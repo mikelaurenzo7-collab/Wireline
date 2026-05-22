@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { IS_PROD } from "./server-context";
-import { applyPlanToolUnlocks, resolveAgentTools, type AgentToolName } from "./agent-capabilities";
+import { applyPlanToolUnlocks, resolveAgentTools } from "./agent-capabilities";
 import {
   filterToolsByTenantConnections,
   loadTenantIntegrationConnections,

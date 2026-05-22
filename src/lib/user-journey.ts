@@ -1,10 +1,10 @@
-import { drizzle } from './server-context';
-import { eq, and } from 'drizzle-orm';
-import { userPreferences, onboardingProgress } from '../db/schema';
+import { drizzle } from "./server-context";
+import { eq } from "drizzle-orm";
+import { userPreferences, onboardingProgress } from "../db/schema";
 
 export interface UserPreferences {
   user_id: string;
-  persona?: 'new' | 'solo' | 'power' | 'technical' | 'non_technical';
+  persona?: "new" | "solo" | "power" | "technical" | "non_technical";
   tour_completed: boolean;
   onboarding_completed: boolean;
   help_enabled: boolean;
@@ -41,7 +41,7 @@ export async function getUserPreferences(userId: string): Promise<UserPreference
       keyboard_shortcuts_enabled: row.keyboardShortcutsEnabled || true,
       preferences: (row.preferences as any) || {},
     };
-  } catch (error) {
+  } catch {
     return {
       user_id: userId,
       tour_completed: false,
@@ -55,14 +55,16 @@ export async function getUserPreferences(userId: string): Promise<UserPreference
 
 export async function updateUserPreferences(
   userId: string,
-  updates: Partial<UserPreferences>
+  updates: Partial<UserPreferences>,
 ): Promise<void> {
   const mapped: any = {};
   if (updates.persona) mapped.persona = updates.persona;
   if (updates.tour_completed !== undefined) mapped.tourCompleted = updates.tour_completed;
-  if (updates.onboarding_completed !== undefined) mapped.onboardingCompleted = updates.onboarding_completed;
+  if (updates.onboarding_completed !== undefined)
+    mapped.onboardingCompleted = updates.onboarding_completed;
   if (updates.help_enabled !== undefined) mapped.helpEnabled = updates.help_enabled;
-  if (updates.keyboard_shortcuts_enabled !== undefined) mapped.keyboardShortcutsEnabled = updates.keyboard_shortcuts_enabled;
+  if (updates.keyboard_shortcuts_enabled !== undefined)
+    mapped.keyboardShortcutsEnabled = updates.keyboard_shortcuts_enabled;
   if (updates.preferences) mapped.preferences = updates.preferences;
 
   await drizzle
@@ -70,14 +72,14 @@ export async function updateUserPreferences(
     .values({ userId, ...mapped })
     .onConflictDoUpdate({
       target: userPreferences.userId,
-      set: mapped
+      set: mapped,
     });
 }
 
 export async function trackOnboardingStep(
   userId: string,
   stepId: string,
-  metadata?: Record<string, any>
+  metadata?: Record<string, any>,
 ): Promise<{ completed: boolean }> {
   await drizzle
     .insert(onboardingProgress)
@@ -94,7 +96,7 @@ export async function trackOnboardingStep(
         completed: true,
         completedAt: new Date(),
         metadata: metadata || {},
-      }
+      },
     });
 
   return { completed: true };
@@ -107,11 +109,14 @@ export async function getOnboardingProgress(userId: string): Promise<Record<stri
       .from(onboardingProgress)
       .where(eq(onboardingProgress.userId, userId));
 
-    return data.reduce((acc, row) => {
-      acc[row.stepId] = row.completed || false;
-      return acc;
-    }, {} as Record<string, boolean>);
-  } catch (error) {
+    return data.reduce(
+      (acc, row) => {
+        acc[row.stepId] = row.completed || false;
+        return acc;
+      },
+      {} as Record<string, boolean>,
+    );
+  } catch {
     return {};
   }
 }

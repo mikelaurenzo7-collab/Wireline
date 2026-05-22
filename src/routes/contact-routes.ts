@@ -1,7 +1,7 @@
 import { Router, Response } from "express";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, desc, ilike } from "drizzle-orm";
+import { eq, and, desc, ilike } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { normalizePhoneTail, buildContactProfile } from "../lib/contact-profile";
 import { claudeErr } from "../lib/claude-response-helpers";

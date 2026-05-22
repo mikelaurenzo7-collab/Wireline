@@ -6,7 +6,6 @@ import PageTransition from "../components/layout/PageTransition";
 import RouteFallback from "../components/layout/RouteFallback";
 import NotFound from "../components/layout/NotFound";
 
-const DashboardHome = lazy(() => import("../components/DashboardHome"));
 const TriageInbox = lazy(() => import("../components/TriageInbox"));
 const ContactProfile = lazy(() => import("../components/ContactProfile"));
 const InsightsView = lazy(() => import("../components/InsightsView"));

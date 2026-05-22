@@ -3,18 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { PageMeta } from "../lib/page-meta";
 import WirelineMark from "../components/WirelineMark";
-import {
-  Check,
-  Waves,
-  ArrowRight,
-  Phone,
-  Bot,
-  BarChart3,
-  Users,
-  Zap,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
+import { Check, ArrowRight, Phone, Zap, ShieldCheck, Sparkles } from "lucide-react";
 
 type Tier = {
   id: string;

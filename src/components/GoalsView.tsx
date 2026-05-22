@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Target, Plus, Pencil, Trash2, Check, X, Loader2 } from "lucide-react";
 import { authFetch } from "../lib/api";
-import { cn } from "../lib/utils";
 import { useToast } from "../contexts/ToastContext";
 
 /* ──────────────────────────────────────────────────────────────────────────

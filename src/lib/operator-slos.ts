@@ -1,6 +1,6 @@
 import type { VercelPgDatabase } from "drizzle-orm/vercel-postgres";
 import * as schema from "../db/schema";
-import { eq, and, gte, lt, inArray, sql, desc } from "drizzle-orm";
+import { eq, and, gte, inArray, sql } from "drizzle-orm";
 import { getQueueStats, type QueueStats } from "./job-queue";
 import type { WebhookEvent } from "./webhook-helpers";
 

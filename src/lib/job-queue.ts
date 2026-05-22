@@ -21,7 +21,7 @@
 
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, desc, lte, gte, inArray } from "drizzle-orm";
+import { eq, and, sql, lte, gte, inArray } from "drizzle-orm";
 
 type DrizzleDB = typeof drizzle;
 

@@ -2,7 +2,6 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import AdminSettings from "../AdminSettings";
 import { BrowserRouter } from "react-router-dom";
-import { AuthProvider } from "../../contexts/AuthContext";
 import { ToastProvider } from "../../contexts/ToastContext";
 import { BrandingProvider } from "../../contexts/BrandingContext";
 

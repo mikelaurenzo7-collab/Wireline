@@ -8,10 +8,6 @@ import {
   type SendSignupLinkDeps,
 } from "./vapi-tool-handlers";
 
-// A silent logger so test output stays clean. The `.error` calls are
-// expected on the catch paths — we don't assert on them.
-const silentLog = { error: vi.fn() };
-
 // ---------------------------------------------------------------------------
 // create_account
 // ---------------------------------------------------------------------------

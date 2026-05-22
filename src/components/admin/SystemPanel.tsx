@@ -20,12 +20,7 @@ interface SystemPanelProps {
   onOpenIntegrations?: () => void;
 }
 
-export function SystemPanel({
-  claudeStatus,
-  integrations,
-  operationalSlos,
-  onOpenIntegrations,
-}: SystemPanelProps) {
+export function SystemPanel({ operationalSlos }: SystemPanelProps) {
   const getSloStatusColor = (health: string) => {
     switch (health) {
       case "critical":

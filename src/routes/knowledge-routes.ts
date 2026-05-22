@@ -1,25 +1,12 @@
 import { Router, Response } from "express";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import { parseFormData, KnowledgeSchema } from "../lib/form-validators";
 import * as rateLimiters from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
-
-interface AgentRef {
-  id: string;
-  name: string;
-  archetype: string | null;
-}
-
-interface KnowledgeRow {
-  id: number;
-  agent_id: string;
-  content: string;
-  created_at: string;
-}
 
 const router = Router();
 

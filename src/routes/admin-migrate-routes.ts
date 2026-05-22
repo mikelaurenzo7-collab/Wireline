@@ -24,7 +24,7 @@ import { Router, Request, Response, NextFunction } from "express";
 import crypto from "crypto";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";

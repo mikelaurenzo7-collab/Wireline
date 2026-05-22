@@ -16,11 +16,6 @@ import {
   Target,
   Clock,
   Workflow,
-  Beaker,
-  Brain,
-  ListFilter,
-  Settings,
-  Shield,
   Blocks,
   PhoneCall,
   PhoneOff,
@@ -36,8 +31,6 @@ import AgentWorkspace from "./AgentWorkspace";
 import { useToast } from "../contexts/ToastContext";
 import AgentFlowComposer from "./AgentFlowComposer";
 import AgentActionEngine from "./AgentActionEngine";
-
-type Message = { role: "user" | "assistant"; content: string };
 
 type VapiInstance = {
   on: (event: string, cb: () => void) => void;
@@ -57,14 +50,6 @@ export default function AgentTraining() {
   const simMountedRef = useRef(true);
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState("default-agent");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content: "Connected. Send instructions or background information to train your agent.",
-    },
-  ]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
   const [knowledge, setKnowledge] = useState<any[]>([]);
   const [directives, setDirectives] = useState<any[]>([]);
@@ -169,50 +154,6 @@ export default function AgentTraining() {
       setLessons(data.lessons || []);
     } catch {
       /* training fetch failures are non-fatal — UI shows empty state */
-    }
-  };
-
-  const handleSend = async () => {
-    if (!input.trim()) return;
-    const currentInput = input;
-    setInput("");
-
-    setMessages((prev) => [...prev, { role: "user", content: currentInput }]);
-    setIsLoading(true);
-
-    try {
-      const res = await authFetch("/api/train/extract", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: currentInput, agentId: selectedAgentId }),
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        setMessages((prev) => [...prev, { role: "assistant", content: data.responseContent }]);
-        fetchKnowledge();
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content:
-              data.error || "Couldn't parse the response — try rephrasing your training input.",
-          },
-        ]);
-      }
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content:
-            "Couldn't reach the training service. Check your input and try again — if it keeps failing, ping Tyler at (564) 238-9455.",
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
     }
   };
 

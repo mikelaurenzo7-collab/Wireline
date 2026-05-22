@@ -43,7 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const parsed = JSON.parse(stored) as Session;
         setSession(parsed);
         setUser(parsed.user);
-      } catch (e) {
+      } catch {
         localStorage.removeItem("wireline_session");
       }
     }

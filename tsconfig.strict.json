@@ -29,6 +29,7 @@
     // ─── Hardened modules — DO NOT remove without justification. ───
     // Each entry was inspected and confirmed to compile under strict.
     // Add a new entry only after verifying `npm run lint:strict` is clean.
+    "src/types/pg-shim.d.ts",
     "src/lib/secret-vault.ts",
     "src/middleware/require-role.ts",
     "src/lib/tenant-quotas.ts",

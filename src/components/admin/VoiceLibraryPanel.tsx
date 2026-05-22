@@ -48,7 +48,7 @@ export default function VoiceLibraryPanel() {
       const data = await r.json();
       setVoices(data.voices || []);
       setConfigured(!!data.configured);
-    } catch (e) {
+    } catch {
       toastError("Couldn't load voice library");
     } finally {
       setLoading(false);

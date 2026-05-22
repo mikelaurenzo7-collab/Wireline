@@ -54,7 +54,10 @@ describe("PageShell", () => {
 
   it("renders actions slot", () => {
     render(<PageShell title="Test" actions={<button>Export</button>} />);
-    expect(screen.getByRole("button", { name: "Export" })).toBeInTheDocument();
+    // PageShell renders the actions slot twice — once in the desktop
+    // header, once in the mobile row — so both responsive copies exist
+    // in the DOM under jsdom (where CSS visibility classes are inert).
+    expect(screen.getAllByRole("button", { name: "Export" }).length).toBeGreaterThan(0);
   });
 
   it("respects defaultTab", () => {

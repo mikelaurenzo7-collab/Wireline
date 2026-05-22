@@ -1,35 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Vapi webhook/tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
-import express, { Request, Response } from "express";
-import type { AuthenticatedRequest } from "../types/auth";
+import express from "express";
 import * as claudeBrain from "../lib/claude-brain";
-import { drizzle, log, IS_PROD, auditLogger, fetchWithTimeout } from "../lib/server-context";
+import { drizzle, log, IS_PROD, auditLogger } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, or, ilike, not, inArray, asc } from "drizzle-orm";
 import {
   timingSafeEq,
   VAPI_WEBHOOK_SECRET,
   sanitizePhone,
-  KNOWLEDGE_GAP_PREFIX,
-  MAX_RUNTIME_LESSONS,
-  ROLE_SPECIFIC_PROTOCOLS,
-  buildCallerProfileBlock,
-  OUTBOUND_ARCHETYPE_BY_ROLE,
-  getArchetypeConfig,
-  buildRoleToolDefs,
   PRESERVED_LEAD_STATUSES,
   SENTIMENT_ANGRY_SIGNALS,
   SENTIMENT_POSITIVE_SIGNALS,
 } from "../lib/vapi-helpers";
-import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "../lib/agent-runtime";
-import { buildCustomerIntelBlock } from "../lib/customer-intel";
-import { SentryEvents } from "../lib/sentry-events";
 import { getErrorMessage } from "../lib/server-utils";
-import { persistClaudeAuditRecords } from "../middleware/audit-middleware";
-import {
-  buildCallCompletedOutcome,
-  dispatchWebhook,
-  type WirelineCallCompletedOutcome,
-} from "../lib/webhook-helpers";
+import { dispatchWebhook } from "../lib/webhook-helpers";
 import { analyzeLiveSentiment } from "../lib/gemini-brain";
 import { IntegrationService } from "../lib/integrations";
 import { CRMService } from "../lib/crm-service";
@@ -55,18 +39,10 @@ import {
 import { sendTeamsMessage, logToExcel } from "../lib/microsoft-graph-service";
 import { normalizeDncPhone } from "../lib/compliance";
 import { lookupTenantPhoneNumber, sendTenantMessage } from "../lib/twilio-service";
-import { resolveAgentTools } from "../lib/agent-capabilities";
 import { resolveVapiWebhookAgent } from "../lib/vapi-webhook-agent";
 import { enqueue } from "../lib/job-queue";
-import {
-  getConsentRuleForPhone,
-  buildConsentLedgerRow,
-  detectOptOut,
-  CONSENT_RULE_VERSION,
-} from "../lib/tcpa-consent";
 import { handleEndOfCallReport } from "../lib/vapi-handlers";
 import { buildVapiAssistant } from "../lib/vapi-assistant-factory";
-import { shouldQueueWebhook } from "../lib/vapi-webhook-queue";
 import {
   performMidCallVoiceSwap,
   shouldSwapForCall,
@@ -89,7 +65,6 @@ import {
 
 const router = express.Router();
 let _warnedAboutVapiSecret = false;
-const DEFAULT_AGENT_ROLE = "customer_service";
 
 type ShowcaseCallContext = {
   callId: string;
@@ -420,9 +395,6 @@ router.post("/api/vapi-webhook", async (req, res) => {
     .limit(1);
 
   const subscriptionStatus = userSettings?.subscriptionStatus || "active";
-  const voiceLlmProvider =
-    userSettings?.voiceLlmProvider || claudeBrain.VAPI_TENANT_DEFAULT_PROVIDER;
-  const voiceLlmModel = userSettings?.voiceLlmModel || claudeBrain.VAPI_TENANT_DEFAULT_MODEL;
 
   if (subscriptionStatus !== "active") {
     if (message && message.type === "assistant-request") {

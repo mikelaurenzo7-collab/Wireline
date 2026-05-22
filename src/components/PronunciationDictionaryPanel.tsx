@@ -94,13 +94,6 @@ export default function PronunciationDictionaryPanel() {
     void loadDicts();
   }, []);
 
-  function updateDraftEntry(dictId: string, idx: number, patch: Partial<DictEntry>) {
-    setDrafts((prev) => {
-      const next = (prev[dictId] || []).map((e, i) => (i === idx ? { ...e, ...patch } : e));
-      return { ...prev, [dictId]: next };
-    });
-  }
-
   function addDraftRow(dictId: string) {
     setDrafts((prev) => ({
       ...prev,

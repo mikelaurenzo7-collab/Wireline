@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- OAuth provider responses include provider-specific extension fields. */
-import express, { Request, Response } from "express";
-import type { AuthenticatedRequest } from "../types/auth";
+import express from "express";
 import { google } from "googleapis";
 import { drizzle, log, IS_PROD } from "../lib/server-context";
 import { and, eq } from "drizzle-orm";

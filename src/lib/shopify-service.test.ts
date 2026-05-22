@@ -5,7 +5,7 @@
 // guard), the OAuth install-URL builder, and the OAuth-callback HMAC
 // verification.
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { createHmac } from "node:crypto";
 import {
   shopifyOAuthConfigured,

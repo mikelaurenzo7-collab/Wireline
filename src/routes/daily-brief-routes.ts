@@ -2,7 +2,7 @@ import { Router, Response, type Request } from "express";
 import { timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { sendDailyBriefEmail } from "../lib/daily-brief";
 import { getErrorMessage } from "../lib/server-utils";

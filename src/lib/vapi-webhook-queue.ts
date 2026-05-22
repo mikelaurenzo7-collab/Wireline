@@ -24,7 +24,7 @@
 import type { JobRow } from "./job-queue";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { handleEndOfCallReport } from "./vapi-handlers";
 import { getErrorMessage } from "./server-utils";
 
