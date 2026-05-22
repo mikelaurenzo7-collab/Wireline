@@ -565,6 +565,10 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
               <span className="text-[10px] uppercase tracking-[0.3em] text-muted">Recipient</span>
               <input
                 type="email"
+                autoComplete="email"
+                autoCapitalize="none"
+                spellCheck={false}
+                inputMode="email"
                 value={recipient}
                 onChange={(e) => setRecipient(e.target.value.trimStart())}
                 onBlur={(e) => setRecipient(e.target.value.trim())}

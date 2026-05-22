@@ -412,6 +412,7 @@ export default function Cadences() {
                       <Clock className="w-3 h-3 text-muted/60" />
                       <input
                         type="number"
+                        inputMode="numeric"
                         min={0}
                         value={s.delayHours}
                         onChange={(e) => updateStep(i, { delayHours: Number(e.target.value) || 0 })}

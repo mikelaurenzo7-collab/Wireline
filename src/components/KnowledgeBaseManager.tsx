@@ -645,6 +645,7 @@ export default function KnowledgeBaseManager() {
                         </button>
                         <button
                           onClick={cancelEdit}
+                          aria-label="Cancel edit"
                           className="h-8 w-8 rounded-lg glass border border-white/10 flex items-center justify-center text-ink/70 hover:text-ink"
                         >
                           <X className="w-3.5 h-3.5" />
@@ -786,6 +787,7 @@ function DedupePanel({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="w-9 h-9 rounded-full glass border border-white/10 hover:border-white/30 flex items-center justify-center text-ink/60 hover:text-ink"
           >
             <X className="w-4 h-4" />

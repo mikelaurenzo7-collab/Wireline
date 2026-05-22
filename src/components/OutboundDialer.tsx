@@ -1715,6 +1715,7 @@ function CreateCampaignModal({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="w-8 h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
           >
             <X className="w-4 h-4" />
@@ -1793,6 +1794,7 @@ function CreateCampaignModal({
             </label>
             <input
               type="number"
+              inputMode="numeric"
               min="1"
               max="10"
               className={inputCls}

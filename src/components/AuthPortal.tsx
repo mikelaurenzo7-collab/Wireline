@@ -619,6 +619,10 @@ export default function AuthPortal() {
                       <input
                         type="email"
                         required
+                        autoComplete="email"
+                        autoCapitalize="none"
+                        spellCheck={false}
+                        inputMode="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="auth-input"
@@ -661,6 +665,7 @@ export default function AuthPortal() {
                           type="password"
                           required
                           minLength={isSignUp ? 8 : undefined}
+                          autoComplete={isSignUp ? "new-password" : "current-password"}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           className="auth-input tracking-[0.32em]"
