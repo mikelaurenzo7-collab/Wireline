@@ -15,6 +15,10 @@ public/apple-touch-icon.png
 # Playwright
 playwright-report/
 test-results/
+marketing-kit/videos/
+marketing-kit/**/*.webm
+marketing-kit/screenshots/
+marketing-kit/zoom-crops/
 e2e/screenshots/*.png
 !e2e/screenshots/.gitkeep
 .vercel
