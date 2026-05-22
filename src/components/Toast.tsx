@@ -88,9 +88,9 @@ export default function ToastStack() {
       // On mobile: full-width bottom strip (with safe-area inset for
       // notched devices) so toasts aren't squeezed into a corner.
       // On sm+: classic bottom-right stack.
-      className="fixed inset-x-3 bottom-3 sm:inset-x-auto sm:bottom-5 sm:right-5 z-[9999] flex flex-col gap-2 items-stretch sm:items-end pointer-events-none"
+      className="fixed inset-x-3 max-md:bottom-[calc(3.25rem+env(safe-area-inset-bottom,0px))] md:bottom-5 md:inset-x-auto md:right-5 z-[9999] flex flex-col gap-2 items-stretch md:items-end pointer-events-none"
       style={{
-        paddingBottom: "env(safe-area-inset-bottom, 0)",
+        paddingBottom: 0,
       }}
     >
       <AnimatePresence initial={false} mode="sync">

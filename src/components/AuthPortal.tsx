@@ -490,7 +490,7 @@ export default function AuthPortal() {
            Previously `justify-center` pushed the form to ~440px from the top
            of an 800px viewport, putting the Sign In button at ~875px —
            below the fold. */}
-        <div className="flex-1 lg:sticky lg:top-0 lg:min-h-dvh flex flex-col items-center justify-start relative z-10 py-5 sm:py-8 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 overflow-y-auto">
+        <div className="flex-1 lg:sticky lg:top-0 lg:min-h-dvh flex flex-col items-center justify-start relative z-10 py-5 sm:py-8 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 overflow-y-auto native-scroll overscroll-y-contain">
           <div className="lg:hidden w-full max-w-md mb-4 pt-1">
             {/* Logo + wordmark row */}
             <div className="flex items-center gap-3 mb-5">
@@ -513,11 +513,11 @@ export default function AuthPortal() {
               </div>
             </div>
             {/* Hero copy */}
-            <h2 className="font-display italic text-xl sm:text-2xl md:text-3xl leading-snug tracking-tight mb-3 text-balance">
+            <h2 className="type-fluid-hero font-display italic leading-snug tracking-tight mb-3 text-balance">
               <span className="text-[#4F1E7B]">AI agents for every</span>{" "}
               <span className="text-ink">customer conversation</span>
             </h2>
-            <p className="text-[12px] text-muted/80 leading-relaxed">
+            <p className="type-fluid-body text-muted/80">
               Sign in below — try live demo lines anytime after the form.
             </p>
           </div>
@@ -747,7 +747,7 @@ export default function AuthPortal() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full flex items-center justify-center gap-2 py-4 px-6 text-[12px] tracking-[0.3em] uppercase font-medium rounded-full cursor-pointer text-on-brand bg-[#4F1E7B] hover:bg-[#6A25A3] active:translate-y-0 hover:-translate-y-[1px] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
+                    className="native-tap-squish w-full flex items-center justify-center gap-2 py-4 px-6 text-[12px] tracking-[0.3em] uppercase font-medium rounded-full cursor-pointer text-on-brand bg-[#4F1E7B] hover:bg-[#6A25A3] max-md:hover:translate-y-0 hover:-translate-y-[1px] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
                     style={{
                       boxShadow: "0 4px 12px -2px rgba(79,30,123,0.3)",
                     }}

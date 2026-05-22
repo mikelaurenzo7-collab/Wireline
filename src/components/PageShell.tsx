@@ -237,7 +237,7 @@ export default function PageShell({
                       setActiveId(tabs[(i - 1 + tabs.length) % tabs.length].id);
                   }}
                   className={cn(
-                    "relative shrink-0 inline-flex min-h-10 items-center gap-1.5 px-3 py-2 rounded-xl transition-all text-[10px] uppercase tracking-[0.12em] font-medium whitespace-nowrap",
+                    "native-tap-squish relative shrink-0 inline-flex min-h-10 items-center gap-1.5 px-3 py-2 rounded-xl transition-all text-[10px] uppercase tracking-[0.12em] font-medium whitespace-nowrap",
                     active ? "text-on-brand" : "text-muted",
                   )}
                 >
@@ -324,10 +324,10 @@ export default function PageShell({
         {tabs && activeTab ? (
           <motion.div
             key={activeTab.id}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, transform: "translate3d(0, 4px, 0)" }}
+            animate={{ opacity: 1, transform: "translate3d(0, 0, 0)" }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="h-full w-full"
+            className="h-full w-full will-change-[transform,opacity]"
           >
             {activeTab.content}
           </motion.div>

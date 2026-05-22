@@ -65,6 +65,13 @@
 }
 
 @layer base {
+  /* iOS tap flash — kill globally; components use their own press states. */
+  *,
+  *::before,
+  *::after {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   html {
     color-scheme: light;
     /* iOS auto-resizes text in landscape rotation by default — pin to 100%
@@ -141,6 +148,12 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-display font-normal;
     letter-spacing: 0;
+    text-wrap: balance;
+  }
+
+  p,
+  li {
+    text-wrap: pretty;
   }
 
   /* `.scrollbar-hide` used to fully hide scrollbars across the app.
@@ -212,17 +225,12 @@
   }
 
   @media (hover: none) and (pointer: coarse) {
-    button,
-    [role="button"],
-    input[type="button"],
-    input[type="submit"],
-    input[type="reset"],
-    input[type="checkbox"],
-    input[type="radio"],
-    select,
-    a[class*="flex"],
-    a[class*="inline-flex"] {
-      min-width: 44px;
+    /* 44pt targets on primary chrome only — never inflate dense table/icon rows. */
+    nav a:not([data-no-min-touch]),
+    nav button:not([data-no-min-touch]),
+    [role="navigation"] a:not([data-no-min-touch]),
+    [role="navigation"] button:not([data-no-min-touch]),
+    [role="tablist"] button:not([data-no-min-touch]) {
       min-height: 44px;
     }
 
@@ -285,7 +293,15 @@
 }
 
 .brutal-btn:active {
-  transform: translateY(0);
+  transform: scale(0.96);
+  transition-duration: 0.1s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .brutal-btn:active {
+    transform: translateY(0);
+  }
 }
 
 @utility brutal-card {
@@ -784,7 +800,8 @@ select:focus {
 }
 
 /* Scrollable panel content — overscroll containment */
-.panel-scroll {
+.panel-scroll,
+.native-scroll {
   @apply overflow-y-auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(79, 30, 123, 0.20) transparent;
@@ -792,7 +809,56 @@ select:focus {
      Also prevents the URL bar from reappearing mid-scroll on Safari.
      NOTE: touch-action intentionally omitted — pan-y would block horizontal
      scroll inside data tables; iOS 13+ has momentum scrolling by default. */
-  overscroll-behavior: contain;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Sticky chrome — saturated frosted glass (Vercel / Supabase pattern). */
+.shell-sticky-glass {
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+}
+
+/* Fluid type — zero-breakpoint scaling for marketing + console heroes. */
+.type-fluid-hero {
+  font-size: clamp(1.5rem, 1.1rem + 2.2vw, 2.75rem);
+  line-height: 1.1;
+}
+
+.type-fluid-title {
+  font-size: clamp(1.125rem, 0.95rem + 0.9vw, 1.65rem);
+  line-height: 1.2;
+}
+
+.type-fluid-body {
+  font-size: clamp(0.8125rem, 0.78rem + 0.35vw, 0.9375rem);
+  line-height: 1.55;
+}
+
+/* Physical press on touch — haptic substitute. */
+@media (hover: none) and (pointer: coarse) {
+  .native-tap-squish:active,
+  button.native-tap-squish:active,
+  [role="button"].native-tap-squish:active {
+    transform: scale(0.96);
+    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-ghost:active,
+  .btn-brand-outline:active,
+  .btn-danger:active {
+    transform: scale(0.97);
+    transition-duration: 0.1s;
+  }
+}
+
+/* View Transitions API — cross-fade route changes where supported. */
+@supports (view-transition-name: none) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.22s;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  ADDITIONAL ANIMATIONS  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -955,6 +1021,16 @@ select:focus {
   }
 }
 
+/* Fallback when dvh is unavailable (older WebViews). */
+@supports not (height: 100dvh) {
+  html,
+  body,
+  #root,
+  .min-h-dvh {
+    min-height: 100svh;
+  }
+}
+
 @media (max-width: 767px) {
   /* Lighter glass on phones — skip expensive blur, keep warm cream opacity. */
   .glass {
@@ -985,6 +1061,13 @@ select:focus {
   .mobile-page-canvas {
     padding-left: 0;
     padding-right: 0;
+    /* Fill visible viewport between top bar + bottom tab bar. */
+    min-height: 0;
+    flex: 1 1 auto;
+  }
+
+  .mobile-page-canvas > * {
+    min-height: 0;
   }
 
   /* Unified tab + panel stack on mobile routes */

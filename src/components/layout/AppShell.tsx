@@ -13,6 +13,7 @@ import EmailVerifyBanner from "./EmailVerifyBanner";
 import AppRoutes from "../../routes/AppRoutes";
 import { PAGE_TITLES } from "../../constants/navigation";
 import { useBranding } from "../../contexts/BrandingContext";
+import { useViewTransitionRoute } from "../../hooks/useViewTransitionRoute";
 
 const CommandBar = lazy(() => import("../CommandBar"));
 const PersonaWizard = lazy(() => import("../PersonaWizard"));
@@ -33,6 +34,7 @@ export default function AppShell() {
   const { branding } = useBranding();
   const location = useLocation();
   const navigate = useNavigate();
+  useViewTransitionRoute();
 
   // Poll nav badge counts every 2 minutes — only when authenticated.
   useEffect(() => {

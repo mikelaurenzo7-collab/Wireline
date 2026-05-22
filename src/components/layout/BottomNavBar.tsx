@@ -98,7 +98,7 @@ export default function BottomNavBar({ onOpenMenu, badges = {} }: Props) {
             data-no-min-touch
             aria-label={badge > 0 ? `${tab.label}, ${badge} unread` : tab.label}
             aria-current={active ? "page" : undefined}
-            className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[49px] select-none transition-opacity duration-75 active:opacity-50"
+            className="native-tap-squish relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[49px] select-none transition-[transform,opacity] duration-100 active:opacity-80"
             style={{ touchAction: "manipulation" }}
           >
             {active && (
@@ -149,7 +149,7 @@ export default function BottomNavBar({ onOpenMenu, badges = {} }: Props) {
         onClick={onOpenMenu}
         data-no-min-touch
         aria-label="More navigation options"
-        className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[49px] select-none transition-opacity duration-75 active:opacity-50"
+        className="native-tap-squish flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[49px] select-none transition-[transform,opacity] duration-100 active:opacity-80"
         style={{ touchAction: "manipulation" }}
       >
         <div className="w-8 h-6 flex items-center justify-center">
