@@ -125,7 +125,17 @@ describe("safeJson", () => {
       headers: { "Content-Type": "text/html" },
     });
     const parsed = await safeJson(res);
-    expect(parsed).toEqual({ error: expect.stringContaining("unexpected error") });
+    expect(parsed).toEqual({ error: expect.stringContaining("refresh") });
+    consoleSpy.mockRestore();
+  });
+
+  it("maps Vercel plain-text failures to a friendly message", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const res = new Response("A server error has occurred", { status: 500 });
+    const parsed = await safeJson(res);
+    expect(parsed).toEqual({
+      error: "The server is temporarily unavailable. Please try again in a few minutes.",
+    });
     consoleSpy.mockRestore();
   });
 

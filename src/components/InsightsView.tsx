@@ -43,7 +43,15 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
 } from "recharts";
-import { authFetch } from "../lib/api";
+import { authFetch, readApiJson } from "../lib/api";
+
+/** Loads an insights API route; never throws JSON parse errors. */
+async function fetchInsight<T>(url: string): Promise<T> {
+  const res = await authFetch(url);
+  const out = await readApiJson<T>(res);
+  if (!out.ok) throw new Error(out.error);
+  return out.data;
+}
 import { cn } from "../lib/utils";
 import { formatMoney, safeFixed } from "../lib/safe-number";
 import CsvExportButton from "./CsvExportButton";
@@ -162,12 +170,7 @@ function FunnelView({ days }: { days: number }) {
     let active = true;
     setLoading(true);
     setErr(null);
-    authFetch(`/api/insights/funnel?days=${days}`)
-      .then(async (r) => {
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
-        return d;
-      })
+    fetchInsight(`/api/insights/funnel?days=${days}`)
       .then((d) => {
         if (active) setData(d);
       })
@@ -273,12 +276,7 @@ function AttributionView({ days }: { days: number }) {
     let active = true;
     setLoading(true);
     setErr(null);
-    authFetch(`/api/insights/campaign-attribution?days=${days}`)
-      .then(async (r) => {
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
-        return d;
-      })
+    fetchInsight<{ attribution?: unknown[] }>(`/api/insights/campaign-attribution?days=${days}`)
       .then((d) => {
         if (active) setRows(d.attribution || []);
       })
@@ -409,14 +407,9 @@ function TopicsView() {
   const load = (refresh = false) => {
     setLoading(true);
     setErr(null);
-    authFetch(`/api/insights/topics${refresh ? "?refresh=1" : ""}`)
-      .then(async (r) => {
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error);
-        return d;
-      })
+    fetchInsight(`/api/insights/topics${refresh ? "?refresh=1" : ""}`)
       .then(setData)
-      .catch((e) => setErr(e.message))
+      .catch((e) => setErr(e instanceof Error ? e.message : "Request failed"))
       .finally(() => setLoading(false));
   };
   useEffect(() => {
@@ -521,12 +514,7 @@ function HeatmapView({ days }: { days: number }) {
     let active = true;
     setLoading(true);
     setErr(null);
-    authFetch(`/api/insights/heatmap?days=${days}`)
-      .then(async (r) => {
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
-        return d;
-      })
+    fetchInsight(`/api/insights/heatmap?days=${days}`)
       .then((d) => {
         if (active) setData(d);
       })
@@ -655,12 +643,7 @@ function LeaderboardView({ days }: { days: number }) {
     let active = true;
     setLoading(true);
     setErr(null);
-    authFetch(`/api/insights/leaderboard?days=${days}`)
-      .then(async (r) => {
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
-        return d;
-      })
+    fetchInsight(`/api/insights/leaderboard?days=${days}`)
       .then((d) => {
         if (active) setData(d);
       })
@@ -822,14 +805,9 @@ function FailureModesView() {
   const load = (refresh = false) => {
     setLoading(true);
     setErr(null);
-    authFetch(`/api/insights/failure-modes${refresh ? "?refresh=1" : ""}`)
-      .then(async (r) => {
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error);
-        return d;
-      })
+    fetchInsight(`/api/insights/failure-modes${refresh ? "?refresh=1" : ""}`)
       .then(setData)
-      .catch((e) => setErr(e.message))
+      .catch((e) => setErr(e instanceof Error ? e.message : "Request failed"))
       .finally(() => setLoading(false));
   };
   useEffect(() => {
@@ -918,12 +896,7 @@ function VoiceLatencyView({ days }: { days: number }) {
     let active = true;
     setLoading(true);
     setErr(null);
-    authFetch(`/api/audit/summary?days=${days}`)
-      .then(async (r) => {
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
-        return d;
-      })
+    fetchInsight(`/api/audit/summary?days=${days}`)
       .then((d) => {
         if (active) setData(d);
       })
@@ -1047,12 +1020,7 @@ function AISpendView({ days }: { days: number }) {
     let active = true;
     setLoading(true);
     setErr(null);
-    authFetch(`/api/audit/summary?days=${days}`)
-      .then(async (r) => {
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
-        return d;
-      })
+    fetchInsight(`/api/audit/summary?days=${days}`)
       .then((d) => {
         if (active) setData(d);
       })
@@ -1284,10 +1252,16 @@ function SpendBudgetCard() {
   const refresh = async () => {
     setLoading(true);
     try {
-      const [s, b] = await Promise.all([
-        authFetch("/api/spend/status").then((r) => r.json()),
-        authFetch("/api/spend/budget").then((r) => r.json()),
+      const [statusRes, budgetRes] = await Promise.all([
+        authFetch("/api/spend/status"),
+        authFetch("/api/spend/budget"),
       ]);
+      const statusOut = await readApiJson(statusRes);
+      const budgetOut = await readApiJson<{ budget?: Record<string, unknown> }>(budgetRes);
+      if (!statusOut.ok) throw new Error(statusOut.error);
+      if (!budgetOut.ok) throw new Error(budgetOut.error);
+      const s = statusOut.data;
+      const b = budgetOut.data;
       setStatus(s);
       setBudget(b.budget);
       setDraft({
@@ -1320,10 +1294,8 @@ function SpendBudgetCard() {
           enabled: draft.enabled,
         }),
       });
-      if (!r.ok) {
-        const j = await r.json().catch(() => ({}));
-        throw new Error(j.error || "Save failed");
-      }
+      const out = await readApiJson(r);
+      if (!out.ok) throw new Error(out.error);
       setSavedAt(Date.now());
       await refresh();
     } catch (e: any) {
@@ -1626,11 +1598,7 @@ function QualityView({ days }: { days: number }) {
 
   const fetchStats = useCallback(() => {
     setLoading(true);
-    authFetch(`/api/qa/stats?days=${days}`)
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
+    fetchInsight(`/api/qa/stats?days=${days}`)
       .then(setData)
       .catch((e: unknown) => {
         if ((e as any)?.name !== "AbortError")
@@ -1651,8 +1619,9 @@ function QualityView({ days }: { days: number }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ limit: 20, days }),
       });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || "Batch scoring failed");
+      const out = await readApiJson<{ error?: string; scored?: number; total?: number }>(res);
+      if (!out.ok) throw new Error(out.error);
+      const d = out.data;
       if (d.scored === 0 && d.total === 0) {
         toastSuccess("All caught up", "No unscored calls found in this period.");
       } else if (d.failed > 0) {

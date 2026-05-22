@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { authFetch } from "../../lib/api";
+import { authFetch, readApiJson } from "../../lib/api";
 import WirelineMark from "../WirelineMark";
 import ErrorBoundary from "../ErrorBoundary";
 import AuroraBackdrop from "./AuroraBackdrop";
@@ -43,10 +43,9 @@ export default function AppShell() {
     const fetchCounts = async () => {
       try {
         const r = await authFetch("/api/nav-counts");
-        if (!cancelled && r.ok) {
-          const d = await r.json();
-          setNavBadges(d as Record<string, number>);
-        }
+        if (cancelled) return;
+        const out = await readApiJson<Record<string, number>>(r);
+        if (out.ok) setNavBadges(out.data);
       } catch {
         /* non-critical — stale counts are acceptable */
       }

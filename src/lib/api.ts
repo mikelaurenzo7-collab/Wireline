@@ -8,14 +8,77 @@ const DEFAULT_TIMEOUT_MS = 120_000;
  * (e.g. an HTML error page from a reverse proxy), returns a generic error
  * object instead of throwing so callers never surface raw parse errors.
  */
-export async function safeJson<T = any>(response: Response): Promise<T | { error: string }> {
+export type ApiErrorBody = { error: string; code?: string };
+
+/** True when safeJson fell back to a synthetic error object (non-JSON body). */
+export function isApiErrorBody(value: unknown): value is ApiErrorBody {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    "error" in value &&
+    typeof (value as ApiErrorBody).error === "string" &&
+    !("stages" in value) &&
+    !("grid" in value) &&
+    !("agents" in value) &&
+    !("topics" in value) &&
+    !("attribution" in value)
+  );
+}
+
+function messageFromNonJsonBody(text: string, status: number): string {
+  const trimmed = text.trim();
+  if (/^A server error/i.test(trimmed) || /^An error occurred/i.test(trimmed)) {
+    return "The server is temporarily unavailable. Please try again in a few minutes.";
+  }
+  if (status === 502 || status === 503 || status === 504) {
+    return "The server is temporarily unavailable. Please try again shortly.";
+  }
+  if (trimmed.startsWith("<")) {
+    return "The server returned an unexpected error. Please refresh and try again.";
+  }
+  if (trimmed.length > 0 && trimmed.length < 300) {
+    return trimmed;
+  }
+  return "An unexpected error occurred. Please try again.";
+}
+
+/**
+ * Safely parses a fetch Response as JSON. Never throws SyntaxError — callers
+ * should check `!response.ok` and `isApiErrorBody(data)` before using payloads.
+ */
+export async function safeJson<T = unknown>(response: Response): Promise<T | ApiErrorBody> {
   const text = await response.text();
+  if (!text.trim()) {
+    return { error: messageFromNonJsonBody(text, response.status) };
+  }
   try {
     return JSON.parse(text) as T;
   } catch (parseError) {
     console.error("JSON parse failed:", text.slice(0, 200), parseError);
-    return { error: "An unexpected error occurred. Please try again." };
+    return { error: messageFromNonJsonBody(text, response.status) };
   }
+}
+
+/**
+ * authFetch + safeJson + normalized error extraction for UI callers.
+ */
+export async function readApiJson<T = Record<string, unknown>>(
+  response: Response,
+): Promise<{ ok: true; data: T } | { ok: false; status: number; error: string; code?: string }> {
+  const body = await safeJson<T & ApiErrorBody>(response);
+  if (!response.ok) {
+    const err = isApiErrorBody(body) ? body : (body as ApiErrorBody);
+    return {
+      ok: false,
+      status: response.status,
+      error: err?.error || `Request failed (${response.status})`,
+      code: err?.code,
+    };
+  }
+  if (isApiErrorBody(body)) {
+    return { ok: false, status: response.status, error: body.error };
+  }
+  return { ok: true, data: body as T };
 }
 
 // Compose a caller's AbortSignal with our request-timeout signal so

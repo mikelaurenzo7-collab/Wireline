@@ -33,7 +33,7 @@ import PerformanceBenchmarks from "./PerformanceBenchmarks";
 import OnboardingQuickstart from "./OnboardingQuickstart";
 import PageShell, { Panel, StatTile } from "./PageShell";
 import WidgetBoundary from "./WidgetBoundary";
-import { authFetch } from "../lib/api";
+import { authFetch, readApiJson } from "../lib/api";
 import { formatDate } from "../lib/safe-date";
 import { useToast } from "../contexts/ToastContext";
 import type { DashboardStats, SignalPresence, FleetTask, ActivityItem } from "../types/api";
@@ -87,11 +87,13 @@ export default function DashboardHome() {
     fetchSystemActivity();
     authFetch("/api/health/slos")
       .then(async (r) => {
-        if (r.ok) {
-          const d = await r.json();
-          if (mountedRef.current && d.banner_status && d.banner_status !== "ok") {
-            setSloBanner({ status: d.banner_status, events: d.fired_events || [] });
-          }
+        if (!r.ok || !mountedRef.current) return;
+        const out = await readApiJson<{
+          banner_status?: string;
+          fired_events?: Array<{ summary: string }>;
+        }>(r);
+        if (out.ok && out.data.banner_status && out.data.banner_status !== "ok") {
+          setSloBanner({ status: out.data.banner_status, events: out.data.fired_events || [] });
         }
       })
       .catch(() => {});
@@ -157,8 +159,8 @@ export default function DashboardHome() {
   const fetchActiveSignals = async () => {
     try {
       const res = await authFetch("/api/fleet/presence");
-      const data: { signals: SignalPresence[] } = await res.json();
-      setActiveSignals(data.signals || []);
+      const out = await readApiJson<{ signals: SignalPresence[] }>(res);
+      if (out.ok) setActiveSignals(out.data.signals || []);
     } catch (e) {
       console.error("Signal presence sync failed:", e);
     }
@@ -167,8 +169,8 @@ export default function DashboardHome() {
   const fetchHighPriorityTasks = async () => {
     try {
       const res = await authFetch("/api/fleet/tasks?status=pending&priority=high");
-      const data: { tasks: FleetTask[] } = await res.json();
-      setHighPriorityTasks(data.tasks || []);
+      const out = await readApiJson<{ tasks: FleetTask[] }>(res);
+      if (out.ok) setHighPriorityTasks(out.data.tasks || []);
     } catch (e) {
       console.error("Failed to fetch high priority tasks:", e);
     }
@@ -177,8 +179,8 @@ export default function DashboardHome() {
   const fetchSystemActivity = async () => {
     try {
       const res = await authFetch("/api/fleet/activity");
-      const data: { activity: ActivityItem[] } = await res.json();
-      setSystemActivity(data.activity || []);
+      const out = await readApiJson<{ activity: ActivityItem[] }>(res);
+      if (out.ok) setSystemActivity(out.data.activity || []);
     } catch (e) {
       console.error("Failed to fetch system activity:", e);
     }
@@ -187,8 +189,14 @@ export default function DashboardHome() {
   const fetchStats = async () => {
     try {
       const res = await authFetch("/api/dashboard/stats");
-      const data: DashboardStats = await res.json();
-      setStats(data);
+      const out = await readApiJson<DashboardStats>(res);
+      if (!out.ok) {
+        if (out.code !== "AUTH_NOT_CONFIGURED") {
+          toastError("Dashboard unavailable", out.error);
+        }
+        return;
+      }
+      setStats(out.data);
     } catch (e) {
       console.error(e);
       toastError(
@@ -507,7 +515,9 @@ export default function DashboardHome() {
                   <Radio className="w-6 h-6 text-muted/40 animate-pulse" />
                 </div>
                 <div>
-                  <p className="text-[10px] sm:text-[11px] font-medium text-ink/60 mb-0.5">No calls yet</p>
+                  <p className="text-[10px] sm:text-[11px] font-medium text-ink/60 mb-0.5">
+                    No calls yet
+                  </p>
                   <p className="text-[9px] sm:text-[10px] text-muted/50 leading-snug max-w-[200px] sm:max-w-[160px]">
                     Make a test call above to start collecting call data
                   </p>

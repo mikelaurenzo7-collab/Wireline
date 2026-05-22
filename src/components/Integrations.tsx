@@ -13,7 +13,7 @@ import {
   Zap,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { authFetch } from "../lib/api";
+import { authFetch, readApiJson } from "../lib/api";
 import PageShell, { Panel } from "./PageShell";
 import { useToast } from "../contexts/ToastContext";
 import ConfirmModal from "./ConfirmModal";
@@ -41,25 +41,28 @@ export default function Integrations() {
   const fetchAccounts = async () => {
     try {
       const res = await authFetch("/api/emails/accounts");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setAccounts(data.accounts || []);
-    } catch (e: any) {
-      toastError(
-        "Could not load connected accounts",
-        e?.message || "Check your connection and refresh.",
-      );
+      const out = await readApiJson<{ accounts?: typeof accounts }>(res);
+      if (!out.ok) throw new Error(out.error);
+      setAccounts(out.data.accounts || []);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Check your connection and refresh.";
+      if (!msg.includes("temporarily unavailable")) {
+        toastError("Could not load connected accounts", msg);
+      }
     }
   };
 
   const fetchAgents = async () => {
     try {
       const res = await authFetch("/api/agents");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setAgents(data.agents || []);
-    } catch (e: any) {
-      toastError("Could not load agents", e?.message || "Check your connection and refresh.");
+      const out = await readApiJson<{ agents?: typeof agents }>(res);
+      if (!out.ok) throw new Error(out.error);
+      setAgents(out.data.agents || []);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Check your connection and refresh.";
+      if (!msg.includes("temporarily unavailable")) {
+        toastError("Could not load agents", msg);
+      }
     }
   };
 
@@ -97,8 +100,10 @@ export default function Integrations() {
   const handleConnectGmail = async () => {
     try {
       const res = await authFetch("/api/oauth/google/url");
-      const { url, error } = await res.json();
-      if (error) throw new Error(error);
+      const out = await readApiJson<{ url?: string; error?: string }>(res);
+      if (!out.ok || out.data.error) throw new Error(out.data.error || out.error);
+      const url = out.data.url;
+      if (!url) throw new Error("OAuth URL missing");
       openOAuthPopup(url);
     } catch (e: any) {
       toastError("Gmail connection failed", e?.message || "Could not start Gmail OAuth.");
@@ -108,8 +113,10 @@ export default function Integrations() {
   const handleConnectOutlook = async () => {
     try {
       const res = await authFetch("/api/oauth/microsoft/url");
-      const { url, error } = await res.json();
-      if (error) throw new Error(error);
+      const out = await readApiJson<{ url?: string; error?: string }>(res);
+      if (!out.ok || out.data.error) throw new Error(out.data.error || out.error);
+      const url = out.data.url;
+      if (!url) throw new Error("OAuth URL missing");
       const win = window.open(url, "oauth_popup", "width=600,height=820");
       if (!win)
         toastWarning("Popup blocked", "Allow popups for this site to connect your account.");
@@ -121,8 +128,10 @@ export default function Integrations() {
   const handleConnectYahoo = async () => {
     try {
       const res = await authFetch("/api/oauth/yahoo/url");
-      const { url, error } = await res.json();
-      if (error) throw new Error(error);
+      const out = await readApiJson<{ url?: string; error?: string }>(res);
+      if (!out.ok || out.data.error) throw new Error(out.data.error || out.error);
+      const url = out.data.url;
+      if (!url) throw new Error("OAuth URL missing");
       openOAuthPopup(url);
     } catch (e: any) {
       toastError("Yahoo Mail connection failed", e?.message || "Could not start Yahoo OAuth.");
@@ -163,15 +172,16 @@ export default function Integrations() {
     setSyncing(true);
     try {
       const res = await authFetch("/api/emails/sync", { method: "POST" });
-      const data = (await res.json().catch(() => ({}))) as {
+      const out = await readApiJson<{
         ok?: boolean;
         accounts?: number;
         message?: string;
         error?: string;
         code?: string;
-      };
+      }>(res);
+      const data = out.ok ? out.data : { error: out.error, code: out.code };
 
-      if (!res.ok || data.ok === false) {
+      if (!out.ok || data.ok === false) {
         // No-account case is informational — point the operator at the
         // OAuth buttons immediately below this banner.
         if (data.code === "EMAIL_ACCOUNT_NOT_CONNECTED") {

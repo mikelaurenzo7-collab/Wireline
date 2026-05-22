@@ -11,8 +11,9 @@
 import { Router, Response } from "express";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, gte } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
+import { getErrorMessage } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
@@ -108,24 +109,28 @@ router.get(
   "/api/insights/campaign-attribution",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
-    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
-    const days = Math.min(180, Math.max(1, Number(req.query.days) || 30));
-    const rows = await drizzle.execute(sql`
-      SELECT
-        COALESCE(campaign_source, '(untagged)') AS source,
-        COUNT(*)::int                          AS calls,
-        SUM(duration_seconds)::int             AS total_seconds,
-        COUNT(*) FILTER (WHERE outcome_tag = 'booked')::int    AS booked,
-        COUNT(*) FILTER (WHERE outcome_tag = 'qualified')::int AS qualified
-      FROM wireline_call_logs
-      WHERE user_id = ${req.user.id}
-        AND created_at >= NOW() - INTERVAL '${sql.raw(String(days))} days'
-      GROUP BY 1
-      ORDER BY calls DESC
-      LIMIT 50
-    `);
-    const data = (rows as any).rows ?? rows;
-    return res.json({ days, attribution: data });
+    try {
+      if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+      const days = Math.min(180, Math.max(1, Number(req.query.days) || 30));
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+      const rows = await drizzle
+        .select({
+          source: sql<string>`COALESCE(${schema.callLogs.campaignSource}, '(untagged)')`,
+          calls: sql<number>`count(*)::int`,
+          total_seconds: sql<number>`coalesce(sum(${schema.callLogs.durationSeconds}), 0)::int`,
+          booked: sql<number>`count(*) filter (where ${schema.callLogs.outcomeTag} = 'booked')::int`,
+          qualified: sql<number>`count(*) filter (where ${schema.callLogs.outcomeTag} = 'qualified')::int`,
+        })
+        .from(schema.callLogs)
+        .where(and(eq(schema.callLogs.userId, req.user.id), gte(schema.callLogs.createdAt, since)))
+        .groupBy(sql`COALESCE(${schema.callLogs.campaignSource}, '(untagged)')`)
+        .orderBy(sql`count(*) desc`)
+        .limit(50);
+      return res.json({ days, attribution: rows });
+    } catch (error) {
+      log.error("campaign-attribution failed", { error: getErrorMessage(error) });
+      return res.status(500).json({ error: "Failed to load campaign attribution" });
+    }
   },
 );
 
