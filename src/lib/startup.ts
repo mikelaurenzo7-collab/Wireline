@@ -36,6 +36,17 @@ export function validateStartupEnv() {
     recommended.push("CORS_ORIGINS");
   }
 
+  // Rate limiting: without Upstash Redis each Vercel invocation has its own
+  // in-memory state, so limits reset on every cold start and provide no real
+  // protection. This is a security-relevant missing config, not just a perf nit.
+  if (IS_PROD && (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN)) {
+    log.warn(
+      "UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN not set — " +
+        "rate limits are per-invocation only and provide no protection in serverless. " +
+        "Set both vars in Vercel project settings to enable global rate limiting.",
+    );
+  }
+
   if (!IS_PROD && missingProd.length) {
     log.warn("Prod-required env vars not set (dev mode — continuing)", { vars: missingProd });
   }

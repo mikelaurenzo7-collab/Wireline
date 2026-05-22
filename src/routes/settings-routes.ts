@@ -22,7 +22,16 @@ router.get("/api/settings", authenticateUser, async (req: AuthenticatedRequest, 
       .where(eq(settings.userId, req.user.id))
       .limit(1);
 
-    res.json({ settings: data || {} });
+    // Strip sensitive credentials — return boolean presence flags instead.
+    // The raw key is never needed by the browser; only server-side code
+    // uses it (and reads from process.env.VAPI_PRIVATE_KEY, not this column).
+    const safe = data ? { ...data } : ({} as any);
+    if ("vapiPrivateKey" in safe) {
+      safe.has_vapi_key = !!safe.vapiPrivateKey;
+      delete safe.vapiPrivateKey;
+    }
+
+    res.json({ settings: safe });
   } catch {
     res.json({ settings: {} });
   }
@@ -38,6 +47,9 @@ router.post(
       delete update.id;
       delete update.userId;
       delete update.createdAt;
+      // vapiPrivateKey is a sensitive credential — must not be set via this
+      // generic endpoint. It has a dedicated route with proper encryption.
+      delete update.vapiPrivateKey;
 
       const [data] = (await drizzle
         .update(settings)
@@ -45,7 +57,9 @@ router.post(
         .where(eq(settings.userId, req.user.id))
         .returning()) as any[];
 
-      res.json({ settings: data });
+      const safeData = data ? { ...data } : {};
+      delete (safeData as any).vapiPrivateKey;
+      res.json({ settings: safeData });
     } catch (error) {
       log.error("Failed to update settings", { error: getErrorMessage(error) });
       res.status(500).json({ error: "Failed to update settings" });
