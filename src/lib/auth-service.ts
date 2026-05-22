@@ -4,11 +4,24 @@ import * as schema from "../db/schema";
 import { and, eq, gte, isNull } from "drizzle-orm";
 import { requireInternalJwtSecret } from "./internal-jwt-secret";
 
-const SECRET = requireInternalJwtSecret();
+/** Lazy so importing auth-service does not crash the whole API when env is misconfigured. */
+let cachedJwtSecret: string | null = null;
 
-// Validate minimum secret length for security
-if (SECRET.length < 32) {
-  log.warn("JWT secret is less than 32 characters - this may compromise token security");
+function getJwtSecret(): string {
+  if (!cachedJwtSecret) {
+    cachedJwtSecret = requireInternalJwtSecret();
+    if (cachedJwtSecret.length < 32) {
+      log.warn("JWT secret is less than 32 characters - this may compromise token security");
+    }
+  }
+  return cachedJwtSecret;
+}
+
+export class AuthConfigurationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AuthConfigurationError";
+  }
 }
 
 /**
@@ -62,7 +75,7 @@ export function generateToken(user: { id: string; email: string }): string {
   const base64Header = Buffer.from(JSON.stringify(header)).toString("base64url");
   const base64Payload = Buffer.from(JSON.stringify(payload)).toString("base64url");
 
-  const signature = createHmac("sha256", SECRET)
+  const signature = createHmac("sha256", getJwtSecret())
     .update(`${base64Header}.${base64Payload}`)
     .digest("base64url");
 
@@ -74,6 +87,15 @@ export function generateToken(user: { id: string; email: string }): string {
  */
 export const authService = {
   async signIn(email: string, password: string) {
+    try {
+      getJwtSecret();
+    } catch (err) {
+      log.error("Auth: JWT secret not configured", { error: err });
+      throw new AuthConfigurationError(
+        err instanceof Error ? err.message : "JWT_SECRET_NOT_CONFIGURED",
+      );
+    }
+
     const [user] = await drizzle
       .select()
       .from(schema.users)

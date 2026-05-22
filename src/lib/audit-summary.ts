@@ -49,6 +49,12 @@ export interface ByModelBucket {
   cost: number;
 }
 
+export interface LatencyPercentiles {
+  p50_ms: number;
+  p95_ms: number;
+  sample_count: number;
+}
+
 export interface AuditSummary {
   window_days: number;
   totals: {
@@ -62,9 +68,26 @@ export interface AuditSummary {
     avg_cost_per_call: number;
     avg_latency: number;
   };
+  latency: LatencyPercentiles;
   by_day: ByDayBucket[];
   by_action: ByActionBucket[];
   by_model: ByModelBucket[];
+}
+
+/** p50 / p95 from sorted latencies (audit log AI + tool rows). */
+export function computeLatencyPercentiles(rows: AuditLogRow[]): LatencyPercentiles {
+  const values = rows
+    .map((r) => num(r.latencyMs ?? r.latency_ms))
+    .filter((ms) => ms > 0)
+    .sort((a, b) => a - b);
+  if (values.length === 0) {
+    return { p50_ms: 0, p95_ms: 0, sample_count: 0 };
+  }
+  const at = (q: number) => {
+    const idx = Math.min(values.length - 1, Math.max(0, Math.ceil(q * values.length) - 1));
+    return Math.round(values[idx]);
+  };
+  return { p50_ms: at(0.5), p95_ms: at(0.95), sample_count: values.length };
 }
 
 const num = (n: unknown): number => {
@@ -185,6 +208,7 @@ export function computeAuditSummary(input: {
       avg_cost_per_call: totals.calls ? round4(totals.cost / totals.calls) : 0,
       avg_latency: totals.calls ? Math.round(totalLatency / totals.calls) : 0,
     },
+    latency: computeLatencyPercentiles(all),
     by_day,
     by_action,
     by_model,

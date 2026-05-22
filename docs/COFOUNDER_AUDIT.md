@@ -1,6 +1,6 @@
 # Wireline Co-Founder Audit
 
-**Date:** 2026-05-21  
+**Date:** 2026-05-22 (updated)  
 **Standard:** Launch-ready, multi-million-dollar SaaS — beat Bland, Retell, Vapi roll-your-own, and horizontal “AI receptionist” clones on **reliability, integrations depth, and operator UX**.
 
 ---
@@ -11,7 +11,7 @@ Wireline is not a demo. It is a **full-stack voice operations platform**: Vapi v
 
 **Conviction thesis:** Operators do not buy “a voice bot.” They buy **answered calls + booked revenue + CRM truth + team alerts** with zero Frankenstein integrations. Wireline’s moat is **one console for every conversation channel** with agents that **act** (calendar, email, CRM, Slack, Teams, Shopify) — not just talk.
 
-**Gap to immaculate:** Remaining wins are Insights latency dashboard, E2E golden paths in CI, and enterprise SSO — core operator UX, voice latency caps, compare page, and marketing demo seed are in production as of `7f256b8`+.
+**Gap to immaculate:** E2E golden paths in CI, hosted call recordings in Logs, production auth env verification on Vercel, enterprise SSO. **Shipped 2026-05-22:** Insights **Latency** tab (p50/p95 + live-call guards), native iOS mobile polish, marketing kit script, public sign-in stripped of internal demo shortcuts, lazy JWT config with `503 AUTH_NOT_CONFIGURED`.
 
 ---
 
@@ -78,8 +78,8 @@ Wireline is not a demo. It is a **full-stack voice operations platform**: Vapi v
 1. **Production deploy discipline** — Git `main` → Vercel production auto-promote.
 2. **PageShell headers** — titles/eyebrows visible (addressed).
 3. **Integration card styling** — static Tailwind maps (addressed).
-4. **Voice tool payload size** — assistant factory limits.
-5. **Parallel tool concurrency cap** — protect p95 latency.
+4. **Voice tool payload size** — ✅ assistant factory limits (addressed).
+5. **Parallel tool concurrency cap** — ✅ max 3 parallel tools (addressed).
 6. **AI Gateway migration** — cost tags + failover (Vercel skill path).
 7. **E2E golden paths** — `npm run e2e:golden` in CI.
 8. **Compare page** — sharpen vs Bland/Retell/Synthflow with honest tables.
@@ -88,7 +88,7 @@ Wireline is not a demo. It is a **full-stack voice operations platform**: Vapi v
 11. **Email Yahoo** — finish inbox sync or clearer UX (already “soon”).
 12. **Meta Lead Ads** — beta → stable with webhook tests.
 13. **SOC2 narrative** — audit panel + RBAC docs for enterprise.
-14. **Latency dashboard** — p50/p95 call + tool RTT in Insights.
+14. **Latency dashboard** — ✅ Insights → Latency tab (p50/p95 + live-call guards).
 15. **Loop tick** — overnight agent triage (`docs/loop-ticks/wireline-ai-tick.md`).
 
 ---
@@ -102,8 +102,11 @@ Wireline is not a demo. It is a **full-stack voice operations platform**: Vapi v
 - Design showcase screenshots script + mocks.
 - Voice: max 3 parallel tool calls, 18k prompt cap, directive/knowledge injection.
 - Compare: 13-row honest matrix + Bland/Retell/Vapi DIY positioning.
-- Marketing demo `composer.demo@trywireline.com` seeded (24 calls, 18 leads, 8 appts, 6 KB).
-- Auth portal one-click marketing email fill.
+- Marketing demo `composer.demo@trywireline.com` seeded (24 calls, 18 leads, 8 appts, 6 KB) — **docs only**, not on public auth UI.
+- `docs/OPERATOR_SUCCESS.md` — activation + quality playbook.
+- Insights **Latency** tab + `computeLatencyPercentiles` in audit summary.
+- Native iOS mobile polish (`dvh`, tap squish, view transitions, toast clearance above tab bar).
+- Auth: lazy JWT secret — misconfig returns **503** instead of function crash.
 - Vitest: `vapi-tool-results.test.ts`, `vapi-prompt-budget.test.ts`.
 - Vercel promote script uses `/v1/.../promote` (v10 422 on staged builds).
 

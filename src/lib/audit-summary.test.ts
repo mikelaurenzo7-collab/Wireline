@@ -1,6 +1,11 @@
 // src/lib/audit-summary.test.ts
 import { describe, it, expect } from "vitest";
-import { computeAuditSummary, inputRateForModel, type AuditLogRow } from "./audit-summary";
+import {
+  computeAuditSummary,
+  computeLatencyPercentiles,
+  inputRateForModel,
+  type AuditLogRow,
+} from "./audit-summary";
 
 describe("inputRateForModel", () => {
   it("should conservatively price missing and unknown models at Opus rates", () => {
@@ -49,6 +54,21 @@ describe("computeAuditSummary", () => {
     expect(result.by_day).toEqual([]);
     expect(result.by_action).toEqual([]);
     expect(result.by_model).toEqual([]);
+    expect(result.latency).toEqual({ p50_ms: 0, p95_ms: 0, sample_count: 0 });
+  });
+
+  it("computes p50 and p95 latency percentiles", () => {
+    const rows: AuditLogRow[] = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000].map(
+      (latencyMs, i) => ({
+        action: `action-${i}`,
+        latencyMs,
+        createdAt: "2024-01-15T10:30:00Z",
+      }),
+    );
+    const p = computeLatencyPercentiles(rows);
+    expect(p.sample_count).toBe(10);
+    expect(p.p50_ms).toBeGreaterThan(0);
+    expect(p.p95_ms).toBeGreaterThanOrEqual(p.p50_ms);
   });
 
   it("should handle camelCase field names", () => {

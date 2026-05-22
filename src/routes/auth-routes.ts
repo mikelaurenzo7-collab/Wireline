@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { authService } from "../lib/auth-service";
+import { authService, AuthConfigurationError } from "../lib/auth-service";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
@@ -33,7 +33,13 @@ router.post("/api/auth/signin", signinRateLimiter, async (req: Request, res: Res
 
     res.json(result);
   } catch (error) {
-    // New refined logger captures the full error object
+    if (error instanceof AuthConfigurationError) {
+      log.error("Auth: Sign in unavailable — JWT secret missing", { error });
+      return res.status(503).json({
+        error: "Sign-in is temporarily unavailable. Platform configuration is incomplete.",
+        code: "AUTH_NOT_CONFIGURED",
+      });
+    }
     log.error("Auth: Sign in endpoint failed", { error });
     res.status(500).json({ error: "Internal server error" });
   }
