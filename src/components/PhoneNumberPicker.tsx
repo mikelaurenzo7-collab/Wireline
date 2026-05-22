@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Phone, MapPin, Search, Loader2, Check, AlertCircle, RefreshCw } from "lucide-react";
+import { Phone, MapPin, Search, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 

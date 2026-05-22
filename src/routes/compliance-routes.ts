@@ -1,7 +1,7 @@
 import { Router, Response } from "express";
 import { log, auditLogger, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, desc, inArray } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { tcpaRateLimit } from "../middleware/api-rate-limits";
 import {
@@ -23,14 +23,6 @@ interface DncEntry {
   phone: string;
   reason?: string;
   source?: string;
-}
-
-interface DncRow {
-  user_id: string;
-  phone: string;
-  phone_raw: string;
-  reason: string | null;
-  source: string;
 }
 
 // List DNC entries

@@ -2,7 +2,7 @@ import express, { Response } from "express";
 import type { AuthenticatedRequest } from "../types/auth";
 import { drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, desc, inArray } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import * as claudeBrain from "../lib/claude-brain";
 import { claudeErr } from "../lib/claude-response-helpers";

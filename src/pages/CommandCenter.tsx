@@ -1,27 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import {
-  LayoutGrid,
-  Activity,
-  ShieldCheck,
-  RefreshCw,
-  Terminal,
-  Zap,
-  Globe,
-  Cpu,
-  Lock,
-  Bell,
-} from "lucide-react";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
+import { Activity, RefreshCw, Zap, Globe } from "lucide-react";
+import { ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from "recharts";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { useNavigate } from "react-router-dom";
@@ -35,15 +14,6 @@ import { clsx } from "clsx";
 import { motion } from "motion/react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-
-type SignalPresence = {
-  id: string;
-  customer_number: string;
-  label: string;
-  urgency: number;
-  status: "active" | "escalated";
-  started_at: string;
-};
 
 type LiveCall = {
   id: string;

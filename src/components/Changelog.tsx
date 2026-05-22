@@ -14,7 +14,7 @@
  * isn't a changelog entry; "TopBar fits at 1280px laptops" is.
  */
 import { Link } from "react-router-dom";
-import { ArrowLeft, Sparkles, ShieldCheck, Wrench, Workflow } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 
 type Tag = "feature" | "fix" | "polish" | "infra";

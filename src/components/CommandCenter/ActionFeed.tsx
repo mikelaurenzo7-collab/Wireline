@@ -12,7 +12,6 @@ import {
   Check,
   X,
   Sparkles,
-  ArrowRight,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { clsx } from "clsx";

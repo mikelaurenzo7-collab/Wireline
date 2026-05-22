@@ -1,6 +1,6 @@
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { type ActionItem, type ActionResult } from "./action-types";
 import { getErrorMessage } from "./server-utils";
 import { IntegrationService } from "./integrations";

@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SentinelService } from "../services/sentinel";
-import { drizzle } from "../lib/server-context";
 
 vi.mock("../lib/server-context", () => ({
   drizzle: {
@@ -37,8 +36,6 @@ describe("SentinelService", () => {
   });
 
   it("should allow calls during business hours in NY (212)", async () => {
-    // Mock date to 10 AM on a Monday (not a holiday)
-    const mockDate = new Date("2026-05-11T10:00:00Z"); // 6 AM EST
     // Wait, the getLocalTime uses toLocaleString which depends on system time.
     // I should probably mock the internal getLocalTime or the Date global.
 

@@ -16,7 +16,7 @@
 // authenticated user owns their data by definition.
 
 import type { Request, Response, NextFunction } from "express";
-import { eq, sql, and, isNull, desc } from "drizzle-orm";
+import { eq, and, isNull, desc } from "drizzle-orm";
 import type { VercelPgDatabase } from "drizzle-orm/vercel-postgres";
 import * as schema from "../db/schema";
 import {

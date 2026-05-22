@@ -1,6 +1,5 @@
 import {
   Users,
-  Activity,
   MessageSquare,
   ServerCog,
   PlugZap,

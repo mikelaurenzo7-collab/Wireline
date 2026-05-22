@@ -5,7 +5,7 @@
  * Extracted from server.ts to avoid circular dependencies.
  */
 
-import { drizzle, log } from "./server-context";
+import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, gte, lt, desc } from "drizzle-orm";
 import * as claudeBrain from "./claude-brain";
@@ -27,50 +27,115 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
     throw err;
   }
 
-  const yStart = new Date(); yStart.setHours(0, 0, 0, 0); yStart.setDate(yStart.getDate() - 1);
-  const yEnd   = new Date(yStart); yEnd.setDate(yEnd.getDate() + 1);
-  const wStart = new Date(); wStart.setDate(wStart.getDate() - 7);
+  const yStart = new Date();
+  yStart.setHours(0, 0, 0, 0);
+  yStart.setDate(yStart.getDate() - 1);
+  const yEnd = new Date(yStart);
+  yEnd.setDate(yEnd.getDate() + 1);
+  const wStart = new Date();
+  wStart.setDate(wStart.getDate() - 7);
 
   const [yCalls, wCalls, appts, tasks, leads, wins, losses] = await Promise.all([
-    drizzle.select({ leadScore: schema.callLogs.leadScore, intentLabel: schema.callLogs.intentLabel, durationSeconds: schema.callLogs.durationSeconds, cost: schema.callLogs.cost, summary: schema.callLogs.summary, customerNumber: schema.callLogs.customerNumber })
+    drizzle
+      .select({
+        leadScore: schema.callLogs.leadScore,
+        intentLabel: schema.callLogs.intentLabel,
+        durationSeconds: schema.callLogs.durationSeconds,
+        cost: schema.callLogs.cost,
+        summary: schema.callLogs.summary,
+        customerNumber: schema.callLogs.customerNumber,
+      })
       .from(schema.callLogs)
-      .where(and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, yStart), lt(schema.callLogs.createdAt, yEnd))),
-    drizzle.select({ leadScore: schema.callLogs.leadScore, durationSeconds: schema.callLogs.durationSeconds, cost: schema.callLogs.cost })
+      .where(
+        and(
+          eq(schema.callLogs.userId, userId),
+          gte(schema.callLogs.createdAt, yStart),
+          lt(schema.callLogs.createdAt, yEnd),
+        ),
+      ),
+    drizzle
+      .select({
+        leadScore: schema.callLogs.leadScore,
+        durationSeconds: schema.callLogs.durationSeconds,
+        cost: schema.callLogs.cost,
+      })
       .from(schema.callLogs)
       .where(and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, wStart))),
-    drizzle.select({ id: schema.appointments.id })
+    drizzle
+      .select({ id: schema.appointments.id })
       .from(schema.appointments)
-      .where(and(eq(schema.appointments.userId, userId), gte(schema.appointments.createdAt, yStart), lt(schema.appointments.createdAt, yEnd))),
-    drizzle.select({ priority: schema.fleetTasks.priority, description: schema.fleetTasks.description })
+      .where(
+        and(
+          eq(schema.appointments.userId, userId),
+          gte(schema.appointments.createdAt, yStart),
+          lt(schema.appointments.createdAt, yEnd),
+        ),
+      ),
+    drizzle
+      .select({ priority: schema.fleetTasks.priority, description: schema.fleetTasks.description })
       .from(schema.fleetTasks)
       .where(and(eq(schema.fleetTasks.userId, userId), eq(schema.fleetTasks.status, "pending")))
       .orderBy(desc(schema.fleetTasks.createdAt))
       .limit(8),
-    drizzle.select({ id: schema.outboundLeads.id })
+    drizzle
+      .select({ id: schema.outboundLeads.id })
       .from(schema.outboundLeads)
-      .where(and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.status, "Pending"))),
-    drizzle.select({ customerNumber: schema.callLogs.customerNumber, leadScore: schema.callLogs.leadScore, summary: schema.callLogs.summary })
+      .where(
+        and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.status, "Pending")),
+      ),
+    drizzle
+      .select({
+        customerNumber: schema.callLogs.customerNumber,
+        leadScore: schema.callLogs.leadScore,
+        summary: schema.callLogs.summary,
+      })
       .from(schema.callLogs)
-      .where(and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, yStart), gte(schema.callLogs.leadScore, 70)))
+      .where(
+        and(
+          eq(schema.callLogs.userId, userId),
+          gte(schema.callLogs.createdAt, yStart),
+          gte(schema.callLogs.leadScore, 70),
+        ),
+      )
       .orderBy(desc(schema.callLogs.leadScore))
       .limit(3),
-    drizzle.select({ customerNumber: schema.callLogs.customerNumber, leadScore: schema.callLogs.leadScore, summary: schema.callLogs.summary })
+    drizzle
+      .select({
+        customerNumber: schema.callLogs.customerNumber,
+        leadScore: schema.callLogs.leadScore,
+        summary: schema.callLogs.summary,
+      })
       .from(schema.callLogs)
-      .where(and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, yStart), lt(schema.callLogs.leadScore, 30)))
+      .where(
+        and(
+          eq(schema.callLogs.userId, userId),
+          gte(schema.callLogs.createdAt, yStart),
+          lt(schema.callLogs.leadScore, 30),
+        ),
+      )
       .orderBy(desc(schema.callLogs.createdAt))
       .limit(3),
   ]);
 
   const yTotal = yCalls?.length || 0;
-  const yMinutes = Math.round((yCalls || []).reduce((s: number, c: any) => s + (c.durationSeconds || 0), 0) / 60);
-  const yAvgScore = yTotal ? Math.round((yCalls || []).reduce((s: number, c: any) => s + (c.leadScore || 0), 0) / yTotal) : 0;
+  const yMinutes = Math.round(
+    (yCalls || []).reduce((s: number, c: any) => s + (c.durationSeconds || 0), 0) / 60,
+  );
+  const yAvgScore = yTotal
+    ? Math.round((yCalls || []).reduce((s: number, c: any) => s + (c.leadScore || 0), 0) / yTotal)
+    : 0;
   const yHighIntent = (yCalls || []).filter((c: any) => c.intentLabel === "high").length;
-  const yCost = Number((yCalls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0).toFixed(2));
+  const yCost = Number(
+    (yCalls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0).toFixed(2),
+  );
 
   const wDays = 7;
   const wAvgPerDay = (wCalls?.length || 0) / wDays;
-  const wAvgScore = wCalls?.length ? (wCalls || []).reduce((s: number, c: any) => s + (c.leadScore || 0), 0) / wCalls.length : 0;
-  const wAvgCostPerDay = (wCalls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0) / wDays;
+  const wAvgScore = wCalls?.length
+    ? (wCalls || []).reduce((s: number, c: any) => s + (c.leadScore || 0), 0) / wCalls.length
+    : 0;
+  const wAvgCostPerDay =
+    (wCalls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0) / wDays;
 
   const callsPct = wAvgPerDay > 0 ? ((yTotal - wAvgPerDay) / wAvgPerDay) * 100 : 0;
   const scorePct = wAvgScore > 0 ? ((yAvgScore - wAvgScore) / wAvgScore) * 100 : 0;
@@ -92,16 +157,30 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
       score_pct: Math.round(scorePct),
       cost_pct: Math.round(costPct),
     },
-    recentWinSamples: (wins || []).map(w => ({ customer: w.customerNumber || "Contact", score: w.leadScore || 0, summary: w.summary || "" })),
-    recentLossSamples: (losses || []).map(l => ({ customer: l.customerNumber || "Contact", score: l.leadScore || 0, summary: l.summary || "" })),
-    openTasks: (tasks || []).map((t: any) => ({ priority: t.priority || "medium", description: t.description || "" })),
+    recentWinSamples: (wins || []).map((w) => ({
+      customer: w.customerNumber || "Contact",
+      score: w.leadScore || 0,
+      summary: w.summary || "",
+    })),
+    recentLossSamples: (losses || []).map((l) => ({
+      customer: l.customerNumber || "Contact",
+      score: l.leadScore || 0,
+      summary: l.summary || "",
+    })),
+    openTasks: (tasks || []).map((t: any) => ({
+      priority: t.priority || "medium",
+      description: t.description || "",
+    })),
   });
 
   setCachedInsight(cacheKey, result);
   return { payload: result, cached: false };
 }
 
-export function renderDailyBriefEmail(payload: any, opts: { dateLabel: string; appUrl?: string | null }): { subject: string; html: string; text: string } {
+export function renderDailyBriefEmail(
+  payload: any,
+  opts: { dateLabel: string; appUrl?: string | null },
+): { subject: string; html: string; text: string } {
   const brief = payload?.brief || {};
   const stats = payload?.stats_yesterday || {};
   const delta = payload?.week_delta || {};
@@ -147,9 +226,11 @@ export function renderDailyBriefEmail(payload: any, opts: { dateLabel: string; a
     <div class="stat">
       <div class="v">${escapeHtml(value)}</div>
       <div class="l">${escapeHtml(label)}</div>
-      ${delta !== undefined && delta !== null && Math.abs(delta) >= 1
-        ? `<div class="${delta >= 0 ? "delta-pos" : "delta-neg"}" style="font-size:11px;margin-top:6px;">${fmtPct(delta)} vs 7-day</div>`
-        : ""}
+      ${
+        delta !== undefined && delta !== null && Math.abs(delta) >= 1
+          ? `<div class="${delta >= 0 ? "delta-pos" : "delta-neg"}" style="font-size:11px;margin-top:6px;">${fmtPct(delta)} vs 7-day</div>`
+          : ""
+      }
     </div>`;
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8" /><style>${css}</style></head><body>
@@ -165,21 +246,33 @@ export function renderDailyBriefEmail(payload: any, opts: { dateLabel: string; a
           ${stat("Booked", String(stats.appointments_booked ?? 0))}
         </div>
       </div>
-      ${highlights.length ? `
+      ${
+        highlights.length
+          ? `
       <div class="card">
         <p class="label">Highlights</p>
-        <ul>${highlights.map(h => `<li>${escapeHtml(h)}</li>`).join("")}</ul>
-      </div>` : ""}
-      ${concerns.length ? `
+        <ul>${highlights.map((h) => `<li>${escapeHtml(h)}</li>`).join("")}</ul>
+      </div>`
+          : ""
+      }
+      ${
+        concerns.length
+          ? `
       <div class="card">
         <p class="label">Concerns</p>
-        <ul>${concerns.map(h => `<li class="warn">${escapeHtml(h)}</li>`).join("")}</ul>
-      </div>` : ""}
-      ${actions.length ? `
+        <ul>${concerns.map((h) => `<li class="warn">${escapeHtml(h)}</li>`).join("")}</ul>
+      </div>`
+          : ""
+      }
+      ${
+        actions.length
+          ? `
       <div class="card">
         <p class="label">Action Items</p>
-        <ul>${actions.map(h => `<li class="action">${escapeHtml(h)}</li>`).join("")}</ul>
-      </div>` : ""}
+        <ul>${actions.map((h) => `<li class="action">${escapeHtml(h)}</li>`).join("")}</ul>
+      </div>`
+          : ""
+      }
       ${link ? `<div style="text-align:center; padding:12px 0 32px;"><a class="btn" href="${escapeHtml(link)}">Open Wireline</a></div>` : ""}
       <div class="footer">Sent automatically from your scheduled daily brief. Pause anytime in <strong>Command Atlas → Daily Brief</strong>.</div>
     </div>
@@ -192,11 +285,28 @@ export function renderDailyBriefEmail(payload: any, opts: { dateLabel: string; a
   lines.push("");
   lines.push(headline);
   lines.push("");
-  lines.push(`Calls: ${stats.total_calls ?? 0}  ·  Lead Score: ${stats.avg_lead_score ?? 0}  ·  Cost: $${Number(stats.cost ?? 0).toFixed(2)}  ·  Booked: ${stats.appointments_booked ?? 0}`);
-  if (highlights.length) { lines.push(""); lines.push("HIGHLIGHTS"); highlights.forEach(h => lines.push(` • ${h}`)); }
-  if (concerns.length)   { lines.push(""); lines.push("CONCERNS");   concerns.forEach(h => lines.push(` ⚠ ${h}`)); }
-  if (actions.length)    { lines.push(""); lines.push("ACTIONS");    actions.forEach(h => lines.push(` → ${h}`)); }
-  if (link) { lines.push(""); lines.push(`Open Wireline: ${link}`); }
+  lines.push(
+    `Calls: ${stats.total_calls ?? 0}  ·  Lead Score: ${stats.avg_lead_score ?? 0}  ·  Cost: $${Number(stats.cost ?? 0).toFixed(2)}  ·  Booked: ${stats.appointments_booked ?? 0}`,
+  );
+  if (highlights.length) {
+    lines.push("");
+    lines.push("HIGHLIGHTS");
+    highlights.forEach((h) => lines.push(` • ${h}`));
+  }
+  if (concerns.length) {
+    lines.push("");
+    lines.push("CONCERNS");
+    concerns.forEach((h) => lines.push(` ⚠ ${h}`));
+  }
+  if (actions.length) {
+    lines.push("");
+    lines.push("ACTIONS");
+    actions.forEach((h) => lines.push(` → ${h}`));
+  }
+  if (link) {
+    lines.push("");
+    lines.push(`Open Wireline: ${link}`);
+  }
   return { subject, html, text: lines.join("\n") };
 }
 
@@ -212,27 +322,43 @@ function escapeHtml(s: any): string {
 export async function sendDailyBriefEmail(userId: string, opts?: { force?: boolean }) {
   // Pull settings + the operator's connected Gmail account.
   const [settingsRow, accountRow] = await Promise.all([
-    drizzle.select({ dailyBriefRecipient: schema.settings.dailyBriefRecipient, dailyBriefEnabled: schema.settings.dailyBriefEnabled })
+    drizzle
+      .select({
+        dailyBriefRecipient: schema.settings.dailyBriefRecipient,
+        dailyBriefEnabled: schema.settings.dailyBriefEnabled,
+      })
       .from(schema.settings)
       .where(eq(schema.settings.userId, userId))
       .limit(1)
-      .then(rows => rows[0] || null),
-    drizzle.select({ accessToken: schema.emailAccounts.accessToken, refreshToken: schema.emailAccounts.refreshToken, expiresAt: schema.emailAccounts.expiresAt, emailAddress: schema.emailAccounts.emailAddress })
+      .then((rows) => rows[0] || null),
+    drizzle
+      .select({
+        accessToken: schema.emailAccounts.accessToken,
+        refreshToken: schema.emailAccounts.refreshToken,
+        expiresAt: schema.emailAccounts.expiresAt,
+        emailAddress: schema.emailAccounts.emailAddress,
+      })
       .from(schema.emailAccounts)
-      .where(and(eq(schema.emailAccounts.userId, userId), eq(schema.emailAccounts.provider, "google")))
+      .where(
+        and(eq(schema.emailAccounts.userId, userId), eq(schema.emailAccounts.provider, "google")),
+      )
       .limit(1)
-      .then(rows => rows[0] || null),
+      .then((rows) => rows[0] || null),
   ]);
 
   const recipient = settingsRow?.dailyBriefRecipient;
   if (!recipient) throw new Error("No recipient configured (dailyBriefRecipient).");
   const account: any = accountRow;
-  if (!account?.refreshToken) throw new Error("No connected Gmail account — connect one in Carrier Bridge first.");
+  if (!account?.refreshToken)
+    throw new Error("No connected Gmail account — connect one in Carrier Bridge first.");
 
   // Compute the brief (uses the per-day cache) — may throw CLAUDE_OFFLINE.
   const { payload } = await computeDailyBrief(userId, { force: opts?.force === true });
   const dateLabel = new Date().toISOString().slice(0, 10);
-  const { subject, html, text } = renderDailyBriefEmail(payload, { dateLabel, appUrl: process.env.APP_URL });
+  const { subject, html, text } = renderDailyBriefEmail(payload, {
+    dateLabel,
+    appUrl: process.env.APP_URL,
+  });
 
   const oauth2Client = buildOAuthClient();
   oauth2Client.setCredentials({

@@ -1,6 +1,6 @@
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import * as claudeBrain from "./claude-brain";
 import { getErrorMessage } from "./server-utils";
 import { SentryEvents } from "./sentry-events";

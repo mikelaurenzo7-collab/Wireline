@@ -13,7 +13,7 @@
  */
 import { Router, type Request, type Response } from "express";
 import crypto from "crypto";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { log, drizzle } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import * as schema from "../db/schema";

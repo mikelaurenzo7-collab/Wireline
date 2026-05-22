@@ -7,7 +7,7 @@
 
 import { drizzle, fetchWithTimeout, log } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, desc, ilike, sql } from "drizzle-orm";
+import { eq, and, desc, ilike } from "drizzle-orm";
 import { isDncBlocked } from "./compliance";
 import {
   sanitizePhone,

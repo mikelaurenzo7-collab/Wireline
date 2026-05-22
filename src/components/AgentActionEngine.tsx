@@ -1,14 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Save,
-  Blocks,
-  Link as LinkIcon,
-  AlertCircle,
-  CheckCircle2,
-  Webhook,
-  Loader2,
-  Workflow,
-} from "lucide-react";
+import { Save, Blocks, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
@@ -22,7 +13,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
   const { error: toastError, success: toastSuccess } = useToast();
   const [enabledTools, setEnabledTools] = useState<AgentToolName[]>([]);
   const [globalIntegrations, setGlobalIntegrations] = useState<any[]>([]);
-  const [agentRole, setAgentRole] = useState<string>("customer_service");
+  const [, setAgentRole] = useState<string>("customer_service");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -57,7 +48,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
             }
           }
         }
-      } catch (err) {
+      } catch {
         if (active) toastError("Failed to load capabilities");
       } finally {
         if (active) setIsLoading(false);
@@ -93,7 +84,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
       setSaveSuccess(true);
       toastSuccess("Capabilities saved", "Agent action permissions updated.");
       setTimeout(() => setSaveSuccess(false), 2500);
-    } catch (err) {
+    } catch {
       toastError("Failed to save capabilities");
     } finally {
       setIsSaving(false);

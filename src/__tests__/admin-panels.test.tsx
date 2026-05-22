@@ -1,6 +1,4 @@
 import { describe, it, expect, vi } from "vitest";
-import React from "react";
-import { render, screen } from "@testing-library/react";
 import { BrandingPanel } from "../components/admin/BrandingPanel";
 import { TeamPanel } from "../components/admin/TeamPanel";
 

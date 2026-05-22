@@ -9,6 +9,7 @@ const log =
   (event: string): EventLogger =>
   (params) => {
     if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console -- intentional dev-only shim for the removed Sentry SDK
       console.info(`[event:${event}]`, params);
     }
   };

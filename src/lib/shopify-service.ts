@@ -2,7 +2,7 @@ import { drizzle, log, fetchWithTimeout } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { encryptSecret, decryptSecret } from "./secret-vault";
+import { decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
 
 /**

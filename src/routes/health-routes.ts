@@ -1,5 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
-import { drizzle, log } from "../lib/server-context";
+import { drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
 import { getHealthCapabilities, getIntegrationsStatus } from "../lib/integrations-registry";
@@ -39,18 +39,20 @@ const HEALTH_RATE_MAX = 30;
 // Purge stale IP entries every 10 minutes to prevent unbounded Map growth
 // in long-running (Docker) deployments. Skip when the Map is small to avoid
 // unnecessary iteration overhead.
-(setInterval(
-  () => {
-    if (healthRateLimit.size < 100) return;
-    const now = Date.now();
-    for (const [key, hits] of healthRateLimit) {
-      if (hits.every((t) => now - t >= HEALTH_RATE_WINDOW_MS)) {
-        healthRateLimit.delete(key);
+(
+  setInterval(
+    () => {
+      if (healthRateLimit.size < 100) return;
+      const now = Date.now();
+      for (const [key, hits] of healthRateLimit) {
+        if (hits.every((t) => now - t >= HEALTH_RATE_WINDOW_MS)) {
+          healthRateLimit.delete(key);
+        }
       }
-    }
-  },
-  10 * 60 * 1000,
-) as any).unref?.();
+    },
+    10 * 60 * 1000,
+  ) as any
+).unref?.();
 
 function healthRateLimiter(req: Request, res: Response, next: NextFunction) {
   const xff = req.headers["x-forwarded-for"];

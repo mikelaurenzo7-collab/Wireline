@@ -1901,6 +1901,7 @@ export async function objectionDrill(input: ObjectionDrillInput) {
   if (input.role) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
     if (!roleGuidance)
+      // eslint-disable-next-line no-console -- dev diagnostic for a misconfigured agent role
       console.warn(
         `[claude-brain] objectionDrill: unknown role "${input.role}" — no role lens applied.`,
       );
@@ -1936,6 +1937,7 @@ export async function coldEmail(input: ColdEmailInput) {
   if (input.agentRole) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.agentRole] ?? "";
     if (!roleGuidance)
+      // eslint-disable-next-line no-console -- dev diagnostic for a misconfigured agent role
       console.warn(
         `[claude-brain] coldEmail: unknown role "${input.agentRole}" — no role lens applied.`,
       );
@@ -2041,6 +2043,7 @@ export async function agentReview(input: AgentReviewInput) {
   if (input.role) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
     if (!roleGuidance)
+      // eslint-disable-next-line no-console -- dev diagnostic for a misconfigured agent role
       console.warn(
         `[claude-brain] agentReview: unknown role "${input.role}" — no role lens applied.`,
       );
@@ -2091,6 +2094,7 @@ export async function smartDraft(input: SmartDraftInput) {
   if (input.agentRole) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.agentRole] ?? "";
     if (!roleGuidance)
+      // eslint-disable-next-line no-console -- dev diagnostic for a misconfigured agent role
       console.warn(
         `[claude-brain] smartDraft: unknown role "${input.agentRole}" — no role lens applied.`,
       );
@@ -2183,6 +2187,7 @@ export async function postCallAnalysis(input: PostCallInput) {
   if (input.role) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
     if (!roleGuidance)
+      // eslint-disable-next-line no-console -- dev diagnostic for a misconfigured agent role
       console.warn(
         `[claude-brain] postCallAnalysis: unknown role "${input.role}" — no scoring lens applied.`,
       );
@@ -2512,6 +2517,7 @@ export async function smartEmailReply(input: SmartEmailReplyInput): Promise<{
   if (input.agentRole) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.agentRole] ?? "";
     if (!roleGuidance)
+      // eslint-disable-next-line no-console -- dev diagnostic for a misconfigured agent role
       console.warn(
         `[claude-brain] smartEmailReply: unknown role "${input.agentRole}" — no role lens applied.`,
       );

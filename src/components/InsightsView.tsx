@@ -23,6 +23,7 @@ import {
   Play,
   Megaphone,
   Gauge,
+  Target,
 } from "lucide-react";
 import {
   MAX_VAPI_PARALLEL_TOOL_CALLS,
@@ -47,6 +48,7 @@ import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatMoney, safeFixed } from "../lib/safe-number";
 import CsvExportButton from "./CsvExportButton";
+import GoalsView from "./GoalsView";
 import { AGENT_ROLES } from "./FleetSettings";
 import PageShell from "./PageShell";
 import WidgetBoundary from "./WidgetBoundary";
@@ -102,6 +104,12 @@ export default function InsightsView() {
           label: "Funnel",
           icon: TrendingUp,
           content: wrap("Funnel", <FunnelView days={days} />),
+        },
+        {
+          id: "goals",
+          label: "Goals",
+          icon: Target,
+          content: wrap("Goals", <GoalsView />),
         },
         {
           id: "attribution",

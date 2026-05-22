@@ -4,13 +4,12 @@ import {
   CheckCircle2,
   Plus,
   Trash2,
-  Webhook,
   Loader2,
   Bot,
   ChevronDown,
   RotateCw,
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { authFetch } from "../lib/api";
 import PageShell, { Panel } from "./PageShell";
 import { useToast } from "../contexts/ToastContext";

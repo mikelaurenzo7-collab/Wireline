@@ -1,7 +1,7 @@
 import express, { Response } from "express";
 import { log, auditLogger, requirePermission, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { getErrorMessage } from "../lib/server-utils";
 import { authenticateUser } from "../middleware/auth";
 import { validateWebhookUrl } from "../lib/webhook-validators";
@@ -16,9 +16,6 @@ import { webhooksRateLimit } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = express.Router();
-
-const WEBHOOK_PUBLIC_COLUMNS =
-  "id, user_id, name, url, events, active, last_triggered_at, last_status, last_error, delivery_count, created_at, secret_last_four";
 
 router.get("/", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {

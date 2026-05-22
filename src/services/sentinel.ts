@@ -1,8 +1,8 @@
-import { drizzle, log } from '../lib/server-context';
-import * as schema from '../db/schema';
-import { eq, and } from 'drizzle-orm';
-import { isDncBlocked, normalizeDncPhone } from '../lib/compliance';
-import { fetchWithTimeout } from '../lib/server-context';
+import { drizzle, log } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq } from "drizzle-orm";
+import { isDncBlocked, normalizeDncPhone } from "../lib/compliance";
+import { fetchWithTimeout } from "../lib/server-context";
 
 export interface SentinelResult {
   allowed: boolean;
@@ -15,13 +15,17 @@ export class SentinelService {
    * Main gatekeeper for outbound calls.
    * Checks DNC, Time Windows, State Restrictions, and Holidays.
    */
-  async isCallAllowed(userId: string, phoneNumber: string, now: Date = new Date()): Promise<SentinelResult> {
+  async isCallAllowed(
+    userId: string,
+    phoneNumber: string,
+    now: Date = new Date(),
+  ): Promise<SentinelResult> {
     const normalized = normalizeDncPhone(phoneNumber);
-    if (!normalized) return { allowed: false, reason: 'Invalid phone number' };
+    if (!normalized) return { allowed: false, reason: "Invalid phone number" };
 
     // 1. Check DNC
     if (await isDncBlocked(userId, normalized)) {
-      return { allowed: false, reason: 'DNC_BLOCKED' };
+      return { allowed: false, reason: "DNC_BLOCKED" };
     }
 
     // 2. Identify State and Timezone
@@ -67,26 +71,29 @@ export class SentinelService {
       .where(eq(schema.signalPresence.customerNumber, normalized));
 
     for (const call of activeCalls) {
-      await this.killCall(call.id, 'DNC_UPDATE_DURING_CALL');
+      await this.killCall(call.id, "DNC_UPDATE_DURING_CALL");
     }
   }
 
   private async killCall(callId: string, reason: string) {
     log.info(`Terminating call ${callId} due to ${reason}`);
     try {
-      await fetchWithTimeout(`https://api.vapi.ai/call/${callId}/terminate`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.VAPI_PRIVATE_KEY}`,
-        }
-      }, 5000);
-      
+      await fetchWithTimeout(
+        `https://api.vapi.ai/call/${callId}/terminate`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.VAPI_PRIVATE_KEY}`,
+          },
+        },
+        5000,
+      );
+
       // Update presence
       await drizzle
         .update(schema.signalPresence)
-        .set({ status: 'terminated' })
+        .set({ status: "terminated" })
         .where(eq(schema.signalPresence.id, callId));
-        
     } catch (err: any) {
       log.error(`Failed to terminate call ${callId}`, { error: err.message });
     }
@@ -94,46 +101,93 @@ export class SentinelService {
 
   private getStateInfo(areaCode: string) {
     // Simplified mapping for the Sentinel prototype
-    const map: Record<string, { state: string, timezone: string, noSunday?: boolean, noHoliday?: boolean, startHour?: number, endHour?: number }> = {
-      '205': { state: 'AL', timezone: 'America/Chicago', noSunday: true, noHoliday: true, endHour: 20 },
-      '251': { state: 'AL', timezone: 'America/Chicago', noSunday: true, noHoliday: true, endHour: 20 },
-      '225': { state: 'LA', timezone: 'America/Chicago', noSunday: true, noHoliday: true, endHour: 20 },
-      '504': { state: 'LA', timezone: 'America/Chicago', noSunday: true, noHoliday: true, endHour: 20 },
-      '601': { state: 'MS', timezone: 'America/Chicago', noSunday: true, noHoliday: true, endHour: 20 },
-      '401': { state: 'RI', timezone: 'America/New_York', noSunday: true, noHoliday: true, startHour: 9, endHour: 18 },
-      '305': { state: 'FL', timezone: 'America/New_York', endHour: 20 },
-      '407': { state: 'FL', timezone: 'America/New_York', endHour: 20 },
-      '212': { state: 'NY', timezone: 'America/New_York' },
-      '310': { state: 'CA', timezone: 'America/Los_Angeles' },
+    const map: Record<
+      string,
+      {
+        state: string;
+        timezone: string;
+        noSunday?: boolean;
+        noHoliday?: boolean;
+        startHour?: number;
+        endHour?: number;
+      }
+    > = {
+      "205": {
+        state: "AL",
+        timezone: "America/Chicago",
+        noSunday: true,
+        noHoliday: true,
+        endHour: 20,
+      },
+      "251": {
+        state: "AL",
+        timezone: "America/Chicago",
+        noSunday: true,
+        noHoliday: true,
+        endHour: 20,
+      },
+      "225": {
+        state: "LA",
+        timezone: "America/Chicago",
+        noSunday: true,
+        noHoliday: true,
+        endHour: 20,
+      },
+      "504": {
+        state: "LA",
+        timezone: "America/Chicago",
+        noSunday: true,
+        noHoliday: true,
+        endHour: 20,
+      },
+      "601": {
+        state: "MS",
+        timezone: "America/Chicago",
+        noSunday: true,
+        noHoliday: true,
+        endHour: 20,
+      },
+      "401": {
+        state: "RI",
+        timezone: "America/New_York",
+        noSunday: true,
+        noHoliday: true,
+        startHour: 9,
+        endHour: 18,
+      },
+      "305": { state: "FL", timezone: "America/New_York", endHour: 20 },
+      "407": { state: "FL", timezone: "America/New_York", endHour: 20 },
+      "212": { state: "NY", timezone: "America/New_York" },
+      "310": { state: "CA", timezone: "America/Los_Angeles" },
     };
     return map[areaCode];
   }
 
   private getLocalTime(date: Date, tz: string): Date {
-    return new Date(date.toLocaleString('en-US', { timeZone: tz }));
+    return new Date(date.toLocaleString("en-US", { timeZone: tz }));
   }
 
   private isHoliday(date: Date, state: string): boolean {
     const d = `${date.getMonth() + 1}/${date.getDate()}`;
     const federalHolidays = [
-      '1/1',   // New Year
-      '1/19',  // MLK
-      '2/16',  // Presidents
-      '5/25',  // Memorial
-      '6/19',  // Juneteenth
-      '7/4',   // Independence
-      '9/7',   // Labor
-      '10/12', // Columbus
-      '11/11', // Veterans
-      '11/26', // Thanksgiving
-      '12/25', // Christmas
+      "1/1", // New Year
+      "1/19", // MLK
+      "2/16", // Presidents
+      "5/25", // Memorial
+      "6/19", // Juneteenth
+      "7/4", // Independence
+      "9/7", // Labor
+      "10/12", // Columbus
+      "11/11", // Veterans
+      "11/26", // Thanksgiving
+      "12/25", // Christmas
     ];
-    
+
     if (federalHolidays.includes(d)) return true;
-    
+
     // State-specific
-    if (state === 'LA' && d === '2/17') return true; // Mardi Gras 2026 (approx)
-    
+    if (state === "LA" && d === "2/17") return true; // Mardi Gras 2026 (approx)
+
     return false;
   }
 
@@ -141,7 +195,7 @@ export class SentinelService {
     const now = new Date();
     const hour = now.getUTCHours() - 5; // Rough Est Central fallback
     if (hour < 8 || hour >= 21) {
-      return { allowed: false, reason: 'OUTSIDE_TCPA_HOURS_EST_FALLBACK' };
+      return { allowed: false, reason: "OUTSIDE_TCPA_HOURS_EST_FALLBACK" };
     }
     return { allowed: true };
   }

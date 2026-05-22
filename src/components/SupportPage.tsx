@@ -65,7 +65,7 @@ export function SupportPage() {
       if (typeof window !== "undefined" && (window as any).plausible) {
         (window as any).plausible("SupportTicketSubmitted", { props: { issueType } });
       }
-    } catch (e) {
+    } catch {
       // Graceful fallback: pre-fill mailto with the operator's content
       // so they don't lose what they typed.
       const fallback = `mailto:trywireline@yahoo.com?subject=${encodeURIComponent(

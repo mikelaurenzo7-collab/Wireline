@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Loader2, ChevronRight, AlertTriangle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import ConfirmModal from "./ConfirmModal";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
-import CrmConnectionCard from "./CrmConnectionCard";
 import IntegrationHealthBanner, { type IntegrationHealthPayload } from "./IntegrationHealthBanner";
-import PageShell, { Panel } from "./PageShell";
+import PageShell from "./PageShell";
 import HubTabs, { SYSTEM_HUB } from "./HubTabs";
 import { useToast } from "../contexts/ToastContext";
 import { useBranding } from "../contexts/BrandingContext";
@@ -60,7 +58,7 @@ export default function AdminSettings() {
   const [phoneNumbers, setPhoneNumbers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isDeletingNumber, setIsDeletingNumber] = useState<number | string | null>(null);
+  const [, setIsDeletingNumber] = useState<number | string | null>(null);
   const [claudeStatus, setClaudeStatus] = useState<{
     available: boolean;
     model: string;
@@ -115,13 +113,6 @@ export default function AdminSettings() {
 
   const [carrierNumbers, setCarrierNumbers] = useState<any[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
-
-  const providerDocsUrl =
-    {
-      google: "https://ai.google.dev/gemini-api/docs/models",
-      openai: "https://platform.openai.com/docs/models",
-      anthropic: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
-    }[settings.voice_llm_provider] ?? "https://ai.google.dev/gemini-api/docs/models";
 
   const fetchIntegrationHealth = async () => {
     try {
@@ -182,30 +173,6 @@ export default function AdminSettings() {
       else setOperationalSlos(null);
     } catch {
       setOperationalSlos(null);
-    }
-  };
-
-  const downloadEvidencePack = async () => {
-    try {
-      const r = await authFetch("/api/soc2/evidence-pack");
-      if (!r.ok) {
-        toastError(
-          "Export unavailable",
-          "Requires audit.read permission — owner, admin, or auditor roles.",
-        );
-        return;
-      }
-      const data = await r.json();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `wireline-soc2-evidence-${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toastSuccess("Evidence pack exported", "JSON downloaded for your SOC2 workbook.");
-    } catch (e: any) {
-      toastError("Export failed", e?.message || "Unknown error.");
     }
   };
 
