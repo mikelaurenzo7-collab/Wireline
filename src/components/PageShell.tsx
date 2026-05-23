@@ -166,15 +166,23 @@ export default function PageShell({
       {/* ── Desktop tab strip (hidden on mobile) ───────────────────────── */}
       {tabs && tabs.length > 0 && (
         <div className="shrink-0 md:mb-2 hidden md:flex items-center gap-1 overflow-x-auto scrollbar-hide relative">
-          <div className="flex items-center gap-0.5 p-0.5 rounded-xl glass border border-black/8">
+          <div
+            role="tablist"
+            aria-label="Page sub-navigation"
+            className="flex items-center gap-0.5 p-0.5 rounded-xl glass border border-black/8"
+          >
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const active = tab.id === activeId;
               return (
                 <button
                   key={tab.id}
+                  role="tab"
+                  id={`pageshell-tab-${tab.id}`}
+                  aria-selected={active}
+                  aria-controls={`pageshell-panel-${tab.id}`}
+                  tabIndex={active ? 0 : -1}
                   onClick={() => setActiveId(tab.id)}
-                  aria-current={active ? "page" : undefined}
                   className={cn(
                     "relative shrink-0 inline-flex min-h-11 sm:min-h-10 items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[10px] uppercase tracking-[0.12em] font-medium",
                     active ? "text-on-brand" : "text-muted hover:text-ink hover:bg-black/5",
@@ -229,6 +237,7 @@ export default function PageShell({
                   key={tab.id}
                   role="tab"
                   aria-selected={active}
+                  aria-controls={`pageshell-panel-${tab.id}`}
                   tabIndex={active ? 0 : -1}
                   onClick={() => setActiveId(tab.id)}
                   onKeyDown={(e) => {
@@ -324,6 +333,9 @@ export default function PageShell({
         {tabs && activeTab ? (
           <motion.div
             key={activeTab.id}
+            role="tabpanel"
+            id={`pageshell-panel-${activeTab.id}`}
+            aria-labelledby={`pageshell-tab-${activeTab.id}`}
             initial={{ opacity: 0, transform: "translate3d(0, 4px, 0)" }}
             animate={{ opacity: 1, transform: "translate3d(0, 0, 0)" }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
