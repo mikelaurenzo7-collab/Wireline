@@ -570,6 +570,9 @@ export default function AuditLog() {
                     title="No matches"
                     description="Try a different search term or widen the time range filter."
                     accent="#4F1E7B"
+                    actions={[
+                      { label: "Clear search", onClick: () => setSearchQuery(""), primary: true },
+                    ]}
                   />
                 ) : (
                   <EmptyState
