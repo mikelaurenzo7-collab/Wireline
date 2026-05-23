@@ -10,6 +10,7 @@ import {
   LifeBuoy,
   Kanban,
   Crown,
+  Headphones,
 } from "lucide-react";
 
 export type NavItem = {
@@ -40,7 +41,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         path: "/",
         icon: LayoutGrid,
         dataTour: "dashboard",
-        matches: ["/dashboard", "/command", "/live"],
+        matches: ["/dashboard", "/command", "/live", "/cockpit"],
       },
       { label: "Triage", path: "/triage", icon: Inbox },
       { label: "Insights", path: "/insights", icon: BarChart3, dataTour: "insights" },
@@ -57,6 +58,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         dataTour: "training",
         matches: ["/knowledge"],
       },
+      { label: "Cockpit", path: "/cockpit", icon: Headphones, ownerOnly: true },
       { label: "Founder", path: "/founder", icon: Crown, ownerOnly: true },
     ],
   },
@@ -119,6 +121,7 @@ export const ROUTE_ACCENTS: Record<string, [string, string]> = {
   "/knowledge": ["#10B981", "#4F1E7B"],
   "/integrations": ["#4F1E7B", "#10B981"],
   "/admin": ["#4F1E7B", "#4F1E7B"],
+  "/cockpit": ["#4F1E7B", "#10B981"],
   "/dnc": ["#4F1E7B", "#FF6B6B"],
   "/audit": ["#4F1E7B", "#FFC07D"],
   "/help": ["#10B981", "#4F1E7B"],
