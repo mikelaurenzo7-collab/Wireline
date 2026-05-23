@@ -72,6 +72,7 @@ export default function HubTabs({ tabs, label, className }: HubTabsProps) {
 
 import {
   MessageSquare,
+  MessageCircle,
   Database,
   History,
   PhoneOutgoing,
@@ -91,6 +92,7 @@ export const CHANNELS_HUB: HubTabDef[] = [
   { label: "Logs", path: "/logs", icon: History },
   { label: "Outbound", path: "/outbound", icon: PhoneOutgoing },
   { label: "Email", path: "/inbox", icon: Mail },
+  { label: "SMS", path: "/sms", icon: MessageCircle },
   { label: "Appointments", path: "/appointments", icon: Calendar },
 ];
 
