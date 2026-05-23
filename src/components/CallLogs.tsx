@@ -738,6 +738,7 @@ function CallDetail({
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
+                      aria-label="Download recording (opens in new tab)"
                     >
                       <Download className="w-3 h-3" /> Download
                     </a>

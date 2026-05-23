@@ -611,12 +611,16 @@ export default function AuthPortal() {
                 <form onSubmit={handleAuth} className="relative z-10 space-y-4">
                   {/* Email */}
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5">
+                    <label
+                      htmlFor="auth-email"
+                      className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5"
+                    >
                       <Mail className="w-3 h-3 text-[#4F1E7B]" />
                       Email
                     </label>
                     <div className="relative group">
                       <input
+                        id="auth-email"
                         type="email"
                         required
                         autoComplete="email"
@@ -642,7 +646,10 @@ export default function AuthPortal() {
                   {!isReset && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <label className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5">
+                        <label
+                          htmlFor="auth-password"
+                          className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5"
+                        >
                           <Lock className="w-3 h-3 text-[#4F1E7B]" />
                           Password
                         </label>
@@ -662,6 +669,7 @@ export default function AuthPortal() {
                       </div>
                       <div className="relative group">
                         <input
+                          id="auth-password"
                           type="password"
                           required
                           minLength={isSignUp ? 8 : undefined}

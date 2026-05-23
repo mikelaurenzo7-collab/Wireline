@@ -533,6 +533,7 @@ export function ZoomDocs() {
               className="text-brand hover:underline"
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="trywireline.com (opens in new tab)"
             >
               trywireline.com
             </a>
@@ -545,6 +546,7 @@ export function ZoomDocs() {
               className="text-brand hover:underline"
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="trywireline.com/integrations (opens in new tab)"
             >
               trywireline.com/integrations
             </a>{" "}
@@ -657,6 +659,7 @@ export function ZoomDocs() {
               className="text-brand hover:underline"
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="trywireline.com/integrations (opens in new tab)"
             >
               trywireline.com/integrations
             </a>
@@ -671,6 +674,7 @@ export function ZoomDocs() {
               className="text-brand hover:underline"
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="marketplace.zoom.us (opens in new tab)"
             >
               marketplace.zoom.us
             </a>
@@ -714,6 +718,7 @@ export function ZoomDocs() {
             className="text-brand hover:underline"
             target="_blank"
             rel="noopener noreferrer"
+            aria-label="trywireline.com/support (opens in new tab)"
           >
             trywireline.com/support
           </a>
