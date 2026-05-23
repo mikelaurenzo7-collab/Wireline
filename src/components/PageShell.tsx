@@ -171,7 +171,7 @@ export default function PageShell({
             aria-label="Page sub-navigation"
             className="flex items-center gap-0.5 p-0.5 rounded-xl glass border border-black/8"
           >
-            {tabs.map((tab) => {
+            {tabs.map((tab, i) => {
               const Icon = tab.icon;
               const active = tab.id === activeId;
               return (
@@ -183,6 +183,13 @@ export default function PageShell({
                   aria-controls={`pageshell-panel-${tab.id}`}
                   tabIndex={active ? 0 : -1}
                   onClick={() => setActiveId(tab.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowRight") setActiveId(tabs[(i + 1) % tabs.length].id);
+                    else if (e.key === "ArrowLeft")
+                      setActiveId(tabs[(i - 1 + tabs.length) % tabs.length].id);
+                    else if (e.key === "Home") setActiveId(tabs[0].id);
+                    else if (e.key === "End") setActiveId(tabs[tabs.length - 1].id);
+                  }}
                   className={cn(
                     "relative shrink-0 inline-flex min-h-11 sm:min-h-10 items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[10px] uppercase tracking-[0.12em] font-medium",
                     active ? "text-on-brand" : "text-muted hover:text-ink hover:bg-black/5",
@@ -244,6 +251,8 @@ export default function PageShell({
                     if (e.key === "ArrowRight") setActiveId(tabs[(i + 1) % tabs.length].id);
                     else if (e.key === "ArrowLeft")
                       setActiveId(tabs[(i - 1 + tabs.length) % tabs.length].id);
+                    else if (e.key === "Home") setActiveId(tabs[0].id);
+                    else if (e.key === "End") setActiveId(tabs[tabs.length - 1].id);
                   }}
                   className={cn(
                     "native-tap-squish relative shrink-0 inline-flex min-h-10 items-center gap-1.5 px-3 py-2 rounded-xl transition-all text-[10px] uppercase tracking-[0.12em] font-medium whitespace-nowrap",

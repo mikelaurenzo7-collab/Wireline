@@ -130,7 +130,7 @@ export default function ContactProfile() {
 
   if (err || !data)
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-4">
+      <div role="alert" className="h-full flex flex-col items-center justify-center gap-4">
         <AlertOctagon className="w-12 h-12 text-rose-500/60" />
         <p className="text-[11px] uppercase tracking-[0.4em] text-rose-500">
           {err || "Contact not found"}
