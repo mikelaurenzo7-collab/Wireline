@@ -567,7 +567,10 @@ const ResultCard: React.FC<{ title: string; copyText?: string; children?: ReactN
 
 function ErrCard({ error }: { error: string }) {
   return (
-    <div className="rounded-xl bg-rose-500/10 border border-rose-500/30 p-4 text-rose-500 text-sm flex items-start gap-3">
+    <div
+      role="alert"
+      className="rounded-xl bg-rose-500/10 border border-rose-500/30 p-4 text-rose-500 text-sm flex items-start gap-3"
+    >
       <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
       <span>{error}</span>
     </div>

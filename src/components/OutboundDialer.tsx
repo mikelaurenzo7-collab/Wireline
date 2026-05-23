@@ -1816,7 +1816,10 @@ function CreateCampaignModal({
           </div>
 
           {err && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/30">
+            <div
+              role="alert"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/30"
+            >
               <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
               <p className="text-[11px] text-rose-500">{err}</p>
             </div>

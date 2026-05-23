@@ -724,6 +724,7 @@ export default function AuthPortal() {
                   <AnimatePresence mode="wait">
                     {error && (
                       <motion.div
+                        role="alert"
                         key="error"
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}

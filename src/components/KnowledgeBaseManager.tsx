@@ -510,7 +510,10 @@ export default function KnowledgeBaseManager() {
 
       {/* Error */}
       {error && (
-        <div className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-4 text-rose-500 text-sm flex items-center gap-3">
+        <div
+          role="alert"
+          className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-4 text-rose-500 text-sm flex items-center gap-3"
+        >
           <AlertOctagon className="w-4 h-4" />
           <span>{error}</span>
         </div>

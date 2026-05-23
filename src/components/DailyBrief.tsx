@@ -126,7 +126,10 @@ export default function DailyBrief() {
 
   if (err && !data)
     return (
-      <div className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-5 flex items-start gap-3">
+      <div
+        role="alert"
+        className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-5 flex items-start gap-3"
+      >
         <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
         <span className="text-sm text-rose-500">{err}</span>
       </div>
