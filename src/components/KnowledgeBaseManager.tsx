@@ -361,6 +361,7 @@ export default function KnowledgeBaseManager() {
                 <label className="space-y-1.5">
                   <span className="text-[10px] uppercase tracking-[0.3em] text-muted">Agent</span>
                   <select
+                    aria-label="Agent"
                     value={addAgent}
                     onChange={(e) => setAddAgent(e.target.value)}
                     className="w-full h-11 px-3 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
@@ -509,7 +510,10 @@ export default function KnowledgeBaseManager() {
 
       {/* Error */}
       {error && (
-        <div className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-4 text-rose-500 text-sm flex items-center gap-3">
+        <div
+          role="alert"
+          className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-4 text-rose-500 text-sm flex items-center gap-3"
+        >
           <AlertOctagon className="w-4 h-4" />
           <span>{error}</span>
         </div>
@@ -524,6 +528,7 @@ export default function KnowledgeBaseManager() {
               onClick={toggleSelectAll}
               disabled={filtered.length === 0}
               className={cn(
+                "disabled:opacity-50 disabled:cursor-not-allowed",
                 "w-4 h-4 rounded border-2 flex items-center justify-center transition-all",
                 allFilteredSelected
                   ? "bg-brand border-brand text-on-brand"
@@ -845,6 +850,7 @@ function DedupePanel({
                         onClick={() => setKeep(idx, m.id)}
                         disabled={!keepId}
                         className={cn(
+                          "disabled:opacity-50 disabled:cursor-not-allowed",
                           "w-full text-left rounded-xl border p-3 flex items-start gap-3 transition-all",
                           !keepId
                             ? "bg-black/10 border-white/5 opacity-50 cursor-not-allowed"

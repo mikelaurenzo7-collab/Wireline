@@ -307,7 +307,7 @@ export function ActionFeed({
                             <button
                               disabled={isProcessing}
                               onClick={(e) => handleApprove(action.id, e)}
-                              className="flex-[2] h-9 rounded-xl brutal-btn !py-0 !text-[10px] !tracking-[0.2em] !font-bold flex items-center justify-center gap-2"
+                              className="disabled:opacity-50 disabled:cursor-not-allowed flex-[2] h-9 rounded-xl brutal-btn !py-0 !text-[10px] !tracking-[0.2em] !font-bold flex items-center justify-center gap-2"
                             >
                               {isProcessing ? (
                                 <Clock className="w-3.5 h-3.5 animate-spin" />

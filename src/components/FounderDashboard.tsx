@@ -344,6 +344,7 @@ export default function FounderDashboard() {
                 onClick={() => exists && setSelected(s)}
                 disabled={!exists}
                 className={cn(
+                  "disabled:opacity-50 disabled:cursor-not-allowed",
                   "text-left rounded-2xl border p-4 transition-all bg-gradient-to-br",
                   s.accent,
                   exists

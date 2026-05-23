@@ -847,7 +847,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                   <button
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="h-9 px-4 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-all flex items-center gap-2 ml-2"
+                    className="disabled:opacity-50 disabled:cursor-not-allowed h-9 px-4 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-all flex items-center gap-2 ml-2"
                   >
                     {isSaving ? (
                       <div className="w-3.5 h-3.5 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />

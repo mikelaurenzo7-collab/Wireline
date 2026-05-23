@@ -1455,6 +1455,7 @@ function SpendBudgetCard() {
             </span>
             <input
               type="number"
+              inputMode="numeric"
               min="1"
               max="99"
               step="1"
@@ -1500,7 +1501,11 @@ function SpendBudgetCard() {
             {saving ? "Saving" : "Save budget"}
           </button>
         </div>
-        {error && <div className="text-xs text-rose-500">{error}</div>}
+        {error && (
+          <div role="alert" className="text-xs text-rose-500">
+            {error}
+          </div>
+        )}
         {savedAt && !error && Date.now() - savedAt < 4000 && (
           <div className="text-xs text-emerald-600">Saved.</div>
         )}
@@ -1610,7 +1615,10 @@ function Empty({ label, green }: { label: string; green?: boolean }) {
 
 function ErrCard({ error }: { error: string }) {
   return (
-    <div className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-6 text-rose-500 text-sm flex items-start gap-3">
+    <div
+      role="alert"
+      className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-6 text-rose-500 text-sm flex items-start gap-3"
+    >
       <AlertOctagon className="w-5 h-5 shrink-0 mt-0.5" />
       <span>{error}</span>
     </div>

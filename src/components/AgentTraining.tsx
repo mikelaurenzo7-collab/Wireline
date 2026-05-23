@@ -242,6 +242,7 @@ export default function AgentTraining() {
             </span>
             <div className="relative flex-1 lg:flex-none lg:min-w-[260px]">
               <select
+                aria-label="Select agent"
                 value={selectedAgentId}
                 onChange={(e) => setSelectedAgentId(e.target.value)}
                 className="w-full text-sm bg-black/5 border border-black/10 rounded-lg pl-3 pr-8 py-2 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"

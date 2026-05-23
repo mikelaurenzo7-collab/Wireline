@@ -190,7 +190,7 @@ function GoalEditor({
         <button
           onClick={onCancel}
           disabled={saving}
-          className="h-11 px-3 rounded-lg glass border border-black/10 text-muted text-[11px] uppercase tracking-[0.14em] hover:text-ink transition-colors"
+          className="disabled:opacity-50 disabled:cursor-not-allowed h-11 px-3 rounded-lg glass border border-black/10 text-muted text-[11px] uppercase tracking-[0.14em] hover:text-ink transition-colors"
         >
           Cancel
         </button>
@@ -287,7 +287,7 @@ function GoalCard({
             <button
               onClick={onDelete}
               disabled={deleting}
-              className="h-8 px-3 rounded-lg text-[10px] uppercase tracking-[0.14em] font-medium flex items-center justify-center gap-1.5 bg-rose-500/12 text-rose-600 hover:bg-rose-500/20 transition-colors"
+              className="disabled:opacity-50 disabled:cursor-not-allowed h-8 px-3 rounded-lg text-[10px] uppercase tracking-[0.14em] font-medium flex items-center justify-center gap-1.5 bg-rose-500/12 text-rose-600 hover:bg-rose-500/20 transition-colors"
             >
               {deleting ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -299,7 +299,7 @@ function GoalCard({
             <button
               onClick={() => setConfirm(false)}
               disabled={deleting}
-              className="h-8 w-8 rounded-lg glass border border-black/10 text-muted flex items-center justify-center hover:text-ink transition-colors"
+              className="disabled:opacity-50 disabled:cursor-not-allowed h-8 w-8 rounded-lg glass border border-black/10 text-muted flex items-center justify-center hover:text-ink transition-colors"
               aria-label="Cancel delete"
             >
               <X className="w-3.5 h-3.5" />

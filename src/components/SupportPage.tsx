@@ -262,7 +262,11 @@ export function SupportPage() {
                 />
               </div>
 
-              {error && <p className="text-[11px] text-rose-600 leading-relaxed">{error}</p>}
+              {error && (
+                <p role="alert" className="text-[11px] text-rose-600 leading-relaxed">
+                  {error}
+                </p>
+              )}
 
               <button
                 type="submit"

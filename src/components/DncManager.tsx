@@ -281,7 +281,8 @@ export default function DncManager() {
                   <div className="relative">
                     <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
                     <input
-                      type="text"
+                      type="search"
+                      aria-label="Search blocked numbers"
                       placeholder="Search numbers…"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
@@ -376,7 +377,7 @@ export default function DncManager() {
                               <button
                                 onClick={() => handleDelete(entry.id)}
                                 disabled={deletingId === entry.id}
-                                className="h-7 px-2.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-500 text-[9px] uppercase tracking-[0.22em] hover:bg-rose-500/30 transition-all flex items-center gap-1"
+                                className="disabled:opacity-50 disabled:cursor-not-allowed h-7 px-2.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-500 text-[9px] uppercase tracking-[0.22em] hover:bg-rose-500/30 transition-all flex items-center gap-1"
                               >
                                 {deletingId === entry.id ? (
                                   <Loader2 className="w-2.5 h-2.5 animate-spin" />
@@ -458,6 +459,8 @@ export default function DncManager() {
                         <Phone className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
                         <input
                           type="tel"
+                          inputMode="tel"
+                          autoComplete="tel"
                           placeholder="+1 (555) 123-4567"
                           value={addPhone}
                           onChange={(e) => setAddPhone(e.target.value)}
@@ -472,6 +475,7 @@ export default function DncManager() {
                         Reason
                       </label>
                       <select
+                        aria-label="Reason"
                         value={addReason}
                         onChange={(e) => setAddReason(e.target.value)}
                         className="w-full h-10 px-3 rounded-xl glass border border-white/10 text-sm text-ink focus:border-rose-400/50 focus:outline-none transition-all"

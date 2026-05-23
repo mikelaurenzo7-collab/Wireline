@@ -122,6 +122,14 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const save = async () => {
@@ -240,6 +248,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
             {agents.length > 0 && (
               <Field label="Agent" icon={Bot}>
                 <select
+                  aria-label="Appointment agent"
                   className={cn(inputCls, "appearance-none cursor-pointer")}
                   value={form.agent_id}
                   onChange={(e) => set("agent_id", e.target.value)}
@@ -256,6 +265,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
             {isEdit && (
               <Field label="Status" icon={CheckCircle2}>
                 <select
+                  aria-label="Appointment status"
                   className={cn(inputCls, "appearance-none cursor-pointer")}
                   value={form.status}
                   onChange={(e) => set("status", e.target.value)}
@@ -279,7 +289,10 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
           </div>
 
           {err && (
-            <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30">
+            <div
+              role="alert"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30"
+            >
               <AlertOctagon className="w-3.5 h-3.5 text-rose-500 shrink-0" />
               <p className="text-[11px] text-rose-600 leading-snug">{err}</p>
             </div>

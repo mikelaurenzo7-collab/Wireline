@@ -244,7 +244,10 @@ export default function TrialGateModal() {
               </div>
 
               {error && (
-                <div className="mt-4 flex items-start gap-2 text-xs text-rose-600 leading-relaxed">
+                <div
+                  role="alert"
+                  className="mt-4 flex items-start gap-2 text-xs text-rose-600 leading-relaxed"
+                >
                   <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>{error}</span>
                 </div>

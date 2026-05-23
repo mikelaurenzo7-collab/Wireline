@@ -570,6 +570,8 @@ export default function OutboundDialer() {
                         </label>
                         <input
                           type="tel"
+                          inputMode="tel"
+                          autoComplete="tel"
                           value={customerNumber}
                           onChange={(e) => setCustomerNumber(e.target.value)}
                           placeholder="+1 555 000 0000"
@@ -672,6 +674,7 @@ export default function OutboundDialer() {
                           </label>
                           <div className="relative">
                             <select
+                              aria-label="Assign to campaign"
                               value={bulkCampaignId}
                               onChange={(e) => setBulkCampaignId(e.target.value)}
                               className="w-full text-sm bg-black/5 border border-black/10 rounded-lg pl-3 pr-8 py-2 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
@@ -1664,6 +1667,14 @@ function CreateCampaignModal({
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const inputCls =
     "w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 transition-all";
@@ -1751,6 +1762,7 @@ function CreateCampaignModal({
                 <Bot className="w-2.5 h-2.5 text-brand" /> Default Agent
               </label>
               <select
+                aria-label="Default agent"
                 className={cn(inputCls, "appearance-none cursor-pointer")}
                 value={form.agent_id}
                 onChange={(e) => set("agent_id", e.target.value)}
@@ -1804,7 +1816,10 @@ function CreateCampaignModal({
           </div>
 
           {err && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/30">
+            <div
+              role="alert"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/30"
+            >
               <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
               <p className="text-[11px] text-rose-500">{err}</p>
             </div>

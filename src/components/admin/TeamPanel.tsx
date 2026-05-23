@@ -63,6 +63,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                     />
                   </div>
                   <select
+                    aria-label="Role"
                     className="w-32 px-3 py-2.5 bg-white/50 border border-black/10 rounded-xl outline-none focus:border-brand/50 text-xs appearance-none cursor-pointer"
                     value={inviteRole}
                     onChange={(e) => setInviteRole(e.target.value)}

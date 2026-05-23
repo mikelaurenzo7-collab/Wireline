@@ -424,6 +424,7 @@ export default function DeployAgentModal({
                   onClick={handleSubmit}
                   disabled={!canSubmit}
                   className={cn(
+                    "disabled:opacity-50 disabled:cursor-not-allowed",
                     "group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] uppercase tracking-[0.32em] font-semibold transition-all",
                     canSubmit
                       ? "text-paper shadow-lg shadow-brand/30 hover:shadow-brand/40 active:scale-[0.98]"

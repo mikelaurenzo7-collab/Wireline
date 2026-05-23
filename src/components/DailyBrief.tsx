@@ -126,7 +126,10 @@ export default function DailyBrief() {
 
   if (err && !data)
     return (
-      <div className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-5 flex items-start gap-3">
+      <div
+        role="alert"
+        className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-5 flex items-start gap-3"
+      >
         <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
         <span className="text-sm text-rose-500">{err}</span>
       </div>
@@ -484,9 +487,10 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
         </div>
         <button
           onClick={onClose}
-          className="w-7 h-7 rounded-full glass border border-white/10 hover:border-white/30 flex items-center justify-center text-ink/60 hover:text-ink"
+          aria-label="Close"
+          className="w-9 h-9 rounded-full glass border border-white/10 hover:border-white/30 flex items-center justify-center text-ink/60 hover:text-ink"
         >
-          <XIcon className="w-3.5 h-3.5" />
+          <XIcon className="w-4 h-4" />
         </button>
       </div>
 
@@ -512,6 +516,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
             onClick={() => setEnabled((e) => !e)}
             disabled={!gmailConnected}
             className={cn(
+              "disabled:opacity-50 disabled:cursor-not-allowed",
               "w-full px-4 py-3 rounded-xl border flex items-start gap-3 text-left transition-all",
               !gmailConnected
                 ? "bg-black/20 border-white/5 text-muted/50 cursor-not-allowed"

@@ -906,6 +906,7 @@ export default function FleetSettings() {
                       </label>
                       <div className="relative">
                         <select
+                          aria-label="Business role"
                           value={newAgentRole}
                           onChange={(e) => setNewAgentRole(e.target.value as RoleValue)}
                           className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-3 pr-7 py-2 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
@@ -1072,6 +1073,7 @@ export default function FleetSettings() {
                                   </label>
                                   <div className="relative">
                                     <select
+                                      aria-label="Agent role"
                                       value={selectedAgent.role || "customer_service"}
                                       onChange={(e) => updateAgentMeta({ role: e.target.value })}
                                       className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
@@ -1208,6 +1210,8 @@ export default function FleetSettings() {
                               </label>
                               <input
                                 type="url"
+                                inputMode="url"
+                                autoComplete="url"
                                 value={selectedAgent.website_url || ""}
                                 onChange={(e) => updateAgentMeta({ website_url: e.target.value })}
                                 placeholder="https://example.com"
@@ -1220,6 +1224,8 @@ export default function FleetSettings() {
                               </label>
                               <input
                                 type="tel"
+                                inputMode="tel"
+                                autoComplete="tel"
                                 value={selectedAgent.transfer_phone || ""}
                                 onChange={(e) =>
                                   updateAgentMeta({ transfer_phone: e.target.value })
@@ -1248,6 +1254,7 @@ export default function FleetSettings() {
                                     </label>
                                     <div className="relative">
                                       <select
+                                        aria-label="Voice signature"
                                         value={
                                           PREMIUM_VOICES.find(
                                             (v) => v.id === selectedAgent.voice_id,
@@ -1299,6 +1306,7 @@ export default function FleetSettings() {
                                       </label>
                                       <div className="relative">
                                         <select
+                                          aria-label="Secondary voice"
                                           value={(selectedAgent as any).secondary_voice_id || ""}
                                           onChange={(e) => {
                                             const val = e.target.value;
@@ -1335,6 +1343,7 @@ export default function FleetSettings() {
                                     </label>
                                     <div className="relative">
                                       <select
+                                        aria-label="Archetype"
                                         value={selectedAgent.archetype || "Receptionist"}
                                         onChange={(e) =>
                                           updateAgentMeta({ archetype: e.target.value })
@@ -1404,6 +1413,7 @@ export default function FleetSettings() {
                                     </label>
                                     <div className="relative">
                                       <select
+                                        aria-label="Ambient atmosphere"
                                         value={selectedAgent.ambient_noise || "off"}
                                         onChange={(e) =>
                                           updateAgentMeta({ ambient_noise: e.target.value })
@@ -1548,6 +1558,7 @@ export default function FleetSettings() {
                                         Relay tone
                                       </label>
                                       <select
+                                        aria-label="Relay tone"
                                         value={selectedAgent.email_agent_tone || "Professional"}
                                         onChange={(e) =>
                                           updateAgentMeta({ email_agent_tone: e.target.value })

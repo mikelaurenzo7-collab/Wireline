@@ -445,7 +445,8 @@ export default function AuditLog() {
               <div className="flex-1 relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
                 <input
-                  type="text"
+                  type="search"
+                  aria-label="Search audit events"
                   placeholder="Search events..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -459,6 +460,7 @@ export default function AuditLog() {
               </div>
               <div className="relative">
                 <select
+                  aria-label="Time range"
                   value={timeRange}
                   onChange={(e) => setTimeRange(Number(e.target.value) as TimeRange)}
                   className="pl-4 pr-10 py-3 rounded-xl glass border border-white/10 text-sm text-ink appearance-none bg-transparent focus:outline-none focus:border-brand/40 transition-all cursor-pointer"

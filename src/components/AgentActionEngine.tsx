@@ -136,7 +136,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="h-10 px-6 rounded-full bg-brand/15 border border-brand/40 text-brand text-[11px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-all flex items-center gap-2"
+          className="disabled:opacity-50 disabled:cursor-not-allowed h-10 px-6 rounded-full bg-brand/15 border border-brand/40 text-brand text-[11px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-all flex items-center gap-2"
         >
           {isSaving ? (
             <div className="w-4 h-4 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />

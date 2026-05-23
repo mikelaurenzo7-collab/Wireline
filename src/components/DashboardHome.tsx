@@ -301,6 +301,7 @@ export default function DashboardHome() {
       onClick={toggleCall}
       disabled={isConnecting}
       className={cn(
+        "disabled:opacity-50 disabled:cursor-not-allowed",
         "h-9 px-4 rounded-full flex items-center justify-center gap-2 text-[10px] uppercase tracking-[0.28em] transition-all",
         isConnected
           ? "bg-rose-500/15 border border-rose-500/40 text-rose-500 hover:bg-rose-500/25"
@@ -790,6 +791,7 @@ export default function DashboardHome() {
                       onClick={toggleCall}
                       disabled={isConnecting}
                       className={cn(
+                        "disabled:opacity-50 disabled:cursor-not-allowed",
                         "w-full h-10 rounded-xl font-medium text-[11px] uppercase tracking-[0.22em] flex items-center justify-center gap-2 transition-all",
                         isConnected
                           ? "bg-rose-500/15 border border-rose-500/40 text-rose-500 hover:bg-rose-500/25"
