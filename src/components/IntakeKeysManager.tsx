@@ -250,6 +250,7 @@ export default function IntakeKeysManager() {
                       Default agent (optional)
                     </span>
                     <select
+                      aria-label="Default agent"
                       value={defaultAgentId}
                       onChange={(e) => {
                         setDefaultAgentId(e.target.value);

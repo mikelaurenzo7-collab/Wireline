@@ -240,6 +240,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
             {agents.length > 0 && (
               <Field label="Agent" icon={Bot}>
                 <select
+                  aria-label="Appointment agent"
                   className={cn(inputCls, "appearance-none cursor-pointer")}
                   value={form.agent_id}
                   onChange={(e) => set("agent_id", e.target.value)}
@@ -256,6 +257,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
             {isEdit && (
               <Field label="Status" icon={CheckCircle2}>
                 <select
+                  aria-label="Appointment status"
                   className={cn(inputCls, "appearance-none cursor-pointer")}
                   value={form.status}
                   onChange={(e) => set("status", e.target.value)}

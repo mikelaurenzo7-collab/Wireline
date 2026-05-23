@@ -570,6 +570,8 @@ export default function OutboundDialer() {
                         </label>
                         <input
                           type="tel"
+                          inputMode="tel"
+                          autoComplete="tel"
                           value={customerNumber}
                           onChange={(e) => setCustomerNumber(e.target.value)}
                           placeholder="+1 555 000 0000"
@@ -672,6 +674,7 @@ export default function OutboundDialer() {
                           </label>
                           <div className="relative">
                             <select
+                              aria-label="Assign to campaign"
                               value={bulkCampaignId}
                               onChange={(e) => setBulkCampaignId(e.target.value)}
                               className="w-full text-sm bg-black/5 border border-black/10 rounded-lg pl-3 pr-8 py-2 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
@@ -1751,6 +1754,7 @@ function CreateCampaignModal({
                 <Bot className="w-2.5 h-2.5 text-brand" /> Default Agent
               </label>
               <select
+                aria-label="Default agent"
                 className={cn(inputCls, "appearance-none cursor-pointer")}
                 value={form.agent_id}
                 onChange={(e) => set("agent_id", e.target.value)}

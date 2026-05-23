@@ -342,6 +342,7 @@ export default function Integrations() {
                         </label>
                         <div className="relative">
                           <select
+                            aria-label="Route to agent"
                             value={acc.agent_id || "none"}
                             onChange={(e) => updateAccountAgent(acc.id, e.target.value)}
                             className="text-xs bg-black/5 border border-black/10 rounded-lg pl-3 pr-8 py-1.5 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"

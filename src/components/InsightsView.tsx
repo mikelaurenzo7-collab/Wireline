@@ -1455,6 +1455,7 @@ function SpendBudgetCard() {
             </span>
             <input
               type="number"
+              inputMode="numeric"
               min="1"
               max="99"
               step="1"

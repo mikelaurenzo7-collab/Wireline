@@ -274,6 +274,7 @@ export default function FleetTaskBridge() {
                     </span>
                     <div className="relative">
                       <select
+                        aria-label="Task priority"
                         value={task.priority || "medium"}
                         onChange={(e) => updatePriority(task.id, e.target.value)}
                         className={cn(
@@ -315,6 +316,7 @@ export default function FleetTaskBridge() {
                       </label>
                       <div className="relative">
                         <select
+                          aria-label="Assigned agent"
                           value={task.agent_id || ""}
                           onChange={(e) => updateAssignment(task.id, e.target.value)}
                           className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"

@@ -459,6 +459,7 @@ export default function AuditLog() {
               </div>
               <div className="relative">
                 <select
+                  aria-label="Time range"
                   value={timeRange}
                   onChange={(e) => setTimeRange(Number(e.target.value) as TimeRange)}
                   className="pl-4 pr-10 py-3 rounded-xl glass border border-white/10 text-sm text-ink appearance-none bg-transparent focus:outline-none focus:border-brand/40 transition-all cursor-pointer"

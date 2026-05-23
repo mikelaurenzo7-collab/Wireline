@@ -517,6 +517,7 @@ export default function CrmConnectionCard() {
                             </div>
                           ) : (
                             <select
+                              aria-label="Default Slack channel"
                               className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink"
                               value={s.default_channel_id || ""}
                               onChange={async (e) => {
@@ -556,6 +557,7 @@ export default function CrmConnectionCard() {
                             </div>
                           ) : (
                             <select
+                              aria-label="Default Teams team and channel"
                               className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink"
                               value={
                                 s.team_id && s.channel_id ? `${s.team_id}:${s.channel_id}` : ""

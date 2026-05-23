@@ -336,6 +336,7 @@ function RecipeModal({
             </div>
             <button
               onClick={onClose}
+              aria-label="Close"
               className="w-10 h-10 rounded-full glass border border-white/10 flex items-center justify-center text-ink/60 hover:text-ink hover:border-brand/40 transition-all"
             >
               <X className="w-4 h-4" />
@@ -486,6 +487,7 @@ function Select({
 }) {
   return (
     <select
+      aria-label="Recipe option"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className="w-full h-12 px-4 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"

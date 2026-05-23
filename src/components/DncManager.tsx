@@ -458,6 +458,8 @@ export default function DncManager() {
                         <Phone className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
                         <input
                           type="tel"
+                          inputMode="tel"
+                          autoComplete="tel"
                           placeholder="+1 (555) 123-4567"
                           value={addPhone}
                           onChange={(e) => setAddPhone(e.target.value)}
@@ -472,6 +474,7 @@ export default function DncManager() {
                         Reason
                       </label>
                       <select
+                        aria-label="Reason"
                         value={addReason}
                         onChange={(e) => setAddReason(e.target.value)}
                         className="w-full h-10 px-3 rounded-xl glass border border-white/10 text-sm text-ink focus:border-rose-400/50 focus:outline-none transition-all"

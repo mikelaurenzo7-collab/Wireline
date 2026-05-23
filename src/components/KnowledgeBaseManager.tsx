@@ -361,6 +361,7 @@ export default function KnowledgeBaseManager() {
                 <label className="space-y-1.5">
                   <span className="text-[10px] uppercase tracking-[0.3em] text-muted">Agent</span>
                   <select
+                    aria-label="Agent"
                     value={addAgent}
                     onChange={(e) => setAddAgent(e.target.value)}
                     className="w-full h-11 px-3 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"

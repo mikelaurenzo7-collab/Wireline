@@ -422,6 +422,7 @@ function EntryEditor({ entries, onChange, onAddRow, onRemoveRow }: EntryEditorPr
               className="rounded-lg border border-black/10 bg-paper px-2.5 py-2 text-[12px] text-ink outline-none focus:border-brand/40"
             />
             <select
+              aria-label="Entry kind"
               value={entry.kind}
               onChange={(e) => {
                 const next = entries.map((e2, i) =>

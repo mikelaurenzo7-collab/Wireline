@@ -417,6 +417,8 @@ export function CarrierPanel({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               <input
                 type="tel"
+                inputMode="tel"
+                autoComplete="tel"
                 value={newNumber}
                 onChange={(e) => setNewNumber(e.target.value)}
                 placeholder="+1 800 555 0100"
@@ -524,6 +526,8 @@ export function CarrierPanel({
             <input
               id="twilio-sms-from"
               type="tel"
+              inputMode="tel"
+              autoComplete="tel"
               value={settings.twilio_sms_from_number || ""}
               onChange={(e) =>
                 onUpdateSettings({ ...settings, twilio_sms_from_number: e.target.value })
@@ -636,6 +640,8 @@ export function CarrierPanel({
                 <input
                   id="manager-alert-number"
                   type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
                   value={settings.twilio_manager_alert_number || ""}
                   onChange={(e) =>
                     onUpdateSettings({

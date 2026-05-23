@@ -484,9 +484,10 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
         </div>
         <button
           onClick={onClose}
-          className="w-7 h-7 rounded-full glass border border-white/10 hover:border-white/30 flex items-center justify-center text-ink/60 hover:text-ink"
+          aria-label="Close"
+          className="w-9 h-9 rounded-full glass border border-white/10 hover:border-white/30 flex items-center justify-center text-ink/60 hover:text-ink"
         >
-          <XIcon className="w-3.5 h-3.5" />
+          <XIcon className="w-4 h-4" />
         </button>
       </div>
 
