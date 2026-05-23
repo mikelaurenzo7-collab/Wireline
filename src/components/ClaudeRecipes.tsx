@@ -253,6 +253,14 @@ function RecipeModal({
   const [available, setAvailable] = useState<boolean | null>(null);
 
   useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  useEffect(() => {
     (async () => {
       try {
         const [statusRes, agentsRes] = await Promise.all([
@@ -506,7 +514,7 @@ function RunButton({ onClick, loading, disabled, label = "Generate" }: any) {
     <button
       onClick={onClick}
       disabled={loading || disabled}
-      className="brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
+      className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
     >
       {loading ? (
         <>
@@ -964,7 +972,7 @@ function KnowledgeFromUrlForm({
           <button
             onClick={apply}
             disabled={!agentId || applying || selected.size === 0}
-            className="brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
+            className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
           >
             {applying ? (
               <>
@@ -1144,7 +1152,7 @@ function AgentForgeForm({ initial, disabled }: { initial?: any; disabled: boolea
             <button
               onClick={create}
               disabled={creating}
-              className="brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
+              className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
             >
               {creating ? (
                 <>
@@ -2667,7 +2675,7 @@ function KnowledgeFromDocumentForm({
           <button
             onClick={apply}
             disabled={!agentId || applying || selected.size === 0}
-            className="brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
+            className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
           >
             {applying ? (
               <>

@@ -445,7 +445,8 @@ export default function AuditLog() {
               <div className="flex-1 relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
                 <input
-                  type="text"
+                  type="search"
+                  aria-label="Search audit events"
                   placeholder="Search events..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}

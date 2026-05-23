@@ -280,7 +280,7 @@ export default function PronunciationDictionaryPanel() {
                 setNewEntries([blankEntry()]);
               }}
               disabled={creating}
-              className="px-4 py-2.5 rounded-full text-[11px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
+              className="disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5 rounded-full text-[11px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
             >
               Cancel
             </button>

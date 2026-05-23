@@ -315,7 +315,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
               <button
                 onClick={onSave}
                 disabled={isSaving}
-                className="brutal-btn !px-12 !py-3.5 !text-[11px] !tracking-[0.45em] flex items-center justify-center gap-3 shadow-xl"
+                className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn !px-12 !py-3.5 !text-[11px] !tracking-[0.45em] flex items-center justify-center gap-3 shadow-xl"
               >
                 {isSaving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

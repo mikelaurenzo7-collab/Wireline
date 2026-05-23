@@ -111,7 +111,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
             <button
               onClick={onSave}
               disabled={isSaving}
-              className="brutal-btn w-full md:w-auto !px-8 !py-3 !text-[10px] !tracking-[0.4em] flex items-center justify-center gap-2"
+              className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn w-full md:w-auto !px-8 !py-3 !text-[10px] !tracking-[0.4em] flex items-center justify-center gap-2"
             >
               {isSaving ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

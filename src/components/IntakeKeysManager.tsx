@@ -272,6 +272,7 @@ export default function IntakeKeysManager() {
                   onClick={() => defaultAgentId && setAutoDial(!autoDial)}
                   disabled={!defaultAgentId}
                   className={cn(
+                    "disabled:opacity-50 disabled:cursor-not-allowed",
                     "w-full px-4 py-3 rounded-xl border flex items-start gap-3 text-left transition-all",
                     !defaultAgentId
                       ? "bg-black/20 border-white/5 text-muted/50 cursor-not-allowed"
@@ -385,6 +386,7 @@ export default function IntakeKeysManager() {
                         : "Set a default agent before enabling auto-dial."
                     }
                     className={cn(
+                      "disabled:opacity-50 disabled:cursor-not-allowed",
                       "h-9 px-3 rounded-lg text-[10px] uppercase tracking-[0.25em] flex items-center gap-1.5 transition-all",
                       !k.default_agent_id
                         ? "glass border border-black/5 text-muted/40 cursor-not-allowed"

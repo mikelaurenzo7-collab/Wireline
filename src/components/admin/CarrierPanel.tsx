@@ -404,7 +404,7 @@ export function CarrierPanel({
               <button
                 onClick={handleSync}
                 disabled={isSyncing}
-                className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.3em] text-muted/70 hover:text-brand transition-colors"
+                className="disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.3em] text-muted/70 hover:text-brand transition-colors"
               >
                 {isSyncing ? (
                   <Loader2 className="w-3 h-3 animate-spin" />

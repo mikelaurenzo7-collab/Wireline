@@ -272,7 +272,7 @@ export default function VoiceLibraryPanel() {
                 setConsent(false);
               }}
               disabled={cloning}
-              className="px-4 py-2.5 rounded-full text-[11px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
+              className="disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5 rounded-full text-[11px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
             >
               Cancel
             </button>
@@ -304,6 +304,7 @@ export default function VoiceLibraryPanel() {
                 onClick={() => playPreview(v)}
                 disabled={!v.preview_url}
                 className={cn(
+                  "disabled:opacity-50 disabled:cursor-not-allowed",
                   "shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all",
                   v.preview_url
                     ? "bg-brand/10 text-brand hover:bg-brand/20"

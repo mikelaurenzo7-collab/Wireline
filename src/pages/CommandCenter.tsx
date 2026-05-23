@@ -305,7 +305,7 @@ export default function CommandCenter() {
             <button
               onClick={refresh}
               disabled={isRefreshing || loading}
-              className="brutal-btn !p-3 !rounded-2xl"
+              className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn !p-3 !rounded-2xl"
               aria-label="Refresh"
             >
               <RefreshCw className={clsx("w-5 h-5", isRefreshing && "animate-spin")} />

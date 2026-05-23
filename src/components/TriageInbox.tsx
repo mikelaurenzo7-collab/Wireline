@@ -557,7 +557,7 @@ const KnowledgeGapRow: React.FC<{
           <button
             onClick={promote}
             disabled={busy || discarding}
-            className="brutal-btn !py-1.5 !px-3 !text-[9px] !tracking-[0.28em]"
+            className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn !py-1.5 !px-3 !text-[9px] !tracking-[0.28em]"
           >
             {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
             Promote
@@ -635,6 +635,7 @@ const OpenTaskRow: React.FC<{
         onClick={complete}
         disabled={completing}
         className={cn(
+          "disabled:opacity-50 disabled:cursor-not-allowed",
           "shrink-0 w-5 h-5 rounded-full border transition-all mt-0.5 flex items-center justify-center",
           completing
             ? "border-emerald-500/60 bg-emerald-500/20"

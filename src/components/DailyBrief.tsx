@@ -513,6 +513,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
             onClick={() => setEnabled((e) => !e)}
             disabled={!gmailConnected}
             className={cn(
+              "disabled:opacity-50 disabled:cursor-not-allowed",
               "w-full px-4 py-3 rounded-xl border flex items-start gap-3 text-left transition-all",
               !gmailConnected
                 ? "bg-black/20 border-white/5 text-muted/50 cursor-not-allowed"
