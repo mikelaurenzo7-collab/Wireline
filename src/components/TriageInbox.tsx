@@ -13,7 +13,6 @@ import {
   RefreshCw,
   Pencil,
   X,
-  Inbox,
   Check,
   Trash2,
 } from "lucide-react";
@@ -24,7 +23,6 @@ import { formatDate, formatDateTime } from "../lib/safe-date";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
-import EmptyState from "./EmptyState";
 import WidgetBoundary from "./WidgetBoundary";
 
 interface HotLead {
@@ -124,18 +122,6 @@ export default function TriageInbox() {
             Retry
           </button>
         </div>
-      ) : totalAttention === 0 ? (
-        <EmptyState
-          icon={Inbox}
-          title="All clear"
-          description="No items need attention right now. Triage surfaces follow-ups, hot leads, and escalations from your agent activity."
-          accent="#10B981"
-          actions={[
-            { label: "View Call Logs", to: "/logs" },
-            { label: "View Dashboard", to: "/" },
-          ]}
-          className="h-full py-10"
-        />
       ) : (
         body
       )}
