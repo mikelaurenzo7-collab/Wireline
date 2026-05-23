@@ -79,6 +79,10 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
                     src={settings.brand_logo_url}
                     className="w-6 h-6 object-contain"
                     alt="Logo"
+                    loading="lazy"
+                    decoding="async"
+                    width={24}
+                    height={24}
                   />
                 ) : (
                   <Zap className="w-6 h-6" style={{ color: settings.primary_color }} />
