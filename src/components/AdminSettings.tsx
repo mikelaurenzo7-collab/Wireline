@@ -444,6 +444,8 @@ export default function AdminSettings() {
                   {activeTab === "branding" && (
                     <motion.div
                       key="branding"
+                      role="tabpanel"
+                      id="admin-panel-branding"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
@@ -461,6 +463,8 @@ export default function AdminSettings() {
                   {activeTab === "carrier" && (
                     <motion.div
                       key="carrier"
+                      role="tabpanel"
+                      id="admin-panel-carrier"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
@@ -486,6 +490,8 @@ export default function AdminSettings() {
                   {activeTab === "voices" && (
                     <motion.div
                       key="voices"
+                      role="tabpanel"
+                      id="admin-panel-voices"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
@@ -498,6 +504,8 @@ export default function AdminSettings() {
                   {activeTab === "pronunciation" && (
                     <motion.div
                       key="pronunciation"
+                      role="tabpanel"
+                      id="admin-panel-pronunciation"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
@@ -510,6 +518,8 @@ export default function AdminSettings() {
                   {activeTab === "subscription" && (
                     <motion.div
                       key="subscription"
+                      role="tabpanel"
+                      id="admin-panel-subscription"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
@@ -529,6 +539,8 @@ export default function AdminSettings() {
                   {activeTab === "team" && (
                     <motion.div
                       key="team"
+                      role="tabpanel"
+                      id="admin-panel-team"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
@@ -545,6 +557,8 @@ export default function AdminSettings() {
                   {activeTab === "flywheel" && (
                     <motion.div
                       key="flywheel"
+                      role="tabpanel"
+                      id="admin-panel-flywheel"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
@@ -562,6 +576,8 @@ export default function AdminSettings() {
                   {activeTab === "system" && (
                     <motion.div
                       key="system"
+                      role="tabpanel"
+                      id="admin-panel-system"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
@@ -579,6 +595,8 @@ export default function AdminSettings() {
                   {activeTab === "activity" && (
                     <motion.div
                       key="activity"
+                      role="tabpanel"
+                      id="admin-panel-activity"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}

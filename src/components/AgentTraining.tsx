@@ -318,7 +318,11 @@ export default function AgentTraining() {
           </div>
         </details>
 
-        <nav className="flex flex-wrap gap-1.5 max-w-[1400px] mx-auto w-full mt-2">
+        <nav
+          role="tablist"
+          aria-label="Training views"
+          className="flex flex-wrap gap-1.5 max-w-[1400px] mx-auto w-full mt-2"
+        >
           {[
             {
               id: "workspace",
@@ -353,6 +357,9 @@ export default function AgentTraining() {
           ].map((tab) => (
             <button
               key={tab.id}
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              aria-controls={`training-panel-${tab.id}`}
               onClick={() => setActiveTab(tab.id as any)}
               className={cn(
                 "px-2.5 py-1.5 rounded-lg border text-[10px] uppercase tracking-[0.12em] flex items-center gap-1.5 transition-colors",
@@ -378,6 +385,8 @@ export default function AgentTraining() {
           {activeTab === "actions" && (
             <motion.div
               key="actions"
+              role="tabpanel"
+              id="training-panel-actions"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
@@ -391,6 +400,8 @@ export default function AgentTraining() {
           {activeTab === "database" && (
             <motion.div
               key="database"
+              role="tabpanel"
+              id="training-panel-database"
               initial={{ opacity: 0, x: 16 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0 }}
@@ -834,6 +845,8 @@ export default function AgentTraining() {
           {activeTab === "flow" && (
             <motion.div
               key="flow"
+              role="tabpanel"
+              id="training-panel-flow"
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
@@ -847,6 +860,8 @@ export default function AgentTraining() {
           {activeTab === "workspace" && (
             <motion.div
               key="workspace"
+              role="tabpanel"
+              id="training-panel-workspace"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -863,6 +878,8 @@ export default function AgentTraining() {
           {activeTab === "simulator" && (
             <motion.div
               key="simulator"
+              role="tabpanel"
+              id="training-panel-simulator"
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
