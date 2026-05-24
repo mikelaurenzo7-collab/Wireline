@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
 import {
   Users2,
   MessageSquare,
@@ -205,22 +206,11 @@ export default function FounderDashboard() {
   };
 
   // Owner-only surface. Non-owners (team members, customers who somehow
-  // land on /founder) get a clean access wall — never the staff roster
-  // or the platform stats.
+  // land on /founder) get silently redirected to Home so the route's
+  // existence isn't even disclosed. Server-side /api/admin/founder-stats
+  // is independently gated by authorizeMigration (OWNER_EMAIL check).
   if (user && user.is_owner !== true) {
-    return (
-      <div className="h-full flex items-center justify-center p-8">
-        <div className="text-center max-w-sm">
-          <div className="w-12 h-12 rounded-2xl glass border border-white/10 flex items-center justify-center text-brand mx-auto mb-4">
-            <Users2 className="w-5 h-5" />
-          </div>
-          <h2 className="font-display italic text-2xl text-ink mb-2">Owner only</h2>
-          <p className="text-[13px] text-muted/80 leading-relaxed">
-            The Founder's Dashboard is restricted to the Wireline platform owner.
-          </p>
-        </div>
-      </div>
-    );
+    return <Navigate to="/" replace />;
   }
 
   if (selected) {

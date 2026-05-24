@@ -32,6 +32,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
+import { useAuth } from "../contexts/AuthContext";
 
 interface CommandItem {
   id: string;
@@ -41,12 +42,14 @@ interface CommandItem {
   action: () => void;
   category: string;
   shortcut?: string;
+  ownerOnly?: boolean;
 }
 
 export default function CommandBar() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const { user } = useAuth();
 
   // Pin the page underneath while the command palette is open so
   // arrow-key navigation doesn't scroll the page beneath it.
@@ -147,6 +150,7 @@ export default function CommandBar() {
       description: "Floor-level monitoring with SLA flags",
       icon: Headphones,
       category: "Navigation",
+      ownerOnly: true,
       action: () => navigate("/cockpit"),
     },
     {
@@ -155,6 +159,7 @@ export default function CommandBar() {
       description: "Owner-only metrics dashboard",
       icon: Crown,
       category: "Navigation",
+      ownerOnly: true,
       action: () => navigate("/founder"),
     },
     {
@@ -258,12 +263,15 @@ export default function CommandBar() {
     },
   ];
 
-  const filteredCommands = commands.filter(
-    (c) =>
-      c.label.toLowerCase().includes(query.toLowerCase()) ||
-      c.description.toLowerCase().includes(query.toLowerCase()) ||
-      c.category.toLowerCase().includes(query.toLowerCase()),
-  );
+  const filteredCommands = commands.filter((c) => {
+    if (c.ownerOnly && user?.is_owner !== true) return false;
+    const q = query.toLowerCase();
+    return (
+      c.label.toLowerCase().includes(q) ||
+      c.description.toLowerCase().includes(q) ||
+      c.category.toLowerCase().includes(q)
+    );
+  });
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
