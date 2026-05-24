@@ -233,7 +233,7 @@ export function ClaudeRecipeButton({
 
 /* ────────────────────  Modal shell  ─────────────────────────────── */
 
-function RecipeModal({
+export function RecipeModal({
   recipe,
   agentId,
   threadId,

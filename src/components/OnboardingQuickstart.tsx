@@ -49,11 +49,11 @@ const STEPS = [
   },
   {
     id: "number",
-    title: "Your phone number is live",
-    body: "Every Wireline plan includes a dedicated voice number — no Twilio bill, no separate setup. It's already provisioned for you and routed to your agent.",
+    title: "Wire up a phone number",
+    body: "Every Wireline plan includes a dedicated voice number — no Twilio bill, no separate setup. Provision yours in Integrations and route inbound calls to your agent.",
     icon: Phone,
     accent: "#4F1E7B",
-    badge: "Auto",
+    badge: "1 click",
   },
   {
     id: "call",

@@ -28,6 +28,7 @@ import HubTabs, { TRAINING_HUB } from "./HubTabs";
 import { cn } from "../lib/utils";
 import { formatDate } from "../lib/safe-date";
 import EmptyState from "./EmptyState";
+import { RecipeModal } from "./ClaudeRecipes";
 
 interface KnowledgeRow {
   id: number;
@@ -70,6 +71,10 @@ export default function KnowledgeBaseManager() {
   const [addAgent, setAddAgent] = useState("");
   const [addContent, setAddContent] = useState("");
   const [adding, setAdding] = useState(false);
+
+  // URL-ingest modal state. Wired to the knowledge-from-url Claude recipe,
+  // which crawls a site and adds extracted facts into wireline_knowledge.
+  const [showIngestUrl, setShowIngestUrl] = useState(false);
 
   // Dedupe state
   const [deduping, setDeduping] = useState(false);
@@ -560,7 +565,7 @@ export default function KnowledgeBaseManager() {
                 accent="#4F1E7B"
                 actions={[
                   { label: "Add Knowledge", onClick: () => setShowAdd(true), primary: true },
-                  { label: "Ingest from URL", onClick: () => {} },
+                  { label: "Ingest from URL", onClick: () => setShowIngestUrl(true) },
                 ]}
                 className="py-12"
               />
@@ -708,6 +713,17 @@ export default function KnowledgeBaseManager() {
           </div>
         </div>
       </div>
+      <AnimatePresence>
+        {showIngestUrl && (
+          <RecipeModal
+            recipe="knowledge-from-url"
+            onClose={() => {
+              setShowIngestUrl(false);
+              refresh();
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

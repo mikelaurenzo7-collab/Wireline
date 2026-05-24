@@ -152,8 +152,12 @@ export default function SmsThreads() {
                   <EmptyState
                     icon={MessageSquare}
                     title="No SMS yet"
-                    description="Conversations land here when an agent sends a text or a customer replies to your number."
+                    description="Conversations land here when an agent sends a text or a customer replies to your number. Configure your Twilio sender in Settings, then trigger SMS from outbound campaigns."
                     accent="#4F1E7B"
+                    actions={[
+                      { label: "Configure SMS sender", to: "/admin?tab=carrier", primary: true },
+                      { label: "Set up outbound", to: "/outbound" },
+                    ]}
                   />
                 ) : (
                   <div className="space-y-1.5">

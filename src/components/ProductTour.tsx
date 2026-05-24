@@ -117,7 +117,11 @@ export default function ProductTour() {
     authFetch("/api/user-preferences")
       .then((r) => r.json())
       .then((prefs) => {
-        if (!cancelled && prefs.tour_completed === false) {
+        // Show the tour to brand-new users who have no preferences row yet
+        // (tour_completed === undefined) AND to users who explicitly haven't
+        // completed it (tour_completed === false). Only suppress when the
+        // user has explicitly finished the tour (=== true).
+        if (!cancelled && prefs?.tour_completed !== true) {
           setActive(true);
         }
       })
