@@ -681,6 +681,16 @@ export default function AppointmentsView() {
                             Book a commitment manually or let agents schedule during calls.
                           </p>
                         </div>
+                        <button
+                          onClick={() => {
+                            setEditTarget(null);
+                            setShowModal(true);
+                          }}
+                          className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-brand text-on-brand text-[10px] uppercase tracking-[0.28em] hover:bg-brand/90 transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Book appointment
+                        </button>
                       </motion.div>
                     ) : (
                       <div className="divide-y divide-white/5">
