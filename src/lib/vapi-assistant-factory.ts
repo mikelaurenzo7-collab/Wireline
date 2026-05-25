@@ -506,9 +506,23 @@ Today is ${currentDateTime}.
     if (!Number.isFinite(n)) return fallback;
     return Math.min(1, Math.max(0, n));
   };
-  const parsedStability = clamp01((agentConfigRow as any)?.voiceStability, 0.5);
-  const parsedSimilarityBoost = clamp01((agentConfigRow as any)?.voiceSimilarityBoost, 0.75);
-  const parsedStyle = clamp01((agentConfigRow as any)?.voiceStyle, 0.0);
+  // Human-like voice tuning. These three knobs determine how lifelike
+  // the synthesized voice sounds on ElevenLabs:
+  //   - stability 0.40 (was 0.50): slightly less locked to the speaker's
+  //     base intonation, so emotion + emphasis varies naturally between
+  //     sentences. EL recommends 0.30–0.50 for conversational use; the
+  //     0.50 default was tilted toward narration consistency.
+  //   - similarityBoost 0.78 (was 0.75): tightens fidelity to the
+  //     trained voice without crossing into over-modeled territory.
+  //   - style 0.35 (was 0.00): the biggest "feels human" lever. Style
+  //     adds emotional inflection — without it, every sentence reads
+  //     in the same neutral register. 0.35 gives the agent perceptible
+  //     warmth and emphasis without melodrama. Operators can override
+  //     to 0 for compliance-heavy use cases (medical, legal) via
+  //     FleetSettings → Voice fine-tuning.
+  const parsedStability = clamp01((agentConfigRow as any)?.voiceStability, 0.4);
+  const parsedSimilarityBoost = clamp01((agentConfigRow as any)?.voiceSimilarityBoost, 0.78);
+  const parsedStyle = clamp01((agentConfigRow as any)?.voiceStyle, 0.35);
   // PG returns boolean as JS boolean — but a `null` (column missing
   // pre-migration) defaults to EL's spec'd true.
   const rawSpeakerBoost = (agentConfigRow as any)?.voiceSpeakerBoost;
