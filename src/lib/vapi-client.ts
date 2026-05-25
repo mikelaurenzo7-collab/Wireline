@@ -484,6 +484,13 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
         return {
           provider,
           voiceId: agentConfig.voiceIdOutbound || agentConfig.voiceId || "bIHbv24MWmeRgasZH58o",
+          // Pin the ElevenLabs TTS model so Vapi doesn't auto-swap
+          // between turbo / flash / multilingual / v3 mid-call. Each
+          // model has subtly different prosody for the same voiceId,
+          // which a caller hears as the agent "changing voice or
+          // cadence" halfway through. Matches the showcase + tenant
+          // assistant factory configuration.
+          ...(provider === "11labs" ? { model: "eleven_flash_v2_5" } : {}),
           ...(provider === "11labs" && speed !== 1.0 ? { speed } : {}),
           ...(provider === "11labs" ? { stability, similarityBoost, style, useSpeakerBoost } : {}),
         };
