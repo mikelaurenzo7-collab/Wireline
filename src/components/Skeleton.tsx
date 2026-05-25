@@ -44,21 +44,6 @@ export function Skeleton({ className, accent = "cyan" }: SkeletonProps) {
   );
 }
 
-/* ── Stat tile skeleton ───────────────────────────────────────────── */
-
-export function StatTileSkeleton() {
-  return (
-    <div className="relative rounded-xl glass border border-black/8 p-4 overflow-hidden">
-      <div className="flex items-start justify-between mb-2.5">
-        <Skeleton className="h-2 w-20" accent="cyan" />
-        <Skeleton className="w-7 h-7 rounded-lg" accent="violet" />
-      </div>
-      <Skeleton className="h-9 w-24 rounded-lg mb-2" accent="cyan" />
-      <Skeleton className="h-2 w-16" accent="cyan" />
-    </div>
-  );
-}
-
 /* ── Row skeleton (for lists) ─────────────────────────────────────── */
 
 interface RowSkeletonProps {
@@ -68,7 +53,7 @@ interface RowSkeletonProps {
   showValue?: boolean;
 }
 
-export function RowSkeleton({ showIcon = true, showValue = true }: RowSkeletonProps) {
+function RowSkeleton({ showIcon = true, showValue = true }: RowSkeletonProps) {
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       {showIcon && <Skeleton className="w-9 h-9 rounded-xl shrink-0" accent="violet" />}
@@ -94,81 +79,6 @@ export function PanelSkeleton({ rows = 4, className }: PanelSkeletonProps) {
       {Array.from({ length: rows }).map((_, i) => (
         <RowSkeleton key={i} />
       ))}
-    </div>
-  );
-}
-
-/* ── Card grid skeleton ───────────────────────────────────────────── */
-
-export function CardGridSkeleton({ count = 4 }: { count?: number }) {
-  return (
-    <div className="grid grid-cols-2 gap-3 h-full">
-      {Array.from({ length: count }).map((_, i) => (
-        <div
-          key={i}
-          className="rounded-2xl glass border border-black/8 p-5 space-y-3 overflow-hidden"
-        >
-          <div className="flex items-center justify-between">
-            <Skeleton className="h-2 w-16" accent={i % 2 === 0 ? "cyan" : "violet"} />
-            <Skeleton className="w-5 h-5 rounded-full" accent="magenta" />
-          </div>
-          <Skeleton className="h-8 w-20 rounded-lg" accent="cyan" />
-          <Skeleton className="h-1 w-full rounded-full" accent="violet" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ── Chart skeleton ───────────────────────────────────────────────── */
-
-export function ChartSkeleton({ className }: { className?: string }) {
-  const bars = [40, 65, 45, 80, 70, 55, 35];
-  return (
-    <div className={cn("flex items-end justify-between gap-2 h-full px-2 pb-4", className)}>
-      {bars.map((h, i) => (
-        <div
-          key={i}
-          className={cn(
-            "relative overflow-hidden flex-1 rounded-t-md bg-black/[0.07] border border-black/[0.05]",
-          )}
-          style={{ height: `${h}%` }}
-        >
-          <div
-            className={cn(
-              "skeleton-shimmer absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r",
-              ACCENT_SHIMMER[i % 3 === 0 ? "cyan" : i % 3 === 1 ? "violet" : "magenta"],
-            )}
-          />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ── Full-page centered spinner fallback ─────────────────────────── */
-
-export function PageSpinner() {
-  return (
-    <div className="h-full w-full flex flex-col items-center justify-center gap-4">
-      <div className="relative w-14 h-14">
-        <div
-          className="absolute inset-0 rounded-full opacity-40"
-          style={{
-            background: "conic-gradient(from 0deg, #4F1E7B, #4F1E7B, #4F1E7B, #10B981, #4F1E7B)",
-            filter: "blur(1px)",
-            animation: "spin 2.4s linear infinite",
-          }}
-        />
-        <div className="absolute inset-1.5 rounded-full bg-paper" />
-        <div className="absolute inset-3 rounded-full glass flex items-center justify-center">
-          <div
-            className="w-3 h-3 rounded-full"
-            style={{ background: "#4F1E7B", boxShadow: "0 0 12px #4F1E7B" }}
-          />
-        </div>
-      </div>
-      <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60 animate-pulse">Loading…</p>
     </div>
   );
 }
