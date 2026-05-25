@@ -21,7 +21,6 @@ import {
   Calendar,
 } from "lucide-react";
 import PageShell, { Panel } from "./PageShell";
-import HubTabs, { SYSTEM_HUB } from "./HubTabs";
 import EmptyState from "./EmptyState";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
@@ -378,227 +377,222 @@ export default function AuditLog() {
   }, []);
 
   return (
-    <div className="h-full flex flex-col min-h-0">
-      <HubTabs tabs={SYSTEM_HUB} label="System sub-navigation" />
-      <div className="flex-1 min-h-0">
-        <PageShell
-          title="Audit Log"
-          subtitle="System activity monitoring & compliance"
-          eyebrow="Security · Activity"
-          actions={
-            <button
-              onClick={handleExport}
-              disabled={exporting || events.length === 0}
-              aria-label={`Export ${events.length} events as CSV`}
-              className="px-4 py-2.5 rounded-full glass border border-white/10 text-[11px] uppercase tracking-[0.3em] text-ink/80 hover:text-brand hover:border-brand/40 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {exporting ? (
-                <>
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                  </motion.div>
-                  exporting...
-                </>
-              ) : (
-                <>
+    <div className="h-full min-h-0">
+      <PageShell
+        title="Audit Log"
+        subtitle="System activity monitoring & compliance"
+        eyebrow="Security · Activity"
+        actions={
+          <button
+            onClick={handleExport}
+            disabled={exporting || events.length === 0}
+            aria-label={`Export ${events.length} events as CSV`}
+            className="px-4 py-2.5 rounded-full glass border border-white/10 text-[11px] uppercase tracking-[0.3em] text-ink/80 hover:text-brand hover:border-brand/40 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {exporting ? (
+              <>
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                >
                   <Download className="w-3.5 h-3.5" />
-                  export
-                </>
-              )}
-            </button>
-          }
-        >
-          <div className="h-full flex flex-col gap-4 p-4 overflow-y-auto scrollbar-hide">
-            {/* Stats Overview */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard
-                label="Total Events"
-                value={stats?.total.toLocaleString() || "—"}
-                icon={Activity}
-                color="bg-cyan-400"
-              />
-              <StatCard
-                label="API Calls"
-                value={stats?.api_calls.toLocaleString() || "—"}
-                icon={Cpu}
-                color="bg-purple-400"
-              />
-              <StatCard
-                label="Total Cost"
-                value={stats ? `$${stats.total_cost.toFixed(2)}` : "—"}
-                icon={DollarSign}
-                color="bg-emerald-400"
-              />
-              <StatCard
-                label="Critical Events"
-                value={stats?.critical_count || 0}
-                icon={Shield}
-                color="bg-rose-400"
-              />
-            </div>
-
-            {/* Search and Time Range */}
-            <div className="flex flex-col md:flex-row gap-3">
-              <div className="flex-1 relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
-                <input
-                  type="search"
-                  aria-label="Search audit events"
-                  placeholder="Search events..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      // Trigger search (already handled by useMemo)
-                    }
-                  }}
-                  className="w-full pl-11 pr-4 py-3 rounded-xl glass border border-white/10 text-sm text-ink placeholder:text-muted/50 focus:outline-none focus:border-brand/40 transition-all"
-                />
-              </div>
-              <div className="relative">
-                <select
-                  aria-label="Time range"
-                  value={timeRange}
-                  onChange={(e) => setTimeRange(Number(e.target.value) as TimeRange)}
-                  className="pl-4 pr-10 py-3 rounded-xl glass border border-white/10 text-sm text-ink appearance-none bg-transparent focus:outline-none focus:border-brand/40 transition-all cursor-pointer"
-                >
-                  <option value={1}>Last 24 hours</option>
-                  <option value={7}>Last 7 days</option>
-                  <option value={30}>Last 30 days</option>
-                  <option value={90}>Last 90 days</option>
-                </select>
-                <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
-              </div>
-              <button
-                onClick={() => setFiltersExpanded(!filtersExpanded)}
-                aria-label={filtersExpanded ? "Hide filters" : "Show filters"}
-                aria-expanded={filtersExpanded}
-                className={cn(
-                  "px-4 py-3 rounded-xl glass border transition-all flex items-center gap-2 text-sm",
-                  filtersExpanded
-                    ? "border-brand/40 text-brand"
-                    : "border-white/10 text-ink/80 hover:border-white/20",
-                )}
-              >
-                <Filter className="w-4 h-4" />
-                Filters
-                <motion.div
-                  animate={{ rotate: filtersExpanded ? 180 : 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <ChevronDown className="w-4 h-4" />
                 </motion.div>
-              </button>
-            </div>
+                exporting...
+              </>
+            ) : (
+              <>
+                <Download className="w-3.5 h-3.5" />
+                export
+              </>
+            )}
+          </button>
+        }
+      >
+        <div className="h-full flex flex-col gap-4 p-4 overflow-y-auto scrollbar-hide">
+          {/* Stats Overview */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              label="Total Events"
+              value={stats?.total.toLocaleString() || "—"}
+              icon={Activity}
+              color="bg-cyan-400"
+            />
+            <StatCard
+              label="API Calls"
+              value={stats?.api_calls.toLocaleString() || "—"}
+              icon={Cpu}
+              color="bg-purple-400"
+            />
+            <StatCard
+              label="Total Cost"
+              value={stats ? `$${stats.total_cost.toFixed(2)}` : "—"}
+              icon={DollarSign}
+              color="bg-emerald-400"
+            />
+            <StatCard
+              label="Critical Events"
+              value={stats?.critical_count || 0}
+              icon={Shield}
+              color="bg-rose-400"
+            />
+          </div>
 
-            {/* Filters Panel */}
-            <AnimatePresence>
-              {filtersExpanded && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                  className="overflow-hidden"
-                >
-                  <div className="glass rounded-xl border border-white/10 p-4 space-y-4">
-                    <div>
-                      <h4 className="text-xs uppercase tracking-[0.3em] text-muted mb-3">
-                        Severity
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {SEVERITY_OPTIONS.map((severity) => (
-                          <button
-                            key={severity}
-                            onClick={() => toggleSeverity(severity)}
-                            className={cn(
-                              "px-3 py-1.5 rounded-full text-xs uppercase tracking-wider transition-all border",
-                              selectedSeverities.includes(severity)
-                                ? "border-brand/40 bg-brand/10 text-brand"
-                                : "border-white/10 bg-white/5 text-muted hover:text-ink hover:border-white/20",
-                            )}
-                          >
-                            {severity}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="text-xs uppercase tracking-[0.3em] text-muted mb-3">
-                        Event Type
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {Object.entries(EVENT_CATEGORIES).map(([key, label]) => (
-                          <button
-                            key={key}
-                            onClick={() => toggleCategory(key)}
-                            className={cn(
-                              "px-3 py-1.5 rounded-full text-xs uppercase tracking-wider transition-all border",
-                              selectedCategories.includes(key)
-                                ? "border-brand/40 bg-brand/10 text-brand"
-                                : "border-white/10 bg-white/5 text-muted hover:text-ink hover:border-white/20",
-                            )}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
+          {/* Search and Time Range */}
+          <div className="flex flex-col md:flex-row gap-3">
+            <div className="flex-1 relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
+              <input
+                type="search"
+                aria-label="Search audit events"
+                placeholder="Search events..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    // Trigger search (already handled by useMemo)
+                  }
+                }}
+                className="w-full pl-11 pr-4 py-3 rounded-xl glass border border-white/10 text-sm text-ink placeholder:text-muted/50 focus:outline-none focus:border-brand/40 transition-all"
+              />
+            </div>
+            <div className="relative">
+              <select
+                aria-label="Time range"
+                value={timeRange}
+                onChange={(e) => setTimeRange(Number(e.target.value) as TimeRange)}
+                className="pl-4 pr-10 py-3 rounded-xl glass border border-white/10 text-sm text-ink appearance-none bg-transparent focus:outline-none focus:border-brand/40 transition-all cursor-pointer"
+              >
+                <option value={1}>Last 24 hours</option>
+                <option value={7}>Last 7 days</option>
+                <option value={30}>Last 30 days</option>
+                <option value={90}>Last 90 days</option>
+              </select>
+              <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
+            </div>
+            <button
+              onClick={() => setFiltersExpanded(!filtersExpanded)}
+              aria-label={filtersExpanded ? "Hide filters" : "Show filters"}
+              aria-expanded={filtersExpanded}
+              className={cn(
+                "px-4 py-3 rounded-xl glass border transition-all flex items-center gap-2 text-sm",
+                filtersExpanded
+                  ? "border-brand/40 text-brand"
+                  : "border-white/10 text-ink/80 hover:border-white/20",
+              )}
+            >
+              <Filter className="w-4 h-4" />
+              Filters
+              <motion.div
+                animate={{ rotate: filtersExpanded ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ChevronDown className="w-4 h-4" />
+              </motion.div>
+            </button>
+          </div>
+
+          {/* Filters Panel */}
+          <AnimatePresence>
+            {filtersExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="glass rounded-xl border border-white/10 p-4 space-y-4">
+                  <div>
+                    <h4 className="text-xs uppercase tracking-[0.3em] text-muted mb-3">Severity</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {SEVERITY_OPTIONS.map((severity) => (
+                        <button
+                          key={severity}
+                          onClick={() => toggleSeverity(severity)}
+                          className={cn(
+                            "px-3 py-1.5 rounded-full text-xs uppercase tracking-wider transition-all border",
+                            selectedSeverities.includes(severity)
+                              ? "border-brand/40 bg-brand/10 text-brand"
+                              : "border-white/10 bg-white/5 text-muted hover:text-ink hover:border-white/20",
+                          )}
+                        >
+                          {severity}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  <div>
+                    <h4 className="text-xs uppercase tracking-[0.3em] text-muted mb-3">
+                      Event Type
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(EVENT_CATEGORIES).map(([key, label]) => (
+                        <button
+                          key={key}
+                          onClick={() => toggleCategory(key)}
+                          className={cn(
+                            "px-3 py-1.5 rounded-full text-xs uppercase tracking-wider transition-all border",
+                            selectedCategories.includes(key)
+                              ? "border-brand/40 bg-brand/10 text-brand"
+                              : "border-white/10 bg-white/5 text-muted hover:text-ink hover:border-white/20",
+                          )}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-            {/* Events List */}
-            <Panel title="Activity Stream" icon={Shield} scroll>
-              {loading ? (
-                <div className="flex items-center justify-center py-20">
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  >
-                    <Shield className="w-8 h-8 text-brand" />
-                  </motion.div>
-                </div>
-              ) : filteredEvents.length === 0 ? (
-                searchQuery.trim() ? (
-                  <EmptyState
-                    icon={Shield}
-                    title="No matches"
-                    description="Try a different search term or widen the time range filter."
-                    accent="#4F1E7B"
-                    actions={[
-                      { label: "Clear search", onClick: () => setSearchQuery(""), primary: true },
-                    ]}
-                  />
-                ) : (
-                  <EmptyState
-                    icon={Shield}
-                    title="Audit trail is quiet"
-                    description="Every agent action, escalation, and policy check writes here. Deploy an agent to start the feed."
-                    accent="#4F1E7B"
-                    actions={[{ label: "Deploy an agent", to: "/agents", primary: true }]}
-                  />
-                )
+          {/* Events List */}
+          <Panel title="Activity Stream" icon={Shield} scroll>
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                >
+                  <Shield className="w-8 h-8 text-brand" />
+                </motion.div>
+              </div>
+            ) : filteredEvents.length === 0 ? (
+              searchQuery.trim() ? (
+                <EmptyState
+                  icon={Shield}
+                  title="No matches"
+                  description="Try a different search term or widen the time range filter."
+                  accent="#4F1E7B"
+                  actions={[
+                    { label: "Clear search", onClick: () => setSearchQuery(""), primary: true },
+                  ]}
+                />
               ) : (
-                <div className="space-y-3">
-                  {filteredEvents.map((event) => (
-                    <EventRow
-                      key={event.id}
-                      event={event}
-                      expanded={expandedRows.has(event.id)}
-                      onToggle={() => toggleRow(event.id)}
-                    />
-                  ))}
-                </div>
-              )}
-            </Panel>
-          </div>
-        </PageShell>
-      </div>
+                <EmptyState
+                  icon={Shield}
+                  title="Audit trail is quiet"
+                  description="Every agent action, escalation, and policy check writes here. Deploy an agent to start the feed."
+                  accent="#4F1E7B"
+                  actions={[{ label: "Deploy an agent", to: "/agents", primary: true }]}
+                />
+              )
+            ) : (
+              <div className="space-y-3">
+                {filteredEvents.map((event) => (
+                  <EventRow
+                    key={event.id}
+                    event={event}
+                    expanded={expandedRows.has(event.id)}
+                    onToggle={() => toggleRow(event.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </Panel>
+        </div>
+      </PageShell>
     </div>
   );
 }
