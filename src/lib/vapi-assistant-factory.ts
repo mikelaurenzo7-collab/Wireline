@@ -580,6 +580,18 @@ Today is ${currentDateTime}.
     voice: {
       provider: resolvedVoiceProvider,
       voiceId: resolvedVoiceId,
+      // Pin the ElevenLabs TTS model explicitly. Without this, Vapi
+      // silently auto-selects between eleven_turbo_*, eleven_flash_*,
+      // eleven_multilingual_*, and eleven_v3 mid-call (typically a
+      // fast model for the first audio-out, then a higher-quality
+      // model for subsequent turns). Different models render the same
+      // voiceId with noticeably different prosody and cadence — the
+      // caller hears "the agent's voice shifted halfway through" even
+      // though voiceId never changed. Pinning eleven_flash_v2_5 keeps
+      // every utterance on the same TTS engine for the full call, and
+      // matches the showcase-assistant configuration so tenant agents
+      // and the demo line sound identical.
+      ...(resolvedVoiceProvider === "11labs" ? { model: "eleven_flash_v2_5" } : {}),
       // 11labs-specific streaming optimization. 4 is the max — slight
       // quality trade for fastest first-audio-out. Most call quality
       // differences are imperceptible vs the latency win.
