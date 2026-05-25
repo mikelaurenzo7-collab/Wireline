@@ -582,6 +582,27 @@ Today is ${currentDateTime}.
     responseDelaySeconds: voiceLatency.responseDelaySeconds,
     numWordsToInterruptAssistant: voiceLatency.numWordsToInterruptAssistant,
     backgroundDenoisingEnabled: false,
+    // Subtle background office ambience by default. A real receptionist
+    // sits at a desk with faint room tone, typing, and distant voices —
+    // pure silence between agent utterances reads as "robocall". Vapi's
+    // "office" track is the closest match to a small business front desk
+    // and is the same texture leading voice-AI products (Air, Bland)
+    // ship by default. Operators can override via FleetSettings →
+    // Ambient atmosphere (off / office / phone-internal), and HIPAA /
+    // legal use cases that need recorded silence can opt out to "off".
+    backgroundSound: (agentConfigRow as any)?.ambientNoise || "office",
+    // Smart endpointing — instead of a fixed timeout, use LiveKit's
+    // turn-detection model to decide when the caller has actually
+    // finished a thought. waitSeconds: 0.05 is the minimum hold before
+    // we even consider responding (filter out caller breath); the
+    // smartEndpointingPlan adapts the actual silence-to-respond gap
+    // based on the audio + transcript context. Matches the showcase
+    // assistant; the previous fixed-timeout behaviour was prone to
+    // either interrupting (too short) or feeling sluggish (too long).
+    startSpeakingPlan: {
+      waitSeconds: 0.05,
+      smartEndpointingPlan: { provider: "livekit", waitFunction: "10 + 5000 * x" },
+    },
     model: {
       provider: voiceLlmProvider,
       model: voiceLlmModel,
@@ -601,11 +622,12 @@ Today is ${currentDateTime}.
       // model for subsequent turns). Different models render the same
       // voiceId with noticeably different prosody and cadence — the
       // caller hears "the agent's voice shifted halfway through" even
-      // though voiceId never changed. Pinning eleven_flash_v2_5 keeps
-      // every utterance on the same TTS engine for the full call, and
-      // matches the showcase-assistant configuration so tenant agents
-      // and the demo line sound identical.
-      ...(resolvedVoiceProvider === "11labs" ? { model: "eleven_flash_v2_5" } : {}),
+      // though voiceId never changed. Pinning eleven_turbo_v2_5 keeps
+      // every utterance on the same TTS engine for the full call.
+      // Chose turbo_v2_5 over flash_v2_5: ~50ms more TTFA but
+      // noticeably more natural prosody — humanness wins the tradeoff
+      // at our latency budget.
+      ...(resolvedVoiceProvider === "11labs" ? { model: "eleven_turbo_v2_5" } : {}),
       // 11labs-specific streaming optimization. 4 is the max — slight
       // quality trade for fastest first-audio-out. Most call quality
       // differences are imperceptible vs the latency win.
