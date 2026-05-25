@@ -491,7 +491,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
           // cadence" halfway through. Matches the tenant assistant
           // factory; turbo_v2_5 is the humanness/latency sweet spot
           // for phone calls.
-          ...(provider === "11labs" ? { model: "eleven_turbo_v2_5" } : {}),
+          ...(provider === "11labs" ? { model: "eleven_flash_v2_5" } : {}),
           ...(provider === "11labs" && speed !== 1.0 ? { speed } : {}),
           ...(provider === "11labs" ? { stability, similarityBoost, style, useSpeakerBoost } : {}),
         };

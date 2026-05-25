@@ -364,7 +364,7 @@ export function buildShowcaseAssistantPayload(
     payload.voice = {
       provider: "11labs",
       voiceId,
-      model: "eleven_turbo_v2_5",
+      model: "eleven_flash_v2_5",
       optimizeStreamingLatency: 4,
       stability: 0.62,
       similarityBoost: 0.88,

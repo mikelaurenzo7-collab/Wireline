@@ -622,12 +622,13 @@ Today is ${currentDateTime}.
       // model for subsequent turns). Different models render the same
       // voiceId with noticeably different prosody and cadence — the
       // caller hears "the agent's voice shifted halfway through" even
-      // though voiceId never changed. Pinning eleven_turbo_v2_5 keeps
+      // though voiceId never changed. Pinning eleven_flash_v2_5 keeps
       // every utterance on the same TTS engine for the full call.
-      // Chose turbo_v2_5 over flash_v2_5: ~50ms more TTFA but
-      // noticeably more natural prosody — humanness wins the tradeoff
-      // at our latency budget.
-      ...(resolvedVoiceProvider === "11labs" ? { model: "eleven_turbo_v2_5" } : {}),
+      // Reverted from turbo_v2_5 — operator preferred the ~50ms TTFA
+      // savings over the slight prosody bump; with the Claude Haiku
+      // LLM already adding ~400ms to TTFT, every TTS millisecond
+      // counts toward perceived snappiness.
+      ...(resolvedVoiceProvider === "11labs" ? { model: "eleven_flash_v2_5" } : {}),
       // 11labs-specific streaming optimization. 4 is the max — slight
       // quality trade for fastest first-audio-out. Most call quality
       // differences are imperceptible vs the latency win.

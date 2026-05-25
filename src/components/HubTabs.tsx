@@ -78,9 +78,6 @@ import {
   PhoneOutgoing,
   Mail,
   Calendar,
-  ServerCog,
-  Ban,
-  ScrollText,
 } from "lucide-react";
 
 export const TRAINING_HUB: HubTabDef[] = [
@@ -94,10 +91,4 @@ export const CHANNELS_HUB: HubTabDef[] = [
   { label: "Email", path: "/inbox", icon: Mail },
   { label: "SMS", path: "/sms", icon: MessageCircle },
   { label: "Appointments", path: "/appointments", icon: Calendar },
-];
-
-export const SYSTEM_HUB: HubTabDef[] = [
-  { label: "Settings", path: "/admin", icon: ServerCog },
-  { label: "DNC List", path: "/dnc", icon: Ban },
-  { label: "Audit Log", path: "/audit", icon: ScrollText },
 ];
