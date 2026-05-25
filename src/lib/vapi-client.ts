@@ -488,9 +488,10 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
           // between turbo / flash / multilingual / v3 mid-call. Each
           // model has subtly different prosody for the same voiceId,
           // which a caller hears as the agent "changing voice or
-          // cadence" halfway through. Matches the showcase + tenant
-          // assistant factory configuration.
-          ...(provider === "11labs" ? { model: "eleven_flash_v2_5" } : {}),
+          // cadence" halfway through. Matches the tenant assistant
+          // factory; turbo_v2_5 is the humanness/latency sweet spot
+          // for phone calls.
+          ...(provider === "11labs" ? { model: "eleven_turbo_v2_5" } : {}),
           ...(provider === "11labs" && speed !== 1.0 ? { speed } : {}),
           ...(provider === "11labs" ? { stability, similarityBoost, style, useSpeakerBoost } : {}),
         };
