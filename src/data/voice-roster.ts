@@ -18,7 +18,7 @@
  * `voiceId` when set, so this is purely a smarter default.
  */
 
-export type VoiceRosterEntry = {
+type VoiceRosterEntry = {
   /** ElevenLabs voice id — used in vapi-assistant-factory.ts voice payload. */
   voiceId: string;
   /** Human label surfaced in FleetSettings + analytics, not the API. */
@@ -37,7 +37,7 @@ export type VoiceRosterEntry = {
  * distinctly different timbres that read as "polished, varied fleet"
  * on the first dashboard load.
  */
-export const VOICE_ROSTER: ReadonlyArray<VoiceRosterEntry> = [
+const VOICE_ROSTER: ReadonlyArray<VoiceRosterEntry> = [
   // Platform default — Adam · Deep (warm-male). Broad fit across the
   // service-business verticals we wedge into.
   { voiceId: "pNInz6obpgDQGcFmaJgB", label: "Adam · Deep (Wireline Default)", vibe: "warm-male" },

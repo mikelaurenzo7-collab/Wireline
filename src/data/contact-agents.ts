@@ -111,14 +111,12 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
   },
 ];
 
-export type DemoAgent = ContactAgent;
-
 /**
  * 7 vertical demo agents — each role-plays one industry Wireline
  * sells into, so a prospect can call the line for their own vertical
  * and hear exactly what their customers would experience.
  */
-export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
+export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
   {
     name: "Ria",
     role: "Demo Concierge",
@@ -221,4 +219,3 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
 ];
 
 export const WIRELINE_FEATURED_TEAM_AGENT = WIRELINE_CONTACT_AGENTS[0]!;
-export const WIRELINE_DEMO_CONCIERGE_AGENT = WIRELINE_DEMO_AGENTS[0]!;
