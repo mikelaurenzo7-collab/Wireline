@@ -33,7 +33,6 @@ import {
   Award,
   CalendarClock,
   Repeat,
-  Kanban,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Cadences from "./Cadences";
@@ -1431,31 +1430,6 @@ export default function OutboundDialer() {
                       loading={callbacksLoading}
                       onRefresh={fetchCallbacks}
                     />
-                  </Panel>
-                ),
-              },
-              {
-                id: "pipeline",
-                label: "Pipeline",
-                icon: Kanban,
-                content: (
-                  <Panel icon={Kanban} hint="Stage view" title="" accent="#10B981">
-                    <div className="h-full flex items-center justify-center text-center px-6">
-                      <div>
-                        <Kanban className="w-7 h-7 text-brand mx-auto mb-3" />
-                        <p className="text-[12px] text-ink/80 mb-3 max-w-md leading-relaxed">
-                          The full Kanban view lives at{" "}
-                          <code className="text-brand">/pipeline</code> — drag leads between Cold /
-                          Contacted / Qualified / Demo / Won / Lost.
-                        </p>
-                        <Link
-                          to="/pipeline"
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand text-on-brand text-[11px] uppercase tracking-[0.28em] hover:bg-brand/90 transition-colors"
-                        >
-                          Open pipeline →
-                        </Link>
-                      </div>
-                    </div>
                   </Panel>
                 ),
               },

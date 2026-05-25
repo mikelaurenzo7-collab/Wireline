@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import ConfirmModal from "./ConfirmModal";
@@ -89,7 +89,9 @@ export default function AdminSettings() {
     | "team"
     | "flywheel"
     | "system"
-    | "activity";
+    | "activity"
+    | "dnc"
+    | "audit";
   const VALID_TABS: AdminTab[] = [
     "branding",
     "carrier",
@@ -100,6 +102,8 @@ export default function AdminSettings() {
     "flywheel",
     "system",
     "activity",
+    "dnc",
+    "audit",
   ];
   // Honor ?tab=<name> in the URL so deep links (e.g. the TrialBanner
   // "Upgrade now" CTA pointing at /admin?tab=subscription) land on
@@ -361,53 +365,66 @@ export default function AdminSettings() {
     }
   };
 
+  // Visually grouped Admin tabs. The flat 9-tab strip overwhelmed the
+  // operator with equal-weight options; grouping by concept (Account /
+  // Brand / Voice / Growth / System) gives the eye anchor points and
+  // makes the tab strip easier to scan.
+  const TAB_GROUPS: { tabs: { id: AdminTab; label: string }[] }[] = [
+    {
+      tabs: [
+        { id: "subscription", label: "Billing" },
+        { id: "team", label: "Team" },
+      ],
+    },
+    { tabs: [{ id: "branding", label: "Branding" }] },
+    {
+      tabs: [
+        { id: "carrier", label: "Carrier" },
+        { id: "voices", label: "Voices" },
+        { id: "pronunciation", label: "Pronunciation" },
+      ],
+    },
+    { tabs: [{ id: "flywheel", label: "Growth" }] },
+    {
+      tabs: [
+        { id: "system", label: "System" },
+        { id: "activity", label: "Activity" },
+      ],
+    },
+    {
+      tabs: [
+        { id: "dnc", label: "DNC" },
+        { id: "audit", label: "Audit" },
+      ],
+    },
+  ];
+
   const tabSwitcher = (
     <div
       className="flex gap-0.5 p-0.5 rounded-xl glass border border-white/10 overflow-x-auto snap-x snap-mandatory scrollbar-hide max-w-full"
       role="tablist"
     >
-      {(
-        [
-          "branding",
-          "carrier",
-          "voices",
-          "pronunciation",
-          "subscription",
-          "team",
-          "flywheel",
-          "system",
-          "activity",
-        ] as const
-      ).map((t) => (
-        <button
-          key={t}
-          role="tab"
-          aria-selected={activeTab === t}
-          aria-controls={`admin-panel-${t}`}
-          onClick={() => setActiveTab(t)}
-          className={cn(
-            "shrink-0 snap-start px-2.5 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.12em] transition-colors whitespace-nowrap",
-            activeTab === t ? "bg-brand/20 text-brand" : "text-muted hover:text-ink",
+      {TAB_GROUPS.map((group, gi) => (
+        <React.Fragment key={gi}>
+          {gi > 0 && (
+            <span aria-hidden="true" className="shrink-0 self-center w-px h-4 bg-white/12 mx-1" />
           )}
-        >
-          {t === "branding"
-            ? "Branding"
-            : t === "carrier"
-              ? "Carrier"
-              : t === "voices"
-                ? "Voices"
-                : t === "pronunciation"
-                  ? "Pronunciation"
-                  : t === "subscription"
-                    ? "Billing"
-                    : t === "team"
-                      ? "Team"
-                      : t === "flywheel"
-                        ? "Growth"
-                        : t === "system"
-                          ? "System"
-                          : "Activity"}
-        </button>
+          {group.tabs.map((t) => (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={activeTab === t.id}
+              aria-controls={`admin-panel-${t.id}`}
+              onClick={() => setActiveTab(t.id)}
+              className={cn(
+                "shrink-0 snap-start px-2.5 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.12em] transition-colors whitespace-nowrap",
+                activeTab === t.id ? "bg-brand/20 text-brand" : "text-muted hover:text-ink",
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </React.Fragment>
       ))}
     </div>
   );
