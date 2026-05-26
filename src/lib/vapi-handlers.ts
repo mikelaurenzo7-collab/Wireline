@@ -363,6 +363,9 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
           sourceCallId: call?.id,
         });
       }
+    } catch (gemErr) {
+      log.warn("Gemini fallback post-call analysis failed", { error: getErrorMessage(gemErr) });
+    }
   }
 
   // Invalidate cache so dashboard immediately reflects the new call log and enrichment.
