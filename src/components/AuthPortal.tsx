@@ -57,6 +57,57 @@ const AUTH_PORTAL_WIRELINE_AGENTS = WIRELINE_CONTACT_AGENTS.slice(0, -1);
 const AUTH_PORTAL_DEMO_AGENTS = WIRELINE_DEMO_AGENTS.slice(0, -1);
 
 /**
+ * Normalize a JSON error payload into a human-readable string.
+ *
+ * Servers (and intermediate proxies / Vercel / Express defaults) can
+ * return any of these shapes for an error body:
+ *   { error: "Bad thing" }
+ *   { error: { message: "Bad thing", code: "X" } }
+ *   { error: { ... } }            // no message field
+ *   { message: "Bad thing" }
+ *   { ... }                       // no error/message at all
+ *
+ * If we naïvely do `throw new Error(j.error)` with an object value, the
+ * Error constructor calls `String(obj)` which yields the dreaded
+ * "[object Object]" — surfaced to the user as e.g.
+ * "Google sign-in failed: [object Object]". This helper strips that
+ * away and returns either a string or null (so the caller can fall
+ * back to a status-aware default).
+ */
+function extractServerErrorMessage(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  const p = payload as Record<string, unknown>;
+  const candidates: unknown[] = [p.error, p.message, (p.error as any)?.message];
+  for (const c of candidates) {
+    if (typeof c === "string" && c.trim()) return c.trim();
+  }
+  // Last resort: serialize the error object so the user still sees
+  // *something* useful, but never the literal "[object Object]".
+  if (p.error && typeof p.error === "object") {
+    try {
+      const s = JSON.stringify(p.error);
+      if (s && s !== "{}") return s.slice(0, 240);
+    } catch {
+      /* ignore */
+    }
+  }
+  return null;
+}
+
+/**
+ * Convert a thrown value into a clean string message. Filters out the
+ * "[object Object]" sentinel that occurs when `new Error(someObject)`
+ * was constructed somewhere upstream.
+ */
+function cleanThrownMessage(e: unknown): string | null {
+  const raw = (e as { message?: unknown })?.message;
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  if (!trimmed || trimmed === "[object Object]") return null;
+  return trimmed;
+}
+
+/**
  * Sign-in / sign-up shortcut row. Most business users have a Google
  * or Microsoft identity already; skipping the email-and-password
  * dance for them is a meaningful conversion lift. Buttons start the
@@ -130,8 +181,10 @@ function OAuthSignInButtons({
         );
       }
       if (!res.ok) {
+        const serverMsg = extractServerErrorMessage(j);
         throw new Error(
-          j?.error || `Could not start ${provider} sign-in (HTTP ${res.status}). Please try again.`,
+          serverMsg ||
+            `Could not start ${provider} sign-in (HTTP ${res.status}). Please try again.`,
         );
       }
       const url = j?.url;
@@ -139,13 +192,13 @@ function OAuthSignInButtons({
         throw new Error("Received invalid sign-in URL from server.");
       }
       window.location.assign(url);
-    } catch (e: any) {
+    } catch (e: unknown) {
       setPending(null);
       const providerLabel = provider.charAt(0).toUpperCase() + provider.slice(1);
-      const message =
-        e?.message && typeof e.message === "string"
-          ? `${providerLabel} sign-in failed: ${e.message}`
-          : `${providerLabel} sign-in failed. Please try again or use email below.`;
+      const detail = cleanThrownMessage(e);
+      const message = detail
+        ? `${providerLabel} sign-in failed: ${detail}`
+        : `${providerLabel} sign-in failed. Please try again or use email below.`;
       console.warn("OAuth start failed", message);
       onError?.(message);
     }
@@ -332,8 +385,9 @@ export default function AuthPortal() {
         }
         if (!res.ok) {
           // Non-JSON or error body — use status-aware message
+          const serverMsg = extractServerErrorMessage(data);
           const msg =
-            data?.error ||
+            serverMsg ||
             (res.status >= 500
               ? "Server temporarily unavailable. Please try again shortly."
               : "Password reset request failed");
@@ -355,8 +409,9 @@ export default function AuthPortal() {
           data = {};
         }
         if (!res.ok) {
+          const serverMsg = extractServerErrorMessage(data);
           const msg =
-            data?.error ||
+            serverMsg ||
             (res.status >= 500
               ? "Server temporarily unavailable. Please try again shortly."
               : "Authentication failed");
@@ -368,8 +423,8 @@ export default function AuthPortal() {
           user: data.user,
         });
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(cleanThrownMessage(err) || "Authentication failed. Please try again.");
     } finally {
       setLoading(false);
     }
