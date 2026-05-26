@@ -1,6 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Keyboard, LogOut, Settings, CreditCard, ChevronDown, Crown } from "lucide-react";
+import {
+  Menu,
+  X,
+  Keyboard,
+  LogOut,
+  Settings,
+  CreditCard,
+  ChevronDown,
+  Crown,
+  PlugZap,
+  LifeBuoy,
+  Headphones,
+} from "lucide-react";
 import WirelineMark from "../WirelineMark";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../../contexts/AuthContext";
@@ -192,12 +204,12 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
               );
               if (visibleItems.length === 0) return null;
               return (
-              <React.Fragment key={group.label}>
-                {gIdx > 0 && (
-                  <span aria-hidden="true" className="mx-0.5 h-4 w-px bg-white/10 shrink-0" />
-                )}
-                {visibleItems.map((item) => renderNavItem(item))}
-              </React.Fragment>
+                <React.Fragment key={group.label}>
+                  {gIdx > 0 && (
+                    <span aria-hidden="true" className="mx-0.5 h-4 w-px bg-white/10 shrink-0" />
+                  )}
+                  {visibleItems.map((item) => renderNavItem(item))}
+                </React.Fragment>
               );
             })}
           </nav>
@@ -284,7 +296,25 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                         <Settings className="w-3.5 h-3.5 text-muted" />
                         Settings
                       </Link>
-                      {/* Founder Dashboard — only visible to the platform founder */}
+                      <Link
+                        to="/integrations"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
+                        role="menuitem"
+                      >
+                        <PlugZap className="w-3.5 h-3.5 text-muted" />
+                        Integrations
+                      </Link>
+                      <Link
+                        to="/help"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
+                        role="menuitem"
+                      >
+                        <LifeBuoy className="w-3.5 h-3.5 text-muted" />
+                        Help &amp; support
+                      </Link>
+                      {/* Founder Dashboard — only visible to the platform founder (internal platform meta) */}
                       {user?.email === "mikelaurenzo7@gmail.com" && (
                         <Link
                           to="/founder"
@@ -296,6 +326,16 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                           Founder Dashboard
                         </Link>
                       )}
+                      {/* Supervisor Cockpit — available to all authenticated users (client-facing operational tool) */}
+                      <Link
+                        to="/cockpit"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
+                        role="menuitem"
+                      >
+                        <Headphones className="w-3.5 h-3.5 text-muted" />
+                        Supervisor Cockpit
+                      </Link>
                     </div>
                     <div className="border-t border-black/8 py-1">
                       <button
@@ -387,14 +427,14 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                   );
                   if (visibleItems.length === 0) return null;
                   return (
-                  <div key={group.label}>
-                    <div className="px-2 mb-1 text-[8px] font-semibold uppercase tracking-[0.42em] text-muted/55">
-                      {group.label}
+                    <div key={group.label}>
+                      <div className="px-2 mb-1 text-[8px] font-semibold uppercase tracking-[0.42em] text-muted/55">
+                        {group.label}
+                      </div>
+                      <div className="space-y-0.5">
+                        {visibleItems.map((item) => renderNavItem(item, { variant: "drawer" }))}
+                      </div>
                     </div>
-                    <div className="space-y-0.5">
-                      {visibleItems.map((item) => renderNavItem(item, { variant: "drawer" }))}
-                    </div>
-                  </div>
                   );
                 })}
               </nav>

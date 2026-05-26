@@ -36,7 +36,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: "Workspace",
     items: [
       {
-        label: "Home",
+        label: "Live Ops",
         path: "/",
         icon: LayoutGrid,
         dataTour: "dashboard",
@@ -57,14 +57,14 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         dataTour: "training",
         matches: ["/knowledge"],
       },
-      { label: "Cockpit", path: "/cockpit", icon: Headphones, ownerOnly: true },
+      { label: "Cockpit", path: "/cockpit", icon: Headphones },
     ],
   },
   {
-    label: "Channels",
+    label: "Activity",
     items: [
       {
-        label: "Channels",
+        label: "Activity",
         path: "/logs",
         icon: Radio,
         matches: ["/outbound", "/inbox", "/appointments"],
@@ -72,18 +72,10 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { label: "Pipeline", path: "/pipeline", icon: Kanban },
     ],
   },
-  {
-    label: "System",
-    items: [
-      { label: "Integrations", path: "/integrations", icon: PlugZap },
-      { label: "Settings", path: "/admin", icon: ServerCog, matches: ["/dnc", "/audit"] },
-      { label: "Help", path: "/help", icon: LifeBuoy },
-    ],
-  },
 ];
 
 export const PAGE_TITLES: Record<string, string> = {
-  "/": "Home",
+  "/": "Live Ops",
   "/triage": "Triage",
   "/appointments": "Appointments",
   "/logs": "Call Logs",

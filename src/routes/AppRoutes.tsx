@@ -23,7 +23,7 @@ const KnowledgeBaseManager = lazy(() => import("../components/KnowledgeBaseManag
 const LiveMonitor = lazy(() => import("../components/LiveMonitor"));
 const DncManager = lazy(() => import("../components/DncManager"));
 const AuditLog = lazy(() => import("../components/AuditLog"));
-const CommandCenter = lazy(() => import("../pages/CommandCenter"));
+const LiveOps = lazy(() => import("../pages/CommandCenter"));
 const HelpCenter = lazy(() => import("../components/HelpCenter"));
 const Pipeline = lazy(() => import("../components/Pipeline"));
 const FounderDashboard = lazy(() => import("../components/FounderDashboard"));
@@ -38,7 +38,7 @@ export default function AppRoutes() {
             element={
               <PageTransition>
                 <ErrorBoundary>
-                  <CommandCenter />
+                  <LiveOps />
                 </ErrorBoundary>
               </PageTransition>
             }
@@ -126,16 +126,8 @@ export default function AppRoutes() {
               </PageTransition>
             }
           />
-          <Route
-            path="/cockpit"
-            element={
-              <PageTransition>
-                <ErrorBoundary>
-                  <SupervisorCockpit />
-                </ErrorBoundary>
-              </PageTransition>
-            }
-          />
+          {/* /cockpit redirects to unified Live Ops at home */}
+          <Route path="/cockpit" element={<Navigate to="/" replace />} />
           <Route
             path="/outbound"
             element={

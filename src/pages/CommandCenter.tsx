@@ -55,7 +55,7 @@ const SENTIMENT_COLORS = {
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 
-export default function CommandCenter() {
+export default function LiveOps() {
   const { user } = useAuth();
   const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
   const navigate = useNavigate();

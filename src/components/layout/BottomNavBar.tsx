@@ -22,7 +22,7 @@ interface NavTab {
 
 const PRIMARY_TABS: readonly NavTab[] = [
   {
-    label: "Home",
+    label: "Live Ops",
     path: "/",
     icon: LayoutGrid,
     matches: ["/dashboard", "/command", "/live", "/cockpit"],
@@ -35,7 +35,7 @@ const PRIMARY_TABS: readonly NavTab[] = [
     badgePaths: ["/triage"],
   },
   {
-    label: "Channels",
+    label: "Activity",
     path: "/logs",
     icon: Radio,
     matches: ["/outbound", "/inbox", "/appointments", "/sms"],
