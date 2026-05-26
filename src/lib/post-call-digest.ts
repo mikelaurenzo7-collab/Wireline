@@ -114,7 +114,7 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
     log.warn("post-call digest: unparseable callLogId — skipping", {
       callLogId: String(ctx.callLogId),
     });
-    return { outcomeTag, campaignSource, crmLogged: false, emailSent: false };
+    return { outcomeTag, campaignSource, crmLogged: false, emailSent: false, csatSent: false };
   }
 
   // 1. Write outcome + campaign back to the call log
@@ -201,7 +201,7 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
         userId: ctx.userId,
         customerNumber: ctx.customerNumber,
         agentName: ctx.agentName,
-        callLogId: ctx.callLogId,
+        callLogId: String(ctx.callLogId),
       });
       csatSent = csatResult.sent;
     }

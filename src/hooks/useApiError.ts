@@ -13,35 +13,35 @@ export function useApiError() {
 
   const handleApiError = async (
     response: Response,
-    fallbackMessage = "An unexpected error occurred"
+    fallbackMessage = "An unexpected error occurred",
   ) => {
     try {
       const data = (await response.json()) as ApiErrorResponse;
-      
+
       // If we have validation issues from Zod, format them nicely
       if (data.code === "VALIDATION_FAILED" && data.issues?.length) {
-        const issueList = data.issues.map(i => i.message).join(", ");
+        const issueList = data.issues.map((i) => i.message).join(", ");
         toast({
+          type: "error",
           title: "Invalid input",
-          description: issueList,
-          variant: "destructive",
+          message: issueList,
         });
         return data;
       }
 
       toast({
+        type: "error",
         title: "Error",
-        description: data.error || fallbackMessage,
-        variant: "destructive",
+        message: data.error || fallbackMessage,
       });
       return data;
     } catch (e) {
       // Failed to parse JSON error response
       captureException(e);
       toast({
+        type: "error",
         title: "Error",
-        description: fallbackMessage,
-        variant: "destructive",
+        message: fallbackMessage,
       });
       return { error: fallbackMessage };
     }
@@ -51,9 +51,9 @@ export function useApiError() {
     captureException(error);
     const message = error instanceof Error ? error.message : fallbackMessage;
     toast({
+      type: "error",
       title: "Error",
-      description: message,
-      variant: "destructive",
+      message: message,
     });
   };
 

@@ -25,7 +25,7 @@ import {
   Receipt,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { authFetch, safeJson } from "../lib/api";
+import { authFetch, safeJson, isApiErrorBody } from "../lib/api";
 import { cn } from "../lib/utils";
 import { useToast } from "../contexts/ToastContext";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
@@ -581,7 +581,8 @@ export default function AgentTemplates() {
       });
       const data = await safeJson(resp);
       if (!resp.ok) {
-        toastError("Deployment failed", data.error || "Please try again.");
+        const errorMessage = isApiErrorBody(data) ? data.error : "Please try again.";
+        toastError("Deployment failed", errorMessage);
         setDeploying(null);
         return;
       }

@@ -51,7 +51,7 @@ import { authFetch, readApiJson } from "../lib/api";
 async function fetchInsight<T>(url: string): Promise<T> {
   const res = await authFetch(url);
   const out = await readApiJson<T>(res);
-  if (!out.ok) throw new Error(out.error);
+  if (out.ok === false) throw new Error(out.error);
   return out.data;
 }
 import { cn } from "../lib/utils";
@@ -1265,19 +1265,22 @@ function SpendBudgetCard() {
         authFetch("/api/spend/status"),
         authFetch("/api/spend/budget"),
       ]);
-      const statusOut = await readApiJson(statusRes);
+      const statusOut = await readApiJson<Record<string, unknown>>(statusRes);
       const budgetOut = await readApiJson<{ budget?: Record<string, unknown> }>(budgetRes);
-      if (!statusOut.ok) throw new Error(statusOut.error);
-      if (!budgetOut.ok) throw new Error(budgetOut.error);
+      if (statusOut.ok === false) throw new Error(statusOut.error);
+      if (budgetOut.ok === false) throw new Error(budgetOut.error);
       const s = statusOut.data;
       const b = budgetOut.data;
       setStatus(s);
       setBudget(b.budget);
+      const budgetData = b.budget as Record<string, unknown> | undefined;
       setDraft({
-        monthly_limit_usd: b.budget?.monthly_limit_usd ? String(b.budget.monthly_limit_usd) : "",
-        warn_threshold_pct: b.budget?.warn_threshold_pct ?? 80,
-        hard_cap: !!b.budget?.hard_cap,
-        enabled: b.budget?.enabled !== false,
+        monthly_limit_usd: budgetData?.monthly_limit_usd
+          ? String(budgetData.monthly_limit_usd)
+          : "",
+        warn_threshold_pct: (budgetData?.warn_threshold_pct as number) ?? 80,
+        hard_cap: !!budgetData?.hard_cap,
+        enabled: budgetData?.enabled !== false,
       });
     } finally {
       setLoading(false);
@@ -1304,7 +1307,7 @@ function SpendBudgetCard() {
         }),
       });
       const out = await readApiJson(r);
-      if (!out.ok) throw new Error(out.error);
+      if (out.ok === false) throw new Error(out.error);
       setSavedAt(Date.now());
       await refresh();
     } catch (e: any) {
@@ -1636,12 +1639,17 @@ function QualityView({ days }: { days: number }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ limit: 20, days }),
       });
-      const out = await readApiJson<{ error?: string; scored?: number; total?: number }>(res);
-      if (!out.ok) throw new Error(out.error);
+      const out = await readApiJson<{
+        error?: string;
+        scored?: number;
+        total?: number;
+        failed?: number;
+      }>(res);
+      if (out.ok === false) throw new Error(out.error);
       const d = out.data;
       if (d.scored === 0 && d.total === 0) {
         toastSuccess("All caught up", "No unscored calls found in this period.");
-      } else if (d.failed > 0) {
+      } else if ((d.failed ?? 0) > 0) {
         toastWarning(
           "Batch QA partial",
           `Scored ${d.scored} call${d.scored === 1 ? "" : "s"}, ${d.failed} failed. Check logs for details.`,

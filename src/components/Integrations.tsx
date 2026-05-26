@@ -42,7 +42,7 @@ export default function Integrations() {
     try {
       const res = await authFetch("/api/emails/accounts");
       const out = await readApiJson<{ accounts?: typeof accounts }>(res);
-      if (!out.ok) throw new Error(out.error);
+      if (out.ok === false) throw new Error(out.error);
       setAccounts(out.data.accounts || []);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Check your connection and refresh.";
@@ -56,7 +56,7 @@ export default function Integrations() {
     try {
       const res = await authFetch("/api/agents");
       const out = await readApiJson<{ agents?: typeof agents }>(res);
-      if (!out.ok) throw new Error(out.error);
+      if (out.ok === false) throw new Error(out.error);
       setAgents(out.data.agents || []);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Check your connection and refresh.";
@@ -101,7 +101,8 @@ export default function Integrations() {
     try {
       const res = await authFetch("/api/oauth/google/url");
       const out = await readApiJson<{ url?: string; error?: string }>(res);
-      if (!out.ok || out.data.error) throw new Error(out.data.error || out.error);
+      if (out.ok === false) throw new Error(out.error);
+      if (out.data.error) throw new Error(out.data.error);
       const url = out.data.url;
       if (!url) throw new Error("OAuth URL missing");
       openOAuthPopup(url);
@@ -114,7 +115,8 @@ export default function Integrations() {
     try {
       const res = await authFetch("/api/oauth/microsoft/url");
       const out = await readApiJson<{ url?: string; error?: string }>(res);
-      if (!out.ok || out.data.error) throw new Error(out.data.error || out.error);
+      if (out.ok === false) throw new Error(out.error);
+      if (out.data.error) throw new Error(out.data.error);
       const url = out.data.url;
       if (!url) throw new Error("OAuth URL missing");
       const win = window.open(url, "oauth_popup", "width=600,height=820");
@@ -129,7 +131,8 @@ export default function Integrations() {
     try {
       const res = await authFetch("/api/oauth/yahoo/url");
       const out = await readApiJson<{ url?: string; error?: string }>(res);
-      if (!out.ok || out.data.error) throw new Error(out.data.error || out.error);
+      if (out.ok === false) throw new Error(out.error);
+      if (out.data.error) throw new Error(out.data.error);
       const url = out.data.url;
       if (!url) throw new Error("OAuth URL missing");
       openOAuthPopup(url);
@@ -179,18 +182,30 @@ export default function Integrations() {
         error?: string;
         code?: string;
       }>(res);
-      const data = out.ok ? out.data : { error: out.error, code: out.code };
 
-      if (!out.ok || data.ok === false) {
-        // No-account case is informational — point the operator at the
-        // OAuth buttons immediately below this banner.
+      if (out.ok === false) {
+        // Handle HTTP error response
+        if (out.code === "EMAIL_ACCOUNT_NOT_CONNECTED") {
+          toastError(
+            "No email accounts connected",
+            out.error ?? "Connect Gmail or Outlook below to start syncing.",
+          );
+        } else {
+          toastError("Sync failed", out.error ?? `HTTP ${res.status}`);
+        }
+        return;
+      }
+
+      const data = out.data;
+      if (data.ok === false) {
+        // Handle application-level error
         if (data.code === "EMAIL_ACCOUNT_NOT_CONNECTED") {
           toastError(
             "No email accounts connected",
             data.error ?? "Connect Gmail or Outlook below to start syncing.",
           );
         } else {
-          toastError("Sync failed", data.error ?? `HTTP ${res.status}`);
+          toastError("Sync failed", data.error ?? "Sync failed");
         }
         return;
       }
