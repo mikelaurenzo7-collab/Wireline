@@ -713,6 +713,7 @@ Today is ${currentDateTime}.
       // smartFormat handles "two five five five" → "2555" automatically
       // — critical for confirming phone numbers + appointment times.
       smartFormat: true,
+      endpointing: 40,
     },
     // Voicemail detection — Vapi's ML-based answering-machine detector.
     // When triggered, the assistant skips its first message + can
