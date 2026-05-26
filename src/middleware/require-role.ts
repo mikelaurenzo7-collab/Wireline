@@ -20,6 +20,7 @@ import type { Request, Response, NextFunction } from "express";
 import { eq, and, isNull, desc } from "drizzle-orm";
 import type { VercelPgDatabase } from "drizzle-orm/vercel-postgres";
 import * as schema from "../db/schema";
+import { log } from "../lib/server-context";
 import {
   ROLE_PERMISSIONS,
   ROLE_HIERARCHY,
@@ -130,7 +131,7 @@ export function createRbacMiddleware(deps: RbacDeps) {
                 userAgent: req.get("user-agent") ?? undefined,
                 metadata: { required_permission: permission, role },
               })
-              .catch(() => {});
+              .catch((e: unknown) => log.warn("audit log failed", { error: String(e) }));
           }
           deny(res, 403, `Forbidden: role "${role}" lacks permission "${permission}"`, "FORBIDDEN");
           return;

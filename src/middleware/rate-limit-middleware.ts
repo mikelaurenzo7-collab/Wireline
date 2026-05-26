@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Express middleware operates on heterogeneous request/response shapes. */
-import { auditLogger } from "../lib/server-context";
+import { auditLogger, log } from "../lib/server-context";
 import { rateLimit, distributedLimiterStatus } from "../lib/rate-limit";
 
 const OAUTH_RATE_WINDOW_MS = 5 * 60_000;
@@ -40,7 +40,7 @@ export async function emailRateLimiter(req: any, res: any, next: any) {
   if (!result.allowed) {
     void auditLogger
       .logSecurity("rate_limit_exceeded", { userId, resource: "email_api", ip: req.ip })
-      .catch(() => {});
+      .catch((e: unknown) => log.warn("audit log failed", { error: String(e) }));
     return res.status(429).json({ error: "Email rate limit exceeded.", code: "EMAIL_RATE_LIMIT" });
   }
   next();
@@ -60,7 +60,7 @@ export async function dialRateLimiter(req: any, res: any, next: any) {
   if (!result.allowed) {
     void auditLogger
       .logSecurity("rate_limit_exceeded", { userId, resource: "outbound_dial", ip: req.ip })
-      .catch(() => {});
+      .catch((e: unknown) => log.warn("audit log failed", { error: String(e) }));
     return res.status(429).json({ error: "Dial rate limit exceeded.", code: "DIAL_RATE_LIMIT" });
   }
   next();
@@ -116,7 +116,7 @@ export async function signinRateLimiter(req: any, res: any, next: any) {
         ip: req.ip,
         userId: email,
       })
-      .catch(() => {});
+      .catch((e: unknown) => log.warn("audit log failed", { error: String(e) }));
     res.setHeader("Retry-After", Math.ceil(SIGNIN_RATE_WINDOW_MS / 1000));
     return res.status(429).json({
       error: "Too many sign-in attempts. Wait 15 minutes and try again.",
@@ -148,7 +148,7 @@ export async function signupRateLimiter(req: any, res: any, next: any) {
         resource: "auth_signup",
         ip: req.ip,
       })
-      .catch(() => {});
+      .catch((e: unknown) => log.warn("audit log failed", { error: String(e) }));
     res.setHeader("Retry-After", Math.ceil(SIGNUP_RATE_WINDOW_MS / 1000));
     return res.status(429).json({
       error: "Too many signup attempts. Wait 15 minutes and try again.",
@@ -180,7 +180,7 @@ export async function forgotPasswordRateLimiter(req: any, res: any, next: any) {
         ip: req.ip,
         userId: email,
       })
-      .catch(() => {});
+      .catch((e: unknown) => log.warn("audit log failed", { error: String(e) }));
     res.setHeader("Retry-After", Math.ceil(FORGOT_PASSWORD_RATE_WINDOW_MS / 1000));
     return res.status(429).json({
       error: "Too many password reset requests. Wait 15 minutes and try again.",

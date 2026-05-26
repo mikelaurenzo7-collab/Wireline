@@ -22,10 +22,37 @@
  */
 
 import { Router, Request, Response } from "express";
+import Twilio from "twilio";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { sanitizePhone } from "../lib/vapi-helpers";
+
+const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || "";
+
+/**
+ * Verify Twilio webhook signature. In production, rejects unsigned requests.
+ * In development, allows passthrough if TWILIO_AUTH_TOKEN is unset.
+ */
+function verifyTwilioSignature(req: Request): boolean {
+  if (!TWILIO_AUTH_TOKEN) {
+    // Dev mode — no token configured; allow passthrough
+    if (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") {
+      log.error("TWILIO_AUTH_TOKEN not configured in production — rejecting webhook");
+      return false;
+    }
+    return true;
+  }
+  const signature = req.headers["x-twilio-signature"] as string | undefined;
+  if (!signature) return false;
+
+  // Reconstruct the full URL Twilio used to sign
+  const protocol = req.headers["x-forwarded-proto"] || req.protocol;
+  const host = req.headers["host"] || "";
+  const url = `${protocol}://${host}${req.originalUrl}`;
+
+  return Twilio.validateRequest(TWILIO_AUTH_TOKEN, signature, url, req.body || {});
+}
 
 const router = Router();
 
@@ -91,6 +118,11 @@ async function lookupTenant(toNumber: string): Promise<string | null> {
 }
 
 router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
+  if (!verifyTwilioSignature(req)) {
+    log.warn("Twilio webhook signature verification failed", { path: req.path });
+    return res.status(403).send(twimlEmpty());
+  }
+
   // Twilio posts as form-urlencoded; Express needs body-parser registered
   // upstream. The server-context entry point already mounts urlencoded.
   const from = (req.body?.From as string | undefined) || "";
@@ -273,6 +305,11 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
  * to the business's human fallback number.
  */
 router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Response) => {
+  if (!verifyTwilioSignature(req)) {
+    log.warn("Twilio webhook signature verification failed", { path: req.path });
+    return res.status(403).send(twimlEmpty());
+  }
+
   const to = (req.body?.To as string | undefined) || "";
   const from = (req.body?.From as string | undefined) || "";
   log.error("VAPI FAILOVER TRIGGERED", { to, from });

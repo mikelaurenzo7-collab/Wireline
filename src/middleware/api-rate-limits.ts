@@ -7,6 +7,7 @@
 
 import { Request, Response, NextFunction } from "express";
 import { rateLimit, RateLimiterOptions, distributedLimiterStatus } from "../lib/rate-limit.js";
+import { log } from "../lib/server-context";
 
 // ──────────────────────────────────────────────────────────────────────
 //  Claude rate limiter — shared by server.ts and extracted route files.
@@ -96,10 +97,10 @@ function createRateLimiter(opts: RateLimiterOptions): RateLimitMiddleware {
       // Fail-OPEN on unexpected error — better to serve traffic than to
       // lock out everyone on rate limiter bugs.
 
-      console.error(
-        `[api-rate-limits] error in ${opts.bucket} limiter, fail-open:`,
-        getErrorMessage(err),
-      );
+      log.error("rate limiter error, fail-open", {
+        bucket: opts.bucket,
+        error: getErrorMessage(err),
+      });
       next();
     }
   };
@@ -160,10 +161,10 @@ export const jobsSweepRateLimit: RateLimitMiddleware = async (req, res, next) =>
     res.set("X-RateLimit-Reset", String(Math.ceil((Date.now() + result.resetMs) / 1000)));
     next();
   } catch (err) {
-    console.error(
-      `[api-rate-limits] error in ${opts.bucket} limiter, fail-open:`,
-      getErrorMessage(err),
-    );
+    log.error("rate limiter error, fail-open", {
+      bucket: opts.bucket,
+      error: getErrorMessage(err),
+    });
     next();
   }
 };
