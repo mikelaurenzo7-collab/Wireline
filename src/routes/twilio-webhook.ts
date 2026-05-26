@@ -186,6 +186,28 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
     return res.status(200).send(twimlReply("You have been resubscribed. Welcome back."));
   }
 
+  // ─── CSAT REPLY DETECTION ─────────────────────────────────────
+  // If the inbound body is a bare digit 1–5, treat it as a CSAT
+  // response to the most recent post-call satisfaction SMS we sent.
+  // processCsatReply finds the caller's latest call log and writes
+  // the score. Best-effort — never blocks or throws. We still fall
+  // through to thread storage below so the operator can see the
+  // reply in /inbox.
+  if (/^\s*[1-5]\s*$/.test(body)) {
+    try {
+      const { processCsatReply } = await import("../lib/csat-service");
+      await processCsatReply({
+        userId: tenantUserId,
+        customerNumber: fromNormalized,
+        score: parseInt(trimmed, 10),
+      });
+    } catch (e: any) {
+      log.warn("CSAT reply processing failed", { error: e?.message });
+    }
+    // Don't auto-reply — the CSAT SMS already told them what to do.
+    // Fall through to persist the message in the SMS thread below.
+  }
+
   // ─── TWO-WAY THREAD STORAGE ────────────────────────────────────
   // Persist the inbound message into the SMS inbox so operators can
   // see + reply from /inbox. Idempotent thread upsert keyed by

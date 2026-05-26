@@ -899,6 +899,30 @@ export const VAPI_TOOL_DEFS = {
       required: ["caller", "outcome", "details"],
     },
   },
+  log_to_google_sheets: {
+    name: "log_to_google_sheets",
+    description:
+      "Append a row to the operator's Wireline Call Log spreadsheet in Google Drive — records the caller, the outcome, and a short detail. Use at the end of a call to keep a running log the operator can review in Google Sheets.",
+    parameters: {
+      type: "object",
+      properties: {
+        caller: {
+          type: "string",
+          description: "The caller's name, or their phone number if no name was given.",
+        },
+        outcome: {
+          type: "string",
+          description:
+            "Short outcome label — e.g. 'Booked', 'Qualified lead', 'No answer', 'Escalated'.",
+        },
+        details: {
+          type: "string",
+          description: "One or two sentences summarizing what happened on the call.",
+        },
+      },
+      required: ["caller", "outcome", "details"],
+    },
+  },
 } as const;
 
 export type VapiToolName = keyof typeof VAPI_TOOL_DEFS;

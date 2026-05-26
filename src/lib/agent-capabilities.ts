@@ -37,6 +37,7 @@ export const AGENT_TOOL_NAME_VALUES = [
   "square_create_payment_link",
   "send_teams_message",
   "log_to_excel",
+  "log_to_google_sheets",
   "meta_submit_lead",
   "crm_create_contact",
   "crm_update_deal_stage",
@@ -59,7 +60,8 @@ export type ToolIntegration =
   | "shopify"
   | "square"
   | "microsoft_teams"
-  | "microsoft_excel";
+  | "microsoft_excel"
+  | "google_sheets";
 
 export interface AgentToolCatalogEntry {
   name: AgentToolName;
@@ -344,6 +346,14 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     group: "core",
     integration: "microsoft_excel",
   },
+  {
+    name: "log_to_google_sheets",
+    label: "Log call to Google Sheets",
+    description:
+      "Appends a row — caller, outcome, and details — to the operator's Wireline Call Log spreadsheet in Google Drive.",
+    group: "core",
+    integration: "google_sheets",
+  },
   // Meta CAPI
   {
     name: "meta_submit_lead",
@@ -437,6 +447,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "meta_submit_lead",
     "gemini_ground",
     "log_to_excel",
+    "log_to_google_sheets",
   ],
   customer_service: [
     "view_recent_interactions",
@@ -473,6 +484,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "square_create_payment_link",
     "square_send_invoice",
     "log_to_excel",
+    "log_to_google_sheets",
   ],
   // E-commerce support agents — handle online-store customer calls and
   // emails: order status, inventory, returns, address fixes. Shopify
@@ -506,6 +518,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "square_create_payment_link",
     "square_send_invoice",
     "log_to_excel",
+    "log_to_google_sheets",
   ],
   scheduler: [
     "view_recent_interactions",
@@ -542,6 +555,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "send_slack_notification",
     "send_teams_message",
     "log_to_excel",
+    "log_to_google_sheets",
   ],
   technical_support: [
     "view_recent_interactions",
@@ -567,6 +581,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "square_lookup_order",
     "square_lookup_customer",
     "log_to_excel",
+    "log_to_google_sheets",
   ],
   lead_qualifier: [
     "view_recent_interactions",
@@ -595,6 +610,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "meta_submit_lead",
     "gemini_ground",
     "log_to_excel",
+    "log_to_google_sheets",
   ],
   receptionist: [
     "view_recent_interactions",
@@ -640,6 +656,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "crm_log_call",
     "crm_create_contact",
     "log_to_excel",
+    "log_to_google_sheets",
   ],
   // Personal assistants — represent an individual person, not a business.
   // Focused on scheduling, message-taking, callbacks, and general
@@ -670,12 +687,13 @@ const PLAN_TOOL_UNLOCKS: Record<string, readonly AgentToolName[]> = {
   starter: [],
   personal: [],
   pro: ["enrich_lead", "gemini_ground", "send_contract"],
-  business: ["enrich_lead", "gemini_ground", "send_contract", "log_to_excel"],
+  business: ["enrich_lead", "gemini_ground", "send_contract", "log_to_excel", "log_to_google_sheets"],
   enterprise: [
     "enrich_lead",
     "gemini_ground",
     "send_contract",
     "log_to_excel",
+    "log_to_google_sheets",
     "send_slack_notification",
     "send_teams_message",
   ],

@@ -45,7 +45,6 @@ export async function sendPostCallCsatSms(params: {
     const [settings] = await drizzle
       .select({
         csatSmsEnabled: schema.settings.csatSmsEnabled,
-        twilioMessagingEnabled: schema.settings.twilioMessagingEnabled,
       })
       .from(schema.settings)
       .where(eq(schema.settings.userId, userId))
@@ -53,11 +52,6 @@ export async function sendPostCallCsatSms(params: {
 
     if (!settings?.csatSmsEnabled) {
       return { sent: false, reason: "csat_sms_disabled" };
-    }
-
-    // Gate 2: Twilio must be configured
-    if (!settings.twilioMessagingEnabled) {
-      return { sent: false, reason: "twilio_not_configured" };
     }
 
     // Gate 3: Valid phone number
@@ -89,8 +83,7 @@ export async function sendPostCallCsatSms(params: {
     const agent = agentName || "our team";
     const body = `How was your call with ${agent}? Reply 1-5 (1=poor, 5=great). Reply STOP to unsubscribe.`;
 
-    const result = await sendTenantMessage({
-      userId,
+    const result = await sendTenantMessage(userId, {
       to: e164,
       body,
     });

@@ -1081,6 +1081,29 @@ router.post("/api/vapi-webhook", async (req, res) => {
             }
           }
 
+          if (toolCall.function.name === "log_to_google_sheets") {
+            try {
+              const { caller, outcome, details } = toolCall.function.arguments || {};
+              if (agent?.user_id) {
+                const { logToGoogleSheets } = await import("../lib/google-sheets-service");
+                const ok = await logToGoogleSheets({
+                  userId: agent.user_id,
+                  caller: String(caller || "Unknown caller"),
+                  outcome: String(outcome || ""),
+                  details: String(details || ""),
+                });
+                push({
+                  toolCallId: toolCall.id,
+                  result: ok
+                    ? "Got it, I've logged that to the Google Sheets call record."
+                    : "The Google Sheets integration isn't connected for this account yet. I've noted the details though.",
+                });
+              }
+            } catch {
+              push({ toolCallId: toolCall.id, result: "I've noted the call details." });
+            }
+          }
+
           // Workflow Handlers
           if (toolCall.function.name === "generate_zoom_link") {
             try {

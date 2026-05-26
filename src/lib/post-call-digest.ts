@@ -95,6 +95,7 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
   campaignSource: string | null;
   crmLogged: boolean;
   emailSent: boolean;
+  csatSent: boolean;
 }> {
   const outcomeTag = classifyCallOutcome({
     summary: ctx.summary,
@@ -185,6 +186,29 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
     log.warn("post-call digest: auto_qa_score enqueue failed", { error: err?.message });
   }
 
+  // 5. Post-call CSAT SMS — opt-in, best effort.
+  //    Only fires for real conversations (>30s, not voicemail/DNC).
+  let csatSent = false;
+  try {
+    if (
+      ctx.customerNumber &&
+      outcomeTag !== "unreachable" &&
+      outcomeTag !== "dnc" &&
+      (ctx.durationSeconds ?? 0) > 30
+    ) {
+      const { sendPostCallCsatSms } = await import("./csat-service");
+      const csatResult = await sendPostCallCsatSms({
+        userId: ctx.userId,
+        customerNumber: ctx.customerNumber,
+        agentName: ctx.agentName,
+        callLogId: ctx.callLogId,
+      });
+      csatSent = csatResult.sent;
+    }
+  } catch (err: any) {
+    log.warn("post-call digest: CSAT SMS failed", { error: err?.message });
+  }
+
   log.info("Post-call digest completed", {
     userId: ctx.userId,
     callLogId: String(ctx.callLogId),
@@ -192,9 +216,10 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
     campaignSource,
     crmLogged,
     emailSent,
+    csatSent,
   });
 
-  return { outcomeTag, campaignSource, crmLogged, emailSent };
+  return { outcomeTag, campaignSource, crmLogged, emailSent, csatSent };
 }
 
 async function pickOperatorEmail(userId: string): Promise<string | null> {
