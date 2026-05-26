@@ -282,8 +282,17 @@ export default function CommandBar() {
       if (e.key === "Escape") setIsOpen(false);
     };
 
+    const handleOpenCommandBar = () => {
+      setIsOpen(true);
+    };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("wireline:open-command-bar", handleOpenCommandBar);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("wireline:open-command-bar", handleOpenCommandBar);
+    };
   }, []);
 
   const handleAction = useCallback((cmd: CommandItem) => {
