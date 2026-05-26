@@ -34,9 +34,15 @@ const TIERS: Tier[] = [
       "Call logs + transcripts + sentiment",
       "Web dashboard, no team seats",
       "Overage at $0.20 / min — rarely triggered",
-      "Add extra agents at $39/each",
+      "Add extra agents at $49/each",
     ],
-    notIncluded: ["Outbound campaigns", "Slack alerts", "Multi-user team"],
+    notIncluded: [
+      "Outbound campaigns",
+      "Slack alerts",
+      "Multi-user team",
+      "Voice cloning",
+      "AI coaching",
+    ],
   },
   {
     id: "starter",
@@ -48,13 +54,13 @@ const TIERS: Tier[] = [
     ctaHref: "/signup?plan=starter",
     features: [
       "3 AI voice agents",
-      "1,500 voice minutes / month (~50 min/day)",
+      "1,200 voice minutes / month (~40 min/day)",
       "3 connected mailboxes",
       "Outbound dialer (CSV upload, auto-dial)",
       "Live call monitor",
       "Up to 5 team seats",
       "Overage at $0.18 / min — only if you exceed",
-      "Add extra agents at $35/each",
+      "Add extra agents at $45/each",
     ],
   },
   {
@@ -68,15 +74,17 @@ const TIERS: Tier[] = [
     highlight: true,
     features: [
       "10 AI voice agents",
-      "6,000 voice minutes / month (~200 min/day)",
+      "5,000 voice minutes / month (~165 min/day)",
       "10 connected mailboxes",
       "Outbound dialer + email campaigns",
       "Slack alerts on key events",
       "Up to 25 team seats",
       "Advanced insights + funnel analysis",
       "Webhook + Action Engine",
+      "AI voice cloning + custom personalities",
+      "Post-call coaching + agent training",
       "Overage at $0.15 / min — best per-minute rate before Business",
-      "Add extra agents at $30/each",
+      "Add extra agents at $40/each",
     ],
   },
   {
@@ -89,14 +97,15 @@ const TIERS: Tier[] = [
     ctaHref: "/signup?plan=business",
     features: [
       "25 AI voice agents",
-      "15,000 voice minutes / month (~500 min/day)",
+      "12,000 voice minutes / month (~400 min/day)",
       "25 connected mailboxes",
       "SSO + audit log export",
       "Up to 50 team seats",
       "Everything in Pro",
+      "Dedicated success manager",
       "Priority support · Slack channel",
-      "Overage at $0.13 / min — lowest on platform outside Enterprise",
-      "Add extra agents at $25/each",
+      "Overage at $0.14 / min — lowest on platform outside Enterprise",
+      "Add extra agents at $35/each",
     ],
   },
   {
@@ -566,8 +575,8 @@ export default function Pricing() {
           <p className="text-[12px] text-muted/65">
             Voice minutes are pooled across all agents in your workspace. Overage is tier-based
             (Personal: $0.20/min · Starter: $0.18/min · Pro: $0.15/min · Business: $0.13/min) —
-            priced near our cost, not a profit center. Most teams stay well inside plan. Email volume
-            is unlimited on all plans.
+            priced near our cost, not a profit center. Most teams stay well inside plan. Email
+            volume is unlimited on all plans.
           </p>
         </motion.div>
       </section>
