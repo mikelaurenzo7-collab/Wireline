@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
+ 
 /**
  * Claude Model Constants & Tiering
  * ---------------------------------------------------------------------------
@@ -224,3 +224,59 @@ export const CLAUDE_MODEL_DEFAULT: string = process.env.ANTHROPIC_MODEL || CLAUD
  * exported alias so existing references continue to compile during the rollout.
  */
 export const DEFAULT_MODEL = CLAUDE_MODEL_DEFAULT;
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * WIRELINE LLM TIERING ARCHITECTURE (Single Source of Truth)
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * Wireline uses a deliberate two-tier LLM system optimized for the
+ * voice-first agent use case. This split is the core of the moat:
+ *
+ *   • Voice Runtime  → Gemini 3.5 Flash  (speed + price + streaming)
+ *   • Reasoning Layer → Claude Opus 4.7   (adaptive depth + tool reliability)
+ *
+ * RATIONALE
+ *
+ * Voice calls are latency-sensitive. Every 100 ms of added delay is
+ * perceived as "sluggish." Gemini 3.5 Flash delivers sub-250 ms first-token
+ * latency at the lowest price point for real-time streaming. No other
+ * model (Grok-2, GPT-4o, Claude Haiku) matches this combination in 2026.
+ *
+ * Pre-call briefs, post-call coaching, and integration orchestration
+ * require adaptive, multi-step reasoning: understanding context, choosing
+ * the right tool, self-correcting when a step fails, and producing
+ * structured output the rest of the system can trust. Claude Opus 4.7 is
+ * the strongest publicly available model at this class of task.
+ *
+ * Grok-2 is competitive with Claude Sonnet 4 / GPT-4o tier — not Opus 4.7.
+ * Grok-4 (expected later 2026) is the first xAI model positioned to compete
+ * at the Opus tier. Until then, Opus 4.7 remains the reasoning default.
+ *
+ * NEVER downgrade the reasoning layer below Opus without an explicit
+ * benchmark showing equivalent or better adaptive reasoning quality.
+ *
+ * TIER MAP
+ *
+ *   Voice Runtime        : Gemini 3.5 Flash   (VAPI_TENANT_DEFAULT_MODEL)
+ *   Voice Fallback       : GPT-4o             (VAPI_OPENAI_FALLBACK_MODEL)
+ *   Reasoning (default)  : Claude Opus 4.7    (CLAUDE_MODEL_DEFAULT)
+ *   Reasoning (simple)   : Claude Haiku 4.5   (selectModelForTask("simple"))
+ *   Grounded Search      : Gemini 2.5 Flash   (native googleSearchRetrieval)
+ *
+ * FILES THAT ENFORCE THIS
+ *
+ *   src/lib/claude-models.ts          — constants and resolveVapiVoiceModelSelection
+ *   src/lib/vapi-assistant-factory.ts — reads voiceLlmProvider/Model from settings
+ *   src/lib/vapi-client.ts            — same, for outbound
+ *   src/lib/claude-recipes.ts         — brief, coach, postCallAnalysis, dailyBrief
+ *   src/routes/health-routes.ts       — exposes tiering to /api/health
+ *
+ * COST MODEL (approximate, May 2026)
+ *
+ *   Voice (Gemini Flash)  : $0.15–1.25 per 1M tokens  — 80%+ of total spend
+ *   Reasoning (Opus)      : $15–75 per 1M tokens     — high-value, low-volume
+ *
+ * When Grok-4 is available and benchmarked, this comment block will be
+ * updated. Until then, the tiering above is the production contract.
+ */

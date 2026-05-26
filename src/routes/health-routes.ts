@@ -112,6 +112,23 @@ router.get("/internal", healthRateLimiter, authenticateUser, async (_req, res) =
     app_model: CLAUDE_MODEL_DEFAULT,
     voice_agent_model: VAPI_TENANT_DEFAULT_MODEL,
     voice_agent_premium_model: VAPI_PREMIUM_MODEL,
+    llm_tiering: {
+      voice_runtime: {
+        provider: "google",
+        model: VAPI_TENANT_DEFAULT_MODEL,
+        reason: "sub-250ms first-token latency, native streaming, lowest cost for real-time",
+      },
+      reasoning_layer: {
+        provider: "anthropic",
+        model: CLAUDE_MODEL_DEFAULT,
+        reason: "highest adaptive reasoning depth for briefs, coaching, orchestration",
+      },
+      grounded_search: {
+        provider: "google",
+        model: "gemini-2.5-flash",
+        reason: "native googleSearchRetrieval tool with citations",
+      },
+    },
     timestamp: new Date().toISOString(),
   });
 });
