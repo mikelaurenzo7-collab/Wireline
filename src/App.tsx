@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import AppShell from "./components/layout/AppShell";
 import NotFound from "./components/layout/NotFound";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { BrandingProvider } from "./contexts/BrandingContext";
 import { MotionConfig } from "motion/react";
 
@@ -19,12 +20,24 @@ const Compare = lazy(() => import("./pages/Compare"));
 const About = lazy(() => import("./pages/About"));
 const Showcase = lazy(() => import("./pages/Showcase"));
 
-const PrivacyPolicy = lazy(() => import("./components/LegalPage").then((m) => ({ default: m.PrivacyPolicy })));
-const TermsOfService = lazy(() => import("./components/LegalPage").then((m) => ({ default: m.TermsOfService })));
-const DataDeletion = lazy(() => import("./components/LegalPage").then((m) => ({ default: m.DataDeletion })));
-const ZoomDocs = lazy(() => import("./components/LegalPage").then((m) => ({ default: m.ZoomDocs })));
-const ChangelogPage = lazy(() => import("./components/Changelog").then((m) => ({ default: m.ChangelogPage })));
-const SupportPage = lazy(() => import("./components/SupportPage").then((m) => ({ default: m.SupportPage })));
+const PrivacyPolicy = lazy(() =>
+  import("./components/LegalPage").then((m) => ({ default: m.PrivacyPolicy })),
+);
+const TermsOfService = lazy(() =>
+  import("./components/LegalPage").then((m) => ({ default: m.TermsOfService })),
+);
+const DataDeletion = lazy(() =>
+  import("./components/LegalPage").then((m) => ({ default: m.DataDeletion })),
+);
+const ZoomDocs = lazy(() =>
+  import("./components/LegalPage").then((m) => ({ default: m.ZoomDocs })),
+);
+const ChangelogPage = lazy(() =>
+  import("./components/Changelog").then((m) => ({ default: m.ChangelogPage })),
+);
+const SupportPage = lazy(() =>
+  import("./components/SupportPage").then((m) => ({ default: m.SupportPage })),
+);
 
 function AppContent() {
   const { user } = useAuth();
@@ -161,7 +174,9 @@ function AppContent() {
   if (location.pathname === "/reset-password") {
     return (
       <Suspense fallback={<div className="min-h-dvh" />}>
-        <ResetPassword />
+        <ErrorBoundary>
+          <ResetPassword />
+        </ErrorBoundary>
       </Suspense>
     );
   }
@@ -172,7 +187,9 @@ function AppContent() {
   if (location.pathname === "/auth/oauth-complete") {
     return (
       <Suspense fallback={<div className="min-h-dvh" />}>
-        <OAuthComplete />
+        <ErrorBoundary>
+          <OAuthComplete />
+        </ErrorBoundary>
       </Suspense>
     );
   }
@@ -194,7 +211,11 @@ function AppContent() {
     // both jobs (sell + sign in) on one screen. Any deep-link to a
     // protected route also lands here so visitors sign in then
     // continue.
-    return <AuthPortal />;
+    return (
+      <ErrorBoundary>
+        <AuthPortal />
+      </ErrorBoundary>
+    );
   }
 
   // AppShell already renders the ⌘K CommandBar — don't double-mount.
