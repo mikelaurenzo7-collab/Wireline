@@ -136,10 +136,7 @@ ON wireline_subscriptions(stripe_customer_id);
 postgresql://postgres.[PROJECT_REF]:[PASSWORD]@[REGION].pooler.supabase.com:6543/postgres
 ```
 
-**Your connection**:
-```
-postgresql://postgres.ogenlhodmwvyacvnrsnj:hudsonpeanutforever123!@aws-1-us-east-2.pooler.supabase.com:6543/postgres
-```
+**Your connection**: Set `POSTGRES_URL` in `.env` (see `.env.example`). Never commit credentials to version control.
 
 ### Connection Parameters
 
@@ -215,11 +212,11 @@ USING (user_id = auth.uid());
 ### Manual Backup (pg_dump)
 
 ```bash
-# Schema only
-pg_dump --schema-only -h aws-1-us-east-2.pooler.supabase.com -p 6543 -U postgres.ogenlhodmwvyacvnrsnj postgres > schema_backup.sql
+# Schema only (substitute your pooler host + project ref)
+pg_dump --schema-only -h $PGHOST -p 6543 -U postgres.$PROJECT_REF postgres > schema_backup.sql
 
 # Full backup (data + schema)
-pg_dump -h aws-1-us-east-2.pooler.supabase.com -p 6543 -U postgres.ogenlhodmwvyacvnrsnj postgres > full_backup.sql
+pg_dump -h $PGHOST -p 6543 -U postgres.$PROJECT_REF postgres > full_backup.sql
 ```
 
 ### Point-in-Time Recovery (PITR)

@@ -39,7 +39,7 @@ How we win: operators **trust the fleet** — on the phone, in the console, and 
 
 ## Sales / demo (internal only)
 
-- Demo account: `docs/DEMO_ACCOUNT.md` — **never** expose shortcuts on public sign-in.
+- Demo account credentials: stored in environment secrets (never in source control).
 - Marketing captures: `npm run marketing:kit` (local mocks) or `npm run qa:design-showcase` (prod).
 - Compare page: honest matrix vs Bland / Retell / DIY Vapi.
 

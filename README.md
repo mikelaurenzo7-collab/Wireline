@@ -291,8 +291,7 @@ open yet, but if you're interested in working on it,
 
 Internal contributors:
 
-1. Branch off the current production branch (currently
-   `claude/audit-vercel-env-3jCjd`)
+1. Branch off `main`
 2. Run `npm run verify` before pushing — TypeScript clean, tests
    green, production build clean
 3. Commit messages: imperative subject ≤72 chars, one blank line,
