@@ -8,7 +8,6 @@
  * Or programmatically: await runDatabaseHealthCheck()
  */
 
-import { sql } from "drizzle-orm";
 import { Pool } from "pg";
 import { log } from "./server-context";
 
@@ -46,11 +45,7 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
     },
   };
 
-  // Use explicit connection string provided (bypassing Supabase MCP)
-  // Connection: postgresql://postgres.ogenlhodmwvyacvnrsnj@aws-1-us-east-2.pooler.supabase.com:6543/postgres
-  const dbUrl =
-    process.env.POSTGRES_URL ||
-    "postgresql://postgres.ogenlhodmwvyacvnrsnj:hudsonpeanutforever123!@aws-1-us-east-2.pooler.supabase.com:6543/postgres";
+  const dbUrl = process.env.POSTGRES_URL;
 
   if (!dbUrl) {
     result.healthy = false;
@@ -145,11 +140,13 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
       LIMIT 10
     `);
 
-    result.stats.largestTables = tableStats.rows.map((row: any) => ({
-      name: row.table_name,
-      rows: parseInt(row.row_count || "0"),
-      size: row.size,
-    }));
+    result.stats.largestTables = tableStats.rows.map(
+      (row: { table_name: string; row_count: string; size: string }) => ({
+        name: row.table_name,
+        rows: parseInt(row.row_count || "0"),
+        size: row.size,
+      }),
+    );
 
     result.stats.totalRowsEstimate = result.stats.largestTables.reduce((sum, t) => sum + t.rows, 0);
 
@@ -187,7 +184,7 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
 
     if (bloatCheck.rows.length > 0) {
       result.optimizations.push(
-        `Consider VACUUM ANALYZE for frequently updated tables: ${bloatCheck.rows.map((r: any) => r.tablename).join(", ")}`,
+        `Consider VACUUM ANALYZE for frequently updated tables: ${bloatCheck.rows.map((r: { tablename: string }) => r.tablename).join(", ")}`,
       );
     }
 
@@ -220,7 +217,9 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
 
     if (longQueries.rows.length > 0) {
       result.warnings.push(`${longQueries.rows.length} long-running queries detected (>30s)`);
-      result.stats.slowQueries = longQueries.rows.map((r: any) => r.query.substring(0, 100));
+      result.stats.slowQueries = longQueries.rows.map((r: { query: string }) =>
+        r.query.substring(0, 100),
+      );
     }
 
     // 11. Verify RLS is enabled on appropriate tables
@@ -285,6 +284,7 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
 /**
  * Print health check results in a readable format
  */
+/* eslint-disable no-console -- CLI output function; intentional use of console for terminal display. */
 export function printHealthReport(result: HealthCheckResult): void {
   console.log("\n" + "=".repeat(70));
   console.log("WIRELINE DATABASE HEALTH REPORT");
@@ -326,6 +326,7 @@ export function printHealthReport(result: HealthCheckResult): void {
 
   console.log("\n" + "=".repeat(70));
 }
+/* eslint-enable no-console */
 
 /**
  * Get recommended indexes for better query performance

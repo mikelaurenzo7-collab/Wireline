@@ -1164,7 +1164,7 @@ interface Props {
 export default function AgentIntegrationCanvas({
   agentName,
   selectedToolNames,
-  roleDefaultTools,
+  roleDefaultTools: _roleDefaultTools,
   usingRoleDefaults,
   integrationStatus,
   onToggleIntegrationGroup,

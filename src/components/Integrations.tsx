@@ -83,6 +83,7 @@ export default function Integrations() {
     };
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only effect; functions are stable within the component lifecycle.
   }, []);
 
   const openOAuthPopup = (url: string) => {
@@ -150,7 +151,7 @@ export default function Integrations() {
         try {
           await authFetch(`/api/emails/accounts/${id}`, { method: "DELETE" });
           fetchAccounts();
-        } catch (e) {
+        } catch {
           toastError("Disconnect failed", "Could not disconnect this account. Please try again.");
         }
       },
@@ -165,7 +166,7 @@ export default function Integrations() {
         body: JSON.stringify({ agent_id: agentId === "none" ? null : agentId }),
       });
       fetchAccounts();
-    } catch (e) {
+    } catch {
       toastError("Assignment failed", "Could not update the agent for this account.");
     }
   };

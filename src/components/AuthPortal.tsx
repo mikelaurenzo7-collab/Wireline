@@ -199,7 +199,7 @@ function OAuthSignInButtons({
       const message = detail
         ? `${providerLabel} sign-in failed: ${detail}`
         : `${providerLabel} sign-in failed. Please try again or use email below.`;
-      console.warn("OAuth start failed", message);
+      console.error("OAuth start failed", message);
       onError?.(message);
     }
   };

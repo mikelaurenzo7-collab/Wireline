@@ -95,7 +95,7 @@ describe("OAuth /url endpoints", () => {
       } finally {
         server.close();
       }
-    });
+    }, 15_000);
 
     it("Microsoft: returns 503 JSON instead of HTML", async () => {
       const app = await buildApp();

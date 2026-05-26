@@ -64,7 +64,7 @@ export default function CallLogs() {
       else setCalls(data.calls || []);
       setHasMore(data.hasMore);
       setOffset(currentOffset + (data.calls?.length || 0));
-    } catch (e) {
+    } catch {
       toastError(
         "Call logs unavailable",
         append

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 /**
  * Google Sheets Integration Service — call-log spreadsheet.
  *
@@ -208,10 +207,7 @@ async function patchMetadata(connId: string, patch: Record<string, unknown>): Pr
  * On first use, creates the spreadsheet in Google Drive with
  * formatted headers. Returns the spreadsheetId or null.
  */
-async function ensureSpreadsheet(
-  token: string,
-  conn: SheetConnection,
-): Promise<string | null> {
+async function ensureSpreadsheet(token: string, conn: SheetConnection): Promise<string | null> {
   // Return cached spreadsheet ID if we already created one
   const cached = conn.metadata.spreadsheet_id as string | undefined;
   if (cached) return cached;
