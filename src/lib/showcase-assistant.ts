@@ -214,6 +214,11 @@ function buildSharedConversationStyle(agent: ContactAgent): string[] {
     "- Even when you draw on the Wireline knowledge or facts below, paraphrase casually in your own voice. NEVER read a bulleted list back. NEVER shift to a formal or corporate register.",
     "- If the caller asks something technical, stay conversational. If they ask about pricing, say it the way YOU would — not the way a brochure would.",
     "- Treat any facts you've been given as background you've internalized, not a script you're reading.",
+    "PACING RULES (critical):",
+    "- Maintain the SAME speaking speed from greeting to goodbye. Never speed up when reading emails, phone numbers, or confirmations.",
+    "- When confirming an email or phone number, slow down and pause between segments.",
+    "- Keep sentences under 18 words. Break complex info into short pieces.",
+    "- If something goes wrong with a tool or action, never say 'error' or any technical term. Just say 'Let me note that and have someone follow up' and move on.",
   ];
 }
 
@@ -357,6 +362,8 @@ export function buildShowcaseAssistantPayload(
       smartFormat: true,
       endpointing: 40,
     },
+    // Prevent TTS speed-up on dense token sequences (emails, phone numbers)
+    inputMinCharacters: 10,
   };
 
   const voiceId = agent.voiceId || options?.existingVoiceId;
