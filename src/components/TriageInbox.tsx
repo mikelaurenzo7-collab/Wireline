@@ -265,13 +265,20 @@ function HotLeads({ items }: { items: HotLead[] }) {
   if (items.length === 0)
     return <Empty icon={Flame} label="No hot leads right now — keep dialing." />;
   return (
-    <ul className="divide-y divide-white/5">
+    <ul className="divide-y divide-black/8">
       {items.map((c) => (
         <li
           key={c.id}
-          className="group px-4 py-3.5 flex items-center gap-3 hover:bg-white/3 transition-all"
+          className="group px-4 py-3.5 flex items-center gap-3 hover:bg-white/3 transition-all relative active:bg-white/5 active:scale-[0.99] duration-100"
         >
-          <div className="shrink-0 w-11 h-11 flex items-center justify-center text-ink">
+          {/* Absolute overlay link covering the entire row target */}
+          <Link
+            to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
+            className="absolute inset-0 z-0"
+            aria-label={`View contact profile for ${c.customer_number || "unknown caller"}`}
+          />
+
+          <div className="shrink-0 w-11 h-11 flex items-center justify-center text-ink relative z-10 pointer-events-none">
             <svg width="44" height="44" viewBox="0 0 44 44">
               <circle
                 r="16"
@@ -305,13 +312,10 @@ function HotLeads({ items }: { items: HotLead[] }) {
             </svg>
           </div>
 
-          <div className="min-w-0 flex-1">
-            <Link
-              to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
-              className="font-display italic text-base text-ink leading-tight hover:text-brand transition-colors block truncate"
-            >
+          <div className="min-w-0 flex-1 relative z-10 pointer-events-none">
+            <span className="font-display italic text-base text-ink leading-tight block truncate group-hover:text-brand transition-colors">
               {c.customer_number || "Unknown caller"}
-            </Link>
+            </span>
             <p className="text-[11px] text-muted/70 truncate">{c.summary}</p>
             <div className="flex items-center gap-2 mt-1 text-[8px] uppercase tracking-[0.26em] text-muted/50">
               <span>{formatDate(c.created_at)}</span>
@@ -335,7 +339,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
             )}
           </div>
 
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1 shrink-0 relative z-20">
             <ClaudeRecipeButton
               recipe="enrich-lead"
               initial={{
@@ -344,13 +348,9 @@ function HotLeads({ items }: { items: HotLead[] }) {
               }}
               label="Enrich"
             />
-            <Link
-              to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
-              aria-label={`View contact profile for ${c.customer_number || "unknown caller"}`}
-              className="w-8 h-8 rounded-xl glass border border-white/8 flex items-center justify-center text-ink/50 hover:text-brand hover:border-brand/40 transition-all group-hover:border-white/15"
-            >
+            <div className="w-8 h-8 rounded-xl glass border border-white/8 flex items-center justify-center text-ink/50 transition-all group-hover:border-white/15 group-hover:text-brand">
               <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
+            </div>
           </div>
         </li>
       ))}
@@ -364,7 +364,7 @@ function ComplianceList({ items }: { items: FleetTask[] }) {
   if (items.length === 0)
     return <Empty icon={ShieldAlert} label="All clear — no compliance flags." green />;
   return (
-    <ul className="divide-y divide-white/5">
+    <ul className="divide-y divide-black/8">
       {items.map((t) => (
         <li
           key={t.id}
@@ -436,7 +436,7 @@ function KnowledgeGaps({
       />
     );
   return (
-    <ul className="divide-y divide-white/5">
+    <ul className="divide-y divide-black/8">
       <AnimatePresence initial={false}>
         {items.map((g) => (
           <KnowledgeGapRow key={g.id} gap={g} onPromoted={onPromoted} onDiscard={onDiscard} />
@@ -568,7 +568,7 @@ function OpenTasks({
   if (items.length === 0)
     return <Empty icon={ListTodo} label="Inbox zero. You're caught up." green />;
   return (
-    <ul className="divide-y divide-white/5">
+    <ul className="divide-y divide-black/8">
       <AnimatePresence initial={false}>
         {items.map((t) => (
           <OpenTaskRow
@@ -633,7 +633,7 @@ const OpenTaskRow: React.FC<{
         {completing ? (
           <Loader2 className="w-2.5 h-2.5 animate-spin text-emerald-400" />
         ) : (
-          <Check className="w-2.5 h-2.5 text-white/0 group-hover:text-emerald-400 transition-colors" />
+          <Check className="w-2.5 h-2.5 text-muted/30 group-hover:text-emerald-400 group-active:text-emerald-400 transition-colors" />
         )}
       </button>
 
@@ -667,17 +667,24 @@ function Escalations({ items }: { items: EscalationCall[] }) {
   if (items.length === 0)
     return <Empty icon={AlertOctagon} label="No escalations on file." green />;
   return (
-    <ul className="divide-y divide-white/5">
+    <ul className="divide-y divide-black/8">
       {items.map((c) => (
-        <li key={c.id} className="px-4 py-3 flex items-start gap-3 bg-rose-500/3">
-          <AlertOctagon className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <Link
-              to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
-              className="font-display italic text-base text-ink hover:text-brand transition-colors block truncate"
-            >
+        <li
+          key={c.id}
+          className="group px-4 py-3 flex items-start gap-3 bg-rose-500/3 relative hover:bg-rose-500/6 active:bg-rose-500/8 transition-all duration-100"
+        >
+          {/* Absolute overlay link covering the entire row target */}
+          <Link
+            to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
+            className="absolute inset-0 z-0"
+            aria-label={`View contact profile for ${c.customer_number || "unknown caller"}`}
+          />
+
+          <AlertOctagon className="w-4 h-4 text-rose-500 shrink-0 mt-0.5 relative z-10 pointer-events-none" />
+          <div className="flex-1 min-w-0 relative z-10 pointer-events-none">
+            <span className="font-display italic text-base text-ink block truncate group-hover:text-brand transition-colors">
               {c.customer_number || "Unknown caller"}
-            </Link>
+            </span>
             <p className="text-[11px] text-ink/70 truncate">{c.summary}</p>
             <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-0.5">
               {formatDateTime(c.created_at)}
@@ -688,7 +695,9 @@ function Escalations({ items }: { items: EscalationCall[] }) {
               </p>
             )}
           </div>
-          <ClaudeRecipeButton recipe="coach" callId={c.id} label="Coach" variant="compact" />
+          <div className="relative z-20">
+            <ClaudeRecipeButton recipe="coach" callId={c.id} label="Coach" variant="compact" />
+          </div>
         </li>
       ))}
     </ul>

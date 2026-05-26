@@ -216,7 +216,7 @@ function SMSPreviewCard() {
               className="max-w-[80%] px-3 py-2 rounded-2xl rounded-tr-sm text-[11px] text-white leading-relaxed"
               style={{ background: "#007AFF" }}
             >
-              Thanks for calling! Here's your booking confirmation: wireline.app/b/4x9z
+              Thanks for calling! Here's your booking confirmation: trywireline.com/b/4x9z
             </div>
           </div>
         )}

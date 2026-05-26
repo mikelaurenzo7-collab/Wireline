@@ -40,7 +40,7 @@ export const WIRELINE_PLANS = [
       "Small teams running a single playbook (inbound support, outbound SDR, or scheduling).",
     includes: [
       "3 AI agents",
-      "3 phone numbers",
+      "2 phone numbers",
       "1,500 voice minutes/mo (overage $0.18/min)",
       "CRM sync (HubSpot or Salesforce)",
       "Two-way texting",
@@ -53,7 +53,7 @@ export const WIRELINE_PLANS = [
       "Growing operators running multiple playbooks side by side — sales, support, and outbound.",
     includes: [
       "10 AI agents",
-      "10 phone numbers",
+      "5 phone numbers",
       "6,000 voice minutes/mo (overage $0.15/min)",
       "All CRM integrations (HubSpot, Salesforce, Pipedrive, Apollo)",
       "Slack handoff for human escalations",
@@ -66,7 +66,7 @@ export const WIRELINE_PLANS = [
     bestFor: "Multi-team operators who need supervisor visibility + call-center routing.",
     includes: [
       "25 AI agents",
-      "25 phone numbers",
+      "10 phone numbers",
       "15,000 voice minutes/mo (overage $0.13/min)",
       "Supervisor cockpit with live call monitor",
       "Team-level routing + per-team text-message sender",

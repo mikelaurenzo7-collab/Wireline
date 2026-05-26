@@ -1,9 +1,7 @@
 import React, { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, useLocation, useNavigate } from "react-router-dom";
 import AuthPortal from "./components/AuthPortal";
-import { PrivacyPolicy, TermsOfService, DataDeletion, ZoomDocs } from "./components/LegalPage";
-import { ChangelogPage } from "./components/Changelog";
-import { SupportPage } from "./components/SupportPage";
+
 import CookieConsent from "./components/CookieConsent";
 import ToastStack from "./components/Toast";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -20,6 +18,13 @@ const VerticalLanding = lazy(() => import("./pages/VerticalLanding"));
 const Compare = lazy(() => import("./pages/Compare"));
 const About = lazy(() => import("./pages/About"));
 const Showcase = lazy(() => import("./pages/Showcase"));
+
+const PrivacyPolicy = lazy(() => import("./components/LegalPage").then((m) => ({ default: m.PrivacyPolicy })));
+const TermsOfService = lazy(() => import("./components/LegalPage").then((m) => ({ default: m.TermsOfService })));
+const DataDeletion = lazy(() => import("./components/LegalPage").then((m) => ({ default: m.DataDeletion })));
+const ZoomDocs = lazy(() => import("./components/LegalPage").then((m) => ({ default: m.ZoomDocs })));
+const ChangelogPage = lazy(() => import("./components/Changelog").then((m) => ({ default: m.ChangelogPage })));
+const SupportPage = lazy(() => import("./components/SupportPage").then((m) => ({ default: m.SupportPage })));
 
 function AppContent() {
   const { user } = useAuth();
@@ -39,16 +44,52 @@ function AppContent() {
   }, [user, location.pathname, navigate]);
 
   // Public pages — accessible before auth.
-  if (location.pathname === "/privacy") return <PrivacyPolicy />;
-  if (location.pathname === "/terms") return <TermsOfService />;
-  if (location.pathname === "/legal/data-deletion") return <DataDeletion />;
+  if (location.pathname === "/privacy") {
+    return (
+      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+        <PrivacyPolicy />
+      </Suspense>
+    );
+  }
+  if (location.pathname === "/terms") {
+    return (
+      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+        <TermsOfService />
+      </Suspense>
+    );
+  }
+  if (location.pathname === "/legal/data-deletion") {
+    return (
+      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+        <DataDeletion />
+      </Suspense>
+    );
+  }
   // Integration-specific docs pages — required for marketplace review on
   // platforms like Zoom that demand a vendor-hosted setup guide.
-  if (location.pathname === "/docs/zoom") return <ZoomDocs />;
+  if (location.pathname === "/docs/zoom") {
+    return (
+      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+        <ZoomDocs />
+      </Suspense>
+    );
+  }
   // Public changelog — pre-launch trust signal and post-launch
   // transparency: every prospect can verify "yes they ship."
-  if (location.pathname === "/changelog") return <ChangelogPage />;
-  if (location.pathname === "/support") return <SupportPage />;
+  if (location.pathname === "/changelog") {
+    return (
+      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+        <ChangelogPage />
+      </Suspense>
+    );
+  }
+  if (location.pathname === "/support") {
+    return (
+      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+        <SupportPage />
+      </Suspense>
+    );
+  }
 
   // Vertical wedge pages — outbound DMs target these directly with
   // industry-specific copy, but the product behind them is the same

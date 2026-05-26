@@ -202,25 +202,30 @@ export function renderDailyBriefEmail(
   const subject = `Wireline · ${escapeHtml(headline)} · ${opts.dateLabel}`;
 
   const css = `
-    body { margin:0; padding:0; background:#0F0E2D; color:#EEF1F8; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
-    .wrap { max-width:640px; margin:0 auto; padding:32px 16px; }
-    .card { background:#191734; border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:28px; margin-bottom:16px; }
-    .label { font-size:10px; letter-spacing:0.4em; text-transform:uppercase; color:#8E91A8; margin:0 0 12px; }
-    h1 { font-size:28px; line-height:1.15; margin:0 0 8px; color:#fff; font-weight:600; letter-spacing:-0.01em; }
-    h2 { font-size:13px; letter-spacing:0.3em; text-transform:uppercase; color:${moodColor}; margin:0 0 16px; }
-    p { color:rgba(238,241,248,0.8); line-height:1.55; margin:0 0 12px; font-size:14px; }
-    .stats { display:table; width:100%; border-collapse:separate; border-spacing:8px 0; margin-top:8px; }
-    .stat { display:table-cell; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:14px; text-align:center; vertical-align:top; }
-    .stat .v { font-size:22px; font-weight:600; color:#fff; line-height:1; }
-    .stat .l { font-size:10px; letter-spacing:0.25em; text-transform:uppercase; color:#8E91A8; margin-top:8px; }
-    .delta-pos { color:#4DFFC4; }
-    .delta-neg { color:#FF6BD9; }
+    body { margin:0; padding:0; background-color:#0a0a0a; color:#f4f4f5; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    .wrap { max-width:600px; margin:0 auto; padding:40px 20px; }
+    .brand-header { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
+    .brand-logo { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #4F1E7B, #7e3eb8); display: inline-block; vertical-align: middle; }
+    .brand-name { font-size: 20px; font-weight: 700; font-style: italic; letter-spacing: -0.02em; color: #fff; vertical-align: middle; display: inline-block; margin-left: 12px; }
+    .card { background:#121214; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:32px; margin-bottom:24px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+    .card-hero { background: linear-gradient(180deg, #18181b 0%, #121214 100%); position: relative; overflow: hidden; }
+    .card-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #4F1E7B, #10b981); }
+    .label { font-size:10px; font-weight: 600; letter-spacing:0.3em; text-transform:uppercase; color:#a1a1aa; margin:0 0 16px; }
+    h1 { font-size:28px; line-height:1.2; margin:0 0 12px; color:#fff; font-weight:600; letter-spacing:-0.02em; font-style: italic; }
+    h2 { font-size:12px; font-weight: 700; letter-spacing:0.2em; text-transform:uppercase; color:${moodColor}; margin:0 0 20px; display: inline-block; padding: 4px 10px; background: ${moodColor}15; border-radius: 99px; border: 1px solid ${moodColor}30; }
+    p { color:#a1a1aa; line-height:1.6; margin:0 0 16px; font-size:15px; }
+    .stats { width:100%; border-collapse:separate; border-spacing:12px 0; margin-top:24px; display: table; table-layout: fixed; }
+    .stat { display:table-cell; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:16px 12px; text-align:center; vertical-align:top; }
+    .stat .v { font-size:24px; font-weight:600; color:#fff; line-height:1; font-style: italic; }
+    .stat .l { font-size:10px; font-weight: 600; letter-spacing:0.2em; text-transform:uppercase; color:#71717a; margin-top:8px; }
+    .delta-pos { color:#10b981; }
+    .delta-neg { color:#f43f5e; }
     ul { padding:0; margin:0; list-style:none; }
-    li { background:rgba(255,255,255,0.03); border-left:3px solid ${moodColor}; border-radius:6px; padding:10px 14px; margin-bottom:8px; font-size:14px; line-height:1.5; color:rgba(238,241,248,0.9); }
-    li.warn { border-left-color:#FFC07D; }
-    li.action { border-left-color:#7DF9FF; }
-    .footer { text-align:center; color:#8E91A8; font-size:11px; padding:16px 0; }
-    .btn { display:inline-block; padding:10px 18px; border-radius:999px; background:linear-gradient(135deg,#7DF9FF,#C58BFF); color:#0F0E2D !important; text-decoration:none; font-weight:600; font-size:13px; letter-spacing:0.05em; }
+    li { background:rgba(255,255,255,0.02); border-left:3px solid ${moodColor}; border-radius:8px; padding:14px 16px; margin-bottom:12px; font-size:15px; line-height:1.6; color:#e4e4e7; border: 1px solid rgba(255,255,255,0.05); border-left-width: 3px; }
+    li.warn { border-left-color:#fbbf24; }
+    li.action { border-left-color:#38bdf8; }
+    .footer { text-align:center; color:#71717a; font-size:12px; padding:32px 0; line-height: 1.6; }
+    .btn { display:inline-block; padding:12px 24px; border-radius:99px; background:#4F1E7B; color:#ffffff !important; text-decoration:none; font-weight:600; font-size:13px; letter-spacing:0.1em; text-transform: uppercase; border: 1px solid #7e3eb8; }
   `;
 
   const stat = (label: string, value: string, delta?: number | null) => `
@@ -229,55 +234,77 @@ export function renderDailyBriefEmail(
       <div class="l">${escapeHtml(label)}</div>
       ${
         delta !== undefined && delta !== null && Math.abs(delta) >= 1
-          ? `<div class="${delta >= 0 ? "delta-pos" : "delta-neg"}" style="font-size:11px;margin-top:6px;">${fmtPct(delta)} vs 7-day</div>`
+          ? `<div class="${delta >= 0 ? "delta-pos" : "delta-neg"}" style="font-size:11px;font-weight:500;margin-top:8px;">${fmtPct(delta)} <span style="color:#71717a;font-weight:400;font-size:10px;">vs 7d</span></div>`
           : ""
       }
     </div>`;
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8" /><style>${css}</style></head><body>
-    <div class="wrap">
-      <div class="card">
-        <p class="label">Wireline · Daily Brief · ${escapeHtml(opts.dateLabel)}</p>
-        <h2>${escapeHtml(mood)}</h2>
-        <h1>${escapeHtml(headline)}</h1>
-        <div class="stats" role="presentation">
-          ${stat("Calls", String(stats.total_calls ?? 0), delta.calls_pct)}
-          ${stat("Lead Score", String(stats.avg_lead_score ?? 0), delta.score_pct)}
-          ${stat("Cost", `$${Number(stats.cost ?? 0).toFixed(2)}`, delta.cost_pct)}
-          ${stat("Booked", String(stats.appointments_booked ?? 0))}
-        </div>
-      </div>
-      ${
-        highlights.length
-          ? `
-      <div class="card">
-        <p class="label">Highlights</p>
-        <ul>${highlights.map((h) => `<li>${escapeHtml(h)}</li>`).join("")}</ul>
-      </div>`
-          : ""
-      }
-      ${
-        concerns.length
-          ? `
-      <div class="card">
-        <p class="label">Concerns</p>
-        <ul>${concerns.map((h) => `<li class="warn">${escapeHtml(h)}</li>`).join("")}</ul>
-      </div>`
-          : ""
-      }
-      ${
-        actions.length
-          ? `
-      <div class="card">
-        <p class="label">Action Items</p>
-        <ul>${actions.map((h) => `<li class="action">${escapeHtml(h)}</li>`).join("")}</ul>
-      </div>`
-          : ""
-      }
-      ${link ? `<div style="text-align:center; padding:12px 0 32px;"><a class="btn" href="${escapeHtml(link)}">Open Wireline</a></div>` : ""}
-      <div class="footer">Sent automatically from your scheduled daily brief. Pause anytime in <strong>Command Atlas → Daily Brief</strong>.</div>
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,600;1,700&display=swap" rel="stylesheet">
+  <style>${css}</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand-header">
+      <div class="brand-logo"></div>
+      <div class="brand-name">Wireline</div>
     </div>
-  </body></html>`;
+    
+    <div class="card card-hero">
+      <p class="label">Daily Brief · ${escapeHtml(opts.dateLabel)}</p>
+      <h1>${escapeHtml(headline)}</h1>
+      <h2>${escapeHtml(mood)}</h2>
+      
+      <div class="stats" role="presentation">
+        ${stat("Calls", String(stats.total_calls ?? 0), delta.calls_pct)}
+        ${stat("Avg Score", String(stats.avg_lead_score ?? 0), delta.score_pct)}
+        ${stat("Cost", `$${Number(stats.cost ?? 0).toFixed(2)}`, delta.cost_pct)}
+      </div>
+    </div>
+
+    ${
+      highlights.length
+        ? `
+    <div class="card">
+      <p class="label">Highlights</p>
+      <ul>${highlights.map((h) => `<li>${escapeHtml(h)}</li>`).join("")}</ul>
+    </div>`
+        : ""
+    }
+    
+    ${
+      concerns.length
+        ? `
+    <div class="card">
+      <p class="label">Areas of Concern</p>
+      <ul>${concerns.map((h) => `<li class="warn">${escapeHtml(h)}</li>`).join("")}</ul>
+    </div>`
+        : ""
+    }
+    
+    ${
+      actions.length
+        ? `
+    <div class="card">
+      <p class="label">Action Items</p>
+      <ul>${actions.map((h) => `<li class="action">${escapeHtml(h)}</li>`).join("")}</ul>
+    </div>`
+        : ""
+    }
+    
+    ${link ? `<div style="text-align:center; padding:24px 0;"><a class="btn" href="${escapeHtml(link)}">Open Dashboard</a></div>` : ""}
+    
+    <div class="footer">
+      This brief was generated by Claude using your real-time call data.<br>
+      You can pause these updates anytime in <strong>Command Atlas → Settings</strong>.
+    </div>
+  </div>
+</body>
+</html>`;
 
   // Plain-text fallback for clients that don't render HTML.
   const lines: string[] = [];

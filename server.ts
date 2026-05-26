@@ -30,6 +30,7 @@ import path from "path";
 import { randomUUID } from "node:crypto";
 import { db, IS_PROD, log } from "./src/lib/server-context";
 import { getErrorMessage } from "./src/lib/server-utils";
+import { AppError, formatErrorResponse } from "./src/lib/api-error";
 import { validateStartupEnv } from "./src/lib/startup";
 import { buildCSP, buildConnectSrcs } from "./src/lib/csp";
 import { isRedisConfigured, startMemoryCleanup } from "./src/lib/rate-limit";
@@ -271,23 +272,36 @@ app.use(authRouter);
 
 // 404 API catch-all (Must be mounted after all valid API routes and before global error handler)
 app.use("/api", (req: express.Request, res: express.Response) => {
-  res
-    .status(404)
-    .json({ error: "API Route Not Found", path: req.path, requestId: res.locals?.requestId });
+  const { status, body } = formatErrorResponse(
+    AppError.notFound(`No API route matches ${req.method} ${req.path}`),
+    res.locals?.requestId as string | undefined,
+  );
+  res.status(status).json(body);
 });
 
-// Global error handler
+// Global error handler — returns the standard { error, code, requestId } shape.
+// AppError instances preserve their status and code; unknown errors are
+// sanitized to prevent stack-trace / implementation-detail leaks.
 app.use(
   (err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    const requestId = res.locals?.requestId as string | undefined;
     const errObj = err as { message?: string; stack?: string };
-    log.error("Unhandled global error", {
-      requestId: res.locals?.requestId,
-      method: req.method,
-      path: req.path,
-      error: getErrorMessage(err),
-      stack: errObj?.stack,
-    });
-    res.status(500).json({ error: "Internal Server Error", requestId: res.locals?.requestId });
+    const isServerError = !(err instanceof AppError) || (err as AppError).status >= 500;
+
+    // Always log — but only log stack traces for actual server errors,
+    // not for 4xx client errors the caller intentionally threw.
+    if (isServerError) {
+      log.error("Unhandled global error", {
+        requestId,
+        method: req.method,
+        path: req.path,
+        error: getErrorMessage(err),
+        stack: errObj?.stack,
+      });
+    }
+
+    const { status, body } = formatErrorResponse(err, requestId);
+    res.status(status).json(body);
   },
 );
 

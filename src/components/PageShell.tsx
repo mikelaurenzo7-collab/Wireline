@@ -132,8 +132,8 @@ export default function PageShell({
     >
       {/* ── Page header — every route gets editorial hierarchy ─────────── */}
       {showPageHeader && (
-        <header className="shrink-0 mb-2 md:mb-3 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-          <div className="min-w-0">
+        <header className="shrink-0 mb-2 md:mb-3 flex flex-row items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
             {eyebrow && (
               <p className="text-[9px] uppercase tracking-[0.38em] text-brand/80 font-medium mb-1">
                 {eyebrow}
@@ -151,16 +151,20 @@ export default function PageShell({
             )}
           </div>
           {actions && (
-            <div className="hidden md:flex flex-wrap items-center justify-end gap-2 shrink-0">
-              {actions}
+            <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
+              <div className="hidden md:flex items-center gap-2">{actions}</div>
+              {!tabs?.length && (
+                <button
+                  onClick={() => setMobileActionsOpen(true)}
+                  aria-label="Page actions"
+                  className="md:hidden w-11 h-11 rounded-xl flex items-center justify-center text-muted border border-black/8 bg-black/4 active:bg-black/8 transition-colors"
+                >
+                  <MoreHorizontal className="w-5 h-5" />
+                </button>
+              )}
             </div>
           )}
         </header>
-      )}
-
-      {/* Mobile-only actions row when no tabs (tabs bundle ⋯ separately) */}
-      {actions && !tabs?.length && (
-        <div className="md:hidden shrink-0 flex justify-end mb-1">{actions}</div>
       )}
 
       {/* ── Desktop tab strip (hidden on mobile) ───────────────────────── */}
@@ -302,18 +306,7 @@ export default function PageShell({
         </div>
       )}
 
-      {/* ── Mobile: no-tabs case — ⋯ button when actions exist ─────────── */}
-      {!tabs && actions && (
-        <div className="md:hidden shrink-0 flex items-center justify-end border-b border-black/8">
-          <button
-            onClick={() => setMobileActionsOpen(true)}
-            aria-label="Page actions"
-            className="w-11 h-11 flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors"
-          >
-            <MoreHorizontal className="w-5 h-5" />
-          </button>
-        </div>
-      )}
+
 
       {/* ── Body — bounded, never scrolls itself ───────────────────────── */}
       <div
@@ -477,7 +470,7 @@ export function Panel({
         />
       )}
 
-      {(title || actions) && (
+      {(title || actions || hint || Icon) && (
         <header className="relative shrink-0 px-3 py-2.5 max-md:px-4 max-md:py-3 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 min-w-0">
             {Icon && (
@@ -506,7 +499,7 @@ export function Panel({
       )}
 
       {/* Header separator */}
-      {(title || actions) && (
+      {(title || actions || hint || Icon) && (
         <div
           className="shrink-0 mx-4 h-px"
           style={{

@@ -332,9 +332,9 @@ export default function CommandCenter() {
           <span className="text-[10px] uppercase tracking-[0.35em] text-muted font-medium block">
             Live operations
           </span>
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-2">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
             {/* Left Column: Live Monitor (8/12) */}
-            <div className="xl:col-span-8 space-y-2">
+            <div className="lg:col-span-8 space-y-2">
               <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-brand/20 to-brand-2/20 rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000" />
                 <div className="relative glass border-black/5 rounded-[2rem] p-4 min-h-[180px]">
@@ -473,7 +473,7 @@ export default function CommandCenter() {
             </div>
 
             {/* Right Column: Intelligence & Actions (4/12) */}
-            <div className="xl:col-span-4 space-y-2">
+            <div className="lg:col-span-4 space-y-2">
               {/* Intelligence Hub (Action Feed) */}
               <div className="glass border-black/5 rounded-[2rem] p-4 h-full min-h-[180px] flex flex-col">
                 <ActionFeed actions={actions} onRefresh={refresh} />

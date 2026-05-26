@@ -206,7 +206,7 @@ export default function About() {
       </section>
 
       {/* CTA */}
-      <section className="relative z-10 max-w-3xl mx-auto px-6 lg:px-10 pb-24 text-center">
+      <section className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 pb-24 text-center">
         <h2 className="font-display italic text-4xl sm:text-5xl text-ink mb-4 text-balance">
           Let's get your front desk back.
         </h2>

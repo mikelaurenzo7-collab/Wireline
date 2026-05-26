@@ -26,6 +26,7 @@ import { authenticateUser } from "../middleware/auth";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
+import { CLAUDE_MODELS } from "../lib/claude-models";
 
 const router = express.Router();
 
@@ -221,9 +222,15 @@ router.post(
         try {
           const client = new Anthropic({ apiKey });
           const response = await client.messages.create({
-            model: "claude-opus-4-7",
+            model: CLAUDE_MODELS.SONNET,
             max_tokens: 1024,
-            system: systemPrompt,
+            system: [
+              {
+                type: "text",
+                text: systemPrompt,
+                cache_control: { type: "ephemeral" },
+              },
+            ],
             messages: turns,
           });
           agentReply =

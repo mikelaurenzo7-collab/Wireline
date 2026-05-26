@@ -509,6 +509,8 @@ router.post(
           user: message,
           tool: extractionTool,
           maxTokens: 1024,
+          complexity: "medium",
+          cacheSystem: true,
         });
       } catch (err) {
         log.error("Claude extraction failed; falling back to Gemini", {

@@ -13,6 +13,7 @@ import {
   Shield,
   FileSpreadsheet,
   ChevronRight,
+  ChevronDown,
   Search,
   Trash2,
   AlertTriangle,
@@ -1735,19 +1736,22 @@ function CreateCampaignModal({
               <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
                 <Bot className="w-2.5 h-2.5 text-brand" /> Default Agent
               </label>
-              <select
-                aria-label="Default agent"
-                className={cn(inputCls, "appearance-none cursor-pointer")}
-                value={form.agent_id}
-                onChange={(e) => set("agent_id", e.target.value)}
-              >
-                <option value="">Unassigned</option>
-                {agents.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  aria-label="Default agent"
+                  className={cn(inputCls, "appearance-none cursor-pointer pr-8")}
+                  value={form.agent_id}
+                  onChange={(e) => set("agent_id", e.target.value)}
+                >
+                  <option value="">Unassigned</option>
+                  {agents.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted pointer-events-none" />
+              </div>
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">

@@ -8,7 +8,7 @@ import { authenticateUser } from "../middleware/auth";
 import { computeDashboardStats } from "../lib/dashboard-stats";
 import { computeDashboardBenchmarks } from "../lib/dashboard-benchmarks";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
-import { getCachedDashboard, setCachedDashboard } from "../lib/dashboard-cache";
+import { getCachedDashboard, setCachedDashboard, invalidateDashboard } from "../lib/dashboard-cache";
 
 const router = Router();
 
@@ -467,6 +467,7 @@ router.post(
         })
         .returning()) as any[];
 
+      invalidateDashboard(req.user.id);
       res.json({ appointment: data });
     } catch (error: any) {
       log.error("Failed to create appointment", { error: getErrorMessage(error) });
@@ -545,6 +546,7 @@ router.patch(
         )
         .returning()) as any[];
 
+      invalidateDashboard(req.user.id);
       res.json({ appointment: data });
     } catch (error: any) {
       log.error("Failed to update appointment", { error: getErrorMessage(error) });
@@ -566,6 +568,7 @@ router.delete(
             eq(schema.appointments.userId, req.user.id),
           ),
         );
+      invalidateDashboard(req.user.id);
       res.json({ success: true });
     } catch (error: any) {
       log.error("Failed to delete appointment", { error: getErrorMessage(error) });

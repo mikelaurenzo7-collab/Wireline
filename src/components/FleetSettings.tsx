@@ -1557,18 +1557,21 @@ export default function FleetSettings() {
                                       <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
                                         Relay tone
                                       </label>
-                                      <select
-                                        aria-label="Relay tone"
-                                        value={selectedAgent.email_agent_tone || "Professional"}
-                                        onChange={(e) =>
-                                          updateAgentMeta({ email_agent_tone: e.target.value })
-                                        }
-                                        className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-emerald-400/50 cursor-pointer appearance-none text-ink"
-                                      >
-                                        <option value="Professional">Authoritative</option>
-                                        <option value="Friendly">Diplomatic</option>
-                                        <option value="Direct">Concise</option>
-                                      </select>
+                                      <div className="relative">
+                                        <select
+                                          aria-label="Relay tone"
+                                          value={selectedAgent.email_agent_tone || "Professional"}
+                                          onChange={(e) =>
+                                            updateAgentMeta({ email_agent_tone: e.target.value })
+                                          }
+                                          className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-emerald-400/50 cursor-pointer appearance-none text-ink"
+                                        >
+                                          <option value="Professional">Authoritative</option>
+                                          <option value="Friendly">Diplomatic</option>
+                                          <option value="Direct">Concise</option>
+                                        </select>
+                                        <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none rotate-90" />
+                                      </div>
                                     </div>
 
                                     <div className="space-y-1.5">

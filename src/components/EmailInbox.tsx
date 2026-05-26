@@ -325,7 +325,7 @@ export default function EmailInbox() {
                           key={thread.id}
                           onClick={() => setSelectedThread(thread)}
                           className={cn(
-                            "group w-full px-4 py-3.5 text-left transition-all flex gap-3 items-start relative",
+                            "group w-full px-4 py-3.5 text-left transition-all flex gap-3 items-start relative active:scale-[0.99] active:bg-white/5 duration-100",
                             active ? "bg-brand/6" : "hover:bg-white/3",
                           )}
                         >
@@ -390,7 +390,7 @@ export default function EmailInbox() {
               hint={selectedThread ? "DETAIL" : "INBOX"}
               icon={Mail}
               flush
-              className={cn("flex-1 min-w-0", !selectedThread && "hidden lg:flex")}
+              className={cn("flex-1 min-w-0", !selectedThread && "hidden md:flex")}
             >
               <AnimatePresence mode="wait">
                 {selectedThread ? (

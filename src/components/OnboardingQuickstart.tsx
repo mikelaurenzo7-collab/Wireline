@@ -22,6 +22,8 @@ import {
 import { authFetch } from "../lib/api";
 import WirelineMark from "./WirelineMark";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
+import { useToast } from "../contexts/ToastContext";
+import { Skeleton } from "./Skeleton";
 
 interface ProgressData {
   agents: number;
@@ -77,6 +79,7 @@ export default function OnboardingQuickstart({
   // this gate, a 500-seat call center buyer lands on the same setup
   // screen as a $49 solo operator — sets the wrong expectations.
   const [planId, setPlanId] = useState<string | null>(null);
+  const { success: toastSuccess } = useToast();
 
   useEffect(() => {
     (async () => {
@@ -105,7 +108,35 @@ export default function OnboardingQuickstart({
         ]);
         setProgress({ agents: a, knowledge: k, numbers: n, calls: c });
         setPlanId(planRes);
-        onComplete?.(a > 0 && k > 0 && n > 0 && c > 0);
+        
+        const isComplete = a > 0 && k > 0 && n > 0 && c > 0;
+        
+        // Timer tracking logic
+        if (!isComplete) {
+          if (!localStorage.getItem("wireline_onboarding_start")) {
+            localStorage.setItem("wireline_onboarding_start", Date.now().toString());
+          }
+        } else {
+          const startTs = localStorage.getItem("wireline_onboarding_start");
+          const celebrated = localStorage.getItem("wireline_onboarding_celebrated");
+          
+          if (startTs && !celebrated) {
+            const elapsedMs = Date.now() - parseInt(startTs, 10);
+            const elapsedMins = Math.max(1, Math.round(elapsedMs / 60000));
+            
+            // Celebrate the time-to-first-value!
+            setTimeout(() => {
+              toastSuccess(
+                "Incredible speed 🚀",
+                `You got your first AI agent live in just ${elapsedMins} minute${elapsedMins === 1 ? "" : "s"}!`
+              );
+            }, 500); // Slight delay for dramatic effect after rendering the AllSetCard
+            
+            localStorage.setItem("wireline_onboarding_celebrated", "true");
+          }
+        }
+        
+        onComplete?.(isComplete);
       } finally {
         setLoading(false);
       }
@@ -183,13 +214,14 @@ export default function OnboardingQuickstart({
 
   if (loading || !progress)
     return (
-      <div className="space-y-3 animate-pulse px-1">
+      <div className="space-y-3 px-1 py-2">
         {[...Array(4)].map((_, i) => (
           <div key={i} className="flex items-center gap-3">
-            <div className="w-6 h-6 rounded-full bg-white/8 shrink-0" />
-            <div
-              className="flex-1 h-4 rounded-lg bg-white/8"
+            <Skeleton className="w-6 h-6 rounded-full shrink-0" accent="violet" />
+            <Skeleton
+              className="h-4 rounded-lg"
               style={{ width: `${60 + i * 10}%` }}
+              accent="violet"
             />
           </div>
         ))}
@@ -499,66 +531,68 @@ function AllSetCard() {
       initial={{ opacity: 0, scale: 0.97 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="relative h-full flex flex-col"
+      className="relative aurora-ring rounded-3xl"
     >
-      {/* Aurora glow */}
-      <div
-        className="absolute -top-20 -right-20 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-20 blur-3xl pointer-events-none"
-        style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
-      />
-      <div
-        className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-15 blur-3xl pointer-events-none"
-        style={{ background: "radial-gradient(circle, #10B981, transparent)" }}
-      />
+      <div className="relative rounded-3xl glass-strong overflow-hidden p-6 md:p-8 flex flex-col h-full">
+        {/* Aurora glow */}
+        <div
+          className="absolute -top-20 -right-20 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-20 blur-3xl pointer-events-none"
+          style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
+        />
+        <div
+          className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-15 blur-3xl pointer-events-none"
+          style={{ background: "radial-gradient(circle, #10B981, transparent)" }}
+        />
 
-      {/* Hero row */}
-      <div className="relative z-10 flex flex-col items-center text-center gap-4 pt-6 pb-5">
-        {/* Animated checkmark ring */}
-        <div className="relative w-16 h-16">
-          <motion.div
-            className="absolute inset-0 rounded-full"
-            style={{ background: "conic-gradient(from 0deg, #4F1E7B, #4F1E7B, #10B981, #4F1E7B)" }}
-            animate={{ rotate: 360 }}
-            transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-          />
-          <div className="absolute inset-[2px] rounded-full glass flex items-center justify-center">
-            <Check className="w-7 h-7 text-emerald-400" strokeWidth={2.5} />
+        {/* Hero row */}
+        <div className="relative z-10 flex flex-col items-center text-center gap-4 pb-5">
+          {/* Animated checkmark ring */}
+          <div className="relative w-16 h-16">
+            <motion.div
+              className="absolute inset-0 rounded-full"
+              style={{ background: "conic-gradient(from 0deg, #4F1E7B, #4F1E7B, #10B981, #4F1E7B)" }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+            />
+            <div className="absolute inset-[2px] rounded-full glass flex items-center justify-center">
+              <Check className="w-7 h-7 text-emerald-400" strokeWidth={2.5} />
+            </div>
+          </div>
+
+          <div>
+            <p className="text-[9px] uppercase tracking-[0.45em] text-emerald-600 mb-1.5 font-medium">
+              Setup complete
+            </p>
+            <h3 className="font-display italic text-3xl text-ink leading-tight">
+              You're live on Wireline
+            </h3>
+            <p className="text-[12px] text-ink/55 mt-1.5 leading-relaxed max-w-[220px] mx-auto">
+              Your agents are running. Here's what to do next.
+            </p>
           </div>
         </div>
 
-        <div>
-          <p className="text-[9px] uppercase tracking-[0.45em] text-emerald-400 mb-1.5">
-            Setup complete
-          </p>
-          <h3 className="font-display italic text-3xl text-ink leading-tight">
-            You're live on Wireline
-          </h3>
-          <p className="text-[12px] text-ink/55 mt-1.5 leading-relaxed max-w-[220px] mx-auto">
-            Your agents are running. Here's what to do next.
-          </p>
-        </div>
-      </div>
-
-      {/* Quick links */}
-      <div className="relative z-10 flex flex-col gap-2 px-1 pb-4">
-        {POWER_LINKS.map(({ to, icon: Icon, label, hint }) => (
-          <Link
-            key={to}
-            to={to}
-            className="group flex items-center gap-3 h-11 rounded-xl glass border border-white/8 px-3.5 hover:border-white/20 hover:bg-white/4 transition-all"
-          >
-            <div className="w-7 h-7 rounded-lg bg-brand/12 border border-brand/20 flex items-center justify-center shrink-0 text-brand">
-              <Icon className="w-3.5 h-3.5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-[11px] text-ink group-hover:text-brand transition-colors">
-                {label}
+        {/* Quick links */}
+        <div className="relative z-10 flex flex-col gap-2">
+          {POWER_LINKS.map(({ to, icon: Icon, label, hint }) => (
+            <Link
+              key={to}
+              to={to}
+              className="group flex items-center gap-3 h-11 rounded-xl glass border border-white/8 px-3.5 hover:border-white/20 hover:bg-white/4 transition-all"
+            >
+              <div className="w-7 h-7 rounded-lg bg-brand/12 border border-brand/20 flex items-center justify-center shrink-0 text-brand">
+                <Icon className="w-3.5 h-3.5" />
               </div>
-              <div className="text-[8px] uppercase tracking-[0.24em] text-muted">{hint}</div>
-            </div>
-            <ArrowRight className="w-3.5 h-3.5 text-muted/40 group-hover:text-brand transition-colors shrink-0" />
-          </Link>
-        ))}
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] text-ink group-hover:text-brand transition-colors">
+                  {label}
+                </div>
+                <div className="text-[8px] uppercase tracking-[0.24em] text-muted">{hint}</div>
+              </div>
+              <ArrowRight className="w-3.5 h-3.5 text-muted/40 group-hover:text-brand transition-colors shrink-0" />
+            </Link>
+          ))}
+        </div>
       </div>
     </motion.div>
   );

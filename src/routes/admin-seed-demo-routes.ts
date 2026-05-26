@@ -5,7 +5,7 @@
  * sign in and capture screenshots/video of a fully-populated console
  * rather than empty states.
  *
- * Default seed target email: qa-final-2026@wireline.app (overridable via
+ * Default seed target email: composer.demo@trywireline.com (overridable via
  * POST body { email }). Re-running is safe — every insert is gated by a
  * "do we already have this many rows for this user?" check so we never
  * inflate beyond the intended sample size.

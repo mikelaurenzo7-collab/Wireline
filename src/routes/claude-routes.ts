@@ -11,6 +11,8 @@ import { parseFormData, DirectiveSchema } from "../lib/form-validators";
 import { DEFAULT_AGENT_ROLE } from "../lib/agent-constants";
 import { dispatchWebhook } from "../lib/webhook-helpers";
 import { isSsrfUrl } from "../lib/webhook-validators";
+import { validate } from "../middleware/input-validation";
+import { z } from "zod";
 
 const router = express.Router();
 
@@ -32,7 +34,19 @@ router.get("/status", authenticateUser, async (_req: AuthenticatedRequest, res: 
   });
 });
 
-router.post("/brief", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+const briefSchema = z.object({
+  agentId: z.string().optional(),
+  customerName: z.string().max(200).optional(),
+  customerNumber: z.string().max(50).optional(),
+  reasonForCall: z.string().max(1000).optional(),
+  pastInteractionSummary: z.string().max(2000).optional(),
+});
+
+router.post(
+  "/brief",
+  authenticateUser,
+  validate({ body: briefSchema }),
+  async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { agentId, customerName, customerNumber, reasonForCall, pastInteractionSummary } =
       req.body;
@@ -85,7 +99,19 @@ router.post("/brief", authenticateUser, async (req: AuthenticatedRequest, res: R
   }
 });
 
-router.post("/qualify", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+const qualifySchema = z.object({
+  source: z.enum(["voice_call", "email_thread", "sms_thread"]).optional(),
+  transcript: z.string().max(25000).optional(), // Optional since it can be fetched via callId/threadId
+  callId: z.string().or(z.number()).optional(),
+  threadId: z.string().optional(),
+  agentId: z.string().optional(),
+});
+
+router.post(
+  "/qualify",
+  authenticateUser,
+  validate({ body: qualifySchema }),
+  async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { source, transcript, callId, threadId, agentId } = req.body;
     let actualTranscript: string = transcript;
@@ -160,9 +186,16 @@ router.post("/qualify", authenticateUser, async (req: AuthenticatedRequest, res:
   }
 });
 
+const objectionDrillSchema = z.object({
+  agentId: z.string().optional(),
+  topic: z.string().max(200).optional(),
+  count: z.number().int().min(1).max(10).optional(),
+});
+
 router.post(
   "/objection-drill",
   authenticateUser,
+  validate({ body: objectionDrillSchema }),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { agentId, topic, count } = req.body;

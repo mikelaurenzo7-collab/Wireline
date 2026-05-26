@@ -14,6 +14,7 @@ import {
   FileText,
   X,
   Phone,
+  ChevronDown,
 } from "lucide-react";
 import Papa from "papaparse";
 import { authFetch } from "../lib/api";
@@ -21,6 +22,7 @@ import { cn } from "../lib/utils";
 import { formatDate } from "../lib/safe-date";
 import PageShell, { Panel } from "./PageShell";
 import { useToast } from "../contexts/ToastContext";
+import SettingsTabSwitcher from "./admin/SettingsTabSwitcher";
 
 interface DncEntry {
   id: string;
@@ -193,7 +195,8 @@ export default function DncManager() {
   };
 
   return (
-    <div className="h-full min-h-0">
+    <div className="h-full flex flex-col gap-3 min-h-0">
+      <SettingsTabSwitcher />
       <PageShell
         eyebrow="Compliance · Outbound Protection"
         title="DNC List"
@@ -471,18 +474,21 @@ export default function DncManager() {
                     <label className="block text-[9px] uppercase tracking-[0.32em] text-muted mb-2">
                       Reason
                     </label>
-                    <select
-                      aria-label="Reason"
-                      value={addReason}
-                      onChange={(e) => setAddReason(e.target.value)}
-                      className="w-full h-10 px-3 rounded-xl glass border border-white/10 text-sm text-ink focus:border-rose-400/50 focus:outline-none transition-all"
-                    >
-                      {REASON_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <select
+                        aria-label="Reason"
+                        value={addReason}
+                        onChange={(e) => setAddReason(e.target.value)}
+                        className="w-full h-10 pl-3 pr-10 rounded-xl glass border border-white/10 text-sm text-ink focus:border-rose-400/50 focus:outline-none transition-all appearance-none cursor-pointer"
+                      >
+                        {REASON_OPTIONS.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/8 border border-amber-500/20">

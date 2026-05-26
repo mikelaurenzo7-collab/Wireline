@@ -265,7 +265,7 @@ export default function Showcase() {
       </header>
 
       {/* Hero */}
-      <section className="relative z-10 max-w-4xl mx-auto px-6 lg:px-10 pt-12 pb-12 sm:pt-20 sm:pb-16">
+      <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 pt-12 pb-12 sm:pt-20 sm:pb-16">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -286,7 +286,7 @@ export default function Showcase() {
       </section>
 
       {/* Showcase cards */}
-      <section className="relative z-10 max-w-4xl mx-auto px-6 lg:px-10 pb-20">
+      <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 pb-20">
         <div className="flex items-center gap-2 mb-6">
           <Volume2 className="w-4 h-4 text-brand" strokeWidth={2.2} />
           <p className="text-[10px] uppercase tracking-[0.4em] text-brand font-medium">
@@ -300,7 +300,7 @@ export default function Showcase() {
         </div>
       </section>
 
-      <section className="relative z-10 max-w-4xl mx-auto px-6 lg:px-10 pb-20">
+      <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 pb-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div>
             <div className="flex items-center gap-2 mb-4">
@@ -332,7 +332,7 @@ export default function Showcase() {
       </section>
 
       {/* CTA */}
-      <section className="relative z-10 max-w-3xl mx-auto px-6 lg:px-10 pb-24 text-center">
+      <section className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 pb-24 text-center">
         <h2 className="font-display italic text-4xl sm:text-5xl text-ink mb-4 text-balance">
           Deploy your own in under a minute.
         </h2>

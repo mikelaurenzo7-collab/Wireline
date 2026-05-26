@@ -105,8 +105,8 @@ export const settings = pgTable("wireline_settings", {
   vapiPhoneNumberId: text("vapi_phone_number_id"),
   retentionDays: integer("retention_days").default(365),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-  voiceLlmProvider: text("voice_llm_provider").default("anthropic"),
-  voiceLlmModel: text("voice_llm_model").default("claude-haiku-4-5"),
+  voiceLlmProvider: text("voice_llm_provider").default("google"),
+  voiceLlmModel: text("voice_llm_model").default("gemini-3-flash-preview"),
   dailyBriefEnabled: boolean("daily_brief_enabled").default(false).notNull(),
   dailyBriefSendAt: text("daily_brief_send_at").default("13:00").notNull(),
   dailyBriefRecipient: text("daily_brief_recipient"),
@@ -958,6 +958,7 @@ export const outboundLeads = pgTable(
     createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_created_at ON wireline_outbound_leads USING btree (created_at)`,
     userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_user_created ON wireline_outbound_leads USING btree (user_id, created_at DESC)`,
     statusNextAttemptIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_status_next_attempt ON wireline_outbound_leads USING btree (status, callback_scheduled_at) WHERE status IN ('Pending', 'Retry')`,
+    userCustomerNumberIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_user_customer_number ON wireline_outbound_leads USING btree (user_id, customer_number)`,
   }),
 );
 

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import ConfirmModal from "./ConfirmModal";
@@ -10,6 +11,7 @@ import IntegrationHealthBanner, { type IntegrationHealthPayload } from "./Integr
 import PageShell from "./PageShell";
 import { useToast } from "../contexts/ToastContext";
 import { useBranding } from "../contexts/BrandingContext";
+import SettingsTabSwitcher from "./admin/SettingsTabSwitcher";
 
 // Modularized Panels
 import { BrandingPanel } from "./admin/BrandingPanel";
@@ -108,12 +110,12 @@ export default function AdminSettings() {
   // "Upgrade now" CTA pointing at /admin?tab=subscription) land on
   // the correct tab instead of bouncing to the default. Falls back
   // to "branding" for unknown or missing values.
-  const initialTab: AdminTab = (() => {
-    if (typeof window === "undefined") return "branding";
-    const qs = new URLSearchParams(window.location.search).get("tab");
-    return VALID_TABS.includes(qs as AdminTab) ? (qs as AdminTab) : "branding";
+  const location = useLocation();
+  const navigate = useNavigate();
+  const activeTab: AdminTab = (() => {
+    const qs = new URLSearchParams(location.search).get("tab") as AdminTab;
+    return VALID_TABS.includes(qs) ? qs : "branding";
   })();
-  const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
 
   const [carrierNumbers, setCarrierNumbers] = useState<any[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -364,82 +366,18 @@ export default function AdminSettings() {
     }
   };
 
-  // Visually grouped Admin tabs. The flat 9-tab strip overwhelmed the
-  // operator with equal-weight options; grouping by concept (Account /
-  // Brand / Voice / Growth / System) gives the eye anchor points and
-  // makes the tab strip easier to scan.
-  const TAB_GROUPS: { tabs: { id: AdminTab; label: string }[] }[] = [
-    {
-      tabs: [
-        { id: "subscription", label: "Billing" },
-        { id: "team", label: "Team" },
-      ],
-    },
-    { tabs: [{ id: "branding", label: "Branding" }] },
-    {
-      tabs: [
-        { id: "carrier", label: "Carrier" },
-        { id: "voices", label: "Voices" },
-        { id: "pronunciation", label: "Pronunciation" },
-      ],
-    },
-    { tabs: [{ id: "flywheel", label: "Growth" }] },
-    {
-      tabs: [
-        { id: "system", label: "System" },
-        { id: "activity", label: "Activity" },
-      ],
-    },
-    {
-      tabs: [
-        { id: "dnc", label: "DNC" },
-        { id: "audit", label: "Audit" },
-      ],
-    },
-  ];
-
-  const tabSwitcher = (
-    <div
-      className="flex gap-0.5 p-0.5 rounded-xl glass border border-white/10 overflow-x-auto snap-x snap-mandatory scrollbar-hide max-w-full"
-      role="tablist"
-    >
-      {TAB_GROUPS.map((group, gi) => (
-        <React.Fragment key={gi}>
-          {gi > 0 && (
-            <span aria-hidden="true" className="shrink-0 self-center w-px h-4 bg-white/12 mx-1" />
-          )}
-          {group.tabs.map((t) => (
-            <button
-              key={t.id}
-              role="tab"
-              aria-selected={activeTab === t.id}
-              aria-controls={`admin-panel-${t.id}`}
-              onClick={() => setActiveTab(t.id)}
-              className={cn(
-                "shrink-0 snap-start px-2.5 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.12em] transition-colors whitespace-nowrap",
-                activeTab === t.id ? "bg-brand/20 text-brand" : "text-muted hover:text-ink",
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
-        </React.Fragment>
-      ))}
-    </div>
-  );
-
   return (
-    <div className="h-full min-h-0">
+    <div className="h-full flex flex-col gap-3 min-h-0">
+      <SettingsTabSwitcher />
       <PageShell
         title="Settings"
         eyebrow="Admin · Configuration"
         subtitle="API credentials, phone numbers, and platform configuration."
-        actions={tabSwitcher}
       >
         <div className="h-full flex flex-col">
           <IntegrationHealthBanner
             health={integrationHealth}
-            onOpenIntegrations={() => setActiveTab("system")}
+            onOpenIntegrations={() => navigate("/admin?tab=system")}
           />
           <div className="flex-1 min-h-0">
             {isLoading ? (
@@ -601,7 +539,7 @@ export default function AdminSettings() {
                       claudeStatus={claudeStatus}
                       integrations={integrations}
                       operationalSlos={operationalSlos}
-                      onOpenIntegrations={() => setActiveTab("system")}
+                      onOpenIntegrations={() => navigate("/admin?tab=system")}
                     />
                   </motion.div>
                 )}

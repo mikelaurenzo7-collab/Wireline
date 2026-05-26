@@ -613,7 +613,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
       </div>
 
       {/* Top brand bar */}
-      <header className="relative z-10 px-6 lg:px-10 py-5 flex items-center justify-between">
+      <header className="relative z-10 px-4 sm:px-6 lg:px-10 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center"
@@ -644,7 +644,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
       </header>
 
       {/* Hero */}
-      <section className="relative z-10 max-w-5xl mx-auto px-6 lg:px-10 pt-12 pb-16 sm:pt-20 sm:pb-24">
+      <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 pt-12 pb-16 sm:pt-20 sm:pb-24">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -679,7 +679,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
       </section>
 
       {/* Stat band */}
-      <section className="relative z-10 max-w-5xl mx-auto px-6 lg:px-10 pb-16">
+      <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 pb-16">
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -695,7 +695,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
       </section>
 
       {/* Pain points */}
-      <section className="relative z-10 max-w-5xl mx-auto px-6 lg:px-10 pb-20">
+      <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 pb-20">
         <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-8">
           What your AI agent handles
         </h2>
@@ -726,7 +726,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
       </section>
 
       {/* Script preview */}
-      <section className="relative z-10 max-w-3xl mx-auto px-6 lg:px-10 pb-20">
+      <section className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 pb-20">
         <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70 mb-3">
           What callers hear
         </p>
@@ -743,7 +743,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           accordion-style so the visitor doesn't have to scroll past
           to the CTA. Each Q&A is the answer to the most common
           conversion blocker in THIS vertical. */}
-      <section className="relative z-10 max-w-3xl mx-auto px-6 lg:px-10 pb-20">
+      <section className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 pb-20">
         <p className="text-[10px] uppercase tracking-[0.4em] text-brand mb-3 font-medium">
           Frequently asked
         </p>
@@ -781,7 +781,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
       </section>
 
       {/* Bottom CTA */}
-      <section className="relative z-10 max-w-3xl mx-auto px-6 lg:px-10 pb-24 text-center">
+      <section className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 pb-24 text-center">
         <h2 className="font-display italic text-4xl sm:text-5xl text-ink mb-4 text-balance">
           Try it on your business this week.
         </h2>
@@ -823,7 +823,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           tier; we lead with the {vertical} message because it makes
           DMs convert better, but every customer gets the full
           horizontal platform. */}
-      <section className="relative z-10 max-w-4xl mx-auto px-6 lg:px-10 pb-12">
+      <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 pb-12">
         <div className="rounded-2xl glass border border-white/10 p-5 sm:p-6 text-center">
           <p className="text-[10px] uppercase tracking-[0.35em] text-brand/80 mb-2">
             Built for every service business
@@ -860,7 +860,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
       </section>
 
       {/* Trust footer */}
-      <footer className="relative z-10 border-t border-black/8 py-8 px-6 lg:px-10 max-w-5xl mx-auto">
+      <footer className="relative z-10 border-t border-black/8 py-8 px-4 sm:px-6 lg:px-10 max-w-5xl mx-auto">
         <p className="text-[10px] text-muted/60 text-center max-w-2xl mx-auto leading-relaxed">
           {cfg.trustLine}
         </p>

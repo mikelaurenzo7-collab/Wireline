@@ -83,7 +83,7 @@
             "@id": "https://trywireline.com/#organization",
             "name": "Wireline",
             "url": "https://trywireline.com/",
-            "logo": "https://trywireline.com/wireline-connected-app-logo.png",
+            "logo": "https://trywireline.com/wireline-icon-1024.png",
             "description": "AI voice and email agents that deploy on real phone numbers for businesses. ",
             "sameAs": [
               "https://twitter.com/wirelineapp"
@@ -132,9 +132,12 @@
       }
     </script>
 
-    <!-- Preconnect to key origins for faster API bootstrap.
-         supabase.co handles auth + DB queries on every page; preconnect
-         shaves ~150-300ms off the first authenticated request. -->
+    <!-- Preconnect to key origins for faster bootstrap.
+         Google Fonts needs TWO origins: googleapis.com (CSS) + gstatic.com
+         (WOFF2 files). Preconnect collapses 200-400ms of DNS+TLS on 4G.
+         supabase.co handles auth + DB queries on every page. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://supabase.co" crossorigin />
     <link rel="preconnect" href="https://ogenlhodmwvyacvnrsnj.supabase.co" crossorigin />
     <link rel="dns-prefetch" href="https://api.anthropic.com" />

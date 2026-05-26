@@ -4,11 +4,12 @@
  * Use these instead of spinners for any data-loading state.
  */
 
+import React from "react";
 import { cn } from "../lib/utils";
 
 /* ── Base pulse animation ──────────────────────────────────────────── */
 
-interface SkeletonProps {
+interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string;
   /** Accent color for the shimmer — defaults to the brand cyan */
   accent?: "cyan" | "violet" | "magenta" | "emerald";
@@ -22,7 +23,7 @@ const ACCENT_SHIMMER: Record<string, string> = {
 };
 
 /** Single skeleton line / block — the atom of the system. */
-export function Skeleton({ className, accent = "cyan" }: SkeletonProps) {
+export function Skeleton({ className, accent = "cyan", ...props }: SkeletonProps) {
   return (
     <div
       role="status"
@@ -33,6 +34,7 @@ export function Skeleton({ className, accent = "cyan" }: SkeletonProps) {
         "relative overflow-hidden rounded-lg bg-black/[0.07] border border-black/[0.05]",
         className,
       )}
+      {...props}
     >
       <div
         className={cn(

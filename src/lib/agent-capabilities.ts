@@ -641,6 +641,28 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "crm_create_contact",
     "log_to_excel",
   ],
+  // Personal assistants — represent an individual person, not a business.
+  // Focused on scheduling, message-taking, callbacks, and general
+  // communication. Deliberately excludes e-commerce, CRM pipeline, and
+  // lead-scoring tools that don't apply to personal use.
+  personal_assistant: [
+    "view_recent_interactions",
+    "escalate_to_human",
+    "create_fleet_task",
+    "send_email",
+    "send_text_message",
+    "lookup_phone_number",
+    "add_to_dnc",
+    "check_calendar_availability",
+    "book_appointment",
+    "leave_voicemail",
+    "schedule_callback",
+    "capture_customer_profile",
+    "send_slack_notification",
+    "send_teams_message",
+    "generate_zoom_link",
+    "gemini_ground",
+  ],
 };
 
 /** Extra tools unlocked by subscription tier (settings.ai_tier). */

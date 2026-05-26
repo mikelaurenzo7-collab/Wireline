@@ -173,12 +173,26 @@ export default function Pricing() {
           </div>
           <span className="brand-wordmark text-[16px] leading-none">WIRELINE</span>
         </Link>
-        <Link
-          to="/"
-          className="text-[11px] uppercase tracking-[0.32em] text-muted hover:text-ink transition-colors"
-        >
-          Sign in →
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/compare"
+            className="text-[11px] uppercase tracking-[0.3em] text-muted/70 hover:text-ink transition-colors"
+          >
+            Compare
+          </Link>
+          <Link
+            to="/about"
+            className="hidden sm:inline text-[11px] uppercase tracking-[0.3em] text-muted/70 hover:text-ink transition-colors"
+          >
+            About
+          </Link>
+          <Link
+            to="/"
+            className="px-4 py-2 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.28em] hover:opacity-90 transition-opacity"
+          >
+            Start free trial
+          </Link>
+        </div>
       </header>
 
       {/* Hero */}
@@ -476,8 +490,8 @@ export default function Pricing() {
                 humanCost: 75000,
                 humanCostLabel: "US median SDR comp",
                 tier: "Pro",
-                tierCost: 399 * 12,
-                tierLabel: "$399/mo",
+                tierCost: 499 * 12,
+                tierLabel: "$499/mo",
               },
               {
                 role: "5-seat call center",
@@ -551,12 +565,40 @@ export default function Pricing() {
           </p>
           <p className="text-[12px] text-muted/65">
             Voice minutes are pooled across all agents in your workspace. Overage is tier-based
-            (Personal: $0.25/min · Starter: $0.20/min · Pro: $0.18/min · Business: $0.16/min) —
-            priced at our cost, not a profit center. Most teams stay well inside plan. Email volume
+            (Personal: $0.20/min · Starter: $0.18/min · Pro: $0.15/min · Business: $0.13/min) —
+            priced near our cost, not a profit center. Most teams stay well inside plan. Email volume
             is unlimited on all plans.
           </p>
         </motion.div>
       </section>
+
+      <footer className="relative z-10 border-t border-black/8 py-8 px-4 sm:px-6 lg:px-10 xl:px-14 max-w-6xl mx-auto">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] text-muted/60">
+          <Link to="/" className="hover:text-ink transition-colors">
+            Wireline
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/compare" className="hover:text-ink transition-colors">
+            Compare
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/about" className="hover:text-ink transition-colors">
+            About
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/showcase" className="hover:text-ink transition-colors">
+            Showcase
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/privacy" className="hover:text-ink transition-colors">
+            Privacy
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/terms" className="hover:text-ink transition-colors">
+            Terms
+          </Link>
+        </div>
+      </footer>
     </div>
   );
 }

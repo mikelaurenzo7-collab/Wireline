@@ -23,6 +23,7 @@ import {
 import PageShell, { Panel } from "./PageShell";
 import EmptyState from "./EmptyState";
 import { authFetch } from "../lib/api";
+import SettingsTabSwitcher from "./admin/SettingsTabSwitcher";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
 import { formatDateTime } from "../lib/safe-date";
@@ -377,7 +378,8 @@ export default function AuditLog() {
   }, []);
 
   return (
-    <div className="h-full min-h-0">
+    <div className="h-full flex flex-col gap-3 min-h-0">
+      <SettingsTabSwitcher />
       <PageShell
         title="Audit Log"
         subtitle="System activity monitoring & compliance"

@@ -93,7 +93,7 @@ export function PrivacyPolicy() {
         <p>
           <strong>Wireline</strong> ("we", "our", or "us") operates the Wireline platform — an
           AI-powered omnichannel agent fleet for businesses. Questions about this policy can be sent
-          to <strong>legal@wireline.app</strong>. This policy explains what data we collect, why,
+          to <strong>trywireline@yahoo.com</strong>. This policy explains what data we collect, why,
           and your rights over it.
         </p>
       </Section>
@@ -218,7 +218,7 @@ export function PrivacyPolicy() {
         </p>
         <p>
           To exercise your California privacy rights, contact us at{" "}
-          <strong>legal@wireline.app</strong> or use the Delete Account option in Settings. We will
+          <strong>trywireline@yahoo.com</strong> or use the Delete Account option in Settings. We will
           respond to verified requests within 45 days.
         </p>
       </Section>
@@ -266,7 +266,7 @@ export function PrivacyPolicy() {
 
       <Section title="12. Contact">
         <p>
-          Privacy questions or requests: <strong>legal@wireline.app</strong>
+          Privacy questions or requests: <strong>trywireline@yahoo.com</strong>
         </p>
       </Section>
     </LegalLayout>
@@ -426,7 +426,7 @@ export function TermsOfService() {
 
       <Section title="13. Contact">
         <p>
-          Legal notices: <strong>legal@wireline.app</strong>
+          Legal notices: <strong>trywireline@yahoo.com</strong>
         </p>
       </Section>
     </LegalLayout>

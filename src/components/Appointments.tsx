@@ -18,6 +18,7 @@ import {
   LayoutList,
   LayoutGrid,
   AlertOctagon,
+  ChevronDown,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -247,35 +248,41 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
             </div>
             {agents.length > 0 && (
               <Field label="Agent" icon={Bot}>
-                <select
-                  aria-label="Appointment agent"
-                  className={cn(inputCls, "appearance-none cursor-pointer")}
-                  value={form.agent_id}
-                  onChange={(e) => set("agent_id", e.target.value)}
-                >
-                  <option value="">Unassigned</option>
-                  {agents.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    aria-label="Appointment agent"
+                    className={cn(inputCls, "appearance-none cursor-pointer pr-8")}
+                    value={form.agent_id}
+                    onChange={(e) => set("agent_id", e.target.value)}
+                  >
+                    <option value="">Unassigned</option>
+                    {agents.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted pointer-events-none" />
+                </div>
               </Field>
             )}
             {isEdit && (
               <Field label="Status" icon={CheckCircle2}>
-                <select
-                  aria-label="Appointment status"
-                  className={cn(inputCls, "appearance-none cursor-pointer")}
-                  value={form.status}
-                  onChange={(e) => set("status", e.target.value)}
-                >
-                  {Object.keys(STATUS_META).map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    aria-label="Appointment status"
+                    className={cn(inputCls, "appearance-none cursor-pointer pr-8")}
+                    value={form.status}
+                    onChange={(e) => set("status", e.target.value)}
+                  >
+                    {Object.keys(STATUS_META).map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted pointer-events-none" />
+                </div>
               </Field>
             )}
             <Field label="Notes" icon={StickyNote}>

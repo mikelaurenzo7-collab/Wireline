@@ -5,7 +5,7 @@ export const VAPI_TOOL_UNAVAILABLE_RESULT =
 export type VapiToolResult = { toolCallId: string; result: string };
 
 /** Wall-clock cap for a single live-call tool (keeps Vapi from waiting on slow IO). */
-export const VAPI_TOOL_TIMEOUT_MS = 8_000;
+export const VAPI_TOOL_TIMEOUT_MS = 5_000;
 
 /** Max concurrent tool handlers per Vapi tool-calls webhook (audit #4). */
 export const MAX_VAPI_PARALLEL_TOOL_CALLS = 3;

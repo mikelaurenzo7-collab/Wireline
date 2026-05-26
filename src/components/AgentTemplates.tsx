@@ -208,6 +208,35 @@ const AGENT_TEMPLATES = [
     firstMessage:
       "Hi! I'm calling on behalf of [Company] — we'd love your feedback on your recent experience. This takes under 2 minutes.",
   },
+  // === E-COMMERCE ===
+  {
+    id: "ecommerce-support",
+    category: "E-commerce",
+    name: "Shopify / Square Support",
+    description:
+      "Handles 'Where is my order?', returns, inventory questions, address changes, and discount codes — connected to your live store.",
+    role: "ecommerce",
+    channel: "voice" as const,
+    icon: Headphones,
+    accent: "#96BF48",
+    badge: "Shopify · Square",
+    firstMessage:
+      "Thanks for calling! I can help with order status, returns, or anything about your purchase. What can I look into for you?",
+  },
+  {
+    id: "ecommerce-phone-order",
+    category: "E-commerce",
+    name: "Phone Order Agent",
+    description:
+      "Takes orders over the phone, builds draft orders, applies discounts, sends payment links, and handles address corrections — all live.",
+    role: "ecommerce",
+    channel: "voice" as const,
+    icon: Receipt,
+    accent: "#96BF48",
+    badge: "Phone sales",
+    firstMessage:
+      "Hi, welcome to our store! I can help you place an order right over the phone. What are you looking for today?",
+  },
   // === PERSONAL & LIFESTYLE ===
   // For individuals on the Personal tier ($49/mo, 1 agent) — agents
   // represent a single human rather than a business. Versatile concierge
@@ -279,6 +308,7 @@ const CATEGORIES = [
   "Scheduling",
   "Collections & Finance",
   "Marketing",
+  "E-commerce",
   "Personal & Lifestyle",
 ] as const;
 
@@ -299,6 +329,8 @@ const DEFAULT_GENDER_BY_TEMPLATE: Record<string, "female" | "male"> = {
   "collections-hard": "male",
   "marketing-reengagement": "female",
   "marketing-survey": "female",
+  "ecommerce-support": "female",
+  "ecommerce-phone-order": "female",
   "personal-concierge": "female",
   "personal-screener": "female",
   "personal-errand": "female",

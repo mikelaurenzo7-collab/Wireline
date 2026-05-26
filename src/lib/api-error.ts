@@ -1,0 +1,109 @@
+/**
+ * Standardized API error handling for Wireline.
+ * ---------------------------------------------------------------------------
+ * All API routes should throw AppError instances (or let the global handler
+ * catch raw errors) so that every response follows the same shape:
+ *   { error: string, code: string, requestId?: string, details?: object }
+ *
+ * This replaces the ad-hoc mix of `{ error: "..." }`, `{ message: "..." }`,
+ * and leaked stack traces across the 50 route files.
+ */
+
+export class AppError extends Error {
+  status: number;
+  code: string;
+  details?: Record<string, unknown>;
+
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    details?: Record<string, unknown>,
+  ) {
+    super(message);
+    this.name = "AppError";
+    this.status = status;
+    this.code = code;
+    this.details = details;
+  }
+
+  /* ── Common factory methods ──────────────────────────────────────── */
+
+  static badRequest(message: string, details?: Record<string, unknown>) {
+    return new AppError(400, "BAD_REQUEST", message, details);
+  }
+
+  static unauthorized(message = "Authentication required") {
+    return new AppError(401, "UNAUTHORIZED", message);
+  }
+
+  static forbidden(message = "Access denied") {
+    return new AppError(403, "FORBIDDEN", message);
+  }
+
+  static notFound(message = "Resource not found") {
+    return new AppError(404, "NOT_FOUND", message);
+  }
+
+  static conflict(message: string, details?: Record<string, unknown>) {
+    return new AppError(409, "CONFLICT", message, details);
+  }
+
+  static tooManyRequests(message = "Rate limit exceeded") {
+    return new AppError(429, "RATE_LIMITED", message);
+  }
+
+  static internal(message = "Internal server error") {
+    return new AppError(500, "INTERNAL_ERROR", message);
+  }
+
+  static serviceUnavailable(message: string) {
+    return new AppError(503, "SERVICE_UNAVAILABLE", message);
+  }
+}
+
+/** Standard error response shape for all API endpoints. */
+export interface ApiErrorResponse {
+  error: string;
+  code: string;
+  requestId?: string;
+  details?: Record<string, unknown>;
+}
+
+/**
+ * Format any error into the standard response shape.
+ * - AppError instances are preserved with their status and code.
+ * - Unknown errors never leak stack traces or implementation details
+ *   (500 responses always show "Internal server error").
+ */
+export function formatErrorResponse(
+  err: unknown,
+  requestId?: string,
+): { status: number; body: ApiErrorResponse } {
+  if (err instanceof AppError) {
+    return {
+      status: err.status,
+      body: {
+        error: err.message,
+        code: err.code,
+        ...(requestId ? { requestId } : {}),
+        ...(err.details ? { details: err.details } : {}),
+      },
+    };
+  }
+
+  // Unknown error — never leak stack traces or implementation details.
+  const isKnownHttpError =
+    err instanceof Error && "status" in err && typeof (err as any).status === "number";
+  const status: number = isKnownHttpError ? (err as any).status : 500;
+  const safeStatus = status >= 400 && status < 600 ? status : 500;
+
+  return {
+    status: safeStatus,
+    body: {
+      error: safeStatus === 500 ? "Internal server error" : (err instanceof Error ? err.message : "Unknown error"),
+      code: safeStatus === 500 ? "INTERNAL_ERROR" : "ERROR",
+      ...(requestId ? { requestId } : {}),
+    },
+  };
+}

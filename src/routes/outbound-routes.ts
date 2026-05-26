@@ -15,6 +15,8 @@ import { quotaRejectionHeaders } from "../lib/tenant-quotas";
 import { placeOutboundCall } from "../lib/vapi-client";
 import { SentryEvents } from "../lib/sentry-events";
 import { claudeRateLimiter, dialRateLimiter } from "../middleware/api-rate-limits";
+import { validate } from "../middleware/input-validation";
+import { z } from "zod";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
@@ -114,6 +116,17 @@ router.delete(
   },
 );
 
+const dialSchema = z.object({
+  agentId: z.string().min(1, "agentId is required"),
+  customerNumber: z
+    .string()
+    .min(1, "customerNumber is required")
+    // Accept E.164 (+1XXXXXXXXXX) or common US formats (10-15 digits)
+    .regex(/^\+?[1-9]\d{6,14}$/, "Invalid phone number format — expected E.164 (e.g. +15551234567)"),
+  customerName: z.string().max(200).optional(),
+  context: z.string().max(2000).optional(),
+});
+
 router.post(
   "/api/outbound/dial",
   authenticateUser,
@@ -126,12 +139,10 @@ router.post(
   enforce24hSpendCap,
   enforceSpendCap,
   dialRateLimiter,
+  validate({ body: dialSchema }),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { agentId, customerName, customerNumber, context } = req.body;
-      if (!agentId || !customerNumber) {
-        return res.status(400).json({ error: "agentId and customerNumber are required." });
-      }
 
       // DNC compliance check — block calls to numbers on the Do Not Call list.
       if (await isDncBlocked(req.user.id, customerNumber)) {

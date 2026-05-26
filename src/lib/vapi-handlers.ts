@@ -2,6 +2,7 @@
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
+import { invalidateDashboard } from "./dashboard-cache";
 import * as claudeBrain from "./claude-brain";
 import { getErrorMessage } from "./server-utils";
 import { SentryEvents } from "./sentry-events";
@@ -362,8 +363,8 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
           sourceCallId: call?.id,
         });
       }
-    } catch (gErr) {
-      log.warn("Gemini post-call fallback failed", { error: getErrorMessage(gErr) });
-    }
   }
+
+  // Invalidate cache so dashboard immediately reflects the new call log and enrichment.
+  invalidateDashboard(userId);
 }

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   PhoneIncoming,
   PhoneOutgoing,
@@ -23,6 +23,10 @@ import {
   Sparkles,
   Phone,
   ArrowLeft,
+  Volume2,
+  Play,
+  Pause,
+  SkipForward,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
@@ -204,7 +208,7 @@ export default function CallLogs() {
                           onClick={() => setSelectedCall(call)}
                           aria-label={`Open signal from ${call.customer_number || "Sim Test"}: ${call.summary || "no summary"}`}
                           className={cn(
-                            "group w-full text-left flex items-center gap-3 px-3 py-3 transition-all relative",
+                            "group w-full text-left flex items-center gap-3 px-3 py-3 transition-all relative active:scale-[0.99] active:bg-white/5 duration-100",
                             selectedCall?.id === call.id ? "bg-brand/8" : "hover:bg-white/3",
                           )}
                         >
@@ -298,7 +302,7 @@ export default function CallLogs() {
             <div
               className={cn(
                 "col-span-12 md:col-span-6 lg:col-span-7 xl:col-span-8 h-full",
-                !selectedCall && "hidden lg:block",
+                !selectedCall && "hidden md:block",
               )}
             >
               {selectedCall ? (
@@ -727,22 +731,7 @@ function CallDetail({
                 className="h-full overflow-y-auto scrollbar-hide p-4 space-y-3"
               >
                 {call.recording_url ? (
-                  <div className="rounded-xl glass border border-black/8 p-4 space-y-3">
-                    <div className="text-[9px] uppercase tracking-[0.3em] text-brand flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
-                      Decrypted signal buffer
-                    </div>
-                    <a
-                      href={call.recording_url}
-                      download
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
-                      aria-label="Download recording (opens in new tab)"
-                    >
-                      <Download className="w-3 h-3" /> Download
-                    </a>
-                  </div>
+                  <RecordingPlayer url={call.recording_url} />
                 ) : (
                   <div className="h-full min-h-[200px] flex flex-col items-center justify-center gap-2">
                     <Activity className="w-6 h-6 text-muted/40" />
@@ -784,6 +773,198 @@ function Stat({
         {label}
       </div>
       <div className="font-display italic text-lg text-ink leading-none truncate">{value}</div>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ *  RecordingPlayer — inline audio playback with seek, speed, and download
+ * ──────────────────────────────────────────────────────────────────── */
+
+const SPEEDS = [1, 1.25, 1.5, 2] as const;
+
+function RecordingPlayer({ url }: { url: string }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrent] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [speedIdx, setSpeedIdx] = useState(0);
+  const [loadError, setLoadError] = useState(false);
+
+  const fmtTime = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2, "0")}`;
+  };
+
+  const togglePlay = useCallback(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    if (a.paused) {
+      a.play().catch(() => setLoadError(true));
+    } else {
+      a.pause();
+    }
+  }, []);
+
+  const cycleSpeed = useCallback(() => {
+    setSpeedIdx((prev) => {
+      const next = (prev + 1) % SPEEDS.length;
+      const a = audioRef.current;
+      if (a) a.playbackRate = SPEEDS[next];
+      return next;
+    });
+  }, []);
+
+  const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const a = audioRef.current;
+    if (!a || !a.duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    a.currentTime = pct * a.duration;
+  }, []);
+
+  const skip = useCallback((delta: number) => {
+    const a = audioRef.current;
+    if (!a) return;
+    a.currentTime = Math.max(0, Math.min(a.duration || 0, a.currentTime + delta));
+  }, []);
+
+  const pct = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  if (loadError) {
+    return (
+      <div className="rounded-xl glass border border-rose-500/20 p-4 text-center space-y-2">
+        <Activity className="w-5 h-5 text-rose-400 mx-auto" />
+        <p className="text-[10px] text-rose-400">
+          Recording could not be loaded. It may have expired.
+        </p>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
+        >
+          <ExternalLink className="w-3 h-3" /> Try opening directly
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl glass border border-black/8 p-4 space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="text-[9px] uppercase tracking-[0.3em] text-brand flex items-center gap-1.5">
+          <Volume2 className="w-3 h-3" />
+          Call Recording
+        </div>
+        <a
+          href={url}
+          download
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-[9px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
+          aria-label="Download recording"
+        >
+          <Download className="w-3 h-3" /> Download
+        </a>
+      </div>
+
+      {/* Hidden HTML5 audio element */}
+      <audio
+        ref={audioRef}
+        src={url}
+        preload="metadata"
+        onLoadedMetadata={() => {
+          const a = audioRef.current;
+          if (a) setDuration(a.duration);
+        }}
+        onTimeUpdate={() => {
+          const a = audioRef.current;
+          if (a) setCurrent(a.currentTime);
+        }}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+        onError={() => setLoadError(true)}
+      />
+
+      {/* Progress bar */}
+      <div
+        className="group relative h-2 rounded-full bg-black/10 cursor-pointer overflow-hidden"
+        onClick={handleSeek}
+        role="slider"
+        aria-label="Seek through recording"
+        aria-valuenow={Math.round(pct)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        tabIndex={0}
+      >
+        {/* Filled track */}
+        <div
+          className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-100"
+          style={{
+            width: `${pct}%`,
+            background: "linear-gradient(90deg, #4F1E7B, #7B3FA0)",
+          }}
+        />
+        {/* Hover thumb */}
+        <div
+          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-brand shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{ left: `calc(${pct}% - 6px)` }}
+        />
+      </div>
+
+      {/* Controls row */}
+      <div className="flex items-center gap-2">
+        {/* Skip back 10s */}
+        <button
+          onClick={() => skip(-10)}
+          aria-label="Rewind 10 seconds"
+          className="w-7 h-7 rounded-full glass border border-black/10 flex items-center justify-center text-muted hover:text-ink hover:border-black/20 transition-all"
+        >
+          <SkipForward className="w-3 h-3 rotate-180" />
+        </button>
+
+        {/* Play/Pause */}
+        <button
+          onClick={togglePlay}
+          aria-label={playing ? "Pause" : "Play"}
+          className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-lg"
+          style={{ background: "linear-gradient(135deg, #4F1E7B, #7B3FA0)" }}
+        >
+          {playing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+        </button>
+
+        {/* Skip forward 10s */}
+        <button
+          onClick={() => skip(10)}
+          aria-label="Forward 10 seconds"
+          className="w-7 h-7 rounded-full glass border border-black/10 flex items-center justify-center text-muted hover:text-ink hover:border-black/20 transition-all"
+        >
+          <SkipForward className="w-3 h-3" />
+        </button>
+
+        {/* Time */}
+        <span className="text-[10px] font-mono text-muted tabular-nums ml-1">
+          {fmtTime(currentTime)}
+          <span className="text-muted/40 mx-0.5">/</span>
+          {fmtTime(duration)}
+        </span>
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Speed toggle */}
+        <button
+          onClick={cycleSpeed}
+          aria-label={`Playback speed: ${SPEEDS[speedIdx]}x`}
+          className="h-6 px-2 rounded-full glass border border-black/10 text-[9px] font-mono text-muted hover:text-ink hover:border-black/20 transition-all"
+        >
+          {SPEEDS[speedIdx]}x
+        </button>
+      </div>
     </div>
   );
 }

@@ -13,10 +13,12 @@ import {
   X,
   Loader2,
   Zap,
+  ChevronDown,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { logFetchError } from "../lib/utils";
 import { useToast } from "../contexts/ToastContext";
+import { useApiError } from "../hooks/useApiError";
 
 type StepType = "call" | "sms" | "email";
 type Step = { type: StepType; delayHours: number; template?: string };
@@ -104,7 +106,8 @@ function stepTint(t: StepType) {
 }
 
 export default function Cadences() {
-  const { success: toastSuccess, error: toastError } = useToast();
+  const { success: toastSuccess } = useToast();
+  const { handleApiError, handleCatchError } = useApiError();
   const [cadences, setCadences] = useState<Cadence[]>([]);
   const [runs, setRuns] = useState<CadenceRun[]>([]);
   const [loading, setLoading] = useState(true);
@@ -153,11 +156,11 @@ export default function Cadences() {
 
   const save = async () => {
     if (!draftName.trim()) {
-      toastError("Name required", "Give your sequence a name first.");
+      handleCatchError(new Error("Give your sequence a name first."), "Name required");
       return;
     }
     if (draftSteps.length === 0) {
-      toastError("Add at least one step", "Sequences need a step to run.");
+      handleCatchError(new Error("Sequences need a step to run."), "Add at least one step");
       return;
     }
     setSaving(true);
@@ -172,8 +175,8 @@ export default function Cadences() {
         }),
       });
       if (!r.ok) {
-        const b = await r.json().catch(() => ({}));
-        throw new Error(b?.error || `HTTP ${r.status}`);
+        await handleApiError(r, "Failed to save sequence");
+        return;
       }
       toastSuccess("Sequence created", `"${draftName}" is live.`);
       setShowBuilder(false);
@@ -181,8 +184,8 @@ export default function Cadences() {
       setDraftDescription("");
       setDraftSteps([{ type: "call", delayHours: 0 }]);
       load();
-    } catch (e: any) {
-      toastError("Save failed", e?.message || "Try again.");
+    } catch (e: unknown) {
+      handleCatchError(e, "Save failed");
     } finally {
       setSaving(false);
     }
@@ -195,10 +198,13 @@ export default function Cadences() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ active: !c.active }),
       });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      if (!r.ok) {
+        await handleApiError(r, "Failed to update sequence");
+        return;
+      }
       load();
-    } catch (e: any) {
-      toastError("Update failed", e?.message || "Try again.");
+    } catch (e: unknown) {
+      handleCatchError(e, "Update failed");
     }
   };
 
@@ -206,11 +212,14 @@ export default function Cadences() {
     if (!confirm(`Delete "${c.name}"? Any active runs will be paused.`)) return;
     try {
       const r = await authFetch(`/api/cadences/${c.id}`, { method: "DELETE" });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      if (!r.ok) {
+        await handleApiError(r, "Failed to delete sequence");
+        return;
+      }
       toastSuccess("Sequence deleted", `"${c.name}" removed.`);
       load();
-    } catch (e: any) {
-      toastError("Delete failed", e?.message || "Try again.");
+    } catch (e: unknown) {
+      handleCatchError(e, "Delete failed");
     }
   };
 
@@ -399,16 +408,19 @@ export default function Cadences() {
                     {i + 1}
                   </span>
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
-                    <select
-                      aria-label="Step type"
-                      value={s.type}
-                      onChange={(e) => updateStep(i, { type: e.target.value as StepType })}
-                      className="px-2 py-1.5 rounded-md bg-white/5 border border-white/10 text-ink text-[11px]"
-                    >
-                      <option value="call">Call</option>
-                      <option value="sms">SMS</option>
-                      <option value="email">Email</option>
-                    </select>
+                    <div className="relative">
+                      <select
+                        aria-label="Step type"
+                        value={s.type}
+                        onChange={(e) => updateStep(i, { type: e.target.value as StepType })}
+                        className="w-full pl-2 pr-7 py-1.5 rounded-md bg-white/5 border border-white/10 text-ink text-[11px] appearance-none cursor-pointer"
+                      >
+                        <option value="call">Call</option>
+                        <option value="sms">SMS</option>
+                        <option value="email">Email</option>
+                      </select>
+                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none" />
+                    </div>
                     <div className="flex items-center gap-1.5">
                       <Clock className="w-3 h-3 text-muted/60" />
                       <input

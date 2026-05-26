@@ -17,6 +17,7 @@ import {
   User,
   Target,
   AlertOctagon,
+  Volume2,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
@@ -414,6 +415,17 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
               <span className="inline-block mt-1 text-[8px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
                 Lesson captured
               </span>
+            )}
+            {event.recording_url && (
+              <a
+                href={event.recording_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-1 mt-1.5 px-2 py-1 rounded-full bg-brand/8 border border-brand/20 text-brand text-[8px] uppercase tracking-[0.25em] hover:bg-brand/15 hover:border-brand/35 transition-all"
+              >
+                <Volume2 className="w-2.5 h-2.5" /> Listen to recording
+              </a>
             )}
           </>
         )}
