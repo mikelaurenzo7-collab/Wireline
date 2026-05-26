@@ -18,7 +18,7 @@
  *   personal:   $0.20  (+36% margin)  — unchanged
  *   starter:    $0.18  (+29% margin)  — bumped from $0.15
  *   pro:        $0.15  (+15% margin)  — bumped from $0.12
- *   business:   $0.13  (+2%  margin)  — bumped from $0.10
+ *   business:   $0.14  (+9%  margin)  — bumped from $0.10, healthy buffer
  *   enterprise: $0.11  (~breakeven)   — bumped from $0.08, custom contracts cover
  *
  * Existing subscribers stay on their original Stripe Price IDs (Stripe
@@ -141,7 +141,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     price_usd_monthly: 1_499,
     max_agents: 25,
     voice_minutes_monthly: 15_000,
-    overage_per_min_usd: 0.13,
+    overage_per_min_usd: 0.14,
     included_phone_numbers: 10,
     priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
     extra_agent_price_usd: 25,
@@ -154,7 +154,7 @@ export const STRIPE_PLANS: StripePlan[] = [
       "SSO + audit log export",
       "Up to 50 team seats",
       "Priority support · Slack channel",
-      "Overage billed at $0.13 / min",
+      "Overage billed at $0.14 / min",
       "Add more agents: $25/each/month (best per-agent rate)",
     ],
   },

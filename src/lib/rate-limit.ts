@@ -12,6 +12,7 @@
 // One INCR + one EXPIRE per request — both are O(1) on Redis.
 
 import { Redis } from "@upstash/redis";
+import { log } from "./server-context";
 
 let redis: Redis | null = null;
 let warnedNoRedis = false;
@@ -84,22 +85,22 @@ export async function rateLimit(key: string, opts: RateLimiterOptions): Promise<
       return { allowed: count <= opts.max, remaining, resetMs };
     } catch (err) {
       if (opts.failClosedOnError) {
-        console.error(
-          `[rate-limit] redis error on spend-sensitive bucket ${opts.bucket}, failing closed:`,
-          (err as Error).message,
+        log.error(
+          `[rate-limit] redis error on spend-sensitive bucket ${opts.bucket}, failing closed`,
+          { bucket: opts.bucket, error: (err as Error).message },
         );
         throw err;
       }
       // Fail-OPEN on Redis error — better to serve traffic than to lock
       // out everyone when the Redis quota or network is degraded.
-      // eslint-disable-next-line no-console
-      console.warn("[rate-limit] redis error, falling back to memory:", (err as Error).message);
+      log.warn("[rate-limit] redis error, falling back to memory", {
+        error: (err as Error).message,
+      });
     }
   } else if (!warnedNoRedis) {
     warnedNoRedis = true;
     if (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") {
-      // eslint-disable-next-line no-console
-      console.warn(
+      log.warn(
         "[rate-limit] UPSTASH_REDIS_REST_URL not set — rate limits are per-invocation only " +
           "and provide no real protection in serverless. Configure Upstash Redis for production.",
       );
