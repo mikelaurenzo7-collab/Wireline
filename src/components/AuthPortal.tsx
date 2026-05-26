@@ -346,23 +346,23 @@ export default function AuthPortal() {
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="flex items-center gap-3 mb-6 xl:mb-8"
+            className="flex items-center gap-4 mb-6 xl:mb-8"
           >
             <div
-              className="relative w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+              className="relative w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
               style={{
                 background: "#4F1E7B",
                 boxShadow:
                   "0 8px 24px -8px rgba(79,30,123,0.4), 0 0 0 1px rgba(255,255,255,0.22) inset",
               }}
             >
-              <WirelineMark className="w-4 h-4 text-on-brand" strokeWidth={130} />
+              <WirelineMark className="w-6 h-6 text-on-brand" strokeWidth={130} />
             </div>
             <div>
-              <span className="brand-wordmark text-xl leading-none !text-[#4F1E7B] !filter-none">
+              <span className="brand-wordmark text-3xl xl:text-4xl leading-none !text-[#4F1E7B] !filter-none">
                 WIRELINE
               </span>
-              <p className="text-[7px] tracking-[0.42em] uppercase text-muted mt-0.5">
+              <p className="text-[9px] xl:text-[10px] tracking-[0.42em] uppercase text-muted mt-1">
                 AI Voice Platform
               </p>
             </div>
@@ -493,21 +493,21 @@ export default function AuthPortal() {
         <div className="flex-1 lg:sticky lg:top-0 lg:min-h-dvh flex flex-col items-center justify-start relative z-10 py-5 sm:py-8 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 overflow-y-auto native-scroll overscroll-y-contain">
           <div className="lg:hidden w-full max-w-md mb-4 pt-1">
             {/* Logo + wordmark row */}
-            <div className="flex items-center gap-3 mb-5">
+            <div className="flex items-center gap-3.5 mb-5">
               <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
                 style={{
                   background: "#4F1E7B",
                   boxShadow: "0 8px 24px -8px rgba(79,30,123,0.4)",
                 }}
               >
-                <WirelineMark className="w-5 h-5 text-on-brand" strokeWidth={130} />
+                <WirelineMark className="w-6 h-6 text-on-brand" strokeWidth={130} />
               </div>
               <div>
-                <span className="brand-wordmark text-2xl leading-none !text-[#4F1E7B] !filter-none">
+                <span className="brand-wordmark text-3xl leading-none !text-[#4F1E7B] !filter-none">
                   WIRELINE
                 </span>
-                <p className="text-[8px] tracking-[0.42em] uppercase text-muted mt-0.5">
+                <p className="text-[9px] tracking-[0.42em] uppercase text-muted mt-1">
                   AI Voice Platform
                 </p>
               </div>
