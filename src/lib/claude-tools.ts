@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
+ 
 /**
  * Claude Tool Schemas
  * ---------------------------------------------------------------------------
@@ -972,8 +972,14 @@ export const TOOLS = {
           items: {
             type: "object",
             properties: {
-              objection: { type: "string", description: "Exact words or paraphrase of the objection." },
-              response: { type: "string", description: "Complete scripted response (2–4 sentences)." },
+              objection: {
+                type: "string",
+                description: "Exact words or paraphrase of the objection.",
+              },
+              response: {
+                type: "string",
+                description: "Complete scripted response (2–4 sentences).",
+              },
               technique: {
                 type: "string",
                 enum: [
@@ -1120,46 +1126,6 @@ export const TOOLS = {
   } as ToolSchema,
 } as const;
 
-export const CLIENT_COMMUNICATION_SUPERVISOR_TOOL: ToolSchema = {
-  name: "review_client_communication",
-  description:
-    "Review and, when needed, rewrite a client-bound email or text message before it is sent. Preserve accuracy, avoid fabricated commitments, and calibrate urgency.",
-  input_schema: {
-    type: "object",
-    properties: {
-      approved: {
-        type: "boolean",
-        description: "Whether the message is safe and appropriate to send now.",
-      },
-      subject: {
-        type: "string",
-        description: "Final subject line for emails. Use an empty string for SMS or WhatsApp.",
-      },
-      body: {
-        type: "string",
-        description: "Final plain-text body to send to the client.",
-      },
-      rationale: {
-        type: "string",
-        description: "Short explanation of what changed or why the send was blocked.",
-      },
-    },
-    required: ["approved", "subject", "body", "rationale"],
-    additionalProperties: false,
-  },
-};
-
-export const SCORE_INTENT_TOOL: ToolSchema = {
-  name: "score_intent",
-  description: "Score business / buying intent.",
-  input_schema: {
-    type: "object",
-    properties: {
-      score: { type: "integer", minimum: 0, maximum: 100 },
-      label: { type: "string", enum: ["high", "medium", "low", "none"] },
-      reasoning: { type: "string" },
-    },
-    required: ["score", "label"],
-    additionalProperties: false,
-  },
-};
+// Standalone supervisor schemas (not part of the TOOLS registry) live in a
+// sibling module. Re-exported here so existing import paths keep working.
+export { CLIENT_COMMUNICATION_SUPERVISOR_TOOL, SCORE_INTENT_TOOL } from "./claude-supervisor-tools";
