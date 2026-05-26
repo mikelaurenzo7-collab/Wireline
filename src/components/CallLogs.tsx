@@ -31,7 +31,7 @@ import {
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
-import { authFetch } from "../lib/api";
+import { authFetch, readApiJson } from "../lib/api";
 import { formatDate, formatTime } from "../lib/safe-date";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
@@ -59,7 +59,9 @@ export default function CallLogs() {
     else setLoadingMore(true);
     try {
       const res = await authFetch(`/api/calls?offset=${currentOffset}&limit=${LIMIT}`);
-      const data: { calls: CallLog[]; hasMore: boolean; total?: number } = await res.json();
+      const out = await readApiJson<{ calls: CallLog[]; hasMore: boolean; total?: number }>(res);
+      if (!out.ok) throw new Error(out.error);
+      const data = out.data;
       if (append) setCalls((prev) => [...prev, ...(data.calls || [])]);
       else setCalls(data.calls || []);
       setHasMore(data.hasMore);

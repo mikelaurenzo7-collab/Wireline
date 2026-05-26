@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
-import { authFetch } from "../lib/api";
+import { authFetch, readApiJson } from "../lib/api";
 import { formatDate, formatTime } from "../lib/safe-date";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import PageShell, { Panel } from "./PageShell";
@@ -48,10 +48,10 @@ export default function EmailInbox() {
   const fetchThreads = async () => {
     try {
       const res = await authFetch("/api/emails/threads");
-      const data = await res.json();
-      setThreads(data.threads || []);
+      const out = await readApiJson<{ threads?: any[] }>(res);
+      if (!out.ok) throw new Error(out.error);
+      setThreads(out.data.threads || []);
     } catch (e) {
-      console.error("Failed to fetch threads:", e);
       toastError("Inbox unavailable", "Could not load email threads. Please refresh.");
     } finally {
       setLoading(false);
