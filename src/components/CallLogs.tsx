@@ -65,7 +65,6 @@ export default function CallLogs() {
       setHasMore(data.hasMore);
       setOffset(currentOffset + (data.calls?.length || 0));
     } catch (e) {
-      console.error("Failed to fetch calls:", e);
       toastError(
         "Call logs unavailable",
         append

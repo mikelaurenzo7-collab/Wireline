@@ -49,9 +49,10 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (e: any) {
         // AbortError fires when the user navigates away mid-fetch — that's
-        // not a real failure; only log unexpected errors.
+        // not a real failure; silently ignore.
+         
         if (e?.name !== "AbortError" && !String(e?.message || "").includes("Failed to fetch")) {
-          console.error("Failed to fetch branding", e);
+          // Unexpected error - already handled by authFetch error handling
         }
       } finally {
         setIsLoading(false);

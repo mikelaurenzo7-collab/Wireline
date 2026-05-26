@@ -102,14 +102,25 @@ function OAuthSignInButtons({ disabled }: { disabled?: boolean }) {
     setPending(provider);
     try {
       const res = await fetch(`/api/auth/${provider}/url`);
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || `Could not start ${provider} sign-in`);
+      let j: any = {};
+      try {
+        j = await res.json();
+      } catch {
+        j = {};
       }
-      const { url } = (await res.json()) as { url: string };
+      if (!res.ok) {
+        throw new Error(j.error || `Could not start ${provider} sign-in. Please try again.`);
+      }
+      const url = j?.url;
+      if (typeof url !== "string" || !url.startsWith("http")) {
+        throw new Error("Received invalid sign-in URL from server.");
+      }
       window.location.assign(url);
-    } catch {
+    } catch (e: any) {
       setPending(null);
+      // Surface a clean message instead of raw error
+      // (the outer form error state is not used for OAuth; this is best-effort)
+      console.warn("OAuth start failed", e?.message);
     }
   };
   // Per-provider visual: brand logo SVG + accent color. Renders as a
@@ -284,8 +295,21 @@ export default function AuthPortal() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: trimmedEmail }),
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Password reset request failed");
+        let data: any = {};
+        try {
+          data = await res.json();
+        } catch {
+          data = {};
+        }
+        if (!res.ok) {
+          // Non-JSON or error body — use status-aware message
+          const msg =
+            data?.error ||
+            (res.status >= 500
+              ? "Server temporarily unavailable. Please try again shortly."
+              : "Password reset request failed");
+          throw new Error(msg);
+        }
         setMessage(data.message || "If that email is registered, a reset link is on its way.");
       } else {
         const endpoint = isSignUp ? "/api/auth/signup" : "/api/auth/signin";
@@ -295,8 +319,20 @@ export default function AuthPortal() {
           body: JSON.stringify({ email: trimmedEmail, password }),
         });
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Authentication failed");
+        let data: any = {};
+        try {
+          data = await res.json();
+        } catch {
+          data = {};
+        }
+        if (!res.ok) {
+          const msg =
+            data?.error ||
+            (res.status >= 500
+              ? "Server temporarily unavailable. Please try again shortly."
+              : "Authentication failed");
+          throw new Error(msg);
+        }
 
         signIn({
           access_token: data.token,

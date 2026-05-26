@@ -59,8 +59,20 @@ export default function ResetPassword() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, new_password: password }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Reset failed");
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch {
+        data = {};
+      }
+      if (!res.ok) {
+        const msg =
+          data?.error ||
+          (res.status >= 500
+            ? "Server temporarily unavailable. Please try again shortly."
+            : "Reset failed");
+        throw new Error(msg);
+      }
 
       setSuccess(true);
 

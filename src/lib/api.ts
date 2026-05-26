@@ -4,6 +4,14 @@
 // the UI never spins forever on a stalled fetch.
 const DEFAULT_TIMEOUT_MS = 120_000;
 
+// Logger stub for client-side (avoid console.error in production)
+const logError = (message: string, ...args: any[]) => {
+  if (process.env.NODE_ENV !== "production" && typeof console !== "undefined") {
+     
+    console.error(message, ...args);
+  }
+};
+
 /**
  * Safely parses a fetch Response as JSON. If the body is not valid JSON
  * (e.g. an HTML error page from a reverse proxy), returns a generic error
@@ -28,16 +36,35 @@ export function isApiErrorBody(value: unknown): value is ApiErrorBody {
 
 function messageFromNonJsonBody(text: string, status: number): string {
   const trimmed = text.trim();
-  if (/^A server error/i.test(trimmed) || /^An error occurred/i.test(trimmed)) {
+  // Handle HTML error pages from Vercel/Supabase/Nginx
+  if (trimmed.startsWith("<") || trimmed.startsWith("<!DOCTYPE") || trimmed.startsWith("<html")) {
+    if (status === 502 || status === 503 || status === 504 || status === 500) {
+      return "Our servers are temporarily busy. Please wait a moment and try again.";
+    }
+    return "The server returned an unexpected response. Please refresh and try again.";
+  }
+  // Handle plain text error messages
+  if (
+    /^A server error/i.test(trimmed) ||
+    /^An error occurred/i.test(trimmed) ||
+    /^Internal Server Error/i.test(trimmed)
+  ) {
     return "The server is temporarily unavailable. Please try again in a few minutes.";
   }
   if (status === 502 || status === 503 || status === 504) {
     return "The server is temporarily unavailable. Please try again shortly.";
   }
-  if (trimmed.startsWith("<")) {
-    return "The server returned an unexpected error. Please refresh and try again.";
+  if (status === 500) {
+    return "Something went wrong on our end. Please try again.";
   }
-  if (trimmed.length > 0 && trimmed.length < 300) {
+  if (status === 429) {
+    return "Too many requests. Please wait a moment and try again.";
+  }
+  if (status === 401 || status === 403) {
+    return "You're not authorized to do that. Please sign in again.";
+  }
+  // If it's short text, return it directly (might be a plain error message)
+  if (trimmed.length > 0 && trimmed.length < 300 && !trimmed.includes("{")) {
     return trimmed;
   }
   return "An unexpected error occurred. Please try again.";
@@ -55,8 +82,8 @@ export async function safeJson<T = unknown>(response: Response): Promise<T | Api
   try {
     return JSON.parse(text) as T;
   } catch (parseError) {
-    console.error("JSON parse failed:", text.slice(0, 200), parseError);
-    return { error: messageFromNonJsonBody(text, response.status) };
+    logError("JSON parse failed:", text.slice(0, 200), parseError);
+    return { error: messageFromNonJsonBody(text, response.status), code: "PARSE_ERROR" };
   }
 }
 

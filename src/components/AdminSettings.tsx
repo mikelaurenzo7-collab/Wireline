@@ -242,7 +242,6 @@ export default function AdminSettings() {
       const data = await res.json();
       setCarrierNumbers(data.numbers || []);
     } catch (e) {
-      console.error(e);
       toastError("Sync failed", "Could not fetch available Wireline phone numbers.");
     }
     setIsSyncing(false);
