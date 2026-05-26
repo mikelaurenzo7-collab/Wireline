@@ -210,6 +210,15 @@
     color-scheme: light;
   }
 
+  /* Immersive auth inputs — stronger placeholder contrast + focus ring */
+  .auth-input {
+    @apply w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-[13px] text-ink placeholder:text-ink/50 focus:border-[#4F1E7B]/60 focus:bg-white/90 transition-all;
+    /* WCAG 4.5:1+ placeholder on cream */
+  }
+  .auth-input::placeholder {
+    color: rgba(28, 25, 23, 0.55); /* ink at ~55% for 4.5:1+ on #FAF8F5 */
+  }
+
   :focus-visible {
     outline: 2px solid rgba(79, 30, 123, 0.60);
     outline-offset: 2px;

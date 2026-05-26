@@ -15,6 +15,8 @@ import {
   PhoneOutgoing,
   MailCheck,
   Radio,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { AuthDemoDirectory } from "./auth/AuthDemoDirectory";
 import { cn } from "../lib/utils";
@@ -249,7 +251,9 @@ export default function AuthPortal() {
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -706,15 +710,28 @@ export default function AuthPortal() {
                       <div className="relative group">
                         <input
                           id="auth-password"
-                          type="password"
+                          type={showPassword ? "text" : "password"}
                           required
                           minLength={isSignUp ? 8 : undefined}
                           autoComplete={isSignUp ? "new-password" : "current-password"}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="auth-input tracking-[0.32em]"
+                          className="auth-input tracking-[0.32em] pr-10"
                           placeholder="••••••••••••"
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted/60 hover:text-ink transition-colors"
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          tabIndex={-1}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
                         <div
                           className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity"
                           style={{
@@ -793,10 +810,34 @@ export default function AuthPortal() {
                     )}
                   </AnimatePresence>
 
+                  {/* Terms & Privacy — required for signup only (legal + trust) */}
+                  {isSignUp && (
+                    <label className="flex items-start gap-2 text-[10px] text-muted/70 leading-snug cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={agreedToTerms}
+                        onChange={(e) => setAgreedToTerms(e.target.checked)}
+                        className="mt-0.5 accent-[#4F1E7B]"
+                        required
+                      />
+                      <span>
+                        I agree to the{" "}
+                        <Link to="/legal/terms" className="underline hover:text-ink">
+                          Terms
+                        </Link>{" "}
+                        and{" "}
+                        <Link to="/legal/privacy" className="underline hover:text-ink">
+                          Privacy Policy
+                        </Link>
+                        .
+                      </span>
+                    </label>
+                  )}
+
                   {/* Submit */}
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || (isSignUp && !agreedToTerms)}
                     className="native-tap-squish w-full flex items-center justify-center gap-2 py-4 px-6 text-[12px] tracking-[0.3em] uppercase font-medium rounded-full cursor-pointer text-on-brand bg-[#4F1E7B] hover:bg-[#6A25A3] max-md:hover:translate-y-0 hover:-translate-y-[1px] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
                     style={{
                       boxShadow: "0 4px 12px -2px rgba(79,30,123,0.3)",
