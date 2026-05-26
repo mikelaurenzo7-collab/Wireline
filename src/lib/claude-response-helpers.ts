@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 /**
  * src/lib/claude-response-helpers.ts
  *
@@ -42,10 +43,7 @@ export function claudeErr(res: any, e: any, endpoint: string = "/api/claude"): v
   // overload) — these are useful to the client. Otherwise return a
   // generic message so internal stack traces / file paths don't leak.
   const isKnownApiError =
-    e?.status >= 400 &&
-    e?.status < 600 &&
-    typeof e?.message === "string" &&
-    e.message.length < 500;
+    e?.status >= 400 && e?.status < 600 && typeof e?.message === "string" && e.message.length < 500;
 
   res.status(500).json({
     error: isKnownApiError ? e.message : "Claude request failed",

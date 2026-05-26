@@ -404,7 +404,7 @@ export function CarrierPanel({
               <button
                 onClick={handleSync}
                 disabled={isSyncing}
-                className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.3em] text-muted/70 hover:text-brand transition-colors"
+                className="disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.3em] text-muted/70 hover:text-brand transition-colors"
               >
                 {isSyncing ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
@@ -417,6 +417,8 @@ export function CarrierPanel({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               <input
                 type="tel"
+                inputMode="tel"
+                autoComplete="tel"
                 value={newNumber}
                 onChange={(e) => setNewNumber(e.target.value)}
                 placeholder="+1 800 555 0100"
@@ -524,6 +526,8 @@ export function CarrierPanel({
             <input
               id="twilio-sms-from"
               type="tel"
+              inputMode="tel"
+              autoComplete="tel"
               value={settings.twilio_sms_from_number || ""}
               onChange={(e) =>
                 onUpdateSettings({ ...settings, twilio_sms_from_number: e.target.value })
@@ -636,6 +640,8 @@ export function CarrierPanel({
                 <input
                   id="manager-alert-number"
                   type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
                   value={settings.twilio_manager_alert_number || ""}
                   onChange={(e) =>
                     onUpdateSettings({

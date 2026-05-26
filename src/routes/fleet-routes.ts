@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- task and job payloads are stored as Postgres jsonb. */
 import { Router, Response } from "express";
 
-import { log, drizzle, auditLogger } from "../lib/server-context";
+import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, desc, inArray, like, ne, gte, or } from "drizzle-orm";
+import { eq, and, sql, desc, like, ne, gte } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { parseFormData, FleetTaskCreateSchema } from "../lib/form-validators";
@@ -18,23 +19,6 @@ const router = Router();
 
 const FLEET_TASK_STATUSES = ["pending", "open", "in_progress", "completed", "cancelled"] as const;
 const FLEET_TASK_PRIORITIES = ["low", "medium", "high"] as const;
-
-interface FleetTaskRow {
-  id: string;
-  status: string | null;
-  priority: string | null;
-  dueDate: Date | null;
-  createdAt: Date | null;
-  agent?: { name: string | null } | null;
-}
-
-interface TaskUpdateData {
-  status?: string;
-  priority?: string;
-  dueDate?: Date;
-  agentId?: string;
-  resolutionNotes?: string;
-}
 
 router.post(
   "/api/fleet/seed",

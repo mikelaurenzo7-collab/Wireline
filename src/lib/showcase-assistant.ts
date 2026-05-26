@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 import {
   WIRELINE_CONTACT_AGENTS,
   WIRELINE_DEMO_AGENTS,
@@ -208,19 +209,24 @@ function buildSharedConversationStyle(agent: ContactAgent): string[] {
     `- ${SHOWCASE_VIBE_GUIDE[agent.defaultVibe]}`,
     "- Reply directly. No long preambles, feature dumps, or stacked questions.",
     "- If a short answer works, stop after the answer and one next question.",
+    "VOICE CONSISTENCY (critical):",
+    "- Speak in the SAME voice for the entire call — same warmth, same cadence, same word choice — no matter what topic the caller raises.",
+    "- Even when you draw on the Wireline knowledge or facts below, paraphrase casually in your own voice. NEVER read a bulleted list back. NEVER shift to a formal or corporate register.",
+    "- If the caller asks something technical, stay conversational. If they ask about pricing, say it the way YOU would — not the way a brochure would.",
+    "- Treat any facts you've been given as background you've internalized, not a script you're reading.",
   ];
 }
 
 function buildCompactWirelineKnowledgeSection(kind: ShowcaseKind): string[] {
   const modeLead =
     kind === "cs"
-      ? "- Use this Wireline knowledge directly on real product, pricing, billing, onboarding, and technical questions."
-      : "- Use this Wireline knowledge only when the caller asks about Wireline, pricing, or how the platform works.";
+      ? "- Use this Wireline knowledge as YOUR own working knowledge — paraphrase casually in your normal voice. Never recite as a list."
+      : "- Use this Wireline knowledge only when the caller asks about Wireline. Paraphrase in YOUR voice, in the same cadence and warmth as the rest of the call.";
 
   const modeTail =
     kind === "cs"
       ? "- You are the real Wireline team on this line, not a role-play demo."
-      : "- After answering the Wireline question, either return to the role-play or offer the next real Wireline step.";
+      : "- After the Wireline answer, slide back into the role-play with the same energy — no announcement, no pivot phrase like 'anyway' or 'so'.";
 
   return [
     "WIRELINE KNOWLEDGE:",
@@ -270,13 +276,13 @@ function buildDemoShowcasePrompt(agent: ContactAgent): string {
     `Topics you handle in the role-play: ${agent.handles}.`,
     "DEMO IDENTITY RULES:",
     "- This is a showcase demo, not Wireline's real support desk.",
-    "- Stay in the role-play unless the caller asks about Wireline itself.",
-    "- When a caller asks about Wireline, answer briefly from the Wireline knowledge below, then return to the role-play or offer a next step.",
+    "- The role-play is your primary mode. When a caller asks about Wireline, weave the answer into your normal conversational voice — same warmth, same pacing — and offer a concrete next step.",
+    "- Do not announce a topic change or switch register. The transition between role-play and Wireline talk should be invisible to the caller.",
     ...buildSharedOpeningRules(),
     ...buildSharedConversationStyle(agent),
     "DEMO STANDARD:",
     "- Keep the role-play believable, fast, and specific to the vertical.",
-    "- If the caller becomes a real prospect, pivot cleanly into a short Wireline answer and keep the pace tight.",
+    "- When the caller asks about Wireline, answer in YOUR voice (warm, conversational, the same rhythm as the rest of the call) — never recite a bulleted list of features.",
     ...buildCompactWirelineKnowledgeSection("demo"),
     "TOOL RULES:",
     "- Use send_signup_link when they want the trial or product details by email.",

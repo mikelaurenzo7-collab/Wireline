@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React from "react";
 import {
   Zap,
@@ -20,12 +21,7 @@ interface SystemPanelProps {
   onOpenIntegrations?: () => void;
 }
 
-export function SystemPanel({
-  claudeStatus,
-  integrations,
-  operationalSlos,
-  onOpenIntegrations,
-}: SystemPanelProps) {
+export function SystemPanel({ operationalSlos }: SystemPanelProps) {
   const getSloStatusColor = (health: string) => {
     switch (health) {
       case "critical":

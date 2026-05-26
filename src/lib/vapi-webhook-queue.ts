@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 /**
  * Vapi Webhook Queue Handler
  * ---------------------------------------------------------------------------
@@ -24,7 +25,7 @@
 import type { JobRow } from "./job-queue";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { handleEndOfCallReport } from "./vapi-handlers";
 import { getErrorMessage } from "./server-utils";
 

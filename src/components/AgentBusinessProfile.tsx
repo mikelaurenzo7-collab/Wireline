@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 // AgentBusinessProfile — operator-facing editor for the business-context
 // fields that gate every call: hours, compliance mode, guardrails,
 // variables, KPI focus. Pure presentation; the parent owns persistence.
@@ -152,7 +153,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
   const [keywordDraft, setKeywordDraft] = useState("");
 
   const hours = value.business_hours ?? {};
-  const variables = value.business_variables ?? {};
+  const variables = useMemo(() => value.business_variables ?? {}, [value.business_variables]);
 
   const setField = <K extends keyof BusinessProfile>(k: K, v: BusinessProfile[K]) => {
     onChange({ ...value, [k]: v });

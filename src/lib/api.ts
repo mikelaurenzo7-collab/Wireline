@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 // Default per-request timeout for backend calls. Long enough for the
 // slowest Claude paths (deep-think recipes ~ 60-90s) but bounded so
 // the UI never spins forever on a stalled fetch.

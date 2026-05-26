@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import {
@@ -210,7 +211,10 @@ export default function StripeBillingCard() {
       {sub?.has_subscription && <UsageMeter />}
 
       {error && (
-        <div className="rounded-2xl bg-rose-500/8 border border-rose-500/30 p-4 flex items-center gap-3">
+        <div
+          role="alert"
+          className="rounded-2xl bg-rose-500/8 border border-rose-500/30 p-4 flex items-center gap-3"
+        >
           <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
           <p className="text-[11px] text-rose-500">{error}</p>
         </div>

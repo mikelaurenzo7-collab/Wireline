@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "motion/react";
@@ -129,7 +130,7 @@ export default function ContactProfile() {
 
   if (err || !data)
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-4">
+      <div role="alert" className="h-full flex flex-col items-center justify-center gap-4">
         <AlertOctagon className="w-12 h-12 text-rose-500/60" />
         <p className="text-[11px] uppercase tracking-[0.4em] text-rose-500">
           {err || "Contact not found"}

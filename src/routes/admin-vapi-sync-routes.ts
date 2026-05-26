@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 /**
  * Owner-only endpoint that synchronizes Wireline knowledge + customer-
  * service playbook into the live Vapi assistants behind the 10

@@ -336,6 +336,22 @@ export function buildAgentRuntimeContext(
   const vibeBlock = buildVibeBlock(profile?.personality_vibe);
   if (vibeBlock) sections.push(vibeBlock.trim());
 
+  // Voice consistency rule appended to every assistant. The single
+  // biggest "feels AI" tell on long calls is tone-shifting between
+  // small-talk and topic-specific answers (pricing, technical, KB
+  // recitations). The base persona prompt usually defines the warm
+  // conversational voice; this section reinforces that the SAME
+  // voice must be used regardless of topic, and that any injected
+  // KB / facts / knowledge must be paraphrased in the agent's own
+  // voice — never read back as a list. Kept terse so it doesn't
+  // crowd out persona-specific instructions earlier in the prompt.
+  sections.push(
+    "## VOICE CONSISTENCY",
+    "- Use ONE voice for the entire call — same warmth, same cadence, same word choice — regardless of which topic comes up.",
+    "- Treat any knowledge, facts, or directives you've been given as background you've internalized. Paraphrase casually. NEVER recite them as a list.",
+    "- Do not shift to a formal or corporate register when answering technical, pricing, or product questions. Stay conversational the whole way through.",
+  );
+
   const composed = sections.length > 0 ? `${basePrompt}\n\n${sections.join("\n\n")}` : basePrompt;
 
   // Apply variable substitution as the FINAL step so it can fill

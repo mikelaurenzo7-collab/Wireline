@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 /**
  * Voice Library — operator-side clone management surface.
  *
@@ -48,7 +49,7 @@ export default function VoiceLibraryPanel() {
       const data = await r.json();
       setVoices(data.voices || []);
       setConfigured(!!data.configured);
-    } catch (e) {
+    } catch {
       toastError("Couldn't load voice library");
     } finally {
       setLoading(false);
@@ -60,6 +61,7 @@ export default function VoiceLibraryPanel() {
     return () => {
       if (audioRef.current) audioRef.current.pause();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time fetch on mount
   }, []);
 
   function playPreview(voice: ClonedVoice) {
@@ -270,7 +272,7 @@ export default function VoiceLibraryPanel() {
                 setConsent(false);
               }}
               disabled={cloning}
-              className="px-4 py-2.5 rounded-full text-[11px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
+              className="disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5 rounded-full text-[11px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
             >
               Cancel
             </button>
@@ -302,6 +304,7 @@ export default function VoiceLibraryPanel() {
                 onClick={() => playPreview(v)}
                 disabled={!v.preview_url}
                 className={cn(
+                  "disabled:opacity-50 disabled:cursor-not-allowed",
                   "shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all",
                   v.preview_url
                     ? "bg-brand/10 text-brand hover:bg-brand/20"

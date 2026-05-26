@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 import { Router, Request, Response } from "express";
 import { authService, AuthConfigurationError } from "../lib/auth-service";
 import { log, drizzle } from "../lib/server-context";

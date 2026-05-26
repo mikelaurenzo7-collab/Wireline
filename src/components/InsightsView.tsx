@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import {
@@ -23,6 +24,7 @@ import {
   Play,
   Megaphone,
   Gauge,
+  Target,
 } from "lucide-react";
 import {
   MAX_VAPI_PARALLEL_TOOL_CALLS,
@@ -55,6 +57,7 @@ async function fetchInsight<T>(url: string): Promise<T> {
 import { cn } from "../lib/utils";
 import { formatMoney, safeFixed } from "../lib/safe-number";
 import CsvExportButton from "./CsvExportButton";
+import GoalsView from "./GoalsView";
 import { AGENT_ROLES } from "./FleetSettings";
 import PageShell from "./PageShell";
 import WidgetBoundary from "./WidgetBoundary";
@@ -110,6 +113,12 @@ export default function InsightsView() {
           label: "Funnel",
           icon: TrendingUp,
           content: wrap("Funnel", <FunnelView days={days} />),
+        },
+        {
+          id: "goals",
+          label: "Goals",
+          icon: Target,
+          content: wrap("Goals", <GoalsView />),
         },
         {
           id: "attribution",
@@ -1418,6 +1427,7 @@ function SpendBudgetCard() {
             </span>
             <input
               type="number"
+              inputMode="numeric"
               min="1"
               max="99"
               step="1"
@@ -1463,7 +1473,11 @@ function SpendBudgetCard() {
             {saving ? "Saving" : "Save budget"}
           </button>
         </div>
-        {error && <div className="text-xs text-rose-500">{error}</div>}
+        {error && (
+          <div role="alert" className="text-xs text-rose-500">
+            {error}
+          </div>
+        )}
         {savedAt && !error && Date.now() - savedAt < 4000 && (
           <div className="text-xs text-emerald-600">Saved.</div>
         )}
@@ -1573,7 +1587,10 @@ function Empty({ label, green }: { label: string; green?: boolean }) {
 
 function ErrCard({ error }: { error: string }) {
   return (
-    <div className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-6 text-rose-500 text-sm flex items-start gap-3">
+    <div
+      role="alert"
+      className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-6 text-rose-500 text-sm flex items-start gap-3"
+    >
       <AlertOctagon className="w-5 h-5 shrink-0 mt-0.5" />
       <span>{error}</span>
     </div>

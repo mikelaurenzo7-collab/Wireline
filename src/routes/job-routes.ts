@@ -1,8 +1,9 @@
-import { Router, Request, Response, NextFunction } from "express";
+/* eslint-disable @typescript-eslint/no-explicit-any -- task and job payloads are stored as Postgres jsonb. */
+import { Router, Response, NextFunction } from "express";
 import { timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
 import { log, auditLogger, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, lte, gte } from "drizzle-orm";
+import { eq, and, lte, gte } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { jobsRateLimit, jobsSweepRateLimit } from "../middleware/api-rate-limits";
 import { getErrorMessage } from "../lib/server-utils";

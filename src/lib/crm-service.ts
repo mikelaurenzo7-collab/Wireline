@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc, inArray } from "drizzle-orm";
@@ -15,10 +16,12 @@ async function getActiveCrm(userId: string): Promise<"salesforce" | "hubspot" | 
     const [data] = await drizzle
       .select({ provider: schema.crmConnections.provider })
       .from(schema.crmConnections)
-      .where(and(
-        eq(schema.crmConnections.userId, userId),
-        inArray(schema.crmConnections.provider, ["salesforce", "hubspot"])
-      ))
+      .where(
+        and(
+          eq(schema.crmConnections.userId, userId),
+          inArray(schema.crmConnections.provider, ["salesforce", "hubspot"]),
+        ),
+      )
       .orderBy(desc(schema.crmConnections.updatedAt))
       .limit(1);
 
@@ -45,7 +48,10 @@ export class CRMService {
     notes?: string;
   }): Promise<boolean> {
     try {
-      log.info(`Updating ${params.crmType} lead`, { userId: this.userId, phone: params.customerNumber });
+      log.info(`Updating ${params.crmType} lead`, {
+        userId: this.userId,
+        phone: params.customerNumber,
+      });
 
       if (params.crmType === "salesforce") {
         return await this.updateSalesforce(params);
@@ -62,10 +68,16 @@ export class CRMService {
     const resolved = crmType === "auto" ? await getActiveCrm(this.userId) : crmType;
 
     if (resolved === "salesforce") {
-      return { crm: "salesforce" as const, contacts: await salesforce.searchContacts(query, this.userId) };
+      return {
+        crm: "salesforce" as const,
+        contacts: await salesforce.searchContacts(query, this.userId),
+      };
     }
     if (resolved === "hubspot") {
-      return { crm: "hubspot" as const, contacts: await hubspot.searchContacts(query, this.userId) };
+      return {
+        crm: "hubspot" as const,
+        contacts: await hubspot.searchContacts(query, this.userId),
+      };
     }
     return { crm: null, contacts: [] };
   }
@@ -79,28 +91,32 @@ export class CRMService {
     duration_minutes?: number;
     outcome?: string;
   }): Promise<string | null> {
-    const crm = params.crmType === "auto"
-      ? await getActiveCrm(this.userId)
-      : params.crmType;
-    const contactId = params.contact_id || await this.resolveContactId(crm, params.to_number);
+    const crm = params.crmType === "auto" ? await getActiveCrm(this.userId) : params.crmType;
+    const contactId = params.contact_id || (await this.resolveContactId(crm, params.to_number));
 
     if (crm === "salesforce") {
-      return salesforce.logCall({
-        subject: params.subject,
-        description: params.description,
-        contact_id: contactId,
-        duration_minutes: params.duration_minutes,
-        outcome: params.outcome,
-      }, this.userId);
+      return salesforce.logCall(
+        {
+          subject: params.subject,
+          description: params.description,
+          contact_id: contactId,
+          duration_minutes: params.duration_minutes,
+          outcome: params.outcome,
+        },
+        this.userId,
+      );
     }
     if (crm === "hubspot") {
-      return hubspot.logCall({
-        to_number: params.to_number,
-        body: params.description,
-        contact_id: contactId,
-        duration_ms: (params.duration_minutes || 0) * 60_000,
-        outcome: params.outcome,
-      }, this.userId);
+      return hubspot.logCall(
+        {
+          to_number: params.to_number,
+          body: params.description,
+          contact_id: contactId,
+          duration_ms: (params.duration_minutes || 0) * 60_000,
+          outcome: params.outcome,
+        },
+        this.userId,
+      );
     }
     return null;
   }
@@ -112,25 +128,29 @@ export class CRMService {
     stage?: string;
     amount?: number;
   }): Promise<string | null> {
-    const crm = params.crmType === "auto"
-      ? await getActiveCrm(this.userId)
-      : params.crmType;
+    const crm = params.crmType === "auto" ? await getActiveCrm(this.userId) : params.crmType;
 
     let createdId: string | null = null;
     if (crm === "salesforce") {
-      createdId = await salesforce.createOpportunity({
-        name: params.name,
-        contact_id: params.contact_id,
-        stage: params.stage,
-        amount: params.amount,
-      }, this.userId);
+      createdId = await salesforce.createOpportunity(
+        {
+          name: params.name,
+          contact_id: params.contact_id,
+          stage: params.stage,
+          amount: params.amount,
+        },
+        this.userId,
+      );
     } else if (crm === "hubspot") {
-      createdId = await hubspot.createDeal({
-        name: params.name,
-        contact_id: params.contact_id,
-        stage: params.stage,
-        amount: params.amount,
-      }, this.userId);
+      createdId = await hubspot.createDeal(
+        {
+          name: params.name,
+          contact_id: params.contact_id,
+          stage: params.stage,
+          amount: params.amount,
+        },
+        this.userId,
+      );
     }
     if (createdId) {
       const ch = await getDefaultChannel(this.userId);
@@ -153,11 +173,14 @@ export class CRMService {
   }): Promise<boolean> {
     const results = await salesforce.searchContacts(params.customerNumber, this.userId);
     if (results.length === 0) return false;
-    const id = await salesforce.logCall({
-      subject: `Status update: ${params.status}`,
-      description: params.notes || `Lead status changed to ${params.status}`,
-      contact_id: results[0].sf_id,
-    }, this.userId);
+    const id = await salesforce.logCall(
+      {
+        subject: `Status update: ${params.status}`,
+        description: params.notes || `Lead status changed to ${params.status}`,
+        contact_id: results[0].sf_id,
+      },
+      this.userId,
+    );
     return id !== null;
   }
 
@@ -168,12 +191,15 @@ export class CRMService {
   }): Promise<boolean> {
     const results = await hubspot.searchContacts(params.customerNumber, this.userId);
     if (results.length === 0) return false;
-    const id = await hubspot.logCall({
-      to_number: params.customerNumber,
-      body: params.notes || `Lead status changed to ${params.status}`,
-      contact_id: results[0].hs_id,
-      outcome: params.status,
-    }, this.userId);
+    const id = await hubspot.logCall(
+      {
+        to_number: params.customerNumber,
+        body: params.notes || `Lead status changed to ${params.status}`,
+        contact_id: results[0].hs_id,
+        outcome: params.status,
+      },
+      this.userId,
+    );
     return id !== null;
   }
 
@@ -186,7 +212,8 @@ export class CRMService {
     const target = normalizePhone(toNumber);
     if (crmType === "salesforce") {
       const results = await salesforce.searchContacts(toNumber, this.userId);
-      const best = results.find((contact) => normalizePhone(contact.phone) === target) || results[0];
+      const best =
+        results.find((contact) => normalizePhone(contact.phone) === target) || results[0];
       return best?.sf_id;
     }
 

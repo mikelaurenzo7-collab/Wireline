@@ -233,7 +233,7 @@ export function ClaudeRecipeButton({
 
 /* ────────────────────  Modal shell  ─────────────────────────────── */
 
-function RecipeModal({
+export function RecipeModal({
   recipe,
   agentId,
   threadId,
@@ -251,6 +251,14 @@ function RecipeModal({
   const meta = RECIPE_META[recipe];
   const [agents, setAgents] = useState<AgentLite[]>([]);
   const [available, setAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   useEffect(() => {
     (async () => {
@@ -336,6 +344,7 @@ function RecipeModal({
             </div>
             <button
               onClick={onClose}
+              aria-label="Close"
               className="w-10 h-10 rounded-full glass border border-white/10 flex items-center justify-center text-ink/60 hover:text-ink hover:border-brand/40 transition-all"
             >
               <X className="w-4 h-4" />
@@ -486,6 +495,7 @@ function Select({
 }) {
   return (
     <select
+      aria-label="Recipe option"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className="w-full h-12 px-4 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
@@ -504,7 +514,7 @@ function RunButton({ onClick, loading, disabled, label = "Generate" }: any) {
     <button
       onClick={onClick}
       disabled={loading || disabled}
-      className="brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
+      className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
     >
       {loading ? (
         <>
@@ -557,7 +567,10 @@ const ResultCard: React.FC<{ title: string; copyText?: string; children?: ReactN
 
 function ErrCard({ error }: { error: string }) {
   return (
-    <div className="rounded-xl bg-rose-500/10 border border-rose-500/30 p-4 text-rose-500 text-sm flex items-start gap-3">
+    <div
+      role="alert"
+      className="rounded-xl bg-rose-500/10 border border-rose-500/30 p-4 text-rose-500 text-sm flex items-start gap-3"
+    >
       <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
       <span>{error}</span>
     </div>
@@ -755,7 +768,7 @@ function KnowledgeFromUrlForm({
 
   useEffect(() => {
     if (!agentId && agents[0]) setAgentId(agents[0].id);
-  }, [agents]);
+  }, [agents, agentId]);
 
   const run = async () => {
     setLoading(true);
@@ -962,7 +975,7 @@ function KnowledgeFromUrlForm({
           <button
             onClick={apply}
             disabled={!agentId || applying || selected.size === 0}
-            className="brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
+            className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
           >
             {applying ? (
               <>
@@ -1142,7 +1155,7 @@ function AgentForgeForm({ initial, disabled }: { initial?: any; disabled: boolea
             <button
               onClick={create}
               disabled={creating}
-              className="brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
+              className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
             >
               {creating ? (
                 <>
@@ -1185,7 +1198,7 @@ function BriefForm({
 
   useEffect(() => {
     if (!agentId && agents[0]) setAgentId(agents[0].id);
-  }, [agents]);
+  }, [agents, agentId]);
 
   const run = async () => {
     setLoading(true);
@@ -1645,7 +1658,7 @@ function ObjectionDrillForm({
 
   useEffect(() => {
     if (!agentId && agents[0]) setAgentId(agents[0].id);
-  }, [agents]);
+  }, [agents, agentId]);
 
   const run = async () => {
     setLoading(true);
@@ -2223,7 +2236,7 @@ function AgentReviewForm({
 
   useEffect(() => {
     if (!agentId && agents[0]) setAgentId(agents[0].id);
-  }, [agents]);
+  }, [agents, agentId]);
 
   const run = async () => {
     setLoading(true);
@@ -2418,7 +2431,7 @@ function KnowledgeFromDocumentForm({
 
   useEffect(() => {
     if (!agentId && agents[0]) setAgentId(agents[0].id);
-  }, [agents]);
+  }, [agents, agentId]);
 
   const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -2665,7 +2678,7 @@ function KnowledgeFromDocumentForm({
           <button
             onClick={apply}
             disabled={!agentId || applying || selected.size === 0}
-            className="brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
+            className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
           >
             {applying ? (
               <>
@@ -2717,7 +2730,7 @@ function CallPlaybookForm({
 
   useEffect(() => {
     if (!agentId && agents[0]) setAgentId(agents[0].id);
-  }, [agents]);
+  }, [agents, agentId]);
 
   const run = async () => {
     setLoading(true);

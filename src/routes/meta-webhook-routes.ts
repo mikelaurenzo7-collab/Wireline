@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- vendor webhook payloads are JSON envelopes with provider-specific shapes. */
 import express, { Request, Response } from "express";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { drizzle, log } from "../lib/server-context";

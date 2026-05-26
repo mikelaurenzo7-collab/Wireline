@@ -50,12 +50,12 @@ export default function AgentWorkspace({ agentId, agentName = "agent" }: AgentWo
       if (!r.ok) throw new Error("Failed to load messages");
       const data = await r.json();
       setMessages(data.messages || []);
-    } catch (e) {
+    } catch {
       toastError("Couldn't load workspace", "Check connection and refresh");
     } finally {
       setIsLoading(false);
     }
-  }, [agentId, toastError]);
+  }, [agentId, toastError, isSharedView]);
 
   useEffect(() => {
     loadMessages();
@@ -95,7 +95,7 @@ export default function AgentWorkspace({ agentId, agentName = "agent" }: AgentWo
         createdAt: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, agentReply]);
-    } catch (e) {
+    } catch {
       // Roll back the optimistic operator message and surface error.
       setMessages((prev) => prev.filter((m) => m.id !== optimisticOperator.id));
       setInput(text);
@@ -115,7 +115,7 @@ export default function AgentWorkspace({ agentId, agentName = "agent" }: AgentWo
       if (!r.ok) throw new Error("Clear failed");
       setMessages([]);
       toastSuccess("Thread cleared", "Fresh start with this agent");
-    } catch (e) {
+    } catch {
       toastError("Couldn't clear thread");
     }
   }, [agentId, toastError, toastSuccess]);

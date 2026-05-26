@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Stripe events and subscription payloads are vendor-defined JSON. */
 import express, { Request, Response } from "express";
 import { log, auditLogger, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, desc, count } from "drizzle-orm";
+import { eq, and, count } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import { stripe, stripeAvailable, syncSubscriptionFromStripe } from "../lib/stripe-helpers";

@@ -1,4 +1,9 @@
-export const IS_PROD = typeof process !== 'undefined' ? (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") : true;
+/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
+/* eslint-disable no-console -- logger.ts IS the console sink; emitLog must call console.* directly. */
+export const IS_PROD =
+  typeof process !== "undefined"
+    ? process.env.NODE_ENV === "production" || process.env.VERCEL === "1"
+    : true;
 
 type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -14,11 +19,11 @@ function getErrorStack(error: unknown): string | undefined {
 
 function emitLog(level: LogLevel, msg: string, fields?: Record<string, unknown>) {
   const entry: any = { ts: new Date().toISOString(), level, msg, ...(fields || {}) };
-  
+
   if (fields?.error) {
     entry.error_message = getErrorMessage(fields.error);
     entry.error_stack = getErrorStack(fields.error);
-    if (typeof entry.error === 'object') delete entry.error;
+    if (typeof entry.error === "object") delete entry.error;
   }
 
   if (IS_PROD) {

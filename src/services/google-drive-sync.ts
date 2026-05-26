@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- external integration data shape varies by provider. */
 import { google } from "googleapis";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { encryptSecret, decryptSecret } from "../lib/secret-vault";
-import { drizzle, log } from "../lib/server-context";
+import { drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 

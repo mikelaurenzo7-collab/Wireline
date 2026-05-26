@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
@@ -48,11 +49,11 @@ const STEPS = [
   },
   {
     id: "number",
-    title: "Your phone number is live",
-    body: "Every Wireline plan includes a dedicated voice number — no Twilio bill, no separate setup. It's already provisioned for you and routed to your agent.",
+    title: "Wire up a phone number",
+    body: "Every Wireline plan includes a dedicated voice number — no Twilio bill, no separate setup. Provision yours in Integrations and route inbound calls to your agent.",
     icon: Phone,
     accent: "#4F1E7B",
-    badge: "Auto",
+    badge: "1 click",
   },
   {
     id: "call",
@@ -109,6 +110,7 @@ export default function OnboardingQuickstart({
         setLoading(false);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time mount load
   }, []);
 
   /**

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 /**
  * Cadence engine — fires the scheduled step for every cadence run that's
  * due. Hooked into the job-worker via the `cadence_tick` job type; the

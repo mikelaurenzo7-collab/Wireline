@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -270,7 +271,10 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
       </div>
 
       {err && (
-        <div className="rounded-lg bg-rose-500/10 border border-rose-500/30 p-3 text-rose-500 text-xs flex items-center gap-2">
+        <div
+          role="alert"
+          className="rounded-lg bg-rose-500/10 border border-rose-500/30 p-3 text-rose-500 text-xs flex items-center gap-2"
+        >
           <AlertTriangle className="w-3.5 h-3.5" />
           {err}
         </div>
@@ -278,7 +282,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
       <button
         onClick={submit}
         disabled={busy || !name || !url || picked.size === 0}
-        className="brutal-btn w-full !py-3 !text-[11px] !tracking-[0.3em]"
+        className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn w-full !py-3 !text-[11px] !tracking-[0.3em]"
       >
         {busy ? (
           <>
@@ -484,7 +488,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
               <button
                 onClick={remove}
                 disabled={busy !== null}
-                className="px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] bg-rose-500 text-on-brand hover:bg-rose-500/80 transition-all"
+                className="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] bg-rose-500 text-on-brand hover:bg-rose-500/80 transition-all"
               >
                 {busy === "delete" ? <Loader2 className="w-3 h-3 animate-spin" /> : "Confirm"}
               </button>
@@ -522,7 +526,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                 <button
                   onClick={loadDeliveries}
                   disabled={loadingDeliveries}
-                  className="text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink flex items-center gap-1.5"
+                  className="disabled:opacity-50 disabled:cursor-not-allowed text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink flex items-center gap-1.5"
                 >
                   {loadingDeliveries ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -608,7 +612,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                         <button
                           onClick={() => discardDelivery(d.id)}
                           disabled={deliveryBusy === d.id}
-                          className="w-6 h-6 rounded glass border border-white/10 hover:border-rose-500/40 hover:text-rose-400 flex items-center justify-center"
+                          className="disabled:opacity-50 disabled:cursor-not-allowed w-6 h-6 rounded glass border border-white/10 hover:border-rose-500/40 hover:text-rose-400 flex items-center justify-center"
                           title="Discard"
                         >
                           <Trash2 className="w-2.5 h-2.5" />

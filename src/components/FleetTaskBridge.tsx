@@ -1,5 +1,19 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useState, useEffect, useRef } from "react";
-import { Phone, Mail, MessageSquare, CheckCircle2, Clock, Loader2, Bot, ChevronRight, Calendar, ChevronDown, AlertTriangle, RotateCw } from "lucide-react";
+import {
+  Phone,
+  Mail,
+  MessageSquare,
+  CheckCircle2,
+  Clock,
+  Loader2,
+  Bot,
+  ChevronRight,
+  Calendar,
+  ChevronDown,
+  AlertTriangle,
+  RotateCw,
+} from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
@@ -64,49 +78,57 @@ export default function FleetTaskBridge() {
   const updateStatus = async (id: string, status: string) => {
     try {
       const payload: any = { status };
-      if (status === 'completed' && resolutionNotes[id]) {
+      if (status === "completed" && resolutionNotes[id]) {
         payload.resolution_notes = resolutionNotes[id];
       }
       await authFetch(`/api/fleet/tasks/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
       fetchTasks();
-    } catch { /* noop */ }
+    } catch {
+      /* noop */
+    }
   };
 
   const updatePriority = async (id: string, priority: string) => {
     try {
       await authFetch(`/api/fleet/tasks/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priority })
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priority }),
       });
       fetchTasks();
-    } catch { /* noop */ }
+    } catch {
+      /* noop */
+    }
   };
 
   const updateAssignment = async (id: string, agent_id: string) => {
     try {
       await authFetch(`/api/fleet/tasks/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agent_id })
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_id }),
       });
       fetchTasks();
-    } catch { /* noop */ }
+    } catch {
+      /* noop */
+    }
   };
 
   const updateDueDate = async (id: string, due_date: string) => {
     try {
       await authFetch(`/api/fleet/tasks/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ due_date })
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ due_date }),
       });
       fetchTasks();
-    } catch { /* noop */ }
+    } catch {
+      /* noop */
+    }
   };
 
   if (loading && tasks.length === 0) {
@@ -122,7 +144,10 @@ export default function FleetTaskBridge() {
   // doesn't masquerade as an empty success.
   if (error && tasks.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-3 py-12 text-center">
+      <div
+        role="alert"
+        className="h-full flex flex-col items-center justify-center gap-3 py-12 text-center"
+      >
         <div className="w-12 h-12 rounded-2xl glass border border-rose-500/30 flex items-center justify-center text-rose-500">
           <AlertTriangle className="w-5 h-5" />
         </div>
@@ -142,7 +167,9 @@ export default function FleetTaskBridge() {
         </div>
         <div className="space-y-1">
           <h4 className="font-display italic lowercase text-lg text-ink">queue clear</h4>
-          <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70">All handoffs processed</p>
+          <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70">
+            All handoffs processed
+          </p>
         </div>
       </div>
     );
@@ -151,7 +178,9 @@ export default function FleetTaskBridge() {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70 tabular-nums">{tasks.length} task{tasks.length === 1 ? '' : 's'}</span>
+        <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70 tabular-nums">
+          {tasks.length} task{tasks.length === 1 ? "" : "s"}
+        </span>
         <button
           onClick={() => fetchTasks()}
           className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.3em] text-muted/70 hover:text-brand transition-colors"
@@ -163,10 +192,11 @@ export default function FleetTaskBridge() {
       </div>
 
       <AnimatePresence mode="popLayout">
-        {tasks.map(task => {
-          const isCompleted = task.status === 'completed';
-          const isHigh = task.priority === 'high' && !isCompleted;
-          const isOverdue = task.due_date && task.status === 'pending' && new Date(task.due_date) < new Date();
+        {tasks.map((task) => {
+          const isCompleted = task.status === "completed";
+          const isHigh = task.priority === "high" && !isCompleted;
+          const isOverdue =
+            task.due_date && task.status === "pending" && new Date(task.due_date) < new Date();
 
           return (
             <motion.div
@@ -177,41 +207,63 @@ export default function FleetTaskBridge() {
               key={task.id}
               className={cn(
                 "relative rounded-xl glass border p-3 overflow-hidden",
-                isCompleted ? "border-white/6 opacity-60" :
-                isHigh ? "border-rose-500/40" :
-                "border-white/8"
+                isCompleted
+                  ? "border-white/6 opacity-60"
+                  : isHigh
+                    ? "border-rose-500/40"
+                    : "border-white/8",
               )}
             >
               {/* Priority bar */}
               {!isCompleted && (
-                <div className={cn(
-                  "absolute top-0 left-0 w-0.5 h-full",
-                  isHigh ? "bg-rose-500" : "bg-brand"
-                )} />
+                <div
+                  className={cn(
+                    "absolute top-0 left-0 w-0.5 h-full",
+                    isHigh ? "bg-rose-500" : "bg-brand",
+                  )}
+                />
               )}
 
               <div className="flex flex-col lg:flex-row gap-3">
                 {/* Source → target channel diagram */}
                 <div className="flex items-center gap-1.5 shrink-0">
                   {(() => {
-                    const targetIsEmail = task.target_channel === 'email';
-                    const targetIsSms = task.target_channel === 'sms';
+                    const targetIsEmail = task.target_channel === "email";
+                    const targetIsSms = task.target_channel === "sms";
                     return (
                       <>
-                        <div className={cn(
-                          "w-8 h-8 rounded-lg glass border flex items-center justify-center shrink-0",
-                          task.source_type === 'phone_call' ? "border-brand/40 text-brand" : "border-white/10 text-ink/70"
-                        )}>
-                          {task.source_type === 'phone_call' ? <Phone className="w-3.5 h-3.5" /> : <Mail className="w-3.5 h-3.5" />}
+                        <div
+                          className={cn(
+                            "w-8 h-8 rounded-lg glass border flex items-center justify-center shrink-0",
+                            task.source_type === "phone_call"
+                              ? "border-brand/40 text-brand"
+                              : "border-white/10 text-ink/70",
+                          )}
+                        >
+                          {task.source_type === "phone_call" ? (
+                            <Phone className="w-3.5 h-3.5" />
+                          ) : (
+                            <Mail className="w-3.5 h-3.5" />
+                          )}
                         </div>
                         <ChevronRight className="w-3 h-3 text-muted/50" />
-                        <div className={cn(
-                          "w-8 h-8 rounded-lg glass border flex items-center justify-center shrink-0",
-                          targetIsEmail ? "border-white/10 text-ink/70" :
-                          targetIsSms ? "border-violet-500/35 text-violet-600" :
-                          "border-brand/40 text-brand"
-                        )}>
-                          {targetIsEmail ? <Mail className="w-3.5 h-3.5" /> : targetIsSms ? <MessageSquare className="w-3.5 h-3.5" /> : <Phone className="w-3.5 h-3.5" />}
+                        <div
+                          className={cn(
+                            "w-8 h-8 rounded-lg glass border flex items-center justify-center shrink-0",
+                            targetIsEmail
+                              ? "border-white/10 text-ink/70"
+                              : targetIsSms
+                                ? "border-violet-500/35 text-violet-600"
+                                : "border-brand/40 text-brand",
+                          )}
+                        >
+                          {targetIsEmail ? (
+                            <Mail className="w-3.5 h-3.5" />
+                          ) : targetIsSms ? (
+                            <MessageSquare className="w-3.5 h-3.5" />
+                          ) : (
+                            <Phone className="w-3.5 h-3.5" />
+                          )}
                         </div>
                       </>
                     );
@@ -225,13 +277,16 @@ export default function FleetTaskBridge() {
                     </span>
                     <div className="relative">
                       <select
+                        aria-label="Task priority"
                         value={task.priority || "medium"}
                         onChange={(e) => updatePriority(task.id, e.target.value)}
                         className={cn(
                           "text-[9px] uppercase tracking-[0.25em] py-0.5 pl-2 pr-6 rounded-full border outline-none cursor-pointer appearance-none leading-none",
-                          task.priority === 'high' ? "bg-rose-500/15 border-rose-500/30 text-rose-500" :
-                          task.priority === 'low' ? "bg-white/5 border-white/10 text-muted" :
-                          "bg-brand/10 border-brand/30 text-brand"
+                          task.priority === "high"
+                            ? "bg-rose-500/15 border-rose-500/30 text-rose-500"
+                            : task.priority === "low"
+                              ? "bg-white/5 border-white/10 text-muted"
+                              : "bg-brand/10 border-brand/30 text-brand",
                         )}
                       >
                         <option value="high">High</option>
@@ -248,12 +303,12 @@ export default function FleetTaskBridge() {
                     )}
                     <span className="text-[9px] uppercase tracking-[0.3em] text-muted/50 ml-auto">
                       <Clock className="w-2.5 h-2.5 inline mr-1" />
-                      {formatTime(task.created_at, { hour: '2-digit', minute: '2-digit' })}
+                      {formatTime(task.created_at, { hour: "2-digit", minute: "2-digit" })}
                     </span>
                   </div>
 
                   <h4 className="font-display italic text-base text-ink leading-tight">
-                    {task.source_type === 'phone_call' ? 'Inbound voice handoff' : 'Routing thread'}
+                    {task.source_type === "phone_call" ? "Inbound voice handoff" : "Routing thread"}
                   </h4>
                   <p className="text-xs text-muted/80 leading-relaxed">{task.description}</p>
 
@@ -264,13 +319,16 @@ export default function FleetTaskBridge() {
                       </label>
                       <div className="relative">
                         <select
+                          aria-label="Assigned agent"
                           value={task.agent_id || ""}
                           onChange={(e) => updateAssignment(task.id, e.target.value)}
                           className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
                         >
                           <option value="">Select agent</option>
                           {agents.map((a: any) => (
-                            <option key={a.id} value={a.id}>{a.name}</option>
+                            <option key={a.id} value={a.id}>
+                              {a.name}
+                            </option>
                           ))}
                         </select>
                         <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none" />
@@ -283,24 +341,26 @@ export default function FleetTaskBridge() {
                       </label>
                       <input
                         type="date"
-                        value={task.due_date ? task.due_date.split('T')[0] : ""}
+                        value={task.due_date ? task.due_date.split("T")[0] : ""}
                         onChange={(e) => updateDueDate(task.id, e.target.value)}
                         className="w-full text-xs bg-black/5 border border-black/10 rounded-lg px-2.5 py-1.5 outline-none focus:border-brand/50 text-ink"
                       />
                     </div>
                   </div>
 
-                  {task.status === 'pending' ? (
+                  {task.status === "pending" ? (
                     <div className="space-y-1.5 pt-1">
                       <textarea
                         rows={2}
                         placeholder="Resolution notes (optional)…"
-                        value={resolutionNotes[task.id] || ''}
-                        onChange={e => setResolutionNotes({ ...resolutionNotes, [task.id]: e.target.value })}
+                        value={resolutionNotes[task.id] || ""}
+                        onChange={(e) =>
+                          setResolutionNotes({ ...resolutionNotes, [task.id]: e.target.value })
+                        }
                         className="w-full text-xs bg-black/5 border border-black/10 rounded-lg px-2.5 py-1.5 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 resize-none"
                       />
                       <button
-                        onClick={() => updateStatus(task.id, 'completed')}
+                        onClick={() => updateStatus(task.id, "completed")}
                         className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 text-[10px] uppercase tracking-[0.25em] hover:bg-emerald-500/25 transition-colors"
                       >
                         <CheckCircle2 className="w-3 h-3" /> Mark resolved
@@ -309,8 +369,12 @@ export default function FleetTaskBridge() {
                   ) : (
                     task.resolution_notes && (
                       <div className="rounded-lg glass border border-emerald-500/20 p-2.5">
-                        <span className="text-[9px] uppercase tracking-[0.3em] text-emerald-500 block mb-1">Resolution</span>
-                        <p className="text-xs text-ink/80 leading-relaxed">{task.resolution_notes}</p>
+                        <span className="text-[9px] uppercase tracking-[0.3em] text-emerald-500 block mb-1">
+                          Resolution
+                        </span>
+                        <p className="text-xs text-ink/80 leading-relaxed">
+                          {task.resolution_notes}
+                        </p>
                       </div>
                     )
                   )}

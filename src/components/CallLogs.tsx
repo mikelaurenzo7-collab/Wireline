@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useState, useEffect } from "react";
 import {
   PhoneIncoming,
@@ -75,6 +76,7 @@ export default function CallLogs() {
 
   useEffect(() => {
     fetchCalls(0, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time fetch on mount
   }, []);
 
   // Auto-select first call on initial load only — preserve user deselection.
@@ -109,7 +111,7 @@ export default function CallLogs() {
       <div className="relative min-w-0 flex-1 sm:flex-none">
         <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
         <input
-          type="text"
+          type="search"
           aria-label="Search calls"
           placeholder="Search signals…"
           className="h-9 w-full sm:w-44 lg:w-60 pl-8 pr-3 rounded-full glass border border-black/10 text-[11px] text-ink placeholder:text-muted/60 focus:border-brand/40 focus:outline-none transition-all"
@@ -168,7 +170,7 @@ export default function CallLogs() {
                       onClick={loadMore}
                       disabled={loadingMore}
                       aria-label="Load more calls"
-                      className="text-[9px] uppercase tracking-[0.3em] text-muted hover:text-ink transition-colors flex items-center gap-1"
+                      className="disabled:opacity-50 disabled:cursor-not-allowed text-[9px] uppercase tracking-[0.3em] text-muted hover:text-ink transition-colors flex items-center gap-1"
                     >
                       {loadingMore ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
@@ -440,6 +442,7 @@ function CallDetail({
             disabled={scoring}
             title="Run AI quality scoring"
             className={cn(
+              "disabled:opacity-50 disabled:cursor-not-allowed",
               "h-7 px-2.5 rounded-full border text-[9px] uppercase tracking-[0.22em] transition-all flex items-center gap-1 shrink-0",
               qaScore !== null
                 ? "glass border-white/10 text-muted hover:text-brand hover:border-brand/30"
@@ -615,7 +618,7 @@ function CallDetail({
                   <button
                     onClick={handleScoreQa}
                     disabled={scoring}
-                    className="w-full rounded-xl glass border border-brand/20 hover:border-brand/40 p-3 flex items-center gap-3 transition-all group"
+                    className="disabled:opacity-50 disabled:cursor-not-allowed w-full rounded-xl glass border border-brand/20 hover:border-brand/40 p-3 flex items-center gap-3 transition-all group"
                   >
                     <div className="w-8 h-8 rounded-lg bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">
                       {scoring ? (
@@ -733,8 +736,9 @@ function CallDetail({
                       href={call.recording_url}
                       download
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
+                      aria-label="Download recording (opens in new tab)"
                     >
                       <Download className="w-3 h-3" /> Download
                     </a>

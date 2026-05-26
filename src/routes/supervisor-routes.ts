@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- LLM responses and dynamic call analyses include freeform JSON content. */
 /**
  * Live-call supervisor endpoints — v1 captures the subscription intent
  * (listen / whisper / barge) so supervisors can bookmark live calls for

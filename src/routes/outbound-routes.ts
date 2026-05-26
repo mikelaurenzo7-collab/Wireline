@@ -1,4 +1,5 @@
-import { Router, Request, Response, NextFunction } from "express";
+/* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
+import { Router, Response } from "express";
 import { log, quotaTracker, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, desc, isNotNull } from "drizzle-orm";
@@ -15,14 +16,6 @@ import { placeOutboundCall } from "../lib/vapi-client";
 import { SentryEvents } from "../lib/sentry-events";
 import { claudeRateLimiter, dialRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
-
-interface OutboundLead {
-  agent_id?: string;
-  customer_name?: string;
-  customer_number?: string;
-  phone_number?: string;
-  context?: string;
-}
 
 const router = Router();
 

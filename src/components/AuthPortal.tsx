@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -9,7 +10,6 @@ import {
   UserPlus,
   LogIn,
   AlertTriangle,
-  Waves,
   Check,
   PhoneIncoming,
   PhoneOutgoing,
@@ -611,14 +611,22 @@ export default function AuthPortal() {
                 <form onSubmit={handleAuth} className="relative z-10 space-y-4">
                   {/* Email */}
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5">
+                    <label
+                      htmlFor="auth-email"
+                      className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5"
+                    >
                       <Mail className="w-3 h-3 text-[#4F1E7B]" />
                       Email
                     </label>
                     <div className="relative group">
                       <input
+                        id="auth-email"
                         type="email"
                         required
+                        autoComplete="email"
+                        autoCapitalize="none"
+                        spellCheck={false}
+                        inputMode="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="auth-input"
@@ -638,7 +646,10 @@ export default function AuthPortal() {
                   {!isReset && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <label className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5">
+                        <label
+                          htmlFor="auth-password"
+                          className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5"
+                        >
                           <Lock className="w-3 h-3 text-[#4F1E7B]" />
                           Password
                         </label>
@@ -658,9 +669,11 @@ export default function AuthPortal() {
                       </div>
                       <div className="relative group">
                         <input
+                          id="auth-password"
                           type="password"
                           required
                           minLength={isSignUp ? 8 : undefined}
+                          autoComplete={isSignUp ? "new-password" : "current-password"}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           className="auth-input tracking-[0.32em]"
@@ -719,6 +732,7 @@ export default function AuthPortal() {
                   <AnimatePresence mode="wait">
                     {error && (
                       <motion.div
+                        role="alert"
                         key="error"
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}

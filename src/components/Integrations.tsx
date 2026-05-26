@@ -1,10 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useState, useEffect } from "react";
 import {
   Mail,
   CheckCircle2,
   Plus,
   Trash2,
-  Webhook,
   Loader2,
   Bot,
   ChevronDown,
@@ -12,7 +12,7 @@ import {
   Phone,
   Zap,
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { authFetch, readApiJson } from "../lib/api";
 import PageShell, { Panel } from "./PageShell";
 import { useToast } from "../contexts/ToastContext";
@@ -397,6 +397,7 @@ export default function Integrations() {
                           </label>
                           <div className="relative">
                             <select
+                              aria-label="Route to agent"
                               value={acc.agent_id || "none"}
                               onChange={(e) => updateAccountAgent(acc.id, e.target.value)}
                               className="text-xs bg-black/5 border border-black/10 rounded-lg pl-3 pr-8 py-1.5 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"

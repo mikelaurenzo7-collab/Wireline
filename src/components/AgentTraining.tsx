@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useState, useEffect, useRef } from "react";
 import {
   Loader2,
@@ -16,11 +17,6 @@ import {
   Target,
   Clock,
   Workflow,
-  Beaker,
-  Brain,
-  ListFilter,
-  Settings,
-  Shield,
   Blocks,
   PhoneCall,
   PhoneOff,
@@ -36,8 +32,6 @@ import AgentWorkspace from "./AgentWorkspace";
 import { useToast } from "../contexts/ToastContext";
 import AgentFlowComposer from "./AgentFlowComposer";
 import AgentActionEngine from "./AgentActionEngine";
-
-type Message = { role: "user" | "assistant"; content: string };
 
 type VapiInstance = {
   on: (event: string, cb: () => void) => void;
@@ -57,14 +51,6 @@ export default function AgentTraining() {
   const simMountedRef = useRef(true);
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState("default-agent");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content: "Connected. Send instructions or background information to train your agent.",
-    },
-  ]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
   const [knowledge, setKnowledge] = useState<any[]>([]);
   const [directives, setDirectives] = useState<any[]>([]);
@@ -105,6 +91,7 @@ export default function AgentTraining() {
         }
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-syncs on agent switch by design
   }, [selectedAgentId]);
 
   const startTestCall = async () => {
@@ -169,50 +156,6 @@ export default function AgentTraining() {
       setLessons(data.lessons || []);
     } catch {
       /* training fetch failures are non-fatal — UI shows empty state */
-    }
-  };
-
-  const handleSend = async () => {
-    if (!input.trim()) return;
-    const currentInput = input;
-    setInput("");
-
-    setMessages((prev) => [...prev, { role: "user", content: currentInput }]);
-    setIsLoading(true);
-
-    try {
-      const res = await authFetch("/api/train/extract", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: currentInput, agentId: selectedAgentId }),
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        setMessages((prev) => [...prev, { role: "assistant", content: data.responseContent }]);
-        fetchKnowledge();
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content:
-              data.error || "Couldn't parse the response — try rephrasing your training input.",
-          },
-        ]);
-      }
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content:
-            "Couldn't reach the training service. Check your input and try again — if it keeps failing, ping Tyler at (564) 238-9455.",
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -299,6 +242,7 @@ export default function AgentTraining() {
             </span>
             <div className="relative flex-1 lg:flex-none lg:min-w-[260px]">
               <select
+                aria-label="Select agent"
                 value={selectedAgentId}
                 onChange={(e) => setSelectedAgentId(e.target.value)}
                 className="w-full text-sm bg-black/5 border border-black/10 rounded-lg pl-3 pr-8 py-2 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
@@ -374,7 +318,11 @@ export default function AgentTraining() {
           </div>
         </details>
 
-        <nav className="flex flex-wrap gap-1.5 max-w-[1400px] mx-auto w-full mt-2">
+        <nav
+          role="tablist"
+          aria-label="Training views"
+          className="flex flex-wrap gap-1.5 max-w-[1400px] mx-auto w-full mt-2"
+        >
           {[
             {
               id: "workspace",
@@ -409,6 +357,9 @@ export default function AgentTraining() {
           ].map((tab) => (
             <button
               key={tab.id}
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              aria-controls={`training-panel-${tab.id}`}
               onClick={() => setActiveTab(tab.id as any)}
               className={cn(
                 "px-2.5 py-1.5 rounded-lg border text-[10px] uppercase tracking-[0.12em] flex items-center gap-1.5 transition-colors",
@@ -434,6 +385,8 @@ export default function AgentTraining() {
           {activeTab === "actions" && (
             <motion.div
               key="actions"
+              role="tabpanel"
+              id="training-panel-actions"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
@@ -447,6 +400,8 @@ export default function AgentTraining() {
           {activeTab === "database" && (
             <motion.div
               key="database"
+              role="tabpanel"
+              id="training-panel-database"
               initial={{ opacity: 0, x: 16 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0 }}
@@ -890,6 +845,8 @@ export default function AgentTraining() {
           {activeTab === "flow" && (
             <motion.div
               key="flow"
+              role="tabpanel"
+              id="training-panel-flow"
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
@@ -903,6 +860,8 @@ export default function AgentTraining() {
           {activeTab === "workspace" && (
             <motion.div
               key="workspace"
+              role="tabpanel"
+              id="training-panel-workspace"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -919,6 +878,8 @@ export default function AgentTraining() {
           {activeTab === "simulator" && (
             <motion.div
               key="simulator"
+              role="tabpanel"
+              id="training-panel-simulator"
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useState, useEffect, useCallback, KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   Search,
@@ -11,6 +12,7 @@ import {
   BarChart3,
   Calendar,
   MessageSquare,
+  MessageCircle,
   PhoneOutgoing,
   History,
   ServerCog,
@@ -18,11 +20,19 @@ import {
   Sparkles,
   Activity,
   Database,
+  Radio,
+  Headphones,
+  Crown,
+  Kanban,
+  ScrollText,
+  Ban,
+  LifeBuoy,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
+import { useAuth } from "../contexts/AuthContext";
 
 interface CommandItem {
   id: string;
@@ -32,12 +42,14 @@ interface CommandItem {
   action: () => void;
   category: string;
   shortcut?: string;
+  ownerOnly?: boolean;
 }
 
 export default function CommandBar() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const { user } = useAuth();
 
   // Pin the page underneath while the command palette is open so
   // arrow-key navigation doesn't scroll the page beneath it.
@@ -100,6 +112,14 @@ export default function CommandBar() {
       action: () => navigate("/inbox"),
     },
     {
+      id: "sms",
+      label: "SMS",
+      description: "Two-way text conversations",
+      icon: MessageCircle,
+      category: "Navigation",
+      action: () => navigate("/sms"),
+    },
+    {
       id: "outbound",
       label: "Outbound",
       description: "Single and bulk lead outreach",
@@ -107,6 +127,40 @@ export default function CommandBar() {
       category: "Navigation",
       shortcut: "O",
       action: () => navigate("/outbound"),
+    },
+    {
+      id: "pipeline",
+      label: "Pipeline",
+      description: "Kanban view of leads across stages",
+      icon: Kanban,
+      category: "Navigation",
+      action: () => navigate("/pipeline"),
+    },
+    {
+      id: "live",
+      label: "Live Monitor",
+      description: "Real-time agent activity grid",
+      icon: Radio,
+      category: "Navigation",
+      action: () => navigate("/live"),
+    },
+    {
+      id: "cockpit",
+      label: "Supervisor Cockpit",
+      description: "Floor-level monitoring with SLA flags",
+      icon: Headphones,
+      category: "Navigation",
+      ownerOnly: true,
+      action: () => navigate("/cockpit"),
+    },
+    {
+      id: "founder",
+      label: "Founder",
+      description: "Owner-only metrics dashboard",
+      icon: Crown,
+      category: "Navigation",
+      ownerOnly: true,
+      action: () => navigate("/founder"),
     },
     {
       id: "train",
@@ -149,6 +203,30 @@ export default function CommandBar() {
       category: "Navigation",
       action: () => navigate("/admin"),
     },
+    {
+      id: "dnc",
+      label: "DNC List",
+      description: "Do-not-call number registry",
+      icon: Ban,
+      category: "Navigation",
+      action: () => navigate("/dnc"),
+    },
+    {
+      id: "audit",
+      label: "Audit Log",
+      description: "Account activity and security events",
+      icon: ScrollText,
+      category: "Navigation",
+      action: () => navigate("/audit"),
+    },
+    {
+      id: "help",
+      label: "Help",
+      description: "Reach the Wireline team",
+      icon: LifeBuoy,
+      category: "Navigation",
+      action: () => navigate("/help"),
+    },
 
     // ── Actions ────────────────────────────────────────────
     {
@@ -185,12 +263,15 @@ export default function CommandBar() {
     },
   ];
 
-  const filteredCommands = commands.filter(
-    (c) =>
-      c.label.toLowerCase().includes(query.toLowerCase()) ||
-      c.description.toLowerCase().includes(query.toLowerCase()) ||
-      c.category.toLowerCase().includes(query.toLowerCase()),
-  );
+  const filteredCommands = commands.filter((c) => {
+    if (c.ownerOnly && user?.is_owner !== true) return false;
+    const q = query.toLowerCase();
+    return (
+      c.label.toLowerCase().includes(q) ||
+      c.description.toLowerCase().includes(q) ||
+      c.category.toLowerCase().includes(q)
+    );
+  });
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

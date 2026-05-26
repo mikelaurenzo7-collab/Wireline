@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 // SOC 2 access-control evidence helpers.
 //
 // This module provides the data-access primitives that a SOC 2 auditor

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -27,6 +28,7 @@ import HubTabs, { TRAINING_HUB } from "./HubTabs";
 import { cn } from "../lib/utils";
 import { formatDate } from "../lib/safe-date";
 import EmptyState from "./EmptyState";
+import { RecipeModal } from "./ClaudeRecipes";
 
 interface KnowledgeRow {
   id: number;
@@ -69,6 +71,10 @@ export default function KnowledgeBaseManager() {
   const [addAgent, setAddAgent] = useState("");
   const [addContent, setAddContent] = useState("");
   const [adding, setAdding] = useState(false);
+
+  // URL-ingest modal state. Wired to the knowledge-from-url Claude recipe,
+  // which crawls a site and adds extracted facts into wireline_knowledge.
+  const [showIngestUrl, setShowIngestUrl] = useState(false);
 
   // Dedupe state
   const [deduping, setDeduping] = useState(false);
@@ -360,6 +366,7 @@ export default function KnowledgeBaseManager() {
                 <label className="space-y-1.5">
                   <span className="text-[10px] uppercase tracking-[0.3em] text-muted">Agent</span>
                   <select
+                    aria-label="Agent"
                     value={addAgent}
                     onChange={(e) => setAddAgent(e.target.value)}
                     className="w-full h-11 px-3 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
@@ -508,7 +515,10 @@ export default function KnowledgeBaseManager() {
 
       {/* Error */}
       {error && (
-        <div className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-4 text-rose-500 text-sm flex items-center gap-3">
+        <div
+          role="alert"
+          className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-4 text-rose-500 text-sm flex items-center gap-3"
+        >
           <AlertOctagon className="w-4 h-4" />
           <span>{error}</span>
         </div>
@@ -523,6 +533,7 @@ export default function KnowledgeBaseManager() {
               onClick={toggleSelectAll}
               disabled={filtered.length === 0}
               className={cn(
+                "disabled:opacity-50 disabled:cursor-not-allowed",
                 "w-4 h-4 rounded border-2 flex items-center justify-center transition-all",
                 allFilteredSelected
                   ? "bg-brand border-brand text-on-brand"
@@ -554,7 +565,7 @@ export default function KnowledgeBaseManager() {
                 accent="#4F1E7B"
                 actions={[
                   { label: "Add Knowledge", onClick: () => setShowAdd(true), primary: true },
-                  { label: "Ingest from URL", onClick: () => {} },
+                  { label: "Ingest from URL", onClick: () => setShowIngestUrl(true) },
                 ]}
                 className="py-12"
               />
@@ -644,6 +655,7 @@ export default function KnowledgeBaseManager() {
                         </button>
                         <button
                           onClick={cancelEdit}
+                          aria-label="Cancel edit"
                           className="h-8 w-8 rounded-lg glass border border-white/10 flex items-center justify-center text-ink/70 hover:text-ink"
                         >
                           <X className="w-3.5 h-3.5" />
@@ -701,6 +713,17 @@ export default function KnowledgeBaseManager() {
           </div>
         </div>
       </div>
+      <AnimatePresence>
+        {showIngestUrl && (
+          <RecipeModal
+            recipe="knowledge-from-url"
+            onClose={() => {
+              setShowIngestUrl(false);
+              refresh();
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -785,6 +808,7 @@ function DedupePanel({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="w-9 h-9 rounded-full glass border border-white/10 hover:border-white/30 flex items-center justify-center text-ink/60 hover:text-ink"
           >
             <X className="w-4 h-4" />
@@ -842,6 +866,7 @@ function DedupePanel({
                         onClick={() => setKeep(idx, m.id)}
                         disabled={!keepId}
                         className={cn(
+                          "disabled:opacity-50 disabled:cursor-not-allowed",
                           "w-full text-left rounded-xl border p-3 flex items-start gap-3 transition-all",
                           !keepId
                             ? "bg-black/10 border-white/5 opacity-50 cursor-not-allowed"

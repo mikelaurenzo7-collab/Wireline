@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -121,6 +122,14 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const save = async () => {
@@ -184,6 +193,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
           </div>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
           >
             <X className="w-4 h-4" />
@@ -238,6 +248,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
             {agents.length > 0 && (
               <Field label="Agent" icon={Bot}>
                 <select
+                  aria-label="Appointment agent"
                   className={cn(inputCls, "appearance-none cursor-pointer")}
                   value={form.agent_id}
                   onChange={(e) => set("agent_id", e.target.value)}
@@ -254,6 +265,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
             {isEdit && (
               <Field label="Status" icon={CheckCircle2}>
                 <select
+                  aria-label="Appointment status"
                   className={cn(inputCls, "appearance-none cursor-pointer")}
                   value={form.status}
                   onChange={(e) => set("status", e.target.value)}
@@ -277,7 +289,10 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
           </div>
 
           {err && (
-            <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30">
+            <div
+              role="alert"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30"
+            >
               <AlertOctagon className="w-3.5 h-3.5 text-rose-500 shrink-0" />
               <p className="text-[11px] text-rose-600 leading-snug">{err}</p>
             </div>
@@ -517,6 +532,7 @@ export default function AppointmentsView() {
 
   useEffect(() => {
     fetchAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time fetch on mount
   }, []);
 
   const handleSaved = (appt: Appointment) => {
@@ -665,6 +681,16 @@ export default function AppointmentsView() {
                             Book a commitment manually or let agents schedule during calls.
                           </p>
                         </div>
+                        <button
+                          onClick={() => {
+                            setEditTarget(null);
+                            setShowModal(true);
+                          }}
+                          className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-brand text-on-brand text-[10px] uppercase tracking-[0.28em] hover:bg-brand/90 transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Book appointment
+                        </button>
                       </motion.div>
                     ) : (
                       <div className="divide-y divide-white/5">
@@ -879,6 +905,7 @@ function AppointmentRow({
           <button
             onClick={onEdit}
             title="Edit"
+            aria-label="Edit appointment"
             className="w-7 h-7 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink hover:border-white/25 transition-all"
           >
             <Pencil className="w-3.5 h-3.5" />
@@ -887,6 +914,7 @@ function AppointmentRow({
             onClick={onDelete}
             disabled={deleting}
             title="Remove"
+            aria-label="Remove appointment"
             className="w-7 h-7 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all disabled:opacity-50"
           >
             {deleting ? (

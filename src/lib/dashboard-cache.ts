@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- audit metadata and aggregate stats are stored as Postgres jsonb. */
 /**
  * Dashboard Stats Cache
  * ---------------------------------------------------------------------------

@@ -465,6 +465,7 @@ export default function CrmConnectionCard() {
                               onClick={connect(key)}
                               disabled={isConnecting}
                               className={cn(
+                                "disabled:opacity-50 disabled:cursor-not-allowed",
                                 "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-medium transition-all",
                                 "bg-brand/15 border border-brand/30 text-brand hover:bg-brand/25",
                                 isConnecting && "opacity-60 pointer-events-none",
@@ -536,6 +537,7 @@ export default function CrmConnectionCard() {
                             </div>
                           ) : (
                             <select
+                              aria-label="Default Slack channel"
                               className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink"
                               value={s.default_channel_id || ""}
                               onChange={async (e) => {
@@ -575,6 +577,7 @@ export default function CrmConnectionCard() {
                             </div>
                           ) : (
                             <select
+                              aria-label="Default Teams team and channel"
                               className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink"
                               value={
                                 s.team_id && s.channel_id ? `${s.team_id}:${s.channel_id}` : ""

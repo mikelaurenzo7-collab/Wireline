@@ -1,8 +1,9 @@
-import { drizzle, log } from '../lib/server-context';
-import * as schema from '../db/schema';
-import { eq, and, sql, lt } from 'drizzle-orm';
-import { isDncBlocked } from '../lib/compliance';
-import { placeOutboundCall } from '../lib/vapi-client';
+/* eslint-disable @typescript-eslint/no-explicit-any -- external integration data shape varies by provider. */
+import { drizzle, log } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and, sql, lt } from "drizzle-orm";
+import { isDncBlocked } from "../lib/compliance";
+import { placeOutboundCall } from "../lib/vapi-client";
 
 export class CampaignDialerService {
   /**
@@ -15,22 +16,30 @@ export class CampaignDialerService {
         .select()
         .from(schema.outboundCampaigns)
         .where(
-          userId 
-            ? and(eq(schema.outboundCampaigns.status, 'active'), eq(schema.outboundCampaigns.userId, userId))
-            : eq(schema.outboundCampaigns.status, 'active')
+          userId
+            ? and(
+                eq(schema.outboundCampaigns.status, "active"),
+                eq(schema.outboundCampaigns.userId, userId),
+              )
+            : eq(schema.outboundCampaigns.status, "active"),
         );
 
       log.info(`Processing ${activeCampaigns.length} active campaigns`);
 
       for (const campaign of activeCampaigns) {
-        if (this.isWithinWindow(campaign.callWindowStart || '09:00', campaign.callWindowEnd || '17:00')) {
+        if (
+          this.isWithinWindow(
+            campaign.callWindowStart || "09:00",
+            campaign.callWindowEnd || "17:00",
+          )
+        ) {
           await this.processCampaignLeads(campaign);
         } else {
           log.info(`Campaign ${campaign.name} is outside its call window`);
         }
       }
     } catch (error: any) {
-      log.error('Failed to process campaigns', { error: error.message });
+      log.error("Failed to process campaigns", { error: error.message });
     }
   }
 
@@ -45,8 +54,8 @@ export class CampaignDialerService {
         and(
           eq(schema.outboundLeads.campaignId, campaign.id),
           sql`${schema.outboundLeads.status} IN ('Pending', 'Retrying')`,
-          lt(schema.outboundLeads.attempts, campaign.maxAttempts || 3)
-        )
+          lt(schema.outboundLeads.attempts, campaign.maxAttempts || 3),
+        ),
       )
       .limit(50); // Process in batches
 
@@ -61,18 +70,18 @@ export class CampaignDialerService {
   private async dialLead(lead: any, campaign: any) {
     try {
       // 1. Check DNC
-      if (lead.customerNumber && await isDncBlocked(lead.userId!, lead.customerNumber)) {
+      if (lead.customerNumber && (await isDncBlocked(lead.userId!, lead.customerNumber))) {
         await drizzle
           .update(schema.outboundLeads)
-          .set({ status: 'Blocked-DNC' })
+          .set({ status: "Blocked-DNC" })
           .where(eq(schema.outboundLeads.id, lead.id));
-        
+
         await drizzle.insert(schema.consentLog).values({
           userId: lead.userId!,
           customerNumber: lead.customerNumber,
-          event: 'outbound_blocked_dnc',
-          state: 'blocked',
-          metadata: { leadId: lead.id, campaignId: campaign.id }
+          event: "outbound_blocked_dnc",
+          state: "blocked",
+          metadata: { leadId: lead.id, campaignId: campaign.id },
         });
         return;
       }
@@ -83,7 +92,7 @@ export class CampaignDialerService {
         agentId: campaign.agentId!,
         customerNumber: lead.customerNumber!,
         customerName: lead.customerName,
-        context: lead.context || campaign.goal
+        context: lead.context || campaign.goal,
       });
 
       if (result.ok) {
@@ -91,29 +100,29 @@ export class CampaignDialerService {
           drizzle
             .update(schema.outboundLeads)
             .set({
-              status: 'Dialing',
+              status: "Dialing",
               attempts: (lead.attempts || 0) + 1,
               lastCalledAt: new Date(),
-              callId: result.callId
+              callId: result.callId,
             })
             .where(eq(schema.outboundLeads.id, lead.id)),
           drizzle.insert(schema.consentLog).values({
             userId: lead.userId!,
             customerNumber: lead.customerNumber,
             callId: result.callId,
-            event: 'outbound_call_placed',
-            state: 'initiated',
-            metadata: { leadId: lead.id, campaignId: campaign.id }
-          })
+            event: "outbound_call_placed",
+            state: "initiated",
+            metadata: { leadId: lead.id, campaignId: campaign.id },
+          }),
         ]);
       } else {
         await drizzle
           .update(schema.outboundLeads)
           .set({
-            status: 'Error',
+            status: "Error",
             attempts: (lead.attempts || 0) + 1,
             lastCalledAt: new Date(),
-            metadata: { ...((lead.metadata as object) || {}), lastError: result.error }
+            metadata: { ...((lead.metadata as object) || {}), lastError: result.error },
           })
           .where(eq(schema.outboundLeads.id, lead.id));
       }
@@ -126,7 +135,9 @@ export class CampaignDialerService {
    * Checks if the current time (or a provided time) is within the call window.
    */
   private isWithinWindow(start: string, end: string, currentTimeOverride?: string): boolean {
-    const now = currentTimeOverride || new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const now =
+      currentTimeOverride ||
+      new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
     return now >= start && now <= end;
   }
 }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { sendManagerAlert } from "./twilio-service";

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 /**
  * Mid-call voice swap for bilingual receptionists.
  *
@@ -133,6 +134,11 @@ export async function performMidCallVoiceSwap(params: VoiceSwapParams): Promise<
         voice: {
           provider: voiceProvider,
           voiceId: secondaryVoiceId,
+          // Pin the TTS model on the swapped-in voice too, so the
+          // bilingual handoff doesn't introduce a SECOND cadence shift
+          // on top of the language change. Matches the primary
+          // assistant factory + outbound client.
+          ...(voiceProvider === "11labs" ? { model: "eleven_flash_v2_5" } : {}),
           // Stream as aggressively as the primary voice does — same
           // latency budget regardless of language.
           optimizeStreamingLatency: 4,

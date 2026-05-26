@@ -173,7 +173,7 @@ export default function ConfirmModal({
                 <button
                   onClick={onCancel}
                   disabled={loading}
-                  className="flex-1 h-11 rounded-xl glass border border-white/10 text-[11px] uppercase tracking-[0.25em] text-muted hover:text-ink hover:border-white/20 transition-all active:scale-95"
+                  className="disabled:opacity-50 disabled:cursor-not-allowed flex-1 h-11 rounded-xl glass border border-white/10 text-[11px] uppercase tracking-[0.25em] text-muted hover:text-ink hover:border-white/20 transition-all active:scale-95"
                 >
                   {cancelLabel}
                 </button>
@@ -182,6 +182,7 @@ export default function ConfirmModal({
                   onClick={onConfirm}
                   disabled={loading}
                   className={cn(
+                    "disabled:opacity-50 disabled:cursor-not-allowed",
                     "flex-1 h-11 rounded-xl text-[11px] uppercase tracking-[0.25em] flex items-center justify-center gap-1.5 transition-all active:scale-95",
                     danger
                       ? "bg-rose-500/20 border border-rose-500/40 text-rose-500 hover:bg-rose-500/30"

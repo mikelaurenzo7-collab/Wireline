@@ -96,18 +96,3 @@ export function HelpTooltip({ content, title, placement = "top", children }: Hel
     </span>
   );
 }
-
-interface HelpBadgeProps {
-  label: string;
-  help: string;
-  placement?: "top" | "bottom" | "left" | "right";
-}
-
-export function HelpBadge({ label, help, placement = "top" }: HelpBadgeProps) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span>{label}</span>
-      <HelpTooltip content={help} placement={placement} />
-    </span>
-  );
-}

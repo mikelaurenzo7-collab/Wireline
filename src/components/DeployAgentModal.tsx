@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Loader2, ArrowRight, User2, Users2, Play, Pause } from "lucide-react";
@@ -177,6 +178,7 @@ export default function DeployAgentModal({
     setShowVoiceList(false);
     // Defer focus until the modal animation is past the initial frame
     setTimeout(() => nameInputRef.current?.select(), 80);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally re-keyed on template id
   }, [template?.id]);
 
   // When gender flips, swap to the default voice for that gender so the
@@ -422,6 +424,7 @@ export default function DeployAgentModal({
                   onClick={handleSubmit}
                   disabled={!canSubmit}
                   className={cn(
+                    "disabled:opacity-50 disabled:cursor-not-allowed",
                     "group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] uppercase tracking-[0.32em] font-semibold transition-all",
                     canSubmit
                       ? "text-paper shadow-lg shadow-brand/30 hover:shadow-brand/40 active:scale-[0.98]"

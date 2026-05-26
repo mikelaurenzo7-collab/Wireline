@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Phone, MapPin, Search, Loader2, Check, AlertCircle, RefreshCw } from "lucide-react";
+import { Phone, MapPin, Search, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 
@@ -263,6 +264,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
       <AnimatePresence>
         {error && (
           <motion.div
+            role="alert"
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}

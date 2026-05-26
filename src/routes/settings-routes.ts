@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 import { Router, Response } from "express";
 import type { AuthenticatedRequest } from "../types/auth";
 import { drizzle, log, auditLogger } from "../lib/server-context";
 import { settings, userPreferences, agents, callLogs, deletionQueue } from "../db/schema";
 import * as schema from "../db/schema";
-import { eq, sql, and, desc } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage, mapObjectToCamel } from "../lib/server-utils";
 import { enqueue } from "../lib/job-queue";
@@ -214,47 +215,6 @@ router.post(
     const uid = req.user.id;
     try {
       log.info("account export requested", { uid });
-
-      // List of all tables to export (same order as delete for consistency)
-      const tables = [
-        "wireline_settings",
-        "wireline_agents",
-        "wireline_directives",
-        "wireline_knowledge",
-        "wireline_personality",
-        "wireline_agent_lessons",
-        "wireline_appointments",
-        "wireline_call_logs",
-        "wireline_email_accounts",
-        "wireline_email_threads",
-        "wireline_email_messages",
-        "wireline_fleet_tasks",
-        "wireline_phone_numbers",
-        "wireline_outbound_leads",
-        "wireline_outbound_campaigns",
-        "wireline_signal_presence",
-        "wireline_audit_log",
-        "wireline_webhooks",
-        "wireline_webhook_deliveries",
-        "wireline_spend_budgets",
-        "wireline_spend_alerts",
-        "wireline_intake_keys",
-        "wireline_subscriptions",
-        "wireline_stripe_events",
-        "wireline_dnc_list",
-        "wireline_user_preferences",
-        "wireline_onboarding_progress",
-        "wireline_consent_log",
-        "wireline_quota_limits",
-        "wireline_quota_usage",
-        "wireline_calendar_accounts",
-        "wireline_calendar_events",
-        "wireline_crm_connections",
-        "wireline_team_members",
-        "wireline_change_log",
-        "wireline_incidents",
-        "wireline_jobs",
-      ];
 
       const exportData: Record<string, any[]> = {};
       let totalRows = 0;

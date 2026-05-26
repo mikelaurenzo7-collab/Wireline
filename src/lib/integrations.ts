@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 import { google } from "googleapis";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Express middleware operates on heterogeneous request/response shapes. */
 import { auditLogger } from "../lib/server-context";
 import { rateLimit, distributedLimiterStatus } from "../lib/rate-limit";
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React from "react";
 import { Bot, Zap, Save, Loader2 } from "lucide-react";
 
@@ -78,6 +79,10 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
                     src={settings.brand_logo_url}
                     className="w-6 h-6 object-contain"
                     alt="Logo"
+                    loading="lazy"
+                    decoding="async"
+                    width={24}
+                    height={24}
                   />
                 ) : (
                   <Zap className="w-6 h-6" style={{ color: settings.primary_color }} />
@@ -110,7 +115,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
             <button
               onClick={onSave}
               disabled={isSaving}
-              className="brutal-btn w-full md:w-auto !px-8 !py-3 !text-[10px] !tracking-[0.4em] flex items-center justify-center gap-2"
+              className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn w-full md:w-auto !px-8 !py-3 !text-[10px] !tracking-[0.4em] flex items-center justify-center gap-2"
             >
               {isSaving ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

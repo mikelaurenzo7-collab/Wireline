@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 /**
  * Pronunciation Dictionary — operator-side jargon management surface.
  *
@@ -92,14 +93,8 @@ export default function PronunciationDictionaryPanel() {
 
   useEffect(() => {
     void loadDicts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time fetch on mount
   }, []);
-
-  function updateDraftEntry(dictId: string, idx: number, patch: Partial<DictEntry>) {
-    setDrafts((prev) => {
-      const next = (prev[dictId] || []).map((e, i) => (i === idx ? { ...e, ...patch } : e));
-      return { ...prev, [dictId]: next };
-    });
-  }
 
   function addDraftRow(dictId: string) {
     setDrafts((prev) => ({
@@ -285,7 +280,7 @@ export default function PronunciationDictionaryPanel() {
                 setNewEntries([blankEntry()]);
               }}
               disabled={creating}
-              className="px-4 py-2.5 rounded-full text-[11px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
+              className="disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5 rounded-full text-[11px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
             >
               Cancel
             </button>
@@ -427,6 +422,7 @@ function EntryEditor({ entries, onChange, onAddRow, onRemoveRow }: EntryEditorPr
               className="rounded-lg border border-black/10 bg-paper px-2.5 py-2 text-[12px] text-ink outline-none focus:border-brand/40"
             />
             <select
+              aria-label="Entry kind"
               value={entry.kind}
               onChange={(e) => {
                 const next = entries.map((e2, i) =>

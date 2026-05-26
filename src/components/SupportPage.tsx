@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 /**
  * /support — real customer support surface.
  *
@@ -65,7 +66,7 @@ export function SupportPage() {
       if (typeof window !== "undefined" && (window as any).plausible) {
         (window as any).plausible("SupportTicketSubmitted", { props: { issueType } });
       }
-    } catch (e) {
+    } catch {
       // Graceful fallback: pre-fill mailto with the operator's content
       // so they don't lose what they typed.
       const fallback = `mailto:trywireline@yahoo.com?subject=${encodeURIComponent(
@@ -206,6 +207,10 @@ export function SupportPage() {
                   id="support-email"
                   type="email"
                   required
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  inputMode="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@yourcompany.com"
@@ -257,7 +262,11 @@ export function SupportPage() {
                 />
               </div>
 
-              {error && <p className="text-[11px] text-rose-600 leading-relaxed">{error}</p>}
+              {error && (
+                <p role="alert" className="text-[11px] text-rose-600 leading-relaxed">
+                  {error}
+                </p>
+              )}
 
               <button
                 type="submit"

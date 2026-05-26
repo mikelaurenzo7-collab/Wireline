@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- LLM responses and dynamic call analyses include freeform JSON content. */
 import { Router, Response } from "express";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, gte, isNull, isNotNull, desc } from "drizzle-orm";
+import { eq, and, gte, isNull, isNotNull, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { withAudit } from "../middleware/audit-middleware";
 import { claudeRateLimiter } from "../middleware/api-rate-limits";
@@ -26,12 +27,6 @@ interface CallForQa {
   durationSeconds?: number;
   agentId?: string | null;
   agentRole?: string | null;
-}
-
-interface QaUpdatePayload {
-  qa_score: number;
-  qa_breakdown: Record<string, unknown>;
-  coaching_note?: string;
 }
 
 // Score a call against a 5-dimension QA rubric (20 pts each = 100 total).

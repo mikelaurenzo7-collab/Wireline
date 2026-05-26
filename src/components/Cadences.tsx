@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -399,6 +400,7 @@ export default function Cadences() {
                   </span>
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
                     <select
+                      aria-label="Step type"
                       value={s.type}
                       onChange={(e) => updateStep(i, { type: e.target.value as StepType })}
                       className="px-2 py-1.5 rounded-md bg-white/5 border border-white/10 text-ink text-[11px]"
@@ -411,6 +413,7 @@ export default function Cadences() {
                       <Clock className="w-3 h-3 text-muted/60" />
                       <input
                         type="number"
+                        inputMode="numeric"
                         min={0}
                         value={s.delayHours}
                         onChange={(e) => updateStep(i, { delayHours: Number(e.target.value) || 0 })}

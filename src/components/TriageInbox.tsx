@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -12,7 +13,6 @@ import {
   RefreshCw,
   Pencil,
   X,
-  Inbox,
   Check,
   Trash2,
 } from "lucide-react";
@@ -23,7 +23,6 @@ import { formatDate, formatDateTime } from "../lib/safe-date";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
-import EmptyState from "./EmptyState";
 import WidgetBoundary from "./WidgetBoundary";
 
 interface HotLead {
@@ -123,18 +122,6 @@ export default function TriageInbox() {
             Retry
           </button>
         </div>
-      ) : totalAttention === 0 ? (
-        <EmptyState
-          icon={Inbox}
-          title="All clear"
-          description="No items need attention right now. Triage surfaces follow-ups, hot leads, and escalations from your agent activity."
-          accent="#10B981"
-          actions={[
-            { label: "View Call Logs", to: "/logs" },
-            { label: "View Dashboard", to: "/" },
-          ]}
-          className="h-full py-10"
-        />
       ) : (
         body
       )}
@@ -556,7 +543,7 @@ const KnowledgeGapRow: React.FC<{
           <button
             onClick={promote}
             disabled={busy || discarding}
-            className="brutal-btn !py-1.5 !px-3 !text-[9px] !tracking-[0.28em]"
+            className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn !py-1.5 !px-3 !text-[9px] !tracking-[0.28em]"
           >
             {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
             Promote
@@ -634,6 +621,7 @@ const OpenTaskRow: React.FC<{
         onClick={complete}
         disabled={completing}
         className={cn(
+          "disabled:opacity-50 disabled:cursor-not-allowed",
           "shrink-0 w-5 h-5 rounded-full border transition-all mt-0.5 flex items-center justify-center",
           completing
             ? "border-emerald-500/60 bg-emerald-500/20"

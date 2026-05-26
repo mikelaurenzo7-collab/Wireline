@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- aggregate stats and dashboard rows draw from heterogeneous queries. */
 import { Router, Response } from "express";
 import type { AuthenticatedRequest } from "../types/auth";
 import { log, auditLogger, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, desc, isNotNull, lt, gte, inArray } from "drizzle-orm";
+import { eq, and, sql, desc, lt, gte, inArray } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { computeDashboardStats } from "../lib/dashboard-stats";
 import { computeDashboardBenchmarks } from "../lib/dashboard-benchmarks";
@@ -591,39 +592,6 @@ function rowsToCsv(rows: Record<string, unknown>[], columns: string[]): string {
   return `${header}\n${body}`;
 }
 
-const EXPORT_DEFS: Record<string, { table: string; columns: string[]; order: string }> = {
-  calls: {
-    table: "wireline_call_logs",
-    columns: [
-      "created_at",
-      "customer_number",
-      "direction",
-      "duration_seconds",
-      "cost",
-      "lead_score",
-      "intent_label",
-      "sentiment",
-      "summary",
-    ],
-    order: "created_at",
-  },
-  leads: {
-    table: "wireline_outbound_leads",
-    columns: ["created_at", "customer_number", "customer_name", "status", "last_called_at"],
-    order: "created_at",
-  },
-  triage: {
-    table: "wireline_fleet_tasks",
-    columns: ["created_at", "task_type", "status", "priority", "description"],
-    order: "created_at",
-  },
-  appointments: {
-    table: "wireline_appointments",
-    columns: ["date", "time", "customer_name", "service_type", "status", "phone_number"],
-    order: "date",
-  },
-};
-
 router.get(
   "/api/export/:type.csv",
   authenticateUser,
@@ -632,7 +600,6 @@ router.get(
       const type = req.params.type;
       let data: any[] = [];
       let columns: string[] = [];
-      let order: any;
 
       if (type === "calls") {
         columns = [

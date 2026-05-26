@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useState, useEffect, useRef } from "react";
 import {
   Mail,
@@ -95,6 +96,7 @@ export default function EmailInbox() {
 
   useEffect(() => {
     fetchThreads();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time fetch on mount
   }, []);
 
   // Guarded against the rapid-thread-switch race: if the user clicks
@@ -127,6 +129,7 @@ export default function EmailInbox() {
       active = false;
       controller.abort();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally re-keyed on thread id only
   }, [selectedThread?.id]);
 
   const fetchMessages = async (threadId: string) => {
@@ -281,7 +284,10 @@ export default function EmailInbox() {
               icon={Inbox}
               scroll
               flush
-              className={cn("md:w-[350px] lg:w-[420px] shrink-0", selectedThread && "hidden md:flex")}
+              className={cn(
+                "md:w-[350px] lg:w-[420px] shrink-0",
+                selectedThread && "hidden md:flex",
+              )}
               actions={
                 <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.3em] text-muted/70 tabular-nums">
                   {threads.length}

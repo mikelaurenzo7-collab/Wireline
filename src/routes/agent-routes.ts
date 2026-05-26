@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 import { Router, Response } from "express";
 import type { AuthenticatedRequest } from "../types/auth";
 
 import { log, auditLogger, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, desc, inArray } from "drizzle-orm";
+import { eq, and, sql, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import {
   getErrorMessage,
@@ -14,7 +15,6 @@ import {
 import {
   parseFormData,
   AgentFormSchema,
-  AgentBusinessProfileSchema,
   GeminiAgentExtractionSchema,
 } from "../lib/form-validators";
 import { ROLE_PERSONALITY_TEMPLATES, DEFAULT_AGENT_ROLE } from "../lib/agent-constants";
@@ -747,7 +747,7 @@ router.post(
         });
       }
 
-      const { id, personality, templateId, firstMessage, ...rest } = req.body;
+      const { id, personality, templateId, ...rest } = req.body;
       const agentId = id || `agent-${Date.now()}`;
       const agentRole = rest.role || DEFAULT_AGENT_ROLE;
 

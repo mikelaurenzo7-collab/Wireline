@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 // AgentFlowComposer — neural-aligned linear stage progression editor.
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
@@ -15,7 +16,7 @@ import {
   AlertTriangle,
   MessageSquareQuote,
 } from "lucide-react";
-import { motion, AnimatePresence, Reorder } from "motion/react";
+import { AnimatePresence, Reorder } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
@@ -323,7 +324,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
           // counts as dirty and gets pushed up.
           setLastSavedSnapshot("");
         }
-      } catch (err) {
+      } catch {
         if (active) toastError("Failed to load agent flow configuration");
       } finally {
         if (active) setIsLoading(false);
@@ -436,7 +437,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
   // step, or a non-terminal step with no transition condition. These
   // make the saved flow useless at runtime because the LLM won't know
   // when to advance — operator MUST fix before save lands.
-  const blockingIssues = useMemo(() => validationIssues.filter((i) => true), [validationIssues]);
+  const blockingIssues = useMemo(() => validationIssues.filter(() => true), [validationIssues]);
 
   /**
    * Persist the current step list. Pulled out as a callback so the
@@ -476,7 +477,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
           setTimeout(() => setSaveSuccess(false), 2500);
         }
         return true;
-      } catch (err) {
+      } catch {
         if (!silent) toastError("Failed to save flow configuration");
         return false;
       } finally {
@@ -846,7 +847,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                   <button
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="h-9 px-4 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-all flex items-center gap-2 ml-2"
+                    className="disabled:opacity-50 disabled:cursor-not-allowed h-9 px-4 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-all flex items-center gap-2 ml-2"
                   >
                     {isSaving ? (
                       <div className="w-3.5 h-3.5 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />

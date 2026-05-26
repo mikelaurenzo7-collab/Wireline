@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 /**
  * Resolves which Wireline agent should handle an incoming Vapi server webhook.
  *
@@ -8,7 +9,7 @@
 
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 export function extractVapiPhoneNumberId(
   body: Record<string, unknown> | undefined | null,

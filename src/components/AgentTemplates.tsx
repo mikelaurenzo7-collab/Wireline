@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import DeployAgentModal, { DeployValues } from "./DeployAgentModal";
@@ -572,7 +573,8 @@ export default function AgentTemplates() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted/60 pointer-events-none" />
           <input
-            type="text"
+            type="search"
+            aria-label="Search templates"
             placeholder="Search templates…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}

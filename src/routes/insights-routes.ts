@@ -1,12 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- aggregate stats and dashboard rows draw from heterogeneous queries. */
 import { Router, Response } from "express";
 
-import { drizzle, log } from "../lib/server-context";
+import { drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, desc, gte, lt, or } from "drizzle-orm";
+import { eq, and, desc, gte, lt, or } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import * as claudeBrain from "../lib/claude-brain";
 import { claudeErr } from "../lib/claude-response-helpers";
-import { getErrorMessage } from "../lib/server-utils";
 import { cachedInsight, setCachedInsight } from "../lib/insights-cache";
 import { enforceSpendCap, enforce24hSpendCap } from "../lib/spend-guards";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -16,27 +16,6 @@ const router = Router();
 const DEFAULT_AGENT_ROLE = "customer_service";
 
 import { computeDailyBrief } from "../lib/daily-brief";
-
-interface CallRow {
-  duration_seconds?: number;
-  lead_score?: number;
-  intent_label?: string;
-  summary?: string;
-  created_at: string;
-}
-
-interface AgentRow {
-  id: string;
-  name: string;
-  archetype?: string;
-  channel?: string;
-  role?: string;
-}
-
-interface AuditCostRow {
-  agent_id?: string;
-  cost_usd?: number;
-}
 
 router.get(
   "/api/insights/funnel",
@@ -104,8 +83,7 @@ router.get(
         ],
       });
     } catch (e) {
-      log.error("insights funnel failed", { error: getErrorMessage(e), userId: req.user?.id });
-      res.status(500).json({ error: "Failed to load funnel data" });
+      claudeErr(res, e);
     }
   },
 );

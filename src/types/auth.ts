@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- shared type shims bridge untyped third-party modules. */
 import type { Request } from "express";
 import { AccessRole } from "../lib/soc2-controls";
 
@@ -21,13 +22,13 @@ declare global {
 /**
  * An Express Request object that has been through the authenticateUser
  * middleware and thus has a valid User attached.
- * 
+ *
  * NOTE: We explicitly define body, params, and query here to resolve
  * errors when @types/express is missing or incomplete in the environment.
  */
 export interface AuthenticatedRequest<
   P = Record<string, string>,
-  ResBody = any,
+  _ResBody = any,
   ReqBody = any,
   ReqQuery = Record<string, string | string[] | undefined>,
 > extends Request {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 // Distributed rate limiter — uses Upstash Redis when configured, falls
 // back to per-process in-memory state otherwise.
 //

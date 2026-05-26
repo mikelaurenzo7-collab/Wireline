@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 // AgentScorecard — outcome-aligned per-agent reporting card.
 //
 // Hits GET /api/agents/:id/scorecard?days=N which returns the metric
@@ -84,7 +85,10 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
 
   if (error) {
     return (
-      <section className="rounded-2xl bg-rose-500/8 border border-rose-500/30 p-4 flex items-start gap-2.5">
+      <section
+        role="alert"
+        className="rounded-2xl bg-rose-500/8 border border-rose-500/30 p-4 flex items-start gap-2.5"
+      >
         <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
         <span className="text-xs text-rose-500">Couldn't load scorecard. {error}</span>
       </section>

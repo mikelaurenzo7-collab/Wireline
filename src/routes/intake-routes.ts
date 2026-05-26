@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- inbound lead payloads are vendor-defined JSON envelopes. */
 import express, { Request, Response } from "express";
 import type { AuthenticatedRequest } from "../types/auth";
 import { log, auditLogger, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import { dispatchWebhook } from "../lib/webhook-helpers";
@@ -20,7 +21,11 @@ async function sha256Hex(value: string): Promise<string> {
 
 async function generateIntakeKey(): Promise<{ plaintext: string; prefix: string; hash: string }> {
   const crypto = await import("node:crypto");
-  const raw = crypto.randomBytes(32).toString("base64").replace(/[^A-Za-z0-9]/g, "").slice(0, 36);
+  const raw = crypto
+    .randomBytes(32)
+    .toString("base64")
+    .replace(/[^A-Za-z0-9]/g, "")
+    .slice(0, 36);
   const plaintext = `${INTAKE_KEY_PREFIX}${raw}`;
   const prefix = plaintext.slice(0, 12);
   const hash = await sha256Hex(plaintext);
@@ -38,7 +43,8 @@ interface IntakeKey {
 }
 
 async function resolveIntakeKey(provided: string | undefined): Promise<IntakeKey | null> {
-  if (!provided || typeof provided !== "string" || !provided.startsWith(INTAKE_KEY_PREFIX)) return null;
+  if (!provided || typeof provided !== "string" || !provided.startsWith(INTAKE_KEY_PREFIX))
+    return null;
   const hash = await sha256Hex(provided.trim());
   const [data] = await drizzle
     .select({
@@ -48,12 +54,12 @@ async function resolveIntakeKey(provided: string | undefined): Promise<IntakeKey
       default_agent_id: schema.intakeKeys.defaultAgentId,
       active: schema.intakeKeys.active,
       use_count: schema.intakeKeys.useCount,
-      auto_dial: schema.intakeKeys.autoDial
+      auto_dial: schema.intakeKeys.autoDial,
     })
     .from(schema.intakeKeys)
     .where(eq(schema.intakeKeys.keyHash, hash))
     .limit(1);
-  
+
   if (!data || !data.active) return null;
   return data as any;
 }
@@ -69,7 +75,9 @@ type IntakeRateCheck =
   | { ok: false; status: 429; retry_after_s: number; code: "INTAKE_RATE_LIMIT"; error: string }
   | { ok: false; status: 503; code: "RATE_LIMITER_UNAVAILABLE"; error: string };
 
-function isIntakeRateFailure(result: IntakeRateCheck): result is Exclude<IntakeRateCheck, { ok: true }> {
+function isIntakeRateFailure(
+  result: IntakeRateCheck,
+): result is Exclude<IntakeRateCheck, { ok: true }> {
   return !result.ok;
 }
 
@@ -106,7 +114,8 @@ async function checkIntakeRate(keyId: string): Promise<IntakeRateCheck> {
       ok: false,
       status: 503,
       code: "RATE_LIMITER_UNAVAILABLE",
-      error: "Distributed rate limiter is unavailable for intake traffic. Configure Upstash Redis or enable WIRELINE_ALLOW_INMEMORY_RATE_LIMIT for single-node deployments.",
+      error:
+        "Distributed rate limiter is unavailable for intake traffic. Configure Upstash Redis or enable WIRELINE_ALLOW_INMEMORY_RATE_LIMIT for single-node deployments.",
     };
   }
 }
@@ -135,8 +144,14 @@ type IntakeLeadResult = {
   code?: string;
 };
 
-async function processIntakeLead(key: IntakeKey, input: IntakeLeadInput, idemHeaderOverride?: string | null): Promise<IntakeLeadResult> {
-  const customer_number = (input.customer_number || input.phone || input.phone_number || "").toString().trim();
+async function processIntakeLead(
+  key: IntakeKey,
+  input: IntakeLeadInput,
+  idemHeaderOverride?: string | null,
+): Promise<IntakeLeadResult> {
+  const customer_number = (input.customer_number || input.phone || input.phone_number || "")
+    .toString()
+    .trim();
   if (!customer_number) {
     return { ok: false, error: "customer_number (or phone) is required.", code: "MISSING_NUMBER" };
   }
@@ -148,7 +163,11 @@ async function processIntakeLead(key: IntakeKey, input: IntakeLeadInput, idemHea
   const PHONE_RE = /^\+?[0-9]{7,20}$/;
   const phoneClean = customer_number.replace(/[\s\-().]/g, "");
   if (!PHONE_RE.test(phoneClean)) {
-    return { ok: false, error: "customer_number must be a valid phone number (7–20 digits, optional leading +).", code: "INVALID_NUMBER" };
+    return {
+      ok: false,
+      error: "customer_number must be a valid phone number (7–20 digits, optional leading +).",
+      code: "INVALID_NUMBER",
+    };
   }
 
   const customer_name = (input.customer_name || input.name || "").toString().slice(0, 200);
@@ -159,18 +178,23 @@ async function processIntakeLead(key: IntakeKey, input: IntakeLeadInput, idemHea
     metadata = Object.fromEntries(entries.map(([k, v]) => [String(k).slice(0, 100), v]));
   }
   const agent_id = input.agent_id || key.default_agent_id || null;
-  const idemKey = (idemHeaderOverride !== undefined ? idemHeaderOverride : (input.idempotency_key || null));
+  const idemKey =
+    idemHeaderOverride !== undefined ? idemHeaderOverride : input.idempotency_key || null;
   const idemKeyTrimmed = idemKey ? String(idemKey).trim().slice(0, 255) : null;
 
   if (idemKeyTrimmed) {
     const [existing] = await drizzle
-      .select({ id: schema.outboundLeads.id, callId: schema.outboundLeads.callId, status: schema.outboundLeads.status })
+      .select({
+        id: schema.outboundLeads.id,
+        callId: schema.outboundLeads.callId,
+        status: schema.outboundLeads.status,
+      })
       .from(schema.outboundLeads)
       .where(
         and(
           eq(schema.outboundLeads.userId, key.user_id),
-          eq(schema.outboundLeads.idempotencyKey, idemKeyTrimmed)
-        )
+          eq(schema.outboundLeads.idempotencyKey, idemKeyTrimmed),
+        ),
       )
       .limit(1);
 
@@ -209,16 +233,20 @@ async function processIntakeLead(key: IntakeKey, input: IntakeLeadInput, idemHea
   } catch (error: any) {
     if (idemKeyTrimmed && (error.code === "23505" || /duplicate key/i.test(error.message || ""))) {
       const [replay] = await drizzle
-        .select({ id: schema.outboundLeads.id, callId: schema.outboundLeads.callId, status: schema.outboundLeads.status })
+        .select({
+          id: schema.outboundLeads.id,
+          callId: schema.outboundLeads.callId,
+          status: schema.outboundLeads.status,
+        })
         .from(schema.outboundLeads)
         .where(
           and(
             eq(schema.outboundLeads.userId, key.user_id),
-            eq(schema.outboundLeads.idempotencyKey, idemKeyTrimmed)
-          )
+            eq(schema.outboundLeads.idempotencyKey, idemKeyTrimmed),
+          ),
         )
         .limit(1);
-      
+
       if (replay) {
         return {
           ok: true,
@@ -247,7 +275,7 @@ async function processIntakeLead(key: IntakeKey, input: IntakeLeadInput, idemHea
     log.warn("lead.received webhook dispatch failed", {
       user_id: key.user_id,
       error: err instanceof Error ? err.message : String(err),
-    })
+    }),
   );
 
   let auto_dial_initiated = false;
@@ -276,10 +304,18 @@ async function processIntakeLead(key: IntakeKey, input: IntakeLeadInput, idemHea
             .update(schema.outboundLeads)
             .set({
               status: "AutoDialFailed",
-              metadata: { ...(metadata || {}), auto_dial_error: result.error, auto_dial_status: result.status } as any,
+              metadata: {
+                ...(metadata || {}),
+                auto_dial_error: result.error,
+                auto_dial_status: result.status,
+              } as any,
             })
             .where(eq(schema.outboundLeads.id, insertedId!));
-          log.warn("Auto-dial failed for lead", { leadId: insertedId, status: result.status, error: result.error });
+          log.warn("Auto-dial failed for lead", {
+            leadId: insertedId,
+            status: result.status,
+            error: result.error,
+          });
         }
       } catch (err: any) {
         await drizzle
@@ -319,7 +355,8 @@ router.post("/lead", async (req: Request, res: Response) => {
       });
     }
 
-    const idemHeader = (req.headers["idempotency-key"] as string | undefined)?.toString().trim() || null;
+    const idemHeader =
+      (req.headers["idempotency-key"] as string | undefined)?.toString().trim() || null;
     const result = await processIntakeLead(key, req.body || {}, idemHeader);
 
     if (result.ok) {
@@ -331,7 +368,10 @@ router.post("/lead", async (req: Request, res: Response) => {
             useCount: (key.use_count || 0) + 1,
           })
           .where(eq(schema.intakeKeys.id, key.id))
-          .then(() => {}, () => {});
+          .then(
+            () => {},
+            () => {},
+          );
       }
       return res.json(result);
     }
@@ -354,7 +394,9 @@ router.post("/leads", async (req: Request, res: Response) => {
 
     const leads = Array.isArray(req.body?.leads) ? req.body.leads : null;
     if (!leads || leads.length === 0) {
-      return res.status(400).json({ error: "leads must be a non-empty array.", code: "EMPTY_BATCH" });
+      return res
+        .status(400)
+        .json({ error: "leads must be a non-empty array.", code: "EMPTY_BATCH" });
     }
     if (leads.length > INTAKE_BULK_MAX) {
       return res.status(400).json({
@@ -381,14 +423,19 @@ router.post("/leads", async (req: Request, res: Response) => {
     }
 
     const results = await Promise.all(
-      (leads as IntakeLeadInput[]).map((lead) => processIntakeLead(key, lead).catch((err: unknown) => ({
-        ok: false,
-        error: getErrorMessage(err),
-        code: "PROCESS_FAILED",
-      } as IntakeLeadResult))),
+      (leads as IntakeLeadInput[]).map((lead) =>
+        processIntakeLead(key, lead).catch(
+          (err: unknown) =>
+            ({
+              ok: false,
+              error: getErrorMessage(err),
+              code: "PROCESS_FAILED",
+            }) as IntakeLeadResult,
+        ),
+      ),
     );
 
-    const successes = results.filter(r => r.ok).length;
+    const successes = results.filter((r) => r.ok).length;
     if (successes > 0) {
       drizzle
         .update(schema.intakeKeys)
@@ -397,7 +444,10 @@ router.post("/leads", async (req: Request, res: Response) => {
           useCount: (key.use_count || 0) + successes,
         })
         .where(eq(schema.intakeKeys.id, key.id))
-        .then(() => {}, () => {});
+        .then(
+          () => {},
+          () => {},
+        );
     }
 
     res.json({
@@ -426,13 +476,16 @@ router.get("/keys", authenticateUser, async (req: AuthenticatedRequest, res: Res
         active: schema.intakeKeys.active,
         last_used_at: schema.intakeKeys.lastUsedAt,
         use_count: schema.intakeKeys.useCount,
-        created_at: schema.intakeKeys.createdAt
+        created_at: schema.intakeKeys.createdAt,
       })
       .from(schema.intakeKeys)
       .where(eq(schema.intakeKeys.userId, req.user.id))
       .orderBy(desc(schema.intakeKeys.createdAt));
     res.json({ keys: data || [] });
-  } catch (e: any) { log.error("Failed to load keys", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load keys" }); }
+  } catch (e: any) {
+    log.error("Failed to load keys", { error: getErrorMessage(e) });
+    res.status(500).json({ error: "Failed to load keys" });
+  }
 });
 
 // POST /keys — create a new intake key
@@ -462,14 +515,23 @@ router.post("/keys", authenticateUser, async (req: AuthenticatedRequest, res: Re
         default_agent_id: schema.intakeKeys.defaultAgentId,
         auto_dial: schema.intakeKeys.autoDial,
         active: schema.intakeKeys.active,
-        created_at: schema.intakeKeys.createdAt
+        created_at: schema.intakeKeys.createdAt,
       });
 
-    void auditLogger.logIntakeKey('created', {
-      userId: req.user.id, keyId: data.id, keyPrefix: data.key_prefix, keyName: data.name, ip: req.ip,
-    }).catch(() => {});
+    void auditLogger
+      .logIntakeKey("created", {
+        userId: req.user.id,
+        keyId: data.id,
+        keyPrefix: data.key_prefix,
+        keyName: data.name,
+        ip: req.ip,
+      })
+      .catch(() => {});
     res.json({ key: data, plaintext });
-  } catch (e: any) { log.error("Failed to create key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to create key" }); }
+  } catch (e: any) {
+    log.error("Failed to create key", { error: getErrorMessage(e) });
+    res.status(500).json({ error: "Failed to create key" });
+  }
 });
 
 // PATCH /keys/:id — update an intake key
@@ -478,13 +540,16 @@ router.patch("/keys/:id", authenticateUser, async (req: AuthenticatedRequest, re
     const patch: any = {};
     if (req.body?.name !== undefined) patch.name = String(req.body.name).slice(0, 80);
     if (req.body?.active !== undefined) patch.active = !!req.body.active;
-    if (req.body?.default_agent_id !== undefined) patch.defaultAgentId = req.body.default_agent_id || null;
+    if (req.body?.default_agent_id !== undefined)
+      patch.defaultAgentId = req.body.default_agent_id || null;
     if (req.body?.auto_dial !== undefined) patch.autoDial = !!req.body.auto_dial;
-    
+
     const [data] = await drizzle
       .update(schema.intakeKeys)
       .set(patch)
-      .where(and(eq(schema.intakeKeys.id, req.params.id), eq(schema.intakeKeys.userId, req.user.id)))
+      .where(
+        and(eq(schema.intakeKeys.id, req.params.id), eq(schema.intakeKeys.userId, req.user.id)),
+      )
       .returning({
         id: schema.intakeKeys.id,
         name: schema.intakeKeys.name,
@@ -494,14 +559,23 @@ router.patch("/keys/:id", authenticateUser, async (req: AuthenticatedRequest, re
         active: schema.intakeKeys.active,
         last_used_at: schema.intakeKeys.lastUsedAt,
         use_count: schema.intakeKeys.useCount,
-        created_at: schema.intakeKeys.createdAt
+        created_at: schema.intakeKeys.createdAt,
       });
 
-    void auditLogger.logIntakeKey('updated', {
-      userId: req.user.id, keyId: data.id, keyPrefix: data.key_prefix, keyName: data.name, ip: req.ip,
-    }).catch(() => {});
+    void auditLogger
+      .logIntakeKey("updated", {
+        userId: req.user.id,
+        keyId: data.id,
+        keyPrefix: data.key_prefix,
+        keyName: data.name,
+        ip: req.ip,
+      })
+      .catch(() => {});
     res.json({ key: data });
-  } catch (e: any) { log.error("Failed to update key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to update key" }); }
+  } catch (e: any) {
+    log.error("Failed to update key", { error: getErrorMessage(e) });
+    res.status(500).json({ error: "Failed to update key" });
+  }
 });
 
 // DELETE /keys/:id — delete an intake key
@@ -509,13 +583,22 @@ router.delete("/keys/:id", authenticateUser, async (req: AuthenticatedRequest, r
   try {
     await drizzle
       .delete(schema.intakeKeys)
-      .where(and(eq(schema.intakeKeys.id, req.params.id), eq(schema.intakeKeys.userId, req.user.id)));
-    
-    void auditLogger.logIntakeKey('deleted', {
-      userId: req.user.id, keyId: req.params.id, ip: req.ip,
-    }).catch(() => {});
+      .where(
+        and(eq(schema.intakeKeys.id, req.params.id), eq(schema.intakeKeys.userId, req.user.id)),
+      );
+
+    void auditLogger
+      .logIntakeKey("deleted", {
+        userId: req.user.id,
+        keyId: req.params.id,
+        ip: req.ip,
+      })
+      .catch(() => {});
     res.json({ success: true });
-  } catch (e: any) { log.error("Failed to delete key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to delete key" }); }
+  } catch (e: any) {
+    log.error("Failed to delete key", { error: getErrorMessage(e) });
+    res.status(500).json({ error: "Failed to delete key" });
+  }
 });
 
 export default router;

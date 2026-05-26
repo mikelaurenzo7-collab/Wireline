@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lock, AlertTriangle, Check } from "lucide-react";
@@ -177,7 +178,10 @@ export default function ResetPassword() {
             </div>
 
             {error && (
-              <div className="flex items-start gap-3 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs">
+              <div
+                role="alert"
+                className="flex items-start gap-3 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs"
+              >
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span className="leading-relaxed">{error}</span>
               </div>

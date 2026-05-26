@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc, ilike, sql, notInArray } from "drizzle-orm";
@@ -505,9 +506,23 @@ Today is ${currentDateTime}.
     if (!Number.isFinite(n)) return fallback;
     return Math.min(1, Math.max(0, n));
   };
-  const parsedStability = clamp01((agentConfigRow as any)?.voiceStability, 0.5);
-  const parsedSimilarityBoost = clamp01((agentConfigRow as any)?.voiceSimilarityBoost, 0.75);
-  const parsedStyle = clamp01((agentConfigRow as any)?.voiceStyle, 0.0);
+  // Human-like voice tuning. These three knobs determine how lifelike
+  // the synthesized voice sounds on ElevenLabs:
+  //   - stability 0.40 (was 0.50): slightly less locked to the speaker's
+  //     base intonation, so emotion + emphasis varies naturally between
+  //     sentences. EL recommends 0.30–0.50 for conversational use; the
+  //     0.50 default was tilted toward narration consistency.
+  //   - similarityBoost 0.78 (was 0.75): tightens fidelity to the
+  //     trained voice without crossing into over-modeled territory.
+  //   - style 0.35 (was 0.00): the biggest "feels human" lever. Style
+  //     adds emotional inflection — without it, every sentence reads
+  //     in the same neutral register. 0.35 gives the agent perceptible
+  //     warmth and emphasis without melodrama. Operators can override
+  //     to 0 for compliance-heavy use cases (medical, legal) via
+  //     FleetSettings → Voice fine-tuning.
+  const parsedStability = clamp01((agentConfigRow as any)?.voiceStability, 0.4);
+  const parsedSimilarityBoost = clamp01((agentConfigRow as any)?.voiceSimilarityBoost, 0.78);
+  const parsedStyle = clamp01((agentConfigRow as any)?.voiceStyle, 0.35);
   // PG returns boolean as JS boolean — but a `null` (column missing
   // pre-migration) defaults to EL's spec'd true.
   const rawSpeakerBoost = (agentConfigRow as any)?.voiceSpeakerBoost;
@@ -567,6 +582,27 @@ Today is ${currentDateTime}.
     responseDelaySeconds: voiceLatency.responseDelaySeconds,
     numWordsToInterruptAssistant: voiceLatency.numWordsToInterruptAssistant,
     backgroundDenoisingEnabled: false,
+    // Subtle background office ambience by default. A real receptionist
+    // sits at a desk with faint room tone, typing, and distant voices —
+    // pure silence between agent utterances reads as "robocall". Vapi's
+    // "office" track is the closest match to a small business front desk
+    // and is the same texture leading voice-AI products (Air, Bland)
+    // ship by default. Operators can override via FleetSettings →
+    // Ambient atmosphere (off / office / phone-internal), and HIPAA /
+    // legal use cases that need recorded silence can opt out to "off".
+    backgroundSound: (agentConfigRow as any)?.ambientNoise || "office",
+    // Smart endpointing — instead of a fixed timeout, use LiveKit's
+    // turn-detection model to decide when the caller has actually
+    // finished a thought. waitSeconds: 0.05 is the minimum hold before
+    // we even consider responding (filter out caller breath); the
+    // smartEndpointingPlan adapts the actual silence-to-respond gap
+    // based on the audio + transcript context. Matches the showcase
+    // assistant; the previous fixed-timeout behaviour was prone to
+    // either interrupting (too short) or feeling sluggish (too long).
+    startSpeakingPlan: {
+      waitSeconds: 0.05,
+      smartEndpointingPlan: { provider: "livekit", waitFunction: "10 + 5000 * x" },
+    },
     model: {
       provider: voiceLlmProvider,
       model: voiceLlmModel,
@@ -579,6 +615,20 @@ Today is ${currentDateTime}.
     voice: {
       provider: resolvedVoiceProvider,
       voiceId: resolvedVoiceId,
+      // Pin the ElevenLabs TTS model explicitly. Without this, Vapi
+      // silently auto-selects between eleven_turbo_*, eleven_flash_*,
+      // eleven_multilingual_*, and eleven_v3 mid-call (typically a
+      // fast model for the first audio-out, then a higher-quality
+      // model for subsequent turns). Different models render the same
+      // voiceId with noticeably different prosody and cadence — the
+      // caller hears "the agent's voice shifted halfway through" even
+      // though voiceId never changed. Pinning eleven_flash_v2_5 keeps
+      // every utterance on the same TTS engine for the full call.
+      // Reverted from turbo_v2_5 — operator preferred the ~50ms TTFA
+      // savings over the slight prosody bump; with the Claude Haiku
+      // LLM already adding ~400ms to TTFT, every TTS millisecond
+      // counts toward perceived snappiness.
+      ...(resolvedVoiceProvider === "11labs" ? { model: "eleven_flash_v2_5" } : {}),
       // 11labs-specific streaming optimization. 4 is the max — slight
       // quality trade for fastest first-audio-out. Most call quality
       // differences are imperceptible vs the latency win.

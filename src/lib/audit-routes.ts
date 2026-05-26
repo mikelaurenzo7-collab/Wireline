@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- audit metadata and aggregate stats are stored as Postgres jsonb. */
 import type { VercelPgDatabase } from "drizzle-orm/vercel-postgres";
 import * as schema from "../db/schema";
 import { eq, and, or, ilike, gte, lte, desc, inArray, sql } from "drizzle-orm";

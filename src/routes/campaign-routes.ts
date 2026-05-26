@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 import { Router, Response } from "express";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -7,10 +8,7 @@ import { eq, and, sql, desc, inArray, isNotNull } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import { parseFormData, CampaignCreateSchema, CampaignUpdateSchema } from "../lib/form-validators";
-import {
-  computeOutcomeBreakdown,
-  computeCallStats,
-} from "../lib/campaign-analytics";
+import { computeOutcomeBreakdown, computeCallStats } from "../lib/campaign-analytics";
 import { claudeRateLimiter } from "../middleware/api-rate-limits";
 
 const router = Router();
@@ -377,9 +375,8 @@ router.post(
           userId: req.user.id,
           type: "campaign_dial",
           payload: { userId: req.user.id },
-        })
+        }),
       );
-
     } catch (error: any) {
       log.error("Campaign launch failed", { error: getErrorMessage(error) });
       res.status(500).json({ error: "Failed to launch campaign." });

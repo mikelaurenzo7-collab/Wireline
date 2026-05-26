@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 /**
  * Wireline Claude Brain
  * ---------------------------------------------------------------------------
@@ -41,31 +42,38 @@ export const GEMINI_MODELS = {
   FLASH_2_5: "gemini-2.5-flash",
 } as const;
 
-export const VAPI_TENANT_DEFAULT_PROVIDER = "google" as const;
-export const VAPI_SHOWCASE_PROVIDER = "google" as const;
+export const VAPI_TENANT_DEFAULT_PROVIDER = "anthropic" as const;
+export const VAPI_SHOWCASE_PROVIDER = "anthropic" as const;
 export const VAPI_OPENAI_FALLBACK_MODEL = OPENAI_MODELS.GPT_4O;
-// Vapi rejects cross-provider fallbackModels on Google assistants, so this list
-// is only attached to OpenAI payloads we construct ourselves.
+// Vapi rejects cross-provider fallbackModels on Anthropic + Google
+// assistants, so this list is only attached to OpenAI payloads we
+// construct ourselves.
 export const VAPI_DEFAULT_FALLBACK_MODELS = [VAPI_OPENAI_FALLBACK_MODEL] as const;
 
 /**
  * Primary realtime model for the Vapi voice runtime.
- * Claude remains the supervisory/written-communication layer, while
- * live phone turns now run on Gemini 3 Flash Preview first.
+ * Claude Haiku 4.5 — best-in-class human-likeness for live phone
+ * conversations: natural conversational rhythm, emotional nuance,
+ * and the lowest TTFT among Claude models (~400–700ms on short
+ * voice turns, well within the budget for natural turn-taking).
+ * Previously ran on Gemini 3 Flash Preview for raw speed; the
+ * trade-off in naturalness was too steep for paying customers and
+ * the showcase line. OpenAI GPT-4o is wired as the cross-provider
+ * fallback if Anthropic 5xxs.
  */
-export const VAPI_PREMIUM_MODEL = GEMINI_MODELS.FLASH_3_PREVIEW;
+export const VAPI_PREMIUM_MODEL = CLAUDE_MODELS.HAIKU;
 
 /**
  * Default tenant voice model for deployed phone agents.
  */
-export const VAPI_TENANT_DEFAULT_MODEL = GEMINI_MODELS.FLASH_3_PREVIEW;
+export const VAPI_TENANT_DEFAULT_MODEL = CLAUDE_MODELS.HAIKU;
 
 /**
  * Model used by the Wireline showcase + demo assistants.
- * The public line shares the same Gemini 3 Flash Preview primary
- * runtime as tenant voice agents for consistent voice behavior.
+ * The public line shares the same Claude Haiku 4.5 primary runtime
+ * as tenant voice agents for consistent voice behavior.
  */
-export const VAPI_SHOWCASE_MODEL = GEMINI_MODELS.FLASH_3_PREVIEW;
+export const VAPI_SHOWCASE_MODEL = CLAUDE_MODELS.HAIKU;
 
 const GEMINI_FLASH_LATEST_ALIASES = new Set([
   GEMINI_MODELS.FLASH_3_PREVIEW,
@@ -75,7 +83,7 @@ const GEMINI_FLASH_LATEST_ALIASES = new Set([
 ]);
 
 export interface VapiVoiceModelSelection {
-  provider: "google" | "openai";
+  provider: "anthropic" | "google" | "openai";
   model: string;
   fallbackModels?: string[];
 }
@@ -91,12 +99,26 @@ export function resolveVapiVoiceModelSelection(input?: {
     requestedProvider === "anthropic" ||
     requestedModelLower.includes("claude") ||
     requestedModelLower.includes("sonnet") ||
-    requestedModelLower.includes("opus");
+    requestedModelLower.includes("opus") ||
+    requestedModelLower.includes("haiku");
 
   if (anthroVoiceRequested) {
+    // Normalize Claude family aliases → a concrete model id Vapi accepts.
+    // Sonnet / Opus stay on their requested model when the operator
+    // explicitly chose them (e.g. higher-quality long calls). Bare
+    // "claude" or "haiku" lands on Haiku 4.5 — our default voice
+    // runtime, fast enough for natural turn-taking. Vapi rejects
+    // cross-provider fallbackModels on Anthropic assistants, so we
+    // omit the OpenAI fallback here.
+    let normalized: string = VAPI_TENANT_DEFAULT_MODEL;
+    if (requestedModelLower.includes("sonnet")) normalized = CLAUDE_MODELS.SONNET;
+    else if (requestedModelLower.includes("opus")) normalized = CLAUDE_MODELS.OPUS;
+    else if (requestedModelLower.includes("haiku") || requestedModelLower.startsWith("claude")) {
+      normalized = requestedModel || VAPI_TENANT_DEFAULT_MODEL;
+    }
     return {
-      provider: VAPI_TENANT_DEFAULT_PROVIDER,
-      model: VAPI_TENANT_DEFAULT_MODEL,
+      provider: "anthropic",
+      model: normalized,
     };
   }
 
@@ -1901,6 +1923,7 @@ export async function objectionDrill(input: ObjectionDrillInput) {
   if (input.role) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
     if (!roleGuidance)
+      // eslint-disable-next-line no-console -- dev diagnostic for a misconfigured agent role
       console.warn(
         `[claude-brain] objectionDrill: unknown role "${input.role}" — no role lens applied.`,
       );
@@ -1936,6 +1959,7 @@ export async function coldEmail(input: ColdEmailInput) {
   if (input.agentRole) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.agentRole] ?? "";
     if (!roleGuidance)
+      // eslint-disable-next-line no-console -- dev diagnostic for a misconfigured agent role
       console.warn(
         `[claude-brain] coldEmail: unknown role "${input.agentRole}" — no role lens applied.`,
       );
@@ -2041,6 +2065,7 @@ export async function agentReview(input: AgentReviewInput) {
   if (input.role) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
     if (!roleGuidance)
+      // eslint-disable-next-line no-console -- dev diagnostic for a misconfigured agent role
       console.warn(
         `[claude-brain] agentReview: unknown role "${input.role}" — no role lens applied.`,
       );
@@ -2091,6 +2116,7 @@ export async function smartDraft(input: SmartDraftInput) {
   if (input.agentRole) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.agentRole] ?? "";
     if (!roleGuidance)
+      // eslint-disable-next-line no-console -- dev diagnostic for a misconfigured agent role
       console.warn(
         `[claude-brain] smartDraft: unknown role "${input.agentRole}" — no role lens applied.`,
       );
@@ -2183,6 +2209,7 @@ export async function postCallAnalysis(input: PostCallInput) {
   if (input.role) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
     if (!roleGuidance)
+      // eslint-disable-next-line no-console -- dev diagnostic for a misconfigured agent role
       console.warn(
         `[claude-brain] postCallAnalysis: unknown role "${input.role}" — no scoring lens applied.`,
       );
@@ -2512,6 +2539,7 @@ export async function smartEmailReply(input: SmartEmailReplyInput): Promise<{
   if (input.agentRole) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.agentRole] ?? "";
     if (!roleGuidance)
+      // eslint-disable-next-line no-console -- dev diagnostic for a misconfigured agent role
       console.warn(
         `[claude-brain] smartEmailReply: unknown role "${input.agentRole}" — no role lens applied.`,
       );

@@ -24,7 +24,7 @@ import { Router, Request, Response, NextFunction } from "express";
 import crypto from "crypto";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -1517,5 +1517,47 @@ router.post("/api/admin/purge-demo-users", optionalAuth, async (req: Request, re
     return res.status(500).json({ ok: false, error: e?.message || "purge failed" });
   }
 });
+
+/**
+ * Auth-gated DDL endpoint for the performance-goals table (migration
+ * 0014). Idempotent: CREATE TABLE / CREATE INDEX IF NOT EXISTS so
+ * re-running after each deploy is safe.
+ */
+router.post(
+  "/api/admin/migrate-goals",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+
+    try {
+      await drizzle.execute(sql`
+        CREATE TABLE IF NOT EXISTS wireline_goals (
+          id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          user_id    uuid NOT NULL,
+          metric     text NOT NULL,
+          target     integer NOT NULL CHECK (target > 0),
+          label      text,
+          created_at timestamptz NOT NULL DEFAULT now(),
+          updated_at timestamptz NOT NULL DEFAULT now(),
+          CONSTRAINT wireline_goals_user_id_metric_key UNIQUE (user_id, metric)
+        );
+      `);
+      await drizzle.execute(sql`
+        CREATE INDEX IF NOT EXISTS idx_goals_user
+        ON wireline_goals (user_id);
+      `);
+      // Match the RLS posture of every other wireline_* table. Idempotent.
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_goals ENABLE ROW LEVEL SECURITY;
+      `);
+
+      log.info("migrate-goals completed", { userId: req.user?.id || "migration-token" });
+      return res.json({ ok: true, message: "Performance goals table ensured." });
+    } catch (e: any) {
+      log.error("migrate-goals failed", { error: e?.message });
+      return res.status(500).json({ error: e?.message || "Migration failed" });
+    }
+  },
+);
 
 export default router;

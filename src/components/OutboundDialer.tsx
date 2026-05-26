@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useState, useEffect, useRef } from "react";
 import {
   Loader2,
@@ -32,7 +33,6 @@ import {
   Award,
   CalendarClock,
   Repeat,
-  Kanban,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Cadences from "./Cadences";
@@ -104,6 +104,7 @@ export default function OutboundDialer() {
     fetchData();
     fetchCampaigns();
     fetchCallbacks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time fetch on mount
   }, []);
 
   // Live-poll lead statuses when a running campaign is selected.
@@ -114,6 +115,7 @@ export default function OutboundDialer() {
       fetchCampaigns(); // refresh dialed_count / connected_count on list too
     }, 10_000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally re-keyed on campaign id + status
   }, [selectedCampaign?.id, selectedCampaign?.status]);
 
   const fetchCampaignAnalytics = async (id: string) => {
@@ -567,6 +569,8 @@ export default function OutboundDialer() {
                         </label>
                         <input
                           type="tel"
+                          inputMode="tel"
+                          autoComplete="tel"
                           value={customerNumber}
                           onChange={(e) => setCustomerNumber(e.target.value)}
                           placeholder="+1 555 000 0000"
@@ -669,6 +673,7 @@ export default function OutboundDialer() {
                           </label>
                           <div className="relative">
                             <select
+                              aria-label="Assign to campaign"
                               value={bulkCampaignId}
                               onChange={(e) => setBulkCampaignId(e.target.value)}
                               className="w-full text-sm bg-black/5 border border-black/10 rounded-lg pl-3 pr-8 py-2 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
@@ -1428,31 +1433,6 @@ export default function OutboundDialer() {
                   </Panel>
                 ),
               },
-              {
-                id: "pipeline",
-                label: "Pipeline",
-                icon: Kanban,
-                content: (
-                  <Panel icon={Kanban} hint="Stage view" title="" accent="#10B981">
-                    <div className="h-full flex items-center justify-center text-center px-6">
-                      <div>
-                        <Kanban className="w-7 h-7 text-brand mx-auto mb-3" />
-                        <p className="text-[12px] text-ink/80 mb-3 max-w-md leading-relaxed">
-                          The full Kanban view lives at{" "}
-                          <code className="text-brand">/pipeline</code> — drag leads between Cold /
-                          Contacted / Qualified / Demo / Won / Lost.
-                        </p>
-                        <Link
-                          to="/pipeline"
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand text-on-brand text-[11px] uppercase tracking-[0.28em] hover:bg-brand/90 transition-colors"
-                        >
-                          Open pipeline →
-                        </Link>
-                      </div>
-                    </div>
-                  </Panel>
-                ),
-              },
             ]}
           />
         </div>
@@ -1661,6 +1641,14 @@ function CreateCampaignModal({
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const inputCls =
     "w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 transition-all";
@@ -1712,6 +1700,7 @@ function CreateCampaignModal({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="w-8 h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
           >
             <X className="w-4 h-4" />
@@ -1747,6 +1736,7 @@ function CreateCampaignModal({
                 <Bot className="w-2.5 h-2.5 text-brand" /> Default Agent
               </label>
               <select
+                aria-label="Default agent"
                 className={cn(inputCls, "appearance-none cursor-pointer")}
                 value={form.agent_id}
                 onChange={(e) => set("agent_id", e.target.value)}
@@ -1790,6 +1780,7 @@ function CreateCampaignModal({
             </label>
             <input
               type="number"
+              inputMode="numeric"
               min="1"
               max="10"
               className={inputCls}
@@ -1799,7 +1790,10 @@ function CreateCampaignModal({
           </div>
 
           {err && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/30">
+            <div
+              role="alert"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/30"
+            >
               <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
               <p className="text-[11px] text-rose-500">{err}</p>
             </div>

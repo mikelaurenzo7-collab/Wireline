@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 /**
  * src/lib/vapi-client.ts
  *
@@ -7,7 +8,7 @@
 
 import { drizzle, fetchWithTimeout, log } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, desc, ilike, sql } from "drizzle-orm";
+import { eq, and, desc, ilike } from "drizzle-orm";
 import { isDncBlocked } from "./compliance";
 import {
   sanitizePhone,
@@ -483,6 +484,14 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
         return {
           provider,
           voiceId: agentConfig.voiceIdOutbound || agentConfig.voiceId || "bIHbv24MWmeRgasZH58o",
+          // Pin the ElevenLabs TTS model so Vapi doesn't auto-swap
+          // between turbo / flash / multilingual / v3 mid-call. Each
+          // model has subtly different prosody for the same voiceId,
+          // which a caller hears as the agent "changing voice or
+          // cadence" halfway through. Matches the tenant assistant
+          // factory; turbo_v2_5 is the humanness/latency sweet spot
+          // for phone calls.
+          ...(provider === "11labs" ? { model: "eleven_flash_v2_5" } : {}),
           ...(provider === "11labs" && speed !== 1.0 ? { speed } : {}),
           ...(provider === "11labs" ? { stability, similarityBoost, style, useSpeakerBoost } : {}),
         };

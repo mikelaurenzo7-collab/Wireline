@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- job and webhook payloads are stored as Postgres jsonb. */
 import { log, quotaTracker, auditLogger, drizzle } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, desc, or, ilike } from "drizzle-orm";
+import { eq, and, sql, desc } from "drizzle-orm";
 import * as claudeBrain from "./claude-brain";
 import * as geminiBrain from "./gemini-brain";
 import { getErrorMessage } from "./server-utils";
