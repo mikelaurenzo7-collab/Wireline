@@ -216,7 +216,7 @@
     /* WCAG 4.5:1+ placeholder on cream */
   }
   .auth-input::placeholder {
-    color: rgba(28, 25, 23, 0.55); /* ink at ~55% for 4.5:1+ on #FAF8F5 */
+    color: rgba(28, 25, 23, 0.62); /* ink at ~62% for 4.8:1+ on #FAF8F5 — exceeds WCAG AA for body text */
   }
 
   :focus-visible {
@@ -910,13 +910,7 @@ select:focus {
   background: linear-gradient(90deg, rgba(79,30,123,0.45) 0%, transparent 100%);
 }
 
-/* Auth form input â€” tall, light, branded */
-.auth-input {
-  @apply w-full px-5 rounded-xl bg-black/5 border border-black/12 outline-none
-         text-ink text-sm placeholder:text-muted/50 focus:border-brand/50
-         focus:bg-white/70 transition-all;
-  height: 52px;
-}
+/* (Duplicate .auth-input rule removed — the stronger definition earlier in this file with WCAG 4.8:1+ placeholder contrast and refined focus states is authoritative) */
 
 /* Empty state helper */
 .empty-state-icon {

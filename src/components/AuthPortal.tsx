@@ -442,12 +442,11 @@ export default function AuthPortal() {
                 One fleet, every channel
               </span>
             </div>
-            <h2 className="font-display italic text-4xl xl:text-5xl 2xl:text-6xl leading-[1.0] xl:leading-[0.92] tracking-tight mb-4 text-balance">
-              <span className="text-[#4F1E7B]">AI agents for every</span>
-              <br />
-              <span className="text-ink">customer conversation</span>
+            <h2 className="font-display italic text-4xl xl:text-5xl 2xl:text-6xl leading-[1.05] xl:leading-[0.95] tracking-[-0.01em] mb-4 text-balance max-w-[28ch]">
+              <span className="text-[#4F1E7B]">AI agents that handle</span>{" "}
+              <span className="text-ink">every customer conversation</span>
             </h2>
-            <p className="text-[13px] xl:text-sm text-muted/80 leading-relaxed max-w-xl mb-5">
+            <p className="text-[13px] xl:text-sm text-[#4A4640] leading-relaxed max-w-xl mb-5">
               Wireline runs your <span className="text-ink/90">inbound support</span>,{" "}
               <span className="text-ink/90">outbound sales</span>, and{" "}
               <span className="text-ink/90">email follow-ups</span> across one fleet of AI agents —
@@ -475,9 +474,9 @@ export default function AuthPortal() {
               </div>
               <div className="w-px h-6 bg-white/10" />
               <div className="flex flex-col">
-                <span className="font-display italic text-2xl text-ink">Every</span>
+                <span className="font-display italic text-2xl text-ink">100%</span>
                 <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">
-                  Call Picked Up
+                  Calls Answered
                 </span>
               </div>
               <LiveStatsTicker />
@@ -635,10 +634,10 @@ export default function AuthPortal() {
                         layout
                         className="absolute inset-y-1 w-[calc(50%-4px)] rounded-xl"
                         style={{
-                          background: "rgba(79, 30, 123, 0.12)",
-                          border: "1px solid rgba(79, 30, 123, 0.25)",
+                          background: "rgba(79, 30, 123, 0.22)",
+                          border: "1px solid rgba(79, 30, 123, 0.38)",
                           left: isSignUp ? "calc(50% + 2px)" : "4px",
-                          boxShadow: "0 4px 12px -4px rgba(79, 30, 123, 0.2)",
+                          boxShadow: "0 4px 14px -4px rgba(79, 30, 123, 0.28)",
                         }}
                         transition={{ type: "spring", stiffness: 400, damping: 34 }}
                       />
@@ -722,7 +721,8 @@ export default function AuthPortal() {
                               setError(null);
                               setMessage(null);
                             }}
-                            className="text-[9px] uppercase tracking-[0.3em] text-muted/60 hover:text-[#4F1E7B] transition-colors"
+                            className="text-[11px] uppercase tracking-[0.3em] text-muted/80 hover:text-[#4F1E7B] transition-colors py-2 px-3 -mx-2 -my-1 rounded-lg hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4F1E7B]/50"
+                            aria-label="Forgot your password? Reset it here"
                           >
                             Forgot?
                           </button>
@@ -833,21 +833,28 @@ export default function AuthPortal() {
 
                   {/* Terms & Privacy — required for signup only (legal + trust) */}
                   {isSignUp && (
-                    <label className="flex items-start gap-2 text-[10px] text-muted/70 leading-snug cursor-pointer">
+                    <label className="flex items-start gap-2.5 text-[10px] text-muted/70 leading-snug cursor-pointer select-none">
                       <input
                         type="checkbox"
                         checked={agreedToTerms}
                         onChange={(e) => setAgreedToTerms(e.target.checked)}
-                        className="mt-0.5 accent-[#4F1E7B]"
+                        className="mt-0.5 accent-[#4F1E7B] w-4 h-4 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4F1E7B]/50 focus-visible:ring-offset-1 rounded-sm"
                         required
+                        aria-describedby="terms-description"
                       />
-                      <span>
+                      <span id="terms-description">
                         I agree to the{" "}
-                        <Link to="/legal/terms" className="underline hover:text-ink">
+                        <Link
+                          to="/legal/terms"
+                          className="underline hover:text-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#4F1E7B]/60 rounded"
+                        >
                           Terms
                         </Link>{" "}
                         and{" "}
-                        <Link to="/legal/privacy" className="underline hover:text-ink">
+                        <Link
+                          to="/legal/privacy"
+                          className="underline hover:text-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#4F1E7B]/60 rounded"
+                        >
                           Privacy Policy
                         </Link>
                         .
@@ -859,9 +866,12 @@ export default function AuthPortal() {
                   <button
                     type="submit"
                     disabled={loading || (isSignUp && !agreedToTerms)}
-                    className="native-tap-squish w-full flex items-center justify-center gap-2 py-4 px-6 text-[12px] tracking-[0.3em] uppercase font-medium rounded-full cursor-pointer text-on-brand bg-[#4F1E7B] hover:bg-[#6A25A3] max-md:hover:translate-y-0 hover:-translate-y-[1px] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
+                    className="native-tap-squish w-full flex items-center justify-center gap-2 py-4 px-6 text-[12px] tracking-[0.3em] uppercase font-medium rounded-full text-on-brand bg-[#4F1E7B] hover:bg-[#6A25A3] max-md:hover:translate-y-0 hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#4F1E7B] disabled:hover:-translate-y-0 disabled:shadow-none"
                     style={{
-                      boxShadow: "0 4px 12px -2px rgba(79,30,123,0.3)",
+                      boxShadow:
+                        loading || (isSignUp && !agreedToTerms)
+                          ? "none"
+                          : "0 4px 12px -2px rgba(79,30,123,0.3)",
                     }}
                   >
                     {loading ? (
