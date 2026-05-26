@@ -25,7 +25,7 @@ const PRIMARY_TABS: readonly NavTab[] = [
     label: "Home",
     path: "/",
     icon: LayoutGrid,
-    matches: ["/dashboard", "/command", "/live", "/cockpit", "/founder"],
+    matches: ["/dashboard", "/command", "/live", "/cockpit"],
     badgePaths: [],
   },
   {

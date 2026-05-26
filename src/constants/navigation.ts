@@ -9,7 +9,6 @@ import {
   LayoutGrid,
   LifeBuoy,
   Kanban,
-  Crown,
   Headphones,
 } from "lucide-react";
 
@@ -79,12 +78,6 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { label: "Integrations", path: "/integrations", icon: PlugZap },
       { label: "Settings", path: "/admin", icon: ServerCog, matches: ["/dnc", "/audit"] },
       { label: "Help", path: "/help", icon: LifeBuoy },
-    ],
-  },
-  {
-    label: "Owner",
-    items: [
-      { label: "Founder", path: "/founder", icon: Crown, ownerOnly: true },
     ],
   },
 ];

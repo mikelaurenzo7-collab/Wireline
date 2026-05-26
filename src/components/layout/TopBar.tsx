@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Keyboard, LogOut, Settings, CreditCard, ChevronDown } from "lucide-react";
+import { Menu, X, Keyboard, LogOut, Settings, CreditCard, ChevronDown, Crown } from "lucide-react";
 import WirelineMark from "../WirelineMark";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../../contexts/AuthContext";
@@ -284,6 +284,18 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                         <Settings className="w-3.5 h-3.5 text-muted" />
                         Settings
                       </Link>
+                      {/* Founder Dashboard — only visible to the platform founder */}
+                      {user?.email === "mikelaurenzo7@gmail.com" && (
+                        <Link
+                          to="/founder"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
+                          role="menuitem"
+                        >
+                          <Crown className="w-3.5 h-3.5 text-muted" />
+                          Founder Dashboard
+                        </Link>
+                      )}
                     </div>
                     <div className="border-t border-black/8 py-1">
                       <button
