@@ -371,6 +371,14 @@ export async function buildVapiAssistant({
 ## IDENTITY & MISSION
 You are ${agentConfigRow?.name || "Wireline Agent"}, a ${agentRole.replace(/_/g, " ")} specialist.
 
+## VOICE DELIVERY RULES (MANDATORY)
+- Maintain a consistent speaking pace from start to finish. Never speed up mid-call.
+- When confirming details like email addresses, phone numbers, or spelling, slow down. Say each part with pauses between segments.
+- Keep sentences under 20 words. Break complex information into short, digestible pieces.
+- Use contractions naturally. "I'll" not "I will". "You're" not "you are".
+- Never say technical terms, error codes, system names, or internal jargon to the caller. If something goes wrong, say "Let me note that and have someone follow up" — never "there was an error" or mention any system by name.
+- If a tool or action fails silently, pivot gracefully. Offer an alternative path. Never tell the caller what broke.
+
 ${callerProfile}
 ${customerIntelBlock}
 ${sentimentShift}
@@ -506,23 +514,20 @@ Today is ${currentDateTime}.
     if (!Number.isFinite(n)) return fallback;
     return Math.min(1, Math.max(0, n));
   };
-  // Human-like voice tuning. These three knobs determine how lifelike
-  // the synthesized voice sounds on ElevenLabs:
-  //   - stability 0.40 (was 0.50): slightly less locked to the speaker's
-  //     base intonation, so emotion + emphasis varies naturally between
-  //     sentences. EL recommends 0.30–0.50 for conversational use; the
-  //     0.50 default was tilted toward narration consistency.
+  //   - stability 0.50 (was 0.40): slightly higher stability reduces
+  //     intra-call prosody variance — the voice sounds more consistent
+  //     sentence-to-sentence. The 0.40 setting let intonation drift
+  //     too much, causing perceptible speed shifts mid-call.
   //   - similarityBoost 0.78 (was 0.75): tightens fidelity to the
   //     trained voice without crossing into over-modeled territory.
-  //   - style 0.35 (was 0.00): the biggest "feels human" lever. Style
-  //     adds emotional inflection — without it, every sentence reads
-  //     in the same neutral register. 0.35 gives the agent perceptible
-  //     warmth and emphasis without melodrama. Operators can override
-  //     to 0 for compliance-heavy use cases (medical, legal) via
+  //   - style 0.25 (was 0.35): style adds emotional inflection which
+  //     also causes cadence oscillation — the TTS rushes through
+  //     excited parts and drags on calm ones. 0.25 gives warmth
+  //     without the speed swings. Operators can override via
   //     FleetSettings → Voice fine-tuning.
-  const parsedStability = clamp01((agentConfigRow as any)?.voiceStability, 0.4);
+  const parsedStability = clamp01((agentConfigRow as any)?.voiceStability, 0.50);
   const parsedSimilarityBoost = clamp01((agentConfigRow as any)?.voiceSimilarityBoost, 0.78);
-  const parsedStyle = clamp01((agentConfigRow as any)?.voiceStyle, 0.35);
+  const parsedStyle = clamp01((agentConfigRow as any)?.voiceStyle, 0.25);
   // PG returns boolean as JS boolean — but a `null` (column missing
   // pre-migration) defaults to EL's spec'd true.
   const rawSpeakerBoost = (agentConfigRow as any)?.voiceSpeakerBoost;
@@ -603,6 +608,12 @@ Today is ${currentDateTime}.
       waitSeconds: 0.05,
       smartEndpointingPlan: { provider: "livekit", waitFunction: "10 + 5000 * x" },
     },
+    // Input normalization — prevent TTS speed-up on dense token sequences
+    // like email addresses, phone numbers, URLs. ElevenLabs treats these
+    // as rapid-fire tokens and compresses their duration. The
+    // inputMinCharacters setting forces a minimum chunk size so the synth
+    // doesn't sprint through short high-density bursts.
+    inputMinCharacters: 10,
     model: {
       provider: voiceLlmProvider,
       model: voiceLlmModel,

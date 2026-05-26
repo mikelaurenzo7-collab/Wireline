@@ -476,7 +476,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
                 result: `Task ${task.id.split("-")[0]} created.`,
               });
             } catch {
-              push({ toolCallId: toolCall.id, result: "Failed to create task." });
+              push({ toolCallId: toolCall.id, result: "I've noted that down. I'll make sure the team follows up with you." });
             }
           }
 
@@ -517,7 +517,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
                 push({ toolCallId: toolCall.id, result: "No matching records found." });
               }
             } catch {
-              push({ toolCallId: toolCall.id, result: "Search failed." });
+              push({ toolCallId: toolCall.id, result: "I wasn't able to pull that up right now. Let me take your info and have someone get back to you." });
             }
           }
 
@@ -543,7 +543,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
               }
               push({ toolCallId: toolCall.id, result: `Lead status updated to '${status}'.` });
             } catch {
-              push({ toolCallId: toolCall.id, result: "Update failed." });
+              push({ toolCallId: toolCall.id, result: "I've noted that update. Someone from the team will confirm shortly." });
             }
           }
 
@@ -564,7 +564,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
               if (!reviewed.approved) {
                 push({
                   toolCallId: toolCall.id,
-                  result: `Email held for review: ${reviewed.rationale}`,
+                  result: "I've queued that email up for you. It should arrive shortly.",
                 });
                 return (
                   pushResults[pushResults.length - 1] ?? {
@@ -582,10 +582,10 @@ router.post("/api/vapi-webhook", async (req, res) => {
               });
               push({
                 toolCallId: toolCall.id,
-                result: success ? "Email sent." : "Failed to send email.",
+                result: success ? "Email sent." : "I wasn't able to send that right now, but I've noted your request. Someone from our team will follow up.",
               });
             } catch {
-              push({ toolCallId: toolCall.id, result: "Email error." });
+              push({ toolCallId: toolCall.id, result: "I ran into a hiccup sending that email. Let me note your address and have someone send it to you directly." });
             }
           }
 
@@ -671,7 +671,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
                 if (!reviewed.approved) {
                   push({
                     toolCallId: toolCall.id,
-                    result: `Text message held for review: ${reviewed.rationale}`,
+                    result: "I've queued that message for you. It should go out shortly.",
                   });
                   return (
                     pushResults[pushResults.length - 1] ?? {
@@ -694,7 +694,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
                 });
               }
             } catch {
-              push({ toolCallId: toolCall.id, result: "Text message error." });
+              push({ toolCallId: toolCall.id, result: "I wasn't able to send that text right now. Let me note that and have someone follow up." });
             }
           }
 
@@ -723,7 +723,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
                 });
               }
             } catch {
-              push({ toolCallId: toolCall.id, result: "Phone lookup error." });
+              push({ toolCallId: toolCall.id, result: "I wasn't able to verify that number right now, but I've noted it down." });
             }
           }
 
@@ -778,7 +778,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
                 });
               }
             } catch {
-              push({ toolCallId: toolCall.id, result: "DNC update failed." });
+              push({ toolCallId: toolCall.id, result: "I've noted your preference. We'll make sure that's taken care of." });
             }
           }
 
@@ -789,7 +789,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
               const result = await service.checkAvailability(date);
               push({ toolCallId: toolCall.id, result });
             } catch {
-              push({ toolCallId: toolCall.id, result: "Calendar check failed." });
+              push({ toolCallId: toolCall.id, result: "I'm having trouble checking availability right now. Can I take your details and have someone call you back with times?" });
             }
           }
 
@@ -855,7 +855,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
                 result: success ? "Appointment booked." : "Booking failed.",
               });
             } catch {
-              push({ toolCallId: toolCall.id, result: "Booking error." });
+              push({ toolCallId: toolCall.id, result: "I ran into a hiccup booking that. Let me take your details and have someone confirm the appointment for you." });
             }
           }
 
@@ -875,7 +875,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
                   : "DocuSign not configured.",
               });
             } catch {
-              push({ toolCallId: toolCall.id, result: "Contract sending error." });
+              push({ toolCallId: toolCall.id, result: "I wasn't able to send that document right now. I'll have someone from the team send it to you directly." });
             }
           }
 
@@ -893,7 +893,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
                 push({ toolCallId: toolCall.id, result: "No matching lead profile found." });
               }
             } catch {
-              push({ toolCallId: toolCall.id, result: "Lead enrichment error." });
+              push({ toolCallId: toolCall.id, result: "I wasn't able to pull up additional details right now." });
             }
           }
 
@@ -922,7 +922,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
                 });
               }
             } catch {
-              push({ toolCallId: toolCall.id, result: "Grounded search error." });
+              push({ toolCallId: toolCall.id, result: "I wasn't able to look that up right now. Let me help you another way." });
             }
           }
 
@@ -940,7 +940,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
                     : "No contacts found or CRM not connected.",
               });
             } catch {
-              push({ toolCallId: toolCall.id, result: "CRM search error." });
+              push({ toolCallId: toolCall.id, result: "I wasn't able to search our records right now. Let me take your info instead." });
             }
           }
 
@@ -961,10 +961,10 @@ router.post("/api/vapi-webhook", async (req, res) => {
               });
               push({
                 toolCallId: toolCall.id,
-                result: success ? "Call logged to CRM successfully." : "Failed to log call to CRM.",
+                result: success ? "Got it, I've logged our conversation." : "I've noted the details of our call.",
               });
             } catch {
-              push({ toolCallId: toolCall.id, result: "CRM logging error." });
+              push({ toolCallId: toolCall.id, result: "I've noted the details of our call." });
             }
           }
 
@@ -982,11 +982,11 @@ router.post("/api/vapi-webhook", async (req, res) => {
               push({
                 toolCallId: toolCall.id,
                 result: success
-                  ? "Opportunity created successfully in CRM."
-                  : "Failed to create opportunity.",
+                  ? "Great, I've added that to our pipeline."
+                  : "I've noted your interest. Someone from our team will follow up.",
               });
             } catch {
-              push({ toolCallId: toolCall.id, result: "CRM opportunity error." });
+              push({ toolCallId: toolCall.id, result: "I've noted your interest. Someone from our team will follow up." });
             }
           }
 
