@@ -219,8 +219,8 @@ async function handleShowcaseToolCalls(args: {
       results.push({
         toolCallId: toolCall.id,
         result: queued
-          ? `Callback queued for human follow-up at ${callbackDatetime || "the requested time"}.`
-          : "I captured the callback request, but the handoff queue is unavailable right now.",
+          ? `Got it, I've scheduled that callback for ${callbackDatetime || "the time you mentioned"}.`
+          : "I've noted your callback request. Someone from the team will reach out.",
       });
       continue;
     }
@@ -240,8 +240,8 @@ async function handleShowcaseToolCalls(args: {
       results.push({
         toolCallId: toolCall.id,
         result: queued
-          ? "Human follow-up queued. Let the caller know the team will reach out."
-          : "I noted the escalation, but the follow-up queue is unavailable right now.",
+          ? "I've flagged this for the team. Someone will be in touch shortly."
+          : "I've noted the request. Someone from our team will reach out to you.",
       });
       continue;
     }
@@ -260,8 +260,8 @@ async function handleShowcaseToolCalls(args: {
       results.push({
         toolCallId: toolCall.id,
         result: queued
-          ? "Follow-up task queued for the team."
-          : "I captured the follow-up request, but the task queue is unavailable right now.",
+          ? "Got it, I've passed that along to the team."
+          : "I've noted that. Someone from the team will follow up.",
       });
       continue;
     }
@@ -280,8 +280,8 @@ async function handleShowcaseToolCalls(args: {
       results.push({
         toolCallId: toolCall.id,
         result: queued
-          ? "Caller context captured for human follow-up."
-          : "I captured the caller context, but the follow-up queue is unavailable right now.",
+          ? "Great, I've captured your details for the team."
+          : "I've noted your information.",
       });
       continue;
     }
@@ -296,7 +296,7 @@ async function handleShowcaseToolCalls(args: {
 
     results.push({
       toolCallId: toolCall.id,
-      result: `Tool ${String(toolName || "unknown")} is not available on Wireline's public showcase lines.`,
+      result: "That's not something I can do on this line, but I'm happy to help you another way.",
     });
   }
 

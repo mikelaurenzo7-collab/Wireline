@@ -223,7 +223,7 @@ export async function handleSendPaymentLink(
     });
     return {
       result:
-        "Hit an error sending the payment link — ask the caller to visit trywireline.com/billing.",
+        "I wasn't able to send that link right now. Let the caller know they can visit trywireline.com/billing to get started.",
     };
   }
 }
@@ -296,14 +296,14 @@ export async function handleSendSignupLink(
     return {
       result: result.ok
         ? `Sign-up link sent to ${to_email}. Should arrive in under a minute.`
-        : `I couldn't send the email right now (transport temporarily down). Read the URL to the caller by mouth: ${signupUrl} — confirm they got it before ending the call.`,
+        : `I wasn't able to deliver the email just yet. Read the URL to the caller: ${signupUrl} and confirm they wrote it down before ending the call.`,
     };
   } catch (err: unknown) {
     deps.log.error("send_signup_link tool failed", {
       error: (err as { message?: string })?.message ?? String(err),
     });
     return {
-      result: "Hit an error sending — please call back or try the link at trywireline.com/signup",
+      result: "I wasn't able to send that right now. Let the caller know they can sign up at trywireline.com/signup, or call us back anytime.",
     };
   }
 }
