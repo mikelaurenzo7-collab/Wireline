@@ -38,24 +38,37 @@ export function validateStartupEnv() {
     );
   }
 
-  // If validation failed, throw with helpful guidance
+  // If validation failed, log loudly but DO NOT throw — even in production.
+  //
+  // Previously this threw in IS_PROD, which crashed the Vercel serverless
+  // function at module load. The handler in `api/index.ts` could no longer
+  // import `dist/server.cjs`, so Vercel responded to every request with its
+  // generic "A server error has occurred" HTML page. That broke every
+  // auth surface (Google / Microsoft / Yahoo OAuth and email-password sign-in)
+  // any time a single required env var (e.g. VAPI_WEBHOOK_SECRET) was
+  // forgotten, with zero diagnostic signal to the end user.
+  //
+  // The individual routes already short-circuit cleanly when their
+  // specific env vars are missing (e.g. `/api/auth/google/url` returns
+  // 503 `{"error":"Google sign-in is not configured."}` when
+  // GOOGLE_CLIENT_ID is unset). Keeping the app booted means those
+  // route-level errors surface to the SPA as actionable JSON instead
+  // of an opaque Vercel 500.
   if (!validation.valid) {
     const missing = validation.errors.map((e) => e.var);
 
     if (IS_PROD) {
-      log.error("Missing required env vars. App may be unstable.", {
-        missing,
-        groupSummary: validation.byGroup,
-      });
+      log.error(
+        "Missing required env vars in production. Affected features will return errors at request time.",
+        {
+          missing,
+          groupSummary: validation.byGroup,
+        },
+      );
 
       // Generate setup checklist for easier onboarding
-      const checklist = generateSetupChecklist();
+      generateSetupChecklist();
       log.info("Environment setup checklist generated. See logs above for details.");
-
-      throw new Error(
-        `Missing required env vars: ${missing.join(", ")}. ` +
-          `Run with VERBOSE_ENV=1 for detailed setup instructions.`,
-      );
     } else {
       log.warn("Required env vars missing (dev mode — continuing with placeholders)", {
         missing,
