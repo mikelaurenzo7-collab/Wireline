@@ -25,10 +25,13 @@ router.get("/api/campaigns", authenticateUser, async (req: AuthenticatedRequest,
     let leadStats: Record<string, { total: number; dialed: number; connected: number }> = {};
 
     if (campaignIds.length > 0) {
-      const allLeads = await drizzle
+      // Aggregate lead stats in SQL — avoids loading all lead rows into memory
+      const rows = await drizzle
         .select({
           campaignId: schema.outboundLeads.campaignId,
-          status: schema.outboundLeads.status,
+          total: sql<number>`count(*)`,
+          dialed: sql<number>`count(*) filter (where ${schema.outboundLeads.status} not in ('Pending', 'Queued'))`,
+          connected: sql<number>`count(*) filter (where ${schema.outboundLeads.status} in ('Connected', 'Completed'))`,
         })
         .from(schema.outboundLeads)
         .where(
@@ -37,17 +40,16 @@ router.get("/api/campaigns", authenticateUser, async (req: AuthenticatedRequest,
             isNotNull(schema.outboundLeads.campaignId),
             inArray(schema.outboundLeads.campaignId, campaignIds),
           ),
-        );
+        )
+        .groupBy(schema.outboundLeads.campaignId);
 
-      for (const row of allLeads) {
+      for (const row of rows) {
         if (!row.campaignId) continue;
-        const s = leadStats[row.campaignId] ?? { total: 0, dialed: 0, connected: 0 };
-        s.total++;
-        // Count as dialed if not in initial states
-        if (row.status !== "Pending" && row.status !== "Queued") s.dialed++;
-        // Count as connected if status is Connected or Completed (call was answered)
-        if (row.status === "Connected" || row.status === "Completed") s.connected++;
-        leadStats[row.campaignId] = s;
+        leadStats[row.campaignId] = {
+          total: Number(row.total),
+          dialed: Number(row.dialed),
+          connected: Number(row.connected),
+        };
       }
     }
 
@@ -59,7 +61,7 @@ router.get("/api/campaigns", authenticateUser, async (req: AuthenticatedRequest,
     res.json({ campaigns: enriched });
   } catch (error: any) {
     log.error("Failed to fetch campaigns", { error: getErrorMessage(error) });
-    res.json({ campaigns: [] });
+    res.status(500).json({ error: "Failed to fetch campaigns" });
   }
 });
 
@@ -231,7 +233,7 @@ router.get(
       });
     } catch (error: any) {
       log.error("Failed to fetch campaign leads", { error: getErrorMessage(error) });
-      res.json({ leads: [] });
+      res.status(500).json({ error: "Failed to fetch campaign leads" });
     }
   },
 );

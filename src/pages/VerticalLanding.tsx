@@ -587,7 +587,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
 
   return (
     <div className="min-h-dvh relative bg-paper text-ink">
-      <PageMeta title={cfg.metaTitle} description={cfg.metaDescription} />
+      <PageMeta title={cfg.metaTitle} description={cfg.metaDescription} path={`/for/${slug}`} />
 
       {/* Aurora backdrop — toned down. The wedge pages compete with
           /pricing for sales attention; matching the visual density of

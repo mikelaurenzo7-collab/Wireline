@@ -38,6 +38,7 @@ export default function About() {
       <PageMeta
         title="About Wireline — Built by an Operator, for Operators"
         description="Wireline is a solo-founder voice-AI platform built by Mike Laurenzo. Mission, principles, and the infra stack that powers every customer call."
+        path="/about"
       />
 
       {/* Aurora */}
