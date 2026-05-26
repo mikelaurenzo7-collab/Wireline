@@ -16,7 +16,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { Mail, Loader2, Check, AlertTriangle } from "lucide-react";
-import { authFetch } from "../../lib/api";
+import { authFetch, readApiJson } from "../../lib/api";
 import { useToast } from "../../contexts/ToastContext";
 
 type SendOutcome = "idle" | "pending" | "sent" | "no-transport" | "error";
@@ -24,17 +24,24 @@ type SendOutcome = "idle" | "pending" | "sent" | "no-transport" | "error";
 export default function EmailVerifyBanner() {
   const [verified, setVerified] = useState<boolean | null>(null);
   const [outcome, setOutcome] = useState<SendOutcome>("idle");
-  const { success } = useToast();
+  const { success, error: toastError } = useToast();
 
   useEffect(() => {
+    // Hardened: use readApiJson so we never crash on non-JSON or structured error bodies
     authFetch("/api/billing/status")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (d && typeof d.email_verified === "boolean") {
-          setVerified(d.email_verified);
+      .then(readApiJson<{ email_verified?: boolean }>)
+      .then((out) => {
+        if (out.ok && typeof out.data?.email_verified === "boolean") {
+          setVerified(out.data.email_verified);
+        } else {
+          // Fail-open: if the status call fails we hide the banner rather than
+          // blocking a legitimate (but temporarily unreachable) user.
+          setVerified(true);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        setVerified(true);
+      });
 
     // Listen for the "?verified=1" query param the verify-email route
     // redirects to so the banner immediately disappears without
@@ -66,7 +73,7 @@ export default function EmailVerifyBanner() {
       // needs to resend. Avoid a "Link expired" warning since it's
       // ambiguous (could mean phishing concern).
     }
-  }, [success]);
+  }, [success, toastError]);
 
   if (verified !== false) return null;
 
@@ -74,16 +81,39 @@ export default function EmailVerifyBanner() {
     setOutcome("pending");
     try {
       const r = await authFetch("/api/auth/resend-verification", { method: "POST" });
-      const data = (await r.json().catch(() => ({}))) as {
-        ok?: boolean;
-        sent?: boolean;
-        reason?: string;
-      };
-      if (data?.ok && data.sent) setOutcome("sent");
-      else if (data?.reason === "transport_unavailable") setOutcome("no-transport");
-      else setOutcome("error");
-    } catch {
+      const out = await readApiJson<{ ok?: boolean; sent?: boolean; reason?: string }>(r);
+
+      if (out.ok && out.data?.ok && out.data.sent) {
+        setOutcome("sent");
+        success("Verification email sent", "Check your inbox (and spam folder).");
+      } else if (out.ok && out.data?.reason === "transport_unavailable") {
+        // Explicit transport failure from the server (RESEND_API_KEY missing in prod)
+        setOutcome("no-transport");
+        toastError(
+          "Mail transport temporarily unavailable",
+          "The verification email could not be sent right now. Your trial is not affected — try again in a few minutes or contact support.",
+        );
+      } else if (out.ok === false) {
+        // Hard server or network error
+        setOutcome("error");
+        toastError(
+          "Couldn't resend verification email",
+          out.error || "Server returned an error. Please try again in a moment.",
+        );
+      } else {
+        // Unexpected shape but not a hard failure
+        setOutcome("error");
+        toastError(
+          "Couldn't resend verification email",
+          "We couldn't send the verification email. Please try again in a moment.",
+        );
+      }
+    } catch (e: any) {
       setOutcome("error");
+      toastError(
+        "Couldn't resend verification email",
+        e?.message || "Network error. Please check your connection and try again.",
+      );
     }
   }
 
