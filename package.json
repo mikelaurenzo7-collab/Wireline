@@ -29,6 +29,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:check": "drizzle-kit check",
+    "db:health": "tsx scripts/db-health-check.ts",
     "marketing:kit": "node scripts/marketing-kit.mjs",
     "prepare": "husky",
     "test:e2e": "playwright test",
