@@ -97,21 +97,42 @@ function LiveStatsTicker() {
   );
 }
 
-function OAuthSignInButtons({ disabled }: { disabled?: boolean }) {
+function OAuthSignInButtons({
+  disabled,
+  onError,
+}: {
+  disabled?: boolean;
+  onError?: (message: string) => void;
+}) {
   const [pending, setPending] = useState<"google" | "microsoft" | "yahoo" | null>(null);
   const start = async (provider: "google" | "microsoft" | "yahoo") => {
     if (disabled || pending) return;
     setPending(provider);
+    onError?.("");
     try {
-      const res = await fetch(`/api/auth/${provider}/url`);
+      const res = await fetch(`/api/auth/${provider}/url`, {
+        headers: { Accept: "application/json" },
+      });
+      const contentType = res.headers.get("content-type") || "";
       let j: any = {};
-      try {
-        j = await res.json();
-      } catch {
-        j = {};
+      if (contentType.includes("application/json")) {
+        try {
+          j = await res.json();
+        } catch {
+          j = {};
+        }
+      } else {
+        // Server returned HTML (e.g. Vercel/Express default error page).
+        // Treat as a misconfiguration we should surface clearly.
+        const bodySnippet = (await res.text().catch(() => "")).slice(0, 120);
+        throw new Error(
+          `Sign-in service returned ${res.status} ${res.statusText || ""}. ${bodySnippet ? `Details: ${bodySnippet}` : "The server may be misconfigured."}`.trim(),
+        );
       }
       if (!res.ok) {
-        throw new Error(j.error || `Could not start ${provider} sign-in. Please try again.`);
+        throw new Error(
+          j?.error || `Could not start ${provider} sign-in (HTTP ${res.status}). Please try again.`,
+        );
       }
       const url = j?.url;
       if (typeof url !== "string" || !url.startsWith("http")) {
@@ -120,9 +141,13 @@ function OAuthSignInButtons({ disabled }: { disabled?: boolean }) {
       window.location.assign(url);
     } catch (e: any) {
       setPending(null);
-      // Surface a clean message instead of raw error
-      // (the outer form error state is not used for OAuth; this is best-effort)
-      console.warn("OAuth start failed", e?.message);
+      const providerLabel = provider.charAt(0).toUpperCase() + provider.slice(1);
+      const message =
+        e?.message && typeof e.message === "string"
+          ? `${providerLabel} sign-in failed: ${e.message}`
+          : `${providerLabel} sign-in failed. Please try again or use email below.`;
+      console.warn("OAuth start failed", message);
+      onError?.(message);
     }
   };
   // Per-provider visual: brand logo SVG + accent color. Renders as a
@@ -646,7 +671,17 @@ export default function AuthPortal() {
                   identity. Email-and-password stays below for everyone
                   else. The buttons hide for the password-reset mode
                   since OAuth doesn't apply there. */}
-                {!isReset && <OAuthSignInButtons disabled={loading} />}
+                {!isReset && (
+                  <OAuthSignInButtons
+                    disabled={loading}
+                    onError={(m) => {
+                      // Empty string clears (called at the start of each attempt);
+                      // non-empty surfaces the failure in the form's error slot
+                      // so the user actually sees what went wrong.
+                      setError(m || null);
+                    }}
+                  />
+                )}
 
                 <form onSubmit={handleAuth} className="relative z-10 space-y-4">
                   {/* Email */}

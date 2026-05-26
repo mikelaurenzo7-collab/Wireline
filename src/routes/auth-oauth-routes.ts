@@ -115,23 +115,29 @@ function bridgeRedirect(
 /* ─────────────────────────  Google  ─────────────────────── */
 
 router.get("/api/auth/google/url", (req: Request, res: Response) => {
-  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-    return res.status(503).json({ error: "Google sign-in is not configured." });
+  try {
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+      return res.status(503).json({ error: "Google sign-in is not configured." });
+    }
+    const baseUrl = appOrigin(req);
+    const redirectUri = `${baseUrl}/api/auth/google/callback`;
+    const client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      redirectUri,
+    );
+    const authUrl = client.generateAuthUrl({
+      scope: GOOGLE_SIGNIN_SCOPES,
+      access_type: "online",
+      prompt: "select_account",
+      state: generateOAuthState({ userId: "signin" }),
+    });
+    return res.json({ url: authUrl });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Google sign-in failed to start.";
+    log.error("auth oauth google: /url failed", { error: message });
+    return res.status(500).json({ error: `Google sign-in failed to start: ${message}` });
   }
-  const baseUrl = appOrigin(req);
-  const redirectUri = `${baseUrl}/api/auth/google/callback`;
-  const client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    redirectUri,
-  );
-  const authUrl = client.generateAuthUrl({
-    scope: GOOGLE_SIGNIN_SCOPES,
-    access_type: "online",
-    prompt: "select_account",
-    state: generateOAuthState({ userId: "signin" }),
-  });
-  res.json({ url: authUrl });
 });
 
 router.get("/api/auth/google/callback", async (req: Request, res: Response) => {
@@ -177,22 +183,28 @@ router.get("/api/auth/google/callback", async (req: Request, res: Response) => {
 /* ─────────────────────────  Microsoft  ─────────────────────── */
 
 router.get("/api/auth/microsoft/url", (req: Request, res: Response) => {
-  if (!process.env.MICROSOFT_CLIENT_ID || !process.env.MICROSOFT_CLIENT_SECRET) {
-    return res.status(503).json({ error: "Microsoft sign-in is not configured." });
+  try {
+    if (!process.env.MICROSOFT_CLIENT_ID || !process.env.MICROSOFT_CLIENT_SECRET) {
+      return res.status(503).json({ error: "Microsoft sign-in is not configured." });
+    }
+    const baseUrl = appOrigin(req);
+    const redirectUri = `${baseUrl}/api/auth/microsoft/callback`;
+    const params = new URLSearchParams({
+      client_id: process.env.MICROSOFT_CLIENT_ID,
+      response_type: "code",
+      redirect_uri: redirectUri,
+      response_mode: "query",
+      scope: MICROSOFT_SIGNIN_SCOPES.join(" "),
+      state: generateOAuthState({ userId: "signin" }),
+      prompt: "select_account",
+    });
+    const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params.toString()}`;
+    return res.json({ url: authUrl });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Microsoft sign-in failed to start.";
+    log.error("auth oauth microsoft: /url failed", { error: message });
+    return res.status(500).json({ error: `Microsoft sign-in failed to start: ${message}` });
   }
-  const baseUrl = appOrigin(req);
-  const redirectUri = `${baseUrl}/api/auth/microsoft/callback`;
-  const params = new URLSearchParams({
-    client_id: process.env.MICROSOFT_CLIENT_ID,
-    response_type: "code",
-    redirect_uri: redirectUri,
-    response_mode: "query",
-    scope: MICROSOFT_SIGNIN_SCOPES.join(" "),
-    state: generateOAuthState({ userId: "signin" }),
-    prompt: "select_account",
-  });
-  const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params.toString()}`;
-  res.json({ url: authUrl });
 });
 
 router.get("/api/auth/microsoft/callback", async (req: Request, res: Response) => {
@@ -268,21 +280,27 @@ router.get("/api/auth/microsoft/callback", async (req: Request, res: Response) =
  */
 
 router.get("/api/auth/yahoo/url", (req: Request, res: Response) => {
-  if (!process.env.YAHOO_CLIENT_ID || !process.env.YAHOO_CLIENT_SECRET) {
-    return res.status(503).json({ error: "Yahoo sign-in is not configured." });
+  try {
+    if (!process.env.YAHOO_CLIENT_ID || !process.env.YAHOO_CLIENT_SECRET) {
+      return res.status(503).json({ error: "Yahoo sign-in is not configured." });
+    }
+    const baseUrl = appOrigin(req);
+    const redirectUri = `${baseUrl}/api/auth/yahoo/callback`;
+    const params = new URLSearchParams({
+      client_id: process.env.YAHOO_CLIENT_ID,
+      response_type: "code",
+      redirect_uri: redirectUri,
+      scope: YAHOO_SIGNIN_SCOPES.join(" "),
+      state: generateOAuthState({ userId: "signin" }),
+      prompt: "login",
+    });
+    const authUrl = `https://api.login.yahoo.com/oauth2/request_auth?${params.toString()}`;
+    return res.json({ url: authUrl });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Yahoo sign-in failed to start.";
+    log.error("auth oauth yahoo: /url failed", { error: message });
+    return res.status(500).json({ error: `Yahoo sign-in failed to start: ${message}` });
   }
-  const baseUrl = appOrigin(req);
-  const redirectUri = `${baseUrl}/api/auth/yahoo/callback`;
-  const params = new URLSearchParams({
-    client_id: process.env.YAHOO_CLIENT_ID,
-    response_type: "code",
-    redirect_uri: redirectUri,
-    scope: YAHOO_SIGNIN_SCOPES.join(" "),
-    state: generateOAuthState({ userId: "signin" }),
-    prompt: "login",
-  });
-  const authUrl = `https://api.login.yahoo.com/oauth2/request_auth?${params.toString()}`;
-  res.json({ url: authUrl });
 });
 
 router.get("/api/auth/yahoo/callback", async (req: Request, res: Response) => {
