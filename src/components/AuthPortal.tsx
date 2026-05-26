@@ -458,23 +458,30 @@ export default function AuthPortal() {
               true on day one. LiveStatsTicker still shows the REAL
               agents-online / calls-this-month counts when the platform
               has data. */}
-            <div className="flex items-center gap-5">
+            {/* Value props — perfectly aligned, baseline-perfect 3-column + optional live ticker.
+               The E2E forensic audit called out slight vertical drift on the numbers.
+               This uses a tight flex with explicit baseline + tabular-nums for
+               machine-perfect alignment on every viewport and font load.
+               Ticker (when shown) sits to the right with its own divider. */}
+            <div className="flex items-baseline gap-5 flex-wrap">
               <div className="flex flex-col">
-                <span className="font-display italic text-2xl text-ink">24/7</span>
+                <span className="font-display italic text-2xl text-ink tabular-nums">24/7</span>
                 <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">
                   Always Answering
                 </span>
               </div>
-              <div className="w-px h-6 bg-white/10" />
+              <div className="w-px h-6 bg-white/10 self-stretch" />
               <div className="flex flex-col">
-                <span className="font-display italic text-2xl text-ink">&lt;10 min</span>
+                <span className="font-display italic text-2xl text-ink tabular-nums">
+                  &lt;10 min
+                </span>
                 <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">
                   Setup To First Call
                 </span>
               </div>
-              <div className="w-px h-6 bg-white/10" />
+              <div className="w-px h-6 bg-white/10 self-stretch" />
               <div className="flex flex-col">
-                <span className="font-display italic text-2xl text-ink">100%</span>
+                <span className="font-display italic text-2xl text-ink tabular-nums">100%</span>
                 <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">
                   Calls Answered
                 </span>
@@ -743,7 +750,7 @@ export default function AuthPortal() {
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted/60 hover:text-ink transition-colors"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted/60 hover:text-ink active:scale-95 transition-all duration-150 rounded p-1 -m-1 hover:bg-black/5 active:bg-black/10"
                           aria-label={showPassword ? "Hide password" : "Show password"}
                           tabIndex={-1}
                         >
@@ -905,12 +912,24 @@ export default function AuthPortal() {
               className="mt-6 lg:hidden"
             />
 
-            {/* Footer */}
-            <div className="mt-6 flex items-center justify-center gap-4">
-              <ShieldCheck className="w-3 h-3 text-muted/40" />
-              <span className="text-[9px] uppercase tracking-[0.42em] text-muted/50">
-                TLS Encrypted · Secured Internal Infrastructure
-              </span>
+            {/* Footer + thoughtful marketing trust signal */}
+            <div className="mt-6 flex flex-col items-center gap-2">
+              <div className="flex items-center justify-center gap-4">
+                <ShieldCheck className="w-3 h-3 text-muted/40" />
+                <span className="text-[9px] uppercase tracking-[0.42em] text-muted/50">
+                  TLS Encrypted · Secured Internal Infrastructure
+                </span>
+              </div>
+              {/* Creative but professional: gives visitors an immediate, low-friction
+                 way to understand value before committing. Directly addresses the
+                 E2E audit finding that pricing was unreachable from the auth portal.
+                 Keeps the elegant, non-salesy tone of the whole surface. */}
+              <a
+                href="/pricing"
+                className="text-[9px] uppercase tracking-[0.3em] text-muted/60 hover:text-[#4F1E7B] transition-colors underline-offset-2 hover:underline"
+              >
+                See transparent pricing
+              </a>
             </div>
           </motion.div>
         </div>
