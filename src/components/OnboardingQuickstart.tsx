@@ -79,7 +79,20 @@ export default function OnboardingQuickstart({
   // this gate, a 500-seat call center buyer lands on the same setup
   // screen as a $49 solo operator — sets the wrong expectations.
   const [planId, setPlanId] = useState<string | null>(null);
+  const [dismissed, setDismissed] = useState(false);
   const { success: toastSuccess } = useToast();
+
+  // Check if user has dismissed the onboarding card
+  useEffect(() => {
+    if (localStorage.getItem("wireline_onboarding_dismissed") === "true") {
+      setDismissed(true);
+    }
+  }, []);
+
+  const handleDismiss = () => {
+    localStorage.setItem("wireline_onboarding_dismissed", "true");
+    setDismissed(true);
+  };
 
   useEffect(() => {
     (async () => {
@@ -108,9 +121,9 @@ export default function OnboardingQuickstart({
         ]);
         setProgress({ agents: a, knowledge: k, numbers: n, calls: c });
         setPlanId(planRes);
-        
+
         const isComplete = a > 0 && k > 0 && n > 0 && c > 0;
-        
+
         // Timer tracking logic
         if (!isComplete) {
           if (!localStorage.getItem("wireline_onboarding_start")) {
@@ -119,23 +132,23 @@ export default function OnboardingQuickstart({
         } else {
           const startTs = localStorage.getItem("wireline_onboarding_start");
           const celebrated = localStorage.getItem("wireline_onboarding_celebrated");
-          
+
           if (startTs && !celebrated) {
             const elapsedMs = Date.now() - parseInt(startTs, 10);
             const elapsedMins = Math.max(1, Math.round(elapsedMs / 60000));
-            
+
             // Celebrate the time-to-first-value!
             setTimeout(() => {
               toastSuccess(
                 "Incredible speed 🚀",
-                `You got your first AI agent live in just ${elapsedMins} minute${elapsedMins === 1 ? "" : "s"}!`
+                `You got your first AI agent live in just ${elapsedMins} minute${elapsedMins === 1 ? "" : "s"}!`,
               );
             }, 500); // Slight delay for dramatic effect after rendering the AllSetCard
-            
+
             localStorage.setItem("wireline_onboarding_celebrated", "true");
           }
         }
-        
+
         onComplete?.(isComplete);
       } finally {
         setLoading(false);
@@ -212,6 +225,11 @@ export default function OnboardingQuickstart({
     );
   }
 
+  // User has dismissed the onboarding card
+  if (dismissed) {
+    return null;
+  }
+
   if (loading || !progress)
     return (
       <div className="space-y-3 px-1 py-2">
@@ -239,7 +257,7 @@ export default function OnboardingQuickstart({
 
   // When all 4 steps are complete, show a compact "you're all set" card.
   if (completedCount === STEPS.length) {
-    return <AllSetCard />;
+    return <AllSetCard onDismiss={handleDismiss} />;
   }
 
   // Find the first incomplete step so we can spotlight it.
@@ -525,7 +543,7 @@ const POWER_LINKS = [
   { to: "/agents", icon: Users, label: "Manage Agents", hint: "Edit & train" },
 ] as const;
 
-function AllSetCard() {
+function AllSetCard({ onDismiss }: { onDismiss: () => void }) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.97 }}
@@ -534,6 +552,14 @@ function AllSetCard() {
       className="relative aurora-ring rounded-3xl"
     >
       <div className="relative rounded-3xl glass-strong overflow-hidden p-6 md:p-8 flex flex-col h-full">
+        {/* Dismiss button */}
+        <button
+          onClick={onDismiss}
+          className="absolute top-4 right-4 text-[10px] uppercase tracking-[0.2em] text-muted hover:text-ink transition-colors"
+          aria-label="Dismiss onboarding"
+        >
+          Dismiss
+        </button>
         {/* Aurora glow */}
         <div
           className="absolute -top-20 -right-20 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-20 blur-3xl pointer-events-none"
@@ -550,7 +576,9 @@ function AllSetCard() {
           <div className="relative w-16 h-16">
             <motion.div
               className="absolute inset-0 rounded-full"
-              style={{ background: "conic-gradient(from 0deg, #4F1E7B, #4F1E7B, #10B981, #4F1E7B)" }}
+              style={{
+                background: "conic-gradient(from 0deg, #4F1E7B, #4F1E7B, #10B981, #4F1E7B)",
+              }}
               animate={{ rotate: 360 }}
               transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
             />

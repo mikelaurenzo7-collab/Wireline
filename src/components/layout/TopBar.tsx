@@ -12,6 +12,7 @@ import {
   PlugZap,
   LifeBuoy,
   Headphones,
+  Search,
 } from "lucide-react";
 import WirelineMark from "../WirelineMark";
 import { motion, AnimatePresence } from "motion/react";
@@ -218,6 +219,20 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
 
           {/* Right cluster */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* Global search — visible on mobile + desktop */}
+            <button
+              onClick={() => {
+                // CommandBar is lazy-loaded in AppShell; we dispatch a custom event it listens to
+                window.dispatchEvent(new CustomEvent("wireline:open-command-bar"));
+              }}
+              className="flex items-center justify-center w-9 h-9 md:w-auto md:h-7 md:px-2 rounded-lg text-[#EFE9DC]/65 hover:text-[#EFE9DC] hover:bg-white/10 transition-colors"
+              aria-label="Open command bar"
+              title="Search ( / )"
+            >
+              <Search className="w-4 h-4" />
+              <span className="hidden md:inline ml-1.5 text-[10px] text-[#EFE9DC]/50">/</span>
+            </button>
+
             {/* Keyboard shortcut hint — desktop only */}
             <button
               onClick={onShowShortcuts}
