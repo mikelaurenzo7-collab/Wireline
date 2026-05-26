@@ -256,7 +256,7 @@ export default function Pricing() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.28, duration: 0.6 }}
-          className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[10px] uppercase tracking-[0.28em] text-muted/70"
+          className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[11px] uppercase tracking-[0.28em] text-muted/70"
         >
           <Link to="/for/home-services" className="hover:text-brand transition-colors">
             Home Services
@@ -336,19 +336,19 @@ export default function Pricing() {
             sm:grid-cols-2 jump because 360-390px in 2-col mode forced
             ~160px tier cards that were unreadable. Now: single column
             until md (768px), then 3 across, 5 on wide desktop. */}
-        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4 items-stretch">
           {TIERS.map((tier, i) => (
             <motion.div
               key={tier.id}
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + i * 0.08, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className={`relative rounded-3xl p-4 lg:p-5 flex flex-col ${
+              className={`relative rounded-3xl p-4 lg:p-5 flex flex-col h-full ${
                 tier.highlight ? "aurora-ring md:scale-[1.02] md:-my-1 md:z-10" : ""
               }`}
             >
               <div
-                className={`relative rounded-3xl ${
+                className={`relative rounded-3xl h-full ${
                   tier.highlight
                     ? "glass-strong border-2 border-brand/40"
                     : "glass border border-white/8"
@@ -429,7 +429,7 @@ export default function Pricing() {
                     </li>
                   ))}
                   {tier.notIncluded?.map((f) => (
-                    <li key={f} className="flex items-start gap-2 opacity-40">
+                    <li key={f} className="flex items-start gap-2 opacity-60">
                       <span className="w-3.5 h-3.5 mt-0.5 shrink-0 text-muted">—</span>
                       <span className="line-through">{f}</span>
                     </li>
