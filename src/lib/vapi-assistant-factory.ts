@@ -707,10 +707,11 @@ Today is ${currentDateTime}.
       enabled: true,
       machineDetectionTimeout: 15,
     },
-    // Custom voicemail message — concise, branded, includes a callback
-    // hook so the contact can press 0 (handled via DTMF tool).
+    // Custom voicemail message — concise, branded with the agent's
+    // identity. Uses the agent name so tenants hear their own brand,
+    // not "Wireline". Saves LLM cost vs. having the model improvise.
     voicemailMessage:
-      "Hi, this is Wireline calling. Sorry we missed you — feel free to call us back at any time and we'll be happy to help. Thanks!",
+      `Hi, this is ${agentConfigRow?.name || "your assistant"} calling. Sorry we missed you — feel free to call us back at any time and we'll be happy to help. Thanks!`,
     // Always record so we can replay + retrain. Operator can disable per-
     // agent if HIPAA mode is on.
     recordingEnabled: true,
