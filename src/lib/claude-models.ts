@@ -29,6 +29,9 @@ export const OPENAI_MODELS = {
 } as const;
 
 export const GEMINI_MODELS = {
+  /** GA release, May 19 2026. Replaces gemini-3-flash-preview. */
+  FLASH_3_5: "gemini-3.5-flash",
+  /** Legacy — kept for operators who pinned this model explicitly. */
   FLASH_3_PREVIEW: "gemini-3-flash-preview",
   FLASH_2_5: "gemini-2.5-flash",
 } as const;
@@ -43,27 +46,32 @@ export const VAPI_DEFAULT_FALLBACK_MODELS = [VAPI_OPENAI_FALLBACK_MODEL] as cons
 
 /**
  * Primary realtime model for the Vapi voice runtime.
- * Gemini 3 Flash Preview — yields ultra-low turn-taking latency
- * (~150-250ms TTFT), ensuring smooth and responsive live conversation
- * flow without awkward delays. Claude Haiku 4.5 is retained as the
- * fallback target for explicit Anthropic voice configurations.
+ * Gemini 3.5 Flash (GA, May 19 2026) — yields ultra-low turn-taking
+ * latency, 4x faster output than previous Flash models, and top-tier
+ * tool calling accuracy (MCP Atlas 83.6%). Replaces the
+ * gemini-3-flash-preview that was our previous default.
+ *
+ * Claude Haiku 4.5 is retained as the fallback target for operators
+ * who explicitly select an Anthropic voice configuration.
  */
-export const VAPI_PREMIUM_MODEL = GEMINI_MODELS.FLASH_3_PREVIEW;
+export const VAPI_PREMIUM_MODEL = GEMINI_MODELS.FLASH_3_5;
 
 /**
  * Default tenant voice model for deployed phone agents.
  */
-export const VAPI_TENANT_DEFAULT_MODEL = GEMINI_MODELS.FLASH_3_PREVIEW;
+export const VAPI_TENANT_DEFAULT_MODEL = GEMINI_MODELS.FLASH_3_5;
 
 /**
  * Model used by the Wireline showcase + demo assistants.
- * The public line shares the same Gemini 3 Flash Preview primary runtime
+ * The public line shares the same Gemini 3.5 Flash primary runtime
  * as tenant voice agents for consistent, ultra-low latency voice behavior.
  */
-export const VAPI_SHOWCASE_MODEL = GEMINI_MODELS.FLASH_3_PREVIEW;
+export const VAPI_SHOWCASE_MODEL = GEMINI_MODELS.FLASH_3_5;
 
 const GEMINI_FLASH_LATEST_ALIASES = new Set([
+  GEMINI_MODELS.FLASH_3_5,
   GEMINI_MODELS.FLASH_3_PREVIEW,
+  "gemini-3.5-flash",
   "gemini-3-flash",
   "gemini-2.5-flash-latest",
   "gemini-flash-latest",
@@ -116,7 +124,7 @@ export function resolveVapiVoiceModelSelection(input?: {
       !requestedModel || !requestedModelLower.includes("gemini")
         ? VAPI_TENANT_DEFAULT_MODEL
         : GEMINI_FLASH_LATEST_ALIASES.has(requestedModelLower)
-          ? GEMINI_MODELS.FLASH_3_PREVIEW
+          ? GEMINI_MODELS.FLASH_3_5
           : requestedModel;
     return {
       provider: "google",
@@ -169,6 +177,7 @@ export const MODEL_PRICING = {
   "claude-3-5-sonnet-20241022": { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },
   "gemini-1.5-flash": { input: 0.075, output: 0.3, cacheRead: 0, cacheWrite: 0 },
   "gemini-1.5-pro": { input: 1.25, output: 5, cacheRead: 0, cacheWrite: 0 },
+  "gemini-3.5-flash": { input: 0.15, output: 1.25, cacheRead: 0, cacheWrite: 0 },
   "gemini-3-flash-preview": { input: 0.3, output: 2.5, cacheRead: 0, cacheWrite: 0 },
   "gemini-2.5-flash": { input: 0.3, output: 2.5, cacheRead: 0, cacheWrite: 0 },
   "gpt-4o": { input: 5, output: 15, cacheRead: 0, cacheWrite: 0 },

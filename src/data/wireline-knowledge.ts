@@ -19,7 +19,7 @@ export const WIRELINE_ONE_LINER =
   "Wireline runs your inbound support, outbound sales, and email follow-ups across one fleet of AI agents — trained on your playbook, available 24/7, and improving with every interaction.";
 
 export const WIRELINE_VOICE_STACK =
-  "Live voice calls run on Gemini 3 Flash Preview. When Wireline has to recover from a Vapi model provisioning failure, it falls back to GPT-4o. Claude remains the coaching and written-review layer, not the live phone runtime.";
+  "Live voice calls run on Gemini 3.5 Flash — Google's fastest production model. When Wireline has to recover from a Vapi model provisioning failure, it falls back to GPT-4o. Claude remains the coaching and written-review layer, not the live phone runtime.";
 
 export const WIRELINE_PLANS = [
   {
@@ -55,7 +55,7 @@ export const WIRELINE_PLANS = [
       "10 AI agents",
       "5 phone numbers",
       "6,000 voice minutes/mo (overage $0.15/min)",
-      "All CRM integrations (HubSpot, Salesforce, Pipedrive, Apollo)",
+      "All CRM integrations (HubSpot, Salesforce, Apollo)",
       "Slack handoff for human escalations",
       "Custom playbooks + knowledge ingestion",
     ],
@@ -126,11 +126,11 @@ export const WIRELINE_FEATURES = [
 export const WIRELINE_INTEGRATIONS = [
   "HubSpot",
   "Salesforce",
-  "Pipedrive",
   "Apollo",
   "Slack",
   "DocuSign",
   "Google Calendar",
+  "Google Sheets",
   "Microsoft 365",
   "Stripe",
   "Twilio (BYO carrier)",
