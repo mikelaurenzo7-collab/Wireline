@@ -60,7 +60,7 @@ export default function CallLogs() {
     try {
       const res = await authFetch(`/api/calls?offset=${currentOffset}&limit=${LIMIT}`);
       const out = await readApiJson<{ calls: CallLog[]; hasMore: boolean; total?: number }>(res);
-      if (!out.ok) throw new Error(out.error);
+      if (out.ok === false) throw new Error(out.error);
       const data = out.data;
       if (append) setCalls((prev) => [...prev, ...(data.calls || [])]);
       else setCalls(data.calls || []);

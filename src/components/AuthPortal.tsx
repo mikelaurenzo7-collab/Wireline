@@ -307,11 +307,16 @@ export default function AuthPortal() {
         }
         if (!res.ok) {
           // Non-JSON or error body — use status-aware message
+          // Defensive: server can return { error: "string" } or { error: { message, code } }
+          const raw = data?.error;
           const msg =
-            data?.error ||
-            (res.status >= 500
-              ? "Server temporarily unavailable. Please try again shortly."
-              : "Password reset request failed");
+            typeof raw === "string"
+              ? raw
+              : raw?.message ||
+                raw?.error ||
+                (res.status >= 500
+                  ? "Server temporarily unavailable. Please try again shortly."
+                  : "Password reset request failed");
           throw new Error(msg);
         }
         setMessage(data.message || "If that email is registered, a reset link is on its way.");
@@ -330,12 +335,23 @@ export default function AuthPortal() {
           data = {};
         }
         if (!res.ok) {
+          // Defensive: server can return { error: "string" } or { error: { message, code } }
+          const raw = data?.error;
           const msg =
-            data?.error ||
-            (res.status >= 500
-              ? "Server temporarily unavailable. Please try again shortly."
-              : "Authentication failed");
+            typeof raw === "string"
+              ? raw
+              : raw?.message ||
+                raw?.error ||
+                (res.status >= 500
+                  ? "Server temporarily unavailable. Please try again shortly."
+                  : "Authentication failed");
           throw new Error(msg);
+        }
+
+        if (!data?.token || !data?.user) {
+          throw new Error(
+            "Account created successfully, but we couldn't sign you in automatically. Please try signing in now.",
+          );
         }
 
         signIn({
@@ -344,7 +360,12 @@ export default function AuthPortal() {
         });
       }
     } catch (err: any) {
-      setError(err.message);
+      // Extremely defensive — never let an object reach the UI as "[object Object]"
+      const message =
+        err?.message ||
+        (typeof err === "string" ? err : null) ||
+        "Something went wrong. Please try again.";
+      setError(message);
     } finally {
       setLoading(false);
     }

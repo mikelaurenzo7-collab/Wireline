@@ -49,7 +49,7 @@ export default function EmailInbox() {
     try {
       const res = await authFetch("/api/emails/threads");
       const out = await readApiJson<{ threads?: any[] }>(res);
-      if (!out.ok) throw new Error(out.error);
+      if (out.ok === false) throw new Error(out.error);
       setThreads(out.data.threads || []);
     } catch (e) {
       toastError("Inbox unavailable", "Could not load email threads. Please refresh.");

@@ -66,11 +66,16 @@ export default function ResetPassword() {
         data = {};
       }
       if (!res.ok) {
+        // Defensive: server can return { error: "string" } or { error: { message, code } }
+        const raw = data?.error;
         const msg =
-          data?.error ||
-          (res.status >= 500
-            ? "Server temporarily unavailable. Please try again shortly."
-            : "Reset failed");
+          typeof raw === "string"
+            ? raw
+            : raw?.message ||
+              raw?.error ||
+              (res.status >= 500
+                ? "Server temporarily unavailable. Please try again shortly."
+                : "Reset failed");
         throw new Error(msg);
       }
 
@@ -83,9 +88,18 @@ export default function ResetPassword() {
         // success state isn't ambiguous.
         signIn({ access_token: data.token, user: data.user });
         setTimeout(() => navigate("/", { replace: true }), 900);
+      } else if (data.token || data.user) {
+        // Partial response — still better to tell the user clearly
+        throw new Error(
+          "Password updated, but sign-in response was incomplete. Please sign in manually.",
+        );
       }
     } catch (err: any) {
-      setError(err.message || "Reset failed");
+      const message =
+        err?.message ||
+        (typeof err === "string" ? err : null) ||
+        "Something went wrong. Please try again.";
+      setError(message);
     } finally {
       setLoading(false);
     }
