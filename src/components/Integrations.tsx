@@ -19,15 +19,16 @@ import { useToast } from "../contexts/ToastContext";
 import ConfirmModal from "./ConfirmModal";
 import CrmConnectionCard from "./CrmConnectionCard";
 import { EMAIL_INBOUND_TASKS } from "../lib/integration-playbooks";
+import { getIntegrationLogo } from "./layout/IntegrationLogos";
 
 type ConfirmState = { open: boolean; onConfirm: () => void };
 const CLOSED_CONFIRM: ConfirmState = { open: false, onConfirm: () => {} };
 
 // Provider badge metadata
-const PROVIDER_META: Record<string, { label: string; color: string }> = {
-  google: { label: "Google Workspace", color: "text-brand" },
-  microsoft: { label: "Microsoft / Outlook", color: "text-blue-600" },
-  yahoo: { label: "Yahoo Mail", color: "text-purple-600" },
+const PROVIDER_META: Record<string, { label: string; color: string; logoName: string }> = {
+  google: { label: "Google Workspace", color: "text-brand", logoName: "Google" },
+  microsoft: { label: "Microsoft / Outlook", color: "text-blue-600", logoName: "Microsoft" },
+  yahoo: { label: "Yahoo Mail", color: "text-purple-600", logoName: "Yahoo" },
 };
 
 export default function Integrations() {
@@ -319,19 +320,20 @@ export default function Integrations() {
                     onClick={handleConnectGmail}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors"
                   >
-                    <Plus className="w-3 h-3" /> Connect Gmail
+                    <span className="w-4 h-4">{getIntegrationLogo("Google")}</span> Connect Gmail
                   </button>
                   <button
                     onClick={handleConnectOutlook}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] uppercase tracking-[0.25em] hover:bg-blue-500/20 transition-colors"
                   >
-                    <Plus className="w-3 h-3" /> Connect Outlook
+                    <span className="w-4 h-4">{getIntegrationLogo("Microsoft")}</span> Connect
+                    Outlook
                   </button>
                   <button
                     onClick={handleConnectYahoo}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-500 text-[10px] uppercase tracking-[0.25em] hover:bg-purple-500/20 transition-colors"
                   >
-                    <Plus className="w-3 h-3" /> Connect Yahoo
+                    <span className="w-4 h-4">{getIntegrationLogo("Yahoo")}</span> Connect Yahoo
                   </button>
                 </div>
               </div>
@@ -376,9 +378,9 @@ export default function Integrations() {
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div
-                            className={`w-10 h-10 rounded-xl glass border border-white/10 flex items-center justify-center shrink-0 ${meta.color}`}
+                            className={`w-10 h-10 rounded-xl glass border border-white/10 flex items-center justify-center shrink-0 overflow-hidden ${meta.color}`}
                           >
-                            <Mail className="w-4 h-4" />
+                            {getIntegrationLogo(meta.logoName) ?? <Mail className="w-4 h-4" />}
                           </div>
                           <div className="min-w-0 space-y-1">
                             <div className="font-display italic text-lg text-ink leading-none truncate">

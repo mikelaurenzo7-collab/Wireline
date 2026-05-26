@@ -181,6 +181,14 @@ function LogoRow({ logos, height = 18 }: { logos: LogoDef[]; height?: number }) 
   );
 }
 
+export function getIntegrationLogo(name: string): React.ReactNode | null {
+  const logo = INTEGRATIONS.find((l) => l.name.toLowerCase() === name.toLowerCase());
+  if (!logo) return null;
+  return React.cloneElement(logo.svg as React.ReactElement<any>, {
+    style: { height: "100%", width: "auto", display: "block" },
+  });
+}
+
 export default function IntegrationLogos() {
   // Only the customer-facing "Integrates with" row is shown.
   return (
