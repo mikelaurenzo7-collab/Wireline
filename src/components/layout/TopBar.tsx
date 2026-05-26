@@ -182,8 +182,10 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
             </span>
           </Link>
 
-          {/* Desktop nav — visible at lg+ only */}
-          <nav className="hidden lg:flex items-center gap-0.5 ml-3 shrink-0">
+          {/* Desktop nav — visible at lg+ only. min-w-0 + overflow-x-auto
+               lets the strip scroll when the owner has many tabs (Cockpit +
+               Founder), keeping the user avatar/logout pinned right. */}
+          <nav className="hidden lg:flex items-center gap-0.5 ml-3 min-w-0 flex-1 overflow-x-auto scrollbar-hide">
             {NAV_GROUPS.map((group, gIdx) => (
               <React.Fragment key={group.label}>
                 {gIdx > 0 && (
@@ -196,7 +198,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
             ))}
           </nav>
 
-          <div className="flex-1" />
+          <div className="flex-1 lg:hidden" />
 
           {/* Right cluster */}
           <div className="flex items-center gap-2 shrink-0">
