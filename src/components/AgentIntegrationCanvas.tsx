@@ -868,6 +868,81 @@ function ExcelPreviewCard() {
   );
 }
 
+function SheetsPreviewCard() {
+  const [highlightNew, setHighlightNew] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setHighlightNew(false), 1500);
+    return () => clearTimeout(t);
+  }, []);
+
+  const rows: [string, string, string, string][] = [
+    ["10:42 AM", "(555) 234-5678", "Qualified", "4m 12s"],
+    ["11:05 AM", "(555) 876-4321", "Booked", "6m 38s"],
+  ];
+
+  return (
+    <div className="rounded-xl overflow-hidden border border-white/8 text-left">
+      <div
+        className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
+        style={{ background: "#0F9D58" }}
+      >
+        <Table2 size={10} /> Row Appended to Sheet
+      </div>
+      <div className="overflow-x-auto" style={{ background: "#1C0F33" }}>
+        <table className="w-full text-[9px] border-collapse">
+          <thead>
+            <tr style={{ background: "rgba(15,157,88,0.25)" }}>
+              {["Timestamp", "Caller", "Outcome", "Duration"].map((h) => (
+                <th
+                  key={h}
+                  className="px-2 py-1 text-left font-semibold whitespace-nowrap"
+                  style={{ color: "#34D399", borderBottom: "1px solid rgba(15,157,88,0.3)" }}
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, i) => (
+              <tr
+                key={i}
+                className="transition-all duration-700"
+                style={{
+                  background:
+                    i === 0 && highlightNew
+                      ? "rgba(15,157,88,0.25)"
+                      : i === 0
+                        ? "rgba(15,157,88,0.1)"
+                        : "transparent",
+                  borderBottom: "1px solid rgba(255,255,255,0.04)",
+                }}
+              >
+                {row.map((cell, j) => (
+                  <td
+                    key={j}
+                    className="px-2 py-1.5 whitespace-nowrap"
+                    style={{ color: i === 0 ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.45)" }}
+                  >
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div
+          className="px-3 py-1.5 text-[9px]"
+          style={{ color: "rgba(255,255,255,0.3)", borderTop: "1px solid rgba(255,255,255,0.04)" }}
+        >
+          Wireline Call Log · Google Drive · Call Log
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Integration registry ──────────────────────────────────────────────────────
 
 interface IntegrationMeta {
@@ -984,6 +1059,14 @@ const INTEGRATION_META: readonly IntegrationMeta[] = [
     tagline: "Append call summaries to your Wireline log spreadsheet in OneDrive",
     PreviewCard: ExcelPreviewCard,
   },
+  {
+    key: "google_sheets",
+    label: "Google Sheets",
+    color: "#0F9D58",
+    Icon: Table2,
+    tagline: "Append call summaries to your Wireline log spreadsheet in Google Drive",
+    PreviewCard: SheetsPreviewCard,
+  },
 ] as const;
 
 // ── Recent activity feed (demo content) ──────────────────────────────────────
@@ -1039,6 +1122,10 @@ const ACTIVITY_LOG: Partial<Record<ToolIntegration, Array<{ text: string; time: 
     { text: "#hot-leads: Enterprise lead — $12K ARR", time: "Yesterday" },
   ],
   microsoft_excel: [
+    { text: "Row appended: (555) 234-5678 → Qualified", time: "3 calls ago" },
+    { text: "Row appended: (555) 876-4321 → Booked", time: "4 calls ago" },
+  ],
+  google_sheets: [
     { text: "Row appended: (555) 234-5678 → Qualified", time: "3 calls ago" },
     { text: "Row appended: (555) 876-4321 → Booked", time: "4 calls ago" },
   ],

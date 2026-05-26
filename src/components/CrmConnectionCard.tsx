@@ -37,6 +37,7 @@ interface IntegrationState {
   square: IntegrationStatus;
   microsoft_teams: IntegrationStatus;
   microsoft_excel: IntegrationStatus;
+  google_sheets: IntegrationStatus;
 }
 
 type ProviderKey = keyof IntegrationState;
@@ -178,6 +179,14 @@ const PROVIDERS: {
     color: "emerald",
     logo: "XL",
     group: "Microsoft 365",
+    beta: true,
+  },
+  {
+    key: "google_sheets",
+    label: "Google Sheets",
+    color: "emerald",
+    logo: "GS",
+    group: "Google Workspace",
     beta: true,
   },
 ];

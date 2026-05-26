@@ -92,6 +92,7 @@ export class IntegrationService {
           ? `${params.description}\n\nZoom Meeting: ${zoomUrl}`
           : params.description,
         location: zoomUrl || undefined,
+        generateMeetLink: !zoomUrl,
       };
 
       // Pick the first account as the primary for booking.
@@ -350,15 +351,34 @@ export class IntegrationService {
   private async createGoogleEvent(account: any, params: any): Promise<boolean> {
     const auth = await this.getGoogleClient(account);
     const calendar = google.calendar({ version: "v3", auth });
+    
+    const requestBody: any = {
+      summary: params.title,
+      description: params.description,
+      start: { dateTime: params.startTime },
+      end: { dateTime: params.endTime },
+      attendees: params.attendees?.map((email: string) => ({ email })),
+    };
+
+    if (params.location) {
+      requestBody.location = params.location;
+    }
+
+    if (params.generateMeetLink) {
+      requestBody.conferenceData = {
+        createRequest: {
+          requestId: `meet-${Date.now()}`,
+          conferenceSolutionKey: {
+            type: "hangoutsMeet",
+          },
+        },
+      };
+    }
+
     await calendar.events.insert({
       calendarId: "primary",
-      requestBody: {
-        summary: params.title,
-        description: params.description,
-        start: { dateTime: params.startTime },
-        end: { dateTime: params.endTime },
-        attendees: params.attendees?.map((email: string) => ({ email })),
-      },
+      ...(params.generateMeetLink ? { conferenceDataVersion: 1 } : {}),
+      requestBody,
     });
     return true;
   }

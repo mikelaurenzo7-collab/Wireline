@@ -281,6 +281,21 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
       },
     ],
   },
+  google_sheets: {
+    integration: "google_sheets",
+    label: "Google Sheets",
+    headline: "Every call becomes a row in your Google Sheets call log workbook — no manual export.",
+    orbitHint: "Append call log row",
+    connectPath: "/integrations",
+    tasks: [
+      {
+        id: "sheets-log",
+        callerMoment: "Call completed (any outcome)",
+        agentAction: "Appends caller, outcome, and notes to your Google Drive spreadsheet.",
+        tools: ["log_to_google_sheets"],
+      },
+    ],
+  },
 };
 
 export function getIntegrationPlaybook(
@@ -339,7 +354,8 @@ const PROVIDER_TOOL_INTEGRATION: Partial<
     | "shopify"
     | "square"
     | "microsoft_teams"
-    | "microsoft_excel",
+    | "microsoft_excel"
+    | "google_sheets",
     ToolIntegration
   >
 > = {
@@ -353,6 +369,7 @@ const PROVIDER_TOOL_INTEGRATION: Partial<
   square: "square",
   microsoft_teams: "microsoft_teams",
   microsoft_excel: "microsoft_excel",
+  google_sheets: "google_sheets",
 };
 
 export function toolIntegrationForProvider(
@@ -372,6 +389,7 @@ export const PROVIDER_ACCENT: Record<string, string> = {
   square: "#00A2E8",
   microsoft_teams: "#6264A7",
   microsoft_excel: "#217346",
+  google_sheets: "#0F9D58", // Google green
 };
 
 export function validatePlaybookCoverage(): string[] {
