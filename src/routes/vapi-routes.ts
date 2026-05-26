@@ -43,12 +43,7 @@ import { resolveVapiWebhookAgent } from "../lib/vapi-webhook-agent";
 import { enqueue } from "../lib/job-queue";
 import { handleEndOfCallReport } from "../lib/vapi-handlers";
 import { buildVapiAssistant } from "../lib/vapi-assistant-factory";
-import {
-  performMidCallVoiceSwap,
-  shouldSwapForCall,
-  clearSwapDedupe,
-  logSwapAttempt,
-} from "../lib/vapi-voice-swap";
+
 import {
   handleCreateAccount,
   handleSendPaymentLink,
@@ -1761,81 +1756,8 @@ router.post("/api/vapi-webhook", async (req, res) => {
     }
   }
 
-  // Mid-call voice swap on detected non-English language. Vapi's
-  // transcriber emits a dedicated `language-change-detected` event the
-  // moment a caller switches to e.g. Spanish. We look up the operator's
-  // configured secondary voice for this agent and hand the call off to
-  // a clone of the assistant running that voice — caller hears "Sarah"
-  // (English) → ~500ms of dead air → "Maria" (Spanish), no hold music.
-  //
-  // Why a handoff and not a config patch: Vapi's PATCH /call/{id}
-  // endpoint only mutates the call display name (May 2026 docs); the
-  // voice block on the running assistant is immutable mid-call. The
-  // live-call control channel exposes a `handoff` message type that
-  // DOES accept a fresh voice override — that's the path we use.
-  //
-  // Pattern source: ElevenLabs multi-voice cookbook —
-  //   https://elevenlabs.io/docs/eleven-agents/customization/voice/multi-voice-support
-  //
-  // Trade-offs documented in src/lib/vapi-voice-swap.ts:1-30.
-  if (message && message.type === "language-change-detected") {
-    const langCode = (message as { language?: string }).language || "";
-    const callObj = (payload.call as Record<string, any> | undefined) || {};
-    const callId = (callObj.id as string | undefined) || "";
-
-    // English back to English is a no-op (the transcriber sometimes
-    // flickers when the caller code-switches mid-sentence). We only
-    // swap on a NON-English detected language.
-    if (callId && langCode && langCode !== "en") {
-      // Dedupe — Vapi re-emits the same language-change event on
-      // noisy transcripts; a second handoff would re-fire the same
-      // ~500ms dead-air gap for nothing.
-      if (shouldSwapForCall(callId, langCode)) {
-        try {
-          const [agentRow] = await drizzle
-            .select({
-              secondaryVoiceId: schema.agents.secondaryVoiceId,
-              voiceProvider: schema.agents.voiceProvider,
-            })
-            .from(schema.agents)
-            .where(eq(schema.agents.id, webhookAgentId))
-            .limit(1);
-
-          if (agentRow?.secondaryVoiceId) {
-            const result = await performMidCallVoiceSwap({
-              call: callObj as any,
-              detectedLanguage: langCode,
-              secondaryVoiceId: agentRow.secondaryVoiceId,
-              voiceProvider: agentRow.voiceProvider || "11labs",
-            });
-            logSwapAttempt(callId, webhookAgentId, langCode, result);
-          } else {
-            // No secondary voice configured — log so ops can see the
-            // operator hasn't set one up yet.
-            log.info("Vapi language-change detected but no secondary voice set", {
-              callId,
-              agentId: webhookAgentId,
-              language: langCode,
-            });
-          }
-        } catch (e: any) {
-          log.warn("Vapi mid-call voice swap lookup failed", {
-            callId,
-            agentId: webhookAgentId,
-            language: langCode,
-            error: getErrorMessage(e),
-          });
-        }
-      }
-    }
-    return res.json({ received: true });
-  }
 
   if (message && message.type === "end-of-call-report") {
-    // Clear the per-call voice-swap dedupe entries — keeps the
-    // in-memory dedupe set bounded across thousands of calls.
-    const endCallId = (message.call as { id?: string } | undefined)?.id;
-    if (endCallId) clearSwapDedupe(endCallId);
 
     // Queue for async processing to prevent Vapi timeout/retries
     // End-of-call processing can take 10-30s (AI analysis, webhook dispatch)
