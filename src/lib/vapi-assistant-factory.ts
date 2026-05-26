@@ -707,11 +707,12 @@ Today is ${currentDateTime}.
       enabled: true,
       machineDetectionTimeout: 15,
     },
-    // Custom voicemail message — concise, branded with the agent's
-    // identity. Uses the agent name so tenants hear their own brand,
-    // not "Wireline". Saves LLM cost vs. having the model improvise.
+    // Custom voicemail message — concise, branded with the TENANT's
+    // company name. Uses business_name variable so customers hear the
+    // business ("Acme Plumbing"), not the agent's first name.
+    // Saves LLM cost vs. having the model improvise.
     voicemailMessage:
-      `Hi, this is ${agentConfigRow?.name || "your assistant"} calling. Sorry we missed you — feel free to call us back at any time and we'll be happy to help. Thanks!`,
+      `Hi, this is ${(bizVars.business_name as string) || agentConfigRow?.name || "your assistant"} calling. Sorry we missed you — feel free to call us back at any time and we'll be happy to help. Thanks!`,
     // Always record so we can replay + retrain. Operator can disable per-
     // agent if HIPAA mode is on.
     recordingEnabled: true,
