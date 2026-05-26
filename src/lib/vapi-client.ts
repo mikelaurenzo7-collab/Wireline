@@ -431,7 +431,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
       },
       transcriber: {
         provider: "deepgram",
-        model: "nova-2",
+        model: "nova-3",
         language: "en",
         smartFormat: true,
         endpointing: 40,

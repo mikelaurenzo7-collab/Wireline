@@ -357,7 +357,7 @@ export function buildShowcaseAssistantPayload(
     },
     transcriber: {
       provider: "deepgram",
-      model: "nova-2",
+      model: "nova-3",
       language: "en",
       smartFormat: true,
       endpointing: 40,

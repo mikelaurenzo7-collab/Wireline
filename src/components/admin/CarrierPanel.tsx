@@ -219,7 +219,7 @@ export function CarrierPanel({
                     {[
                       {
                         v: "google",
-                        label: "Gemini 3 Flash Preview",
+                        label: "Gemini 3.5 Flash",
                         sub: "PRIMARY",
                         desc: "Primary live-call model for the fastest Gemini voice stack our voice platform currently supports.",
                       },
@@ -237,7 +237,7 @@ export function CarrierPanel({
                           onUpdateSettings({
                             ...settings,
                             voice_llm_provider: p.v,
-                            voice_llm_model: p.v === "google" ? "gemini-3-flash-preview" : "gpt-4o",
+                            voice_llm_model: p.v === "google" ? "gemini-3.5-flash" : "gpt-4o",
                           })
                         }
                         className={cn(

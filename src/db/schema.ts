@@ -106,7 +106,7 @@ export const settings = pgTable("wireline_settings", {
   retentionDays: integer("retention_days").default(365),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   voiceLlmProvider: text("voice_llm_provider").default("google"),
-  voiceLlmModel: text("voice_llm_model").default("gemini-3-flash-preview"),
+  voiceLlmModel: text("voice_llm_model").default("gemini-3.5-flash"),
   dailyBriefEnabled: boolean("daily_brief_enabled").default(false).notNull(),
   dailyBriefSendAt: text("daily_brief_send_at").default("13:00").notNull(),
   dailyBriefRecipient: text("daily_brief_recipient"),
@@ -138,6 +138,8 @@ export const settings = pgTable("wireline_settings", {
    * "supervised" — auto-execute high-confidence, draft the rest.
    */
   autonomyLevel: text("autonomy_level").default("draft"),
+  /** Opt-in: send a 1-question CSAT SMS after completed calls. */
+  csatSmsEnabled: boolean("csat_sms_enabled").default(false),
 });
 
 // 1.1 USER PREFERENCES
@@ -496,6 +498,8 @@ export const callLogs = pgTable(
     coachingNote: text("coaching_note"),
     qaScore: integer("qa_score"),
     qaBreakdown: jsonb("qa_breakdown"),
+    /** Post-call CSAT score (1-5) from the caller's SMS reply. */
+    csatScore: integer("csat_score"),
     // Single-word outcome bucket the post-call digest uses for the email
     // subject + Insights breakdown: booked | qualified | followup | dnc |
     // unreachable | info | other.

@@ -683,13 +683,15 @@ Today is ${currentDateTime}.
         ? { pronunciationDictionaryLocators: pronunciationDicts }
         : {}),
     },
-    // Explicit transcriber — Vapi defaults to Deepgram Nova-2 which is
-    // already best-in-class on noisy lines + accented English. Pinning
-    // the model explicitly (vs relying on Vapi defaults) protects us
-    // from silent upstream model swaps that could regress accuracy.
+    // Explicit transcriber — Deepgram Nova-3 is the current best-in-class
+    // streaming STT (~6.8% WER, 25% better than Nova-2). Nova-3 also
+    // handles code-switching natively, which is critical for the mid-call
+    // language swap (vapi-voice-swap.ts). Pinning the model explicitly
+    // (vs relying on Vapi defaults) protects us from silent upstream
+    // model swaps that could regress accuracy.
     transcriber: {
       provider: "deepgram",
-      model: "nova-2",
+      model: "nova-3",
       language: "en",
       // smartFormat handles "two five five five" → "2555" automatically
       // — critical for confirming phone numbers + appointment times.

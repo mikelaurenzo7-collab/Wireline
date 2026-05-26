@@ -107,6 +107,7 @@ export function inputRateForModel(model: string | null | undefined): number {
     "gemini-1.5-flash": 0.075,
     "gemini-1.5-pro": 1.25,
     "gemini-3-flash-preview": 0.3,
+    "gemini-3.5-flash": 0.15,
     "gemini-2.5-flash": 0.3,
     "gpt-4o": 5,
     "gpt-4-turbo": 10,
