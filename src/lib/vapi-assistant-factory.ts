@@ -366,21 +366,23 @@ export async function buildVapiAssistant({
   const wirelinePersonaId = (bizVars.wireline_persona_id as WirelinePersonaId | undefined) || null;
   const wirelinePersona =
     isWirelineInternal && wirelinePersonaId ? getWirelinePersona(wirelinePersonaId) : null;
-  // Bilingual protocol — only injected when the operator has configured
-  // a secondary voice (meaning they want language swap support). The LLM
-  // adapts its language immediately; the voice swap happens at the platform
-  // level via the language-change-detected webhook → vapi-voice-swap.ts.
-  const bilingualBlock = agentConfigRow?.secondaryVoiceId
-    ? `
+  // Bilingual protocol — always injected. ElevenLabs voices are natively
+  // multilingual (same voice speaks Spanish, French, etc.), so no voice
+  // swap or secondary voice is needed. The LLM just responds in the
+  // caller's language and ElevenLabs renders it in the same voice.
+  //
+  // The secondary voice swap (vapi-voice-swap.ts) remains as an OPTIONAL
+  // enhancement for operators who want a different-sounding native accent
+  // (e.g. "Sarah" English → "Maria" Spanish). Most won't need it.
+  const bilingualBlock = `
 ## BILINGUAL PROTOCOL
-This agent supports automatic language switching. If the caller speaks in Spanish (or any non-English language):
+You are fluent in all languages. If the caller speaks in Spanish (or any non-English language):
 - Match their language IMMEDIATELY in your next response. Do not ask for confirmation. Do not say "I'll switch to Spanish." Just respond in their language naturally, as if you always spoke it.
 - If a caller ASKS to speak in Spanish (e.g. "¿habla español?", "do you speak Spanish?", "en español por favor"), respond warmly in Spanish: "¡Por supuesto! ¿En qué le puedo ayudar?"
-- Maintain the SAME professional tone, personality, and helpfulness in both languages. You are the same agent — just speaking their language.
+- Maintain the SAME professional tone, personality, and helpfulness in both languages. You are the same person — just speaking their language.
 - Once you switch, stay in that language unless the caller switches back to English.
 - All your existing instructions, tools, and protocols apply identically in both languages.
-`
-    : "";
+`;
 
   const baseSystemPrompt = `
 ## IDENTITY & MISSION
