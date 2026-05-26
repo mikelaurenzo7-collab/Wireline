@@ -59,7 +59,6 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         matches: ["/knowledge"],
       },
       { label: "Cockpit", path: "/cockpit", icon: Headphones, ownerOnly: true },
-      { label: "Founder", path: "/founder", icon: Crown, ownerOnly: true },
     ],
   },
   {
@@ -80,6 +79,12 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { label: "Integrations", path: "/integrations", icon: PlugZap },
       { label: "Settings", path: "/admin", icon: ServerCog, matches: ["/dnc", "/audit"] },
       { label: "Help", path: "/help", icon: LifeBuoy },
+    ],
+  },
+  {
+    label: "Owner",
+    items: [
+      { label: "Founder", path: "/founder", icon: Crown, ownerOnly: true },
     ],
   },
 ];

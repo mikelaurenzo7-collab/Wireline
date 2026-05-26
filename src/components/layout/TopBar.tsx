@@ -186,16 +186,20 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                lets the strip scroll when the owner has many tabs (Cockpit +
                Founder), keeping the user avatar/logout pinned right. */}
           <nav className="hidden lg:flex items-center gap-0.5 ml-3 min-w-0 flex-1 overflow-x-auto scrollbar-hide">
-            {NAV_GROUPS.map((group, gIdx) => (
+            {NAV_GROUPS.map((group, gIdx) => {
+              const visibleItems = group.items.filter(
+                (item) => !item.ownerOnly || user?.is_owner === true,
+              );
+              if (visibleItems.length === 0) return null;
+              return (
               <React.Fragment key={group.label}>
                 {gIdx > 0 && (
                   <span aria-hidden="true" className="mx-0.5 h-4 w-px bg-white/10 shrink-0" />
                 )}
-                {group.items
-                  .filter((item) => !item.ownerOnly || user?.is_owner === true)
-                  .map((item) => renderNavItem(item))}
+                {visibleItems.map((item) => renderNavItem(item))}
               </React.Fragment>
-            ))}
+              );
+            })}
           </nav>
 
           <div className="flex-1 lg:hidden" />
@@ -365,18 +369,22 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
               </div>
 
               <nav className="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-3">
-                {NAV_GROUPS.map((group) => (
+                {NAV_GROUPS.map((group) => {
+                  const visibleItems = group.items.filter(
+                    (item) => !item.ownerOnly || user?.is_owner === true,
+                  );
+                  if (visibleItems.length === 0) return null;
+                  return (
                   <div key={group.label}>
                     <div className="px-2 mb-1 text-[8px] font-semibold uppercase tracking-[0.42em] text-muted/55">
                       {group.label}
                     </div>
                     <div className="space-y-0.5">
-                      {group.items
-                        .filter((item) => !item.ownerOnly || user?.is_owner === true)
-                        .map((item) => renderNavItem(item, { variant: "drawer" }))}
+                      {visibleItems.map((item) => renderNavItem(item, { variant: "drawer" }))}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </nav>
 
               <div className="pt-3 mt-3 border-t border-black/8 space-y-2">
