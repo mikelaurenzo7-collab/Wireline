@@ -12,6 +12,13 @@ import {
 import { sendPasswordResetEmail } from "../lib/email-service";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
+import {
+  validateBody,
+  signinSchema,
+  signupSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from "../lib/api-validation";
 
 const router = Router();
 
@@ -20,84 +27,90 @@ const router = Router();
  * Authenticate a user and return a JWT. Rate-limited 5 attempts / 15 min
  * per (email, IP) pair to slow credential stuffing.
  */
-router.post("/api/auth/signin", signinRateLimiter, async (req: Request, res: Response) => {
-  try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
-    }
+router.post(
+  "/api/auth/signin",
+  signinRateLimiter,
+  validateBody(signinSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const { email, password } = req.body;
+      // Body is now validated by Zod middleware
 
-    const result = await authService.signIn(email, password);
-    if (!result) {
-      return res.status(401).json({ error: "Invalid email or password" });
-    }
+      const result = await authService.signIn(email, password);
+      if (!result) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
 
-    res.json(result);
-  } catch (error) {
-    if (error instanceof AuthConfigurationError) {
-      log.error("Auth: Sign in unavailable — JWT secret missing", { error });
-      return res.status(503).json({
-        error: "Sign-in is temporarily unavailable. Platform configuration is incomplete.",
-        code: "AUTH_NOT_CONFIGURED",
-      });
+      res.json(result);
+    } catch (error) {
+      if (error instanceof AuthConfigurationError) {
+        log.error("Auth: Sign in unavailable — JWT secret missing", { error });
+        return res.status(503).json({
+          error: "Sign-in is temporarily unavailable. Platform configuration is incomplete.",
+          code: "AUTH_NOT_CONFIGURED",
+        });
+      }
+      log.error("Auth: Sign in endpoint failed", { error });
+      res.status(500).json({ error: "Internal server error" });
     }
-    log.error("Auth: Sign in endpoint failed", { error });
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+  },
+);
 
 /**
  * POST /api/auth/signup
  * Register a new user and return a JWT.
  */
-router.post("/api/auth/signup", signupRateLimiter, async (req: Request, res: Response) => {
-  try {
-    const { email, password, fullName } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
-    }
-
-    const result = await authService.signUp(email, password, fullName);
-
-    // Mint + email the verification link. Best-effort: if the
-    // transport is down (no RESEND_API_KEY), signup still succeeds
-    // but the user lands with email_verified_at = NULL and the
-    // banner shows "Resend verification." No silent ok-lies. The
-    // user can still poke around the product; the trial gate blocks
-    // money-spending actions until verified.
+router.post(
+  "/api/auth/signup",
+  signupRateLimiter,
+  validateBody(signupSchema),
+  async (req: Request, res: Response) => {
     try {
-      const { token } = await authService.createEmailVerificationToken(result.user.id);
-      const baseUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
-      const verifyUrl = `${baseUrl}/api/auth/verify-email/${encodeURIComponent(token)}`;
-      const { sendEmailVerification } = await import("../lib/email-service");
-      const emailRes = await sendEmailVerification({
-        to: email,
-        verifyUrl,
-        fullName: result.user.full_name,
-      });
-      if (!emailRes.ok) {
-        log.warn("Verification email not delivered (transport down) — user can resend", {
+      const { email, password, fullName } = req.body;
+      // Body is now validated by Zod middleware
+
+      const result = await authService.signUp(email, password, fullName);
+
+      // Mint + email the verification link. Best-effort: if the
+      // transport is down (no RESEND_API_KEY), signup still succeeds
+      // but the user lands with email_verified_at = NULL and the
+      // banner shows "Resend verification." No silent ok-lies. The
+      // user can still poke around the product; the trial gate blocks
+      // money-spending actions until verified.
+      try {
+        const { token } = await authService.createEmailVerificationToken(result.user.id);
+        const baseUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+        const verifyUrl = `${baseUrl}/api/auth/verify-email/${encodeURIComponent(token)}`;
+        const { sendEmailVerification } = await import("../lib/email-service");
+        const emailRes = await sendEmailVerification({
+          to: email,
+          verifyUrl,
+          fullName: result.user.full_name,
+        });
+        if (!emailRes.ok) {
+          log.warn("Verification email not delivered (transport down) — user can resend", {
+            userId: result.user.id,
+            reason: emailRes.error,
+          });
+        }
+      } catch (verifyErr: any) {
+        log.error("verification email step failed (signup still succeeded)", {
           userId: result.user.id,
-          reason: emailRes.error,
+          error: verifyErr?.message ?? String(verifyErr),
         });
       }
-    } catch (verifyErr: any) {
-      log.error("verification email step failed (signup still succeeded)", {
-        userId: result.user.id,
-        error: verifyErr?.message ?? String(verifyErr),
-      });
-    }
 
-    res.json(result);
-  } catch (error: any) {
-    if (error.code === "23505") {
-      // Unique violation in Postgres
-      return res.status(400).json({ error: "An account with this email already exists" });
+      res.json(result);
+    } catch (error: any) {
+      if (error.code === "23505") {
+        // Unique violation in Postgres
+        return res.status(400).json({ error: "An account with this email already exists" });
+      }
+      log.error("Auth: Sign up endpoint failed", { error });
+      res.status(500).json({ error: "Internal server error" });
     }
-    log.error("Auth: Sign up endpoint failed", { error });
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+  },
+);
 
 /**
  * GET /api/auth/verify-email/:token
@@ -242,12 +255,11 @@ async function equalizedDuration<T>(promise: Promise<T>): Promise<T> {
 router.post(
   "/api/auth/forgot-password",
   forgotPasswordRateLimiter,
+  validateBody(forgotPasswordSchema),
   async (req: Request, res: Response) => {
     try {
-      const email = (req.body?.email || "").toString().trim().toLowerCase();
-      if (!email) {
-        return res.status(400).json({ error: "Email is required" });
-      }
+      const { email } = req.body;
+      // Email is now validated by Zod middleware
 
       const issued = await equalizedDuration(authService.createPasswordResetToken(email, req.ip));
 
@@ -304,29 +316,24 @@ router.post(
  * accepts the legacy `password` key so AuthPortal forms that send
  * either work.
  */
-router.post("/api/auth/reset-password", async (req: Request, res: Response) => {
-  try {
-    const body = req.body || {};
-    const token = body.token;
-    const newPassword = body.new_password ?? body.password;
-    if (!token || !newPassword) {
-      return res.status(400).json({ error: "Token and new password required" });
+router.post(
+  "/api/auth/reset-password",
+  validateBody(resetPasswordSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const { token, password } = req.body;
+      // Body is now validated by Zod middleware
+
+      const result = await authService.completePasswordReset(token, password);
+      if (!result) {
+        return res.status(400).json({ error: "Invalid or expired reset link" });
+      }
+      return res.json(result);
+    } catch (error) {
+      log.error("Auth: reset-password complete failed", { error });
+      return res.status(500).json({ error: "Internal server error" });
     }
-    if (typeof newPassword !== "string" || newPassword.length < 8) {
-      // Matches the /signup minimum — we explicitly do NOT add a stronger
-      // complexity rule here so reset never rejects a password that
-      // signup would have accepted.
-      return res.status(400).json({ error: "Password must be at least 8 characters" });
-    }
-    const result = await authService.completePasswordReset(token, newPassword);
-    if (!result) {
-      return res.status(400).json({ error: "Invalid or expired reset link" });
-    }
-    return res.json(result);
-  } catch (error) {
-    log.error("Auth: reset-password complete failed", { error });
-    return res.status(500).json({ error: "Internal server error" });
-  }
-});
+  },
+);
 
 export default router;

@@ -1,33 +1,24 @@
 import { log, IS_PROD } from "./server-context";
 import { getInternalJwtSecret } from "./internal-jwt-secret";
+import { validateEnv, logEnvValidation, generateSetupChecklist } from "./env-validator";
 
 /**
  * Startup env validation — fail fast in production rather than
  * silently booting with placeholder Supabase URLs / missing webhook
  * secrets.
+ *
+ * Uses the comprehensive env-validator for detailed, grouped validation
+ * with actionable error messages and setup guidance.
  */
 export function validateStartupEnv() {
+  // Run comprehensive validation
+  const validation = validateEnv();
+
+  // Log results with verbose mode in production
+  logEnvValidation(IS_PROD);
+
+  // Additional legacy checks for backward compatibility
   const jwtSecret = getInternalJwtSecret();
-
-  // Required in production; warn in dev so local hacking still works.
-  const prodRequired: [string, string | undefined][] = [
-    ["INTERNAL_JWT_SECRET", jwtSecret],
-    ["ANTHROPIC_API_KEY", process.env.ANTHROPIC_API_KEY],
-    ["GEMINI_API_KEY", process.env.GEMINI_API_KEY],
-    ["VAPI_PRIVATE_KEY", process.env.VAPI_PRIVATE_KEY],
-    ["VAPI_WEBHOOK_SECRET", process.env.VAPI_WEBHOOK_SECRET],
-    ["OAUTH_STATE_SECRET", process.env.OAUTH_STATE_SECRET],
-    ["APP_URL", process.env.APP_URL],
-    // Stripe is wired into every billing route — without the secret
-    // key, /api/billing/* throws on first request rather than at boot.
-    ["STRIPE_SECRET_KEY", process.env.STRIPE_SECRET_KEY],
-    // Drizzle reads this at server-context init. Without it the app
-    // boots but every DB-touching route 500s instantly.
-    ["POSTGRES_URL", process.env.POSTGRES_URL],
-  ];
-
-  const missingProd = prodRequired.filter(([, v]) => !v).map(([k]) => k);
-  const missing = IS_PROD ? missingProd : [];
 
   const recommended: string[] = [];
   if (!process.env.APP_URL) recommended.push("APP_URL");
@@ -47,20 +38,41 @@ export function validateStartupEnv() {
     );
   }
 
-  if (!IS_PROD && missingProd.length) {
-    log.warn("Prod-required env vars not set (dev mode — continuing)", { vars: missingProd });
-  }
+  // If validation failed, throw with helpful guidance
+  if (!validation.valid) {
+    const missing = validation.errors.map((e) => e.var);
 
-  if (missing.length) {
     if (IS_PROD) {
-      log.error("Missing required env vars. App may be unstable.", { missing });
-      throw new Error(`Missing required env vars: ${missing.join(", ")}`);
+      log.error("Missing required env vars. App may be unstable.", {
+        missing,
+        groupSummary: validation.byGroup,
+      });
+
+      // Generate setup checklist for easier onboarding
+      const checklist = generateSetupChecklist();
+      log.info("Environment setup checklist generated. See logs above for details.");
+
+      throw new Error(
+        `Missing required env vars: ${missing.join(", ")}. ` +
+          `Run with VERBOSE_ENV=1 for detailed setup instructions.`,
+      );
     } else {
-      log.warn("Required env vars missing (dev mode — continuing with placeholders)", { missing });
+      log.warn("Required env vars missing (dev mode — continuing with placeholders)", {
+        missing,
+        count: missing.length,
+      });
     }
   }
 
   if (recommended.length) {
     log.warn("Recommended env vars not set", { recommended });
+  }
+
+  // Success logging
+  if (validation.valid) {
+    log.info("Environment validation passed", {
+      configured: Object.values(validation.byGroup).reduce((sum, g) => sum + g.valid, 0),
+      total: Object.values(validation.byGroup).reduce((sum, g) => sum + g.total, 0),
+    });
   }
 }

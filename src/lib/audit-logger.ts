@@ -3,6 +3,7 @@
 import type { VercelPgDatabase } from "drizzle-orm/vercel-postgres";
 import * as schema from "../db/schema";
 import type { AuditEventType, AuditSeverity } from "../types/audit";
+import { log } from "./server-context";
 
 export class AuditLogger {
   private failureCount = 0;
@@ -28,7 +29,7 @@ export class AuditLogger {
   }): Promise<{ success: boolean; error?: string }> {
     // Validate required fields
     if (!data.action || !data.eventType) {
-      console.error("[AuditLogger] Missing required fields:", {
+      log.error("[AuditLogger] Missing required fields", {
         action: data.action,
         eventType: data.eventType,
       });
@@ -57,7 +58,7 @@ export class AuditLogger {
       await this.drizzle.insert(schema.auditLog).values(record as any);
     } catch (error: any) {
       this.failureCount++;
-      console.error("[AuditLogger] Failed to log event:", {
+      log.error("[AuditLogger] Failed to log event", {
         eventType: data.eventType,
         error: error.message,
         totalFailures: this.failureCount,
