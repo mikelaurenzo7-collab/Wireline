@@ -23,3 +23,10 @@ e2e/screenshots/*.png
 !e2e/screenshots/.gitkeep
 .vercel
 .env*.local
+.env
+.env.*
+*.env
+credentials.json
+*.pem
+*.key
+.credentials
