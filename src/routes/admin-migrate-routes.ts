@@ -1588,6 +1588,10 @@ router.post(
         ALTER TABLE wireline_agents
         ADD COLUMN IF NOT EXISTS escalation_email text;
       `);
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_agents
+        ADD COLUMN IF NOT EXISTS escalation_handoff_enabled boolean DEFAULT false;
+      `);
 
       log.info("migrate-escalation-routing completed", {
         userId: req.user?.id || "migration-token",
@@ -1595,7 +1599,7 @@ router.post(
       return res.json({
         ok: true,
         message:
-          "Per-agent escalation routing columns ensured (escalation_phone, escalation_email).",
+          "Per-agent escalation routing columns ensured (escalation_phone, escalation_email, escalation_handoff_enabled).",
       });
     } catch (e: any) {
       log.error("migrate-escalation-routing failed", { error: e?.message });

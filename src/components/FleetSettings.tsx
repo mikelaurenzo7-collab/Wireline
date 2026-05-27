@@ -1487,6 +1487,7 @@ export default function FleetSettings() {
                             escalation_keywords: selectedAgent.escalation_keywords,
                             escalation_phone: selectedAgent.escalation_phone,
                             escalation_email: selectedAgent.escalation_email,
+                            escalation_handoff_enabled: selectedAgent.escalation_handoff_enabled,
                             business_variables: selectedAgent.business_variables,
                             out_of_hours_message: selectedAgent.out_of_hours_message,
                             kpi_focus: selectedAgent.kpi_focus,

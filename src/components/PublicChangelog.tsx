@@ -1,0 +1,223 @@
+/**
+ * PublicChangelog.tsx — public-facing changelog at /changelog.
+ *
+ * Mirrors the in-app Changelog component (used by signed-in operators)
+ * but renders without the AppShell chrome and includes a "Subscribe"
+ * placeholder for email-list growth. Every B2B SaaS in 2026 publishes
+ * one of these — the absence reads as "side project" and the presence
+ * reads as "real company that shipped real things."
+ *
+ * Data source: a curated, hand-edited list of releases right here in
+ * this file. Single source of truth; cheap to update; easy to audit.
+ * When the velocity demands more, this can flip to a CMS or a
+ * markdown-folder build step — but until then, in-file is correct.
+ */
+import React from "react";
+import { motion } from "motion/react";
+import { Link } from "react-router-dom";
+import { ArrowLeft, Rocket, Shield, Sparkles, Wrench, Zap } from "lucide-react";
+import WirelineMark from "./WirelineMark";
+import { PageMeta } from "../lib/page-meta";
+
+type EntryTag = "launch" | "feature" | "infra" | "polish" | "security";
+
+interface ChangelogEntry {
+  date: string;
+  tag: EntryTag;
+  title: string;
+  body: string;
+}
+
+const TAG_META: Record<EntryTag, { label: string; tone: string; icon: typeof Sparkles }> = {
+  launch: {
+    label: "Launch",
+    tone: "bg-[#4F1E7B]/10 text-[#4F1E7B] border-[#4F1E7B]/25",
+    icon: Rocket,
+  },
+  feature: {
+    label: "Feature",
+    tone: "bg-emerald-500/10 text-emerald-700 border-emerald-500/25",
+    icon: Sparkles,
+  },
+  infra: {
+    label: "Infra",
+    tone: "bg-amber-500/10 text-amber-700 border-amber-500/25",
+    icon: Zap,
+  },
+  polish: {
+    label: "Polish",
+    tone: "bg-cyan-500/10 text-cyan-700 border-cyan-500/25",
+    icon: Wrench,
+  },
+  security: {
+    label: "Security",
+    tone: "bg-rose-500/10 text-rose-700 border-rose-500/25",
+    icon: Shield,
+  },
+};
+
+const ENTRIES: ChangelogEntry[] = [
+  {
+    date: "Jan 28, 2026",
+    tag: "feature",
+    title: "Warm-transfer escalation",
+    body: "Every agent can now warm-transfer a live caller to a human mid-call when it escalates. Per-agent setting: turn it on in Knowledge → Business Profile → Immediate-escalation triggers. The agent speaks a brief handoff line, then transfers the call to the configured phone. Off by default — explicit opt-in.",
+  },
+  {
+    date: "Jan 28, 2026",
+    tag: "feature",
+    title: "Per-agent escalation routing",
+    body: "Sales agents can now route their escalations to the sales lead; support agents to the support lead. Two new fields per agent — escalation phone (SMS) and escalation email — override the tenant-wide Manager Alert Number when set. Email is a new channel: opt-in, branded, sent via Resend.",
+  },
+  {
+    date: "Jan 27, 2026",
+    tag: "infra",
+    title: "Public system status page",
+    body: "Live operational status of the voice runtime, fallback path, and reasoning layer at trywireline.com/status. Updates every 60 seconds via a 1-token probe of each LLM tier. External uptime monitors welcome.",
+  },
+  {
+    date: "Jan 27, 2026",
+    tag: "polish",
+    title: "Trust signals + ROI calculator on the landing",
+    body: "Industry verticals, security/compliance posture, and a moment-of-truth ROI calculator with industry presets all live on the marketing surface. Honest math: 82% missed-call recovery, $22/hr admin median, $499/mo Wireline Pro baseline.",
+  },
+  {
+    date: "Jan 27, 2026",
+    tag: "infra",
+    title: "Visual-regression CI",
+    body: "Every PR now runs Playwright pixel-diff against the committed baselines for 5 critical routes × 3 viewports. Chrome regressions fail CI before they can ship.",
+  },
+  {
+    date: "Jan 27, 2026",
+    tag: "polish",
+    title: "Aurora rail — desktop chrome rebuild",
+    body: "The horizontal top bar gave way to a vertical 'Aurora rail' on desktop. Collapses to 56 px when not in focus; expands to 224 px on hover or toggle. Carries logo, search, every nav destination, tier-usage badge, live phone pulse, and the avatar block. Mobile keeps its iOS-style bottom tabs (Live Ops · Triage · Activity · Cockpit · More).",
+  },
+  {
+    date: "Jan 27, 2026",
+    tag: "infra",
+    title: "Voice tiering rebalanced — Sonnet 4.6 live, Opus 4.7 brain",
+    body: "End-to-end caller dead air dropped from ~2 s to ~700–900 ms. The live voice runtime now runs Claude Sonnet 4.6 (TTFT 300–500 ms against our 18 KB system prompt); Claude Opus 4.7 powers every off-wire path — pre-call briefs, post-call analysis, daily brief, coaching — where the user isn't waiting. Same agent moat, faster wire.",
+  },
+  {
+    date: "Jan 27, 2026",
+    tag: "infra",
+    title: "/api/health/models — live LLM canary",
+    body: "Auth-gated endpoint pings every configured Claude tier with a 1-token probe and reports {ok, latency_ms} per layer. Catches the silent failure mode where a model id drifts away from what Anthropic actually serves.",
+  },
+  {
+    date: "May 19, 2026",
+    tag: "feature",
+    title: "Per-agent Workspace — private DM with each AI employee",
+    body: 'Every agent now has its own persistent chat thread. Coach the agent in plain English ("be warmer on price objections"), ask how this week\'s calls went, give context. Memory model: the thread itself + the last 5 call summaries injected as context on every reply.',
+  },
+];
+
+export default function PublicChangelog() {
+  return (
+    <>
+      <PageMeta
+        title="Changelog — Wireline"
+        description="Every shipped improvement to Wireline — features, infrastructure, polish, security. Updated when we ship."
+        path="/changelog"
+      />
+      <div className="min-h-dvh bg-paper relative">
+        <div className="scanline" />
+
+        <header className="border-b border-black/5 bg-white/60 backdrop-blur sticky top-0 z-10">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-2.5 group" aria-label="Wireline home">
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: "#4F1E7B" }}
+              >
+                <WirelineMark className="w-4 h-4 text-on-brand" strokeWidth={130} />
+              </div>
+              <span className="brand-wordmark text-[15px] leading-none !text-[#4F1E7B] !filter-none">
+                WIRELINE
+              </span>
+            </Link>
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink transition-colors"
+            >
+              <ArrowLeft className="w-3 h-3" />
+              Back home
+            </Link>
+          </div>
+        </header>
+
+        <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="mb-10"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <span className="hero-accent-line" style={{ background: "#4F1E7B" }} />
+              <span className="text-[8.5px] uppercase tracking-[0.5em] text-muted/65 font-semibold">
+                Shipping log
+              </span>
+            </div>
+            <h1 className="font-display italic text-4xl sm:text-5xl text-ink leading-tight tracking-tight mb-3">
+              Every change we've shipped.
+            </h1>
+            <p className="text-[13px] text-muted/85 leading-relaxed max-w-prose">
+              Wireline ships almost daily. This page is hand-curated — when a release is worth
+              writing down, it lands here. Subscribe via the in-app Changelog drawer for real-time
+              updates after you sign up.
+            </p>
+          </motion.div>
+
+          <ol className="space-y-6">
+            {ENTRIES.map((entry, idx) => {
+              const meta = TAG_META[entry.tag];
+              const Icon = meta.icon;
+              return (
+                <motion.li
+                  key={`${entry.date}-${entry.title}`}
+                  initial={{ opacity: 0, y: 8 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ duration: 0.4, delay: Math.min(idx * 0.04, 0.4) }}
+                  className="relative pl-4 sm:pl-6"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-0 top-2 w-1.5 h-1.5 rounded-full"
+                    style={{ background: "#4F1E7B" }}
+                  />
+                  <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                    <span className="text-[9px] uppercase tracking-[0.3em] text-muted/65 font-semibold">
+                      {entry.date}
+                    </span>
+                    <span
+                      className={`inline-flex items-center gap-1 text-[8.5px] uppercase tracking-[0.22em] font-semibold px-2 py-0.5 rounded-full border leading-none ${meta.tone}`}
+                    >
+                      <Icon className="w-2.5 h-2.5" strokeWidth={2.2} />
+                      {meta.label}
+                    </span>
+                  </div>
+                  <h2 className="font-display italic text-xl text-ink leading-tight mb-1">
+                    {entry.title}
+                  </h2>
+                  <p className="text-[12.5px] text-ink/80 leading-relaxed">{entry.body}</p>
+                </motion.li>
+              );
+            })}
+          </ol>
+
+          <div className="mt-12 pt-6 border-t border-black/8">
+            <p className="text-[10px] uppercase tracking-[0.32em] text-muted/65 mb-2">Coming up</p>
+            <ul className="text-[12px] text-ink/80 space-y-1 list-disc pl-5">
+              <li>iOS app — listen-in + whisper-coach on the go</li>
+              <li>Recipe marketplace — community-contributed agent templates</li>
+              <li>Annual Wireline Report — every Dec 31, your year in calls</li>
+            </ul>
+          </div>
+        </main>
+      </div>
+    </>
+  );
+}

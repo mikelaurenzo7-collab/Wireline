@@ -440,8 +440,21 @@ router.post("/api/vapi-webhook", async (req, res) => {
     const toolCallRows = await runVapiToolCallsWithConcurrency(toolCalls, (toolCall) =>
       withVapiToolTimeout(
         (async () => {
-          const pushResults: { toolCallId: string; result: string }[] = [];
-          const push = (row: { toolCallId: string; result: string }) => {
+          // Vapi tool-result rows. `destination` is optional — when
+          // present, Vapi transfers the live call to that destination
+          // after speaking `result`. Used by the warm-transfer escalation
+          // path; absent for every other tool result.
+          type ToolResultRow = {
+            toolCallId: string;
+            result: string;
+            destination?: {
+              type: "number";
+              number: string;
+              message?: string;
+            };
+          };
+          const pushResults: ToolResultRow[] = [];
+          const push = (row: ToolResultRow) => {
             pushResults.push(row);
           };
           if (toolCall.function.name === "create_fleet_task") {
@@ -1293,6 +1306,33 @@ router.post("/api/vapi-webhook", async (req, res) => {
           if (toolCall.function.name === "escalate_to_human") {
             try {
               const { reason } = toolCall.function.arguments;
+
+              // Look up this agent's escalation routing config to decide:
+              //   - Warm-transfer the live caller? (handoff_enabled + phone)
+              //   - Or just queue async alerts (default)?
+              // One DB read; failures degrade gracefully to the async path.
+              let warmTransferPhone: string | null = null;
+              if (agent?.id) {
+                try {
+                  const [row] = await drizzle
+                    .select({
+                      phone: schema.agents.escalationPhone,
+                      enabled: schema.agents.escalationHandoffEnabled,
+                    })
+                    .from(schema.agents)
+                    .where(eq(schema.agents.id, agent.id))
+                    .limit(1);
+                  if (row?.enabled && row?.phone && row.phone.trim().length >= 7) {
+                    warmTransferPhone = row.phone.trim();
+                  }
+                } catch (lookupErr: any) {
+                  log.warn("escalate_to_human: warm-transfer lookup failed; using async path", {
+                    agentId: agent.id,
+                    error: lookupErr?.message,
+                  });
+                }
+              }
+
               if (agent?.user_id) {
                 // Pass agent.id so per-agent escalation overrides
                 // (escalation_phone / escalation_email) route the
@@ -1301,16 +1341,37 @@ router.post("/api/vapi-webhook", async (req, res) => {
                 // overrides aren't set.
                 const notifier = new NotificationService(agent.user_id, agent.id);
                 await notifier.sendUrgentAlert({
-                  title: "Agent Escalate to Human",
-                  message: `Agent ${agentVoiceName || "unknown"} — Reason: ${reason}`,
+                  title: warmTransferPhone ? "Live Transfer Incoming" : "Agent Escalate to Human",
+                  message: warmTransferPhone
+                    ? `Caller is being warm-transferred to ${warmTransferPhone} now. Agent: ${agentVoiceName || "unknown"}. Reason: ${reason}`
+                    : `Agent ${agentVoiceName || "unknown"} — Reason: ${reason}`,
                   callId: (payload.call as any)?.id || "unknown",
                 });
               }
-              push({
-                toolCallId: toolCall.id,
-                result:
-                  "Escalation signal sent to human supervisors. If you can transfer the call, do it now, otherwise apologize and say a human will call back.",
-              });
+
+              if (warmTransferPhone) {
+                // Vapi tool-result schema supports a `destination` field
+                // per result. When present, Vapi speaks `result` then
+                // transfers the call to the destination number. Vapi
+                // honours the `message` as the announcement BEFORE the
+                // transfer happens (the caller hears it, the human picks
+                // up to a context-set call).
+                push({
+                  toolCallId: toolCall.id,
+                  result: "Transferring you now — please hold.",
+                  destination: {
+                    type: "number",
+                    number: warmTransferPhone,
+                    message: "Please hold while I connect you with a team member.",
+                  },
+                });
+              } else {
+                push({
+                  toolCallId: toolCall.id,
+                  result:
+                    "Escalation signal sent to human supervisors. Apologize warmly and let the caller know a human will reach out shortly.",
+                });
+              }
             } catch {
               push({
                 toolCallId: toolCall.id,

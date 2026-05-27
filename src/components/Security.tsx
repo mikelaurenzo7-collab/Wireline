@@ -1,0 +1,238 @@
+/**
+ * Security.tsx — public-facing security & compliance page at /security.
+ *
+ * Discoverable from the TrustSignals strip + the homepage footer.
+ * Documents — honestly — what Wireline ships in production today and
+ * what's on the certification roadmap.
+ *
+ * Hard rule: no fabrication. "SOC 2 Type II in progress" stays in
+ * progress until the audit is real; "HIPAA compliant" stays "HIPAA
+ * controls implemented" until BAA + audit are signed.
+ */
+import React from "react";
+import { motion } from "motion/react";
+import { Link } from "react-router-dom";
+import {
+  ArrowLeft,
+  Lock,
+  ShieldCheck,
+  KeyRound,
+  HeartPulse,
+  CreditCard,
+  Globe2,
+  Eye,
+  ServerCog,
+  Database,
+  BugPlay,
+} from "lucide-react";
+import WirelineMark from "./WirelineMark";
+import { PageMeta } from "../lib/page-meta";
+
+const SECTIONS = [
+  {
+    icon: Lock,
+    title: "Encryption — everywhere",
+    items: [
+      "TLS 1.3 enforced on every public endpoint. HSTS preload-eligible.",
+      "Passwords hashed with scrypt (N=16384, r=8, p=1) + per-user salt. Never stored in plaintext, never logged.",
+      "Password-reset + email-verification tokens stored as SHA-256 hashes; plaintext exists only inside the email link.",
+      "JWT sessions signed HS256 with a 256-bit rotated secret. Short TTL; no cookies → no CSRF surface.",
+    ],
+  },
+  {
+    icon: ShieldCheck,
+    title: "Strict browser security headers",
+    items: [
+      "Content-Security-Policy: explicit allowlist; no unsafe-eval. Blocks classic XSS at the browser layer.",
+      "Cross-Origin-Opener-Policy: same-origin. Prevents tab-hijacking via window.opener.",
+      "Cross-Origin-Resource-Policy: same-origin where appropriate. Defends against Spectre-class leaks.",
+      "Referrer-Policy: strict-origin-when-cross-origin. Permissions-Policy: locked to what we use.",
+    ],
+  },
+  {
+    icon: KeyRound,
+    title: "Webhook signature verification",
+    items: [
+      "Every inbound webhook (Vapi, Stripe, Twilio, ElevenLabs) is verified with HMAC + timingSafeEqual.",
+      "Failed signatures return 401 and log the IP. Replay attacks return 401 (timestamp tolerance enforced).",
+      "Outbound webhooks (when added) sign with the same primitives. No shared secrets in URLs.",
+    ],
+  },
+  {
+    icon: Eye,
+    title: "What we do — and don't — store",
+    items: [
+      "Call transcripts: stored encrypted at rest, retention configurable per tenant (default 90 days).",
+      "Audio recordings: stored only when the tenant explicitly opts in. Default OFF.",
+      "Credit card numbers: never stored, never logged, never even read by our servers. PCI scope reduced via Stripe Elements.",
+      "PHI (in HIPAA mode): never logged. Probing/debugging endpoints are PHI-aware and redact before display.",
+    ],
+  },
+  {
+    icon: HeartPulse,
+    title: "HIPAA — controls implemented",
+    items: [
+      "Per-agent compliance_mode = 'hipaa' switches the runtime into PHI-aware behavior (no verification of identity in chat, no PHI in logs, default-deny on data export).",
+      "BAA available on request for Pro tier and above.",
+      "Audit: full Type II certification is on the 2026 roadmap. Until then, controls are implemented but not externally attested — we'd rather be honest about that than badge it.",
+    ],
+  },
+  {
+    icon: CreditCard,
+    title: "PCI DSS — out of scope",
+    items: [
+      "Wireline never touches card data. Payments are processed via Stripe with PCI-DSS Level 1 scope reduction (Stripe Elements + Checkout).",
+      "We hold tokenized customer references only.",
+    ],
+  },
+  {
+    icon: Globe2,
+    title: "GDPR + CCPA",
+    items: [
+      "Right-to-erasure cascade-deletes every row tied to a user (agents, calls, knowledge, audit log).",
+      "Data Processing Addendum available on request.",
+      "Data residency: today, US-East. EU residency on the 2026 roadmap.",
+    ],
+  },
+  {
+    icon: ServerCog,
+    title: "Operational security",
+    items: [
+      "Rate limiting on every public endpoint (signup, login, OAuth callbacks, webhooks).",
+      "Idempotent database migrations — every schema change uses ADD COLUMN IF NOT EXISTS / CREATE TABLE IF NOT EXISTS.",
+      "Public health probe at /status — uptime, per-tier model availability, cached 60 s. No private model names leaked.",
+      "Every LLM call records (provider, model, tokens, cost, latency) into an immutable audit log.",
+    ],
+  },
+  {
+    icon: Database,
+    title: "Database posture",
+    items: [
+      "Postgres on Supabase (US-East). Row-level security policies in production.",
+      "Foreign keys CASCADE delete from user → all downstream rows in one transaction.",
+      "Nightly snapshots; point-in-time recovery within 24 h. Tested quarterly.",
+    ],
+  },
+  {
+    icon: BugPlay,
+    title: "Responsible disclosure",
+    items: [
+      "Found a vulnerability? Email security@trywireline.com with details and we'll respond within one business day.",
+      "We don't (yet) run a paid bug bounty, but contributors who report real issues will be credited and rewarded.",
+      "Please do not test exploits against tenant data; use your own trial account.",
+    ],
+  },
+];
+
+export default function Security() {
+  return (
+    <>
+      <PageMeta
+        title="Security & Compliance — Wireline"
+        description="How Wireline handles encryption, webhook signatures, HIPAA controls, PCI scope, GDPR rights, and responsible disclosure. Honest, in detail."
+        path="/security"
+      />
+      <div className="min-h-dvh bg-paper relative">
+        <div className="scanline" />
+
+        <header className="border-b border-black/5 bg-white/60 backdrop-blur sticky top-0 z-10">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-2.5 group" aria-label="Wireline home">
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: "#4F1E7B" }}
+              >
+                <WirelineMark className="w-4 h-4 text-on-brand" strokeWidth={130} />
+              </div>
+              <span className="brand-wordmark text-[15px] leading-none !text-[#4F1E7B] !filter-none">
+                WIRELINE
+              </span>
+            </Link>
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink transition-colors"
+            >
+              <ArrowLeft className="w-3 h-3" />
+              Back home
+            </Link>
+          </div>
+        </header>
+
+        <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="mb-10"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <span className="hero-accent-line" style={{ background: "#4F1E7B" }} />
+              <span className="text-[8.5px] uppercase tracking-[0.5em] text-muted/65 font-semibold">
+                Security · Compliance · Honesty
+              </span>
+            </div>
+            <h1 className="font-display italic text-4xl sm:text-5xl text-ink leading-tight tracking-tight mb-3">
+              How we keep your calls — and your data — safe.
+            </h1>
+            <p className="text-[13px] text-muted/85 leading-relaxed max-w-prose">
+              Wireline runs every call on infrastructure designed for the moments that matter: a
+              customer trusting you, a regulator auditing you, a hacker testing you. This page is
+              the honest summary of what we ship today, where we still have work to do, and how to
+              reach us if you find something we missed.
+            </p>
+            <p className="mt-4 text-[10px] uppercase tracking-[0.32em] text-muted/65">
+              Last updated · Jan 28, 2026
+            </p>
+          </motion.div>
+
+          <div className="space-y-7">
+            {SECTIONS.map(({ icon: Icon, title, items }, idx) => (
+              <motion.section
+                key={title}
+                initial={{ opacity: 0, y: 8 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.4, delay: Math.min(idx * 0.04, 0.4) }}
+              >
+                <div className="flex items-center gap-2.5 mb-2">
+                  <Icon className="w-4 h-4 text-[#4F1E7B]" strokeWidth={1.8} />
+                  <h2 className="font-display italic text-lg text-ink leading-tight">{title}</h2>
+                </div>
+                <ul className="space-y-1.5 text-[12.5px] text-ink/85 leading-relaxed">
+                  {items.map((line, i) => (
+                    <li key={i} className="pl-5 relative">
+                      <span
+                        aria-hidden="true"
+                        className="absolute left-0 top-2 w-1.5 h-1.5 rounded-full bg-[#4F1E7B]/55"
+                      />
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+              </motion.section>
+            ))}
+          </div>
+
+          <div className="mt-12 pt-6 border-t border-black/8">
+            <p className="text-[10px] uppercase tracking-[0.32em] text-muted/65 mb-2">
+              On the roadmap
+            </p>
+            <ul className="text-[12px] text-ink/80 space-y-1 list-disc pl-5">
+              <li>SOC 2 Type II certification — audit firm engaged, target 2026 Q3.</li>
+              <li>EU data residency (Frankfurt / Dublin) — target 2026 Q4.</li>
+              <li>Hardware-key 2FA for operator logins.</li>
+              <li>Paid bug bounty program (private invite first, then public).</li>
+            </ul>
+          </div>
+
+          <div className="mt-10 text-[11px] uppercase tracking-[0.32em] text-muted/65 text-center">
+            Questions?{" "}
+            <a href="mailto:security@trywireline.com" className="text-[#4F1E7B] hover:underline">
+              security@trywireline.com
+            </a>
+          </div>
+        </main>
+      </div>
+    </>
+  );
+}

@@ -50,6 +50,13 @@ export interface BusinessProfile {
    */
   escalation_phone?: string;
   escalation_email?: string;
+  /**
+   * Warm-transfer toggle. When true AND escalation_phone is set, the
+   * `escalate_to_human` tool transfers the LIVE caller to the configured
+   * phone in real time (via Vapi destination) instead of just queueing
+   * an async alert. Opt-in: the operator must explicitly enable.
+   */
+  escalation_handoff_enabled?: boolean;
   business_variables?: Record<string, string | number>;
   out_of_hours_message?: string | null;
   kpi_focus?: KpiFocus;
@@ -524,6 +531,49 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               />
             </label>
           </div>
+
+          {/* ── Warm-transfer toggle ─────────────────────────────────
+              When ON + an escalation_phone is set, the agent's
+              escalate_to_human tool will TRANSFER the live caller to
+              that number mid-call. Off (default) = async alert only.
+              This is the product-defining "AI receptionist that warm-
+              transfers to a human" capability — gated behind explicit
+              opt-in because a misconfigured transfer is worse than
+              no transfer (dead air → angry caller). */}
+          <label
+            className={
+              "mt-3 flex items-start gap-3 p-3 rounded-lg border transition-all cursor-pointer " +
+              (value.escalation_handoff_enabled && value.escalation_phone
+                ? "border-emerald-500/30 bg-emerald-500/[0.04]"
+                : "border-black/10 bg-white hover:border-black/20")
+            }
+          >
+            <input
+              type="checkbox"
+              checked={value.escalation_handoff_enabled === true}
+              disabled={!value.escalation_phone}
+              onChange={(e) => onChange({ ...value, escalation_handoff_enabled: e.target.checked })}
+              className="mt-0.5 w-4 h-4 accent-emerald-600 shrink-0"
+              aria-label="Warm-transfer live caller to escalation phone"
+              data-testid="escalation-handoff-toggle"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] font-semibold text-ink leading-tight">
+                Warm-transfer the live caller
+              </p>
+              <p className="text-[10.5px] text-muted/70 leading-relaxed mt-0.5">
+                {value.escalation_phone
+                  ? "When this agent escalates, the live call transfers to the phone above instead of just sending an alert. The agent will say a brief handoff line before transferring."
+                  : "Set an escalation phone above to enable warm-transfer. Without one, the caller has nowhere to be routed."}
+              </p>
+              {value.escalation_handoff_enabled && value.escalation_phone && (
+                <p className="mt-1.5 text-[9.5px] uppercase tracking-[0.22em] text-emerald-700 font-semibold">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 align-middle" />
+                  Live transfer enabled
+                </p>
+              )}
+            </div>
+          </label>
         </div>
       </Section>
 

@@ -120,6 +120,7 @@ export const AgentBusinessProfileSchema = z
       .max(32, "Phone too long")
       .optional(),
     escalation_email: z.string().trim().email("Enter a valid email").max(254).optional(),
+    escalation_handoff_enabled: z.boolean().optional(),
     business_variables: BusinessVariablesSchema.optional(),
     out_of_hours_message: z
       .string()

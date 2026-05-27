@@ -20,6 +20,8 @@ const Compare = lazy(() => import("./pages/Compare"));
 const About = lazy(() => import("./pages/About"));
 const Showcase = lazy(() => import("./pages/Showcase"));
 const Status = lazy(() => import("./components/Status"));
+const PublicChangelog = lazy(() => import("./components/PublicChangelog"));
+const Security = lazy(() => import("./components/Security"));
 
 const PrivacyPolicy = lazy(() =>
   import("./components/LegalPage").then((m) => ({ default: m.PrivacyPolicy })),
@@ -202,6 +204,29 @@ function AppContent() {
       <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
         <ErrorBoundary>
           <Status />
+        </ErrorBoundary>
+      </Suspense>
+    );
+  }
+  // /changelog — public shipping log. Same pattern as /status —
+  // pre-auth so it serves as both a trust signal AND a discoverable
+  // record for prospects evaluating velocity.
+  if (location.pathname === "/changelog") {
+    return (
+      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+        <ErrorBoundary>
+          <PublicChangelog />
+        </ErrorBoundary>
+      </Suspense>
+    );
+  }
+  // /security — public security & compliance posture. Linked from
+  // TrustSignals + footer. Honest, in-detail, never fabricated.
+  if (location.pathname === "/security") {
+    return (
+      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+        <ErrorBoundary>
+          <Security />
         </ErrorBoundary>
       </Suspense>
     );

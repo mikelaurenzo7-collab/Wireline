@@ -25,6 +25,8 @@ const AuditLog = lazy(() => import("../components/AuditLog"));
 const LiveOps = lazy(() => import("../pages/CommandCenter"));
 const HelpCenter = lazy(() => import("../components/HelpCenter"));
 const Status = lazy(() => import("../components/Status"));
+const PublicChangelog = lazy(() => import("../components/PublicChangelog"));
+const Security = lazy(() => import("../components/Security"));
 const Pipeline = lazy(() => import("../components/Pipeline"));
 const FounderDashboard = lazy(() => import("../components/FounderDashboard"));
 const SupervisorCockpit = lazy(() => import("../components/SupervisorCockpit"));
@@ -245,6 +247,26 @@ export default function AppRoutes() {
               <PageTransition>
                 <ErrorBoundary>
                   <Status />
+                </ErrorBoundary>
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/changelog"
+            element={
+              <PageTransition>
+                <ErrorBoundary>
+                  <PublicChangelog />
+                </ErrorBoundary>
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/security"
+            element={
+              <PageTransition>
+                <ErrorBoundary>
+                  <Security />
                 </ErrorBoundary>
               </PageTransition>
             }

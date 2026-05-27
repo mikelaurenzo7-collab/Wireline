@@ -174,13 +174,21 @@ export default function TrustSignals() {
       {/* Status-page deep link — the single most under-rated trust
           signal in B2B SaaS. If we publish uptime, prospects believe
           we run a real shop. */}
-      <div className="mt-3 flex items-center justify-end gap-3 text-[9px] uppercase tracking-[0.32em] text-muted/65">
+      <div className="mt-3 flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-[9px] uppercase tracking-[0.32em] text-muted/65">
         <a
           href="/status"
           className="inline-flex items-center gap-1.5 hover:text-ink transition-colors"
         >
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dot-online" />
           System status
+        </a>
+        <span className="text-muted/30">·</span>
+        <a href="/security" className="hover:text-ink transition-colors">
+          Security
+        </a>
+        <span className="text-muted/30">·</span>
+        <a href="/changelog" className="hover:text-ink transition-colors">
+          Changelog
         </a>
         <span className="text-muted/30">·</span>
         <a href="/pricing" className="hover:text-ink transition-colors">

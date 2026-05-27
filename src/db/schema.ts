@@ -276,6 +276,14 @@ export const agents = pgTable(
      */
     escalationPhone: text("escalation_phone"),
     escalationEmail: text("escalation_email"),
+    /**
+     * Warm-transfer toggle. When TRUE and escalation_phone is set, the
+     * `escalate_to_human` tool returns a Vapi `destination` so the LIVE
+     * caller is transferred to escalation_phone in real time instead of
+     * just queueing an async SMS/email alert. The product-defining
+     * "AI receptionist that warm-transfers to a human" promise.
+     */
+    escalationHandoffEnabled: boolean("escalation_handoff_enabled").default(false),
     businessVariables: jsonb("business_variables"),
     flowConfig: jsonb("flow_config"),
     outOfHoursMessage: text("out_of_hours_message"),
