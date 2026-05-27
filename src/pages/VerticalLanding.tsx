@@ -117,7 +117,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "home-services",
     metaTitle: "Wireline for Home Services — AI Receptionist that Books Every Call",
     metaDescription:
-      "AI phone agent for HVAC, plumbing, electrical, and roofing companies. Never miss another after-hours service call. Books appointments, dispatches techs, syncs with your CRM. Free 14-day trial.",
+      "AI voice + email agent for HVAC, plumbing, electrical, and roofing teams. Answer after-hours calls, book jobs, and follow up. 14-day free trial.",
     eyebrow: "For Home Services Pros",
     headline: "Stop missing $500 after-hours calls.",
     subhead:
@@ -179,7 +179,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "medical",
     metaTitle: "Wireline for Medical Practices — AI Patient Intake on Every Call",
     metaDescription:
-      "AI phone agent for dental, chiropractic, med spa, and primary care practices. Handles patient intake demos, appointments, cancellations, and compliance-aware handoff. Call the medical demo.",
+      "AI voice + email agent for dental, med spa, chiropractic, and primary care practices. Book appointments and manage intake. Call the medical demo.",
     eyebrow: "For Medical Practices",
     headline: "Patients waiting on hold becomes patients on the schedule.",
     subhead:
@@ -238,7 +238,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "legal",
     metaTitle: "Wireline for Law Firms — AI Intake That Captures Every New Matter",
     metaDescription:
-      "AI phone agent for law firms — captures new client intakes, qualifies the matter type, schedules consults, and uses attorney-client privileged language by default. Built for plaintiff, family, criminal, and small business practices.",
+      "AI voice + email intake for law firms. Capture new matters, qualify urgency, schedule consults, and route conflict checks. Call the legal demo.",
     eyebrow: "For Law Firms",
     headline: "Every new client call captured. Every consult booked.",
     subhead:
@@ -297,7 +297,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "real-estate",
     metaTitle: "Wireline for Real Estate — AI Lead Qualifier on Every Listing Call",
     metaDescription:
-      "AI phone agent for real estate brokerages and teams — qualifies buyers, books showings, follows up on cold leads, and syncs with HubSpot/Salesforce. Never lose another lead to a missed call.",
+      "AI voice + email agent for real estate teams. Qualify buyers, book showings, revive cold leads, and sync CRM notes. 14-day free trial.",
     eyebrow: "For Real Estate Agents & Brokerages",
     headline: "Every lead worked. Every showing booked.",
     subhead:
@@ -364,7 +364,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "personal",
     metaTitle: "Wireline for Everyone — Your AI Handles the Calls You Hate",
     metaDescription:
-      "Personal AI assistant that makes the phone calls you don't want to make. Debt negotiation, appointment booking, customer service disputes, returns — your AI handles it. Starts at $49/mo.",
+      "Personal AI voice assistant for calls you avoid: appointments, customer service, billing disputes, returns, and follow-ups. Starts at $49/mo.",
     eyebrow: "For everyone who hates the phone",
     headline: "Never make an awkward call again.",
     subhead:
@@ -428,7 +428,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "insurance",
     metaTitle: "Wireline for Insurance Agencies — AI Quote Intake + Renewal Follow-Up",
     metaDescription:
-      "AI phone agent for insurance agencies: handles quote requests 24/7, captures FNOL (first notice of loss) details, runs renewal follow-up campaigns. Free 14-day trial.",
+      "AI voice + email agent for insurance agencies. Capture quote intake, FNOL details, renewal follow-up, and producer-ready notes. Free trial.",
     eyebrow: "For Insurance Agencies",
     headline: "Every quote request answered. Every renewal followed up.",
     subhead:
@@ -487,7 +487,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "restaurants",
     metaTitle: "Wireline for Restaurants — AI Phone Host for Reservations + Takeout",
     metaDescription:
-      "AI phone agent for restaurants, bars, and hospitality. Takes reservations, manages waitlists, captures takeout orders, handles allergen/special-request questions. Never miss a Saturday-night call again.",
+      "AI voice + email host for restaurants. Take reservations, capture takeout orders, handle event inquiries, and follow up by SMS. Free trial.",
     eyebrow: "For Restaurants + Hospitality",
     headline: "The phone rings during dinner rush. The agent picks up.",
     subhead:
@@ -546,7 +546,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "sales",
     metaTitle: "Wireline for Sales Teams — AI SDR for Outbound + Inbound Lead Qualification",
     metaDescription:
-      "AI sales development rep that runs outbound calling campaigns at scale, qualifies inbound leads in under 90 seconds, books meetings on your reps' calendars. Free 14-day trial.",
+      "AI voice + email SDR for sales teams. Run outbound campaigns, qualify inbound leads, book meetings, and sync CRM activity. Free trial.",
     eyebrow: "For Sales + SDR Teams",
     headline: "Your AI SDR works the list while your reps work the calls.",
     subhead:
@@ -613,10 +613,27 @@ export function getVerticalConfig(slug: VerticalKey): VerticalConfig {
 export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
   const cfg = WEDGES[slug];
   if (!cfg) return null;
+  const faqStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: cfg.faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.a,
+      },
+    })),
+  };
 
   return (
     <div className="min-h-dvh relative bg-paper text-ink">
-      <PageMeta title={cfg.metaTitle} description={cfg.metaDescription} path={`/for/${slug}`} />
+      <PageMeta
+        title={cfg.metaTitle}
+        description={cfg.metaDescription}
+        path={`/for/${slug}`}
+        structuredData={faqStructuredData}
+      />
 
       {/* Aurora backdrop — toned down. The wedge pages compete with
           /pricing for sales attention; matching the visual density of

@@ -37,7 +37,7 @@ export default function About() {
     <div className="min-h-dvh relative bg-paper text-ink">
       <PageMeta
         title="About Wireline — Built by an Operator, for Operators"
-        description="Wireline is a solo-founder voice-AI platform built by Mike Laurenzo. Mission, principles, and the infra stack that powers every customer call."
+        description="Wireline is a solo-founder AI voice + email agent platform built by Mike Laurenzo. Mission, principles, and the infra stack behind every customer conversation."
         path="/about"
       />
 

@@ -5,6 +5,7 @@ import { Lock, AlertTriangle, Check } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import WirelineMark from "../components/WirelineMark";
 import { getPasswordPolicyError } from "../lib/password-policy";
+import { PageMeta } from "../lib/page-meta";
 
 /**
  * /reset-password?token=<raw>
@@ -95,6 +96,12 @@ export default function ResetPassword() {
 
   return (
     <div className="min-h-dvh flex items-center justify-center relative overflow-hidden bg-paper">
+      <PageMeta
+        title="Reset Password"
+        description="Reset your Wireline account password."
+        path="/reset-password"
+        noIndex
+      />
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div
           className="absolute -top-[25%] -left-[15%] w-[70vw] h-[70vw] max-w-[640px] max-h-[640px] rounded-full"
