@@ -173,9 +173,10 @@ async function processConversationUpdateAsync(
         })
         .where(eq(schema.signalPresence.id, callId));
 
-      // Send notification
+      // Send notification — pass agentId so per-agent escalation
+      // overrides (escalation_phone / escalation_email) are honored.
       const { NotificationService } = await import("./notifications");
-      const notifier = new NotificationService(userId);
+      const notifier = new NotificationService(userId, agentId);
       await notifier.sendUrgentAlert({
         title: "High Escalation Risk Detected",
         message: `Live monitoring detected a high-stress situation: ${result.reason}`,

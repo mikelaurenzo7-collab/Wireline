@@ -1485,6 +1485,8 @@ export default function FleetSettings() {
                             compliance_mode: selectedAgent.compliance_mode,
                             disallowed_topics: selectedAgent.disallowed_topics,
                             escalation_keywords: selectedAgent.escalation_keywords,
+                            escalation_phone: selectedAgent.escalation_phone,
+                            escalation_email: selectedAgent.escalation_email,
                             business_variables: selectedAgent.business_variables,
                             out_of_hours_message: selectedAgent.out_of_hours_message,
                             kpi_focus: selectedAgent.kpi_focus,

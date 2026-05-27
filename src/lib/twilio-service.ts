@@ -419,3 +419,72 @@ export async function sendManagerAlert(
     };
   }
 }
+
+/**
+ * Send an SMS alert to an EXPLICITLY supplied destination phone — used
+ * by the per-agent escalation override path. Bypasses
+ * `managerAlertsEnabled` (the per-agent override IS the operator's
+ * opt-in) but still respects all carrier guardrails (DNC, business
+ * hours, etc.) via buildMessagePayload's `ignoreMessagingToggle: true`
+ * flag, mirroring sendManagerAlert.
+ */
+export async function sendDirectAlert(
+  userId: string,
+  destinationPhone: string,
+  params: { title: string; message: string; callId?: string },
+): Promise<TwilioSendResult> {
+  // Basic input sanity. The UI validator already enforces > 7 chars +
+  // E.164-ish, but the boundary here is the network — be defensive.
+  const to = (destinationPhone || "").trim();
+  if (!to || to.length < 7) {
+    return {
+      ok: false,
+      configured: isTwilioConfigured(),
+      enabled: false,
+      reason: "Per-agent escalation phone is missing or too short.",
+    };
+  }
+
+  const body = [params.title, params.message, params.callId ? `Call ID: ${params.callId}` : null]
+    .filter(Boolean)
+    .join("\n");
+
+  const client = getTwilioClient();
+  const prepared = await buildMessagePayload(
+    userId,
+    { to, body, channel: "sms" },
+    { ignoreMessagingToggle: true },
+  );
+
+  if (prepared.result) return prepared.result;
+  if (!client || !prepared.payload) {
+    return {
+      ok: false,
+      configured: false,
+      enabled: false,
+      reason: "Twilio direct alerting is unavailable.",
+    };
+  }
+
+  try {
+    const message = await client.messages.create(prepared.payload as any);
+    return {
+      ok: true,
+      configured: true,
+      enabled: true,
+      sid: message.sid,
+      status: message.status ?? null,
+      to: message.to || prepared.payload.to,
+      channel: "sms",
+    };
+  } catch (error) {
+    log.warn("Twilio per-agent escalation alert failed", { error: getErrorMessage(error) });
+    return {
+      ok: false,
+      configured: true,
+      enabled: true,
+      reason: "Twilio rejected the per-agent escalation message.",
+      channel: "sms",
+    };
+  }
+}

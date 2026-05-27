@@ -1063,9 +1063,8 @@ router.post(
     const force = String(req.query.force || "").toLowerCase() === "true";
 
     try {
-      const { generateSoundEffect, elevenLabsConfigured } = await import(
-        "../lib/elevenlabs-client"
-      );
+      const { generateSoundEffect, elevenLabsConfigured } =
+        await import("../lib/elevenlabs-client");
       if (!elevenLabsConfigured()) {
         return res.status(500).json({ error: "ELEVENLABS_API_KEY not set" });
       }
@@ -1555,6 +1554,51 @@ router.post(
       return res.json({ ok: true, message: "Performance goals table ensured." });
     } catch (e: any) {
       log.error("migrate-goals failed", { error: e?.message });
+      return res.status(500).json({ error: e?.message || "Migration failed" });
+    }
+  },
+);
+
+/**
+ * Per-agent escalation routing (migration 0015 — 2026 audit pass).
+ * Adds two columns to wireline_agents so different agents inside a
+ * tenant can route the `escalate_to_human` tool to different humans:
+ *
+ *   - escalation_phone : SMS destination (E.164 format)
+ *   - escalation_email : Email destination for non-instant escalation
+ *
+ * When both are NULL the handler falls back to the tenant-level
+ * twilio_manager_alert_number (existing behaviour), so this migration
+ * is fully backward-compatible — no agent's behaviour changes until
+ * the operator sets a value.
+ *
+ * Idempotent: ADD COLUMN IF NOT EXISTS. Safe to re-run on every deploy.
+ */
+router.post(
+  "/api/admin/migrate-escalation-routing",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+    try {
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_agents
+        ADD COLUMN IF NOT EXISTS escalation_phone text;
+      `);
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_agents
+        ADD COLUMN IF NOT EXISTS escalation_email text;
+      `);
+
+      log.info("migrate-escalation-routing completed", {
+        userId: req.user?.id || "migration-token",
+      });
+      return res.json({
+        ok: true,
+        message:
+          "Per-agent escalation routing columns ensured (escalation_phone, escalation_email).",
+      });
+    } catch (e: any) {
+      log.error("migrate-escalation-routing failed", { error: e?.message });
       return res.status(500).json({ error: e?.message || "Migration failed" });
     }
   },

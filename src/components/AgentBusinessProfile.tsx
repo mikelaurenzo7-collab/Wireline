@@ -41,6 +41,15 @@ export interface BusinessProfile {
   compliance_mode?: ComplianceMode;
   disallowed_topics?: string[];
   escalation_keywords?: string[];
+  /**
+   * Where this agent's `escalate_to_human` tool routes. Overrides the
+   * tenant-wide `twilio_manager_alert_number`. Both optional — if
+   * neither is set the handler falls back to tenant defaults.
+   *   - escalation_phone : E.164 SMS destination
+   *   - escalation_email : Address to email on non-instant escalations
+   */
+  escalation_phone?: string;
+  escalation_email?: string;
   business_variables?: Record<string, string | number>;
   out_of_hours_message?: string | null;
   kpi_focus?: KpiFocus;
@@ -458,6 +467,64 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
           placeholder="e.g. lawsuit, cancel my account, speak to a manager"
           disabled={(value.escalation_keywords ?? []).length >= 24}
         />
+
+        {/* ── Escalation routing — per-agent override ──────────────────
+            When this agent fires the escalate_to_human tool, where does
+            the alert go? Both fields are optional. If empty, the handler
+            falls back to the tenant-wide Manager Alert Number set in
+            Settings → Carrier. Setting these lets one tenant route a
+            sales agent's escalations to the sales manager and a support
+            agent's to the support lead. */}
+        <div className="mt-4 pt-4 border-t border-black/5">
+          <p className="text-[9px] uppercase tracking-[0.35em] text-muted/65 font-semibold mb-1">
+            Route alerts to (this agent only)
+          </p>
+          <p className="text-[10px] text-muted/65 mb-3 leading-relaxed">
+            Both optional. Leave blank to use the tenant-wide Manager Alert Number from{" "}
+            <a href="/admin?tab=carrier" className="text-[#4F1E7B] hover:underline">
+              Settings → Carrier
+            </a>
+            .
+          </p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <label className="block">
+              <span className="text-[9px] uppercase tracking-[0.3em] text-muted/65 font-semibold block mb-1">
+                Escalation phone (SMS)
+              </span>
+              <input
+                type="tel"
+                inputMode="tel"
+                autoComplete="off"
+                value={value.escalation_phone ?? ""}
+                onChange={(e) =>
+                  onChange({ ...value, escalation_phone: e.target.value.trim() || undefined })
+                }
+                placeholder="+1 555 123 4567"
+                aria-label="Per-agent escalation phone number"
+                className="w-full h-9 px-3 rounded-lg border border-black/12 bg-white text-[12px] focus:outline-none focus:border-[#4F1E7B]/40 focus:ring-2 focus:ring-[#4F1E7B]/12 transition-all"
+                data-testid="escalation-phone-input"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[9px] uppercase tracking-[0.3em] text-muted/65 font-semibold block mb-1">
+                Escalation email
+              </span>
+              <input
+                type="email"
+                inputMode="email"
+                autoComplete="off"
+                value={value.escalation_email ?? ""}
+                onChange={(e) =>
+                  onChange({ ...value, escalation_email: e.target.value.trim() || undefined })
+                }
+                placeholder="lead@yourcompany.com"
+                aria-label="Per-agent escalation email"
+                className="w-full h-9 px-3 rounded-lg border border-black/12 bg-white text-[12px] focus:outline-none focus:border-[#4F1E7B]/40 focus:ring-2 focus:ring-[#4F1E7B]/12 transition-all"
+                data-testid="escalation-email-input"
+              />
+            </label>
+          </div>
+        </div>
       </Section>
 
       {/* ── Variables ───────────────────────────────────────────────── */}

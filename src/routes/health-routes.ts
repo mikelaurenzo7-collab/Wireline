@@ -157,6 +157,103 @@ router.get("/integrations", healthRateLimiter, authenticateUser, (_req, res) => 
 });
 
 /**
+ * Public, sanitized health probe. No auth required. Cached aggressively
+ * (60s in-memory) so this can't be used to DoS the upstream Anthropic
+ * probe; rate-limited by the same middleware as the other /health/* paths.
+ *
+ * Returns ONLY:
+ *   - overall: "operational" | "degraded" | "outage"
+ *   - components: { voice_runtime, voice_fallback, reasoning } each as
+ *     "operational" | "degraded" | "outage" — no model names, no
+ *     latency numbers, no provider details. Public consumers don't
+ *     need to know we run Sonnet vs Opus; they need to know "is the
+ *     line up?" and that's all this endpoint says.
+ *   - last_checked: ISO timestamp of the cache fill
+ *
+ * Designed to be consumable by:
+ *   - The public /status marketing page on trywireline.com
+ *   - External uptime monitors (Better Uptime, Pingdom, etc.)
+ *   - The TrustSignals strip's green "system status" pill
+ */
+let publicHealthCache: {
+  body: any;
+  expiresAt: number;
+} | null = null;
+const PUBLIC_HEALTH_TTL_MS = 60_000;
+
+function summarize(
+  probe: { ok: boolean; error?: string } | null | undefined,
+): "operational" | "degraded" | "outage" | "unknown" {
+  if (!probe) return "unknown";
+  if (probe.ok) return "operational";
+  // Distinguish "configured but failing" (outage) from "not configured"
+  // (degraded — we don't have visibility, but service may still work
+  // via fallback). Heuristic: missing API key → degraded.
+  if (probe.error && /not configured|missing/i.test(probe.error)) {
+    return "degraded";
+  }
+  return "outage";
+}
+
+router.get("/public", healthRateLimiter, async (_req, res) => {
+  const now = Date.now();
+  if (publicHealthCache && publicHealthCache.expiresAt > now) {
+    res.setHeader("X-Wireline-Cache", "HIT");
+    return res.json(publicHealthCache.body);
+  }
+
+  // Run the same Anthropic probes as /models, but discard everything
+  // except the ok flag. Voice fallback is reported by env presence only
+  // (matches the /models endpoint's behavior).
+  const [voice, reasoning] = await Promise.all([
+    probeAnthropicModel(VAPI_TENANT_DEFAULT_MODEL).catch((err: any) => ({
+      ok: false,
+      latency_ms: 0,
+      model: "",
+      error: err?.message ?? "probe failed",
+    })),
+    probeAnthropicModel(CLAUDE_MODEL_DEFAULT).catch((err: any) => ({
+      ok: false,
+      latency_ms: 0,
+      model: "",
+      error: err?.message ?? "probe failed",
+    })),
+  ]);
+
+  const components = {
+    voice_runtime: summarize(voice),
+    voice_fallback: process.env.GEMINI_API_KEY ? "operational" : "degraded",
+    reasoning: summarize(reasoning),
+  } as const;
+
+  // Overall = worst component. Order: outage > degraded > operational.
+  const order: Record<string, number> = { operational: 0, degraded: 1, outage: 2, unknown: 1 };
+  const worst = Object.values(components).reduce(
+    (acc, s) => (order[s] > order[acc] ? s : acc),
+    "operational" as string,
+  );
+  const overallMap: Record<string, "operational" | "degraded" | "outage"> = {
+    operational: "operational",
+    degraded: "degraded",
+    outage: "outage",
+    unknown: "degraded",
+  };
+
+  const body = {
+    overall: overallMap[worst] ?? "degraded",
+    components,
+    last_checked: new Date().toISOString(),
+    // Don't leak our cache TTL in headers, but DO publish a "next_check_at"
+    // hint so external monitors can throttle politely.
+    next_check_at: new Date(now + PUBLIC_HEALTH_TTL_MS).toISOString(),
+  };
+  publicHealthCache = { body, expiresAt: now + PUBLIC_HEALTH_TTL_MS };
+  res.setHeader("X-Wireline-Cache", "MISS");
+  res.setHeader("Cache-Control", "public, max-age=60");
+  res.json(body);
+});
+
+/**
  * Authenticated live-probe of every configured LLM tier. The goal is to
  * catch the silent failure mode where a model id in our constants drifts
  * away from what the provider actually serves (e.g. a versioned alias

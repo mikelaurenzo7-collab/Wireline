@@ -259,6 +259,23 @@ export const agents = pgTable(
     complianceMode: text("compliance_mode").default("standard"),
     disallowedTopics: text("disallowed_topics").array(),
     escalationKeywords: text("escalation_keywords").array(),
+    /**
+     * Per-agent escalation routing. When set, the `escalate_to_human`
+     * tool routes here INSTEAD of the tenant-wide
+     * `wireline_settings.twilio_manager_alert_number`. Lets operators
+     * route sales escalations to the sales manager and support
+     * escalations to the support lead without splitting tenants.
+     *
+     * - escalationPhone : SMS destination (E.164 format)
+     * - escalationEmail : Email destination for non-instant escalations
+     *                     (delivered via Resend on the same job that
+     *                     posts to Slack + SMS)
+     *
+     * If BOTH are NULL the handler falls back to the tenant defaults,
+     * preserving existing behaviour for accounts that haven't migrated.
+     */
+    escalationPhone: text("escalation_phone"),
+    escalationEmail: text("escalation_email"),
     businessVariables: jsonb("business_variables"),
     flowConfig: jsonb("flow_config"),
     outOfHoursMessage: text("out_of_hours_message"),

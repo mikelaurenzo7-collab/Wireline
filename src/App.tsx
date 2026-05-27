@@ -19,6 +19,7 @@ const VerticalLanding = lazy(() => import("./pages/VerticalLanding"));
 const Compare = lazy(() => import("./pages/Compare"));
 const About = lazy(() => import("./pages/About"));
 const Showcase = lazy(() => import("./pages/Showcase"));
+const Status = lazy(() => import("./components/Status"));
 
 const PrivacyPolicy = lazy(() =>
   import("./components/LegalPage").then((m) => ({ default: m.PrivacyPolicy })),
@@ -189,6 +190,18 @@ function AppContent() {
       <Suspense fallback={<div className="min-h-dvh" />}>
         <ErrorBoundary>
           <OAuthComplete />
+        </ErrorBoundary>
+      </Suspense>
+    );
+  }
+  // /status — public uptime page. Renders BEFORE the auth guard so
+  // anyone (including external monitors and skeptical prospects) can
+  // verify the system is up without an account.
+  if (location.pathname === "/status") {
+    return (
+      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+        <ErrorBoundary>
+          <Status />
         </ErrorBoundary>
       </Suspense>
     );

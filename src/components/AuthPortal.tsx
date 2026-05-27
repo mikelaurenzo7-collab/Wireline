@@ -19,6 +19,8 @@ import {
   EyeOff,
 } from "lucide-react";
 import { AuthDemoDirectory } from "./auth/AuthDemoDirectory";
+import RoiCalculator from "./marketing/RoiCalculator";
+import TrustSignals from "./marketing/TrustSignals";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
@@ -624,6 +626,16 @@ export default function AuthPortal() {
             defaultExpanded={false}
             className="mb-6"
           />
+
+          {/* ROI Calculator — the conversion moment. Lets prospects
+              plug their own numbers in and watch Wireline pay back. */}
+          <RoiCalculator />
+
+          {/* Trust signals — verticals + security/compliance badges.
+              Replaces the previous one-line "TLS Encrypted" trust row
+              with proper density: 8 verticals, 5 compliance badges,
+              live system-status pill. Cheap real estate, big trust lift. */}
+          <TrustSignals />
 
           {/* Trust row */}
           <motion.div
