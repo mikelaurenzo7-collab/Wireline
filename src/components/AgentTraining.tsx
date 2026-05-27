@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Loader2,
   Users,
@@ -20,6 +21,8 @@ import {
   Blocks,
   PhoneCall,
   PhoneOff,
+  Mic,
+  BookOpen,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
@@ -32,6 +35,27 @@ import AgentWorkspace from "./AgentWorkspace";
 import { useToast } from "../contexts/ToastContext";
 import AgentFlowComposer from "./AgentFlowComposer";
 import AgentActionEngine from "./AgentActionEngine";
+import VoiceLibraryPanel from "./admin/VoiceLibraryPanel";
+import PronunciationDictionaryPanel from "./PronunciationDictionaryPanel";
+
+type TrainingTab =
+  | "workspace"
+  | "database"
+  | "voices"
+  | "pronunciation"
+  | "simulator"
+  | "flow"
+  | "actions";
+
+const VALID_TRAINING_TABS: TrainingTab[] = [
+  "workspace",
+  "database",
+  "voices",
+  "pronunciation",
+  "simulator",
+  "flow",
+  "actions",
+];
 
 type VapiInstance = {
   on: (event: string, cb: () => void) => void;
@@ -42,9 +66,27 @@ type VapiInstance = {
 
 export default function AgentTraining() {
   const { error: toastError } = useToast();
-  const [activeTab, setActiveTab] = useState<
-    "workspace" | "database" | "simulator" | "flow" | "actions"
-  >("workspace");
+  const location = useLocation();
+  const navigate = useNavigate();
+  // Honour ?tab=<name> deep-links. Legacy /admin?tab=voices and
+  // /admin?tab=pronunciation now redirect here, so this is the canonical
+  // landing for those panels.
+  const initialTab: TrainingTab = (() => {
+    const qs = new URLSearchParams(location.search).get("tab") as TrainingTab;
+    return VALID_TRAINING_TABS.includes(qs) ? qs : "workspace";
+  })();
+  const [activeTab, setActiveTabState] = useState<TrainingTab>(initialTab);
+
+  // Keep URL in sync when the operator switches tabs — gives every tab a
+  // deep-linkable URL for sharing + browser back/forward.
+  const setActiveTab = (next: TrainingTab) => {
+    setActiveTabState(next);
+    const params = new URLSearchParams(location.search);
+    if (next === "workspace") params.delete("tab");
+    else params.set("tab", next);
+    const qs = params.toString();
+    navigate(qs ? `/train?${qs}` : "/train", { replace: true });
+  };
   const [simConnecting, setSimConnecting] = useState(false);
   const [simConnected, setSimConnected] = useState(false);
   const simVapiRef = useRef<VapiInstance | null>(null);
@@ -337,6 +379,18 @@ export default function AgentTraining() {
               help: "View and edit everything this agent has learned: personality, directives, knowledge entries, and uploaded files.",
             },
             {
+              id: "voices",
+              label: "Voices",
+              icon: Mic,
+              help: "Voice library + cloning. Every agent's identity starts with the voice they speak in.",
+            },
+            {
+              id: "pronunciation",
+              label: "Pronunciation",
+              icon: BookOpen,
+              help: "Teach the voice engine how to pronounce industry jargon, brand names, and abbreviations correctly.",
+            },
+            {
               id: "simulator",
               label: "Test call",
               icon: PlayCircle,
@@ -360,7 +414,7 @@ export default function AgentTraining() {
               role="tab"
               aria-selected={activeTab === tab.id}
               aria-controls={`training-panel-${tab.id}`}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as TrainingTab)}
               className={cn(
                 "px-2.5 py-1.5 rounded-lg border text-[10px] uppercase tracking-[0.12em] flex items-center gap-1.5 transition-colors",
                 activeTab === tab.id
@@ -872,6 +926,36 @@ export default function AgentTraining() {
                 agentId={selectedAgentId}
                 agentName={agents.find((a) => a.id === selectedAgentId)?.name || "your agent"}
               />
+            </motion.div>
+          )}
+
+          {activeTab === "voices" && (
+            <motion.div
+              key="voices"
+              role="tabpanel"
+              id="training-panel-voices"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute inset-0 overflow-y-auto p-4"
+            >
+              <VoiceLibraryPanel />
+            </motion.div>
+          )}
+
+          {activeTab === "pronunciation" && (
+            <motion.div
+              key="pronunciation"
+              role="tabpanel"
+              id="training-panel-pronunciation"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute inset-0 overflow-y-auto p-4"
+            >
+              <PronunciationDictionaryPanel />
             </motion.div>
           )}
 

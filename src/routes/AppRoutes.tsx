@@ -26,6 +26,7 @@ const LiveOps = lazy(() => import("../pages/CommandCenter"));
 const HelpCenter = lazy(() => import("../components/HelpCenter"));
 const Pipeline = lazy(() => import("../components/Pipeline"));
 const FounderDashboard = lazy(() => import("../components/FounderDashboard"));
+const SupervisorCockpit = lazy(() => import("../components/SupervisorCockpit"));
 
 export default function AppRoutes() {
   return (
@@ -125,8 +126,18 @@ export default function AppRoutes() {
               </PageTransition>
             }
           />
-          {/* /cockpit redirects to unified Live Ops at home */}
-          <Route path="/cockpit" element={<Navigate to="/" replace />} />
+          {/* /cockpit — Floor supervisor view (distinct from / Live Ops).
+              / is owner pulse + action feed; /cockpit is per-agent availability + listen/whisper. */}
+          <Route
+            path="/cockpit"
+            element={
+              <PageTransition>
+                <ErrorBoundary>
+                  <SupervisorCockpit />
+                </ErrorBoundary>
+              </PageTransition>
+            }
+          />
           <Route
             path="/outbound"
             element={

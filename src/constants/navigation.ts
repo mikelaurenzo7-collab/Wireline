@@ -7,6 +7,7 @@ import {
   LayoutGrid,
   Kanban,
   Headphones,
+  SlidersHorizontal,
 } from "lucide-react";
 
 export type NavItem = {
@@ -24,10 +25,14 @@ export type NavItem = {
   ownerOnly?: boolean;
 };
 
-// Consolidated horizontal nav. Command Center + Dashboard merged into a single
-// Home route at "/" (LayoutGrid icon). /command and /dashboard redirect to /.
-// Groups stay for visual separation in the top bar (subtle dividers between
-// groups), but each item is a flat tab.
+// Three-group nav. Workspace = where you watch + decide. Fleet = where you
+// build + manage agents. Activity = where conversations live + close.
+// Settings sits as the trailing tab since it's daily-touch (Branding,
+// Carrier, Billing) — not buried in a profile dropdown.
+//
+// Architecture note: /cockpit is its OWN page (SupervisorCockpit), distinct
+// from / (LiveOps). Live Ops is the owner's pulse — calls + actions + intel.
+// Cockpit is the floor supervisor's view — agent availability + listen-in.
 export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: "Workspace",
@@ -37,7 +42,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         path: "/",
         icon: LayoutGrid,
         dataTour: "dashboard",
-        matches: ["/dashboard", "/command", "/live", "/cockpit"],
+        matches: ["/dashboard", "/command", "/live"],
       },
       { label: "Triage", path: "/triage", icon: Inbox },
       { label: "Insights", path: "/insights", icon: BarChart3, dataTour: "insights" },
@@ -64,9 +69,21 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         label: "Activity",
         path: "/logs",
         icon: Radio,
-        matches: ["/outbound", "/inbox", "/appointments"],
+        matches: ["/outbound", "/inbox", "/appointments", "/sms"],
       },
       { label: "Pipeline", path: "/pipeline", icon: Kanban },
+    ],
+  },
+  {
+    label: "Admin",
+    items: [
+      {
+        label: "Settings",
+        path: "/admin",
+        icon: SlidersHorizontal,
+        dataTour: "settings",
+        matches: ["/integrations", "/dnc", "/audit"],
+      },
     ],
   },
 ];

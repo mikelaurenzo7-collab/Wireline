@@ -15,8 +15,8 @@ import SettingsTabSwitcher from "./admin/SettingsTabSwitcher";
 // Modularized Panels
 import { BrandingPanel } from "./admin/BrandingPanel";
 import { CarrierPanel } from "./admin/CarrierPanel";
-import VoiceLibraryPanel from "./admin/VoiceLibraryPanel";
-import PronunciationDictionaryPanel from "./PronunciationDictionaryPanel";
+// Voice library + pronunciation dictionary panels moved to AgentTraining
+// (they're agent training inputs, not tenant admin config).
 import { SubscriptionPanel } from "./admin/SubscriptionPanel";
 import { SystemPanel } from "./admin/SystemPanel";
 import { TeamPanel } from "./admin/TeamPanel";
@@ -83,8 +83,6 @@ export default function AdminSettings() {
   type AdminTab =
     | "branding"
     | "carrier"
-    | "voices"
-    | "pronunciation"
     | "subscription"
     | "team"
     | "flywheel"
@@ -95,8 +93,6 @@ export default function AdminSettings() {
   const VALID_TABS: AdminTab[] = [
     "branding",
     "carrier",
-    "voices",
-    "pronunciation",
     "subscription",
     "team",
     "flywheel",
@@ -107,12 +103,23 @@ export default function AdminSettings() {
   ];
   // Honor ?tab=<name> in the URL so deep links (e.g. the TrialBanner
   // "Upgrade now" CTA pointing at /admin?tab=subscription) land on
-  // the correct tab instead of bouncing to the default. Falls back
-  // to "branding" for unknown or missing values.
+  // the correct tab instead of bouncing to the default. Legacy links
+  // pointing at ?tab=voices / ?tab=pronunciation redirect to /train,
+  // where those panels now live (handled below in the routing layer).
   const location = useLocation();
   const navigate = useNavigate();
   const activeTab: AdminTab = (() => {
-    const qs = new URLSearchParams(location.search).get("tab") as AdminTab;
+    const qsRaw = new URLSearchParams(location.search).get("tab");
+    // Legacy redirect: voices + pronunciation moved out of Settings into
+    // Training where they belong (they're agent identity, not tenant config).
+    if (qsRaw === "voices" || qsRaw === "pronunciation") {
+      // useNavigate inside a render branch is fine because navigate is
+      // a stable callback and we run it once per matching render. The
+      // redirect happens synchronously on the next tick.
+      queueMicrotask(() => navigate(`/train?tab=${qsRaw}`, { replace: true }));
+      return "branding";
+    }
+    const qs = qsRaw as AdminTab;
     return VALID_TABS.includes(qs) ? qs : "branding";
   })();
 
@@ -434,34 +441,6 @@ export default function AdminSettings() {
                       onDeleteNumber={deletePhoneNumber}
                       onUpdateNumberAgent={updateNumberAgent}
                     />
-                  </motion.div>
-                )}
-
-                {activeTab === "voices" && (
-                  <motion.div
-                    key="voices"
-                    role="tabpanel"
-                    id="admin-panel-voices"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="h-full"
-                  >
-                    <VoiceLibraryPanel />
-                  </motion.div>
-                )}
-
-                {activeTab === "pronunciation" && (
-                  <motion.div
-                    key="pronunciation"
-                    role="tabpanel"
-                    id="admin-panel-pronunciation"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="h-full"
-                  >
-                    <PronunciationDictionaryPanel />
                   </motion.div>
                 )}
 

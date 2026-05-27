@@ -208,8 +208,32 @@ export default function LiveOps() {
         {/* Command header — the "Wireline OS" title + caption were
             removed per design direction (the top nav already labels
             this Home). The action button + live-stat tiles stay,
-            right-aligned. */}
-        <div className="flex flex-wrap items-center justify-end gap-3 pb-2">
+            right-aligned. A small orientation strip on the left
+            clarifies what this page IS vs the nearby /cockpit page
+            (which manages the agent floor). */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
+          {/* Orientation eyebrow — anchors the page identity for first-time
+              visitors and gives demo viewers the framing line. */}
+          <div className="min-w-0 flex-1 sm:max-w-md">
+            <p className="text-[9px] uppercase tracking-[0.38em] text-brand/80 font-medium leading-none mb-1">
+              Workspace · Owner pulse
+            </p>
+            <h1 className="page-title-aurora font-display italic text-xl sm:text-2xl leading-tight tracking-tight">
+              Live Ops
+            </h1>
+            <p className="mt-1 text-[11px] text-muted/80 leading-relaxed">
+              Live calls, action feed, lead intel — what's happening + what to do next. For the
+              floor view (agent availability + listen-in), open{" "}
+              <button
+                type="button"
+                onClick={() => navigate("/cockpit")}
+                className="text-brand hover:underline"
+              >
+                Cockpit ↗
+              </button>
+              .
+            </p>
+          </div>
           <div className="flex items-center gap-3">
             {/* Activate Growth — full button when the user has at least one
                 agent, disabled-stub when they don't. Stub still occupies the

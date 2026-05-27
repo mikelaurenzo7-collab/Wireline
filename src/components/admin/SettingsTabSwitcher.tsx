@@ -5,8 +5,6 @@ import { cn } from "../../lib/utils";
 type AdminTab =
   | "branding"
   | "carrier"
-  | "voices"
-  | "pronunciation"
   | "subscription"
   | "team"
   | "flywheel"
@@ -21,6 +19,8 @@ interface TabDef {
   path: string;
 }
 
+// Settings is now strictly admin/config concerns. Voice library + pronunciation
+// moved to /train (they're agent training inputs, not tenant admin).
 const TAB_GROUPS: { tabs: TabDef[] }[] = [
   {
     tabs: [
@@ -29,13 +29,7 @@ const TAB_GROUPS: { tabs: TabDef[] }[] = [
     ],
   },
   { tabs: [{ id: "branding", label: "Branding", path: "/admin?tab=branding" }] },
-  {
-    tabs: [
-      { id: "carrier", label: "Carrier", path: "/admin?tab=carrier" },
-      { id: "voices", label: "Voices", path: "/admin?tab=voices" },
-      { id: "pronunciation", label: "Pronunciation", path: "/admin?tab=pronunciation" },
-    ],
-  },
+  { tabs: [{ id: "carrier", label: "Carrier", path: "/admin?tab=carrier" }] },
   { tabs: [{ id: "flywheel", label: "Growth", path: "/admin?tab=flywheel" }] },
   {
     tabs: [
@@ -63,8 +57,6 @@ export default function SettingsTabSwitcher() {
     const validTabs: AdminTab[] = [
       "branding",
       "carrier",
-      "voices",
-      "pronunciation",
       "subscription",
       "team",
       "flywheel",
@@ -96,7 +88,9 @@ export default function SettingsTabSwitcher() {
                 aria-selected={activeTab === t.id}
                 className={cn(
                   "shrink-0 snap-start px-2.5 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.12em] transition-colors whitespace-nowrap font-medium",
-                  activeTab === t.id ? "bg-brand/20 text-brand font-semibold" : "text-muted hover:text-ink hover:bg-black/5",
+                  activeTab === t.id
+                    ? "bg-brand/20 text-brand font-semibold"
+                    : "text-muted hover:text-ink hover:bg-black/5",
                 )}
                 style={
                   activeTab === t.id

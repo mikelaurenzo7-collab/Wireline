@@ -81,9 +81,9 @@ export default function SupervisorCockpit() {
 
   return (
     <PageShell
-      eyebrow="Operations · Supervisor"
+      eyebrow="Floor · Supervisor"
       title="Cockpit"
-      subtitle="Live call floor — who's on what, where it's spicy, and what needs a human. Refreshes every 5 seconds."
+      subtitle="Live agent floor — who's on a call, who's idle, what's escalated. Different from Live Ops: this view is for managing the room, not the work. Listen-in + whisper-coach in 1 tap. Refreshes every 5 seconds."
       actions={
         <div className="inline-flex items-center gap-2 px-3 h-9 rounded-full glass border border-brand/30">
           <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />

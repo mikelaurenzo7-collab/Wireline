@@ -101,19 +101,33 @@ export default function TriageInbox() {
   const counts = data?.counts || ({} as Record<string, number>);
   const totalAttention = Object.values(counts).reduce((s, n) => s + n, 0);
 
-  const wrap = (
+  // Per-bucket panel renderer — shared error / loading shell so every
+  // card on the dense triage grid behaves identically. Each Panel is
+  // `scroll` so the page itself never grows; the cards handle their
+  // own overflow.
+  const bucketPanel = (
+    title: string,
     icon: React.ComponentType<{ className?: string }>,
     hint: string,
     body: React.ReactNode,
+    accent?: string,
   ) => (
-    <Panel icon={icon} hint={hint} title="" scroll flush>
+    <Panel
+      icon={icon}
+      hint={hint}
+      title={title}
+      scroll
+      flush
+      accent={accent}
+      className="h-full min-h-[260px]"
+    >
       {loading && !data ? (
-        <div className="h-full flex flex-col items-center justify-center gap-2">
-          <Loader2 className="w-6 h-6 animate-spin text-brand" />
-          <p className="text-[9px] uppercase tracking-[0.4em] text-muted">Scanning the fleet</p>
+        <div className="h-full flex flex-col items-center justify-center gap-2 py-6">
+          <Loader2 className="w-5 h-5 animate-spin text-brand" />
+          <p className="text-[9px] uppercase tracking-[0.4em] text-muted">Scanning…</p>
         </div>
       ) : fetchErr ? (
-        <div className="h-full flex flex-col items-center justify-center gap-3 px-6 text-center">
+        <div className="h-full flex flex-col items-center justify-center gap-3 px-6 text-center py-6">
           <p className="text-[10px] uppercase tracking-[0.35em] text-rose-500">{fetchErr}</p>
           <button
             onClick={fetchData}
@@ -162,7 +176,7 @@ export default function TriageInbox() {
     <PageShell
       eyebrow={`Today's Inbox · ${totalAttention} items`}
       title="Triage"
-      subtitle="Hot leads, compliance flags, knowledge gaps, open tasks, and escalations."
+      subtitle="Every signal that needs your attention, side-by-side. Hot leads, compliance flags, knowledge gaps, open tasks, escalations — one glance, no tabs."
       actions={
         <>
           <CsvExportButton type="tasks" label="CSV" />
@@ -180,41 +194,92 @@ export default function TriageInbox() {
           </button>
         </>
       }
-      tabs={[
-        {
-          id: "hot",
-          label: "Hot Leads",
-          icon: Flame,
-          badge: counts.hot_leads,
-          content: wrap(
+    >
+      {/* ────────────────────────────────────────────────────────────
+          Dense triage grid — five buckets visible simultaneously.
+          Replaces the tabbed layout (which buried 4 of 5 buckets and
+          left an empty Panel below the active list when items were
+          short).
+          
+          Layout:
+            - base / sm   : 1 column stack
+            - md          : 2 columns
+            - lg          : 3 columns; hot leads spans 2, escalations
+                            spans 1 full-height tower on the right
+            - xl          : same 3 columns but with taller rows
+          
+          Each card scrolls internally → the page itself never scrolls.
+          ──────────────────────────────────────────────────────────── */}
+      <div
+        className={cn(
+          "h-full min-h-0 overflow-y-auto lg:overflow-hidden",
+          "grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
+          // Two-row grid on lg+: Hot Leads + Escalations on row 1,
+          // Compliance + Tasks + Gaps share row 2.
+          "lg:[grid-template-rows:minmax(0,1.15fr)_minmax(0,1fr)]",
+          "auto-rows-fr",
+        )}
+        data-testid="triage-grid"
+      >
+        {/* Hot Leads — hero, spans 2 columns on lg+ */}
+        <div className="lg:col-span-2">
+          {bucketPanel(
+            "Hot Leads",
             Flame,
-            "Hot intent",
+            counts.hot_leads ? `${counts.hot_leads} ready to close` : "Cold floor",
             <WidgetBoundary label="Hot Leads">
               <HotLeads items={data?.hot_leads || []} />
             </WidgetBoundary>,
-          ),
-        },
-        {
-          id: "compliance",
-          label: "Compliance",
-          icon: ShieldAlert,
-          badge: counts.compliance,
-          content: wrap(
-            ShieldAlert,
-            "Flags",
-            <WidgetBoundary label="Compliance">
-              <ComplianceList items={data?.compliance || []} />
+            "#F59E0B",
+          )}
+        </div>
+
+        {/* Escalations — full-height right tower on lg+ */}
+        <div className="lg:row-span-2">
+          {bucketPanel(
+            "Escalations",
+            AlertOctagon,
+            counts.escalations ? `${counts.escalations} pending` : "All clear",
+            <WidgetBoundary label="Escalations">
+              <Escalations items={data?.escalations || []} />
             </WidgetBoundary>,
-          ),
-        },
-        {
-          id: "knowledge",
-          label: "Gaps",
-          icon: BookOpen,
-          badge: counts.knowledge_gaps,
-          content: wrap(
+            "#E8466A",
+          )}
+        </div>
+
+        {/* Row 2: Compliance · Tasks · Gaps */}
+        {bucketPanel(
+          "Compliance",
+          ShieldAlert,
+          counts.compliance ? `${counts.compliance} flags` : "Clean",
+          <WidgetBoundary label="Compliance">
+            <ComplianceList items={data?.compliance || []} />
+          </WidgetBoundary>,
+          "#E8466A",
+        )}
+        {bucketPanel(
+          "Open Tasks",
+          ListTodo,
+          counts.pending_tasks ? `${counts.pending_tasks} open` : "Queue clear",
+          <WidgetBoundary label="Open Tasks">
+            <OpenTasks
+              items={data?.pending_tasks || []}
+              onCompleted={removeTask}
+              onFetchFailed={fetchData}
+            />
+          </WidgetBoundary>,
+          "#4F1E7B",
+        )}
+        {/* Knowledge gaps — second row, third column */}
+        <div className="lg:col-start-2 lg:row-start-2 hidden lg:block">
+          {/* Empty cell - reserved so the next card lands in col 3.
+              On smaller screens it never renders. */}
+        </div>
+        <div className="md:col-span-2 lg:col-span-1">
+          {bucketPanel(
+            "Knowledge Gaps",
             BookOpen,
-            "Capture",
+            counts.knowledge_gaps ? `${counts.knowledge_gaps} to capture` : "Up to date",
             <WidgetBoundary label="Knowledge Gaps">
               <KnowledgeGaps
                 items={data?.knowledge_gaps || []}
@@ -222,40 +287,11 @@ export default function TriageInbox() {
                 onDiscard={removeGap}
               />
             </WidgetBoundary>,
-          ),
-        },
-        {
-          id: "tasks",
-          label: "Tasks",
-          icon: ListTodo,
-          badge: counts.pending_tasks,
-          content: wrap(
-            ListTodo,
-            "Open",
-            <WidgetBoundary label="Open Tasks">
-              <OpenTasks
-                items={data?.pending_tasks || []}
-                onCompleted={removeTask}
-                onFetchFailed={fetchData}
-              />
-            </WidgetBoundary>,
-          ),
-        },
-        {
-          id: "escalations",
-          label: "Escalations",
-          icon: AlertOctagon,
-          badge: counts.escalations,
-          content: wrap(
-            AlertOctagon,
-            "Critical",
-            <WidgetBoundary label="Escalations">
-              <Escalations items={data?.escalations || []} />
-            </WidgetBoundary>,
-          ),
-        },
-      ]}
-    />
+            "#10B981",
+          )}
+        </div>
+      </div>
+    </PageShell>
   );
 }
 
