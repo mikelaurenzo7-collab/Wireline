@@ -119,9 +119,61 @@ Goal for next pass: get every file with `*.test.ts` coverage under strict.
 
 ---
 
+## 7. God-file slicing — ClaudeRecipes (2026-02 pass)
+
+**Before:** `src/components/ClaudeRecipes.tsx` — **2,862 LOC** in a single
+file: type, metadata, button, modal, 13 form components, form primitives,
+and ResultCard all jammed together.
+
+**After:** **16 LOC barrel** that re-exports `ClaudeRecipeButton`,
+`RecipeModal`, and the `Recipe` type from a new folder:
+
+```
+src/components/recipes/
+├── types.ts                          (146 LOC — Recipe enum + RECIPE_META + AgentLite)
+├── shared.tsx                        (180 LOC — FormShell, Field, TextInput, TextArea, Select,
+│                                                RunButton, ResultCard, ErrCard, Stat, NoKeyInline)
+├── ClaudeRecipeButton.tsx            ( 71 LOC)
+├── RecipeModal.tsx                   (224 LOC — modal shell + recipe → form routing)
+└── forms/
+    ├── BriefForm.tsx                 (160 LOC)
+    ├── EnrichLeadForm.tsx            (192 LOC)
+    ├── QualifyForm.tsx               (136 LOC)
+    ├── ObjectionDrillForm.tsx        (134 LOC)
+    ├── ColdEmailForm.tsx             (177 LOC)
+    ├── PersonaCloneForm.tsx          (175 LOC)
+    ├── ThreadSummaryForm.tsx         (142 LOC)
+    ├── AgentReviewForm.tsx           (205 LOC)
+    ├── CoachForm.tsx                 (174 LOC)
+    ├── KnowledgeFromUrlForm.tsx      (269 LOC)
+    ├── KnowledgeFromDocumentForm.tsx (313 LOC)
+    ├── AgentForgeForm.tsx            (187 LOC)
+    └── CallPlaybookForm.tsx          (171 LOC)
+```
+
+Largest module now is **313 LOC** (10× smaller than the original).
+Zero behavioural change — every consumer still imports
+`{ ClaudeRecipeButton }` from `"./ClaudeRecipes"`; the barrel forwards.
+Vite also code-splits the new modal chunk separately
+(`RecipeModal-*.js` at 60 kB gz 14 kB), which means the recipe surface
+no longer loads on routes that never open it.
+
+**Verified by:** `npm run lint` (TS clean), `npm run test:run`
+(139/139 green), `npm run build` (production bundle clean),
+`npm run docs:check` (pricing table consistent).
+
+**Files touched:**
+- `src/components/ClaudeRecipes.tsx` (rewrote to barrel)
+- `src/components/recipes/**/*` (16 new files)
+
+---
+
 ## Backlog (deferred — captured for the next pass)
 
-1. **Slice god-files.** `ClaudeRecipes.tsx` (2862 LOC), `FleetSettings.tsx` (2015), `OutboundDialer.tsx` (1879), `InsightsView.tsx` (1927). Each is 3+ sub-features in one file; extracting siblings would unblock review velocity.
+1. **Slice the remaining god-files.** `InsightsView.tsx` (1927 LOC),
+   `OutboundDialer.tsx` (1879), `FleetSettings.tsx` (1802 — small
+   helper extract already done). Same playbook as ClaudeRecipes:
+   sub-folder, barrel at the original path, no consumer changes.
 2. **Prompt caching on reasoning paths.** Anthropic's `cache_control` on system messages cuts cached-input tokens by 90%. The 18 KB Wireline agent prompt is a perfect cache candidate for `brief()`, `coach()`, `postCallAnalysis()` (which all share the same per-agent system frame).
 3. **Tenant backfill migration.** One-shot SQL endpoint that flips existing `google` / `gemini-3.5-flash` settings rows to `anthropic` / `claude-sonnet-4-6` — gated, dry-run-first, audited.
 4. **Tighten `--max-warnings 1100` → 700 over Q1.** Ratchet down 100 warnings per cycle via `eslint --max-warnings` in CI.
