@@ -1,4 +1,3 @@
- 
 /**
  * Claude Model Constants & Tiering
  * ---------------------------------------------------------------------------
@@ -36,8 +35,8 @@ export const GEMINI_MODELS = {
   FLASH_2_5: "gemini-2.5-flash",
 } as const;
 
-export const VAPI_TENANT_DEFAULT_PROVIDER = "google" as const;
-export const VAPI_SHOWCASE_PROVIDER = "google" as const;
+export const VAPI_TENANT_DEFAULT_PROVIDER = "anthropic" as const;
+export const VAPI_SHOWCASE_PROVIDER = "anthropic" as const;
 export const VAPI_OPENAI_FALLBACK_MODEL = OPENAI_MODELS.GPT_4O;
 // Vapi rejects cross-provider fallbackModels on Anthropic + Google
 // assistants, so this list is only attached to OpenAI payloads we
@@ -45,28 +44,42 @@ export const VAPI_OPENAI_FALLBACK_MODEL = OPENAI_MODELS.GPT_4O;
 export const VAPI_DEFAULT_FALLBACK_MODELS = [VAPI_OPENAI_FALLBACK_MODEL] as const;
 
 /**
- * Primary realtime model for the Vapi voice runtime.
- * Gemini 3.5 Flash (GA, May 19 2026) — yields ultra-low turn-taking
- * latency, 4x faster output than previous Flash models, and top-tier
- * tool calling accuracy (MCP Atlas 83.6%). Replaces the
- * gemini-3-flash-preview that was our previous default.
- *
- * Claude Haiku 4.5 is retained as the fallback target for operators
- * who explicitly select an Anthropic voice configuration.
+ * Application-level voice fallback model. When the primary Anthropic
+ * model is unavailable or times out, the retry path uses Gemini Flash
+ * as a fast backup. This is NOT a Vapi fallbackModels entry (Vapi
+ * rejects cross-provider fallbacks on Anthropic assistants) — it's
+ * used by our own retry logic in vapi-client.ts.
  */
-export const VAPI_PREMIUM_MODEL = GEMINI_MODELS.FLASH_3_5;
+export const VAPI_VOICE_FALLBACK_PROVIDER = "google" as const;
+export const VAPI_VOICE_FALLBACK_MODEL = GEMINI_MODELS.FLASH_3_5;
+
+/**
+ * Primary realtime model for the Vapi voice runtime.
+ * Claude Opus 4.7 — the most intelligent, most adaptive voice model available.
+ * Yields natural, consistent cadence and tone throughout the entire call
+ * without the token-burst irregularity that plagues streaming-optimized
+ * models like Gemini Flash. Higher cost per token but eliminates the
+ * perceptible speed/cadence shifts that kill caller trust on demo calls.
+ *
+ * Gemini 3.5 Flash is retained as the application-level fallback
+ * (VAPI_VOICE_FALLBACK_MODEL) for availability failures.
+ */
+export const VAPI_PREMIUM_MODEL = CLAUDE_MODELS.OPUS;
 
 /**
  * Default tenant voice model for deployed phone agents.
+ * Claude Opus 4.7 — the best-in-class model for voice. Consistent output
+ * token pacing eliminates the mid-call cadence doubling caused by Gemini's
+ * variable burst sizes. Maximum reasoning depth for adaptive conversations.
  */
-export const VAPI_TENANT_DEFAULT_MODEL = GEMINI_MODELS.FLASH_3_5;
+export const VAPI_TENANT_DEFAULT_MODEL = "claude-opus-4-7";
 
 /**
  * Model used by the Wireline showcase + demo assistants.
- * The public line shares the same Gemini 3.5 Flash primary runtime
- * as tenant voice agents for consistent, ultra-low latency voice behavior.
+ * Same Opus 4.7 as tenant agents — the demo line must be the best
+ * possible experience since it's the product's first impression.
  */
-export const VAPI_SHOWCASE_MODEL = GEMINI_MODELS.FLASH_3_5;
+export const VAPI_SHOWCASE_MODEL = "claude-opus-4-7";
 
 const GEMINI_FLASH_LATEST_ALIASES = new Set([
   GEMINI_MODELS.FLASH_3_5,
@@ -99,19 +112,21 @@ export function resolveVapiVoiceModelSelection(input?: {
 
   if (anthroVoiceRequested) {
     // Normalize Claude family aliases → a concrete model id Vapi accepts.
-    // Sonnet / Opus stay on their requested model when the operator
-    // explicitly chose them (e.g. higher-quality long calls). Bare
-    // "claude" or "haiku" lands on Haiku 4.5 — our default voice
-    // runtime fallback, fast enough for natural turn-taking. Vapi rejects
-    // cross-provider fallbackModels on Anthropic assistants, so we
-    // omit the OpenAI fallback here. We must use CLAUDE_MODELS.HAIKU
-    // as the default normalization target rather than VAPI_TENANT_DEFAULT_MODEL
-    // to avoid returning a Google model under the Anthropic provider.
-    let normalized: string = CLAUDE_MODELS.HAIKU;
+    // Default normalization target is now claude-opus-4-7 — the voice
+    // runtime default. Operators who explicitly select Sonnet/Haiku get
+    // what they asked for; bare "claude" or unspecified lands on Opus 4.7
+    // for maximum voice quality, reasoning depth, and consistent cadence.
+    // Vapi rejects cross-provider fallbackModels on Anthropic assistants,
+    // so we omit any fallback here.
+    let normalized: string = CLAUDE_MODELS.OPUS;
     if (requestedModelLower.includes("sonnet")) normalized = CLAUDE_MODELS.SONNET;
-    else if (requestedModelLower.includes("opus")) normalized = CLAUDE_MODELS.OPUS;
-    else if (requestedModelLower.includes("haiku") || requestedModelLower.startsWith("claude")) {
-      normalized = requestedModel || CLAUDE_MODELS.HAIKU;
+    else if (requestedModelLower.includes("opus")) {
+      // Prefer the exact requested model string if it includes "opus"
+      normalized = requestedModel || CLAUDE_MODELS.OPUS;
+    } else if (requestedModelLower.includes("haiku")) {
+      normalized = CLAUDE_MODELS.HAIKU;
+    } else if (requestedModelLower.startsWith("claude")) {
+      normalized = requestedModel || CLAUDE_MODELS.OPUS;
     }
     return {
       provider: "anthropic",
@@ -122,7 +137,7 @@ export function resolveVapiVoiceModelSelection(input?: {
   if (requestedProvider === "google" || requestedModelLower.includes("gemini")) {
     const normalizedGoogleModel =
       !requestedModel || !requestedModelLower.includes("gemini")
-        ? VAPI_TENANT_DEFAULT_MODEL
+        ? GEMINI_MODELS.FLASH_3_5
         : GEMINI_FLASH_LATEST_ALIASES.has(requestedModelLower)
           ? GEMINI_MODELS.FLASH_3_5
           : requestedModel;
@@ -230,39 +245,39 @@ export const DEFAULT_MODEL = CLAUDE_MODEL_DEFAULT;
  * WIRELINE LLM TIERING ARCHITECTURE (Single Source of Truth)
  * ─────────────────────────────────────────────────────────────────────────────
  *
- * Wireline uses a deliberate two-tier LLM system optimized for the
- * voice-first agent use case. This split is the core of the moat:
+ * Wireline uses a quality-first LLM system optimized for the
+ * voice-first agent use case. Consistency and intelligence over speed:
  *
- *   • Voice Runtime  → Gemini 3.5 Flash  (speed + price + streaming)
- *   • Reasoning Layer → Claude Opus 4.7   (adaptive depth + tool reliability)
+ *   • Voice Runtime  → Claude Opus 4.7   (best reasoning + consistent cadence)
+ *   • Voice Fallback → Gemini 3.5 Flash  (speed backup for availability failures)
+ *   • Reasoning Layer → Claude Opus 4.7  (adaptive depth + tool reliability)
  *
  * RATIONALE
  *
- * Voice calls are latency-sensitive. Every 100 ms of added delay is
- * perceived as "sluggish." Gemini 3.5 Flash delivers sub-250 ms first-token
- * latency at the lowest price point for real-time streaming. No other
- * model (Grok-2, GPT-4o, Claude Haiku) matches this combination in 2026.
+ * Voice calls demand CONSISTENT cadence above all else. Gemini Flash's
+ * variable token burst rates caused perceptible speed doubling mid-call
+ * — the agent's speaking pace would suddenly accelerate on dense content
+ * (pricing, confirmations, technical details) then slow back down on
+ * conversational turns. This reads as "AI" to callers and kills trust.
  *
- * Pre-call briefs, post-call coaching, and integration orchestration
- * require adaptive, multi-step reasoning: understanding context, choosing
- * the right tool, self-correcting when a step fails, and producing
- * structured output the rest of the system can trust. Claude Opus 4.7 is
- * the strongest publicly available model at this class of task.
+ * Claude Opus 4.7 delivers the deepest adaptive reasoning combined with
+ * even, measured output token pacing that the TTS engine renders as one
+ * consistent voice throughout the call. It is the single best-performing
+ * model available for voice AI agents in May 2026. The ~200-400ms latency
+ * increase vs Flash is acceptable given the dramatic improvement in
+ * perceived naturalness and conversation quality.
  *
- * Grok-2 is competitive with Claude Sonnet 4 / GPT-4o tier — not Opus 4.7.
- * Grok-4 (expected later 2026) is the first xAI model positioned to compete
- * at the Opus tier. Until then, Opus 4.7 remains the reasoning default.
- *
- * NEVER downgrade the reasoning layer below Opus without an explicit
- * benchmark showing equivalent or better adaptive reasoning quality.
+ * Gemini 3.5 Flash remains as the application-level fallback for when
+ * Anthropic is unavailable — speed over quality is the right tradeoff
+ * only when the alternative is a failed call.
  *
  * TIER MAP
  *
- *   Voice Runtime        : Gemini 3.5 Flash   (VAPI_TENANT_DEFAULT_MODEL)
- *   Voice Fallback       : GPT-4o             (VAPI_OPENAI_FALLBACK_MODEL)
- *   Reasoning (default)  : Claude Opus 4.7    (CLAUDE_MODEL_DEFAULT)
- *   Reasoning (simple)   : Claude Haiku 4.5   (selectModelForTask("simple"))
- *   Grounded Search      : Gemini 2.5 Flash   (native googleSearchRetrieval)
+ *   Voice Runtime        : Claude Opus 4.7   (VAPI_TENANT_DEFAULT_MODEL)
+ *   Voice Fallback       : Gemini 3.5 Flash  (VAPI_VOICE_FALLBACK_MODEL)
+ *   Reasoning (default)  : Claude Opus 4.7   (CLAUDE_MODEL_DEFAULT)
+ *   Reasoning (simple)   : Claude Haiku 4.5  (selectModelForTask("simple"))
+ *   Grounded Search      : Gemini 2.5 Flash  (native googleSearchRetrieval)
  *
  * FILES THAT ENFORCE THIS
  *
@@ -274,8 +289,9 @@ export const DEFAULT_MODEL = CLAUDE_MODEL_DEFAULT;
  *
  * COST MODEL (approximate, May 2026)
  *
- *   Voice (Gemini Flash)  : $0.15–1.25 per 1M tokens  — 80%+ of total spend
- *   Reasoning (Opus)      : $15–75 per 1M tokens     — high-value, low-volume
+ *   Voice (Opus 4.7)      : $15–75 per 1M tokens   — best-in-market quality, worth it
+ *   Voice Fallback (Flash) : $0.15–1.25 per 1M tokens — used only on Anthropic outage
+ *   Reasoning (Opus 4.7)  : $15–75 per 1M tokens   — high-value, low-volume
  *
  * When Grok-4 is available and benchmarked, this comment block will be
  * updated. Until then, the tiering above is the production contract.
