@@ -139,7 +139,7 @@ export function createRbacMiddleware(deps: RbacDeps) {
         next();
       } catch (err) {
         // Fail-CLOSED on role lookup errors.
-        console.error("[require-role] role lookup failed:", (err as Error).message);
+        log.error("[require-role] role lookup failed:", (err as Error).message);
         deny(res, 403, "Authorization check failed", "FORBIDDEN");
         return;
       }
@@ -167,7 +167,7 @@ export function createRbacMiddleware(deps: RbacDeps) {
         }
         next();
       } catch (err) {
-        console.error("[require-role] role lookup failed:", (err as Error).message);
+        log.error("[require-role] role lookup failed:", (err as Error).message);
         deny(res, 403, "Authorization check failed", "FORBIDDEN");
         return;
       }
