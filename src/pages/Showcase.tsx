@@ -200,6 +200,7 @@ export default function Showcase() {
       <PageMeta
         title="Showcase — Playable AI Agent Templates · Wireline"
         description="Audition Wireline's voice agents in your browser before signing up. The marquee fun demo: a singing receptionist who sings the moment you connect, then catches herself with a normal greeting."
+        path="/showcase"
       />
 
       {/* Aurora — matches /about + /compare so the public surface feels like one product. */}

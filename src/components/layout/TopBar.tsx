@@ -74,8 +74,8 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
     const withLabel = opts.withLabel ?? true;
     const variant = opts.variant ?? "topbar";
     const isDrawer = variant === "drawer";
-    const activeBg = isDrawer ? "#4F1E7B" : "#EFE9DC";
-    const activeTextColor = isDrawer ? "#EFE9DC" : "#3B154C";
+    const activeBg = isDrawer ? "var(--color-brand)" : "var(--color-paper)";
+    const activeTextColor = isDrawer ? "var(--color-paper)" : "#3B154C";
     return (
       <Link
         key={item.label}
@@ -158,7 +158,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
     <>
       <header
         aria-label="Main navigation"
-        className="shell-sticky-glass shrink-0 sticky top-0 z-50 bg-[#3B154C]/92 border-b border-[#EFE9DC]/10 text-on-brand"
+        className="shell-sticky-glass shrink-0 sticky top-0 z-50 bg-brand-deep/92 border-b border-[#EFE9DC]/10 text-on-brand"
         style={{
           boxShadow:
             "0 0 0 1px rgba(239, 233, 220, 0.06), 0 8px 24px -16px rgba(79, 30, 123, 0.15)",

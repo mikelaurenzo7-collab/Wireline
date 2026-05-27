@@ -144,6 +144,7 @@ export default function Pricing() {
       <PageMeta
         title="Plans & Pricing"
         description="Wireline pricing plans from $49/month Personal to Enterprise custom. Every plan includes AI voice agents, real-time call logs, sentiment scoring, and the Wireline Demo Line. 14-day free trial, no credit card required."
+        path="/pricing"
       />
       {/* Aurora backdrop — toned down so the tier cards win the eye.
           Previously 60vw at 0.18 opacity dominated the hero on 1366×768

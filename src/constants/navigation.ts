@@ -1,13 +1,10 @@
 import {
   Users,
   MessageSquare,
-  ServerCog,
-  PlugZap,
   Radio,
   Inbox,
   BarChart3,
   LayoutGrid,
-  LifeBuoy,
   Kanban,
   Headphones,
 } from "lucide-react";

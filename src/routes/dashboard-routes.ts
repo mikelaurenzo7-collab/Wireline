@@ -132,7 +132,7 @@ router.get("/api/calls", authenticateUser, async (req: AuthenticatedRequest, res
     });
   } catch (error: any) {
     log.error("Failed to fetch calls", { error: getErrorMessage(error) });
-    res.json({ calls: [], hasMore: false, total: 0 });
+    res.status(500).json({ error: "Failed to fetch calls" });
   }
 });
 
@@ -372,7 +372,7 @@ router.get(
       });
     } catch (error: any) {
       log.error("Failed to fetch appointments", { error: getErrorMessage(error) });
-      res.json({ appointments: [], total: 0, hasMore: false });
+      res.status(500).json({ error: "Failed to fetch appointments" });
     }
   },
 );

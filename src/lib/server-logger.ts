@@ -5,12 +5,30 @@ export const IS_PROD = process.env.NODE_ENV === "production" || process.env.VERC
 
 type LogLevel = "debug" | "info" | "warn" | "error";
 
+function safeStringify(obj: Record<string, unknown>): string {
+  try {
+    return JSON.stringify(obj);
+  } catch {
+    // Fallback: strip non-serializable fields
+    const safe: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(obj)) {
+      try {
+        JSON.stringify(v);
+        safe[k] = v;
+      } catch {
+        safe[k] = "[unserializable]";
+      }
+    }
+    return JSON.stringify(safe);
+  }
+}
+
 function emitLog(level: LogLevel, msg: string, fields?: Record<string, unknown>) {
   const entry = { ts: new Date().toISOString(), level, msg, ...(fields || {}) };
   if (IS_PROD) {
     // eslint-disable-next-line no-console
     (level === "error" ? console.error : level === "warn" ? console.warn : console.log)(
-      JSON.stringify(entry),
+      safeStringify(entry),
     );
   } else {
     // eslint-disable-next-line no-console

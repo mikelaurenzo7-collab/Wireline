@@ -248,21 +248,39 @@ export async function handleJob(job: JobRow): Promise<void> {
         error: getErrorMessage(e),
       }),
     );
-    void dispatchWebhook(p.userId, "call.completed", payload);
+    dispatchWebhook(p.userId, "call.completed", payload).catch((e: unknown) =>
+      log.error("webhook dispatch failed", {
+        userId: p.userId,
+        event: "call.completed",
+        error: getErrorMessage(e),
+      }),
+    );
     if (typeof result.lead_score === "number" && result.lead_score >= 70) {
-      void dispatchWebhook(p.userId, "lead.hot", {
+      dispatchWebhook(p.userId, "lead.hot", {
         vapi_call_id: p.callId,
         lead_score: result.lead_score,
         customer_number: payload.customer_number,
-      });
+      }).catch((e: unknown) =>
+        log.error("webhook dispatch failed", {
+          userId: p.userId,
+          event: "lead.hot",
+          error: getErrorMessage(e),
+        }),
+      );
     }
     const intent = (result.intent_label || "").toLowerCase();
     if (intent === "escalation" || intent === "escalate") {
-      void dispatchWebhook(p.userId, "call.escalated", {
+      dispatchWebhook(p.userId, "call.escalated", {
         vapi_call_id: p.callId,
         intent_label: result.intent_label,
         customer_number: payload.customer_number,
-      });
+      }).catch((e: unknown) =>
+        log.error("webhook dispatch failed", {
+          userId: p.userId,
+          event: "call.escalated",
+          error: getErrorMessage(e),
+        }),
+      );
     }
 
     // Automatically enqueue action extraction after enrichment

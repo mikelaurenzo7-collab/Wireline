@@ -53,7 +53,7 @@ router.get("/api/outbound", authenticateUser, async (req: AuthenticatedRequest, 
     });
   } catch (error: any) {
     log.error("GET /api/outbound failed", { error: error.message });
-    res.json({ leads: [], total: 0, hasMore: false });
+    res.status(500).json({ error: "Failed to fetch leads" });
   }
 });
 

@@ -587,7 +587,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
 
   return (
     <div className="min-h-dvh relative bg-paper text-ink">
-      <PageMeta title={cfg.metaTitle} description={cfg.metaDescription} />
+      <PageMeta title={cfg.metaTitle} description={cfg.metaDescription} path={`/for/${slug}`} />
 
       {/* Aurora backdrop — toned down. The wedge pages compete with
           /pricing for sales attention; matching the visual density of
@@ -659,17 +659,17 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           <p className="text-base sm:text-lg text-ink/75 max-w-2xl leading-relaxed mb-8">
             {cfg.subhead}
           </p>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
             <Link
               to={cfg.primaryCta.href}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
             >
               {cfg.primaryCta.label}
               <ArrowRight className="w-4 h-4" />
             </Link>
             <a
               href={cfg.secondaryCta.href}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-full glass border border-black/12 text-ink text-[11px] uppercase tracking-[0.3em] font-medium hover:border-brand/40 transition-all"
+              className="hidden sm:inline-flex items-center gap-2 px-5 py-3 rounded-full glass border border-black/12 text-ink text-[11px] uppercase tracking-[0.3em] font-medium hover:border-brand/40 transition-all"
             >
               <PhoneIncoming className="w-4 h-4" />
               {cfg.secondaryCta.label}
@@ -774,7 +774,9 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
                   +
                 </span>
               </summary>
-              <div className="px-5 pb-4 pl-[58px] text-sm text-ink/75 leading-relaxed">{faq.a}</div>
+              <div className="px-5 pb-4 pl-4 md:pl-[58px] text-sm text-ink/75 leading-relaxed">
+                {faq.a}
+              </div>
             </motion.details>
           ))}
         </div>

@@ -5,7 +5,6 @@ import { Loader2 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import ConfirmModal from "./ConfirmModal";
 import { motion, AnimatePresence } from "motion/react";
-import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import IntegrationHealthBanner, { type IntegrationHealthPayload } from "./IntegrationHealthBanner";
 import PageShell from "./PageShell";
@@ -241,7 +240,7 @@ export default function AdminSettings() {
       const res = await authFetch("/api/carrier/numbers");
       const data = await res.json();
       setCarrierNumbers(data.numbers || []);
-    } catch (e) {
+    } catch {
       toastError("Sync failed", "Could not fetch available Wireline phone numbers.");
     }
     setIsSyncing(false);

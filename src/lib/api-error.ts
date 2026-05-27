@@ -14,12 +14,7 @@ export class AppError extends Error {
   code: string;
   details?: Record<string, unknown>;
 
-  constructor(
-    status: number,
-    code: string,
-    message: string,
-    details?: Record<string, unknown>,
-  ) {
+  constructor(status: number, code: string, message: string, details?: Record<string, unknown>) {
     super(message);
     this.name = "AppError";
     this.status = status;
@@ -94,14 +89,21 @@ export function formatErrorResponse(
 
   // Unknown error — never leak stack traces or implementation details.
   const isKnownHttpError =
-    err instanceof Error && "status" in err && typeof (err as any).status === "number";
-  const status: number = isKnownHttpError ? (err as any).status : 500;
+    err instanceof Error &&
+    "status" in err &&
+    typeof (err as unknown as { status: unknown }).status === "number";
+  const status: number = isKnownHttpError ? (err as unknown as { status: number }).status : 500;
   const safeStatus = status >= 400 && status < 600 ? status : 500;
 
   return {
     status: safeStatus,
     body: {
-      error: safeStatus === 500 ? "Internal server error" : (err instanceof Error ? err.message : "Unknown error"),
+      error:
+        safeStatus === 500
+          ? "Internal server error"
+          : err instanceof Error
+            ? err.message
+            : "Unknown error",
       code: safeStatus === 500 ? "INTERNAL_ERROR" : "ERROR",
       ...(requestId ? { requestId } : {}),
     },

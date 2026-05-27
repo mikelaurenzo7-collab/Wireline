@@ -283,6 +283,46 @@ export function startWorker(db: DrizzleDB, handler: any, opts: WorkerOptions = {
   };
 }
 
+/**
+ * Recover jobs stuck in "running" state for longer than the timeout.
+ * Jobs that were claimed but never completed (e.g., worker crash) are
+ * reset to "pending" for retry, or marked "dead" if max attempts exceeded.
+ * Should be called periodically (e.g., every 5 minutes from the sweep cron).
+ */
+export async function recoverStaleJobs(
+  db: DrizzleDB,
+  staleAfterMs = 30 * 60 * 1000,
+): Promise<number> {
+  const cutoff = new Date(Date.now() - staleAfterMs);
+  const staleJobs = await db
+    .select({
+      id: schema.jobs.id,
+      attempts: schema.jobs.attempts,
+      maxAttempts: schema.jobs.maxAttempts,
+    })
+    .from(schema.jobs)
+    .where(and(eq(schema.jobs.status, "running" as JobStatus), lte(schema.jobs.startedAt, cutoff)));
+
+  let recovered = 0;
+  for (const job of staleJobs) {
+    const exhausted = (job.attempts || 0) >= (job.maxAttempts || 5);
+    await db
+      .update(schema.jobs)
+      .set({
+        status: (exhausted ? "dead" : "pending") as JobStatus,
+        error: exhausted
+          ? "Marked dead: stuck in running state beyond timeout"
+          : "Reset from stale running state",
+        runAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.jobs.id, job.id));
+    recovered++;
+  }
+
+  return recovered;
+}
+
 // ─────────────────────────────────────────────────────────────────
 // Stats helper — for health endpoint / monitoring
 // ─────────────────────────────────────────────────────────────────

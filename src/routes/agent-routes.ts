@@ -44,7 +44,7 @@ router.get("/api/agents", authenticateUser, async (req: AuthenticatedRequest, re
     res.json({ agents: mapObjectToSnake(agentsList) });
   } catch (error: any) {
     log.warn("Failed to fetch agents", { userId: req.user.id, error: getErrorMessage(error) });
-    res.json({ agents: [] });
+    res.status(500).json({ error: "Failed to fetch agents" });
   }
 });
 

@@ -201,6 +201,7 @@ export default function Compare() {
       <PageMeta
         title="Wireline vs Air / Synthflow / Bland / Vapi / Retell — Feature Comparison"
         description="Side-by-side comparison of Wireline against the leading AI voice agent platforms. Wireline is the only horizontal platform with voice + email + SMS, supervisor cockpit, frontier reasoning, and bundled phone numbers."
+        path="/compare"
       />
 
       {/* Aurora backdrop — same restrained palette as the wedge pages. */}

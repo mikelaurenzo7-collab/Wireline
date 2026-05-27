@@ -87,6 +87,7 @@ export function PrivacyPolicy() {
       <PageMeta
         title="Privacy Policy"
         description="Wireline's privacy policy — how we collect, use, and protect your data. Sub-processors: Supabase, Anthropic, Stripe, and Vercel. Last updated May 9, 2026."
+        path="/privacy"
       />
 
       <Section title="1. Who We Are">
@@ -282,6 +283,7 @@ export function TermsOfService() {
       <PageMeta
         title="Terms of Service"
         description="Wireline's terms of service — acceptable use, billing, telemarketing compliance (TCPA), limitation of liability, and governing law (Delaware). Last updated May 9, 2026."
+        path="/terms"
       />
 
       <Section title="1. Acceptance">

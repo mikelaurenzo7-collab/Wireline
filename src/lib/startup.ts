@@ -18,7 +18,8 @@ export function validateStartupEnv() {
   logEnvValidation(IS_PROD);
 
   // Additional legacy checks for backward compatibility
-  const jwtSecret = getInternalJwtSecret();
+  // Validates that JWT secret can be resolved (throws if missing in prod)
+  getInternalJwtSecret();
 
   const recommended: string[] = [];
   if (!process.env.APP_URL) recommended.push("APP_URL");
