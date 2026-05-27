@@ -41,13 +41,24 @@ export const TRIAL_DAYS = 14;
 export const TRIAL_MAX_AGENTS = 1;
 export const TRIAL_MAX_OUTBOUND = 25;
 
+export type SignupAttribution = {
+  preferredPlanId?: string | null;
+  signupWedge?: string | null;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+};
+
 /**
  * Insert a settings row for a brand-new tenant with the trial state
  * primed. Called from authService.signUp() right after the user row
  * is inserted. Idempotent — does nothing if a settings row already
  * exists for the userId (Stripe-checkout-first signups land here too).
  */
-export async function startTrialForUser(userId: string): Promise<void> {
+export async function startTrialForUser(
+  userId: string,
+  attribution: SignupAttribution = {},
+): Promise<void> {
   const trialEnds = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
   try {
     await drizzle
@@ -58,6 +69,11 @@ export async function startTrialForUser(userId: string): Promise<void> {
         subscriptionStatus: "trialing",
         trialEndsAt: trialEnds,
         trialOutboundCount: 0,
+        signupPlanInterest: attribution.preferredPlanId || null,
+        signupWedge: attribution.signupWedge || null,
+        acquisitionSource: attribution.utmSource || null,
+        acquisitionMedium: attribution.utmMedium || null,
+        acquisitionCampaign: attribution.utmCampaign || null,
       })
       .onConflictDoNothing();
   } catch (err: any) {
@@ -68,6 +84,45 @@ export async function startTrialForUser(userId: string): Promise<void> {
       error: err?.message ?? String(err),
     });
   }
+}
+
+export async function saveSignupAttribution(
+  userId: string,
+  attribution: SignupAttribution,
+): Promise<void> {
+  if (
+    !attribution.preferredPlanId &&
+    !attribution.signupWedge &&
+    !attribution.utmSource &&
+    !attribution.utmMedium &&
+    !attribution.utmCampaign
+  ) {
+    return;
+  }
+
+  const attributionValues = {
+    signupPlanInterest: attribution.preferredPlanId || null,
+    signupWedge: attribution.signupWedge || null,
+    acquisitionSource: attribution.utmSource || null,
+    acquisitionMedium: attribution.utmMedium || null,
+    acquisitionCampaign: attribution.utmCampaign || null,
+    updatedAt: new Date(),
+  };
+
+  await drizzle
+    .insert(schema.settings)
+    .values({
+      id: userId,
+      userId,
+      subscriptionStatus: "trialing",
+      trialEndsAt: new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000),
+      trialOutboundCount: 0,
+      ...attributionValues,
+    })
+    .onConflictDoUpdate({
+      target: schema.settings.userId,
+      set: attributionValues,
+    });
 }
 
 interface TrialCheck {

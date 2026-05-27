@@ -86,6 +86,7 @@ export function SupportPage() {
       <PageMeta
         title="Support — Wireline"
         description={`Get help with Wireline. Call ${supportAgent.display} for instant agent triage, or open a ticket. Billing, technical, feature, agent-quality requests all in one place.`}
+        path="/support"
       />
       <div className="max-w-3xl mx-auto px-5 sm:px-6 py-10 sm:py-16">
         <Link

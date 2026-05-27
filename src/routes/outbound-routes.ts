@@ -122,9 +122,13 @@ const dialSchema = z.object({
     .string()
     .min(1, "customerNumber is required")
     // Accept E.164 (+1XXXXXXXXXX) or common US formats (10-15 digits)
-    .regex(/^\+?[1-9]\d{6,14}$/, "Invalid phone number format — expected E.164 (e.g. +15551234567)"),
+    .regex(
+      /^\+?[1-9]\d{6,14}$/,
+      "Invalid phone number format — expected E.164 (e.g. +15551234567)",
+    ),
   customerName: z.string().max(200).optional(),
   context: z.string().max(2000).optional(),
+  hasExpressWrittenConsent: z.boolean().optional().default(false),
 });
 
 router.post(
@@ -142,7 +146,7 @@ router.post(
   validate({ body: dialSchema }),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { agentId, customerName, customerNumber, context } = req.body;
+      const { agentId, customerName, customerNumber, context, hasExpressWrittenConsent } = req.body;
 
       // DNC compliance check — block calls to numbers on the Do Not Call list.
       if (await isDncBlocked(req.user.id, customerNumber)) {
@@ -158,7 +162,7 @@ router.post(
         phone: customerNumber,
         is_internal_dnc: false, // already checked above
         is_marketing_call: true,
-        has_express_written_consent: false,
+        has_express_written_consent: !!hasExpressWrittenConsent,
       });
       if (!tcpaDecision.allowed) {
         log.warn("Outbound dial blocked by TCPA consent gate", {
@@ -206,6 +210,7 @@ router.post(
         context: context,
         callId: result.callId,
         status: "Dialing",
+        metadata: { has_express_written_consent: !!hasExpressWrittenConsent },
       });
 
       SentryEvents.outboundDialStarted({
@@ -237,11 +242,12 @@ router.post(
       const validation = parseFormData(OutboundBulkSchema, {
         leads: req.body.leads,
         campaign_id: req.body.campaign_id,
+        has_express_written_consent: req.body.has_express_written_consent,
       });
       if (!validation.success) {
         return res.status(400).json({ error: "Validation failed", errors: validation.errors });
       }
-      const { leads, campaign_id } = validation.data!;
+      const { leads, campaign_id, has_express_written_consent } = validation.data!;
 
       // SECURITY ENFORCEMENT
       const [userSettings] = await drizzle
@@ -277,6 +283,10 @@ router.post(
         phoneNumber: lead.phone_number || lead.customer_number,
         context: lead.context,
         campaignId: campaign_id || null,
+        metadata: {
+          ...((lead.metadata as Record<string, unknown>) || {}),
+          has_express_written_consent: !!has_express_written_consent,
+        },
       }));
 
       const insertedLeads = await drizzle

@@ -18,6 +18,7 @@ import { X, Loader2, CreditCard, AlertTriangle, Sparkles } from "lucide-react";
 import { authFetch, safeJson, TRIAL_GATE_EVENT, type TrialGateBlockDetail } from "../lib/api";
 import { cn } from "../lib/utils";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
+import { getStoredSignupIntent, recommendedPlanFromIntent } from "../lib/signup-intent";
 
 /**
  * Self-serve tiers we surface in the picker. Enterprise is intentionally
@@ -117,6 +118,7 @@ export default function TrialGateModal() {
   if (!detail) return null;
 
   const { title, body } = headlineForCode(detail);
+  const recommendedPlanId = recommendedPlanFromIntent(getStoredSignupIntent());
 
   async function checkout(planId: string) {
     setPending(planId);
@@ -199,6 +201,7 @@ export default function TrialGateModal() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {SELF_SERVE_TIERS.map((tier) => {
                   const isPending = pending === tier.id;
+                  const isRecommended = tier.id === recommendedPlanId;
                   return (
                     <button
                       key={tier.id}
@@ -206,13 +209,13 @@ export default function TrialGateModal() {
                       disabled={!!pending}
                       className={cn(
                         "relative text-left rounded-2xl border p-4 transition-all touch-manipulation",
-                        tier.recommended
+                        isRecommended
                           ? "border-brand/50 bg-brand/5 hover:border-brand hover:bg-brand/10"
                           : "border-black/10 hover:border-brand/30 hover:bg-black/3",
                         "disabled:opacity-50 disabled:cursor-not-allowed",
                       )}
                     >
-                      {tier.recommended && (
+                      {isRecommended && (
                         <div className="absolute -top-2 left-4 px-2 py-0.5 rounded-full bg-brand text-on-brand text-[9px] uppercase tracking-[0.2em] font-medium">
                           Recommended
                         </div>

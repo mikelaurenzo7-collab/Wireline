@@ -103,6 +103,30 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
       }
     }
 
+    const requiredColumns = [
+      { table: "wireline_settings", column: "signup_plan_interest" },
+      { table: "wireline_settings", column: "signup_wedge" },
+      { table: "wireline_settings", column: "acquisition_source" },
+      { table: "wireline_settings", column: "acquisition_medium" },
+      { table: "wireline_settings", column: "acquisition_campaign" },
+    ];
+
+    for (const { table, column } of requiredColumns) {
+      const columnExists = await client.query(
+        `SELECT EXISTS (
+          SELECT FROM information_schema.columns
+          WHERE table_schema = 'public'
+          AND table_name = $1
+          AND column_name = $2
+        )`,
+        [table, column],
+      );
+      if (!columnExists.rows[0]?.exists) {
+        result.healthy = false;
+        result.issues.push(`Required column missing: ${table}.${column}`);
+      }
+    }
+
     // 5. Check for critical indexes
     const criticalIndexes = [
       { table: "wireline_users", column: "email" },

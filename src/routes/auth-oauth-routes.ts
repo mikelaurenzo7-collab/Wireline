@@ -33,6 +33,7 @@ import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import { generateToken, isOwnerEmail } from "../lib/auth-service";
 import { generateOAuthState, verifyOAuthState } from "../lib/oauth-helpers";
+import { oauthRateLimiter } from "../middleware/rate-limit-middleware";
 
 const router = Router();
 
@@ -79,12 +80,14 @@ function findOrCreateUserByEmail(
       .values({
         email: normalized,
         // passwordHash stays NULL — these users sign in via OAuth.
-        // Password reset will no-op for them; we surface a clearer
-        // message in the reset flow when passwordHash is null.
+        // They can still add a password later via the reset flow.
         fullName,
+        emailVerifiedAt: new Date(),
       })
       .returning()) as Array<{ id: string; email: string; fullName: string | null }>;
     const u = inserted[0];
+    const { startTrialForUser } = await import("../lib/trial-gate");
+    await startTrialForUser(u.id);
     log.info("auth oauth: created new user", { email: normalized });
     return { id: u.id, email: u.email, fullName: u.fullName };
   })();
@@ -114,7 +117,7 @@ function bridgeRedirect(
 
 /* ─────────────────────────  Google  ─────────────────────── */
 
-router.get("/api/auth/google/url", (req: Request, res: Response) => {
+router.get("/api/auth/google/url", oauthRateLimiter, (req: Request, res: Response) => {
   try {
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
       return res.status(503).json({ error: "Google sign-in is not configured." });
@@ -182,7 +185,7 @@ router.get("/api/auth/google/callback", async (req: Request, res: Response) => {
 
 /* ─────────────────────────  Microsoft  ─────────────────────── */
 
-router.get("/api/auth/microsoft/url", (req: Request, res: Response) => {
+router.get("/api/auth/microsoft/url", oauthRateLimiter, (req: Request, res: Response) => {
   try {
     if (!process.env.MICROSOFT_CLIENT_ID || !process.env.MICROSOFT_CLIENT_SECRET) {
       return res.status(503).json({ error: "Microsoft sign-in is not configured." });
@@ -279,7 +282,7 @@ router.get("/api/auth/microsoft/callback", async (req: Request, res: Response) =
  * Userinfo:       https://api.login.yahoo.com/openid/v1/userinfo
  */
 
-router.get("/api/auth/yahoo/url", (req: Request, res: Response) => {
+router.get("/api/auth/yahoo/url", oauthRateLimiter, (req: Request, res: Response) => {
   try {
     if (!process.env.YAHOO_CLIENT_ID || !process.env.YAHOO_CLIENT_SECRET) {
       return res.status(503).json({ error: "Yahoo sign-in is not configured." });

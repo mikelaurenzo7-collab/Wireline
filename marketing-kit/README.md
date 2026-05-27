@@ -36,7 +36,7 @@ Demo account has **24 seeded calls with summaries** but no `recording_url` in DB
 # Already in screenshots/production-public/
 
 # Full kit (local Vite + rich mocks)
-E2E_BASE_URL="http://127.0.0.1:5173" MARKETING_USE_MOCKS=1 npm run marketing:kit
+E2E_BASE_URL="http://127.0.0.1:3000" MARKETING_USE_MOCKS=1 npm run marketing:kit
 
 # Full kit on production (requires demo credentials in env)
 E2E_BASE_URL="https://trywireline.com" \

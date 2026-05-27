@@ -3,6 +3,7 @@ import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, lt } from "drizzle-orm";
 import { isDncBlocked } from "../lib/compliance";
+import { evaluateOutboundConsent } from "../lib/tcpa-consent";
 import { placeOutboundCall } from "../lib/vapi-client";
 
 export class CampaignDialerService {
@@ -86,7 +87,35 @@ export class CampaignDialerService {
         return;
       }
 
-      // 2. Place Call
+      // 2. TCPA consent gate. Campaigns are automated outbound marketing by default,
+      // so they require the same explicit consent attestation as manual dials.
+      const metadata = (lead.metadata || {}) as Record<string, unknown>;
+      const tcpaDecision = evaluateOutboundConsent({
+        phone: lead.customerNumber!,
+        is_internal_dnc: false,
+        is_marketing_call: true,
+        has_express_written_consent: metadata.has_express_written_consent === true,
+      });
+      if (!tcpaDecision.allowed) {
+        await drizzle
+          .update(schema.outboundLeads)
+          .set({
+            status: "Blocked-TCPA",
+            metadata: { ...metadata, tcpa: tcpaDecision },
+          })
+          .where(eq(schema.outboundLeads.id, lead.id));
+
+        await drizzle.insert(schema.consentLog).values({
+          userId: lead.userId!,
+          customerNumber: lead.customerNumber,
+          event: "outbound_blocked_tcpa",
+          state: "blocked",
+          metadata: { leadId: lead.id, campaignId: campaign.id, tcpa: tcpaDecision },
+        });
+        return;
+      }
+
+      // 3. Place Call
       const result = await placeOutboundCall({
         userId: lead.userId!,
         agentId: campaign.agentId!,

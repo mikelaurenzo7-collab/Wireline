@@ -152,16 +152,59 @@ export const signupSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
   fullName: z.string().min(2, "Full name must be at least 2 characters").max(100).optional(),
+  preferredPlanId: z.enum(["personal", "starter", "pro", "business"]).optional(),
+  signupWedge: z
+    .enum([
+      "home-services",
+      "medical",
+      "legal",
+      "real-estate",
+      "personal",
+      "insurance",
+      "restaurants",
+      "sales",
+    ])
+    .optional(),
+  utmSource: z.string().trim().max(120).optional(),
+  utmMedium: z.string().trim().max(120).optional(),
+  utmCampaign: z.string().trim().max(120).optional(),
 });
+
+export const signupIntentSchema = signupSchema
+  .pick({
+    preferredPlanId: true,
+    signupWedge: true,
+    utmSource: true,
+    utmMedium: true,
+    utmCampaign: true,
+  })
+  .refine(
+    (v) => !!(v.preferredPlanId || v.signupWedge || v.utmSource || v.utmMedium || v.utmCampaign),
+    "At least one signup-intent field is required",
+  );
 
 export const forgotPasswordSchema = z.object({
   email: emailSchema,
 });
 
-export const resetPasswordSchema = z.object({
-  token: z.string().min(1, "Reset token is required"),
-  password: passwordSchema,
-});
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().min(1, "Reset token is required"),
+    password: passwordSchema.optional(),
+    new_password: passwordSchema.optional(),
+  })
+  .transform((v, ctx) => {
+    const password = v.password || v.new_password;
+    if (!password) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["password"],
+        message: "Password is required",
+      });
+      return z.NEVER;
+    }
+    return { token: v.token, password };
+  });
 
 // ============================================================================
 // Agent Route Schemas

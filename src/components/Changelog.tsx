@@ -126,6 +126,7 @@ export function ChangelogPage() {
       <PageMeta
         title="Changelog — Wireline"
         description="Wireline's deploy history. Features, fixes, polish, infra — what shipped, when, and why."
+        path="/changelog"
       />
       <div className="max-w-3xl mx-auto px-5 sm:px-6 py-10 sm:py-16">
         <Link

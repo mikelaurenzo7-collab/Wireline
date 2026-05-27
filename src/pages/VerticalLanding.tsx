@@ -15,6 +15,7 @@
  * Adding a new wedge: drop a new entry in `WEDGES`, route it from
  * App.tsx. ~20 lines per vertical.
  */
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import {
@@ -32,6 +33,7 @@ import {
 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import WirelineMark from "../components/WirelineMark";
+import { signupHrefForWedge } from "../lib/signup-intent";
 
 export type VerticalKey =
   | "home-services"
@@ -83,12 +85,39 @@ interface VerticalConfig {
   faqs: { q: string; a: string }[];
 }
 
+function isExternalHref(href: string): boolean {
+  return /^(tel:|mailto:|https?:)/.test(href);
+}
+
+function CtaLink({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className: string;
+  children: ReactNode;
+}) {
+  if (isExternalHref(href)) {
+    return (
+      <a href={href} className={className}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link to={href} className={className}>
+      {children}
+    </Link>
+  );
+}
+
 const WEDGES: Record<VerticalKey, VerticalConfig> = {
   "home-services": {
     slug: "home-services",
     metaTitle: "Wireline for Home Services — AI Receptionist that Books Every Call",
     metaDescription:
-      "AI phone agent for HVAC, plumbing, electrical, and roofing companies. Never miss another after-hours service call. Books appointments, dispatches techs, syncs with your CRM. Free 14-day trial.",
+      "AI voice + email agent for HVAC, plumbing, electrical, and roofing teams. Answer after-hours calls, book jobs, and follow up. 14-day free trial.",
     eyebrow: "For Home Services Pros",
     headline: "Stop missing $500 after-hours calls.",
     subhead:
@@ -122,7 +151,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "24 / 7",
     statLabel:
       "Always answers — including the 6pm pipe-burst that books a $500 emergency job your competitor missed.",
-    primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=home-services" },
+    primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("home-services") },
     secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
     trustLine:
       "Built on enterprise-grade carrier infrastructure. White-labeled — customers hear your business name, not ours.",
@@ -150,7 +179,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "medical",
     metaTitle: "Wireline for Medical Practices — AI Patient Intake on Every Call",
     metaDescription:
-      "AI phone agent for dental, chiropractic, med spa, and primary care practices. Handles patient intake, books appointments, manages cancellations, and follows HIPAA-aware compliance hedges. Free 14-day trial.",
+      "AI voice + email agent for dental, med spa, chiropractic, and primary care practices. Book appointments and manage intake. Call the medical demo.",
     eyebrow: "For Medical Practices",
     headline: "Patients waiting on hold becomes patients on the schedule.",
     subhead:
@@ -181,14 +210,14 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "First ring",
     statLabel:
       "Patients on hold drop calls. Wireline picks up before the first ring — every call, every hour.",
-    primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=medical" },
-    secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
+    primaryCta: { label: "Call medical demo", href: "tel:+16173134469" },
+    secondaryCta: { label: "Start trial", href: signupHrefForWedge("medical") },
     trustLine:
-      "Built on enterprise voice infrastructure. White-labeled — patients hear your practice name. HIPAA BAA on Enterprise tier when certified.",
+      "Built on enterprise voice infrastructure. White-labeled — patients hear your practice name. Use Enterprise onboarding for workflows that require a signed BAA.",
     faqs: [
       {
         q: "Is Wireline HIPAA-compliant?",
-        a: "Wireline runs healthcare-style intake flows today — TCPA disclosure logging, opt-out enforcement, no PHI in transcripts by default. A full HIPAA BAA is available on the Enterprise tier with ~30-day onboarding. We're honest: don't claim certified until certified.",
+        a: "Wireline runs healthcare-style intake flows today — TCPA disclosure logging, opt-out enforcement, and no PHI in transcripts by default. Use Enterprise onboarding for workflows that require a signed BAA. We're honest: don't claim certified until certified.",
       },
       {
         q: "Can it actually book to my existing schedule?",
@@ -200,7 +229,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Will patients accept an AI receptionist?",
-        a: "Patient response data so far: when the agent is warm, uses your practice name, and resolves the call in under 60 seconds, satisfaction matches or beats live front-desk. The win is no-hold-time. Disclosure is your call — many practices run undisclosed for routine scheduling.",
+        a: "The acceptance win is no-hold-time: a warm agent that uses your practice name and resolves routine scheduling quickly feels better than waiting on the line. Disclosure choices and consent language should match your practice policy and applicable rules.",
       },
     ],
   },
@@ -209,7 +238,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "legal",
     metaTitle: "Wireline for Law Firms — AI Intake That Captures Every New Matter",
     metaDescription:
-      "AI phone agent for law firms — captures new client intakes, qualifies the matter type, schedules consults, and uses attorney-client privileged language by default. Built for plaintiff, family, criminal, and small business practices.",
+      "AI voice + email intake for law firms. Capture new matters, qualify urgency, schedule consults, and route conflict checks. Call the legal demo.",
     eyebrow: "For Law Firms",
     headline: "Every new client call captured. Every consult booked.",
     subhead:
@@ -240,8 +269,8 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "Conflict-checked",
     statLabel:
       "Captures the prospective client + the opposing party name; pings your paralegal in Slack before the consult lands on the attorney's calendar.",
-    primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=legal" },
-    secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
+    primaryCta: { label: "Call legal demo", href: "tel:+15727269365" },
+    secondaryCta: { label: "Start trial", href: signupHrefForWedge("legal") },
     trustLine:
       "Audit log preserves every disclosure and opt-out. Not a substitute for legal counsel — Wireline is the intake layer, your attorneys deliver the advice.",
     faqs: [
@@ -268,7 +297,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "real-estate",
     metaTitle: "Wireline for Real Estate — AI Lead Qualifier on Every Listing Call",
     metaDescription:
-      "AI phone agent for real estate brokerages and teams — qualifies buyers, books showings, follows up on cold leads, and syncs with HubSpot/Salesforce. Never lose another lead to a missed call.",
+      "AI voice + email agent for real estate teams. Qualify buyers, book showings, revive cold leads, and sync CRM notes. 14-day free trial.",
     eyebrow: "For Real Estate Agents & Brokerages",
     headline: "Every lead worked. Every showing booked.",
     subhead:
@@ -299,7 +328,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "Same day",
     statLabel:
       "Pre-qualified buyers get a same-day showing slot. Cold leads get nurtured via text until they're warm — your top agents only see the ready ones.",
-    primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=real-estate" },
+    primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("real-estate") },
     secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
     trustLine:
       "Connects to HubSpot, Salesforce, Google Calendar, Outlook. White-labeled — buyers hear your brokerage name.",
@@ -335,7 +364,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "personal",
     metaTitle: "Wireline for Everyone — Your AI Handles the Calls You Hate",
     metaDescription:
-      "Personal AI assistant that makes the phone calls you don't want to make. Debt negotiation, appointment booking, customer service disputes, returns — your AI handles it. Starts at $49/mo.",
+      "Personal AI voice assistant for calls you avoid: appointments, customer service, billing disputes, returns, and follow-ups. Starts at $49/mo.",
     eyebrow: "For everyone who hates the phone",
     headline: "Never make an awkward call again.",
     subhead:
@@ -344,7 +373,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: Clock,
         title: "Debt negotiation calls",
-        body: "Past-due collector keeps calling? Tell your agent the amount, the offer you can afford, and the verbiage you want to use. The agent dials, negotiates within your bounds, gets the agreement in writing — and you never have to hear the collector's voice.",
+        body: "Past-due collector keeps calling? Tell your agent the amount, the offer you can afford, and your approved script. The agent dials, stays within those bounds, asks for terms in writing, and reports back without promising a specific outcome.",
       },
       {
         icon: Calendar,
@@ -354,7 +383,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: DollarSign,
         title: "Returns, billing disputes, customer service",
-        body: "Cable bill suddenly jumped $40. Online order arrived broken. Insurance won't approve the claim. These are the calls that take an hour on hold and end with you frustrated. Your agent waits on hold, escalates politely, and gets the credit/refund/approval logged.",
+        body: "Cable bill suddenly jumped $40. Online order arrived broken. Insurance won't approve the claim. These are the calls that take an hour on hold and end with you frustrated. Your agent waits on hold, escalates politely, and logs whatever resolution the provider offers.",
       },
       {
         icon: Shield,
@@ -363,22 +392,22 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
     ],
     scriptPreview:
-      "Hi, this is Alex calling on behalf of Mike Laurenzo regarding account ending in 4421. Mike is offering $1,200 as a one-time settlement, payable Friday, in exchange for the account being marked paid-in-full and removed from his credit report. Can your team accept those terms today, or do you need to escalate?",
+      "Hi, this is Alex calling on behalf of Mike Laurenzo regarding account ending in 4421. Mike authorized me to ask whether your team can consider a $1,200 one-time payment offer and send any available terms in writing. If that is not something you can review, who should I speak with?",
     statValue: "Yours",
     statLabel:
       "Your AI, calling on your behalf. You text it what you need; it dials, talks, and reports back. You stay off the call.",
-    primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=personal" },
+    primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("personal") },
     secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
     trustLine:
       "Your agent only does what you authorize. Every call is recorded, transcribed, and visible to you in your dashboard before, during, and after. You can hang it up, override mid-call, or take over yourself at any time.",
     faqs: [
       {
         q: "Is it actually legal for an AI to make calls on my behalf?",
-        a: "Yes — you're the principal, the AI is your agent. Wireline introduces itself with your authorization (\"I'm calling on behalf of Mike Laurenzo regarding…\") and operates within the limits you set. TCPA and state-level robocall laws apply only to calls without the recipient's prior consent — calls you're making to YOUR creditors, providers, and accounts are fully permitted.",
+        a: "Wireline is a tool you authorize to place calls with your script and limits. Rules vary by call type, state, and account, so do not treat this as legal advice; configure calls using your own guidance. The agent identifies that it is calling on your behalf and records what happened.",
       },
       {
         q: "Can it really negotiate debt? Won't the collector just hang up on a robot?",
-        a: "Two things. First, the agent doesn't sound like a robot — Wireline's voice quality is indistinguishable from human in most calls. Second, collectors are required by law to negotiate in good faith with authorized representatives. Your agent IS an authorized representative. If they hang up, your agent calls back with the next escalation script. Most settlements take 1-3 calls.",
+        a: "Wireline can call with your authorized offer, ask whether the collector can review it, and request written terms if they are available. Settlement outcomes are not guaranteed, creditors and collectors set their own policies, and this is not legal or financial advice. If a caller refuses to engage, the agent logs that and follows your escalation instructions.",
       },
       {
         q: "What about voicemail / hold music / phone trees? Doesn't that break it?",
@@ -386,7 +415,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How is this different from just having a friend or family member call for me?",
-        a: "Available 24/7. Doesn't owe you a favor afterwards. Never gets tired or annoyed. Records everything so you have evidence if needed. Costs $49/mo total — same call from a real human assistant would cost $25-50 per call. Privacy: nobody in your life knows you avoid these calls. The agent is also better at scripts than most humans because it can be coached precisely.",
+        a: "Available 24/7. Doesn't owe you a favor afterwards. Never gets tired or annoyed. Records and summarizes calls where lawful and configured, so you can review exactly what happened. Costs $49/mo total — same call from a real human assistant can cost $25-50 per call. Privacy: nobody in your life needs to know you avoid these calls.",
       },
       {
         q: "What can't it do?",
@@ -399,7 +428,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "insurance",
     metaTitle: "Wireline for Insurance Agencies — AI Quote Intake + Renewal Follow-Up",
     metaDescription:
-      "AI phone agent for insurance agencies: handles quote requests 24/7, captures FNOL (first notice of loss) details, runs renewal follow-up campaigns. Free 14-day trial.",
+      "AI voice + email agent for insurance agencies. Capture quote intake, FNOL details, renewal follow-up, and producer-ready notes. Free trial.",
     eyebrow: "For Insurance Agencies",
     headline: "Every quote request answered. Every renewal followed up.",
     subhead:
@@ -430,7 +459,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "60-day",
     statLabel:
       "Renewal cadence catches the customer who would have lapsed to a competitor — before they even shopped around.",
-    primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=insurance" },
+    primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("insurance") },
     secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
     trustLine:
       "White-labeled — your insureds hear your agency name, not ours. Recordings + transcripts archived for audit compliance.",
@@ -458,7 +487,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "restaurants",
     metaTitle: "Wireline for Restaurants — AI Phone Host for Reservations + Takeout",
     metaDescription:
-      "AI phone agent for restaurants, bars, and hospitality. Takes reservations, manages waitlists, captures takeout orders, handles allergen/special-request questions. Never miss a Saturday-night call again.",
+      "AI voice + email host for restaurants. Take reservations, capture takeout orders, handle event inquiries, and follow up by SMS. Free trial.",
     eyebrow: "For Restaurants + Hospitality",
     headline: "The phone rings during dinner rush. The agent picks up.",
     subhead:
@@ -489,7 +518,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "Saturday 7pm",
     statLabel:
       "The hour your phone rings off the hook + your hostess can't get to it. Agent fields every call — books the booking, takes the takeout, sends you the events lead.",
-    primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=restaurants" },
+    primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("restaurants") },
     secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
     trustLine:
       "Caller hears your restaurant's name + brand voice. We can clone your hostess's actual voice with consent — 60 seconds of sample audio.",
@@ -517,7 +546,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "sales",
     metaTitle: "Wireline for Sales Teams — AI SDR for Outbound + Inbound Lead Qualification",
     metaDescription:
-      "AI sales development rep that runs outbound calling campaigns at scale, qualifies inbound leads in under 90 seconds, books meetings on your reps' calendars. Free 14-day trial.",
+      "AI voice + email SDR for sales teams. Run outbound campaigns, qualify inbound leads, book meetings, and sync CRM activity. Free trial.",
     eyebrow: "For Sales + SDR Teams",
     headline: "Your AI SDR works the list while your reps work the calls.",
     subhead:
@@ -548,7 +577,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "200 / day",
     statLabel:
       "Calls one AI agent can make in a 9-hour workday. Run 5 in parallel = 1,000 dials. No bathroom breaks, no Mondays.",
-    primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=sales" },
+    primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("sales") },
     secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
     trustLine:
       "Integrates with Salesforce, HubSpot, Pipedrive, Apollo. Outbound list management + CRM activity logging out of the box.",
@@ -584,10 +613,27 @@ export function getVerticalConfig(slug: VerticalKey): VerticalConfig {
 export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
   const cfg = WEDGES[slug];
   if (!cfg) return null;
+  const faqStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: cfg.faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.a,
+      },
+    })),
+  };
 
   return (
     <div className="min-h-dvh relative bg-paper text-ink">
-      <PageMeta title={cfg.metaTitle} description={cfg.metaDescription} path={`/for/${slug}`} />
+      <PageMeta
+        title={cfg.metaTitle}
+        description={cfg.metaDescription}
+        path={`/for/${slug}`}
+        structuredData={faqStructuredData}
+      />
 
       {/* Aurora backdrop — toned down. The wedge pages compete with
           /pricing for sales attention; matching the visual density of
@@ -634,12 +680,12 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           >
             Pricing
           </Link>
-          <Link
-            to={cfg.primaryCta.href}
+          <CtaLink
+            href={cfg.primaryCta.href}
             className="px-4 py-2 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.28em] hover:opacity-90 transition-opacity"
           >
             Get started
-          </Link>
+          </CtaLink>
         </div>
       </header>
 
@@ -660,13 +706,13 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
             {cfg.subhead}
           </p>
           <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
-            <Link
-              to={cfg.primaryCta.href}
+            <CtaLink
+              href={cfg.primaryCta.href}
               className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
             >
               {cfg.primaryCta.label}
               <ArrowRight className="w-4 h-4" />
-            </Link>
+            </CtaLink>
             <a
               href={cfg.secondaryCta.href}
               className="hidden sm:inline-flex items-center gap-2 px-5 py-3 rounded-full glass border border-black/12 text-ink text-[11px] uppercase tracking-[0.3em] font-medium hover:border-brand/40 transition-all"
@@ -792,13 +838,13 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           take it production.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
-          <Link
-            to={cfg.primaryCta.href}
+          <CtaLink
+            href={cfg.primaryCta.href}
             className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
           >
             {cfg.primaryCta.label}
             <ArrowRight className="w-4 h-4" />
-          </Link>
+          </CtaLink>
           <a
             href={cfg.secondaryCta.href}
             className="inline-flex items-center gap-2 px-5 py-3 rounded-full glass border border-black/12 text-ink text-[11px] uppercase tracking-[0.3em] font-medium hover:border-brand/40 transition-all"

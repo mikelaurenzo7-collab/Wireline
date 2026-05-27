@@ -25,6 +25,12 @@ import { useAuth } from "../contexts/AuthContext";
 import { PageMeta } from "../lib/page-meta";
 import WirelineMark from "./WirelineMark";
 import { WIRELINE_CONTACT_AGENTS, WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
+import {
+  captureSignupIntentFromLocation,
+  syncSignupIntent,
+  type SignupIntent,
+} from "../lib/signup-intent";
+import { getPasswordPolicyError } from "../lib/password-policy";
 
 const FEATURES = [
   {
@@ -105,6 +111,14 @@ function cleanThrownMessage(e: unknown): string | null {
   const trimmed = raw.trim();
   if (!trimmed || trimmed === "[object Object]") return null;
   return trimmed;
+}
+
+function signupIntentLabel(intent: SignupIntent | null): string | null {
+  if (!intent?.preferredPlanId && !intent?.signupWedge) return null;
+  const parts = [];
+  if (intent.preferredPlanId) parts.push(`${intent.preferredPlanId} plan`);
+  if (intent.signupWedge) parts.push(intent.signupWedge.replace(/-/g, " "));
+  return parts.join(" · ");
 }
 
 /**
@@ -319,12 +333,13 @@ type AuthMode = "signin" | "signup" | "reset";
 
 export default function AuthPortal() {
   const { signIn } = useAuth();
+  const pathname = typeof window === "undefined" ? "/" : window.location.pathname;
   // Default mode matches the URL the user landed on. /signup → signup
   // form, /signin or anything else (including "/") → signin form.
   // AuthPortal is the public home page now, so "/" defaults to signin.
   const initialMode: AuthMode = (() => {
     if (typeof window === "undefined") return "signin";
-    return window.location.pathname === "/signup" ? "signup" : "signin";
+    return pathname === "/signup" ? "signup" : "signin";
   })();
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
@@ -334,10 +349,18 @@ export default function AuthPortal() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [signupIntent, setSignupIntent] = useState<SignupIntent | null>(() =>
+    captureSignupIntentFromLocation(),
+  );
 
   const isSignUp = mode === "signup";
   const isReset = mode === "reset";
   const pwStrength = isSignUp ? getPasswordStrength(password) : null;
+  const intentLabel = signupIntentLabel(signupIntent);
+
+  useEffect(() => {
+    setSignupIntent(captureSignupIntentFromLocation());
+  }, []);
 
   const setIsSignUp = (v: boolean) => {
     setMode(v ? "signup" : "signin");
@@ -364,8 +387,9 @@ export default function AuthPortal() {
       setError("Password is required.");
       return;
     }
-    if (isSignUp && password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    const passwordPolicyError = isSignUp ? getPasswordPolicyError(password) : null;
+    if (passwordPolicyError) {
+      setError(passwordPolicyError);
       return;
     }
 
@@ -399,7 +423,19 @@ export default function AuthPortal() {
         const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: trimmedEmail, password }),
+          body: JSON.stringify({
+            email: trimmedEmail,
+            password,
+            ...(isSignUp && signupIntent
+              ? {
+                  preferredPlanId: signupIntent.preferredPlanId,
+                  signupWedge: signupIntent.signupWedge,
+                  utmSource: signupIntent.utmSource,
+                  utmMedium: signupIntent.utmMedium,
+                  utmCampaign: signupIntent.utmCampaign,
+                }
+              : {}),
+          }),
         });
 
         let data: any = {};
@@ -418,6 +454,7 @@ export default function AuthPortal() {
           throw new Error(msg);
         }
 
+        await syncSignupIntent(signupIntent, data.token).catch(() => {});
         signIn({
           access_token: data.token,
           user: data.user,
@@ -433,12 +470,24 @@ export default function AuthPortal() {
   return (
     <>
       <PageMeta
-        title={isReset ? "Reset Password" : isSignUp ? "Create Account" : "Sign In"}
-        description={
-          isSignUp
-            ? "Start your 14-day free Wireline trial — deploy an AI voice agent in under 10 minutes. No credit card required."
-            : "Sign in to your Wireline operator console to manage your AI voice agents, call logs, and outbound campaigns."
+        title={
+          pathname === "/"
+            ? "Wireline — AI Voice & Email Agents for Every Business"
+            : isReset
+              ? "Reset Password"
+              : isSignUp
+                ? "Create Account"
+                : "Sign In"
         }
+        description={
+          pathname === "/"
+            ? "Deploy AI voice + email agents on real phone numbers in under 10 minutes. Handle inbound calls, qualify leads, book appointments, send SMS follow-ups, and sync with your CRM."
+            : isSignUp
+              ? "Start your 14-day free Wireline trial — deploy an AI voice agent in under 10 minutes. No credit card required."
+              : "Sign in to your Wireline operator console to manage your AI voice agents, call logs, and outbound campaigns."
+        }
+        path={pathname === "/" ? "/" : pathname === "/signup" ? "/signup" : undefined}
+        noIndex={pathname !== "/"}
       />
       <div className="min-h-dvh flex relative overflow-hidden bg-paper">
         {/* Global parchment backdrop matching Claude.ai */}
@@ -483,7 +532,7 @@ export default function AuthPortal() {
                 WIRELINE
               </span>
               <p className="text-[9px] xl:text-[10px] tracking-[0.42em] uppercase text-muted mt-1">
-                AI Voice Platform
+                AI Voice + Email Platform
               </p>
             </div>
           </motion.div>
@@ -501,11 +550,11 @@ export default function AuthPortal() {
                 One fleet, every channel
               </span>
             </div>
-            <h2 className="font-display italic text-4xl xl:text-5xl 2xl:text-6xl leading-[1.0] xl:leading-[0.92] tracking-tight mb-4 text-balance">
+            <h1 className="font-display italic text-4xl xl:text-5xl 2xl:text-6xl leading-[1.0] xl:leading-[0.92] tracking-tight mb-4 text-balance">
               <span className="text-[#4F1E7B]">AI agents for every</span>
               <br />
               <span className="text-ink">customer conversation</span>
-            </h2>
+            </h1>
             <p className="text-[13px] xl:text-sm text-muted/80 leading-relaxed max-w-xl mb-5">
               Wireline runs your <span className="text-ink/90">inbound support</span>,{" "}
               <span className="text-ink/90">outbound sales</span>, and{" "}
@@ -628,15 +677,15 @@ export default function AuthPortal() {
                   WIRELINE
                 </span>
                 <p className="text-[9px] tracking-[0.42em] uppercase text-muted mt-1">
-                  AI Voice Platform
+                  AI Voice + Email Platform
                 </p>
               </div>
             </div>
             {/* Hero copy */}
-            <h2 className="type-fluid-hero font-display italic leading-snug tracking-tight mb-3 text-balance">
+            <h1 className="type-fluid-hero font-display italic leading-snug tracking-tight mb-3 text-balance">
               <span className="text-[#4F1E7B]">AI agents for every</span>{" "}
               <span className="text-ink">customer conversation</span>
-            </h2>
+            </h1>
             <p className="type-fluid-body text-muted/80">
               Sign in below — try live demo lines anytime after the form.
             </p>
@@ -654,7 +703,9 @@ export default function AuthPortal() {
               <WirelineMark className="w-8 h-8 text-on-brand" strokeWidth={120} />
             </div>
             <h1 className="brand-wordmark text-5xl leading-none">WIRELINE</h1>
-            <p className="text-[9px] uppercase tracking-[0.5em] text-muted">AI Voice Platform</p>
+            <p className="text-[9px] uppercase tracking-[0.5em] text-muted">
+              AI Voice + Email Platform
+            </p>
           </div>
 
           <motion.div
@@ -684,6 +735,11 @@ export default function AuthPortal() {
                         ? "Start your 14-day free trial. No credit card required."
                         : "Sign in to your Wireline operator console."}
                   </p>
+                  {isSignUp && intentLabel && (
+                    <p className="mt-2 inline-flex rounded-full border border-brand/20 bg-brand/8 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-brand">
+                      Matched from your visit · {intentLabel}
+                    </p>
+                  )}
                 </div>
 
                 {/* Tab toggle — hidden in reset mode */}

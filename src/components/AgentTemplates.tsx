@@ -527,6 +527,16 @@ export default function AgentTemplates() {
     refetchAgents();
   }, []);
 
+  useEffect(() => {
+    const templateId = new URLSearchParams(window.location.search).get("template");
+    if (!templateId) return;
+    const template = AGENT_TEMPLATES.find((t) => t.id === templateId);
+    if (!template) return;
+    setActiveCategory(template.category);
+    setSearch(template.name);
+    setModalTemplate(template);
+  }, []);
+
   const deployedCounts = useMemo(() => {
     const counts = new Map<string, number>();
     for (const n of deployedNames) {

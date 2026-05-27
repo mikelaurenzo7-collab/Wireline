@@ -17,6 +17,10 @@ Disallow: /train
 Disallow: /live
 Disallow: /insights
 Disallow: /appointments
+Disallow: /signin
+Disallow: /signup
+Disallow: /reset-password
+Disallow: /auth/
 
 # Sitemap of public marketing surfaces
 Sitemap: https://trywireline.com/sitemap.xml

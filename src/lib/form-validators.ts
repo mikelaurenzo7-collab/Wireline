@@ -189,6 +189,7 @@ export const OutboundBulkSchema = z.object({
     .min(1, 'At least one lead is required')
     .max(5000, 'Cannot submit more than 5000 leads per request'),
   campaign_id: z.string().uuid('Invalid campaign ID').optional().nullable(),
+  has_express_written_consent: z.boolean().optional().default(false),
 });
 
 export type OutboundBulk = z.infer<typeof OutboundBulkSchema>;

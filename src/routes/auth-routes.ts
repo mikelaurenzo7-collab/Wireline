@@ -8,6 +8,7 @@ import {
   signinRateLimiter,
   signupRateLimiter,
   forgotPasswordRateLimiter,
+  resendVerificationRateLimiter,
 } from "../middleware/rate-limit-middleware";
 import { sendPasswordResetEmail } from "../lib/email-service";
 import { authenticateUser } from "../middleware/auth";
@@ -16,6 +17,7 @@ import {
   validateBody,
   signinSchema,
   signupSchema,
+  signupIntentSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
 } from "../lib/api-validation";
@@ -66,10 +68,25 @@ router.post(
   validateBody(signupSchema),
   async (req: Request, res: Response) => {
     try {
-      const { email, password, fullName } = req.body;
+      const {
+        email,
+        password,
+        fullName,
+        preferredPlanId,
+        signupWedge,
+        utmSource,
+        utmMedium,
+        utmCampaign,
+      } = req.body;
       // Body is now validated by Zod middleware
 
-      const result = await authService.signUp(email, password, fullName);
+      const result = await authService.signUp(email, password, fullName, {
+        preferredPlanId,
+        signupWedge,
+        utmSource,
+        utmMedium,
+        utmCampaign,
+      });
 
       // Mint + email the verification link. Best-effort: if the
       // transport is down (no RESEND_API_KEY), signup still succeeds
@@ -108,6 +125,32 @@ router.post(
       }
       log.error("Auth: Sign up endpoint failed", { error });
       res.status(500).json({ error: "Internal server error" });
+    }
+  },
+);
+
+/**
+ * POST /api/auth/signup-intent
+ *
+ * Persists marketing intent captured from public CTAs after the visitor
+ * authenticates. This keeps pricing/wedge attribution attached to OAuth
+ * signups too, not only the email/password form path.
+ */
+router.post(
+  "/api/auth/signup-intent",
+  authenticateUser,
+  validateBody(signupIntentSchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { saveSignupAttribution } = await import("../lib/trial-gate");
+      await saveSignupAttribution(req.user.id, req.body);
+      return res.json({ ok: true });
+    } catch (err: any) {
+      log.error("signup intent save failed", {
+        userId: req.user?.id,
+        error: err?.message ?? String(err),
+      });
+      return res.status(500).json({ error: "Failed to save signup intent" });
     }
   },
 );
@@ -153,6 +196,7 @@ router.get("/api/auth/verify-email/:token", async (req: Request, res: Response) 
 router.post(
   "/api/auth/resend-verification",
   authenticateUser,
+  resendVerificationRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       // Read current user (might already be verified — bail clean).

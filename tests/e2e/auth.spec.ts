@@ -1,30 +1,29 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test.describe('Authentication Flows', () => {
-  test('Login page loads and has correct title', async ({ page }) => {
-    await page.goto('/login');
-    
-    // Expect a title "to contain" a substring.
+test.describe("Authentication Flows", () => {
+  test("Sign-in page loads and has correct title", async ({ page }) => {
+    await page.goto("/");
+
     await expect(page).toHaveTitle(/Wireline/);
-    
-    // Expect an email input to be visible
-    const emailInput = page.getByPlaceholder(/name@company.com/i).first();
+
+    const emailInput = page.getByPlaceholder(/operator@company.io/i).first();
     await expect(emailInput).toBeVisible();
-    
-    // Expect a submit button to be visible
-    const submitBtn = page.getByRole('button', { name: /sign in/i });
+
+    const submitBtn = page.locator("form").getByRole("button", { name: /sign in/i });
     await expect(submitBtn).toBeVisible();
   });
 
-  test('Registration page loads and contains pricing link', async ({ page }) => {
-    await page.goto('/register');
-    
-    // Check if the registration form is present
-    const emailInput = page.getByPlaceholder(/name@company.com/i).first();
+  test("Signup page captures pricing and wedge intent", async ({ page }) => {
+    await page.goto("/signup?plan=pro&wedge=medical&utm_source=linkedin");
+
+    const emailInput = page.getByPlaceholder(/operator@company.io/i).first();
     await expect(emailInput).toBeVisible();
-    
-    // Check for "Sign up" button
-    const submitBtn = page.getByRole('button', { name: /create account/i });
+
+    await expect(page.getByText(/matched from your visit/i)).toBeVisible();
+    await expect(page.getByText(/pro plan/i)).toBeVisible();
+    await expect(page.getByText(/medical/i)).toBeVisible();
+
+    const submitBtn = page.getByRole("button", { name: /create account/i });
     await expect(submitBtn).toBeVisible();
   });
 });

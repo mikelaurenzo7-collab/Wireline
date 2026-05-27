@@ -43,7 +43,6 @@ specific branch for Preview which is awkward — prefer the UI.
 | `APP_URL`                                           | Base URL for OAuth callbacks, Stripe webhooks, Vapi assistant config                        |
 | `CORS_ORIGINS`                                      | Allowed origins for cross-origin API requests                                               |
 | `POSTGRES_URL`                                      | Supabase Postgres connection                                                                |
-| `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`      | Frontend Supabase client                                                                    |
 | `INTERNAL_JWT_SECRET`                               | Wireline session JWT signing. Canonical name; `SUPABASE_JWT_SECRET` is only a legacy alias. |
 | `VAPI_PRIVATE_KEY`                                  | Server-side Vapi API calls                                                                  |
 | `VITE_VAPI_PUBLIC_KEY`                              | In-browser Vapi widget                                                                      |
@@ -60,6 +59,13 @@ If `SUPABASE_JWT_SECRET` also exists, delete it only after confirming it is eith
 identical to `INTERNAL_JWT_SECRET` or after intentionally rotating sessions. If both
 names are set to different values, production startup/checks fail because one part
 of the app could sign tokens that another part rejects.
+
+### Database migrations
+
+Run `npm run db:migrate` before promoting schema-dependent releases, then run
+`npm run db:health`. For signup-attribution releases, confirm
+`0017_add_signup_intent.sql` has applied; the health check fails when those
+attribution columns are missing.
 
 ---
 

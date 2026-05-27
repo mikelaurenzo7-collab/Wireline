@@ -12,6 +12,8 @@
  * agents get the updated prompt within seconds.
  */
 
+import { STRIPE_PLANS } from "../lib/plan-catalog";
+
 export const WIRELINE_URL = "https://trywireline.com";
 export const WIRELINE_SUPPORT_EMAIL = "trywireline@yahoo.com";
 
@@ -19,76 +21,31 @@ export const WIRELINE_ONE_LINER =
   "Wireline runs your inbound support, outbound sales, and email follow-ups across one fleet of AI agents — trained on your playbook, available 24/7, and improving with every interaction.";
 
 export const WIRELINE_VOICE_STACK =
-  "Live voice calls run on Gemini 3.5 Flash — Google's fastest production model. When Wireline has to recover from a Vapi model provisioning failure, it falls back to GPT-4o. Claude remains the coaching and written-review layer, not the live phone runtime.";
+  "Live calls run through Vapi with low-latency speech-to-text and ElevenLabs voice synthesis. Wireline uses fast voice models for the phone runtime, while Claude powers coaching, written review, and higher-reasoning workflows.";
 
-export const WIRELINE_PLANS = [
-  {
-    name: "Personal",
-    price: "$49/mo",
-    bestFor: "Solo operators, side hustles, founders testing the waters.",
-    includes: [
-      "1 AI agent",
-      "1 phone number",
-      "400 voice minutes/mo (overage $0.20/min — rarely triggered)",
-      "Email triage on a connected inbox",
-    ],
-  },
-  {
-    name: "Starter",
-    price: "$149/mo",
-    bestFor:
-      "Small teams running a single playbook (inbound support, outbound SDR, or scheduling).",
-    includes: [
-      "3 AI agents",
-      "2 phone numbers",
-      "1,500 voice minutes/mo (overage $0.18/min)",
-      "CRM sync (HubSpot or Salesforce)",
-      "Two-way texting",
-    ],
-  },
-  {
-    name: "Pro",
-    price: "$499/mo",
-    bestFor:
-      "Growing operators running multiple playbooks side by side — sales, support, and outbound.",
-    includes: [
-      "10 AI agents",
-      "5 phone numbers",
-      "6,000 voice minutes/mo (overage $0.15/min)",
-      "All CRM integrations (HubSpot, Salesforce, Apollo)",
-      "Slack handoff for human escalations",
-      "Custom playbooks + knowledge ingestion",
-    ],
-  },
-  {
-    name: "Business",
-    price: "$1,499/mo",
-    bestFor: "Multi-team operators who need supervisor visibility + call-center routing.",
-    includes: [
-      "25 AI agents",
-      "10 phone numbers",
-      "15,000 voice minutes/mo (overage $0.13/min)",
-      "Supervisor cockpit with live call monitor",
-      "Team-level routing + per-team text-message sender",
-      "DocuSign + custom integrations",
-      "SSO + audit log",
-      "Dedicated onboarding call",
-    ],
-  },
-  {
-    name: "Enterprise",
-    price: "Custom",
-    bestFor: "Companies that need white-glove onboarding + dedicated support.",
-    includes: [
-      "Everything in Business",
-      "Custom voice cloning",
-      "Dedicated CSM",
-      "Custom SLA",
-      "Custom data residency",
-      "Quarterly business review",
-    ],
-  },
-] as const;
+const PLAN_BEST_FOR: Record<string, string> = {
+  personal: "Solo operators, side hustles, founders testing the waters.",
+  starter: "Small teams running a single playbook: inbound support, outbound SDR, or scheduling.",
+  pro: "Growing operators running multiple playbooks side by side: sales, support, and outbound.",
+  business: "Multi-team operators who need supervisor visibility, SSO, and serious volume.",
+  enterprise: "Companies that need white-glove onboarding, dedicated support, and custom terms.",
+};
+
+function formatPlanPrice(plan: (typeof STRIPE_PLANS)[number]): string {
+  return plan.price_usd_monthly > 0 ? `$${plan.price_usd_monthly.toLocaleString()}/mo` : "Custom";
+}
+
+export const WIRELINE_PLANS = STRIPE_PLANS.map((plan) => ({
+  name: plan.name,
+  price: formatPlanPrice(plan),
+  bestFor: PLAN_BEST_FOR[plan.id],
+  includes: plan.features,
+})) as ReadonlyArray<{
+  name: string;
+  price: string;
+  bestFor: string;
+  includes: readonly string[];
+}>;
 
 export const WIRELINE_FEATURES = [
   {
@@ -143,7 +100,7 @@ export const WIRELINE_INTEGRATIONS = [
  */
 export const WIRELINE_COMPLIANCE_STATUS = {
   done: [
-    "Encryption at rest (Supabase Postgres + Vercel)",
+    "Encryption at rest (Postgres + Vercel)",
     "TLS 1.2+ in transit",
     "Per-tenant data isolation enforced on every query",
     "Append-only audit log on every state change",

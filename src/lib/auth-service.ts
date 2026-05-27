@@ -124,7 +124,18 @@ export const authService = {
     };
   },
 
-  async signUp(email: string, password: string, fullName?: string) {
+  async signUp(
+    email: string,
+    password: string,
+    fullName?: string,
+    signupAttribution?: {
+      preferredPlanId?: string | null;
+      signupWedge?: string | null;
+      utmSource?: string | null;
+      utmMedium?: string | null;
+      utmCampaign?: string | null;
+    },
+  ) {
     const passwordHash = hashPassword(password);
 
     try {
@@ -141,7 +152,7 @@ export const authService = {
       // Soft 14-day trial starts here. Failures don't block signup —
       // the sweep job will fix up any stragglers.
       const { startTrialForUser } = await import("./trial-gate");
-      await startTrialForUser(user.id);
+      await startTrialForUser(user.id, signupAttribution);
 
       return {
         user: {

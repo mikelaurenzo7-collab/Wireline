@@ -152,11 +152,7 @@ postgresql://postgres.[PROJECT_REF]:[PASSWORD]@[REGION].pooler.supabase.com:6543
 ```bash
 # Required
 POSTGRES_URL=postgresql://postgres.[REF]:[PASS]@[REGION].pooler.supabase.com:6543/postgres
-
-# Supabase (for auth)
-VITE_SUPABASE_URL=https://[REF].supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbG...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbG...
+INTERNAL_JWT_SECRET=<64-character hex string>
 ```
 
 ---

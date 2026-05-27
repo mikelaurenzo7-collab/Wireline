@@ -575,7 +575,7 @@ export default function Pricing() {
           </p>
           <p className="text-[12px] text-muted/65">
             Voice minutes are pooled across all agents in your workspace. Overage is tier-based
-            (Personal: $0.20/min · Starter: $0.18/min · Pro: $0.15/min · Business: $0.13/min) —
+            (Personal: $0.20/min · Starter: $0.18/min · Pro: $0.15/min · Business: $0.14/min) —
             priced near our cost, not a profit center. Most teams stay well inside plan. Email
             volume is unlimited on all plans.
           </p>

@@ -28,6 +28,8 @@ const SIGNUP_RATE_MAX = 3;
 // spray reset emails across many tenants.
 const FORGOT_PASSWORD_RATE_WINDOW_MS = 15 * 60_000;
 const FORGOT_PASSWORD_RATE_MAX = 3;
+const RESEND_VERIFICATION_RATE_WINDOW_MS = 15 * 60_000;
+const RESEND_VERIFICATION_RATE_MAX = 3;
 
 export async function emailRateLimiter(req: any, res: any, next: any) {
   const userId = req.user?.id;
@@ -185,6 +187,32 @@ export async function forgotPasswordRateLimiter(req: any, res: any, next: any) {
     return res.status(429).json({
       error: "Too many password reset requests. Wait 15 minutes and try again.",
       code: "FORGOT_PASSWORD_RATE_LIMIT",
+    });
+  }
+  next();
+}
+
+export async function resendVerificationRateLimiter(req: any, res: any, next: any) {
+  const userId = req.user?.id;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  const ip = req.ip || "anon";
+  const result = await rateLimit(`verify:${userId}:${ip}`, {
+    bucket: "resend_verification",
+    windowMs: RESEND_VERIFICATION_RATE_WINDOW_MS,
+    max: RESEND_VERIFICATION_RATE_MAX,
+  });
+  if (!result.allowed) {
+    void auditLogger
+      .logSecurity("rate_limit_exceeded", {
+        userId,
+        resource: "auth_resend_verification",
+        ip: req.ip,
+      })
+      .catch((e: unknown) => log.warn("audit log failed", { error: String(e) }));
+    res.setHeader("Retry-After", Math.ceil(RESEND_VERIFICATION_RATE_WINDOW_MS / 1000));
+    return res.status(429).json({
+      error: "Too many verification email requests. Wait 15 minutes and try again.",
+      code: "RESEND_VERIFICATION_RATE_LIMIT",
     });
   }
   next();

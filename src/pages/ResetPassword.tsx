@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { Lock, AlertTriangle, Check } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import WirelineMark from "../components/WirelineMark";
+import { getPasswordPolicyError } from "../lib/password-policy";
+import { PageMeta } from "../lib/page-meta";
 
 /**
  * /reset-password?token=<raw>
@@ -12,7 +14,7 @@ import WirelineMark from "../components/WirelineMark";
  * the URL, takes a new password, posts to /api/auth/reset-password,
  * and (on success) signs the user in via the returned JWT and routes
  * to the dashboard. Mirrors AuthPortal's visual style and password
- * minimum-length rule (8 chars) so the experience feels continuous.
+ * policy so the experience feels continuous.
  *
  * The page must render even when the user is unauthenticated, so
  * App.tsx routes to this BEFORE the auth guard. We don't navigate
@@ -43,8 +45,9 @@ export default function ResetPassword() {
       setError("This reset link is missing its token. Request a new one from the sign-in page.");
       return;
     }
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    const passwordPolicyError = getPasswordPolicyError(password);
+    if (passwordPolicyError) {
+      setError(passwordPolicyError);
       return;
     }
     if (password !== confirm) {
@@ -93,6 +96,12 @@ export default function ResetPassword() {
 
   return (
     <div className="min-h-dvh flex items-center justify-center relative overflow-hidden bg-paper">
+      <PageMeta
+        title="Reset Password"
+        description="Reset your Wireline account password."
+        path="/reset-password"
+        noIndex
+      />
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div
           className="absolute -top-[25%] -left-[15%] w-[70vw] h-[70vw] max-w-[640px] max-h-[640px] rounded-full"
@@ -151,8 +160,8 @@ export default function ResetPassword() {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <p className="text-sm text-muted/80 mb-6 leading-relaxed">
-              Pick a new password to finish resetting your Wireline account. It must be at least 8
-              characters.
+              Pick a new password to finish resetting your Wireline account. Use at least 8
+              characters with uppercase, lowercase, and a number.
             </p>
 
             <div className="space-y-2">
