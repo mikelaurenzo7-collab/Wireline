@@ -188,7 +188,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
     <>
       <header
         aria-label="Main navigation"
-        className="shell-sticky-glass shrink-0 sticky top-0 z-50 bg-brand-deep/92 border-b border-[#EFE9DC]/10 text-on-brand"
+        className="shell-sticky-glass shrink-0 sticky top-0 z-50 bg-brand-deep/92 border-b border-[#EFE9DC]/10 text-on-brand lg:hidden"
         style={{
           boxShadow:
             "0 0 0 1px rgba(239, 233, 220, 0.06), 0 8px 24px -16px rgba(79, 30, 123, 0.15)",

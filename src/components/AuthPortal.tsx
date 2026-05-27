@@ -660,6 +660,54 @@ export default function AuthPortal() {
            of an 800px viewport, putting the Sign In button at ~875px —
            below the fold. */}
         <div className="flex-1 lg:sticky lg:top-0 lg:min-h-dvh flex flex-col items-center justify-start relative z-10 py-5 sm:py-8 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 overflow-y-auto native-scroll overscroll-y-contain">
+          {/* ── Aurora wash ──────────────────────────────────────────
+              Decorative animated gradients that breathe behind the
+              form column. Purely cosmetic — pointer-events-none and
+              aria-hidden. Mobile + desktop friendly: the radial blobs
+              scale with the viewport so they never tile or repeat.
+              Two layers crossfade on a 14s/19s offset so the motion
+              never feels mechanical. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 overflow-hidden -z-10"
+          >
+            {/* Layer A — top-right brand-purple bloom */}
+            <div
+              className="absolute -top-20 -right-24 w-[420px] h-[420px] rounded-full opacity-[0.55] mix-blend-multiply animate-[wireline-aurora-a_14s_ease-in-out_infinite_alternate]"
+              style={{
+                background:
+                  "radial-gradient(closest-side, rgba(79,30,123,0.22), rgba(79,30,123,0.06) 55%, transparent 80%)",
+                filter: "blur(28px)",
+              }}
+            />
+            {/* Layer B — bottom-left warm amber glow */}
+            <div
+              className="absolute -bottom-32 -left-24 w-[480px] h-[480px] rounded-full opacity-50 mix-blend-multiply animate-[wireline-aurora-b_19s_ease-in-out_infinite_alternate]"
+              style={{
+                background:
+                  "radial-gradient(closest-side, rgba(217,119,82,0.18), rgba(217,119,82,0.05) 55%, transparent 80%)",
+                filter: "blur(32px)",
+              }}
+            />
+            {/* Layer C — center cream wash, anchors readability */}
+            <div
+              className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[280px] rounded-[50%] opacity-60"
+              style={{
+                background:
+                  "radial-gradient(closest-side, rgba(239,233,220,0.65), rgba(239,233,220,0.18) 60%, transparent 80%)",
+                filter: "blur(40px)",
+              }}
+            />
+            {/* Subtle grain — same warm noise as the rest of the cream
+                surfaces. 2.5% opacity keeps it imperceptible-but-felt. */}
+            <div
+              className="absolute inset-0 opacity-[0.025] mix-blend-multiply"
+              style={{
+                backgroundImage:
+                  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")",
+              }}
+            />
+          </div>
           <div className="lg:hidden w-full max-w-md mb-4 pt-1">
             {/* Logo + wordmark row */}
             <div className="flex items-center gap-3.5 mb-5">

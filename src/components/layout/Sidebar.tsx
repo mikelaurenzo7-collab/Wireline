@@ -23,7 +23,7 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronsLeft, ChevronsRight, Crown, LifeBuoy, LogOut } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, Crown, LifeBuoy, LogOut, Search } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import WirelineMark from "../WirelineMark";
 import { useAuth } from "../../contexts/AuthContext";
@@ -99,6 +99,20 @@ export default function Sidebar({ navBadges }: SidebarProps) {
   // `effective` = the *actual rendered* state (handles peek-on-collapsed).
   const effective = expanded || peek;
   const railWidth = effective ? RAIL_EXPANDED : RAIL_COLLAPSED;
+
+  // Publish the COMMITTED rail width (NOT the peek state) to a CSS
+  // custom property so the rest of the chrome — `<main>` content
+  // column — can reserve exactly the right space and never get
+  // overlapped. Peek is deliberately ignored here: hover-peek expands
+  // the rail OVER the content (overlay), but does NOT push the content
+  // right (otherwise every hover would jank-shift the page).
+  useEffect(() => {
+    const committed = expanded ? RAIL_EXPANDED : RAIL_COLLAPSED;
+    document.documentElement.style.setProperty("--wireline-rail-w", `${committed}px`);
+    return () => {
+      document.documentElement.style.removeProperty("--wireline-rail-w");
+    };
+  }, [expanded]);
 
   // Active-state matcher mirrors TopBar logic for consistency.
   const isActive = (item: NavItem) => {
@@ -188,6 +202,36 @@ export default function Sidebar({ navBadges }: SidebarProps) {
       {/* ── Tier badge — small status pill under the logo ───────────── */}
       <TierBadge expanded={effective} />
 
+      {/* ── Search trigger — fires the same global command bar event the
+          mobile/tablet topbar uses. Discoverable on lg+ where there's
+          no topbar; also visible in collapsed-rail state as a single
+          icon so the hotkey "/" is never the only entry. */}
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new CustomEvent("wireline:open-command-bar"))}
+        className={cn(
+          "shrink-0 mx-2 mb-2 h-9 flex items-center gap-2 rounded-lg border border-[#EFE9DC]/10 bg-white/[0.04] hover:bg-white/[0.08] hover:border-[#EFE9DC]/20 transition-all group",
+          effective ? "px-3" : "px-2 justify-center",
+        )}
+        aria-label="Open search ( / )"
+        title="Search ( / )"
+      >
+        <Search
+          className="w-3.5 h-3.5 shrink-0 text-[#EFE9DC]/55 group-hover:text-[#EFE9DC] transition-colors"
+          strokeWidth={2}
+        />
+        {effective && (
+          <>
+            <span className="flex-1 text-left text-[11px] text-[#EFE9DC]/50 group-hover:text-[#EFE9DC]/75 transition-colors">
+              Search…
+            </span>
+            <kbd className="text-[9px] font-mono px-1.5 py-0.5 rounded border border-white/12 bg-white/4 text-[#EFE9DC]/45 leading-none">
+              /
+            </kbd>
+          </>
+        )}
+      </button>
+
       {/* ── Group sections ─────────────────────────────────────────── */}
       <nav className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-3 px-2 space-y-4 scrollbar-thin">
         {NAV_GROUPS.map((group) => {
@@ -248,6 +292,49 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
       >
         <LivePulse count={liveCalls} expanded={effective} />
+
+        {/* Account block — avatar + email, shown when expanded. Tap to
+            open billing in a new context. Replaces what was in the topbar
+            avatar dropdown on lg+ (where the topbar no longer renders). */}
+        {effective && user && (
+          <Link
+            to="/admin?tab=subscription"
+            className="flex items-center gap-2.5 h-10 px-2 rounded-lg hover:bg-white/[0.06] transition-all group"
+            aria-label="Account & billing"
+            title={user.email}
+          >
+            <div
+              className="w-7 h-7 rounded-full flex items-center justify-center text-[#3B154C] font-semibold text-[11px] shrink-0"
+              style={{ background: "#EFE9DC" }}
+              aria-hidden="true"
+            >
+              {user.email?.slice(0, 1).toUpperCase() ?? "?"}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-medium text-[#EFE9DC] leading-none truncate">
+                {user.email?.split("@")[0]}
+              </p>
+              <p className="text-[8.5px] uppercase tracking-[0.25em] text-[#EFE9DC]/45 leading-none mt-1 truncate">
+                {user.email?.split("@")[1]}
+              </p>
+            </div>
+          </Link>
+        )}
+        {!effective && user && (
+          <Link
+            to="/admin?tab=subscription"
+            className="h-10 flex items-center justify-center rounded-lg hover:bg-white/[0.06] transition-all"
+            aria-label="Account"
+            title={user.email}
+          >
+            <div
+              className="w-7 h-7 rounded-full flex items-center justify-center text-[#3B154C] font-semibold text-[11px]"
+              style={{ background: "#EFE9DC" }}
+            >
+              {user.email?.slice(0, 1).toUpperCase() ?? "?"}
+            </div>
+          </Link>
+        )}
 
         <FooterItem
           to="/help"

@@ -220,6 +220,10 @@ export default function AppShell() {
         }}
       />
 
+      {/* TopBar — visible on phone + tablet ONLY (< lg). On desktop the
+          Aurora rail carries brand, nav, search, and avatar — no purple
+          top strip needed. Removing the topbar on lg+ reclaims 44 px of
+          vertical viewport for content. */}
       <TopBar
         onShowShortcuts={() => setShowShortcuts(true)}
         drawerOpen={drawerOpen}
@@ -227,20 +231,17 @@ export default function AppShell() {
         navBadges={navBadges}
       />
 
-      {/* Aurora Rail — vertical primary nav, lg+ only. Pushes the main
-          column right by its width via CSS padding-left on `main`. The
-          rail self-manages its collapsed/expanded state (persisted in
-          localStorage) — AppShell stays out of it. */}
+      {/* Aurora Rail — vertical primary nav, lg+ only. The rail publishes
+          its committed width to --wireline-rail-w (CSS custom property)
+          so the main column below reserves *exactly* the right space and
+          never gets overlapped. Hover-peek does NOT push content (overlay
+          only) — only explicit toggle / auto-expand updates the variable. */}
       <Sidebar navBadges={navBadges} />
 
       <main
         id="main-content"
         tabIndex={-1}
-        className={
-          // pl-14 on lg = 56px (rail collapsed default) — content reflows
-          // when rail expands (rail uses absolute peek so we don't double-shift).
-          "flex-1 overflow-hidden relative flex flex-col z-10 focus:outline-none lg:pl-14"
-        }
+        className="flex-1 overflow-hidden relative flex flex-col z-10 focus:outline-none lg:pl-[var(--wireline-rail-w,56px)] transition-[padding-left] duration-[240ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
       >
         <RouteAccentStrip />
         <EmailVerifyBanner />

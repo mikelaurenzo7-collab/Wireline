@@ -61,6 +61,19 @@ router.post(
 /**
  * POST /api/auth/signup
  * Register a new user and return a JWT.
+ *
+ * Duplicate-email handling has TWO layers:
+ *   1. Pre-insert SELECT — gives a clean 409 + actionable error message
+ *      with no race window in the common case (single client retrying).
+ *   2. Post-insert catch on Postgres 23505 — race-condition backstop for
+ *      two concurrent signups with the same email. Drizzle wraps pg
+ *      errors so the code can live on either `error.code` (older
+ *      drivers / unwrapped errors) or `error.cause?.code` (Drizzle's
+ *      DrizzleQueryError wrapping in current versions). We check both.
+ *
+ * Without (2) the same race could leak through as a 500, which is what
+ * the May 2026 signup-bug was — single insert path, wrapped error, the
+ * 23505 check missed, fell through to "Internal server error".
  */
 router.post(
   "/api/auth/signup",
@@ -78,7 +91,22 @@ router.post(
         utmMedium,
         utmCampaign,
       } = req.body;
-      // Body is now validated by Zod middleware
+      // Body is now validated by Zod middleware (email already lowercased + trimmed).
+
+      // Pre-check for existing account — gives a clean 409 with a
+      // user-actionable message instead of a confusing 500.
+      // (Race-condition backstop lives in the catch block below.)
+      const [existing] = await drizzle
+        .select({ id: schema.users.id })
+        .from(schema.users)
+        .where(eq(schema.users.email, email))
+        .limit(1);
+      if (existing) {
+        return res.status(409).json({
+          error: "An account with this email already exists. Try signing in instead.",
+          code: "EMAIL_TAKEN",
+        });
+      }
 
       const result = await authService.signUp(email, password, fullName, {
         preferredPlanId,
@@ -119,11 +147,24 @@ router.post(
 
       res.json(result);
     } catch (error: any) {
-      if (error.code === "23505") {
-        // Unique violation in Postgres
-        return res.status(400).json({ error: "An account with this email already exists" });
+      // Drizzle wraps pg errors in DrizzleQueryError — the underlying
+      // pg code is on `cause.code` in current versions. Older paths
+      // ship the code on `error.code` directly. Walk both so we never
+      // miss a unique-violation race and leak it as a 500.
+      const pgCode = error?.code ?? error?.cause?.code;
+      if (pgCode === "23505") {
+        return res.status(409).json({
+          error: "An account with this email already exists. Try signing in instead.",
+          code: "EMAIL_TAKEN",
+        });
       }
-      log.error("Auth: Sign up endpoint failed", { error });
+      log.error("Auth: Sign up endpoint failed", {
+        // Include the resolved pg code (if any) so future regressions
+        // of this exact bug land in logs with a fingerprint.
+        error: error?.message ?? String(error),
+        pgCode: pgCode ?? null,
+        cause: error?.cause?.message ?? null,
+      });
       res.status(500).json({ error: "Internal server error" });
     }
   },

@@ -30,3 +30,4 @@ credentials.json
 *.pem
 *.key
 .credentials
+.local/

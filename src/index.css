@@ -521,6 +521,25 @@
   animation: aurora-drift 18s ease-in-out infinite;
 }
 
+/* Auth-portal aurora — slow breathing radial blobs behind the form
+   column. Two layers run on offset durations (14s vs 19s) so the motion
+   never feels synchronized or mechanical. translate3d nudges the GPU
+   compositor; scale lets the blob "breathe" rather than slide. */
+@keyframes wireline-aurora-a {
+  0%   { transform: translate3d(0, 0, 0)    scale(1);    opacity: 0.55; }
+  100% { transform: translate3d(-6%, 5%, 0) scale(1.08); opacity: 0.42; }
+}
+@keyframes wireline-aurora-b {
+  0%   { transform: translate3d(0, 0, 0)   scale(1);    opacity: 0.50; }
+  100% { transform: translate3d(7%, -4%, 0) scale(1.12); opacity: 0.38; }
+}
+
+/* Respect prefers-reduced-motion — kills the breathing for visitors
+   who've asked browsers to minimise animation. */
+@media (prefers-reduced-motion: reduce) {
+  [class*="wireline-aurora-"] { animation: none !important; }
+}
+
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
