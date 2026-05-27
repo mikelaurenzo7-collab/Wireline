@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutGrid, Inbox, Radio, Users, Menu, type LucideIcon } from "lucide-react";
+import { LayoutGrid, Inbox, Radio, Headphones, Menu, type LucideIcon } from "lucide-react";
 
 /* ── iOS-style primary bottom navigation bar ──────────────────────────────
    Visible only on mobile (md:hidden on outer). Matches Apple HIG:
@@ -20,12 +20,26 @@ interface NavTab {
   readonly badgePaths: readonly string[];
 }
 
+// Mobile primary 4 + More.
+//
+// Rationale for picks (vs. the desktop 8-item nav):
+//   - Live Ops    : pulse-check; first tap of every session
+//   - Triage      : inbox-style attention queue; highest re-open rate
+//   - Activity    : "what happened" — calls + email + sms + outbound
+//   - Cockpit     : listen-in + whisper-coach on the go (mobile USE CASE)
+//
+// Insights, Agents, Training, Settings live behind "More" — they're either
+// review-rate (Insights) or setup-heavy desktop work (Agents, Training,
+// Settings). Cockpit beats Agents on mobile because supervising a live
+// call from your pocket is the magic moment; editing the fleet roster
+// from your pocket is not.
 const PRIMARY_TABS: readonly NavTab[] = [
   {
     label: "Live Ops",
     path: "/",
     icon: LayoutGrid,
-    matches: ["/dashboard", "/command", "/live", "/cockpit"],
+    // /cockpit removed — it's its own destination now (see TopBar / Sidebar IA).
+    matches: ["/dashboard", "/command", "/live"],
     badgePaths: [],
   },
   {
@@ -42,10 +56,10 @@ const PRIMARY_TABS: readonly NavTab[] = [
     badgePaths: ["/logs", "/outbound", "/inbox", "/appointments"],
   },
   {
-    label: "Agents",
-    path: "/agents",
-    icon: Users,
-    badgePaths: ["/agents"],
+    label: "Cockpit",
+    path: "/cockpit",
+    icon: Headphones,
+    badgePaths: ["/cockpit"],
   },
 ];
 

@@ -11,14 +11,13 @@ import {
   Crown,
   PlugZap,
   LifeBuoy,
-  Headphones,
   Search,
 } from "lucide-react";
 import WirelineMark from "../WirelineMark";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../../contexts/AuthContext";
 import { cn } from "../../lib/utils";
-import { NAV_GROUPS, type NavItem } from "../../constants/navigation";
+import { NAV_GROUPS, PAGE_TITLES, type NavItem } from "../../constants/navigation";
 import { useBranding } from "../../contexts/BrandingContext";
 
 interface Props {
@@ -62,6 +61,37 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
       (m) => location.pathname === m || location.pathname.startsWith(`${m}/`),
     );
   };
+
+  // Derive a contextual breadcrumb from the current path. PAGE_TITLES is
+  // the single source of truth — every nav destination is keyed there.
+  // Falls back gracefully for routes we haven't titled yet.
+  const breadcrumb: { eyebrow?: string; title: string } | null = (() => {
+    // Exact match wins.
+    if (PAGE_TITLES[location.pathname]) {
+      // Find the group this path belongs to so the eyebrow reads
+      // "Workspace · Triage" / "Fleet · Training" / etc.
+      for (const group of NAV_GROUPS) {
+        const match = group.items.find(
+          (i) =>
+            i.path === location.pathname ||
+            i.matches?.some(
+              (m) => m === location.pathname || location.pathname.startsWith(`${m}/`),
+            ),
+        );
+        if (match) return { eyebrow: group.label, title: PAGE_TITLES[location.pathname]! };
+      }
+      return { title: PAGE_TITLES[location.pathname]! };
+    }
+    // Walk back the path one segment at a time for parameterised routes
+    // like /contacts/abc-123 → match /contacts.
+    const segments = location.pathname.split("/").filter(Boolean);
+    while (segments.length > 0) {
+      segments.pop();
+      const candidate = "/" + segments.join("/");
+      if (PAGE_TITLES[candidate]) return { title: PAGE_TITLES[candidate]! };
+    }
+    return null;
+  })();
 
   const renderNavItem = (
     item: NavItem,
@@ -169,11 +199,13 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
           paddingRight: "env(safe-area-inset-right)",
         }}
       >
-        <div className="h-11 flex items-center gap-2 px-3 lg:px-4">
-          {/* Logo / Brand */}
+        <div className="h-11 flex items-center gap-2 px-3 lg:pl-3 lg:pr-4">
+          {/* Logo / Brand — VISIBLE under lg only. On lg+ the Sidebar (Aurora
+              rail) carries brand chrome, so we hide this to avoid double-brand
+              and reclaim the top-bar real-estate for the breadcrumb. */}
           <Link
             to="/"
-            className="flex items-center gap-2.5 shrink-0 group"
+            className="flex items-center gap-2.5 shrink-0 group lg:hidden"
             aria-label={`${branding.brand_name} home`}
           >
             <motion.div
@@ -195,10 +227,43 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
             </span>
           </Link>
 
-          {/* Desktop nav — visible at lg+ only. min-w-0 + overflow-x-auto
-               lets the strip scroll when the owner has many tabs (Cockpit +
-               Founder), keeping the user avatar/logout pinned right. */}
-          <nav className="hidden lg:flex items-center gap-0.5 ml-3 min-w-0 flex-1 overflow-x-auto scrollbar-hide">
+          {/* Desktop (lg+): contextual breadcrumb. Replaces the horizontal
+              nav strip that used to live here — the Aurora rail now carries
+              the nav, freeing this space to tell you WHERE YOU ARE.
+              Animated key-on-change so the title swap reads instantly. */}
+          <div className="hidden lg:flex items-center gap-3 min-w-0 flex-1">
+            <AnimatePresence mode="wait">
+              {breadcrumb && (
+                <motion.div
+                  key={location.pathname}
+                  initial={{ opacity: 0, x: -6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 6 }}
+                  transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex items-baseline gap-3 min-w-0"
+                >
+                  {breadcrumb.eyebrow && (
+                    <>
+                      <span className="text-[9px] uppercase tracking-[0.42em] text-[#EFE9DC]/45 font-semibold whitespace-nowrap">
+                        {breadcrumb.eyebrow}
+                      </span>
+                      <span aria-hidden="true" className="text-[#EFE9DC]/25">
+                        ·
+                      </span>
+                    </>
+                  )}
+                  <h1 className="font-display italic text-[18px] leading-none truncate text-[#EFE9DC]">
+                    {breadcrumb.title}
+                  </h1>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Tablet (md → lg-1): keep the legacy horizontal nav strip so
+              users with hamburger viewports still see groups inline. Hidden
+              on mobile (BottomNavBar takes over) and on lg+ (Sidebar does). */}
+          <nav className="hidden md:flex lg:hidden items-center gap-0.5 ml-3 min-w-0 flex-1 overflow-x-auto scrollbar-hide">
             {NAV_GROUPS.map((group, gIdx) => {
               const visibleItems = group.items.filter(
                 (item) => !item.ownerOnly || user?.is_owner === true,
@@ -215,7 +280,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
             })}
           </nav>
 
-          <div className="flex-1 lg:hidden" />
+          <div className="flex-1 md:hidden" />
 
           {/* Right cluster */}
           <div className="flex items-center gap-2 shrink-0">
@@ -341,16 +406,6 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                           Founder Dashboard
                         </Link>
                       )}
-                      {/* Supervisor Cockpit — available to all authenticated users (client-facing operational tool) */}
-                      <Link
-                        to="/cockpit"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
-                        role="menuitem"
-                      >
-                        <Headphones className="w-3.5 h-3.5 text-muted" />
-                        Supervisor Cockpit
-                      </Link>
                     </div>
                     <div className="border-t border-black/8 py-1">
                       <button

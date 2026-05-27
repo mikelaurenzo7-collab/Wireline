@@ -6,6 +6,7 @@ import WirelineMark from "../WirelineMark";
 import ErrorBoundary from "../ErrorBoundary";
 import AuroraBackdrop from "./AuroraBackdrop";
 import TopBar from "./TopBar";
+import Sidebar from "./Sidebar";
 import BottomNavBar from "./BottomNavBar";
 import RouteAccentStrip from "./RouteAccentStrip";
 import TrialBanner from "./TrialBanner";
@@ -226,10 +227,20 @@ export default function AppShell() {
         navBadges={navBadges}
       />
 
+      {/* Aurora Rail — vertical primary nav, lg+ only. Pushes the main
+          column right by its width via CSS padding-left on `main`. The
+          rail self-manages its collapsed/expanded state (persisted in
+          localStorage) — AppShell stays out of it. */}
+      <Sidebar navBadges={navBadges} />
+
       <main
         id="main-content"
         tabIndex={-1}
-        className="flex-1 overflow-hidden relative flex flex-col z-10 focus:outline-none"
+        className={
+          // pl-14 on lg = 56px (rail collapsed default) — content reflows
+          // when rail expands (rail uses absolute peek so we don't double-shift).
+          "flex-1 overflow-hidden relative flex flex-col z-10 focus:outline-none lg:pl-14"
+        }
       >
         <RouteAccentStrip />
         <EmailVerifyBanner />
