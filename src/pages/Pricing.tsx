@@ -139,12 +139,88 @@ const VALUE_BULLETS = [
 ];
 
 export default function Pricing() {
+  // FAQ schema is built from copy that already lives on this page (the
+  // reassurance paragraph + tier blurbs). Keeping it as structured data
+  // — not visible UI — lets Google render FAQ rich results without
+  // changing the visual design Mike already approved.
+  const pricingStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "How much does Wireline cost?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Wireline starts at $49/month for Personal (1 agent, 400 voice minutes), $149/month for Starter (3 agents, 1,200 minutes), $499/month for Pro (10 agents, 5,000 minutes), and $1,499/month for Business (25 agents, 12,000 minutes). Enterprise and call-center pricing is custom. All plans include AI voice agents, real-time call logs, sentiment scoring, and the Wireline Demo Line.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Is there a free trial?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Yes. Every paid plan starts with a 14-day free trial — no credit card required. You can deploy a real AI voice agent on a real phone number, run live calls, and cancel before the trial ends with no charge.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What happens if I go over my voice-minute allowance?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Voice minutes are pooled across all agents in your workspace. Overage is tier-based and priced near cost, not as a profit center: $0.20/min on Personal, $0.18/min on Starter, $0.15/min on Pro, and $0.14/min on Business. Most teams stay well inside their plan and never see an overage charge.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Can I cancel anytime?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Yes. There are no long-term contracts on any self-serve plan. You can cancel from the dashboard at any time and keep access through the end of your current billing period.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Is email volume included?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Email volume is unlimited on all plans. Wireline only meters voice minutes; inbound and outbound email handled by your AI agents — including triage, replies, follow-ups, and CRM sync — is included.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "How fast can I deploy an AI voice agent?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Under 10 minutes. Pick a phone number, point the agent at your business profile (or paste a website URL and Wireline drafts the profile for you), choose a voice, and publish. No developers required.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Which CRMs and integrations does Wireline support?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Wireline integrates with HubSpot, Salesforce, Gmail, Microsoft Outlook, Google Calendar, Slack, Stripe, and Zoom out of the box. Pro and Business plans add webhooks and the Action Engine for custom CRMs and internal tools.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Is Wireline secure and compliant?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Wireline ships SOC 2-ready architecture with encrypted secrets at rest, per-tenant data isolation, full audit logs, configurable data retention, and a documented DNC list. Business and Enterprise plans add SSO and audit-log export.",
+        },
+      },
+    ],
+  };
+
   return (
     <div className="min-h-dvh relative">
       <PageMeta
         title="Plans & Pricing"
         description="Wireline pricing plans from $49/month Personal to Enterprise custom. Every plan includes AI voice agents, real-time call logs, sentiment scoring, and the Wireline Demo Line. 14-day free trial, no credit card required."
         path="/pricing"
+        structuredData={pricingStructuredData}
       />
       {/* Aurora backdrop — toned down so the tier cards win the eye.
           Previously 60vw at 0.18 opacity dominated the hero on 1366×768

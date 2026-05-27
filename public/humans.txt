@@ -1,0 +1,19 @@
+/* humans.txt — the people behind Wireline */
+
+/* TEAM */
+  Founder & Engineer: Mike Laurenzo
+  Site: https://trywireline.com
+  Twitter: @wirelineapp
+
+/* THANKS */
+  Every early customer who picked up the phone and trusted an AI
+  with their inbound calls before it was cool.
+
+/* SITE */
+  Language:         English (US)
+  Doctype:          HTML5
+  Standards:        HTML5, CSS3, ES2022, JSON-LD, RFC 9116
+  Components:       React 19, Vite, TypeScript, TailwindCSS, motion/react
+  Hosting:          Vercel
+  Analytics:        Plausible (privacy-first, no cookies)
+  Last update:      2026/05
