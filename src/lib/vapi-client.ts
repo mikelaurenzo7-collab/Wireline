@@ -24,9 +24,10 @@ import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./agent-runt
 import { buildCustomerIntelBlock } from "./customer-intel";
 import { DEFAULT_AGENT_ROLE } from "./agent-constants";
 import {
-  VAPI_OPENAI_FALLBACK_MODEL,
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
+  VAPI_VOICE_FALLBACK_MODEL,
+  VAPI_VOICE_FALLBACK_PROVIDER,
   resolveVapiVoiceModelSelection,
 } from "./claude-brain";
 
@@ -450,6 +451,9 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
       ...(outboundServerUrl && { serverUrl: outboundServerUrl }),
       serverUrlSecret: process.env.VAPI_WEBHOOK_SECRET,
       serverMessages: ["tool-calls", "status-update", "conversation-update", "end-of-call-report"],
+      // Buffer text before shipping to TTS — prevents cadence speed-ups
+      // on short dense token bursts (emails, phone numbers, URLs).
+      inputMinCharacters: 30,
       model: {
         provider: voiceLlmProvider,
         model: voiceLlmModel,
@@ -487,9 +491,9 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
           if (!Number.isFinite(n)) return fallback;
           return Math.min(1, Math.max(0, n));
         };
-        const stability = clamp01((agentConfig as any)?.voiceStability, 0.5);
-        const similarityBoost = clamp01((agentConfig as any)?.voiceSimilarityBoost, 0.75);
-        const style = clamp01((agentConfig as any)?.voiceStyle, 0.0);
+        const stability = clamp01((agentConfig as any)?.voiceStability, 0.65);
+        const similarityBoost = clamp01((agentConfig as any)?.voiceSimilarityBoost, 0.8);
+        const style = clamp01((agentConfig as any)?.voiceStyle, 0.1);
         const rawSpeakerBoost = (agentConfig as any)?.voiceSpeakerBoost;
         const useSpeakerBoost = rawSpeakerBoost == null ? true : Boolean(rawSpeakerBoost);
         return {
@@ -541,8 +545,8 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
           ...vapiPayload.assistant,
           model: {
             ...vapiPayload.assistant.model,
-            provider: "openai",
-            model: VAPI_OPENAI_FALLBACK_MODEL,
+            provider: VAPI_VOICE_FALLBACK_PROVIDER,
+            model: VAPI_VOICE_FALLBACK_MODEL,
           },
         },
       } as any;

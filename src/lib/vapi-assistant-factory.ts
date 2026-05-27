@@ -531,20 +531,22 @@ Today is ${currentDateTime}.
     if (!Number.isFinite(n)) return fallback;
     return Math.min(1, Math.max(0, n));
   };
-  //   - stability 0.50 (was 0.40): slightly higher stability reduces
-  //     intra-call prosody variance — the voice sounds more consistent
-  //     sentence-to-sentence. The 0.40 setting let intonation drift
-  //     too much, causing perceptible speed shifts mid-call.
-  //   - similarityBoost 0.78 (was 0.75): tightens fidelity to the
+  //   - stability 0.65 (was 0.50): high stability dramatically reduces
+  //     intra-call prosody variance — the voice sounds rock-solid
+  //     consistent sentence-to-sentence. The 0.50 setting still allowed
+  //     noticeable speed shifts mid-call, especially when the LLM output
+  //     switched between conversational and information-dense content.
+  //   - similarityBoost 0.80 (was 0.78): tightens fidelity to the
   //     trained voice without crossing into over-modeled territory.
-  //   - style 0.25 (was 0.35): style adds emotional inflection which
-  //     also causes cadence oscillation — the TTS rushes through
-  //     excited parts and drags on calm ones. 0.25 gives warmth
-  //     without the speed swings. Operators can override via
-  //     FleetSettings → Voice fine-tuning.
-  const parsedStability = clamp01((agentConfigRow as any)?.voiceStability, 0.50);
-  const parsedSimilarityBoost = clamp01((agentConfigRow as any)?.voiceSimilarityBoost, 0.78);
-  const parsedStyle = clamp01((agentConfigRow as any)?.voiceStyle, 0.25);
+  //   - style 0.10 (was 0.25): style adds emotional inflection which
+  //     causes cadence oscillation — the TTS rushes through excited
+  //     parts and drags on calm ones. 0.10 gives minimal warmth
+  //     without ANY perceptible speed swings. The LLM prompt already
+  //     handles emotional range; TTS should just render consistently.
+  //     Operators can override via FleetSettings → Voice fine-tuning.
+  const parsedStability = clamp01((agentConfigRow as any)?.voiceStability, 0.65);
+  const parsedSimilarityBoost = clamp01((agentConfigRow as any)?.voiceSimilarityBoost, 0.8);
+  const parsedStyle = clamp01((agentConfigRow as any)?.voiceStyle, 0.1);
   // PG returns boolean as JS boolean — but a `null` (column missing
   // pre-migration) defaults to EL's spec'd true.
   const rawSpeakerBoost = (agentConfigRow as any)?.voiceSpeakerBoost;
@@ -630,7 +632,11 @@ Today is ${currentDateTime}.
     // as rapid-fire tokens and compresses their duration. The
     // inputMinCharacters setting forces a minimum chunk size so the synth
     // doesn't sprint through short high-density bursts.
-    inputMinCharacters: 10,
+    // Increased from 10 → 30 to further smooth cadence: with Opus
+    // producing more measured, complete sentences, we buffer longer
+    // before shipping to TTS, resulting in more natural phrasing
+    // boundaries and eliminating micro-speed-ups on partial sentences.
+    inputMinCharacters: 30,
     model: {
       provider: voiceLlmProvider,
       model: voiceLlmModel,
@@ -729,8 +735,7 @@ Today is ${currentDateTime}.
     // company name. Uses business_name variable so customers hear the
     // business ("Acme Plumbing"), not the agent's first name.
     // Saves LLM cost vs. having the model improvise.
-    voicemailMessage:
-      `Hi, this is ${(bizVars.business_name as string) || agentConfigRow?.name || "your assistant"} calling. Sorry we missed you — feel free to call us back at any time and we'll be happy to help. Thanks!`,
+    voicemailMessage: `Hi, this is ${(bizVars.business_name as string) || agentConfigRow?.name || "your assistant"} calling. Sorry we missed you — feel free to call us back at any time and we'll be happy to help. Thanks!`,
     // Always record so we can replay + retrain. Operator can disable per-
     // agent if HIPAA mode is on.
     recordingEnabled: true,

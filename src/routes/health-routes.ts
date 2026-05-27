@@ -114,9 +114,10 @@ router.get("/internal", healthRateLimiter, authenticateUser, async (_req, res) =
     voice_agent_premium_model: VAPI_PREMIUM_MODEL,
     llm_tiering: {
       voice_runtime: {
-        provider: "google",
+        provider: "anthropic",
         model: VAPI_TENANT_DEFAULT_MODEL,
-        reason: "sub-250ms first-token latency, native streaming, lowest cost for real-time",
+        reason:
+          "consistent cadence and tone, smartest adaptive voice, eliminates mid-call speed shifts",
       },
       reasoning_layer: {
         provider: "anthropic",

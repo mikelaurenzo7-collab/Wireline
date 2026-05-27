@@ -363,7 +363,7 @@ export function buildShowcaseAssistantPayload(
       endpointing: 40,
     },
     // Prevent TTS speed-up on dense token sequences (emails, phone numbers)
-    inputMinCharacters: 10,
+    inputMinCharacters: 30,
   };
 
   const voiceId = agent.voiceId || options?.existingVoiceId;
@@ -372,8 +372,8 @@ export function buildShowcaseAssistantPayload(
       provider: "11labs",
       voiceId,
       model: "eleven_flash_v2_5",
-      optimizeStreamingLatency: 4,
-      stability: 0.62,
+      optimizeStreamingLatency: 2,
+      stability: 0.65,
       similarityBoost: 0.88,
       style: 0.05,
       useSpeakerBoost: true,

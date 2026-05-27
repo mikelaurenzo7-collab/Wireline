@@ -57,6 +57,11 @@ export function getVoiceLatencyProfile(input: {
     silenceTimeoutSeconds,
     responseDelaySeconds: 0,
     numWordsToInterruptAssistant: paid ? 2 : 3,
-    optimizeStreamingLatency: paid ? 4 : 3,
+    // Reduced from 4/3 → 2/2. Higher values (3-4) maximize speed at the
+    // cost of TTS prosody quality — ElevenLabs renders more aggressively
+    // compressed audio that amplifies cadence inconsistency when the LLM
+    // feeds varying-length text chunks. Level 2 is the sweet spot:
+    // perceptibly fast first-audio-out without the jarring speed shifts.
+    optimizeStreamingLatency: paid ? 2 : 2,
   };
 }
