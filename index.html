@@ -32,6 +32,8 @@
     <meta name="publisher" content="Wireline" />
     <meta name="theme-color" content="#4F1E7B" />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#4F1E7B" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2A0C42" />
+    <meta name="msapplication-TileColor" content="#4F1E7B" />
     <meta name="apple-mobile-web-app-title" content="Wireline" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -107,9 +109,20 @@
             "@type": "Organization",
             "@id": "https://trywireline.com/#organization",
             "name": "Wireline",
+            "legalName": "Wireline",
             "url": "https://trywireline.com/",
             "logo": "https://trywireline.com/wireline-icon-1024.png",
+            "image": "https://trywireline.com/og-image.png",
             "description": "AI voice and email agents that deploy on real phone numbers for businesses.",
+            "slogan": "AI voice and email agents on real phone numbers. Live in 10 minutes.",
+            "foundingDate": "2024",
+            "email": "trywireline@yahoo.com",
+            "founder": {
+              "@type": "Person",
+              "name": "Mike Laurenzo",
+              "jobTitle": "Founder",
+              "url": "https://trywireline.com/about"
+            },
             "sameAs": ["https://twitter.com/wirelineapp"],
             "contactPoint": [
               {
@@ -186,14 +199,21 @@
     <!-- Preconnect to key origins for faster bootstrap.
          Google Fonts needs TWO origins: googleapis.com (CSS) + gstatic.com
          (WOFF2 files). Preconnect collapses 200-400ms of DNS+TLS on 4G.
-         Keep this list to browser-touched origins only. -->
+         Plausible is preconnected because the analytics script ships from
+         there and we want it ready before the bundle parses. Keep this
+         list to browser-touched origins only. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://plausible.io" crossorigin />
     <link rel="dns-prefetch" href="https://api.anthropic.com" />
     <link rel="dns-prefetch" href="https://api.vapi.ai" />
 
     <!-- Favicons &amp; PWA -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- mask-icon: Safari pinned-tab uses a single-color SVG. We reuse
+         the favicon since the mark is already mono-stroke on a solid
+         tile; the color attribute overrides the SVG fill in Safari. -->
+    <link rel="mask-icon" href="/favicon.svg" color="#4F1E7B" />
     <!-- apple-touch-icon: iOS ignores the sizes attribute and uses the largest
          file it finds. The bare (no sizes) entry is the canonical default iOS
          will pick. Using the 1024px source — iOS applies its own rounded rect
@@ -201,6 +221,8 @@
          referenced here once available. -->
     <link rel="apple-touch-icon" href="/wireline-icon-1024.png" />
     <link rel="manifest" href="/site.webmanifest" />
+    <!-- humans.txt — credits, stack, and "who built this" -->
+    <link rel="author" type="text/plain" href="/humans.txt" />
 
     <!-- Buffer polyfill: removed. The previous inline script was a no-op
          (calling Node's `require("buffer")` doesn't work in the browser)

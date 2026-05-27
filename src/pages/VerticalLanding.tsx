@@ -613,17 +613,40 @@ export function getVerticalConfig(slug: VerticalKey): VerticalConfig {
 export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
   const cfg = WEDGES[slug];
   if (!cfg) return null;
-  const faqStructuredData = {
+  // Combine FAQ + Breadcrumb in a single @graph so Google can pick up
+  // both rich-result types from one JSON-LD block.
+  const structuredData = {
     "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: cfg.faqs.map((faq) => ({
-      "@type": "Question",
-      name: faq.q,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: faq.a,
+    "@graph": [
+      {
+        "@type": "FAQPage",
+        mainEntity: cfg.faqs.map((faq) => ({
+          "@type": "Question",
+          name: faq.q,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: faq.a,
+          },
+        })),
       },
-    })),
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Wireline",
+            item: "https://trywireline.com/",
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: cfg.metaTitle.split("—")[0].trim() || slug,
+            item: `https://trywireline.com/for/${slug}`,
+          },
+        ],
+      },
+    ],
   };
 
   return (
@@ -632,7 +655,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         title={cfg.metaTitle}
         description={cfg.metaDescription}
         path={`/for/${slug}`}
-        structuredData={faqStructuredData}
+        structuredData={structuredData}
       />
 
       {/* Aurora backdrop — toned down. The wedge pages compete with
