@@ -35,8 +35,10 @@
     "marketing:kit": "node scripts/marketing-kit.mjs",
     "prepare": "husky",
     "e2e": "npm run test:e2e",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
+    "test:e2e": "playwright test tests/e2e",
+    "test:e2e:ui": "playwright test tests/e2e --ui",
+    "test:visual": "playwright test tests/visual --project=chromium",
+    "test:visual:update": "playwright test tests/visual --project=chromium --update-snapshots",
     "test": "vitest",
     "test:run": "vitest run"
   },
