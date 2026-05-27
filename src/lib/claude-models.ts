@@ -55,7 +55,7 @@ export const VAPI_VOICE_FALLBACK_MODEL = GEMINI_MODELS.FLASH_3_5;
 
 /**
  * Primary realtime model for the Vapi voice runtime.
- * Claude Opus 4.6 — the smartest, most adaptive voice model available.
+ * Claude Opus 4.7 — the most intelligent, most adaptive voice model available.
  * Yields natural, consistent cadence and tone throughout the entire call
  * without the token-burst irregularity that plagues streaming-optimized
  * models like Gemini Flash. Higher cost per token but eliminates the
@@ -68,17 +68,18 @@ export const VAPI_PREMIUM_MODEL = CLAUDE_MODELS.OPUS;
 
 /**
  * Default tenant voice model for deployed phone agents.
- * Claude Opus 4.6 — consistent output token pacing eliminates the
- * mid-call cadence doubling caused by Gemini's variable burst sizes.
+ * Claude Opus 4.7 — the best-in-class model for voice. Consistent output
+ * token pacing eliminates the mid-call cadence doubling caused by Gemini's
+ * variable burst sizes. Maximum reasoning depth for adaptive conversations.
  */
-export const VAPI_TENANT_DEFAULT_MODEL = "claude-opus-4-6";
+export const VAPI_TENANT_DEFAULT_MODEL = "claude-opus-4-7";
 
 /**
  * Model used by the Wireline showcase + demo assistants.
- * Same Opus 4.6 as tenant agents — the demo line must be the best
+ * Same Opus 4.7 as tenant agents — the demo line must be the best
  * possible experience since it's the product's first impression.
  */
-export const VAPI_SHOWCASE_MODEL = "claude-opus-4-6";
+export const VAPI_SHOWCASE_MODEL = "claude-opus-4-7";
 
 const GEMINI_FLASH_LATEST_ALIASES = new Set([
   GEMINI_MODELS.FLASH_3_5,
@@ -111,21 +112,21 @@ export function resolveVapiVoiceModelSelection(input?: {
 
   if (anthroVoiceRequested) {
     // Normalize Claude family aliases → a concrete model id Vapi accepts.
-    // Default normalization target is now claude-opus-4-6 — the voice
+    // Default normalization target is now claude-opus-4-7 — the voice
     // runtime default. Operators who explicitly select Sonnet/Haiku get
-    // what they asked for; bare "claude" or unspecified lands on Opus 4.6
-    // for maximum voice quality and consistent cadence.
+    // what they asked for; bare "claude" or unspecified lands on Opus 4.7
+    // for maximum voice quality, reasoning depth, and consistent cadence.
     // Vapi rejects cross-provider fallbackModels on Anthropic assistants,
     // so we omit any fallback here.
-    let normalized: string = "claude-opus-4-6";
+    let normalized: string = CLAUDE_MODELS.OPUS;
     if (requestedModelLower.includes("sonnet")) normalized = CLAUDE_MODELS.SONNET;
     else if (requestedModelLower.includes("opus")) {
       // Prefer the exact requested model string if it includes "opus"
-      normalized = requestedModel || "claude-opus-4-6";
+      normalized = requestedModel || CLAUDE_MODELS.OPUS;
     } else if (requestedModelLower.includes("haiku")) {
       normalized = CLAUDE_MODELS.HAIKU;
     } else if (requestedModelLower.startsWith("claude")) {
-      normalized = requestedModel || "claude-opus-4-6";
+      normalized = requestedModel || CLAUDE_MODELS.OPUS;
     }
     return {
       provider: "anthropic",
@@ -247,7 +248,7 @@ export const DEFAULT_MODEL = CLAUDE_MODEL_DEFAULT;
  * Wireline uses a quality-first LLM system optimized for the
  * voice-first agent use case. Consistency and intelligence over speed:
  *
- *   • Voice Runtime  → Claude Opus 4.6   (consistent cadence + smartest adaptive voice)
+ *   • Voice Runtime  → Claude Opus 4.7   (best reasoning + consistent cadence)
  *   • Voice Fallback → Gemini 3.5 Flash  (speed backup for availability failures)
  *   • Reasoning Layer → Claude Opus 4.7  (adaptive depth + tool reliability)
  *
@@ -259,10 +260,12 @@ export const DEFAULT_MODEL = CLAUDE_MODEL_DEFAULT;
  * (pricing, confirmations, technical details) then slow back down on
  * conversational turns. This reads as "AI" to callers and kills trust.
  *
- * Claude Opus 4.6 delivers even, measured output token pacing that
- * the TTS engine renders as one consistent voice throughout the call.
- * The ~200-400ms latency increase vs Flash is acceptable given the
- * dramatic improvement in perceived naturalness.
+ * Claude Opus 4.7 delivers the deepest adaptive reasoning combined with
+ * even, measured output token pacing that the TTS engine renders as one
+ * consistent voice throughout the call. It is the single best-performing
+ * model available for voice AI agents in May 2026. The ~200-400ms latency
+ * increase vs Flash is acceptable given the dramatic improvement in
+ * perceived naturalness and conversation quality.
  *
  * Gemini 3.5 Flash remains as the application-level fallback for when
  * Anthropic is unavailable — speed over quality is the right tradeoff
@@ -270,7 +273,7 @@ export const DEFAULT_MODEL = CLAUDE_MODEL_DEFAULT;
  *
  * TIER MAP
  *
- *   Voice Runtime        : Claude Opus 4.6   (VAPI_TENANT_DEFAULT_MODEL)
+ *   Voice Runtime        : Claude Opus 4.7   (VAPI_TENANT_DEFAULT_MODEL)
  *   Voice Fallback       : Gemini 3.5 Flash  (VAPI_VOICE_FALLBACK_MODEL)
  *   Reasoning (default)  : Claude Opus 4.7   (CLAUDE_MODEL_DEFAULT)
  *   Reasoning (simple)   : Claude Haiku 4.5  (selectModelForTask("simple"))
@@ -286,7 +289,7 @@ export const DEFAULT_MODEL = CLAUDE_MODEL_DEFAULT;
  *
  * COST MODEL (approximate, May 2026)
  *
- *   Voice (Opus 4.6)      : $15–75 per 1M tokens   — premium quality, worth it for demo
+ *   Voice (Opus 4.7)      : $15–75 per 1M tokens   — best-in-market quality, worth it
  *   Voice Fallback (Flash) : $0.15–1.25 per 1M tokens — used only on Anthropic outage
  *   Reasoning (Opus 4.7)  : $15–75 per 1M tokens   — high-value, low-volume
  *

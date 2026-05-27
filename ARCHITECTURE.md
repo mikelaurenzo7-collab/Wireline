@@ -6,22 +6,24 @@ This document is the canonical reference for Wireline's system design, LLM tieri
 
 ## 1. LLM Tiering (The Moat)
 
-Wireline deliberately splits LLM usage across two providers and three models:
+Wireline deliberately uses the highest-performing models at every layer:
 
 | Layer | Provider | Model | Purpose | Why This Model |
 |-------|----------|-------|---------|----------------|
-| **Voice Runtime** | Google | Gemini 3.5 Flash | Live call handling (inbound/outbound) | Sub-250 ms first-token latency, native streaming, lowest cost for real-time |
+| **Voice Runtime** | Anthropic | Claude Opus 4.7 | Live call handling (inbound/outbound) | Best-in-market reasoning depth, consistent output pacing, natural cadence throughout calls |
+| **Voice Fallback** | Google | Gemini 3.5 Flash | Availability backup when Anthropic is down | Sub-250 ms latency, acceptable quality when alternative is a failed call |
 | **Reasoning Layer** | Anthropic | Claude Opus 4.7 | Pre-call briefs, post-call coaching, integration orchestration | Highest adaptive reasoning depth, most reliable tool orchestration, best self-correction |
 | **Grounded Search** | Google | Gemini 2.5 Flash | `gemini_ground` tool (web lookup with citations) | Native `googleSearchRetrieval` tool with source grounding |
 
-### 1.1 Why Gemini Flash for Voice
+### 1.1 Why Claude Opus for Voice
 
-- Every 100 ms of latency is perceived as "sluggish" on a phone call
-- Gemini 3.5 Flash delivers the best price/performance/latency combination available in 2026
-- Vapi's streaming integration is mature for Gemini
-- No other model (Grok-2, GPT-4o, Claude Haiku) matches the latency + price + streaming trifecta
+- Consistent output token pacing eliminates the perceptible cadence doubling that Gemini Flash exhibits on dense content (pricing, confirmations, technical details)
+- Deepest reasoning depth means the agent adapts to caller tone, handles complex objections, and never sounds robotic
+- Same model for voice + reasoning = unified intelligence across the entire call lifecycle
+- The ~200-400ms latency increase vs Flash is imperceptible to callers thanks to TTS buffering
+- Gemini 3.5 Flash remains as fallback for Anthropic outages only
 
-**Voice is 80%+ of token spend.** This choice is non-negotiable for unit economics.
+**Quality over latency. The best agents in the market don't compromise on intelligence.**
 
 ### 1.2 Why Claude Opus for Reasoning
 
