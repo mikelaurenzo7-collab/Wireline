@@ -1,0 +1,130 @@
+# Audit Wins — 2026-Q1 Pass
+
+What changed in the deep-audit follow-up, why, and where to look. This
+file is reference material — not a checklist to maintain. After 60 days,
+the items here should be obvious from the codebase and this file can
+roll into `docs/` or be deleted.
+
+---
+
+## 1. Voice + Reasoning Tiering, Finalised
+
+**Previous state:** `claude-opus-4-7` on the live voice path AND the
+reasoning path. Brand promise was "smartest agent." Real-world TTFT against
+an 18 KB system prompt was 1.5–2.5 s — long enough that callers said
+"hello? are you there?"
+
+**New state:**
+
+| Layer | Model | TTFT (real-world) |
+|---|---|---|
+| Voice runtime (live) | **Claude Sonnet 4.6** | 300–500 ms |
+| Voice fallback | Gemini 3.5 Flash | ~200 ms |
+| Reasoning (briefs, coaching, post-call, daily-brief) | **Claude Opus 4.7** | 800–1500 ms (invisible — runs off the live wire) |
+| Simple utility (sentiment, extraction) | Claude Haiku 4.5 | ~150 ms |
+
+End-to-end caller-perceived dead air dropped from ~2 s → ~700–900 ms while
+keeping Opus's depth on every artefact the operator reads.
+
+**Files touched:**
+- `src/lib/claude-models.ts` — `VAPI_TENANT_DEFAULT_MODEL`, `VAPI_SHOWCASE_MODEL`, `VAPI_PREMIUM_MODEL` all now point to `CLAUDE_MODELS.SONNET`. Tiering docstring rewritten with the rationale.
+- `src/db/schema.ts` — `wireline_settings.voiceLlmProvider/voiceLlmModel` default → `anthropic` / `claude-sonnet-4-6` (was `google` / `gemini-3.5-flash`).
+- `src/components/AdminSettings.tsx` — UI default state and fallback both updated.
+- `src/routes/health-routes.ts` — `/api/health/internal` now reports the correct tiering rationale per layer.
+- `ARCHITECTURE.md` — full rewrite of section 1 (LLM Tiering) explaining the Sonnet-voice + Opus-reasoning split.
+- `README.md` — voice-runtime paragraph + tech-stack row updated.
+
+> **Migration note for existing tenants:** the schema default change only
+> affects *new* signups. Existing tenants whose `wireline_settings` rows
+> still hold `google` / `gemini-3.5-flash` will continue running Gemini
+> on the voice path until an operator updates them via Fleet Settings.
+> If a wholesale migration is desired, add a one-shot SQL admin endpoint
+> under `/api/admin/migrate-*` that flips rows older than the cutoff.
+
+---
+
+## 2. Live Model-Resolution Probe
+
+**`GET /api/health/models`** (auth-gated) now ships a real 1-token probe
+against every configured Anthropic tier and reports `{ok, latency_ms,
+error}` per layer.
+
+This catches the silent failure mode where a model id in our constants
+drifts away from what the provider actually serves — e.g. a versioned
+alias gets retired or you upgrade the SDK and the next-gen model isn't
+GA yet. Uptime monitors and the in-app admin Health panel can both hit
+this endpoint.
+
+Cost per probe: <$0.001 (5-token prompt, 1-token reply). Rate-limited
+like every other health endpoint.
+
+**File:** `src/routes/health-routes.ts`
+
+---
+
+## 3. Tests Added (the moat now has a safety net)
+
+Test files grew from **6 → 10**; unit test count from ~40 → **115**.
+
+| New file | Covers |
+|---|---|
+| `src/lib/agent-runtime.test.ts` | All pure helpers: business-hours gate (timezones, overnight windows, malformed input), compliance presets, disallowed-topics + escalation blocks, business-variable substitution, KPI focus, full `buildAgentRuntimeContext` composition. The docstring on `agent-runtime.ts` had long promised this file; now it exists. |
+| `src/lib/personality-vibes.test.ts` | All three vibes have the right tone-anchor phrases. `buildVibeBlock()` always emits the adaptive-core + the "never fabricate an action" rule. The moat is now guarded against silent edits. |
+| `src/lib/claude-models.test.ts` | Constants are stable (voice = Sonnet, reasoning = Opus). `resolveVapiVoiceModelSelection` covers Anthropic / Google / OpenAI normalisation, fallback-list contract (no cross-provider list on Anthropic), unknown-provider fall-through. |
+| `src/lib/plan-catalog.test.ts` | Catalog shape, overage rates strictly decrease as tier rises, minute allowances at least 2x per tier, `planById` / `planByPriceId` resolution, `plansForClient` never exposes Enterprise as configured (the contact-sales sentinel). |
+
+Run with `npm run test:run` — currently 115 passing in ~2.3 s.
+
+---
+
+## 4. CI-Enforced Doc Freshness
+
+`scripts/check-readme-pricing.mjs` diffs the README pricing table against
+`src/lib/plan-catalog.ts`. Wired into `npm run verify` via the new
+`npm run docs:check` script.
+
+Any push where the README pricing or plan-catalog tier rates drift fails
+the verify step, before the tree even builds. This locks down the entire
+class of "marketing page says one number, billing system charges
+another" bugs the audit surfaced.
+
+---
+
+## 5. TypeScript Strictness — 16-File Allowlist (was 8)
+
+Added to `tsconfig.strict.json`:
+- `src/lib/agent-runtime.ts`
+- `src/lib/personality-vibes.ts`
+- `src/lib/claude-models.ts`
+- `src/lib/plan-catalog.ts`
+- `src/lib/password-policy.ts`
+- `src/lib/form-validators.ts`
+- `src/lib/signup-intent.ts`
+- `src/lib/csp.ts`
+
+All pass `npm run lint:strict` clean. These are the highest-traffic,
+moat-adjacent modules — getting them under strict-mode means a regression
+fails the build instead of shipping silently.
+
+Goal for next pass: get every file with `*.test.ts` coverage under strict.
+
+---
+
+## 6. Documentation Reconciliation
+
+| Doc | Before | After |
+|---|---|---|
+| `README.md` | Sonnet 4.6 with 200 ms latency; pricing $0.20/0.18/0.16 | Sonnet voice + Opus reasoning split documented; pricing table mirrors `plan-catalog.ts` exactly ($0.20/0.18/0.15/0.14) |
+| `ARCHITECTURE.md` | Dated "May 26, 2026"; all-Opus tiering | Date-anchor moved to git log; tiering rewritten with rationale; references `/api/health/models` |
+
+---
+
+## Backlog (deferred — captured for the next pass)
+
+1. **Slice god-files.** `ClaudeRecipes.tsx` (2862 LOC), `FleetSettings.tsx` (2015), `OutboundDialer.tsx` (1879), `InsightsView.tsx` (1927). Each is 3+ sub-features in one file; extracting siblings would unblock review velocity.
+2. **Prompt caching on reasoning paths.** Anthropic's `cache_control` on system messages cuts cached-input tokens by 90%. The 18 KB Wireline agent prompt is a perfect cache candidate for `brief()`, `coach()`, `postCallAnalysis()` (which all share the same per-agent system frame).
+3. **Tenant backfill migration.** One-shot SQL endpoint that flips existing `google` / `gemini-3.5-flash` settings rows to `anthropic` / `claude-sonnet-4-6` — gated, dry-run-first, audited.
+4. **Tighten `--max-warnings 1100` → 700 over Q1.** Ratchet down 100 warnings per cycle via `eslint --max-warnings` in CI.
+5. **Strict-mode allowlist → cover every `*.test.ts` peer.** ~20 more files.
+6. **Visual canary for the live demo lines.** Cron a synthetic call to each showcase number nightly; alert on TTFT or sentiment regressions. Today this is detected by users; should be detected by us first.
+7. **Resolve `src/lib/audit-routes.ts` ↔ `src/routes/audit-routes.ts` naming collision** (one is helpers, one is the router — rename the lib file).

@@ -10,7 +10,11 @@ import {
   CLAUDE_MODEL_DEFAULT,
   VAPI_PREMIUM_MODEL,
   VAPI_TENANT_DEFAULT_MODEL,
+  VAPI_VOICE_FALLBACK_MODEL,
+  CLAUDE_MODELS,
+  GEMINI_MODELS,
 } from "../lib/claude-brain";
+import { getClient as getAnthropicClient, isClaudeAvailable } from "../lib/claude-client";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = express.Router();
@@ -117,12 +121,18 @@ router.get("/internal", healthRateLimiter, authenticateUser, async (_req, res) =
         provider: "anthropic",
         model: VAPI_TENANT_DEFAULT_MODEL,
         reason:
-          "consistent cadence and tone, smartest adaptive voice, eliminates mid-call speed shifts",
+          "smartest model in voice's latency class (TTFT ~300-500ms); adaptive tone, reliable tool calls, consistent cadence",
+      },
+      voice_fallback: {
+        provider: "google",
+        model: VAPI_VOICE_FALLBACK_MODEL,
+        reason: "sub-250ms TTFT backup used only on Anthropic outages",
       },
       reasoning_layer: {
         provider: "anthropic",
         model: CLAUDE_MODEL_DEFAULT,
-        reason: "highest adaptive reasoning depth for briefs, coaching, orchestration",
+        reason:
+          "deepest adaptive reasoning; runs OFF the live wire (briefs, coaching, post-call) so latency is invisible",
       },
       grounded_search: {
         provider: "google",
@@ -142,6 +152,107 @@ router.get("/internal", healthRateLimiter, authenticateUser, async (_req, res) =
 router.get("/integrations", healthRateLimiter, authenticateUser, (_req, res) => {
   res.json({
     integrations: getIntegrationsStatus(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+/**
+ * Authenticated live-probe of every configured LLM tier. The goal is to
+ * catch the silent failure mode where a model id in our constants drifts
+ * away from what the provider actually serves (e.g. a versioned alias
+ * gets retired). Each probe ships ~5 input tokens and asks for ~1 output
+ * token, so total cost is negligible (<$0.001 per call).
+ *
+ * Returns one row per tier with:
+ *   - ok: boolean — did the provider accept the model id and respond?
+ *   - latency_ms: round-trip TTFT in milliseconds (best-effort)
+ *   - error: provider error string if the probe failed
+ *
+ * Designed to be called by uptime monitors / canaries. Rate-limited like
+ * every other health endpoint.
+ *
+ * NOTE: We only probe Anthropic here. The Gemini-fallback path uses a
+ * separate SDK; adding a Google probe is tracked as a follow-up so this
+ * endpoint stays fast (<2 s total) on the happy path.
+ */
+async function probeAnthropicModel(
+  model: string,
+  timeoutMs = 8_000,
+): Promise<{ ok: boolean; latency_ms: number; error?: string; model: string }> {
+  const t0 = Date.now();
+  if (!isClaudeAvailable()) {
+    return {
+      ok: false,
+      latency_ms: 0,
+      model,
+      error: "ANTHROPIC_API_KEY not configured",
+    };
+  }
+  try {
+    const client = getAnthropicClient();
+    const probe = client.messages.create({
+      model,
+      max_tokens: 1,
+      messages: [{ role: "user", content: "ping" }],
+    });
+    await Promise.race([
+      probe,
+      new Promise((_resolve, reject) =>
+        setTimeout(() => reject(new Error("model probe timed out")), timeoutMs),
+      ),
+    ]);
+    return { ok: true, latency_ms: Date.now() - t0, model };
+  } catch (err: any) {
+    return {
+      ok: false,
+      latency_ms: Date.now() - t0,
+      model,
+      // Surface only the message — not the full Anthropic error envelope —
+      // because the full envelope can include request ids that aren't
+      // safe to render on the dashboard.
+      error: getErrorMessage(err).slice(0, 240),
+    };
+  }
+}
+
+router.get("/models", healthRateLimiter, authenticateUser, async (_req, res) => {
+  const t0 = Date.now();
+  const [voice, voicePremium, reasoning] = await Promise.all([
+    probeAnthropicModel(VAPI_TENANT_DEFAULT_MODEL),
+    // Skip the premium probe when it would duplicate the tenant probe —
+    // saves a roundtrip when showcase/tenant are on the same model.
+    VAPI_PREMIUM_MODEL !== VAPI_TENANT_DEFAULT_MODEL
+      ? probeAnthropicModel(VAPI_PREMIUM_MODEL)
+      : Promise.resolve(null),
+    probeAnthropicModel(CLAUDE_MODEL_DEFAULT),
+  ]);
+  const allOk = voice.ok && reasoning.ok && (voicePremium ? voicePremium.ok : true);
+  res.status(allOk ? 200 : 503).json({
+    ok: allOk,
+    total_latency_ms: Date.now() - t0,
+    probes: {
+      voice_runtime: voice,
+      ...(voicePremium ? { voice_premium: voicePremium } : {}),
+      reasoning: reasoning,
+      // Static info — Google Gemini fallback is not probed live to keep
+      // this endpoint snappy; status is "configured" if the env is set.
+      voice_fallback: {
+        ok: !!process.env.GEMINI_API_KEY,
+        latency_ms: 0,
+        model: VAPI_VOICE_FALLBACK_MODEL,
+        ...(process.env.GEMINI_API_KEY ? {} : { error: "GEMINI_API_KEY not configured" }),
+      },
+    },
+    constants: {
+      voice_runtime: VAPI_TENANT_DEFAULT_MODEL,
+      voice_premium: VAPI_PREMIUM_MODEL,
+      voice_fallback: VAPI_VOICE_FALLBACK_MODEL,
+      reasoning_default: CLAUDE_MODEL_DEFAULT,
+      sonnet: CLAUDE_MODELS.SONNET,
+      opus: CLAUDE_MODELS.OPUS,
+      haiku: CLAUDE_MODELS.HAIKU,
+      gemini_flash: GEMINI_MODELS.FLASH_3_5,
+    },
     timestamp: new Date().toISOString(),
   });
 });

@@ -30,12 +30,29 @@
     // Each entry was inspected and confirmed to compile under strict.
     // Add a new entry only after verifying `npm run lint:strict` is clean.
     "src/types/pg-shim.d.ts",
+    "src/types/audit.ts",
     "src/lib/secret-vault.ts",
     "src/middleware/require-role.ts",
     "src/lib/tenant-quotas.ts",
     "src/lib/soc2-controls.ts",
     "src/lib/customer-intel.ts",
     "src/lib/rate-limit.ts",
-    "src/types/audit.ts"
+    // ─── Added 2026-Q1 audit (Sonnet/Opus tiering pass) ─────────────
+    // The agent moat — pure helpers, no DB or I/O. Every branch is
+    // covered by src/lib/agent-runtime.test.ts.
+    "src/lib/agent-runtime.ts",
+    "src/lib/personality-vibes.ts",
+    // LLM tiering — constants and the function that decides which
+    // model gets to handle a live call. Covered by claude-models.test.ts.
+    "src/lib/claude-models.ts",
+    // Pricing source of truth. Covered by plan-catalog.test.ts and
+    // double-locked by scripts/check-readme-pricing.mjs.
+    "src/lib/plan-catalog.ts",
+    // Password + form validation — already had tests, now strict-clean.
+    "src/lib/password-policy.ts",
+    "src/lib/form-validators.ts",
+    "src/lib/signup-intent.ts",
+    // CSP builder — pure helper with snapshot test coverage.
+    "src/lib/csp.ts"
   ]
 }

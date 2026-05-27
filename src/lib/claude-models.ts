@@ -54,32 +54,38 @@ export const VAPI_VOICE_FALLBACK_PROVIDER = "google" as const;
 export const VAPI_VOICE_FALLBACK_MODEL = GEMINI_MODELS.FLASH_3_5;
 
 /**
- * Primary realtime model for the Vapi voice runtime.
- * Claude Opus 4.7 — the most intelligent, most adaptive voice model available.
- * Yields natural, consistent cadence and tone throughout the entire call
- * without the token-burst irregularity that plagues streaming-optimized
- * models like Gemini Flash. Higher cost per token but eliminates the
- * perceptible speed/cadence shifts that kill caller trust on demo calls.
+ * Premium / showcase voice model.
  *
- * Gemini 3.5 Flash is retained as the application-level fallback
- * (VAPI_VOICE_FALLBACK_MODEL) for availability failures.
+ * Claude Sonnet 4.6 is the production voice runtime — the smartest model
+ * Anthropic ships in the latency class that voice can tolerate. Real-world
+ * TTFT lands in the 300–500 ms range against an 18 KB system prompt, which
+ * (combined with Deepgram Nova-3 endpointing @ 40 ms + ElevenLabs Flash
+ * v2.5 TTS @ ~200 ms TTFA) puts perceived "agent is thinking" dead air
+ * comfortably under 900 ms. Opus 4.7 on the same prompt routinely pushes
+ * past 1.5 s, which reads as "did they hang up?" to callers.
+ *
+ * Sonnet 4.6 is also the model the rest of the market underestimates: it's
+ * adaptive, reads tone well, handles tool calls reliably, and stays
+ * conversational without the token-burst irregularity that plagues
+ * streaming-optimised models like Gemini Flash. Opus 4.7 remains on every
+ * non-realtime path (briefs, coaching, post-call analysis) where the
+ * latency tax is invisible — that's where its depth pays off.
  */
-export const VAPI_PREMIUM_MODEL = CLAUDE_MODELS.OPUS;
+export const VAPI_PREMIUM_MODEL = CLAUDE_MODELS.SONNET;
 
 /**
  * Default tenant voice model for deployed phone agents.
- * Claude Opus 4.7 — the best-in-class model for voice. Consistent output
- * token pacing eliminates the mid-call cadence doubling caused by Gemini's
- * variable burst sizes. Maximum reasoning depth for adaptive conversations.
+ * Same Sonnet 4.6 as the showcase — voice quality is the product's first
+ * impression and tenant agents get the same engine the demo line uses.
  */
-export const VAPI_TENANT_DEFAULT_MODEL = "claude-opus-4-7";
+export const VAPI_TENANT_DEFAULT_MODEL: string = CLAUDE_MODELS.SONNET;
 
 /**
  * Model used by the Wireline showcase + demo assistants.
- * Same Opus 4.7 as tenant agents — the demo line must be the best
- * possible experience since it's the product's first impression.
+ * Sonnet 4.6 — best-in-class voice intelligence at a TTFT callers don't
+ * feel. The Opus 4.7 reasoning layer enriches each call post-hoc.
  */
-export const VAPI_SHOWCASE_MODEL = "claude-opus-4-7";
+export const VAPI_SHOWCASE_MODEL: string = CLAUDE_MODELS.SONNET;
 
 const GEMINI_FLASH_LATEST_ALIASES = new Set([
   GEMINI_MODELS.FLASH_3_5,
@@ -112,21 +118,28 @@ export function resolveVapiVoiceModelSelection(input?: {
 
   if (anthroVoiceRequested) {
     // Normalize Claude family aliases → a concrete model id Vapi accepts.
-    // Default normalization target is now claude-opus-4-7 — the voice
-    // runtime default. Operators who explicitly select Sonnet/Haiku get
-    // what they asked for; bare "claude" or unspecified lands on Opus 4.7
-    // for maximum voice quality, reasoning depth, and consistent cadence.
-    // Vapi rejects cross-provider fallbackModels on Anthropic assistants,
-    // so we omit any fallback here.
-    let normalized: string = CLAUDE_MODELS.OPUS;
-    if (requestedModelLower.includes("sonnet")) normalized = CLAUDE_MODELS.SONNET;
-    else if (requestedModelLower.includes("opus")) {
+    //
+    // Default normalization target is claude-sonnet-4-6 — the voice
+    // runtime default. Sonnet 4.6 is the smartest model in the latency
+    // class voice can tolerate (TTFT ~300–500 ms vs Opus's 800–1500 ms
+    // on an 18 KB system prompt).
+    //
+    // Operators who explicitly select Opus/Haiku get what they asked
+    // for; bare "claude" or unspecified lands on Sonnet 4.6 for the
+    // smart-but-snappy voice profile every Wireline agent ships with.
+    //
+    // Vapi rejects cross-provider fallbackModels on Anthropic
+    // assistants, so we omit any fallback here.
+    let normalized: string = CLAUDE_MODELS.SONNET;
+    if (requestedModelLower.includes("opus")) {
       // Prefer the exact requested model string if it includes "opus"
       normalized = requestedModel || CLAUDE_MODELS.OPUS;
+    } else if (requestedModelLower.includes("sonnet")) {
+      normalized = requestedModel || CLAUDE_MODELS.SONNET;
     } else if (requestedModelLower.includes("haiku")) {
       normalized = CLAUDE_MODELS.HAIKU;
     } else if (requestedModelLower.startsWith("claude")) {
-      normalized = requestedModel || CLAUDE_MODELS.OPUS;
+      normalized = requestedModel || CLAUDE_MODELS.SONNET;
     }
     return {
       provider: "anthropic",
@@ -245,39 +258,38 @@ export const DEFAULT_MODEL = CLAUDE_MODEL_DEFAULT;
  * WIRELINE LLM TIERING ARCHITECTURE (Single Source of Truth)
  * ─────────────────────────────────────────────────────────────────────────────
  *
- * Wireline uses a quality-first LLM system optimized for the
- * voice-first agent use case. Consistency and intelligence over speed:
+ * Quality-first, latency-aware. Different models for different jobs:
  *
- *   • Voice Runtime  → Claude Opus 4.7   (best reasoning + consistent cadence)
- *   • Voice Fallback → Gemini 3.5 Flash  (speed backup for availability failures)
- *   • Reasoning Layer → Claude Opus 4.7  (adaptive depth + tool reliability)
+ *   • Voice Runtime    → Claude Sonnet 4.6  (smartest model in voice's
+ *                                            latency class; TTFT 300–500 ms)
+ *   • Voice Fallback   → Gemini 3.5 Flash   (speed-only backup for outages)
+ *   • Reasoning Layer  → Claude Opus 4.7    (briefs, coaching, post-call —
+ *                                            non-realtime, depth pays off)
+ *   • Simple Tasks     → Claude Haiku 4.5   (classification, extraction)
+ *   • Grounded Search  → Gemini 2.5 Flash   (native googleSearchRetrieval)
  *
  * RATIONALE
  *
- * Voice calls demand CONSISTENT cadence above all else. Gemini Flash's
- * variable token burst rates caused perceptible speed doubling mid-call
- * — the agent's speaking pace would suddenly accelerate on dense content
- * (pricing, confirmations, technical details) then slow back down on
- * conversational turns. This reads as "AI" to callers and kills trust.
+ * Voice calls live or die on the gap between caller-stops-talking and
+ * agent-first-audio. Opus 4.7 produces deeper, more adaptive replies but
+ * routinely takes 1.5–2.5 s to ship the first token against an 18 KB
+ * system prompt — long enough that callers say "hello? are you there?"
+ * Sonnet 4.6 keeps TTFT in the 300–500 ms range on the same prompt and
+ * is still the strongest voice-AI model in the market for adaptive tone,
+ * tool-call reliability, and conversational consistency.
  *
- * Claude Opus 4.7 delivers the deepest adaptive reasoning combined with
- * even, measured output token pacing that the TTS engine renders as one
- * consistent voice throughout the call. It is the single best-performing
- * model available for voice AI agents in May 2026. The ~200-400ms latency
- * increase vs Flash is acceptable given the dramatic improvement in
- * perceived naturalness and conversation quality.
- *
- * Gemini 3.5 Flash remains as the application-level fallback for when
- * Anthropic is unavailable — speed over quality is the right tradeoff
- * only when the alternative is a failed call.
+ * The deep-reasoning paths (pre-call briefs, post-call analysis, daily
+ * brief generation, coaching) all run *outside* the live call. The user
+ * never waits on them. We pay Opus 4.7's latency tax exactly zero times
+ * during a call and reap its depth on every artefact we produce.
  *
  * TIER MAP
  *
- *   Voice Runtime        : Claude Opus 4.7   (VAPI_TENANT_DEFAULT_MODEL)
- *   Voice Fallback       : Gemini 3.5 Flash  (VAPI_VOICE_FALLBACK_MODEL)
- *   Reasoning (default)  : Claude Opus 4.7   (CLAUDE_MODEL_DEFAULT)
- *   Reasoning (simple)   : Claude Haiku 4.5  (selectModelForTask("simple"))
- *   Grounded Search      : Gemini 2.5 Flash  (native googleSearchRetrieval)
+ *   Voice Runtime        : Claude Sonnet 4.6  (VAPI_TENANT_DEFAULT_MODEL)
+ *   Voice Fallback       : Gemini 3.5 Flash   (VAPI_VOICE_FALLBACK_MODEL)
+ *   Reasoning (default)  : Claude Opus 4.7    (CLAUDE_MODEL_DEFAULT)
+ *   Reasoning (simple)   : Claude Haiku 4.5   (selectModelForTask("simple"))
+ *   Grounded Search      : Gemini 2.5 Flash   (native googleSearchRetrieval)
  *
  * FILES THAT ENFORCE THIS
  *
@@ -285,14 +297,16 @@ export const DEFAULT_MODEL = CLAUDE_MODEL_DEFAULT;
  *   src/lib/vapi-assistant-factory.ts — reads voiceLlmProvider/Model from settings
  *   src/lib/vapi-client.ts            — same, for outbound
  *   src/lib/claude-recipes.ts         — brief, coach, postCallAnalysis, dailyBrief
- *   src/routes/health-routes.ts       — exposes tiering to /api/health
+ *   src/routes/health-routes.ts       — exposes tiering to /api/health/internal
+ *   src/routes/health-routes.ts       — /api/health/models live-probes each tier
  *
- * COST MODEL (approximate, May 2026)
+ * COST MODEL (approximate, current generation)
  *
- *   Voice (Opus 4.7)      : $15–75 per 1M tokens   — best-in-market quality, worth it
- *   Voice Fallback (Flash) : $0.15–1.25 per 1M tokens — used only on Anthropic outage
- *   Reasoning (Opus 4.7)  : $15–75 per 1M tokens   — high-value, low-volume
+ *   Voice (Sonnet 4.6)    : $3 / $15 per 1M tokens   — fast + smart
+ *   Voice Fallback (Flash) : $0.15 / $1.25 per 1M    — outage-only
+ *   Reasoning (Opus 4.7)  : $15 / $75 per 1M tokens  — high-value, low-volume
+ *   Simple (Haiku 4.5)    : $1 / $5 per 1M tokens    — high-volume utility
  *
- * When Grok-4 is available and benchmarked, this comment block will be
- * updated. Until then, the tiering above is the production contract.
+ * When a higher-tier model ships at Sonnet's latency profile, this comment
+ * gets revised. Until then, the split above is the production contract.
  */

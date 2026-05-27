@@ -41,9 +41,22 @@ tool for.** It's the brand line your competitors can't credibly copy.
 | **Elena** | authoritative | (904) 460-1596 | Insurance claims (demo) |
 | **Jake** | playful | (469) 257-1581 | Outbound SDR (demo) |
 
-Each agent runs Claude Sonnet 4.6 with a ~200 ms perceived reply
-delay, deepgram-nova-3 transcription at 50 ms endpointing, and
-ElevenLabs Flash v2.5 voice synthesis.
+Every agent runs **Claude Sonnet 4.6** on the live voice path —
+the smartest model in the latency class voice can tolerate
+(real-world TTFT ~300–500 ms against an 18 KB system prompt).
+**Claude Opus 4.7** runs the *reasoning* layer behind every call:
+pre-call briefs, post-call analysis, daily brief generation,
+agent coaching — anywhere a few hundred milliseconds of think
+time is invisible because the user isn't waiting on the wire.
+
+Deepgram Nova-3 STT (~6.8% WER) at 40 ms endpointing handles
+the inbound audio; ElevenLabs Flash v2.5 (pinned model — no
+Vapi auto-swaps mid-call) handles synthesis. Gemini 3.5 Flash
+sits behind the voice path as an availability fallback only.
+
+End-to-end perceived dead air lands around 700–900 ms after
+the caller stops talking — well under the "did they hang up?"
+threshold, and the agent's reply itself is Sonnet-grade adaptive.
 
 ---
 
@@ -115,7 +128,7 @@ locally, fill in `VAPI_PRIVATE_KEY`, `ANTHROPIC_API_KEY`, and
 | **Database** | Postgres on Supabase, Drizzle ORM | Type-safe queries, idempotent migrations |
 | **Auth** | Custom JWT + OAuth (Google · Microsoft · Yahoo) | Bearer-in-Authorization-header; no cookie sessions |
 | **Voice runtime** | Vapi + ElevenLabs Flash v2.5 | Live latency under 250 ms |
-| **LLM** | Claude Sonnet 4.6 (showcase) · Opus 4.6 (premium tenant) · Gemini 2.5 (fallback) | Smart-enough-where-it-matters tiering |
+| **LLM** | Claude Sonnet 4.6 (voice) · Opus 4.7 (reasoning) · Haiku 4.5 (utility) · Gemini 3.5 Flash (voice fallback) · Gemini 2.5 Flash (grounded search) | Quality-first tiering. Sonnet on the live wire for smart + fast; Opus on briefs/coach/post-call where the user isn't waiting. |
 | **Payments** | Stripe — checkout + portal + webhooks | Subscriptions + usage metering |
 | **Background jobs** | Postgres-backed claim/fail/retry queue | No Redis dependency for job state |
 | **Rate limits** | Upstash Redis (in-mem fallback w/ LRU) | Distributed buckets per route + per user |
@@ -262,10 +275,24 @@ FAQ, and CTA — but the product behind them is the horizontal platform.
 
 Plans live in `src/lib/plan-catalog.ts`. Each plan ships:
 - Flat monthly price (Stripe `STRIPE_*_PRICE_ID`)
-- Included voice minutes
-- Per-agent overage minute rate (Starter $0.20, Pro $0.18, Business $0.16)
-- Max agents + max numbers
+- Included voice minutes (pooled across all agents)
+- Per-agent à-la-carte overage agent slot (Personal $49, Starter $45, Pro $40, Business $35)
+- Per-minute overage rate (Personal $0.20, Starter $0.18, Pro $0.15, Business $0.14)
+- Max agents + included phone numbers
 - Per-tenant feature flags (HIPAA mode, white-label, dedicated number)
+
+| Tier | Price / mo | Agents | Minutes | Overage / min | Included #s |
+|---|---|---|---|---|---|
+| **Personal** | $49 | 1 | 400 | $0.20 | 1 |
+| **Starter** | $149 | 3 | 1,200 | $0.18 | 2 |
+| **Pro** | $499 | 10 | 5,000 | $0.15 | 5 |
+| **Business** | $1,499 | 25 | 12,000 | $0.14 | 10 |
+| **Enterprise** | Custom | 100+ | 50,000+ | $0.11 | 25 |
+
+Pricing math, gross-margin targets, and per-tier rationale live as
+docstrings in `src/lib/plan-catalog.ts`. CI runs
+`npm run docs:check` to fail any push where the table above drifts
+from the catalog.
 
 Stripe **metered billing** for voice-minute overage is wired but
 inert until `STRIPE_VOICE_OVERAGE_METER_EVENT_NAME` is set in the

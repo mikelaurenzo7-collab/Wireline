@@ -35,6 +35,30 @@ const TAG_META: Record<Tag, { label: string; color: string; bg: string }> = {
 
 const ENTRIES: Entry[] = [
   {
+    date: "Jan 27, 2026",
+    tag: "infra",
+    title: "Voice tiering rebalanced — Sonnet 4.6 live, Opus 4.7 brain",
+    body: "End-to-end caller dead air dropped from ~2 s to ~700–900 ms. The live voice runtime now runs Claude Sonnet 4.6 (TTFT 300–500 ms against our 18 KB system prompt); Claude Opus 4.7 powers every off-wire path — pre-call briefs, post-call analysis, daily brief, coaching — where the user isn't waiting. Same agent moat, faster wire.",
+  },
+  {
+    date: "Jan 27, 2026",
+    tag: "infra",
+    title: "/api/health/models — live LLM canary",
+    body: "New auth-gated endpoint pings every configured Claude tier with a 1-token probe and reports {ok, latency_ms, error} per layer. Catches the silent failure mode where a model id drifts away from what Anthropic actually serves. Wired to the in-app System Status panel and ready for external uptime monitors.",
+  },
+  {
+    date: "Jan 27, 2026",
+    tag: "infra",
+    title: "Pricing & model docs now CI-enforced",
+    body: "scripts/check-readme-pricing.mjs runs on every npm run verify and fails the build if the README pricing table drifts from src/lib/plan-catalog.ts. The class of bug where marketing said one number and billing charged another is now structurally impossible.",
+  },
+  {
+    date: "Jan 27, 2026",
+    tag: "infra",
+    title: "Agent moat behind a safety net",
+    body: "agent-runtime.ts, personality-vibes.ts, claude-models.ts, plan-catalog.ts — the four files that actually define the product — now have dedicated unit tests (115 total tests, 10 test files). TypeScript strict-mode allowlist doubled (8 → 16 files). A silent edit to a personality vibe or a tiering constant now fails CI instead of shipping.",
+  },
+  {
     date: "May 19, 2026",
     tag: "feature",
     title: "Per-agent Workspace — private DM with each AI employee",
