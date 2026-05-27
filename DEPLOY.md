@@ -60,6 +60,13 @@ identical to `INTERNAL_JWT_SECRET` or after intentionally rotating sessions. If 
 names are set to different values, production startup/checks fail because one part
 of the app could sign tokens that another part rejects.
 
+### Database migrations
+
+Run `npm run db:migrate` before promoting schema-dependent releases, then run
+`npm run db:health`. For signup-attribution releases, confirm
+`0017_add_signup_intent.sql` has applied; the health check fails when those
+attribution columns are missing.
+
 ---
 
 ## Vapi agents

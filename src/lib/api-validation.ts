@@ -187,10 +187,24 @@ export const forgotPasswordSchema = z.object({
   email: emailSchema,
 });
 
-export const resetPasswordSchema = z.object({
-  token: z.string().min(1, "Reset token is required"),
-  password: passwordSchema,
-});
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().min(1, "Reset token is required"),
+    password: passwordSchema.optional(),
+    new_password: passwordSchema.optional(),
+  })
+  .transform((v, ctx) => {
+    const password = v.password || v.new_password;
+    if (!password) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["password"],
+        message: "Password is required",
+      });
+      return z.NEVER;
+    }
+    return { token: v.token, password };
+  });
 
 // ============================================================================
 // Agent Route Schemas

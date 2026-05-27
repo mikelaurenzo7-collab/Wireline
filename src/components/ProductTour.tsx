@@ -31,7 +31,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     id: "agents",
     title: "Your Agent Fleet",
-    body: "Each agent has a role (Sales, Support, Scheduler...), a voice, a personality, and its own knowledge base. You can deploy up to 3 agents on the free plan.",
+    body: "Each agent has a role (Sales, Support, Scheduler...), a voice, a personality, and its own knowledge base. Your 14-day trial starts with 1 agent and 25 outbound calls.",
     anchor: '[data-tour="agents"]',
     cta: "Next",
   },
@@ -121,7 +121,10 @@ export default function ProductTour() {
         // (tour_completed === undefined) AND to users who explicitly haven't
         // completed it (tour_completed === false). Only suppress when the
         // user has explicitly finished the tour (=== true).
-        if (!cancelled && prefs?.tour_completed !== true) {
+        const onboardingInProgress =
+          localStorage.getItem("wireline_onboarding_start") &&
+          !localStorage.getItem("wireline_onboarding_celebrated");
+        if (!cancelled && prefs?.tour_completed !== true && !onboardingInProgress) {
           setActive(true);
         }
       })

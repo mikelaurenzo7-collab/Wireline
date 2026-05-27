@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import WirelineMark from "../components/WirelineMark";
+import { signupHrefForWedge } from "../lib/signup-intent";
 
 export type VerticalKey =
   | "home-services"
@@ -150,7 +151,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "24 / 7",
     statLabel:
       "Always answers — including the 6pm pipe-burst that books a $500 emergency job your competitor missed.",
-    primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=home-services" },
+    primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("home-services") },
     secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
     trustLine:
       "Built on enterprise-grade carrier infrastructure. White-labeled — customers hear your business name, not ours.",
@@ -210,7 +211,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statLabel:
       "Patients on hold drop calls. Wireline picks up before the first ring — every call, every hour.",
     primaryCta: { label: "Call medical demo", href: "tel:+16173134469" },
-    secondaryCta: { label: "Start trial", href: "/signup?wedge=medical" },
+    secondaryCta: { label: "Start trial", href: signupHrefForWedge("medical") },
     trustLine:
       "Built on enterprise voice infrastructure. White-labeled — patients hear your practice name. Use Enterprise onboarding for workflows that require a signed BAA.",
     faqs: [
@@ -269,7 +270,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statLabel:
       "Captures the prospective client + the opposing party name; pings your paralegal in Slack before the consult lands on the attorney's calendar.",
     primaryCta: { label: "Call legal demo", href: "tel:+15727269365" },
-    secondaryCta: { label: "Start trial", href: "/signup?wedge=legal" },
+    secondaryCta: { label: "Start trial", href: signupHrefForWedge("legal") },
     trustLine:
       "Audit log preserves every disclosure and opt-out. Not a substitute for legal counsel — Wireline is the intake layer, your attorneys deliver the advice.",
     faqs: [
@@ -327,7 +328,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "Same day",
     statLabel:
       "Pre-qualified buyers get a same-day showing slot. Cold leads get nurtured via text until they're warm — your top agents only see the ready ones.",
-    primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=real-estate" },
+    primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("real-estate") },
     secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
     trustLine:
       "Connects to HubSpot, Salesforce, Google Calendar, Outlook. White-labeled — buyers hear your brokerage name.",
@@ -395,7 +396,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "Yours",
     statLabel:
       "Your AI, calling on your behalf. You text it what you need; it dials, talks, and reports back. You stay off the call.",
-    primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=personal" },
+    primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("personal") },
     secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
     trustLine:
       "Your agent only does what you authorize. Every call is recorded, transcribed, and visible to you in your dashboard before, during, and after. You can hang it up, override mid-call, or take over yourself at any time.",
@@ -458,7 +459,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "60-day",
     statLabel:
       "Renewal cadence catches the customer who would have lapsed to a competitor — before they even shopped around.",
-    primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=insurance" },
+    primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("insurance") },
     secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
     trustLine:
       "White-labeled — your insureds hear your agency name, not ours. Recordings + transcripts archived for audit compliance.",
@@ -517,7 +518,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "Saturday 7pm",
     statLabel:
       "The hour your phone rings off the hook + your hostess can't get to it. Agent fields every call — books the booking, takes the takeout, sends you the events lead.",
-    primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=restaurants" },
+    primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("restaurants") },
     secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
     trustLine:
       "Caller hears your restaurant's name + brand voice. We can clone your hostess's actual voice with consent — 60 seconds of sample audio.",
@@ -576,7 +577,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "200 / day",
     statLabel:
       "Calls one AI agent can make in a 9-hour workday. Run 5 in parallel = 1,000 dials. No bathroom breaks, no Mondays.",
-    primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=sales" },
+    primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("sales") },
     secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
     trustLine:
       "Integrates with Salesforce, HubSpot, Pipedrive, Apollo. Outbound list management + CRM activity logging out of the box.",

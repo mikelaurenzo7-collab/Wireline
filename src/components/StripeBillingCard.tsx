@@ -18,6 +18,7 @@ import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { safeDate, formatDate } from "../lib/safe-date";
 import UsageMeter from "./UsageMeter";
+import { getStoredSignupIntent, recommendedPlanFromIntent } from "../lib/signup-intent";
 
 interface Plan {
   id: "personal" | "starter" | "pro" | "business" | "enterprise";
@@ -63,6 +64,7 @@ export default function StripeBillingCard() {
   const [sub, setSub] = useState<SubscriptionState | null>(null);
   const [agentCount, setAgentCount] = useState<number>(0);
   const [stripeConfigured, setStripeConfigured] = useState(false);
+  const [signupPlanInterest, setSignupPlanInterest] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null); // plan_id | "portal"
   const [error, setError] = useState<string | null>(null);
@@ -78,6 +80,11 @@ export default function StripeBillingCard() {
       setStripeConfigured(!!statusRes.stripe_configured && !!plansRes.stripe_configured);
       setSub(statusRes.subscription || null);
       setAgentCount(statusRes.agent_count ?? 0);
+      const storedIntent = getStoredSignupIntent();
+      setSignupPlanInterest(
+        statusRes.signup_intent?.plan_id ||
+          (storedIntent ? recommendedPlanFromIntent(storedIntent) : null),
+      );
       setPlans(plansRes.plans || []);
     } catch (e: any) {
       setError(e?.message || "Load failed");
@@ -244,6 +251,7 @@ export default function StripeBillingCard() {
             const accent = PLAN_ACCENTS[plan.id] || "#4F1E7B";
             const isCurrent = sub?.plan === plan.id && hasActive;
             const isBusy = busy === plan.id;
+            const isSignupMatch = !hasActive && signupPlanInterest === plan.id;
             return (
               <motion.div
                 key={plan.id}
@@ -252,7 +260,9 @@ export default function StripeBillingCard() {
                   "relative rounded-2xl glass border p-7 flex flex-col gap-5 transition-all",
                   isCurrent
                     ? "border-brand/40 bg-brand/5"
-                    : "border-white/10 hover:border-white/20",
+                    : isSignupMatch
+                      ? "border-brand/50 bg-brand/5 shadow-lg shadow-brand/10"
+                      : "border-white/10 hover:border-white/20",
                 )}
               >
                 {isCurrent && (
@@ -263,7 +273,18 @@ export default function StripeBillingCard() {
                     Current plan
                   </div>
                 )}
-                {!isCurrent && plan.id === "pro" && (
+                {!isCurrent && isSignupMatch && (
+                  <div
+                    className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em]"
+                    style={{
+                      background: "#4F1E7B",
+                      color: "#fff",
+                    }}
+                  >
+                    Matched from visit
+                  </div>
+                )}
+                {!isCurrent && !isSignupMatch && plan.id === "pro" && (
                   <div
                     className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em]"
                     style={{

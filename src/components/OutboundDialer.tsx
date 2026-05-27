@@ -76,6 +76,7 @@ export default function OutboundDialer() {
   const [customerName, setCustomerName] = useState("");
   const [customerNumber, setCustomerNumber] = useState("");
   const [context, setContext] = useState("");
+  const [hasOutboundConsent, setHasOutboundConsent] = useState(false);
 
   const [isDialing, setIsDialing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -193,13 +194,23 @@ export default function OutboundDialer() {
 
   const dispatchCall = async () => {
     if (!selectedAgentId || !customerNumber) return;
+    if (!hasOutboundConsent) {
+      setDialError("Confirm outbound consent before dispatching this call.");
+      return;
+    }
     setIsDialing(true);
     setDialError("");
     try {
       const res = await authFetch("/api/outbound/dial", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agentId: selectedAgentId, customerName, customerNumber, context }),
+        body: JSON.stringify({
+          agentId: selectedAgentId,
+          customerName,
+          customerNumber,
+          context,
+          hasExpressWrittenConsent: hasOutboundConsent,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -312,6 +323,7 @@ export default function OutboundDialer() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               leads: parsedLeads,
+              has_express_written_consent: hasOutboundConsent,
               ...(bulkCampaignId ? { campaign_id: bulkCampaignId } : {}),
             }),
           });
@@ -340,6 +352,10 @@ export default function OutboundDialer() {
   };
 
   const launchQueue = () => {
+    if (!hasOutboundConsent) {
+      setDialError("Confirm outbound consent before dispatching queued calls.");
+      return;
+    }
     const queued = leads.filter((l) => l.status === "Queued");
     if (queued.length === 0) return;
     setConfirmState({
@@ -370,6 +386,7 @@ export default function OutboundDialer() {
             customerName: lead.customer_name,
             customerNumber: lead.customer_number,
             context: lead.context,
+            hasExpressWrittenConsent: hasOutboundConsent,
           }),
         });
         if (res.ok) {
@@ -624,9 +641,22 @@ export default function OutboundDialer() {
                         />
                       </div>
 
+                      <label className="rounded-lg glass border border-brand/20 p-3 flex items-start gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={hasOutboundConsent}
+                          onChange={(e) => setHasOutboundConsent(e.target.checked)}
+                          className="mt-0.5 accent-brand"
+                        />
+                        <span className="text-[10px] text-muted/80 leading-relaxed">
+                          I have prior express written consent to place this AI-assisted marketing
+                          call, and this number is not on my DNC list.
+                        </span>
+                      </label>
+
                       <button
                         onClick={dispatchCall}
-                        disabled={isDialing || !customerNumber}
+                        disabled={isDialing || !customerNumber || !hasOutboundConsent}
                         className="brutal-btn w-full !py-3 !text-[11px] !tracking-[0.3em] disabled:opacity-50"
                       >
                         {isDialing ? (
@@ -691,10 +721,24 @@ export default function OutboundDialer() {
                         </div>
                       )}
 
+                      <label className="rounded-lg glass border border-brand/20 p-3 flex items-start gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={hasOutboundConsent}
+                          onChange={(e) => setHasOutboundConsent(e.target.checked)}
+                          className="mt-0.5 accent-brand"
+                        />
+                        <span className="text-[10px] text-muted/80 leading-relaxed">
+                          I have prior express written consent for every number in this manifest and
+                          will honor opt-outs immediately.
+                        </span>
+                      </label>
+
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full rounded-xl glass border border-dashed border-white/15 hover:border-brand/40 hover:bg-brand/5 transition-all py-8 flex flex-col items-center justify-center gap-2 group"
+                        disabled={!hasOutboundConsent}
+                        className="w-full rounded-xl glass border border-dashed border-white/15 hover:border-brand/40 hover:bg-brand/5 transition-all py-8 flex flex-col items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isUploading ? (
                           <Loader2 className="w-7 h-7 text-brand animate-spin" />
@@ -758,7 +802,12 @@ export default function OutboundDialer() {
                 queuedCount > 0 ? (
                   <button
                     onClick={launchQueue}
-                    disabled={isDialing}
+                    disabled={isDialing || !hasOutboundConsent}
+                    title={
+                      hasOutboundConsent
+                        ? "Dispatch queued calls"
+                        : "Confirm outbound consent before dispatching queued calls"
+                    }
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/20 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/30 transition-colors disabled:opacity-50"
                   >
                     {isDialing ? (

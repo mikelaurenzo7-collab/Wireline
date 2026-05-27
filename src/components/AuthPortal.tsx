@@ -30,6 +30,7 @@ import {
   syncSignupIntent,
   type SignupIntent,
 } from "../lib/signup-intent";
+import { getPasswordPolicyError } from "../lib/password-policy";
 
 const FEATURES = [
   {
@@ -385,8 +386,9 @@ export default function AuthPortal() {
       setError("Password is required.");
       return;
     }
-    if (isSignUp && password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    const passwordPolicyError = isSignUp ? getPasswordPolicyError(password) : null;
+    if (passwordPolicyError) {
+      setError(passwordPolicyError);
       return;
     }
 

@@ -8,6 +8,7 @@ import {
   signinRateLimiter,
   signupRateLimiter,
   forgotPasswordRateLimiter,
+  resendVerificationRateLimiter,
 } from "../middleware/rate-limit-middleware";
 import { sendPasswordResetEmail } from "../lib/email-service";
 import { authenticateUser } from "../middleware/auth";
@@ -195,6 +196,7 @@ router.get("/api/auth/verify-email/:token", async (req: Request, res: Response) 
 router.post(
   "/api/auth/resend-verification",
   authenticateUser,
+  resendVerificationRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       // Read current user (might already be verified — bail clean).

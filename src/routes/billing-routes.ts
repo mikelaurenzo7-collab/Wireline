@@ -359,6 +359,11 @@ router.get(
           status: schema.settings.subscriptionStatus,
           trialEndsAt: schema.settings.trialEndsAt,
           trialOutboundCount: schema.settings.trialOutboundCount,
+          signupPlanInterest: schema.settings.signupPlanInterest,
+          signupWedge: schema.settings.signupWedge,
+          acquisitionSource: schema.settings.acquisitionSource,
+          acquisitionMedium: schema.settings.acquisitionMedium,
+          acquisitionCampaign: schema.settings.acquisitionCampaign,
         })
         .from(schema.settings)
         .where(eq(schema.settings.userId, req.user.id))
@@ -435,6 +440,15 @@ router.get(
             }
           : null,
         trial,
+        signup_intent: settingsRow
+          ? {
+              plan_id: settingsRow.signupPlanInterest,
+              wedge: settingsRow.signupWedge,
+              utm_source: settingsRow.acquisitionSource,
+              utm_medium: settingsRow.acquisitionMedium,
+              utm_campaign: settingsRow.acquisitionCampaign,
+            }
+          : null,
       });
     } catch (e: any) {
       log.error("Failed to load status", { error: getErrorMessage(e) });

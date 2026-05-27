@@ -24,6 +24,64 @@ export type SignupIntent = {
   capturedAt: string;
 };
 
+export type SignupWedgeRecommendation = {
+  label: string;
+  defaultPlanId: SignupPlanId;
+  templateId: string;
+  templateLabel: string;
+};
+
+export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRecommendation> = {
+  "home-services": {
+    label: "home services",
+    defaultPlanId: "starter",
+    templateId: "lead-qualifier-inbound",
+    templateLabel: "Inbound Lead Qualifier",
+  },
+  medical: {
+    label: "medical",
+    defaultPlanId: "starter",
+    templateId: "scheduler-medical",
+    templateLabel: "Medical Office Scheduler",
+  },
+  legal: {
+    label: "legal",
+    defaultPlanId: "starter",
+    templateId: "lead-qualifier-inbound",
+    templateLabel: "Inbound Lead Qualifier",
+  },
+  "real-estate": {
+    label: "real estate",
+    defaultPlanId: "starter",
+    templateId: "scheduler-realestate",
+    templateLabel: "Real Estate Tour Booker",
+  },
+  personal: {
+    label: "personal",
+    defaultPlanId: "personal",
+    templateId: "personal-concierge",
+    templateLabel: "Personal Concierge",
+  },
+  insurance: {
+    label: "insurance",
+    defaultPlanId: "starter",
+    templateId: "lead-qualifier-inbound",
+    templateLabel: "Inbound Lead Qualifier",
+  },
+  restaurants: {
+    label: "restaurants",
+    defaultPlanId: "starter",
+    templateId: "ecommerce-phone-order",
+    templateLabel: "Phone Order Agent",
+  },
+  sales: {
+    label: "sales",
+    defaultPlanId: "pro",
+    templateId: "sales-sdr",
+    templateLabel: "SDR — Outbound Prospecting",
+  },
+};
+
 const PLAN_SET = new Set<string>(SIGNUP_PLAN_IDS);
 const WEDGE_SET = new Set<string>(SIGNUP_WEDGE_KEYS);
 
@@ -99,12 +157,26 @@ export function captureSignupIntentFromLocation(): SignupIntent | null {
 }
 
 export function recommendedPlanFromIntent(intent: SignupIntent | null | undefined): SignupPlanId {
-  return intent?.preferredPlanId || "starter";
+  if (intent?.preferredPlanId) return intent.preferredPlanId;
+  if (intent?.signupWedge) return SIGNUP_WEDGE_RECOMMENDATIONS[intent.signupWedge].defaultPlanId;
+  return "starter";
+}
+
+export function getSignupWedgeRecommendation(
+  wedge: string | null | undefined,
+): SignupWedgeRecommendation | null {
+  if (!wedge || !WEDGE_SET.has(wedge)) return null;
+  return SIGNUP_WEDGE_RECOMMENDATIONS[wedge as SignupWedgeKey];
+}
+
+export function signupHrefForWedge(wedge: SignupWedgeKey, planId?: SignupPlanId): string {
+  const plan = planId || SIGNUP_WEDGE_RECOMMENDATIONS[wedge].defaultPlanId;
+  return `/signup?wedge=${encodeURIComponent(wedge)}&plan=${encodeURIComponent(plan)}`;
 }
 
 export async function syncSignupIntent(intent: SignupIntent | null, token: string): Promise<void> {
   if (!hasSignupIntent(intent)) return;
-  await fetch("/api/auth/signup-intent", {
+  const response = await fetch("/api/auth/signup-intent", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -112,4 +184,8 @@ export async function syncSignupIntent(intent: SignupIntent | null, token: strin
     },
     body: JSON.stringify(intent),
   });
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    console.warn("signup intent sync failed", response.status, body.slice(0, 240));
+  }
 }

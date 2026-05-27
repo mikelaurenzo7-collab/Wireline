@@ -100,18 +100,29 @@ export async function saveSignupAttribution(
     return;
   }
 
-  await startTrialForUser(userId, attribution);
+  const attributionValues = {
+    signupPlanInterest: attribution.preferredPlanId || null,
+    signupWedge: attribution.signupWedge || null,
+    acquisitionSource: attribution.utmSource || null,
+    acquisitionMedium: attribution.utmMedium || null,
+    acquisitionCampaign: attribution.utmCampaign || null,
+    updatedAt: new Date(),
+  };
+
   await drizzle
-    .update(schema.settings)
-    .set({
-      signupPlanInterest: attribution.preferredPlanId || null,
-      signupWedge: attribution.signupWedge || null,
-      acquisitionSource: attribution.utmSource || null,
-      acquisitionMedium: attribution.utmMedium || null,
-      acquisitionCampaign: attribution.utmCampaign || null,
-      updatedAt: new Date(),
+    .insert(schema.settings)
+    .values({
+      id: userId,
+      userId,
+      subscriptionStatus: "trialing",
+      trialEndsAt: new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000),
+      trialOutboundCount: 0,
+      ...attributionValues,
     })
-    .where(eq(schema.settings.userId, userId));
+    .onConflictDoUpdate({
+      target: schema.settings.userId,
+      set: attributionValues,
+    });
 }
 
 interface TrialCheck {

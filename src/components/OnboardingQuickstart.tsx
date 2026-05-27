@@ -24,6 +24,7 @@ import WirelineMark from "./WirelineMark";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { useToast } from "../contexts/ToastContext";
 import { Skeleton } from "./Skeleton";
+import { getSignupWedgeRecommendation } from "../lib/signup-intent";
 
 interface ProgressData {
   agents: number;
@@ -79,6 +80,7 @@ export default function OnboardingQuickstart({
   // this gate, a 500-seat call center buyer lands on the same setup
   // screen as a $49 solo operator — sets the wrong expectations.
   const [planId, setPlanId] = useState<string | null>(null);
+  const [signupWedge, setSignupWedge] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const { success: toastSuccess } = useToast();
 
@@ -97,7 +99,7 @@ export default function OnboardingQuickstart({
   useEffect(() => {
     (async () => {
       try {
-        const [a, k, n, c, planRes] = await Promise.all([
+        const [a, k, n, c, billingStatus] = await Promise.all([
           authFetch("/api/agents")
             .then((r) => r.json())
             .then((d) => d.agents?.length ?? 0)
@@ -116,11 +118,16 @@ export default function OnboardingQuickstart({
             .catch(() => 0),
           authFetch("/api/billing/status")
             .then((r) => r.json())
-            .then((d) => d.subscription?.plan_id || d.subscription?.plan || null)
+            .then((d) => ({
+              planId:
+                d.subscription?.plan_id || d.subscription?.plan || d.signup_intent?.plan_id || null,
+              signupWedge: d.signup_intent?.wedge || null,
+            }))
             .catch(() => null),
         ]);
         setProgress({ agents: a, knowledge: k, numbers: n, calls: c });
-        setPlanId(planRes);
+        setPlanId(billingStatus?.planId || null);
+        setSignupWedge(billingStatus?.signupWedge || null);
 
         const isComplete = a > 0 && k > 0 && n > 0 && c > 0;
 
@@ -254,6 +261,7 @@ export default function OnboardingQuickstart({
   };
   const completedCount = Object.values(completion).filter(Boolean).length;
   const completionPct = Math.round((completedCount / STEPS.length) * 100);
+  const wedgeRecommendation = getSignupWedgeRecommendation(signupWedge);
 
   // When all 4 steps are complete, show a compact "you're all set" card.
   if (completedCount === STEPS.length) {
@@ -318,6 +326,29 @@ export default function OnboardingQuickstart({
           </div>
         </div>
 
+        {wedgeRecommendation && !completion.agent && (
+          <div className="relative z-10 px-3 md:px-4 pt-3">
+            <div className="rounded-2xl border border-brand/20 bg-brand/5 p-3 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-[9px] uppercase tracking-[0.34em] text-brand mb-1">
+                  Matched setup · {wedgeRecommendation.label}
+                </p>
+                <p className="text-xs text-ink/70 leading-relaxed">
+                  Start with the <strong>{wedgeRecommendation.templateLabel}</strong> template, then
+                  tune the script to your business.
+                </p>
+              </div>
+              <Link
+                to={`/agents?template=${encodeURIComponent(wedgeRecommendation.templateId)}`}
+                className="shrink-0 px-3 py-2 rounded-full bg-brand text-on-brand text-[10px] uppercase tracking-[0.28em] hover:bg-brand/90 transition-colors inline-flex items-center justify-center gap-1.5"
+              >
+                Deploy matched agent
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Steps — 4 columns on lg so all four 'Get Started' cards fit
             in a single row above the fold. 2 cols on tablet, 1 on mobile. */}
         <div className="relative z-10 p-3 md:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
@@ -328,6 +359,8 @@ export default function OnboardingQuickstart({
               index={i}
               done={completion[s.id as keyof typeof completion]}
               isActive={s.id === activeStepId}
+              recommendedTemplateId={wedgeRecommendation?.templateId ?? null}
+              recommendedTemplateLabel={wedgeRecommendation?.templateLabel ?? null}
             />
           ))}
         </div>
@@ -401,7 +434,9 @@ const Step: React.FC<{
   index: number;
   done: boolean;
   isActive: boolean;
-}> = ({ step, index, done, isActive }) => {
+  recommendedTemplateId: string | null;
+  recommendedTemplateLabel: string | null;
+}> = ({ step, index, done, isActive, recommendedTemplateId, recommendedTemplateLabel }) => {
   const Icon = step.icon;
   return (
     <motion.div
@@ -466,7 +501,11 @@ const Step: React.FC<{
               <Check className="w-3 h-3" /> Complete
             </div>
           ) : (
-            <StepCTA stepId={step.id} />
+            <StepCTA
+              stepId={step.id}
+              recommendedTemplateId={recommendedTemplateId}
+              recommendedTemplateLabel={recommendedTemplateLabel}
+            />
           )}
         </div>
       </div>
@@ -474,7 +513,25 @@ const Step: React.FC<{
   );
 };
 
-function StepCTA({ stepId }: { stepId: string }) {
+function StepCTA({
+  stepId,
+  recommendedTemplateId,
+  recommendedTemplateLabel,
+}: {
+  stepId: string;
+  recommendedTemplateId: string | null;
+  recommendedTemplateLabel: string | null;
+}) {
+  if (stepId === "agent" && recommendedTemplateId) {
+    return (
+      <CTAButton
+        to={`/agents?template=${encodeURIComponent(recommendedTemplateId)}`}
+        label={
+          recommendedTemplateLabel ? `Deploy ${recommendedTemplateLabel}` : "Deploy Matched Agent"
+        }
+      />
+    );
+  }
   if (stepId === "agent") return <ClaudeRecipeButton recipe="agent-forge" label="Forge an Agent" />;
   if (stepId === "knowledge")
     return <ClaudeRecipeButton recipe="knowledge-from-url" label="Ingest from URL" />;

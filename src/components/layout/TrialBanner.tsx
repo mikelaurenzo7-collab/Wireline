@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { AlertTriangle } from "lucide-react";
-import { authFetch } from "../../lib/api";
+import { authFetch, TRIAL_GATE_EVENT, type TrialGateBlockDetail } from "../../lib/api";
 import { safeDate } from "../../lib/safe-date";
 
 interface TrialState {
@@ -71,6 +70,18 @@ export default function TrialBanner() {
     ? "bg-rose-500/25 border border-rose-500/50 text-rose-700 hover:bg-rose-500/35"
     : "bg-amber-500/20 border border-amber-500/40 text-amber-700 hover:bg-amber-500/30";
 
+  const openUpgrade = () => {
+    const detail: TrialGateBlockDetail = {
+      code: showByUsage ? "TRIAL_LIMIT_HIT" : "TRIAL_EXPIRED",
+      error: "Trial upgrade requested",
+      limit: trial.outboundCap || undefined,
+      current: trial.outboundUsed || undefined,
+      days_left: daysLeft,
+      trial_ended_at: daysLeft === 0 ? new Date().toISOString() : null,
+    };
+    window.dispatchEvent(new CustomEvent<TrialGateBlockDetail>(TRIAL_GATE_EVENT, { detail }));
+  };
+
   // Choose the most pressing message — usage-cap proximity beats
   // days-left when both fire (a tenant burning calls fast needs to
   // upgrade BEFORE the trial day-count matters).
@@ -114,12 +125,13 @@ export default function TrialBanner() {
         <AlertTriangle className={`w-3.5 h-3.5 shrink-0 ${iconCls}`} />
         <span>{message}</span>
       </div>
-      <Link
-        to="/admin?tab=subscription"
+      <button
+        type="button"
+        onClick={openUpgrade}
         className={`shrink-0 px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] transition-all ${buttonCls}`}
       >
         Upgrade now
-      </Link>
+      </button>
     </motion.div>
   );
 }
