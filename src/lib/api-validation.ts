@@ -158,10 +158,23 @@ export const forgotPasswordSchema = z.object({
   email: emailSchema,
 });
 
-export const resetPasswordSchema = z.object({
-  token: z.string().min(1, "Reset token is required"),
-  password: passwordSchema,
-});
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().min(1, "Reset token is required"),
+    password: passwordSchema.optional(),
+    new_password: passwordSchema.optional(),
+  })
+  .transform((data) => ({
+    token: data.token,
+    // Accept either "password" or "new_password" — the original contract
+    // used new_password (snake-case), but Zod middleware was added later
+    // expecting "password". Support both for backward compat.
+    password: data.password || data.new_password || "",
+  }))
+  .refine((data) => data.password.length >= 8, {
+    message: "Password must be at least 8 characters",
+    path: ["password"],
+  });
 
 // ============================================================================
 // Agent Route Schemas

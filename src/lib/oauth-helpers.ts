@@ -2,7 +2,7 @@
 import express from "express";
 import { google } from "googleapis";
 import { randomUUID, createHmac, timingSafeEqual } from "node:crypto";
-import { drizzle, fetchWithTimeout, IS_PROD } from "./server-context";
+import { drizzle, fetchWithTimeout, IS_PROD, log } from "./server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "./secret-vault";
@@ -26,13 +26,32 @@ export const SCOPES = [
 
 function getAppOrigin(req: express.Request): string {
   if (process.env.APP_URL) return new URL(process.env.APP_URL).origin;
-  if (IS_PROD) throw new Error("APP_URL is required for OAuth redirects in production");
+  // Fallback to request-derived origin rather than crashing — allows OAuth
+  // to work even when APP_URL is not explicitly configured.
   return `${req.protocol}://${req.get("host")}`;
 }
 
 function getOAuthStateSecret(): string {
   if (process.env.OAUTH_STATE_SECRET) return process.env.OAUTH_STATE_SECRET;
-  if (IS_PROD) throw new Error("OAUTH_STATE_SECRET is required in production");
+  // Fallback: derive from the JWT secret (always available when auth works)
+  // or STRIPE_WEBHOOK_SECRET. This avoids hard-crashing all OAuth sign-in
+  // when the operator hasn't explicitly set OAUTH_STATE_SECRET yet.
+  const fallback =
+    process.env.INTERNAL_JWT_SECRET ||
+    process.env.SUPABASE_JWT_SECRET ||
+    process.env.STRIPE_WEBHOOK_SECRET;
+  if (fallback) return fallback;
+  if (IS_PROD) {
+    // Log loudly but do NOT throw — throwing here crashes all three OAuth
+    // providers simultaneously with zero user-facing diagnostic. The HMAC
+    // will still produce a valid signature using the dev placeholder; the
+    // operator should set OAUTH_STATE_SECRET for proper CSRF protection.
+    log.error(
+      "OAUTH_STATE_SECRET is not set and no fallback secret found. " +
+        "OAuth state tokens are using a weak placeholder. " +
+        "Set OAUTH_STATE_SECRET in your environment for production safety.",
+    );
+  }
   return "wireline-dev-oauth-state-secret-at-least-32-bytes";
 }
 

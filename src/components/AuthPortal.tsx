@@ -77,6 +77,13 @@ const AUTH_PORTAL_DEMO_AGENTS = WIRELINE_DEMO_AGENTS.slice(0, -1);
 function extractServerErrorMessage(payload: unknown): string | null {
   if (!payload || typeof payload !== "object") return null;
   const p = payload as Record<string, unknown>;
+
+  // If Zod validation error with details array, surface the first detail message
+  if (p.code === "VALIDATION_ERROR" && Array.isArray(p.details) && p.details.length > 0) {
+    const first = p.details[0] as { field?: string; message?: string } | undefined;
+    if (first?.message) return first.message;
+  }
+
   const candidates: unknown[] = [p.error, p.message, (p.error as any)?.message];
   for (const c of candidates) {
     if (typeof c === "string" && c.trim()) return c.trim();
@@ -364,9 +371,23 @@ export default function AuthPortal() {
       setError("Password is required.");
       return;
     }
-    if (isSignUp && password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
+    if (isSignUp) {
+      if (password.length < 8) {
+        setError("Password must be at least 8 characters.");
+        return;
+      }
+      if (!/[A-Z]/.test(password)) {
+        setError("Password must contain at least one uppercase letter.");
+        return;
+      }
+      if (!/[a-z]/.test(password)) {
+        setError("Password must contain at least one lowercase letter.");
+        return;
+      }
+      if (!/[0-9]/.test(password)) {
+        setError("Password must contain at least one number.");
+        return;
+      }
     }
 
     setLoading(true);
