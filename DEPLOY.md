@@ -43,7 +43,6 @@ specific branch for Preview which is awkward — prefer the UI.
 | `APP_URL`                                           | Base URL for OAuth callbacks, Stripe webhooks, Vapi assistant config                        |
 | `CORS_ORIGINS`                                      | Allowed origins for cross-origin API requests                                               |
 | `POSTGRES_URL`                                      | Supabase Postgres connection                                                                |
-| `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`      | Frontend Supabase client                                                                    |
 | `INTERNAL_JWT_SECRET`                               | Wireline session JWT signing. Canonical name; `SUPABASE_JWT_SECRET` is only a legacy alias. |
 | `VAPI_PRIVATE_KEY`                                  | Server-side Vapi API calls                                                                  |
 | `VITE_VAPI_PUBLIC_KEY`                              | In-browser Vapi widget                                                                      |

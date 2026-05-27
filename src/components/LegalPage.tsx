@@ -86,7 +86,7 @@ export function PrivacyPolicy() {
     <LegalLayout title="Privacy Policy" icon={Shield}>
       <PageMeta
         title="Privacy Policy"
-        description="Wireline's privacy policy — how we collect, use, and protect your data. Sub-processors: Supabase, Anthropic, Stripe, and Vercel. Last updated May 9, 2026."
+        description="Wireline's privacy policy — how we collect, use, and protect your data. Sub-processors include Postgres hosting, Anthropic, Stripe, and Vercel. Last updated May 9, 2026."
         path="/privacy"
       />
 
@@ -144,7 +144,7 @@ export function PrivacyPolicy() {
         <p>We rely on the following sub-processors to deliver the service:</p>
         <ul className="list-disc list-inside space-y-1.5 ml-2">
           <li>
-            <strong>Supabase</strong> (supabase.com) — Database, authentication, and file storage
+            <strong>Postgres hosting</strong> — Database storage and backup infrastructure
           </li>
           <li>
             <strong>Voice AI Infrastructure</strong> — Real-time voice processing and call routing
@@ -219,17 +219,17 @@ export function PrivacyPolicy() {
         </p>
         <p>
           To exercise your California privacy rights, contact us at{" "}
-          <strong>trywireline@yahoo.com</strong> or use the Delete Account option in Settings. We will
-          respond to verified requests within 45 days.
+          <strong>trywireline@yahoo.com</strong> or use the Delete Account option in Settings. We
+          will respond to verified requests within 45 days.
         </p>
       </Section>
 
       <Section title="8. Cookies">
         <p>
-          Wireline uses only strictly necessary cookies required to maintain your authentication
-          session (a single first-party session cookie set by Supabase Auth). We do not use
-          advertising, analytics, or cross-site tracking cookies. Under GDPR and the ePrivacy
-          Directive, strictly necessary cookies do not require your prior consent.
+          Wireline uses only strictly necessary first-party session storage required to maintain
+          authentication. We do not use advertising, analytics, or cross-site tracking cookies.
+          Under GDPR and the ePrivacy Directive, strictly necessary storage does not require your
+          prior consent.
         </p>
       </Section>
 

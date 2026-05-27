@@ -85,6 +85,8 @@ function findOrCreateUserByEmail(
       })
       .returning()) as Array<{ id: string; email: string; fullName: string | null }>;
     const u = inserted[0];
+    const { startTrialForUser } = await import("../lib/trial-gate");
+    await startTrialForUser(u.id);
     log.info("auth oauth: created new user", { email: normalized });
     return { id: u.id, email: u.email, fullName: u.fullName };
   })();

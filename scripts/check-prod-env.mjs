@@ -14,17 +14,7 @@
 //   2 — missing recommended vars and PRODUCTION_CHECK=1 (CI hardening)
 
 const required = [
-  ["VITE_SUPABASE_URL", "Supabase project URL — frontend + backend", process.env.VITE_SUPABASE_URL],
-  [
-    "VITE_SUPABASE_ANON_KEY",
-    "Supabase anon key — frontend client",
-    process.env.VITE_SUPABASE_ANON_KEY,
-  ],
-  [
-    "SUPABASE_SERVICE_ROLE_KEY",
-    "Supabase service role — backend privileged ops",
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
-  ],
+  ["POSTGRES_URL", "Postgres connection string for Drizzle-backed API routes", process.env.POSTGRES_URL],
   [
     "INTERNAL_JWT_SECRET",
     "Session JWT signing — canonical Wireline session secret (legacy alias: SUPABASE_JWT_SECRET)",
@@ -38,10 +28,6 @@ const required = [
 ];
 
 const recommended = [
-  [
-    "POSTGRES_URL",
-    "Drizzle / server Postgres — Supabase pooler URI; required for API routes using the ORM",
-  ],
   ["ANTHROPIC_API_KEY", "Claude — required for /api/claude/* recipes"],
   ["VITE_VAPI_PUBLIC_KEY", "Vapi — required for browser-side test calls from the dashboard"],
   ["VAPI_PRIVATE_KEY", "Vapi — required for outbound/inbound voice agents"],

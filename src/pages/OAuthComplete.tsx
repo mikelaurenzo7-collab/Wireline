@@ -19,6 +19,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import WirelineMark from "../components/WirelineMark";
+import { getStoredSignupIntent, syncSignupIntent } from "../lib/signup-intent";
 
 export default function OAuthComplete() {
   const { signIn } = useAuth();
@@ -49,19 +50,23 @@ export default function OAuthComplete() {
       setError("Sign-in response was incomplete. Please try again.");
       return;
     }
-    signIn({
-      access_token: token,
-      user: {
-        id: userId,
-        email,
-        full_name: name || undefined,
-        // Server stamps "1" when the email matches OWNER_EMAIL — gates
-        // the Founder's Dashboard for owners who sign in via OAuth.
-        is_owner: params.get("is_owner") === "1",
-      },
-    });
-    // Replace so a back button doesn't re-trigger the bridge.
-    navigate("/", { replace: true });
+    const complete = async () => {
+      await syncSignupIntent(getStoredSignupIntent(), token).catch(() => {});
+      signIn({
+        access_token: token,
+        user: {
+          id: userId,
+          email,
+          full_name: name || undefined,
+          // Server stamps "1" when the email matches OWNER_EMAIL — gates
+          // the Founder's Dashboard for owners who sign in via OAuth.
+          is_owner: params.get("is_owner") === "1",
+        },
+      });
+      // Replace so a back button doesn't re-trigger the bridge.
+      navigate("/", { replace: true });
+    };
+    void complete();
   }, [location.search, signIn, navigate]);
 
   return (

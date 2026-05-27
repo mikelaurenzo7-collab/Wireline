@@ -61,7 +61,7 @@ npm install
 cp .env.example .env
 
 # Boot the dev server (Vite frontend + Express API)
-npm run dev          # → http://localhost:5173
+npm run dev          # → http://localhost:3000
 
 # Type-check + tests + production build
 npm run verify
@@ -100,7 +100,7 @@ locally, fill in `VAPI_PRIVATE_KEY`, `ANTHROPIC_API_KEY`, and
 ├── drizzle/migrations/ # Idempotent SQL migrations
 ├── scripts/            # Operator tooling — Vapi sync, OG image
 │                       # rendering, visual QA, OAuth redirect printer
-├── e2e/                # Playwright E2E tests
+├── tests/e2e/          # Playwright E2E tests
 └── public/             # Static assets — favicon, OG images,
                         # legal docs, sitemap, robots, manifest
 ```
@@ -109,7 +109,7 @@ locally, fill in `VAPI_PRIVATE_KEY`, `ANTHROPIC_API_KEY`, and
 
 | Layer | Choice | Why |
 |---|---|---|
-| **Frontend** | React 18 + Vite + TypeScript | Fast HMR, tree-shaken bundles, every route lazy-loaded |
+| **Frontend** | React 19 + Vite + TypeScript | Fast HMR, tree-shaken bundles, every route lazy-loaded |
 | **Styling** | Tailwind CSS 4 + Motion (Framer) | Atomic + a tight motion vocabulary |
 | **API** | Express on Vercel serverless functions | One handler tree, deployed as one function |
 | **Database** | Postgres on Supabase, Drizzle ORM | Type-safe queries, idempotent migrations |
@@ -278,7 +278,7 @@ in `src/lib/stripe-helpers.ts` for the dashboard setup steps.
 Vapi-managed by default (first 10 free, then $2/mo). Self-serve
 claim via `/api/phone-numbers/provision` from the operator UI;
 admin bulk-fill via `/api/admin/phone-numbers/fill-pool`. Trial
-accounts auto-get a number on signup. Twilio BYO porting works
+accounts get a number when the first agent is created. Twilio BYO porting works
 for customers who want to keep their existing number.
 
 ---

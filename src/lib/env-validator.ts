@@ -77,28 +77,6 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     formatHint:
       "64-character hex string (generate: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\")",
   },
-  {
-    name: "VITE_SUPABASE_URL",
-    group: "core",
-    required: true,
-    description: "Supabase project URL",
-    validate: isUrl,
-    formatHint: "https://your-project.supabase.co",
-  },
-  {
-    name: "VITE_SUPABASE_ANON_KEY",
-    group: "core",
-    required: true,
-    description: "Supabase anonymous key for client-side auth",
-    validate: isNonEmpty,
-  },
-  {
-    name: "SUPABASE_SERVICE_ROLE_KEY",
-    group: "core",
-    required: true,
-    description: "Supabase service role key for server operations",
-    validate: isNonEmpty,
-  },
 
   // AI - Required for Claude and Gemini
   {

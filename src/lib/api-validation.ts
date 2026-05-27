@@ -152,7 +152,36 @@ export const signupSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
   fullName: z.string().min(2, "Full name must be at least 2 characters").max(100).optional(),
+  preferredPlanId: z.enum(["personal", "starter", "pro", "business"]).optional(),
+  signupWedge: z
+    .enum([
+      "home-services",
+      "medical",
+      "legal",
+      "real-estate",
+      "personal",
+      "insurance",
+      "restaurants",
+      "sales",
+    ])
+    .optional(),
+  utmSource: z.string().trim().max(120).optional(),
+  utmMedium: z.string().trim().max(120).optional(),
+  utmCampaign: z.string().trim().max(120).optional(),
 });
+
+export const signupIntentSchema = signupSchema
+  .pick({
+    preferredPlanId: true,
+    signupWedge: true,
+    utmSource: true,
+    utmMedium: true,
+    utmCampaign: true,
+  })
+  .refine(
+    (v) => !!(v.preferredPlanId || v.signupWedge || v.utmSource || v.utmMedium || v.utmCampaign),
+    "At least one signup-intent field is required",
+  );
 
 export const forgotPasswordSchema = z.object({
   email: emailSchema,

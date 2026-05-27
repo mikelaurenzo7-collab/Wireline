@@ -25,6 +25,11 @@ import { useAuth } from "../contexts/AuthContext";
 import { PageMeta } from "../lib/page-meta";
 import WirelineMark from "./WirelineMark";
 import { WIRELINE_CONTACT_AGENTS, WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
+import {
+  captureSignupIntentFromLocation,
+  syncSignupIntent,
+  type SignupIntent,
+} from "../lib/signup-intent";
 
 const FEATURES = [
   {
@@ -105,6 +110,14 @@ function cleanThrownMessage(e: unknown): string | null {
   const trimmed = raw.trim();
   if (!trimmed || trimmed === "[object Object]") return null;
   return trimmed;
+}
+
+function signupIntentLabel(intent: SignupIntent | null): string | null {
+  if (!intent?.preferredPlanId && !intent?.signupWedge) return null;
+  const parts = [];
+  if (intent.preferredPlanId) parts.push(`${intent.preferredPlanId} plan`);
+  if (intent.signupWedge) parts.push(intent.signupWedge.replace(/-/g, " "));
+  return parts.join(" · ");
 }
 
 /**
@@ -334,10 +347,18 @@ export default function AuthPortal() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [signupIntent, setSignupIntent] = useState<SignupIntent | null>(() =>
+    captureSignupIntentFromLocation(),
+  );
 
   const isSignUp = mode === "signup";
   const isReset = mode === "reset";
   const pwStrength = isSignUp ? getPasswordStrength(password) : null;
+  const intentLabel = signupIntentLabel(signupIntent);
+
+  useEffect(() => {
+    setSignupIntent(captureSignupIntentFromLocation());
+  }, []);
 
   const setIsSignUp = (v: boolean) => {
     setMode(v ? "signup" : "signin");
@@ -399,7 +420,19 @@ export default function AuthPortal() {
         const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: trimmedEmail, password }),
+          body: JSON.stringify({
+            email: trimmedEmail,
+            password,
+            ...(isSignUp && signupIntent
+              ? {
+                  preferredPlanId: signupIntent.preferredPlanId,
+                  signupWedge: signupIntent.signupWedge,
+                  utmSource: signupIntent.utmSource,
+                  utmMedium: signupIntent.utmMedium,
+                  utmCampaign: signupIntent.utmCampaign,
+                }
+              : {}),
+          }),
         });
 
         let data: any = {};
@@ -418,6 +451,7 @@ export default function AuthPortal() {
           throw new Error(msg);
         }
 
+        await syncSignupIntent(signupIntent, data.token).catch(() => {});
         signIn({
           access_token: data.token,
           user: data.user,
@@ -684,6 +718,11 @@ export default function AuthPortal() {
                         ? "Start your 14-day free trial. No credit card required."
                         : "Sign in to your Wireline operator console."}
                   </p>
+                  {isSignUp && intentLabel && (
+                    <p className="mt-2 inline-flex rounded-full border border-brand/20 bg-brand/8 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-brand">
+                      Matched from your visit · {intentLabel}
+                    </p>
+                  )}
                 </div>
 
                 {/* Tab toggle — hidden in reset mode */}

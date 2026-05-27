@@ -35,7 +35,15 @@ import { WEBHOOK_EVENTS } from "./webhook-helpers";
 // stable and the spec self-contained.
 
 type JsonSchema = {
-  type?: "string" | "number" | "integer" | "boolean" | "object" | "array" | "null" | readonly ("string" | "number" | "integer" | "boolean" | "object" | "array" | "null")[];
+  type?:
+    | "string"
+    | "number"
+    | "integer"
+    | "boolean"
+    | "object"
+    | "array"
+    | "null"
+    | readonly ("string" | "number" | "integer" | "boolean" | "object" | "array" | "null")[];
   format?: string;
   description?: string;
   enum?: readonly (string | number | boolean | null)[];
@@ -221,7 +229,8 @@ const Webhook: JsonSchema = {
 
 const TriageBucket: JsonSchema = {
   type: "object",
-  description: "One of the five Triage Inbox buckets — hot leads, compliance, knowledge gaps, tasks, escalations.",
+  description:
+    "One of the five Triage Inbox buckets — hot leads, compliance, knowledge gaps, tasks, escalations.",
   properties: {
     hot_leads: { type: "array", items: { type: "object", additionalProperties: true } },
     compliance: { type: "array", items: { type: "object", additionalProperties: true } },
@@ -236,12 +245,27 @@ const IntakeLeadRequest: JsonSchema = {
   type: "object",
   required: ["customer_number"],
   properties: {
-    customer_number: { type: "string", description: "E.164 phone number (or accepted alias `phone`/`phone_number`)." },
+    customer_number: {
+      type: "string",
+      description: "E.164 phone number (or accepted alias `phone`/`phone_number`).",
+    },
     customer_name: { type: "string" },
-    context: { type: "string", description: "Free-form note shown to the agent on call.", default: "" },
-    metadata: { type: "object", additionalProperties: true, description: "Free-form pass-through (utm_*, source, etc.)." },
+    context: {
+      type: "string",
+      description: "Free-form note shown to the agent on call.",
+      default: "",
+    },
+    metadata: {
+      type: "object",
+      additionalProperties: true,
+      description: "Free-form pass-through (utm_*, source, etc.).",
+    },
     agent_id: { type: "string", description: "Optional — pin this lead to a specific agent." },
-    idempotency_key: { type: "string", description: "Caller-supplied idempotency key. Also honored via the `Idempotency-Key` header." },
+    idempotency_key: {
+      type: "string",
+      description:
+        "Caller-supplied idempotency key. Also honored via the `Idempotency-Key` header.",
+    },
   },
   example: {
     customer_name: "Jane Doe",
@@ -322,10 +346,14 @@ const BillingStatus: JsonSchema = {
   properties: {
     stripe_configured: { type: "boolean" },
     agent_count: { type: "integer" },
-    phone_lines_used: { type: "integer", description: "Rows in wireline_phone_numbers for this tenant." },
+    phone_lines_used: {
+      type: "integer",
+      description: "Rows in wireline_phone_numbers for this tenant.",
+    },
     phone_lines_included: {
       type: "integer",
-      description: "Max provisioned voice numbers while active — equals the subscribed plan agent cap (one number slot per purchased agent seat).",
+      description:
+        "Max provisioned voice numbers while active — equals the subscribed plan agent cap (one number slot per purchased agent seat).",
     },
     subscription: {
       type: ["object", "null"],
@@ -333,7 +361,10 @@ const BillingStatus: JsonSchema = {
       properties: {
         plan: { type: ["string", "null"] },
         plan_name: { type: ["string", "null"] },
-        max_agents: { type: ["integer", "null"], description: "Agent seat cap — also the voice-number slot cap." },
+        max_agents: {
+          type: ["integer", "null"],
+          description: "Agent seat cap — also the voice-number slot cap.",
+        },
         status: { type: ["string", "null"] },
         current_period_end: { type: ["string", "null"], format: "date-time" },
         cancel_at_period_end: { type: "boolean" },
@@ -449,7 +480,11 @@ const COMMON_ERROR_RESPONSES: Record<string, ResponseObject> = {
   "503": errorResponse("Dependency unavailable (e.g. Claude / Stripe unconfigured)."),
 };
 
-const auth = { bearer: [{ bearerAuth: [] }], intakeKey: [{ intakeKeyAuth: [] }], none: [] as const };
+const auth = {
+  bearer: [{ bearerAuth: [] }],
+  intakeKey: [{ intakeKeyAuth: [] }],
+  none: [] as const,
+};
 
 // ──────────────────────────────────────────────────────────────────────
 //  Paths
@@ -462,12 +497,16 @@ const PATHS: Record<string, PathItem> = {
   "/api/health": {
     get: {
       summary: "Health probe",
-      description: "Public. Returns process uptime, database probe, and capability flags. Stable contract — external monitors may key on the response shape.",
+      description:
+        "Public. Returns process uptime, database probe, and capability flags. Stable contract — external monitors may key on the response shape.",
       operationId: "getHealth",
       tags: ["Health"],
       security: auth.none,
       responses: {
-        "200": { description: "Healthy.", content: { "application/json": { schema: ref("HealthResponse") } } },
+        "200": {
+          description: "Healthy.",
+          content: { "application/json": { schema: ref("HealthResponse") } },
+        },
         "503": errorResponse("Database probe failed."),
         "429": COMMON_ERROR_RESPONSES["429"],
       },
@@ -476,24 +515,34 @@ const PATHS: Record<string, PathItem> = {
   "/api/openapi.json": {
     get: {
       summary: "OpenAPI 3.1 spec for this API",
-      description: "Public. Returns this document. Use it to auto-generate client SDKs, drive contract tests, or expose Wireline as a tool to AI-agent frameworks.",
+      description:
+        "Public. Returns this document. Use it to auto-generate client SDKs, drive contract tests, or expose Wireline as a tool to AI-agent frameworks.",
       operationId: "getOpenApiSpec",
       tags: ["Health"],
       security: auth.none,
       responses: {
-        "200": { description: "OpenAPI 3.1 document.", content: { "application/json": { schema: { type: "object", additionalProperties: true } } } },
+        "200": {
+          description: "OpenAPI 3.1 document.",
+          content: {
+            "application/json": { schema: { type: "object", additionalProperties: true } },
+          },
+        },
       },
     },
   },
   "/api/health/integrations": {
     get: {
       summary: "Authenticated integrations health report",
-      description: "Per-integration configured/missing/fallback status with the env-var presence map. Powers the AdminSettings → Platform Health panel.",
+      description:
+        "Per-integration configured/missing/fallback status with the env-var presence map. Powers the AdminSettings → Platform Health panel.",
       operationId: "getIntegrationsReport",
       tags: ["Health"],
       security: auth.bearer,
       responses: {
-        "200": { description: "Integration report.", content: { "application/json": { schema: ref("IntegrationsReport") } } },
+        "200": {
+          description: "Integration report.",
+          content: { "application/json": { schema: ref("IntegrationsReport") } },
+        },
         "401": COMMON_ERROR_RESPONSES["401"],
         "429": COMMON_ERROR_RESPONSES["429"],
       },
@@ -506,10 +555,18 @@ const PATHS: Record<string, PathItem> = {
       tags: ["Health"],
       security: auth.bearer,
       parameters: [
-        { name: "window_hours", in: "query", required: false, schema: { type: "integer", minimum: 1, maximum: 168, default: 24 } },
+        {
+          name: "window_hours",
+          in: "query",
+          required: false,
+          schema: { type: "integer", minimum: 1, maximum: 168, default: 24 },
+        },
       ],
       responses: {
-        "200": { description: "SLO snapshot.", content: { "application/json": { schema: ref("SloSnapshot") } } },
+        "200": {
+          description: "SLO snapshot.",
+          content: { "application/json": { schema: ref("SloSnapshot") } },
+        },
         "401": COMMON_ERROR_RESPONSES["401"],
       },
     },
@@ -527,9 +584,15 @@ const PATHS: Record<string, PathItem> = {
       parameters: [
         { name: "Idempotency-Key", in: "header", required: false, schema: { type: "string" } },
       ],
-      requestBody: { required: true, content: { "application/json": { schema: ref("IntakeLeadRequest") } } },
+      requestBody: {
+        required: true,
+        content: { "application/json": { schema: ref("IntakeLeadRequest") } },
+      },
       responses: {
-        "200": { description: "Lead accepted.", content: { "application/json": { schema: ref("IntakeLeadResponse") } } },
+        "200": {
+          description: "Lead accepted.",
+          content: { "application/json": { schema: ref("IntakeLeadResponse") } },
+        },
         "400": COMMON_ERROR_RESPONSES["400"],
         "401": COMMON_ERROR_RESPONSES["401"],
         "429": COMMON_ERROR_RESPONSES["429"],
@@ -543,7 +606,10 @@ const PATHS: Record<string, PathItem> = {
       operationId: "postIntakeLeads",
       tags: ["Intake"],
       security: auth.intakeKey,
-      requestBody: { required: true, content: { "application/json": { schema: ref("IntakeLeadsBulkRequest") } } },
+      requestBody: {
+        required: true,
+        content: { "application/json": { schema: ref("IntakeLeadsBulkRequest") } },
+      },
       responses: {
         "200": {
           description: "Aggregate result.",
@@ -575,7 +641,10 @@ const PATHS: Record<string, PathItem> = {
       tags: ["Agents"],
       security: auth.bearer,
       responses: {
-        "200": { description: "Array of agents owned by the caller.", content: { "application/json": { schema: { type: "array", items: ref("Agent") } } } },
+        "200": {
+          description: "Array of agents owned by the caller.",
+          content: { "application/json": { schema: { type: "array", items: ref("Agent") } } },
+        },
         "401": COMMON_ERROR_RESPONSES["401"],
       },
     },
@@ -588,7 +657,12 @@ const PATHS: Record<string, PathItem> = {
       tags: ["Agents"],
       security: auth.none,
       responses: {
-        "200": { description: "Role catalog.", content: { "application/json": { schema: { type: "object", additionalProperties: true } } } },
+        "200": {
+          description: "Role catalog.",
+          content: {
+            "application/json": { schema: { type: "object", additionalProperties: true } },
+          },
+        },
       },
     },
   },
@@ -597,16 +671,25 @@ const PATHS: Record<string, PathItem> = {
   "/api/calls": {
     get: {
       summary: "List the caller's call logs",
-      description: "Returns enriched call records owned by the calling tenant. Filterable via query params.",
+      description:
+        "Returns enriched call records owned by the calling tenant. Filterable via query params.",
       operationId: "listCalls",
       tags: ["Calls"],
       security: auth.bearer,
       parameters: [
-        { name: "limit", in: "query", required: false, schema: { type: "integer", minimum: 1, maximum: 500 } },
+        {
+          name: "limit",
+          in: "query",
+          required: false,
+          schema: { type: "integer", minimum: 1, maximum: 500 },
+        },
         { name: "agent_id", in: "query", required: false, schema: { type: "string" } },
       ],
       responses: {
-        "200": { description: "Array of call logs.", content: { "application/json": { schema: { type: "array", items: ref("CallLog") } } } },
+        "200": {
+          description: "Array of call logs.",
+          content: { "application/json": { schema: { type: "array", items: ref("CallLog") } } },
+        },
         "401": COMMON_ERROR_RESPONSES["401"],
       },
     },
@@ -620,7 +703,10 @@ const PATHS: Record<string, PathItem> = {
       tags: ["Settings"],
       security: auth.bearer,
       responses: {
-        "200": { description: "Settings.", content: { "application/json": { schema: ref("Settings") } } },
+        "200": {
+          description: "Settings.",
+          content: { "application/json": { schema: ref("Settings") } },
+        },
         "401": COMMON_ERROR_RESPONSES["401"],
       },
     },
@@ -632,7 +718,10 @@ const PATHS: Record<string, PathItem> = {
       security: auth.bearer,
       requestBody: { required: true, content: { "application/json": { schema: ref("Settings") } } },
       responses: {
-        "200": { description: "Updated settings.", content: { "application/json": { schema: ref("Settings") } } },
+        "200": {
+          description: "Updated settings.",
+          content: { "application/json": { schema: ref("Settings") } },
+        },
         "400": COMMON_ERROR_RESPONSES["400"],
         "401": COMMON_ERROR_RESPONSES["401"],
       },
@@ -647,7 +736,10 @@ const PATHS: Record<string, PathItem> = {
       tags: ["Insights"],
       security: auth.bearer,
       responses: {
-        "200": { description: "Triage buckets.", content: { "application/json": { schema: ref("TriageBucket") } } },
+        "200": {
+          description: "Triage buckets.",
+          content: { "application/json": { schema: ref("TriageBucket") } },
+        },
         "401": COMMON_ERROR_RESPONSES["401"],
       },
     },
@@ -659,7 +751,10 @@ const PATHS: Record<string, PathItem> = {
       tags: ["Insights"],
       security: auth.bearer,
       responses: {
-        "200": { description: "Daily brief.", content: { "application/json": { schema: ref("DailyBrief") } } },
+        "200": {
+          description: "Daily brief.",
+          content: { "application/json": { schema: ref("DailyBrief") } },
+        },
         "401": COMMON_ERROR_RESPONSES["401"],
         "402": errorResponse("Spend hard cap reached. Increase cap or wait for next period."),
         "503": COMMON_ERROR_RESPONSES["503"],
@@ -673,7 +768,12 @@ const PATHS: Record<string, PathItem> = {
       tags: ["Insights"],
       security: auth.bearer,
       responses: {
-        "200": { description: "Funnel data.", content: { "application/json": { schema: { type: "object", additionalProperties: true } } } },
+        "200": {
+          description: "Funnel data.",
+          content: {
+            "application/json": { schema: { type: "object", additionalProperties: true } },
+          },
+        },
         "401": COMMON_ERROR_RESPONSES["401"],
       },
     },
@@ -685,7 +785,12 @@ const PATHS: Record<string, PathItem> = {
       tags: ["Insights"],
       security: auth.bearer,
       responses: {
-        "200": { description: "Leaderboard rows.", content: { "application/json": { schema: { type: "object", additionalProperties: true } } } },
+        "200": {
+          description: "Leaderboard rows.",
+          content: {
+            "application/json": { schema: { type: "object", additionalProperties: true } },
+          },
+        },
         "401": COMMON_ERROR_RESPONSES["401"],
       },
     },
@@ -707,7 +812,10 @@ const PATHS: Record<string, PathItem> = {
                 type: "object",
                 properties: {
                   webhooks: { type: "array", items: ref("Webhook") },
-                  available_events: { type: "array", items: { type: "string", enum: [...WEBHOOK_EVENTS] } },
+                  available_events: {
+                    type: "array",
+                    items: { type: "string", enum: [...WEBHOOK_EVENTS] },
+                  },
                 },
               },
             },
@@ -718,7 +826,8 @@ const PATHS: Record<string, PathItem> = {
     },
     post: {
       summary: "Create an outbound webhook subscription",
-      description: "On create, a signing secret is generated and returned **once**. Subsequent reads omit it; persist it on your end.",
+      description:
+        "On create, a signing secret is generated and returned **once**. Subsequent reads omit it; persist it on your end.",
       operationId: "createWebhook",
       tags: ["Webhooks"],
       security: auth.bearer,
@@ -740,7 +849,12 @@ const PATHS: Record<string, PathItem> = {
         },
       },
       responses: {
-        "200": { description: "Created.", content: { "application/json": { schema: { type: "object", additionalProperties: true } } } },
+        "200": {
+          description: "Created.",
+          content: {
+            "application/json": { schema: { type: "object", additionalProperties: true } },
+          },
+        },
         "400": COMMON_ERROR_RESPONSES["400"],
         "401": COMMON_ERROR_RESPONSES["401"],
         "403": COMMON_ERROR_RESPONSES["403"],
@@ -757,7 +871,10 @@ const PATHS: Record<string, PathItem> = {
       tags: ["Billing"],
       security: auth.bearer,
       responses: {
-        "200": { description: "Quota usage.", content: { "application/json": { schema: ref("QuotaUsage") } } },
+        "200": {
+          description: "Quota usage.",
+          content: { "application/json": { schema: ref("QuotaUsage") } },
+        },
         "401": COMMON_ERROR_RESPONSES["401"],
       },
     },
@@ -770,7 +887,12 @@ const PATHS: Record<string, PathItem> = {
       tags: ["Billing"],
       security: auth.none,
       responses: {
-        "200": { description: "Plan catalog.", content: { "application/json": { schema: { type: "object", additionalProperties: true } } } },
+        "200": {
+          description: "Plan catalog.",
+          content: {
+            "application/json": { schema: { type: "object", additionalProperties: true } },
+          },
+        },
       },
     },
   },
@@ -781,7 +903,10 @@ const PATHS: Record<string, PathItem> = {
       tags: ["Billing"],
       security: auth.bearer,
       responses: {
-        "200": { description: "Subscription status.", content: { "application/json": { schema: ref("BillingStatus") } } },
+        "200": {
+          description: "Subscription status.",
+          content: { "application/json": { schema: ref("BillingStatus") } },
+        },
         "401": COMMON_ERROR_RESPONSES["401"],
         "503": COMMON_ERROR_RESPONSES["503"],
       },
@@ -790,14 +915,23 @@ const PATHS: Record<string, PathItem> = {
   "/api/billing/portal": {
     post: {
       summary: "Open a Stripe Customer Portal session",
-      description: "Returns a short-lived URL to redirect the user to the Stripe-hosted portal where they can manage payment methods and cancel.",
+      description:
+        "Returns a short-lived URL to redirect the user to the Stripe-hosted portal where they can manage payment methods and cancel.",
       operationId: "createBillingPortalSession",
       tags: ["Billing"],
       security: auth.bearer,
       responses: {
         "200": {
           description: "Portal URL.",
-          content: { "application/json": { schema: { type: "object", required: ["url"], properties: { url: { type: "string", format: "uri" } } } } },
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["url"],
+                properties: { url: { type: "string", format: "uri" } },
+              },
+            },
+          },
         },
         "401": COMMON_ERROR_RESPONSES["401"],
         "503": COMMON_ERROR_RESPONSES["503"],
@@ -818,12 +952,14 @@ function buildWebhookEntries(): Record<string, PathItem> {
     entries[event] = {
       post: {
         summary: `Outbound webhook — ${event}`,
-        description:
-          `POST sent to the URL you registered. Verify the \`X-Wireline-Signature\` header with HMAC-SHA256(body, your_signing_secret).`,
+        description: `POST sent to the URL you registered. Verify the \`X-Wireline-Signature\` header with HMAC-SHA256(body, your_signing_secret).`,
         operationId: `webhook_${event.replace(/\W+/g, "_")}`,
         tags: ["Webhooks"],
         security: auth.none,
-        requestBody: { required: true, content: { "application/json": { schema: ref("WebhookDelivery") } } },
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: ref("WebhookDelivery") } },
+        },
         responses: {
           "2XX": { description: "Acknowledged. Any 2xx is treated as success." },
         },
@@ -851,33 +987,44 @@ export function getOpenApiSpec(serverUrl?: string): OpenApiDocument {
       title: "Wireline API",
       version: "1.0.0",
       summary: "Carrier-grade omnichannel agent fleet — voice + email autonomous agents.",
-      description:
-        [
-          "Wireline's public API. Designed for three audiences:",
-          "",
-          "1. **CRM / form / Zapier integrations** — push leads in via `POST /api/intake/lead`.",
-          "2. **Operators & ops dashboards** — read agents, calls, settings, quotas, SLOs.",
-          "3. **AI-agent frameworks** — consume this spec as a tool catalog (Claude Desktop, Cursor, ChatGPT custom GPTs, etc).",
-          "",
-          "Authentication:",
-          "",
-          "- `bearerAuth` — Supabase JWT in `Authorization: Bearer <jwt>`. Used by tenant-scoped endpoints.",
-          "- `intakeKeyAuth` — Wireline-issued API key in `X-Wireline-Key: wlk_…`. Used only by `POST /api/intake/lead[s]`.",
-          "",
-          "Outbound webhook deliveries are documented under `webhooks:` — each entry shows the body shape your receiver will get.",
-        ].join("\n"),
+      description: [
+        "Wireline's public API. Designed for three audiences:",
+        "",
+        "1. **CRM / form / Zapier integrations** — push leads in via `POST /api/intake/lead`.",
+        "2. **Operators & ops dashboards** — read agents, calls, settings, quotas, SLOs.",
+        "3. **AI-agent frameworks** — consume this spec as a tool catalog (Claude Desktop, Cursor, ChatGPT custom GPTs, etc).",
+        "",
+        "Authentication:",
+        "",
+        "- `bearerAuth` — Wireline session JWT in `Authorization: Bearer <jwt>`. Used by tenant-scoped endpoints.",
+        "- `intakeKeyAuth` — Wireline-issued API key in `X-Wireline-Key: wlk_…`. Used only by `POST /api/intake/lead[s]`.",
+        "",
+        "Outbound webhook deliveries are documented under `webhooks:` — each entry shows the body shape your receiver will get.",
+      ].join("\n"),
       contact: { name: "Wireline" },
       license: { name: "Proprietary" },
     },
     servers: [{ url, description: "This deployment." }],
     tags: [
-      { name: "Health", description: "Liveness, capability flags, integrations report, SLO snapshot." },
+      {
+        name: "Health",
+        description: "Liveness, capability flags, integrations report, SLO snapshot.",
+      },
       { name: "Intake", description: "Inbound lead intake API used by CRMs / forms / Zapier." },
-      { name: "Agents", description: "Configured voice + email agents owned by the calling tenant." },
+      {
+        name: "Agents",
+        description: "Configured voice + email agents owned by the calling tenant.",
+      },
       { name: "Calls", description: "Enriched call logs." },
-      { name: "Settings", description: "Tenant-level settings (retention, business profile, ...)." },
+      {
+        name: "Settings",
+        description: "Tenant-level settings (retention, business profile, ...).",
+      },
       { name: "Insights", description: "Triage Inbox, Daily Brief, funnel, leaderboard." },
-      { name: "Webhooks", description: "Outbound webhook subscriptions and the events they deliver." },
+      {
+        name: "Webhooks",
+        description: "Outbound webhook subscriptions and the events they deliver.",
+      },
       { name: "Billing", description: "Stripe-backed subscription, plan catalog, quota usage." },
     ],
     security: [{ bearerAuth: [] }],
@@ -889,7 +1036,7 @@ export function getOpenApiSpec(serverUrl?: string): OpenApiDocument {
           type: "http",
           scheme: "bearer",
           bearerFormat: "JWT",
-          description: "Supabase-issued JWT in `Authorization: Bearer <jwt>`.",
+          description: "Wireline-issued JWT in `Authorization: Bearer <jwt>`.",
         },
         intakeKeyAuth: {
           type: "apiKey",

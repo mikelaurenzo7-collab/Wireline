@@ -80,7 +80,7 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
     // every bearer-token validation as "auth.login" would flood the audit
     // log with thousands of rows per day, all semantically wrong (a login
     // is when a new session is *created*, not when an existing JWT is
-    // *verified*). Real sign-in events are emitted by Supabase's own auth
+    // *verified*). Real sign-in events are emitted by Wireline's auth
     // system; the audit log captures failed attempts above.
 
     return next();

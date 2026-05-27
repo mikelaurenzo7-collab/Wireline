@@ -547,6 +547,27 @@ router.post(
         .where(eq(schema.subscriptions.userId, req.user.id))
         .limit(1);
 
+      const [signupIntent] = await drizzle
+        .select({
+          signupPlanInterest: schema.settings.signupPlanInterest,
+          signupWedge: schema.settings.signupWedge,
+          acquisitionSource: schema.settings.acquisitionSource,
+          acquisitionMedium: schema.settings.acquisitionMedium,
+          acquisitionCampaign: schema.settings.acquisitionCampaign,
+        })
+        .from(schema.settings)
+        .where(eq(schema.settings.userId, req.user.id))
+        .limit(1);
+      const attributionMetadata = Object.fromEntries(
+        Object.entries({
+          wireline_signup_plan_interest: signupIntent?.signupPlanInterest,
+          wireline_signup_wedge: signupIntent?.signupWedge,
+          wireline_acquisition_source: signupIntent?.acquisitionSource,
+          wireline_acquisition_medium: signupIntent?.acquisitionMedium,
+          wireline_acquisition_campaign: signupIntent?.acquisitionCampaign,
+        }).filter(([, value]) => !!value),
+      ) as Record<string, string>;
+
       const liveStatuses = new Set(["active", "trialing", "past_due", "incomplete", "unpaid"]);
       if (existing?.stripeSubscriptionId && liveStatuses.has(existing.status || "")) {
         return res.status(409).json({
@@ -563,7 +584,7 @@ router.post(
       if (!customerId) {
         const customer = await stripe.customers.create({
           email: req.user.email,
-          metadata: { wireline_user_id: req.user.id },
+          metadata: { wireline_user_id: req.user.id, ...attributionMetadata },
         });
         customerId = customer.id;
         await drizzle
@@ -580,6 +601,10 @@ router.post(
               updatedAt: new Date(),
             },
           });
+      } else if (Object.keys(attributionMetadata).length > 0) {
+        await stripe.customers.update(customerId, {
+          metadata: { wireline_user_id: req.user.id, ...attributionMetadata },
+        });
       }
 
       const base = billingBaseUrl(req);
@@ -591,7 +616,11 @@ router.post(
         cancel_url: `${base}/admin?billing=canceled`,
         allow_promotion_codes: true,
         subscription_data: {
-          metadata: { wireline_user_id: req.user.id, wireline_plan: plan.id },
+          metadata: {
+            wireline_user_id: req.user.id,
+            wireline_plan: plan.id,
+            ...attributionMetadata,
+          },
         },
       });
       res.json({ url: session.url });

@@ -130,6 +130,11 @@ export const settings = pgTable("wireline_settings", {
   brandName: text("brand_name"),
   brandLogoUrl: text("brand_logo_url"),
   primaryColor: text("primary_color"),
+  signupPlanInterest: text("signup_plan_interest"),
+  signupWedge: text("signup_wedge"),
+  acquisitionSource: text("acquisition_source"),
+  acquisitionMedium: text("acquisition_medium"),
+  acquisitionCampaign: text("acquisition_campaign"),
   aiTier: text("ai_tier").default("starter"),
   /**
    * Tenant-wide default autonomy. Per-agent autonomy in `agents.autonomyLevel`
