@@ -168,7 +168,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
       {/* ── Header: logo + brand wordmark ───────────────────────────── */}
       <Link
         to="/"
-        className="shrink-0 flex items-center gap-3 h-14 px-3 group"
+        className="shrink-0 flex items-center gap-3 h-12 px-3 group"
         aria-label={`${branding.brand_name} home`}
       >
         <motion.div
@@ -199,10 +199,11 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         </AnimatePresence>
       </Link>
 
-      {/* ── Tier badge — small status pill under the logo ───────────── */}
-      <TierBadge expanded={effective} />
+      {/* TierBadge inlined into the account block below — saves ~50 px of
+          vertical rail real-estate so all nav groups fit without a
+          scrollbar at viewport heights ≥ 720 px.
 
-      {/* ── Search trigger — fires the same global command bar event the
+      ── Search trigger — fires the same global command bar event the
           mobile/tablet topbar uses. Discoverable on lg+ where there's
           no topbar; also visible in collapsed-rail state as a single
           icon so the hotkey "/" is never the only entry. */}
@@ -210,7 +211,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         type="button"
         onClick={() => window.dispatchEvent(new CustomEvent("wireline:open-command-bar"))}
         className={cn(
-          "shrink-0 mx-2 mb-2 h-9 flex items-center gap-2 rounded-lg border border-[#EFE9DC]/10 bg-white/[0.04] hover:bg-white/[0.08] hover:border-[#EFE9DC]/20 transition-all group",
+          "shrink-0 mx-2 mb-1.5 h-8 flex items-center gap-2 rounded-lg border border-[#EFE9DC]/10 bg-white/[0.04] hover:bg-white/[0.08] hover:border-[#EFE9DC]/20 transition-all group",
           effective ? "px-3" : "px-2 justify-center",
         )}
         aria-label="Open search ( / )"
@@ -233,7 +234,11 @@ export default function Sidebar({ navBadges }: SidebarProps) {
       </button>
 
       {/* ── Group sections ─────────────────────────────────────────── */}
-      <nav className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-3 px-2 space-y-4 scrollbar-thin">
+      {/* overflow-y-auto + scrollbar-hide: at the design heights (720+ px
+          laptop, 800+ px desktop) all groups fit without overflow. On
+          ultra-short windows or zoomed-in browsers the content scrolls
+          silently — no visible scrollbar, no clipped items. */}
+      <nav className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-2 px-2 space-y-3 scrollbar-hide">
         {NAV_GROUPS.map((group) => {
           const items = group.items.filter((item) => !item.ownerOnly || user?.is_owner === true);
           if (items.length === 0) return null;
@@ -286,10 +291,10 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         })}
       </nav>
 
-      {/* ── Footer: live pulse + help/founder/signout ──────────────── */}
+      {/* ── Footer: live pulse + account/help/founder/signout ─────── */}
       <div
-        className="shrink-0 border-t border-[#EFE9DC]/8 px-2 pt-3 pb-3 space-y-1"
-        style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+        className="shrink-0 border-t border-[#EFE9DC]/8 px-2 pt-2 pb-2 space-y-0.5"
+        style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
       >
         <LivePulse count={liveCalls} expanded={effective} />
 
@@ -356,7 +361,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
             keyboard users who never open it. */}
         <button
           onClick={() => signOut()}
-          className="w-full group h-10 flex items-center gap-2.5 px-2 rounded-lg text-[#EFE9DC]/55 hover:text-[#EFE9DC] hover:bg-white/8 transition-all"
+          className="w-full group h-9 flex items-center gap-2.5 px-2 rounded-lg text-[#EFE9DC]/55 hover:text-[#EFE9DC] hover:bg-white/8 transition-all"
           title={effective ? undefined : "Sign out"}
           aria-label="Sign out"
         >
@@ -365,12 +370,11 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         </button>
 
         {/* Collapse/expand toggle — always rendered, sits at the very
-            bottom so it never gets in the way of nav clicks. Only
-            interactive on lg+ because the rail itself is lg+ only. */}
+            bottom so it never gets in the way of nav clicks. */}
         <button
           type="button"
           onClick={() => setUserOverride(!expanded)}
-          className="w-full h-8 mt-1 flex items-center justify-center gap-2 px-2 rounded-lg text-[#EFE9DC]/35 hover:text-[#EFE9DC]/75 hover:bg-white/6 transition-all"
+          className="w-full h-7 mt-0.5 flex items-center justify-center gap-2 px-2 rounded-lg text-[#EFE9DC]/35 hover:text-[#EFE9DC]/75 hover:bg-white/6 transition-all"
           aria-label={expanded ? "Collapse navigation" : "Expand navigation"}
           aria-pressed={expanded}
           title={expanded ? "Collapse rail" : "Expand rail"}
@@ -414,7 +418,7 @@ function RailItem({ item, active, badge, expanded, accent, shortcut }: RailItemP
       aria-current={active ? "page" : undefined}
       title={expanded ? undefined : item.label}
       className={cn(
-        "group relative flex items-center gap-2.5 h-10 px-2 rounded-lg transition-all duration-150",
+        "group relative flex items-center gap-2.5 h-9 px-2 rounded-lg transition-all duration-150",
         active ? "text-[#3B154C]" : "text-[#EFE9DC]/65 hover:text-[#EFE9DC] hover:bg-white/8",
       )}
     >
@@ -509,82 +513,6 @@ function resolveBadge(item: NavItem, navBadges: Record<string, number>): number 
 }
 
 // ──────────────────────────────────────────────────────────────────────
-// TierBadge — pill that shows the operator's plan + minute usage.
-// Reads from /api/billing/usage. Hidden when collapsed.
-// ──────────────────────────────────────────────────────────────────────
-
-function TierBadge({ expanded }: { expanded: boolean }) {
-  const { user } = useAuth();
-  const [tier, setTier] = useState<{
-    plan_name?: string;
-    voice_minutes_used?: number;
-    voice_minutes_cap?: number;
-  } | null>(null);
-
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    const fetchTier = async () => {
-      try {
-        const r = await authFetch("/api/billing/usage");
-        if (!r.ok || cancelled) return;
-        const d = await r.json();
-        if (!cancelled) setTier(d);
-      } catch {
-        /* non-critical */
-      }
-    };
-    fetchTier();
-    const id = setInterval(fetchTier, 60_000); // refresh once a minute
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, [user]);
-
-  if (!expanded || !tier?.plan_name) return null;
-  const used = tier.voice_minutes_used ?? 0;
-  const cap = tier.voice_minutes_cap ?? 0;
-  const pct = cap > 0 ? Math.min(100, (used / cap) * 100) : 0;
-  const overage = cap > 0 && used > cap;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -4 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
-      className="mx-3 mb-2 rounded-lg px-2.5 py-1.5 border border-[#EFE9DC]/10 bg-white/[0.04]"
-    >
-      <div className="flex items-center justify-between gap-2 mb-1">
-        <span className="text-[9px] uppercase tracking-[0.22em] text-[#EFE9DC]/55 font-semibold truncate">
-          {tier.plan_name}
-        </span>
-        {cap > 0 && (
-          <span
-            className={cn("text-[8px] font-mono", overage ? "text-rose-300" : "text-[#EFE9DC]/55")}
-          >
-            {used.toLocaleString()} / {cap.toLocaleString()}
-          </span>
-        )}
-      </div>
-      {cap > 0 && (
-        <div className="h-[3px] rounded-full overflow-hidden bg-[#EFE9DC]/10">
-          <div
-            className="h-full rounded-full transition-all"
-            style={{
-              width: `${pct}%`,
-              background: overage
-                ? "linear-gradient(90deg, #E8466A, #F59E0B)"
-                : "linear-gradient(90deg, #10B981, #EFE9DC)",
-            }}
-          />
-        </div>
-      )}
-    </motion.div>
-  );
-}
-
-// ──────────────────────────────────────────────────────────────────────
 // LivePulse — "Wireline is alive." Subtle ambient indicator at the
 // foot of the rail. Animates when calls > 0; static when quiet.
 // ──────────────────────────────────────────────────────────────────────
@@ -594,7 +522,7 @@ function LivePulse({ count, expanded }: { count: number; expanded: boolean }) {
   return (
     <div
       className={cn(
-        "flex items-center gap-2 h-9 px-2 rounded-lg",
+        "flex items-center gap-2 h-8 px-2 rounded-lg",
         live ? "bg-emerald-500/10" : "bg-white/[0.03]",
       )}
       title={live ? `${count} live call${count === 1 ? "" : "s"}` : "Floor is quiet"}
@@ -631,6 +559,94 @@ function LivePulse({ count, expanded }: { count: number; expanded: boolean }) {
 // language as RailItem but slimmer (no group accents, no shortcuts).
 // ──────────────────────────────────────────────────────────────────────
 
+// ──────────────────────────────────────────────────────────────────────
+// TierInline — slim, single-line plan-usage pill rendered inside the
+// account block in the footer. Replaces the standalone TierBadge that
+// previously sat below the logo and ate ~50 px of rail height. Reads
+// from the same /api/billing/usage endpoint; refreshes every 60 s.
+//
+// Renders as:  PRO · 1.2k / 5k min   (with hairline progress underline)
+// On overage:  PRO · OVER · 5.4k / 5k   (rose accent)
+// ──────────────────────────────────────────────────────────────────────
+
+function TierInline() {
+  const { user } = useAuth();
+  const [tier, setTier] = useState<{
+    plan_name?: string;
+    voice_minutes_used?: number;
+    voice_minutes_cap?: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    const fetchTier = async () => {
+      try {
+        const r = await authFetch("/api/billing/usage");
+        if (!r.ok || cancelled) return;
+        const d = await r.json();
+        if (!cancelled) setTier(d);
+      } catch {
+        /* non-critical */
+      }
+    };
+    fetchTier();
+    const id = setInterval(fetchTier, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [user]);
+
+  // While loading or for fresh accounts: show the email domain so the
+  // account row never looks empty.
+  if (!tier?.plan_name) {
+    return (
+      <p className="text-[8.5px] uppercase tracking-[0.25em] text-[#EFE9DC]/45 leading-none mt-1 truncate">
+        {user?.email?.split("@")[1]}
+      </p>
+    );
+  }
+  const used = tier.voice_minutes_used ?? 0;
+  const cap = tier.voice_minutes_cap ?? 0;
+  const overage = cap > 0 && used > cap;
+  const fmt = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n));
+  const pct = cap > 0 ? Math.min(100, (used / cap) * 100) : 0;
+  return (
+    <div className="mt-1 leading-none">
+      <span
+        className={cn(
+          "text-[8.5px] uppercase tracking-[0.25em] font-semibold",
+          overage ? "text-rose-300" : "text-[#EFE9DC]/55",
+        )}
+      >
+        {tier.plan_name}
+        {cap > 0 && (
+          <>
+            {" · "}
+            <span className="font-mono normal-case tracking-normal">
+              {fmt(used)}/{fmt(cap)}
+            </span>
+          </>
+        )}
+      </span>
+      {cap > 0 && (
+        <div className="mt-0.5 h-[2px] rounded-full overflow-hidden bg-[#EFE9DC]/8">
+          <div
+            className="h-full rounded-full transition-all"
+            style={{
+              width: `${pct}%`,
+              background: overage
+                ? "linear-gradient(90deg, #E8466A, #F59E0B)"
+                : "linear-gradient(90deg, #10B981, #EFE9DC)",
+            }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface FooterItemProps {
   to: string;
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
@@ -645,7 +661,7 @@ function FooterItem({ to, icon: Icon, label, expanded, active }: FooterItemProps
       aria-current={active ? "page" : undefined}
       title={expanded ? undefined : label}
       className={cn(
-        "group h-10 flex items-center gap-2.5 px-2 rounded-lg transition-all",
+        "group h-9 flex items-center gap-2.5 px-2 rounded-lg transition-all",
         active
           ? "bg-white/12 text-[#EFE9DC]"
           : "text-[#EFE9DC]/55 hover:text-[#EFE9DC] hover:bg-white/8",
