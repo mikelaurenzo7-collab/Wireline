@@ -136,6 +136,15 @@ export const authService = {
       utmCampaign?: string | null;
     },
   ) {
+    try {
+      getJwtSecret();
+    } catch (err) {
+      log.error("Auth: JWT secret not configured", { error: err });
+      throw new AuthConfigurationError(
+        err instanceof Error ? err.message : "JWT_SECRET_NOT_CONFIGURED",
+      );
+    }
+
     const passwordHash = hashPassword(password);
 
     try {

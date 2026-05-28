@@ -18,8 +18,9 @@ export function validateBody<T extends ZodSchema>(schema: T) {
 
     if (!result.success) {
       const errors = formatZodError(result.error);
+      const firstMessage = errors[0]?.message;
       res.status(400).json({
-        error: "Invalid request body",
+        error: firstMessage || "Invalid request body",
         code: "VALIDATION_ERROR",
         details: errors,
       });

@@ -85,6 +85,36 @@ export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRec
 const PLAN_SET = new Set<string>(SIGNUP_PLAN_IDS);
 const WEDGE_SET = new Set<string>(SIGNUP_WEDGE_KEYS);
 
+/**
+ * Drop plan/wedge values outside the current allowlist. Stale
+ * localStorage (e.g. preferredPlanId "enterprise" from old links) made
+ * POST /api/auth/signup return 400 VALIDATION_ERROR while the UI only
+ * showed "Invalid request body".
+ */
+export function sanitizeSignupIntent(intent: SignupIntent | null | undefined): SignupIntent | null {
+  if (!intent) return null;
+
+  const out: SignupIntent = {
+    capturedAt: intent.capturedAt || new Date().toISOString(),
+  };
+
+  if (intent.preferredPlanId && PLAN_SET.has(intent.preferredPlanId)) {
+    out.preferredPlanId = intent.preferredPlanId;
+  }
+  if (intent.signupWedge && WEDGE_SET.has(intent.signupWedge)) {
+    out.signupWedge = intent.signupWedge;
+  }
+
+  const utmSource = cleanCampaignValue(intent.utmSource ?? null);
+  const utmMedium = cleanCampaignValue(intent.utmMedium ?? null);
+  const utmCampaign = cleanCampaignValue(intent.utmCampaign ?? null);
+  if (utmSource) out.utmSource = utmSource;
+  if (utmMedium) out.utmMedium = utmMedium;
+  if (utmCampaign) out.utmCampaign = utmCampaign;
+
+  return hasSignupIntent(out) ? out : null;
+}
+
 function cleanCampaignValue(value: string | null): string | undefined {
   const trimmed = value?.trim();
   if (!trimmed) return undefined;
@@ -133,20 +163,21 @@ export function getStoredSignupIntent(): SignupIntent | null {
     const raw = window.localStorage.getItem(SIGNUP_INTENT_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as SignupIntent;
-    return hasSignupIntent(parsed) ? parsed : null;
+    return sanitizeSignupIntent(parsed);
   } catch {
     return null;
   }
 }
 
 export function persistSignupIntent(intent: SignupIntent | null): SignupIntent | null {
-  if (typeof window === "undefined" || !hasSignupIntent(intent)) return null;
+  const safe = sanitizeSignupIntent(intent);
+  if (typeof window === "undefined" || !safe) return null;
   try {
-    window.localStorage.setItem(SIGNUP_INTENT_STORAGE_KEY, JSON.stringify(intent));
+    window.localStorage.setItem(SIGNUP_INTENT_STORAGE_KEY, JSON.stringify(safe));
   } catch {
     // Storage can fail in private browsing; signup still works without attribution.
   }
-  return intent;
+  return safe;
 }
 
 export function captureSignupIntentFromLocation(): SignupIntent | null {

@@ -29,6 +29,7 @@ import WirelineMark from "./WirelineMark";
 import { WIRELINE_CONTACT_AGENTS, WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
 import {
   captureSignupIntentFromLocation,
+  sanitizeSignupIntent,
   syncSignupIntent,
   type SignupIntent,
 } from "../lib/signup-intent";
@@ -130,6 +131,22 @@ function extractServerErrorMessage(payload: unknown): string | null {
   for (const c of candidates) {
     if (typeof c === "string" && c.trim()) return c.trim();
   }
+
+  const details = p.details;
+  if (Array.isArray(details) && details.length > 0) {
+    const parts = details
+      .map((d) => {
+        if (!d || typeof d !== "object") return null;
+        const row = d as { field?: unknown; message?: unknown };
+        const msg = typeof row.message === "string" ? row.message.trim() : "";
+        if (!msg) return null;
+        const field = typeof row.field === "string" && row.field ? row.field : null;
+        return field ? `${field}: ${msg}` : msg;
+      })
+      .filter((s): s is string => !!s);
+    if (parts.length > 0) return parts.slice(0, 3).join(" ");
+  }
+
   // Last resort: serialize the error object so the user still sees
   // *something* useful, but never the literal "[object Object]".
   if (p.error && typeof p.error === "object") {
@@ -463,19 +480,20 @@ export default function AuthPortal() {
         setMessage(data.message || "If that email is registered, a reset link is on its way.");
       } else {
         const endpoint = isSignUp ? "/api/auth/signup" : "/api/auth/signin";
+        const attribution = isSignUp ? sanitizeSignupIntent(signupIntent) : null;
         const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: trimmedEmail,
             password,
-            ...(isSignUp && signupIntent
+            ...(attribution
               ? {
-                  preferredPlanId: signupIntent.preferredPlanId,
-                  signupWedge: signupIntent.signupWedge,
-                  utmSource: signupIntent.utmSource,
-                  utmMedium: signupIntent.utmMedium,
-                  utmCampaign: signupIntent.utmCampaign,
+                  preferredPlanId: attribution.preferredPlanId,
+                  signupWedge: attribution.signupWedge,
+                  utmSource: attribution.utmSource,
+                  utmMedium: attribution.utmMedium,
+                  utmCampaign: attribution.utmCampaign,
                 }
               : {}),
           }),
