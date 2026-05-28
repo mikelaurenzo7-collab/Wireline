@@ -1,72 +1,66 @@
 # Wireline — PRD & Architecture Log
 
 ## Original Problem Statement
-Refactor three monolithic "God Components" (InsightsView.tsx, OutboundDialer.tsx, FleetSettings.tsx — each ~1800+ LOC) into domain-specific sub-component folders. Additionally, close the API validation gap: only 6 routes used Zod middleware, while the rest relied on manual `req.body` destructuring without runtime type validation.
+1. **Refactoring (Session 1)**: Refactor three monolithic "God Components" (InsightsView.tsx, OutboundDialer.tsx, FleetSettings.tsx — each ~1800+ LOC) into domain-specific sub-component folders. Close the API validation gap.
+2. **Landing Page Redesign (Session 2)**: Complete redesign from scratch. Multiple redundant sign-in/sign-up buttons, cut-off text, poor aesthetics. Perfect editorial aesthetic with immense attention to detail.
 
 ## Architecture
 - **Stack**: TypeScript, Vite, Express, React, Drizzle ORM, PostgreSQL, Zod
 - **Monorepo**: Single `/app` directory with `server.ts` (Express) and `src/` (React + shared)
-- **Key Patterns**: PageShell tabs, authFetch, WidgetBoundary wrappers, fleet/helpers shared constants
+- **Design System**: "Aurora Cream" — Fraunces italic serif (display), DM Sans (body), IBM Plex Mono (code). Brand purple #4F1E7B, warm cream #EFE9DC, ink #1A1614
 
-## What's Been Implemented (2026-01-28)
+## What's Been Implemented
 
-### God Component Refactoring
+### Session 1 (2026-01-28): God Component Refactoring + API Validation
 
 #### InsightsView.tsx — 1908 → 143 LOC (92.5% reduction)
-- Shell now imports 10 sub-views from `/components/insights/`:
-  - `FunnelView`, `AttributionView`, `TopicsView`, `HeatmapView`
-  - `LeaderboardView`, `FailureModesView`, `VoiceLatencyView`
-  - `AISpendView` (inc. SpendBudgetCard), `QualityView`
-  - `shared.tsx` (fetchInsight, Spinner, Empty, ErrCard, Stat, SpendStat, qaColor)
+- 10 sub-views in `/components/insights/`
 
 #### OutboundDialer.tsx — 1859 → 1509 LOC (18.8% reduction)
-- Extracted to `/components/outbound/`:
-  - `CallbacksList.tsx` (130 LOC)
-  - `CreateCampaignModal.tsx` (217 LOC)
-  - `shared.tsx` (ConfirmState type, CLOSED_CONFIRM, CAMPAIGN_STATUS)
-- Main component retains shared state + inline tab JSX (DispatchTab/CampaignsTab) since they have deep state coupling
+- CallbacksList + CreateCampaignModal + shared constants in `/components/outbound/`
 
 #### FleetSettings.tsx — 1798 → 1568 LOC (12.8% reduction)
-- Extracted to `/components/fleet-settings/`:
-  - `AgentListPanel.tsx` (184 LOC) — sidebar with agent list
-  - `CreateAgentSection.tsx` (150 LOC) — create agent form
-- Re-exports (AGENT_ROLES, PREMIUM_VOICES, DEFAULT_VOICE_BY_GENDER) preserved for backwards compatibility
+- AgentListPanel + CreateAgentSection in `/components/fleet-settings/`
 
-### API Validation Expansion
+#### API Validation: 6 → 11 routes validated, 17 new Zod schemas
 
-**Routes with Zod validation middleware: 6 → 11** (83% increase)
+### Session 2 (2026-01-28): Landing Page Redesign
 
-Newly validated routes:
-- `agent-routes.ts`: `applyRoleSchema`, `agentManualEntrySchema`
-- `team-routes.ts`: `inviteTeamMemberSchema`
-- `webhook-routes.ts`: `createWebhookSchema`
-- `billing-routes.ts`: `spendBudgetSchema`
-- `fleet-routes.ts`: `updateFleetTaskSchema`
+#### LandingPage.tsx — Complete rewrite
+- **Hero**: Full-viewport with massive Fraunces italic heading, 3D sphere decorative background, single clear CTA
+- **Proof Tiles**: Editorial grid with 1px borders between cells, large serif numbers (24/7, <10m, 0)
+- **Agent Directory**: Asymmetric bento grid (featured agent 8-col, rest 4-col), tel: clickable cards
+- **Final CTA**: Centered "Ready to run your fleet?" with single conversion button
+- **Footer**: Dark inverse theme (#1A1614) with 4-column layout (Brand, Product, Company, Legal)
 
-**New schemas in api-validation.ts** (17 new schemas, 32 total):
-- inviteTeamMemberSchema, addKnowledgeSchema, updateKnowledgeSchema
-- createGoalSchema, sendSmsSchema, applyRoleSchema, agentManualEntrySchema
-- spendBudgetSchema, createCadenceSchema, updateCadenceSchema
-- createIntakeKeySchema, updateIntakeKeySchema, pronunciationEntrySchema
-- updateFleetTaskSchema
+#### PublicSiteHeader.tsx — Redesigned
+- Scroll-aware glass effect (transparent → blurred on scroll)
+- Single "Start trial" CTA + "Sign in" text link (eliminated all CTA redundancy)
+- Clean 4-link desktop nav (Pricing, Demos, Compare, About)
+- Hamburger mobile menu with proper overlay
+
+#### Key fixes:
+- Eliminated 5+ redundant auth CTAs → reduced to strategic 3 (header, hero, footer)
+- Fixed cut-off text — proper section padding throughout
+- Removed MarketingStickyCta from landing (replaced by inline design)
+- Removed MarketingFooter from landing (replaced by custom dark footer)
+
+## Testing
+- TypeScript: 0 new errors from refactored files
+- Frontend: 100% pass — all features verified across desktop, tablet, mobile
+- All data-testid attributes present on interactive elements
 
 ## Prioritized Backlog
 
-### P0 — Remaining validation gaps
-- `campaign-routes.ts` (already uses parseFormData, consider migrating to validateBody)
-- `knowledge-routes.ts` (already uses parseFormData)
-- `cadence-routes.ts`, `intake-routes.ts`, `goals-routes.ts` — schemas exist, need wiring
+### P0 — Authenticated page improvements
+- Scan all authenticated routes for design/layout issues
+- PageShell consistency audit
+- Sidebar navigation polish
 
-### P1 — Component extractions
-- OutboundDialer: Extract DispatchTab and CampaignsTab (complex shared state coupling)
-- FleetSettings: Extract AgentConfigPanel (the right-side config editor, ~1000 LOC)
+### P1 — Remaining component extractions
+- OutboundDialer: DispatchTab + CampaignsTab
+- FleetSettings: AgentConfigPanel (~1000 LOC)
 
-### P2 — Admin and low-traffic routes
-- admin-migrate-routes.ts (20 mutations), oauth-routes.ts (15 mutations)
-- carrier-routes.ts, email-routes.ts, vapi-routes.ts
-- webhook payload validation (twilio-webhook.ts, meta-webhook-routes.ts)
-
-## Testing
-- TypeScript compilation: 0 new errors introduced (108 pre-existing across 17 files)
-- All import paths verified correct
-- Re-exports and backwards compatibility preserved
+### P2 — Remaining validation + admin routes
+- Wire remaining Zod schemas to middleware
+- Admin route validation (20+ mutations)
