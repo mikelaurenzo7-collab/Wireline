@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 /**
  * src/lib/spend-guards.ts
  *
@@ -10,6 +9,7 @@
  * system-wide 24h cap (enforce24hSpendCap) uses an in-process accumulator.
  */
 
+import type { Request, Response, NextFunction } from "express";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, gte } from "drizzle-orm";
@@ -92,7 +92,10 @@ export async function getBudgetSnapshot(
       ),
   ]);
 
-  const mtdCost = (logRows || []).reduce((s: number, r: any) => s + Number(r.costUsd || 0), 0);
+  const mtdCost = (logRows || []).reduce(
+    (s: number, r: { costUsd: number | string | null }) => s + Number(r.costUsd || 0),
+    0,
+  );
   const entry: BudgetCacheEntry = {
     fetchedAt: Date.now(),
     budget: budgetRow
@@ -171,7 +174,7 @@ export async function evaluateSpend(userId: string, deltaUsd: number) {
       }
     }
   } catch (err) {
-    log.error("evaluateSpend failed", { error: (err as any)?.message });
+    log.error("evaluateSpend failed", { error: err instanceof Error ? err.message : String(err) });
   }
 }
 
@@ -181,7 +184,9 @@ export async function evaluateSpend(userId: string, deltaUsd: number) {
  * reached it. Fails OPEN on DB errors to avoid locking out everyone
  * when Supabase has a transient issue.
  */
-export async function enforceSpendCap(req: any, res: any, next: any) {
+type AuthedRequest = Request & { user?: { id?: string } };
+
+export async function enforceSpendCap(req: AuthedRequest, res: Response, next: NextFunction) {
   if (!req?.user?.id) return next();
   try {
     const snap = await getBudgetSnapshot(req.user.id);
@@ -205,7 +210,7 @@ export async function enforceSpendCap(req: any, res: any, next: any) {
     log.warn("enforceSpendCap check failed — allowing request through", {
       user_id: req?.user?.id,
       requestId: res.locals?.requestId,
-      error: (err as any)?.message || String(err),
+      error: err instanceof Error ? err.message : String(err),
     });
   }
   next();
@@ -246,7 +251,7 @@ export function recordDailySpend(usd: number) {
  * Express pre-handler — blocks Claude endpoints when the 24h spend window
  * is over budget. Disabled when CLAUDE_MONTHLY_BUDGET_USD is 0.
  */
-export function enforce24hSpendCap(req: any, res: any, next: any) {
+export function enforce24hSpendCap(_req: Request, res: Response, next: NextFunction) {
   if (DAILY_SPEND_LIMIT_USD <= 0) return next(); // disabled when budget is 0
   const now = Date.now();
   if (now - _dailySpendWindowStart > 24 * 60 * 60_000) {

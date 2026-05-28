@@ -302,7 +302,7 @@ export default function OnboardingQuickstart({
               </div>
               <div>
                 <div className="text-[9px] uppercase tracking-[0.4em] text-brand flex items-center gap-1.5">
-                  <Sparkles className="w-3 h-3" /> Get started in 4 steps
+                  <Sparkles className="w-3 h-3" aria-hidden="true" /> Get started in 4 steps
                 </div>
                 <h2 className="font-display italic text-lg md:text-xl text-ink leading-tight mt-0.5">
                   Welcome to WIRELINE

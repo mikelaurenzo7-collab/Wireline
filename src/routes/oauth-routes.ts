@@ -1653,7 +1653,12 @@ async function handleMsGraphCallback(
       });
 
     if (provider === "microsoft_teams") {
-      void bootstrapTeamsNotifyTarget(userId).catch(() => {});
+      void bootstrapTeamsNotifyTarget(userId).catch((err) =>
+        log.warn("bootstrapTeamsNotifyTarget failed", {
+          userId,
+          error: err instanceof Error ? err.message : String(err),
+        }),
+      );
     }
 
     const targetOrigin =
@@ -2005,7 +2010,12 @@ router.get(
           },
         });
 
-      void bootstrapDefaultChannel(userId).catch(() => {});
+      void bootstrapDefaultChannel(userId).catch((err) =>
+        log.warn("bootstrapDefaultChannel failed", {
+          userId,
+          error: err instanceof Error ? err.message : String(err),
+        }),
+      );
 
       const targetOrigin =
         (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||

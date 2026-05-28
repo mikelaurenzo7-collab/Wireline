@@ -413,9 +413,10 @@ function CalendarGrid({
               return { year: d.getFullYear(), month: d.getMonth() };
             })
           }
+          aria-label="Previous month"
           className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-4 h-4" aria-hidden="true" />
         </button>
         <span className="font-display italic lowercase text-xl text-ink">
           {monthNames[month.month]} {month.year}
@@ -427,9 +428,10 @@ function CalendarGrid({
               return { year: d.getFullYear(), month: d.getMonth() };
             })
           }
+          aria-label="Next month"
           className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-4 h-4" aria-hidden="true" />
         </button>
       </div>
 

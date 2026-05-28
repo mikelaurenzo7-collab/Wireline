@@ -178,11 +178,15 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, url, events: [...picked], secret: secret || undefined }),
       });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error);
+      const d = await r.json().catch(() => ({}) as { error?: string });
+      if (!r.ok) {
+        throw new Error(
+          d.error || `Failed to create webhook (HTTP ${r.status}). Check the URL and try again.`,
+        );
+      }
       onCreated();
     } catch (e: any) {
-      setErr(e.message);
+      setErr(e?.message || "Failed to create webhook. Try again.");
     } finally {
       setBusy(false);
     }
