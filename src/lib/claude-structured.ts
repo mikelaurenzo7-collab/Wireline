@@ -8,7 +8,12 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
-import { selectModelForTask, DEFAULT_MODEL, OPENAI_MODELS, type TaskComplexity } from "./claude-models";
+import {
+  selectModelForTask,
+  DEFAULT_MODEL,
+  OPENAI_MODELS,
+  type TaskComplexity,
+} from "./claude-models";
 import { recordUsage } from "./claude-audit";
 import { getClient } from "./claude-client";
 
@@ -26,14 +31,26 @@ interface StructuredOptions {
   tool: ToolSchema;
   /** Adds adaptive thinking + xhigh effort for tough analyses. */
   deepThink?: boolean;
-  /** Marks `system` as the cacheable prefix. Recommended when system is
-   *  large and re-used across calls (e.g. an agent's persona+knowledge). */
+  /** Marks `system` as the cacheable prefix (wraps it in a single
+   *  cache_control: ephemeral block). Recommended when `system` is large and
+   *  reused byte-for-byte across calls (e.g. an agent's persona + knowledge).
+   *
+   *  Caveats — Anthropic caching is a prefix match, so the marker only pays off
+   *  when BOTH hold:
+   *   - the system block clears the model's minimum cacheable prefix
+   *     (~4096 tokens on Opus-tier, ~2048 on Sonnet). Below that the marker is
+   *     a silent no-op — no error, just cache_creation_input_tokens=0.
+   *   - the prefix is byte-stable across calls. Keep per-request volatile data
+   *     (transcripts, customer details, timestamps) in `user`, never in
+   *     `system`; otherwise every call writes a fresh entry and none are read.
+   *  Verify real hits via response.usage.cache_read_input_tokens (recorded in
+   *  the audit log by recordUsage). */
   cacheSystem?: boolean;
   model?: string;
   /** Task complexity for automatic model tiering. Overrides model if specified.
    *  simple = Haiku (fast, cheap), medium = Sonnet (balanced), complex = Opus (deep) */
   complexity?: TaskComplexity;
-  /** Whether the prefix changes per-request (skip caching if so). */
+  /** Hard ceiling on output tokens for this call (default 4096). */
   maxTokens?: number;
 }
 
