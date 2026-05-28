@@ -15,7 +15,7 @@ const STATS = [
   { value: "0", label: "Card required" },
 ] as const;
 
-const TRUST_BADGES = ["TLS 1.3", "SOC 2 path", "HIPAA-ready", "Stripe billing"] as const;
+const TRUST_BADGES = ["TLS 1.3", "SOC 2 in progress", "HIPAA controls", "Stripe billing"] as const;
 
 const FOOTER_COLS = [
   {

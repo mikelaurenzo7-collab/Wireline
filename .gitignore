@@ -26,6 +26,7 @@ e2e/screenshots/*.png
 .env
 .env.*
 *.env
+!.env.example
 credentials.json
 *.pem
 *.key

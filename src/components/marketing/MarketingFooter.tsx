@@ -1,7 +1,10 @@
 import { Link } from "react-router-dom";
 import { cn } from "../../lib/utils";
 
-const TRUST = ["TLS 1.3", "SOC 2 path", "HIPAA-ready", "Stripe billing"] as const;
+// Trust badges must match the honest stance on /security: we ship controls,
+// we don't claim certified until certified. "HIPAA controls" reads true
+// against the published Security posture; "HIPAA-ready" reads aspirational.
+const TRUST = ["TLS 1.3", "SOC 2 in progress", "HIPAA controls", "Stripe billing"] as const;
 
 const LINKS = [
   { to: "/pricing", label: "Pricing" },
@@ -65,6 +68,9 @@ export default function MarketingFooter({
             Terms
           </Link>
         </nav>
+        <p className="text-[11px] text-ink/55 leading-relaxed">
+          14-day free trial · No credit card to start · Cancel anytime, no contracts.
+        </p>
       </div>
     </footer>
   );

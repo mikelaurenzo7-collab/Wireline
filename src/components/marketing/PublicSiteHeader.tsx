@@ -54,6 +54,14 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
 
   return (
     <>
+      {/* a11y: keyboard-first skip link. Visually hidden until focused.
+          Anchors to #main-content; MarketingPageFrame's <main> carries that id. */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:px-3 focus:py-2 focus:bg-ink focus:text-paper focus:text-[13px] focus:font-medium focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-brand"
+      >
+        Skip to content
+      </a>
       <header
         data-testid="site-header"
         className={cn(

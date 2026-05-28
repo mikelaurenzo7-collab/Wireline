@@ -42,6 +42,8 @@ export default function MarketingPageFrame({
       <PublicSiteHeader active={active} />
 
       <main
+        id="main-content"
+        tabIndex={-1}
         className={cn(
           "relative z-10 flex-1 min-h-0",
           scroll ? "overflow-y-auto" : "overflow-hidden flex flex-col",
