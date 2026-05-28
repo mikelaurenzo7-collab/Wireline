@@ -58,10 +58,11 @@ export type SignupAttribution = {
 export async function startTrialForUser(
   userId: string,
   attribution: SignupAttribution = {},
+  tx: any = drizzle,
 ): Promise<void> {
   const trialEnds = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
   try {
-    await drizzle
+    await tx
       .insert(schema.settings)
       .values({
         id: userId,

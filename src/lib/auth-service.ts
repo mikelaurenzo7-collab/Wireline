@@ -148,30 +148,31 @@ export const authService = {
     const passwordHash = hashPassword(password);
 
     try {
-      const inserted = (await drizzle
-        .insert(schema.users)
-        .values({
-          email,
-          passwordHash,
-          fullName,
-        })
-        .returning()) as Array<{ id: string; email: string; fullName: string | null }>;
-      const user = inserted[0];
+      return await drizzle.transaction(async (tx) => {
+        const inserted = (await tx
+          .insert(schema.users)
+          .values({
+            email,
+            passwordHash,
+            fullName,
+          })
+          .returning()) as Array<{ id: string; email: string; fullName: string | null }>;
+        const user = inserted[0];
 
-      // Soft 14-day trial starts here. Failures don't block signup —
-      // the sweep job will fix up any stragglers.
-      const { startTrialForUser } = await import("./trial-gate");
-      await startTrialForUser(user.id, signupAttribution);
+        // Soft 14-day trial starts here. Wrapped in transaction so users aren't created without settings.
+        const { startTrialForUser } = await import("./trial-gate");
+        await startTrialForUser(user.id, signupAttribution, tx);
 
-      return {
-        user: {
-          id: user.id,
-          email: user.email,
-          full_name: user.fullName,
-          is_owner: isOwnerEmail(user.email),
-        },
-        token: generateToken({ id: user.id, email: user.email }),
-      };
+        return {
+          user: {
+            id: user.id,
+            email: user.email,
+            full_name: user.fullName,
+            is_owner: isOwnerEmail(user.email),
+          },
+          token: generateToken({ id: user.id, email: user.email }),
+        };
+      });
     } catch (err: any) {
       log.error("Auth: Sign up failed", { email, error: err.message });
       throw err;
