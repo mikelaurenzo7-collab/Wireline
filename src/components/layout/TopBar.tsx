@@ -392,8 +392,12 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                         <LifeBuoy className="w-3.5 h-3.5 text-muted" />
                         Help &amp; support
                       </Link>
-                      {/* Founder Dashboard — only visible to the platform founder (internal platform meta) */}
-                      {user?.email === "mikelaurenzo7@gmail.com" && (
+                      {/* Founder Dashboard — only visible to the platform owner.
+                          Uses the canonical `is_owner` flag set server-side by
+                          isOwnerEmail() and shipped via the session payload, so
+                          the source of truth lives in one place (auth-service.ts)
+                          and not as a hardcoded email in chrome. */}
+                      {user?.is_owner === true && (
                         <Link
                           to="/founder"
                           onClick={() => setUserMenuOpen(false)}

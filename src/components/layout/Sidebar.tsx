@@ -344,7 +344,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           expanded={effective}
           active={location.pathname === "/help"}
         />
-        {user?.email === "mikelaurenzo7@gmail.com" && (
+        {user?.is_owner === true && (
           <FooterItem
             to="/founder"
             icon={Crown}

@@ -136,6 +136,15 @@ export default function PageShell({
         <header className="shrink-0 mb-2 md:mb-3 flex flex-row items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             {eyebrow && <p className="text-eyebrow text-brand mb-1">{eyebrow}</p>}
+            {/* Title H1 — hidden on lg+ where AppShell's DesktopContextBar
+                already renders the page H1 in the sticky chrome. On phone /
+                tablet TopBar's breadcrumb is hidden, so without this row
+                the page would have no visible title at all. */}
+            {title && (
+              <h1 className="lg:hidden font-display italic text-[1.35rem] sm:text-[1.5rem] leading-tight text-ink truncate">
+                {title}
+              </h1>
+            )}
             {subtitle && <p className="mt-0.5 text-caption max-w-2xl text-pretty">{subtitle}</p>}
           </div>
           {actions && (

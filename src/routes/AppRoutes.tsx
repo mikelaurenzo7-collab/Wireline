@@ -24,9 +24,10 @@ const DncManager = lazy(() => import("../components/DncManager"));
 const AuditLog = lazy(() => import("../components/AuditLog"));
 const LiveOps = lazy(() => import("../pages/CommandCenter"));
 const HelpCenter = lazy(() => import("../components/HelpCenter"));
-const Status = lazy(() => import("../components/Status"));
-const PublicChangelog = lazy(() => import("../components/PublicChangelog"));
-const Security = lazy(() => import("../components/Security"));
+// /status, /changelog, /security are public marketing routes handled
+// directly by App.tsx BEFORE AppShell mounts (see App.tsx route guards).
+// Mounting them again here is dead code that would never be reached, but
+// would still bundle three lazy chunks into the authenticated app shell.
 const Pipeline = lazy(() => import("../components/Pipeline"));
 const FounderDashboard = lazy(() => import("../components/FounderDashboard"));
 const SupervisorCockpit = lazy(() => import("../components/SupervisorCockpit"));
@@ -237,36 +238,6 @@ export default function AppRoutes() {
               <PageTransition>
                 <ErrorBoundary>
                   <HelpCenter />
-                </ErrorBoundary>
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/status"
-            element={
-              <PageTransition>
-                <ErrorBoundary>
-                  <Status />
-                </ErrorBoundary>
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/changelog"
-            element={
-              <PageTransition>
-                <ErrorBoundary>
-                  <PublicChangelog />
-                </ErrorBoundary>
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/security"
-            element={
-              <PageTransition>
-                <ErrorBoundary>
-                  <Security />
                 </ErrorBoundary>
               </PageTransition>
             }
