@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { ArrowRight, Phone, ArrowUpRight } from "lucide-react";
+import { ArrowRight, Phone, ArrowUpRight, Plus } from "lucide-react";
 import PublicSiteHeader from "../components/marketing/PublicSiteHeader";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import { PageMeta } from "../lib/page-meta";
@@ -16,6 +16,51 @@ const STATS = [
 ] as const;
 
 const TRUST_BADGES = ["TLS 1.3", "SOC 2 in progress", "HIPAA controls", "Stripe billing"] as const;
+
+/**
+ * Top-of-funnel FAQ — the questions a prospect asks before they ever reach
+ * pricing. Deliberately distinct from the billing-focused FAQ on /pricing:
+ * these handle product objections (quality, the never-fabricate rule, speed,
+ * fit, security). The visible copy below and the FAQPage JSON-LD are built
+ * from this single source so the structured data can never drift from what a
+ * human actually reads — a requirement for Google FAQ rich results.
+ */
+const FAQS = [
+  {
+    q: "What exactly is Wireline?",
+    a: "Wireline is a horizontal AI agent platform. One fleet of agents answers your inbound calls, works your outbound list, replies to email, and handles SMS — trained on your playbook, live on real phone numbers, and watched from a single supervisor cockpit. You deploy your first agent in under 10 minutes, no developers required.",
+  },
+  {
+    q: "Will it sound like a robot?",
+    a: 'No. Every agent runs on a fast, adaptive model that reads the caller\'s tone in real time and picks one of three personality vibes — warm, playful, or authoritative — in a natural human voice. End-to-end response latency lands around 700–900 ms, well under the "did they hang up?" threshold, so conversations feel like talking to your sharpest rep.',
+  },
+  {
+    q: "What happens when the agent can't do something?",
+    a: "It tells the truth. Wireline agents run a hard rule: never claim an action they don't have a tool for. Instead of fabricating a booking or a transfer and hanging up, the agent takes a message, escalates to a human, or books a callback — and every one of those moments is visible in the live cockpit.",
+  },
+  {
+    q: "Does it work for my industry?",
+    a: "Yes. The platform is horizontal, but the onboarding is vertical: home services, medical, legal, real estate, insurance, restaurants, and outbound sales all have purpose-built starting points. Paste your website URL and Wireline drafts the business profile, FAQs, and escalation rules for you to approve.",
+  },
+  {
+    q: "Can I try it before I buy?",
+    a: "Two ways. Call any live demo agent from your phone right now — no signup. Or start a 14-day free trial with no credit card, deploy a real agent on a real number, run live calls, and cancel before the trial ends with no charge.",
+  },
+  {
+    q: "Is my data secure?",
+    a: "Wireline ships SOC 2-ready architecture with TLS 1.3 in transit, encrypted secrets at rest, per-tenant data isolation, full audit logs, configurable data retention, and a documented Do-Not-Call list. Business and Enterprise plans add SSO and audit-log export.",
+  },
+] as const;
+
+const FAQ_STRUCTURED_DATA = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQS.map((faq) => ({
+    "@type": "Question",
+    name: faq.q,
+    acceptedAnswer: { "@type": "Answer", text: faq.a },
+  })),
+};
 
 const FOOTER_COLS = [
   {
@@ -131,6 +176,7 @@ export default function LandingPage() {
         title="Wireline — AI Voice & Email Agents for Every Business"
         description="Deploy AI voice + email agents on real phone numbers in under 10 minutes. Inbound, outbound, and inbox — one fleet, your playbook, 24/7."
         path="/"
+        structuredData={FAQ_STRUCTURED_DATA}
       />
       <div className="marketing-surface min-h-dvh bg-paper relative">
         {/* ─── Header ─────────────────────────────────────────────── */}
@@ -285,6 +331,56 @@ export default function LandingPage() {
                     {stat.label}
                   </p>
                 </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── FAQ — top-of-funnel objection handling ──────────────── */}
+        <section
+          data-testid="faq-section"
+          className="px-6 lg:px-12 py-20 lg:py-28 border-t border-ink/[0.08]"
+        >
+          <div className="max-w-3xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="mb-10 lg:mb-14"
+            >
+              <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-3">
+                Questions, answered
+              </p>
+              <h2 className="font-display italic text-[clamp(1.8rem,4vw,3rem)] leading-[1.05] text-ink">
+                Everything you&rsquo;d ask your best rep.
+              </h2>
+            </motion.div>
+
+            <div className="border-t border-ink/[0.12]">
+              {FAQS.map((faq, i) => (
+                <motion.details
+                  key={faq.q}
+                  initial={{ opacity: 0, y: 8 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: Math.min(i * 0.04, 0.2) }}
+                  className="group border-b border-ink/[0.12]"
+                  data-testid={`faq-item-${i}`}
+                >
+                  <summary className="flex items-start justify-between gap-4 py-5 lg:py-6 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
+                    <span className="font-display italic text-lg lg:text-xl text-ink leading-snug">
+                      {faq.q}
+                    </span>
+                    <Plus
+                      aria-hidden="true"
+                      className="w-5 h-5 shrink-0 mt-1 text-ink/45 transition-transform duration-300 group-open:rotate-45 group-hover:text-brand"
+                    />
+                  </summary>
+                  <p className="text-ink/70 leading-relaxed text-[15px] pb-6 pr-8 max-w-prose">
+                    {faq.a}
+                  </p>
+                </motion.details>
               ))}
             </div>
           </div>

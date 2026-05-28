@@ -72,6 +72,47 @@ test.describe("Marketing surfaces — primary conversion path", () => {
   });
 });
 
+test.describe("Marketing surfaces — homepage FAQ (SEO + objection handling)", () => {
+  test("renders an accessible FAQ that discloses answers on demand", async ({ page }) => {
+    await page.goto("/");
+
+    const faq = page.getByTestId("faq-section");
+    await expect(faq.getByRole("heading", { level: 2 })).toBeVisible();
+
+    const firstItem = page.getByTestId("faq-item-0");
+
+    // Native <details> starts collapsed, then opens when its summary is activated.
+    await expect(firstItem).not.toHaveJSProperty("open", true);
+    await firstItem.locator("summary").click();
+    await expect(firstItem).toHaveJSProperty("open", true);
+  });
+
+  test("publishes FAQPage structured data whose questions match the visible copy", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByTestId("faq-section")).toBeVisible();
+
+    const jsonLd = await page.locator("#wireline-page-jsonld").textContent();
+    expect(jsonLd, "homepage must emit page-level JSON-LD").toBeTruthy();
+
+    const parsed = JSON.parse(jsonLd!);
+    expect(parsed["@type"]).toBe("FAQPage");
+    expect(Array.isArray(parsed.mainEntity)).toBe(true);
+    expect(parsed.mainEntity.length).toBeGreaterThanOrEqual(4);
+
+    // Each structured question must be visible on the page (Google requires
+    // FAQ rich-result content to be present in the rendered markup).
+    for (const entry of parsed.mainEntity) {
+      expect(entry["@type"]).toBe("Question");
+      expect(entry.acceptedAnswer?.text?.length ?? 0).toBeGreaterThan(0);
+      await expect(
+        page.getByTestId("faq-section").getByText(entry.name, { exact: true }),
+      ).toBeVisible();
+    }
+  });
+});
+
 test.describe("Marketing surfaces — vertical wedge landings (all client types)", () => {
   for (const wedge of VERTICAL_WEDGES) {
     test(`/for/${wedge.slug} renders its industry headline`, async ({ page }) => {
