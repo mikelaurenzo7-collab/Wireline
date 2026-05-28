@@ -37,7 +37,7 @@ export default function MarketingChrome({
       >
         {children}
       </div>
-      {footer && <MarketingFooter className="relative z-10 shrink-0" />}
+      {footer && <MarketingFooter className="relative z-10 shrink-0" aboveStickyCta={stickyCta} />}
       {stickyCta && <MarketingStickyCta />}
     </div>
   );

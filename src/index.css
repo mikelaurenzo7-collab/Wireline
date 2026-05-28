@@ -262,6 +262,12 @@
     select {
       scroll-margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
     }
+
+    .marketing-has-sticky-cta input,
+    .marketing-has-sticky-cta textarea,
+    .marketing-has-sticky-cta select {
+      scroll-margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 6.5rem);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -734,6 +740,17 @@
 @media (min-width: 1024px) {
   .marketing-has-sticky-cta {
     padding-bottom: 0;
+  }
+}
+
+/* Footer sits above the fixed mobile CTA so links stay tappable */
+@media (max-width: 1023px) {
+  .marketing-footer-above-sticky {
+    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .marketing-surface {
+    overflow-x: clip;
   }
 }
 

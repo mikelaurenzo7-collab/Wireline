@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import WirelineMark from "../WirelineMark";
 import { cn } from "../../lib/utils";
@@ -24,10 +24,11 @@ type PublicSiteHeaderProps = {
 
 export default function PublicSiteHeader({ className, active = "home" }: PublicSiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     setMenuOpen(false);
-  }, [active]);
+  }, [active, location.pathname]);
 
   useEffect(() => {
     if (!menuOpen) return;

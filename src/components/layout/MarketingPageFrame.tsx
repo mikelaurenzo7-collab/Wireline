@@ -53,7 +53,9 @@ export default function MarketingPageFrame({
         <div className={cn(scroll && "max-w-[1200px] mx-auto w-full")}>{children}</div>
       </main>
 
-      {footer && <MarketingFooter className="relative z-10 shrink-0" />}
+      {footer && (
+        <MarketingFooter className="relative z-10 shrink-0" aboveStickyCta={stickyCta && scroll} />
+      )}
       {stickyCta && scroll && <MarketingStickyCta />}
     </div>
   );

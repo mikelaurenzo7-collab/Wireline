@@ -105,7 +105,7 @@ function ShowcaseCard({ agent }: { agent: ShowcaseAgent }) {
               type="button"
               onClick={toggle}
               aria-pressed={playing}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
+              className="marketing-btn-primary min-h-[48px] text-sm"
             >
               {playing ? (
                 <>
@@ -119,10 +119,7 @@ function ShowcaseCard({ agent }: { agent: ShowcaseAgent }) {
                 </>
               )}
             </button>
-            <a
-              href={`tel:${agent.tel}`}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full glass border border-black/12 text-ink text-[11px] uppercase tracking-[0.3em] font-medium hover:border-brand/40 transition-all"
-            >
+            <a href={`tel:${agent.tel}`} className="marketing-btn-secondary min-h-[48px] text-sm">
               <Phone className="w-3.5 h-3.5" />
               Or call {agent.display}
             </a>
@@ -153,10 +150,7 @@ function ShowcaseCard({ agent }: { agent: ShowcaseAgent }) {
         </>
       ) : (
         <div className="flex flex-wrap items-center gap-3">
-          <a
-            href={`tel:${agent.tel}`}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
-          >
+          <a href={`tel:${agent.tel}`} className="marketing-btn-primary min-h-[48px] text-sm">
             <Phone className="w-3.5 h-3.5" />
             Call {agent.display}
           </a>

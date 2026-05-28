@@ -1,6 +1,9 @@
 import { AnimatePresence, motion } from "motion/react";
 import { CheckCircle2, XCircle, AlertTriangle, Info, X } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { useToast, type Toast } from "../contexts/ToastContext";
+import { useAuth } from "../contexts/AuthContext";
+import { isMarketingStickyCtaRoute, MARKETING_STICKY_CTA_BOTTOM } from "../lib/marketing-mobile";
 import { cn } from "../lib/utils";
 
 const META = {
@@ -77,17 +80,25 @@ function ToastItem({ toast }: { toast: Toast }) {
 
 export default function ToastStack() {
   const { toasts } = useToast();
+  const { user } = useAuth();
+  const location = useLocation();
+  const marketingSticky = !user && isMarketingStickyCtaRoute(location.pathname);
+
+  const mobileBottom = user
+    ? "calc(3.25rem + env(safe-area-inset-bottom, 0px))"
+    : marketingSticky
+      ? MARKETING_STICKY_CTA_BOTTOM
+      : "calc(0.75rem + env(safe-area-inset-bottom, 0px))";
+
   return (
     <div
       role="log"
       aria-live="polite"
       aria-atomic="false"
       aria-label="Notifications"
-      // On mobile: full-width bottom strip (with safe-area inset for
-      // notched devices) so toasts aren't squeezed into a corner.
-      // On sm+: classic bottom-right stack.
-      className="fixed inset-x-3 max-md:bottom-[calc(3.25rem+env(safe-area-inset-bottom,0px))] md:bottom-5 md:inset-x-auto md:right-5 z-[9999] flex flex-col gap-2 items-stretch md:items-end pointer-events-none"
+      className="fixed inset-x-3 max-md:bottom-[var(--toast-mobile-bottom)] md:bottom-5 md:inset-x-auto md:right-5 z-[9999] flex flex-col gap-2 items-stretch md:items-end pointer-events-none"
       style={{
+        ["--toast-mobile-bottom" as string]: mobileBottom,
         paddingBottom: 0,
       }}
     >

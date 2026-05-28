@@ -15,15 +15,22 @@ const LINKS = [
 
 type Props = {
   compact?: boolean;
+  /** Reserve space above the fixed mobile sticky CTA bar */
+  aboveStickyCta?: boolean;
   className?: string;
 };
 
-export default function MarketingFooter({ compact = false, className }: Props) {
+export default function MarketingFooter({
+  compact = false,
+  aboveStickyCta = false,
+  className,
+}: Props) {
   return (
     <footer
       className={cn(
         "relative z-10 shrink-0 border-t border-black/6 bg-paper/80 backdrop-blur-sm",
         compact ? "px-4 py-3" : "px-5 py-4 lg:px-8",
+        aboveStickyCta && "marketing-footer-above-sticky",
         className,
       )}
     >

@@ -664,26 +664,22 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <p className="text-[10px] uppercase tracking-[0.4em] text-brand mb-4 font-medium">
-            {cfg.eyebrow}
-          </p>
-          <h1 className="font-display italic text-5xl sm:text-6xl lg:text-7xl leading-[1.05] tracking-tight text-ink text-balance mb-5">
+          <p className="text-eyebrow text-brand mb-4">{cfg.eyebrow}</p>
+          <h1 className="marketing-hero-title text-4xl sm:text-5xl lg:text-6xl mb-5">
             {cfg.headline}
           </h1>
-          <p className="text-base sm:text-lg text-ink/75 max-w-2xl leading-relaxed mb-8">
-            {cfg.subhead}
-          </p>
+          <p className="marketing-hero-lead max-w-2xl mb-8">{cfg.subhead}</p>
           <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
             <CtaLink
               href={cfg.primaryCta.href}
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
+              className="marketing-btn-primary w-full sm:w-auto min-h-[48px]"
             >
               {cfg.primaryCta.label}
               <ArrowRight className="w-4 h-4" />
             </CtaLink>
             <a
               href={cfg.secondaryCta.href}
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full glass border border-black/12 text-ink text-[11px] uppercase tracking-[0.3em] font-medium hover:border-brand/40 transition-all"
+              className="marketing-btn-secondary w-full sm:w-auto min-h-[48px]"
             >
               <PhoneIncoming className="w-4 h-4" />
               {cfg.secondaryCta.label}

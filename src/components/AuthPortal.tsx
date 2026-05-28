@@ -598,7 +598,7 @@ export default function AuthPortal() {
                   <button
                     type="submit"
                     disabled={loading || (isSignUp && !agreedToTerms)}
-                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-full text-sm font-semibold text-on-brand bg-brand hover:bg-[#6A25A3] transition-all disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2 min-h-[48px] py-3.5 rounded-full text-sm font-semibold text-on-brand bg-brand hover:bg-[#6A25A3] transition-all disabled:opacity-50"
                   >
                     {loading ? (
                       <>

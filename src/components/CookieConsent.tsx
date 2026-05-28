@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Cookie, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { isMarketingStickyCtaRoute, MARKETING_STICKY_CTA_BOTTOM } from "../lib/marketing-mobile";
 
 const STORAGE_KEY = "wireline_cookie_consent";
 
@@ -41,6 +42,7 @@ export default function CookieConsent() {
   const isPublicRoute =
     location.pathname !== "/" && publicPrefixes.some((p) => location.pathname.startsWith(p));
   const clearMobileBottomNav = hasSession && !isPublicRoute;
+  const clearMarketingSticky = !hasSession && isMarketingStickyCtaRoute(location.pathname);
 
   const dismiss = () => {
     localStorage.setItem(STORAGE_KEY, "acknowledged");
@@ -73,7 +75,11 @@ export default function CookieConsent() {
             // iOS home-bar / dynamic island clearance — push the
             // banner up above the bottom safe area on iPhone X+.
             paddingBottom: "env(safe-area-inset-bottom, 0)",
-            bottom: clearMobileBottomNav ? "calc(49px + env(safe-area-inset-bottom, 0px))" : 0,
+            bottom: clearMobileBottomNav
+              ? "calc(49px + env(safe-area-inset-bottom, 0px))"
+              : clearMarketingSticky
+                ? MARKETING_STICKY_CTA_BOTTOM
+                : 0,
           }}
         >
           {/* Slim bottom bar — full width, never overlaps content columns */}

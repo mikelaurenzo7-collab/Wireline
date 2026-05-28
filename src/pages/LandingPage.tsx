@@ -167,6 +167,7 @@ export default function LandingPage() {
           </div>
         </main>
 
+        <MarketingFooter compact aboveStickyCta className="relative z-10 shrink-0 lg:hidden" />
         <MarketingFooter compact className="relative z-10 shrink-0 hidden lg:block" />
 
         <MarketingStickyCta />
