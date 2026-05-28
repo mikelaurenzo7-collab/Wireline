@@ -174,26 +174,38 @@ export const spendBudgets = pgTable("wireline_spend_budgets", {
 });
 
 // 1.2.1 SPEND ALERTS
-export const spendAlerts = pgTable("wireline_spend_alerts", {
-  id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
-  userId: uuid("user_id"),
-  thresholdPct: integer("threshold_pct"),
-  period: text("period"),
-  firedAt: timestamp("fired_at", { withTimezone: true }).defaultNow(),
-});
+export const spendAlerts = pgTable(
+  "wireline_spend_alerts",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
+    userId: uuid("user_id"),
+    thresholdPct: integer("threshold_pct"),
+    period: text("period"),
+    firedAt: timestamp("fired_at", { withTimezone: true }).defaultNow(),
+  },
+  () => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_spend_alerts_user ON wireline_spend_alerts USING btree (user_id)`,
+  }),
+);
 
 // 1.3 DELETION QUEUE
-export const deletionQueue = pgTable("wireline_deletion_queue", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id"),
-  requestedAt: timestamp("requested_at", { withTimezone: true }).defaultNow(),
-  scheduledPurgeAt: timestamp("scheduled_purge_at", { withTimezone: true }),
-  status: text("status").default("pending"),
-  cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
-  purgedAt: timestamp("purged_at", { withTimezone: true }),
-  ip: text("ip"),
-  userAgent: text("user_agent"),
-});
+export const deletionQueue = pgTable(
+  "wireline_deletion_queue",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id"),
+    requestedAt: timestamp("requested_at", { withTimezone: true }).defaultNow(),
+    scheduledPurgeAt: timestamp("scheduled_purge_at", { withTimezone: true }),
+    status: text("status").default("pending"),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    purgedAt: timestamp("purged_at", { withTimezone: true }),
+    ip: text("ip"),
+    userAgent: text("user_agent"),
+  },
+  () => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_deletion_queue_user ON wireline_deletion_queue USING btree (user_id)`,
+  }),
+);
 
 // 2. FLEET INVENTORY (AGENTS)
 export const agents = pgTable(
@@ -343,21 +355,35 @@ export const agents = pgTable(
 );
 
 // 2.1 COGNITIVE ENGINE (TRAINING DATA)
-export const directives = pgTable("wireline_directives", {
-  id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
-  userId: uuid("user_id"),
-  agentId: text("agent_id").references(() => agents.id, { onDelete: "cascade" }),
-  content: text("content").notNull(),
-  priority: integer("priority").default(5),
-});
+export const directives = pgTable(
+  "wireline_directives",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
+    userId: uuid("user_id"),
+    agentId: text("agent_id").references(() => agents.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    priority: integer("priority").default(5),
+  },
+  () => ({
+    agentUserPriorityIdx: sql`CREATE INDEX IF NOT EXISTS idx_directives_agent_user_priority ON wireline_directives USING btree (agent_id, user_id, priority DESC)`,
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_directives_user_id ON wireline_directives USING btree (user_id)`,
+  }),
+);
 
-export const knowledge = pgTable("wireline_knowledge", {
-  id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
-  userId: uuid("user_id"),
-  agentId: text("agent_id").references(() => agents.id, { onDelete: "cascade" }),
-  content: text("content").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+export const knowledge = pgTable(
+  "wireline_knowledge",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
+    userId: uuid("user_id"),
+    agentId: text("agent_id").references(() => agents.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  () => ({
+    agentUserIdx: sql`CREATE INDEX IF NOT EXISTS idx_knowledge_agent_user ON wireline_knowledge USING btree (agent_id, user_id)`,
+    userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_knowledge_user_created ON wireline_knowledge USING btree (user_id, created_at DESC)`,
+  }),
+);
 
 export const personality = pgTable("wireline_personality", {
   agentId: text("agent_id")
@@ -554,23 +580,29 @@ export const callLogs = pgTable(
 );
 
 // 3.1 OMNICHANNEL RELAY (EMAIL)
-export const emailAccounts = pgTable("wireline_email_accounts", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id"),
-  emailAddress: text("email_address").unique().notNull(),
-  provider: text("provider").default("google"),
-  accessToken: text("access_token"),
-  refreshToken: text("refresh_token"),
-  expiresAt: bigint("expires_at", { mode: "bigint" }),
-  /**
-   * Space-delimited scope string returned by the OAuth provider on the most
-   * recent token grant. Consumed by `computeIntegrationHealth` to detect
-   * accounts that need a re-consent for calendar.events / Calendars.ReadWrite.
-   */
-  oauthGrantedScopes: text("oauth_granted_scopes"),
-  agentId: text("agent_id").references(() => agents.id, { onDelete: "set null" }),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+export const emailAccounts = pgTable(
+  "wireline_email_accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id"),
+    emailAddress: text("email_address").unique().notNull(),
+    provider: text("provider").default("google"),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    expiresAt: bigint("expires_at", { mode: "bigint" }),
+    /**
+     * Space-delimited scope string returned by the OAuth provider on the most
+     * recent token grant. Consumed by `computeIntegrationHealth` to detect
+     * accounts that need a re-consent for calendar.events / Calendars.ReadWrite.
+     */
+    oauthGrantedScopes: text("oauth_granted_scopes"),
+    agentId: text("agent_id").references(() => agents.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  () => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_email_accounts_user ON wireline_email_accounts USING btree (user_id)`,
+  }),
+);
 
 export const calendarAccounts = pgTable(
   "wireline_calendar_accounts",
@@ -616,6 +648,7 @@ export const calendarEvents = pgTable(
   },
   (t: any) => ({
     accountEventUniq: unique().on(t.accountId, t.externalEventId),
+    userStartTimeIdx: sql`CREATE INDEX IF NOT EXISTS idx_calendar_events_user_start ON wireline_calendar_events USING btree (user_id, start_time DESC)`,
   }),
 );
 
@@ -1133,18 +1166,24 @@ export const dncList = pgTable(
 );
 
 // 4.2.1 CONSENT LOG (COMPLIANCE LEDGER)
-export const consentLog = pgTable("wireline_consent_log", {
-  id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
-  userId: uuid("user_id").notNull(),
-  callId: text("call_id"),
-  customerNumber: text("customer_number"),
-  event: text("event").notNull(),
-  ruleVersion: text("rule_version"),
-  rule: text("rule"),
-  state: text("state"),
-  metadata: jsonb("metadata").default({}),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+export const consentLog = pgTable(
+  "wireline_consent_log",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
+    userId: uuid("user_id").notNull(),
+    callId: text("call_id"),
+    customerNumber: text("customer_number"),
+    event: text("event").notNull(),
+    ruleVersion: text("rule_version"),
+    rule: text("rule"),
+    state: text("state"),
+    metadata: jsonb("metadata").default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  () => ({
+    userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_consent_log_user_created ON wireline_consent_log USING btree (user_id, created_at DESC)`,
+  }),
+);
 
 // 4.3 ONBOARDING & PROGRESS
 export const onboardingProgress = pgTable(
@@ -1181,27 +1220,40 @@ export const stripeEvents = pgTable("wireline_stripe_events", {
 });
 
 // 4.5 TEAM & RBAC
-export const teamMembers = pgTable("wireline_team_members", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id"),
-  tenantId: uuid("tenant_id"),
-  email: text("email"),
-  role: text("role").default("member"),
-  invitedBy: uuid("invited_by"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  revokedAt: timestamp("revoked_at", { withTimezone: true }),
-});
+export const teamMembers = pgTable(
+  "wireline_team_members",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id"),
+    tenantId: uuid("tenant_id"),
+    email: text("email"),
+    role: text("role").default("member"),
+    invitedBy: uuid("invited_by"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  },
+  () => ({
+    tenantIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_team_members_tenant ON wireline_team_members USING btree (tenant_id)`,
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_team_members_user ON wireline_team_members USING btree (user_id)`,
+  }),
+);
 
 // 4.6 QUOTAS
-export const quotaLimits = pgTable("wireline_quota_limits", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id").notNull(),
-  dimension: text("dimension").notNull(),
-  value: bigint("value", { mode: "bigint" }).notNull(),
-  enabled: boolean("enabled").default(true),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-});
+export const quotaLimits = pgTable(
+  "wireline_quota_limits",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    dimension: text("dimension").notNull(),
+    value: bigint("value", { mode: "bigint" }).notNull(),
+    enabled: boolean("enabled").default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  () => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_quota_limits_user ON wireline_quota_limits USING btree (user_id)`,
+  }),
+);
 
 export const quotaUsage = pgTable(
   "wireline_quota_usage",
@@ -1256,24 +1308,31 @@ export const crmConnections = pgTable(
 );
 
 // 4.8 BACKGROUND JOBS
-export const jobs = pgTable("wireline_jobs", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id").notNull(),
-  type: text("type").notNull(),
-  status: text("status").default("pending"),
-  payload: jsonb("payload"),
-  result: jsonb("result"),
-  error: text("error"),
-  attempts: integer("attempts").default(0),
-  maxAttempts: integer("max_attempts").default(5),
-  runAt: timestamp("run_at", { withTimezone: true }).defaultNow(),
-  startedAt: timestamp("started_at", { withTimezone: true }),
-  completedAt: timestamp("completed_at", { withTimezone: true }),
-  /** Terminal completion timestamp (mirrors job-queue `finishedAt` updates). */
-  finishedAt: timestamp("finished_at", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-});
+export const jobs = pgTable(
+  "wireline_jobs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    type: text("type").notNull(),
+    status: text("status").default("pending"),
+    payload: jsonb("payload"),
+    result: jsonb("result"),
+    error: text("error"),
+    attempts: integer("attempts").default(0),
+    maxAttempts: integer("max_attempts").default(5),
+    runAt: timestamp("run_at", { withTimezone: true }).defaultNow(),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    /** Terminal completion timestamp (mirrors job-queue `finishedAt` updates). */
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  () => ({
+    statusRunAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_jobs_status_run_at ON wireline_jobs USING btree (status, run_at)`,
+    userStatusIdx: sql`CREATE INDEX IF NOT EXISTS idx_jobs_user_status ON wireline_jobs USING btree (user_id, status)`,
+  }),
+);
 
 export type Job = typeof jobs.$inferSelect;
 
