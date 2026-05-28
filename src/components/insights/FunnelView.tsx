@@ -47,7 +47,7 @@ export default function FunnelView({ days }: { days: number }) {
           </div>
           <div>
             <h3 className="font-display italic text-3xl text-ink mb-2">No calls yet</h3>
-            <p className="text-sm text-ink/55 max-w-sm leading-relaxed">
+            <p className="text-sm text-ink/65 max-w-sm leading-relaxed">
               Your conversion funnel will populate once agents start handling calls. Run a test call
               from the Dashboard to see data here.
             </p>

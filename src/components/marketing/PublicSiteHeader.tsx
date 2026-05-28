@@ -86,7 +86,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
               <Link
                 key={link.to}
                 to={link.to}
-                className="px-3 py-2 text-[13px] font-medium text-ink/55 hover:text-ink transition-colors"
+                className="px-3 py-2 text-[13px] font-medium text-ink/65 hover:text-ink transition-colors"
               >
                 {link.label}
               </Link>
@@ -100,7 +100,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
               <Link
                 to="/signin"
                 data-testid="header-signin"
-                className="hidden sm:inline-flex text-[13px] font-medium text-ink/55 hover:text-ink transition-colors"
+                className="hidden sm:inline-flex text-[13px] font-medium text-ink/65 hover:text-ink transition-colors"
               >
                 Sign in
               </Link>

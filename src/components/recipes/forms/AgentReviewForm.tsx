@@ -142,7 +142,7 @@ export function AgentReviewForm({
                 </div>
                 <div className="flex-1 min-w-0 space-y-1">
                   <p className="text-sm text-ink/90">{d.directive}</p>
-                  <p className="text-xs text-ink/55 italic">{d.rationale}</p>
+                  <p className="text-xs text-ink/65 italic">{d.rationale}</p>
                 </div>
                 <button
                   onClick={() => apply(i, d)}

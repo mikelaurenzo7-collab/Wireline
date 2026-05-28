@@ -386,7 +386,7 @@ export default function PageShell({
                 <button
                   ref={closeButtonRef}
                   onClick={() => setMobileActionsOpen(false)}
-                  className="w-11 h-11 rounded-lg flex items-center justify-center text-ink/55 hover:text-ink hover:bg-black/5 transition-colors"
+                  className="w-11 h-11 rounded-lg flex items-center justify-center text-ink/65 hover:text-ink hover:bg-black/5 transition-colors"
                   aria-label="Close actions"
                 >
                   <X className="w-4 h-4" />

@@ -256,7 +256,7 @@
 
   /* Immersive auth inputs — branded focus ring */
   .auth-input {
-    @apply w-full border border-ink/[0.08] bg-white/60 px-4 py-3 text-[13px] text-ink placeholder:text-ink/55 focus:border-brand/60 focus:bg-white/80 transition-all;
+    @apply w-full border border-ink/[0.08] bg-white/60 px-4 py-3 text-[13px] text-ink placeholder:text-ink/65 focus:border-brand/60 focus:bg-white/80 transition-all;
     /* WCAG 4.5:1+ placeholder on cream */
   }
   .auth-input::placeholder {

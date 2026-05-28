@@ -106,7 +106,7 @@ export default function DailyBrief() {
             <h3 className="font-display italic text-2xl text-ink leading-tight">
               Daily Brief is offline
             </h3>
-            <p className="text-sm text-ink/55">
+            <p className="text-sm text-ink/65">
               Contact your administrator to enable the Wireline Daily Brief.
             </p>
           </div>
@@ -539,7 +539,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
               <div className="text-xs font-medium">
                 Send the daily brief by email at the time below (UTC)
               </div>
-              <div className="text-[10px] leading-snug mt-0.5 text-ink/55">
+              <div className="text-[10px] leading-snug mt-0.5 text-ink/65">
                 Background scheduler ticks every 5 minutes. Emails are sent through{" "}
                 {gmailAddress ? (
                   <span className="font-mono text-ink/75">{gmailAddress}</span>
@@ -562,7 +562,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 onChange={(e) => setSendAt(e.target.value)}
                 className="w-full h-11 px-4 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
               />
-              <span className="text-[10px] text-ink/55 leading-snug">
+              <span className="text-[10px] text-ink/65 leading-snug">
                 13:00 UTC ≈ 9 AM ET / 6 AM PT. Convert your local time before saving.
               </span>
             </label>

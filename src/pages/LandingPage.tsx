@@ -103,7 +103,7 @@ function AgentCard({
           >
             {agent.display}
           </span>
-          <span className="flex items-center gap-1.5 text-ink/55 group-hover:text-brand transition-colors text-[11px] font-mono uppercase tracking-[0.15em]">
+          <span className="flex items-center gap-1.5 text-ink/65 group-hover:text-brand transition-colors text-[11px] font-mono uppercase tracking-[0.15em]">
             Call
             <ArrowUpRight className="w-3.5 h-3.5" />
           </span>
@@ -189,7 +189,7 @@ export default function LandingPage() {
               className="mt-12 lg:mt-16 flex flex-wrap items-center justify-center gap-x-5 gap-y-2"
             >
               {TRUST_BADGES.map((badge) => (
-                <span key={badge} className="font-mono text-[11px] tracking-[0.12em] text-ink/55">
+                <span key={badge} className="font-mono text-[11px] tracking-[0.12em] text-ink/65">
                   {badge}
                 </span>
               ))}
@@ -220,7 +220,7 @@ export default function LandingPage() {
                   <p className="font-display italic text-[clamp(2.5rem,5vw,4rem)] leading-none text-ink tracking-tight">
                     {stat.value}
                   </p>
-                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/55 mt-3">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/65 mt-3">
                     {stat.label}
                   </p>
                 </motion.div>
@@ -239,12 +239,12 @@ export default function LandingPage() {
               transition={{ duration: 0.5 }}
               className="mb-10 lg:mb-14"
             >
-              <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/55 mb-3">
+              <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-3">
                 Live right now
               </p>
               <h2 className="font-display italic text-[clamp(1.8rem,4vw,3rem)] leading-[1.05] text-ink max-w-2xl">
                 Call any agent from your phone.{" "}
-                <span className="text-ink/55">No signup required.</span>
+                <span className="text-ink/65">No signup required.</span>
               </h2>
             </motion.div>
 

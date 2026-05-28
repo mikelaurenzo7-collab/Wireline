@@ -269,7 +269,7 @@ export default function DeployAgentModal({
                   onClick={() => !deploying && onClose()}
                   disabled={deploying}
                   aria-label="Close"
-                  className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-ink/55 hover:text-ink hover:bg-white/5 transition-colors disabled:opacity-40"
+                  className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-ink/65 hover:text-ink hover:bg-white/5 transition-colors disabled:opacity-40"
                 >
                   <X className="w-4 h-4" />
                 </button>

@@ -104,7 +104,7 @@ export default function WebhooksManager() {
               <h4 className="font-display italic text-2xl text-ink leading-tight mt-1">
                 Push events anywhere
               </h4>
-              <p className="text-[11px] text-ink/55 mt-1">
+              <p className="text-[11px] text-ink/65 mt-1">
                 Connect Wireline to Slack, Discord, your CRM, Zapier, n8n, or any HTTPS endpoint.
                 Signed with HMAC-SHA256.
               </p>
@@ -147,7 +147,7 @@ export default function WebhooksManager() {
               <p className="text-[11px] uppercase tracking-[0.4em] text-muted">
                 No webhooks configured
               </p>
-              <p className="text-xs text-ink/55">
+              <p className="text-xs text-ink/65">
                 Click <span className="text-brand">Add Webhook</span> to push events to Slack, CRM,
                 or Zapier.
               </p>
@@ -245,7 +245,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs font-mono text-ink/90">{e}</div>
-                  <div className="text-[10px] text-ink/55 leading-snug">
+                  <div className="text-[10px] text-ink/65 leading-snug">
                     {EVENT_DESCRIPTIONS[e]}
                   </div>
                 </div>
@@ -540,7 +540,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                 <div className="text-[10px] text-muted italic py-3">Loading deliveries…</div>
               )}
               {deliveries && deliveries.length === 0 && (
-                <div className="text-[10px] text-ink/55 italic py-3">
+                <div className="text-[10px] text-ink/65 italic py-3">
                   No deliveries yet. Hit Test or trigger an event.
                 </div>
               )}

@@ -90,7 +90,7 @@ export default function QualityView({ days }: { days: number }) {
             </div>
             <div>
               <h3 className="font-display italic text-3xl text-ink mb-2">No QA scores yet</h3>
-              <p className="text-sm text-ink/55 max-w-sm leading-relaxed">
+              <p className="text-sm text-ink/65 max-w-sm leading-relaxed">
                 Score an individual call in Call Logs, or use{" "}
                 <strong className="text-brand">Score All Unscored</strong> below to batch-evaluate
                 up to 20 calls at once.

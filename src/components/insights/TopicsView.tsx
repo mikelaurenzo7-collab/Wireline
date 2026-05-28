@@ -95,7 +95,7 @@ export default function TopicsView() {
                     )}
                   </div>
                   {t.example_quote && (
-                    <p className="text-xs text-ink/55 italic leading-relaxed mt-2">
+                    <p className="text-xs text-ink/65 italic leading-relaxed mt-2">
                       "{t.example_quote}"
                     </p>
                   )}

@@ -156,7 +156,7 @@ export default function IntakeKeysManager() {
               <h4 className="font-display italic text-2xl text-ink leading-tight mt-1">
                 Capture leads from anywhere
               </h4>
-              <p className="text-[11px] text-ink/55 mt-1">
+              <p className="text-[11px] text-ink/65 mt-1">
                 Issue an API key, point your form / CRM / Zapier at{" "}
                 <span className="font-mono text-ink/80">POST /api/intake/lead</span>, and leads land
                 straight in Outbound + Triage. Fires{" "}
@@ -297,7 +297,7 @@ export default function IntakeKeysManager() {
                     <div className="text-xs font-medium flex items-center gap-2">
                       <Zap className="w-3 h-3" /> Auto-dial inbound leads
                     </div>
-                    <div className="text-[10px] leading-snug mt-0.5 text-ink/55">
+                    <div className="text-[10px] leading-snug mt-0.5 text-ink/65">
                       {defaultAgentId
                         ? "Every lead pushed via this key triggers an outbound call from the selected agent. Subscription must be active."
                         : "Pick a default agent above to enable auto-dial."}
@@ -445,7 +445,7 @@ export default function IntakeKeysManager() {
   -H "Idempotency-Key: form-submission-12345" \\
   -d '{"customer_name":"Jane Doe","customer_number":"+15551234567","context":"Filled out demo form","metadata":{"utm_source":"newsletter"}}'`}</pre>
           </div>
-          <div className="text-[10px] text-ink/55 leading-relaxed font-sans space-y-1.5">
+          <div className="text-[10px] text-ink/65 leading-relaxed font-sans space-y-1.5">
             <div>
               <span className="text-brand-2 font-mono uppercase tracking-wider">
                 Idempotency-Key

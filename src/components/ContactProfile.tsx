@@ -182,7 +182,7 @@ export default function ContactProfile() {
           <h1 className="font-display italic text-6xl md:text-7xl lg:text-[6.5rem] leading-[0.9] tracking-tight text-ink">
             {displayName}
           </h1>
-          <p className="text-ink/55 text-sm">Last touch · {lastTouch}</p>
+          <p className="text-ink/65 text-sm">Last touch · {lastTouch}</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <ClaudeRecipeButton
