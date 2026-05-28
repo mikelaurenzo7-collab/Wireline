@@ -202,7 +202,7 @@ export default function IntegrationLogos({ compact = false }: { compact?: boolea
         className={
           compact
             ? "text-eyebrow mb-2 text-left"
-            : "text-[8px] uppercase tracking-[0.5em] text-muted/55 mb-3 text-center"
+            : "text-[8px] uppercase tracking-[0.5em] text-muted/70 mb-3 text-center"
         }
       >
         Integrates with

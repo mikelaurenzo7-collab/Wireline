@@ -252,7 +252,7 @@ export default function Pipeline() {
                                     → {s.label}
                                   </button>
                                 ))}
-                              <ChevronRight className="w-3 h-3 text-muted/40" />
+                              <ChevronRight className="w-3 h-3 text-muted/60" />
                             </div>
                           </div>
                         </motion.div>

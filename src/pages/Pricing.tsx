@@ -356,7 +356,7 @@ export default function Pricing() {
             Real Estate
           </Link>
           <span aria-hidden="true">·</span>
-          <span className="text-muted/55">+ every other vertical</span>
+          <span className="text-muted/70">+ every other vertical</span>
         </motion.div>
       </section>
 
@@ -638,7 +638,7 @@ export default function Pricing() {
               );
             })}
           </div>
-          <p className="text-center text-[10px] text-muted/55 mt-4 leading-relaxed">
+          <p className="text-center text-[10px] text-muted/70 mt-4 leading-relaxed">
             Salary figures from US BLS 2025 medians. Wireline pricing excludes any voice-minute
             overage. Most teams stay inside plan.
           </p>

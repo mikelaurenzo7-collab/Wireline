@@ -284,7 +284,7 @@ export default function Compare() {
             viewports by design (6 competitor columns need readable
             widths). Without this hint, mobile visitors think the table
             is broken instead of pannable. */}
-        <p className="md:hidden text-[11px] sm:text-[10px] uppercase tracking-[0.3em] text-muted/55 mb-2 flex items-center gap-1.5">
+        <p className="md:hidden text-[11px] sm:text-[10px] uppercase tracking-[0.3em] text-muted/70 mb-2 flex items-center gap-1.5">
           <span aria-hidden="true">←</span>
           Pan to compare
           <span aria-hidden="true">→</span>
@@ -314,7 +314,7 @@ export default function Compare() {
                       {c.label}
                     </div>
                     {c.note && (
-                      <div className="text-[9px] text-muted/55 mt-1 leading-tight">{c.note}</div>
+                      <div className="text-[9px] text-muted/70 mt-1 leading-tight">{c.note}</div>
                     )}
                   </th>
                 ))}
@@ -383,7 +383,7 @@ export default function Compare() {
             </tbody>
           </table>
         </div>
-        <p id="compare-legend" className="text-[10px] text-muted/55 mt-3 leading-relaxed">
+        <p id="compare-legend" className="text-[10px] text-muted/70 mt-3 leading-relaxed">
           <Check className="w-3 h-3 text-emerald-500 inline-block mr-1" aria-hidden /> fully shipped
           &nbsp;·&nbsp;
           <Minus className="w-3 h-3 text-amber-500 inline-block mr-1" /> partial / limited

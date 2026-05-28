@@ -593,7 +593,7 @@ export default function OutboundDialer() {
                           onChange={(e) => setCustomerNumber(e.target.value)}
                           placeholder="+1 555 000 0000"
                           className={cn(
-                            "w-full text-sm bg-black/5 border rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 tabular-nums",
+                            "w-full text-sm bg-black/5 border rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 tabular-nums",
                             customerNumber.length > 0
                               ? /^\+?[\d\s\-()]{7,15}$/.test(customerNumber)
                                 ? "border-emerald-500/50"
@@ -624,7 +624,7 @@ export default function OutboundDialer() {
                           value={customerName}
                           onChange={(e) => setCustomerName(e.target.value)}
                           placeholder="Optional"
-                          className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50"
+                          className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65"
                         />
                       </div>
 
@@ -637,7 +637,7 @@ export default function OutboundDialer() {
                           onChange={(e) => setContext(e.target.value)}
                           rows={4}
                           placeholder="What should the agent say?"
-                          className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 resize-none leading-relaxed"
+                          className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 resize-none leading-relaxed"
                         />
                       </div>
 
@@ -1042,7 +1042,7 @@ export default function OutboundDialer() {
                           </span>
                         </div>
                       </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-muted/40 shrink-0 mt-1" />
+                      <ChevronRight className="w-3.5 h-3.5 text-muted/60 shrink-0 mt-1" />
                     </div>
                   </motion.div>
                 );
@@ -1182,10 +1182,10 @@ export default function OutboundDialer() {
                   </div>
                   <div className="flex items-center gap-1 mt-1.5">
                     <RefreshCw
-                      className="w-2.5 h-2.5 text-muted/50 animate-spin"
+                      className="w-2.5 h-2.5 text-muted/65 animate-spin"
                       style={{ animationDuration: "3s" }}
                     />
-                    <span className="text-[8px] text-muted/50">Refreshing every 10s</span>
+                    <span className="text-[8px] text-muted/65">Refreshing every 10s</span>
                   </div>
                 </div>
               </div>
@@ -1406,7 +1406,7 @@ export default function OutboundDialer() {
                           {lead.phone_number || lead.customer_number}
                         </Link>
                       </div>
-                      <div className="text-[9px] text-muted/50 tabular-nums shrink-0">
+                      <div className="text-[9px] text-muted/65 tabular-nums shrink-0">
                         {formatDate(lead.created_at)}
                       </div>
                     </div>
@@ -1418,7 +1418,7 @@ export default function OutboundDialer() {
         ) : (
           <Panel title="Campaign Details" hint="Details" icon={Target}>
             <div className="h-full flex items-center justify-center">
-              <p className="text-[9px] uppercase tracking-[0.5em] text-muted/40">
+              <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60">
                 Select a campaign to view details
               </p>
             </div>
@@ -1564,7 +1564,7 @@ function CallbacksList({
   if (callbacks.length === 0) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3 px-6 text-center">
-        <CalendarClock className="w-10 h-10 text-muted/30" />
+        <CalendarClock className="w-10 h-10 text-muted/55" />
         <p className="text-[11px] uppercase tracking-[0.35em] text-muted">No scheduled callbacks</p>
         <p className="text-[10px] text-muted/60 max-w-xs">
           When agents use the schedule_callback tool during a call, those contacts appear here and
@@ -1652,7 +1652,7 @@ function CallbacksList({
                     {cb.last_contact_summary}
                   </p>
                 )}
-                <p className="text-[9px] text-muted/50 mt-1">
+                <p className="text-[9px] text-muted/65 mt-1">
                   {scheduledAt.toLocaleString("en-US", {
                     weekday: "short",
                     month: "short",
@@ -1701,7 +1701,7 @@ function CreateCampaignModal({
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const inputCls =
-    "w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 transition-all";
+    "w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 transition-all";
 
   const save = async () => {
     if (!form.name.trim()) {

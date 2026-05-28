@@ -355,7 +355,7 @@ export default function EmailInbox() {
                               <span className="text-[9px] uppercase tracking-[0.24em] text-muted/60 truncate">
                                 {thread.customer_email}
                               </span>
-                              <span className="text-[8px] tabular-nums text-muted/50 shrink-0">
+                              <span className="text-[8px] tabular-nums text-muted/65 shrink-0">
                                 {formatDate(thread.last_message_at)}
                               </span>
                             </div>
@@ -499,7 +499,7 @@ export default function EmailInbox() {
                                 {msg.content}
                               </p>
                             </div>
-                            <span className="text-[9px] uppercase tracking-[0.3em] text-muted/50 mt-1.5 tabular-nums">
+                            <span className="text-[9px] uppercase tracking-[0.3em] text-muted/65 mt-1.5 tabular-nums">
                               {formatTime(msg.created_at)}
                             </span>
                           </motion.div>
@@ -551,7 +551,7 @@ export default function EmailInbox() {
                           value={replyText}
                           onChange={(e) => setReplyText(e.target.value)}
                           placeholder="Type a reply or ask the agent to draft one…"
-                          className="w-full px-3 pb-3 min-h-[100px] outline-none text-ink text-sm leading-relaxed resize-none bg-transparent placeholder:text-muted/50"
+                          className="w-full px-3 pb-3 min-h-[100px] outline-none text-ink text-sm leading-relaxed resize-none bg-transparent placeholder:text-muted/65"
                         />
                       </div>
                       <div className="flex items-center justify-between gap-3">

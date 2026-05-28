@@ -595,7 +595,7 @@ export default function AgentTraining() {
                     <textarea
                       value={personalityDraft}
                       onChange={(e) => setPersonalityDraft(e.target.value)}
-                      className="w-full min-h-[180px] p-3 rounded-xl bg-black/5 border border-black/10 text-sm text-ink outline-none focus:border-brand/50 resize-none leading-relaxed placeholder:text-muted/50"
+                      className="w-full min-h-[180px] p-3 rounded-xl bg-black/5 border border-black/10 text-sm text-ink outline-none focus:border-brand/50 resize-none leading-relaxed placeholder:text-muted/65"
                       placeholder="Define the core identity heuristics…"
                     />
                   ) : (
@@ -724,7 +724,7 @@ export default function AgentTraining() {
                           e.key === "Enter" && saveManualEntry("directive", newDirective)
                         }
                         placeholder="e.g. Never discuss competitor pricing"
-                        className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-muted/50"
+                        className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-muted/65"
                       />
                       <button
                         onClick={() => saveManualEntry("directive", newDirective)}
@@ -839,7 +839,7 @@ export default function AgentTraining() {
                           e.key === "Enter" && saveManualEntry("knowledge", newKnowledge)
                         }
                         placeholder="e.g. Our return policy is 30 days, no questions"
-                        className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-muted/50"
+                        className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-muted/65"
                       />
                       <button
                         onClick={() => saveManualEntry("knowledge", newKnowledge)}

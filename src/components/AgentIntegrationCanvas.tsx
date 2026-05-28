@@ -1642,7 +1642,7 @@ export default function AgentIntegrationCanvas({
                       Connect →
                     </a>
                   )}
-                  <span className="text-muted/50">
+                  <span className="text-muted/65">
                     {getEnabledCount(activeKey)}/{getTotalCount(activeKey)} tools on
                   </span>
                 </div>
@@ -1694,7 +1694,7 @@ export default function AgentIntegrationCanvas({
                           }}
                         />
                         <span className="flex-1 text-muted/80 truncate">{item.text}</span>
-                        <span className="text-muted/40 shrink-0 pl-2">{item.time}</span>
+                        <span className="text-muted/60 shrink-0 pl-2">{item.time}</span>
                       </div>
                     ))}
                   </div>

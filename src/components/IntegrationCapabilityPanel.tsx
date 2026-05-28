@@ -148,7 +148,7 @@ export default function IntegrationCapabilityPanel({
                 <Wrench className="w-3 h-3" />
                 Fine-tune tools
               </span>
-              <span className="text-[9px] text-muted/50 tabular-nums">
+              <span className="text-[9px] text-muted/65 tabular-nums">
                 {integrationTools.filter((t) => enabledSet.has(t.name)).length}/
                 {integrationTools.length}
               </span>

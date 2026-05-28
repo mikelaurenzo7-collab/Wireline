@@ -125,8 +125,10 @@ function AppContent() {
       ].includes(slug)
     ) {
       return (
-        <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
-          <VerticalLanding slug={slug} />
+        <Suspense fallback={<div className="min-h-dvh bg-paper marketing-surface" />}>
+          <div className="marketing-surface min-h-dvh">
+            <VerticalLanding slug={slug} />
+          </div>
         </Suspense>
       );
     }
@@ -134,20 +136,22 @@ function AppContent() {
   if (location.pathname === "/pricing") {
     return (
       <Suspense fallback={<div className="min-h-dvh" />}>
-        <Pricing />
+        <div className="marketing-surface min-h-dvh">
+          <Pricing />
+        </div>
       </Suspense>
     );
   }
   if (location.pathname === "/compare") {
     return (
-      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+      <Suspense fallback={<div className="min-h-dvh bg-paper marketing-surface" />}>
         <Compare />
       </Suspense>
     );
   }
   if (location.pathname === "/about") {
     return (
-      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+      <Suspense fallback={<div className="min-h-dvh bg-paper marketing-surface" />}>
         <About />
       </Suspense>
     );
@@ -157,8 +161,10 @@ function AppContent() {
   // can audition personas without signing in.
   if (location.pathname === "/showcase") {
     return (
-      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
-        <Showcase />
+      <Suspense fallback={<div className="min-h-dvh bg-paper marketing-surface" />}>
+        <div className="marketing-surface min-h-dvh">
+          <Showcase />
+        </div>
       </Suspense>
     );
   }
@@ -236,8 +242,10 @@ function AppContent() {
     const path = location.pathname;
     if (path === "/" || path === "") {
       return (
-        <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
-          <LandingPage />
+        <Suspense fallback={<div className="min-h-dvh bg-paper marketing-surface" />}>
+          <div className="marketing-surface min-h-dvh">
+            <LandingPage />
+          </div>
         </Suspense>
       );
     }

@@ -571,7 +571,7 @@ export default function KnowledgeBaseManager() {
               />
             ) : (
               <div className="p-16 text-center">
-                <BookOpen className="w-10 h-10 mx-auto text-muted/40 mb-3" />
+                <BookOpen className="w-10 h-10 mx-auto text-muted/60 mb-3" />
                 <p className="text-[11px] uppercase tracking-[0.4em] text-muted">
                   No matches for this filter
                 </p>
@@ -614,7 +614,7 @@ export default function KnowledgeBaseManager() {
                           {row.agent_archetype}
                         </span>
                       )}
-                      <span className="text-[8px] uppercase tracking-[0.28em] text-muted/50 ml-auto">
+                      <span className="text-[8px] uppercase tracking-[0.28em] text-muted/65 ml-auto">
                         {formatDate(row.created_at)}
                       </span>
                     </div>

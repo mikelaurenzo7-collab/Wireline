@@ -13,11 +13,23 @@ preview URL; you'll see the URL in the PR's check run.
 
 To promote a preview to production:
 
-1. Merge the PR to `main`, OR
-2. Run `vercel --prod` from the repo root with your Vercel CLI auth.
+1. **Push to `main`** — set **Production Branch** to `main` in
+   [Vercel → wireline → Settings → Git](https://vercel.com/revaluate/wireline/settings/git)
+   so every merge auto-assigns `target: production` to trywireline.com.
+2. If production is still on a feature branch (e.g. `cursor/elevate-business-concept-d625`),
+   previews from `main` and PRs will **not** update trywireline.com until you
+   change that setting or promote manually.
+3. Manual promote (any READY deployment from `main`):
+
+   ```bash
+   export VERCEL_TOKEN="<token>"
+   node scripts/promote-vercel-production.mjs
+   ```
+
+   Or: `vercel deploy --prod --yes` from the repo root.
 
 Both production aliases (`trywireline.com`, `wireline-chi.vercel.app`,
-`wireline-revaluate.vercel.app`) update together.
+`wireline-revaluate.vercel.app`) update together when a deployment is promoted.
 
 ---
 

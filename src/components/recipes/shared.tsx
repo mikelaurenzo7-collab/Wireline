@@ -42,7 +42,7 @@ export function TextInput({ value, onChange, placeholder }: any) {
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full h-12 px-4 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm placeholder:text-muted/50 focus:border-brand/60 focus:bg-black/10 transition-all"
+      className="w-full h-12 px-4 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm placeholder:text-muted/65 focus:border-brand/60 focus:bg-black/10 transition-all"
     />
   );
 }
@@ -54,7 +54,7 @@ export function TextArea({ value, onChange, placeholder, rows = 5 }: any) {
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       rows={rows}
-      className="w-full px-4 py-3 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm placeholder:text-muted/50 focus:border-brand/60 focus:bg-black/10 transition-all resize-none leading-relaxed font-sans"
+      className="w-full px-4 py-3 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm placeholder:text-muted/65 focus:border-brand/60 focus:bg-black/10 transition-all resize-none leading-relaxed font-sans"
     />
   );
 }

@@ -378,7 +378,7 @@ export default function LiveOps() {
 
                   {sentimentData.length === 0 ? (
                     <div className="h-48 flex flex-col items-center justify-center gap-2 text-center border border-dashed border-black/8 rounded-2xl bg-black/[0.01] px-6">
-                      <Activity className="w-6 h-6 text-muted/30" />
+                      <Activity className="w-6 h-6 text-muted/55" />
                       <p className="text-[11px] text-ink/70 font-medium">No conversations yet</p>
                       <p className="text-[10px] text-muted/70 leading-relaxed">
                         Make your first call to{" "}

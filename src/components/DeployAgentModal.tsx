@@ -296,7 +296,7 @@ export default function DeployAgentModal({
                     }}
                     maxLength={80}
                     placeholder="e.g. Sarah, Front Desk, Closer #2"
-                    className="w-full bg-black/5 border border-black/10 rounded-xl px-4 py-3 text-[15px] text-ink placeholder:text-muted/50 outline-none focus:border-brand/50 focus:bg-white/40 transition-colors"
+                    className="w-full bg-black/5 border border-black/10 rounded-xl px-4 py-3 text-[15px] text-ink placeholder:text-muted/65 outline-none focus:border-brand/50 focus:bg-white/40 transition-colors"
                   />
                   <p className="text-[10px] text-muted/65">
                     What callers and your team will see. You can change this any time in /agents.
@@ -373,7 +373,7 @@ export default function DeployAgentModal({
                                 )}
                               >
                                 <span className="truncate">{v.name}</span>
-                                <span className="text-[9px] uppercase tracking-[0.32em] text-muted/55 shrink-0">
+                                <span className="text-[9px] uppercase tracking-[0.32em] text-muted/70 shrink-0">
                                   {v.provider}
                                 </span>
                               </button>
@@ -428,7 +428,7 @@ export default function DeployAgentModal({
                     "group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] uppercase tracking-[0.32em] font-semibold transition-all",
                     canSubmit
                       ? "text-paper shadow-lg shadow-brand/30 hover:shadow-brand/40 active:scale-[0.98]"
-                      : "text-muted/40 bg-black/8 cursor-not-allowed",
+                      : "text-muted/60 bg-black/8 cursor-not-allowed",
                   )}
                   style={canSubmit ? { background: "#4F1E7B" } : undefined}
                 >

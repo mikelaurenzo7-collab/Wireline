@@ -274,7 +274,7 @@ export default function FounderDashboard() {
                 tone={stats.health.warnings_24h > 0 ? "amber" : "emerald"}
               />
             </div>
-            <div className="mt-2 text-[10px] text-muted/55">
+            <div className="mt-2 text-[10px] text-muted/70">
               {stats.calls.total.toLocaleString()} calls all-time ·{" "}
               {stats.calls.last_7d.toLocaleString()} in the last 7 days ·{" "}
               {stats.agents.total.toLocaleString()} agents across all tenants
@@ -308,7 +308,7 @@ export default function FounderDashboard() {
               onChange={(e) => setBroadcast(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && sendBroadcast()}
               placeholder="e.g. From today, always confirm the caller's email by spelling it back."
-              className="flex-1 bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 text-sm text-ink outline-none focus:border-brand/40 transition-colors placeholder:text-muted/50"
+              className="flex-1 bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 text-sm text-ink outline-none focus:border-brand/40 transition-colors placeholder:text-muted/65"
             />
             <button
               onClick={sendBroadcast}

@@ -309,7 +309,7 @@ function AttributionView({ days }: { days: number }) {
   if (totalCalls === 0) {
     return (
       <div className="p-6 text-center">
-        <Megaphone className="w-10 h-10 text-muted/30 mx-auto mb-3" />
+        <Megaphone className="w-10 h-10 text-muted/55 mx-auto mb-3" />
         <p className="text-[13px] text-ink/85 mb-2">No tagged calls yet</p>
         <p className="text-[11px] text-muted/70 max-w-md mx-auto leading-relaxed">
           Tag your phone numbers with a campaign label in{" "}
@@ -749,7 +749,7 @@ function LeaderboardView({ days }: { days: number }) {
                       ? "text-emerald-500"
                       : a.rank_delta < 0
                         ? "text-rose-500"
-                        : "text-muted/50",
+                        : "text-muted/65",
                   )}
                 >
                   {a.rank_delta > 0 ? `+${a.rank_delta}` : a.rank_delta === 0 ? "—" : a.rank_delta}

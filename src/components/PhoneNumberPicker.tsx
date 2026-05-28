@@ -220,7 +220,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
               onKeyDown={(e) => {
                 if (e.key === "Enter") searchByAreaCode();
               }}
-              className="w-full h-10 pl-9 pr-3 rounded-full glass border border-white/10 text-sm text-ink placeholder:text-muted/50 focus:border-brand/40 focus:outline-none transition-all font-mono"
+              className="w-full h-10 pl-9 pr-3 rounded-full glass border border-white/10 text-sm text-ink placeholder:text-muted/65 focus:border-brand/40 focus:outline-none transition-all font-mono"
             />
           </div>
           <button

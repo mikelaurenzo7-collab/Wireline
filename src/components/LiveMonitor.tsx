@@ -389,12 +389,12 @@ export default function LiveMonitor() {
                           }}
                         />
                         <div className="w-full h-full rounded-2xl glass border border-black/8 flex items-center justify-center">
-                          <PhoneOff className="w-7 h-7 text-muted/40" />
+                          <PhoneOff className="w-7 h-7 text-muted/60" />
                         </div>
                       </div>
                       <div className="space-y-1.5">
                         <h3 className="font-display italic lowercase text-2xl text-ink/70">Idle</h3>
-                        <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.4em] text-muted/50 max-w-[240px] sm:max-w-[180px]">
+                        <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.4em] text-muted/65 max-w-[240px] sm:max-w-[180px]">
                           No active calls right now
                         </p>
                       </div>
@@ -458,7 +458,7 @@ export default function LiveMonitor() {
                       animate={{ opacity: 1 }}
                       className="h-full min-h-[160px] flex items-center justify-center"
                     >
-                      <p className="text-[9px] uppercase tracking-[0.5em] text-muted/50">
+                      <p className="text-[9px] uppercase tracking-[0.5em] text-muted/65">
                         No recent activity
                       </p>
                     </motion.div>
@@ -511,7 +511,7 @@ export default function LiveMonitor() {
                         <p
                           className={cn(
                             "text-[9px] uppercase tracking-[0.28em]",
-                            isActive ? "text-emerald-600" : "text-muted/50",
+                            isActive ? "text-emerald-600" : "text-muted/65",
                           )}
                         >
                           {isActive ? "on call" : "idle"}
@@ -594,13 +594,13 @@ function ActivityRow({ ev, agentName }: { ev: ActivityEntry; agentName: (id: str
       <div className="shrink-0 text-right">
         <div className="text-[9px] text-muted/60 tabular-nums">{timeStr}</div>
         {isCall && ev.duration_seconds != null && (
-          <div className="text-[8px] text-muted/40 tabular-nums">
+          <div className="text-[8px] text-muted/60 tabular-nums">
             {Math.floor(ev.duration_seconds / 60)}m {ev.duration_seconds % 60}s
           </div>
         )}
       </div>
 
-      <ChevronRight className="w-3 h-3 text-muted/30 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <ChevronRight className="w-3 h-3 text-muted/55 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
     </div>
   );
 }

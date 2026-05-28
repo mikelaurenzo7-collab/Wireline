@@ -368,11 +368,11 @@ export default function StripeBillingCard() {
           })}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/6 pt-6">
-          <div className="text-[10px] uppercase tracking-[0.35em] text-muted/50 flex items-center gap-2">
+          <div className="text-[10px] uppercase tracking-[0.35em] text-muted/65 flex items-center gap-2">
             <Shield className="w-3 h-3" />
             Stripe · PCI DSS Level 1 · Cancel anytime
           </div>
-          <div className="flex items-center gap-3 text-[9px] text-muted/40 uppercase tracking-[0.2em]">
+          <div className="flex items-center gap-3 text-[9px] text-muted/60 uppercase tracking-[0.2em]">
             <a href="/privacy" className="hover:text-muted/70 transition-colors">
               Privacy
             </a>

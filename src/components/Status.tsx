@@ -300,9 +300,9 @@ export default function Status() {
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[9.5px] uppercase tracking-[0.32em] text-muted/65">
               <span>Probe interval · 60s</span>
-              <span className="text-muted/30">·</span>
+              <span className="text-muted/55">·</span>
               <span>Public cache · 60s</span>
-              <span className="text-muted/30">·</span>
+              <span className="text-muted/55">·</span>
               <a
                 href="https://twitter.com/intent/tweet?text=%40trywireline+status"
                 target="_blank"

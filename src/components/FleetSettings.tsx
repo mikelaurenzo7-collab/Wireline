@@ -625,7 +625,7 @@ export default function FleetSettings() {
                           disabled={isDeletingAgent === agent.id}
                           title="Delete agent"
                           aria-label={`Delete agent ${agent.name}`}
-                          className="mr-2 shrink-0 w-7 h-7 rounded-lg glass border border-white/8 flex items-center justify-center text-muted/40 hover:text-rose-500 hover:border-rose-500/30 hover:bg-rose-500/8 disabled:opacity-40 transition-all"
+                          className="mr-2 shrink-0 w-7 h-7 rounded-lg glass border border-white/8 flex items-center justify-center text-muted/60 hover:text-rose-500 hover:border-rose-500/30 hover:bg-rose-500/8 disabled:opacity-40 transition-all"
                         >
                           {isDeletingAgent === agent.id ? (
                             <Loader2 className="w-3 h-3 animate-spin" />
@@ -711,7 +711,7 @@ export default function FleetSettings() {
                     <div className="space-y-1.5">
                       <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
                         Agent ID{" "}
-                        <span className="text-muted/50 normal-case tracking-normal">
+                        <span className="text-muted/65 normal-case tracking-normal">
                           (lowercase, no spaces)
                         </span>
                       </label>
@@ -722,13 +722,13 @@ export default function FleetSettings() {
                         onChange={(e) =>
                           setNewAgentId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
                         }
-                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono"
+                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 font-mono"
                       />
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
                         Agent name{" "}
-                        <span className="text-muted/50 normal-case tracking-normal">
+                        <span className="text-muted/65 normal-case tracking-normal">
                           (what callers will hear)
                         </span>
                       </label>
@@ -737,7 +737,7 @@ export default function FleetSettings() {
                         placeholder="e.g. Sophie"
                         value={newAgentName}
                         onChange={(e) => setNewAgentName(e.target.value)}
-                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50"
+                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65"
                       />
                     </div>
                   </div>
@@ -958,7 +958,7 @@ export default function FleetSettings() {
                                             fetchAgentPerformance(selectedAgent.id, true)
                                           }
                                           title="Refresh stats"
-                                          className="absolute top-2 right-2 w-5 h-5 flex items-center justify-center rounded-full glass border border-white/10 text-muted/50 hover:text-brand transition-colors"
+                                          className="absolute top-2 right-2 w-5 h-5 flex items-center justify-center rounded-full glass border border-white/10 text-muted/65 hover:text-brand transition-colors"
                                         >
                                           <RefreshCw className="w-2.5 h-2.5" />
                                         </button>
@@ -977,7 +977,7 @@ export default function FleetSettings() {
                                           {s.sparkline.map((v: number, i: number) => (
                                             <span
                                               key={`day-${i}`}
-                                              className="text-[8px] font-mono tabular-nums text-muted/50"
+                                              className="text-[8px] font-mono tabular-nums text-muted/65"
                                               title={`${v} call${v !== 1 ? "s" : ""}`}
                                             >
                                               {v}
@@ -1000,7 +1000,7 @@ export default function FleetSettings() {
                                 value={selectedAgent.website_url || ""}
                                 onChange={(e) => updateAgentMeta({ website_url: e.target.value })}
                                 placeholder="https://example.com"
-                                className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50"
+                                className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65"
                               />
                             </div>
                             <div className="space-y-1.5">
@@ -1016,7 +1016,7 @@ export default function FleetSettings() {
                                   updateAgentMeta({ transfer_phone: e.target.value })
                                 }
                                 placeholder="+1 800 555 0100"
-                                className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 tabular-nums"
+                                className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 tabular-nums"
                               />
                             </div>
                           </div>
@@ -1234,7 +1234,7 @@ export default function FleetSettings() {
                                     onChange={(e) =>
                                       updateAgentMeta({ first_message: e.target.value })
                                     }
-                                    className="w-full text-base bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-display italic"
+                                    className="w-full text-base bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 font-display italic"
                                   />
                                 </div>
                               </div>
@@ -1322,7 +1322,7 @@ export default function FleetSettings() {
                                           updateAgentMeta({ email_signature: e.target.value })
                                         }
                                         placeholder="— Best, Agent"
-                                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-emerald-400/50 text-ink placeholder:text-muted/50"
+                                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-emerald-400/50 text-ink placeholder:text-muted/65"
                                       />
                                     </div>
                                   </div>
@@ -1470,7 +1470,7 @@ export default function FleetSettings() {
                             onChange={(e) =>
                               setAgentConfig({ ...agentConfig, personality: e.target.value })
                             }
-                            className="relative z-10 w-full h-48 px-4 py-3 rounded-xl bg-black/5 border border-black/10 text-ink outline-none focus:border-brand/50 transition-all resize-none text-sm leading-relaxed placeholder:text-muted/50"
+                            className="relative z-10 w-full h-48 px-4 py-3 rounded-xl bg-black/5 border border-black/10 text-ink outline-none focus:border-brand/50 transition-all resize-none text-sm leading-relaxed placeholder:text-muted/65"
                             placeholder="Define the agent's identity, tone, and behavioral patterns…"
                           />
                         </section>
@@ -1618,7 +1618,7 @@ export default function FleetSettings() {
                                     e.key === "Enter" && saveManualEntry("directive", newDirective)
                                   }
                                   placeholder="e.g. Always verify date of birth…"
-                                  className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-muted/50"
+                                  className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-muted/65"
                                 />
                                 <button
                                   onClick={() => saveManualEntry("directive", newDirective)}
@@ -1743,7 +1743,7 @@ export default function FleetSettings() {
                                     e.key === "Enter" && saveManualEntry("knowledge", newKnowledge)
                                   }
                                   placeholder="e.g. Office closes at 5pm…"
-                                  className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-muted/50"
+                                  className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-muted/65"
                                 />
                                 <button
                                   onClick={() => saveManualEntry("knowledge", newKnowledge)}

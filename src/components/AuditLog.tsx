@@ -454,7 +454,7 @@ export default function AuditLog() {
                     // Trigger search (already handled by useMemo)
                   }
                 }}
-                className="w-full pl-11 pr-4 py-3 rounded-xl glass border border-white/10 text-sm text-ink placeholder:text-muted/50 focus:outline-none focus:border-brand/40 transition-all"
+                className="w-full pl-11 pr-4 py-3 rounded-xl glass border border-white/10 text-sm text-ink placeholder:text-muted/65 focus:outline-none focus:border-brand/40 transition-all"
               />
             </div>
             <div className="relative">

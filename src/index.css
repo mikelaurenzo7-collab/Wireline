@@ -138,8 +138,18 @@
     mix-blend-mode: multiply;
   }
 
-  /* Mobile text size adjustments for better readability
-     on small screens. Increases 9px→11px and 10px→12px. */
+  /* Readability floor — micro-type was 8–10px in dense panels. */
+  .app-surface .text-\[8px\],
+  .app-surface .text-\[8\.5px\],
+  .app-surface .text-\[9px\] {
+    font-size: 11px !important;
+    line-height: 1.35;
+  }
+  .app-surface .text-\[10px\] {
+    font-size: 12px !important;
+    line-height: 1.4;
+  }
+
   @media (max-width: 640px) {
     .text-\[9px\] {
       font-size: 11px !important;

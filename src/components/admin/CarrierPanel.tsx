@@ -158,7 +158,7 @@ export function CarrierPanel({
               onChange={(e) =>
                 onUpdateSettings({ ...settings, vapi_phone_number_id: e.target.value })
               }
-              className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono"
+              className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 font-mono"
               placeholder="e.g. 3c7a9f…"
             />
           </div>
@@ -358,7 +358,7 @@ export function CarrierPanel({
                         /* silent — operator will see no save indicator */
                       }
                     }}
-                    className="text-[11px] bg-black/5 border border-black/10 rounded-lg px-2.5 py-1.5 outline-none focus:border-brand/50 text-ink min-w-[200px] placeholder:text-muted/50"
+                    className="text-[11px] bg-black/5 border border-black/10 rounded-lg px-2.5 py-1.5 outline-none focus:border-brand/50 text-ink min-w-[200px] placeholder:text-muted/65"
                   />
                   <div className="flex items-center gap-2 shrink-0">
                     <LinkIcon className="w-3 h-3 text-brand" />
@@ -534,7 +534,7 @@ export function CarrierPanel({
                 onUpdateSettings({ ...settings, twilio_sms_from_number: e.target.value })
               }
               placeholder="+1 800 555 0100"
-              className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono"
+              className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 font-mono"
             />
             <p className="text-[10px] text-muted/60 leading-relaxed">
               A Twilio-verified number you own. Outbound texts go from this number.
@@ -556,7 +556,7 @@ export function CarrierPanel({
                 onUpdateSettings({ ...settings, twilio_messaging_service_sid: e.target.value })
               }
               placeholder="MG••••••••••••••••••••••••••••••••"
-              className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono"
+              className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 font-mono"
             />
             <p className="text-[10px] text-muted/60 leading-relaxed">
               Twilio's pool of numbers with auto-failover. Overrides the single sender above.
@@ -651,7 +651,7 @@ export function CarrierPanel({
                     })
                   }
                   placeholder="+1 555 555 0100"
-                  className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono"
+                  className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 font-mono"
                 />
                 <p className="text-[10px] text-muted/60 leading-relaxed">
                   Standard messaging rates apply. We send no more than ~5 alerts per day per agent

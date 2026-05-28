@@ -143,7 +143,7 @@ export default function WebhooksManager() {
             <PanelSkeleton rows={3} />
           ) : hooks.length === 0 ? (
             <div className="rounded-xl bg-black/20 border border-dashed border-white/10 p-6 text-center space-y-2">
-              <Webhook className="w-8 h-8 text-muted/40 mx-auto" />
+              <Webhook className="w-8 h-8 text-muted/60 mx-auto" />
               <p className="text-[11px] uppercase tracking-[0.4em] text-muted">
                 No webhooks configured
               </p>
