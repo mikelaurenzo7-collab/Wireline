@@ -149,7 +149,7 @@ export default function LandingPage() {
               className="text-center"
             >
               <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/70 mb-6 lg:mb-8">
-                Voice + Email + SMS — One fleet
+                Phone + Email + SMS
               </p>
 
               <h1 className="font-display italic text-[clamp(2.5rem,7vw,5.5rem)] leading-[0.95] tracking-tight text-ink max-w-4xl mx-auto">
@@ -197,40 +197,8 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ─── Integration Logos Ribbon ────────────────────────────── */}
-        <section className="border-y border-ink/[0.08] py-10 lg:py-12 px-6 lg:px-12">
-          <div className="max-w-7xl mx-auto">
-            <IntegrationLogos compact />
-          </div>
-        </section>
-
-        {/* ─── Proof Tiles ────────────────────────────────────────── */}
-        <section data-testid="proof-section" className="px-6 lg:px-12 py-20 lg:py-28">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08]">
-              {STATS.map((stat, i) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 12 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1, duration: 0.5 }}
-                  className="bg-paper p-8 md:p-10 lg:p-12"
-                >
-                  <p className="font-display italic text-[clamp(2.5rem,5vw,4rem)] leading-none text-ink tracking-tight">
-                    {stat.value}
-                  </p>
-                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/65 mt-3">
-                    {stat.label}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
         {/* ─── Agent Directory — Bento Grid ───────────────────────── */}
-        <section data-testid="agent-directory" className="px-6 lg:px-12 pb-24 lg:pb-32">
+        <section data-testid="agent-directory" className="px-6 lg:px-12 pt-4 pb-20 lg:pb-28">
           <div className="max-w-7xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
@@ -294,6 +262,38 @@ export default function LandingPage() {
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </motion.div>
+          </div>
+        </section>
+
+        {/* ─── Proof Tiles ────────────────────────────────────────── */}
+        <section data-testid="proof-section" className="px-6 lg:px-12 py-20 lg:py-28">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08]">
+              {STATS.map((stat, i) => (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
+                  className="bg-paper p-8 md:p-10 lg:p-12"
+                >
+                  <p className="font-display italic text-[clamp(2.5rem,5vw,4rem)] leading-none text-ink tracking-tight">
+                    {stat.value}
+                  </p>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/65 mt-3">
+                    {stat.label}
+                  </p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Integration Logos Ribbon ────────────────────────────── */}
+        <section className="border-y border-ink/[0.08] py-10 lg:py-12 px-6 lg:px-12">
+          <div className="max-w-7xl mx-auto">
+            <IntegrationLogos compact />
           </div>
         </section>
 
