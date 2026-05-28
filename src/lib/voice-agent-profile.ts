@@ -1,20 +1,18 @@
-import type { StripePlanId } from "./plan-catalog";
-
-const PAID_TIERS = new Set<StripePlanId>(["pro", "business", "enterprise"]);
-
-export function normalizeAiTier(tier?: string | null): StripePlanId | "starter" {
-  const raw = String(tier || "starter").toLowerCase();
-  if (
-    raw === "personal" ||
-    raw === "starter" ||
-    raw === "pro" ||
-    raw === "business" ||
-    raw === "enterprise"
-  ) {
-    return raw;
-  }
-  return "starter";
-}
+/**
+ * Voice latency / turn-taking profile.
+ *
+ * Tier-INDEPENDENT by design. Every tenant — Personal through Enterprise —
+ * gets the same snappy turn-taking. The conversational feel of the agent
+ * is a product fundamental, not a paywalled feature; gating call quality
+ * by plan would punish trial users on the exact dimension they're
+ * evaluating. Plans differ only in agent count, included minutes, and
+ * per-minute overage rates (see plan-catalog.ts) — not in how fast or
+ * responsive the agent feels on the wire.
+ *
+ * Latency still varies by role/archetype because a fast SDR cold-call
+ * needs different patience than a support call where the caller is
+ * thinking. That's a conversational fit knob, not a tier gate.
+ */
 
 export interface VoiceLatencyProfile {
   silenceTimeoutSeconds: number;
@@ -23,45 +21,51 @@ export interface VoiceLatencyProfile {
   optimizeStreamingLatency: number;
 }
 
-/**
- * Subscription-tier + role latency tuning for tenant voice agents.
- * Paid tiers get snappier turn-taking; sales/outbound roles get shorter silence windows.
- */
 export function getVoiceLatencyProfile(input: {
-  aiTier?: string | null;
   archetype?: string;
   role?: string;
   isOutbound?: boolean;
 }): VoiceLatencyProfile {
-  const tier = normalizeAiTier(input.aiTier);
-  const paid = PAID_TIERS.has(tier as StripePlanId);
   const role = input.role || "customer_service";
   const salesLike =
     input.isOutbound || ["sales", "lead_qualifier", "collections", "scheduler"].includes(role);
 
+  // Archetype-based silence floor. Sales/outbound archetypes get tight
+  // 2s windows — a hesitating prospect needs a nudge, not three seconds
+  // of dead air. Negotiator sits between (callers weighing terms).
+  // Scheduler/Receptionist callers are often consulting calendars or
+  // looking up info; 3s gives them room without feeling abandoned.
   const archetypeBase: Record<string, number> = {
     "The Closer": 2,
     "The Hunter": 2,
-    "The Negotiator": 3,
-    Scheduler: 4,
-    Receptionist: 5,
+    "The Negotiator": 2,
+    Scheduler: 3,
+    Receptionist: 3,
   };
 
   const archetype = input.archetype || "Receptionist";
-  let silenceTimeoutSeconds = archetypeBase[archetype] ?? (salesLike ? 3 : 5);
+  let silenceTimeoutSeconds = archetypeBase[archetype] ?? (salesLike ? 2 : 3);
 
-  if (paid && salesLike) silenceTimeoutSeconds = Math.min(silenceTimeoutSeconds, 2);
-  if (paid && !salesLike) silenceTimeoutSeconds = Math.min(silenceTimeoutSeconds, 4);
+  // Hard caps applied universally — used to be paid-tier-only. Every
+  // tenant gets snappy turn-taking now.
+  silenceTimeoutSeconds = salesLike
+    ? Math.min(silenceTimeoutSeconds, 2)
+    : Math.min(silenceTimeoutSeconds, 3);
 
   return {
     silenceTimeoutSeconds,
+    // Vapi waits this long after the caller stops talking before the
+    // agent starts speaking. Zero across all tiers — 11labs streaming
+    // TTS handles first-token latency, so there's no quality reason to
+    // throttle.
     responseDelaySeconds: 0,
-    numWordsToInterruptAssistant: paid ? 2 : 3,
-    // Reduced from 4/3 → 2/2. Higher values (3-4) maximize speed at the
-    // cost of TTS prosody quality — ElevenLabs renders more aggressively
-    // compressed audio that amplifies cadence inconsistency when the LLM
-    // feeds varying-length text chunks. Level 2 is the sweet spot:
-    // perceptibly fast first-audio-out without the jarring speed shifts.
-    optimizeStreamingLatency: paid ? 2 : 2,
+    // Two-word interrupt threshold for everyone. Lets the caller cut
+    // the agent off naturally ("wait, actually…") without false-trigger
+    // interruptions from one-word backchannels ("yeah", "mm-hmm").
+    numWordsToInterruptAssistant: 2,
+    // Level 2 is the sweet spot: perceptibly fast first-audio-out
+    // without the jarring speed shifts that levels 3-4 produce when
+    // ElevenLabs over-compresses to chase latency. Applied uniformly.
+    optimizeStreamingLatency: 2,
   };
 }

@@ -111,8 +111,8 @@ function localizeNow(now: Date, timeZone: string): { day: DayOfWeek; minutes: nu
   const wkLower = wkdy.toLowerCase().slice(0, 3) as DayOfWeek;
   const day = DAY_KEYS.includes(wkLower) ? wkLower : "mon";
   // 24:00 sometimes appears for midnight in Intl en-US — normalize.
-  const hour = Number(hh) % 24 | 0;
-  const minute = Number(mm) % 60 | 0;
+  const hour = (Number(hh) % 24) | 0;
+  const minute = (Number(mm) % 60) | 0;
   return { day, minutes: hour * 60 + minute };
 }
 
@@ -347,9 +347,10 @@ export function buildAgentRuntimeContext(
   // crowd out persona-specific instructions earlier in the prompt.
   sections.push(
     "## VOICE CONSISTENCY",
-    "- Use ONE voice for the entire call — same warmth, same cadence, same word choice — regardless of which topic comes up.",
+    "- Use ONE voice and ONE personality for the entire call — same warmth, same cadence, same word choice — from hello to goodbye, no matter the topic or the caller's mood.",
+    "- Do NOT mirror or match the caller's tone, pace, or energy. A rushed, cold, chatty, or excited caller does not change how you speak. The only adjustment allowed is brief empathy when someone is distressed — then return to your normal voice.",
     "- Treat any knowledge, facts, or directives you've been given as background you've internalized. Paraphrase casually. NEVER recite them as a list.",
-    "- Do not shift to a formal or corporate register when answering technical, pricing, or product questions. Stay conversational the whole way through.",
+    "- Do not shift to a formal or corporate register when answering technical, pricing, or product questions. Stay in your one consistent voice the whole way through.",
   );
 
   const composed = sections.length > 0 ? `${basePrompt}\n\n${sections.join("\n\n")}` : basePrompt;

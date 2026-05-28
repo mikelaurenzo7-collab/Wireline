@@ -32,7 +32,7 @@ const FAQS = [
   },
   {
     q: "Will it sound like a robot?",
-    a: 'No. Every agent runs on a fast, adaptive model that reads the caller\'s tone in real time and picks one of three personality vibes — warm, playful, or authoritative — in a natural human voice. End-to-end response latency lands around 700–900 ms, well under the "did they hang up?" threshold, so conversations feel like talking to your sharpest rep.',
+    a: 'No. Each agent has one set personality, voice, and cadence — you pick its vibe (warm, playful, or authoritative) once, and it holds that same character for the entire call instead of lurching between tones. It still adapts to whatever the caller asks, in a natural human voice. End-to-end response latency lands around 700–900 ms, well under the "did they hang up?" threshold, so conversations feel like talking to your sharpest rep.',
   },
   {
     q: "What happens when the agent can't do something?",

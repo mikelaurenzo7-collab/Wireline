@@ -45,9 +45,13 @@ describe("VIBES catalog", () => {
       const d = VIBES.playful.directive;
       // The "capability earns the right to wit" line is the brand thesis.
       expect(d).toMatch(/capability earns the right to wit/i);
-      // And it must explicitly drop playfulness when things matter.
-      expect(d).toMatch(/playful|read the room/i);
-      expect(d).toMatch(/drop|just be human/i);
+      // It stays a fixed, light personality — it sets quips aside when
+      // things get serious WITHOUT flipping into a different voice.
+      expect(d).toMatch(/playful/i);
+      expect(d).toMatch(/set the quips aside|same friendly voice/i);
+      // It must NOT instruct the agent to switch personality mid-call.
+      expect(d).not.toMatch(/read the room/i);
+      expect(d).not.toMatch(/drop the playfulness/i);
     });
 
     it("authoritative is formal + crisp, no slang, with compliance gravity", () => {
@@ -100,5 +104,13 @@ describe("buildVibeBlock", () => {
     // The exact phrase from the directive — guard against silent edits.
     expect(out).toMatch(/No filler/);
     expect(out).toMatch(/um|let me check|one moment please/i);
+  });
+
+  it("locks personality, voice, and cadence — no mid-call tone switching", () => {
+    // The core fear: agents lurching between registers to match the
+    // caller. This guards the always-on rule that forbids it.
+    const out = buildVibeBlock("warm");
+    expect(out).toMatch(/personality, voice, and cadence are fixed/i);
+    expect(out).toMatch(/Do NOT mirror the caller's tone/i);
   });
 });

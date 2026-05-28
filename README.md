@@ -204,7 +204,8 @@ Every Wireline agent system prompt is assembled at runtime by
 `src/lib/agent-runtime.ts`. Composition:
 
 1. **Role + scope** — what this agent does (operator-configured)
-2. **Adaptive + quick core** — always-on. Listen, match cadence,
+2. **Adaptive + quick core** — always-on. Versatile handling of
+   whatever the caller asks, locked personality/voice/cadence,
    no filler, no fabricated actions
 3. **Personality vibe** — warm / playful / authoritative
 4. **Compliance posture** — HIPAA / PCI / GDPR if enabled

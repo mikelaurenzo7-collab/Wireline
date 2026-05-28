@@ -367,14 +367,16 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   {
     name: "crm_create_contact",
     label: "Create CRM contact",
-    description: "Creates a new contact record in Salesforce or HubSpot from caller data captured during the call.",
+    description:
+      "Creates a new contact record in Salesforce or HubSpot from caller data captured during the call.",
     group: "crm",
     integration: "crm",
   },
   {
     name: "crm_update_deal_stage",
     label: "Update deal stage",
-    description: "Moves an existing deal or opportunity to the next pipeline stage based on the call outcome.",
+    description:
+      "Moves an existing deal or opportunity to the next pipeline stage based on the call outcome.",
     group: "crm",
     integration: "crm",
   },
@@ -382,7 +384,8 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   {
     name: "shopify_apply_discount",
     label: "Apply Shopify discount",
-    description: "Applies a discount code or generates a one-time offer code on a draft order during the call.",
+    description:
+      "Applies a discount code or generates a one-time offer code on a draft order during the call.",
     group: "ecommerce",
     integration: "shopify",
   },
@@ -390,7 +393,8 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   {
     name: "square_send_invoice",
     label: "Send Square invoice",
-    description: "Creates and sends a Square invoice directly to the customer's email or phone number.",
+    description:
+      "Creates and sends a Square invoice directly to the customer's email or phone number.",
     group: "ecommerce",
     integration: "square",
   },
@@ -682,32 +686,42 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
   ],
 };
 
-/** Extra tools unlocked by subscription tier (settings.ai_tier). */
-const PLAN_TOOL_UNLOCKS: Record<string, readonly AgentToolName[]> = {
-  starter: [],
-  personal: [],
-  pro: ["enrich_lead", "gemini_ground", "send_contract"],
-  business: ["enrich_lead", "gemini_ground", "send_contract", "log_to_excel", "log_to_google_sheets"],
-  enterprise: [
-    "enrich_lead",
-    "gemini_ground",
-    "send_contract",
-    "log_to_excel",
-    "log_to_google_sheets",
-    "send_slack_notification",
-    "send_teams_message",
-  ],
-};
+/**
+ * Premium integration / data tools previously gated behind paid plans.
+ * Now granted to EVERY tier — plans differ only on agent count, included
+ * voice minutes, and overage rate (see plan-catalog.ts), not on which
+ * integrations the agent can call. Trial / Personal / Starter tenants
+ * get the same toolbox as Enterprise so they can evaluate the full
+ * product and so an upgrade never feels like "unlocking" basic
+ * capability — only more headroom.
+ *
+ * The actual ability to USE each tool still depends on the tenant
+ * having connected the underlying integration (loaded via
+ * loadTenantIntegrationConnections in vapi-helpers); that gate stays
+ * because we can't call Slack without an OAuth token regardless of
+ * plan. This list is purely about the AGENT'S permission to attempt
+ * the call.
+ */
+const UNIVERSAL_BONUS_TOOLS: readonly AgentToolName[] = [
+  "enrich_lead",
+  "gemini_ground",
+  "send_contract",
+  "log_to_excel",
+  "log_to_google_sheets",
+  "send_slack_notification",
+  "send_teams_message",
+];
 
 export function applyPlanToolUnlocks(
   tools: readonly AgentToolName[],
-  aiTier?: string | null,
+  // aiTier kept for signature stability; ignored on purpose. Every tier
+  // gets every integration tool. Removing the param would force a churn
+  // through every call site for no behavioral benefit.
+  _aiTier?: string | null,
 ): AgentToolName[] {
-  const tier = String(aiTier || "starter").toLowerCase();
-  const extras = PLAN_TOOL_UNLOCKS[tier] ?? [];
   const seen = new Set<AgentToolName>(tools);
   const out = [...tools];
-  for (const name of extras) {
+  for (const name of UNIVERSAL_BONUS_TOOLS) {
     if (!seen.has(name)) {
       seen.add(name);
       out.push(name);

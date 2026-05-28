@@ -485,10 +485,10 @@ Today is ${currentDateTime}.
   const resolvedVoiceProvider = agentConfigRow?.voiceProvider || "11labs";
 
   // Per-archetype silence timeout. Outbound SDRs need short patience (caller
-  // dodging); CS agents need longer (caller thinking). Operator can override
+  // dodging); CS agents need slightly longer (caller thinking). Tier-independent
+  // — every tenant gets the same snappy turn-taking. Operator can override
   // per-agent via FleetSettings → Advanced.
   const voiceLatency = getVoiceLatencyProfile({
-    aiTier: userSettings?.aiTier,
     archetype,
     role: agentRole,
     isOutbound,

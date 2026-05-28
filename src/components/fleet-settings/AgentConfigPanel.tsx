@@ -27,12 +27,7 @@ import AgentBusinessProfile from "../AgentBusinessProfile";
 import AgentScorecard from "../AgentScorecard";
 import VoiceFineTuningPanel from "../VoiceFineTuningPanel";
 import AgentIntegrationCanvas from "../AgentIntegrationCanvas";
-import {
-  Sparkline,
-  RoleBadge,
-  PREMIUM_VOICES,
-  AGENT_ROLES,
-} from "../fleet/helpers";
+import { Sparkline, RoleBadge, PREMIUM_VOICES, AGENT_ROLES } from "../fleet/helpers";
 import { resolveAgentTools, getRoleToolSet } from "../../lib/agent-capabilities";
 
 interface AgentConfigPanelProps {
@@ -176,12 +171,10 @@ export default function AgentConfigPanel({
               <Target className="w-7 h-7" />
             </div>
             <div className="space-y-1.5">
-              <h3 className="font-display italic lowercase text-2xl text-ink">
-                pick an agent
-              </h3>
+              <h3 className="font-display italic lowercase text-2xl text-ink">pick an agent</h3>
               <p className="text-caption max-w-sm leading-relaxed">
-                Choose an agent on the left to view its calls, edit its personality, or
-                update what it knows.
+                Choose an agent on the left to view its calls, edit its personality, or update what
+                it knows.
               </p>
             </div>
           </motion.div>
@@ -232,8 +225,7 @@ export default function AgentConfigPanel({
                         </span>
                         <RoleBadge role={selectedAgent.role} size="sm" />
                         <div className="text-[9px] uppercase tracking-[0.25em] text-muted/70 inline-flex items-center gap-1.5">
-                          ID:{" "}
-                          <span className="font-mono text-ink/80">{selectedAgent.id}</span>
+                          ID: <span className="font-mono text-ink/80">{selectedAgent.id}</span>
                         </div>
                       </div>
 
@@ -264,8 +256,7 @@ export default function AgentConfigPanel({
                           <p className="text-[10px] text-muted/70 leading-relaxed max-w-[280px]">
                             {
                               AGENT_ROLES.find(
-                                (r) =>
-                                  r.value === (selectedAgent.role || "customer_service"),
+                                (r) => r.value === (selectedAgent.role || "customer_service"),
                               )?.description
                             }
                           </p>
@@ -294,9 +285,7 @@ export default function AgentConfigPanel({
                       (() => {
                         const s = agentStats[selectedAgent.id];
                         const total =
-                          s.sentiment.positive +
-                            s.sentiment.neutral +
-                            s.sentiment.negative || 1;
+                          s.sentiment.positive + s.sentiment.neutral + s.sentiment.negative || 1;
                         const posPct = Math.round((s.sentiment.positive / total) * 100);
                         return (
                           <div className="md:col-span-2 space-y-2 mb-2">
@@ -325,9 +314,7 @@ export default function AgentConfigPanel({
                                   {s.avgScore > 0 ? (
                                     s.avgScore
                                   ) : (
-                                    <span className="text-muted/70 text-sm not-italic">
-                                      —
-                                    </span>
+                                    <span className="text-muted/70 text-sm not-italic">—</span>
                                   )}
                                 </div>
                               </div>
@@ -337,14 +324,10 @@ export default function AgentConfigPanel({
                                 </div>
                                 <div className="font-display italic text-xl text-ink">
                                   {posPct}%
-                                  <span className="text-xs text-muted not-italic ml-1">
-                                    pos
-                                  </span>
+                                  <span className="text-xs text-muted not-italic ml-1">pos</span>
                                 </div>
                                 <button
-                                  onClick={() =>
-                                    fetchAgentPerformance(selectedAgent.id, true)
-                                  }
+                                  onClick={() => fetchAgentPerformance(selectedAgent.id, true)}
                                   title="Refresh stats"
                                   className="absolute top-2 right-2 w-5 h-5 flex items-center justify-center rounded-full glass border border-white/10 text-muted/70 hover:text-brand transition-colors"
                                 >
@@ -400,9 +383,7 @@ export default function AgentConfigPanel({
                         inputMode="tel"
                         autoComplete="tel"
                         value={selectedAgent.transfer_phone || ""}
-                        onChange={(e) =>
-                          updateAgentMeta({ transfer_phone: e.target.value })
-                        }
+                        onChange={(e) => updateAgentMeta({ transfer_phone: e.target.value })}
                         placeholder="+1 800 555 0100"
                         className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 tabular-nums"
                       />
@@ -429,18 +410,14 @@ export default function AgentConfigPanel({
                               <select
                                 aria-label="Voice signature"
                                 value={
-                                  PREMIUM_VOICES.find(
-                                    (v) => v.id === selectedAgent.voice_id,
-                                  )
+                                  PREMIUM_VOICES.find((v) => v.id === selectedAgent.voice_id)
                                     ? selectedAgent.voice_id
                                     : "custom"
                                 }
                                 onChange={(e) => {
                                   const val = e.target.value;
                                   if (val !== "custom") {
-                                    const voiceData = PREMIUM_VOICES.find(
-                                      (v) => v.id === val,
-                                    );
+                                    const voiceData = PREMIUM_VOICES.find((v) => v.id === val);
                                     updateAgentMeta({
                                       voice_id: val,
                                       voice_provider: voiceData?.provider || "11labs",
@@ -470,9 +447,7 @@ export default function AgentConfigPanel({
                               <select
                                 aria-label="Archetype"
                                 value={selectedAgent.archetype || "Receptionist"}
-                                onChange={(e) =>
-                                  updateAgentMeta({ archetype: e.target.value })
-                                }
+                                onChange={(e) => updateAgentMeta({ archetype: e.target.value })}
                                 className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
                               >
                                 <option value="Receptionist">Receptionist</option>
@@ -492,8 +467,7 @@ export default function AgentConfigPanel({
                             </label>
                             <div className="grid grid-cols-3 gap-1.5">
                               {(["warm", "playful", "authoritative"] as const).map((v) => {
-                                const current =
-                                  (selectedAgent as any).personality_vibe || "warm";
+                                const current = (selectedAgent as any).personality_vibe || "warm";
                                 const isActive = current === v;
                                 const labels: Record<typeof v, string> = {
                                   warm: "Warm",
@@ -518,8 +492,8 @@ export default function AgentConfigPanel({
                               })}
                             </div>
                             <p className="text-[9px] text-muted/70 leading-relaxed">
-                              Voice stays consistent. Vibe shifts the script — same agent,
-                              different tonal register per use case.
+                              Pick once. The agent keeps this one personality, voice, and cadence
+                              for the whole call — it never switches tone mid-conversation.
                             </p>
                           </div>
 
@@ -531,9 +505,7 @@ export default function AgentConfigPanel({
                               <select
                                 aria-label="Ambient atmosphere"
                                 value={selectedAgent.ambient_noise || "off"}
-                                onChange={(e) =>
-                                  updateAgentMeta({ ambient_noise: e.target.value })
-                                }
+                                onChange={(e) => updateAgentMeta({ ambient_noise: e.target.value })}
                                 className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
                               >
                                 <option value="off">Studio (silent)</option>
@@ -549,10 +521,7 @@ export default function AgentConfigPanel({
                                 Speaking rate
                               </label>
                               <span className="text-[10px] font-medium tabular-nums text-ink">
-                                {Number((selectedAgent as any).voice_speed ?? 1.0).toFixed(
-                                  2,
-                                )}
-                                ×
+                                {Number((selectedAgent as any).voice_speed ?? 1.0).toFixed(2)}×
                               </span>
                             </div>
                             <input
@@ -570,8 +539,8 @@ export default function AgentConfigPanel({
                               aria-label="ElevenLabs speaking rate"
                             />
                             <p className="text-[9px] text-muted/70 leading-relaxed">
-                              0.7 = slower (elderly callers). 1.2 = faster (impatient
-                              callers). ElevenLabs voices only.
+                              0.7 = slower (elderly callers). 1.2 = faster (impatient callers).
+                              ElevenLabs voices only.
                             </p>
                           </div>
                         </div>
@@ -593,9 +562,7 @@ export default function AgentConfigPanel({
                           <input
                             type="text"
                             value={selectedAgent.first_message || ""}
-                            onChange={(e) =>
-                              updateAgentMeta({ first_message: e.target.value })
-                            }
+                            onChange={(e) => updateAgentMeta({ first_message: e.target.value })}
                             className="w-full text-base bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 font-display italic"
                           />
                         </div>
@@ -769,8 +736,8 @@ export default function AgentConfigPanel({
                         </div>
                         <p className="text-[9px] text-muted/70 leading-relaxed">
                           Inherit uses the tenant-wide setting. Full Auto executes actions
-                          immediately. Supervised queues for approval on high-risk actions.
-                          Draft Only always requires operator sign-off.
+                          immediately. Supervised queues for approval on high-risk actions. Draft
+                          Only always requires operator sign-off.
                         </p>
                       </div>
                     </div>
@@ -786,7 +753,9 @@ export default function AgentConfigPanel({
                 className="flex flex-col items-center justify-center gap-3 py-20"
               >
                 <Loader2 className="w-5 h-5 animate-spin text-brand" aria-hidden="true" />
-                <span className="app-section-title/70 font-display italic text-sm">Loading configuration</span>
+                <span className="app-section-title/70 font-display italic text-sm">
+                  Loading configuration
+                </span>
               </div>
             ) : (
               <div className="space-y-3">
@@ -1005,9 +974,7 @@ export default function AgentConfigPanel({
                     <div className="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-hide">
                       <AnimatePresence mode="popLayout">
                         {agentConfig.knowledge?.length === 0 ? (
-                          <div className="py-12 text-center app-section-title/60">
-                            No facts yet
-                          </div>
+                          <div className="py-12 text-center app-section-title/60">No facts yet</div>
                         ) : (
                           agentConfig.knowledge?.map((k: any) => (
                             <motion.div

@@ -187,7 +187,7 @@ export function getArchetypeConfig(archetype: string): { rules: string; temp: nu
     case "The Empath":
       return {
         rules:
-          "If a caller sounds frustrated, your first words must be a validating statement like 'I completely hear you, that's incredibly stressful. Let me fix this for you.' You acknowledge before you fix, always.",
+          "If a caller sounds frustrated, your first words must be a validating statement like 'I completely hear you, that's incredibly stressful. Let me fix this for you.' You acknowledge before you fix, always. Hold your own calm, steady voice throughout — do not raise your energy or speed up to match an upset caller; your steadiness is what de-escalates them.",
         temp: 0.6,
       };
     case "The Collector":
