@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 /**
- * OAuth-based SIGN-IN (distinct from the mailbox-connect OAuth in oauth-routes.ts).
+ * OAuth-based SIGN-IN (distinct from the mailbox-connect OAuth in oauth/).
  *
  * The flow:
  *   1. Visitor clicks "Continue with Google" on /auth (no session yet).

@@ -41,10 +41,10 @@ import { performanceMonitoring } from "./src/middleware/performance";
 import { timeoutMiddleware } from "./src/middleware/timeout";
 
 // Routers
-import oauthRouter from "./src/routes/oauth-routes";
+import oauthRouter from "./src/routes/oauth";
 import metaWebhookRouter from "./src/routes/meta-webhook-routes";
 import publicStatsRouter from "./src/routes/public-stats-routes";
-import vapiRouter from "./src/routes/vapi-routes";
+import vapiRouter from "./src/routes/vapi";
 import agentRouter from "./src/routes/agent-routes";
 import agentWorkspaceRouter from "./src/routes/agent-workspace-routes";
 import supportRouter from "./src/routes/support-routes";
@@ -74,7 +74,7 @@ import knowledgeRouter from "./src/routes/knowledge-routes";
 import carrierRouter from "./src/routes/carrier-routes";
 import twilioWebhookRouter from "./src/routes/twilio-webhook";
 import escalationRouter from "./src/routes/escalation-routes";
-import adminMigrateRouter from "./src/routes/admin-migrate-routes";
+import adminMigrateRouter from "./src/routes/admin-migrate";
 import adminVapiSyncRouter from "./src/routes/admin-vapi-sync-routes";
 import adminSeedDemoRouter from "./src/routes/admin-seed-demo-routes";
 import adminPurgeAccountsRouter from "./src/routes/admin-purge-accounts-routes";

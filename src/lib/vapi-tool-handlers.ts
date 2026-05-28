@@ -4,7 +4,7 @@
  * `send_signup_link`.
  *
  * These were originally inline inside the giant `tool-calls` block in
- * `src/routes/vapi-routes.ts`, which made them untestable. Extracting
+ * `src/routes/vapi/`, which made them untestable. Extracting
  * the branch logic here (with every transport/auth dependency injected)
  * lets the route stay a thin adapter and lets the behavior be tested
  * with mocked deps — no real DB, no real email.
@@ -303,7 +303,8 @@ export async function handleSendSignupLink(
       error: (err as { message?: string })?.message ?? String(err),
     });
     return {
-      result: "I wasn't able to send that right now. Let the caller know they can sign up at trywireline.com/signup, or call us back anytime.",
+      result:
+        "I wasn't able to send that right now. Let the caller know they can sign up at trywireline.com/signup, or call us back anytime.",
     };
   }
 }

@@ -1,0 +1,273 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Vapi webhook/tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
+import { and, eq, sql } from "drizzle-orm";
+
+import * as schema from "../../db/schema";
+import { NotificationService } from "../../lib/notifications";
+import { createMeeting as createZoomMeeting } from "../../lib/zoom-service";
+import { sanitizePhone } from "../../lib/vapi-helpers";
+
+import type { ToolCallContext, ToolCallResult } from "./types";
+
+export async function handleWorkflowToolCall(
+  fn: string,
+  args: any,
+  context: ToolCallContext,
+): Promise<ToolCallResult | null> {
+  const { agent, agentVoiceName, drizzle, log, message, payload, toolCallId, webhookAgentId } =
+    context;
+
+  // Workflow Handlers
+  if (fn === "generate_zoom_link") {
+    try {
+      const { topic, start_time, duration } = args || {};
+      const zoomMeeting = await createZoomMeeting(agent.user_id, {
+        topic,
+        startTime: start_time,
+        duration: duration ? Number(duration) : undefined,
+      });
+      return {
+        toolCallId,
+        result: zoomMeeting
+          ? `Meeting link created: ${zoomMeeting.join_url}`
+          : "I wasn't able to create the meeting link right now. I'll have someone follow up with the link.",
+      };
+    } catch {
+      return {
+        toolCallId,
+        result:
+          "I ran into a hiccup creating the meeting link. I'll have someone follow up with it.",
+      };
+    }
+  }
+
+  if (fn === "log_payment_promise") {
+    try {
+      const { amount_promised, payment_date, payment_method } = args || {};
+      await drizzle.insert(schema.auditLog).values({
+        userId: agent.user_id,
+        action: "payment_promise",
+        metadata: { amount_promised, payment_date, payment_method },
+      });
+      return {
+        toolCallId,
+        result: "Payment promise legally recorded in compliance ledger.",
+      };
+    } catch {
+      return {
+        toolCallId,
+        result:
+          "I wasn't able to record that commitment right now. Let me note the details and have someone confirm.",
+      };
+    }
+  }
+
+  if (fn === "create_support_ticket") {
+    try {
+      const { issue_summary, error_codes, severity } = args || {};
+      const [task] = await drizzle
+        .insert(schema.fleetTasks)
+        .values({
+          userId: agent?.user_id,
+          agentId: webhookAgentId,
+          taskType: "ticket",
+          description: `[${severity.toUpperCase()}] ${issue_summary} (Codes: ${error_codes || "None"})`,
+          priority: severity === "critical" ? "high" : severity === "high" ? "high" : "medium",
+          status: "pending",
+          sourceType: "phone_call",
+          targetChannel: "manual",
+        })
+        .returning({ id: schema.fleetTasks.id });
+      return {
+        toolCallId,
+        result: `Support ticket #${task.id.split("-")[0]} created.`,
+      };
+    } catch {
+      return {
+        toolCallId,
+        result:
+          "I wasn't able to create the ticket right now. I've noted the issue and someone from the team will follow up.",
+      };
+    }
+  }
+
+  if (fn === "leave_voicemail") {
+    return {
+      toolCallId,
+      result: "Voicemail recorded. Please say goodbye and end the call now.",
+    };
+  }
+
+  if (fn === "schedule_callback") {
+    try {
+      const { callback_datetime, notes } = args || {};
+      await drizzle.insert(schema.fleetTasks).values({
+        userId: agent?.user_id,
+        agentId: webhookAgentId,
+        taskType: "callback",
+        description: `Scheduled Callback: ${notes}`,
+        priority: "high",
+        status: "pending",
+        sourceType: "phone_call",
+        targetChannel: "manual",
+        createdAt: new Date(),
+      });
+      return {
+        toolCallId,
+        result: `Callback securely scheduled for ${callback_datetime}.`,
+      };
+    } catch {
+      return {
+        toolCallId,
+        result:
+          "I've noted the callback request. Someone will follow up at the time you mentioned.",
+      };
+    }
+  }
+
+  if (fn === "capture_customer_profile") {
+    try {
+      await drizzle.insert(schema.fleetTasks).values({
+        userId: agent?.user_id,
+        agentId: webhookAgentId,
+        taskType: "customer_profile_captured",
+        description: JSON.stringify(args),
+        priority: "medium",
+        status: "completed",
+        sourceType: "phone_call",
+        targetChannel: "manual",
+        createdAt: new Date(),
+      });
+      return {
+        toolCallId,
+        result: "Customer profile structured and saved.",
+      };
+    } catch {
+      return { toolCallId, result: "I've noted your information." };
+    }
+  }
+
+  if (fn === "escalate_to_human") {
+    try {
+      const { reason } = args || {};
+
+      // Look up this agent's escalation routing config to decide:
+      //   - Warm-transfer the live caller? (handoff_enabled + phone)
+      //   - Or just queue async alerts (default)?
+      // One DB read; failures degrade gracefully to the async path.
+      let warmTransferPhone: string | null = null;
+      if (agent?.id) {
+        try {
+          const [row] = await drizzle
+            .select({
+              phone: schema.agents.escalationPhone,
+              enabled: schema.agents.escalationHandoffEnabled,
+            })
+            .from(schema.agents)
+            .where(eq(schema.agents.id, agent.id))
+            .limit(1);
+          if (row?.enabled && row?.phone && row.phone.trim().length >= 7) {
+            warmTransferPhone = row.phone.trim();
+          }
+        } catch (lookupErr: any) {
+          log.warn("escalate_to_human: warm-transfer lookup failed; using async path", {
+            agentId: agent.id,
+            error: lookupErr?.message,
+          });
+        }
+      }
+
+      if (agent?.user_id) {
+        // Pass agent.id so per-agent escalation overrides
+        // (escalation_phone / escalation_email) route the
+        // alert to the right human for THIS agent specifically.
+        // Falls back to tenant-wide manager alert number when
+        // overrides aren't set.
+        const notifier = new NotificationService(agent.user_id, agent.id);
+        await notifier.sendUrgentAlert({
+          title: warmTransferPhone ? "Live Transfer Incoming" : "Agent Escalate to Human",
+          message: warmTransferPhone
+            ? `Caller is being warm-transferred to ${warmTransferPhone} now. Agent: ${agentVoiceName || "unknown"}. Reason: ${reason}`
+            : `Agent ${agentVoiceName || "unknown"} — Reason: ${reason}`,
+          callId: (payload.call as any)?.id || "unknown",
+        });
+      }
+
+      if (warmTransferPhone) {
+        // Vapi tool-result schema supports a `destination` field
+        // per result. When present, Vapi speaks `result` then
+        // transfers the call to the destination number. Vapi
+        // honours the `message` as the announcement BEFORE the
+        // transfer happens (the caller hears it, the human picks
+        // up to a context-set call).
+        return {
+          toolCallId,
+          result: "Transferring you now — please hold.",
+          destination: {
+            type: "number",
+            number: warmTransferPhone,
+            message: "Please hold while I connect you with a team member.",
+          },
+        };
+      }
+
+      return {
+        toolCallId,
+        result:
+          "Escalation signal sent to human supervisors. Apologize warmly and let the caller know a human will reach out shortly.",
+      };
+    } catch {
+      return {
+        toolCallId,
+        result: "I've noted the escalation. Someone from the team will be in touch shortly.",
+      };
+    }
+  }
+
+  if (fn === "view_recent_interactions") {
+    try {
+      const fallbackNumber =
+        (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
+        (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
+      if (fallbackNumber && agent?.user_id) {
+        const safePhone = sanitizePhone(fallbackNumber);
+        const pastCalls = await drizzle
+          .select({
+            summary: schema.callLogs.summary,
+            intentLabel: schema.callLogs.intentLabel,
+            sentiment: schema.callLogs.sentiment,
+            createdAt: schema.callLogs.createdAt,
+          })
+          .from(schema.callLogs)
+          .where(
+            and(
+              eq(schema.callLogs.customerNumber, safePhone),
+              eq(schema.callLogs.userId, agent.user_id),
+            ),
+          )
+          .orderBy(sql`${schema.callLogs.createdAt} DESC`)
+          .limit(3);
+        if (pastCalls.length > 0) {
+          const summaries = pastCalls
+            .map((c: any) => `- ${c.createdAt?.toISOString()}: [${c.intentLabel}] ${c.summary}`)
+            .join("\\n");
+          return {
+            toolCallId,
+            result: `Past 3 interactions:\n${summaries}`,
+          };
+        }
+        return {
+          toolCallId,
+          result: "No recent interactions found for this caller.",
+        };
+      }
+      return { toolCallId, result: "Could not identify caller number." };
+    } catch {
+      return {
+        toolCallId,
+        result: "I wasn't able to pull up past interactions right now. How can I help you today?",
+      };
+    }
+  }
+
+  return null;
+}
