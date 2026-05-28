@@ -1028,11 +1028,11 @@ export default function AuthPortal() {
                       />
                       <span>
                         I agree to the{" "}
-                        <Link to="/legal/terms" className="underline hover:text-ink">
+                        <Link to="/terms" className="underline hover:text-ink">
                           Terms
                         </Link>{" "}
                         and{" "}
-                        <Link to="/legal/privacy" className="underline hover:text-ink">
+                        <Link to="/privacy" className="underline hover:text-ink">
                           Privacy Policy
                         </Link>
                         .

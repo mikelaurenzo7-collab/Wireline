@@ -50,18 +50,22 @@ const recommended = [
     "AES-256-GCM key for encrypting webhook secrets at rest — webhooks with signing secrets fail when unset",
   ],
   ["CRON_SECRET", "Bearer token for cron job authentication — scheduled jobs fail when unset"],
+  [
+    "UPSTASH_REDIS_REST_URL",
+    "Distributed rate-limit store — required for global abuse protection on Vercel",
+  ],
+  ["UPSTASH_REDIS_REST_TOKEN", "Upstash Redis token"],
 ];
 
 const optional = [
   ["GEMINI_API_KEY", "Gemini fallback for legacy paths"],
+  ["OPENAI_API_KEY", "Optional GPT second-tier fallback / degraded-mode recovery"],
   ["GOOGLE_CLIENT_ID", "Gmail OAuth — disables email integration when unset"],
   ["GOOGLE_CLIENT_SECRET", "Gmail OAuth"],
   ["MICROSOFT_CLIENT_ID", "Outlook OAuth"],
   ["MICROSOFT_CLIENT_SECRET", "Outlook OAuth"],
   ["SENTRY_DSN", "Backend error monitoring"],
   ["VITE_SENTRY_DSN", "Frontend error monitoring"],
-  ["UPSTASH_REDIS_REST_URL", "Distributed rate-limit store (in-memory fallback otherwise)"],
-  ["UPSTASH_REDIS_REST_TOKEN", "Upstash Redis token"],
   [
     "CLAUDE_MONTHLY_BUDGET_USD",
     "Monthly Claude spend cap in USD (default $50; 1 % daily safety valve)",

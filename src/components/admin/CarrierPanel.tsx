@@ -218,16 +218,16 @@ export function CarrierPanel({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {[
                       {
-                        v: "google",
-                        label: "Gemini 3.5 Flash",
+                        v: "anthropic",
+                        label: "Claude Sonnet 4.6",
                         sub: "PRIMARY",
-                        desc: "Primary live-call model for the fastest Gemini voice stack our voice platform currently supports.",
+                        desc: "Default live-call model for adaptive tone, tool reliability, and natural cadence.",
                       },
                       {
-                        v: "openai",
-                        label: "OpenAI GPT-4o",
-                        sub: "FALLBACK",
-                        desc: "Recovery model used when Wireline has to fall back from the Google voice path.",
+                        v: "google",
+                        label: "Gemini 3.5 Flash",
+                        sub: "FAST FALLBACK",
+                        desc: "Low-latency outage fallback for Anthropic voice disruptions; GPT can remain a second-tier recovery path.",
                       },
                     ].map((p) => (
                       <button
@@ -237,7 +237,8 @@ export function CarrierPanel({
                           onUpdateSettings({
                             ...settings,
                             voice_llm_provider: p.v,
-                            voice_llm_model: p.v === "google" ? "gemini-3.5-flash" : "gpt-4o",
+                            voice_llm_model:
+                              p.v === "anthropic" ? "claude-sonnet-4-6" : "gemini-3.5-flash",
                           })
                         }
                         className={cn(

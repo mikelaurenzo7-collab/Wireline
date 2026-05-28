@@ -247,7 +247,7 @@ export default function Compare() {
             Pricing
           </Link>
           <Link
-            to="/"
+            to="/signup"
             className="px-4 py-2 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.28em] hover:opacity-90 transition-opacity"
           >
             Start free trial
@@ -350,13 +350,17 @@ export default function Compare() {
                   {COMPETITORS.map((c) => (
                     <td
                       key={c.key}
+                      aria-label={`${c.label}: ${row[c.key] === true ? "yes" : row[c.key] === "partial" ? "partial" : "no"}`}
                       className={`p-3 text-center align-middle ${
                         c.key === "wireline" ? "bg-brand/8" : ""
                       }`}
                     >
-                      <div className="inline-flex">
+                      <div className="inline-flex" aria-hidden="true">
                         <CellGlyph value={row[c.key]} />
                       </div>
+                      <span className="sr-only">
+                        {row[c.key] === true ? "Yes" : row[c.key] === "partial" ? "Partial" : "No"}
+                      </span>
                     </td>
                   ))}
                 </tr>
@@ -420,11 +424,12 @@ export default function Compare() {
           </div>
           <div className="rounded-2xl glass border border-white/10 p-5">
             <p className="text-[10px] uppercase tracking-[0.3em] text-muted mb-1 font-semibold">
-              No limits
+              Flexible growth
             </p>
-            <p className="text-xl font-display italic text-ink mb-2">Unlimited Agents</p>
+            <p className="text-xl font-display italic text-ink mb-2">Agents by tier</p>
             <p className="text-xs text-ink/70">
-              Build as many specialized agents as you need. We don't charge per seat.
+              Every plan includes a clear agent cap, with à-la-carte add-ons when you need more
+              specialists.
             </p>
           </div>
         </div>
@@ -492,7 +497,7 @@ export default function Compare() {
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link
-            to="/"
+            to="/signup"
             className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
           >
             Start free trial

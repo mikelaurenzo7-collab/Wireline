@@ -531,7 +531,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
 
     if (!vapiResponse.ok && voiceSelection.provider === "google") {
       const geminiErrorBody = await vapiResponse.text();
-      log.warn("Vapi rejected Gemini outbound model; retrying with OpenAI fallback", {
+      log.warn("Vapi rejected Gemini outbound model; retrying with configured voice fallback", {
         userId,
         agentId,
         customerNumber,
@@ -563,7 +563,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
           body: JSON.stringify(fallbackPayload),
         },
         20_000,
-        "Vapi placeOutboundCall OpenAI fallback",
+        "Vapi placeOutboundCall voice fallback",
       );
     }
 

@@ -87,7 +87,7 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
   {
     id: "gemini",
     label: "Google Gemini",
-    description: "Legacy fallback for non-Claude paths and the live voice model.",
+    description: "Fast fallback for Anthropic voice outages plus grounded-search legacy paths.",
     group: "ai",
     required: true,
     envVars: ["GEMINI_API_KEY"],
