@@ -31,7 +31,8 @@ router.get(
         .orderBy(desc(schema.emailAccounts.createdAt));
 
       res.json({ accounts: accounts || [] });
-    } catch {
+    } catch (err: any) {
+      log.error("GET /api/emails/accounts failed", { error: getErrorMessage(err) });
       res.status(500).json({ error: "Failed to fetch accounts" });
     }
   },
@@ -300,7 +301,8 @@ router.delete(
           ),
         );
       res.json({ success: true });
-    } catch {
+    } catch (err: any) {
+      log.error("DELETE /api/emails/accounts/:id failed", { error: getErrorMessage(err) });
       res.status(500).json({ error: "Failed to disconnect account" });
     }
   },

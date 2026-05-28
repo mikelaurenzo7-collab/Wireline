@@ -11,6 +11,7 @@ import {
   resolveUserIdFromOAuthSession,
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
+import { getErrorMessage } from "../../lib/server-utils";
 import {
   microsoftGraphConfigured,
   getTeamsAuthUrl,
@@ -184,7 +185,8 @@ router.get(
     try {
       const channels = await listTeamsNotifyTargets(userId);
       res.json({ channels });
-    } catch {
+    } catch (err: any) {
+      log.error("GET /api/oauth/microsoft_teams/channels failed", { error: getErrorMessage(err) });
       res.status(500).json({ error: "Failed to list Teams channels" });
     }
   },
@@ -206,7 +208,10 @@ router.post(
         channel_name: channel_name ? String(channel_name) : undefined,
       });
       res.json({ ok: true });
-    } catch {
+    } catch (err: any) {
+      log.error("POST /api/oauth/microsoft_teams/notify-target failed", {
+        error: getErrorMessage(err),
+      });
       res.status(500).json({ error: "Failed to set Teams notify target" });
     }
   },
