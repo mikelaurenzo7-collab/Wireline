@@ -193,6 +193,11 @@ no longer loads on routes that never open it.
    first-party SDK calls.
 3. **Tenant backfill migration.** One-shot SQL endpoint that flips existing `google` / `gemini-3.5-flash` settings rows to `anthropic` / `claude-sonnet-4-6` — gated, dry-run-first, audited.
 4. **Tighten `--max-warnings 1100` → 700 over Q1.** Ratchet down 100 warnings per cycle via `eslint --max-warnings` in CI.
-5. **Strict-mode allowlist → cover every `*.test.ts` peer.** ~20 more files.
+5. **Strict-mode allowlist → cover every `*.test.ts` peer.** In progress —
+   the 2026 audit follow-up added `safe-date.ts`, `safe-number.ts`,
+   `agent-scorecard.ts`, `wireline-agent-escalation.ts`, and
+   `wireline-agent-objections.ts` (all pure-helper modules with full
+   `*.test.ts` coverage) to `tsconfig.strict.json`, each verified
+   strict-clean via `npm run lint:strict`. ~15 more test-covered files remain.
 6. **Visual canary for the live demo lines.** Cron a synthetic call to each showcase number nightly; alert on TTFT or sentiment regressions. Today this is detected by users; should be detected by us first.
 7. **Resolve `src/lib/audit-routes.ts` ↔ `src/routes/audit-routes.ts` naming collision** (one is helpers, one is the router — rename the lib file).
