@@ -24,8 +24,8 @@ export function timeoutMiddleware(timeoutMs: number) {
         res
           .status(504)
           .json({ error: "Request timeout — operation took too long", code: "REQUEST_TIMEOUT" });
+        res.socket?.destroy();
       }
-      res.socket?.destroy();
     }, timeoutMs);
 
     res.on("finish", () => clearTimeout(timer));

@@ -133,7 +133,7 @@ export function createRbacMiddleware(deps: RbacDeps) {
               })
               .catch((e: unknown) => log.warn("audit log failed", { error: String(e) }));
           }
-          deny(res, 403, `Forbidden: role "${role}" lacks permission "${permission}"`, "FORBIDDEN");
+          deny(res, 403, "Forbidden: insufficient permissions", "FORBIDDEN");
           return;
         }
         next();

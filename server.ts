@@ -365,12 +365,11 @@ async function startServer() {
     if (shuttingDown) return;
     shuttingDown = true;
     log.info(`Received ${signal} — starting graceful shutdown`);
-    const forceTimer = (
-      setTimeout(() => {
-        log.error("Graceful shutdown timed out — forcing exit");
-        process.exit(1);
-      }, GRACE_MS) as any
-    ).unref?.();
+    const forceTimer = setTimeout(() => {
+      log.error("Graceful shutdown timed out — forcing exit");
+      process.exit(1);
+    }, GRACE_MS);
+    (forceTimer as any).unref?.();
     server.close((err?: Error) => {
       clearTimeout(forceTimer);
       if (err) {
@@ -405,7 +404,13 @@ process.on("uncaughtException", (err: Error) => {
 });
 
 if (process.env.VERCEL !== "1") {
-  startServer();
+  startServer().catch((err) => {
+    log.error("Failed to start server", {
+      error: (err as Error).message,
+      stack: (err as Error).stack,
+    });
+    process.exit(1);
+  });
 }
 
 export { app };

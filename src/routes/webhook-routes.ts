@@ -169,6 +169,8 @@ router.patch(
         .where(and(eq(schema.webhooks.id, req.params.id), eq(schema.webhooks.userId, req.user.id)))
         .returning()) as any[];
 
+      if (!data) return res.status(404).json({ error: "Webhook not found." });
+
       void auditLogger
         .logWebhook("updated", {
           userId: req.user.id,
@@ -250,7 +252,8 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const limit = Math.min(parseInt((req.query.limit as string) || "50"), 200);
+      const parsed = parseInt((req.query.limit as string) || "50");
+      const limit = Math.min(Number.isFinite(parsed) ? parsed : 50, 200);
       const [hook] = await drizzle
         .select({ id: schema.webhooks.id })
         .from(schema.webhooks)
