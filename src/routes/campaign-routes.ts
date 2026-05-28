@@ -116,10 +116,7 @@ router.patch(
           .select({ id: schema.agents.id })
           .from(schema.agents)
           .where(
-            and(
-              eq(schema.agents.id, req.body.agent_id),
-              eq(schema.agents.userId, req.user.id),
-            ),
+            and(eq(schema.agents.id, req.body.agent_id), eq(schema.agents.userId, req.user.id)),
           )
           .limit(1);
         if (!agent) return res.status(404).json({ error: "Agent not found" });
@@ -132,10 +129,8 @@ router.patch(
       if (req.body?.status !== undefined) updates.status = req.body.status;
       if (req.body?.call_window_start !== undefined)
         updates.callWindowStart = req.body.call_window_start;
-      if (req.body?.call_window_end !== undefined)
-        updates.callWindowEnd = req.body.call_window_end;
-      if (req.body?.max_attempts !== undefined)
-        updates.maxAttempts = req.body.max_attempts;
+      if (req.body?.call_window_end !== undefined) updates.callWindowEnd = req.body.call_window_end;
+      if (req.body?.max_attempts !== undefined) updates.maxAttempts = req.body.max_attempts;
 
       const [data] = (await drizzle
         .update(schema.outboundCampaigns)
@@ -358,13 +353,21 @@ router.post(
 
       // Enqueue the campaign to be dialed by the durable background worker queue.
       // This prevents serverless timeouts and allows proper concurrency control.
-      await import("../lib/job-queue").then((mq) =>
-        mq.enqueue(drizzle, {
-          userId: req.user.id,
-          type: "campaign_dial",
-          payload: { userId: req.user.id },
-        }),
-      );
+      // Fire-and-forget: response is already sent, log errors but don't propagate.
+      import("../lib/job-queue")
+        .then((mq) =>
+          mq.enqueue(drizzle, {
+            userId: req.user.id,
+            type: "campaign_dial",
+            payload: { userId: req.user.id },
+          }),
+        )
+        .catch((err: unknown) =>
+          log.error("Failed to enqueue campaign_dial job", {
+            error: err instanceof Error ? err.message : String(err),
+            userId: req.user.id,
+          }),
+        );
     } catch (error: any) {
       log.error("Campaign launch failed", { error: getErrorMessage(error) });
       res.status(500).json({ error: "Failed to launch campaign." });

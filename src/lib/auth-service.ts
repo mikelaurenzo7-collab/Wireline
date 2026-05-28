@@ -42,7 +42,9 @@ export function verifyPassword(password: string, storedHash: string): boolean {
   const [salt, hash] = storedHash.split(":");
   if (!salt || !hash) return false;
   const key = scryptSync(password, salt, 64);
-  return timingSafeEqual(Buffer.from(hash, "hex"), key);
+  const hashBuf = Buffer.from(hash, "hex");
+  if (hashBuf.length !== key.length) return false;
+  return timingSafeEqual(hashBuf, key);
 }
 
 /**

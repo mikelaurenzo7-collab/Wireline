@@ -29,7 +29,8 @@ function getRedis(): Redis | null {
 // In-memory fallback with LRU eviction to prevent OOM
 const MAX_MEMORY_BUCKETS = 10_000; // Limit to prevent unbounded growth
 const memBuckets = new Map<string, { count: number; resetAt: number }>();
-const accessOrder: string[] = [];
+const accessSet = new Set<string>(); // O(1) existence check
+const accessOrder: string[] = []; // Maintains insertion/access order
 
 /** Evict least-recently-used bucket if at capacity */
 function evictLRUIfNeeded(): void {
@@ -37,15 +38,20 @@ function evictLRUIfNeeded(): void {
     const oldestKey = accessOrder.shift();
     if (oldestKey) {
       memBuckets.delete(oldestKey);
+      accessSet.delete(oldestKey);
     }
   }
 }
 
 /** Update access order for LRU tracking */
 function touchKey(key: string): void {
-  const idx = accessOrder.indexOf(key);
-  if (idx !== -1) {
-    accessOrder.splice(idx, 1);
+  if (accessSet.has(key)) {
+    const idx = accessOrder.indexOf(key);
+    if (idx !== -1) {
+      accessOrder.splice(idx, 1);
+    }
+  } else {
+    accessSet.add(key);
   }
   accessOrder.push(key);
 }
@@ -140,6 +146,7 @@ export function startMemoryCleanup(intervalMs = 5 * 60_000) {
 
     // Clean up access order to prevent memory leak
     for (const k of expiredKeys) {
+      accessSet.delete(k);
       const idx = accessOrder.indexOf(k);
       if (idx !== -1) accessOrder.splice(idx, 1);
     }

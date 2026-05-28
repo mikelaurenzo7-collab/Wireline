@@ -118,7 +118,8 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
   }
 
   const newAttempts = (deliveryWithHook.attempts || 0) + 1;
-  const reachedDead = !success && newAttempts >= 5;
+  const maxAttempts = deliveryWithHook.maxAttempts || 5;
+  const reachedDead = !success && newAttempts >= maxAttempts;
   const nextAttemptAt =
     success || reachedDead ? null : new Date(Date.now() + Math.pow(2, newAttempts) * 60_000);
 
