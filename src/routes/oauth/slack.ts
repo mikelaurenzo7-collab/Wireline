@@ -1,0 +1,188 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- OAuth provider responses include provider-specific extension fields. */
+import express from "express";
+import { drizzle, log, IS_PROD } from "../../lib/server-context";
+import * as schema from "../../db/schema";
+import { encryptSecret } from "../../lib/secret-vault";
+import { oauthRateLimiter } from "../../middleware/rate-limit-middleware";
+import { authenticateUser } from "../../middleware/auth";
+import {
+  generateOAuthState,
+  verifyOAuthState,
+  resolveUserIdFromOAuthSession,
+} from "../../lib/oauth-helpers";
+import { buildCSP, generateCspNonce } from "../../lib/csp";
+import {
+  slackOAuthConfigured,
+  getSlackAuthUrl,
+  exchangeSlackCode,
+  disconnectSlack,
+  listChannels as listSlackChannels,
+  setDefaultChannel as setSlackDefaultChannel,
+  bootstrapDefaultChannel,
+} from "../../lib/slack-service";
+
+const router = express.Router();
+
+// ────────────────────────────────────────────────────────────────────
+//  Slack OAuth
+// ────────────────────────────────────────────────────────────────────
+
+router.get(
+  "/api/oauth/slack/url",
+  oauthRateLimiter,
+  authenticateUser,
+  (req: express.Request, res: express.Response) => {
+    if (!slackOAuthConfigured()) {
+      return res.status(500).json({
+        error: "Missing SLACK_CLIENT_ID or SLACK_CLIENT_SECRET in environment variables.",
+      });
+    }
+    const baseUrl =
+      (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+      `${req.protocol}://${req.get("host")}`;
+    const redirectUri = `${baseUrl}/api/oauth/slack/callback`;
+    const uid = req.user?.id as string | undefined;
+    const authUrl = getSlackAuthUrl(
+      redirectUri,
+      generateOAuthState(uid ? { userId: uid } : undefined),
+    );
+    res.json({ url: authUrl });
+  },
+);
+
+router.get(
+  "/api/oauth/slack/callback",
+  oauthRateLimiter,
+  async (req: express.Request, res: express.Response) => {
+    const { code, state, error: oauthError } = req.query;
+    if (oauthError) {
+      return res.status(400).send(`Slack OAuth error: ${oauthError}`);
+    }
+    const vs = verifyOAuthState(state as string | undefined);
+    if (!vs.ok) {
+      return res.status(400).send("Invalid or expired OAuth state.");
+    }
+    if (!code || typeof code !== "string") {
+      return res.status(400).send("No code provided by Slack.");
+    }
+
+    try {
+      const baseUrl =
+        (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+        `${req.protocol}://${req.get("host")}`;
+      const redirectUri = `${baseUrl}/api/oauth/slack/callback`;
+      const tokens = await exchangeSlackCode(code, redirectUri);
+
+      let userId: string | null = vs.userId ?? (await resolveUserIdFromOAuthSession(req));
+      if (!userId) {
+        return res.status(401).send("Could not identify user. Please reconnect from the app.");
+      }
+
+      const slackInstanceUrl = `https://${tokens.team.name}.slack.com`;
+      const accessTokenSlack = encryptSecret(tokens.access_token);
+      const refreshTokenSlack = encryptSecret("slack-no-refresh");
+      const slackMetadata = {
+        team_id: tokens.team.id,
+        team_name: tokens.team.name,
+        bot_user_id: tokens.bot_user_id,
+      };
+
+      await drizzle
+        .insert(schema.crmConnections)
+        .values({
+          userId,
+          provider: "slack",
+          instanceUrl: slackInstanceUrl,
+          accessToken: accessTokenSlack,
+          refreshToken: refreshTokenSlack,
+          connectedEmail: tokens.team.name,
+          metadata: slackMetadata,
+        })
+        .onConflictDoUpdate({
+          target: [schema.crmConnections.userId, schema.crmConnections.provider],
+          set: {
+            instanceUrl: slackInstanceUrl,
+            accessToken: accessTokenSlack,
+            refreshToken: refreshTokenSlack,
+            connectedEmail: tokens.team.name,
+            metadata: slackMetadata,
+            updatedAt: new Date(),
+            active: true,
+          },
+        });
+
+      void bootstrapDefaultChannel(userId).catch((err) =>
+        log.warn("bootstrapDefaultChannel failed", {
+          userId,
+          error: err instanceof Error ? err.message : String(err),
+        }),
+      );
+
+      const targetOrigin =
+        (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+        `${req.protocol}://${req.get("host")}`;
+      const cspNonce = generateCspNonce();
+      res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce));
+      res.send(`
+      <html><body><script nonce="${cspNonce}">
+        if (window.opener) {
+          window.opener.postMessage({ type: 'CRM_OAUTH_SUCCESS', provider: 'slack' }, ${JSON.stringify(targetOrigin)});
+          window.close();
+        } else { window.location.href = '/'; }
+      </script><p>Slack connected successfully. You can close this window.</p></body></html>
+    `);
+    } catch (e: any) {
+      log.error("Slack OAuth callback failed", { error: e?.message || String(e) });
+      res.status(500).send("Slack authentication failed. Please try again.");
+    }
+  },
+);
+
+router.post(
+  "/api/oauth/slack/disconnect",
+  authenticateUser,
+  async (req: express.Request, res: express.Response) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    try {
+      await disconnectSlack(userId);
+      res.json({ ok: true });
+    } catch {
+      res.status(500).json({ error: "Failed to disconnect Slack" });
+    }
+  },
+);
+
+router.get(
+  "/api/oauth/slack/channels",
+  authenticateUser,
+  async (req: express.Request, res: express.Response) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    try {
+      const channels = await listSlackChannels(userId);
+      res.json({ channels });
+    } catch {
+      res.status(500).json({ error: "Failed to list Slack channels" });
+    }
+  },
+);
+
+router.post(
+  "/api/oauth/slack/default-channel",
+  authenticateUser,
+  async (req: express.Request, res: express.Response) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    const { channel_id } = req.body;
+    if (!channel_id) return res.status(400).json({ error: "channel_id required" });
+    try {
+      await setSlackDefaultChannel(userId, channel_id);
+      res.json({ ok: true });
+    } catch {
+      res.status(500).json({ error: "Failed to set default channel" });
+    }
+  },
+);
+
+export default router;
