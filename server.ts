@@ -41,7 +41,7 @@ import { performanceMonitoring } from "./src/middleware/performance";
 import { timeoutMiddleware } from "./src/middleware/timeout";
 
 // Routers
-import oauthRouter from "./src/routes/oauth-routes";
+import oauthRouter from "./src/routes/oauth";
 import metaWebhookRouter from "./src/routes/meta-webhook-routes";
 import publicStatsRouter from "./src/routes/public-stats-routes";
 import vapiRouter from "./src/routes/vapi";

@@ -115,7 +115,7 @@ export function normalizeShopDomain(raw: unknown): string | null {
 
 /**
  * Build the per-store Shopify install URL. Throws if the shop domain is
- * invalid — the caller (oauth-routes) catches and returns a 400, which
+ * invalid — the caller (oauth/shopify.ts) catches and returns a 400, which
  * is the right behavior: an unvalidated shop must never reach Shopify.
  */
 export function getShopifyAuthUrl(shop: string, redirectUri: string, state: string): string {
