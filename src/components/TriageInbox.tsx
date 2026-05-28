@@ -124,7 +124,7 @@ export default function TriageInbox() {
       {loading && !data ? (
         <div className="h-full flex flex-col items-center justify-center gap-2 py-6">
           <Loader2 className="w-5 h-5 animate-spin text-brand" />
-          <p className="text-[9px] uppercase tracking-[0.4em] text-muted">Scanning…</p>
+          <p className="text-eyebrow">Scanning…</p>
         </div>
       ) : fetchErr ? (
         <div className="h-full flex flex-col items-center justify-center gap-3 px-6 text-center py-6">
@@ -183,7 +183,7 @@ export default function TriageInbox() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="h-9 px-3 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
+            className="h-9 px-3 rounded-full glass border border-white/10 text-eyebrow hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
           >
             {loading ? (
               <Loader2 className="w-3 h-3 animate-spin" />

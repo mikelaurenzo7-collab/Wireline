@@ -135,7 +135,7 @@ export default function FleetTaskBridge() {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3 py-12">
         <Loader2 className="w-5 h-5 animate-spin text-brand" />
-        <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">Loading queue</span>
+        <span className="app-section-title/70">Loading queue</span>
       </div>
     );
   }
@@ -153,7 +153,7 @@ export default function FleetTaskBridge() {
         </div>
         <div className="space-y-1 max-w-xs">
           <h4 className="font-display italic lowercase text-lg text-ink">queue offline</h4>
-          <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70">{error}</p>
+          <p className="app-section-title/70">{error}</p>
         </div>
       </div>
     );
@@ -167,9 +167,7 @@ export default function FleetTaskBridge() {
         </div>
         <div className="space-y-1">
           <h4 className="font-display italic lowercase text-lg text-ink">queue clear</h4>
-          <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70">
-            All handoffs processed
-          </p>
+          <p className="app-section-title/70">All handoffs processed</p>
         </div>
       </div>
     );

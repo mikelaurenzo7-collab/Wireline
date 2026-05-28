@@ -295,9 +295,7 @@ export default function Pricing() {
           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-white/8 mb-4"
         >
           <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          <span className="text-[10px] uppercase tracking-[0.42em] text-muted">
-            Pricing · Start free, upgrade when ready
-          </span>
+          <span className="text-eyebrow">Pricing · Start free, upgrade when ready</span>
         </motion.div>
 
         <motion.h1
@@ -338,7 +336,7 @@ export default function Pricing() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.28, duration: 0.6 }}
-          className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[10px] uppercase tracking-[0.28em] text-muted/70"
+          className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-eyebrow opacity-90"
         >
           <Link to="/for/home-services" className="hover:text-brand transition-colors">
             Home Services
@@ -446,7 +444,7 @@ export default function Pricing() {
               >
                 {tier.highlight && (
                   <span
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full text-[10px] uppercase tracking-[0.35em] font-semibold z-10"
+                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full text-eyebrow font-semibold z-10"
                     style={{
                       background: "#4F1E7B",
                       color: "#fff",
@@ -559,9 +557,7 @@ export default function Pricing() {
           className="mt-14 max-w-5xl mx-auto"
         >
           <div className="text-center mb-6">
-            <p className="text-[10px] uppercase tracking-[0.42em] text-brand mb-2">
-              ROI snapshot · vs traditional headcount
-            </p>
+            <p className="text-eyebrow text-brand mb-2">ROI snapshot · vs traditional headcount</p>
             <h3 className="font-display italic text-2xl text-ink leading-tight">
               How much you save replacing one human role
             </h3>
@@ -607,9 +603,7 @@ export default function Pricing() {
                     className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-20 blur-3xl pointer-events-none"
                     style={{ background: "#10B981" }}
                   />
-                  <p className="text-[10px] uppercase tracking-[0.32em] text-muted/70 mb-1">
-                    Replace
-                  </p>
+                  <p className="app-section-title opacity-90 mb-1">Replace</p>
                   <p className="text-[14px] font-semibold text-ink mb-3">{row.role}</p>
                   <div className="space-y-1.5 mb-3 text-[11px]">
                     <div className="flex justify-between text-muted/80">
@@ -626,9 +620,7 @@ export default function Pricing() {
                     </div>
                   </div>
                   <div className="pt-3 border-t border-white/10 flex items-baseline justify-between">
-                    <span className="text-[10px] uppercase tracking-[0.3em] text-emerald-600">
-                      You save
-                    </span>
+                    <span className="text-eyebrow text-emerald-600">You save</span>
                     <span className="font-display italic text-2xl text-emerald-600 tabular-nums">
                       ${savings.toLocaleString()}
                       <span className="text-[11px] text-emerald-600/70 ml-1">/yr ({pct}%)</span>
@@ -651,9 +643,7 @@ export default function Pricing() {
           transition={{ delay: 0.9, duration: 0.6 }}
           className="mt-14 max-w-3xl mx-auto text-center space-y-3"
         >
-          <p className="text-[10px] uppercase tracking-[0.42em] text-muted/70">
-            No long-term contracts · Cancel anytime · USD pricing
-          </p>
+          <p className="text-eyebrow/70">No long-term contracts · Cancel anytime · USD pricing</p>
           <p className="text-[12px] text-muted/65">
             Voice minutes are pooled across all agents in your workspace. Overage is tier-based
             (Personal: $0.20/min · Starter: $0.18/min · Pro: $0.15/min · Business: $0.14/min) —

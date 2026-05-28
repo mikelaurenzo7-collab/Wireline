@@ -645,9 +645,7 @@ export default function AppointmentsView() {
             {isLoading ? (
               <div className="h-full flex items-center justify-center gap-3">
                 <Loader2 className="w-5 h-5 animate-spin text-brand" />
-                <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">
-                  Loading…
-                </span>
+                <span className="app-section-title/70">Loading…</span>
               </div>
             ) : viewMode === "calendar" ? (
               <Panel title="Calendar" hint="Monthly view" icon={CalendarIcon} flush>
@@ -684,7 +682,7 @@ export default function AppointmentsView() {
                           <h3 className="font-display italic lowercase text-2xl text-ink">
                             no active commitments
                           </h3>
-                          <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70 max-w-xs">
+                          <p className="app-section-title/70 max-w-xs">
                             Book a commitment manually or let agents schedule during calls.
                           </p>
                         </div>

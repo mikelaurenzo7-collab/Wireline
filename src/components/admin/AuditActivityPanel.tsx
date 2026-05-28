@@ -82,7 +82,7 @@ export function AuditActivityPanel() {
     <div className="h-full flex flex-col gap-3 overflow-y-auto scrollbar-hide pb-6">
       {/* Window selector */}
       <div className="flex items-center justify-between shrink-0">
-        <h3 className="text-[9px] uppercase tracking-[0.4em] text-muted">AI Usage · Last</h3>
+        <h3 className="text-eyebrow">AI Usage · Last</h3>
         <div className="flex p-0.5 rounded-full glass border border-white/10">
           {windowOpts.map((d) => (
             <button
@@ -143,7 +143,7 @@ export function AuditActivityPanel() {
           {/* Action breakdown */}
           <div className="grid md:grid-cols-2 gap-3 shrink-0">
             <div className="p-6 rounded-3xl glass border border-white/10 flex flex-col gap-4">
-              <h4 className="text-[9px] uppercase tracking-[0.4em] text-muted">Cost by Action</h4>
+              <h4 className="text-eyebrow">Cost by Action</h4>
               <div className="space-y-4">
                 {byAction.length === 0 ? (
                   <p className="py-8 text-center text-[10px] text-muted uppercase tracking-widest">
@@ -171,7 +171,7 @@ export function AuditActivityPanel() {
 
             {/* Daily Trend */}
             <div className="p-6 rounded-3xl glass border border-white/10 flex flex-col gap-4">
-              <h4 className="text-[9px] uppercase tracking-[0.4em] text-muted">Cost Trend</h4>
+              <h4 className="text-eyebrow">Cost Trend</h4>
               <div className="h-48 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={byDay}>
@@ -226,9 +226,7 @@ export function AuditActivityPanel() {
           {/* Recent Ledger */}
           <div className="flex-1 min-h-[300px] p-6 rounded-3xl glass border border-white/10 flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <h4 className="text-[9px] uppercase tracking-[0.4em] text-muted">
-                Recent Autonomous Actions
-              </h4>
+              <h4 className="text-eyebrow">Recent Autonomous Actions</h4>
               {recentLoading && <Loader2 className="w-3 h-3 animate-spin text-muted" />}
             </div>
             <div className="space-y-1">

@@ -294,9 +294,7 @@ export default function DncManager() {
               {loading ? (
                 <div className="h-full flex flex-col items-center justify-center gap-3">
                   <Loader2 className="w-6 h-6 animate-spin text-brand" />
-                  <p className="text-[9px] uppercase tracking-[0.4em] text-muted">
-                    Loading DNC list…
-                  </p>
+                  <p className="text-eyebrow">Loading DNC list…</p>
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center gap-4 text-center">

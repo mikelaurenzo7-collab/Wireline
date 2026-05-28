@@ -164,7 +164,7 @@ export function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled:
 
           {enrichment.sources?.length > 0 && (
             <div className="rounded-2xl glass border border-white/10 p-4">
-              <div className="text-[10px] uppercase tracking-[0.4em] text-muted mb-2">Sources</div>
+              <div className="app-section-title mb-2">Sources</div>
               <ul className="space-y-1 text-xs">
                 {enrichment.sources.map((s: string, i: number) => (
                   <li

@@ -165,7 +165,7 @@ export default function ResetPassword() {
             </p>
 
             <div className="space-y-2">
-              <label className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5">
+              <label className="app-section-title/80 flex items-center gap-1.5">
                 <Lock className="w-3 h-3 text-brand" />
                 New password
               </label>
@@ -182,7 +182,7 @@ export default function ResetPassword() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5">
+              <label className="app-section-title/80 flex items-center gap-1.5">
                 <Lock className="w-3 h-3 text-brand" />
                 Confirm new password
               </label>

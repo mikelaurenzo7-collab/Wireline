@@ -346,7 +346,7 @@ export default function CrmConnectionCard() {
           <p className="text-[9px] uppercase tracking-[0.35em] text-brand font-semibold">
             Connected stack
           </p>
-          <p className="text-[11px] text-muted/80 mt-0.5">
+          <p className="text-caption mt-0.5">
             {connectedCount} of {PROVIDERS.length} integrations active — agents unlock tools per
             connection.
           </p>

@@ -13,7 +13,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
   return (
     <div className="flex flex-col gap-6">
       <div className="p-6 rounded-2xl glass border border-white/10">
-        <h3 className="text-[9px] uppercase tracking-[0.4em] text-muted mb-6 flex items-center gap-2">
+        <h3 className="text-eyebrow mb-6 flex items-center gap-2">
           <Bot className="w-3.5 h-3.5" /> Brand Identity
         </h3>
 

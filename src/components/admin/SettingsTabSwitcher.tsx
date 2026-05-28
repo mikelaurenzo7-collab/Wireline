@@ -87,7 +87,7 @@ export default function SettingsTabSwitcher() {
                 role="tab"
                 aria-selected={activeTab === t.id}
                 className={cn(
-                  "shrink-0 snap-start px-2.5 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.12em] transition-colors whitespace-nowrap font-medium",
+                  "shrink-0 snap-start min-h-10 px-3 py-1.5 rounded-lg text-[11px] uppercase tracking-[0.1em] transition-colors whitespace-nowrap font-medium",
                   activeTab === t.id
                     ? "bg-brand/20 text-brand font-semibold"
                     : "text-muted hover:text-ink hover:bg-black/5",

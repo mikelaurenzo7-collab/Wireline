@@ -436,7 +436,7 @@ function TopicsView() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <div className="text-[10px] uppercase tracking-[0.4em] text-muted">
+        <div className="app-section-title">
           {data.cached ? "Cached" : "Fresh"} · {data.total_analyzed} signals analyzed
         </div>
         <button
@@ -832,7 +832,7 @@ function FailureModesView() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="text-[10px] uppercase tracking-[0.4em] text-muted">
+        <div className="app-section-title">
           {data.cached ? "Cached" : "Fresh"} · {modes.length} clusters
         </div>
         <button

@@ -216,9 +216,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                           )}
                         </div>
 
-                        <p className="text-[11px] text-muted/80 leading-relaxed">
-                          {tool.description}
-                        </p>
+                        <p className="text-caption leading-relaxed">{tool.description}</p>
 
                         {isMissingIntegration && (
                           <div className="mt-3 flex items-center gap-1.5 text-amber-600 text-[10px] bg-amber-500/5 py-1.5 px-2 rounded-md border border-amber-500/20">

@@ -659,6 +659,42 @@
   color: var(--color-muted);
 }
 
+/* Section labels inside authenticated pages (replaces 10px uppercase muted) */
+.app-section-title {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--color-muted-soft);
+  line-height: 1.35;
+}
+
+/* Marketing long-form pages */
+.marketing-surface .marketing-hero-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(2rem, 3.5vw + 1rem, 3.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+  text-wrap: balance;
+}
+
+.marketing-surface .marketing-hero-lead {
+  font-size: clamp(1rem, 0.2vw + 1rem, 1.125rem);
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--color-ink) 78%, transparent);
+  max-width: 42rem;
+}
+
+/* Dense tables / lists in app panels */
+.app-meta {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--color-muted-soft);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Force light color scheme for native form controls */
 input[type="email"],
 input[type="password"],

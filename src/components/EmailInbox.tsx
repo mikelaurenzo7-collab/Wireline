@@ -608,7 +608,7 @@ export default function EmailInbox() {
                       <h3 className="font-display italic lowercase text-2xl text-ink">
                         select a thread
                       </h3>
-                      <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70 max-w-sm">
+                      <p className="app-section-title/70 max-w-sm">
                         Pick a conversation from the list to monitor or reply.
                       </p>
                     </div>

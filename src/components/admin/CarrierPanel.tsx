@@ -316,9 +316,7 @@ export function CarrierPanel({
         <div className="space-y-3">
           {phoneNumbers.length === 0 ? (
             <div className="rounded-xl glass border border-white/10 border-dashed py-8 text-center">
-              <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70">
-                No active lines
-              </p>
+              <p className="app-section-title/70">No active lines</p>
             </div>
           ) : (
             <div className="space-y-2">

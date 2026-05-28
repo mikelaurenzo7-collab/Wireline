@@ -192,7 +192,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
     <div className="rounded-xl bg-black/5 border border-black/10 p-5 space-y-4 mt-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <label className="text-[10px] uppercase tracking-[0.4em] text-muted">Name</label>
+          <label className="app-section-title">Name</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -201,7 +201,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-[10px] uppercase tracking-[0.4em] text-muted">URL</label>
+          <label className="app-section-title">URL</label>
           <input
             value={url}
             onChange={(e) => setUrl(e.target.value)}
@@ -212,7 +212,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
       </div>
 
       <div className="space-y-2">
-        <label className="text-[10px] uppercase tracking-[0.4em] text-muted">Events</label>
+        <label className="app-section-title">Events</label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
           {events.map((e) => {
             const on = picked.has(e);
@@ -256,7 +256,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-[10px] uppercase tracking-[0.4em] text-muted">
+        <label className="app-section-title">
           Signing Secret{" "}
           <span className="text-muted/60">
             (optional — when set, body is signed as X-Wireline-Signature: sha256=&lt;hex&gt;)

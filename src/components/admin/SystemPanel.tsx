@@ -111,9 +111,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Zap className="w-4 h-4 text-brand" />
-                  <h5 className="text-[10px] uppercase tracking-[0.4em] text-muted font-black">
-                    Service Level Objectives
-                  </h5>
+                  <h5 className="app-section-title font-black">Service Level Objectives</h5>
                 </div>
                 <span className="text-[9px] font-mono text-muted uppercase">
                   Last Evaluation:{" "}
@@ -245,9 +243,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Network className="w-4 h-4 text-brand" />
-                  <h5 className="text-[10px] uppercase tracking-[0.4em] text-muted font-black">
-                    System Backbone
-                  </h5>
+                  <h5 className="app-section-title font-black">System Backbone</h5>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">

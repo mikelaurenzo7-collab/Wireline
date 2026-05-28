@@ -281,9 +281,7 @@ export default function Integrations() {
             {loading ? (
               <div className="h-full flex flex-col items-center justify-center gap-2 py-8">
                 <Loader2 className="w-5 h-5 animate-spin text-brand" />
-                <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">
-                  Loading integrations
-                </span>
+                <span className="app-section-title/70">Loading integrations</span>
               </div>
             ) : accounts.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center gap-4 py-8 text-center px-6">
@@ -294,7 +292,7 @@ export default function Integrations() {
                   <h3 className="font-display italic lowercase text-2xl text-ink">
                     no carriers linked
                   </h3>
-                  <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70 max-w-sm">
+                  <p className="app-section-title/70 max-w-sm">
                     Connect Gmail, Outlook, or Yahoo — agents triage and reply from caller moments
                     below.
                   </p>

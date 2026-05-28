@@ -85,7 +85,7 @@ export function ActionFeed({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-[10px] uppercase tracking-[0.4em] font-medium text-muted flex items-center gap-2">
+        <h3 className="app-section-title flex items-center gap-2">
           <Sparkles className="w-3.5 h-3.5 text-brand" />
           Intelligence Hub
         </h3>

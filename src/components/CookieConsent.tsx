@@ -94,7 +94,7 @@ export default function CookieConsent() {
             </div>
 
             {/* Copy */}
-            <p className="text-[11px] text-muted/80 leading-relaxed flex-1 min-w-0">
+            <p className="text-caption leading-relaxed flex-1 min-w-0">
               We use only essential cookies to keep you signed in — no advertising or cross-site
               tracking.{" "}
               <Link

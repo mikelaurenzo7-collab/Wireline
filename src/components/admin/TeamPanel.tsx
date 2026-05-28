@@ -90,7 +90,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
             </div>
 
             <div className="space-y-1">
-              <div className="text-[10px] uppercase tracking-[0.4em] text-muted mb-4 px-1 flex justify-between items-center">
+              <div className="app-section-title mb-4 px-1 flex justify-between items-center">
                 <span>Active Roster</span>
                 <span>{members.length} Total</span>
               </div>

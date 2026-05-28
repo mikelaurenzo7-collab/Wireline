@@ -11,6 +11,7 @@ import { LiveMonitor } from "../components/CommandCenter/LiveMonitor";
 import { ActionFeed } from "../components/CommandCenter/ActionFeed";
 import OnboardingQuickstart from "../components/OnboardingQuickstart";
 import PageTransition from "../components/layout/PageTransition";
+import AppPageIntro from "../components/layout/AppPageIntro";
 import { clsx } from "clsx";
 import { motion } from "motion/react";
 
@@ -211,137 +212,127 @@ export default function LiveOps() {
             right-aligned. A small orientation strip on the left
             clarifies what this page IS vs the nearby /cockpit page
             (which manages the agent floor). */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
-          {/* Orientation eyebrow — anchors the page identity for first-time
-              visitors and gives demo viewers the framing line. */}
-          <div className="min-w-0 flex-1 sm:max-w-md">
-            <p className="text-[9px] uppercase tracking-[0.38em] text-brand/80 font-medium leading-none mb-1">
-              Workspace · Owner pulse
-            </p>
-            <h1 className="page-title-aurora font-display italic text-xl sm:text-2xl leading-tight tracking-tight">
-              Live Ops
-            </h1>
-            <p className="mt-1 text-[11px] text-muted/80 leading-relaxed">
-              Live calls, action feed, lead intel — what's happening + what to do next. For the
-              floor view (agent availability + listen-in), open{" "}
+        <AppPageIntro
+          eyebrow="Workspace · Owner pulse"
+          title="Live Ops"
+          subtitle={
+            <>
+              Live calls, action feed, lead intel — what&apos;s happening and what to do next. For
+              the floor view (agent availability + listen-in), open{" "}
               <button
                 type="button"
                 onClick={() => navigate("/cockpit")}
-                className="text-brand hover:underline"
+                className="text-brand hover:underline font-medium"
               >
                 Cockpit ↗
               </button>
               .
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Activate Growth — full button when the user has at least one
+            </>
+          }
+          actions={
+            <>
+              {/* Activate Growth — full button when the user has at least one
                 agent, disabled-stub when they don't. Stub still occupies the
                 slot so fresh accounts don't see a blank gap that reads as
                 broken UI. Hover-tooltip routes them to /agents to set up. */}
-            {(stats?.agents?.length ?? 0) > 0 ? (
-              <button
-                onClick={async () => {
-                  if (activatingGrowth) return;
-                  setActivatingGrowth(true);
-                  try {
-                    const res = await authFetch("/api/jobs/prospect", { method: "POST" });
-                    if (!res.ok) {
-                      const body = await res.json().catch(() => ({}));
-                      throw new Error(body.error || `HTTP ${res.status}`);
-                    }
-                    const body = (await res.json().catch(() => ({}))) as {
-                      prospectingEnabled?: boolean;
-                    };
-                    if (body.prospectingEnabled === false) {
-                      toastInfo(
-                        "Prospecting is disabled",
-                        "Open Settings → Growth to enable autonomous prospecting and configure targeting.",
+              {(stats?.agents?.length ?? 0) > 0 ? (
+                <button
+                  onClick={async () => {
+                    if (activatingGrowth) return;
+                    setActivatingGrowth(true);
+                    try {
+                      const res = await authFetch("/api/jobs/prospect", { method: "POST" });
+                      if (!res.ok) {
+                        const body = await res.json().catch(() => ({}));
+                        throw new Error(body.error || `HTTP ${res.status}`);
+                      }
+                      const body = (await res.json().catch(() => ({}))) as {
+                        prospectingEnabled?: boolean;
+                      };
+                      if (body.prospectingEnabled === false) {
+                        toastInfo(
+                          "Prospecting is disabled",
+                          "Open Settings → Growth to enable autonomous prospecting and configure targeting.",
+                        );
+                      } else {
+                        toastSuccess(
+                          "Growth engine queued",
+                          "Apollo Intelligence is sourcing new leads. They'll appear in Outbound shortly.",
+                        );
+                      }
+                    } catch (err: any) {
+                      toastError(
+                        "Failed to activate growth engine",
+                        err?.message || "Check network and try again.",
                       );
-                    } else {
-                      toastSuccess(
-                        "Growth engine queued",
-                        "Apollo Intelligence is sourcing new leads. They'll appear in Outbound shortly.",
-                      );
+                    } finally {
+                      setActivatingGrowth(false);
                     }
-                  } catch (err: any) {
-                    toastError(
-                      "Failed to activate growth engine",
-                      err?.message || "Check network and try again.",
-                    );
-                  } finally {
-                    setActivatingGrowth(false);
-                  }
-                }}
-                disabled={activatingGrowth}
-                className="flex items-center gap-2 px-6 py-3 bg-brand text-on-brand rounded-2xl hover:bg-brand-2 transition-all shadow-xl shadow-brand/20 active:scale-95 disabled:opacity-60 disabled:cursor-wait"
-              >
-                <Zap
-                  className={clsx("w-4 h-4 fill-current", activatingGrowth && "animate-pulse")}
-                />
-                <span className="text-xs font-black uppercase tracking-widest">
-                  {activatingGrowth ? "Activating…" : "Activate Growth"}
-                </span>
-              </button>
-            ) : (
-              <button
-                onClick={() => navigate("/agents")}
-                title="Create an agent first → /agents"
-                className="flex items-center gap-2 px-6 py-3 rounded-2xl border border-white/10 bg-white/5 text-muted/70 hover:text-ink hover:border-white/25 transition-colors"
-              >
-                <Zap className="w-4 h-4" />
-                <span className="text-xs font-black uppercase tracking-widest">
-                  Create an agent →
-                </span>
-              </button>
-            )}
+                  }}
+                  disabled={activatingGrowth}
+                  className="flex items-center gap-2 px-6 py-3 bg-brand text-on-brand rounded-2xl hover:bg-brand-2 transition-all shadow-xl shadow-brand/20 active:scale-95 disabled:opacity-60 disabled:cursor-wait"
+                >
+                  <Zap
+                    className={clsx("w-4 h-4 fill-current", activatingGrowth && "animate-pulse")}
+                  />
+                  <span className="text-xs font-black uppercase tracking-widest">
+                    {activatingGrowth ? "Activating…" : "Activate Growth"}
+                  </span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => navigate("/agents")}
+                  title="Create an agent first → /agents"
+                  className="flex items-center gap-2 px-6 py-3 rounded-2xl border border-white/10 bg-white/5 text-muted/70 hover:text-ink hover:border-white/25 transition-colors"
+                >
+                  <Zap className="w-4 h-4" />
+                  <span className="text-xs font-black uppercase tracking-widest">
+                    Create an agent →
+                  </span>
+                </button>
+              )}
 
-            {/* Live telemetry strip — bound to real fleet/presence state.
+              {/* Live telemetry strip — bound to real fleet/presence state.
                 Previously this rendered hardcoded "0.02ms Latency" / "12 Online"
                 placeholders that violated the no-mocks rule and confused
                 operators who couldn't reconcile the numbers with their
                 actual data. */}
-            <div className="hidden xl:flex items-center gap-6 px-6 py-3 bg-black/[0.02] border border-black/5 rounded-2xl">
-              <div className="flex flex-col">
-                <span className="text-[9px] uppercase tracking-wider text-muted font-bold">
-                  Live Calls
-                </span>
-                <span className="text-xs font-mono font-bold text-brand">
-                  {calls.length} active
-                </span>
+              <div className="hidden xl:flex items-center gap-6 px-6 py-3 bg-black/[0.02] border border-black/5 rounded-2xl">
+                <div className="flex flex-col">
+                  <span className="text-eyebrow">Live Calls</span>
+                  <span className="text-xs font-mono font-bold text-brand">
+                    {calls.length} active
+                  </span>
+                </div>
+                <div className="w-px h-6 bg-black/5" />
+                <button
+                  type="button"
+                  onClick={() => navigate("/agents")}
+                  className="flex flex-col text-left hover:opacity-80 transition-opacity"
+                  title="View fleet"
+                >
+                  <span className="text-eyebrow">Fleet Size</span>
+                  <span className="text-xs font-mono font-bold text-brand">
+                    {stats?.agents?.length ?? 0} agents
+                  </span>
+                </button>
               </div>
-              <div className="w-px h-6 bg-black/5" />
-              <button
-                type="button"
-                onClick={() => navigate("/agents")}
-                className="flex flex-col text-left hover:opacity-80 transition-opacity"
-                title="View fleet"
-              >
-                <span className="text-[9px] uppercase tracking-wider text-muted font-bold">
-                  Fleet Size
-                </span>
-                <span className="text-xs font-mono font-bold text-brand">
-                  {stats?.agents?.length ?? 0} agents
-                </span>
-              </button>
-            </div>
 
-            <button
-              onClick={refresh}
-              disabled={isRefreshing || loading}
-              className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn !p-3 !rounded-2xl"
-              aria-label="Refresh"
-            >
-              <RefreshCw className={clsx("w-5 h-5", isRefreshing && "animate-spin")} />
-            </button>
-          </div>
-        </div>
+              <button
+                onClick={refresh}
+                disabled={isRefreshing || loading}
+                className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn !p-3 !rounded-2xl"
+                aria-label="Refresh"
+              >
+                <RefreshCw className={clsx("w-5 h-5", isRefreshing && "animate-spin")} />
+              </button>
+            </>
+          }
+        />
 
         {/* Onboarding quickstart — self-hides once all 4 steps complete */}
         <section className="space-y-3">
-          <span className="text-[10px] uppercase tracking-[0.35em] text-muted font-medium">
-            Get started
-          </span>
+          <span className="app-section-title">Get started</span>
           <OnboardingQuickstart />
         </section>
 
@@ -353,9 +344,7 @@ export default function LiveOps() {
             min-h-[280px], gap-4. Internal Live Monitor still uses its
             own card. */}
         <section className="space-y-2 pt-2 border-t border-black/5">
-          <span className="text-[10px] uppercase tracking-[0.35em] text-muted font-medium block">
-            Live operations
-          </span>
+          <span className="app-section-title block">Live operations</span>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
             {/* Left Column: Live Monitor (8/12) */}
             <div className="lg:col-span-8 space-y-2">
@@ -370,7 +359,7 @@ export default function LiveOps() {
                 {/* Analytics: Sentiment */}
                 <div className="glass border-black/5 rounded-[2rem] p-4">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-[10px] uppercase tracking-[0.4em] font-medium text-muted flex items-center gap-2">
+                    <h3 className="app-section-title flex items-center gap-2">
                       <Globe className="w-3.5 h-3.5 text-brand" />
                       Market Sentiment
                     </h3>
@@ -379,7 +368,7 @@ export default function LiveOps() {
                   {sentimentData.length === 0 ? (
                     <div className="h-48 flex flex-col items-center justify-center gap-2 text-center border border-dashed border-black/8 rounded-2xl bg-black/[0.01] px-6">
                       <Activity className="w-6 h-6 text-muted/55" />
-                      <p className="text-[11px] text-ink/70 font-medium">No conversations yet</p>
+                      <p className="text-caption font-medium">No conversations yet</p>
                       <p className="text-[10px] text-muted/70 leading-relaxed">
                         Make your first call to{" "}
                         <a href="tel:+16306425661" className="text-brand hover:underline">
@@ -447,7 +436,7 @@ export default function LiveOps() {
                 {/* Analytics: Unit Economics */}
                 <div className="glass border-black/5 rounded-[2rem] p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-[10px] uppercase tracking-[0.4em] font-medium text-muted flex items-center gap-2">
+                    <h3 className="app-section-title flex items-center gap-2">
                       <Zap className="w-3.5 h-3.5 text-brand" />
                       Unit Economics
                     </h3>

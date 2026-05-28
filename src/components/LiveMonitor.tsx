@@ -394,7 +394,7 @@ export default function LiveMonitor() {
                       </div>
                       <div className="space-y-1.5">
                         <h3 className="font-display italic lowercase text-2xl text-ink/70">Idle</h3>
-                        <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.4em] text-muted/65 max-w-[240px] sm:max-w-[180px]">
+                        <p className="text-[9px] sm:app-section-title/65 max-w-[240px] sm:max-w-[180px]">
                           No active calls right now
                         </p>
                       </div>

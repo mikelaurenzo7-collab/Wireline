@@ -76,9 +76,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
     return (
       <section className="rounded-2xl glass border border-white/10 p-5 flex items-center gap-3">
         <Loader2 className="w-4 h-4 animate-spin text-brand" />
-        <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">
-          Loading scorecard
-        </span>
+        <span className="app-section-title/70">Loading scorecard</span>
       </section>
     );
   }

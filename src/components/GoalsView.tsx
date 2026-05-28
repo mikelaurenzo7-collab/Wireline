@@ -132,7 +132,7 @@ function GoalEditor({
         </span>
         <h3 className="font-display italic text-lg text-ink leading-tight">{metric.label}</h3>
       </div>
-      <p className="text-[11px] text-muted/80 leading-relaxed">{metric.description}</p>
+      <p className="text-caption leading-relaxed">{metric.description}</p>
 
       <label className="block">
         <span className="text-[9px] uppercase tracking-[0.22em] text-muted">
@@ -341,7 +341,7 @@ function EmptyMetricCard({
         </span>
         <h3 className="font-display italic text-lg text-ink/80 leading-tight">{metric.label}</h3>
       </div>
-      <p className="text-[11px] text-muted/80 leading-relaxed">{metric.description}</p>
+      <p className="text-caption leading-relaxed">{metric.description}</p>
       <p className="text-[11px] text-ink/60 tabular-nums">
         <span className="font-display italic text-xl text-ink/75">{num(current)}</span>{" "}
         {metric.unit} so far this month
@@ -456,15 +456,13 @@ export default function GoalsView() {
       <div className="relative aurora-ring rounded-3xl">
         <div className="relative rounded-3xl glass-strong overflow-hidden p-6 md:p-7 flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-[9px] uppercase tracking-[0.38em] text-brand/80 font-medium mb-1">
-              Monthly targets · {data.period_label}
-            </p>
+            <p className="text-eyebrow text-brand mb-1">Monthly targets · {data.period_label}</p>
             <h2 className="font-display italic text-2xl md:text-3xl text-ink leading-tight">
               {activeGoals === 0
                 ? "Set your first fleet goal"
                 : `${onPace} of ${activeGoals} ${activeGoals === 1 ? "goal" : "goals"} on pace`}
             </h2>
-            <p className="mt-1 text-[11px] text-muted/80 max-w-md leading-relaxed">
+            <p className="mt-1 text-caption max-w-md leading-relaxed">
               Goals measure live fleet activity against an even daily run-rate for the current
               calendar month.
             </p>

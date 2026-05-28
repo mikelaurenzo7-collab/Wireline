@@ -76,15 +76,13 @@ export function QualifyForm({
         <div className="space-y-4 pt-3">
           <div className="rounded-2xl p-6 glass-strong border border-white/12 flex items-center justify-between">
             <div>
-              <div className="text-[10px] uppercase tracking-[0.4em] text-muted mb-2">
-                Aggregate
-              </div>
+              <div className="app-section-title mb-2">Aggregate</div>
               <div className="font-display italic text-6xl text-aurora leading-none">
                 {q.total_score}
               </div>
             </div>
             <div className="text-right">
-              <div className="text-[10px] uppercase tracking-[0.4em] text-muted mb-2">Label</div>
+              <div className="app-section-title mb-2">Label</div>
               <div
                 className={cn(
                   "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] uppercase tracking-[0.3em]",

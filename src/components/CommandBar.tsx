@@ -465,9 +465,7 @@ export default function CommandBar() {
               ) : (
                 <div className="py-16 flex flex-col items-center justify-center gap-3">
                   <Terminal className="w-8 h-8 text-muted/55" />
-                  <p className="text-[10px] uppercase tracking-[0.4em] text-muted/65">
-                    No matching commands
-                  </p>
+                  <p className="app-section-title/65">No matching commands</p>
                 </div>
               )}
 

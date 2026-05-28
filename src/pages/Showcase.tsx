@@ -318,9 +318,7 @@ export default function Showcase() {
           </div>
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-[10px] uppercase tracking-[0.32em] text-muted/70 font-medium">
-                Demo agents
-              </span>
+              <span className="app-section-title opacity-90 font-medium">Demo agents</span>
               <span className="h-px flex-1 bg-black/10" />
             </div>
             <div className="grid grid-cols-1 gap-3">

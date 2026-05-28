@@ -534,9 +534,7 @@ export default function FleetSettings() {
                       className="flex flex-col items-center justify-center gap-3 py-12"
                     >
                       <Loader2 className="w-5 h-5 animate-spin text-brand" aria-hidden="true" />
-                      <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">
-                        Loading fleet
-                      </span>
+                      <span className="app-section-title/70">Loading fleet</span>
                     </div>
                   ) : agents.length === 0 ? (
                     <div className="rounded-xl glass border border-white/10 border-dashed py-10 text-center px-4">
@@ -544,7 +542,7 @@ export default function FleetSettings() {
                       <p className="font-display italic lowercase text-xl text-ink leading-tight">
                         no agents yet
                       </p>
-                      <p className="text-[11px] text-muted/80 mt-2 leading-relaxed">
+                      <p className="text-caption mt-2 leading-relaxed">
                         Create your first AI agent below — it will answer calls, book appointments,
                         and follow up for you.
                       </p>
@@ -791,7 +789,7 @@ export default function FleetSettings() {
                       <h3 className="font-display italic lowercase text-2xl text-ink">
                         pick an agent
                       </h3>
-                      <p className="text-[11px] text-muted/80 max-w-sm leading-relaxed">
+                      <p className="text-caption max-w-sm leading-relaxed">
                         Choose an agent on the left to view its calls, edit its personality, or
                         update what it knows.
                       </p>
@@ -1425,9 +1423,7 @@ export default function FleetSettings() {
                         className="flex flex-col items-center justify-center gap-3 py-20"
                       >
                         <Loader2 className="w-5 h-5 animate-spin text-brand" aria-hidden="true" />
-                        <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">
-                          Loading configuration
-                        </span>
+                        <span className="app-section-title/70">Loading configuration</span>
                       </div>
                     ) : (
                       <div className="space-y-3">
@@ -1524,7 +1520,7 @@ export default function FleetSettings() {
                             <div className="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-hide">
                               <AnimatePresence mode="popLayout">
                                 {agentConfig.directives?.length === 0 ? (
-                                  <div className="py-12 text-center text-[10px] uppercase tracking-[0.4em] text-muted/60">
+                                  <div className="py-12 text-center app-section-title/60">
                                     No directives yet
                                   </div>
                                 ) : (
@@ -1649,7 +1645,7 @@ export default function FleetSettings() {
                             <div className="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-hide">
                               <AnimatePresence mode="popLayout">
                                 {agentConfig.knowledge?.length === 0 ? (
-                                  <div className="py-12 text-center text-[10px] uppercase tracking-[0.4em] text-muted/60">
+                                  <div className="py-12 text-center app-section-title/60">
                                     No facts yet
                                   </div>
                                 ) : (

@@ -2,10 +2,12 @@ import { Link } from "react-router-dom";
 import WirelineMark from "../WirelineMark";
 import { cn } from "../../lib/utils";
 
+export type PublicNavActive = "signin" | "signup" | "home";
+
 type PublicSiteHeaderProps = {
   className?: string;
   /** Highlight Sign up vs Sign in on auth routes */
-  active?: "signin" | "signup" | "home";
+  active?: PublicNavActive;
 };
 
 export default function PublicSiteHeader({ className, active = "home" }: PublicSiteHeaderProps) {

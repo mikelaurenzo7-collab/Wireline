@@ -796,9 +796,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
 
       {/* Script preview */}
       <section className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 pb-20">
-        <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70 mb-3">
-          What callers hear
-        </p>
+        <p className="app-section-title/70 mb-3">What callers hear</p>
         <blockquote className="rounded-2xl glass border-l-4 border-brand p-6 sm:p-8 italic text-lg sm:text-xl text-ink/85 leading-relaxed">
           {cfg.scriptPreview}
         </blockquote>

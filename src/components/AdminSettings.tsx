@@ -392,9 +392,7 @@ export default function AdminSettings() {
                 className="h-full flex flex-col items-center justify-center gap-3"
               >
                 <Loader2 className="w-5 h-5 animate-spin text-brand" aria-hidden="true" />
-                <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">
-                  Loading settings
-                </span>
+                <span className="app-section-title/70">Loading settings</span>
               </div>
             ) : (
               <AnimatePresence mode="wait">

@@ -734,9 +734,7 @@ function CallDetail({
                 ) : (
                   <div className="h-full min-h-[200px] flex flex-col items-center justify-center gap-2">
                     <Activity className="w-6 h-6 text-muted/60" />
-                    <p className="text-[9px] uppercase tracking-[0.4em] text-muted/60">
-                      No recording available
-                    </p>
+                    <p className="text-eyebrow/60">No recording available</p>
                     <p className="text-[10px] text-muted/60">
                       Recordings are stored by the voice carrier when enabled
                     </p>

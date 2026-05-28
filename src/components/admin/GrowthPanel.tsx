@@ -102,9 +102,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
             <div className="space-y-6">
               <div className="flex items-center gap-2 mb-2">
                 <Target className="w-4 h-4 text-brand" />
-                <h5 className="text-[10px] uppercase tracking-[0.4em] text-muted font-black">
-                  Target Profile Parameters
-                </h5>
+                <h5 className="app-section-title font-black">Target Profile Parameters</h5>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">

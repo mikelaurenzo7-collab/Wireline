@@ -483,9 +483,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
             sales agent's escalations to the sales manager and a support
             agent's to the support lead. */}
         <div className="mt-4 pt-4 border-t border-black/5">
-          <p className="text-[9px] uppercase tracking-[0.35em] text-muted/65 font-semibold mb-1">
-            Route alerts to (this agent only)
-          </p>
+          <p className="text-eyebrow/65 font-semibold mb-1">Route alerts to (this agent only)</p>
           <p className="text-[10px] text-muted/65 mb-3 leading-relaxed">
             Both optional. Leave blank to use the tenant-wide Manager Alert Number from{" "}
             <a href="/admin?tab=carrier" className="text-[#4F1E7B] hover:underline">

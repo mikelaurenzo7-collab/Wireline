@@ -165,9 +165,7 @@ export default function StripeBillingCard() {
     return (
       <div className="rounded-2xl glass border border-white/10 p-10 flex items-center gap-4">
         <Loader2 className="w-5 h-5 animate-spin text-brand" />
-        <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">
-          Loading billing state…
-        </span>
+        <span className="app-section-title/70">Loading billing state…</span>
       </div>
     );
   }
@@ -240,7 +238,7 @@ export default function StripeBillingCard() {
             </p>
           )}
           {hasActive && (
-            <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70 mt-2">
+            <p className="app-section-title/70 mt-2">
               Use the Stripe portal above to upgrade, downgrade, or cancel.
             </p>
           )}
@@ -327,7 +325,7 @@ export default function StripeBillingCard() {
                 </div>
                 <ul className="space-y-2 flex-1">
                   {plan.features.map((f, i) => (
-                    <li key={i} className="flex items-start gap-2 text-[11px] text-muted/80">
+                    <li key={i} className="flex items-start gap-2 text-caption">
                       <Check
                         className="w-3.5 h-3.5 mt-0.5 shrink-0"
                         style={{ color: accent }}
@@ -368,7 +366,7 @@ export default function StripeBillingCard() {
           })}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/6 pt-6">
-          <div className="text-[10px] uppercase tracking-[0.35em] text-muted/65 flex items-center gap-2">
+          <div className="app-section-title/65 flex items-center gap-2">
             <Shield className="w-3 h-3" />
             Stripe · PCI DSS Level 1 · Cancel anytime
           </div>
@@ -455,7 +453,7 @@ function ActiveSubCard({
             <h3 className="font-display italic lowercase text-3xl md:text-4xl text-ink">
               {sub.plan_name || sub.plan || "—"}
             </h3>
-            <p className="text-[10px] uppercase tracking-[0.35em] text-muted/60">
+            <p className="app-section-title/60">
               {sub.max_agents ? (
                 <span className={agentCount >= sub.max_agents ? "text-amber-600" : ""}>
                   {agentCount} / {sub.max_agents} agents

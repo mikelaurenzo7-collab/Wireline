@@ -108,7 +108,7 @@ export default function SystemStatusBadge() {
       {open && health && (
         <div className="absolute bottom-full left-0 mb-2 w-64 rounded-2xl glass-strong border border-white/10 p-4 space-y-3 z-50 shadow-2xl">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-[0.4em] text-muted">System Health</span>
+            <span className="app-section-title">System Health</span>
             <button
               onClick={() => setOpen(false)}
               className="text-ink/40 hover:text-ink transition-colors text-xs"

@@ -651,7 +651,7 @@ export default function AgentTemplates() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="py-20 text-center text-[10px] uppercase tracking-[0.4em] text-muted/60"
+              className="py-20 text-center app-section-title/60"
             >
               No templates match your search
             </motion.div>

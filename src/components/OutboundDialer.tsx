@@ -501,9 +501,7 @@ export default function OutboundDialer() {
       {isLoading ? (
         <div className="h-full flex flex-col items-center justify-center gap-3">
           <Loader2 className="w-5 h-5 animate-spin text-brand" />
-          <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">
-            Loading dispatcher
-          </span>
+          <span className="app-section-title/70">Loading dispatcher</span>
         </div>
       ) : (
         <div className="h-full grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-0">
@@ -977,7 +975,7 @@ export default function OutboundDialer() {
               </div>
               <div className="space-y-1.5">
                 <h3 className="font-display italic lowercase text-2xl text-ink">no campaigns</h3>
-                <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70 max-w-xs">
+                <p className="app-section-title/70 max-w-xs">
                   Create a campaign to group and track bulk outbound calling efforts.
                 </p>
               </div>
@@ -1556,7 +1554,7 @@ function CallbacksList({
     return (
       <div className="h-full flex flex-col items-center justify-center gap-2">
         <Loader2 className="w-5 h-5 animate-spin text-brand" />
-        <p className="text-[9px] uppercase tracking-[0.4em] text-muted">Loading callbacks</p>
+        <p className="text-eyebrow">Loading callbacks</p>
       </div>
     );
   }
@@ -1585,9 +1583,7 @@ function CallbacksList({
   return (
     <div className="h-full flex flex-col min-h-0">
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
-        <span className="text-[9px] uppercase tracking-[0.35em] text-muted">
-          {callbacks.length} scheduled · auto-dialed at due time
-        </span>
+        <span className="text-eyebrow">{callbacks.length} scheduled · auto-dialed at due time</span>
         <button
           onClick={onRefresh}
           className="h-7 px-3 rounded-full glass border border-white/10 text-[9px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5"

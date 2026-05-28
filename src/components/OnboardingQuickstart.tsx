@@ -396,7 +396,7 @@ export default function OnboardingQuickstart({
         {/* Power Up: integration connect cards — shown once at least 2 core steps are done */}
         {completedCount >= 2 && (
           <div className="relative z-10 px-7 md:px-10 pb-7 pt-0">
-            <div className="text-[10px] uppercase tracking-[0.4em] text-muted mb-3 flex items-center gap-2">
+            <div className="app-section-title mb-3 flex items-center gap-2">
               <Link2 className="w-3 h-3" /> Power up your fleet
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">

@@ -533,7 +533,7 @@ export default function AgentTraining() {
                             </motion.div>
                           ))
                         ) : (
-                          <div className="sm:col-span-3 py-8 text-center text-[10px] uppercase tracking-[0.4em] text-muted/60">
+                          <div className="sm:col-span-3 py-8 text-center app-section-title/60">
                             {optSuggestions.reason || "Strategy optimal. No drift detected."}
                           </div>
                         )}

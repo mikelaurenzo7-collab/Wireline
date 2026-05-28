@@ -29,7 +29,7 @@ export function Field({
 }) {
   return (
     <div className="space-y-2">
-      <label className="text-[10px] uppercase tracking-[0.4em] text-muted">{label}</label>
+      <label className="app-section-title">{label}</label>
       {children}
       {hint && <p className="text-[10px] text-muted/70 leading-relaxed">{hint}</p>}
     </div>

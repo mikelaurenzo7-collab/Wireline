@@ -59,9 +59,7 @@ function ToastItem({ toast }: { toast: Toast }) {
         <div className="flex-1 min-w-0 pr-2">
           <p className="text-[12px] font-semibold text-ink leading-snug truncate">{toast.title}</p>
           {toast.message && (
-            <p className="text-[11px] text-muted/80 leading-snug mt-0.5 line-clamp-2">
-              {toast.message}
-            </p>
+            <p className="text-caption leading-snug mt-0.5 line-clamp-2">{toast.message}</p>
           )}
         </div>
         <button
