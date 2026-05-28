@@ -189,20 +189,25 @@ export function getIntegrationLogo(name: string): React.ReactNode | null {
   });
 }
 
-export default function IntegrationLogos() {
-  // Only the customer-facing "Integrates with" row is shown.
+export default function IntegrationLogos({ compact = false }: { compact?: boolean }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.45, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-      className="mt-10 pt-8 border-t border-white/8"
+      transition={{ delay: compact ? 0.2 : 0.45, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+      className={compact ? "mt-0 pt-0" : "mt-10 pt-8 border-t border-white/8"}
       aria-label="Wireline integrations"
     >
-      <p className="text-[8px] uppercase tracking-[0.5em] text-muted/55 mb-3 text-center">
+      <p
+        className={
+          compact
+            ? "text-eyebrow mb-2 text-left"
+            : "text-[8px] uppercase tracking-[0.5em] text-muted/55 mb-3 text-center"
+        }
+      >
         Integrates with
       </p>
-      <LogoRow logos={INTEGRATIONS} height={16} />
+      <LogoRow logos={INTEGRATIONS} height={compact ? 14 : 16} />
     </motion.div>
   );
 }

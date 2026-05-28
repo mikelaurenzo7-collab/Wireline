@@ -32,7 +32,9 @@ export default function CookieConsent() {
     "/security",
     "/changelog",
     "/support",
+    "/",
     "/signup",
+    "/signin",
     "/signin",
     "/reset-password",
   ];

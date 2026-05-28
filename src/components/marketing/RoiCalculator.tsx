@@ -32,6 +32,7 @@
  * sliders never overlap the output card at any viewport ≥ 360px wide.
  */
 import React, { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { Calculator, TrendingUp, Clock } from "lucide-react";
 
@@ -134,35 +135,29 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-        className="mt-4"
+        className="mt-0 shrink-0"
         aria-label="ROI snapshot"
       >
         <div className="rounded-2xl border border-brand/15 bg-white/70 p-3 shadow-[0_8px_28px_-18px_rgba(79,30,123,0.22)]">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[8px] uppercase tracking-[0.28em] text-brand font-semibold">
-                ROI snapshot
-              </p>
-              <p className="mt-1 font-display italic text-lg leading-none text-ink">
+              <p className="text-eyebrow !text-brand">ROI snapshot</p>
+              <p className="mt-1 font-display italic text-xl leading-none text-ink">
                 {fmtUsd(results.totalRecovered)}
-                <span className="ml-1 text-[10px] font-sans not-italic tracking-[0.16em] uppercase text-muted/60">
-                  /yr found
-                </span>
+                <span className="ml-1 text-caption font-sans not-italic">/yr recovered</span>
               </p>
             </div>
-            <div className="shrink-0 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-[9px] uppercase tracking-[0.22em] text-emerald-700">
+            <div className="shrink-0 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
               {results.paybackDays}d payback
             </div>
           </div>
-          <p className="mt-2 text-[10px] leading-relaxed text-muted/75">
-            Default math: 12 missed calls/week at $180/job.
-          </p>
-          <a
-            href="/pricing#roi"
-            className="mt-2 inline-flex min-h-9 items-center rounded-full text-[9px] uppercase tracking-[0.24em] text-brand hover:underline"
+          <p className="mt-2 text-caption">Default: 12 missed calls/week at $180/job.</p>
+          <Link
+            to="/pricing"
+            className="mt-2 inline-flex min-h-9 items-center text-caption font-semibold text-brand hover:underline"
           >
-            See full ROI math →
-          </a>
+            Full ROI calculator →
+          </Link>
         </div>
       </motion.section>
     );

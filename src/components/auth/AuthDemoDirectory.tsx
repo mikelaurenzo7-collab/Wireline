@@ -5,7 +5,7 @@ import type { ContactAgent } from "../../data/contact-agents";
 
 function AgentContactCard({ agent, isDemo }: { agent: ContactAgent; isDemo?: boolean }) {
   return (
-    <div className="relative rounded-xl p-3 overflow-hidden border border-white/10 glass">
+    <div className="relative rounded-xl p-3 overflow-hidden border border-black/8 bg-white/60">
       <div className="flex items-start gap-3">
         <div
           className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/10"
@@ -29,11 +29,9 @@ function AgentContactCard({ agent, isDemo }: { agent: ContactAgent; isDemo?: boo
             >
               {isDemo ? "Demo" : "Wireline Team"}
             </span>
-            <span className="text-[9px] uppercase tracking-[0.18em] text-muted/70 truncate">
-              {agent.name}
-            </span>
+            <span className="text-caption font-medium truncate">{agent.name}</span>
           </div>
-          <p className="font-display italic text-sm leading-snug text-ink/90 line-clamp-2 text-balance">
+          <p className="font-display italic text-sm leading-snug text-ink line-clamp-2 text-balance">
             {agent.role}
           </p>
           <a
@@ -80,10 +78,8 @@ export function AuthDemoDirectory({
         aria-expanded={expanded}
       >
         <div>
-          <p className="text-[9px] uppercase tracking-[0.38em] text-[#4F1E7B] font-semibold">
-            Try live agents
-          </p>
-          <p className="text-[11px] text-muted/75 mt-0.5">
+          <p className="text-eyebrow !text-brand">Try live agents</p>
+          <p className="text-caption mt-0.5">
             {expanded
               ? `${totalCount} lines — dial from your phone`
               : featured
