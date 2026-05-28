@@ -12,6 +12,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { BrandingProvider } from "./contexts/BrandingContext";
 import { MotionConfig } from "motion/react";
 
+const LandingPage = lazy(() => import("./pages/LandingPage"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const OAuthComplete = lazy(() => import("./pages/OAuthComplete"));
@@ -231,16 +232,26 @@ function AppContent() {
   }
 
   if (!user) {
-    // Unauthenticated home IS AuthPortal — the auth form on one side,
-    // the live demo-agent grid + value props on the other. Mike's
-    // call: kill the separate marketing LandingPage, the portal does
-    // both jobs (sell + sign in) on one screen. Any deep-link to a
-    // protected route also lands here so visitors sign in then
-    // continue.
+    // /signin and /signup get the clean auth portal.
+    // Everything else (including /) gets the marketing landing page
+    // so prospects see the full pitch before being asked to sign in.
+    if (
+      location.pathname === "/signin" ||
+      location.pathname === "/signup" ||
+      location.pathname === "/login"
+    ) {
+      return (
+        <ErrorBoundary>
+          <AuthPortal />
+        </ErrorBoundary>
+      );
+    }
     return (
-      <ErrorBoundary>
-        <AuthPortal />
-      </ErrorBoundary>
+      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+        <ErrorBoundary>
+          <LandingPage />
+        </ErrorBoundary>
+      </Suspense>
     );
   }
 

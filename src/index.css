@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -11,8 +11,8 @@
    â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 @theme {
-  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Instrument Serif", "Times New Roman", serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "DM Serif Display", Georgia, "Times New Roman", serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
   /* Core palette â€” single brand teal. The legacy --color-brand-2/3
@@ -25,7 +25,7 @@
   --color-brand-deep: #3B154C;     /* Deeper purple — TopBar & chrome surfaces */
   --color-ink: #1C1917;            /* Warm near-black text */
   --color-paper: #EFE9DC;          /* warm tan / mocha off-white — consistent base */
-  --color-muted: #7C7469;          /* Warm gray muted text */
+  --color-muted: #57534E;          /* Warm stone — WCAG AA 4.5:1+ on cream */
   /* Pure white for text/icons rendered ON solid brand-color surfaces
    * (purple buttons, gradient pills, etc.). We can't use text-white
    * for these because --color-white is intentionally remapped to a
@@ -135,15 +135,16 @@
     mix-blend-mode: multiply;
   }
 
-  /* Mobile text size adjustments for better readability
-     on small screens. Increases 9px→11px and 10px→12px. */
-  @media (max-width: 640px) {
-    .text-\[9px\] {
-      font-size: 11px !important;
-    }
-    .text-\[10px\] {
-      font-size: 12px !important;
-    }
+  /* Readability floor — enforce minimum 11px across all viewports.
+     The old 8px/9px micro-type was borderline unreadable even on
+     Retina displays. 11px Inter is clear at arm's length. */
+  .text-\[8px\],
+  .text-\[8\.5px\],
+  .text-\[9px\] {
+    font-size: 11px !important;
+  }
+  .text-\[10px\] {
+    font-size: 12px !important;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -399,7 +400,7 @@
 
 .brand-wordmark {
   @apply font-display uppercase font-normal;
-  letter-spacing: 0;
+  letter-spacing: 0.04em;
   text-rendering: geometricPrecision;
   color: #4F1E7B;
   filter: drop-shadow(0 0 10px rgba(79, 30, 123, 0.18));

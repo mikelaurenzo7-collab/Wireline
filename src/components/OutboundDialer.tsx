@@ -1274,7 +1274,7 @@ export default function OutboundDialer() {
                                         ? "#4F1E7B"
                                         : o.status?.includes("Blocked")
                                           ? "#FF9A5C"
-                                          : "#7C7469";
+                                          : "#57534E";
                                 return (
                                   <div key={o.status} className="flex items-center gap-2.5">
                                     <span className="text-[9px] text-muted w-28 shrink-0">

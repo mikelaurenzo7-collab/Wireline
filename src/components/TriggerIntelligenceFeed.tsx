@@ -47,7 +47,7 @@ export default function TriggerIntelligenceFeed({ activity }: { activity: Activi
         <ul className="flex-1 divide-y divide-white/5 overflow-y-auto scrollbar-hide">
           <AnimatePresence mode="popLayout">
             {activity.map((item, idx) => {
-              const meta = TYPE_META[item.type] ?? { icon: Activity, color: "#7C7469" };
+              const meta = TYPE_META[item.type] ?? { icon: Activity, color: "#57534E" };
               const IconComp = meta.icon;
               const ringCls = IMPORTANCE_RING[item.importance] ?? IMPORTANCE_RING.low;
               return (

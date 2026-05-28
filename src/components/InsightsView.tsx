@@ -1793,7 +1793,7 @@ function QualityView({ days }: { days: number }) {
                 <PolarGrid stroke="rgba(0,0,0,0.06)" />
                 <PolarAngleAxis
                   dataKey="dimension"
-                  tick={{ fill: "#7C7469", fontSize: 9, fontFamily: "Geist" }}
+                  tick={{ fill: "#57534E", fontSize: 11, fontFamily: "Inter" }}
                 />
                 <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
                 <Radar
@@ -1827,13 +1827,13 @@ function QualityView({ days }: { days: number }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
                 <XAxis
                   dataKey="day"
-                  tick={{ fill: "#7C7469", fontSize: 9 }}
+                  tick={{ fill: "#57534E", fontSize: 11 }}
                   tickLine={false}
                   axisLine={false}
                 />
                 <YAxis
                   domain={[0, 100]}
-                  tick={{ fill: "#7C7469", fontSize: 9 }}
+                  tick={{ fill: "#57534E", fontSize: 11 }}
                   tickLine={false}
                   axisLine={false}
                 />
@@ -1845,7 +1845,7 @@ function QualityView({ days }: { days: number }) {
                     boxShadow: "0 10px 30px rgba(0, 0, 0, 0.25)",
                     fontSize: "11px",
                   }}
-                  labelStyle={{ color: "#7C7469", fontWeight: "bold" }}
+                  labelStyle={{ color: "#57534E", fontWeight: "bold" }}
                   itemStyle={{ color: "#4F1E7B" }}
                 />
                 <Area

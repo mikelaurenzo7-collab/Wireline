@@ -42,7 +42,7 @@ const GROUP_ACCENTS: Record<string, string> = {
   Workspace: "#4F1E7B", // brand purple
   Fleet: "#F59E0B", // warm amber
   Activity: "#10B981", // emerald
-  Admin: "#7C7469", // muted warm gray
+  Admin: "#57534E", // muted warm gray
 };
 
 // Optional keyboard-shortcut hints. Matches the existing g+key shortcut

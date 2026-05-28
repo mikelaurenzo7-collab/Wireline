@@ -67,7 +67,7 @@ export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'")
   return [
     `default-src 'self'`,
     `script-src ${scriptSrc}`,
-    // Allow Google Fonts stylesheet. We pull `Instrument Serif`, `Geist`, and
+    // Allow Google Fonts stylesheet. We pull `Inter`, `DM Serif Display`, and
     // `JetBrains Mono` via `@import url('https://fonts.googleapis.com/...')`
     // in `src/index.css`; without this entry the entire Google Fonts request
     // is blocked at every page load.
