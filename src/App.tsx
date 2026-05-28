@@ -1,6 +1,8 @@
 import React, { useEffect, lazy, Suspense } from "react";
-import { BrowserRouter, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter, useLocation, useNavigate, Navigate } from "react-router-dom";
 import AuthPortal from "./components/AuthPortal";
+
+const LandingPage = lazy(() => import("./pages/LandingPage"));
 
 import CookieConsent from "./components/CookieConsent";
 import ToastStack from "./components/Toast";
@@ -231,17 +233,23 @@ function AppContent() {
   }
 
   if (!user) {
-    // Unauthenticated home IS AuthPortal — the auth form on one side,
-    // the live demo-agent grid + value props on the other. Mike's
-    // call: kill the separate marketing LandingPage, the portal does
-    // both jobs (sell + sign in) on one screen. Any deep-link to a
-    // protected route also lands here so visitors sign in then
-    // continue.
-    return (
-      <ErrorBoundary>
-        <AuthPortal />
-      </ErrorBoundary>
-    );
+    const path = location.pathname;
+    if (path === "/" || path === "") {
+      return (
+        <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+          <LandingPage />
+        </Suspense>
+      );
+    }
+    if (path === "/signup" || path === "/signin" || path === "/login") {
+      return (
+        <ErrorBoundary>
+          <AuthPortal />
+        </ErrorBoundary>
+      );
+    }
+    const redirect = encodeURIComponent(path + location.search);
+    return <Navigate to={`/signin?redirect=${redirect}`} replace />;
   }
 
   // AppShell already renders the ⌘K CommandBar — don't double-mount.

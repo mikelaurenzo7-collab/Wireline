@@ -9,7 +9,7 @@
  * each role-play one industry vertical Wireline sells into.
  *
  * Used in:
- *   1. AuthPortal landing page — public "talk to Wireline" CTAs
+ *   1. Landing page — public "talk to Wireline" CTAs
  *   2. In-app /help route — signed-in operators reach the same agents
  *      without leaving the console.
  *   3. /api/admin/sync-vapi-knowledge — resolves each tel back to its

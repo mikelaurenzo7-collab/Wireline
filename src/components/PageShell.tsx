@@ -134,21 +134,13 @@ export default function PageShell({
       {showPageHeader && (
         <header className="shrink-0 mb-2 md:mb-3 flex flex-row items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            {eyebrow && (
-              <p className="text-[9px] uppercase tracking-[0.38em] text-brand/80 font-medium mb-1">
-                {eyebrow}
-              </p>
-            )}
+            {eyebrow && <p className="text-eyebrow text-brand mb-1">{eyebrow}</p>}
             {title && (
               <h1 className="page-title-aurora font-display italic text-xl sm:text-2xl md:text-[1.65rem] leading-tight tracking-tight text-balance">
                 {title}
               </h1>
             )}
-            {subtitle && (
-              <p className="mt-1.5 text-[11px] sm:text-xs text-muted/80 leading-relaxed max-w-2xl text-pretty">
-                {subtitle}
-              </p>
-            )}
+            {subtitle && <p className="mt-1.5 text-caption max-w-2xl text-pretty">{subtitle}</p>}
           </div>
           {actions && (
             <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
@@ -195,7 +187,7 @@ export default function PageShell({
                     else if (e.key === "End") setActiveId(tabs[tabs.length - 1].id);
                   }}
                   className={cn(
-                    "relative shrink-0 inline-flex min-h-11 sm:min-h-10 items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[10px] uppercase tracking-[0.12em] font-medium",
+                    "relative shrink-0 inline-flex min-h-11 sm:min-h-10 items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[11px] uppercase tracking-[0.1em] font-medium",
                     active ? "text-on-brand" : "text-muted hover:text-ink hover:bg-black/5",
                   )}
                 >
@@ -259,7 +251,7 @@ export default function PageShell({
                     else if (e.key === "End") setActiveId(tabs[tabs.length - 1].id);
                   }}
                   className={cn(
-                    "native-tap-squish relative shrink-0 inline-flex min-h-10 items-center gap-1.5 px-3 py-2 rounded-xl transition-all text-[10px] uppercase tracking-[0.12em] font-medium whitespace-nowrap",
+                    "native-tap-squish relative shrink-0 inline-flex min-h-10 items-center gap-1.5 px-3 py-2 rounded-xl transition-all text-[11px] uppercase tracking-[0.1em] font-medium whitespace-nowrap",
                     active ? "text-on-brand" : "text-muted",
                   )}
                 >
@@ -305,8 +297,6 @@ export default function PageShell({
           )}
         </div>
       )}
-
-
 
       {/* ── Body — bounded, never scrolls itself ───────────────────────── */}
       <div
@@ -397,7 +387,7 @@ export default function PageShell({
               </div>
               {/* Header */}
               <div className="flex items-center justify-between px-4 pb-3">
-                <p className="text-[10px] uppercase tracking-[0.3em] text-muted">Actions</p>
+                <p className="text-eyebrow">Actions</p>
                 <button
                   ref={closeButtonRef}
                   onClick={() => setMobileActionsOpen(false)}
@@ -488,11 +478,7 @@ export function Panel({
             {title && (
               <h3 className="font-display italic text-base text-ink leading-tight">{title}</h3>
             )}
-            {hint && (
-              <span className="text-[9px] uppercase tracking-[0.14em] text-muted/60 ml-1">
-                {hint}
-              </span>
-            )}
+            {hint && <span className="text-eyebrow ml-1 opacity-80">{hint}</span>}
           </div>
           {actions && <div className="flex flex-wrap items-center gap-1.5">{actions}</div>}
         </header>
@@ -557,9 +543,7 @@ export function StatTile({
 
       <div className="relative">
         <div className="flex items-start justify-between mb-2.5">
-          <p className="text-[9px] uppercase tracking-[0.18em] text-muted font-medium leading-none">
-            {label}
-          </p>
+          <p className="text-eyebrow leading-none">{label}</p>
           {Icon && (
             <div
               className="w-7 h-7 rounded-lg flex items-center justify-center border border-black/8 shrink-0"
@@ -578,11 +562,7 @@ export function StatTile({
         </div>
 
         <div className="flex items-center gap-2">
-          {sub && (
-            <p className="text-[9px] uppercase tracking-[0.16em] text-muted truncate flex-1">
-              {sub}
-            </p>
-          )}
+          {sub && <p className="text-caption truncate flex-1 uppercase tracking-wide">{sub}</p>}
           {trend && (
             <span
               className={cn(

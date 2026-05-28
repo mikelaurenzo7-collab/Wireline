@@ -218,15 +218,15 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         title="Search ( / )"
       >
         <Search
-          className="w-3.5 h-3.5 shrink-0 text-[#EFE9DC]/55 group-hover:text-[#EFE9DC] transition-colors"
+          className="w-3.5 h-3.5 shrink-0 chrome-muted group-hover:text-[#EFE9DC] transition-colors"
           strokeWidth={2}
         />
         {effective && (
           <>
-            <span className="flex-1 text-left text-[11px] text-[#EFE9DC]/50 group-hover:text-[#EFE9DC]/75 transition-colors">
+            <span className="flex-1 text-left text-[12px] chrome-muted group-hover:text-[#EFE9DC] transition-colors">
               Search…
             </span>
-            <kbd className="text-[9px] font-mono px-1.5 py-0.5 rounded border border-white/12 bg-white/4 text-[#EFE9DC]/45 leading-none">
+            <kbd className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-white/12 bg-white/4 chrome-subtle leading-none">
               /
             </kbd>
           </>
@@ -259,9 +259,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                       className="w-1 h-1 rounded-full shrink-0"
                       style={{ background: accent }}
                     />
-                    <span className="text-[8px] uppercase tracking-[0.42em] text-[#EFE9DC]/45 font-semibold">
-                      {group.label}
-                    </span>
+                    <span className="chrome-eyebrow">{group.label}</span>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -359,7 +357,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
             keyboard users who never open it. */}
         <button
           onClick={() => signOut()}
-          className="w-full group h-9 flex items-center gap-2.5 px-2 rounded-lg text-[#EFE9DC]/55 hover:text-[#EFE9DC] hover:bg-white/8 transition-all"
+          className="w-full group h-9 flex items-center gap-2.5 px-2 rounded-lg chrome-muted hover:text-[#EFE9DC] hover:bg-white/8 transition-all"
           title={effective ? undefined : "Sign out"}
           aria-label="Sign out"
         >
@@ -372,7 +370,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         <button
           type="button"
           onClick={() => setUserOverride(!expanded)}
-          className="w-full h-7 mt-0.5 flex items-center justify-center gap-2 px-2 rounded-lg text-[#EFE9DC]/35 hover:text-[#EFE9DC]/75 hover:bg-white/6 transition-all"
+          className="w-full h-7 mt-0.5 flex items-center justify-center gap-2 px-2 rounded-lg chrome-subtle hover:text-[#EFE9DC] hover:bg-white/6 transition-all"
           aria-label={expanded ? "Collapse navigation" : "Expand navigation"}
           aria-pressed={expanded}
           title={expanded ? "Collapse rail" : "Expand rail"}
@@ -380,7 +378,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           {expanded ? (
             <>
               <ChevronsLeft className="w-3.5 h-3.5" />
-              <span className="text-[9px] uppercase tracking-[0.3em]">Collapse</span>
+              <span className="chrome-eyebrow tracking-[0.28em]">Collapse</span>
             </>
           ) : (
             <ChevronsRight className="w-3.5 h-3.5" />
@@ -417,7 +415,7 @@ function RailItem({ item, active, badge, expanded, accent, shortcut }: RailItemP
       title={expanded ? undefined : item.label}
       className={cn(
         "group relative flex items-center gap-2.5 h-9 px-2 rounded-lg transition-all duration-150",
-        active ? "text-[#3B154C]" : "text-[#EFE9DC]/65 hover:text-[#EFE9DC] hover:bg-white/8",
+        active ? "text-[#3B154C]" : "chrome-muted hover:text-[#EFE9DC] hover:bg-white/8",
       )}
     >
       {active && (
@@ -464,7 +462,7 @@ function RailItem({ item, active, badge, expanded, accent, shortcut }: RailItemP
                 "relative z-10 text-[8px] font-mono px-1.5 py-0.5 rounded leading-none border whitespace-nowrap",
                 active
                   ? "border-[#3B154C]/15 text-[#3B154C]/55 bg-[#3B154C]/5"
-                  : "border-white/12 text-[#EFE9DC]/40 bg-white/4 group-hover:border-white/20 group-hover:text-[#EFE9DC]/60",
+                  : "border-white/12 chrome-subtle bg-white/4 group-hover:border-white/20 group-hover:chrome-muted",
               )}
             >
               {shortcut}
@@ -542,9 +540,7 @@ function LivePulse({ count, expanded }: { count: number; expanded: boolean }) {
       </span>
       {expanded && (
         <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-          <span className="text-[10px] uppercase tracking-[0.22em] text-[#EFE9DC]/65 font-medium">
-            {live ? "Live" : "Quiet"}
-          </span>
+          <span className="chrome-eyebrow tracking-[0.2em]">{live ? "Live" : "Quiet"}</span>
           <span className="text-[10px] font-mono text-[#EFE9DC]/75">{count > 0 ? count : "—"}</span>
         </div>
       )}
@@ -600,7 +596,7 @@ function TierInline() {
   // account row never looks empty.
   if (!tier?.plan_name) {
     return (
-      <p className="text-[8.5px] uppercase tracking-[0.25em] text-[#EFE9DC]/45 leading-none mt-1 truncate">
+      <p className="chrome-eyebrow tracking-[0.2em] leading-none mt-1 truncate">
         {user?.email?.split("@")[1]}
       </p>
     );
@@ -662,7 +658,7 @@ function FooterItem({ to, icon: Icon, label, expanded, active }: FooterItemProps
         "group h-9 flex items-center gap-2.5 px-2 rounded-lg transition-all",
         active
           ? "bg-white/12 text-[#EFE9DC]"
-          : "text-[#EFE9DC]/55 hover:text-[#EFE9DC] hover:bg-white/8",
+          : "chrome-muted hover:text-[#EFE9DC] hover:bg-white/8",
       )}
     >
       <Icon className="w-4 h-4 shrink-0" strokeWidth={active ? 2.4 : 1.75} />

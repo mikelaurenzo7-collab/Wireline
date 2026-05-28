@@ -1,12 +1,20 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Authentication Flows", () => {
-  test("Sign-in page loads and has correct title", async ({ page }) => {
+  test("Landing page loads and links to auth", async ({ page }) => {
     await page.goto("/");
 
     await expect(page).toHaveTitle(/Wireline/);
+    await expect(page.getByRole("link", { name: /start free trial/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^sign in$/i })).toBeVisible();
+  });
 
-    const emailInput = page.getByPlaceholder(/operator@company.io/i).first();
+  test("Sign-in page loads and has correct title", async ({ page }) => {
+    await page.goto("/signin");
+
+    await expect(page).toHaveTitle(/Wireline/);
+
+    const emailInput = page.getByPlaceholder(/you@company/i).first();
     await expect(emailInput).toBeVisible();
 
     const submitBtn = page.locator("form").getByRole("button", { name: /sign in/i });

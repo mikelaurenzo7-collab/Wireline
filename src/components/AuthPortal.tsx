@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
-  ShieldCheck,
   Mail,
   Lock,
   Loader2,
@@ -11,118 +10,23 @@ import {
   LogIn,
   AlertTriangle,
   Check,
-  PhoneIncoming,
-  PhoneOutgoing,
-  MailCheck,
-  Radio,
   Eye,
   EyeOff,
+  ArrowLeft,
 } from "lucide-react";
-import { AuthDemoDirectory } from "./auth/AuthDemoDirectory";
-import RoiCalculator from "./marketing/RoiCalculator";
-import TrustSignals from "./marketing/TrustSignals";
+import PublicSiteHeader from "./marketing/PublicSiteHeader";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
 import { PageMeta } from "../lib/page-meta";
-import WirelineMark from "./WirelineMark";
-import { WIRELINE_CONTACT_AGENTS, WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
 import {
   captureSignupIntentFromLocation,
+  sanitizeSignupIntent,
   syncSignupIntent,
   type SignupIntent,
 } from "../lib/signup-intent";
 import { getPasswordPolicyError } from "../lib/password-policy";
 
-const FEATURES = [
-  {
-    icon: PhoneIncoming,
-    title: "Inbound Support",
-    desc: "Agents pick up 24/7 — answer questions, route urgent calls, schedule appointments, and capture intent.",
-    accent: "#4F1E7B",
-  },
-  {
-    icon: PhoneOutgoing,
-    title: "Outbound Sales",
-    desc: "Upload a CSV, pick a playbook, launch auto-dial campaigns. Qualified meetings on your calendar by morning.",
-    accent: "#4F1E7B",
-  },
-  {
-    icon: MailCheck,
-    title: "Email Agents",
-    desc: "Agents triage your inbox, reply on-brand, follow up, and escalate the ones you need to see personally.",
-    accent: "#4F1E7B",
-  },
-  {
-    icon: Radio,
-    title: "Live Monitor & Insights",
-    desc: "Watch every conversation in real time. Sentiment, funnels, topic clusters, leaderboards — one dashboard.",
-    accent: "#10B981",
-  },
-];
-
-const AUTH_PORTAL_WIRELINE_AGENTS = WIRELINE_CONTACT_AGENTS.slice(0, -1);
-const AUTH_PORTAL_DEMO_AGENTS = WIRELINE_DEMO_AGENTS.slice(0, -1);
-
-function MobileTrustProof() {
-  return (
-    <div className="lg:hidden mt-5 space-y-3">
-      <div className="grid grid-cols-3 gap-2">
-        {[
-          { label: "24/7", detail: "always answers" },
-          { label: "<10 min", detail: "setup path" },
-          { label: "No card", detail: "14-day trial" },
-        ].map((item) => (
-          <div
-            key={item.label}
-            className="rounded-xl border border-black/8 bg-white/55 px-2 py-2.5 text-center"
-          >
-            <p className="font-display italic text-lg leading-none text-ink">{item.label}</p>
-            <p className="mt-1 text-[8px] uppercase tracking-[0.16em] text-muted/65 leading-tight">
-              {item.detail}
-            </p>
-          </div>
-        ))}
-      </div>
-      <div className="rounded-xl border border-brand/15 bg-brand/[0.04] p-3">
-        <div className="flex items-center gap-2 text-[9px] uppercase tracking-[0.26em] text-brand font-semibold">
-          <ShieldCheck className="w-3.5 h-3.5" />
-          Trust proof
-        </div>
-        <p className="mt-1.5 text-[11px] text-muted/75 leading-relaxed">
-          Dedicated number included, no Twilio bill. TCPA/DNC controls, audit logs, and public{" "}
-          <Link to="/status" className="text-brand underline underline-offset-2">
-            status
-          </Link>{" "}
-          +{" "}
-          <Link to="/security" className="text-brand underline underline-offset-2">
-            security
-          </Link>{" "}
-          pages before you sign up.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Normalize a JSON error payload into a human-readable string.
- *
- * Servers (and intermediate proxies / Vercel / Express defaults) can
- * return any of these shapes for an error body:
- *   { error: "Bad thing" }
- *   { error: { message: "Bad thing", code: "X" } }
- *   { error: { ... } }            // no message field
- *   { message: "Bad thing" }
- *   { ... }                       // no error/message at all
- *
- * If we naïvely do `throw new Error(j.error)` with an object value, the
- * Error constructor calls `String(obj)` which yields the dreaded
- * "[object Object]" — surfaced to the user as e.g.
- * "Google sign-in failed: [object Object]". This helper strips that
- * away and returns either a string or null (so the caller can fall
- * back to a status-aware default).
- */
 function extractServerErrorMessage(payload: unknown): string | null {
   if (!payload || typeof payload !== "object") return null;
   const p = payload as Record<string, unknown>;
@@ -130,8 +34,20 @@ function extractServerErrorMessage(payload: unknown): string | null {
   for (const c of candidates) {
     if (typeof c === "string" && c.trim()) return c.trim();
   }
-  // Last resort: serialize the error object so the user still sees
-  // *something* useful, but never the literal "[object Object]".
+  const details = p.details;
+  if (Array.isArray(details) && details.length > 0) {
+    const parts = details
+      .map((d) => {
+        if (!d || typeof d !== "object") return null;
+        const row = d as { field?: unknown; message?: unknown };
+        const msg = typeof row.message === "string" ? row.message.trim() : "";
+        if (!msg) return null;
+        const field = typeof row.field === "string" && row.field ? row.field : null;
+        return field ? `${field}: ${msg}` : msg;
+      })
+      .filter((s): s is string => !!s);
+    if (parts.length > 0) return parts.slice(0, 3).join(" ");
+  }
   if (p.error && typeof p.error === "object") {
     try {
       const s = JSON.stringify(p.error);
@@ -143,11 +59,6 @@ function extractServerErrorMessage(payload: unknown): string | null {
   return null;
 }
 
-/**
- * Convert a thrown value into a clean string message. Filters out the
- * "[object Object]" sentinel that occurs when `new Error(someObject)`
- * was constructed somewhere upstream.
- */
 function cleanThrownMessage(e: unknown): string | null {
   const raw = (e as { message?: unknown })?.message;
   if (typeof raw !== "string") return null;
@@ -162,47 +73,6 @@ function signupIntentLabel(intent: SignupIntent | null): string | null {
   if (intent.preferredPlanId) parts.push(`${intent.preferredPlanId} plan`);
   if (intent.signupWedge) parts.push(intent.signupWedge.replace(/-/g, " "));
   return parts.join(" · ");
-}
-
-/**
- * Sign-in / sign-up shortcut row. Most business users have a Google
- * or Microsoft identity already; skipping the email-and-password
- * dance for them is a meaningful conversion lift. Buttons start the
- * server-side OAuth flow which round-trips back to /auth/oauth-complete.
- */
-/**
- * Tiny live-stats pill that fetches /api/public/stats and renders
- * a "Live: N agents online · M calls this month" caption next to
- * the marketing stats strip. Hidden entirely below a credibility
- * threshold — at <5 agents the live ticker would read as
- * pre-revenue and tank trust. Once there are 5+ agents on the
- * platform it surfaces automatically.
- */
-function LiveStatsTicker() {
-  const [stats, setStats] = useState<{ agents_online: number; calls_this_month: number } | null>(
-    null,
-  );
-  useEffect(() => {
-    fetch("/api/public/stats")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setStats(data))
-      .catch(() => {});
-  }, []);
-  const agentsOnline = Number(stats?.agents_online ?? 0);
-  if (agentsOnline < 5) return null;
-  return (
-    <>
-      <div className="w-px h-6 bg-white/10" />
-      <div className="flex flex-col">
-        <span className="font-display italic text-2xl text-ink">
-          {agentsOnline.toLocaleString()}
-        </span>
-        <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">
-          Agents on Wireline
-        </span>
-      </div>
-    </>
-  );
 }
 
 function OAuthSignInButtons({
@@ -230,8 +100,6 @@ function OAuthSignInButtons({
           j = {};
         }
       } else {
-        // Server returned HTML (e.g. Vercel/Express default error page).
-        // Treat as a misconfiguration we should surface clearly.
         const bodySnippet = (await res.text().catch(() => "")).slice(0, 120);
         throw new Error(
           `Sign-in service returned ${res.status} ${res.statusText || ""}. ${bodySnippet ? `Details: ${bodySnippet}` : "The server may be misconfigured."}`.trim(),
@@ -256,15 +124,10 @@ function OAuthSignInButtons({
       const message = detail
         ? `${providerLabel} sign-in failed: ${detail}`
         : `${providerLabel} sign-in failed. Please try again or use email below.`;
-      console.error("OAuth start failed", message);
       onError?.(message);
     }
   };
-  // Per-provider visual: brand logo SVG + accent color. Renders as a
-  // compact equal-width tile (icon stacked above tiny label) — the row
-  // takes ~64px of vertical space total instead of the previous 3 × 44px
-  // = 132px+ stacking on mobile. Lets the integration logo strip and
-  // demo-agent grid above breathe instead of being crowded out.
+
   const providers: Array<{
     id: "google" | "microsoft" | "yahoo";
     label: string;
@@ -319,12 +182,8 @@ function OAuthSignInButtons({
   ];
 
   return (
-    <div className="relative z-10 space-y-3 mb-5">
-      {/* OAuth row — on 360-390px the prior 3-col gap-2 squeezed each
-          tile to ~85px width with sub-44px touch comfort. Bumping gap
-          and slightly more vertical padding keeps the three providers
-          balanced AND iOS-tap-target compliant. */}
-      <div className="grid grid-cols-3 gap-3">
+    <div className="space-y-3 mb-5">
+      <div className="grid grid-cols-3 gap-2.5">
         {providers.map((p) => (
           <button
             key={p.id}
@@ -332,8 +191,7 @@ function OAuthSignInButtons({
             onClick={() => start(p.id)}
             disabled={disabled || !!pending}
             aria-label={`Continue with ${p.label}`}
-            title={`Continue with ${p.label}`}
-            className="min-h-[56px] sm:min-h-[60px] py-3 inline-flex flex-col items-center justify-center gap-1.5 rounded-xl border border-black/10 bg-white/70 text-ink text-[10px] sm:text-[11px] uppercase tracking-[0.18em] font-medium hover:border-[#4F1E7B]/40 hover:bg-white hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="min-h-[52px] py-2.5 inline-flex flex-col items-center justify-center gap-1 rounded-xl border border-black/10 bg-white/80 text-ink text-[11px] font-semibold hover:border-brand/35 hover:bg-white disabled:opacity-50 transition-all"
           >
             {pending === p.id ? <Loader2 className="w-5 h-5 animate-spin" /> : p.icon}
             <span>{p.label}</span>
@@ -342,9 +200,7 @@ function OAuthSignInButtons({
       </div>
       <div className="flex items-center gap-3" aria-hidden="true">
         <span className="flex-1 h-px bg-black/8" />
-        <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.4em] text-muted/60 font-medium">
-          or with email
-        </span>
+        <span className="text-eyebrow !text-[0.625rem]">or email</span>
         <span className="flex-1 h-px bg-black/8" />
       </div>
     </div>
@@ -374,16 +230,11 @@ function getPasswordStrength(pw: string): PasswordStrength {
 
 type AuthMode = "signin" | "signup" | "reset";
 
+/** Slim sign-in / sign-up surface — marketing lives on `/` (LandingPage). */
 export default function AuthPortal() {
   const { signIn } = useAuth();
-  const pathname = typeof window === "undefined" ? "/" : window.location.pathname;
-  // Default mode matches the URL the user landed on. /signup → signup
-  // form, /signin or anything else (including "/") → signin form.
-  // AuthPortal is the public home page now, so "/" defaults to signin.
-  const initialMode: AuthMode = (() => {
-    if (typeof window === "undefined") return "signin";
-    return pathname === "/signup" ? "signup" : "signin";
-  })();
+  const pathname = typeof window === "undefined" ? "/signin" : window.location.pathname;
+  const initialMode: AuthMode = pathname === "/signup" ? "signup" : "signin";
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -405,6 +256,11 @@ export default function AuthPortal() {
     setSignupIntent(captureSignupIntentFromLocation());
   }, []);
 
+  useEffect(() => {
+    if (pathname === "/signup") setMode("signup");
+    else setMode((m) => (m === "reset" ? "reset" : "signin"));
+  }, [pathname]);
+
   const setIsSignUp = (v: boolean) => {
     setMode(v ? "signup" : "signin");
     setError(null);
@@ -421,7 +277,6 @@ export default function AuthPortal() {
       setError("Email is required.");
       return;
     }
-    // RFC-5322-ish — good enough for client-side; server is authoritative.
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       setError("Enter a valid email address.");
       return;
@@ -451,31 +306,31 @@ export default function AuthPortal() {
           data = {};
         }
         if (!res.ok) {
-          // Non-JSON or error body — use status-aware message
           const serverMsg = extractServerErrorMessage(data);
-          const msg =
+          throw new Error(
             serverMsg ||
-            (res.status >= 500
-              ? "Server temporarily unavailable. Please try again shortly."
-              : "Password reset request failed");
-          throw new Error(msg);
+              (res.status >= 500
+                ? "Server temporarily unavailable. Please try again shortly."
+                : "Password reset request failed"),
+          );
         }
         setMessage(data.message || "If that email is registered, a reset link is on its way.");
       } else {
         const endpoint = isSignUp ? "/api/auth/signup" : "/api/auth/signin";
+        const attribution = isSignUp ? sanitizeSignupIntent(signupIntent) : null;
         const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: trimmedEmail,
             password,
-            ...(isSignUp && signupIntent
+            ...(attribution
               ? {
-                  preferredPlanId: signupIntent.preferredPlanId,
-                  signupWedge: signupIntent.signupWedge,
-                  utmSource: signupIntent.utmSource,
-                  utmMedium: signupIntent.utmMedium,
-                  utmCampaign: signupIntent.utmCampaign,
+                  preferredPlanId: attribution.preferredPlanId,
+                  signupWedge: attribution.signupWedge,
+                  utmSource: attribution.utmSource,
+                  utmMedium: attribution.utmMedium,
+                  utmCampaign: attribution.utmCampaign,
                 }
               : {}),
           }),
@@ -489,12 +344,12 @@ export default function AuthPortal() {
         }
         if (!res.ok) {
           const serverMsg = extractServerErrorMessage(data);
-          const msg =
+          throw new Error(
             serverMsg ||
-            (res.status >= 500
-              ? "Server temporarily unavailable. Please try again shortly."
-              : "Authentication failed");
-          throw new Error(msg);
+              (res.status >= 500
+                ? "Server temporarily unavailable. Please try again shortly."
+                : "Authentication failed"),
+          );
         }
 
         await syncSignupIntent(signupIntent, data.token).catch(() => {});
@@ -513,330 +368,80 @@ export default function AuthPortal() {
   return (
     <>
       <PageMeta
-        title={
-          pathname === "/"
-            ? "Wireline — AI Voice & Email Agents for Every Business"
-            : isReset
-              ? "Reset Password"
-              : isSignUp
-                ? "Create Account"
-                : "Sign In"
-        }
+        title={isSignUp ? "Create Account — Wireline" : "Sign In — Wireline"}
         description={
-          pathname === "/"
-            ? "Deploy AI voice + email agents on real phone numbers in under 10 minutes. Handle inbound calls, qualify leads, book appointments, send SMS follow-ups, and sync with your CRM."
-            : isSignUp
-              ? "Start your 14-day free Wireline trial — deploy an AI voice agent in under 10 minutes. No credit card required."
-              : "Sign in to your Wireline operator console to manage your AI voice agents, call logs, and outbound campaigns."
+          isSignUp
+            ? "Start your 14-day free Wireline trial — deploy an AI voice agent in under 10 minutes."
+            : "Sign in to your Wireline operator console."
         }
-        path={pathname === "/" ? "/" : pathname === "/signup" ? "/signup" : undefined}
-        noIndex={pathname !== "/"}
+        path={isSignUp ? "/signup" : "/signin"}
+        noIndex
       />
-      <div className="min-h-dvh flex relative overflow-hidden bg-paper">
-        {/* Global parchment backdrop matching Claude.ai */}
-        <div className="pointer-events-none fixed inset-0 z-0 bg-paper" />
-        <div className="scanline" />
+      <div className="marketing-surface h-dvh max-h-dvh flex flex-col overflow-hidden bg-paper relative">
+        <div
+          className="pointer-events-none absolute inset-0 z-0"
+          aria-hidden
+          style={{
+            background:
+              "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(79,30,123,0.12), transparent 55%)",
+          }}
+        />
 
-        {/* ── LEFT PANEL — brand showcase ───────────────────────────────────────
-           min-h-dvh + overflow-y-auto so the agent showcase + integration
-            strip don't push the whole layout taller than the viewport.
-            Without this, the left column at lg+ widths grows to ~1020px,
-            making the Sign In button on the right scroll-required even
-           though it's anchored to the top of its column. */}
-        <div className="hidden lg:flex lg:w-[52%] xl:w-[54%] flex-col relative z-10 p-6 lg:p-8 xl:p-10 lg:min-h-dvh overflow-y-auto scrollbar-hide">
-          {/* Decorative vertical line on right edge */}
-          <div
-            className="absolute top-0 right-0 w-px h-full"
-            style={{
-              background:
-                "linear-gradient(to bottom, transparent, rgba(217,119,82,0.2) 30%, rgba(217,119,82,0.2) 70%, transparent)",
-            }}
-          />
+        <PublicSiteHeader active={isSignUp ? "signup" : "signin"} />
 
-          {/* Logo */}
+        <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-4 min-h-0 overflow-y-auto">
           <motion.div
-            initial={{ opacity: 0, y: -12 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="flex items-center gap-4 mb-6 xl:mb-8"
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full max-w-[420px]"
           >
             <div
-              className="relative w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
-              style={{
-                background: "#4F1E7B",
-                boxShadow:
-                  "0 8px 24px -8px rgba(79,30,123,0.4), 0 0 0 1px rgba(255,255,255,0.22) inset",
-              }}
-            >
-              <WirelineMark className="w-6 h-6 text-on-brand" strokeWidth={130} />
-            </div>
-            <div>
-              <span className="brand-wordmark text-3xl xl:text-4xl leading-none !text-[#4F1E7B] !filter-none">
-                WIRELINE
-              </span>
-              <p className="text-[9px] xl:text-[10px] tracking-[0.42em] uppercase text-muted mt-1">
-                AI Voice + Email Platform
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Hero copy */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-6 xl:mb-8"
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <span className="hero-accent-line" style={{ background: "#4F1E7B" }} />
-              <span className="text-[8px] uppercase tracking-[0.5em] text-muted/70">
-                One fleet, every channel
-              </span>
-            </div>
-            <h1 className="font-display italic text-4xl xl:text-5xl 2xl:text-6xl leading-[1.0] xl:leading-[0.92] tracking-tight mb-4 text-balance">
-              <span className="text-[#4F1E7B]">AI agents for every</span>
-              <br />
-              <span className="text-ink">customer conversation</span>
-            </h1>
-            <p className="text-[14px] xl:text-[15px] text-muted/82 leading-relaxed max-w-lg">
-              One trained fleet answers, qualifies, follows up, and escalates across phone, SMS, and
-              email — with no fake actions and no missed handoff.
-            </p>
-            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-brand/15 bg-white/60 px-3 py-2 text-[9px] uppercase tracking-[0.26em] text-brand">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dot-online" />
-              Live demo lines open 24/7
-            </div>
-          </motion.div>
-
-          {/* Product pillars — compact grid; demos live in collapsible directory below. */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-8"
-          >
-            <div className="grid grid-cols-2 gap-3">
-              {FEATURES.map((f) => {
-                const Icon = f.icon;
-                return (
-                  <div
-                    key={f.title}
-                    className="rounded-xl p-3.5 border border-black/5 bg-[#FAF8F5]/80"
-                  >
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center mb-2 border border-black/5 bg-[#4F1E7B]/10 text-[#4F1E7B]">
-                      <Icon className="w-3.5 h-3.5" />
-                    </div>
-                    <p className="text-[11px] font-medium text-ink mb-0.5">{f.title}</p>
-                    <p className="text-[10px] text-muted/70 leading-snug">{f.desc}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </motion.div>
-
-          <AuthDemoDirectory
-            wirelineAgents={AUTH_PORTAL_WIRELINE_AGENTS}
-            demoAgents={AUTH_PORTAL_DEMO_AGENTS}
-            defaultExpanded={false}
-            className="mb-6"
-          />
-
-          {/* Trust signals — verticals + security/compliance badges.
-              Replaces the previous one-line "TLS Encrypted" trust row
-              with proper density: 8 verticals, 5 compliance badges,
-              live system-status pill. Cheap real estate, big trust lift. */}
-          <TrustSignals />
-
-          {/* Trust row */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
-            className="mt-auto flex items-center gap-6"
-          >
-            <div className="flex items-center gap-2 text-muted/60">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span className="text-[9px] uppercase tracking-[0.38em]">TLS Encrypted</span>
-            </div>
-            <div className="h-3 w-px bg-white/10" />
-            <div className="flex items-center gap-2 text-muted/60">
-              <div className="relative w-2 h-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 absolute inset-0 dot-online" />
-              </div>
-              <span className="text-[9px] uppercase tracking-[0.38em]">Carrier-Grade Infra</span>
-            </div>
-            <div className="h-3 w-px bg-white/10" />
-            <Link
-              to="/pricing"
-              className="text-[9px] uppercase tracking-[0.38em] text-muted/60 hover:text-ink transition-colors"
-            >
-              Pricing →
-            </Link>
-          </motion.div>
-        </div>
-
-        {/* ── RIGHT PANEL — auth form ────────────────────────────────────────────
-           Anchored to the top (not vertically centered) so the Sign In
-           button is reliably above the fold at 1280×800 / 1366×768 laptops.
-           Previously `justify-center` pushed the form to ~440px from the top
-           of an 800px viewport, putting the Sign In button at ~875px —
-           below the fold. */}
-        <div className="flex-1 lg:sticky lg:top-0 lg:min-h-dvh flex flex-col items-center justify-start relative z-10 py-5 sm:py-8 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 overflow-y-auto native-scroll overscroll-y-contain">
-          {/* ── Aurora wash ──────────────────────────────────────────
-              Decorative animated gradients that breathe behind the
-              form column. Purely cosmetic — pointer-events-none and
-              aria-hidden. Mobile + desktop friendly: the radial blobs
-              scale with the viewport so they never tile or repeat.
-              Two layers crossfade on a 14s/19s offset so the motion
-              never feels mechanical. */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 overflow-hidden -z-10"
-          >
-            {/* Layer A — top-right brand-purple bloom */}
-            <div
-              className="absolute -top-20 -right-24 w-[420px] h-[420px] rounded-full opacity-[0.55] mix-blend-multiply animate-[wireline-aurora-a_14s_ease-in-out_infinite_alternate]"
-              style={{
-                background:
-                  "radial-gradient(closest-side, rgba(79,30,123,0.22), rgba(79,30,123,0.06) 55%, transparent 80%)",
-                filter: "blur(28px)",
-              }}
-            />
-            {/* Layer B — bottom-left warm amber glow */}
-            <div
-              className="absolute -bottom-32 -left-24 w-[480px] h-[480px] rounded-full opacity-50 mix-blend-multiply animate-[wireline-aurora-b_19s_ease-in-out_infinite_alternate]"
-              style={{
-                background:
-                  "radial-gradient(closest-side, rgba(217,119,82,0.18), rgba(217,119,82,0.05) 55%, transparent 80%)",
-                filter: "blur(32px)",
-              }}
-            />
-            {/* Layer C — center cream wash, anchors readability */}
-            <div
-              className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[280px] rounded-[50%] opacity-60"
-              style={{
-                background:
-                  "radial-gradient(closest-side, rgba(239,233,220,0.65), rgba(239,233,220,0.18) 60%, transparent 80%)",
-                filter: "blur(40px)",
-              }}
-            />
-            {/* Subtle grain — same warm noise as the rest of the cream
-                surfaces. 2.5% opacity keeps it imperceptible-but-felt. */}
-            <div
-              className="absolute inset-0 opacity-[0.025] mix-blend-multiply"
-              style={{
-                backgroundImage:
-                  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")",
-              }}
-            />
-          </div>
-          <div className="lg:hidden w-full max-w-md mb-4 pt-1">
-            {/* Logo + wordmark row */}
-            <div className="flex items-center gap-3.5 mb-5">
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
-                style={{
-                  background: "#4F1E7B",
-                  boxShadow: "0 8px 24px -8px rgba(79,30,123,0.4)",
-                }}
-              >
-                <WirelineMark className="w-6 h-6 text-on-brand" strokeWidth={130} />
-              </div>
-              <div>
-                <span className="brand-wordmark text-3xl leading-none !text-[#4F1E7B] !filter-none">
-                  WIRELINE
-                </span>
-                <p className="text-[9px] tracking-[0.42em] uppercase text-muted mt-1">
-                  AI Voice + Email Platform
-                </p>
-              </div>
-            </div>
-            {/* Hero copy */}
-            <h1 className="type-fluid-hero font-display italic leading-snug tracking-tight mb-3 text-balance">
-              <span className="text-[#4F1E7B]">AI agents for every</span>{" "}
-              <span className="text-ink">customer conversation</span>
-            </h1>
-            <p className="type-fluid-body text-muted/80">
-              Sign in below — try live demo lines anytime after the form.
-            </p>
-          </div>
-
-          {/* Mobile logo — retained for the form-card width reference, hidden visually below hero */}
-          <div className="hidden">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center"
-              style={{
-                background: "#4F1E7B",
-                boxShadow: "0 16px 40px -10px rgba(79, 30, 123 ,0.55)",
-              }}
-            >
-              <WirelineMark className="w-8 h-8 text-on-brand" strokeWidth={120} />
-            </div>
-            <h1 className="brand-wordmark text-5xl leading-none">WIRELINE</h1>
-            <p className="text-[9px] uppercase tracking-[0.5em] text-muted">
-              AI Voice + Email Platform
-            </p>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-md"
-          >
-            {/* Form card */}
-            <div
-              className="relative rounded-2xl sm:rounded-3xl border border-black/8 bg-[#FAF8F5] overflow-hidden"
+              className="rounded-2xl border border-black/8 bg-[#FAF8F5] overflow-hidden"
               style={{
                 boxShadow:
-                  "0 1px 0 rgba(255,255,255,0.9) inset, 0 20px 50px -24px rgba(79, 30, 123, 0.22), 0 8px 24px -12px rgba(0,0,0,0.12)",
+                  "0 1px 0 rgba(255,255,255,0.9) inset, 0 20px 50px -24px rgba(79, 30, 123, 0.2)",
               }}
             >
-              <div className="relative p-6 sm:p-7 md:p-9 lg:p-10">
-                {/* Header */}
-                <div className="relative z-10 mb-9">
-                  <h2 className="font-display italic text-3xl text-ink leading-tight mb-1">
+              <div className="p-6 sm:p-8">
+                <div className="mb-6">
+                  <h1 className="font-display italic text-2xl sm:text-3xl text-ink leading-tight">
                     {isReset ? "Reset password" : isSignUp ? "Create account" : "Welcome back"}
-                  </h2>
-                  <p className="text-[11px] text-muted/70">
+                  </h1>
+                  <p className="text-caption mt-1.5">
                     {isReset
-                      ? "Enter your email and we'll send you a reset link."
+                      ? "We'll email you a secure reset link."
                       : isSignUp
-                        ? "Start your 14-day free trial. No credit card required."
-                        : "Sign in to your Wireline operator console."}
+                        ? "14-day trial · no credit card"
+                        : "Operator console access"}
                   </p>
                   {isSignUp && intentLabel && (
-                    <p className="mt-2 inline-flex rounded-full border border-brand/20 bg-brand/8 px-3 py-1 text-[9px] uppercase tracking-[0.26em] text-brand">
-                      Matched from your visit · {intentLabel}
+                    <p className="mt-2 inline-flex rounded-full border border-brand/20 bg-brand/8 px-3 py-1 text-eyebrow !text-brand">
+                      From your visit · {intentLabel}
                     </p>
                   )}
                 </div>
 
-                {/* Tab toggle — hidden in reset mode */}
                 {!isReset && (
-                  <div className="relative z-10 mb-7">
-                    <div className="relative flex p-1 rounded-2xl bg-black/5 border border-black/5">
+                  <div className="mb-5">
+                    <div className="relative flex p-1 rounded-xl bg-black/5 border border-black/6">
                       <motion.div
                         layout
-                        className="absolute inset-y-1 w-[calc(50%-4px)] rounded-xl"
-                        style={{
-                          background: "rgba(79, 30, 123, 0.12)",
-                          border: "1px solid rgba(79, 30, 123, 0.25)",
-                          left: isSignUp ? "calc(50% + 2px)" : "4px",
-                          boxShadow: "0 4px 12px -4px rgba(79, 30, 123, 0.2)",
-                        }}
+                        className="absolute inset-y-1 w-[calc(50%-4px)] rounded-lg bg-brand/12 border border-brand/25"
+                        style={{ left: isSignUp ? "calc(50% + 2px)" : "4px" }}
                         transition={{ type: "spring", stiffness: 400, damping: 34 }}
                       />
                       {[
-                        { label: "Sign In", value: false },
-                        { label: "Sign Up", value: true },
+                        { label: "Sign in", value: false },
+                        { label: "Sign up", value: true },
                       ].map((opt) => (
                         <button
                           key={String(opt.value)}
+                          type="button"
                           onClick={() => setIsSignUp(opt.value)}
                           className={cn(
-                            "relative z-10 flex-1 py-3 text-[11px] uppercase tracking-[0.3em] transition-colors",
-                            isSignUp === opt.value ? "text-ink" : "text-muted hover:text-ink/70",
+                            "relative z-10 flex-1 py-2.5 text-sm font-semibold transition-colors",
+                            isSignUp === opt.value ? "text-ink" : "text-muted hover:text-ink",
                           )}
                         >
                           {opt.label}
@@ -846,67 +451,36 @@ export default function AuthPortal() {
                   </div>
                 )}
 
-                {/* OAuth sign-in — Continue with Google / Microsoft.
-                  Skips the email-and-password flow entirely for the 80%
-                  of business users who already have a Google or Outlook
-                  identity. Email-and-password stays below for everyone
-                  else. The buttons hide for the password-reset mode
-                  since OAuth doesn't apply there. */}
                 {!isReset && (
-                  <OAuthSignInButtons
-                    disabled={loading}
-                    onError={(m) => {
-                      // Empty string clears (called at the start of each attempt);
-                      // non-empty surfaces the failure in the form's error slot
-                      // so the user actually sees what went wrong.
-                      setError(m || null);
-                    }}
-                  />
+                  <OAuthSignInButtons disabled={loading} onError={(m) => setError(m || null)} />
                 )}
 
-                <form onSubmit={handleAuth} className="relative z-10 space-y-4">
-                  {/* Email */}
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="auth-email"
-                      className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5"
-                    >
-                      <Mail className="w-3 h-3 text-[#4F1E7B]" />
+                <form onSubmit={handleAuth} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label htmlFor="auth-email" className="text-eyebrow flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5 text-brand" />
                       Email
                     </label>
-                    <div className="relative group">
-                      <input
-                        id="auth-email"
-                        type="email"
-                        required
-                        autoComplete="email"
-                        autoCapitalize="none"
-                        spellCheck={false}
-                        inputMode="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="auth-input"
-                        placeholder="operator@company.io"
-                      />
-                      <div
-                        className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity"
-                        style={{
-                          boxShadow:
-                            "0 0 0 1px rgba(79,30,123,0.45), 0 0 20px rgba(79,30,123,0.15)",
-                        }}
-                      />
-                    </div>
+                    <input
+                      id="auth-email"
+                      type="email"
+                      required
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="auth-input"
+                      placeholder="you@company.com"
+                    />
                   </div>
 
-                  {/* Password — hidden in reset mode */}
                   {!isReset && (
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
                         <label
                           htmlFor="auth-password"
-                          className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5"
+                          className="text-eyebrow flex items-center gap-1.5"
                         >
-                          <Lock className="w-3 h-3 text-[#4F1E7B]" />
+                          <Lock className="w-3.5 h-3.5 text-brand" />
                           Password
                         </label>
                         {!isSignUp && (
@@ -915,15 +489,14 @@ export default function AuthPortal() {
                             onClick={() => {
                               setMode("reset");
                               setError(null);
-                              setMessage(null);
                             }}
-                            className="text-[9px] uppercase tracking-[0.3em] text-muted/60 hover:text-[#4F1E7B] transition-colors"
+                            className="text-caption font-medium text-brand hover:underline"
                           >
                             Forgot?
                           </button>
                         )}
                       </div>
-                      <div className="relative group">
+                      <div className="relative">
                         <input
                           id="auth-password"
                           type={showPassword ? "text" : "password"}
@@ -932,13 +505,13 @@ export default function AuthPortal() {
                           autoComplete={isSignUp ? "new-password" : "current-password"}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="auth-input tracking-[0.32em] pr-10"
+                          className="auth-input pr-11"
                           placeholder="••••••••••••"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted/60 hover:text-ink transition-colors"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
                           aria-label={showPassword ? "Hide password" : "Show password"}
                           tabIndex={-1}
                         >
@@ -948,116 +521,81 @@ export default function AuthPortal() {
                             <Eye className="w-4 h-4" />
                           )}
                         </button>
-                        <div
-                          className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity"
-                          style={{
-                            boxShadow:
-                              "0 0 0 1px rgba(79,30,123,0.45), 0 0 20px rgba(79,30,123,0.15)",
-                          }}
-                        />
                       </div>
-                      {/* Password strength meter — sign-up only */}
                       {isSignUp && password.length > 0 && pwStrength && (
-                        <div className="space-y-1.5">
-                          <div className="flex gap-1">
-                            {[1, 2, 3, 4].map((i) => (
-                              <div
-                                key={i}
-                                className="h-1 flex-1 rounded-full transition-all duration-300"
-                                style={{
-                                  background:
-                                    i <= pwStrength.score ? pwStrength.color : "rgba(0,0,0,0.06)",
-                                }}
-                              />
-                            ))}
-                          </div>
-                          <p
-                            className="text-[9px] uppercase tracking-[0.3em]"
-                            style={{ color: pwStrength.color }}
-                          >
-                            {pwStrength.label}
-                          </p>
-                        </div>
+                        <p className="text-caption" style={{ color: pwStrength.color }}>
+                          {pwStrength.label}
+                        </p>
                       )}
                     </div>
                   )}
 
-                  {/* Reset-mode footer — link back to sign-in */}
                   {isReset && (
                     <button
                       type="button"
                       onClick={() => {
                         setMode("signin");
                         setError(null);
-                        setMessage(null);
                       }}
-                      className="text-[10px] uppercase tracking-[0.3em] text-muted/60 hover:text-[#4F1E7B] transition-colors"
+                      className="text-caption font-medium text-brand hover:underline"
                     >
                       ← Back to sign in
                     </button>
                   )}
 
-                  {/* Feedback messages */}
                   <AnimatePresence mode="wait">
                     {error && (
                       <motion.div
                         role="alert"
-                        key="error"
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="flex items-start gap-3 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs"
+                        className="flex gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-700 text-sm"
                       >
                         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                        <span className="leading-relaxed">{error}</span>
+                        <span>{error}</span>
                       </motion.div>
                     )}
                     {message && (
                       <motion.div
-                        key="msg"
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="flex items-start gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 text-xs"
+                        className="flex gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-800 text-sm"
                       >
                         <Check className="w-4 h-4 shrink-0 mt-0.5" />
-                        <span className="leading-relaxed">{message}</span>
+                        <span>{message}</span>
                       </motion.div>
                     )}
                   </AnimatePresence>
 
-                  {/* Terms & Privacy — required for signup only (legal + trust) */}
                   {isSignUp && (
-                    <label className="flex items-start gap-2 text-[10px] text-muted/70 leading-snug cursor-pointer">
+                    <label className="flex items-start gap-2 text-caption cursor-pointer">
                       <input
                         type="checkbox"
                         checked={agreedToTerms}
                         onChange={(e) => setAgreedToTerms(e.target.checked)}
-                        className="mt-0.5 accent-[#4F1E7B]"
+                        className="mt-1 accent-brand"
                         required
                       />
                       <span>
                         I agree to the{" "}
-                        <Link to="/terms" className="underline hover:text-ink">
+                        <Link to="/terms" className="text-brand underline">
                           Terms
                         </Link>{" "}
                         and{" "}
-                        <Link to="/privacy" className="underline hover:text-ink">
-                          Privacy Policy
+                        <Link to="/privacy" className="text-brand underline">
+                          Privacy
                         </Link>
                         .
                       </span>
                     </label>
                   )}
 
-                  {/* Submit */}
                   <button
                     type="submit"
                     disabled={loading || (isSignUp && !agreedToTerms)}
-                    className="native-tap-squish w-full flex items-center justify-center gap-2 py-4 px-6 text-[12px] tracking-[0.3em] uppercase font-medium rounded-full cursor-pointer text-on-brand bg-[#4F1E7B] hover:bg-[#6A25A3] max-md:hover:translate-y-0 hover:-translate-y-[1px] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
-                    style={{
-                      boxShadow: "0 4px 12px -2px rgba(79,30,123,0.3)",
-                    }}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-full text-sm font-semibold text-on-brand bg-brand hover:bg-[#6A25A3] transition-all disabled:opacity-50"
                   >
                     {loading ? (
                       <>
@@ -1065,17 +603,16 @@ export default function AuthPortal() {
                       </>
                     ) : isReset ? (
                       <>
-                        <Mail className="w-4 h-4" /> Send Reset Link{" "}
-                        <ArrowRight className="w-4 h-4" />
+                        <Mail className="w-4 h-4" /> Send reset link
                       </>
                     ) : isSignUp ? (
                       <>
-                        <UserPlus className="w-4 h-4" /> Create Account{" "}
+                        <UserPlus className="w-4 h-4" /> Create account{" "}
                         <ArrowRight className="w-4 h-4" />
                       </>
                     ) : (
                       <>
-                        <LogIn className="w-4 h-4" /> Sign In <ArrowRight className="w-4 h-4" />
+                        <LogIn className="w-4 h-4" /> Sign in <ArrowRight className="w-4 h-4" />
                       </>
                     )}
                   </button>
@@ -1083,23 +620,17 @@ export default function AuthPortal() {
               </div>
             </div>
 
-            <RoiCalculator compact />
-
-            <AuthDemoDirectory
-              wirelineAgents={AUTH_PORTAL_WIRELINE_AGENTS}
-              demoAgents={AUTH_PORTAL_DEMO_AGENTS}
-              defaultExpanded={false}
-              className="mt-6 lg:hidden"
-            />
-
-            <MobileTrustProof />
-
-            {/* Footer */}
-            <div className="mt-6 flex items-center justify-center gap-4">
-              <ShieldCheck className="w-3 h-3 text-muted/40" />
-              <span className="text-[9px] uppercase tracking-[0.42em] text-muted/50">
-                TLS Encrypted · Secured Internal Infrastructure
-              </span>
+            <div className="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-caption">
+              <Link
+                to="/"
+                className="inline-flex items-center gap-1.5 font-medium text-ink/80 hover:text-ink"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Back to home
+              </Link>
+              <Link to="/showcase" className="font-medium text-brand hover:underline">
+                Try live demo lines
+              </Link>
             </div>
           </motion.div>
         </div>

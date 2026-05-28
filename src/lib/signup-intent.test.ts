@@ -3,6 +3,7 @@ import {
   getSignupWedgeRecommendation,
   parseSignupIntent,
   recommendedPlanFromIntent,
+  sanitizeSignupIntent,
   signupHrefForWedge,
 } from "./signup-intent";
 
@@ -44,5 +45,33 @@ describe("signup intent", () => {
   it("builds signup URLs with wedge default plan", () => {
     expect(signupHrefForWedge("sales")).toBe("/signup?wedge=sales&plan=pro");
     expect(signupHrefForWedge("medical", "business")).toBe("/signup?wedge=medical&plan=business");
+  });
+
+  it("sanitizes stale localStorage intent with invalid plan or wedge", () => {
+    const stale = {
+      preferredPlanId: "enterprise",
+      signupWedge: "unknown",
+      utmSource: "linkedin",
+      capturedAt: "2025-01-01T00:00:00.000Z",
+    } as const;
+
+    expect(sanitizeSignupIntent(stale)).toMatchObject({
+      utmSource: "linkedin",
+    });
+    expect(sanitizeSignupIntent(stale)?.preferredPlanId).toBeUndefined();
+    expect(sanitizeSignupIntent(stale)?.signupWedge).toBeUndefined();
+  });
+
+  it("keeps valid attribution fields when sanitizing", () => {
+    expect(
+      sanitizeSignupIntent({
+        preferredPlanId: "pro",
+        signupWedge: "medical",
+        capturedAt: "2025-01-01T00:00:00.000Z",
+      }),
+    ).toMatchObject({
+      preferredPlanId: "pro",
+      signupWedge: "medical",
+    });
   });
 });

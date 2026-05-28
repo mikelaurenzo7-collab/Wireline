@@ -21,6 +21,7 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
 } from "../lib/api-validation";
+import { getPostgresErrorCode } from "../lib/pg-errors";
 
 const router = Router();
 
@@ -147,11 +148,15 @@ router.post(
 
       res.json(result);
     } catch (error: any) {
-      // Drizzle wraps pg errors in DrizzleQueryError — the underlying
-      // pg code is on `cause.code` in current versions. Older paths
-      // ship the code on `error.code` directly. Walk both so we never
-      // miss a unique-violation race and leak it as a 500.
-      const pgCode = error?.code ?? error?.cause?.code;
+      if (error instanceof AuthConfigurationError) {
+        log.error("Auth: Sign up unavailable — JWT secret missing", { error });
+        return res.status(503).json({
+          error: "Sign-up is temporarily unavailable. Platform configuration is incomplete.",
+          code: "AUTH_NOT_CONFIGURED",
+        });
+      }
+
+      const pgCode = getPostgresErrorCode(error);
       if (pgCode === "23505") {
         return res.status(409).json({
           error: "An account with this email already exists. Try signing in instead.",
@@ -159,8 +164,6 @@ router.post(
         });
       }
       log.error("Auth: Sign up endpoint failed", {
-        // Include the resolved pg code (if any) so future regressions
-        // of this exact bug land in logs with a fingerprint.
         error: error?.message ?? String(error),
         pgCode: pgCode ?? null,
         cause: error?.cause?.message ?? null,
