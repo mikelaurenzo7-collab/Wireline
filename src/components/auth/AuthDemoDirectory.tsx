@@ -3,7 +3,55 @@ import { ChevronDown, Phone } from "lucide-react";
 import { cn } from "../../lib/utils";
 import type { ContactAgent } from "../../data/contact-agents";
 
-function AgentContactCard({ agent, isDemo }: { agent: ContactAgent; isDemo?: boolean }) {
+function AgentContactCard({
+  agent,
+  isDemo,
+  dense = false,
+}: {
+  agent: ContactAgent;
+  isDemo?: boolean;
+  dense?: boolean;
+}) {
+  if (dense) {
+    return (
+      <div className="rounded-lg border border-black/8 bg-white/65 px-2 py-1.5 hover:border-brand/20 transition-colors">
+        <div className="flex items-center gap-2 min-w-0">
+          <div
+            className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
+            style={{ background: isDemo ? "rgba(0,0,0,0.04)" : `${agent.tint}18` }}
+          >
+            <Phone
+              className="w-3 h-3"
+              style={{ color: isDemo ? "#6B635A" : agent.tint }}
+              strokeWidth={2.4}
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline gap-1 min-w-0">
+              <span className="text-[11px] font-semibold text-ink truncate">{agent.name}</span>
+              <span
+                className={cn(
+                  "shrink-0 text-[9px] uppercase tracking-wide font-semibold px-1 py-px rounded",
+                  isDemo ? "text-amber-800/80 bg-amber-500/10" : "text-brand bg-brand/10",
+                )}
+              >
+                {isDemo ? "Demo" : "Team"}
+              </span>
+            </div>
+            <p className="text-[10px] leading-tight text-muted truncate">{agent.role}</p>
+            <a
+              href={`tel:${agent.tel}`}
+              className="font-mono text-[11px] tabular-nums text-ink/90 hover:text-brand hover:underline underline-offset-2"
+              aria-label={`Call ${agent.name} at ${agent.display}`}
+            >
+              {agent.display}
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative rounded-xl p-3 overflow-hidden border border-black/8 bg-white/60">
       <div className="flex items-start gap-3">
@@ -50,24 +98,39 @@ function AgentContactCard({ agent, isDemo }: { agent: ContactAgent; isDemo?: boo
 export interface AuthDemoDirectoryProps {
   wirelineAgents: ContactAgent[];
   demoAgents: ContactAgent[];
+  /** Collapsible directory (auth). Landing uses `landing` for a full grid. */
+  variant?: "collapsible" | "landing";
   /** Show full directory expanded on first paint (desktop brand panel). */
   defaultExpanded?: boolean;
   className?: string;
 }
 
 /**
- * Collapsible live-line directory for the auth portal — keeps sign-in above the fold
- * while still surfacing all demo numbers on demand.
+ * Live-line directory — collapsible on auth, full grid on the marketing home.
  */
 export function AuthDemoDirectory({
   wirelineAgents,
   demoAgents,
+  variant = "collapsible",
   defaultExpanded = false,
   className,
 }: AuthDemoDirectoryProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const featured = wirelineAgents[0];
   const totalCount = wirelineAgents.length + demoAgents.length;
+
+  if (variant === "landing") {
+    return (
+      <div className={cn("grid grid-cols-2 gap-1.5 auto-rows-min content-start h-full", className)}>
+        {wirelineAgents.map((agent) => (
+          <AgentContactCard key={agent.tel} agent={agent} dense />
+        ))}
+        {demoAgents.map((agent) => (
+          <AgentContactCard key={agent.tel} agent={agent} isDemo dense />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className={cn("space-y-3", className)}>
@@ -100,9 +163,7 @@ export function AuthDemoDirectory({
       {expanded && (
         <div className="space-y-3 max-h-[min(42vh,380px)] overflow-y-auto scrollbar-hide pr-0.5">
           <div>
-            <p className="mb-2 text-[9px] uppercase tracking-[0.32em] text-[#4F1E7B]/80 font-semibold">
-              Wireline agents
-            </p>
+            <p className="mb-2 text-eyebrow !text-brand">Wireline agents</p>
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-2.5">
               {wirelineAgents.map((agent) => (
                 <AgentContactCard key={agent.tel} agent={agent} isDemo={false} />
@@ -110,9 +171,7 @@ export function AuthDemoDirectory({
             </div>
           </div>
           <div>
-            <p className="mb-2 text-[9px] uppercase tracking-[0.32em] text-amber-600/90 font-semibold">
-              Demo agents
-            </p>
+            <p className="mb-2 text-eyebrow !text-amber-800/90">Demo agents</p>
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-2.5">
               {demoAgents.map((agent) => (
                 <AgentContactCard key={agent.tel} agent={agent} isDemo />
