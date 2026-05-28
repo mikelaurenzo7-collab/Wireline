@@ -5,6 +5,7 @@ import { drizzle, log, auditLogger } from "../../lib/server-context";
 import { sql } from "drizzle-orm";
 import type { AuthenticatedRequest } from "../../types/auth";
 import { authorizeMigration, optionalAuth } from "./auth";
+import { jobsRateLimit } from "../../middleware/api-rate-limits";
 
 const router = Router();
 
@@ -39,6 +40,7 @@ const TARGET_MODEL = "claude-sonnet-4-6";
  */
 router.post(
   "/api/admin/migrate-voice-llm-backfill",
+  jobsRateLimit,
   optionalAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     if (!authorizeMigration(req, res)) return;
