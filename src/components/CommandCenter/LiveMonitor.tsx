@@ -33,19 +33,19 @@ export function LiveMonitor({ calls }: { calls: LiveCall[] }) {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <AnimatePresence mode="popLayout">
           {calls.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="col-span-full py-16 flex flex-col items-center justify-center border border-dashed border-black/8 rounded-3xl bg-black/[0.01]"
+              className="col-span-full py-20 flex flex-col items-center justify-center border border-black/10 rounded-sm bg-black/[0.02] shadow-inner"
             >
-              <div className="w-12 h-12 rounded-2xl bg-black/5 flex items-center justify-center mb-4">
-                <Zap className="w-6 h-6 text-muted/20" />
+              <div className="w-12 h-12 rounded-full bg-white border border-black/10 shadow-sm flex items-center justify-center mb-4">
+                <Zap className="w-5 h-5 text-black/30" />
               </div>
-              <p className="text-muted/65 text-[10px] uppercase tracking-[0.3em]">
+              <p className="text-black/50 text-[11px] font-bold uppercase tracking-[0.25em]">
                 Carrier network idle
               </p>
             </motion.div>
@@ -58,19 +58,18 @@ export function LiveMonitor({ calls }: { calls: LiveCall[] }) {
                 exit={{ opacity: 0, scale: 0.95 }}
                 key={call.id}
                 className={clsx(
-                  "relative group overflow-hidden p-6 rounded-3xl border transition-all duration-500",
+                  "relative group overflow-hidden p-6 rounded-sm border transition-all duration-300",
                   call.status === "escalated"
-                    ? "bg-rose-500/[0.03] border-rose-500/30 shadow-[0_0_40px_rgba(244,63,94,0.08)]"
-                    : "glass border-black/8 hover:border-brand/30",
+                    ? "bg-rose-50 border-rose-300 shadow-[0_4px_20px_-8px_rgba(244,63,94,0.25)]"
+                    : "bg-white border-black/15 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.15)] hover:border-black/30",
                 )}
               >
-                {/* Visual pulse for activity */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 blur-3xl rounded-full -mr-16 -mt-16 pointer-events-none group-hover:bg-brand/10 transition-colors" />
 
                 <div className="relative flex items-center gap-4 mb-5">
                   <div
                     className={clsx(
-                      "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border transition-all",
+                      "w-12 h-12 rounded-sm flex items-center justify-center shrink-0 border transition-all",
                       call.status === "escalated"
                         ? "bg-rose-500/10 border-rose-500/20 text-rose-500"
                         : "bg-brand/10 border-brand/20 text-brand",
@@ -107,29 +106,29 @@ export function LiveMonitor({ calls }: { calls: LiveCall[] }) {
                 </div>
 
                 {/* AI Thought / Live Stream Placeholder */}
-                <div className="relative mb-5 p-3.5 rounded-2xl bg-black/[0.03] border border-black/5">
+                <div className="relative mb-5 p-4 rounded-sm bg-black/[0.03] border border-black/10">
                   <div className="flex items-center gap-2 mb-2">
                     <Sparkles className="w-3 h-3 text-brand" />
-                    <span className="text-[8px] uppercase tracking-[0.2em] text-muted font-bold">
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-black/60 font-bold">
                       Autonomous Reasoning
                     </span>
                   </div>
-                  <p className="text-[11px] text-ink/70 leading-relaxed italic">
+                  <p className="text-xs text-ink/80 leading-relaxed italic font-medium">
                     {call.thought ||
                       "AI is synthesizing intent and identifying high-leverage follow-up actions..."}
                   </p>
-                  <div className="absolute bottom-2 right-2 flex gap-1">
-                    <span className="w-1 h-1 rounded-full bg-brand/40 animate-bounce [animation-delay:-0.3s]" />
-                    <span className="w-1 h-1 rounded-full bg-brand/40 animate-bounce [animation-delay:-0.15s]" />
-                    <span className="w-1 h-1 rounded-full bg-brand/40 animate-bounce" />
+                  <div className="absolute bottom-3 right-3 flex gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-brand/40 animate-bounce [animation-delay:-0.3s]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-brand/40 animate-bounce [animation-delay:-0.15s]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-brand/40 animate-bounce" />
                   </div>
                 </div>
 
                 <div className="relative">
                   <div className="flex justify-between items-center mb-2">
                     <div className="flex items-center gap-2">
-                      <MessageSquareText className="w-3 h-3 text-muted/60" />
-                      <span className="text-[9px] uppercase tracking-[0.2em] text-muted font-bold">
+                      <MessageSquareText className="w-4 h-4 text-black/40" />
+                      <span className="text-[10px] uppercase tracking-[0.2em] text-black/60 font-bold">
                         Sentiment Score
                       </span>
                     </div>

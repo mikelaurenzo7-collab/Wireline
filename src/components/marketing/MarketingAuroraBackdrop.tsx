@@ -7,7 +7,7 @@ export default function MarketingAuroraBackdrop() {
       <motion.div
         className="absolute -top-[22%] -left-[12%] w-[min(520px,48vw)] h-[min(520px,48vw)] rounded-full"
         style={{
-          background: "radial-gradient(circle, rgba(79,30,123,0.11), transparent 68%)",
+          background: "radial-gradient(circle, rgba(0,0,0,0.06), transparent 68%)",
           filter: "blur(42px)",
         }}
         animate={{ x: [0, 18, 0], y: [0, -12, 0] }}
@@ -16,7 +16,7 @@ export default function MarketingAuroraBackdrop() {
       <motion.div
         className="absolute -bottom-[18%] -right-[10%] w-[min(440px,42vw)] h-[min(440px,42vw)] rounded-full"
         style={{
-          background: "radial-gradient(circle, rgba(217,119,82,0.09), transparent 70%)",
+          background: "radial-gradient(circle, rgba(0,0,0,0.04), transparent 70%)",
           filter: "blur(48px)",
         }}
         animate={{ x: [0, -14, 0], y: [0, 10, 0] }}

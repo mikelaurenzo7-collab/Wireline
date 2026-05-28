@@ -84,33 +84,27 @@ export function ActionFeed({
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="app-section-title flex items-center gap-2">
-          <Sparkles className="w-3.5 h-3.5 text-brand" />
-          Intelligence Hub
-        </h3>
-        <span className="text-[9px] font-mono text-muted/65 bg-black/5 px-2 py-0.5 rounded-full">
-          {actions.filter((a) => a.status === "pending").length} PENDING
-        </span>
-      </div>
+        <div className="flex items-center justify-between mb-6 border-b border-black/10 pb-4">
+          <h3 className="app-section-title flex items-center gap-2 text-ink uppercase tracking-widest font-bold">
+            <Sparkles className="w-4 h-4 text-ink" />
+            Intelligence Hub
+          </h3>
+          <span className="text-[10px] font-mono text-muted/80 font-bold bg-black/5 px-2 py-0.5 rounded-sm uppercase tracking-widest">
+            {actions.filter((a) => a.status === "pending").length} PENDING
+          </span>
+        </div>
 
       <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-3 custom-scrollbar">
         {actions.length === 0 ? (
-          <div className="h-64 flex flex-col items-center justify-center gap-4 text-center border border-dashed border-black/8 rounded-[2rem] bg-black/[0.01] relative overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(79, 30, 123 ,0.03),transparent)]" />
-            <div className="w-12 h-12 rounded-2xl bg-white brutal-border flex items-center justify-center relative">
-              <Sparkles className="w-5 h-5 text-brand" />
-              <motion.div
-                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
-                transition={{ duration: 3, repeat: Infinity }}
-                className="absolute inset-0 bg-brand/20 rounded-2xl -z-10"
-              />
+          <div className="h-64 flex flex-col items-center justify-center gap-4 text-center border border-black/10 rounded-sm bg-black/[0.02] relative overflow-hidden shadow-inner">
+            <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center relative">
+              <Sparkles className="w-5 h-5 text-black/30" />
             </div>
             <div className="space-y-1">
-              <p className="text-[10px] text-ink font-bold uppercase tracking-[0.3em]">
+              <p className="text-[11px] text-ink font-bold uppercase tracking-[0.25em]">
                 Fleet synchronized
               </p>
-              <p className="text-[9px] text-muted max-w-[180px] leading-relaxed">
+              <p className="text-[10px] font-medium text-black/50 max-w-[200px] leading-relaxed">
                 Autonomous agents are monitoring signals. No manual intervention required.
               </p>
             </div>
@@ -125,11 +119,11 @@ export function ActionFeed({
                 layout
                 key={action.id}
                 className={clsx(
-                  "relative group rounded-2xl border transition-all duration-300 overflow-hidden",
+                  "relative group rounded-sm border transition-all duration-300 overflow-hidden",
                   action.status === "pending"
-                    ? "bg-white/40 border-black/8 hover:border-brand/30 hover:bg-white/60"
-                    : "bg-black/[0.02] border-black/4 opacity-60",
-                  isExpanded && "border-brand/40 bg-white/80 ring-1 ring-brand/10 shadow-lg",
+                    ? "bg-white border-black/15 shadow-sm hover:shadow-md hover:border-black/30"
+                    : "bg-black/[0.02] border-black/10 opacity-60",
+                  isExpanded && "border-black/40 bg-white ring-1 ring-black/10 shadow-lg",
                 )}
                 onClick={() => setExpandedId(isExpanded ? null : action.id)}
               >

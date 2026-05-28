@@ -47,21 +47,20 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
           className,
         )}
       >
-        <Link to="/" className="flex items-center gap-3 group min-w-0">
+        <Link to="/" className="flex items-center gap-3 group min-w-0" data-testid="header-logo-home">
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-[1.02]"
+            className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-[1.02] border border-black/10 shadow-sm"
             style={{
-              background: "#4F1E7B",
-              boxShadow: "0 6px 20px -8px rgba(79,30,123,0.45)",
+              background: "#000000",
             }}
           >
-            <WirelineMark className="w-5 h-5 text-on-brand" strokeWidth={130} />
+            <WirelineMark className="w-5 h-5 text-white" strokeWidth={130} />
           </div>
           <div className="min-w-0">
-            <span className="brand-wordmark text-2xl leading-none !text-brand !filter-none block truncate">
+            <span className="font-sans font-black tracking-tight text-xl leading-none text-ink block truncate">
               WIRELINE
             </span>
-            <span className="text-eyebrow hidden sm:block mt-0.5">Voice + email agents</span>
+            <span className="text-[10px] uppercase tracking-widest font-bold text-black/50 hidden sm:block mt-0.5">Voice + email agents</span>
           </div>
         </Link>
 
@@ -92,11 +91,12 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
           <Link
             to="/signup"
             className={cn(
-              "hidden sm:inline-flex items-center justify-center px-4 py-2.5 rounded-full text-[13px] font-semibold tracking-wide transition-all",
+              "hidden sm:inline-flex items-center justify-center px-4 py-2.5 rounded-sm text-xs font-bold tracking-widest uppercase transition-all shadow-sm border border-black/10",
               active === "signup"
-                ? "bg-brand-deep text-on-brand"
-                : "bg-brand text-on-brand hover:bg-[#6A25A3] shadow-[0_4px_14px_-4px_rgba(79,30,123,0.5)]",
+                ? "bg-black text-white"
+                : "bg-black text-white hover:bg-black/80 hover:shadow-md",
             )}
+            data-testid="header-start-trial"
           >
             Start trial
           </Link>

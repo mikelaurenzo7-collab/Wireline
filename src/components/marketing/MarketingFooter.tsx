@@ -35,33 +35,33 @@ export default function MarketingFooter({
       )}
     >
       <div className="max-w-[1200px] mx-auto space-y-3">
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5 justify-center sm:justify-start">
           {TRUST.map((label) => (
             <span
               key={label}
-              className="text-[11px] font-medium px-2.5 py-1 rounded-full border border-black/8 bg-white/50 text-ink/85"
+              className="text-[10px] font-bold px-3 py-1 rounded-sm border border-black/10 bg-white/70 text-ink/80 shadow-sm uppercase tracking-widest"
             >
               {label}
             </span>
           ))}
         </div>
         <nav
-          className="flex flex-wrap gap-x-4 gap-y-2 text-caption font-medium"
+          className="flex flex-wrap gap-x-6 gap-y-3 text-xs font-bold uppercase tracking-widest justify-center sm:justify-start"
           aria-label="Footer"
         >
           {LINKS.map((l) => (
             <Link
               key={l.to}
               to={l.to}
-              className="min-h-[44px] inline-flex items-center hover:text-brand"
+              className="min-h-[44px] inline-flex items-center hover:text-black/60 transition-colors"
             >
               {l.label}
             </Link>
           ))}
-          <Link to="/privacy" className="min-h-[44px] inline-flex items-center hover:text-brand">
+          <Link to="/privacy" className="min-h-[44px] inline-flex items-center hover:text-black/60 transition-colors">
             Privacy
           </Link>
-          <Link to="/terms" className="min-h-[44px] inline-flex items-center hover:text-brand">
+          <Link to="/terms" className="min-h-[44px] inline-flex items-center hover:text-black/60 transition-colors">
             Terms
           </Link>
         </nav>

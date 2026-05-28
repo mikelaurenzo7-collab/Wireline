@@ -610,8 +610,8 @@ function TierInline() {
     <div className="mt-1 leading-none">
       <span
         className={cn(
-          "text-[8.5px] uppercase tracking-[0.25em] font-semibold",
-          overage ? "text-rose-300" : "text-[#EFE9DC]/55",
+          "text-[8.5px] uppercase tracking-[0.25em] font-bold",
+          overage ? "text-rose-300" : "text-[#EFE9DC]/70",
         )}
       >
         {tier.plan_name}

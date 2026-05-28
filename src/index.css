@@ -23,12 +23,12 @@
    * tokens were the purple/magenta points of the aurora gradient;
    * they're now aliased to the brand teal so any stray references
    * resolve to the canonical hue instead of breaking the build. */
-  --color-brand: #4F1E7B;          /* Silky Purple â€” matches new aesthetic */
-  --color-brand-2: #4F1E7B;        /* deprecated â€” alias of --color-brand */
-  --color-brand-3: #4F1E7B;        /* deprecated â€” alias of --color-brand */
-  --color-brand-deep: #3B154C;     /* Deeper purple — TopBar & chrome surfaces */
-  --color-ink: #1A1614;            /* Warm near-black text */
-  --color-paper: #EFE9DC;          /* warm tan / mocha off-white — consistent base */
+  --color-brand: #0A0A0A;          /* Sexy Dark Ink as primary brand color for high contrast */
+  --color-brand-2: #1A1A1A;        /* deep charcoal alias */
+  --color-brand-3: #262626;        /* lighter charcoal alias */
+  --color-brand-deep: #000000;     /* Absolute black */
+  --color-ink: #0A0A0A;            /* Warm near-black text */
+  --color-paper: #FFFFFF;          /* Pure white base for absolute maximum contrast */
   /* Pure white for text/icons rendered ON solid brand-color surfaces
    * (purple buttons, gradient pills, etc.). We can't use text-white
    * for these because --color-white is intentionally remapped to a
@@ -303,13 +303,13 @@
 }
 
 @utility brutal-btn {
-  @apply relative inline-flex items-center justify-center gap-2 px-5 py-2.5 font-medium tracking-[0.10em] uppercase text-[11px] rounded-xl transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:grayscale disabled:pointer-events-none overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-paper;
-  color: #FAF8F4;
-  background: #4F1E7B;
+  @apply relative inline-flex items-center justify-center gap-2 px-5 py-2.5 font-bold tracking-[0.10em] uppercase text-[11px] rounded-lg transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:grayscale disabled:pointer-events-none overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-paper;
+  color: #FFFFFF;
+  background: #0A0A0A;
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.25) inset,
-    0 6px 20px -6px rgba(79, 30, 123, 0.40),
-    0 14px 36px -10px rgba(79, 30, 123, 0.25);
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset,
+    0 6px 20px -6px rgba(0, 0, 0, 0.40),
+    0 14px 36px -10px rgba(0, 0, 0, 0.25);
 }
 
 /* Button size variants — use alongside brutal-btn to avoid !py- overrides. */
@@ -333,12 +333,12 @@
 }
 
 .brutal-btn:hover {
-  background: #6A25A3;
-  transform: translateY(-1px);
+  background: #1A1A1A;
+  transform: translateY(-2px);
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.30) inset,
-    0 12px 28px -8px rgba(79, 30, 123, 0.50),
-    0 20px 48px -12px rgba(79, 30, 123, 0.30);
+    0 0 0 1px rgba(255, 255, 255, 0.20) inset,
+    0 12px 28px -8px rgba(0, 0, 0, 0.50),
+    0 20px 48px -12px rgba(0, 0, 0, 0.30);
 }
 
 .brutal-btn:active {
@@ -354,18 +354,11 @@
 }
 
 @utility brutal-card {
-  @apply relative overflow-hidden p-6 md:p-8 rounded-2xl border border-black/8;
-  background:
-    linear-gradient(180deg, rgba(247, 242, 234, 0.80), rgba(245, 239, 229, 0.55)),
-    rgba(239, 233, 220, 0.75);
-  backdrop-filter: blur(32px) saturate(140%);
-  -webkit-backdrop-filter: blur(32px) saturate(140%);
+  @apply relative overflow-hidden p-6 md:p-8 rounded-none border border-black/10 bg-white;
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.90) inset,
-    0 0 0 1px rgba(79, 30, 123, 0.04),
-    0 12px 40px -12px rgba(0, 0, 0, 0.10),
-    0 4px 16px -6px rgba(79, 30, 123, 0.08);
-  transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 400ms ease, border-color 300ms ease;
+    0 4px 20px -8px rgba(0, 0, 0, 0.15),
+    0 1px 3px -1px rgba(0, 0, 0, 0.10);
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 300ms ease, border-color 300ms ease;
 }
 
 @utility indicator-glow {
@@ -472,26 +465,19 @@
  * gradient stops to derive from --color-paper (#EFE9DC) so every
  * glass surface inherits the same warm cream — auth'd console and
  * AuthPortal now read as the same brand canvas. */
-/* Glass panels derive from the warm-tan paper base (#EFE9DC → rgb
- * 239,233,220) but sit a touch lighter so cards read as raised. Keep
- * these in lockstep with --color-paper so the whole app stays one
- * consistent warm tone — no white-vs-purple drift. */
+/* Glass panels derive from pure white for that stark, clean Swiss look. */
 .glass {
-  background:
-    linear-gradient(180deg, rgba(246, 241, 232, 0.80), rgba(244, 238, 228, 0.62)),
-    rgba(239, 233, 220, 0.6);
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  border: 1px solid rgba(0, 0, 0, 0.07);
+  background: rgba(255, 255, 255, 0.70);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .glass-strong {
-  background:
-    linear-gradient(180deg, rgba(247, 242, 234, 0.94), rgba(245, 240, 230, 0.82)),
-    rgba(239, 233, 220, 0.9);
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(32px) saturate(160%);
+  -webkit-backdrop-filter: blur(32px) saturate(160%);
+  border: 1px solid rgba(0, 0, 0, 0.12);
 }
 
 /* Reduced motion: kill the GPU-expensive backdrop blur entirely. The
@@ -1309,17 +1295,17 @@ select:focus {
 }
 
 @media (max-width: 767px) {
-  /* Lighter glass on phones — skip expensive blur, keep warm cream opacity. */
+  /* Mobile: skip blur for performance but keep crisp white */
   .glass {
-    background: rgba(246, 241, 232, 0.94);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px) saturate(130%);
     -webkit-backdrop-filter: blur(10px) saturate(130%);
-    border-color: rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.08);
   }
 
   .glass-strong,
   .glass-elevated {
-    background: rgba(248, 243, 235, 0.98);
+    background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(14px) saturate(150%);
     -webkit-backdrop-filter: blur(14px) saturate(150%);
   }

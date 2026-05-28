@@ -93,38 +93,38 @@ function AgentContactCard({
   }
 
   return (
-    <div className="relative rounded-xl p-3 overflow-hidden border border-black/8 bg-white/60">
+    <div className="relative rounded-sm p-3 overflow-hidden border border-black/10 bg-white/80 shadow-sm">
       <div className="flex items-start gap-3">
         <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/10"
-          style={{ background: isDemo ? "rgba(255,255,255,0.03)" : `${agent.tint}1a` }}
+          className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-black/5 shadow-sm"
+          style={{ background: isDemo ? "rgba(0,0,0,0.03)" : `${agent.tint}1a` }}
         >
           <Phone
-            className="w-3.5 h-3.5"
+            className="w-4 h-4"
             style={{ color: isDemo ? "#a1a1aa" : agent.tint }}
             strokeWidth={2.4}
           />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 mb-1">
+          <div className="flex items-center gap-1.5 mb-1.5">
             <span
               className={cn(
-                "shrink-0 whitespace-nowrap text-[8px] uppercase tracking-[0.16em] font-semibold px-1.5 py-0.5 rounded leading-none",
+                "shrink-0 whitespace-nowrap text-[9px] uppercase tracking-[0.2em] font-bold px-1.5 py-0.5 rounded-sm leading-none",
                 isDemo
-                  ? "bg-white/8 text-muted/80 border border-white/10"
-                  : "bg-[#4F1E7B]/15 text-[#4F1E7B] border border-[#4F1E7B]/30",
+                  ? "bg-black/5 text-black/60 border border-black/10"
+                  : "bg-black text-white border border-black",
               )}
             >
               {isDemo ? "Demo" : "Wireline Team"}
             </span>
-            <span className="text-caption font-medium truncate">{agent.name}</span>
+            <span className="text-sm font-bold truncate text-ink tracking-tight">{agent.name}</span>
           </div>
-          <p className="font-display italic text-sm leading-snug text-ink line-clamp-2 text-balance">
+          <p className="font-display italic text-sm leading-snug text-ink/80 line-clamp-2 text-balance">
             {agent.role}
           </p>
           <a
             href={`tel:${agent.tel}`}
-            className="mt-1 inline-flex min-h-[44px] items-center font-mono text-[13px] tabular-nums text-ink underline-offset-2 hover:text-[#4F1E7B] hover:underline"
+            className="mt-2 inline-flex min-h-[44px] items-center font-mono text-sm tabular-nums font-bold text-ink underline-offset-2 hover:text-black/60 transition-colors"
             aria-label={`Call ${agent.name} at ${agent.display}`}
           >
             <span className="select-all">{agent.display}</span>
@@ -183,12 +183,12 @@ export function AuthDemoDirectory({
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center justify-between gap-3 rounded-xl border border-[#4F1E7B]/20 bg-[#4F1E7B]/5 px-3.5 py-3 min-h-[48px] text-left transition-colors hover:bg-[#4F1E7B]/10 active:bg-[#4F1E7B]/14"
+        className="w-full flex items-center justify-between gap-3 rounded-sm border border-black/10 bg-black/5 px-4 py-3 min-h-[48px] text-left transition-colors hover:bg-black/10 active:bg-black/15 shadow-sm"
         aria-expanded={expanded}
       >
         <div>
-          <p className="text-eyebrow !text-brand">Try live agents</p>
-          <p className="text-caption mt-0.5">
+          <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-ink">Try live agents</p>
+          <p className="text-xs text-black/60 font-medium mt-0.5">
             {expanded
               ? `${totalCount} lines — dial from your phone`
               : featured
@@ -198,7 +198,7 @@ export function AuthDemoDirectory({
         </div>
         <ChevronDown
           className={cn(
-            "w-4 h-4 shrink-0 text-[#4F1E7B] transition-transform",
+            "w-4 h-4 shrink-0 text-ink transition-transform",
             expanded && "rotate-180",
           )}
         />
@@ -207,18 +207,18 @@ export function AuthDemoDirectory({
       {!expanded && featured && <AgentContactCard agent={featured} isDemo={false} />}
 
       {expanded && (
-        <div className="space-y-3 max-h-[min(42vh,380px)] overflow-y-auto scrollbar-hide pr-0.5">
+        <div className="space-y-3 max-h-[min(42vh,380px)] overflow-y-auto scrollbar-hide pr-0.5 mt-4">
           <div>
-            <p className="mb-2 text-eyebrow !text-brand">Wireline agents</p>
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-2.5">
+            <p className="mb-3 text-[10px] uppercase tracking-[0.2em] font-bold text-ink">Wireline agents</p>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
               {wirelineAgents.map((agent) => (
                 <AgentContactCard key={agent.tel} agent={agent} isDemo={false} />
               ))}
             </div>
           </div>
-          <div>
-            <p className="mb-2 text-eyebrow !text-amber-800/90">Demo agents</p>
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-2.5">
+          <div className="pt-2">
+            <p className="mb-3 text-[10px] uppercase tracking-[0.2em] font-bold text-black/60">Demo agents</p>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
               {demoAgents.map((agent) => (
                 <AgentContactCard key={agent.tel} agent={agent} isDemo />
               ))}

@@ -56,27 +56,27 @@ export default function LandingPage() {
 
         <PublicSiteHeader active="home" />
 
-        <main className="relative z-10 flex-1 min-h-0 overflow-y-auto lg:overflow-hidden marketing-has-sticky-cta px-4 sm:px-6 pb-8 lg:px-8 lg:pb-4">
-          <div className="max-w-[1320px] mx-auto lg:h-full grid lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] gap-8 lg:gap-8 lg:items-stretch lg:min-h-0 py-6 lg:py-0">
+        <main className="relative z-10 flex-1 min-h-0 overflow-y-auto lg:overflow-hidden px-4 sm:px-6 pb-8 lg:px-8 lg:pb-4 pt-4 lg:pt-0">
+          <div className="max-w-[1320px] mx-auto lg:h-full grid lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] gap-10 lg:gap-12 lg:items-center lg:min-h-0 py-6 lg:py-0">
             {/* ── Hero column ───────────────────────────────────────── */}
             <motion.section
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-col justify-center lg:min-h-0 lg:py-2"
+              className="flex flex-col justify-center lg:min-h-0 lg:py-12"
             >
               <div className="flex items-center gap-2 mb-3">
                 <span className="hero-accent-line shrink-0" style={{ background: "#4F1E7B" }} />
                 <span className="text-eyebrow">One fleet · phone · SMS · email</span>
               </div>
 
-              <h1 className="font-display italic text-[clamp(2rem,8vw,3.5rem)] leading-[1.02] tracking-tight text-balance text-ink">
-                <span className="text-brand">Every conversation</span>
+              <h1 className="font-display italic text-[clamp(2.5rem,8vw,5rem)] leading-[1.05] tracking-tighter text-balance text-ink drop-shadow-sm pb-1 pt-1">
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-ink to-ink/70">Every conversation</span>
                 <br />
                 answered like your best rep.
               </h1>
 
-              <p className="text-lead mt-3 max-w-md">
+              <p className="text-lead mt-5 max-w-lg font-medium text-ink/80 tracking-tight leading-relaxed">
                 Wireline runs inbound support, outbound sales, and email follow-ups on real numbers
                 — trained on your playbook, improving with every call.
               </p>
@@ -97,31 +97,6 @@ export default function LandingPage() {
                 ))}
               </div>
 
-              <div className="mt-8 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
-                <Link to="/signup" className="marketing-btn-primary w-full sm:w-auto text-center" data-testid="start-free-trial-btn">
-                  Start free trial
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-                <Link to="/signin" className="marketing-btn-secondary hidden sm:inline-flex" data-testid="sign-in-btn">
-                  Sign in
-                </Link>
-                <a
-                  href="tel:+16305811834"
-                  className="inline-flex justify-center items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold text-brand bg-brand/5 border border-brand/15 hover:bg-brand/10 active:scale-[0.98] transition-all min-h-[48px] w-full sm:w-auto"
-                  data-testid="call-demo-btn"
-                >
-                  <Phone className="w-4 h-4" />
-                  Liam · (630) 581-1834
-                </a>
-              </div>
-
-              <p className="mt-4 text-caption max-w-md lg:hidden">
-                Scroll to call any live line — real Wireline agents, no signup required.
-              </p>
-              <p className="mt-4 text-caption max-w-md hidden lg:block">
-                Dial any line on the right from your phone — real Wireline agents, no signup required.
-              </p>
-
               <div className="mt-6 lg:mt-auto lg:pt-4 hidden lg:block">
                 <IntegrationLogos compact />
               </div>
@@ -132,7 +107,7 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-col lg:min-h-0 lg:py-2 mt-6 lg:mt-0"
+              className="flex flex-col lg:min-h-0 lg:py-12 mt-6 lg:mt-0"
             >
               <div className="rounded-[1.5rem] border border-black/8 bg-white/70 backdrop-blur-2xl p-4 sm:p-5 lg:p-6 shadow-[0_12px_40px_-20px_rgba(79,30,123,0.28)] flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden relative">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 shrink-0">
@@ -166,7 +141,7 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <div className="mt-8 lg:hidden">
+              <div className="mt-6 lg:hidden max-w-[200px] mx-auto sm:mx-0">
                 <IntegrationLogos compact />
               </div>
             </motion.section>
@@ -175,8 +150,6 @@ export default function LandingPage() {
 
         <MarketingFooter compact aboveStickyCta className="relative z-10 shrink-0 lg:hidden" />
         <MarketingFooter compact className="relative z-10 shrink-0 hidden lg:block" />
-
-        <MarketingStickyCta />
       </div>
     </>
   );
