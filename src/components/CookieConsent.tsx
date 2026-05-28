@@ -1,21 +1,44 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Cookie, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 const STORAGE_KEY = "wireline_cookie_consent";
 
 export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
+  const location = useLocation();
+  const [hasSession, setHasSession] = useState(false);
 
   useEffect(() => {
     // Only show if not already acknowledged
     if (!localStorage.getItem(STORAGE_KEY)) {
+      setHasSession(!!localStorage.getItem("wireline_session"));
       // Small delay so it doesn't compete with page load
       const t = setTimeout(() => setVisible(true), 1200);
       return () => clearTimeout(t);
     }
   }, []);
+
+  const publicPrefixes = [
+    "/pricing",
+    "/compare",
+    "/about",
+    "/showcase",
+    "/for/",
+    "/privacy",
+    "/terms",
+    "/status",
+    "/security",
+    "/changelog",
+    "/support",
+    "/signup",
+    "/signin",
+    "/reset-password",
+  ];
+  const isPublicRoute =
+    location.pathname !== "/" && publicPrefixes.some((p) => location.pathname.startsWith(p));
+  const clearMobileBottomNav = hasSession && !isPublicRoute;
 
   const dismiss = () => {
     localStorage.setItem(STORAGE_KEY, "acknowledged");
@@ -48,6 +71,7 @@ export default function CookieConsent() {
             // iOS home-bar / dynamic island clearance — push the
             // banner up above the bottom safe area on iPhone X+.
             paddingBottom: "env(safe-area-inset-bottom, 0)",
+            bottom: clearMobileBottomNav ? "calc(49px + env(safe-area-inset-bottom, 0px))" : 0,
           }}
         >
           {/* Slim bottom bar — full width, never overlaps content columns */}

@@ -33,7 +33,7 @@ import WirelineMark from "./WirelineMark";
 import { PageMeta } from "../lib/page-meta";
 
 type ComponentState = "operational" | "degraded" | "outage" | "unknown";
-type OverallState = "operational" | "degraded" | "outage";
+type OverallState = "operational" | "degraded" | "outage" | "unknown";
 
 interface PublicHealth {
   overall: OverallState;
@@ -138,7 +138,7 @@ export default function Status() {
     };
   }, []);
 
-  const overall = data?.overall ?? (error ? "outage" : "operational");
+  const overall: OverallState = data?.overall ?? (error ? "unknown" : "operational");
   const OverallIcon = STATE_META[overall].icon;
 
   return (
@@ -213,7 +213,9 @@ export default function Status() {
                         ? "All systems operational"
                         : overall === "degraded"
                           ? "Some systems degraded"
-                          : "Outage in progress"}
+                          : overall === "outage"
+                            ? "Outage in progress"
+                            : "Status temporarily unavailable"}
                   </h1>
                   <p className="text-[12px] text-muted/80 leading-relaxed">
                     {data?.last_checked ? (
@@ -230,11 +232,13 @@ export default function Status() {
                         </time>{" "}
                         · refreshes every 60s.
                       </>
+                    ) : error ? (
+                      "We could not reach the public status feed. This is not treated as a service outage until a live probe confirms one."
                     ) : (
                       "Probing the live runtime…"
                     )}
                   </p>
-                  {error && <p className="mt-2 text-[11px] text-rose-700">{error}</p>}
+                  {error && <p className="mt-2 text-[11px] text-muted">{error}</p>}
                 </div>
               </div>
             </div>

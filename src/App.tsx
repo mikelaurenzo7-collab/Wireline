@@ -35,9 +35,6 @@ const DataDeletion = lazy(() =>
 const ZoomDocs = lazy(() =>
   import("./components/LegalPage").then((m) => ({ default: m.ZoomDocs })),
 );
-const ChangelogPage = lazy(() =>
-  import("./components/Changelog").then((m) => ({ default: m.ChangelogPage })),
-);
 const SupportPage = lazy(() =>
   import("./components/SupportPage").then((m) => ({ default: m.SupportPage })),
 );
@@ -87,15 +84,6 @@ function AppContent() {
     return (
       <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
         <ZoomDocs />
-      </Suspense>
-    );
-  }
-  // Public changelog — pre-launch trust signal and post-launch
-  // transparency: every prospect can verify "yes they ship."
-  if (location.pathname === "/changelog") {
-    return (
-      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
-        <ChangelogPage />
       </Suspense>
     );
   }

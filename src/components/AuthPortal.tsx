@@ -64,6 +64,47 @@ const FEATURES = [
 const AUTH_PORTAL_WIRELINE_AGENTS = WIRELINE_CONTACT_AGENTS.slice(0, -1);
 const AUTH_PORTAL_DEMO_AGENTS = WIRELINE_DEMO_AGENTS.slice(0, -1);
 
+function MobileTrustProof() {
+  return (
+    <div className="lg:hidden mt-5 space-y-3">
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          { label: "24/7", detail: "always answers" },
+          { label: "<10 min", detail: "setup path" },
+          { label: "No card", detail: "14-day trial" },
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="rounded-xl border border-black/8 bg-white/55 px-2 py-2.5 text-center"
+          >
+            <p className="font-display italic text-lg leading-none text-ink">{item.label}</p>
+            <p className="mt-1 text-[8px] uppercase tracking-[0.16em] text-muted/65 leading-tight">
+              {item.detail}
+            </p>
+          </div>
+        ))}
+      </div>
+      <div className="rounded-xl border border-brand/15 bg-brand/[0.04] p-3">
+        <div className="flex items-center gap-2 text-[9px] uppercase tracking-[0.26em] text-brand font-semibold">
+          <ShieldCheck className="w-3.5 h-3.5" />
+          Trust proof
+        </div>
+        <p className="mt-1.5 text-[11px] text-muted/75 leading-relaxed">
+          Dedicated number included, no Twilio bill. TCPA/DNC controls, audit logs, and public{" "}
+          <Link to="/status" className="text-brand underline underline-offset-2">
+            status
+          </Link>{" "}
+          +{" "}
+          <Link to="/security" className="text-brand underline underline-offset-2">
+            security
+          </Link>{" "}
+          pages before you sign up.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Normalize a JSON error payload into a human-readable string.
  *
@@ -557,40 +598,13 @@ export default function AuthPortal() {
               <br />
               <span className="text-ink">customer conversation</span>
             </h1>
-            <p className="text-[13px] xl:text-sm text-muted/80 leading-relaxed max-w-xl mb-5">
-              Wireline runs your <span className="text-ink/90">inbound support</span>,{" "}
-              <span className="text-ink/90">outbound sales</span>, and{" "}
-              <span className="text-ink/90">email follow-ups</span> across one fleet of AI agents —
-              trained on your playbook, available 24/7, improving with every interaction.
+            <p className="text-[14px] xl:text-[15px] text-muted/82 leading-relaxed max-w-lg">
+              One trained fleet answers, qualifies, follows up, and escalates across phone, SMS, and
+              email — with no fake actions and no missed handoff.
             </p>
-            {/* Value props — honest capability statements, not fabricated
-              vanity metrics. The old "10M+ calls / $150M pipeline /
-              4.9 CSAT" trio was invented; replaced with claims that are
-              true on day one. LiveStatsTicker still shows the REAL
-              agents-online / calls-this-month counts when the platform
-              has data. */}
-            <div className="flex items-center gap-5">
-              <div className="flex flex-col">
-                <span className="font-display italic text-2xl text-ink">24/7</span>
-                <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">
-                  Always Answering
-                </span>
-              </div>
-              <div className="w-px h-6 bg-white/10" />
-              <div className="flex flex-col">
-                <span className="font-display italic text-2xl text-ink">&lt;10 min</span>
-                <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">
-                  Setup To First Call
-                </span>
-              </div>
-              <div className="w-px h-6 bg-white/10" />
-              <div className="flex flex-col">
-                <span className="font-display italic text-2xl text-ink">Every</span>
-                <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">
-                  Call Picked Up
-                </span>
-              </div>
-              <LiveStatsTicker />
+            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-brand/15 bg-white/60 px-3 py-2 text-[9px] uppercase tracking-[0.26em] text-brand">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dot-online" />
+              Live demo lines open 24/7
             </div>
           </motion.div>
 
@@ -626,10 +640,6 @@ export default function AuthPortal() {
             defaultExpanded={false}
             className="mb-6"
           />
-
-          {/* ROI Calculator — the conversion moment. Lets prospects
-              plug their own numbers in and watch Wireline pay back. */}
-          <RoiCalculator />
 
           {/* Trust signals — verticals + security/compliance badges.
               Replaces the previous one-line "TLS Encrypted" trust row
@@ -1028,11 +1038,11 @@ export default function AuthPortal() {
                       />
                       <span>
                         I agree to the{" "}
-                        <Link to="/legal/terms" className="underline hover:text-ink">
+                        <Link to="/terms" className="underline hover:text-ink">
                           Terms
                         </Link>{" "}
                         and{" "}
-                        <Link to="/legal/privacy" className="underline hover:text-ink">
+                        <Link to="/privacy" className="underline hover:text-ink">
                           Privacy Policy
                         </Link>
                         .
@@ -1073,12 +1083,16 @@ export default function AuthPortal() {
               </div>
             </div>
 
+            <RoiCalculator compact />
+
             <AuthDemoDirectory
               wirelineAgents={AUTH_PORTAL_WIRELINE_AGENTS}
               demoAgents={AUTH_PORTAL_DEMO_AGENTS}
               defaultExpanded={false}
               className="mt-6 lg:hidden"
             />
+
+            <MobileTrustProof />
 
             {/* Footer */}
             <div className="mt-6 flex items-center justify-center gap-4">

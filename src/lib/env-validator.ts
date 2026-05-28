@@ -78,7 +78,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
       "64-character hex string (generate: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\")",
   },
 
-  // AI - Required for Claude and Gemini
+  // AI - Required for Claude and Gemini fallback/search
   {
     name: "ANTHROPIC_API_KEY",
     group: "ai",
@@ -91,9 +91,17 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "GEMINI_API_KEY",
     group: "ai",
     required: true,
-    description: "Google Gemini API key for voice runtime",
+    description: "Google Gemini API key for voice fallback and grounded search",
     validate: isNonEmpty,
     formatHint: "Get from https://aistudio.google.com/app/apikey",
+  },
+  {
+    name: "OPENAI_API_KEY",
+    group: "ai",
+    required: false,
+    description: "Optional OpenAI key for second-tier GPT fallback and degraded-mode recovery",
+    validate: (v) => !v || v.startsWith("sk-"),
+    formatHint: "sk-...",
   },
 
   // VOICE - Required for Vapi integration

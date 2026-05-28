@@ -124,7 +124,7 @@ to redirect URIs. Same pattern for Microsoft (Azure AD).
 
 **Stripe webhook fails**
 → Stripe Dashboard → Webhooks → confirm endpoint URL is
-`https://trywireline.com/api/billing/stripe-webhook`.
+`https://trywireline.com/api/stripe-webhook`.
 
 **Preview build fails author-email check**
 → Already mitigated. If it returns: set

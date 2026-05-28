@@ -73,8 +73,8 @@ const SECTIONS = [
     title: "HIPAA — controls implemented",
     items: [
       "Per-agent compliance_mode = 'hipaa' switches the runtime into PHI-aware behavior (no verification of identity in chat, no PHI in logs, default-deny on data export).",
-      "BAA available on request for Pro tier and above.",
-      "Audit: full Type II certification is on the 2026 roadmap. Until then, controls are implemented but not externally attested — we'd rather be honest about that than badge it.",
+      "BAA available on Enterprise onboarding only; Pro can use HIPAA-style guardrails, but PHI workflows require the Enterprise BAA path.",
+      "Audit: SOC 2 Type II certification is on the 2026 Q4 roadmap. Until then, controls are implemented but not externally attested — we'd rather be honest about that than badge it.",
     ],
   },
   {
@@ -108,7 +108,7 @@ const SECTIONS = [
     icon: Database,
     title: "Database posture",
     items: [
-      "Postgres on Supabase (US-East). Row-level security policies in production.",
+      "Postgres on Supabase (US-East). Tenant isolation is enforced in application queries today; Supabase RLS policy coverage is actively being hardened.",
       "Foreign keys CASCADE delete from user → all downstream rows in one transaction.",
       "Nightly snapshots; point-in-time recovery within 24 h. Tested quarterly.",
     ],
@@ -181,7 +181,7 @@ export default function Security() {
               reach us if you find something we missed.
             </p>
             <p className="mt-4 text-[10px] uppercase tracking-[0.32em] text-muted/65">
-              Last updated · Jan 28, 2026
+              Last updated · May 27, 2026
             </p>
           </motion.div>
 
@@ -218,7 +218,10 @@ export default function Security() {
               On the roadmap
             </p>
             <ul className="text-[12px] text-ink/80 space-y-1 list-disc pl-5">
-              <li>SOC 2 Type II certification — audit firm engaged, target 2026 Q3.</li>
+              <li>SOC 2 Type II certification — audit firm engaged, target 2026 Q4.</li>
+              <li>
+                Supabase RLS policy coverage + GraphQL exposure cleanup for all tenant tables.
+              </li>
               <li>EU data residency (Frankfurt / Dublin) — target 2026 Q4.</li>
               <li>Hardware-key 2FA for operator logins.</li>
               <li>Paid bug bounty program (private invite first, then public).</li>

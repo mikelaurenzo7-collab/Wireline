@@ -14,7 +14,11 @@
 //   2 — missing recommended vars and PRODUCTION_CHECK=1 (CI hardening)
 
 const required = [
-  ["POSTGRES_URL", "Postgres connection string for Drizzle-backed API routes", process.env.POSTGRES_URL],
+  [
+    "POSTGRES_URL",
+    "Postgres connection string for Drizzle-backed API routes",
+    process.env.POSTGRES_URL,
+  ],
   [
     "INTERNAL_JWT_SECRET",
     "Session JWT signing — canonical Wireline session secret (legacy alias: SUPABASE_JWT_SECRET)",
@@ -36,26 +40,32 @@ const recommended = [
   ["CORS_ORIGINS", "CORS allowlist — required in prod or browser API calls fail"],
   ["STRIPE_SECRET_KEY", "Stripe — billing endpoints return 503 when unset"],
   ["STRIPE_WEBHOOK_SECRET", "Stripe webhook signature verification"],
+  ["STRIPE_PERSONAL_PRICE_ID", "Stripe price ID for the Personal plan"],
   ["STRIPE_STARTER_PRICE_ID", "Stripe price ID for the Starter plan"],
   ["STRIPE_PRO_PRICE_ID", "Stripe price ID for the Pro plan"],
+  ["STRIPE_BUSINESS_PRICE_ID", "Stripe price ID for the Business plan"],
   ["STRIPE_ENTERPRISE_PRICE_ID", "Stripe price ID for the Enterprise plan"],
   [
     "WIRELINE_DATA_KEY",
     "AES-256-GCM key for encrypting webhook secrets at rest — webhooks with signing secrets fail when unset",
   ],
   ["CRON_SECRET", "Bearer token for cron job authentication — scheduled jobs fail when unset"],
+  [
+    "UPSTASH_REDIS_REST_URL",
+    "Distributed rate-limit store — required for global abuse protection on Vercel",
+  ],
+  ["UPSTASH_REDIS_REST_TOKEN", "Upstash Redis token"],
 ];
 
 const optional = [
   ["GEMINI_API_KEY", "Gemini fallback for legacy paths"],
+  ["OPENAI_API_KEY", "Optional GPT second-tier fallback / degraded-mode recovery"],
   ["GOOGLE_CLIENT_ID", "Gmail OAuth — disables email integration when unset"],
   ["GOOGLE_CLIENT_SECRET", "Gmail OAuth"],
   ["MICROSOFT_CLIENT_ID", "Outlook OAuth"],
   ["MICROSOFT_CLIENT_SECRET", "Outlook OAuth"],
   ["SENTRY_DSN", "Backend error monitoring"],
   ["VITE_SENTRY_DSN", "Frontend error monitoring"],
-  ["UPSTASH_REDIS_REST_URL", "Distributed rate-limit store (in-memory fallback otherwise)"],
-  ["UPSTASH_REDIS_REST_TOKEN", "Upstash Redis token"],
   [
     "CLAUDE_MONTHLY_BUDGET_USD",
     "Monthly Claude spend cap in USD (default $50; 1 % daily safety valve)",

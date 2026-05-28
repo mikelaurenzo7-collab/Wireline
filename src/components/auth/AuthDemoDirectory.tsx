@@ -36,9 +36,13 @@ function AgentContactCard({ agent, isDemo }: { agent: ContactAgent; isDemo?: boo
           <p className="font-display italic text-sm leading-snug text-ink/90 line-clamp-2 text-balance">
             {agent.role}
           </p>
-          <p className="mt-1 font-mono text-[13px] tabular-nums text-ink select-all">
-            {agent.display}
-          </p>
+          <a
+            href={`tel:${agent.tel}`}
+            className="mt-1 inline-flex min-h-[44px] items-center font-mono text-[13px] tabular-nums text-ink underline-offset-2 hover:text-[#4F1E7B] hover:underline"
+            aria-label={`Call ${agent.name} at ${agent.display}`}
+          >
+            <span className="select-all">{agent.display}</span>
+          </a>
         </div>
       </div>
     </div>

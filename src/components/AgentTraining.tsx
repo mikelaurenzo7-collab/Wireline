@@ -37,6 +37,7 @@ import AgentFlowComposer from "./AgentFlowComposer";
 import AgentActionEngine from "./AgentActionEngine";
 import VoiceLibraryPanel from "./admin/VoiceLibraryPanel";
 import PronunciationDictionaryPanel from "./PronunciationDictionaryPanel";
+import HubTabs, { TRAINING_HUB } from "./HubTabs";
 
 type TrainingTab =
   | "workspace"
@@ -274,6 +275,9 @@ export default function AgentTraining() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <header className="shrink-0 px-3 md:px-4 py-2 sticky top-0 z-30 backdrop-blur-xl bg-paper/70 border-b border-white/8">
+        <div className="max-w-[1400px] mx-auto w-full">
+          <HubTabs tabs={TRAINING_HUB} label="Training sub-navigation" className="mb-2 md:mb-2" />
+        </div>
         {/* Page title removed per design direction — the left nav
             already says "Training". The agent picker stays. */}
         <div className="flex flex-col lg:flex-row justify-end items-start lg:items-center gap-2 max-w-[1400px] mx-auto w-full">

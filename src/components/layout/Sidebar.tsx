@@ -319,9 +319,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
               <p className="text-[11px] font-medium text-[#EFE9DC] leading-none truncate">
                 {user.email?.split("@")[0]}
               </p>
-              <p className="text-[8.5px] uppercase tracking-[0.25em] text-[#EFE9DC]/45 leading-none mt-1 truncate">
-                {user.email?.split("@")[1]}
-              </p>
+              <TierInline />
             </div>
           </Link>
         )}

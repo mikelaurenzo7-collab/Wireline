@@ -20,6 +20,8 @@ const repoRoot = resolve(__dirname, "..");
 
 const readme = readFileSync(resolve(repoRoot, "README.md"), "utf8");
 const catalogSource = readFileSync(resolve(repoRoot, "src/lib/plan-catalog.ts"), "utf8");
+const pricingSource = readFileSync(resolve(repoRoot, "src/pages/Pricing.tsx"), "utf8");
+const indexHtml = readFileSync(resolve(repoRoot, "index.html"), "utf8");
 
 // Extract plan entries from plan-catalog.ts. The file uses literal JS so
 // we parse the four numeric fields per tier with a forgiving regex against
@@ -67,6 +69,29 @@ for (const plan of plans) {
       `❌  ${label} row missing/out of sync. Expected: ` +
         `| **${label}** | ${priceStr} | ${plan.agents} | ${plan.minutes.toLocaleString("en-US")} | ${overageStr} | ${plan.phones} |`,
     );
+  }
+
+  const pricingExpectations = [
+    { label: "price", value: priceStr },
+    { label: "agents", value: `${plan.agents} AI voice agent${plan.agents === 1 ? "" : "s"}` },
+    { label: "minutes", value: `${plan.minutes.toLocaleString("en-US")} voice minutes` },
+    { label: "overage", value: `Overage at ${overageStr} / min` },
+    {
+      label: "numbers",
+      value: `${plan.phones} dedicated voice number${plan.phones === 1 ? "" : "s"} INCLUDED`,
+    },
+  ];
+  for (const expectation of pricingExpectations) {
+    if (!pricingSource.includes(expectation.value)) {
+      issues.push(`❌  Pricing.tsx missing ${label} ${expectation.label}: ${expectation.value}`);
+    }
+  }
+
+  const jsonLdOffer = new RegExp(
+    `"name":\\s*"${label}"[\\s\\S]*?"price":\\s*"${plan.price}"[\\s\\S]*?"url":\\s*"https://trywireline.com/signup\\?plan=${plan.id}"`,
+  );
+  if (!jsonLdOffer.test(indexHtml)) {
+    issues.push(`❌  index.html JSON-LD offer missing/out of sync for ${label}.`);
   }
 }
 
