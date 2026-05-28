@@ -135,12 +135,7 @@ export default function PageShell({
         <header className="shrink-0 mb-2 md:mb-3 flex flex-row items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             {eyebrow && <p className="text-eyebrow text-brand mb-1">{eyebrow}</p>}
-            {title && (
-              <h1 className="page-title-aurora font-display italic text-xl sm:text-2xl md:text-[1.65rem] leading-tight tracking-tight text-balance">
-                {title}
-              </h1>
-            )}
-            {subtitle && <p className="mt-1.5 text-caption max-w-2xl text-pretty">{subtitle}</p>}
+            {subtitle && <p className="mt-0.5 text-caption max-w-2xl text-pretty">{subtitle}</p>}
           </div>
           {actions && (
             <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
@@ -149,7 +144,7 @@ export default function PageShell({
                 <button
                   onClick={() => setMobileActionsOpen(true)}
                   aria-label="Page actions"
-                  className="md:hidden w-11 h-11 rounded-xl flex items-center justify-center text-muted border border-black/8 bg-black/4 active:bg-black/8 transition-colors"
+                  className="md:hidden w-11 h-11 flex items-center justify-center text-muted border border-black/8 bg-black/4 active:bg-black/8 transition-colors"
                 >
                   <MoreHorizontal className="w-5 h-5" />
                 </button>

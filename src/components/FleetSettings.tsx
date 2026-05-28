@@ -1,56 +1,22 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useState, useEffect, useRef } from "react";
-import {
-  Plus,
-  Phone,
-  Bot,
-  Save,
-  Loader2,
-  Link as LinkIcon,
-  Trash2,
-  Mail,
-  Pencil,
-  Sparkles,
-  ChevronRight,
-  ChevronLeft,
-  Zap,
-  Target,
-  Radio,
-  Settings2,
-  Shield,
-  Briefcase,
-  RefreshCw,
-  LayoutGrid,
-  Clock,
-} from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { Shield, LayoutGrid } from "lucide-react";
 import { cn } from "../lib/utils";
 import { authFetch, safeJson } from "../lib/api";
 import ConfirmModal from "./ConfirmModal";
-import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { useToast } from "../contexts/ToastContext";
 import AgentTemplates from "./AgentTemplates";
-import AgentExportImport from "./AgentExportImport";
-import AgentBusinessProfile from "./AgentBusinessProfile";
-import AgentScorecard from "./AgentScorecard";
-import VoiceFineTuningPanel from "./VoiceFineTuningPanel";
 import {
   AGENT_TOOL_CATALOG,
-  getRoleToolSet,
   resolveAgentTools,
   type AgentToolName,
 } from "../lib/agent-capabilities";
-import AgentIntegrationCanvas from "./AgentIntegrationCanvas";
 // Fleet helpers — extracted in the 2026 audit god-file slicing pass.
 // Local imports for use within this file; re-exports below preserve
 // existing call sites in InsightsView, DeployAgentModal, etc.
 import {
-  Sparkline,
   PREMIUM_VOICES,
   DEFAULT_VOICE_BY_GENDER,
   AGENT_ROLES,
-  getRoleMeta,
-  RoleBadge,
   type RoleValue,
 } from "./fleet/helpers";
 // Sidebar extracted during the 2026 audit god-file slicing pass.
@@ -76,8 +42,8 @@ export default function FleetSettings() {
   const [isCreating, setIsCreating] = useState(false);
   const [newAgentName, setNewAgentName] = useState("");
   const [newAgentId, setNewAgentId] = useState("");
-  const [newAgentChannel, setNewAgentChannel] = useState("voice");
-  const [newAgentRole, setNewAgentRole] = useState<RoleValue>("customer_service");
+  const [newAgentChannel, _setNewAgentChannel] = useState("voice");
+  const [newAgentRole, _setNewAgentRole] = useState<RoleValue>("customer_service");
   const [selectedAgent, setSelectedAgent] = useState<any | null>(null);
   const [isApplyingTemplate, setIsApplyingTemplate] = useState(false);
 

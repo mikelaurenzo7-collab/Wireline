@@ -1,7 +1,6 @@
 import React from "react";
 import { motion } from "motion/react";
 import { X, Activity } from "lucide-react";
-import { cn } from "../../lib/utils";
 import { type ToolIntegration, type AgentToolName } from "../../lib/agent-capabilities";
 import { getIntegrationPlaybook } from "../../lib/integration-playbooks";
 import IntegrationCapabilityPanel from "../IntegrationCapabilityPanel";

@@ -217,6 +217,6 @@ export async function syncSignupIntent(intent: SignupIntent | null, token: strin
   });
   if (!response.ok) {
     const body = await response.text().catch(() => "");
-    console.warn("signup intent sync failed", response.status, body.slice(0, 240));
+    console.error("signup intent sync failed", response.status, body.slice(0, 240));
   }
 }

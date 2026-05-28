@@ -131,7 +131,7 @@ export default function SupervisorCockpit() {
       ws.onclose = () => {
         setListeningCallId(null);
       };
-    } catch (err) {
+    } catch (_err) {
       info("Audio Error", "Browser AudioContext initialization failed.");
     }
   };
@@ -168,7 +168,7 @@ export default function SupervisorCockpit() {
           setWhisperLogs((prev) => [...prev, `[Delivered] ${payload.text}`]);
           info("Coaching Delivered", "Note broadcasted to agent's screen.");
         }
-      } catch (err) {
+      } catch (_err) {
         // silent parse catch
       }
     };
@@ -202,7 +202,7 @@ export default function SupervisorCockpit() {
           const d = await res.json();
           if (alive && d.agents) setAgents(d.agents);
         }
-      } catch (err) {
+      } catch (_err) {
         // silent fetch error fallback
       }
     };
@@ -260,7 +260,7 @@ export default function SupervisorCockpit() {
               );
               setLoading(false);
             }
-          } catch (e) {
+          } catch (_e) {
             // parsing error
           }
         };
@@ -275,7 +275,7 @@ export default function SupervisorCockpit() {
             fallbackTimer = setInterval(pollFallbackPresence, 5000);
           }
         };
-      } catch (err) {
+      } catch (_err) {
         void pollFallbackPresence();
         fallbackTimer = setInterval(pollFallbackPresence, 5000);
       }

@@ -7,7 +7,7 @@ import * as schema from "../db/schema";
 import { eq, and, sql, desc, inArray, isNotNull } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
-import { parseFormData, CampaignCreateSchema, CampaignUpdateSchema } from "../lib/form-validators";
+import { CampaignCreateSchema, CampaignUpdateSchema } from "../lib/form-validators";
 import { computeOutcomeBreakdown, computeCallStats } from "../lib/campaign-analytics";
 import { validateBody } from "../lib/api-validation";
 import { claudeRateLimiter } from "../middleware/api-rate-limits";

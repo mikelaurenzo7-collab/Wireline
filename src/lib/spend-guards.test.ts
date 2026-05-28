@@ -105,7 +105,7 @@ describe("Spend Guards & Budgets", () => {
           enabled: true,
         },
       ];
-      const snap1 = await getBudgetSnapshot(userId);
+      const _snap1 = await getBudgetSnapshot(userId);
 
       // Change DB return value
       mockBudgetRows = [

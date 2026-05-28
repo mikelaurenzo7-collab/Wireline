@@ -4,7 +4,7 @@
  * Extracted from the monolithic FleetSettings.tsx during the 2026 audit.
  */
 import { useState } from "react";
-import { Plus, Bot, Loader2, Sparkles, ChevronRight, Briefcase, LayoutGrid } from "lucide-react";
+import { Plus, Loader2, Sparkles, ChevronRight, Briefcase } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "../../lib/utils";
 import { AGENT_ROLES, type RoleValue } from "../fleet/helpers";
@@ -20,8 +20,8 @@ interface Props {
 
 export default function CreateAgentSection({
   isCreating,
-  agents,
-  subscription,
+  agents: _agents,
+  subscription: _subscription,
   onCreate,
   onSeedFleet,
 }: Props) {

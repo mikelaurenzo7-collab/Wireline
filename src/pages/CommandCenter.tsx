@@ -203,7 +203,7 @@ export default function LiveOps() {
                   .catch(() => {});
               }
             }
-          } catch (e) {
+          } catch (_e) {
             // silent parsing catch
           }
         };
@@ -219,7 +219,7 @@ export default function LiveOps() {
             fallbackTimer = setInterval(fetchPresence, 5000);
           }
         };
-      } catch (err) {
+      } catch (_err) {
         fetchPresence();
         fallbackTimer = setInterval(fetchPresence, 5000);
       }
@@ -465,7 +465,7 @@ export default function LiveOps() {
                               contentStyle={{
                                 background: "rgba(28, 25, 23, 0.95)",
                                 border: "1px solid rgba(79, 30, 123 , 0.3)",
-                                borderRadius: "12px",
+                                borderRadius: 0,
                                 boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
                               }}
                               itemStyle={{ color: "#E0D8CC", fontSize: "11px" }}

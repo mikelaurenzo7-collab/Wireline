@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import {
   DollarSign,
@@ -12,15 +12,6 @@ import {
   Save,
   Loader2,
 } from "lucide-react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-} from "recharts";
 import { authFetch, readApiJson } from "../../lib/api";
 import { formatMoney, safeFixed } from "../../lib/safe-number";
 import { cn } from "../../lib/utils";

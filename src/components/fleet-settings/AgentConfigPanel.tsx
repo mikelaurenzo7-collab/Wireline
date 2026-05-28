@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   ChevronLeft,
   Target,
@@ -32,7 +32,6 @@ import {
   RoleBadge,
   PREMIUM_VOICES,
   AGENT_ROLES,
-  type RoleValue,
 } from "../fleet/helpers";
 import { resolveAgentTools, getRoleToolSet } from "../../lib/agent-capabilities";
 

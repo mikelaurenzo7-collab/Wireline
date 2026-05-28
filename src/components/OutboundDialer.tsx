@@ -1,57 +1,17 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useState, useEffect, useRef } from "react";
-import {
-  Loader2,
-  PlayCircle,
-  Plus,
-  Phone,
-  UploadCloud,
-  Bot,
-  Radar,
-  Zap,
-  Terminal,
-  Shield,
-  FileSpreadsheet,
-  ChevronRight,
-  ChevronDown,
-  Search,
-  Trash2,
-  AlertTriangle,
-  CheckCircle2,
-  Megaphone,
-  Target,
-  Pause,
-  Play,
-  X,
-  Clock,
-  Users,
-  Activity,
-  BarChart3,
-  Rocket,
-  RefreshCw,
-  TrendingUp,
-  DollarSign,
-  Award,
-  CalendarClock,
-  Repeat,
-} from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { Megaphone, CalendarClock, Repeat } from "lucide-react";
+import { AnimatePresence } from "motion/react";
 import Cadences from "./Cadences";
 import Papa from "papaparse";
-import { cn, logFetchError } from "../lib/utils";
+import { logFetchError } from "../lib/utils";
 import { authFetch } from "../lib/api";
-import { formatDate, safeDate } from "../lib/safe-date";
-import { Link } from "react-router-dom";
-import { ClaudeRecipeButton } from "./ClaudeRecipes";
-import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
 import HubTabs, { CHANNELS_HUB } from "./HubTabs";
-import EmptyState from "./EmptyState";
 import { useToast } from "../contexts/ToastContext";
 import ConfirmModal from "./ConfirmModal";
 
 // Types & constants extracted to outbound/shared.tsx
-import { type ConfirmState, CLOSED_CONFIRM, CAMPAIGN_STATUS } from "./outbound/shared";
+import { type ConfirmState, CLOSED_CONFIRM } from "./outbound/shared";
 // Sub-components extracted during the 2026 audit god-file slicing pass
 import CallbacksListExtracted from "./outbound/CallbacksList";
 import CreateCampaignModalExtracted from "./outbound/CreateCampaignModal";

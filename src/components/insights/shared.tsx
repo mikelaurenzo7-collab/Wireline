@@ -7,7 +7,7 @@
  * duplicating spinner / empty / error chrome.
  */
 import React from "react";
-import { BarChart3, CheckCircle2 as CheckCircle2Icon, AlertOctagon, Loader2 } from "lucide-react";
+import { BarChart3, CheckCircle2 as CheckCircle2Icon, AlertOctagon } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { authFetch, readApiJson } from "../../lib/api";
 
@@ -132,7 +132,7 @@ export function SpendStat({
 }: {
   label: string;
   value: string;
-  icon: any;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   accent: string;
 }) {
   return (

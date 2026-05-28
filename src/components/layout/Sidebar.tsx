@@ -21,7 +21,7 @@
  * contextual (breadcrumb + actions + search), and reads as a tier-1
  * product the moment the page loads.
  */
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ChevronsLeft, ChevronsRight, Crown, LifeBuoy, LogOut, Search } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";

@@ -390,7 +390,7 @@ export default function AuthPortal() {
         <PublicSiteHeader active={isSignUp ? "signup" : "signin"} />
 
         <div
-          className="relative z-10 flex-1 flex items-center justify-center px-4 py-6 min-h-0 overflow-y-auto"
+          className="relative z-10 flex-1 flex items-center justify-center px-4 py-6 pt-20 min-h-0 overflow-y-auto"
           style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))" }}
         >
           <motion.div

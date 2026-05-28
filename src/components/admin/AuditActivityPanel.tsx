@@ -203,7 +203,7 @@ export function AuditActivityPanel() {
                       contentStyle={{
                         background: "#fff",
                         border: "none",
-                        borderRadius: "12px",
+                        borderRadius: 0,
                         boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
                         fontSize: "10px",
                       }}

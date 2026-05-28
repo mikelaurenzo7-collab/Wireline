@@ -26,7 +26,6 @@
 import React from "react";
 import { motion } from "motion/react";
 import {
-  ShieldCheck,
   Lock,
   HeartPulse,
   CreditCard,

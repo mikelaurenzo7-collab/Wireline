@@ -117,7 +117,7 @@ export default function Status() {
           setData(json);
           setError(null);
         }
-      } catch (err) {
+      } catch (_err) {
         if (!cancelled) {
           setError("Status feed temporarily unavailable.");
         }

@@ -63,17 +63,28 @@
   --color-cyan-50: #ECFEFF;
   --color-rose-600: #C53050;
 
-  --radius-xl: 1rem;
-  --radius-2xl: 1.5rem;
-  --radius-3xl: 2rem;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-3xl: 0;
 }
 
 @layer base {
-  /* iOS tap flash — kill globally; components use their own press states. */
+  /* ── SHARP CORNERS — global reset. Every element is razor-edged. ──── */
   *,
   *::before,
   *::after {
     -webkit-tap-highlight-color: transparent;
+    border-radius: 0 !important;
+  }
+  /* Exceptions — elements that are inherently circular (data indicators,
+     avatar initials, scrollbar thumbs, live-pulse rings). */
+  .dot-online, .dot-busy, .dot-idle, .dot-pending,
+  .live-ring, .live-ring::after,
+  [data-circular] {
+    border-radius: 9999px !important;
+  }
+  ::-webkit-scrollbar-thumb {
+    border-radius: 999px !important;
   }
 
   html {
@@ -705,7 +716,7 @@
   background: var(--color-brand);
   box-shadow: 0 6px 20px -6px rgba(79, 30, 123, 0.55);
   transition: background 0.15s ease, transform 0.15s ease;
-  border-radius: 9999px;
+  border-radius: 0;
 }
 
 .marketing-btn-primary:hover {
@@ -724,7 +735,7 @@
   background: transparent;
   border: 1px solid color-mix(in srgb, var(--color-ink) 12%, transparent);
   transition: background 0.15s ease, border-color 0.15s ease;
-  border-radius: 9999px;
+  border-radius: 0;
 }
 
 .marketing-btn-secondary:hover {
@@ -757,13 +768,13 @@
 .marketing-panel {
   border: 1px solid color-mix(in srgb, black 8%, transparent);
   background: white;
-  border-radius: 12px;
+  border-radius: 0;
 }
 
 .marketing-panel-muted {
   border: 1px solid color-mix(in srgb, black 8%, transparent);
   background: color-mix(in srgb, white 70%, transparent);
-  border-radius: 12px;
+  border-radius: 0;
 }
 
 .marketing-body {
@@ -1270,7 +1281,7 @@ select:focus {
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
   border: 1px solid rgba(79, 30, 123, 0.3) !important;
-  border-radius: 12px !important;
+  border-radius: 0 !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
   padding: 12px !important;
 }

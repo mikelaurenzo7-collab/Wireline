@@ -97,7 +97,7 @@ export function createAuditEventsHandler(deps: AuditRoutesDeps) {
     const userId = req.user.id;
     const {
       event_type,
-      custom_fields, // retained for compatibility with route schema signature
+      custom_fields: _custom_fields, // retained for compatibility with route schema signature
       severity,
       resource_type,
       start_date,
@@ -188,7 +188,6 @@ export function createAuditStatsHandler(deps: AuditRoutesDeps) {
       let apiCalls = 0;
 
       events.forEach((event: any) => {
-        const Math_ = Math;
         const sev = event.severity || "info";
         bySeverity[sev] = (bySeverity[sev] || 0) + 1;
 

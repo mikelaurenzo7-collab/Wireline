@@ -5,7 +5,6 @@ import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
-import { parseFormData, KnowledgeSchema } from "../lib/form-validators";
 import * as rateLimiters from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import { validateBody, addKnowledgeSchema, updateKnowledgeSchema } from "../lib/api-validation";
