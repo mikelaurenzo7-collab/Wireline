@@ -174,7 +174,23 @@ no longer loads on routes that never open it.
    `OutboundDialer.tsx` (1879), `FleetSettings.tsx` (1802 — small
    helper extract already done). Same playbook as ClaudeRecipes:
    sub-folder, barrel at the original path, no consumer changes.
-2. **Prompt caching on reasoning paths.** Anthropic's `cache_control` on system messages cuts cached-input tokens by 90%. The 18 KB Wireline agent prompt is a perfect cache candidate for `brief()`, `coach()`, `postCallAnalysis()` (which all share the same per-agent system frame).
+2. **Prompt caching on reasoning paths.** ✅ Shipped (2026-Q2). `cacheSystem`
+   on `runStructured` / `runCompletion` wraps the system block in
+   `cache_control: ephemeral` across the reasoning recipes in
+   `claude-recipes.ts`, and `recordUsage` logs `cache_read`/`cache_create`
+   tokens so hits are observable. Locked against regression by
+   `claude-recipes.cache.test.ts` (source guard — every cached recipe carries
+   the flag) and `claude-structured.cache.test.ts` (behavioural guard — the
+   helper actually emits `cache_control`). Reality-check on the original note:
+   `brief()`, `coach()`, and `postCallAnalysis()` do **not** share one 18 KB
+   frame — each builds its own short, task-specific system prompt (a few hundred
+   tokens). Caching only meaningfully fires for recipes whose system block
+   carries a large per-agent knowledge/persona payload (e.g. `smartEmailReply`,
+   or `brief` with a full knowledge base) and clears the Opus ~4096-token
+   minimum cacheable prefix; on the short prompts the marker is a harmless
+   no-op. The genuine 18 KB system frame is on the **voice** path
+   (`agent-runtime.ts` → Vapi), which Vapi/ElevenLabs runs — not these
+   first-party SDK calls.
 3. **Tenant backfill migration.** One-shot SQL endpoint that flips existing `google` / `gemini-3.5-flash` settings rows to `anthropic` / `claude-sonnet-4-6` — gated, dry-run-first, audited.
 4. **Tighten `--max-warnings 1100` → 700 over Q1.** Ratchet down 100 warnings per cycle via `eslint --max-warnings` in CI.
 5. **Strict-mode allowlist → cover every `*.test.ts` peer.** ~20 more files.
