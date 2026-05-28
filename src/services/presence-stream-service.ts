@@ -62,8 +62,7 @@ class PresenceStreamManager {
 export const presenceStreams = new PresenceStreamManager();
 
 /**
- * Initialize Postgres triggers on the database and connect a dedicated
- * pg client listener to LISTEN for presence_change notifications.
+ * Initialize Postgres triggers on the database.
  */
 export async function initPresenceDbListener() {
   if (process.env.VERCEL === "1") {
@@ -102,11 +101,24 @@ export async function initPresenceDbListener() {
     `);
 
     log.info("Postgres presence triggers initialized successfully");
+  } catch (error: any) {
+    log.error("Failed to initialize postgres triggers", { error: error.message });
+  }
+}
 
-    // 3. Connect dedicated pg client to LISTEN for notifications
-    const client = new Client({ connectionString: process.env.POSTGRES_URL });
+/**
+ * Connect dedicated pg client to LISTEN for notifications.
+ * Self-healing reconnection loop.
+ */
+export async function startPresenceListener() {
+  if (process.env.VERCEL === "1") return;
+
+  const client = new Client({ connectionString: process.env.POSTGRES_URL });
+
+  try {
     await client.connect();
     await client.query("LISTEN presence_change");
+    log.info("Postgres presence listener connected successfully");
 
     client.on("notification", async (msg: any) => {
       try {
@@ -132,10 +144,17 @@ export async function initPresenceDbListener() {
       log.error("Presence Postgres listener encountered an error — reconnecting", {
         error: err.message,
       });
+      // Clean up the client to prevent socket/connection leaks
+      client
+        .end()
+        .catch((e: any) => log.warn("Failed to end PG client on error", { error: e.message }));
       // Schedule reconnection loop
-      setTimeout(initPresenceDbListener, 5000);
+      setTimeout(startPresenceListener, 5000);
     });
   } catch (error: any) {
-    log.error("Failed to initialize postgres triggers/listeners", { error: error.message });
+    log.warn("Failed to connect presence pg listener, retrying in 5s", { error: error.message });
+    // Clean up if connect failed
+    client.end().catch(() => {});
+    setTimeout(startPresenceListener, 5000);
   }
 }

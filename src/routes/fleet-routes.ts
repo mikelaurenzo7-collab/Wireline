@@ -91,48 +91,50 @@ router.post(
     }>;
 
     try {
-      // Snapshot the tenant's current agent count once before the loop
-      // so rotation indices are stable + distinct across this seed
-      // batch even though the COUNT(*) result changes mid-loop.
-      const [{ existing }] = await drizzle
-        .select({ existing: sql<number>`COUNT(*)::int` })
-        .from(schema.agents)
-        .where(eq(schema.agents.userId, userId));
-      const existingCount = Number(existing) || 0;
+      await drizzle.transaction(async (tx) => {
+        // Snapshot the tenant's current agent count once before the loop
+        // so rotation indices are stable + distinct across this seed
+        // batch even though the COUNT(*) result changes mid-loop.
+        const [{ existing }] = await tx
+          .select({ existing: sql<number>`COUNT(*)::int` })
+          .from(schema.agents)
+          .where(eq(schema.agents.userId, userId));
+        const existingCount = Number(existing) || 0;
 
-      for (let i = 0; i < specializedAgents.length; i++) {
-        const agent = specializedAgents[i];
-        // Voice rotation — bypasses the /api/agents fallback path because
-        // this seed inserts directly. Without this every seeded agent
-        // would inherit the factory's PLATFORM_DEFAULT_VOICE_ID and
-        // sound identical, undercutting the voice-picker selling point.
-        const rotatedVoiceId = pickRotatedVoiceId(existingCount + i);
-        await drizzle.insert(schema.agents).values({
-          id: agent.id,
-          userId: userId,
-          name: agent.name,
-          channel: agent.channel,
-          role: agent.role,
-          archetype: agent.archetype,
-          firstMessage: agent.first_message,
-          emailAgentTone: agent.email_agent_tone,
-          emailSignature: agent.email_signature,
-          voiceId: rotatedVoiceId,
-        });
+        for (let i = 0; i < specializedAgents.length; i++) {
+          const agent = specializedAgents[i];
+          // Voice rotation — bypasses the /api/agents fallback path because
+          // this seed inserts directly. Without this every seeded agent
+          // would inherit the factory's PLATFORM_DEFAULT_VOICE_ID and
+          // sound identical, undercutting the voice-picker selling point.
+          const rotatedVoiceId = pickRotatedVoiceId(existingCount + i);
+          await tx.insert(schema.agents).values({
+            id: agent.id,
+            userId: userId,
+            name: agent.name,
+            channel: agent.channel,
+            role: agent.role,
+            archetype: agent.archetype,
+            firstMessage: agent.first_message,
+            emailAgentTone: agent.email_agent_tone,
+            emailSignature: agent.email_signature,
+            voiceId: rotatedVoiceId,
+          });
 
-        await drizzle.insert(schema.personality).values({
-          agentId: agent.id,
-          userId: userId,
-          content: agent.personality,
-        });
+          await tx.insert(schema.personality).values({
+            agentId: agent.id,
+            userId: userId,
+            content: agent.personality,
+          });
 
-        await drizzle.insert(schema.directives).values({
-          agentId: agent.id,
-          userId: userId,
-          content: "Always verify the customer's identity before discussing account details.",
-          priority: 10,
-        });
-      }
+          await tx.insert(schema.directives).values({
+            agentId: agent.id,
+            userId: userId,
+            content: "Always verify the customer's identity before discussing account details.",
+            priority: 10,
+          });
+        }
+      });
       res.json({ success: true, count: specializedAgents.length });
     } catch (error: any) {
       log.error("Fleet seeding failed", { error: getErrorMessage(error) });

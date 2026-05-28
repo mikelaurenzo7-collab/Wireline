@@ -47,57 +47,58 @@ router.post(
   authenticateUser,
   validate({ body: briefSchema }),
   async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { agentId, customerName, customerNumber, reasonForCall, pastInteractionSummary } =
-      req.body;
-    let agentName = "Wireline Agent";
-    let agentArchetype = "Receptionist";
-    let knowledgeBase: string[] = [];
-    let role: string | undefined;
+    try {
+      const { agentId, customerName, customerNumber, reasonForCall, pastInteractionSummary } =
+        req.body;
+      let agentName = "Wireline Agent";
+      let agentArchetype = "Receptionist";
+      let knowledgeBase: string[] = [];
+      let role: string | undefined;
 
-    if (agentId) {
-      const [agentRows, knowledgeRows] = await Promise.all([
-        drizzle
-          .select({
-            name: schema.agents.name,
-            archetype: schema.agents.archetype,
-            role: schema.agents.role,
-          })
-          .from(schema.agents)
-          .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
-          .limit(1),
-        drizzle
-          .select({ content: schema.knowledge.content })
-          .from(schema.knowledge)
-          .where(
-            and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, req.user.id)),
-          )
-          .limit(500),
-      ]);
-      const agent = agentRows[0];
-      if (agent) {
-        agentName = agent.name;
-        agentArchetype = agent.archetype || "Receptionist";
-        role = agent.role || DEFAULT_AGENT_ROLE;
+      if (agentId) {
+        const [agentRows, knowledgeRows] = await Promise.all([
+          drizzle
+            .select({
+              name: schema.agents.name,
+              archetype: schema.agents.archetype,
+              role: schema.agents.role,
+            })
+            .from(schema.agents)
+            .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+            .limit(1),
+          drizzle
+            .select({ content: schema.knowledge.content })
+            .from(schema.knowledge)
+            .where(
+              and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, req.user.id)),
+            )
+            .limit(500),
+        ]);
+        const agent = agentRows[0];
+        if (agent) {
+          agentName = agent.name;
+          agentArchetype = agent.archetype || "Receptionist";
+          role = agent.role || DEFAULT_AGENT_ROLE;
+        }
+        knowledgeBase = (knowledgeRows ?? []).map((k: { content: string }) => k.content);
       }
-      knowledgeBase = (knowledgeRows ?? []).map((k: { content: string }) => k.content);
-    }
 
-    const result = await claudeBrain.brief({
-      agentName,
-      agentArchetype,
-      role,
-      customerName,
-      customerNumber,
-      reasonForCall: reasonForCall || "No specific reason provided.",
-      knowledgeBase,
-      pastInteractionSummary,
-    });
-    res.json({ brief: result });
-  } catch (e) {
-    claudeErr(res, e);
-  }
-});
+      const result = await claudeBrain.brief({
+        agentName,
+        agentArchetype,
+        role,
+        customerName,
+        customerNumber,
+        reasonForCall: reasonForCall || "No specific reason provided.",
+        knowledgeBase,
+        pastInteractionSummary,
+      });
+      res.json({ brief: result });
+    } catch (e) {
+      claudeErr(res, e);
+    }
+  },
+);
 
 const qualifySchema = z.object({
   source: z.enum(["voice_call", "email_thread", "sms_thread"]).optional(),
@@ -112,79 +113,85 @@ router.post(
   authenticateUser,
   validate({ body: qualifySchema }),
   async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { source, transcript, callId, threadId, agentId } = req.body;
-    let actualTranscript: string = transcript;
-    let metadata: Record<string, any> = {};
-    let resolvedAgentId: string | undefined = agentId;
+    try {
+      const { source, transcript, callId, threadId, agentId } = req.body;
+      let actualTranscript: string = transcript;
+      let metadata: Record<string, any> = {};
+      let resolvedAgentId: string | undefined = agentId;
 
-    if (!actualTranscript && callId) {
-      const [call] = await drizzle
-        .select()
-        .from(schema.callLogs)
-        .where(and(eq(schema.callLogs.id, BigInt(callId)), eq(schema.callLogs.userId, req.user.id)))
-        .limit(1);
+      if (!actualTranscript && callId) {
+        const [call] = await drizzle
+          .select()
+          .from(schema.callLogs)
+          .where(
+            and(eq(schema.callLogs.id, BigInt(callId)), eq(schema.callLogs.userId, req.user.id)),
+          )
+          .limit(1);
 
-      actualTranscript = call?.transcript ?? call?.summary ?? "";
-      metadata = { customer_number: call?.customerNumber, duration_seconds: call?.durationSeconds };
-      if (!resolvedAgentId && call?.agentId) resolvedAgentId = call.agentId;
-    } else if (!actualTranscript && threadId) {
-      const [thread] = await drizzle
-        .select({ agentId: schema.emailThreads.agentId })
-        .from(schema.emailThreads)
-        .where(
-          and(eq(schema.emailThreads.id, threadId), eq(schema.emailThreads.userId, req.user.id)),
-        )
-        .limit(1);
+        actualTranscript = call?.transcript ?? call?.summary ?? "";
+        metadata = {
+          customer_number: call?.customerNumber,
+          duration_seconds: call?.durationSeconds,
+        };
+        if (!resolvedAgentId && call?.agentId) resolvedAgentId = call.agentId;
+      } else if (!actualTranscript && threadId) {
+        const [thread] = await drizzle
+          .select({ agentId: schema.emailThreads.agentId })
+          .from(schema.emailThreads)
+          .where(
+            and(eq(schema.emailThreads.id, threadId), eq(schema.emailThreads.userId, req.user.id)),
+          )
+          .limit(1);
 
-      if (!resolvedAgentId && thread?.agentId) resolvedAgentId = thread.agentId;
-      const msgs = await drizzle
-        .select({ role: schema.emailMessages.role, content: schema.emailMessages.content })
-        .from(schema.emailMessages)
-        .where(
-          and(
-            eq(schema.emailMessages.threadId, threadId),
-            eq(schema.emailMessages.userId, req.user.id),
-          ),
-        )
-        .orderBy(schema.emailMessages.createdAt)
-        .limit(100);
+        if (!resolvedAgentId && thread?.agentId) resolvedAgentId = thread.agentId;
+        const msgs = await drizzle
+          .select({ role: schema.emailMessages.role, content: schema.emailMessages.content })
+          .from(schema.emailMessages)
+          .where(
+            and(
+              eq(schema.emailMessages.threadId, threadId),
+              eq(schema.emailMessages.userId, req.user.id),
+            ),
+          )
+          .orderBy(schema.emailMessages.createdAt)
+          .limit(100);
 
-      actualTranscript = (msgs ?? [])
-        .map(
-          (m: { role: string | null; content: string | null }) =>
-            `${(m.role || "user").toUpperCase()}: ${m.content}`,
-        )
-        .join("\n\n");
+        actualTranscript = (msgs ?? [])
+          .map(
+            (m: { role: string | null; content: string | null }) =>
+              `${(m.role || "user").toUpperCase()}: ${m.content}`,
+          )
+          .join("\n\n");
+      }
+
+      if (!actualTranscript) {
+        return res
+          .status(400)
+          .json({ error: "No transcript provided (and no callId/threadId to fetch from)." });
+      }
+
+      let role: string | undefined;
+      if (resolvedAgentId) {
+        const [agent] = await drizzle
+          .select({ role: schema.agents.role })
+          .from(schema.agents)
+          .where(and(eq(schema.agents.id, resolvedAgentId), eq(schema.agents.userId, req.user.id)))
+          .limit(1);
+        if (agent) role = agent.role || DEFAULT_AGENT_ROLE;
+      }
+
+      const result = await claudeBrain.qualify({
+        source: source ?? "voice_call",
+        transcript: actualTranscript,
+        metadata,
+        role,
+      });
+      res.json({ qualification: result });
+    } catch (e) {
+      claudeErr(res, e);
     }
-
-    if (!actualTranscript) {
-      return res
-        .status(400)
-        .json({ error: "No transcript provided (and no callId/threadId to fetch from)." });
-    }
-
-    let role: string | undefined;
-    if (resolvedAgentId) {
-      const [agent] = await drizzle
-        .select({ role: schema.agents.role })
-        .from(schema.agents)
-        .where(and(eq(schema.agents.id, resolvedAgentId), eq(schema.agents.userId, req.user.id)))
-        .limit(1);
-      if (agent) role = agent.role || DEFAULT_AGENT_ROLE;
-    }
-
-    const result = await claudeBrain.qualify({
-      source: source ?? "voice_call",
-      transcript: actualTranscript,
-      metadata,
-      role,
-    });
-    res.json({ qualification: result });
-  } catch (e) {
-    claudeErr(res, e);
-  }
-});
+  },
+);
 
 const objectionDrillSchema = z.object({
   agentId: z.string().optional(),
@@ -1023,44 +1030,46 @@ router.post("/forge/create", authenticateUser, async (req: AuthenticatedRequest,
 
     const agentId = `agent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
-    await drizzle.insert(schema.agents).values({
-      id: agentId,
-      userId: req.user.id,
-      name: design.name,
-      archetype: design.archetype || "Receptionist",
-      firstMessage: design.first_message || `Hi, this is ${design.name}. How can I help?`,
-      websiteUrl: websiteUrl || null,
-      channel: "voice",
+    await drizzle.transaction(async (tx) => {
+      await tx.insert(schema.agents).values({
+        id: agentId,
+        userId: req.user.id,
+        name: design.name,
+        archetype: design.archetype || "Receptionist",
+        firstMessage: design.first_message || `Hi, this is ${design.name}. How can I help?`,
+        websiteUrl: websiteUrl || null,
+        channel: "voice",
+      });
+
+      if (design.personality_block) {
+        await tx
+          .insert(schema.personality)
+          .values({
+            agentId: agentId,
+            userId: req.user.id,
+            content: design.personality_block,
+          })
+          .onConflictDoUpdate({
+            target: schema.personality.agentId,
+            set: { content: design.personality_block, userId: req.user.id },
+          });
+      }
+
+      const directiveRows = (design.directives || []).map((d: any) => ({
+        agentId: agentId,
+        userId: req.user.id,
+        content: d.content,
+        priority: d.priority ?? 5,
+      }));
+      if (directiveRows.length) await tx.insert(schema.directives).values(directiveRows);
+
+      const knowledgeRows = (design.seed_knowledge || []).map((k: string) => ({
+        agentId: agentId,
+        userId: req.user.id,
+        content: k,
+      }));
+      if (knowledgeRows.length) await tx.insert(schema.knowledge).values(knowledgeRows);
     });
-
-    if (design.personality_block) {
-      await drizzle
-        .insert(schema.personality)
-        .values({
-          agentId: agentId,
-          userId: req.user.id,
-          content: design.personality_block,
-        })
-        .onConflictDoUpdate({
-          target: schema.personality.agentId,
-          set: { content: design.personality_block, userId: req.user.id },
-        });
-    }
-
-    const directiveRows = (design.directives || []).map((d: any) => ({
-      agentId: agentId,
-      userId: req.user.id,
-      content: d.content,
-      priority: d.priority ?? 5,
-    }));
-    if (directiveRows.length) await drizzle.insert(schema.directives).values(directiveRows);
-
-    const knowledgeRows = (design.seed_knowledge || []).map((k: string) => ({
-      agentId: agentId,
-      userId: req.user.id,
-      content: k,
-    }));
-    if (knowledgeRows.length) await drizzle.insert(schema.knowledge).values(knowledgeRows);
 
     res.json({ success: true, agentId });
   } catch (e) {

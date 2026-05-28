@@ -651,37 +651,39 @@ router.post(
     try {
       const parsed = extracted || {};
 
-      if (parsed.directives && parsed.directives.length) {
-        await drizzle.insert(schema.directives).values(
-          parsed.directives.map((d: { content: string; priority?: number }) => ({
-            ...d,
-            agentId,
-            userId,
-          })),
-        );
-      }
-      if (parsed.knowledge && parsed.knowledge.length) {
-        await drizzle.insert(schema.knowledge).values(
-          parsed.knowledge.map((k: { content: string }) => ({
-            ...k,
-            agentId,
-            userId,
-          })),
-        );
-      }
-      if (parsed.personality) {
-        await drizzle
-          .insert(schema.personality)
-          .values({
-            agentId,
-            userId,
-            content: parsed.personality,
-          })
-          .onConflictDoUpdate({
-            target: schema.personality.agentId,
-            set: { content: parsed.personality },
-          });
-      }
+      await drizzle.transaction(async (tx) => {
+        if (parsed.directives && parsed.directives.length) {
+          await tx.insert(schema.directives).values(
+            parsed.directives.map((d: { content: string; priority?: number }) => ({
+              ...d,
+              agentId,
+              userId,
+            })),
+          );
+        }
+        if (parsed.knowledge && parsed.knowledge.length) {
+          await tx.insert(schema.knowledge).values(
+            parsed.knowledge.map((k: { content: string }) => ({
+              ...k,
+              agentId,
+              userId,
+            })),
+          );
+        }
+        if (parsed.personality) {
+          await tx
+            .insert(schema.personality)
+            .values({
+              agentId,
+              userId,
+              content: parsed.personality,
+            })
+            .onConflictDoUpdate({
+              target: schema.personality.agentId,
+              set: { content: parsed.personality },
+            });
+        }
+      });
 
       res.json({ success: true });
     } catch (error) {
@@ -756,27 +758,54 @@ router.post(
       const agentId = id || `agent-${Date.now()}`;
       const agentRole = rest.role || DEFAULT_AGENT_ROLE;
 
-      try {
-        // Voice rotation: when the operator didn't pick a voice (template
-        // deploys typically don't), assign one from the curated roster by
-        // current agent count so the first 3 agents end up with 3 distinct
-        // voices instead of all sharing the platform default. Operator can
-        // override later in FleetSettings → Voice.
-        const rotatedVoice = pickRotatedVoiceId(agentCount);
-        const agentValues = {
-          ...mapObjectToCamel(rest),
-          id: agentId,
-          userId: req.user.id,
-          voiceId: rest.voice_id || rotatedVoice,
-          channel: rest.channel || "voice",
-          role: agentRole,
-        };
-        // Remove any fields that don't belong in the agents table
-        delete (agentValues as any).personality;
+      // Compose personality from layered templates + operator overrides:
+      //   role base (deep methodology) + template overlay (tactic specifics)
+      //   + operator custom (highest priority), with {{businessName}} etc.
+      //   substituted from the operator's settings row.
+      const rolePersonality =
+        ROLE_PERSONALITY_TEMPLATES[agentRole as keyof typeof ROLE_PERSONALITY_TEMPLATES] ||
+        (rest.channel === "email"
+          ? "You are a professional email agent specialized in clear, efficient communication."
+          : "You are a helpful assistant serving as a phone agent.");
 
-        await drizzle.insert(schema.agents).values(agentValues);
+      const businessContext = {
+        businessName: (userSettings as any)?.businessName,
+        businessType: (userSettings as any)?.businessType,
+        operatingHours: (userSettings as any)?.businessHours,
+        escalationContact: (userSettings as any)?.escalationContact,
+        primaryProduct: (userSettings as any)?.primaryProduct,
+      };
+
+      const personalityContent = composeAgentPersonality({
+        rolePersonality,
+        templateId: typeof templateId === "string" ? templateId : null,
+        operatorCustom: typeof personality === "string" ? personality : null,
+        businessContext,
+      });
+
+      const rotatedVoice = pickRotatedVoiceId(agentCount);
+      const agentValues = {
+        ...mapObjectToCamel(rest),
+        id: agentId,
+        userId: req.user.id,
+        voiceId: rest.voice_id || rotatedVoice,
+        channel: rest.channel || "voice",
+        role: agentRole,
+      };
+      // Remove any fields that don't belong in the agents table
+      delete (agentValues as any).personality;
+
+      try {
+        await drizzle.transaction(async (tx) => {
+          await tx.insert(schema.agents).values(agentValues);
+          await tx.insert(schema.personality).values({
+            agentId: agentId,
+            userId: req.user.id,
+            content: personalityContent,
+          });
+        });
       } catch (error: any) {
-        log.error("Agent row insert failed", {
+        log.error("Agent creation database writes failed", {
           userId: req.user.id,
           agentId,
           error: error.message,
@@ -819,49 +848,6 @@ router.post(
             error: err?.message,
           }),
         );
-
-      // Compose personality from layered templates + operator overrides:
-      //   role base (deep methodology) + template overlay (tactic specifics)
-      //   + operator custom (highest priority), with {{businessName}} etc.
-      //   substituted from the operator's settings row.
-      const rolePersonality =
-        ROLE_PERSONALITY_TEMPLATES[agentRole as keyof typeof ROLE_PERSONALITY_TEMPLATES] ||
-        (rest.channel === "email"
-          ? "You are a professional email agent specialized in clear, efficient communication."
-          : "You are a helpful assistant serving as a phone agent.");
-
-      const businessContext = {
-        businessName: (userSettings as any)?.businessName,
-        businessType: (userSettings as any)?.businessType,
-        operatingHours: (userSettings as any)?.businessHours,
-        escalationContact: (userSettings as any)?.escalationContact,
-        primaryProduct: (userSettings as any)?.primaryProduct,
-      };
-
-      const personalityContent = composeAgentPersonality({
-        rolePersonality,
-        templateId: typeof templateId === "string" ? templateId : null,
-        operatorCustom: typeof personality === "string" ? personality : null,
-        businessContext,
-      });
-
-      try {
-        await drizzle.insert(schema.personality).values({
-          agentId: agentId,
-          userId: req.user.id,
-          content: personalityContent,
-        });
-      } catch (error: any) {
-        log.error("Agent personality insert failed", {
-          userId: req.user.id,
-          agentId,
-          error: error.message,
-        });
-        await drizzle
-          .delete(schema.agents)
-          .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)));
-        return res.status(500).json({ error: "Failed to create agent" });
-      }
 
       // Audit log: agent creation
       void auditLogger
@@ -1399,45 +1385,46 @@ router.post(
 
       const agentId = `agent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
-      await drizzle.insert(schema.agents).values({
-        id: agentId,
-        userId: req.user.id,
-        name: design.name,
-        archetype: design.archetype || "Receptionist",
-        firstMessage: design.first_message || `Hi, this is ${design.name}. How can I help?`,
-        websiteUrl: websiteUrl || null,
-        channel: "voice",
+      await drizzle.transaction(async (tx) => {
+        await tx.insert(schema.agents).values({
+          id: agentId,
+          userId: req.user.id,
+          name: design.name,
+          archetype: design.archetype || "Receptionist",
+          firstMessage: design.first_message || `Hi, this is ${design.name}. How can I help?`,
+          websiteUrl: websiteUrl || null,
+          channel: "voice",
+        });
+
+        if (design.personality_block) {
+          await tx
+            .insert(schema.personality)
+            .values({
+              agentId: agentId,
+              userId: req.user.id,
+              content: design.personality_block,
+            })
+            .onConflictDoUpdate({
+              target: schema.personality.agentId,
+              set: { content: design.personality_block },
+            });
+        }
+
+        const directiveRows = (design.directives || []).map((d: any) => ({
+          agentId: agentId,
+          userId: req.user.id,
+          content: d.content,
+          priority: d.priority ?? 5,
+        }));
+        if (directiveRows.length) await tx.insert(schema.directives).values(directiveRows as any);
+
+        const knowledgeRows = (design.seed_knowledge || []).map((k: string) => ({
+          agentId: agentId,
+          userId: req.user.id,
+          content: k,
+        }));
+        if (knowledgeRows.length) await tx.insert(schema.knowledge).values(knowledgeRows);
       });
-
-      if (design.personality_block) {
-        await drizzle
-          .insert(schema.personality)
-          .values({
-            agentId: agentId,
-            userId: req.user.id,
-            content: design.personality_block,
-          })
-          .onConflictDoUpdate({
-            target: schema.personality.agentId,
-            set: { content: design.personality_block },
-          });
-      }
-
-      const directiveRows = (design.directives || []).map((d: any) => ({
-        agentId: agentId,
-        userId: req.user.id,
-        content: d.content,
-        priority: d.priority ?? 5,
-      }));
-      if (directiveRows.length)
-        await drizzle.insert(schema.directives).values(directiveRows as any);
-
-      const knowledgeRows = (design.seed_knowledge || []).map((k: string) => ({
-        agentId: agentId,
-        userId: req.user.id,
-        content: k,
-      }));
-      if (knowledgeRows.length) await drizzle.insert(schema.knowledge).values(knowledgeRows);
 
       res.json({ success: true, agentId });
     } catch (e) {

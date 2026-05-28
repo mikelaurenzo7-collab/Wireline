@@ -319,8 +319,10 @@ async function startServer() {
   }
 
   if (dbHealthy) {
-    const { initPresenceDbListener } = await import("./src/services/presence-stream-service");
-    void initPresenceDbListener();
+    const { initPresenceDbListener, startPresenceListener } =
+      await import("./src/services/presence-stream-service");
+    await initPresenceDbListener();
+    void startPresenceListener();
   }
 
   if (process.env.NODE_ENV !== "production") {
