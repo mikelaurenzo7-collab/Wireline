@@ -8,7 +8,6 @@ import {
   Settings,
   CreditCard,
   ChevronDown,
-  Crown,
   PlugZap,
   LifeBuoy,
   Search,
@@ -392,22 +391,10 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                         <LifeBuoy className="w-3.5 h-3.5 text-muted" />
                         Help &amp; support
                       </Link>
-                      {/* Founder Dashboard — only visible to the platform owner.
-                          Uses the canonical `is_owner` flag set server-side by
-                          isOwnerEmail() and shipped via the session payload, so
-                          the source of truth lives in one place (auth-service.ts)
-                          and not as a hardcoded email in chrome. */}
-                      {user?.is_owner === true && (
-                        <Link
-                          to="/founder"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
-                          role="menuitem"
-                        >
-                          <Crown className="w-3.5 h-3.5 text-muted" />
-                          Founder Dashboard
-                        </Link>
-                      )}
+                      {/* No Founder link. The founder surface lives at
+                          /founder as a public route OUTSIDE this client
+                          AppShell — no chrome dropdown advertises it to
+                          users. The owner reaches it by URL. */}
                     </div>
                     <div className="border-t border-black/8 py-1">
                       <button

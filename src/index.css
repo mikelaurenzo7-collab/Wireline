@@ -78,25 +78,27 @@
 }
 
 @layer base {
-  /* ── SHARP CORNERS — global default. Every element is razor-edged
-     UNLESS it explicitly opts into a non-zero radius. The @theme block
-     above remaps --radius-sm/md/lg/xl/2xl/3xl to 0, so Tailwind utilities
-     like `rounded-lg` already render sharp via the design tokens.
-
-     Important: this rule is NOT `!important`. The earlier !important
-     version silently defeated `rounded-full` (which compiles to
-     ~infinity px) on every avatar, badge, loading spinner, radial
-     glow, and pill — they all rendered as squares. With normal
-     specificity, Tailwind utilities + arbitrary `rounded-[Npx]`
-     values win, while un-classed elements still default to 0. */
+  /* ── SHARP CORNERS — global reset. Every element is razor-edged.
+     This is an intentional brand-system contract: no rounded graphics
+     anywhere. The !important is what enforces it against every stray
+     `rounded-*` Tailwind utility that may live in third-party widgets,
+     legacy components, or shared primitives — it's the SSOT for
+     "boxes are sharp." Don't drop the !important. ──── */
   *,
   *::before,
   *::after {
     -webkit-tap-highlight-color: transparent;
-    border-radius: 0;
+    border-radius: 0 !important;
+  }
+  /* Exceptions — elements that are inherently circular (data indicators,
+     avatar initials, scrollbar thumbs, live-pulse rings). */
+  .dot-online, .dot-busy, .dot-idle, .dot-pending,
+  .live-ring, .live-ring::after,
+  [data-circular] {
+    border-radius: 9999px !important;
   }
   ::-webkit-scrollbar-thumb {
-    border-radius: 999px;
+    border-radius: 999px !important;
   }
 
   /* ── TEXT-WHITE RESCUE ─────────────────────────────────────────────

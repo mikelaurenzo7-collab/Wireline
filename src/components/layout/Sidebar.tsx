@@ -23,7 +23,7 @@
  */
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronsLeft, ChevronsRight, Crown, LifeBuoy, LogOut, Search } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, LifeBuoy, LogOut, Search } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import WirelineMark from "../WirelineMark";
 import { useAuth } from "../../contexts/AuthContext";
@@ -344,15 +344,11 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           expanded={effective}
           active={location.pathname === "/help"}
         />
-        {user?.is_owner === true && (
-          <FooterItem
-            to="/founder"
-            icon={Crown}
-            label="Founder"
-            expanded={effective}
-            active={location.pathname === "/founder"}
-          />
-        )}
+        {/* No Founder link here. The founder surface lives at /founder as
+            a public route OUTSIDE this authenticated AppShell — no chrome
+            menu, sidebar, or dropdown advertises it to clients. The owner
+            reaches it by URL (bookmark). The page + server endpoints are
+            independently auth + OWNER_EMAIL gated. */}
         {/* Sign-out lives in the avatar dropdown too; mirrored here for
             keyboard users who never open it. */}
         <button

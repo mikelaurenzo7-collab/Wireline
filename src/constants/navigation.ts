@@ -102,7 +102,6 @@ export const PAGE_TITLES: Record<string, string> = {
   "/train": "Training",
   "/knowledge": "Knowledge",
   "/agents": "Agents",
-  "/founder": "Founder",
   "/integrations": "Integrations",
   "/admin": "Settings",
   "/dnc": "DNC List",
@@ -131,7 +130,6 @@ export const ROUTE_ACCENTS: Record<string, [string, string]> = {
   "/audit": ["#4F1E7B", "#FFC07D"],
   "/help": ["#10B981", "#4F1E7B"],
   "/pipeline": ["#4F1E7B", "#10B981"],
-  "/founder": ["#4F1E7B", "#FFC07D"],
 };
 
 export function getRouteAccent(pathname: string): [string, string] {

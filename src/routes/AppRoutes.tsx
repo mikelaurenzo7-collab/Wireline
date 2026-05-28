@@ -29,7 +29,13 @@ const HelpCenter = lazy(() => import("../components/HelpCenter"));
 // Mounting them again here is dead code that would never be reached, but
 // would still bundle three lazy chunks into the authenticated app shell.
 const Pipeline = lazy(() => import("../components/Pipeline"));
-const FounderDashboard = lazy(() => import("../components/FounderDashboard"));
+// FounderDashboard is mounted as a PUBLIC route in App.tsx — NOT in the
+// authenticated AppShell. This keeps it off every chrome menu / sidebar
+// link / lazy chunk preload for the client app. The page itself handles
+// auth + owner gating; the server endpoints (e.g. /api/admin/founder-stats)
+// are independently gated by authorizeMigration (OWNER_EMAIL). The result:
+// clients in the authenticated app never see, link to, or download code
+// for the founder surface.
 const SupervisorCockpit = lazy(() => import("../components/SupervisorCockpit"));
 
 export default function AppRoutes() {
@@ -66,16 +72,6 @@ export default function AppRoutes() {
               <PageTransition>
                 <ErrorBoundary>
                   <TriageInbox />
-                </ErrorBoundary>
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/founder"
-            element={
-              <PageTransition>
-                <ErrorBoundary>
-                  <FounderDashboard />
                 </ErrorBoundary>
               </PageTransition>
             }

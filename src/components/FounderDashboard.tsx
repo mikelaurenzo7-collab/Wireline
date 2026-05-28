@@ -156,7 +156,7 @@ function StatTile({
 
 export default function FounderDashboard() {
   const { error: toastError, success: toastSuccess } = useToast();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [selected, setSelected] = useState<StaffMember | null>(null);
   const [provisionedIds, setProvisionedIds] = useState<Set<string> | null>(null);
   const [broadcast, setBroadcast] = useState("");
@@ -220,11 +220,27 @@ export default function FounderDashboard() {
     }
   };
 
-  // Owner-only surface. Non-owners (team members, customers who somehow
-  // land on /founder) get silently redirected to Home so the route's
-  // existence isn't even disclosed. Server-side /api/admin/founder-stats
-  // is independently gated by authorizeMigration (OWNER_EMAIL check).
-  if (user && user.is_owner !== true) {
+  // Owner-only surface. /founder is mounted as a public route in App.tsx
+  // (outside the authenticated AppShell), so the user context can be
+  // anything when we arrive — anonymous, authed-non-owner, or owner.
+  // Order of gates matters:
+  //   0. Auth still hydrating from localStorage → show a quiet blank
+  //      surface (NOT a redirect — a refresh of /founder must not punt
+  //      the owner to /signin during the millisecond before useEffect
+  //      restores the session).
+  //   1. Anonymous → punt to sign-in with /founder as the return.
+  //   2. Authed but not owner → silent redirect to Home (route's
+  //      existence stays undisclosed).
+  //   3. Owner → render.
+  // Server-side /api/admin/founder-stats is independently gated by
+  // authorizeMigration (OWNER_EMAIL check) — defense in depth.
+  if (authLoading) {
+    return <div className="min-h-dvh bg-paper" aria-busy="true" />;
+  }
+  if (!user) {
+    return <Navigate to="/signin?redirect=%2Ffounder" replace />;
+  }
+  if (user.is_owner !== true) {
     return <Navigate to="/" replace />;
   }
 

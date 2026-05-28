@@ -25,6 +25,12 @@ const Showcase = lazy(() => import("./pages/Showcase"));
 const Status = lazy(() => import("./components/Status"));
 const PublicChangelog = lazy(() => import("./components/PublicChangelog"));
 const Security = lazy(() => import("./components/Security"));
+// FounderDashboard — mounted as a stand-alone route OUTSIDE the
+// authenticated AppShell so it's never linked, indexed, or bundled
+// into the client app's chrome. Owner reaches it by URL. Page +
+// server endpoints are independently gated (see component below + the
+// OWNER_EMAIL check in authorizeMigration).
+const FounderDashboard = lazy(() => import("./components/FounderDashboard"));
 
 const PrivacyPolicy = lazy(() =>
   import("./components/LegalPage").then((m) => ({ default: m.PrivacyPolicy })),
@@ -55,17 +61,26 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Redirect authenticated users away from auth-only pages to dashboard
+  // Redirect authenticated users away from auth-only pages. Honors the
+  // ?redirect=<path> query param the catch-all guard sets on entry, so
+  // an owner clicking a bookmark to /founder gets sent to /signin,
+  // signs in, and lands BACK on /founder — not on Home. The redirect
+  // target is sanity-checked: same-origin paths only (must start with
+  // "/" and not "//" — the latter is a protocol-relative URL).
   useEffect(() => {
     if (
-      user &&
-      (location.pathname === "/login" ||
-        location.pathname === "/signin" ||
-        location.pathname === "/signup")
+      !user ||
+      (location.pathname !== "/login" &&
+        location.pathname !== "/signin" &&
+        location.pathname !== "/signup")
     ) {
-      navigate("/", { replace: true });
+      return;
     }
-  }, [user, location.pathname, navigate]);
+    const params = new URLSearchParams(location.search);
+    const raw = params.get("redirect");
+    const safe = raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
+    navigate(safe, { replace: true });
+  }, [user, location.pathname, location.search, navigate]);
 
   // Public pages — accessible before auth.
   if (location.pathname === "/privacy") {
@@ -232,6 +247,22 @@ function AppContent() {
       <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
         <ErrorBoundary>
           <Security />
+        </ErrorBoundary>
+      </Suspense>
+    );
+  }
+  // /founder — owner-only platform dashboard. Mounted as a stand-alone
+  // route here (BEFORE the auth guard) so it's never linked from chrome,
+  // never bundled into the authenticated AppShell, and clients in the
+  // client app surface have no surface area that hints at its existence.
+  // The component itself redirects unauthenticated users to /signin and
+  // non-owners to /. Server endpoints are independently OWNER_EMAIL-gated
+  // (see src/routes/admin-migrate/auth.ts → authorizeMigration).
+  if (location.pathname === "/founder") {
+    return (
+      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+        <ErrorBoundary>
+          <FounderDashboard />
         </ErrorBoundary>
       </Suspense>
     );
