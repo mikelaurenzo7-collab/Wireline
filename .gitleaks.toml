@@ -1,0 +1,9 @@
+title = "Wireline gitleaks config"
+
+[extend]
+# Extend the default ruleset so all default secret patterns still apply.
+useDefault = true
+
+[[allowlists]]
+description = "PITR runbook — eyJhbG... is a documentation placeholder for a Supabase service-role key, not a real credential. The placeholder has since been replaced with angle-bracket copy but the pattern exists in git history."
+paths = ['''scripts/restore-drill\.md''']

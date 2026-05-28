@@ -1,13 +1,12 @@
 name: CodeQL Security Scan
 
+# CodeQL uploads results to GitHub's code-scanning dashboard, which requires
+# GitHub Advanced Security. That feature is only available on public repos or
+# private repos on a GitHub Enterprise / Advanced Security plan.
+# Until code scanning is enabled in repo Settings → Security → Code scanning,
+# keep this workflow manual-only so it doesn't block CI on every PR.
+# To enable: Settings → Security → Code scanning → Set up → Advanced → Save.
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  schedule:
-    # Weekly catch-all so newly-disclosed query packs scan existing code.
-    - cron: "27 3 * * 1" # Mondays 03:27 UTC
   workflow_dispatch:
 
 concurrency:

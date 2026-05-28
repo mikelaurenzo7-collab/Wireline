@@ -695,7 +695,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="rounded-3xl glass border border-brand/25 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8"
+          className="glass border border-brand/25 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8"
         >
           <div className="font-display italic text-5xl sm:text-6xl text-brand leading-none shrink-0">
             {cfg.statValue}
@@ -719,10 +719,10 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.08 }}
-                className="rounded-2xl glass border border-white/10 p-5"
+                className="glass border border-white/10 p-5"
               >
                 <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
+                  className="w-10 h-10 flex items-center justify-center mb-3"
                   style={{ background: "#4F1E7B" }}
                 >
                   <Icon className="w-5 h-5 text-on-brand" strokeWidth={2} />
@@ -738,7 +738,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
       {/* Script preview */}
       <section className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 pb-20">
         <p className="app-section-title/70 mb-3">What callers hear</p>
-        <blockquote className="rounded-2xl glass border-l-4 border-brand p-6 sm:p-8 italic text-lg sm:text-xl text-ink/85 leading-relaxed">
+        <blockquote className="glass border-l-4 border-brand p-6 sm:p-8 italic text-lg sm:text-xl text-ink/85 leading-relaxed">
           {cfg.scriptPreview}
         </blockquote>
         <p className="text-[10px] text-muted/70 mt-3 leading-relaxed">
@@ -766,7 +766,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.05 }}
-              className="group rounded-2xl glass border border-white/10 overflow-hidden"
+              className="group glass border border-white/10 overflow-hidden"
             >
               <summary className="cursor-pointer list-none px-5 py-4 sm:py-4 min-h-[56px] flex items-start gap-3 hover:bg-white/3 transition-colors touch-manipulation">
                 <span className="text-[10px] uppercase tracking-[0.3em] text-brand/70 mt-1 shrink-0 font-mono">
@@ -802,14 +802,14 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
           <CtaLink
             href={cfg.primaryCta.href}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
           >
             {cfg.primaryCta.label}
             <ArrowRight className="w-4 h-4" />
           </CtaLink>
           <a
             href={cfg.secondaryCta.href}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-full glass border border-black/12 text-ink text-[11px] uppercase tracking-[0.3em] font-medium hover:border-brand/40 transition-all"
+            className="inline-flex items-center gap-2 px-5 py-3 glass border border-black/12 text-ink text-[11px] uppercase tracking-[0.3em] font-medium hover:border-brand/40 transition-all"
           >
             <Phone className="w-4 h-4" />
             {cfg.secondaryCta.label}
@@ -834,7 +834,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           DMs convert better, but every customer gets the full
           horizontal platform. */}
       <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 pb-12">
-        <div className="rounded-2xl glass border border-white/10 p-5 sm:p-6 text-center">
+        <div className="glass border border-white/10 p-5 sm:p-6 text-center">
           <p className="text-[10px] uppercase tracking-[0.35em] text-brand/80 mb-2">
             Built for every service business
           </p>

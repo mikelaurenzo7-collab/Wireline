@@ -70,11 +70,11 @@ function ShowcaseCard({ agent }: { agent: ShowcaseAgent }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="rounded-3xl glass border border-brand/25 p-6 sm:p-8"
+      className="glass border border-brand/25 p-6 sm:p-8"
     >
       <div className="flex items-start gap-4 mb-5">
         <div
-          className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+          className="w-12 h-12 flex items-center justify-center shrink-0"
           style={{ background: agent.tint }}
         >
           <Sparkles className="w-5 h-5 text-on-brand" strokeWidth={2.2} />
@@ -94,7 +94,7 @@ function ShowcaseCard({ agent }: { agent: ShowcaseAgent }) {
 
       {agent.preRollAudio ? (
         <>
-          <div className="rounded-2xl bg-ink/5 border border-white/10 p-4 mb-4">
+          <div className="bg-ink/5 border border-white/10 p-4 mb-4">
             <p className="text-[11px] uppercase tracking-[0.3em] text-muted/70 mb-2">
               First-message script
             </p>
@@ -168,7 +168,7 @@ function PhoneLineCard({ agent, label }: { agent: ContactAgent; label: string })
     >
       <div className="flex items-start gap-3">
         <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+          className="w-10 h-10 flex items-center justify-center shrink-0"
           style={{ background: `${agent.tint}1f`, color: agent.tint }}
         >
           <Phone className="w-4 h-4" strokeWidth={2.3} />

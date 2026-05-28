@@ -70,10 +70,10 @@ export default function About() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="rounded-3xl glass border border-brand/25 p-5 sm:p-8 flex flex-col sm:flex-row items-start gap-4 sm:gap-6"
+            className="glass border border-brand/25 p-5 sm:p-8 flex flex-col sm:flex-row items-start gap-4 sm:gap-6"
           >
             <div
-              className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center shrink-0"
+              className="w-14 h-14 sm:w-20 sm:h-20 flex items-center justify-center shrink-0"
               style={{
                 background: "#4F1E7B",
                 boxShadow: "0 8px 24px -8px rgba(79,30,123,0.4)",
@@ -121,10 +121,10 @@ export default function About() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.08 }}
-                className="rounded-2xl glass border border-white/10 p-5"
+                className="glass border border-white/10 p-5"
               >
                 <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center mb-3"
+                  className="w-8 h-8 flex items-center justify-center mb-3"
                   style={{ background: "#4F1E7B" }}
                 >
                   <Sparkles className="w-4 h-4 text-on-brand" strokeWidth={2} />
@@ -145,7 +145,7 @@ export default function About() {
             Wireline is built on the strongest infra layer money can buy. Every paying customer
             inherits the reliability + capability of these platforms at no incremental cost.
           </p>
-          <div className="rounded-2xl glass border border-white/10 p-5 sm:p-6">
+          <div className="glass border border-white/10 p-5 sm:p-6">
             <IntegrationLogos />
           </div>
         </section>
@@ -161,7 +161,7 @@ export default function About() {
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Link
               to="/signup"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
+              className="inline-flex items-center gap-2 px-5 py-3 bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
             >
               Start free trial
               <ArrowRight className="w-4 h-4" />
