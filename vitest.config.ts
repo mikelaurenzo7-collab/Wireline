@@ -9,5 +9,20 @@ export default defineConfig({
     globals: false,
     // Keep server bundling tools out of the way during unit runs.
     pool: "forks",
+    coverage: {
+      provider: "v8",
+      reporter: ["text-summary", "html", "json-summary"],
+      reportsDirectory: "./coverage",
+      // Ratchet thresholds: set just below the current measured floor so the
+      // build fails on a coverage *regression* rather than enforcing an
+      // aspirational target the legacy UI tree can't yet meet. Raise these as
+      // direct tests are added for the money/identity paths (Phase 1).
+      thresholds: {
+        statements: 5,
+        branches: 45,
+        functions: 17,
+        lines: 5,
+      },
+    },
   },
 });

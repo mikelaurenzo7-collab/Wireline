@@ -41,7 +41,8 @@
     "test:visual": "playwright test tests/visual --project=chromium",
     "test:visual:update": "playwright test tests/visual --project=chromium --update-snapshots",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
