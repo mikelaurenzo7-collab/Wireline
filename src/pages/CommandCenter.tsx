@@ -270,7 +270,7 @@ export default function LiveOps() {
                     }
                   }}
                   disabled={activatingGrowth}
-                  className="flex items-center gap-2 px-6 py-3 bg-brand text-on-brand rounded-2xl hover:bg-brand-2 transition-all shadow-xl shadow-brand/20 active:scale-95 disabled:opacity-60 disabled:cursor-wait"
+                  className="app-primary-btn flex items-center gap-2 px-6 py-3 bg-brand text-on-brand rounded-2xl hover:bg-brand-2 transition-all shadow-xl shadow-brand/20 active:scale-95 disabled:opacity-60 disabled:cursor-wait"
                 >
                   <Zap
                     className={clsx("w-4 h-4 fill-current", activatingGrowth && "animate-pulse")}
@@ -283,7 +283,7 @@ export default function LiveOps() {
                 <button
                   onClick={() => navigate("/agents")}
                   title="Create an agent first → /agents"
-                  className="flex items-center gap-2 px-6 py-3 rounded-2xl border border-white/10 bg-white/5 text-muted/70 hover:text-ink hover:border-white/25 transition-colors"
+                  className="app-primary-btn flex items-center gap-2 px-6 py-3 rounded-2xl border border-black/10 bg-white/55 text-ink hover:border-brand/25 transition-colors"
                 >
                   <Zap className="w-4 h-4" />
                   <span className="text-xs font-black uppercase tracking-widest">
@@ -297,7 +297,7 @@ export default function LiveOps() {
                 placeholders that violated the no-mocks rule and confused
                 operators who couldn't reconcile the numbers with their
                 actual data. */}
-              <div className="hidden xl:flex items-center gap-6 px-6 py-3 bg-black/[0.02] border border-black/5 rounded-2xl">
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6 px-4 sm:px-6 py-3 bg-black/[0.02] border border-black/5 rounded-2xl max-md:w-full max-md:grid max-md:grid-cols-2">
                 <div className="flex flex-col">
                   <span className="text-eyebrow">Live Calls</span>
                   <span className="text-xs font-mono font-bold text-brand">
@@ -369,7 +369,7 @@ export default function LiveOps() {
                     <div className="h-48 flex flex-col items-center justify-center gap-2 text-center border border-dashed border-black/8 rounded-2xl bg-black/[0.01] px-6">
                       <Activity className="w-6 h-6 text-muted/55" />
                       <p className="text-caption font-medium">No conversations yet</p>
-                      <p className="text-[10px] text-muted/70 leading-relaxed">
+                      <p className="text-caption leading-relaxed">
                         Make your first call to{" "}
                         <a href="tel:+16306425661" className="text-brand hover:underline">
                           (630) 642-5661
@@ -378,8 +378,8 @@ export default function LiveOps() {
                       </p>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-8">
-                      <div className="w-1/2 h-[150px]">
+                    <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8">
+                      <div className="w-full sm:w-1/2 h-[150px] min-w-0">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
@@ -441,7 +441,7 @@ export default function LiveOps() {
                       Unit Economics
                     </h3>
                     <div className="flex items-center gap-1.5 px-2.5 py-1 bg-brand/10 border border-brand/20 rounded-full">
-                      <span className="text-[9px] font-bold text-brand uppercase tracking-wider">
+                      <span className="text-eyebrow !text-[0.625rem] text-brand">
                         Efficiency: {stats?.unitEconomics?.efficiencyScore ?? 0}%
                       </span>
                     </div>
@@ -449,17 +449,13 @@ export default function LiveOps() {
 
                   <div className="grid grid-cols-2 gap-2">
                     <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
-                      <span className="text-[9px] font-medium text-muted uppercase tracking-wider block mb-1">
-                        Cost / Min
-                      </span>
+                      <span className="app-section-title block mb-1">Cost / Min</span>
                       <span className="text-xl font-bold text-ink">
                         ${stats?.unitEconomics?.costPerMinute ?? "0.00"}
                       </span>
                     </div>
                     <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
-                      <span className="text-[9px] font-medium text-muted uppercase tracking-wider block mb-1">
-                        Cost / Lead
-                      </span>
+                      <span className="app-section-title block mb-1">Cost / Lead</span>
                       <span className="text-xl font-bold text-ink">
                         ${stats?.unitEconomics?.costPerLead ?? "0.00"}
                       </span>
@@ -468,10 +464,10 @@ export default function LiveOps() {
 
                   <div className="mt-4 p-4 rounded-2xl bg-brand/5 border border-brand/10">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-bold text-brand uppercase tracking-wider">
-                        Fleet ROI Projection
+                      <span className="text-eyebrow text-brand">Fleet ROI Projection</span>
+                      <span className="text-caption font-mono font-semibold text-brand">
+                        EXCELLENT
                       </span>
-                      <span className="text-[10px] font-mono font-bold text-brand">EXCELLENT</span>
                     </div>
                     <div className="h-1.5 w-full bg-brand/10 rounded-full overflow-hidden">
                       <motion.div

@@ -88,7 +88,7 @@ export default function InsightsView() {
                 key={d}
                 onClick={() => setDays(d)}
                 className={cn(
-                  "h-7 px-3 rounded-full text-[10px] font-medium tracking-wide transition-all",
+                  "app-segment-btn h-9 sm:h-7 px-3 rounded-full text-xs sm:text-[11px] font-medium tracking-wide transition-all",
                   days === d ? "text-paper" : "text-muted hover:text-ink",
                 )}
                 style={
@@ -227,7 +227,7 @@ function FunnelView({ days }: { days: number }) {
   return (
     <div className="relative aurora-ring rounded-3xl">
       <div className="relative rounded-3xl glass-strong overflow-hidden p-8 md:p-10 space-y-4">
-        <div className="text-[10px] uppercase tracking-[0.4em] text-brand mb-2">
+        <div className="app-section-title text-brand mb-2">
           Conversion Funnel · {data.window_days}d
         </div>
         {stages.map((s: any, i: number) => {
@@ -262,9 +262,7 @@ function FunnelView({ days }: { days: number }) {
                 />
               </div>
               {drop !== null && drop > 0 && (
-                <div className="text-[10px] uppercase tracking-[0.3em] text-muted text-right">
-                  ↓ {drop}% from previous stage
-                </div>
+                <div className="app-section-title text-right">↓ {drop}% from previous stage</div>
               )}
             </motion.div>
           );
@@ -339,10 +337,10 @@ function AttributionView({ days }: { days: number }) {
           accent="#4F1E7B"
         />
       </div>
-      <div className="rounded-2xl glass border border-white/8 overflow-hidden">
-        <table className="w-full text-[12px]">
+      <div className="rounded-2xl glass border border-white/8 overflow-hidden app-table-scroll">
+        <table className="w-full text-sm">
           <thead className="bg-black/3">
-            <tr className="text-left text-[10px] uppercase tracking-[0.24em] text-muted/80">
+            <tr className="text-left app-section-title">
               <th className="px-3 py-2.5 font-medium">Campaign</th>
               <th className="px-3 py-2.5 font-medium text-right">Calls</th>
               <th className="px-3 py-2.5 font-medium text-right">Minutes</th>
@@ -395,7 +393,7 @@ function AttributionView({ days }: { days: number }) {
           </tbody>
         </table>
       </div>
-      <p className="text-[10px] text-muted/60 leading-relaxed px-1">
+      <p className="text-caption leading-relaxed px-1">
         Set the campaign label per phone number under{" "}
         <a href="/admin" className="text-brand hover:underline">
           Admin → Carrier
@@ -441,7 +439,7 @@ function TopicsView() {
         </div>
         <button
           onClick={() => load(true)}
-          className="px-3 py-1.5 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5"
+          className="px-3 py-1.5 rounded-full glass border border-white/10 app-section-title hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5"
         >
           <RefreshCw className="w-3 h-3" /> Refresh
         </button>
@@ -549,19 +547,16 @@ function HeatmapView({ days }: { days: number }) {
   return (
     <div className="relative aurora-ring rounded-3xl">
       <div className="relative rounded-3xl glass-strong overflow-hidden p-7 md:p-10">
-        <div className="text-[10px] uppercase tracking-[0.4em] text-brand mb-6">
+        <div className="app-section-title text-brand mb-6">
           Calls by Hour × Weekday · {data.window_days}d
         </div>
-        <div className="overflow-x-auto scrollbar-hide">
+        <div className="app-table-scroll rounded-2xl border border-black/8">
           <table className="w-full md:min-w-[700px]">
             <thead>
               <tr>
-                <th className="text-[9px] uppercase tracking-[0.3em] text-muted text-left pb-2 font-normal w-8"></th>
+                <th className="app-section-title text-left pb-2 font-normal w-8"></th>
                 {Array.from({ length: 24 }).map((_, h) => (
-                  <th
-                    key={h}
-                    className="text-[9px] uppercase tracking-[0.3em] text-muted text-center pb-2 font-normal"
-                  >
+                  <th key={h} className="app-section-title text-center pb-2 font-normal">
                     {h % 3 === 0 ? h : ""}
                   </th>
                 ))}
@@ -570,9 +565,7 @@ function HeatmapView({ days }: { days: number }) {
             <tbody>
               {weekdays.map((wd, w) => (
                 <tr key={w}>
-                  <td className="text-[10px] uppercase tracking-[0.3em] text-muted pr-3 py-1">
-                    {wd}
-                  </td>
+                  <td className="app-section-title pr-3 py-1">{wd}</td>
                   {Array.from({ length: 24 }).map((_, h) => {
                     const cell = grid.find((g: any) => g.weekday === w && g.hour === h);
                     const intensity = cell ? cell.count / max : 0;
@@ -601,7 +594,7 @@ function HeatmapView({ days }: { days: number }) {
             </tbody>
           </table>
         </div>
-        <div className="flex items-center gap-3 mt-6 text-[9px] uppercase tracking-[0.3em] text-muted">
+        <div className="flex items-center gap-3 mt-6 app-section-title">
           <span>Less</span>
           <div className="flex gap-1">
             {[0.1, 0.3, 0.55, 0.8, 1].map((o, i) => (
@@ -793,7 +786,7 @@ function LeaderboardView({ days }: { days: number }) {
 function Stat({ label, value, accent }: { label: string; value: any; accent?: string }) {
   return (
     <div>
-      <div className="text-[9px] uppercase tracking-[0.3em] text-muted">{label}</div>
+      <div className="app-section-title">{label}</div>
       <div
         className="font-display italic text-xl text-ink mt-0.5"
         style={accent ? { color: accent } : {}}
@@ -837,7 +830,7 @@ function FailureModesView() {
         </div>
         <button
           onClick={() => load(true)}
-          className="px-3 py-1.5 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5"
+          className="px-3 py-1.5 rounded-full glass border border-white/10 app-section-title hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5"
         >
           <RefreshCw className="w-3 h-3" /> Refresh
         </button>
@@ -1098,7 +1091,7 @@ function AISpendView({ days }: { days: number }) {
           {/* Spend over time */}
           <div className="relative aurora-ring rounded-3xl">
             <div className="relative rounded-3xl glass-strong overflow-hidden p-6 md:p-8">
-              <div className="text-[10px] uppercase tracking-[0.4em] text-brand mb-5">
+              <div className="app-section-title text-brand mb-5">
                 Spend per Day · {data.window_days}d
               </div>
               <div className="space-y-2">
@@ -1142,9 +1135,7 @@ function AISpendView({ days }: { days: number }) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="relative aurora-ring rounded-2xl">
               <div className="relative rounded-2xl glass border border-white/10 p-5 space-y-3">
-                <div className="text-[10px] uppercase tracking-[0.4em] text-brand">
-                  Spend by Recipe
-                </div>
+                <div className="app-section-title text-brand">Spend by Recipe</div>
                 <div className="space-y-2">
                   {by_action.slice(0, 12).map((a: any, i: number) => {
                     const pct = (Number(a.cost) / maxAction) * 100;
@@ -1178,9 +1169,7 @@ function AISpendView({ days }: { days: number }) {
 
             <div className="relative aurora-ring rounded-2xl">
               <div className="relative rounded-2xl glass border border-white/10 p-5 space-y-3">
-                <div className="text-[10px] uppercase tracking-[0.4em] text-brand">
-                  Spend by Model
-                </div>
+                <div className="app-section-title text-brand">Spend by Model</div>
                 <div className="space-y-3">
                   {by_model.map((m: any) => (
                     <div
@@ -1200,9 +1189,7 @@ function AISpendView({ days }: { days: number }) {
                   ))}
                 </div>
                 <div className="pt-3 border-t border-white/5">
-                  <div className="text-[10px] uppercase tracking-[0.3em] text-muted mb-1">
-                    Tokens (window)
-                  </div>
+                  <div className="app-section-title mb-1">Tokens (window)</div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                     <div>
                       Input{" "}
@@ -1374,9 +1361,7 @@ function SpendBudgetCard() {
                 ${safeFixed(used, 2)}{" "}
                 <span className="text-ink/50 text-xl">/ ${safeFixed(limit, 2)}</span>
               </div>
-              <div className="text-[10px] uppercase tracking-[0.3em] text-muted">
-                {safeFixed(pct, 1)}% used
-              </div>
+              <div className="app-section-title">{safeFixed(pct, 1)}% used</div>
             </div>
             <div className="relative h-3 rounded-full bg-black/10 overflow-hidden">
               {/* Warn-threshold tick */}
@@ -1410,9 +1395,7 @@ function SpendBudgetCard() {
         {/* Controls */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
           <label className="space-y-1.5">
-            <span className="text-[10px] uppercase tracking-[0.3em] text-muted">
-              Monthly limit (USD)
-            </span>
+            <span className="app-section-title">Monthly limit (USD)</span>
             <input
               type="number"
               min="0"
@@ -1425,9 +1408,7 @@ function SpendBudgetCard() {
             />
           </label>
           <label className="space-y-1.5">
-            <span className="text-[10px] uppercase tracking-[0.3em] text-muted">
-              Warn at (% of limit)
-            </span>
+            <span className="app-section-title">Warn at (% of limit)</span>
             <input
               type="number"
               inputMode="numeric"
@@ -1509,7 +1490,7 @@ function SpendStat({
         />
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-[10px] uppercase tracking-[0.3em] text-muted">{label}</p>
+            <p className="app-section-title">{label}</p>
             <Icon className="w-4 h-4" style={{ color: accent }} />
           </div>
           <p className="font-display italic text-3xl text-ink leading-none">{value}</p>

@@ -251,7 +251,7 @@ export default function PageShell({
                     else if (e.key === "End") setActiveId(tabs[tabs.length - 1].id);
                   }}
                   className={cn(
-                    "native-tap-squish relative shrink-0 inline-flex min-h-10 items-center gap-1.5 px-3 py-2 rounded-xl transition-all text-[11px] uppercase tracking-[0.1em] font-medium whitespace-nowrap",
+                    "native-tap-squish relative shrink-0 inline-flex min-h-11 items-center gap-1.5 px-3 py-2 rounded-xl transition-all text-[11px] uppercase tracking-[0.1em] font-medium whitespace-nowrap",
                     active ? "text-on-brand" : "text-muted",
                   )}
                 >

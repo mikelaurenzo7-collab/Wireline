@@ -773,6 +773,30 @@
   color: color-mix(in srgb, var(--color-ink) 85%, transparent);
 }
 
+/* Horizontally scrollable data tables on phone */
+.app-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.app-table-scroll table {
+  min-width: 36rem;
+}
+
+@media (max-width: 1023px) {
+  .app-surface .app-segment-btn {
+    min-height: 44px;
+    min-width: 2.75rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .app-surface .app-primary-btn {
+    min-height: 48px;
+  }
+}
+
 /* Dense tables / lists in app panels */
 .app-meta {
   font-size: 0.75rem;

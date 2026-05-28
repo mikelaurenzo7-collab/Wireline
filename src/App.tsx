@@ -51,7 +51,7 @@ function PublicNotFound() {
 }
 
 function AppContent() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -245,6 +245,10 @@ function AppContent() {
         <PublicNotFound />
       </Suspense>
     );
+  }
+
+  if (loading) {
+    return <div className="min-h-dvh bg-paper" aria-busy="true" />;
   }
 
   if (!user) {

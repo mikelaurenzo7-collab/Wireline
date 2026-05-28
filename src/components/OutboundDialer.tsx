@@ -533,7 +533,7 @@ export default function OutboundDialer() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
+                  <label className="app-section-title flex items-center gap-1.5">
                     <Bot className="w-2.5 h-2.5 text-brand" /> Agent
                   </label>
                   <div className="relative">
@@ -580,7 +580,7 @@ export default function OutboundDialer() {
                       className="space-y-3"
                     >
                       <div className="space-y-1.5">
-                        <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
+                        <label className="app-section-title flex items-center gap-1.5">
                           <Phone className="w-2.5 h-2.5 text-brand" /> Phone number
                         </label>
                         <input
@@ -614,9 +614,7 @@ export default function OutboundDialer() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
-                          Customer name
-                        </label>
+                        <label className="app-section-title">Customer name</label>
                         <input
                           type="text"
                           value={customerName}
@@ -627,9 +625,7 @@ export default function OutboundDialer() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
-                          Context
-                        </label>
+                        <label className="app-section-title">Context</label>
                         <textarea
                           value={context}
                           onChange={(e) => setContext(e.target.value)}
@@ -696,7 +692,7 @@ export default function OutboundDialer() {
                       {/* Optional campaign assignment for bulk */}
                       {campaigns.length > 0 && (
                         <div className="space-y-1.5">
-                          <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
+                          <label className="app-section-title flex items-center gap-1.5">
                             <Megaphone className="w-2.5 h-2.5 text-brand" /> Assign to campaign
                             (optional)
                           </label>
@@ -746,9 +742,7 @@ export default function OutboundDialer() {
                         <span className="font-display italic lowercase text-base text-ink">
                           upload manifest
                         </span>
-                        <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
-                          Drag CSV or click to browse
-                        </span>
+                        <span className="app-section-title">Drag CSV or click to browse</span>
                       </button>
 
                       <div className="rounded-lg glass border border-brand/20 p-3 flex items-start gap-2">
@@ -1416,9 +1410,7 @@ export default function OutboundDialer() {
         ) : (
           <Panel title="Campaign Details" hint="Details" icon={Target}>
             <div className="h-full flex items-center justify-center">
-              <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60">
-                Select a campaign to view details
-              </p>
+              <p className="app-section-title">Select a campaign to view details</p>
             </div>
           </Panel>
         )}
@@ -1755,9 +1747,7 @@ function CreateCampaignModal({
 
         <div className="p-5 space-y-4 overflow-y-auto max-h-[70vh] scrollbar-hide">
           <div className="space-y-1.5">
-            <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
-              Campaign Name
-            </label>
+            <label className="app-section-title">Campaign Name</label>
             <input
               className={inputCls}
               placeholder="Q4 Win-Back Drive"
@@ -1766,9 +1756,7 @@ function CreateCampaignModal({
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
-              Goal (optional)
-            </label>
+            <label className="app-section-title">Goal (optional)</label>
             <input
               className={inputCls}
               placeholder="Re-engage churned users from past 90 days"
@@ -1778,7 +1766,7 @@ function CreateCampaignModal({
           </div>
           {agents.length > 0 && (
             <div className="space-y-1.5">
-              <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
+              <label className="app-section-title flex items-center gap-1.5">
                 <Bot className="w-2.5 h-2.5 text-brand" /> Default Agent
               </label>
               <div className="relative">
@@ -1801,7 +1789,7 @@ function CreateCampaignModal({
           )}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
+              <label className="app-section-title flex items-center gap-1.5">
                 <Clock className="w-2.5 h-2.5 text-brand" /> Window start
               </label>
               <input
@@ -1812,9 +1800,7 @@ function CreateCampaignModal({
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
-                Window end
-              </label>
+              <label className="app-section-title">Window end</label>
               <input
                 type="time"
                 className={inputCls}
@@ -1824,9 +1810,7 @@ function CreateCampaignModal({
             </div>
           </div>
           <div className="space-y-1.5">
-            <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
-              Max retry attempts
-            </label>
+            <label className="app-section-title">Max retry attempts</label>
             <input
               type="number"
               inputMode="numeric"
