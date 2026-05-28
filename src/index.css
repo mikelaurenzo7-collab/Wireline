@@ -626,6 +626,29 @@
   color: var(--color-muted);
 }
 
+/* Purple chrome (TopBar, Sidebar) — cream text on brand-deep */
+.chrome-eyebrow {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, #efe9dc 68%, transparent);
+  line-height: 1.3;
+}
+
+.chrome-muted {
+  color: color-mix(in srgb, #efe9dc 72%, transparent);
+}
+
+.chrome-subtle {
+  color: color-mix(in srgb, #efe9dc 48%, transparent);
+}
+
+/* In-app content area — slightly stronger muted than marketing default */
+.app-surface .text-muted {
+  color: var(--color-muted);
+}
+
 /* Force light color scheme for native form controls */
 input[type="email"],
 input[type="password"],

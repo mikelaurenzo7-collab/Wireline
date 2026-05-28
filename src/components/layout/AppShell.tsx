@@ -143,9 +143,7 @@ export default function AppShell() {
           <h1 className="brand-wordmark text-5xl md:text-7xl leading-[0.85]">
             {branding.brand_name.toUpperCase()}
           </h1>
-          <p className="text-[10px] uppercase tracking-[0.6em] text-muted">
-            Growth Engine Initializing
-          </p>
+          <p className="text-eyebrow tracking-[0.4em]">Growth Engine Initializing</p>
           <div className="flex items-center justify-center gap-1.5 pt-4">
             {[0, 1, 2].map((i) => (
               <span
@@ -253,7 +251,7 @@ export default function AppShell() {
 
         <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
           <div className="flex-1 overflow-hidden relative z-10 min-h-0">
-            <div className="max-w-[1920px] mx-auto px-3 md:px-4 lg:px-5 pt-2 md:pt-4 pb-0 md:pb-4 flex flex-col h-full min-h-0 mobile-page-canvas">
+            <div className="app-surface max-w-[1920px] mx-auto px-3 md:px-4 lg:px-5 pt-2 md:pt-4 pb-0 md:pb-4 flex flex-col h-full min-h-0 mobile-page-canvas">
               <ErrorBoundary>
                 <AppRoutes />
               </ErrorBoundary>
@@ -306,19 +304,15 @@ function DesktopContextBar({
   return (
     <div className="hidden lg:flex shrink-0 items-center justify-between gap-4 border-b border-black/5 bg-paper/72 px-5 py-3 backdrop-blur-xl">
       <div className="min-w-0">
-        {breadcrumb.eyebrow && (
-          <p className="text-[10px] uppercase tracking-[0.26em] text-muted/60">
-            {breadcrumb.eyebrow}
-          </p>
-        )}
-        <h1 className="font-display italic text-[22px] leading-tight text-ink truncate">
+        {breadcrumb.eyebrow && <p className="text-eyebrow mb-0.5">{breadcrumb.eyebrow}</p>}
+        <h1 className="font-display italic text-[1.35rem] sm:text-[22px] leading-tight text-ink truncate">
           {breadcrumb.title}
         </h1>
       </div>
       <button
         type="button"
         onClick={onShowShortcuts}
-        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-black/8 bg-white/55 px-4 text-[10px] uppercase tracking-[0.22em] text-muted/75 transition-colors hover:border-brand/25 hover:text-brand"
+        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-black/8 bg-white/55 px-4 text-eyebrow transition-colors hover:border-brand/25 hover:text-brand"
         aria-label="Open keyboard shortcuts"
       >
         Press ?

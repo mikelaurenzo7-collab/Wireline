@@ -123,7 +123,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
               : "text-ink/70 hover:text-ink hover:bg-black/5"
             : active
               ? "shadow-md shadow-[#3B154C]/10"
-              : "text-[#EFE9DC]/75 hover:text-[#EFE9DC] hover:bg-white/8 hover:shadow-sm",
+              : "chrome-muted hover:text-[#EFE9DC] hover:bg-white/8 hover:shadow-sm",
         )}
         style={active ? { color: activeTextColor } : undefined}
       >
@@ -150,7 +150,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 : "text-ink/55 group-hover:text-ink"
               : active
                 ? ""
-                : "text-[#EFE9DC]/60 group-hover:text-[#EFE9DC]",
+                : "chrome-muted group-hover:text-[#EFE9DC]",
           )}
           style={active ? { color: activeTextColor } : undefined}
           strokeWidth={active ? 2.5 : 1.75}
@@ -244,10 +244,8 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 >
                   {breadcrumb.eyebrow && (
                     <>
-                      <span className="text-[9px] uppercase tracking-[0.42em] text-[#EFE9DC]/45 font-semibold whitespace-nowrap">
-                        {breadcrumb.eyebrow}
-                      </span>
-                      <span aria-hidden="true" className="text-[#EFE9DC]/25">
+                      <span className="chrome-eyebrow whitespace-nowrap">{breadcrumb.eyebrow}</span>
+                      <span aria-hidden="true" className="chrome-subtle">
                         ·
                       </span>
                     </>
@@ -290,23 +288,23 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 // CommandBar is lazy-loaded in AppShell; we dispatch a custom event it listens to
                 window.dispatchEvent(new CustomEvent("wireline:open-command-bar"));
               }}
-              className="flex items-center justify-center w-9 h-9 md:w-auto md:h-7 md:px-2 rounded-lg text-[#EFE9DC]/65 hover:text-[#EFE9DC] hover:bg-white/10 transition-colors"
+              className="flex items-center justify-center w-9 h-9 md:w-auto md:h-7 md:px-2 rounded-lg chrome-muted hover:text-[#EFE9DC] hover:bg-white/10 transition-colors"
               aria-label="Open command bar"
               title="Search ( / )"
             >
               <Search className="w-4 h-4" />
-              <span className="hidden md:inline ml-1.5 text-[10px] text-[#EFE9DC]/50">/</span>
+              <span className="hidden md:inline ml-1.5 text-[11px] chrome-subtle">/</span>
             </button>
 
             {/* Keyboard shortcut hint — desktop only */}
             <button
               onClick={onShowShortcuts}
-              className="hidden md:flex items-center gap-1.5 h-7 px-2 rounded-lg text-[#EFE9DC]/65 hover:text-[#EFE9DC] hover:bg-white/10 transition-colors"
+              className="hidden md:flex items-center gap-1.5 h-7 px-2 rounded-lg chrome-muted hover:text-[#EFE9DC] hover:bg-white/10 transition-colors"
               aria-label="Show keyboard shortcuts"
               title="Keyboard shortcuts"
             >
               <Keyboard className="w-4 h-4" />
-              <kbd className="text-[9px] bg-white/10 border border-white/15 px-1.5 py-0.5 rounded font-mono text-[#EFE9DC]/70">
+              <kbd className="text-[10px] bg-white/10 border border-white/15 px-1.5 py-0.5 rounded font-mono chrome-muted">
                 ?
               </kbd>
             </button>
@@ -498,9 +496,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                   if (visibleItems.length === 0) return null;
                   return (
                     <div key={group.label}>
-                      <div className="px-2 mb-1 text-[8px] font-semibold uppercase tracking-[0.42em] text-muted/55">
-                        {group.label}
-                      </div>
+                      <div className="px-2 mb-1 text-eyebrow">{group.label}</div>
                       <div className="space-y-0.5">
                         {visibleItems.map((item) => renderNavItem(item, { variant: "drawer" }))}
                       </div>

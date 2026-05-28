@@ -42,7 +42,7 @@ export default function HubTabs({ tabs, label, className }: HubTabsProps) {
               to={t.path}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "relative shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[10px] uppercase tracking-[0.12em] font-medium",
+                "relative shrink-0 inline-flex min-h-10 items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[11px] uppercase tracking-[0.1em] font-medium",
                 active ? "text-on-brand" : "text-muted hover:text-ink hover:bg-black/5",
               )}
               style={

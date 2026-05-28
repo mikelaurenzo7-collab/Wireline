@@ -54,7 +54,7 @@ export default function EmptyState({
         <h3 className="font-display italic text-xl sm:text-2xl text-ink mb-2 text-balance">
           {title}
         </h3>
-        <p className="text-[12px] sm:text-xs text-muted leading-relaxed">{description}</p>
+        <p className="text-caption max-w-sm mx-auto">{description}</p>
       </div>
       {actions.length > 0 && (
         <div className="flex flex-wrap gap-3 justify-center mt-1">
@@ -69,7 +69,7 @@ export default function EmptyState({
                 <Link
                   to={action.to}
                   className={cn(
-                    "px-4 py-2 rounded-full text-[11px] uppercase tracking-[0.25em] transition-all",
+                    "px-4 py-2.5 rounded-full text-eyebrow tracking-[0.2em] transition-all",
                     action.primary
                       ? "brutal-btn !py-2"
                       : "glass border border-white/10 text-muted hover:text-ink hover:border-brand/30",
@@ -88,7 +88,7 @@ export default function EmptyState({
                 <button
                   onClick={action.onClick}
                   className={cn(
-                    "px-4 py-2 rounded-full text-[11px] uppercase tracking-[0.25em] transition-all",
+                    "px-4 py-2.5 rounded-full text-eyebrow tracking-[0.2em] transition-all",
                     action.primary
                       ? "brutal-btn !py-2"
                       : "glass border border-white/10 text-muted hover:text-ink hover:border-brand/30",
