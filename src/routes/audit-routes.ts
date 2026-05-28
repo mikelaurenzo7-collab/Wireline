@@ -10,7 +10,7 @@ import {
   createAuditEventsHandler,
   createAuditStatsHandler,
   createAuditExportHandler,
-} from "../lib/audit-routes";
+} from "../lib/audit-handlers";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();

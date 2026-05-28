@@ -53,6 +53,15 @@
     "src/lib/form-validators.ts",
     "src/lib/signup-intent.ts",
     // CSP builder — pure helper with snapshot test coverage.
-    "src/lib/csp.ts"
+    "src/lib/csp.ts",
+    // Test suites corresponding to the strict-clean modules
+    "src/lib/agent-runtime.test.ts",
+    "src/lib/personality-vibes.test.ts",
+    "src/lib/claude-models.test.ts",
+    "src/lib/plan-catalog.test.ts",
+    "src/lib/password-policy.test.ts",
+    "src/lib/form-validators.test.ts",
+    "src/lib/signup-intent.test.ts",
+    "src/lib/csp.test.ts"
   ]
 }
