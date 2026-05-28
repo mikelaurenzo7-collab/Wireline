@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { motion } from "motion/react";
 import type { ComponentType, SVGProps } from "react";
 import { cn } from "../lib/utils";
 
@@ -21,6 +22,10 @@ interface HubTabsProps {
  * operator one-click access to siblings within the same hub (Training,
  * Channels, System). Active-state matches by current pathname so the
  * strip stays correct on direct navigation.
+ *
+ * The active pill uses motion's layoutId so it glides between tabs the
+ * same way the landing page's Pricing tier toggle does. Tokens drive the
+ * brand surface (no inline hex) so future palette tweaks propagate.
  */
 export default function HubTabs({ tabs, label, className }: HubTabsProps) {
   const { pathname } = useLocation();
@@ -32,7 +37,7 @@ export default function HubTabs({ tabs, label, className }: HubTabsProps) {
         className,
       )}
     >
-      <div className="flex items-center gap-0.5 p-0.5 rounded-xl glass border border-black/8">
+      <div className="flex items-center gap-0.5 p-0.5 glass border border-ink/[0.06] shadow-[0_1px_0_rgba(255,255,255,0.6)_inset]">
         {tabs.map((t) => {
           const Icon = t.icon;
           const active = pathname === t.path || pathname.startsWith(`${t.path}/`);
@@ -42,21 +47,26 @@ export default function HubTabs({ tabs, label, className }: HubTabsProps) {
               to={t.path}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "relative shrink-0 inline-flex min-h-10 items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[11px] uppercase tracking-[0.1em] font-medium",
-                active ? "text-on-brand" : "text-muted hover:text-ink hover:bg-black/5",
+                "relative shrink-0 inline-flex min-h-10 items-center gap-1.5 px-3 py-1.5 transition-colors text-[11px] uppercase tracking-[0.1em] font-medium",
+                active ? "text-on-brand" : "text-muted hover:text-ink hover:bg-ink/[0.04]",
               )}
-              style={
-                active
-                  ? {
-                      background: "#4F1E7B",
-                      boxShadow:
-                        "0 3px 12px -6px rgba(79, 30, 123 ,0.50), 0 0 0 1px rgba(255,255,255,0.18) inset",
-                    }
-                  : undefined
-              }
             >
-              <Icon className="w-3 h-3" />
-              <span>{t.label}</span>
+              {active && (
+                <motion.span
+                  layoutId="hub-tabs-active-pill"
+                  aria-hidden="true"
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, var(--color-brand) 0%, var(--color-brand-deep) 100%)",
+                    boxShadow:
+                      "0 3px 12px -6px color-mix(in srgb, var(--color-brand) 60%, transparent), 0 0 0 1px rgba(255,255,255,0.18) inset, 0 1px 0 rgba(255,255,255,0.32) inset",
+                  }}
+                  transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                />
+              )}
+              <Icon className="relative z-[1] w-3 h-3" />
+              <span className="relative z-[1]">{t.label}</span>
             </Link>
           );
         })}

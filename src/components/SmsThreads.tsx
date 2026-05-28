@@ -153,7 +153,6 @@ export default function SmsThreads() {
                     icon={MessageSquare}
                     title="No SMS yet"
                     description="Conversations land here when an agent sends a text or a customer replies to your number. Configure your Twilio sender in Settings, then trigger SMS from outbound campaigns."
-                    accent="#4F1E7B"
                     actions={[
                       { label: "Configure SMS sender", to: "/admin?tab=carrier", primary: true },
                       { label: "Set up outbound", to: "/outbound" },
@@ -219,7 +218,6 @@ export default function SmsThreads() {
                     icon={MessageSquare}
                     title="Pick a conversation"
                     description="Select a thread on the left to see the full SMS history and reply."
-                    accent="#4F1E7B"
                   />
                 ) : (
                   <div className="h-full flex flex-col">

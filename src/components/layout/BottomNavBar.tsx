@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
+import { motion } from "motion/react";
 import { LayoutGrid, Inbox, Radio, Headphones, Menu, type LucideIcon } from "lucide-react";
 
 /* ── iOS-style primary bottom navigation bar ──────────────────────────────
@@ -116,13 +117,17 @@ export default function BottomNavBar({ onOpenMenu, badges = {} }: Props) {
             style={{ touchAction: "manipulation" }}
           >
             {active && (
-              <span
+              <motion.span
+                layoutId="bottom-nav-active-pill"
                 aria-hidden="true"
-                className="absolute inset-x-2 top-1 bottom-5 rounded-2xl pointer-events-none"
+                className="absolute inset-x-2 top-1 bottom-5 pointer-events-none"
                 style={{
-                  background: "rgba(239, 233, 220, 0.14)",
-                  boxShadow: "0 0 0 1px rgba(239, 233, 220, 0.12) inset",
+                  background:
+                    "linear-gradient(180deg, rgba(239,233,220,0.18) 0%, rgba(239,233,220,0.08) 100%)",
+                  boxShadow:
+                    "0 0 0 1px rgba(239, 233, 220, 0.18) inset, 0 1px 0 rgba(239,233,220,0.22) inset, 0 6px 18px -8px rgba(16, 185, 129, 0.35)",
                 }}
+                transition={{ type: "spring", stiffness: 420, damping: 34 }}
               />
             )}
             {/* Icon + badge container */}

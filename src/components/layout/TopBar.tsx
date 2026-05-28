@@ -119,10 +119,10 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
           isDrawer ? "min-h-11" : "h-8",
           isDrawer
             ? active
-              ? "shadow-md shadow-[#4F1E7B]/20"
+              ? "shadow-md shadow-brand/20"
               : "text-ink/70 hover:text-ink hover:bg-black/5"
             : active
-              ? "shadow-md shadow-[#3B154C]/10"
+              ? "shadow-md shadow-brand-deep/10"
               : "chrome-muted hover:text-[#EFE9DC] hover:bg-white/8 hover:shadow-sm",
         )}
         style={active ? { color: activeTextColor } : undefined}
@@ -135,7 +135,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
             style={{
               background: activeBg,
               boxShadow: isDrawer
-                ? "0 6px 18px -6px rgba(79,30,123,0.45), 0 0 0 1px rgba(255,255,255,0.18) inset"
+                ? "0 6px 18px -6px color-mix(in srgb, var(--color-brand) 55%, transparent), 0 0 0 1px rgba(255,255,255,0.18) inset, 0 1px 0 rgba(255,255,255,0.28) inset"
                 : "0 4px 14px -4px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.2) inset",
               willChange: "transform, background-color",
             }}
@@ -468,10 +468,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                   onClick={() => onDrawerChange(false)}
                   className="flex items-center gap-2.5"
                 >
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center"
-                    style={{ background: "#4F1E7B" }}
-                  >
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-brand">
                     <WirelineMark className="w-4 h-4 text-[#EFE9DC]" strokeWidth={130} />
                   </div>
                   <span className="brand-wordmark text-[16px] leading-none">
@@ -507,10 +504,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
 
               <div className="pt-3 mt-3 border-t border-black/8 space-y-2">
                 <div className="flex items-center gap-2 rounded-lg border border-black/8 glass px-2 py-2">
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-on-brand font-medium text-sm shrink-0"
-                    style={{ background: "#4F1E7B" }}
-                  >
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-on-brand font-medium text-sm shrink-0 bg-brand">
                     {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
                   </div>
                   <div className="min-w-0 flex-1">

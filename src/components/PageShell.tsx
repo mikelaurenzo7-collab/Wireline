@@ -2,6 +2,7 @@ import React, { ReactNode, useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MoreHorizontal, X } from "lucide-react";
 import { cn } from "../lib/utils";
+import { resolveBrandAccent } from "../lib/brand-token";
 
 /* ──────────────────────────────────────────────────────────────────────────
    PageShell — viewport-fit page primitive.
@@ -191,9 +192,10 @@ export default function PageShell({
                       layoutId="tab-active-bg"
                       className="absolute inset-0"
                       style={{
-                        background: "#4F1E7B",
+                        background:
+                          "linear-gradient(180deg, var(--color-brand) 0%, var(--color-brand-deep) 100%)",
                         boxShadow:
-                          "0 3px 12px -6px rgba(79, 30, 123 ,0.50), 0 0 0 1px rgba(255,255,255,0.18) inset",
+                          "0 3px 12px -6px color-mix(in srgb, var(--color-brand) 60%, transparent), 0 0 0 1px rgba(255,255,255,0.18) inset, 0 1px 0 rgba(255,255,255,0.32) inset",
                         willChange: "transform, background-color",
                       }}
                       transition={{ type: "spring", stiffness: 420, damping: 36 }}
@@ -255,9 +257,10 @@ export default function PageShell({
                       layoutId="mobile-tab-active-bg"
                       className="absolute inset-0"
                       style={{
-                        background: "#4F1E7B",
+                        background:
+                          "linear-gradient(180deg, var(--color-brand) 0%, var(--color-brand-deep) 100%)",
                         boxShadow:
-                          "0 3px 12px -6px rgba(79, 30, 123, 0.45), 0 0 0 1px rgba(255,255,255,0.16) inset",
+                          "0 3px 12px -6px color-mix(in srgb, var(--color-brand) 55%, transparent), 0 0 0 1px rgba(255,255,255,0.16) inset, 0 1px 0 rgba(255,255,255,0.28) inset",
                       }}
                       transition={{ type: "spring", stiffness: 420, damping: 36 }}
                     />
@@ -374,11 +377,7 @@ export default function PageShell({
             >
               {/* Grab handle */}
               <div className="flex justify-center pt-3 pb-2">
-                <div
-                  className="w-10 h-1 rounded-full"
-                  style={{ background: "rgba(79, 30, 123, 0.28)" }}
-                  aria-hidden="true"
-                />
+                <div className="w-10 h-1 rounded-full bg-brand/25" aria-hidden="true" />
               </div>
               {/* Header */}
               <div className="flex items-center justify-between px-4 pb-3">
@@ -433,8 +432,9 @@ export function Panel({
   className,
   bodyClassName,
   flush = false,
-  accent = "#4F1E7B",
+  accent,
 }: PanelProps) {
+  const resolvedAccent = resolveBrandAccent(accent);
   return (
     <section
       className={cn(
@@ -451,7 +451,7 @@ export function Panel({
       {Icon && (
         <div
           className="absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none opacity-20 blur-3xl"
-          style={{ background: `radial-gradient(circle, ${accent}, transparent)` }}
+          style={{ background: `radial-gradient(circle, ${resolvedAccent}, transparent)` }}
         />
       )}
 
@@ -462,9 +462,9 @@ export function Panel({
               <div
                 className="w-8 h-8 flex items-center justify-center shrink-0 border border-black/8"
                 style={{
-                  background: `linear-gradient(135deg, ${accent}18, ${accent}06)`,
-                  color: accent,
-                  boxShadow: `0 0 10px ${accent}20`,
+                  background: `linear-gradient(135deg, ${resolvedAccent}18, ${resolvedAccent}06)`,
+                  color: resolvedAccent,
+                  boxShadow: `0 0 10px ${resolvedAccent}20`,
                 }}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -512,7 +512,7 @@ export function StatTile({
   value,
   sub,
   icon: Icon,
-  accent = "#4F1E7B",
+  accent,
   trend,
 }: {
   label: string;
@@ -522,18 +522,21 @@ export function StatTile({
   accent?: string;
   trend?: { value: number; label?: string };
 }) {
+  const resolvedAccent = resolveBrandAccent(accent);
   const trendPositive = trend && trend.value >= 0;
   return (
     <div className="stat-tile-mobile relative glass border border-black/8 p-4 max-md:p-5 overflow-hidden card-interactive">
       {/* Ambient glow */}
       <div
         className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"
-        style={{ background: `radial-gradient(circle, ${accent}, transparent)` }}
+        style={{ background: `radial-gradient(circle, ${resolvedAccent}, transparent)` }}
       />
       {/* Bottom gradient line */}
       <div
         className="absolute bottom-0 left-0 right-0 h-px opacity-60"
-        style={{ background: `linear-gradient(90deg, transparent, ${accent}55, transparent)` }}
+        style={{
+          background: `linear-gradient(90deg, transparent, ${resolvedAccent}55, transparent)`,
+        }}
       />
 
       <div className="relative">
@@ -543,8 +546,8 @@ export function StatTile({
             <div
               className="w-7 h-7 flex items-center justify-center border border-black/8 shrink-0"
               style={{
-                background: `linear-gradient(135deg, ${accent}18, ${accent}06)`,
-                color: accent,
+                background: `linear-gradient(135deg, ${resolvedAccent}18, ${resolvedAccent}06)`,
+                color: resolvedAccent,
               }}
             >
               <Icon className="w-3.5 h-3.5" />

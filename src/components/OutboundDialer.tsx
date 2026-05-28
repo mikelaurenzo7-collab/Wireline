@@ -552,7 +552,7 @@ export default function OutboundDialer() {
                 label: "Sequences",
                 icon: Repeat,
                 content: (
-                  <Panel icon={Repeat} hint="Multi-touch cadences" title="" scroll accent="#4F1E7B">
+                  <Panel icon={Repeat} hint="Multi-touch cadences" title="" scroll>
                     <Cadences />
                   </Panel>
                 ),
