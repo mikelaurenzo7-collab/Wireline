@@ -1,14 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 import { timingSafeEqual } from "node:crypto";
-import { IS_PROD } from "./server-context";
 import { applyPlanToolUnlocks, resolveAgentTools } from "./agent-capabilities";
 import {
   filterToolsByTenantConnections,
   loadTenantIntegrationConnections,
 } from "./tenant-integration-connections";
 
-export const VAPI_WEBHOOK_SECRET =
-  process.env.VAPI_WEBHOOK_SECRET || (IS_PROD ? "" : "wireline-secret-key");
+// Webhook auth secret. Production rejects webhooks when this is unset
+// (see routes/vapi/index.ts); dev accepts all when unset. We never ship a
+// guessable fallback secret in the bundle — an empty string in dev simply
+// means "no shared secret configured" and matches the route's dev-accept path.
+export const VAPI_WEBHOOK_SECRET = process.env.VAPI_WEBHOOK_SECRET || "";
 
 export function timingSafeEq(a: string, b: string): boolean {
   const bufA = Buffer.from(a);
