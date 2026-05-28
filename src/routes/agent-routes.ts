@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
-import { Router, Response } from "express";
+import { Router, Request, Response } from "express";
 import type { AuthenticatedRequest } from "../types/auth";
 
 import { log, auditLogger, drizzle } from "../lib/server-context";
@@ -49,7 +49,7 @@ router.get("/api/agents", authenticateUser, async (req: AuthenticatedRequest, re
   }
 });
 
-router.get("/api/agents/roles", (_req, res) => {
+router.get("/api/agents/roles", (_req: Request, res: Response) => {
   res.json({
     roles: [
       {

@@ -392,7 +392,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
     ],
     scriptPreview:
-      "Hi, this is Alex calling on behalf of Mike Laurenzo regarding account ending in 4421. Mike authorized me to ask whether your team can consider a $1,200 one-time payment offer and send any available terms in writing. If that is not something you can review, who should I speak with?",
+      "Hi, this is Alex calling on behalf of Michael Laurenzo regarding account ending in 4421. Michael authorized me to ask whether your team can consider a $1,200 one-time payment offer and send any available terms in writing. If that is not something you can review, who should I speak with?",
     statValue: "Yours",
     statLabel:
       "Your AI, calling on your behalf. You text it what you need; it dials, talks, and reports back. You stay off the call.",
@@ -650,7 +650,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
   };
 
   return (
-    <MarketingPageFrame mainClassName="!px-0 !py-0">
+    <MarketingPageFrame mainClassName="!px-0 pt-20 sm:pt-24 pb-0">
       <PageMeta
         title={cfg.metaTitle}
         description={cfg.metaDescription}
@@ -658,7 +658,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         structuredData={structuredData}
       />
 
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 pt-4 pb-14 sm:pt-10 sm:pb-20">
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 pt-4 pb-14 sm:pt-10 sm:pb-20 text-center">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -668,8 +668,8 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           <h1 className="marketing-hero-title text-4xl sm:text-5xl lg:text-6xl mb-5">
             {cfg.headline}
           </h1>
-          <p className="marketing-hero-lead max-w-2xl mb-8">{cfg.subhead}</p>
-          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
+          <p className="marketing-hero-lead max-w-2xl mx-auto mb-8">{cfg.subhead}</p>
+          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center gap-3">
             <CtaLink
               href={cfg.primaryCta.href}
               className="marketing-btn-primary w-full sm:w-auto min-h-[48px]"

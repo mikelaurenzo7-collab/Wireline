@@ -379,7 +379,7 @@ export const agentLessons = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
-  (t) => ({
+  (t: any) => ({
     unq: unique().on(t.agentId, t.lesson),
     agentCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_agent_lessons_agent_created ON wireline_agent_lessons USING btree (agent_id, created_at DESC)`,
   }),
@@ -590,7 +590,7 @@ export const calendarAccounts = pgTable(
     oauthGrantedScopes: text("oauth_granted_scopes"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
-  (t) => ({
+  (t: any) => ({
     userEmailUniq: unique("wireline_calendar_accounts_user_id_email_address_key").on(
       t.userId,
       t.emailAddress,
@@ -614,7 +614,7 @@ export const calendarEvents = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
-  (t) => ({
+  (t: any) => ({
     accountEventUniq: unique().on(t.accountId, t.externalEventId),
   }),
 );
@@ -1156,7 +1156,7 @@ export const onboardingProgress = pgTable(
     completedAt: timestamp("completed_at", { withTimezone: true }),
     metadata: jsonb("metadata"),
   },
-  (t) => ({
+  (t: any) => ({
     pk: sql`PRIMARY KEY (${t.userId}, ${t.stepId})`,
   }),
 );
@@ -1212,7 +1212,7 @@ export const quotaUsage = pgTable(
     used: bigint("used", { mode: "bigint" }).default(sql`0`),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
-  (t) => ({
+  (t: any) => ({
     pk: sql`PRIMARY KEY (${t.userId}, ${t.dimension}, ${t.periodKey})`,
   }),
 );
@@ -1242,7 +1242,7 @@ export const crmConnections = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
-  (t) => ({
+  (t: any) => ({
     /**
      * Reconnecting the same provider for the same tenant must update the
      * existing row, not create a duplicate. The OAuth callbacks pass
@@ -1300,7 +1300,7 @@ export const leadDossiers = pgTable(
     interactionSummary: text("interaction_summary"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
-  (t) => ({
+  (t: any) => ({
     unq: unique().on(t.userId, t.customerNumber),
     customerEmailIdx: sql`CREATE INDEX IF NOT EXISTS idx_lead_dossiers_user_email ON wireline_lead_dossiers USING btree (user_id, customer_email) WHERE customer_email IS NOT NULL`,
   }),
@@ -1328,7 +1328,7 @@ export const goals = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => ({
+  (t: any) => ({
     // One goal per metric per tenant — the POST upsert conflict target.
     userMetricUniq: unique("wireline_goals_user_id_metric_key").on(t.userId, t.metric),
     userIdx: sql`CREATE INDEX IF NOT EXISTS idx_goals_user ON wireline_goals USING btree (user_id)`,
@@ -1338,11 +1338,11 @@ export const goals = pgTable(
 export type Goal = typeof goals.$inferSelect;
 
 // Relations
-export const agentRelations = relations(agents, ({ many }) => ({
+export const agentRelations = relations(agents, ({ many }: any) => ({
   callLogs: many(callLogs),
 }));
 
-export const callLogRelations = relations(callLogs, ({ one }) => ({
+export const callLogRelations = relations(callLogs, ({ one }: any) => ({
   agent: one(agents, {
     fields: [callLogs.agentId],
     references: [agents.id],

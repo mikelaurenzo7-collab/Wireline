@@ -38,13 +38,13 @@ export default function About() {
     <>
       <PageMeta
         title="About Wireline — Built by an Operator, for Operators"
-        description="Wireline is a solo-founder AI voice + email agent platform built by Mike Laurenzo. Mission, principles, and the infra stack behind every customer conversation."
+        description="Wireline is a solo-founder AI voice + email agent platform built by Michael Laurenzo. Mission, principles, and the infra stack behind every customer conversation."
         path="/about"
       />
 
-      <MarketingPageFrame mainClassName="!px-0">
+      <MarketingPageFrame mainClassName="!px-0 pt-20 sm:pt-24">
         {/* Hero */}
-        <section className="relative z-10 max-w-5xl mx-auto pt-4 pb-16 sm:pt-8 sm:pb-20">
+        <section className="relative z-10 max-w-5xl mx-auto pt-4 pb-16 sm:pt-8 sm:pb-20 text-center">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -54,7 +54,7 @@ export default function About() {
             <h1 className="marketing-hero-title mb-6">
               Every business deserves a 24/7 front desk that actually answers.
             </h1>
-            <p className="marketing-hero-lead">
+            <p className="marketing-hero-lead mx-auto">
               Wireline is the AI agent platform for businesses that pick up the phone — service
               companies, clinics, law firms, agencies, retail, anyone with a customer on the other
               end of a call or an inbox. We built it because the cheapest hour an owner can buy back
@@ -85,9 +85,9 @@ export default function About() {
               <p className="text-[10px] uppercase tracking-[0.4em] text-brand/80 mb-2 font-medium">
                 Founder
               </p>
-              <h2 className="font-display italic text-3xl text-ink mb-3">Mike Laurenzo</h2>
+              <h2 className="font-display italic text-3xl text-ink mb-3">Michael Laurenzo</h2>
               <p className="text-sm text-ink/80 leading-relaxed mb-3">
-                Mike is a builder, leader, competitor — and an operator before he was a founder.
+                Michael is a builder, leader, competitor — and an operator before he was a founder.
                 Wireline started as a tool he wanted for his own businesses: an AI agent that picks
                 up every call, every email, every text, and treats the customer like the owner would
                 if the owner had unlimited time.

@@ -9,6 +9,7 @@ import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import { parseFormData, CampaignCreateSchema, CampaignUpdateSchema } from "../lib/form-validators";
 import { computeOutcomeBreakdown, computeCallStats } from "../lib/campaign-analytics";
+import { validateBody } from "../lib/api-validation";
 import { claudeRateLimiter } from "../middleware/api-rate-limits";
 
 const router = Router();
@@ -68,21 +69,10 @@ router.get("/api/campaigns", authenticateUser, async (req: AuthenticatedRequest,
 router.post(
   "/api/campaigns",
   authenticateUser,
+  validateBody(CampaignCreateSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const validation = parseFormData(CampaignCreateSchema, {
-        name: req.body.name,
-        goal: req.body.goal,
-        agent_id: req.body.agent_id,
-        call_window_start: req.body.call_window_start,
-        call_window_end: req.body.call_window_end,
-        max_attempts: req.body.max_attempts,
-      });
-      if (!validation.success) {
-        return res.status(400).json({ error: "Validation failed", errors: validation.errors });
-      }
-      const { name, goal, agent_id, call_window_start, call_window_end, max_attempts } =
-        validation.data!;
+      const { name, goal, agent_id, call_window_start, call_window_end, max_attempts } = req.body;
 
       if (agent_id) {
         const [agent] = await drizzle
@@ -118,20 +108,16 @@ router.post(
 router.patch(
   "/api/campaigns/:id",
   authenticateUser,
+  validateBody(CampaignUpdateSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const validation = parseFormData(CampaignUpdateSchema, req.body);
-      if (!validation.success) {
-        return res.status(400).json({ error: "Validation failed", errors: validation.errors });
-      }
-
-      if (validation.data?.agent_id) {
+      if (req.body?.agent_id) {
         const [agent] = await drizzle
           .select({ id: schema.agents.id })
           .from(schema.agents)
           .where(
             and(
-              eq(schema.agents.id, validation.data.agent_id),
+              eq(schema.agents.id, req.body.agent_id),
               eq(schema.agents.userId, req.user.id),
             ),
           )
@@ -140,16 +126,16 @@ router.patch(
       }
 
       const updates: any = { updatedAt: new Date() };
-      if (validation.data?.name !== undefined) updates.name = validation.data.name;
-      if (validation.data?.goal !== undefined) updates.goal = validation.data.goal;
-      if (validation.data?.agent_id !== undefined) updates.agentId = validation.data.agent_id;
-      if (validation.data?.status !== undefined) updates.status = validation.data.status;
-      if (validation.data?.call_window_start !== undefined)
-        updates.callWindowStart = validation.data.call_window_start;
-      if (validation.data?.call_window_end !== undefined)
-        updates.callWindowEnd = validation.data.call_window_end;
-      if (validation.data?.max_attempts !== undefined)
-        updates.maxAttempts = validation.data.max_attempts;
+      if (req.body?.name !== undefined) updates.name = req.body.name;
+      if (req.body?.goal !== undefined) updates.goal = req.body.goal;
+      if (req.body?.agent_id !== undefined) updates.agentId = req.body.agent_id;
+      if (req.body?.status !== undefined) updates.status = req.body.status;
+      if (req.body?.call_window_start !== undefined)
+        updates.callWindowStart = req.body.call_window_start;
+      if (req.body?.call_window_end !== undefined)
+        updates.callWindowEnd = req.body.call_window_end;
+      if (req.body?.max_attempts !== undefined)
+        updates.maxAttempts = req.body.max_attempts;
 
       const [data] = (await drizzle
         .update(schema.outboundCampaigns)

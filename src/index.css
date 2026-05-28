@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -705,6 +705,7 @@
   background: var(--color-brand);
   box-shadow: 0 6px 20px -6px rgba(79, 30, 123, 0.55);
   transition: background 0.15s ease, transform 0.15s ease;
+  border-radius: 9999px;
 }
 
 .marketing-btn-primary:hover {
@@ -723,6 +724,7 @@
   background: transparent;
   border: 1px solid color-mix(in srgb, var(--color-ink) 12%, transparent);
   transition: background 0.15s ease, border-color 0.15s ease;
+  border-radius: 9999px;
 }
 
 .marketing-btn-secondary:hover {
@@ -755,11 +757,13 @@
 .marketing-panel {
   border: 1px solid color-mix(in srgb, black 8%, transparent);
   background: white;
+  border-radius: 12px;
 }
 
 .marketing-panel-muted {
   border: 1px solid color-mix(in srgb, black 8%, transparent);
   background: color-mix(in srgb, white 70%, transparent);
+  border-radius: 12px;
 }
 
 .marketing-body {

@@ -132,7 +132,7 @@ if (IS_PROD && corsAllowList.length === 0 && process.env.APP_URL) {
 }
 app.use(
   cors({
-    origin: (origin, callback) => {
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       if (!origin) return callback(null, true);
       if (!IS_PROD && corsAllowList.length === 0) return callback(null, true);
       if (corsAllowList.includes(origin)) return callback(null, true);
@@ -330,7 +330,7 @@ async function startServer() {
     // js/missing-rate-limiting pattern and is faster under load.
     const { readFileSync } = await import("node:fs");
     const indexHtml = readFileSync(path.join(distPath, "index.html"));
-    app.get("*", (_req, res) => {
+    app.get("*", (_req: express.Request, res: express.Response) => {
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       res.send(indexHtml);
     });
@@ -352,7 +352,7 @@ async function startServer() {
         process.exit(1);
       }, GRACE_MS) as any
     ).unref?.();
-    server.close((err) => {
+    server.close((err?: Error) => {
       clearTimeout(forceTimer);
       if (err) {
         log.error("Error during server.close", { error: err.message });

@@ -86,7 +86,7 @@ function healthRateLimiter(req: Request, res: Response, next: NextFunction) {
  * attackers and reads as amateur on a security-conscious prospect's
  * first probe.
  */
-router.get("/", healthRateLimiter, async (_req, res) => {
+router.get("/", healthRateLimiter, async (_req: Request, res: Response) => {
   const dbStatus = await probeDatabase();
   res.status(dbStatus.ok ? 200 : 503).json({
     ok: dbStatus.ok,
@@ -99,7 +99,7 @@ router.get("/", healthRateLimiter, async (_req, res) => {
  * now gated behind a valid JWT. Used by the in-app SystemPanel + the
  * monitoring stack (which signs in as a service account).
  */
-router.get("/internal", healthRateLimiter, authenticateUser, async (_req, res) => {
+router.get("/internal", healthRateLimiter, authenticateUser, async (_req: Request, res: Response) => {
   const dbStatus = await probeDatabase();
   const status = dbStatus.ok ? "ok" : "degraded";
   res.status(200).json({
@@ -149,7 +149,7 @@ router.get("/internal", healthRateLimiter, authenticateUser, async (_req, res) =
  * Platform Health panel. Returns one row per registered integration with
  * status, required-ness, env-var presence map, and fallback notes.
  */
-router.get("/integrations", healthRateLimiter, authenticateUser, (_req, res) => {
+router.get("/integrations", healthRateLimiter, authenticateUser, (_req: Request, res: Response) => {
   res.json({
     integrations: getIntegrationsStatus(),
     timestamp: new Date().toISOString(),
@@ -195,7 +195,7 @@ function summarize(
   return "outage";
 }
 
-router.get("/public", healthRateLimiter, async (_req, res) => {
+router.get("/public", healthRateLimiter, async (_req: Request, res: Response) => {
   const now = Date.now();
   if (publicHealthCache && publicHealthCache.expiresAt > now) {
     res.setHeader("X-Wireline-Cache", "HIT");
@@ -312,7 +312,7 @@ async function probeAnthropicModel(
   }
 }
 
-router.get("/models", healthRateLimiter, authenticateUser, async (_req, res) => {
+router.get("/models", healthRateLimiter, authenticateUser, async (_req: Request, res: Response) => {
   const t0 = Date.now();
   const [voice, voicePremium, reasoning] = await Promise.all([
     probeAnthropicModel(VAPI_TENANT_DEFAULT_MODEL),

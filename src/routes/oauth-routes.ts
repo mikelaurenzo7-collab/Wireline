@@ -127,7 +127,7 @@ router.get(
 router.get(
   ["/api/oauth/google/callback", "/api/oauth/google/callback/"],
   oauthRateLimiter,
-  async (req, res) => {
+  async (req: express.Request, res: express.Response) => {
     const { code, state } = req.query;
 
     const vs = verifyOAuthState(state as string | undefined);
@@ -275,7 +275,7 @@ router.get(
 router.get(
   ["/api/oauth/google_sheets/callback", "/api/oauth/google_sheets/callback/"],
   oauthRateLimiter,
-  async (req, res) => {
+  async (req: express.Request, res: express.Response) => {
     const { code, state } = req.query;
 
     const vs = verifyOAuthState(state as string | undefined);
@@ -1686,7 +1686,7 @@ router.get(
   buildMsGraphUrlRoute("microsoft_teams"),
 );
 
-router.get("/api/oauth/microsoft_teams/callback", (req, res) =>
+router.get("/api/oauth/microsoft_teams/callback", (req: express.Request, res: express.Response) =>
   handleMsGraphCallback("microsoft_teams", req, res),
 );
 
@@ -1750,7 +1750,7 @@ router.get(
   buildMsGraphUrlRoute("microsoft_excel"),
 );
 
-router.get("/api/oauth/microsoft_excel/callback", (req, res) =>
+router.get("/api/oauth/microsoft_excel/callback", (req: express.Request, res: express.Response) =>
   handleMsGraphCallback("microsoft_excel", req, res),
 );
 

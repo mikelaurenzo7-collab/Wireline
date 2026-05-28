@@ -316,7 +316,7 @@ export default function AdminSettings() {
     }
   };
 
-  const updateNumberAgent = async (id: string, agent_id: string) => {
+  const updateNumberAgent = async (id: string | number, agent_id: string) => {
     try {
       await authFetch(`/api/phone-numbers/${id}`, {
         method: "PATCH",

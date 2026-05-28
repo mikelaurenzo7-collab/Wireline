@@ -7,7 +7,7 @@ One fleet of agents handles inbound calls, outbound dialing, SMS, and
 email — trained on your playbook, available 24/7, watched in a live
 supervisor cockpit, and getting sharper with every conversation.
 
-Built by [Mike Laurenzo](https://trywireline.com/about). Powered by
+Built by [Michael Laurenzo](https://trywireline.com/about). Powered by
 Claude.
 
 ---

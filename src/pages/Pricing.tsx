@@ -220,7 +220,7 @@ export default function Pricing() {
   };
 
   return (
-    <MarketingPageFrame mainClassName="!px-0 !py-0">
+    <MarketingPageFrame mainClassName="!px-0 pt-20 sm:pt-24 pb-0">
       <PageMeta
         title="Plans & Pricing"
         description="Wireline pricing plans from $49/month Personal to Enterprise custom. Every plan includes AI voice agents, real-time call logs, sentiment scoring, and the Wireline Demo Line. 14-day free trial, no credit card required."

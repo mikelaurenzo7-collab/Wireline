@@ -146,21 +146,22 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              className="text-center"
             >
               <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/50 mb-6 lg:mb-8">
                 Voice + Email + SMS — One fleet
               </p>
 
-              <h1 className="font-display italic text-[clamp(2.5rem,7vw,5.5rem)] leading-[0.95] tracking-tight text-ink max-w-4xl">
+              <h1 className="font-display italic text-[clamp(2.5rem,7vw,5.5rem)] leading-[0.95] tracking-tight text-ink max-w-4xl mx-auto">
                 Every conversation, <span className="text-brand">answered like your best rep.</span>
               </h1>
 
-              <p className="mt-6 lg:mt-8 text-[clamp(1rem,1.5vw,1.2rem)] leading-relaxed text-ink/65 max-w-xl">
+              <p className="mt-6 lg:mt-8 text-[clamp(1rem,1.5vw,1.2rem)] leading-relaxed text-ink/65 max-w-xl mx-auto">
                 Wireline deploys AI agents on real phone numbers — inbound support, outbound sales,
                 and email follow-ups. Trained on your playbook, improving with every call.
               </p>
 
-              <div className="mt-8 lg:mt-10 flex flex-wrap items-center gap-4">
+              <div className="mt-8 lg:mt-10 flex flex-wrap items-center justify-center gap-4">
                 <Link
                   to="/signup"
                   data-testid="hero-cta-primary"
@@ -185,7 +186,7 @@ export default function LandingPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4, duration: 0.6 }}
-              className="mt-12 lg:mt-16 flex flex-wrap items-center gap-x-5 gap-y-2"
+              className="mt-12 lg:mt-16 flex flex-wrap items-center justify-center gap-x-5 gap-y-2"
             >
               {TRUST_BADGES.map((badge) => (
                 <span key={badge} className="font-mono text-[11px] tracking-[0.12em] text-ink/40">

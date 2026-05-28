@@ -190,14 +190,14 @@ function PhoneLineCard({ agent, label }: { agent: ContactAgent; label: string })
 
 export default function Showcase() {
   return (
-    <MarketingPageFrame mainClassName="!px-0 !py-0">
+    <MarketingPageFrame mainClassName="!px-0 pt-20 sm:pt-24 pb-0">
       <PageMeta
         title="Showcase — Playable AI Agent Templates · Wireline"
         description="Audition Wireline's voice agents in your browser before signing up. The marquee fun demo: a singing receptionist who sings the moment you connect, then catches herself with a normal greeting."
         path="/showcase"
       />
 
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 pt-4 pb-10 sm:pt-8 sm:pb-14">
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 pt-4 pb-10 sm:pt-8 sm:pb-14 text-center">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -207,7 +207,7 @@ export default function Showcase() {
           <h1 className="marketing-hero-title text-4xl sm:text-5xl mb-6">
             Audition the agents before you deploy one.
           </h1>
-          <p className="marketing-hero-lead max-w-2xl">
+          <p className="marketing-hero-lead max-w-2xl mx-auto">
             Every template below is a real Wireline persona — same voice engine, same brain, same
             hand-off rules — packaged so you can hear it without picking up the phone. Click play to
             sample. Like what you hear? Spin up your own.

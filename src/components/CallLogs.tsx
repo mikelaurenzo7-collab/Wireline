@@ -336,7 +336,7 @@ export default function CallLogs() {
   );
 }
 
-function SentimentDot({ sentiment }: { sentiment?: string }) {
+function SentimentDot({ sentiment }: { sentiment?: string | null }) {
   const s = (sentiment || "neutral").toLowerCase();
   if (s === "positive")
     return (

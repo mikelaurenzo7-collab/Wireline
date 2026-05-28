@@ -49,7 +49,7 @@ export async function syncGoogleDriveToKnowledge(userId: string, agentId: string
   });
 
   // Persist refreshed tokens automatically
-  oauth2Client.on("tokens", async (tokens) => {
+  oauth2Client.on("tokens", async (tokens: any) => {
     if (!tokens.access_token) return;
     const update: any = {
       accessToken: encryptSecret(tokens.access_token),
@@ -121,7 +121,7 @@ ${textContent.substring(0, 15000)}`;
 
     const geminiResponse = await gemini.generateContent(prompt);
     const text = geminiResponse.response.text();
-    const lines = text.split("\n").filter((line) => line.trim().startsWith("["));
+    const lines = text.split("\n").filter((line: string) => line.trim().startsWith("["));
 
     for (const line of lines) {
       const isDirective = line.trim().startsWith("[Directive]");

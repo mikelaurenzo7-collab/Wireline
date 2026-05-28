@@ -120,7 +120,7 @@ router.get(
           calls: calls || [],
           leads: leads || [],
           appts: appts || [],
-          emails: emails || [],
+          emails: (emails as any) || [],
         }),
       );
     } catch (e) {

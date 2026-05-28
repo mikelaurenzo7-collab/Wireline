@@ -2,6 +2,7 @@
 import express, { Request, Response } from "express";
 import type { AuthenticatedRequest } from "../types/auth";
 import { log, auditLogger, drizzle } from "../lib/server-context";
+import { validateBody, createIntakeKeySchema, updateIntakeKeySchema } from "../lib/api-validation";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
@@ -489,10 +490,9 @@ router.get("/keys", authenticateUser, async (req: AuthenticatedRequest, res: Res
 });
 
 // POST /keys — create a new intake key
-router.post("/keys", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+router.post("/keys", authenticateUser, validateBody(createIntakeKeySchema), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const name = (req.body?.name || "").toString().trim();
-    if (!name) return res.status(400).json({ error: "name is required" });
     const default_agent_id = req.body?.default_agent_id || null;
     const auto_dial = !!req.body?.auto_dial;
 
@@ -535,7 +535,7 @@ router.post("/keys", authenticateUser, async (req: AuthenticatedRequest, res: Re
 });
 
 // PATCH /keys/:id — update an intake key
-router.patch("/keys/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+router.patch("/keys/:id", authenticateUser, validateBody(updateIntakeKeySchema), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const patch: any = {};
     if (req.body?.name !== undefined) patch.name = String(req.body.name).slice(0, 80);

@@ -1,4 +1,4 @@
-import { Router, Response } from "express";
+import { Router, Request, Response } from "express";
 import { drizzle, log, auditLogger, quotaTracker, requirePermission } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { authenticateUser } from "../middleware/auth";
@@ -43,7 +43,7 @@ router.get(
 );
 
 /** GET /api/quotas/plans — public plan comparison table. */
-router.get("/plans", quotaRateLimit, (_req, res) => {
+router.get("/plans", quotaRateLimit, (_req: Request, res: Response) => {
   res.json({ plans: PLAN_DEFAULTS });
 });
 

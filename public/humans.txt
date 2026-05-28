@@ -1,7 +1,7 @@
 /* humans.txt — the people behind Wireline */
 
 /* TEAM */
-  Founder & Engineer: Mike Laurenzo
+  Founder & Engineer: Michael Laurenzo
   Site: https://trywireline.com
   Twitter: @wirelineapp
 

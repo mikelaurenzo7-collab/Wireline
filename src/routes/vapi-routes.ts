@@ -298,7 +298,7 @@ async function handleShowcaseToolCalls(args: {
   return results;
 }
 
-router.post("/api/vapi-webhook", async (req, res) => {
+router.post("/api/vapi-webhook", async (req: express.Request, res: express.Response) => {
   const provided =
     (req.headers["x-vapi-secret"] as string | undefined) ||
     (req.headers["x-vapi-signature"] as string | undefined) ||
@@ -459,7 +459,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
           };
           if (toolCall.function.name === "create_fleet_task") {
             try {
-              const { description, priority } = toolCall.function.arguments;
+              const { description, priority } = toolCall.function.arguments || {};
               const [task] = await drizzle
                 .insert(schema.fleetTasks)
                 .values({
@@ -492,7 +492,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
 
           if (toolCall.function.name === "search_leads") {
             try {
-              const { query } = toolCall.function.arguments;
+              const { query } = toolCall.function.arguments || {};
               const safeQuery = String(query || "")
                 .replace(/[^A-Za-z0-9 @.\-+]/g, "")
                 .slice(0, 80);
@@ -537,7 +537,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
 
           if (toolCall.function.name === "update_lead_status") {
             try {
-              const { status, notes } = toolCall.function.arguments;
+              const { status, notes } = toolCall.function.arguments || {};
               const customerPhone =
                 (payload.call as { customer?: { number?: string } } | undefined)?.customer
                   ?.number ||
@@ -566,7 +566,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
 
           if (toolCall.function.name === "send_email") {
             try {
-              const { to_email, subject, body } = toolCall.function.arguments;
+              const { to_email, subject, body } = toolCall.function.arguments || {};
               const reviewed = await claudeBrain.superviseClientCommunication({
                 channel: "email",
                 agentName: webhookAgentId,
@@ -630,7 +630,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
               .from(schema.agents)
               .where(eq(schema.agents.id, webhookAgentId))
               .limit(1);
-            const { result } = await handleSendSignupLink(toolCall.function.arguments, {
+            const { result } = await handleSendSignupLink(toolCall.function.arguments || {}, {
               sendSignupLinkEmail,
               agentName: agentNameRow[0]?.name ?? undefined,
               log,
@@ -646,7 +646,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
             const { authService } = await import("../lib/auth-service");
             const { sendPasswordResetEmail } = await import("../lib/email-service");
             const crypto = await import("crypto");
-            const { result } = await handleCreateAccount(toolCall.function.arguments, {
+            const { result } = await handleCreateAccount(toolCall.function.arguments || {}, {
               signUp: (email, password, fullName) => authService.signUp(email, password, fullName),
               createPasswordResetToken: (email) => authService.createPasswordResetToken(email),
               sendPasswordResetEmail,
@@ -660,7 +660,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
           // specific plan so they can pay + activate without friction.
           if (toolCall.function.name === "send_payment_link") {
             const { sendEmail } = await import("../lib/email-service");
-            const { result } = await handleSendPaymentLink(toolCall.function.arguments, {
+            const { result } = await handleSendPaymentLink(toolCall.function.arguments || {}, {
               sendEmail,
               log,
             });
@@ -669,7 +669,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
 
           if (toolCall.function.name === "send_text_message") {
             try {
-              const { to_number, channel, message_body } = toolCall.function.arguments;
+              const { to_number, channel, message_body } = toolCall.function.arguments || {};
               const fallbackNumber =
                 (payload.call as { customer?: { number?: string } } | undefined)?.customer
                   ?.number ||
@@ -817,7 +817,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
 
           if (toolCall.function.name === "check_calendar_availability") {
             try {
-              const { date } = toolCall.function.arguments;
+              const { date } = toolCall.function.arguments || {};
               const service = new IntegrationService(agent?.user_id);
               const result = await service.checkAvailability(date);
               push({ toolCallId: toolCall.id, result });
@@ -832,7 +832,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
 
           if (toolCall.function.name === "book_appointment") {
             try {
-              const { date, time, customer_name, service_type } = toolCall.function.arguments;
+              const { date, time, customer_name, service_type } = toolCall.function.arguments || {};
               const service = new IntegrationService(agent?.user_id);
 
               // Simple date/time parsing for now.
@@ -904,7 +904,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
 
           if (toolCall.function.name === "send_contract") {
             try {
-              const { recipient_name, recipient_email, template_id } = toolCall.function.arguments;
+              const { recipient_name, recipient_email, template_id } = toolCall.function.arguments || {};
               const { sendContract } = await import("../lib/docusign-service");
               const result = await sendContract({
                 recipientName: recipient_name,
@@ -928,7 +928,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
 
           if (toolCall.function.name === "enrich_lead") {
             try {
-              const { phone_number } = toolCall.function.arguments;
+              const { phone_number } = toolCall.function.arguments || {};
               const { enrichLead } = await import("../lib/apollo-service");
               const profile = await enrichLead(phone_number, agent?.user_id);
               if (profile) {
@@ -982,7 +982,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
           // CRM Handlers
           if (toolCall.function.name === "crm_search_contacts") {
             try {
-              const { query } = toolCall.function.arguments;
+              const { query } = toolCall.function.arguments || {};
               const service = new CRMService(agent.user_id);
               const { contacts } = await service.searchContacts(query);
               push({
@@ -1003,7 +1003,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
 
           if (toolCall.function.name === "crm_log_call") {
             try {
-              const { contact_id, subject, notes } = toolCall.function.arguments;
+              const { contact_id, subject, notes } = toolCall.function.arguments || {};
               const service = new CRMService(agent.user_id);
               const fallbackNumber =
                 (payload.call as { customer?: { number?: string } } | undefined)?.customer
@@ -1029,7 +1029,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
 
           if (toolCall.function.name === "crm_create_opportunity") {
             try {
-              const { name, contact_id, stage, amount } = toolCall.function.arguments;
+              const { name, contact_id, stage, amount } = toolCall.function.arguments || {};
               const service = new CRMService(agent.user_id);
               const success = await service.createOpportunity({
                 crmType: "auto",
@@ -1175,7 +1175,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
           // Workflow Handlers
           if (toolCall.function.name === "generate_zoom_link") {
             try {
-              const { topic, start_time, duration } = toolCall.function.arguments;
+              const { topic, start_time, duration } = toolCall.function.arguments || {};
               const zoomMeeting = await createZoomMeeting(agent.user_id, {
                 topic,
                 startTime: start_time,
@@ -1198,7 +1198,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
 
           if (toolCall.function.name === "log_payment_promise") {
             try {
-              const { amount_promised, payment_date, payment_method } = toolCall.function.arguments;
+              const { amount_promised, payment_date, payment_method } = toolCall.function.arguments || {};
               await drizzle.insert(schema.auditLog).values({
                 userId: agent.user_id,
                 action: "payment_promise",
@@ -1219,7 +1219,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
 
           if (toolCall.function.name === "create_support_ticket") {
             try {
-              const { issue_summary, error_codes, severity } = toolCall.function.arguments;
+              const { issue_summary, error_codes, severity } = toolCall.function.arguments || {};
               const [task] = await drizzle
                 .insert(schema.fleetTasks)
                 .values({
@@ -1256,7 +1256,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
 
           if (toolCall.function.name === "schedule_callback") {
             try {
-              const { callback_datetime, notes } = toolCall.function.arguments;
+              const { callback_datetime, notes } = toolCall.function.arguments || {};
               await drizzle.insert(schema.fleetTasks).values({
                 userId: agent?.user_id,
                 agentId: webhookAgentId,
@@ -1305,7 +1305,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
 
           if (toolCall.function.name === "escalate_to_human") {
             try {
-              const { reason } = toolCall.function.arguments;
+              const { reason } = toolCall.function.arguments || {};
 
               // Look up this agent's escalation routing config to decide:
               //   - Warm-transfer the live caller? (handoff_enabled + phone)
@@ -1847,7 +1847,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
     const customerNumber = (payload.call as { customer?: { number?: string } } | undefined)
       ?.customer?.number;
     if (callId) {
-      if (["in-progress", "ringing", "queued"].includes(status)) {
+      if (["in-progress", "ringing", "queued"].includes(status || "")) {
         await drizzle
           .insert(schema.signalPresence)
           .values({

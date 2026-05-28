@@ -178,9 +178,9 @@ export default function Compare() {
         path="/compare"
       />
 
-      <MarketingPageFrame mainClassName="!px-0">
+      <MarketingPageFrame mainClassName="!px-0 pt-20 sm:pt-24">
         {/* Hero */}
-        <section className="relative z-10 max-w-6xl mx-auto pt-4 pb-12 sm:pt-8 sm:pb-16">
+        <section className="relative z-10 max-w-6xl mx-auto pt-4 pb-12 sm:pt-8 sm:pb-16 text-center">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -190,7 +190,7 @@ export default function Compare() {
             <h1 className="marketing-hero-title mb-5">
               Honest scoring vs every voice-AI platform.
             </h1>
-            <p className="marketing-hero-lead">
+            <p className="marketing-hero-lead mx-auto">
               Wireline is the horizontal platform that runs voice + SMS + email in one console with
               supervisor cockpit, frontier reasoning, white-label numbers, and a real TCPA ledger.
               Bland and Retell are excellent if you mainly want a voice API with a thin dashboard;

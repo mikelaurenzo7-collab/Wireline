@@ -307,7 +307,7 @@ export const inviteTeamMemberSchema = z.object({
 
 export const addKnowledgeSchema = z.object({
   content: z.string().min(1, "Content is required").max(10000),
-  agent_id: z.string().optional(),
+  agent_id: z.string().min(1, "agent_id is required"),
 });
 
 export const updateKnowledgeSchema = z.object({

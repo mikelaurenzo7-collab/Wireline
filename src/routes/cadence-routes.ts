@@ -22,6 +22,7 @@ import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
+import { validateBody, createCadenceSchema, updateCadenceSchema } from "../lib/api-validation";
 
 const router = Router();
 
@@ -67,40 +68,45 @@ router.get("/api/cadences", authenticateUser, async (req: AuthenticatedRequest, 
   res.json({ cadences: rows });
 });
 
-router.post("/api/cadences", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
-  try {
-    const name = (req.body?.name || "").toString().trim();
-    if (!name) return res.status(400).json({ error: "name is required" });
-    const steps = validateSteps(req.body?.steps);
-    const [row] = (await drizzle
-      .insert(schema.cadences)
-      .values({
-        userId: req.user.id,
-        name,
-        description: req.body?.description || null,
-        agentId: req.body?.agentId || null,
-        steps,
-        active: req.body?.active !== false,
-      })
-      .returning()) as any[];
-    res.json({ cadence: row });
-  } catch (e: any) {
-    res.status(400).json({ error: e?.message || "Invalid cadence" });
-  }
-});
+router.post(
+  "/api/cadences",
+  authenticateUser,
+  validateBody(createCadenceSchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+    try {
+      const name = (req.body?.name || "").toString().trim();
+      const steps = validateSteps(req.body?.steps);
+      const [row] = (await drizzle
+        .insert(schema.cadences)
+        .values({
+          userId: req.user.id,
+          name,
+          description: req.body?.description || null,
+          agentId: req.body?.agentId || null,
+          steps,
+          active: req.body?.active !== false,
+        })
+        .returning()) as any[];
+      res.json({ cadence: row });
+    } catch (e: any) {
+      res.status(400).json({ error: e?.message || "Invalid cadence" });
+    }
+  },
+);
 
 router.patch(
   "/api/cadences/:id",
   authenticateUser,
+  validateBody(updateCadenceSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
     const patch: Record<string, any> = {};
-    if (typeof req.body?.name === "string") patch.name = req.body.name;
-    if (typeof req.body?.description === "string") patch.description = req.body.description;
-    if (typeof req.body?.agentId === "string") patch.agentId = req.body.agentId;
-    if (typeof req.body?.active === "boolean") patch.active = req.body.active;
-    if (Array.isArray(req.body?.steps)) {
+    if (req.body?.name !== undefined) patch.name = req.body.name;
+    if (req.body?.description !== undefined) patch.description = req.body.description;
+    if (req.body?.agentId !== undefined) patch.agentId = req.body.agentId;
+    if (req.body?.active !== undefined) patch.active = req.body.active;
+    if (req.body?.steps !== undefined) {
       try {
         patch.steps = validateSteps(req.body.steps);
       } catch (e: any) {

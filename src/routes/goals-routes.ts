@@ -21,6 +21,7 @@ import * as schema from "../db/schema";
 import { eq, and, gte, lt, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
+import { validateBody, createGoalSchema } from "../lib/api-validation";
 import {
   GOAL_METRICS,
   isGoalMetric,
@@ -135,7 +136,7 @@ router.get("/", authenticateUser, async (req: AuthenticatedRequest, res: Respons
 });
 
 /** POST /api/goals — create or update the goal for a metric. */
-router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+router.post("/", authenticateUser, validateBody(createGoalSchema), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user.id;
     const metric = req.body?.metric;

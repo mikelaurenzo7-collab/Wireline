@@ -648,13 +648,13 @@ export default function AgentTraining() {
                             key={d.id}
                             className="rounded-xl bg-rose-500/8 border border-rose-500/20 p-3 group"
                           >
-                            {editingDirective?.id === d.id ? (
+                            {editingDirective && editingDirective.id === d.id ? (
                               <div className="space-y-2">
                                 <textarea
                                   value={editingDirective.content}
                                   onChange={(e) =>
                                     setEditingDirective({
-                                      ...editingDirective,
+                                      id: d.id,
                                       content: e.target.value,
                                     })
                                   }
@@ -669,7 +669,7 @@ export default function AgentTraining() {
                                   </button>
                                   <button
                                     onClick={() =>
-                                      saveManualEntry("directive", editingDirective.content, d.id)
+                                      saveManualEntry("directive", editingDirective!.content, d.id)
                                     }
                                     disabled={isSavingEntry}
                                     className="px-2.5 py-1 rounded-lg bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25 disabled:opacity-50"
@@ -768,13 +768,13 @@ export default function AgentTraining() {
                             key={k.id}
                             className="rounded-xl bg-blue-500/8 border border-blue-500/20 p-3 group"
                           >
-                            {editingKnowledge?.id === k.id ? (
+                            {editingKnowledge && editingKnowledge.id === k.id ? (
                               <div className="space-y-2">
                                 <textarea
                                   value={editingKnowledge.content}
                                   onChange={(e) =>
                                     setEditingKnowledge({
-                                      ...editingKnowledge,
+                                      id: k.id,
                                       content: e.target.value,
                                     })
                                   }
@@ -789,7 +789,7 @@ export default function AgentTraining() {
                                   </button>
                                   <button
                                     onClick={() =>
-                                      saveManualEntry("knowledge", editingKnowledge.content, k.id)
+                                      saveManualEntry("knowledge", editingKnowledge!.content, k.id)
                                     }
                                     disabled={isSavingEntry}
                                     className="px-2.5 py-1 rounded-lg bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25 disabled:opacity-50"

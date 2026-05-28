@@ -191,7 +191,7 @@ export function AuditActivityPanel() {
                       axisLine={false}
                       tickLine={false}
                       tick={{ fontSize: 9, fill: "rgba(0,0,0,0.4)" }}
-                      tickFormatter={(val) =>
+                      tickFormatter={(val: any) =>
                         new Date(val).toLocaleDateString(undefined, {
                           month: "short",
                           day: "numeric",

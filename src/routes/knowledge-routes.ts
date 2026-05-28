@@ -8,6 +8,7 @@ import { getErrorMessage } from "../lib/server-utils";
 import { parseFormData, KnowledgeSchema } from "../lib/form-validators";
 import * as rateLimiters from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
+import { validateBody, addKnowledgeSchema, updateKnowledgeSchema } from "../lib/api-validation";
 
 const router = Router();
 
@@ -77,21 +78,10 @@ router.post(
   "/api/knowledge",
   authenticateUser,
   rateLimiters.knowledgeRateLimiter,
+  validateBody(addKnowledgeSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      // Validate input using Zod schema
-      const validation = parseFormData(KnowledgeSchema, {
-        content: req.body.content,
-      });
-
-      if (!validation.success) {
-        return res.status(400).json({ error: "Validation failed", errors: validation.errors });
-      }
-      if (!validation.data) throw new Error("Validation data missing");
-
-      const content = (validation.data as any).content;
-      const agent_id = (req.body?.agent_id || "").toString();
-      if (!agent_id) return res.status(400).json({ error: "agent_id is required" });
+      const { content, agent_id } = req.body;
 
       const [agent] = await drizzle
         .select({ id: schema.agents.id })
@@ -121,12 +111,10 @@ router.post(
 router.patch(
   "/api/knowledge/:id",
   authenticateUser,
+  validateBody(updateKnowledgeSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { content } = req.body;
-      if (typeof content !== "string" || content.trim().length === 0) {
-        return res.status(400).json({ error: "content is required" });
-      }
 
       const [data] = (await drizzle
         .update(schema.knowledge)

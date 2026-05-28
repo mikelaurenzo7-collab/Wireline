@@ -220,12 +220,12 @@ export class IntegrationService {
       maxResults: opts.limit,
       q: qParts.join(" "),
     });
-    const ids = listRes.data.messages?.map((m) => m.id).filter(Boolean) ?? [];
+    const ids = listRes.data.messages?.map((m: any) => m.id).filter(Boolean) ?? [];
     if (ids.length === 0) return [];
 
     // metadata format → just headers + snippet, no body. Cheap.
     const details = await Promise.all(
-      ids.map((id) =>
+      ids.map((id: any) =>
         gmail.users.messages.get({
           userId: "me",
           id: id!,
@@ -238,7 +238,7 @@ export class IntegrationService {
       .map((d) => {
         const headers = d.data.payload?.headers ?? [];
         const get = (n: string) =>
-          headers.find((h) => h.name?.toLowerCase() === n.toLowerCase())?.value ?? "";
+          headers.find((h: any) => h.name?.toLowerCase() === n.toLowerCase())?.value ?? "";
         const internalDate = d.data.internalDate
           ? new Date(Number(d.data.internalDate))
           : new Date();
@@ -343,7 +343,7 @@ export class IntegrationService {
       singleEvents: true,
     });
     return (res.data.items || []).map(
-      (e) =>
+      (e: any) =>
         `${new Date(e.start?.dateTime || "").toLocaleTimeString()} - ${new Date(e.end?.dateTime || "").toLocaleTimeString()}: ${e.summary || "Busy"}`,
     );
   }

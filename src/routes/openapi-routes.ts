@@ -48,7 +48,7 @@ function resolveServerUrl(req: Request): string | undefined {
   return `${proto}://${host}`;
 }
 
-router.get("/openapi.json", specRateLimiter, (req, res) => {
+router.get("/openapi.json", specRateLimiter, (req: Request, res: Response) => {
   const spec = getOpenApiSpec(resolveServerUrl(req));
   res.setHeader("Cache-Control", "public, max-age=300");
   res.setHeader("Content-Type", "application/json; charset=utf-8");

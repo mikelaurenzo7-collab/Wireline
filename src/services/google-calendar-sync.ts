@@ -41,7 +41,7 @@ export async function syncGoogleCalendar(userId: string) {
       });
 
       // Handle token refresh automatically if expired
-      oauth2Client.on("tokens", async (tokens) => {
+      oauth2Client.on("tokens", async (tokens: any) => {
         if (!tokens.access_token) return;
         const update: any = {
           accessToken: encryptSecret(tokens.access_token),
