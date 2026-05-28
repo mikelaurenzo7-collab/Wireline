@@ -331,7 +331,7 @@ export default function Pricing() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 + i * 0.06, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="rounded-2xl glass border border-white/8 p-5 relative overflow-hidden"
+              className="glass border border-white/8 p-5 relative overflow-hidden"
             >
               <div
                 className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"
@@ -365,7 +365,7 @@ export default function Pricing() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + i * 0.08, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className={`relative rounded-3xl p-4 lg:p-5 flex flex-col ${
+              className={`relative p-4 lg:p-5 flex flex-col ${
                 tier.highlight ? "aurora-ring md:scale-[1.02] md:-my-1 md:z-10" : ""
               }`}
             >
@@ -470,12 +470,9 @@ export default function Pricing() {
           className="mt-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto"
         >
           {VALUE_BULLETS.map(({ icon: Icon, text }) => (
-            <div
-              key={text}
-              className="rounded-2xl glass border border-white/8 p-4 flex items-start gap-3"
-            >
+            <div key={text} className="glass border border-white/8 p-4 flex items-start gap-3">
               <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/8"
+                className="w-8 h-8 flex items-center justify-center shrink-0 border border-white/8"
                 style={{
                   background:
                     "linear-gradient(135deg, rgba(79, 30, 123 ,0.18), rgba(79, 30, 123 ,0.12))",
@@ -539,7 +536,7 @@ export default function Pricing() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.95 + i * 0.06, duration: 0.5 }}
-                  className="rounded-2xl glass border border-white/10 p-5 relative overflow-hidden"
+                  className="glass border border-white/10 p-5 relative overflow-hidden"
                 >
                   <div
                     className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-20 blur-3xl pointer-events-none"

@@ -812,6 +812,20 @@ select {
   background-color: rgba(0, 0, 0, 0.04);
 }
 
+/* Auth inputs override — higher specificity than the global input rule above */
+.auth-input,
+.auth-input[type="email"],
+.auth-input[type="password"],
+.auth-input[type="text"] {
+  background-color: rgba(255, 255, 255, 0.60);
+}
+.auth-input:focus,
+.auth-input[type="email"]:focus,
+.auth-input[type="password"]:focus,
+.auth-input[type="text"]:focus {
+  background-color: rgba(255, 255, 255, 0.80);
+}
+
 /* iOS Safari auto-zooms on focus when input font-size < 16px. Force a
    minimum 16px on touch devices so the page doesn't suddenly scale up
    the moment a user taps an input. Desktop / pointer:fine devices keep
