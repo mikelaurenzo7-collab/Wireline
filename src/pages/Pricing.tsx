@@ -331,7 +331,7 @@ export default function Pricing() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 + i * 0.06, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="glass border border-white/8 p-5 relative overflow-hidden rounded-2xl"
+              className="glass border border-white/8 p-5 relative overflow-hidden"
             >
               <div
                 className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"
@@ -374,7 +374,7 @@ export default function Pricing() {
                   tier.highlight
                     ? "glass-strong border-2 border-brand/40"
                     : "glass border border-white/8"
-                } p-5 flex flex-col flex-1 overflow-hidden rounded-2xl`}
+                } p-5 flex flex-col flex-1 overflow-hidden`}
                 style={
                   tier.highlight
                     ? {
@@ -384,19 +384,6 @@ export default function Pricing() {
                     : undefined
                 }
               >
-                {tier.highlight && (
-                  <span
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-1 text-eyebrow font-semibold z-10"
-                    style={{
-                      background: "#4F1E7B",
-                      color: "#fff",
-                      boxShadow: "0 6px 18px -4px rgba(79, 30, 123 ,0.6)",
-                    }}
-                  >
-                    Most popular
-                  </span>
-                )}
-
                 <div className="mb-4">
                   <h2 className="font-display italic text-2xl text-ink mb-1">{tier.name}</h2>
                   <p className="text-[11px] text-muted leading-snug">{tier.blurb}</p>
@@ -404,9 +391,7 @@ export default function Pricing() {
 
                 <div className="mb-5 flex items-baseline gap-1">
                   <span className="font-display italic text-4xl text-ink">{tier.price}</span>
-                  {tier.cadence && (
-                    <span className="text-[10px] text-muted">{tier.cadence}</span>
-                  )}
+                  {tier.cadence && <span className="text-[10px] text-muted">{tier.cadence}</span>}
                 </div>
 
                 {tier.cta === "Start free trial" && (
@@ -470,12 +455,9 @@ export default function Pricing() {
           className="mt-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto"
         >
           {VALUE_BULLETS.map(({ icon: Icon, text }) => (
-            <div
-              key={text}
-              className="glass border border-white/8 p-4 flex items-start gap-3 rounded-2xl"
-            >
+            <div key={text} className="glass border border-white/8 p-4 flex items-start gap-3">
               <div
-                className="w-8 h-8 flex items-center justify-center shrink-0 border border-white/8 rounded-lg"
+                className="w-8 h-8 flex items-center justify-center shrink-0 border border-white/8"
                 style={{
                   background:
                     "linear-gradient(135deg, rgba(79, 30, 123 ,0.18), rgba(79, 30, 123 ,0.12))",
@@ -539,7 +521,7 @@ export default function Pricing() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.95 + i * 0.06, duration: 0.5 }}
-                  className="glass border border-white/10 p-5 relative overflow-hidden rounded-2xl"
+                  className="glass border border-white/10 p-5 relative overflow-hidden"
                 >
                   <div
                     className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-20 blur-3xl pointer-events-none"

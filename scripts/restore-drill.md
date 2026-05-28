@@ -34,7 +34,7 @@ This runbook documents the Point-In-Time Recovery (PITR) restore procedure for t
 5. Set environment variables for the scratch project:
    ```bash
    export SCRATCH_SUPABASE_URL="https://SCRATCH_REF.supabase.co"
-   export SCRATCH_SERVICE_ROLE_KEY="eyJhbG..."
+   export SCRATCH_SERVICE_ROLE_KEY="<paste-scratch-service-role-key-from-dashboard>"
    export SCRATCH_DB_PASSWORD="your-postgres-password-from-dashboard"
    export SCRATCH_PROJECT_REF="SCRATCH_REF"
    ```

@@ -210,7 +210,7 @@ export default function Compare() {
             Pan to compare
             <span aria-hidden="true">→</span>
           </p>
-          <div className="overflow-x-auto rounded-3xl glass border border-white/12 snap-x snap-mandatory scroll-smooth scrollbar-hide">
+          <div className="overflow-x-auto glass border border-white/12 snap-x snap-mandatory scroll-smooth scrollbar-hide">
             <table className="w-full min-w-[720px]" aria-describedby="compare-legend">
               <caption className="sr-only">
                 Feature comparison of Wireline versus Air, Synthflow, Bland, and Retell
@@ -329,14 +329,14 @@ export default function Compare() {
             the platform and standard pass-through for frontier LLM usage.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
-            <div className="rounded-2xl glass border border-emerald-500/20 p-5 bg-emerald-500/[0.02]">
+            <div className="glass border border-emerald-500/20 p-5 bg-emerald-500/[0.02]">
               <p className="text-eyebrow text-emerald-600 mb-1 font-semibold">Included</p>
               <p className="text-xl font-display italic text-ink mb-2">Dedicated Numbers</p>
               <p className="text-xs text-ink/70">
                 Every plan includes dedicated voice numbers. No Twilio bill required.
               </p>
             </div>
-            <div className="rounded-2xl glass border border-brand/20 p-5 bg-brand/[0.02]">
+            <div className="glass border border-brand/20 p-5 bg-brand/[0.02]">
               <p className="text-[10px] uppercase tracking-[0.3em] text-brand mb-1 font-semibold">
                 Pass-through
               </p>
@@ -345,7 +345,7 @@ export default function Compare() {
                 We never mark up OpenAI or Anthropic tokens. You pay exactly what they charge.
               </p>
             </div>
-            <div className="rounded-2xl glass border border-white/10 p-5">
+            <div className="glass border border-white/10 p-5">
               <p className="text-[10px] uppercase tracking-[0.3em] text-muted mb-1 font-semibold">
                 Flexible growth
               </p>
@@ -364,7 +364,7 @@ export default function Compare() {
             When a competitor is the better pick.
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="rounded-2xl glass border border-white/10 p-5">
+            <div className="glass border border-white/10 p-5">
               <p className="text-[10px] uppercase tracking-[0.3em] text-amber-600 mb-2 font-medium">
                 Pick Air if
               </p>
@@ -374,7 +374,7 @@ export default function Compare() {
                 supervisor coaching, Air's pricing wins.
               </p>
             </div>
-            <div className="rounded-2xl glass border border-white/10 p-5">
+            <div className="glass border border-white/10 p-5">
               <p className="text-[10px] uppercase tracking-[0.3em] text-amber-600 mb-2 font-medium">
                 Pick Bland if
               </p>
@@ -385,7 +385,7 @@ export default function Compare() {
                 supervisor take-over.
               </p>
             </div>
-            <div className="rounded-2xl glass border border-white/10 p-5">
+            <div className="glass border border-white/10 p-5">
               <p className="text-[10px] uppercase tracking-[0.3em] text-amber-600 mb-2 font-medium">
                 Pick Retell if
               </p>
