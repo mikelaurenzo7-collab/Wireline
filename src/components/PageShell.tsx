@@ -134,21 +134,13 @@ export default function PageShell({
       {showPageHeader && (
         <header className="shrink-0 mb-2 md:mb-3 flex flex-row items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            {eyebrow && (
-              <p className="text-[10px] uppercase tracking-widest font-bold text-black/50 mb-1">
-                {eyebrow}
-              </p>
-            )}
+            {eyebrow && <p className="text-eyebrow text-brand mb-1">{eyebrow}</p>}
             {title && (
-              <h1 className="page-title-aurora font-sans font-black tracking-tight text-3xl sm:text-4xl text-balance">
+              <h1 className="page-title-aurora font-display italic text-xl sm:text-2xl md:text-[1.65rem] leading-tight tracking-tight text-balance">
                 {title}
               </h1>
             )}
-            {subtitle && (
-              <p className="mt-2 text-xs font-medium text-ink/70 max-w-2xl text-pretty">
-                {subtitle}
-              </p>
-            )}
+            {subtitle && <p className="mt-1.5 text-caption max-w-2xl text-pretty">{subtitle}</p>}
           </div>
           {actions && (
             <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
@@ -157,7 +149,7 @@ export default function PageShell({
                 <button
                   onClick={() => setMobileActionsOpen(true)}
                   aria-label="Page actions"
-                  className="md:hidden w-11 h-11 rounded-sm flex items-center justify-center text-black/60 border border-black/10 bg-white hover:bg-black/5 active:bg-black/10 transition-colors shadow-sm"
+                  className="md:hidden w-11 h-11 rounded-xl flex items-center justify-center text-muted border border-black/8 bg-black/4 active:bg-black/8 transition-colors"
                 >
                   <MoreHorizontal className="w-5 h-5" />
                 </button>
@@ -173,7 +165,7 @@ export default function PageShell({
           <div
             role="tablist"
             aria-label="Page sub-navigation"
-            className="flex items-center gap-1 p-1 rounded-sm bg-black/5 border border-black/10"
+            className="flex items-center gap-0.5 p-0.5 rounded-xl glass border border-black/8"
           >
             {tabs.map((tab, i) => {
               const Icon = tab.icon;
@@ -195,17 +187,18 @@ export default function PageShell({
                     else if (e.key === "End") setActiveId(tabs[tabs.length - 1].id);
                   }}
                   className={cn(
-                    "relative shrink-0 inline-flex min-h-11 sm:min-h-10 items-center gap-1.5 px-4 py-1.5 rounded-sm transition-all text-[11px] uppercase tracking-widest font-bold",
-                    active ? "text-white" : "text-black/50 hover:text-black hover:bg-black/5",
+                    "relative shrink-0 inline-flex min-h-11 sm:min-h-10 items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[11px] uppercase tracking-[0.1em] font-medium",
+                    active ? "text-on-brand" : "text-muted hover:text-ink hover:bg-black/5",
                   )}
                 >
                   {active && (
                     <motion.div
                       layoutId="tab-active-bg"
-                      className="absolute inset-0 rounded-sm"
+                      className="absolute inset-0 rounded-lg"
                       style={{
-                        background: "#0A0A0A",
-                        boxShadow: "0 4px 10px -4px rgba(0, 0, 0 ,0.25)",
+                        background: "#4F1E7B",
+                        boxShadow:
+                          "0 3px 12px -6px rgba(79, 30, 123 ,0.50), 0 0 0 1px rgba(255,255,255,0.18) inset",
                         willChange: "transform, background-color",
                       }}
                       transition={{ type: "spring", stiffness: 420, damping: 36 }}
@@ -217,8 +210,8 @@ export default function PageShell({
                     {tab.badge != null && tab.badge !== 0 && (
                       <span
                         className={cn(
-                          "ml-0.5 px-1.5 py-px rounded-full text-[8px] font-mono font-bold leading-none",
-                          active ? "bg-white/20 text-white" : "bg-black/10 text-black/60",
+                          "ml-0.5 px-1.5 py-px rounded-full text-[8px] font-mono leading-none",
+                          active ? "bg-white/20 text-on-brand" : "bg-black/8 text-muted",
                         )}
                       >
                         {tab.badge}
@@ -237,7 +230,7 @@ export default function PageShell({
         <div className="md:hidden shrink-0 flex items-center gap-2 min-h-0">
           <div
             role="tablist"
-            className="flex-1 min-w-0 flex items-center gap-1 overflow-x-auto scrollbar-hide py-1 px-1 rounded-sm bg-black/5 border border-black/10"
+            className="tab-toggle-surface flex-1 min-w-0 flex items-center gap-0.5 overflow-x-auto scrollbar-hide py-0.5"
           >
             {tabs.map((tab, i) => {
               const Icon = tab.icon;
@@ -258,17 +251,18 @@ export default function PageShell({
                     else if (e.key === "End") setActiveId(tabs[tabs.length - 1].id);
                   }}
                   className={cn(
-                    "native-tap-squish relative shrink-0 inline-flex min-h-11 items-center gap-1.5 px-3 py-2 rounded-sm transition-all text-[11px] uppercase tracking-widest font-bold whitespace-nowrap",
-                    active ? "text-white" : "text-black/50 hover:text-black",
+                    "native-tap-squish relative shrink-0 inline-flex min-h-11 items-center gap-1.5 px-3 py-2 rounded-xl transition-all text-[11px] uppercase tracking-[0.1em] font-medium whitespace-nowrap",
+                    active ? "text-on-brand" : "text-muted",
                   )}
                 >
                   {active && (
                     <motion.div
                       layoutId="mobile-tab-active-bg"
-                      className="absolute inset-0 rounded-sm"
+                      className="absolute inset-0 rounded-xl"
                       style={{
-                        background: "#0A0A0A",
-                        boxShadow: "0 4px 10px -4px rgba(0, 0, 0, 0.25)",
+                        background: "#4F1E7B",
+                        boxShadow:
+                          "0 3px 12px -6px rgba(79, 30, 123, 0.45), 0 0 0 1px rgba(255,255,255,0.16) inset",
                       }}
                       transition={{ type: "spring", stiffness: 420, damping: 36 }}
                     />
@@ -279,8 +273,8 @@ export default function PageShell({
                     {tab.badge != null && tab.badge !== 0 && (
                       <span
                         className={cn(
-                          "ml-0.5 px-1.5 py-px rounded-full text-[8px] font-mono font-bold leading-none",
-                          active ? "bg-white/20 text-white" : "bg-black/10 text-black/60",
+                          "ml-0.5 px-1.5 py-px rounded-full text-[8px] font-mono leading-none",
+                          active ? "bg-white/20 text-on-brand" : "bg-black/8 text-muted",
                         )}
                       >
                         {tab.badge}
@@ -296,7 +290,7 @@ export default function PageShell({
               onClick={() => setMobileActionsOpen(true)}
               aria-label="Page actions"
               data-no-min-touch
-              className="shrink-0 w-11 h-11 rounded-sm flex items-center justify-center text-black/60 border border-black/10 bg-white hover:bg-black/5 active:bg-black/10 transition-colors shadow-sm"
+              className="shrink-0 w-11 h-11 rounded-xl flex items-center justify-center text-muted border border-black/8 bg-black/4 active:bg-black/8 transition-colors"
             >
               <MoreHorizontal className="w-5 h-5" />
             </button>
@@ -367,10 +361,11 @@ export default function PageShell({
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 360, damping: 32 }}
-              className="fixed bottom-0 left-0 right-0 z-[201] bg-white rounded-t-lg border-t border-black/10 md:hidden select-none"
+              className="fixed bottom-0 left-0 right-0 z-[201] glass-elevated rounded-t-[1.35rem] border-t border-black/10 md:hidden select-none"
               style={{
                 paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
-                boxShadow: "0 -24px 48px -20px rgba(0, 0, 0, 0.25)",
+                boxShadow:
+                  "0 -24px 48px -20px rgba(30, 0, 48, 0.35), 0 1px 0 rgba(255,255,255,0.75) inset",
               }}
               drag="y"
               dragConstraints={{ top: 0 }}
@@ -386,19 +381,17 @@ export default function PageShell({
               <div className="flex justify-center pt-3 pb-2">
                 <div
                   className="w-10 h-1 rounded-full"
-                  style={{ background: "rgba(0, 0, 0, 0.28)" }}
+                  style={{ background: "rgba(79, 30, 123, 0.28)" }}
                   aria-hidden="true"
                 />
               </div>
               {/* Header */}
               <div className="flex items-center justify-between px-4 pb-3">
-                <p className="text-[10px] uppercase tracking-widest font-bold text-black/50">
-                  Actions
-                </p>
+                <p className="text-eyebrow">Actions</p>
                 <button
                   ref={closeButtonRef}
                   onClick={() => setMobileActionsOpen(false)}
-                  className="w-11 h-11 rounded-sm flex items-center justify-center text-ink/40 hover:text-ink hover:bg-black/5 transition-colors border border-transparent hover:border-black/10"
+                  className="w-11 h-11 rounded-lg flex items-center justify-center text-ink/40 hover:text-ink hover:bg-black/5 transition-colors"
                   aria-label="Close actions"
                 >
                   <X className="w-4 h-4" />
@@ -445,15 +438,19 @@ export function Panel({
   className,
   bodyClassName,
   flush = false,
-  accent = "#0A0A0A",
+  accent = "#4F1E7B",
 }: PanelProps) {
   return (
     <section
       className={cn(
-        "relative rounded-sm bg-white border border-black/10 flex flex-col h-full min-h-0 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300",
+        "relative rounded-xl glass border border-black/8 flex flex-col h-full min-h-0 overflow-hidden",
         "panel-mobile-surface",
         className,
       )}
+      style={{
+        boxShadow:
+          "0 1px 0 rgba(255,255,255,0.80) inset, 0 0 0 1px rgba(79, 30, 123 ,0.03), 0 8px 32px -10px rgba(0,0,0,0.10), 0 3px 12px -4px rgba(79, 30, 123 ,0.06)",
+      }}
     >
       {/* Subtle ambient glow behind header */}
       {Icon && (
@@ -479,9 +476,7 @@ export function Panel({
               </div>
             )}
             {title && (
-              <h3 className="font-sans font-black tracking-tight text-base text-ink leading-none">
-                {title}
-              </h3>
+              <h3 className="font-display italic text-base text-ink leading-tight">{title}</h3>
             )}
             {hint && <span className="text-eyebrow ml-1 opacity-80">{hint}</span>}
           </div>
@@ -522,7 +517,7 @@ export function StatTile({
   value,
   sub,
   icon: Icon,
-  accent = "#0A0A0A",
+  accent = "#4F1E7B",
   trend,
 }: {
   label: string;
@@ -534,7 +529,7 @@ export function StatTile({
 }) {
   const trendPositive = trend && trend.value >= 0;
   return (
-    <div className="stat-tile-mobile relative rounded-sm bg-white border border-black/10 p-5 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <div className="stat-tile-mobile relative rounded-xl glass border border-black/8 p-4 max-md:p-5 overflow-hidden card-interactive">
       {/* Ambient glow */}
       <div
         className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"
@@ -548,12 +543,10 @@ export function StatTile({
 
       <div className="relative">
         <div className="flex items-start justify-between mb-2.5">
-          <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-black/50 leading-none">
-            {label}
-          </p>
+          <p className="text-eyebrow leading-none">{label}</p>
           {Icon && (
             <div
-              className="w-7 h-7 rounded-sm flex items-center justify-center border border-black/10 shrink-0"
+              className="w-7 h-7 rounded-lg flex items-center justify-center border border-black/8 shrink-0"
               style={{
                 background: `linear-gradient(135deg, ${accent}18, ${accent}06)`,
                 color: accent,
@@ -564,7 +557,7 @@ export function StatTile({
           )}
         </div>
 
-        <div className="font-sans font-black tracking-tight text-2xl max-md:text-3xl text-ink leading-none truncate mb-2">
+        <div className="metric-value font-display italic text-2xl max-md:text-[1.75rem] text-ink leading-none truncate mb-2">
           {value}
         </div>
 

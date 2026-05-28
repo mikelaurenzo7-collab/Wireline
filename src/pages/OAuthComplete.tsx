@@ -64,7 +64,8 @@ export default function OAuthComplete() {
         <div
           className="w-full max-w-sm rounded-2xl border border-black/8 bg-[#FAF8F5] p-8 text-center space-y-5"
           style={{
-            boxShadow: "0 1px 0 rgba(255,255,255,0.9) inset, 0 20px 50px -24px rgba(0, 0, 0, 0.2)",
+            boxShadow:
+              "0 1px 0 rgba(255,255,255,0.9) inset, 0 20px 50px -24px rgba(79, 30, 123, 0.2)",
           }}
         >
           {error ? (

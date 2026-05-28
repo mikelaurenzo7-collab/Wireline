@@ -91,8 +91,9 @@ export default function CookieConsent() {
             <div
               className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
               style={{
-                background: "linear-gradient(135deg, rgba(0, 0, 0 ,0.12), rgba(0, 0, 0 ,0.12))",
-                border: "1px solid rgba(0, 0, 0 ,0.22)",
+                background:
+                  "linear-gradient(135deg, rgba(79, 30, 123 ,0.12), rgba(79, 30, 123 ,0.12))",
+                border: "1px solid rgba(79, 30, 123 ,0.22)",
               }}
             >
               <Cookie className="w-3.5 h-3.5 text-brand" />

@@ -6,7 +6,6 @@
 // would never see values declared only in `.env`. Using the side-effect
 // import guarantees env is populated before any other import evaluates.
 import "dotenv/config";
-import "express-async-errors";
 
 // Make `BigInt` JSON-serializable globally. Drizzle's `bigint({ mode: 'bigint' })`
 // returns native BigInt values for ids on `callLogs`, `auditLog`,

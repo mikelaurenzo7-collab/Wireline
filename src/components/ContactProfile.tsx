@@ -216,21 +216,21 @@ export default function ContactProfile() {
           label="Calls"
           value={String(data.stats.total_calls)}
           icon={Phone}
-          accent="#0A0A0A"
+          accent="#4F1E7B"
           sparkData={callSpark.length >= 2 ? callSpark : undefined}
         />
         <StatCard
           label="Minutes"
           value={String(data.stats.total_minutes)}
           icon={Clock}
-          accent="#0A0A0A"
+          accent="#4F1E7B"
           sparkData={minuteSpark.length >= 2 ? minuteSpark : undefined}
         />
         <StatCard
           label="Avg Score"
           value={String(data.stats.avg_lead_score)}
           icon={Target}
-          accent="#0A0A0A"
+          accent="#4F1E7B"
         />
         <StatCard
           label="Spend"

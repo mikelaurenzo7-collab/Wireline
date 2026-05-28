@@ -115,7 +115,7 @@ export async function sendPasswordResetEmail(opts: PasswordResetEmailOpts): Prom
       <h2 style="margin: 0 0 16px; font-weight: 600;">Reset your Wireline password</h2>
       <p style="margin: 0 0 16px; line-height: 1.55;">Someone (hopefully you) requested a password reset for your Wireline account.</p>
       <p style="margin: 0 0 24px; line-height: 1.55;">Click the button below to set a new password. The link expires in <strong>${expiresHuman}</strong>.</p>
-      <p style="margin: 0 0 24px;"><a href="${opts.resetUrl}" style="display: inline-block; background: #0A0A0A; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Reset password</a></p>
+      <p style="margin: 0 0 24px;"><a href="${opts.resetUrl}" style="display: inline-block; background: #4F1E7B; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Reset password</a></p>
       <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${opts.resetUrl}</span></p>
       <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you did not request this, you can ignore this email — your password stays unchanged.</p>
     </div>
@@ -178,7 +178,7 @@ export async function sendSignupLinkEmail(opts: {
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a2e;">
       <p style="margin: 0 0 16px; line-height: 1.55;">${greeting}</p>
       <p style="margin: 0 0 16px; line-height: 1.55;">Thanks for the call. Here's the link to start your <strong>14-day Wireline trial</strong> — no credit card, dedicated phone number included, deploy your first AI agent in under 10 minutes.</p>
-      <p style="margin: 0 0 24px;"><a href="${signupUrl}" style="display: inline-block; background: #0A0A0A; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Start your trial</a></p>
+      <p style="margin: 0 0 24px;"><a href="${signupUrl}" style="display: inline-block; background: #4F1E7B; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Start your trial</a></p>
       <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${signupUrl}</span></p>
       <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you have any follow-up questions, just call back — same number you reached me on.</p>
       <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">— Wireline${fromAgent}</p>
@@ -246,7 +246,7 @@ export async function sendEmailVerification(opts: {
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a2e;">
       <p style="margin: 0 0 16px; line-height: 1.55;">${greeting}</p>
       <p style="margin: 0 0 16px; line-height: 1.55;">Welcome to Wireline. Click the button below to verify your email and unlock your 14-day trial.</p>
-      <p style="margin: 0 0 24px;"><a href="${opts.verifyUrl}" style="display: inline-block; background: #0A0A0A; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Verify email</a></p>
+      <p style="margin: 0 0 24px;"><a href="${opts.verifyUrl}" style="display: inline-block; background: #4F1E7B; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Verify email</a></p>
       <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${opts.verifyUrl}</span></p>
       <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">The link expires in 24 hours. If you didn't sign up, you can ignore this email.</p>
     </div>
@@ -301,7 +301,7 @@ export async function sendUrgentEscalationEmail(opts: {
     .join("\n");
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1A1A23; background: #FAF8F5;">
-      <div style="background: white; border-radius: 12px; padding: 24px; border: 1px solid rgba(0,0,0,0.08);">
+      <div style="background: white; border-radius: 12px; padding: 24px; border: 1px solid rgba(79,30,123,0.08);">
         <div style="display: inline-block; background: rgba(232,70,106,0.10); color: #B91C3E; padding: 4px 10px; border-radius: 999px; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 12px;">Urgent · Escalation</div>
         <h2 style="margin: 0 0 12px; font-weight: 600; font-size: 18px;">${escapeHtml(opts.title)}</h2>
         <p style="margin: 0 0 16px; line-height: 1.55; color: #2A2A33;">${escapeHtml(opts.message)}</p>

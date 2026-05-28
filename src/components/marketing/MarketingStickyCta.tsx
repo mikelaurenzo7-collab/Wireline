@@ -34,18 +34,12 @@ export default function MarketingStickyCta({
         }}
       >
         <div className="max-w-lg mx-auto flex gap-2">
-          <Link
-            to={secondaryHref}
-            className="marketing-btn-secondary flex-1 min-h-[48px] text-xs font-bold uppercase tracking-widest rounded-sm border-black/20 bg-white"
-          >
+          <Link to={secondaryHref} className="marketing-btn-secondary flex-1 min-h-[48px] text-sm">
             {secondaryLabel}
           </Link>
-          <Link
-            to={href}
-            className="marketing-btn-primary flex-[1.35] min-h-[48px] text-xs font-bold uppercase tracking-widest rounded-sm"
-          >
+          <Link to={href} className="marketing-btn-primary flex-[1.35] min-h-[48px] text-sm">
             {label}
-            <ArrowRight className="w-4 h-4 ml-1" />
+            <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </div>

@@ -52,7 +52,7 @@ export function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled:
       ? "#10B981"
       : enrichment?.research_confidence === "medium"
         ? "#FFC07D"
-        : "#0A0A0A";
+        : "#4F1E7B";
 
   return (
     <FormShell>

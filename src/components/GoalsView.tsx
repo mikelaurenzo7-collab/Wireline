@@ -51,7 +51,7 @@ interface GoalsData {
 
 const STATUS_META: Record<GoalStatus, { label: string; color: string }> = {
   achieved: { label: "Achieved", color: "#10B981" },
-  ahead: { label: "Ahead of pace", color: "#0A0A0A" },
+  ahead: { label: "Ahead of pace", color: "#4F1E7B" },
   on_track: { label: "On track", color: "#10B981" },
   behind: { label: "Behind pace", color: "#F59E0B" },
 };
@@ -178,7 +178,7 @@ function GoalEditor({
           onClick={() => valid && onSave(Math.round(parsed), label)}
           disabled={!valid || saving}
           className="flex-1 h-11 rounded-lg text-on-brand text-[11px] uppercase tracking-[0.14em] font-medium flex items-center justify-center gap-1.5 disabled:opacity-40 transition-opacity"
-          style={{ background: "#0A0A0A" }}
+          style={{ background: "#4F1E7B" }}
         >
           {saving ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -469,7 +469,7 @@ export default function GoalsView() {
           </div>
           <div
             className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-            style={{ background: "linear-gradient(135deg, #0A0A0A22, #0A0A0A0a)" }}
+            style={{ background: "linear-gradient(135deg, #4F1E7B22, #4F1E7B0a)" }}
           >
             <Target className="w-7 h-7 text-brand" />
           </div>

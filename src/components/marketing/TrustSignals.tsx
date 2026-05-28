@@ -96,8 +96,8 @@ const STATE_TONES = {
     label: "Live",
   },
   ready: {
-    pill: "bg-[#0A0A0A]/8 text-[#0A0A0A] border-[#0A0A0A]/20",
-    dot: "bg-[#0A0A0A]",
+    pill: "bg-[#4F1E7B]/8 text-[#4F1E7B] border-[#4F1E7B]/20",
+    dot: "bg-[#4F1E7B]",
     label: "Ready",
   },
   progress: {
@@ -119,7 +119,7 @@ export default function TrustSignals() {
       data-testid="trust-signals"
     >
       <div className="flex items-center gap-2 mb-3">
-        <span className="hero-accent-line" style={{ background: "#0A0A0A" }} />
+        <span className="hero-accent-line" style={{ background: "#4F1E7B" }} />
         <h2
           id="trust-heading"
           className="text-[8px] uppercase tracking-[0.5em] text-muted/70 font-semibold"
@@ -135,11 +135,11 @@ export default function TrustSignals() {
         {VERTICALS.map(({ icon: Icon, label }) => (
           <div
             key={label}
-            className="group flex flex-col items-center gap-1.5 rounded-lg border border-black/5 bg-[#FAF8F5]/80 py-2.5 px-1 transition-all hover:border-[#0A0A0A]/20 hover:bg-white hover:-translate-y-0.5"
+            className="group flex flex-col items-center gap-1.5 rounded-lg border border-black/5 bg-[#FAF8F5]/80 py-2.5 px-1 transition-all hover:border-[#4F1E7B]/20 hover:bg-white hover:-translate-y-0.5"
             title={label}
           >
             <Icon
-              className="w-3.5 h-3.5 text-[#0A0A0A] group-hover:scale-110 transition-transform"
+              className="w-3.5 h-3.5 text-[#4F1E7B] group-hover:scale-110 transition-transform"
               strokeWidth={1.8}
             />
             <span className="text-[8px] uppercase tracking-[0.18em] text-muted/65 text-center leading-tight">

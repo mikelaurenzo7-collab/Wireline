@@ -14,7 +14,7 @@
  *
  * Each save POSTs to /api/pronunciation-dicts, which syncs to
  * ElevenLabs and stamps the dictionary's EL ID + version on the
- * row. The Voice Engine factory reads active dictionaries when
+ * row. The Vapi assistant factory reads active dictionaries when
  * building per-call configs so playback applies them automatically.
  */
 import React, { useEffect, useState } from "react";

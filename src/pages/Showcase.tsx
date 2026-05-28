@@ -70,23 +70,23 @@ function ShowcaseCard({ agent }: { agent: ShowcaseAgent }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="rounded-sm bg-white border border-black/10 p-6 sm:p-8 shadow-sm"
+      className="rounded-3xl glass border border-brand/25 p-6 sm:p-8"
     >
       <div className="flex items-start gap-4 mb-5">
         <div
-          className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 border border-black/5"
+          className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
           style={{ background: agent.tint }}
         >
-          <Sparkles className="w-5 h-5 text-white" strokeWidth={2.2} />
+          <Sparkles className="w-5 h-5 text-on-brand" strokeWidth={2.2} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-black/50 mb-1">
+          <p className="text-[10px] uppercase tracking-[0.4em] text-brand/80 mb-1 font-medium">
             {agent.role}
           </p>
-          <h3 className="font-display italic text-2xl sm:text-3xl text-ink leading-tight font-bold">
+          <h3 className="font-display italic text-2xl sm:text-3xl text-ink leading-tight">
             {agent.name}
           </h3>
-          <p className="text-[12px] font-medium text-ink/70 mt-1">Voice: {agent.voiceLabel}</p>
+          <p className="text-[12px] text-muted/70 mt-1">Voice: {agent.voiceLabel}</p>
         </div>
       </div>
 
@@ -94,38 +94,33 @@ function ShowcaseCard({ agent }: { agent: ShowcaseAgent }) {
 
       {agent.preRollAudio ? (
         <>
-          <div className="rounded-sm bg-black/[0.02] border border-black/10 p-5 mb-5 shadow-inner">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-black/40 mb-2">
+          <div className="rounded-2xl bg-ink/5 border border-white/10 p-4 mb-4">
+            <p className="text-[11px] uppercase tracking-[0.3em] text-muted/70 mb-2">
               First-message script
             </p>
-            <p className="text-sm font-medium text-ink/80 italic leading-relaxed">
-              "{agent.firstMessage}"
-            </p>
+            <p className="text-sm text-ink/90 italic leading-relaxed">"{agent.firstMessage}"</p>
           </div>
-          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={toggle}
               aria-pressed={playing}
-              className="marketing-btn-primary min-h-[48px] text-xs font-bold uppercase tracking-widest rounded-sm w-full sm:w-auto text-center"
+              className="marketing-btn-primary min-h-[48px] text-sm"
             >
               {playing ? (
                 <>
-                  <Pause className="w-4 h-4" />
+                  <Pause className="w-3.5 h-3.5" />
                   Stop the jingle
                 </>
               ) : (
                 <>
-                  <Play className="w-4 h-4" />
+                  <Play className="w-3.5 h-3.5" />
                   Hear her sing
                 </>
               )}
             </button>
-            <a
-              href={`tel:${agent.tel}`}
-              className="marketing-btn-secondary min-h-[48px] text-xs font-bold uppercase tracking-widest rounded-sm bg-white border border-black/20 w-full sm:w-auto text-center"
-            >
-              <Phone className="w-4 h-4" />
+            <a href={`tel:${agent.tel}`} className="marketing-btn-secondary min-h-[48px] text-sm">
+              <Phone className="w-3.5 h-3.5" />
               Or call {agent.display}
             </a>
           </div>
@@ -154,12 +149,9 @@ function ShowcaseCard({ agent }: { agent: ShowcaseAgent }) {
           />
         </>
       ) : (
-        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
-          <a
-            href={`tel:${agent.tel}`}
-            className="marketing-btn-primary min-h-[48px] text-xs font-bold uppercase tracking-widest rounded-sm w-full sm:w-auto text-center"
-          >
-            <Phone className="w-4 h-4" />
+        <div className="flex flex-wrap items-center gap-3">
+          <a href={`tel:${agent.tel}`} className="marketing-btn-primary min-h-[48px] text-sm">
+            <Phone className="w-3.5 h-3.5" />
             Call {agent.display}
           </a>
         </div>
@@ -172,27 +164,25 @@ function PhoneLineCard({ agent, label }: { agent: ContactAgent; label: string })
   return (
     <a
       href={`tel:${agent.tel}`}
-      className="group bg-white border border-black/10 rounded-sm p-4 min-h-[56px] transition-all hover:border-black/30 hover:shadow-md shadow-sm"
+      className="group marketing-panel p-4 min-h-[56px] transition-all hover:border-brand/30 hover:shadow-[0_8px_24px_-16px_rgba(79,30,123,0.2)]"
     >
       <div className="flex items-start gap-3">
         <div
-          className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-black/5"
+          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
           style={{ background: `${agent.tint}1f`, color: agent.tint }}
         >
           <Phone className="w-4 h-4" strokeWidth={2.3} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[9px] uppercase tracking-widest font-bold text-black/50 mb-1">
+          <p className="text-[9px] uppercase tracking-[0.24em] text-muted/70 mb-1">
             {label} · {agent.name}
           </p>
-          <p className="font-display italic text-lg leading-tight text-ink line-clamp-2 font-bold">
+          <p className="font-display italic text-lg leading-tight text-ink line-clamp-2">
             {agent.role}
           </p>
-          <p className="mt-1 font-mono text-[12px] text-ink/75 font-bold tracking-tight">
-            {agent.display}
-          </p>
+          <p className="mt-1 font-mono text-[12px] text-ink/75">{agent.display}</p>
         </div>
-        <ArrowRight className="w-4 h-4 text-ink/35 group-hover:text-ink group-hover:translate-x-1 transition-all shrink-0 mt-1" />
+        <ArrowRight className="w-4 h-4 text-ink/35 group-hover:text-ink group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
       </div>
     </a>
   );

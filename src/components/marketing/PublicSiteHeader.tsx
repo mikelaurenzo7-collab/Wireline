@@ -47,26 +47,21 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
           className,
         )}
       >
-        <Link
-          to="/"
-          className="flex items-center gap-3 group min-w-0"
-          data-testid="header-logo-home"
-        >
+        <Link to="/" className="flex items-center gap-3 group min-w-0">
           <div
-            className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-[1.02] border border-black/10 shadow-sm"
+            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-[1.02]"
             style={{
-              background: "#000000",
+              background: "#4F1E7B",
+              boxShadow: "0 6px 20px -8px rgba(79,30,123,0.45)",
             }}
           >
-            <WirelineMark className="w-5 h-5 text-white" strokeWidth={130} />
+            <WirelineMark className="w-5 h-5 text-on-brand" strokeWidth={130} />
           </div>
           <div className="min-w-0">
-            <span className="font-sans font-black tracking-tight text-xl leading-none text-ink block truncate">
+            <span className="brand-wordmark text-2xl leading-none !text-brand !filter-none block truncate">
               WIRELINE
             </span>
-            <span className="text-[10px] uppercase tracking-widest font-bold text-black/50 hidden sm:block mt-0.5">
-              Voice + email agents
-            </span>
+            <span className="text-eyebrow hidden sm:block mt-0.5">Voice + email agents</span>
           </div>
         </Link>
 
@@ -97,12 +92,11 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
           <Link
             to="/signup"
             className={cn(
-              "hidden sm:inline-flex items-center justify-center px-4 py-2.5 rounded-sm text-xs font-bold tracking-widest uppercase transition-all shadow-sm border border-black/10",
+              "hidden sm:inline-flex items-center justify-center px-4 py-2.5 rounded-full text-[13px] font-semibold tracking-wide transition-all",
               active === "signup"
-                ? "bg-black text-white"
-                : "bg-black text-white hover:bg-black/80 hover:shadow-md",
+                ? "bg-brand-deep text-on-brand"
+                : "bg-brand text-on-brand hover:bg-[#6A25A3] shadow-[0_4px_14px_-4px_rgba(79,30,123,0.5)]",
             )}
-            data-testid="header-start-trial"
           >
             Start trial
           </Link>
@@ -156,14 +150,14 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
             >
               <Link
                 to="/signin"
-                className="marketing-btn-secondary w-full min-h-[48px] rounded-sm text-xs tracking-widest font-bold bg-white text-ink border-black/20"
+                className="marketing-btn-secondary w-full min-h-[48px]"
                 onClick={() => setMenuOpen(false)}
               >
                 Sign in
               </Link>
               <Link
                 to="/signup"
-                className="marketing-btn-primary w-full min-h-[48px] rounded-sm text-xs tracking-widest font-bold border border-transparent shadow-sm"
+                className="marketing-btn-primary w-full min-h-[48px]"
                 onClick={() => setMenuOpen(false)}
               >
                 Start free trial

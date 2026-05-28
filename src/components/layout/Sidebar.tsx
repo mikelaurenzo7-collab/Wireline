@@ -39,7 +39,7 @@ const AUTO_EXPAND_WIDTH = 1440; // viewport width that auto-expands the rail
 // Per-group accent colors — let operators scan the rail by category.
 // Matches the route-accent palette already in use elsewhere.
 const GROUP_ACCENTS: Record<string, string> = {
-  Workspace: "#0A0A0A", // brand purple
+  Workspace: "#4F1E7B", // brand purple
   Fleet: "#F59E0B", // warm amber
   Activity: "#10B981", // emerald
   Admin: "#7C7469", // muted warm gray
@@ -156,8 +156,8 @@ export default function Sidebar({ navBadges }: SidebarProps) {
       className="hidden lg:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] overflow-hidden"
       style={{
         width: railWidth,
-        background: "rgba(0, 0, 0, 0.98)",
-        borderRight: "1px solid rgba(255, 255, 255, 0.15)",
+        background: "rgba(59, 21, 76, 0.96)",
+        borderRight: "1px solid rgba(239, 233, 220, 0.08)",
         backdropFilter: "blur(20px) saturate(160%)",
         WebkitBackdropFilter: "blur(20px) saturate(160%)",
         boxShadow: "1px 0 0 rgba(255,255,255,0.04) inset, 12px 0 32px -18px rgba(20, 0, 32, 0.45)",
@@ -181,7 +181,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
             boxShadow: "0 4px 14px -4px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.22) inset",
           }}
         >
-          <WirelineMark className="w-4 h-4 text-[#000000] relative z-10" strokeWidth={130} />
+          <WirelineMark className="w-4 h-4 text-[#3B154C] relative z-10" strokeWidth={130} />
           <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent" />
         </motion.div>
         <AnimatePresence>
@@ -242,7 +242,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         {NAV_GROUPS.map((group) => {
           const items = group.items.filter((item) => !item.ownerOnly || user?.is_owner === true);
           if (items.length === 0) return null;
-          const accent = GROUP_ACCENTS[group.label] || "#0A0A0A";
+          const accent = GROUP_ACCENTS[group.label] || "#4F1E7B";
           return (
             <div key={group.label}>
               <AnimatePresence>
@@ -307,7 +307,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
             title={user.email}
           >
             <div
-              className="w-7 h-7 rounded-full flex items-center justify-center text-[#000000] font-semibold text-[11px] shrink-0"
+              className="w-7 h-7 rounded-full flex items-center justify-center text-[#3B154C] font-semibold text-[11px] shrink-0"
               style={{ background: "#EFE9DC" }}
               aria-hidden="true"
             >
@@ -329,7 +329,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
             title={user.email}
           >
             <div
-              className="w-7 h-7 rounded-full flex items-center justify-center text-[#000000] font-semibold text-[11px]"
+              className="w-7 h-7 rounded-full flex items-center justify-center text-[#3B154C] font-semibold text-[11px]"
               style={{ background: "#EFE9DC" }}
             >
               {user.email?.slice(0, 1).toUpperCase() ?? "?"}
@@ -415,7 +415,7 @@ function RailItem({ item, active, badge, expanded, accent, shortcut }: RailItemP
       title={expanded ? undefined : item.label}
       className={cn(
         "group relative flex items-center gap-2.5 h-9 px-2 rounded-lg transition-all duration-150",
-        active ? "text-[#000000]" : "chrome-muted hover:text-[#EFE9DC] hover:bg-white/8",
+        active ? "text-[#3B154C]" : "chrome-muted hover:text-[#EFE9DC] hover:bg-white/8",
       )}
     >
       {active && (
@@ -461,7 +461,7 @@ function RailItem({ item, active, badge, expanded, accent, shortcut }: RailItemP
               className={cn(
                 "relative z-10 text-[8px] font-mono px-1.5 py-0.5 rounded leading-none border whitespace-nowrap",
                 active
-                  ? "border-[#000000]/15 text-[#000000]/55 bg-[#000000]/5"
+                  ? "border-[#3B154C]/15 text-[#3B154C]/55 bg-[#3B154C]/5"
                   : "border-white/12 chrome-subtle bg-white/4 group-hover:border-white/20 group-hover:chrome-muted",
               )}
             >
@@ -476,7 +476,7 @@ function RailItem({ item, active, badge, expanded, accent, shortcut }: RailItemP
           className={cn(
             "relative z-10 shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full text-[9px] font-mono leading-none flex items-center justify-center font-semibold",
             active
-              ? "bg-[#000000]/15 text-[#000000]"
+              ? "bg-[#3B154C]/15 text-[#3B154C]"
               : "bg-rose-500/25 text-rose-300 border border-rose-500/40",
           )}
           // Badge floats top-right in collapsed mode (no label to share width with)
@@ -610,8 +610,8 @@ function TierInline() {
     <div className="mt-1 leading-none">
       <span
         className={cn(
-          "text-[8.5px] uppercase tracking-[0.25em] font-bold",
-          overage ? "text-rose-300" : "text-[#EFE9DC]/70",
+          "text-[8.5px] uppercase tracking-[0.25em] font-semibold",
+          overage ? "text-rose-300" : "text-[#EFE9DC]/55",
         )}
       >
         {tier.plan_name}

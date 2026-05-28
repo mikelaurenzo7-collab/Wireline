@@ -24,7 +24,7 @@ export default function EmptyState({
   title,
   description,
   actions = [],
-  accent = "#0A0A0A",
+  accent = "#4F1E7B",
   className,
 }: Props) {
   return (

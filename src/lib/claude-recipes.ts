@@ -430,7 +430,6 @@ ${input.transcript || "(none)"}
     user,
     tool: TOOLS.postCallAnalysis,
     deepThink: true,
-    cacheSystem: true,
     maxTokens: 4096,
     complexity: "medium",
   });
@@ -470,7 +469,6 @@ Coach this conversation now.`;
     user,
     tool: TOOLS.coach,
     deepThink: false,
-    cacheSystem: true,
     maxTokens: 2048,
     complexity: "complex",
   });

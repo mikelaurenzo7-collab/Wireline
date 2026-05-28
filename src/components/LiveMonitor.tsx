@@ -271,7 +271,7 @@ export default function LiveMonitor() {
               className="absolute inset-0 rounded-full opacity-40"
               style={{
                 background:
-                  "conic-gradient(from 0deg, #0A0A0A, #0A0A0A, #0A0A0A, #10B981, #0A0A0A)",
+                  "conic-gradient(from 0deg, #4F1E7B, #4F1E7B, #4F1E7B, #10B981, #4F1E7B)",
                 filter: "blur(1px)",
                 animation: "spin 2s linear infinite",
               }}
@@ -327,21 +327,21 @@ export default function LiveMonitor() {
               value={activeCount}
               sub="Live right now"
               icon={Radio}
-              accent="#0A0A0A"
+              accent="#4F1E7B"
             />
             <StatTile
               label="Fleet Size"
               value={agents.length}
               sub="Configured agents"
               icon={Users}
-              accent="#0A0A0A"
+              accent="#4F1E7B"
             />
             <StatTile
               label="Recent Activity"
               value={todayCallCount}
               sub="Events in feed"
               icon={Activity}
-              accent="#0A0A0A"
+              accent="#4F1E7B"
             />
             <StatTile
               label="Avg Lead Score"
@@ -384,7 +384,7 @@ export default function LiveMonitor() {
                         <div
                           className="absolute inset-0 rounded-2xl opacity-15"
                           style={{
-                            background: "#0A0A0A",
+                            background: "#4F1E7B",
                             animation: "pulse 3s ease-in-out infinite",
                           }}
                         />

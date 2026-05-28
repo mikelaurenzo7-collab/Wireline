@@ -248,9 +248,9 @@ export default function DncManager() {
           {/* Stat bar */}
           <div className="col-span-12 grid grid-cols-2 sm:grid-cols-4 gap-3 h-fit">
             {[
-              { label: "Total Blocked", value: stats.total, accent: "#0A0A0A", icon: Shield },
-              { label: "Manual Entries", value: stats.manual, accent: "#0A0A0A", icon: Plus },
-              { label: "CSV Imported", value: stats.csv, accent: "#0A0A0A", icon: FileText },
+              { label: "Total Blocked", value: stats.total, accent: "#4F1E7B", icon: Shield },
+              { label: "Manual Entries", value: stats.manual, accent: "#4F1E7B", icon: Plus },
+              { label: "CSV Imported", value: stats.csv, accent: "#4F1E7B", icon: FileText },
               { label: "Opt-Out", value: stats.optOut, accent: "#10B981", icon: CheckCircle2 },
             ].map(({ label, value, accent, icon: Icon }) => (
               <div
@@ -301,7 +301,8 @@ export default function DncManager() {
                   <div
                     className="w-14 h-14 rounded-2xl flex items-center justify-center"
                     style={{
-                      background: "linear-gradient(135deg,rgba(0, 0, 0 ,0.15),rgba(0, 0, 0 ,0.15))",
+                      background:
+                        "linear-gradient(135deg,rgba(79, 30, 123 ,0.15),rgba(79, 30, 123 ,0.15))",
                     }}
                   >
                     <Shield className="w-7 h-7 text-rose-500" />
@@ -338,8 +339,8 @@ export default function DncManager() {
                         <div
                           className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                           style={{
-                            background: "rgba(0, 0, 0 ,0.10)",
-                            border: "1px solid rgba(0, 0, 0 ,0.20)",
+                            background: "rgba(79, 30, 123 ,0.10)",
+                            border: "1px solid rgba(79, 30, 123 ,0.20)",
                           }}
                         >
                           <Phone className="w-3.5 h-3.5 text-rose-500" />

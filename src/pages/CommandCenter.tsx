@@ -270,12 +270,12 @@ export default function LiveOps() {
                     }
                   }}
                   disabled={activatingGrowth}
-                  className="app-primary-btn flex items-center gap-2 px-6 py-3 bg-ink text-paper rounded-sm hover:bg-black/80 transition-all shadow-md active:scale-95 disabled:opacity-60 disabled:cursor-wait"
+                  className="app-primary-btn flex items-center gap-2 px-6 py-3 bg-brand text-on-brand rounded-2xl hover:bg-brand-2 transition-all shadow-xl shadow-brand/20 active:scale-95 disabled:opacity-60 disabled:cursor-wait"
                 >
                   <Zap
                     className={clsx("w-4 h-4 fill-current", activatingGrowth && "animate-pulse")}
                   />
-                  <span className="text-xs font-bold uppercase tracking-widest">
+                  <span className="text-xs font-black uppercase tracking-widest">
                     {activatingGrowth ? "Activating…" : "Activate Growth"}
                   </span>
                 </button>
@@ -283,10 +283,10 @@ export default function LiveOps() {
                 <button
                   onClick={() => navigate("/agents")}
                   title="Create an agent first → /agents"
-                  className="app-primary-btn flex items-center gap-2 px-6 py-3 rounded-sm border border-black/20 bg-white text-ink hover:border-black/40 hover:shadow-sm transition-all"
+                  className="app-primary-btn flex items-center gap-2 px-6 py-3 rounded-2xl border border-black/10 bg-white/55 text-ink hover:border-brand/25 transition-colors"
                 >
                   <Zap className="w-4 h-4" />
-                  <span className="text-xs font-bold uppercase tracking-widest">
+                  <span className="text-xs font-black uppercase tracking-widest">
                     Create an agent →
                   </span>
                 </button>
@@ -297,26 +297,22 @@ export default function LiveOps() {
                 placeholders that violated the no-mocks rule and confused
                 operators who couldn't reconcile the numbers with their
                 actual data. */}
-              <div className="flex flex-wrap items-center gap-4 sm:gap-6 px-4 sm:px-6 py-4 bg-white border border-black/10 rounded-sm shadow-sm max-md:w-full max-md:grid max-md:grid-cols-2">
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6 px-4 sm:px-6 py-3 bg-black/[0.02] border border-black/5 rounded-2xl max-md:w-full max-md:grid max-md:grid-cols-2">
                 <div className="flex flex-col">
-                  <span className="text-[10px] uppercase tracking-widest font-bold text-black/50">
-                    Live Calls
-                  </span>
-                  <span className="text-sm font-mono font-black tracking-tight text-ink">
+                  <span className="text-eyebrow">Live Calls</span>
+                  <span className="text-xs font-mono font-bold text-brand">
                     {calls.length} active
                   </span>
                 </div>
-                <div className="w-px h-8 bg-black/10 hidden md:block" />
+                <div className="w-px h-6 bg-black/5" />
                 <button
                   type="button"
                   onClick={() => navigate("/agents")}
-                  className="flex flex-col text-left hover:opacity-70 transition-opacity"
+                  className="flex flex-col text-left hover:opacity-80 transition-opacity"
                   title="View fleet"
                 >
-                  <span className="text-[10px] uppercase tracking-widest font-bold text-black/50">
-                    Fleet Size
-                  </span>
-                  <span className="text-sm font-mono font-black tracking-tight text-ink">
+                  <span className="text-eyebrow">Fleet Size</span>
+                  <span className="text-xs font-mono font-bold text-brand">
                     {stats?.agents?.length ?? 0} agents
                   </span>
                 </button>
@@ -325,7 +321,7 @@ export default function LiveOps() {
               <button
                 onClick={refresh}
                 disabled={isRefreshing || loading}
-                className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn shadow-sm !p-3 !rounded-sm !border !border-black/20"
+                className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn !p-3 !rounded-2xl"
                 aria-label="Refresh"
               >
                 <RefreshCw className={clsx("w-5 h-5", isRefreshing && "animate-spin")} />
@@ -341,40 +337,41 @@ export default function LiveOps() {
         </section>
 
         {/* Dashboard Grid — compressed for 1366×768 laptop viewports.
-            Tightened to p-5, min-h-[280px], gap-4. Internal Live Monitor still uses its
+            Previously every card was p-8 (32px) min-h-[400px]+, gap-8
+            between, with a right rail at min-h-[600px]. That stacked
+            into ~1200px of dashboard content alone — half a viewport
+            below the fold on a typical demo laptop. Tightened to p-5,
+            min-h-[280px], gap-4. Internal Live Monitor still uses its
             own card. */}
-        <section className="space-y-4 pt-6 border-t border-black/10 mt-6">
-          <span className="text-[10px] uppercase tracking-widest font-bold text-black/50 block">
-            Live operations
-          </span>
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <section className="space-y-2 pt-2 border-t border-black/5">
+          <span className="app-section-title block">Live operations</span>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
             {/* Left Column: Live Monitor (8/12) */}
-            <div className="lg:col-span-8 space-y-4">
+            <div className="lg:col-span-8 space-y-2">
               <div className="relative group">
-                <div className="relative brutal-card min-h-[180px]">
+                <div className="absolute -inset-1 bg-gradient-to-r from-brand/20 to-brand-2/20 rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000" />
+                <div className="relative glass border-black/5 rounded-[2rem] p-4 min-h-[180px]">
                   <LiveMonitor calls={calls} />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {/* Analytics: Sentiment */}
-                <div className="brutal-card">
-                  <div className="flex items-center justify-between mb-4 border-b border-black/10 pb-3">
-                    <h3 className="app-section-title flex items-center gap-2 text-ink uppercase tracking-widest font-bold">
-                      <Globe className="w-4 h-4 text-ink" />
+                <div className="glass border-black/5 rounded-[2rem] p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="app-section-title flex items-center gap-2">
+                      <Globe className="w-3.5 h-3.5 text-brand" />
                       Market Sentiment
                     </h3>
                   </div>
 
                   {sentimentData.length === 0 ? (
-                    <div className="h-48 flex flex-col items-center justify-center gap-2 text-center border border-black/10 rounded-sm bg-black/[0.02] px-6 shadow-inner">
-                      <Activity className="w-5 h-5 text-black/30" />
-                      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-black/60">
-                        No conversations yet
-                      </p>
-                      <p className="text-xs leading-relaxed text-black/50 font-medium">
+                    <div className="h-48 flex flex-col items-center justify-center gap-2 text-center border border-dashed border-black/8 rounded-2xl bg-black/[0.01] px-6">
+                      <Activity className="w-6 h-6 text-muted/55" />
+                      <p className="text-caption font-medium">No conversations yet</p>
+                      <p className="text-caption leading-relaxed">
                         Make your first call to{" "}
-                        <a href="tel:+16306425661" className="text-ink hover:underline font-bold">
+                        <a href="tel:+16306425661" className="text-brand hover:underline">
                           (630) 642-5661
                         </a>{" "}
                         to see live sentiment.
@@ -403,7 +400,7 @@ export default function LiveOps() {
                             <Tooltip
                               contentStyle={{
                                 background: "rgba(28, 25, 23, 0.95)",
-                                border: "1px solid rgba(0, 0, 0 , 0.3)",
+                                border: "1px solid rgba(79, 30, 123 , 0.3)",
                                 borderRadius: "12px",
                                 boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
                               }}
@@ -437,52 +434,46 @@ export default function LiveOps() {
                 </div>
 
                 {/* Analytics: Unit Economics */}
-                <div className="brutal-card">
-                  <div className="flex items-center justify-between mb-4 border-b border-black/10 pb-3">
-                    <h3 className="app-section-title flex items-center gap-2 text-ink uppercase tracking-widest font-bold">
-                      <Zap className="w-4 h-4 text-ink" />
+                <div className="glass border-black/5 rounded-[2rem] p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="app-section-title flex items-center gap-2">
+                      <Zap className="w-3.5 h-3.5 text-brand" />
                       Unit Economics
                     </h3>
-                    <div className="flex items-center gap-1.5 px-2 py-0.5 bg-black/5 border border-black/10 rounded-sm">
-                      <span className="text-[9px] uppercase tracking-widest font-bold text-ink">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-brand/10 border border-brand/20 rounded-full">
+                      <span className="text-eyebrow !text-[0.625rem] text-brand">
                         Efficiency: {stats?.unitEconomics?.efficiencyScore ?? 0}%
                       </span>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-4 rounded-sm bg-black/[0.02] border border-black/10 shadow-inner">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-black/50 block mb-1">
-                        Cost / Min
-                      </span>
-                      <span className="text-2xl font-black tracking-tighter text-ink">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
+                      <span className="app-section-title block mb-1">Cost / Min</span>
+                      <span className="text-xl font-bold text-ink">
                         ${stats?.unitEconomics?.costPerMinute ?? "0.00"}
                       </span>
                     </div>
-                    <div className="p-4 rounded-sm bg-black/[0.02] border border-black/10 shadow-inner">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-black/50 block mb-1">
-                        Cost / Lead
-                      </span>
-                      <span className="text-2xl font-black tracking-tighter text-ink">
+                    <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
+                      <span className="app-section-title block mb-1">Cost / Lead</span>
+                      <span className="text-xl font-bold text-ink">
                         ${stats?.unitEconomics?.costPerLead ?? "0.00"}
                       </span>
                     </div>
                   </div>
 
-                  <div className="mt-4 p-4 rounded-sm bg-black/5 border border-black/15 shadow-sm">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-ink">
-                        Fleet ROI Projection
-                      </span>
-                      <span className="text-[10px] font-mono font-bold text-emerald-600 tracking-widest">
+                  <div className="mt-4 p-4 rounded-2xl bg-brand/5 border border-brand/10">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-eyebrow text-brand">Fleet ROI Projection</span>
+                      <span className="text-caption font-mono font-semibold text-brand">
                         EXCELLENT
                       </span>
                     </div>
-                    <div className="h-2 w-full bg-black/10 rounded-sm overflow-hidden border border-black/10">
+                    <div className="h-1.5 w-full bg-brand/10 rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${stats?.unitEconomics?.efficiencyScore ?? 0}%` }}
-                        className="h-full bg-ink"
+                        className="h-full bg-brand rounded-full"
                       />
                     </div>
                   </div>
@@ -491,9 +482,9 @@ export default function LiveOps() {
             </div>
 
             {/* Right Column: Intelligence & Actions (4/12) */}
-            <div className="lg:col-span-4 space-y-4">
+            <div className="lg:col-span-4 space-y-2">
               {/* Intelligence Hub (Action Feed) */}
-              <div className="brutal-card h-full min-h-[180px] flex flex-col p-5">
+              <div className="glass border-black/5 rounded-[2rem] p-4 h-full min-h-[180px] flex flex-col">
                 <ActionFeed actions={actions} onRefresh={refresh} />
               </div>
             </div>

@@ -53,9 +53,9 @@ const PLAN_ICONS: Record<string, any> = {
 
 const PLAN_ACCENTS: Record<string, string> = {
   personal: "#10B981",
-  starter: "#0A0A0A",
-  pro: "#0A0A0A",
-  business: "#0A0A0A",
+  starter: "#4F1E7B",
+  pro: "#4F1E7B",
+  business: "#4F1E7B",
   enterprise: "#FFC07D",
 };
 
@@ -246,7 +246,7 @@ export default function StripeBillingCard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {plans.map((plan) => {
             const Icon = PLAN_ICONS[plan.id] || Building2;
-            const accent = PLAN_ACCENTS[plan.id] || "#0A0A0A";
+            const accent = PLAN_ACCENTS[plan.id] || "#4F1E7B";
             const isCurrent = sub?.plan === plan.id && hasActive;
             const isBusy = busy === plan.id;
             const isSignupMatch = !hasActive && signupPlanInterest === plan.id;
@@ -275,7 +275,7 @@ export default function StripeBillingCard() {
                   <div
                     className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em]"
                     style={{
-                      background: "#0A0A0A",
+                      background: "#4F1E7B",
                       color: "#fff",
                     }}
                   >
@@ -286,7 +286,7 @@ export default function StripeBillingCard() {
                   <div
                     className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em]"
                     style={{
-                      background: "#0A0A0A",
+                      background: "#4F1E7B",
                       color: "#fff",
                     }}
                   >
@@ -396,7 +396,7 @@ function ActiveSubCard({
   busy: boolean;
   onPortal: () => void;
 }) {
-  const accent = PLAN_ACCENTS[sub.plan || ""] || "#0A0A0A";
+  const accent = PLAN_ACCENTS[sub.plan || ""] || "#4F1E7B";
   const Icon = PLAN_ICONS[sub.plan || ""] || CreditCard;
   const renews = safeDate(sub.current_period_end);
   const daysLeft = renews

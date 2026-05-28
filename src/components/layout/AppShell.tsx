@@ -127,30 +127,28 @@ export default function AppShell() {
           <div
             className="absolute inset-0 rounded-full"
             style={{
-              background: "conic-gradient(from 0deg, #0A0A0A, #0A0A0A, #0A0A0A, #10B981, #0A0A0A)",
+              background: "conic-gradient(from 0deg, #4F1E7B, #4F1E7B, #4F1E7B, #10B981, #4F1E7B)",
               filter: "blur(2px)",
             }}
           />
           <div className="absolute inset-2 rounded-full bg-paper" />
-          <div className="absolute inset-4 rounded-full glass flex items-center justify-center border border-black/10 shadow-sm">
+          <div className="absolute inset-4 rounded-full glass flex items-center justify-center">
             <div className="animate-pulse">
-              <WirelineMark className="w-16 h-16 text-black" strokeWidth={90} />
+              <WirelineMark className="w-16 h-16 text-brand" strokeWidth={90} />
             </div>
           </div>
         </div>
 
         <div className="space-y-4 relative z-10">
-          <h1 className="font-sans font-black tracking-tight text-5xl md:text-7xl leading-[0.85]">
+          <h1 className="brand-wordmark text-5xl md:text-7xl leading-[0.85]">
             {branding.brand_name.toUpperCase()}
           </h1>
-          <p className="text-[10px] uppercase tracking-widest font-bold text-black/50">
-            Growth Engine Initializing
-          </p>
+          <p className="text-eyebrow tracking-[0.4em]">Growth Engine Initializing</p>
           <div className="flex items-center justify-center gap-1.5 pt-4">
             {[0, 1, 2].map((i) => (
               <span
                 key={i}
-                className="w-1.5 h-1.5 rounded-full bg-black animate-bounce"
+                className="w-1.5 h-1.5 rounded-full bg-brand animate-bounce"
                 style={{ animationDelay: `${i * 0.2}s` }}
               />
             ))}
@@ -304,21 +302,17 @@ function DesktopContextBar({
 }) {
   const breadcrumb = getDesktopBreadcrumb(pathname);
   return (
-    <div className="hidden lg:flex shrink-0 items-center justify-between gap-4 border-b border-black/10 bg-white/90 px-6 py-4 shadow-sm z-20 relative">
+    <div className="hidden lg:flex shrink-0 items-center justify-between gap-4 border-b border-black/5 bg-paper/72 px-5 py-3 backdrop-blur-xl">
       <div className="min-w-0">
-        {breadcrumb.eyebrow && (
-          <p className="text-[10px] uppercase tracking-widest font-bold text-black/50 mb-1">
-            {breadcrumb.eyebrow}
-          </p>
-        )}
-        <h1 className="font-sans font-black tracking-tight text-[1.35rem] sm:text-2xl leading-tight text-ink truncate">
+        {breadcrumb.eyebrow && <p className="text-eyebrow mb-0.5">{breadcrumb.eyebrow}</p>}
+        <h1 className="font-display italic text-[1.35rem] sm:text-[22px] leading-tight text-ink truncate">
           {breadcrumb.title}
         </h1>
       </div>
       <button
         type="button"
         onClick={onShowShortcuts}
-        className="inline-flex items-center gap-2 rounded-sm border border-black/10 bg-black/5 px-3 py-1.5 text-[10px] uppercase tracking-widest font-bold text-black/60 transition-all hover:border-black/20 hover:text-black hover:bg-black/10 shadow-sm"
+        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-black/8 bg-white/55 px-4 text-eyebrow transition-colors hover:border-brand/25 hover:text-brand"
         aria-label="Open keyboard shortcuts"
       >
         Press ?

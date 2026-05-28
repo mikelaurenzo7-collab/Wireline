@@ -105,7 +105,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
     const variant = opts.variant ?? "topbar";
     const isDrawer = variant === "drawer";
     const activeBg = isDrawer ? "var(--color-brand)" : "var(--color-paper)";
-    const activeTextColor = isDrawer ? "var(--color-paper)" : "#000000";
+    const activeTextColor = isDrawer ? "var(--color-paper)" : "#3B154C";
     return (
       <Link
         key={item.label}
@@ -119,10 +119,10 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
           isDrawer ? "min-h-11" : "h-8",
           isDrawer
             ? active
-              ? "shadow-md shadow-[#0A0A0A]/20"
+              ? "shadow-md shadow-[#4F1E7B]/20"
               : "text-ink/70 hover:text-ink hover:bg-black/5"
             : active
-              ? "shadow-md shadow-[#000000]/10"
+              ? "shadow-md shadow-[#3B154C]/10"
               : "chrome-muted hover:text-[#EFE9DC] hover:bg-white/8 hover:shadow-sm",
         )}
         style={active ? { color: activeTextColor } : undefined}
@@ -135,7 +135,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
             style={{
               background: activeBg,
               boxShadow: isDrawer
-                ? "0 6px 18px -6px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.18) inset"
+                ? "0 6px 18px -6px rgba(79,30,123,0.45), 0 0 0 1px rgba(255,255,255,0.18) inset"
                 : "0 4px 14px -4px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.2) inset",
               willChange: "transform, background-color",
             }}
@@ -188,9 +188,10 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
     <>
       <header
         aria-label="Main navigation"
-        className="shell-sticky-glass shrink-0 sticky top-0 z-50 bg-[#000000]/92 border-b border-black/10 text-white lg:hidden shadow-sm"
+        className="shell-sticky-glass shrink-0 sticky top-0 z-50 bg-brand-deep/92 border-b border-[#EFE9DC]/10 text-on-brand lg:hidden"
         style={{
-          boxShadow: "0 0 0 1px rgba(0, 0, 0, 0.06), 0 8px 24px -16px rgba(0, 0, 0, 0.15)",
+          boxShadow:
+            "0 0 0 1px rgba(239, 233, 220, 0.06), 0 8px 24px -16px rgba(79, 30, 123, 0.15)",
           /* Top safe area: notch / Dynamic Island on iPhone.
              Left/right safe areas: landscape iPhone notch coverage. */
           paddingTop: "max(0px, env(safe-area-inset-top, 0))",
@@ -211,16 +212,17 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
               whileHover={{ rotate: 8, scale: 1.06 }}
               whileTap={{ scale: 0.96 }}
               transition={{ type: "spring", stiffness: 400, damping: 20 }}
-              className="relative w-7 h-7 rounded-md flex items-center justify-center overflow-hidden shrink-0 border border-white/10"
+              className="relative w-7 h-7 rounded-lg flex items-center justify-center overflow-hidden shrink-0"
               style={{
-                background: "#0A0A0A",
+                background: "#EFE9DC",
                 boxShadow:
                   "0 4px 14px -4px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.22) inset",
               }}
             >
-              <WirelineMark className="w-4 h-4 text-white relative z-10" strokeWidth={130} />
+              <WirelineMark className="w-4 h-4 text-[#3B154C] relative z-10" strokeWidth={130} />
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent" />
             </motion.div>
-            <span className="font-sans font-black tracking-tight text-[15px] sm:text-[16px] leading-none hidden sm:inline text-white filter-none">
+            <span className="brand-wordmark text-[15px] sm:text-[16px] leading-none hidden sm:inline !text-[#EFE9DC] !filter-none">
               {branding.brand_name.toUpperCase()}
             </span>
           </Link>
@@ -242,15 +244,13 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 >
                   {breadcrumb.eyebrow && (
                     <>
-                      <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-white/60 whitespace-nowrap">
-                        {breadcrumb.eyebrow}
-                      </span>
-                      <span aria-hidden="true" className="text-white/30">
+                      <span className="chrome-eyebrow whitespace-nowrap">{breadcrumb.eyebrow}</span>
+                      <span aria-hidden="true" className="chrome-subtle">
                         ·
                       </span>
                     </>
                   )}
-                  <h1 className="font-sans font-black tracking-tight text-[18px] leading-none truncate text-white">
+                  <h1 className="font-display italic text-[18px] leading-none truncate text-[#EFE9DC]">
                     {breadcrumb.title}
                   </h1>
                 </motion.div>
@@ -323,7 +323,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 title={user?.email || "Account"}
               >
                 <div
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-[#000000] font-medium text-[10px] shrink-0"
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-[#3B154C] font-medium text-[10px] shrink-0"
                   style={{ background: "#EFE9DC" }}
                   aria-hidden="true"
                 >
@@ -470,7 +470,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 >
                   <div
                     className="w-9 h-9 rounded-xl flex items-center justify-center"
-                    style={{ background: "#0A0A0A" }}
+                    style={{ background: "#4F1E7B" }}
                   >
                     <WirelineMark className="w-4 h-4 text-[#EFE9DC]" strokeWidth={130} />
                   </div>
@@ -505,28 +505,28 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 })}
               </nav>
 
-              <div className="pt-3 mt-3 border-t border-black/10 space-y-2">
-                <div className="flex items-center gap-2 rounded-sm border border-black/10 bg-white/80 shadow-sm px-3 py-2">
+              <div className="pt-3 mt-3 border-t border-black/8 space-y-2">
+                <div className="flex items-center gap-2 rounded-lg border border-black/8 glass px-2 py-2">
                   <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 border border-black/10"
-                    style={{ background: "#0A0A0A" }}
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-on-brand font-medium text-sm shrink-0"
+                    style={{ background: "#4F1E7B" }}
                   >
                     {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-ink truncate leading-tight mb-0.5">
+                    <p className="text-[12px] font-medium text-ink truncate leading-none mb-0.5">
                       {user?.email?.split("@")[0]}
                     </p>
-                    <p className="text-[9px] tracking-widest uppercase font-bold text-black/50 truncate">
+                    <p className="text-[9px] tracking-[0.12em] uppercase text-muted truncate">
                       {user?.email?.split("@")[1]}
                     </p>
                   </div>
                   <button
                     onClick={() => signOut()}
                     aria-label="Sign out"
-                    className="w-10 h-10 rounded-sm flex items-center justify-center text-black/40 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors"
+                    className="w-11 h-11 rounded-md flex items-center justify-center text-ink/40 hover:text-rose-600 hover:bg-rose-500/8 border border-black/7 hover:border-rose-500/35 transition-colors"
                   >
-                    <LogOut className="w-4 h-4" />
+                    <LogOut className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>

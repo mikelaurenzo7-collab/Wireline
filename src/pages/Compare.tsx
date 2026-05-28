@@ -180,7 +180,7 @@ export default function Compare() {
 
       <MarketingPageFrame mainClassName="!px-0">
         {/* Hero */}
-        <section className="relative z-10 max-w-6xl mx-auto pt-6 pb-12 sm:pt-10 sm:pb-16 px-4 sm:px-6 lg:px-10">
+        <section className="relative z-10 max-w-6xl mx-auto pt-4 pb-12 sm:pt-8 sm:pb-16">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -194,8 +194,7 @@ export default function Compare() {
               Wireline is the horizontal platform that runs voice + SMS + email in one console with
               supervisor cockpit, frontier reasoning, white-label numbers, and a real TCPA ledger.
               Bland and Retell are excellent if you mainly want a voice API with a thin dashboard;
-               Air still
-              wins on pure outbound price. Here's the full picture.
+              Air still wins on pure outbound price. Here's the full picture.
             </p>
           </motion.div>
         </section>

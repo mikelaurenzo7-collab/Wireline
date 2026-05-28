@@ -130,7 +130,7 @@ function SlackPreviewCard() {
         >
           <div
             className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center text-[9px] font-bold text-white mt-0.5"
-            style={{ background: "#0A0A0A" }}
+            style={{ background: "#4F1E7B" }}
           >
             W
           </div>
@@ -763,7 +763,7 @@ function TeamsPreviewCard() {
         >
           <div
             className="w-7 h-7 rounded shrink-0 flex items-center justify-center text-[9px] font-bold text-white mt-0.5"
-            style={{ background: "#0A0A0A" }}
+            style={{ background: "#4F1E7B" }}
           >
             W
           </div>
@@ -1260,7 +1260,7 @@ export default function AgentIntegrationCanvas({
                   y2={n.cy}
                   gradientUnits="userSpaceOnUse"
                 >
-                  <stop offset="0%" stopColor="rgba(0,0,0,0.35)" />
+                  <stop offset="0%" stopColor="rgba(79,30,123,0.35)" />
                   <stop offset="100%" stopColor={n.color} stopOpacity={0.45} />
                 </linearGradient>
               ))}
@@ -1359,7 +1359,7 @@ export default function AgentIntegrationCanvas({
                 style={{
                   width: 76,
                   height: 76,
-                  background: "rgba(0,0,0,0.1)",
+                  background: "rgba(79,30,123,0.1)",
                   animation: "agent-pulse 3.8s ease-in-out 0.75s infinite",
                 }}
                 aria-hidden="true"
@@ -1370,7 +1370,7 @@ export default function AgentIntegrationCanvas({
                 style={{
                   width: 58,
                   height: 58,
-                  background: "rgba(0,0,0,0.18)",
+                  background: "rgba(79,30,123,0.18)",
                   animation: "agent-pulse 3.3s ease-in-out 0.38s infinite",
                 }}
                 aria-hidden="true"
@@ -1381,7 +1381,7 @@ export default function AgentIntegrationCanvas({
                 style={{
                   width: 44,
                   height: 44,
-                  background: "rgba(0,0,0,0.26)",
+                  background: "rgba(79,30,123,0.26)",
                   animation: "agent-pulse 2.9s ease-in-out infinite",
                 }}
                 aria-hidden="true"
@@ -1391,10 +1391,10 @@ export default function AgentIntegrationCanvas({
                 className="relative w-11 h-11 rounded-full flex items-center justify-center z-10"
                 style={{
                   background:
-                    "radial-gradient(circle at 35% 35%, rgba(0,0,0,0.96), rgba(18,0,32,0.98))",
+                    "radial-gradient(circle at 35% 35%, rgba(79,30,123,0.96), rgba(18,0,32,0.98))",
                   border: "1.5px solid rgba(239,233,220,0.28)",
                   boxShadow:
-                    "0 0 20px rgba(0,0,0,0.65), 0 0 42px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1)",
+                    "0 0 20px rgba(79,30,123,0.65), 0 0 42px rgba(79,30,123,0.2), inset 0 1px 0 rgba(255,255,255,0.1)",
                 }}
               >
                 <WirelineMark className="w-5 h-5 text-paper" strokeWidth={90} />

@@ -15,7 +15,7 @@ export default function RouteAccentStrip() {
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="absolute inset-0 origin-left"
         style={{
-          background: `linear-gradient(90deg, transparent 0%, #000000 18%, #000000 78%, transparent 100%)`,
+          background: `linear-gradient(90deg, transparent 0%, ${from} 18%, ${to} 78%, transparent 100%)`,
         }}
         aria-hidden="true"
       />

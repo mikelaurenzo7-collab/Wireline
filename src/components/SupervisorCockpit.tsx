@@ -31,7 +31,7 @@ interface Agent {
  *
  * Mounted at /cockpit and gated to Business+ tiers in nav. For tonight
  * the "listen in" button is UI-only — actual WebRTC audio streaming
- * via Voice Engine's API is a separate slice (logged as P3 risk).
+ * via Vapi's assistant API is a separate slice (logged as P3 risk).
  */
 export default function SupervisorCockpit() {
   const { info } = useToast();

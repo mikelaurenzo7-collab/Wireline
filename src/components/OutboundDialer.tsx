@@ -818,7 +818,7 @@ export default function OutboundDialer() {
                     icon={UploadCloud}
                     title="Queue is idle"
                     description="Upload a CSV of contacts and your agent will dial through them with full call notes saved to the CRM."
-                    accent="#0A0A0A"
+                    accent="#4F1E7B"
                     actions={[
                       {
                         label: "Upload CSV",
@@ -1169,7 +1169,7 @@ export default function OutboundDialer() {
                       }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
                       className="h-full rounded-full"
-                      style={{ background: "linear-gradient(90deg,#0A0A0A,#0A0A0A)" }}
+                      style={{ background: "linear-gradient(90deg,#4F1E7B,#4F1E7B)" }}
                     />
                   </div>
                   <div className="flex items-center gap-1 mt-1.5">
@@ -1215,13 +1215,13 @@ export default function OutboundDialer() {
                               label: "Avg Duration",
                               value: `${campaignAnalytics.call_stats?.avg_duration_sec ?? 0}s`,
                               icon: Clock,
-                              accent: "#0A0A0A",
+                              accent: "#4F1E7B",
                             },
                             {
                               label: "Total Cost",
                               value: `$${(campaignAnalytics.call_stats?.total_cost_usd ?? 0).toFixed(3)}`,
                               icon: DollarSign,
-                              accent: "#0A0A0A",
+                              accent: "#4F1E7B",
                             },
                             {
                               label: "Avg Score",
@@ -1230,7 +1230,7 @@ export default function OutboundDialer() {
                                   ? campaignAnalytics.call_stats.avg_lead_score
                                   : "—",
                               icon: Award,
-                              accent: "#0A0A0A",
+                              accent: "#4F1E7B",
                             },
                           ].map(({ label, value, icon: Icon, accent }) => (
                             <div key={label} className="rounded-xl glass border border-white/8 p-3">
@@ -1261,9 +1261,9 @@ export default function OutboundDialer() {
                                   o.status === "Completed"
                                     ? "#10B981"
                                     : o.status === "Failed" || o.status?.includes("Fail")
-                                      ? "#0A0A0A"
+                                      ? "#4F1E7B"
                                       : o.status === "Queued"
-                                        ? "#0A0A0A"
+                                        ? "#4F1E7B"
                                         : o.status?.includes("Blocked")
                                           ? "#FF9A5C"
                                           : "#7C7469";
@@ -1303,13 +1303,13 @@ export default function OutboundDialer() {
             {/* Stats row */}
             <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-2 border-b border-white/8">
               {[
-                { label: "Leads", value: selectedCampaign.leads_count, accent: "#0A0A0A" },
-                { label: "Dialed", value: selectedCampaign.dialed_count, accent: "#0A0A0A" },
+                { label: "Leads", value: selectedCampaign.leads_count, accent: "#4F1E7B" },
+                { label: "Dialed", value: selectedCampaign.dialed_count, accent: "#4F1E7B" },
                 { label: "Connected", value: selectedCampaign.connected_count, accent: "#10B981" },
                 {
                   label: "Window",
                   value: `${selectedCampaign.call_window_start}–${selectedCampaign.call_window_end}`,
-                  accent: "#0A0A0A",
+                  accent: "#4F1E7B",
                 },
               ].map((s) => (
                 <div key={s.label} className="rounded-lg glass border border-white/8 p-2.5">
@@ -1334,7 +1334,7 @@ export default function OutboundDialer() {
                 icon={Megaphone}
                 title="No leads in campaign"
                 description="Upload a CSV from the Bulk tab and pick this campaign in the dropdown — assigned leads land here."
-                accent="#0A0A0A"
+                accent="#4F1E7B"
                 actions={[
                   {
                     label: "Upload CSV",
@@ -1453,7 +1453,7 @@ export default function OutboundDialer() {
                 label: "Sequences",
                 icon: Repeat,
                 content: (
-                  <Panel icon={Repeat} hint="Multi-touch cadences" title="" scroll accent="#0A0A0A">
+                  <Panel icon={Repeat} hint="Multi-touch cadences" title="" scroll accent="#4F1E7B">
                     <Cadences />
                   </Panel>
                 ),

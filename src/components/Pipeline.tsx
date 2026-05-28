@@ -12,9 +12,9 @@ type Stage = "cold" | "contacted" | "qualified" | "demo" | "won" | "lost";
 
 const STAGES: { id: Stage; label: string; tint: string; help: string }[] = [
   { id: "cold", label: "Cold", tint: "#94a3b8", help: "Not contacted yet" },
-  { id: "contacted", label: "Contacted", tint: "#0A0A0A", help: "Reached at least once" },
-  { id: "qualified", label: "Qualified", tint: "#0A0A0A", help: "Fit confirmed" },
-  { id: "demo", label: "Demo Booked", tint: "#0A0A0A", help: "Meeting on the calendar" },
+  { id: "contacted", label: "Contacted", tint: "#4F1E7B", help: "Reached at least once" },
+  { id: "qualified", label: "Qualified", tint: "#4F1E7B", help: "Fit confirmed" },
+  { id: "demo", label: "Demo Booked", tint: "#4F1E7B", help: "Meeting on the calendar" },
   { id: "won", label: "Won", tint: "#10B981", help: "Closed-won" },
   { id: "lost", label: "Lost", tint: "#f43f5e", help: "Closed-lost" },
 ];
@@ -110,7 +110,7 @@ export default function Pipeline() {
           icon={Kanban}
           title="No leads in the pipeline"
           description="Pipeline tracks every outbound lead through Cold → Contacted → Qualified → Demo → Won/Lost. Add leads via the Outbound tab — upload a CSV or capture them from an inbound call."
-          accent="#0A0A0A"
+          accent="#4F1E7B"
           actions={[
             { label: "Start outbound", to: "/outbound", primary: true },
             { label: "Connect a webhook", to: "/integrations" },
@@ -194,7 +194,7 @@ export default function Pipeline() {
                                 !lead.attempts || lead.attempts === 0
                                   ? "rgba(255,255,255,0.06)"
                                   : lead.attempts <= 2
-                                    ? "#0A0A0A"
+                                    ? "#4F1E7B"
                                     : lead.attempts <= 4
                                       ? "#F59E0B"
                                       : "#E8466A",

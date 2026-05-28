@@ -138,14 +138,14 @@ export default function IntakeKeysManager() {
       <div className="relative rounded-2xl glass border border-white/10 p-6 space-y-5 overflow-hidden">
         <div
           className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-25 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, #0A0A0A, transparent)" }}
+          style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
         />
 
         <div className="relative z-10 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: "#0A0A0A" }}
+              style={{ background: "#4F1E7B" }}
             >
               <Inbox className="w-5 h-5 text-on-brand" />
             </div>

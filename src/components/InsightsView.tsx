@@ -94,8 +94,8 @@ export default function InsightsView() {
                 style={
                   days === d
                     ? {
-                        background: "#0A0A0A",
-                        boxShadow: "0 2px 8px -4px rgba(0, 0, 0 ,0.50)",
+                        background: "#4F1E7B",
+                        boxShadow: "0 2px 8px -4px rgba(79, 30, 123 ,0.50)",
                       }
                     : undefined
                 }
@@ -208,7 +208,7 @@ function FunnelView({ days }: { days: number }) {
         <div className="relative rounded-3xl glass-strong overflow-hidden p-10 md:p-14 flex flex-col items-center gap-5 text-center">
           <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #0A0A0A22, #0A0A0A22)" }}
+            style={{ background: "linear-gradient(135deg, #4F1E7B22, #4F1E7B22)" }}
           >
             <TrendingUp className="w-8 h-8 text-brand" />
           </div>
@@ -256,7 +256,7 @@ function FunnelView({ days }: { days: number }) {
                   transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: i * 0.06 }}
                   className="absolute inset-y-0 left-0 rounded-full"
                   style={{
-                    background: `linear-gradient(90deg, #0A0A0A, #0A0A0A, #0A0A0A)`,
+                    background: `linear-gradient(90deg, #4F1E7B, #4F1E7B, #4F1E7B)`,
                     backgroundSize: "200% 100%",
                   }}
                 />
@@ -327,14 +327,14 @@ function AttributionView({ days }: { days: number }) {
         <Stat
           label="Tagged sources"
           value={rows.filter((r) => r.source !== "(untagged)").length}
-          accent="#0A0A0A"
+          accent="#4F1E7B"
         />
-        <Stat label="Total calls" value={totalCalls} accent="#0A0A0A" />
+        <Stat label="Total calls" value={totalCalls} accent="#4F1E7B" />
         <Stat label="Booked" value={totalBooked} accent="#10B981" />
         <Stat
           label="Conv. rate"
           value={`${totalCalls > 0 ? ((totalBooked / totalCalls) * 100).toFixed(1) : "0.0"}%`}
-          accent="#0A0A0A"
+          accent="#4F1E7B"
         />
       </div>
       <div className="rounded-2xl glass border border-white/8 overflow-hidden app-table-scroll">
@@ -462,7 +462,7 @@ function TopicsView() {
                   animate={{ width: `${pct}%` }}
                   transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: i * 0.05 }}
                   className="absolute inset-x-0 bottom-0 h-1"
-                  style={{ background: "#0A0A0A" }}
+                  style={{ background: "#4F1E7B" }}
                 />
                 <div className="space-y-2">
                   <div className="flex items-baseline justify-between gap-3">
@@ -577,11 +577,11 @@ function HeatmapView({ days }: { days: number }) {
                           style={{
                             background:
                               cell && cell.count > 0
-                                ? `linear-gradient(135deg, rgba(0, 0, 0 ,${opacity}), rgba(0, 0, 0 ,${opacity * 0.8}))`
+                                ? `linear-gradient(135deg, rgba(79, 30, 123 ,${opacity}), rgba(79, 30, 123 ,${opacity * 0.8}))`
                                 : "rgba(0,0,0,0.03)",
                             border:
                               cell && cell.count > 0
-                                ? `1px solid rgba(0, 0, 0 ,${0.2 + intensity * 0.4})`
+                                ? `1px solid rgba(79, 30, 123 ,${0.2 + intensity * 0.4})`
                                 : "1px solid rgba(0,0,0,0.04)",
                           }}
                           title={`${wd} ${h}:00 — ${cell?.count || 0} calls${cell?.avg_score ? `, avg score ${cell.avg_score}` : ""}`}
@@ -602,7 +602,7 @@ function HeatmapView({ days }: { days: number }) {
                 key={i}
                 className="w-4 h-4 rounded"
                 style={{
-                  background: `linear-gradient(135deg, rgba(0, 0, 0 ,${o}), rgba(0, 0, 0 ,${o * 0.8}))`,
+                  background: `linear-gradient(135deg, rgba(79, 30, 123 ,${o}), rgba(79, 30, 123 ,${o * 0.8}))`,
                 }}
               />
             ))}
@@ -673,23 +673,23 @@ function LeaderboardView({ days }: { days: number }) {
     iconBg: boolean;
   }> = [
     {
-      gradient: "#0A0A0A",
+      gradient: "#4F1E7B",
       ring: "border-brand/40",
-      glow: "rgba(0, 0, 0 ,0.25)",
+      glow: "rgba(79, 30, 123 ,0.25)",
       textClass: "text-paper",
       iconBg: true,
     },
     {
-      gradient: "linear-gradient(135deg, rgba(0, 0, 0 ,0.20), rgba(0, 0, 0 ,0.10))",
+      gradient: "linear-gradient(135deg, rgba(79, 30, 123 ,0.20), rgba(79, 30, 123 ,0.10))",
       ring: "border-brand-2/30",
-      glow: "rgba(0, 0, 0 ,0.15)",
+      glow: "rgba(79, 30, 123 ,0.15)",
       textClass: "text-brand-2",
       iconBg: false,
     },
     {
-      gradient: "linear-gradient(135deg, rgba(0, 0, 0 ,0.15), rgba(0, 0, 0 ,0.08))",
+      gradient: "linear-gradient(135deg, rgba(79, 30, 123 ,0.15), rgba(79, 30, 123 ,0.08))",
       ring: "border-brand-3/25",
-      glow: "rgba(0, 0, 0 ,0.12)",
+      glow: "rgba(79, 30, 123 ,0.12)",
       textClass: "text-brand-3",
       iconBg: false,
     },
@@ -759,19 +759,19 @@ function LeaderboardView({ days }: { days: number }) {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
                 <Stat label="Calls" value={a.total_calls} />
-                <Stat label="Qualified" value={a.qualified} accent="#0A0A0A" />
+                <Stat label="Qualified" value={a.qualified} accent="#4F1E7B" />
                 <Stat label="Avg Score" value={a.avg_lead_score} />
                 <Stat label="Bookings" value={a.bookings} />
                 <Stat label="Minutes" value={a.minutes} />
                 <Stat
                   label="$/Qual"
                   value={a.cost_per_qualified ? `$${a.cost_per_qualified}` : "—"}
-                  accent="#0A0A0A"
+                  accent="#4F1E7B"
                 />
                 <Stat
                   label="$/Outcome"
                   value={a.cost_per_outcome ? `$${a.cost_per_outcome}` : "—"}
-                  accent="#0A0A0A"
+                  accent="#4F1E7B"
                 />
                 <Stat label="Total $" value={a.total_cost ? `$${a.total_cost}` : "—"} />
               </div>
@@ -1066,19 +1066,19 @@ function AISpendView({ days }: { days: number }) {
               label="Total Spend"
               value={formatMoney(totals?.cost, 2)}
               icon={DollarSign}
-              accent="#0A0A0A"
+              accent="#4F1E7B"
             />
             <SpendStat
               label="AI Calls"
               value={String(totals.calls)}
               icon={Brain}
-              accent="#0A0A0A"
+              accent="#4F1E7B"
             />
             <SpendStat
               label="Avg / Call"
               value={formatMoney(totals?.avg_cost_per_call, 4)}
               icon={Receipt}
-              accent="#0A0A0A"
+              accent="#4F1E7B"
             />
             <SpendStat
               label="Saved by Cache"
@@ -1114,7 +1114,7 @@ function AISpendView({ days }: { days: number }) {
                           animate={{ width: `${pct}%` }}
                           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: i * 0.02 }}
                           className="absolute inset-y-0 left-0 rounded-lg flex items-center px-3"
-                          style={{ background: "#0A0A0A" }}
+                          style={{ background: "#4F1E7B" }}
                         >
                           <span className="text-[10px] font-mono text-on-brand font-medium">
                             ${safeFixed(d.cost, 2)}
@@ -1153,7 +1153,7 @@ function AISpendView({ days }: { days: number }) {
                             animate={{ width: `${pct}%` }}
                             transition={{ duration: 0.6, delay: i * 0.03 }}
                             className="absolute inset-y-0 left-0 rounded-full"
-                            style={{ background: "#0A0A0A" }}
+                            style={{ background: "#4F1E7B" }}
                           />
                         </div>
                         <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.25em] text-muted">
@@ -1509,7 +1509,7 @@ function Spinner() {
         <div
           className="absolute inset-0 rounded-full opacity-40"
           style={{
-            background: "conic-gradient(from 0deg, #0A0A0A, #0A0A0A, #0A0A0A, #10B981, #0A0A0A)",
+            background: "conic-gradient(from 0deg, #4F1E7B, #4F1E7B, #4F1E7B, #10B981, #4F1E7B)",
             filter: "blur(1px)",
             animation: "spin 2s linear infinite",
           }}
@@ -1519,8 +1519,8 @@ function Spinner() {
           <div
             className="w-3 h-3 rounded-full"
             style={{
-              background: "#0A0A0A",
-              boxShadow: "0 0 10px #0A0A0A",
+              background: "#4F1E7B",
+              boxShadow: "0 0 10px #4F1E7B",
             }}
           />
         </div>
@@ -1541,7 +1541,7 @@ function Empty({ label, green }: { label: string; green?: boolean }) {
           style={{
             background: green
               ? "radial-gradient(circle, #10B981, transparent)"
-              : "radial-gradient(circle, #0A0A0A, transparent)",
+              : "radial-gradient(circle, #4F1E7B, transparent)",
           }}
         />
         <div
@@ -1584,11 +1584,11 @@ function ErrCard({ error }: { error: string }) {
 /* ─────────────────────────  Quality (QA Scorecard)  ─────────────────── */
 
 function qaColor(score: number) {
-  if (score >= 90) return "#0A0A0A";
+  if (score >= 90) return "#4F1E7B";
   if (score >= 75) return "#10B981";
   if (score >= 60) return "#FFD166";
   if (score >= 40) return "#FF9A5C";
-  return "#0A0A0A";
+  return "#4F1E7B";
 }
 
 function QualityView({ days }: { days: number }) {
@@ -1655,7 +1655,7 @@ function QualityView({ days }: { days: number }) {
           <div className="relative rounded-3xl glass-strong overflow-hidden p-10 md:p-14 flex flex-col items-center gap-5 text-center">
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg,#0A0A0A22,#0A0A0A22)" }}
+              style={{ background: "linear-gradient(135deg,#4F1E7B22,#4F1E7B22)" }}
             >
               <Star className="w-8 h-8 text-brand" />
             </div>
@@ -1714,9 +1714,9 @@ function QualityView({ days }: { days: number }) {
       {/* Hero stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Scored Calls", value: data.count, accent: "#0A0A0A" },
+          { label: "Scored Calls", value: data.count, accent: "#4F1E7B" },
           { label: "Average Score", value: `${data.avgScore}/100`, accent: qaColor(data.avgScore) },
-          { label: "Opening", value: `${dims.greeting ?? 0}/20`, accent: "#0A0A0A" },
+          { label: "Opening", value: `${dims.greeting ?? 0}/20`, accent: "#4F1E7B" },
           { label: "Closing", value: `${dims.closing ?? 0}/20`, accent: "#10B981" },
         ].map(({ label, value, accent }) => (
           <div
@@ -1752,7 +1752,7 @@ function QualityView({ days }: { days: number }) {
                     animate={{ width: `${(bucket.count / maxDist) * 100}%` }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
                     className="h-full rounded-full"
-                    style={{ background: bucket.color || "#0A0A0A" }}
+                    style={{ background: bucket.color || "#4F1E7B" }}
                   />
                 </div>
                 <span className="text-[9px] font-mono text-ink w-6 text-right shrink-0">
@@ -1779,8 +1779,8 @@ function QualityView({ days }: { days: number }) {
                 <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
                 <Radar
                   dataKey="score"
-                  stroke="#0A0A0A"
-                  fill="#0A0A0A"
+                  stroke="#4F1E7B"
+                  fill="#4F1E7B"
                   fillOpacity={0.15}
                   strokeWidth={1.5}
                 />
@@ -1801,8 +1801,8 @@ function QualityView({ days }: { days: number }) {
               <AreaChart data={data.trend} margin={{ top: 4, right: 0, left: -28, bottom: 0 }}>
                 <defs>
                   <linearGradient id="qaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0A0A0A" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#0A0A0A" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#4F1E7B" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#4F1E7B" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
@@ -1821,18 +1821,18 @@ function QualityView({ days }: { days: number }) {
                 <Tooltip
                   contentStyle={{
                     background: "rgba(28, 25, 23, 0.95)",
-                    border: "1px solid rgba(0, 0, 0 , 0.3)",
+                    border: "1px solid rgba(79, 30, 123 , 0.3)",
                     borderRadius: "12px",
                     boxShadow: "0 10px 30px rgba(0, 0, 0, 0.25)",
                     fontSize: "11px",
                   }}
                   labelStyle={{ color: "#7C7469", fontWeight: "bold" }}
-                  itemStyle={{ color: "#0A0A0A" }}
+                  itemStyle={{ color: "#4F1E7B" }}
                 />
                 <Area
                   type="monotone"
                   dataKey="avg"
-                  stroke="#0A0A0A"
+                  stroke="#4F1E7B"
                   strokeWidth={1.5}
                   fill="url(#qaGrad)"
                   name="Avg QA Score"

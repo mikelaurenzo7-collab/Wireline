@@ -75,8 +75,8 @@ export default function About() {
             <div
               className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center shrink-0"
               style={{
-                background: "#0A0A0A",
-                boxShadow: "0 8px 24px -8px rgba(0,0,0,0.4)",
+                background: "#4F1E7B",
+                boxShadow: "0 8px 24px -8px rgba(79,30,123,0.4)",
               }}
             >
               <WirelineMark className="w-8 h-8 sm:w-10 sm:h-10 text-on-brand" strokeWidth={120} />
@@ -125,7 +125,7 @@ export default function About() {
               >
                 <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center mb-3"
-                  style={{ background: "#0A0A0A" }}
+                  style={{ background: "#4F1E7B" }}
                 >
                   <Sparkles className="w-4 h-4 text-on-brand" strokeWidth={2} />
                 </div>

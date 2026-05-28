@@ -45,7 +45,8 @@ export default function MarketingPageFrame({
         className={cn(
           "relative z-10 flex-1 min-h-0",
           scroll ? "overflow-y-auto" : "overflow-hidden flex flex-col",
-          scroll ? "px-4 sm:px-6 py-8 md:py-12 lg:px-8" : "px-4 sm:px-6 pb-4 lg:px-8 lg:pb-6",
+          stickyCta && scroll && "marketing-has-sticky-cta",
+          scroll ? "px-5 py-8 md:py-12 lg:px-8" : "px-5 pb-4 lg:px-8 lg:pb-6",
           mainClassName,
         )}
       >
@@ -53,8 +54,9 @@ export default function MarketingPageFrame({
       </main>
 
       {footer && (
-        <MarketingFooter className="relative z-10 shrink-0" aboveStickyCta={false} />
+        <MarketingFooter className="relative z-10 shrink-0" aboveStickyCta={stickyCta && scroll} />
       )}
+      {stickyCta && scroll && <MarketingStickyCta />}
     </div>
   );
 }
