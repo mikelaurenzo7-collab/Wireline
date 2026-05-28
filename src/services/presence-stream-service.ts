@@ -8,19 +8,30 @@ import * as schema from "../db/schema";
 
 class PresenceStreamManager {
   private clients = new Map<string, Set<Response>>();
+  private static readonly MAX_CONNECTIONS_PER_USER = 10;
 
   /**
    * Register a new express response SSE stream for a tenant user.
+   * Returns false if the user has hit the per-user connection limit.
    */
-  register(userId: string, res: Response) {
+  register(userId: string, res: Response): boolean {
     if (!this.clients.has(userId)) {
       this.clients.set(userId, new Set());
     }
-    this.clients.get(userId)!.add(res);
+    const userClients = this.clients.get(userId)!;
+    if (userClients.size >= PresenceStreamManager.MAX_CONNECTIONS_PER_USER) {
+      log.warn("SSE Presence connection limit reached", {
+        userId,
+        limit: PresenceStreamManager.MAX_CONNECTIONS_PER_USER,
+      });
+      return false;
+    }
+    userClients.add(res);
     log.info("SSE Presence client registered", {
       userId,
-      activeConnections: this.clients.get(userId)!.size,
+      activeConnections: userClients.size,
     });
+    return true;
   }
 
   /**

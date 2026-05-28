@@ -250,7 +250,8 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const limit = Math.min(parseInt((req.query.limit as string) || "50"), 200);
+      const limitRaw = parseInt((req.query.limit as string) || "50");
+      const limit = Math.min(Math.max(1, isNaN(limitRaw) ? 50 : limitRaw), 200);
       const [hook] = await drizzle
         .select({ id: schema.webhooks.id })
         .from(schema.webhooks)

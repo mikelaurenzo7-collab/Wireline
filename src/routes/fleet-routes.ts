@@ -171,7 +171,10 @@ router.get(
     res.setHeader("Content-Encoding", "none");
 
     const userId = req.user.id;
-    presenceStreams.register(userId, res);
+    if (!presenceStreams.register(userId, res)) {
+      res.status(429).json({ error: "Too many concurrent SSE connections" });
+      return;
+    }
 
     try {
       const signals = await drizzle

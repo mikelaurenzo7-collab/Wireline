@@ -545,19 +545,30 @@ Categorize them as:
 Respond ONLY in strict, valid JSON format (no markdown):
 {"directives":[{"content":"...","priority":5}],"knowledge":[{"content":"..."}],"personality":""}`;
 
-        const r = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${process.env.OPENAI_API_KEY || ""}`,
-          },
-          body: JSON.stringify({
-            model: process.env.OPENAI_EXTRACTION_MODEL || "gpt-4o",
-            temperature: 0.1,
-            response_format: { type: "json_object" },
-            messages: [{ role: "user", content: prompt }],
-          }),
-        });
+        if (!process.env.OPENAI_API_KEY) {
+          throw new Error("OPENAI_API_KEY not configured for extraction fallback");
+        }
+        const abortCtrl = new AbortController();
+        const fetchTimeout = setTimeout(() => abortCtrl.abort(), 30_000);
+        let r: globalThis.Response;
+        try {
+          r = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + process.env.OPENAI_API_KEY,
+            },
+            body: JSON.stringify({
+              model: process.env.OPENAI_EXTRACTION_MODEL || "gpt-4o",
+              temperature: 0.1,
+              response_format: { type: "json_object" },
+              messages: [{ role: "user", content: prompt }],
+            }),
+            signal: abortCtrl.signal,
+          });
+        } finally {
+          clearTimeout(fetchTimeout);
+        }
         if (!r.ok) throw new Error(`OpenAI extraction fallback failed (${r.status})`);
         const data = (await r.json()) as { choices?: Array<{ message?: { content?: string } }> };
         const raw = JSON.parse(data.choices?.[0]?.message?.content || "{}");

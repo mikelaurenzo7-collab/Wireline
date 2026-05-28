@@ -31,6 +31,12 @@ export function initSupervisorWebSocketServer(server: any) {
 
     log.info("Supervisor WebSocket connected", { callId, mode, userId });
 
+    // Prevent unhandled error events from crashing the process
+    ws.on("error", (err: Error) => {
+      log.error("Supervisor WebSocket error", { callId, userId, error: err.message });
+      ws.close();
+    });
+
     if (mode === "listen") {
       try {
         // Check if the call exists and belongs to the user
