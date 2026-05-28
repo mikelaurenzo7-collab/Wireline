@@ -23,7 +23,7 @@ test.describe("Desktop navigation", () => {
       await page.goto("/");
       const nav = page.locator("nav[aria-label='Site']");
       await nav.getByRole("link", { name: new RegExp(`^${item.label}$`, "i") }).click();
-      await expect(page).toHaveURL(new RegExp(item.path.replace(/\//g, "\\/")));
+      await expect(page).toHaveURL((url) => url.pathname === item.path);
     });
   }
 
