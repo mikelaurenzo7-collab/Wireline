@@ -16,16 +16,16 @@ function AgentContactCard({
 }) {
   if (dense) {
     const card = (
-      <div className="flex items-center gap-2.5 min-w-0">
+      <div className="flex items-center gap-3 min-w-0">
         <div
           className={cn(
-            "rounded-lg flex items-center justify-center shrink-0",
-            landing ? "w-9 h-9" : "w-6 h-6",
+            "rounded-xl flex items-center justify-center shrink-0 shadow-sm",
+            landing ? "w-11 h-11" : "w-6 h-6",
           )}
           style={{ background: isDemo ? "rgba(0,0,0,0.04)" : `${agent.tint}18` }}
         >
           <Phone
-            className={landing ? "w-4 h-4" : "w-3 h-3"}
+            className={landing ? "w-5 h-5" : "w-3 h-3"}
             style={{ color: isDemo ? "#6B635A" : agent.tint }}
             strokeWidth={2.4}
           />
@@ -33,14 +33,14 @@ function AgentContactCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-1.5 min-w-0">
             <span
-              className={cn("font-semibold text-ink truncate", landing ? "text-sm" : "text-[11px]")}
+              className={cn("font-semibold text-ink truncate", landing ? "text-sm sm:text-base tracking-tight" : "text-[11px]")}
             >
               {agent.name}
             </span>
             <span
               className={cn(
-                "shrink-0 uppercase tracking-wide font-semibold px-1.5 py-0.5 rounded",
-                landing ? "text-[10px]" : "text-[9px]",
+                "shrink-0 uppercase tracking-wider font-bold px-1.5 py-0.5 rounded",
+                landing ? "text-[9px] sm:text-[10px]" : "text-[9px]",
                 isDemo ? "text-amber-800/80 bg-amber-500/10" : "text-brand bg-brand/10",
               )}
             >
@@ -56,7 +56,7 @@ function AgentContactCard({
             {agent.role}
           </p>
           {landing ? (
-            <p className="font-mono tabular-nums text-brand mt-1 text-sm font-medium">
+            <p className="font-mono tabular-nums text-brand mt-1 sm:mt-1.5 text-xs sm:text-sm font-medium tracking-tight">
               {agent.display}
             </p>
           ) : (
@@ -76,8 +76,9 @@ function AgentContactCard({
       return (
         <a
           href={`tel:${agent.tel}`}
-          className="block rounded-xl border border-black/8 bg-white/70 px-3 py-3 min-h-[56px] hover:border-brand/30 hover:bg-white active:scale-[0.99] transition-all"
+          className="block rounded-2xl border border-black/8 bg-white/80 backdrop-blur-sm p-4 min-h-[5rem] hover:border-brand/30 hover:shadow-[0_8px_30px_-10px_rgba(79,30,123,0.15)] active:scale-[0.98] transition-all"
           aria-label={`Call ${agent.name} at ${agent.display}`}
+          data-testid={`call-agent-${agent.name.toLowerCase().replace(/\s+/g, '-')}`}
         >
           {card}
         </a>

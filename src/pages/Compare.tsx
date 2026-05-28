@@ -180,7 +180,7 @@ export default function Compare() {
 
       <MarketingPageFrame mainClassName="!px-0">
         {/* Hero */}
-        <section className="relative z-10 max-w-6xl mx-auto pt-4 pb-12 sm:pt-8 sm:pb-16">
+        <section className="relative z-10 max-w-6xl mx-auto pt-6 pb-12 sm:pt-10 sm:pb-16 px-4 sm:px-6 lg:px-10">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
