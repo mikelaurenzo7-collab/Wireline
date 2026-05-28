@@ -365,6 +365,19 @@ async function startServer() {
     if (shuttingDown) return;
     shuttingDown = true;
     log.info(`Received ${signal} — starting graceful shutdown`);
+    // Stop the background job worker first so it stops claiming new
+    // jobs while in-flight HTTP requests drain. Without this, the
+    // worker's poll loop keeps firing across server.close() and can
+    // claim a job that gets killed mid-handler — leaving the row
+    // stuck in `running` until recoverStaleJobs picks it up (default
+    // 30 minutes later).
+    try {
+      stopWorker?.();
+    } catch (err) {
+      log.warn("stopWorker threw during shutdown", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
     const forceTimer = setTimeout(() => {
       log.error("Graceful shutdown timed out — forcing exit");
       process.exit(1);
@@ -385,8 +398,10 @@ async function startServer() {
   process.on("SIGINT", () => shutdown("SIGINT"));
 }
 
-// Background Worker
-let stopWorker: (() => void) | undefined = initJobWorker() || undefined;
+// Background Worker. Captured at module scope so the shutdown handler
+// inside startServer() can close over it and stop the poll loop
+// cleanly on SIGTERM / SIGINT.
+const stopWorker: (() => void) | undefined = initJobWorker() || undefined;
 
 // Safety nets
 process.on("unhandledRejection", (reason: unknown) => {

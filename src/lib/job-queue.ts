@@ -129,13 +129,27 @@ export async function enqueue(db: DrizzleDB, opts: EnqueueOptions): Promise<Enqu
 // ─────────────────────────────────────────────────────────────────
 
 /**
- * Attempt to atomically claim one pending job via RPC.
- * The RPC (`wireline_claim_job`) does:
+ * Attempt to atomically claim one job whose retry window has elapsed.
+ *
+ * Claimable states:
+ *   - `pending` — never tried (or reset from a stale `running` row).
+ *   - `failed`  — previously failed, awaiting retry per the backoff
+ *                 schedule. `failJob` sets `run_at = now + backoff(attempts)`
+ *                 so picking `failed` here is what actually fires the
+ *                 backoff retry. Without this, retries die silently and
+ *                 every retryable error becomes effectively terminal
+ *                 (only the `dead` row at max attempts gets retried —
+ *                 which is wrong, by definition).
+ *
+ * The query intentionally leaves the distinction between `pending` and
+ * `failed` intact on the row itself — `getQueueStats` / operator SLOs
+ * use that to track "fresh queue depth" vs "retry queue depth".
+ *
  *   UPDATE wireline_jobs SET status='running', started_at=now(),
  *          attempts=attempts+1, updated_at=now()
  *   WHERE id = (
  *     SELECT id FROM wireline_jobs
- *     WHERE status='pending' AND run_at <= now()
+ *     WHERE status IN ('pending', 'failed') AND run_at <= now()
  *     ORDER BY run_at ASC
  *     LIMIT 1
  *     FOR UPDATE SKIP LOCKED
@@ -143,12 +157,13 @@ export async function enqueue(db: DrizzleDB, opts: EnqueueOptions): Promise<Enqu
  *   RETURNING *
  *
  * Returns the claimed job row, or null when the queue is idle.
- * Falls back to a non-atomic select+update on older deployments where
- * the RPC doesn't exist yet — safe for single-worker setups.
  */
 export async function claimJob(db: DrizzleDB, typeFilter?: JobType[]): Promise<any | null> {
   return await db.transaction(async (tx) => {
-    const whereClauses = [eq(schema.jobs.status, "pending"), lte(schema.jobs.runAt, new Date())];
+    const whereClauses = [
+      inArray(schema.jobs.status, ["pending", "failed"]),
+      lte(schema.jobs.runAt, new Date()),
+    ];
     if (typeFilter?.length) {
       whereClauses.push(inArray(schema.jobs.type, typeFilter));
     }
