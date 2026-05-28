@@ -3,7 +3,7 @@
  * ----------------------------------------------------------------------
  * Landing-page trust strip: industry tags + security/compliance badges
  * + the operator-facing reassurance line. Sits on the unauthenticated
- * marketing surface (AuthPortal) between the demo directory and the
+ * marketing surface (LandingPage) between the demo directory and the
  * sign-in form so every visitor crosses it before deciding.
  *
  * Why this exists (gap analysis, May 2026):

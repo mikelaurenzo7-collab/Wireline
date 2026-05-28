@@ -1,7 +1,6 @@
 import React, { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, useLocation, useNavigate } from "react-router-dom";
 import AuthPortal from "./components/AuthPortal";
-
 import CookieConsent from "./components/CookieConsent";
 import ToastStack from "./components/Toast";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -12,6 +11,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { BrandingProvider } from "./contexts/BrandingContext";
 import { MotionConfig } from "motion/react";
 
+const LandingPage = lazy(() => import("./pages/LandingPage"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const OAuthComplete = lazy(() => import("./pages/OAuthComplete"));
@@ -231,12 +231,18 @@ function AppContent() {
   }
 
   if (!user) {
-    // Unauthenticated home IS AuthPortal — the auth form on one side,
-    // the live demo-agent grid + value props on the other. Mike's
-    // call: kill the separate marketing LandingPage, the portal does
-    // both jobs (sell + sign in) on one screen. Any deep-link to a
-    // protected route also lands here so visitors sign in then
-    // continue.
+    // Marketing home at /. Sign-in and sign-up live on dedicated routes
+    // so the auth column stays above the fold. Protected deep-links still
+    // land on AuthPortal so visitors can sign in and continue.
+    if (location.pathname === "/") {
+      return (
+        <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+          <ErrorBoundary>
+            <LandingPage />
+          </ErrorBoundary>
+        </Suspense>
+      );
+    }
     return (
       <ErrorBoundary>
         <AuthPortal />

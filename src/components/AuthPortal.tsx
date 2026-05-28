@@ -11,99 +11,21 @@ import {
   LogIn,
   AlertTriangle,
   Check,
-  PhoneIncoming,
-  PhoneOutgoing,
-  MailCheck,
-  Radio,
   Eye,
   EyeOff,
 } from "lucide-react";
-import { AuthDemoDirectory } from "./auth/AuthDemoDirectory";
 import RoiCalculator from "./marketing/RoiCalculator";
-import TrustSignals from "./marketing/TrustSignals";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
 import { PageMeta } from "../lib/page-meta";
 import WirelineMark from "./WirelineMark";
-import { WIRELINE_CONTACT_AGENTS, WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
 import {
   captureSignupIntentFromLocation,
   syncSignupIntent,
   type SignupIntent,
 } from "../lib/signup-intent";
 import { getPasswordPolicyError } from "../lib/password-policy";
-
-const FEATURES = [
-  {
-    icon: PhoneIncoming,
-    title: "Inbound Support",
-    desc: "Agents pick up 24/7 — answer questions, route urgent calls, schedule appointments, and capture intent.",
-    accent: "#4F1E7B",
-  },
-  {
-    icon: PhoneOutgoing,
-    title: "Outbound Sales",
-    desc: "Upload a CSV, pick a playbook, launch auto-dial campaigns. Qualified meetings on your calendar by morning.",
-    accent: "#4F1E7B",
-  },
-  {
-    icon: MailCheck,
-    title: "Email Agents",
-    desc: "Agents triage your inbox, reply on-brand, follow up, and escalate the ones you need to see personally.",
-    accent: "#4F1E7B",
-  },
-  {
-    icon: Radio,
-    title: "Live Monitor & Insights",
-    desc: "Watch every conversation in real time. Sentiment, funnels, topic clusters, leaderboards — one dashboard.",
-    accent: "#10B981",
-  },
-];
-
-const AUTH_PORTAL_WIRELINE_AGENTS = WIRELINE_CONTACT_AGENTS.slice(0, -1);
-const AUTH_PORTAL_DEMO_AGENTS = WIRELINE_DEMO_AGENTS.slice(0, -1);
-
-function MobileTrustProof() {
-  return (
-    <div className="lg:hidden mt-5 space-y-3">
-      <div className="grid grid-cols-3 gap-2">
-        {[
-          { label: "24/7", detail: "always answers" },
-          { label: "<10 min", detail: "setup path" },
-          { label: "No card", detail: "14-day trial" },
-        ].map((item) => (
-          <div
-            key={item.label}
-            className="rounded-xl border border-black/8 bg-white/55 px-2 py-2.5 text-center"
-          >
-            <p className="font-display italic text-lg leading-none text-ink">{item.label}</p>
-            <p className="mt-1 text-[8px] uppercase tracking-[0.16em] text-muted/65 leading-tight">
-              {item.detail}
-            </p>
-          </div>
-        ))}
-      </div>
-      <div className="rounded-xl border border-brand/15 bg-brand/[0.04] p-3">
-        <div className="flex items-center gap-2 text-[9px] uppercase tracking-[0.26em] text-brand font-semibold">
-          <ShieldCheck className="w-3.5 h-3.5" />
-          Trust proof
-        </div>
-        <p className="mt-1.5 text-[11px] text-muted/75 leading-relaxed">
-          Dedicated number included, no Twilio bill. TCPA/DNC controls, audit logs, and public{" "}
-          <Link to="/status" className="text-brand underline underline-offset-2">
-            status
-          </Link>{" "}
-          +{" "}
-          <Link to="/security" className="text-brand underline underline-offset-2">
-            security
-          </Link>{" "}
-          pages before you sign up.
-        </p>
-      </div>
-    </div>
-  );
-}
 
 /**
  * Normalize a JSON error payload into a human-readable string.
@@ -170,41 +92,6 @@ function signupIntentLabel(intent: SignupIntent | null): string | null {
  * dance for them is a meaningful conversion lift. Buttons start the
  * server-side OAuth flow which round-trips back to /auth/oauth-complete.
  */
-/**
- * Tiny live-stats pill that fetches /api/public/stats and renders
- * a "Live: N agents online · M calls this month" caption next to
- * the marketing stats strip. Hidden entirely below a credibility
- * threshold — at <5 agents the live ticker would read as
- * pre-revenue and tank trust. Once there are 5+ agents on the
- * platform it surfaces automatically.
- */
-function LiveStatsTicker() {
-  const [stats, setStats] = useState<{ agents_online: number; calls_this_month: number } | null>(
-    null,
-  );
-  useEffect(() => {
-    fetch("/api/public/stats")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setStats(data))
-      .catch(() => {});
-  }, []);
-  const agentsOnline = Number(stats?.agents_online ?? 0);
-  if (agentsOnline < 5) return null;
-  return (
-    <>
-      <div className="w-px h-6 bg-white/10" />
-      <div className="flex flex-col">
-        <span className="font-display italic text-2xl text-ink">
-          {agentsOnline.toLocaleString()}
-        </span>
-        <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">
-          Agents on Wireline
-        </span>
-      </div>
-    </>
-  );
-}
-
 function OAuthSignInButtons({
   disabled,
   onError,
@@ -379,7 +266,7 @@ export default function AuthPortal() {
   const pathname = typeof window === "undefined" ? "/" : window.location.pathname;
   // Default mode matches the URL the user landed on. /signup → signup
   // form, /signin or anything else (including "/") → signin form.
-  // AuthPortal is the public home page now, so "/" defaults to signin.
+  // "/" is the marketing landing page; auth routes default to signin.
   const initialMode: AuthMode = (() => {
     if (typeof window === "undefined") return "signin";
     return pathname === "/signup" ? "signup" : "signin";
@@ -513,175 +400,21 @@ export default function AuthPortal() {
   return (
     <>
       <PageMeta
-        title={
-          pathname === "/"
-            ? "Wireline — AI Voice & Email Agents for Every Business"
-            : isReset
-              ? "Reset Password"
-              : isSignUp
-                ? "Create Account"
-                : "Sign In"
-        }
+        title={isReset ? "Reset Password" : isSignUp ? "Create Account" : "Sign In"}
         description={
-          pathname === "/"
-            ? "Deploy AI voice + email agents on real phone numbers in under 10 minutes. Handle inbound calls, qualify leads, book appointments, send SMS follow-ups, and sync with your CRM."
-            : isSignUp
-              ? "Start your 14-day free Wireline trial — deploy an AI voice agent in under 10 minutes. No credit card required."
-              : "Sign in to your Wireline operator console to manage your AI voice agents, call logs, and outbound campaigns."
+          isSignUp
+            ? "Start your 14-day free Wireline trial — deploy an AI voice agent in under 10 minutes. No credit card required."
+            : "Sign in to your Wireline operator console to manage your AI voice agents, call logs, and outbound campaigns."
         }
-        path={pathname === "/" ? "/" : pathname === "/signup" ? "/signup" : undefined}
-        noIndex={pathname !== "/"}
+        path={pathname === "/signup" ? "/signup" : pathname === "/login" ? "/login" : undefined}
+        noIndex
       />
       <div className="min-h-dvh flex relative overflow-hidden bg-paper">
         {/* Global parchment backdrop matching Claude.ai */}
         <div className="pointer-events-none fixed inset-0 z-0 bg-paper" />
         <div className="scanline" />
 
-        {/* ── LEFT PANEL — brand showcase ───────────────────────────────────────
-           min-h-dvh + overflow-y-auto so the agent showcase + integration
-            strip don't push the whole layout taller than the viewport.
-            Without this, the left column at lg+ widths grows to ~1020px,
-            making the Sign In button on the right scroll-required even
-           though it's anchored to the top of its column. */}
-        <div className="hidden lg:flex lg:w-[52%] xl:w-[54%] flex-col relative z-10 p-6 lg:p-8 xl:p-10 lg:min-h-dvh overflow-y-auto scrollbar-hide">
-          {/* Decorative vertical line on right edge */}
-          <div
-            className="absolute top-0 right-0 w-px h-full"
-            style={{
-              background:
-                "linear-gradient(to bottom, transparent, rgba(217,119,82,0.2) 30%, rgba(217,119,82,0.2) 70%, transparent)",
-            }}
-          />
-
-          {/* Logo */}
-          <motion.div
-            initial={{ opacity: 0, y: -12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="flex items-center gap-4 mb-6 xl:mb-8"
-          >
-            <div
-              className="relative w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
-              style={{
-                background: "#4F1E7B",
-                boxShadow:
-                  "0 8px 24px -8px rgba(79,30,123,0.4), 0 0 0 1px rgba(255,255,255,0.22) inset",
-              }}
-            >
-              <WirelineMark className="w-6 h-6 text-on-brand" strokeWidth={130} />
-            </div>
-            <div>
-              <span className="brand-wordmark text-3xl xl:text-4xl leading-none !text-[#4F1E7B] !filter-none">
-                WIRELINE
-              </span>
-              <p className="text-[9px] xl:text-[10px] tracking-[0.42em] uppercase text-muted mt-1">
-                AI Voice + Email Platform
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Hero copy */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-6 xl:mb-8"
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <span className="hero-accent-line" style={{ background: "#4F1E7B" }} />
-              <span className="text-[8px] uppercase tracking-[0.5em] text-muted/70">
-                One fleet, every channel
-              </span>
-            </div>
-            <h1 className="font-display italic text-4xl xl:text-5xl 2xl:text-6xl leading-[1.0] xl:leading-[0.92] tracking-tight mb-4 text-balance">
-              <span className="text-[#4F1E7B]">AI agents for every</span>
-              <br />
-              <span className="text-ink">customer conversation</span>
-            </h1>
-            <p className="text-[14px] xl:text-[15px] text-muted/82 leading-relaxed max-w-lg">
-              One trained fleet answers, qualifies, follows up, and escalates across phone, SMS, and
-              email — with no fake actions and no missed handoff.
-            </p>
-            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-brand/15 bg-white/60 px-3 py-2 text-[9px] uppercase tracking-[0.26em] text-brand">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dot-online" />
-              Live demo lines open 24/7
-            </div>
-          </motion.div>
-
-          {/* Product pillars — compact grid; demos live in collapsible directory below. */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-8"
-          >
-            <div className="grid grid-cols-2 gap-3">
-              {FEATURES.map((f) => {
-                const Icon = f.icon;
-                return (
-                  <div
-                    key={f.title}
-                    className="rounded-xl p-3.5 border border-black/5 bg-[#FAF8F5]/80"
-                  >
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center mb-2 border border-black/5 bg-[#4F1E7B]/10 text-[#4F1E7B]">
-                      <Icon className="w-3.5 h-3.5" />
-                    </div>
-                    <p className="text-[11px] font-medium text-ink mb-0.5">{f.title}</p>
-                    <p className="text-[10px] text-muted/70 leading-snug">{f.desc}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </motion.div>
-
-          <AuthDemoDirectory
-            wirelineAgents={AUTH_PORTAL_WIRELINE_AGENTS}
-            demoAgents={AUTH_PORTAL_DEMO_AGENTS}
-            defaultExpanded={false}
-            className="mb-6"
-          />
-
-          {/* Trust signals — verticals + security/compliance badges.
-              Replaces the previous one-line "TLS Encrypted" trust row
-              with proper density: 8 verticals, 5 compliance badges,
-              live system-status pill. Cheap real estate, big trust lift. */}
-          <TrustSignals />
-
-          {/* Trust row */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
-            className="mt-auto flex items-center gap-6"
-          >
-            <div className="flex items-center gap-2 text-muted/60">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span className="text-[9px] uppercase tracking-[0.38em]">TLS Encrypted</span>
-            </div>
-            <div className="h-3 w-px bg-white/10" />
-            <div className="flex items-center gap-2 text-muted/60">
-              <div className="relative w-2 h-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 absolute inset-0 dot-online" />
-              </div>
-              <span className="text-[9px] uppercase tracking-[0.38em]">Carrier-Grade Infra</span>
-            </div>
-            <div className="h-3 w-px bg-white/10" />
-            <Link
-              to="/pricing"
-              className="text-[9px] uppercase tracking-[0.38em] text-muted/60 hover:text-ink transition-colors"
-            >
-              Pricing →
-            </Link>
-          </motion.div>
-        </div>
-
-        {/* ── RIGHT PANEL — auth form ────────────────────────────────────────────
-           Anchored to the top (not vertically centered) so the Sign In
-           button is reliably above the fold at 1280×800 / 1366×768 laptops.
-           Previously `justify-center` pushed the form to ~440px from the top
-           of an 800px viewport, putting the Sign In button at ~875px —
-           below the fold. */}
-        <div className="flex-1 lg:sticky lg:top-0 lg:min-h-dvh flex flex-col items-center justify-start relative z-10 py-5 sm:py-8 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 overflow-y-auto native-scroll overscroll-y-contain">
+        <div className="flex-1 flex flex-col items-center justify-start relative z-10 py-6 sm:py-8 px-4 sm:px-6 min-h-dvh overflow-y-auto native-scroll overscroll-y-contain">
           {/* ── Aurora wash ──────────────────────────────────────────
               Decorative animated gradients that breathe behind the
               form column. Purely cosmetic — pointer-events-none and
@@ -730,59 +463,32 @@ export default function AuthPortal() {
               }}
             />
           </div>
-          <div className="lg:hidden w-full max-w-md mb-4 pt-1">
-            {/* Logo + wordmark row */}
-            <div className="flex items-center gap-3.5 mb-5">
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
-                style={{
-                  background: "#4F1E7B",
-                  boxShadow: "0 8px 24px -8px rgba(79,30,123,0.4)",
-                }}
-              >
-                <WirelineMark className="w-6 h-6 text-on-brand" strokeWidth={130} />
-              </div>
-              <div>
-                <span className="brand-wordmark text-3xl leading-none !text-[#4F1E7B] !filter-none">
-                  WIRELINE
-                </span>
-                <p className="text-[9px] tracking-[0.42em] uppercase text-muted mt-1">
-                  AI Voice + Email Platform
-                </p>
-              </div>
-            </div>
-            {/* Hero copy */}
-            <h1 className="type-fluid-hero font-display italic leading-snug tracking-tight mb-3 text-balance">
-              <span className="text-[#4F1E7B]">AI agents for every</span>{" "}
-              <span className="text-ink">customer conversation</span>
-            </h1>
-            <p className="type-fluid-body text-muted/80">
-              Sign in below — try live demo lines anytime after the form.
-            </p>
-          </div>
-
-          {/* Mobile logo — retained for the form-card width reference, hidden visually below hero */}
-          <div className="hidden">
+          <Link to="/" className="mb-6 flex items-center gap-3 group" data-testid="auth-back-home">
             <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center"
+              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-[1.02]"
               style={{
                 background: "#4F1E7B",
-                boxShadow: "0 16px 40px -10px rgba(79, 30, 123 ,0.55)",
+                boxShadow: "0 8px 24px -8px rgba(79,30,123,0.4)",
               }}
             >
-              <WirelineMark className="w-8 h-8 text-on-brand" strokeWidth={120} />
+              <WirelineMark className="w-5 h-5 text-on-brand" strokeWidth={130} />
             </div>
-            <h1 className="brand-wordmark text-5xl leading-none">WIRELINE</h1>
-            <p className="text-[9px] uppercase tracking-[0.5em] text-muted">
-              AI Voice + Email Platform
-            </p>
-          </div>
+            <div>
+              <span className="brand-wordmark text-2xl leading-none !text-[#4F1E7B] !filter-none">
+                WIRELINE
+              </span>
+              <p className="text-[9px] tracking-[0.38em] uppercase text-muted/70 mt-0.5">
+                ← Product overview
+              </p>
+            </div>
+          </Link>
 
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-md"
+            className="w-full max-w-sm"
+            data-testid="auth-form-column"
           >
             {/* Form card */}
             <div
@@ -792,9 +498,9 @@ export default function AuthPortal() {
                   "0 1px 0 rgba(255,255,255,0.9) inset, 0 20px 50px -24px rgba(79, 30, 123, 0.22), 0 8px 24px -12px rgba(0,0,0,0.12)",
               }}
             >
-              <div className="relative p-6 sm:p-7 md:p-9 lg:p-10">
+              <div className="relative p-6 sm:p-7">
                 {/* Header */}
-                <div className="relative z-10 mb-9">
+                <div className="relative z-10 mb-7">
                   <h2 className="font-display italic text-3xl text-ink leading-tight mb-1">
                     {isReset ? "Reset password" : isSignUp ? "Create account" : "Welcome back"}
                   </h2>
@@ -1083,19 +789,16 @@ export default function AuthPortal() {
               </div>
             </div>
 
-            <RoiCalculator compact />
+            <RoiCalculator compact narrow />
 
-            <AuthDemoDirectory
-              wirelineAgents={AUTH_PORTAL_WIRELINE_AGENTS}
-              demoAgents={AUTH_PORTAL_DEMO_AGENTS}
-              defaultExpanded={false}
-              className="mt-6 lg:hidden"
-            />
+            <p className="mt-4 text-center text-[10px] text-muted/60 leading-relaxed">
+              14-day trial · no credit card ·{" "}
+              <Link to="/pricing" className="text-brand hover:underline">
+                Pricing
+              </Link>
+            </p>
 
-            <MobileTrustProof />
-
-            {/* Footer */}
-            <div className="mt-6 flex items-center justify-center gap-4">
+            <div className="mt-5 flex items-center justify-center gap-4">
               <ShieldCheck className="w-3 h-3 text-muted/40" />
               <span className="text-[9px] uppercase tracking-[0.42em] text-muted/50">
                 TLS Encrypted · Secured Internal Infrastructure
