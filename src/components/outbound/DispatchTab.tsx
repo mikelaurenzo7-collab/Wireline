@@ -56,6 +56,8 @@ interface DispatchTabProps {
   loadMoreLeads: () => void;
   leadsHasMore: boolean;
   isLoadingMore: boolean;
+  quotaUsed?: number | null;
+  quotaLimit?: number | null;
 }
 
 export default function DispatchTab({
@@ -89,15 +91,28 @@ export default function DispatchTab({
   loadMoreLeads,
   leadsHasMore,
   isLoadingMore,
+  quotaUsed,
+  quotaLimit,
 }: DispatchTabProps) {
   const [mode, setMode] = useState<"single" | "bulk">("single");
+
+  const quotaExhausted =
+    quotaUsed != null && quotaLimit != null && quotaLimit > 0 && quotaUsed >= quotaLimit;
+  const quotaNearLimit =
+    !quotaExhausted &&
+    quotaUsed != null &&
+    quotaLimit != null &&
+    quotaLimit > 0 &&
+    quotaUsed / quotaLimit >= 0.9;
 
   return (
     <>
       {isLoading ? (
         <div className="h-full flex flex-col items-center justify-center gap-3">
           <Loader2 className="w-5 h-5 animate-spin text-brand" />
-          <span className="app-section-title/70 font-display italic text-sm">Loading dispatcher</span>
+          <span className="app-section-title/70 font-display italic text-sm">
+            Loading dispatcher
+          </span>
         </div>
       ) : (
         <div className="h-full grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-0">
@@ -240,9 +255,27 @@ export default function DispatchTab({
                         </span>
                       </label>
 
+                      {quotaExhausted && (
+                        <div className="rounded-lg border border-rose-500/30 bg-rose-500/5 px-3 py-2 flex items-start gap-2">
+                          <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
+                          <p className="text-[10px] text-rose-500/90 leading-snug">
+                            Daily voice-minute limit reached. Resets at midnight UTC.
+                          </p>
+                        </div>
+                      )}
+                      {quotaNearLimit && (
+                        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 flex items-start gap-2">
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                          <p className="text-[10px] text-amber-500/90 leading-snug">
+                            Near daily limit — {quotaUsed} of {quotaLimit} minutes used.
+                          </p>
+                        </div>
+                      )}
                       <button
                         onClick={dispatchCall}
-                        disabled={isDialing || !customerNumber || !hasOutboundConsent}
+                        disabled={
+                          isDialing || !customerNumber || !hasOutboundConsent || !!quotaExhausted
+                        }
                         className="brutal-btn w-full !py-3 !text-[11px] !tracking-[0.3em] disabled:opacity-50"
                       >
                         {isDialing ? (

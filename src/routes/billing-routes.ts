@@ -7,6 +7,7 @@ import { authenticateUser } from "../middleware/auth";
 import { validateBody, spendBudgetSchema } from "../lib/api-validation";
 import { getErrorMessage } from "../lib/server-utils";
 import { stripe, stripeAvailable, syncSubscriptionFromStripe } from "../lib/stripe-helpers";
+import { sendPaymentFailedEmail } from "../lib/email-service";
 import { clearBudgetCache, getBudgetSnapshot } from "../lib/spend-guards";
 import { planById, plansForClient } from "../lib/plan-catalog";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
@@ -111,10 +112,42 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                   metadata: { invoice_id: inv.id, attempt_count: inv.attempt_count },
                 })
                 .catch(() => {});
+
+              // Dunning email — look up user email and notify so they can
+              // update their card before the account suspends.
+              const [userRow] = await drizzle
+                .select({ email: schema.users.email })
+                .from(schema.users)
+                .where(eq(schema.users.id, row.userId))
+                .limit(1);
+              if (userRow?.email) {
+                const amountDisplay =
+                  typeof inv.amount_due === "number"
+                    ? `$${(inv.amount_due / 100).toFixed(2)}`
+                    : "your subscription payment";
+                const appUrl = (process.env.APP_URL || "https://trywireline.com").replace(
+                  /\/+$/,
+                  "",
+                );
+                void sendPaymentFailedEmail({
+                  to: userRow.email,
+                  amountDisplay,
+                  invoiceUrl: inv.hosted_invoice_url ?? undefined,
+                  updateCardUrl: `${appUrl}/billing`,
+                })
+                  .then((r) => {
+                    if (!r.ok)
+                      log.warn("payment_failed dunning email not sent", {
+                        userId: row.userId,
+                        error: r.error,
+                      });
+                  })
+                  .catch(() => {});
+              }
             }
           }
-        } catch {
-          /* ignore */
+        } catch (err) {
+          log.error("invoice.payment_failed handler error", { error: getErrorMessage(err) });
         }
         break;
       }
