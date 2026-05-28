@@ -203,6 +203,80 @@ export class CRMService {
     return id !== null;
   }
 
+  async syncEnrichedLead(params: {
+    customerNumber: string;
+    fullName?: string | null;
+    jobTitle?: string | null;
+    company?: string | null;
+    linkedInUrl?: string | null;
+    leadScore?: number | null;
+  }): Promise<boolean> {
+    const crm = await getActiveCrm(this.userId);
+    if (!crm) return false;
+
+    const contactId = await this.resolveContactId(crm, params.customerNumber);
+    if (!contactId) {
+      log.warn("Contact not found in CRM — skipping enriched sync", {
+        customerNumber: params.customerNumber,
+      });
+      return false;
+    }
+
+    if (crm === "hubspot") {
+      const properties: Record<string, any> = {};
+      if (params.jobTitle) properties.jobtitle = params.jobTitle;
+      if (params.company) properties.company = params.company;
+      if (params.linkedInUrl) properties.linkedin = params.linkedInUrl;
+      if (params.leadScore != null) {
+        properties.hs_lead_status = `Score: ${params.leadScore}`;
+      }
+
+      await hubspot.updateContact(contactId, properties, this.userId);
+      await hubspot.logCall(
+        {
+          to_number: params.customerNumber,
+          body:
+            `Enriched contact details:\n` +
+            `Name: ${params.fullName || ""}\n` +
+            `Job: ${params.jobTitle || ""}\n` +
+            `Company: ${params.company || ""}\n` +
+            `LinkedIn: ${params.linkedInUrl || ""}\n` +
+            `Lead Score: ${params.leadScore || ""}`,
+          contact_id: contactId,
+          duration_ms: 0,
+          outcome: "enriched",
+        },
+        this.userId,
+      );
+      return true;
+    }
+
+    if (crm === "salesforce") {
+      const fields: Record<string, any> = {};
+      if (params.jobTitle) fields.Title = params.jobTitle;
+      if (params.linkedInUrl) fields.Description = `LinkedIn: ${params.linkedInUrl}`;
+
+      await salesforce.updateContact(contactId, fields, this.userId);
+      await salesforce.logCall(
+        {
+          subject: "Contact Enriched",
+          description:
+            `Enriched contact details:\n` +
+            `Name: ${params.fullName || ""}\n` +
+            `Job: ${params.jobTitle || ""}\n` +
+            `Company: ${params.company || ""}\n` +
+            `LinkedIn: ${params.linkedInUrl || ""}\n` +
+            `Lead Score: ${params.leadScore || ""}`,
+          contact_id: contactId,
+        },
+        this.userId,
+      );
+      return true;
+    }
+
+    return false;
+  }
+
   private async resolveContactId(
     crmType: "salesforce" | "hubspot" | null,
     toNumber: string,

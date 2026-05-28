@@ -151,14 +151,14 @@ const TABLE_MAP: Record<string, any> = {
  * insert 0 showcase rows. Knowledge entries don't have a demo column
  * (per-agent config, not transactional) so they're counted plain.
  */
-async function countRows(tableName: string, userId: string): Promise<number> {
+async function countRows(tableName: string, userId: string, tx: any = drizzle): Promise<number> {
   const table = TABLE_MAP[tableName];
   if (!table) throw new Error(`Unknown table: ${tableName}`);
   const filters = [eq(table.userId, userId)];
   if (tableName !== "wireline_knowledge") {
     filters.push(eq(table.demo, true));
   }
-  const [row] = await drizzle
+  const [row] = await tx
     .select({ c: sql<number>`COUNT(*)::int` })
     .from(table)
     .where(and(...filters));
@@ -172,18 +172,13 @@ async function countRows(tableName: string, userId: string): Promise<number> {
  * targeted demo user (not a global UPDATE that could hit real production
  * rows with the same numbers). Runs idempotently on every seed call.
  */
-async function backfillTenantDemoRows(userId: string): Promise<void> {
+async function backfillTenantDemoRows(userId: string, tx: any = drizzle): Promise<void> {
   const seedPhones = SAMPLE_CUSTOMERS.map((c) => c.phone);
   try {
     // Wrap in a single transaction so the four UPDATEs commit together
-    // or roll back together. Without this, a mid-loop failure can leave
-    // some tables backfilled and others not — countRows() would then
-    // undercount demo=true on the un-flipped tables and the seed loop
-    // would re-insert duplicates (the same failure mode the PR #138
-    // hotfix just closed via inArray binding, surfacing here as a
-    // defense-in-depth question).
-    await drizzle.transaction(async (tx) => {
-      await tx
+    // or roll back together.
+    await tx.transaction(async (nestedTx: any) => {
+      await nestedTx
         .update(schema.outboundLeads)
         .set({ demo: true })
         .where(
@@ -193,7 +188,7 @@ async function backfillTenantDemoRows(userId: string): Promise<void> {
             inArray(schema.outboundLeads.customerNumber, seedPhones),
           ),
         );
-      await tx
+      await nestedTx
         .update(schema.appointments)
         .set({ demo: true })
         .where(
@@ -203,7 +198,7 @@ async function backfillTenantDemoRows(userId: string): Promise<void> {
             inArray(schema.appointments.phoneNumber, seedPhones),
           ),
         );
-      await tx
+      await nestedTx
         .update(schema.dncList)
         .set({ demo: true })
         .where(
@@ -213,20 +208,13 @@ async function backfillTenantDemoRows(userId: string): Promise<void> {
             inArray(schema.dncList.phone, seedPhones),
           ),
         );
-      // call_logs uses LIKE on the vapi_call_id seed signature — no
-      // array binding bug applies, and the predicate is narrow enough
-      // to stay raw SQL.
-      await tx.execute(sql`
+      // call_logs uses LIKE on the vapi_call_id seed signature
+      await nestedTx.execute(sql`
         UPDATE wireline_call_logs SET demo = true
         WHERE user_id = ${userId} AND demo = false AND vapi_call_id LIKE 'seed-call-%';
       `);
     });
   } catch (err: any) {
-    // Log and re-throw. Swallowing here would let the seed loop proceed
-    // with stale countRows() values and re-insert duplicate demo rows
-    // on every call — exactly the failure mode PR #138 fixed. Failing
-    // fast surfaces the bug to the operator (500 response from the seed
-    // endpoint) instead of silently corrupting the demo footprint.
     log.warn("Seed tenant backfill failed", { userId, error: err?.message });
     throw err;
   }
@@ -260,171 +248,173 @@ router.post(
       });
     }
 
-    // Tenant-scoped backfill for any pre-audit3 rows that are still
-    // demo=false. Safe — only flips rows owned by THIS user whose phone
-    // matches a SAMPLE_CUSTOMERS entry, not a global UPDATE. After this
-    // runs, countRows() (which counts demo=true) reflects the true
-    // demo footprint and we top up to TARGET without piling new rows
-    // on top of old stranded ones.
-    await backfillTenantDemoRows(userId);
-
     const report: SeedReport[] = [];
 
     try {
-      // CALL LOGS
-      {
-        const before = await countRows("wireline_call_logs", userId);
-        const need = Math.max(0, TARGET.callLogs - before);
-        let inserted = 0;
-        for (let i = 0; i < need; i++) {
-          const cust = SAMPLE_CUSTOMERS[i % SAMPLE_CUSTOMERS.length];
-          await drizzle.insert(callLogs).values({
-            userId,
-            agentId,
-            vapiCallId: `seed-call-${userId.slice(0, 6)}-${Date.now()}-${i}`,
-            direction: i % 2 === 0 ? "inbound" : "outbound",
-            customerNumber: cust.phone,
-            durationSeconds: 90 + Math.floor(Math.random() * 480),
-            summary: SAMPLE_SUMMARIES[i % SAMPLE_SUMMARIES.length],
-            intentLabel: SAMPLE_INTENTS[i % SAMPLE_INTENTS.length],
-            sentiment: SAMPLE_SENTIMENTS[i % SAMPLE_SENTIMENTS.length],
-            demo: true,
-            leadScore: 40 + Math.floor(Math.random() * 55),
-            qaScore: 70 + Math.floor(Math.random() * 28),
-            createdAt: randomCreatedAt(21),
-          });
-          inserted++;
-        }
-        report.push({
-          table: "wireline_call_logs",
-          before,
-          inserted,
-          after: before + inserted,
-        });
-      }
+      await drizzle.transaction(async (tx) => {
+        // Tenant-scoped backfill for any pre-audit3 rows that are still
+        // demo=false. Safe — only flips rows owned by THIS user whose phone
+        // matches a SAMPLE_CUSTOMERS entry, not a global UPDATE. After this
+        // runs, countRows() (which counts demo=true) reflects the true
+        // demo footprint and we top up to TARGET without piling new rows
+        // on top of old stranded ones.
+        await backfillTenantDemoRows(userId, tx);
 
-      // OUTBOUND LEADS
-      {
-        const before = await countRows("wireline_outbound_leads", userId);
-        const need = Math.max(0, TARGET.leads - before);
-        let inserted = 0;
-        const statuses = [
-          "Completed",
-          "Voicemail-Left",
-          "Callback-Scheduled",
-          "Connected",
-          "Pending",
-          "Completed",
-        ];
-        for (let i = 0; i < need; i++) {
-          const cust = SAMPLE_CUSTOMERS[i % SAMPLE_CUSTOMERS.length];
-          await drizzle.insert(outboundLeads).values({
-            userId,
-            agentId,
-            customerName: cust.name,
-            customerNumber: cust.phone,
-            phoneNumber: cust.phone,
-            email: cust.email,
-            context: SAMPLE_SUMMARIES[(i + 3) % SAMPLE_SUMMARIES.length],
-            status: statuses[i % statuses.length],
-            attempts: 1 + (i % 3),
-            source: i % 4 === 0 ? "csv-upload" : i % 4 === 1 ? "api" : "manual",
-            lastContactSummary: SAMPLE_SUMMARIES[i % SAMPLE_SUMMARIES.length],
-            lastCalledAt: randomCreatedAt(14),
-            demo: true,
-            createdAt: randomCreatedAt(28),
-          });
-          inserted++;
-        }
-        report.push({
-          table: "wireline_outbound_leads",
-          before,
-          inserted,
-          after: before + inserted,
-        });
-      }
-
-      // APPOINTMENTS
-      {
-        const before = await countRows("wireline_appointments", userId);
-        const need = Math.max(0, TARGET.appointments - before);
-        let inserted = 0;
-        for (let i = 0; i < need; i++) {
-          const cust = SAMPLE_CUSTOMERS[i % SAMPLE_CUSTOMERS.length];
-          const when = new Date(Date.now() + (1 + i) * 86400_000);
-          await drizzle.insert(appointments).values({
-            userId,
-            agentId,
-            customerName: cust.name,
-            phoneNumber: cust.phone,
-            serviceType: SAMPLE_APPOINTMENT_TYPES[i % SAMPLE_APPOINTMENT_TYPES.length],
-            date: when.toISOString().slice(0, 10),
-            time: ["9:00 AM", "10:30 AM", "1:00 PM", "2:30 PM", "4:00 PM"][i % 5],
-            status: "Scheduled",
-            notes: SAMPLE_SUMMARIES[(i + 5) % SAMPLE_SUMMARIES.length],
-            demo: true,
-            createdAt: randomCreatedAt(7),
-          });
-          inserted++;
-        }
-        report.push({
-          table: "wireline_appointments",
-          before,
-          inserted,
-          after: before + inserted,
-        });
-      }
-
-      // KNOWLEDGE
-      {
-        const before = await countRows("wireline_knowledge", userId);
-        const need = Math.max(0, TARGET.knowledge - before);
-        let inserted = 0;
-        for (let i = 0; i < need; i++) {
-          await drizzle.insert(knowledge).values({
-            userId,
-            agentId,
-            content: SAMPLE_KNOWLEDGE[i % SAMPLE_KNOWLEDGE.length],
-            createdAt: randomCreatedAt(35),
-          });
-          inserted++;
-        }
-        report.push({
-          table: "wireline_knowledge",
-          before,
-          inserted,
-          after: before + inserted,
-        });
-      }
-
-      // DNC LIST
-      {
-        const before = await countRows("wireline_dnc_list", userId);
-        const need = Math.max(0, TARGET.dncList - before);
-        let inserted = 0;
-        for (let i = 0; i < need; i++) {
-          const cust = SAMPLE_CUSTOMERS[(i + 7) % SAMPLE_CUSTOMERS.length];
-          try {
-            await drizzle.insert(dncList).values({
+        // CALL LOGS
+        {
+          const before = await countRows("wireline_call_logs", userId, tx);
+          const need = Math.max(0, TARGET.callLogs - before);
+          let inserted = 0;
+          for (let i = 0; i < need; i++) {
+            const cust = SAMPLE_CUSTOMERS[i % SAMPLE_CUSTOMERS.length];
+            await tx.insert(callLogs).values({
               userId,
-              phone: cust.phone,
-              reason: i % 2 === 0 ? "Customer requested STOP via SMS" : "Manual op-add",
-              source: i % 2 === 0 ? "sms-stop" : "manual",
+              agentId,
+              vapiCallId: `seed-call-${userId.slice(0, 6)}-${Date.now()}-${i}`,
+              direction: i % 2 === 0 ? "inbound" : "outbound",
+              customerNumber: cust.phone,
+              durationSeconds: 90 + Math.floor(Math.random() * 480),
+              summary: SAMPLE_SUMMARIES[i % SAMPLE_SUMMARIES.length],
+              intentLabel: SAMPLE_INTENTS[i % SAMPLE_INTENTS.length],
+              sentiment: SAMPLE_SENTIMENTS[i % SAMPLE_SENTIMENTS.length],
               demo: true,
-              createdAt: randomCreatedAt(40),
+              leadScore: 40 + Math.floor(Math.random() * 55),
+              qaScore: 70 + Math.floor(Math.random() * 28),
+              createdAt: randomCreatedAt(21),
             });
             inserted++;
-          } catch {
-            // unique constraint — skip
           }
+          report.push({
+            table: "wireline_call_logs",
+            before,
+            inserted,
+            after: before + inserted,
+          });
         }
-        report.push({
-          table: "wireline_dnc_list",
-          before,
-          inserted,
-          after: before + inserted,
-        });
-      }
+
+        // OUTBOUND LEADS
+        {
+          const before = await countRows("wireline_outbound_leads", userId, tx);
+          const need = Math.max(0, TARGET.leads - before);
+          let inserted = 0;
+          const statuses = [
+            "Completed",
+            "Voicemail-Left",
+            "Callback-Scheduled",
+            "Connected",
+            "Pending",
+            "Completed",
+          ];
+          for (let i = 0; i < need; i++) {
+            const cust = SAMPLE_CUSTOMERS[i % SAMPLE_CUSTOMERS.length];
+            await tx.insert(outboundLeads).values({
+              userId,
+              agentId,
+              customerName: cust.name,
+              customerNumber: cust.phone,
+              phoneNumber: cust.phone,
+              email: cust.email,
+              context: SAMPLE_SUMMARIES[(i + 3) % SAMPLE_SUMMARIES.length],
+              status: statuses[i % statuses.length],
+              attempts: 1 + (i % 3),
+              source: i % 4 === 0 ? "csv-upload" : i % 4 === 1 ? "api" : "manual",
+              lastContactSummary: SAMPLE_SUMMARIES[i % SAMPLE_SUMMARIES.length],
+              lastCalledAt: randomCreatedAt(14),
+              demo: true,
+              createdAt: randomCreatedAt(28),
+            });
+            inserted++;
+          }
+          report.push({
+            table: "wireline_outbound_leads",
+            before,
+            inserted,
+            after: before + inserted,
+          });
+        }
+
+        // APPOINTMENTS
+        {
+          const before = await countRows("wireline_appointments", userId, tx);
+          const need = Math.max(0, TARGET.appointments - before);
+          let inserted = 0;
+          for (let i = 0; i < need; i++) {
+            const cust = SAMPLE_CUSTOMERS[i % SAMPLE_CUSTOMERS.length];
+            const when = new Date(Date.now() + (1 + i) * 86400_000);
+            await tx.insert(appointments).values({
+              userId,
+              agentId,
+              customerName: cust.name,
+              phoneNumber: cust.phone,
+              serviceType: SAMPLE_APPOINTMENT_TYPES[i % SAMPLE_APPOINTMENT_TYPES.length],
+              date: when.toISOString().slice(0, 10),
+              time: ["9:00 AM", "10:30 AM", "1:00 PM", "2:30 PM", "4:00 PM"][i % 5],
+              status: "Scheduled",
+              notes: SAMPLE_SUMMARIES[(i + 5) % SAMPLE_SUMMARIES.length],
+              demo: true,
+              createdAt: randomCreatedAt(7),
+            });
+            inserted++;
+          }
+          report.push({
+            table: "wireline_appointments",
+            before,
+            inserted,
+            after: before + inserted,
+          });
+        }
+
+        // KNOWLEDGE
+        {
+          const before = await countRows("wireline_knowledge", userId, tx);
+          const need = Math.max(0, TARGET.knowledge - before);
+          let inserted = 0;
+          for (let i = 0; i < need; i++) {
+            await tx.insert(knowledge).values({
+              userId,
+              agentId,
+              content: SAMPLE_KNOWLEDGE[i % SAMPLE_KNOWLEDGE.length],
+              createdAt: randomCreatedAt(35),
+            });
+            inserted++;
+          }
+          report.push({
+            table: "wireline_knowledge",
+            before,
+            inserted,
+            after: before + inserted,
+          });
+        }
+
+        // DNC LIST
+        {
+          const before = await countRows("wireline_dnc_list", userId, tx);
+          const need = Math.max(0, TARGET.dncList - before);
+          let inserted = 0;
+          for (let i = 0; i < need; i++) {
+            const cust = SAMPLE_CUSTOMERS[(i + 7) % SAMPLE_CUSTOMERS.length];
+            try {
+              await tx.insert(dncList).values({
+                userId,
+                phone: cust.phone,
+                reason: i % 2 === 0 ? "Customer requested STOP via SMS" : "Manual op-add",
+                source: i % 2 === 0 ? "sms-stop" : "manual",
+                demo: true,
+                createdAt: randomCreatedAt(40),
+              });
+              inserted++;
+            } catch {
+              // unique constraint — skip
+            }
+          }
+          report.push({
+            table: "wireline_dnc_list",
+            before,
+            inserted,
+            after: before + inserted,
+          });
+        }
+      });
 
       // Bust the per-tenant dashboard cache so call/lead/appointment
       // counts update immediately. Symmetric with the DELETE

@@ -5,6 +5,7 @@ import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { toolIntegrationForProvider, PROVIDER_ACCENT } from "../lib/integration-playbooks";
 import IntegrationCapabilityPanel from "./IntegrationCapabilityPanel";
+import { getIntegrationLogo } from "./layout/IntegrationLogos";
 
 interface IntegrationStatus {
   connected: boolean;
@@ -111,7 +112,6 @@ const PROVIDERS: {
     color: "sky",
     logo: "SF",
     group: "CRM",
-    beta: true,
   },
   {
     key: "hubspot",
@@ -119,7 +119,6 @@ const PROVIDERS: {
     color: "orange",
     logo: "HS",
     group: "CRM",
-    beta: true,
   },
   {
     key: "slack",
@@ -415,11 +414,13 @@ export default function CrmConnectionCard() {
                       <div className="flex items-start gap-3 flex-1">
                         <div
                           className={cn(
-                            "w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-bold border shrink-0",
-                            s.connected ? styles.icon : "bg-black/4 border-black/10 text-muted",
+                            "w-9 h-9 rounded-lg flex items-center justify-center p-1.5 border shrink-0",
+                            s.connected ? styles.icon : "bg-black/4 border-black/10 text-muted/50",
                           )}
                         >
-                          {logo}
+                          {getIntegrationLogo(key) ?? (
+                            <span className="text-[10px] font-bold">{logo}</span>
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">

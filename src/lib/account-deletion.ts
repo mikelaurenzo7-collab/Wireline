@@ -87,24 +87,23 @@ export async function purgeAccount(
   const { db, log } = deps;
   const tablesTouched: string[] = [];
 
-  for (const table of ACCOUNT_DELETION_TABLES) {
-    const userCol = TENANT_SCOPED_TABLES.has(table) ? "tenant_id" : "user_id";
-    try {
-      // Use parameterized query to prevent SQL injection
-      // Table name is validated against known list, userId is parameterized
-      await db.execute(sql`DELETE FROM ${sql.raw(table)} WHERE ${sql.raw(userCol)} = ${userId}`);
-      tablesTouched.push(table);
-    } catch (error: any) {
-      log.warn(`account purge: ${table} error`, { error: error.message });
-    }
-  }
-
-  // Delete the local auth row last. Once gone the user is fully
-  // unauthenticated and cannot make further requests.
   try {
-    await db.execute(sql`DELETE FROM wireline_users WHERE id = ${userId}`);
-    return { ok: true, tablesTouched, authRemoved: true };
+    return await db.transaction(async (tx) => {
+      for (const table of ACCOUNT_DELETION_TABLES) {
+        const userCol = TENANT_SCOPED_TABLES.has(table) ? "tenant_id" : "user_id";
+        // Use parameterized query to prevent SQL injection
+        // Table name is validated against known list, userId is parameterized
+        await tx.execute(sql`DELETE FROM ${sql.raw(table)} WHERE ${sql.raw(userCol)} = ${userId}`);
+        tablesTouched.push(table);
+      }
+
+      // Delete the local auth row last. Once gone the user is fully
+      // unauthenticated and cannot make further requests.
+      await tx.execute(sql`DELETE FROM wireline_users WHERE id = ${userId}`);
+      return { ok: true, tablesTouched, authRemoved: true };
+    });
   } catch (error: any) {
+    log.error("account purge transaction failed", { error: error.message });
     return { ok: false, tablesTouched, authRemoved: false, error: error.message };
   }
 }

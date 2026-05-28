@@ -4,6 +4,7 @@ import { Router, Response } from "express";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, desc, like, ne, gte } from "drizzle-orm";
+import { presenceStreams } from "../services/presence-stream-service";
 import { authenticateUser } from "../middleware/auth";
 import { validateBody, updateFleetTaskSchema } from "../lib/api-validation";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
@@ -155,6 +156,35 @@ router.get(
       log.error("Presence fetch failed", { error: getErrorMessage(error) });
       res.json({ signals: [] });
     }
+  },
+);
+
+router.get(
+  "/api/fleet/presence/stream",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("Content-Encoding", "none");
+
+    const userId = req.user.id;
+    presenceStreams.register(userId, res);
+
+    try {
+      const signals = await drizzle
+        .select()
+        .from(schema.signalPresence)
+        .where(eq(schema.signalPresence.userId, userId));
+      res.write(`data: ${JSON.stringify({ type: "presence", signals })}\n\n`);
+    } catch (error: any) {
+      log.error("Failed to push initial snap to presence stream", { error: error.message });
+    }
+
+    req.on("close", () => {
+      presenceStreams.unregister(userId, res);
+      res.end();
+    });
   },
 );
 

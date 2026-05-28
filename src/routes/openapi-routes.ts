@@ -43,14 +43,15 @@ function resolveServerUrl(req: Request): string | undefined {
   const vercel = process.env.VERCEL_URL?.trim();
   if (vercel) return vercel.startsWith("http") ? vercel : `https://${vercel}`;
   const host = (req.headers["x-forwarded-host"] as string | undefined) || req.headers.host;
-  const proto = (req.headers["x-forwarded-proto"] as string | undefined) || (req.secure ? "https" : "http");
+  const proto =
+    (req.headers["x-forwarded-proto"] as string | undefined) || (req.secure ? "https" : "http");
   if (!host) return undefined;
   return `${proto}://${host}`;
 }
 
 router.get("/openapi.json", specRateLimiter, (req: Request, res: Response) => {
   const spec = getOpenApiSpec(resolveServerUrl(req));
-  res.setHeader("Cache-Control", "public, max-age=300");
+  res.setHeader("Cache-Control", "public, max-age=300, s-maxage=600, stale-while-revalidate=3600");
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.json(spec);
 });

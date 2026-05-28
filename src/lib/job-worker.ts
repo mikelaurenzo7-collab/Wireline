@@ -80,6 +80,18 @@ async function syncCallActivityToCrm(input: {
       callId: input.callId,
       activityId,
     });
+
+    if (input.leadScore != null) {
+      void crm
+        .syncEnrichedLead({
+          customerNumber: input.customerNumber,
+          leadScore: input.leadScore,
+        })
+        .catch((e) =>
+          log.warn("Post-call lead score CRM sync failed", { error: getErrorMessage(e) }),
+        );
+    }
+
     return;
   }
 
@@ -567,6 +579,22 @@ export async function handleJob(job: JobRow): Promise<void> {
           customerNumber: p.customerNumber,
           company: enrichment.company,
         });
+
+        // Sync to CRM
+        const crmService = new CRMService(p.userId);
+        void crmService
+          .syncEnrichedLead({
+            customerNumber: p.customerNumber,
+            fullName:
+              enrichment.first_name && enrichment.last_name
+                ? `${enrichment.first_name} ${enrichment.last_name}`
+                : undefined,
+            jobTitle: enrichment.title,
+            company: enrichment.company,
+            linkedInUrl: enrichment.linkedin_url,
+            leadScore: 85, // Default lead score for highly enriched lead
+          })
+          .catch((e) => log.warn("CRM enrichment sync failed", { error: getErrorMessage(e) }));
       } else {
         log.info("No enrichment data found for lead", { customerNumber: p.customerNumber });
       }

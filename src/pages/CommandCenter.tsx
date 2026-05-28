@@ -68,6 +68,8 @@ export default function LiveOps() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activatingGrowth, setActivatingGrowth] = useState(false);
   const mountedRef = useRef(true);
+  const dossiersRef = useRef(dossiers);
+  dossiersRef.current = dossiers;
 
   const fetchPresence = useCallback(async () => {
     if (!user) return;
@@ -91,7 +93,7 @@ export default function LiveOps() {
         // Fetch dossiers for new numbers
         const numbers = (signals || [])
           .map((s: any) => s.customer_number)
-          .filter((n: string) => !dossiers[n]);
+          .filter((n: string) => !dossiersRef.current[n]);
         if (numbers.length > 0) {
           const dossRes = await authFetch(`/api/dashboard/dossiers?numbers=${numbers.join(",")}`);
           if (dossRes.ok) {
@@ -107,7 +109,7 @@ export default function LiveOps() {
       if (err?.name === "AbortError" || msg.includes("Failed to fetch")) return;
       log.error("Failed to fetch live presence", { err });
     }
-  }, [user, dossiers]);
+  }, [user]);
 
   const fetchAll = useCallback(async () => {
     if (!user) return;
@@ -160,16 +162,78 @@ export default function LiveOps() {
   useEffect(() => {
     mountedRef.current = true;
     fetchAll();
-    fetchPresence();
 
-    // High-frequency polling for real-time feel (5s)
-    const fastTimer = setInterval(fetchPresence, 5_000);
+    let eventSource: EventSource | null = null;
+    let fallbackTimer: any = null;
+
+    const setupPresenceStream = () => {
+      if (!user) return;
+
+      try {
+        const streamUrl = `${window.location.origin}/api/fleet/presence/stream`;
+        eventSource = new EventSource(streamUrl, { withCredentials: true });
+
+        eventSource.onmessage = (event) => {
+          try {
+            const payload = JSON.parse(event.data);
+            if (payload.type === "presence" && mountedRef.current) {
+              const signals = payload.signals || [];
+              setCalls(
+                signals.map((s: any) => ({
+                  id: s.id,
+                  customer_number: s.customer_number,
+                  sentiment_label: s.label || "Connected",
+                  urgency: s.urgency || 0,
+                  status: s.status === "escalated" ? "escalated" : "active",
+                })),
+              );
+
+              // Fetch dossiers for new numbers
+              const numbers = signals
+                .map((s: any) => s.customer_number)
+                .filter((n: string) => !dossiersRef.current[n]);
+              if (numbers.length > 0) {
+                authFetch(`/api/dashboard/dossiers?numbers=${numbers.join(",")}`)
+                  .then((r) => (r.ok ? r.json() : null))
+                  .then((dossData) => {
+                    if (mountedRef.current && dossData?.dossiers) {
+                      setDossiers((prev) => ({ ...prev, ...dossData.dossiers }));
+                    }
+                  })
+                  .catch(() => {});
+              }
+            }
+          } catch (e) {
+            // silent parsing catch
+          }
+        };
+
+        eventSource.onerror = () => {
+          // SSE failed or closed, trigger immediate poll fallback and set up interval
+          if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+          }
+          if (mountedRef.current && !fallbackTimer) {
+            fetchPresence();
+            fallbackTimer = setInterval(fetchPresence, 5000);
+          }
+        };
+      } catch (err) {
+        fetchPresence();
+        fallbackTimer = setInterval(fetchPresence, 5000);
+      }
+    };
+
+    setupPresenceStream();
+
     // Standard polling for stats (60s)
     const slowTimer = setInterval(fetchAll, 60_000);
 
     return () => {
       mountedRef.current = false;
-      clearInterval(fastTimer);
+      if (eventSource) eventSource.close();
+      if (fallbackTimer) clearInterval(fallbackTimer);
       clearInterval(slowTimer);
     };
   }, [fetchAll, fetchPresence, user]);

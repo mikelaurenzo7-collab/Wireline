@@ -112,7 +112,17 @@ const STAFF: StaffMember[] = [
   },
 ];
 
-const STAT_TONES: Record<string, string> = {
+const STAT_CARD_CLASSES: Record<string, string> = {
+  brand: "border-brand/20 hover:border-brand/50 hover:shadow-[0_0_15px_rgba(79,30,123,0.12)]",
+  ink: "border-white/10 hover:border-white/20 hover:shadow-[0_0_15px_rgba(255,255,255,0.04)]",
+  emerald:
+    "border-emerald-500/20 hover:border-emerald-500/50 hover:shadow-[0_0_15px_rgba(16,185,129,0.12)]",
+  rose: "border-rose-500/20 hover:border-rose-500/50 hover:shadow-[0_0_15px_rgba(244,63,94,0.12)]",
+  amber:
+    "border-amber-500/20 hover:border-amber-500/50 hover:shadow-[0_0_15px_rgba(245,158,11,0.12)]",
+};
+
+const STAT_TEXT_COLORS: Record<string, string> = {
   brand: "text-brand",
   ink: "text-ink",
   emerald: "text-emerald-500",
@@ -127,11 +137,16 @@ function StatTile({
 }: {
   label: string;
   value: number;
-  tone: keyof typeof STAT_TONES;
+  tone: keyof typeof STAT_CARD_CLASSES;
 }) {
   return (
-    <div className="rounded-xl glass border border-white/10 px-3 py-2.5">
-      <div className={cn("text-xl font-display tabular-nums leading-none", STAT_TONES[tone])}>
+    <div
+      className={cn(
+        "flex-1 min-w-[115px] rounded-xl glass border px-3 py-2.5 transition-all duration-300 hover:-translate-y-0.5",
+        STAT_CARD_CLASSES[tone],
+      )}
+    >
+      <div className={cn("text-xl font-display tabular-nums leading-none", STAT_TEXT_COLORS[tone])}>
         {value.toLocaleString()}
       </div>
       <div className="text-[9px] uppercase tracking-[0.18em] text-muted/70 mt-1.5">{label}</div>
@@ -257,7 +272,7 @@ export default function FounderDashboard() {
             <div className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mb-2">
               Platform · live
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+            <div className="flex flex-wrap gap-2.5">
               <StatTile label="Paying" value={stats.users.paying} tone="brand" />
               <StatTile label="Trialing" value={stats.users.trialing} tone="brand" />
               <StatTile label="Total users" value={stats.users.total} tone="ink" />

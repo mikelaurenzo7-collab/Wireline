@@ -214,15 +214,13 @@ export default function TriageInbox() {
         className={cn(
           "h-full min-h-0 overflow-y-auto lg:overflow-hidden",
           "grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
-          // Two-row grid on lg+: Hot Leads + Escalations on row 1,
-          // Compliance + Tasks + Gaps share row 2.
           "lg:[grid-template-rows:minmax(0,1.15fr)_minmax(0,1fr)]",
           "auto-rows-fr",
         )}
         data-testid="triage-grid"
       >
-        {/* Hot Leads — hero, spans 2 columns on lg+ */}
-        <div className="lg:col-span-2">
+        {/* Column 1, Row 1: Hot Leads */}
+        <div className="lg:col-span-1">
           {bucketPanel(
             "Hot Leads",
             Flame,
@@ -234,7 +232,24 @@ export default function TriageInbox() {
           )}
         </div>
 
-        {/* Escalations — full-height right tower on lg+ */}
+        {/* Column 2, Row 1: Open Tasks */}
+        <div>
+          {bucketPanel(
+            "Open Tasks",
+            ListTodo,
+            counts.pending_tasks ? `${counts.pending_tasks} open` : "Queue clear",
+            <WidgetBoundary label="Open Tasks">
+              <OpenTasks
+                items={data?.pending_tasks || []}
+                onCompleted={removeTask}
+                onFetchFailed={fetchData}
+              />
+            </WidgetBoundary>,
+            "#4F1E7B",
+          )}
+        </div>
+
+        {/* Column 3, Row 1 & 2: Escalations */}
         <div className="lg:row-span-2">
           {bucketPanel(
             "Escalations",
@@ -247,34 +262,20 @@ export default function TriageInbox() {
           )}
         </div>
 
-        {/* Row 2: Compliance · Tasks · Gaps */}
-        {bucketPanel(
-          "Compliance",
-          ShieldAlert,
-          counts.compliance ? `${counts.compliance} flags` : "Clean",
-          <WidgetBoundary label="Compliance">
-            <ComplianceList items={data?.compliance || []} />
-          </WidgetBoundary>,
-          "#E8466A",
-        )}
-        {bucketPanel(
-          "Open Tasks",
-          ListTodo,
-          counts.pending_tasks ? `${counts.pending_tasks} open` : "Queue clear",
-          <WidgetBoundary label="Open Tasks">
-            <OpenTasks
-              items={data?.pending_tasks || []}
-              onCompleted={removeTask}
-              onFetchFailed={fetchData}
-            />
-          </WidgetBoundary>,
-          "#4F1E7B",
-        )}
-        {/* Knowledge gaps — second row, third column */}
-        <div className="lg:col-start-2 lg:row-start-2 hidden lg:block">
-          {/* Empty cell - reserved so the next card lands in col 3.
-              On smaller screens it never renders. */}
+        {/* Column 1, Row 2: Compliance */}
+        <div>
+          {bucketPanel(
+            "Compliance",
+            ShieldAlert,
+            counts.compliance ? `${counts.compliance} flags` : "Clean",
+            <WidgetBoundary label="Compliance">
+              <ComplianceList items={data?.compliance || []} />
+            </WidgetBoundary>,
+            "#E8466A",
+          )}
         </div>
+
+        {/* Column 2, Row 2: Knowledge Gaps */}
         <div className="md:col-span-2 lg:col-span-1">
           {bucketPanel(
             "Knowledge Gaps",

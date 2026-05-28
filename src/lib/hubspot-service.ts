@@ -187,7 +187,10 @@ async function getValidToken(userId: string): Promise<string | null> {
   } catch (err: any) {
     log.error("HubSpot token refresh failed", { error: getErrorMessage(err) });
     if (err.isTerminal) {
-      log.warn(`Terminal HubSpot OAuth failure for user ${userId}. Flagging connection as inactive.`, { error: getErrorMessage(err) });
+      log.warn(
+        `Terminal HubSpot OAuth failure for user ${userId}. Flagging connection as inactive.`,
+        { error: getErrorMessage(err) },
+      );
       await drizzle
         .update(schema.crmConnections)
         .set({
@@ -402,4 +405,34 @@ export async function disconnectHubSpot(userId: string): Promise<void> {
     .update(schema.settings)
     .set({ crmType: null })
     .where(eq(schema.settings.userId, userId));
+}
+
+export async function updateContact(
+  contactId: string,
+  properties: Record<string, string | number | null | undefined>,
+  userId?: string,
+): Promise<boolean> {
+  const uid = userId || "";
+  const token = await getValidToken(uid);
+  if (!token) {
+    log.warn("HubSpot not connected — skipping contact update");
+    return false;
+  }
+
+  try {
+    const res = await fetchWithTimeout(
+      `${HUBSPOT_BASE}/crm/v3/objects/contacts/${contactId}`,
+      {
+        method: "PATCH",
+        headers: hsHeaders(token),
+        body: JSON.stringify({ properties }),
+      },
+      15_000,
+    );
+    if (!res.ok) throw new Error(`HubSpot contact update error: ${res.status}`);
+    return true;
+  } catch (err) {
+    log.error("HubSpot contact update failed", { error: getErrorMessage(err) });
+    return false;
+  }
 }

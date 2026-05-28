@@ -132,7 +132,10 @@ if (IS_PROD && corsAllowList.length === 0 && process.env.APP_URL) {
 }
 app.use(
   cors({
-    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
       if (!origin) return callback(null, true);
       if (!IS_PROD && corsAllowList.length === 0) return callback(null, true);
       if (corsAllowList.includes(origin)) return callback(null, true);
@@ -315,6 +318,11 @@ async function startServer() {
     process.exit(1);
   }
 
+  if (dbHealthy) {
+    const { initPresenceDbListener } = await import("./src/services/presence-stream-service");
+    void initPresenceDbListener();
+  }
+
   if (process.env.NODE_ENV !== "production") {
     const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
@@ -339,6 +347,10 @@ async function startServer() {
   const server = app.listen(PORT, "0.0.0.0", () => {
     log.info(`Server running on http://localhost:${PORT}`);
   });
+
+  const { initSupervisorWebSocketServer } =
+    await import("./src/services/supervisor-websocket-service");
+  initSupervisorWebSocketServer(server);
 
   const GRACE_MS = 45_000;
   let shuttingDown = false;

@@ -185,7 +185,10 @@ async function getValidToken(
   } catch (err: any) {
     log.error("Salesforce token refresh failed", { error: getErrorMessage(err) });
     if (err.isTerminal) {
-      log.warn(`Terminal Salesforce OAuth failure for user ${userId}. Flagging connection as inactive.`, { error: getErrorMessage(err) });
+      log.warn(
+        `Terminal Salesforce OAuth failure for user ${userId}. Flagging connection as inactive.`,
+        { error: getErrorMessage(err) },
+      );
       await drizzle
         .update(schema.crmConnections)
         .set({
@@ -338,4 +341,37 @@ export async function disconnectSalesforce(userId: string): Promise<void> {
     .update(schema.settings)
     .set({ crmType: null })
     .where(eq(schema.settings.userId, userId));
+}
+
+export async function updateContact(
+  contactId: string,
+  fields: Record<string, unknown>,
+  userId?: string,
+): Promise<boolean> {
+  const uid = userId || "";
+  const creds = await getValidToken(uid);
+  if (!creds) {
+    log.warn("Salesforce not connected — skipping contact update");
+    return false;
+  }
+
+  try {
+    const res = await fetchWithTimeout(
+      `${creds.instanceUrl}/services/data/v59.0/sobjects/Contact/${contactId}`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${creds.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(fields),
+      },
+      15_000,
+    );
+    if (!res.ok) throw new Error(`Salesforce contact update error: ${res.status}`);
+    return true;
+  } catch (err) {
+    log.error("Salesforce contact update failed", { error: getErrorMessage(err) });
+    return false;
+  }
 }

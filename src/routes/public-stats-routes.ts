@@ -52,7 +52,7 @@ router.get("/api/public/stats", async (req: Request, res: Response) => {
         .then((r) => r[0]?.count ?? 0),
     ]);
 
-    res.setHeader("Cache-Control", "public, max-age=60, s-maxage=60");
+    res.setHeader("Cache-Control", "public, max-age=60, s-maxage=600, stale-while-revalidate=1200");
     res.json({
       agents_online: agentsRow,
       calls_this_month: callsRow,
