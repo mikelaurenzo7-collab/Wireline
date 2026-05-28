@@ -61,6 +61,18 @@
     "src/lib/tcpa-consent.ts",
     // Postgres error code normalisation — pure helper.
     "src/lib/pg-errors.ts",
+    // ─── Added 2026 audit follow-up (pure-helper test peers) ───────
+    // Safe formatters — coerce unparsable API values to stable
+    // fallbacks so a render never throws. Covered by safe-*.test.ts.
+    "src/lib/safe-date.ts",
+    "src/lib/safe-number.ts",
+    // Agent scorecard math — pure outcome metrics extracted from
+    // server.ts. Covered by agent-scorecard.test.ts.
+    "src/lib/agent-scorecard.ts",
+    // Wireline agent rule engines — escalation + objection handling.
+    // Pure decision logic, covered by their *.test.ts peers.
+    "src/lib/wireline-agent-escalation.ts",
+    "src/lib/wireline-agent-objections.ts",
     // Test suites corresponding to the strict-clean modules
     "src/lib/agent-runtime.test.ts",
     "src/lib/personality-vibes.test.ts",
@@ -72,6 +84,11 @@
     "src/lib/csp.test.ts",
     "src/lib/account-deletion.test.ts",
     "src/lib/tcpa-consent.test.ts",
-    "src/lib/pg-errors.test.ts"
+    "src/lib/pg-errors.test.ts",
+    "src/lib/safe-date.test.ts",
+    "src/lib/safe-number.test.ts",
+    "src/lib/agent-scorecard.test.ts",
+    "src/lib/wireline-agent-escalation.test.ts",
+    "src/lib/wireline-agent-objections.test.ts"
   ]
 }
