@@ -986,6 +986,7 @@ Deliver the daily brief now.`;
     user,
     tool: TOOLS.dailyBrief,
     deepThink: true,
+    cacheSystem: true,
     maxTokens: 3072,
     complexity: "medium",
   });

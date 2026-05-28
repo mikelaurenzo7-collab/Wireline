@@ -40,6 +40,7 @@ interface CrmConnection {
   accessToken: string;
   refreshToken: string;
   expiresAt: number | null;
+  active: boolean | null;
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -129,7 +130,13 @@ async function refreshHubSpotToken(
   );
   const data = (await r.json()) as any;
   if (!r.ok || !data.access_token) {
-    throw new Error(data.message || "HubSpot token refresh failed");
+    const isTerminal =
+      r.status === 400 ||
+      data.error === "invalid_grant" ||
+      (data.message && data.message.includes("invalid_grant"));
+    const err = new Error(data.message || data.error || "HubSpot token refresh failed");
+    (err as any).isTerminal = isTerminal;
+    throw err;
   }
   return {
     access_token: data.access_token,
@@ -145,6 +152,7 @@ async function getConnection(userId: string): Promise<CrmConnection | null> {
       accessToken: schema.crmConnections.accessToken,
       refreshToken: schema.crmConnections.refreshToken,
       expiresAt: schema.crmConnections.expiresAt,
+      active: schema.crmConnections.active,
     })
     .from(schema.crmConnections)
     .where(
@@ -157,7 +165,7 @@ async function getConnection(userId: string): Promise<CrmConnection | null> {
 
 async function getValidToken(userId: string): Promise<string | null> {
   const conn = await getConnection(userId);
-  if (!conn) return null;
+  if (!conn || conn.active === false) return null;
 
   if (conn.expiresAt && Date.now() < conn.expiresAt - 60_000) {
     return decryptSecret(conn.accessToken);
@@ -171,12 +179,23 @@ async function getValidToken(userId: string): Promise<string | null> {
         accessToken: encryptSecret(updated.access_token),
         refreshToken: encryptSecret(updated.refresh_token),
         expiresAt: updated.expires_at,
+        active: true,
         updatedAt: new Date(),
       })
       .where(eq(schema.crmConnections.id, conn.id));
     return updated.access_token;
-  } catch (err) {
+  } catch (err: any) {
     log.error("HubSpot token refresh failed", { error: getErrorMessage(err) });
+    if (err.isTerminal) {
+      log.warn(`Terminal HubSpot OAuth failure for user ${userId}. Flagging connection as inactive.`, { error: getErrorMessage(err) });
+      await drizzle
+        .update(schema.crmConnections)
+        .set({
+          active: false,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.crmConnections.id, conn.id));
+    }
     return null;
   }
 }

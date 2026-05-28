@@ -1608,4 +1608,81 @@ router.post(
   },
 );
 
+/**
+ * Secure, admin-only dry-runnable route to backfill legacy settings.
+ * Updates settings rows where voiceLlmProvider = 'google' to 'anthropic' and 'claude-sonnet-4-6'.
+ *
+ * Body: { dryRun?: boolean }
+ */
+router.post(
+  "/api/admin/backfill-voice-defaults",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+
+    const dryRun = req.body.dryRun !== false && req.query.dry_run !== "false";
+
+    try {
+      // Find rows that match the legacy condition
+      const matchingRows = await drizzle
+        .select({
+          id: schema.settings.id,
+          userId: schema.settings.userId,
+          voiceLlmProvider: schema.settings.voiceLlmProvider,
+          voiceLlmModel: schema.settings.voiceLlmModel,
+        })
+        .from(schema.settings)
+        .where(eq(schema.settings.voiceLlmProvider, "google"));
+
+      if (dryRun) {
+        log.info("[backfill-voice-defaults] Dry-run backfill voice settings defaults", {
+          matchingCount: matchingRows.length,
+        });
+        return res.json({
+          ok: true,
+          dry_run: true,
+          matching_count: matchingRows.length,
+          matching_rows: matchingRows.map((r) => ({
+            id: r.id,
+            userId: r.userId,
+            voiceLlmProvider: r.voiceLlmProvider,
+            voiceLlmModel: r.voiceLlmModel,
+          })),
+        });
+      }
+
+      // Execute update query to backfill Anthropic defaults
+      const result = await drizzle
+        .update(schema.settings)
+        .set({
+          voiceLlmProvider: "anthropic",
+          voiceLlmModel: "claude-sonnet-4-6",
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.settings.voiceLlmProvider, "google"));
+
+      const updatedCount = (result as any)?.rowCount ?? matchingRows.length;
+
+      log.info("[backfill-voice-defaults] Committed backfill voice settings defaults", {
+        updatedCount,
+      });
+
+      return res.json({
+        ok: true,
+        dry_run: false,
+        updated_count: updatedCount,
+        matching_rows_before: matchingRows.map((r) => ({
+          id: r.id,
+          userId: r.userId,
+          voiceLlmProvider: r.voiceLlmProvider,
+          voiceLlmModel: r.voiceLlmModel,
+        })),
+      });
+    } catch (e: any) {
+      log.error("[backfill-voice-defaults] Failed backfilling voice defaults", { error: e?.message });
+      return res.status(500).json({ ok: false, error: e?.message || "Migration backfill failed" });
+    }
+  }
+);
+
 export default router;

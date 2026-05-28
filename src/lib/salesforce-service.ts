@@ -37,6 +37,7 @@ interface CrmConnection {
   accessToken: string;
   refreshToken: string;
   expiresAt: number | null;
+  active: boolean | null;
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -123,7 +124,13 @@ async function refreshSalesforceToken(
   );
   const data = (await r.json()) as any;
   if (!r.ok || !data.access_token) {
-    throw new Error(data.error_description || "Salesforce token refresh failed");
+    const isTerminal =
+      r.status === 400 ||
+      data.error === "invalid_grant" ||
+      (data.error_description && data.error_description.includes("invalid_grant"));
+    const err = new Error(data.error_description || "Salesforce token refresh failed");
+    (err as any).isTerminal = isTerminal;
+    throw err;
   }
   return {
     access_token: data.access_token,
@@ -139,6 +146,7 @@ async function getConnection(userId: string): Promise<CrmConnection | null> {
       accessToken: schema.crmConnections.accessToken,
       refreshToken: schema.crmConnections.refreshToken,
       expiresAt: schema.crmConnections.expiresAt,
+      active: schema.crmConnections.active,
     })
     .from(schema.crmConnections)
     .where(
@@ -156,7 +164,7 @@ async function getValidToken(
   userId: string,
 ): Promise<{ token: string; instanceUrl: string } | null> {
   const conn = await getConnection(userId);
-  if (!conn) return null;
+  if (!conn || conn.active === false) return null;
 
   if (conn.expiresAt && Date.now() < conn.expiresAt - 60_000) {
     return { token: decryptSecret(conn.accessToken), instanceUrl: conn.instanceUrl || "" };
@@ -169,12 +177,23 @@ async function getValidToken(
       .set({
         accessToken: encryptSecret(updated.access_token),
         expiresAt: updated.expires_at,
+        active: true,
         updatedAt: new Date(),
       })
       .where(eq(schema.crmConnections.id, conn.id));
     return { token: updated.access_token, instanceUrl: conn.instanceUrl || "" };
-  } catch (err) {
+  } catch (err: any) {
     log.error("Salesforce token refresh failed", { error: getErrorMessage(err) });
+    if (err.isTerminal) {
+      log.warn(`Terminal Salesforce OAuth failure for user ${userId}. Flagging connection as inactive.`, { error: getErrorMessage(err) });
+      await drizzle
+        .update(schema.crmConnections)
+        .set({
+          active: false,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.crmConnections.id, conn.id));
+    }
     return null;
   }
 }
