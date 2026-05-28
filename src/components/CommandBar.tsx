@@ -22,7 +22,6 @@ import {
   Database,
   Radio,
   Headphones,
-  Crown,
   Kanban,
   ScrollText,
   Ban,
@@ -60,7 +59,7 @@ export default function CommandBar() {
     // ── Navigation ─────────────────────────────────────────
     {
       id: "dash",
-      label: "Dashboard",
+      label: "Live Ops",
       description: "Live overview of agents and activity",
       icon: Activity,
       category: "Navigation",
@@ -150,18 +149,16 @@ export default function CommandBar() {
       description: "Floor-level monitoring with SLA flags",
       icon: Headphones,
       category: "Navigation",
-      ownerOnly: true,
+      // Not ownerOnly — Cockpit is a Business+ tier product feature
+      // (gated server-side by plan), and the Sidebar / TopBar nav lists
+      // it to every authenticated user. Marking it ownerOnly here would
+      // hide it from paying customers who try to find it via ⌘K search.
       action: () => navigate("/cockpit"),
     },
-    {
-      id: "founder",
-      label: "Founder",
-      description: "Owner-only metrics dashboard",
-      icon: Crown,
-      category: "Navigation",
-      ownerOnly: true,
-      action: () => navigate("/founder"),
-    },
+    // No "Founder" command. The founder surface lives at /founder as a
+    // public route OUTSIDE the authenticated AppShell — no chrome menu,
+    // sidebar, dropdown, OR command-bar entry advertises it. The owner
+    // reaches it by URL (bookmark).
     {
       id: "train",
       label: "Training",

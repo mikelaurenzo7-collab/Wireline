@@ -53,7 +53,12 @@ export default function AppPageIntro({
       >
         <div className="min-w-0 flex-1 sm:max-w-2xl">
           {eyebrow && <p className="text-eyebrow text-brand mb-1">{eyebrow}</p>}
-          <h1 className="page-title-aurora font-display italic text-xl sm:text-2xl md:text-[1.65rem] leading-tight tracking-tight text-balance">
+          {/* H1 — hidden on lg+ where AppShell's DesktopContextBar already
+              renders the same title in the sticky chrome. Without this guard
+              every AppPageIntro-using page (Live Ops, etc.) shows the title
+              twice on desktop. Mirrors the PageShell H1 guard so both
+              primitives behave consistently. */}
+          <h1 className="lg:hidden page-title-aurora font-display italic text-xl sm:text-2xl md:text-[1.65rem] leading-tight tracking-tight text-balance">
             {title}
           </h1>
           {subtitle && <div className="mt-1.5 text-caption max-w-2xl text-pretty">{subtitle}</div>}

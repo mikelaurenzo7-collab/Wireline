@@ -11,7 +11,7 @@ const SHORTCUTS = [
   {
     category: "Navigation",
     items: [
-      { keys: ["G", "D"], description: "Go to Dashboard" },
+      { keys: ["G", "D"], description: "Go to Live Ops" },
       { keys: ["G", "L"], description: "Go to Call Logs" },
       { keys: ["G", "T"], description: "Go to Triage" },
       { keys: ["G", "I"], description: "Go to Insights" },
