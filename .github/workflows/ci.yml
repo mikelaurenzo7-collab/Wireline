@@ -32,6 +32,9 @@ jobs:
       - name: Tests
         run: npm run test:run
 
+      - name: Docs and pricing drift check
+        run: npm run docs:check
+
       - name: Strict Typecheck
         run: npm run lint:strict
 

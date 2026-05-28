@@ -53,9 +53,9 @@ const VERTICALS = [
   { icon: PhoneCall, label: "Sales Teams" },
 ];
 
-// Security/compliance badges. Each shows real state — "ready" for
-// architectures where the controls are implemented but the formal
-// audit hasn't shipped; "live" for what's verifiably in production.
+// Security/compliance badges. Each shows real state: "live" for what
+// is in production, "in progress" for implemented controls that still
+// need external attestation or contract setup.
 const BADGES = [
   {
     icon: Lock,
@@ -66,14 +66,14 @@ const BADGES = [
   {
     icon: ServerCog,
     label: "SOC 2 Type II",
-    detail: "Controls implemented · audit in progress",
-    state: "ready" as const,
+    detail: "Controls implemented · audit target Q4",
+    state: "progress" as const,
   },
   {
     icon: HeartPulse,
     label: "HIPAA",
-    detail: "PHI-aware compliance mode per agent",
-    state: "ready" as const,
+    detail: "PHI-aware mode · Enterprise BAA path",
+    state: "progress" as const,
   },
   {
     icon: CreditCard,
@@ -99,6 +99,11 @@ const STATE_TONES = {
     pill: "bg-[#4F1E7B]/8 text-[#4F1E7B] border-[#4F1E7B]/20",
     dot: "bg-[#4F1E7B]",
     label: "Ready",
+  },
+  progress: {
+    pill: "bg-amber-500/10 text-amber-700 border-amber-500/25",
+    dot: "bg-amber-500",
+    label: "In progress",
   },
 } as const;
 

@@ -6,25 +6,26 @@ Quick links to every operational and technical document in this repository.
 
 ## Architecture & Design
 
-| Document | Purpose |
-|----------|---------|
-| [ARCHITECTURE.md](../ARCHITECTURE.md) | System design, LLM tiering, data flows, upgrade paths |
+| Document                                  | Purpose                                                           |
+| ----------------------------------------- | ----------------------------------------------------------------- |
+| [ARCHITECTURE.md](../ARCHITECTURE.md)     | System design, LLM tiering, data flows, upgrade paths             |
 | [DATABASE_SETUP.md](../DATABASE_SETUP.md) | Schema overview, indexes, RLS, connection config, troubleshooting |
 
 ## Operations
 
-| Document | Purpose |
-|----------|---------|
-| [DEPLOY.md](../DEPLOY.md) | Deployment runbook — Vercel, env vars, DNS, troubleshooting |
-| [scripts/restore-drill.md](../scripts/restore-drill.md) | Disaster recovery PITR drill — RTO/RPO measurement |
-| [OPERATOR_SUCCESS.md](./OPERATOR_SUCCESS.md) | Activation ladder, quality checklist, north-star metrics |
+| Document                                                | Purpose                                                       |
+| ------------------------------------------------------- | ------------------------------------------------------------- |
+| [DEPLOY.md](../DEPLOY.md)                               | Deployment runbook — Vercel, env vars, DNS, troubleshooting   |
+| [docs/soc2-policies.md](./soc2-policies.md)             | SOC 2 control narrative, evidence sources, and remaining gaps |
+| [scripts/restore-drill.md](../scripts/restore-drill.md) | Disaster recovery PITR drill — RTO/RPO measurement            |
+| [OPERATOR_SUCCESS.md](./OPERATOR_SUCCESS.md)            | Activation ladder, quality checklist, north-star metrics      |
 
 ## Getting Started
 
-| Document | Purpose |
-|----------|---------|
-| [README.md](../README.md) | Project overview, quick start, tech stack, workflows |
-| [marketing-kit/README.md](../marketing-kit/README.md) | Marketing asset index — screenshots, reels, copy |
+| Document                                              | Purpose                                              |
+| ----------------------------------------------------- | ---------------------------------------------------- |
+| [README.md](../README.md)                             | Project overview, quick start, tech stack, workflows |
+| [marketing-kit/README.md](../marketing-kit/README.md) | Marketing asset index — screenshots, reels, copy     |
 
 ---
 

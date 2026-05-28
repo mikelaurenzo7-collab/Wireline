@@ -19,9 +19,7 @@ test.describe("Authentication Flows", () => {
     const emailInput = page.getByPlaceholder(/operator@company.io/i).first();
     await expect(emailInput).toBeVisible();
 
-    await expect(page.getByText(/matched from your visit/i)).toBeVisible();
-    await expect(page.getByText(/pro plan/i)).toBeVisible();
-    await expect(page.getByText(/medical/i)).toBeVisible();
+    await expect(page.getByText(/matched from your visit.*pro plan.*medical/i)).toBeVisible();
 
     const submitBtn = page.getByRole("button", { name: /create account/i });
     await expect(submitBtn).toBeVisible();

@@ -24,6 +24,7 @@
     "assets": "node scripts/render-image-assets.mjs",
     "check-prod-env": "node scripts/check-prod-env.mjs",
     "docs:check": "node scripts/check-readme-pricing.mjs",
+    "smoke:server": "VERCEL=1 node -e \"require('./dist/server.cjs'); console.log('server bundle imports')\"",
     "loop:tick": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-wireline-loop.ps1",
     "oauth:redirects": "node scripts/print-oauth-redirects.mjs",
     "db:generate": "drizzle-kit generate",

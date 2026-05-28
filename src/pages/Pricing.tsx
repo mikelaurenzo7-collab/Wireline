@@ -25,12 +25,13 @@ const TIERS: Tier[] = [
     price: "$49",
     cadence: "/ month",
     blurb: "For solo operators. Sized so 95% of customers never see an overage.",
-    cta: "Start with Personal",
+    cta: "Start free trial",
     ctaHref: "/signup?plan=personal",
     features: [
       "1 AI voice agent",
+      "1 dedicated voice number INCLUDED — no Twilio bill",
       "400 voice minutes / month (~13 min/day headroom)",
-      "1 connected mailbox (Gmail or Outlook)",
+      "Unlimited inbound email",
       "Call logs + transcripts + sentiment",
       "Web dashboard, no team seats",
       "Overage at $0.20 / min — rarely triggered",
@@ -54,8 +55,9 @@ const TIERS: Tier[] = [
     ctaHref: "/signup?plan=starter",
     features: [
       "3 AI voice agents",
+      "2 dedicated voice numbers INCLUDED — no Twilio bill",
       "1,200 voice minutes / month (~40 min/day)",
-      "3 connected mailboxes",
+      "Unlimited inbound email",
       "Outbound dialer (CSV upload, auto-dial)",
       "Live call monitor",
       "Up to 5 team seats",
@@ -74,8 +76,9 @@ const TIERS: Tier[] = [
     highlight: true,
     features: [
       "10 AI voice agents",
+      "5 dedicated voice numbers INCLUDED — no Twilio bill",
       "5,000 voice minutes / month (~165 min/day)",
-      "10 connected mailboxes",
+      "Unlimited inbound email",
       "Outbound dialer + email campaigns",
       "Slack alerts on key events",
       "Up to 25 team seats",
@@ -97,8 +100,9 @@ const TIERS: Tier[] = [
     ctaHref: "/signup?plan=business",
     features: [
       "25 AI voice agents",
+      "10 dedicated voice numbers INCLUDED — no Twilio bill",
       "12,000 voice minutes / month (~400 min/day)",
-      "25 connected mailboxes",
+      "Unlimited inbound email",
       "SSO + audit log export",
       "Up to 50 team seats",
       "Everything in Pro",
@@ -117,10 +121,11 @@ const TIERS: Tier[] = [
     cta: "Talk to sales",
     ctaHref: "mailto:trywireline@yahoo.com?subject=Enterprise%20%2F%20Call%20Center%20inquiry",
     features: [
-      "Unlimited agents, minutes, mailboxes, and seats",
-      "100+ AI agent seats with team-based routing",
-      "Supervisor cockpit — live floor monitoring + listen-in",
-      "Call queues with SLA timers + overflow rules",
+      "Up to 100 agents, with custom bundles above that",
+      "50,000+ voice minutes with contracted volume pricing",
+      "25 numbers included + BYO carrier option",
+      "Supervisor cockpit — live floor monitoring roadmap + post-call review today",
+      "Call queues with SLA timers + overflow rules on enterprise onboarding",
       "Real-time sentiment + QA scoring on every call",
       "SAML SSO + audit + advanced compliance",
       "BYO carrier (any SIP-compatible provider)",
@@ -273,7 +278,7 @@ export default function Pricing() {
             About
           </Link>
           <Link
-            to="/"
+            to="/signup?plan=starter"
             className="px-4 py-2 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.28em] hover:opacity-90 transition-opacity"
           >
             Start free trial
@@ -674,6 +679,18 @@ export default function Pricing() {
           <span aria-hidden="true">·</span>
           <Link to="/showcase" className="hover:text-ink transition-colors">
             Showcase
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/status" className="hover:text-ink transition-colors">
+            Status
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/security" className="hover:text-ink transition-colors">
+            Security
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/changelog" className="hover:text-ink transition-colors">
+            Changelog
           </Link>
           <span aria-hidden="true">·</span>
           <Link to="/privacy" className="hover:text-ink transition-colors">

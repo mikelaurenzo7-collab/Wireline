@@ -102,15 +102,16 @@ export const WIRELINE_COMPLIANCE_STATUS = {
   done: [
     "Encryption at rest (Postgres + Vercel)",
     "TLS 1.2+ in transit",
-    "Per-tenant data isolation enforced on every query",
+    "Per-tenant data isolation enforced in application queries",
     "Append-only audit log on every state change",
     "TCPA opt-in/opt-out ledger with state-by-state jurisdiction rules in code",
     "DNC list honored automatically on outbound dialing",
     "Account deletion + 30-day retention queue (GDPR-style)",
   ],
   inProgress: [
-    "SOC 2 Type II — auditor engaged, expected Q4 2026",
-    "HIPAA BAA — available on the Enterprise tier on request (~30 day onboarding)",
+    "SOC 2 Type II — auditor engaged, target Q4 2026",
+    "HIPAA BAA — Enterprise tier only, on request (~30 day onboarding)",
+    "Supabase RLS policy coverage + GraphQL exposure cleanup for all tenant tables",
     "EU data residency — planned for the EU launch",
   ],
 } as const;

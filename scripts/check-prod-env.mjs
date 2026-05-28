@@ -14,7 +14,11 @@
 //   2 — missing recommended vars and PRODUCTION_CHECK=1 (CI hardening)
 
 const required = [
-  ["POSTGRES_URL", "Postgres connection string for Drizzle-backed API routes", process.env.POSTGRES_URL],
+  [
+    "POSTGRES_URL",
+    "Postgres connection string for Drizzle-backed API routes",
+    process.env.POSTGRES_URL,
+  ],
   [
     "INTERNAL_JWT_SECRET",
     "Session JWT signing — canonical Wireline session secret (legacy alias: SUPABASE_JWT_SECRET)",
@@ -36,8 +40,10 @@ const recommended = [
   ["CORS_ORIGINS", "CORS allowlist — required in prod or browser API calls fail"],
   ["STRIPE_SECRET_KEY", "Stripe — billing endpoints return 503 when unset"],
   ["STRIPE_WEBHOOK_SECRET", "Stripe webhook signature verification"],
+  ["STRIPE_PERSONAL_PRICE_ID", "Stripe price ID for the Personal plan"],
   ["STRIPE_STARTER_PRICE_ID", "Stripe price ID for the Starter plan"],
   ["STRIPE_PRO_PRICE_ID", "Stripe price ID for the Pro plan"],
+  ["STRIPE_BUSINESS_PRICE_ID", "Stripe price ID for the Business plan"],
   ["STRIPE_ENTERPRISE_PRICE_ID", "Stripe price ID for the Enterprise plan"],
   [
     "WIRELINE_DATA_KEY",

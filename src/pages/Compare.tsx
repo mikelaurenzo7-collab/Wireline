@@ -65,9 +65,9 @@ const ROWS: Row[] = [
     retell: false,
   },
   {
-    feature: "Frontier reasoning model on every agent",
+    feature: "Tiered Claude stack for live calls + deep reasoning",
     detail:
-      "Best-in-class LLM stack tuned for high-stakes conversation. Competitors default to mid-tier models for cost; Wireline doesn't compromise on reasoning quality.",
+      "Sonnet-class models handle live calls for speed and cadence; Opus-class reasoning powers briefs, coaching, review, and harder post-call analysis. The stack is tuned by task instead of flattened to the cheapest model.",
     wireline: true,
     air: false,
     synthflow: false,
@@ -334,9 +334,16 @@ export default function Compare() {
                     {row.feature.includes("integrations") && (
                       <div className="flex flex-wrap gap-1.5 mt-2.5">
                         {["HubSpot", "Salesforce", "Slack", "Zoom", "Apollo", "Meta"].map((b) => (
-                          <span key={b} className="px-1.5 py-0.5 rounded bg-brand/5 border border-brand/10 text-brand text-[9px] uppercase tracking-[0.2em]">{b}</span>
+                          <span
+                            key={b}
+                            className="px-1.5 py-0.5 rounded bg-brand/5 border border-brand/10 text-brand text-[9px] uppercase tracking-[0.2em]"
+                          >
+                            {b}
+                          </span>
                         ))}
-                        <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-muted text-[9px] uppercase tracking-[0.2em]">+ 4 more</span>
+                        <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-muted text-[9px] uppercase tracking-[0.2em]">
+                          + 4 more
+                        </span>
                       </div>
                     )}
                   </td>
@@ -389,23 +396,36 @@ export default function Compare() {
           Transparent, flat-rate pricing.
         </h2>
         <p className="text-sm sm:text-base text-ink/75 max-w-2xl mx-auto mb-8 leading-relaxed">
-          No hidden telephony markups. No complex token math. You pay a flat rate for access to the platform and standard pass-through for frontier LLM usage.
+          No hidden telephony markups. No complex token math. You pay a flat rate for access to the
+          platform and standard pass-through for frontier LLM usage.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
           <div className="rounded-2xl glass border border-emerald-500/20 p-5 bg-emerald-500/[0.02]">
-            <p className="text-[10px] uppercase tracking-[0.3em] text-emerald-600 mb-1 font-semibold">Included</p>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-emerald-600 mb-1 font-semibold">
+              Included
+            </p>
             <p className="text-xl font-display italic text-ink mb-2">Dedicated Numbers</p>
-            <p className="text-xs text-ink/70">Every plan includes dedicated voice numbers. No Twilio bill required.</p>
+            <p className="text-xs text-ink/70">
+              Every plan includes dedicated voice numbers. No Twilio bill required.
+            </p>
           </div>
           <div className="rounded-2xl glass border border-brand/20 p-5 bg-brand/[0.02]">
-            <p className="text-[10px] uppercase tracking-[0.3em] text-brand mb-1 font-semibold">Pass-through</p>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-brand mb-1 font-semibold">
+              Pass-through
+            </p>
             <p className="text-xl font-display italic text-ink mb-2">Frontier LLMs</p>
-            <p className="text-xs text-ink/70">We never mark up OpenAI or Anthropic tokens. You pay exactly what they charge.</p>
+            <p className="text-xs text-ink/70">
+              We never mark up OpenAI or Anthropic tokens. You pay exactly what they charge.
+            </p>
           </div>
           <div className="rounded-2xl glass border border-white/10 p-5">
-            <p className="text-[10px] uppercase tracking-[0.3em] text-muted mb-1 font-semibold">No limits</p>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-muted mb-1 font-semibold">
+              No limits
+            </p>
             <p className="text-xl font-display italic text-ink mb-2">Unlimited Agents</p>
-            <p className="text-xs text-ink/70">Build as many specialized agents as you need. We don't charge per seat.</p>
+            <p className="text-xs text-ink/70">
+              Build as many specialized agents as you need. We don't charge per seat.
+            </p>
           </div>
         </div>
       </section>
