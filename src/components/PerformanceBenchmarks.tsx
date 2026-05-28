@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, ChevronUp, TrendingUp } from "lucide-react";
@@ -183,14 +182,14 @@ export default function PerformanceBenchmarks() {
     let cancelled = false;
     const controller = new AbortController();
     authFetch("/api/dashboard/benchmarks", { signal: controller.signal })
-      .then((r: any) => r.json())
-      .then((d: BenchmarksData) => {
+      .then((r) => r.json() as Promise<BenchmarksData>)
+      .then((d) => {
         if (cancelled) return;
         setData(d);
         setLoading(false);
       })
-      .catch((e: any) => {
-        if (cancelled || e?.name === "AbortError") return;
+      .catch((e: unknown) => {
+        if (cancelled || (e instanceof DOMException && e.name === "AbortError")) return;
         setError("Failed to load benchmarks");
         setLoading(false);
       });

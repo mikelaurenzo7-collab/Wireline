@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- agents[], campaigns[],
+ * and leads[] are forwarded as-is from OutboundDialer's untyped /api/agents,
+ * /api/campaigns and /api/leads state. Mirrors the parent's intentional
+ * loose typing pending contracts/api-types.ts for the outbound module. */
 import React, { useState } from "react";
 import {
   Loader2,

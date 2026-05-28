@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- AgentConfigPanel is
+ * the consumer side of FleetSettings' loosely-typed agent + config rows; its
+ * props mirror those state shapes (selectedAgent, agentConfig, agentStats,
+ * tool callbacks). Until /api/agents and /api/agents/:id/config are modeled
+ * in contracts/api-types.ts, the props stay as any | null. */
 import React, { useState } from "react";
 import {
   ChevronLeft,

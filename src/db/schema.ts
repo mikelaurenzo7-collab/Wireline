@@ -1,3 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Drizzle's $type<...>()
+ * inference flows through generic .$type<T>() column callbacks where the
+ * shape is known by us but expressed as `any` in Drizzle's column-builder
+ * signatures (jsonb payloads, generated columns). Casting to the underlying
+ * runtime shape via `any` is the upstream-blessed escape hatch — see
+ * https://orm.drizzle.team for the typed-jsonb pattern. */
 import {
   pgTable,
   text,

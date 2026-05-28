@@ -1,3 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Agent / subscription /
+ * integration-status payloads come back as heterogeneous JSON from /api/agents,
+ * /api/subscription, /api/oauth/crm/status and the per-agent config endpoints.
+ * Modeling them as shared client types belongs in contracts/api-types.ts and
+ * is tracked separately; this component intentionally treats the rows as
+ * any[] until those contracts land. */
 import { useState, useEffect, useRef } from "react";
 import { Shield, LayoutGrid } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -100,8 +106,6 @@ export default function FleetSettings() {
   useEffect(() => {
     selectedAgentIdRef.current = selectedAgent?.id ?? null;
   }, [selectedAgent?.id]);
-
-
 
   const fetchAgents = async () => {
     setIsLoading(true);
@@ -290,7 +294,6 @@ export default function FleetSettings() {
       : currentTools.filter((name) => !toolsInGroup.includes(name));
     await updateAgentMeta({ enabled_tools: nextTools });
   };
-
 
   const [isDeletingAgent, setIsDeletingAgent] = useState<string | null>(null);
   const [agentStats, setAgentStats] = useState<Record<string, any>>({});

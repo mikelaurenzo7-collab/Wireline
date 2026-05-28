@@ -120,7 +120,11 @@ router.get(
           calls: calls || [],
           leads: leads || [],
           appts: appts || [],
-          emails: (emails as any) || [],
+          // `emails` is the union of inbound and outbound rows that builds a
+          // unified contact timeline; the consumer (buildContactProfile)
+          // narrows per-entry, so a structural cast through `unknown` is the
+          // honest bridge here rather than `as any`.
+          emails: (emails as unknown as Parameters<typeof buildContactProfile>[0]["emails"]) || [],
         }),
       );
     } catch (e) {

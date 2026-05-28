@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Postgres LISTEN/NOTIFY
+ * payloads arrive as untyped JSON strings from the pg driver, and Express
+ * SSE write errors / pg client errors surface as Error-ish objects without a
+ * shared interface. The catch blocks below all access `.message` defensively
+ * so a future tightening to `unknown` is mechanical. */
 import { Response } from "express";
 import { sql, eq } from "drizzle-orm";
 import pkg from "pg";

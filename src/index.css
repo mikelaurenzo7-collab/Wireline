@@ -180,6 +180,21 @@
     line-height: 1.4;
   }
 
+  /* Marketing readability floor — public first-impression surfaces were
+     never covered by the .app-surface rule above, so 7–9px overlines,
+     badge pills, and stat labels rendered sub-legible on desktop (the
+     global mobile bump below only catches 9–10px). 11px stays a notch
+     under the design system's own 12px (text-xs) overline spec, so the
+     editorial micro-type language is preserved while clearing the
+     accessibility / polish floor. */
+  .marketing-surface .text-\[7px\],
+  .marketing-surface .text-\[8px\],
+  .marketing-surface .text-\[8\.5px\],
+  .marketing-surface .text-\[9px\] {
+    font-size: 11px !important;
+    line-height: 1.35;
+  }
+
   @media (max-width: 640px) {
     .text-\[9px\] {
       font-size: 11px !important;

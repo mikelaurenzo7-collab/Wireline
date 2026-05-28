@@ -1,3 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- The `ws` upgrade handler
+ * surfaces node's http server / net socket / upgrade head as loosely-typed
+ * values, and whisper-message JSON payloads aren't (yet) modeled as a schema.
+ * Tightening requires either a structural type for the upgrade triple or a
+ * runtime validator (zod) for the whisper protocol; both are out of scope for
+ * the type-cleanup pass. catch (e: any) → e?.message reads use the narrow
+ * property access so a future migration to `unknown` is mechanical. */
 import { WebSocketServer, WebSocket } from "ws";
 import { parse as parseUrl } from "node:url";
 import { IncomingMessage } from "node:http";

@@ -77,7 +77,14 @@ export default [
       "no-unused-vars": "off", // superseded by TS checker
       "@typescript-eslint/no-unused-vars": [
         "warn",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          // Catch-clause errors aren't covered by the above patterns by
+          // default; without this, `catch (_err)` still warns.
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+        },
       ],
       "no-undef": "off", // TypeScript handles this
     },

@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Campaign rows + analytics
+ * are forwarded from OutboundDialer's untyped /api/campaigns responses. The
+ * prop shapes intentionally mirror those any[] sources so tightening can
+ * happen in one pass once contracts/api-types.ts covers the outbound module. */
 import React from "react";
 import {
   Loader2,
@@ -50,7 +54,6 @@ interface CampaignsTabProps {
   campaignLeads: any[];
   triggerUploadCsv: () => void;
   retryFailedLeads: (campaignId: string) => void;
-  selectedAgentId: string;
 }
 
 export default function CampaignsTab({
@@ -74,7 +77,6 @@ export default function CampaignsTab({
   campaignLeads,
   triggerUploadCsv,
   retryFailedLeads,
-  selectedAgentId,
 }: CampaignsTabProps) {
   return (
     <div className="h-full grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-0">

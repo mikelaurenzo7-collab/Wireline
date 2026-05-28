@@ -1,3 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Agents, leads, campaigns,
+ * callbacks and analytics all flow through /api/* endpoints whose response
+ * shapes are not yet codified in contracts/api-types.ts. The component treats
+ * each row as any[] for state, and forwards the same shape to extracted
+ * sub-components (DispatchTab, CampaignsTab, CallbacksList). Tightening is
+ * tracked alongside the OutboundDialer god-file slicing pass. */
 import React, { useState, useEffect, useRef } from "react";
 import { Megaphone, CalendarClock, Repeat, Zap } from "lucide-react";
 import { AnimatePresence } from "motion/react";
@@ -556,7 +562,6 @@ export default function OutboundDialer() {
                     campaignLeads={campaignLeads}
                     triggerUploadCsv={() => fileInputRef.current?.click()}
                     retryFailedLeads={retryFailedLeads}
-                    selectedAgentId={selectedAgentId}
                   />
                 ),
               },
