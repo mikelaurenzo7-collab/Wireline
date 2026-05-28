@@ -376,11 +376,7 @@ export default function PageShell({
             >
               {/* Grab handle */}
               <div className="flex justify-center pt-3 pb-2">
-                <div
-                  className="w-10 h-1 rounded-full"
-                  style={{ background: "rgba(79, 30, 123, 0.28)" }}
-                  aria-hidden="true"
-                />
+                <div className="w-10 h-1 rounded-full bg-brand/25" aria-hidden="true" />
               </div>
               {/* Header */}
               <div className="flex items-center justify-between px-4 pb-3">
