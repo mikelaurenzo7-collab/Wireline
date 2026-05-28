@@ -1,12 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ArrowRight } from "lucide-react";
 import WirelineMark from "../WirelineMark";
 import { cn } from "../../lib/utils";
 
 export type PublicNavActive = "signin" | "signup" | "home";
 
-const MORE_LINKS = [
+const NAV_LINKS = [
+  { to: "/pricing", label: "Pricing" },
+  { to: "/showcase", label: "Demos" },
+  { to: "/compare", label: "Compare" },
+  { to: "/about", label: "About" },
+] as const;
+
+const MOBILE_LINKS = [
   { to: "/pricing", label: "Pricing" },
   { to: "/showcase", label: "Demos" },
   { to: "/compare", label: "Compare" },
@@ -18,12 +25,12 @@ const MORE_LINKS = [
 
 type PublicSiteHeaderProps = {
   className?: string;
-  /** Highlight Sign up vs Sign in on auth routes */
   active?: PublicNavActive;
 };
 
 export default function PublicSiteHeader({ className, active = "home" }: PublicSiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -39,81 +46,87 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
     };
   }, [menuOpen]);
 
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <>
       <header
+        data-testid="site-header"
         className={cn(
-          "relative z-20 flex shrink-0 items-center justify-between gap-3 px-5 py-4 lg:px-8",
+          "fixed top-0 inset-x-0 z-50 transition-all duration-300",
+          scrolled ? "bg-paper/80 backdrop-blur-xl border-b border-ink/[0.06]" : "bg-transparent",
           className,
         )}
       >
-        <Link to="/" className="flex items-center gap-3 group min-w-0">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-[1.02]"
-            style={{
-              background: "#4F1E7B",
-              boxShadow: "0 6px 20px -8px rgba(79,30,123,0.45)",
-            }}
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 px-6 lg:px-12 h-16">
+          {/* Logo */}
+          <Link
+            to="/"
+            className="flex items-center gap-2.5 group shrink-0"
+            data-testid="header-logo"
           >
-            <WirelineMark className="w-5 h-5 text-on-brand" strokeWidth={130} />
-          </div>
-          <div className="min-w-0">
-            <span className="brand-wordmark text-2xl leading-none !text-brand !filter-none block truncate">
-              WIRELINE
+            <div
+              className="w-8 h-8 flex items-center justify-center shrink-0"
+              style={{ background: "#4F1E7B" }}
+            >
+              <WirelineMark className="w-4 h-4 text-white" strokeWidth={130} />
+            </div>
+            <span className="font-display italic text-xl text-ink leading-none hidden sm:block">
+              Wireline
             </span>
-            <span className="text-eyebrow hidden sm:block mt-0.5">Voice + email agents</span>
+          </Link>
+
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center gap-1" aria-label="Site">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className="px-3 py-2 text-[13px] font-medium text-ink/55 hover:text-ink transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+
+          {/* Right actions — SINGLE primary CTA + Sign in text link */}
+          <div className="flex items-center gap-3 shrink-0">
+            <Link
+              to="/signin"
+              data-testid="header-signin"
+              className="hidden sm:inline-flex text-[13px] font-medium text-ink/55 hover:text-ink transition-colors"
+            >
+              Sign in
+            </Link>
+            <Link
+              to="/signup"
+              data-testid="header-cta"
+              className="hidden sm:inline-flex items-center gap-2 bg-brand text-white text-[13px] font-medium px-5 py-2 hover:bg-[#3d1660] transition-colors duration-300"
+            >
+              Start trial
+            </Link>
+
+            {/* Mobile hamburger */}
+            <button
+              type="button"
+              className="md:hidden inline-flex items-center justify-center w-10 h-10 text-ink"
+              aria-expanded={menuOpen}
+              aria-controls="public-mobile-nav"
+              onClick={() => setMenuOpen((v) => !v)}
+              data-testid="mobile-menu-toggle"
+            >
+              <span className="sr-only">{menuOpen ? "Close menu" : "Open menu"}</span>
+              {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
-        </Link>
-
-        <nav className="flex items-center gap-1 sm:gap-2 shrink-0" aria-label="Site">
-          <Link
-            to="/pricing"
-            className="hidden md:inline-flex px-3 py-2 text-caption font-medium text-ink/75 hover:text-ink rounded-lg hover:bg-black/5 transition-colors"
-          >
-            Pricing
-          </Link>
-          <Link
-            to="/showcase"
-            className="hidden sm:inline-flex px-3 py-2 text-caption font-medium text-ink/75 hover:text-ink rounded-lg hover:bg-black/5 transition-colors"
-          >
-            Demos
-          </Link>
-          <Link
-            to="/signin"
-            className={cn(
-              "hidden sm:inline-flex px-3 py-2 text-caption font-semibold rounded-lg transition-colors",
-              active === "signin"
-                ? "text-ink bg-black/6"
-                : "text-ink/80 hover:text-ink hover:bg-black/5",
-            )}
-          >
-            Sign in
-          </Link>
-          <Link
-            to="/signup"
-            className={cn(
-              "hidden sm:inline-flex items-center justify-center px-4 py-2.5 rounded-full text-[13px] font-semibold tracking-wide transition-all",
-              active === "signup"
-                ? "bg-brand-deep text-on-brand"
-                : "bg-brand text-on-brand hover:bg-[#6A25A3] shadow-[0_4px_14px_-4px_rgba(79,30,123,0.5)]",
-            )}
-          >
-            Start trial
-          </Link>
-
-          <button
-            type="button"
-            className="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-xl border border-black/10 bg-white/60 text-ink hover:bg-white transition-colors"
-            aria-expanded={menuOpen}
-            aria-controls="public-mobile-nav"
-            onClick={() => setMenuOpen((v) => !v)}
-          >
-            <span className="sr-only">{menuOpen ? "Close menu" : "Open menu"}</span>
-            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-        </nav>
+        </div>
       </header>
 
+      {/* Mobile nav overlay */}
       {menuOpen && (
         <div
           id="public-mobile-nav"
@@ -124,20 +137,20 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
         >
           <button
             type="button"
-            className="absolute inset-0 bg-ink/25 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-ink/20 backdrop-blur-sm"
             aria-label="Close menu"
             onClick={() => setMenuOpen(false)}
           />
           <div
-            className="relative mt-[4.25rem] mx-3 mb-3 flex flex-col rounded-2xl border border-black/10 bg-paper shadow-[0_24px_60px_-20px_rgba(30,0,48,0.35)] overflow-hidden"
-            style={{ maxHeight: "calc(100dvh - 5rem - env(safe-area-inset-bottom, 0px))" }}
+            className="relative mt-[4.5rem] mx-4 flex flex-col bg-paper border border-ink/10 shadow-[0_24px_60px_-20px_rgba(26,22,20,0.3)] overflow-hidden"
+            style={{ maxHeight: "calc(100dvh - 5.5rem - env(safe-area-inset-bottom, 0px))" }}
           >
-            <nav className="flex-1 overflow-y-auto p-2" aria-label="Mobile">
-              {MORE_LINKS.map((link) => (
+            <nav className="flex-1 overflow-y-auto py-2" aria-label="Mobile">
+              {MOBILE_LINKS.map((link) => (
                 <Link
                   key={link.to}
                   to={link.to}
-                  className="flex items-center min-h-[48px] px-4 rounded-xl text-[15px] font-medium text-ink hover:bg-black/5"
+                  className="flex items-center min-h-[48px] px-5 text-[15px] font-medium text-ink hover:bg-ink/[0.03]"
                   onClick={() => setMenuOpen(false)}
                 >
                   {link.label}
@@ -145,22 +158,23 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
               ))}
             </nav>
             <div
-              className="shrink-0 border-t border-black/8 p-3 flex flex-col gap-2"
-              style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" }}
+              className="shrink-0 border-t border-ink/[0.08] p-4 flex flex-col gap-2.5"
+              style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))" }}
             >
               <Link
                 to="/signin"
-                className="marketing-btn-secondary w-full min-h-[48px]"
+                className="flex items-center justify-center min-h-[48px] text-[14px] font-medium text-ink border border-ink/15 hover:border-ink/30 transition-colors"
                 onClick={() => setMenuOpen(false)}
               >
                 Sign in
               </Link>
               <Link
                 to="/signup"
-                className="marketing-btn-primary w-full min-h-[48px]"
+                className="flex items-center justify-center gap-2 min-h-[48px] text-[14px] font-medium bg-brand text-white hover:bg-[#3d1660] transition-colors"
                 onClick={() => setMenuOpen(false)}
               >
                 Start free trial
+                <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </div>
