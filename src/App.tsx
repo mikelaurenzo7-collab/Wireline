@@ -13,6 +13,7 @@ import { BrandingProvider } from "./contexts/BrandingContext";
 import { MotionConfig } from "motion/react";
 
 const Pricing = lazy(() => import("./pages/Pricing"));
+const LandingPage = lazy(() => import("./pages/LandingPage"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const OAuthComplete = lazy(() => import("./pages/OAuthComplete"));
 const VerticalLanding = lazy(() => import("./pages/VerticalLanding"));
@@ -230,13 +231,17 @@ function AppContent() {
     );
   }
 
+  if (!user && location.pathname === "/") {
+    return (
+      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+        <LandingPage />
+      </Suspense>
+    );
+  }
+
   if (!user) {
-    // Unauthenticated home IS AuthPortal — the auth form on one side,
-    // the live demo-agent grid + value props on the other. Mike's
-    // call: kill the separate marketing LandingPage, the portal does
-    // both jobs (sell + sign in) on one screen. Any deep-link to a
-    // protected route also lands here so visitors sign in then
-    // continue.
+    // Auth is intentionally sparse now. Marketing and ROI education
+    // start on /; direct auth and protected-route fallbacks stay fast.
     return (
       <ErrorBoundary>
         <AuthPortal />
