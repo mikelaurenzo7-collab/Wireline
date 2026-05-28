@@ -12,7 +12,7 @@ import RouteAccentStrip from "./RouteAccentStrip";
 import TrialBanner from "./TrialBanner";
 import EmailVerifyBanner from "./EmailVerifyBanner";
 import AppRoutes from "../../routes/AppRoutes";
-import { NAV_GROUPS, PAGE_TITLES } from "../../constants/navigation";
+import { NAV_GROUPS, PAGE_TITLES, getRouteAccent } from "../../constants/navigation";
 import { useBranding } from "../../contexts/BrandingContext";
 import { useViewTransitionRoute } from "../../hooks/useViewTransitionRoute";
 
@@ -301,10 +301,21 @@ function DesktopContextBar({
   onShowShortcuts: () => void;
 }) {
   const breadcrumb = getDesktopBreadcrumb(pathname);
+  const [from, to] = getRouteAccent(pathname);
   return (
     <div className="hidden lg:flex shrink-0 items-center justify-between gap-4 border-b border-ink/[0.06] bg-paper/72 px-5 py-3 backdrop-blur-xl">
       <div className="min-w-0">
-        {breadcrumb.eyebrow && <p className="text-eyebrow mb-0.5">{breadcrumb.eyebrow}</p>}
+        {breadcrumb.eyebrow && (
+          <p
+            className="text-eyebrow mb-0.5 inline-block pb-0.5"
+            style={{
+              borderBottom: "1px solid transparent",
+              borderImage: `linear-gradient(90deg, ${from}, ${to}) 1`,
+            }}
+          >
+            {breadcrumb.eyebrow}
+          </p>
+        )}
         <h1 className="font-display italic text-[1.35rem] sm:text-[22px] leading-tight text-ink truncate">
           {breadcrumb.title}
         </h1>

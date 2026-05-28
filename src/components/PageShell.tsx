@@ -191,9 +191,10 @@ export default function PageShell({
                       layoutId="tab-active-bg"
                       className="absolute inset-0"
                       style={{
-                        background: "#4F1E7B",
+                        background:
+                          "linear-gradient(180deg, var(--color-brand) 0%, var(--color-brand-deep) 100%)",
                         boxShadow:
-                          "0 3px 12px -6px rgba(79, 30, 123 ,0.50), 0 0 0 1px rgba(255,255,255,0.18) inset",
+                          "0 3px 12px -6px color-mix(in srgb, var(--color-brand) 60%, transparent), 0 0 0 1px rgba(255,255,255,0.18) inset, 0 1px 0 rgba(255,255,255,0.32) inset",
                         willChange: "transform, background-color",
                       }}
                       transition={{ type: "spring", stiffness: 420, damping: 36 }}
@@ -255,9 +256,10 @@ export default function PageShell({
                       layoutId="mobile-tab-active-bg"
                       className="absolute inset-0"
                       style={{
-                        background: "#4F1E7B",
+                        background:
+                          "linear-gradient(180deg, var(--color-brand) 0%, var(--color-brand-deep) 100%)",
                         boxShadow:
-                          "0 3px 12px -6px rgba(79, 30, 123, 0.45), 0 0 0 1px rgba(255,255,255,0.16) inset",
+                          "0 3px 12px -6px color-mix(in srgb, var(--color-brand) 55%, transparent), 0 0 0 1px rgba(255,255,255,0.16) inset, 0 1px 0 rgba(255,255,255,0.28) inset",
                       }}
                       transition={{ type: "spring", stiffness: 420, damping: 36 }}
                     />

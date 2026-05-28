@@ -24,9 +24,17 @@ export default function EmptyState({
   title,
   description,
   actions = [],
-  accent = "#4F1E7B",
+  accent,
   className,
 }: Props) {
+  // Resolve the brand accent at runtime so palette changes propagate
+  // without touching component code. SSR-safe fallback to brand purple.
+  const resolvedAccent =
+    accent ??
+    (typeof window !== "undefined"
+      ? getComputedStyle(document.documentElement).getPropertyValue("--color-brand").trim() ||
+        "#4F1E7B"
+      : "#4F1E7B");
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -45,9 +53,9 @@ export default function EmptyState({
           animate={{ y: [0, -3, 0] }}
           transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
           className="w-16 h-16 rounded-2xl flex items-center justify-center"
-          style={{ background: `${accent}15`, border: `1px solid ${accent}30` }}
+          style={{ background: `${resolvedAccent}15`, border: `1px solid ${resolvedAccent}30` }}
         >
-          <Icon className="w-7 h-7" style={{ color: accent }} strokeWidth={1.5} />
+          <Icon className="w-7 h-7" style={{ color: resolvedAccent }} strokeWidth={1.5} />
         </motion.div>
       </motion.div>
       <div className="max-w-xs">
