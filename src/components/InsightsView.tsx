@@ -985,7 +985,7 @@ function VoiceLatencyView({ days }: { days: number }) {
             ))}
           </ul>
           <p className="text-[10px] text-muted/65 mt-4 leading-relaxed text-pretty">
-            These limits keep Vapi tool fan-out and assistant payloads bounded so callers hear
+            These limits keep voice tool fan-out and assistant payloads bounded so callers hear
             answers faster — the same caps described on the Compare page vs DIY voice stacks.
           </p>
         </div>

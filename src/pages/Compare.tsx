@@ -3,8 +3,7 @@
  *
  * Honest scoring: a 9-0 sweep signals immaturity. Wireline wins on
  * breadth + horizontal platform; competitors win on niches (Air =
- * cheap for pure outbound, Vapi-direct = lower abstraction for
- * developers who want to compose their own stack). Saying that out
+ * cheap for pure outbound). Saying that out
  * loud reads as confident, not defensive.
  *
  * Strategic context: investors + buyers researching the space land
@@ -26,7 +25,6 @@ interface Row {
   air: Cell;
   synthflow: Cell;
   bland: Cell;
-  vapi: Cell;
   retell: Cell;
 }
 
@@ -39,7 +37,6 @@ const ROWS: Row[] = [
     air: false,
     synthflow: false,
     bland: false,
-    vapi: false,
     retell: false,
   },
   {
@@ -50,7 +47,6 @@ const ROWS: Row[] = [
     air: false,
     synthflow: "partial",
     bland: false,
-    vapi: "partial",
     retell: "partial",
   },
   {
@@ -61,7 +57,6 @@ const ROWS: Row[] = [
     air: false,
     synthflow: false,
     bland: false,
-    vapi: false,
     retell: false,
   },
   {
@@ -72,7 +67,6 @@ const ROWS: Row[] = [
     air: false,
     synthflow: false,
     bland: false,
-    vapi: "partial",
     retell: "partial",
   },
   {
@@ -83,7 +77,6 @@ const ROWS: Row[] = [
     air: "partial",
     synthflow: "partial",
     bland: "partial",
-    vapi: false,
     retell: false,
   },
   {
@@ -94,7 +87,6 @@ const ROWS: Row[] = [
     air: "partial",
     synthflow: false,
     bland: false,
-    vapi: false,
     retell: false,
   },
   {
@@ -105,7 +97,6 @@ const ROWS: Row[] = [
     air: "partial",
     synthflow: "partial",
     bland: false,
-    vapi: false,
     retell: "partial",
   },
   {
@@ -116,7 +107,6 @@ const ROWS: Row[] = [
     air: "partial",
     synthflow: "partial",
     bland: "partial",
-    vapi: "partial",
     retell: "partial",
   },
   {
@@ -127,7 +117,6 @@ const ROWS: Row[] = [
     air: false,
     synthflow: false,
     bland: false,
-    vapi: false,
     retell: false,
   },
   {
@@ -138,7 +127,6 @@ const ROWS: Row[] = [
     air: "partial",
     synthflow: "partial",
     bland: "partial",
-    vapi: false,
     retell: "partial",
   },
   {
@@ -149,7 +137,6 @@ const ROWS: Row[] = [
     air: "partial",
     synthflow: false,
     bland: "partial",
-    vapi: "partial",
     retell: "partial",
   },
   {
@@ -160,19 +147,7 @@ const ROWS: Row[] = [
     air: false,
     synthflow: "partial",
     bland: "partial",
-    vapi: "partial",
     retell: "partial",
-  },
-  {
-    feature: "Roll-your-own Vapi stack",
-    detail:
-      "You compose webhooks, CRM glue, compliance, and UI yourself on top of raw voice primitives. Lowest abstraction if you have a platform team.",
-    wireline: false,
-    air: false,
-    synthflow: false,
-    bland: false,
-    vapi: true,
-    retell: false,
   },
 ];
 
@@ -188,7 +163,6 @@ const COMPETITORS: { key: keyof Omit<Row, "feature" | "detail">; label: string; 
     { key: "air", label: "Air", note: "Cheaper for pure outbound" },
     { key: "synthflow", label: "Synthflow" },
     { key: "bland", label: "Bland", note: "Voice API + light UI" },
-    { key: "vapi", label: "Vapi (DIY)", note: "Primitives you assemble" },
     { key: "retell", label: "Retell", note: "Strong voice dev UX" },
   ];
 
@@ -199,7 +173,7 @@ export default function Compare() {
   return (
     <>
       <PageMeta
-        title="Wireline vs Air / Synthflow / Bland / Vapi / Retell — Feature Comparison"
+        title="Wireline vs Air / Synthflow / Bland / Retell — Feature Comparison"
         description="Side-by-side comparison of Wireline against the leading AI voice agent platforms. Wireline is the only horizontal platform with voice + email + SMS, supervisor cockpit, frontier reasoning, and bundled phone numbers."
         path="/compare"
       />
@@ -220,7 +194,7 @@ export default function Compare() {
               Wireline is the horizontal platform that runs voice + SMS + email in one console with
               supervisor cockpit, frontier reasoning, white-label numbers, and a real TCPA ledger.
               Bland and Retell are excellent if you mainly want a voice API with a thin dashboard;
-              Vapi (direct) wins when you are building your own product on primitives. Air still
+               Air still
               wins on pure outbound price. Here's the full picture.
             </p>
           </motion.div>
@@ -240,7 +214,7 @@ export default function Compare() {
           <div className="overflow-x-auto rounded-3xl glass border border-white/12 snap-x snap-mandatory scroll-smooth scrollbar-hide">
             <table className="w-full min-w-[720px]" aria-describedby="compare-legend">
               <caption className="sr-only">
-                Feature comparison of Wireline versus Air, Synthflow, Bland, Vapi direct, and Retell
+                Feature comparison of Wireline versus Air, Synthflow, Bland, and Retell
               </caption>
               <thead>
                 <tr className="border-b border-white/10">
@@ -421,17 +395,6 @@ export default function Compare() {
                 agent builder UX without building a marketing console. Retell does not bundle
                 multi-channel inbox, white-label numbers, or horizontal compliance the way Wireline
                 does.
-              </p>
-            </div>
-            <div className="rounded-2xl glass border border-white/10 p-5">
-              <p className="text-[10px] uppercase tracking-[0.3em] text-amber-600 mb-2 font-medium">
-                Pick Vapi (DIY) if
-              </p>
-              <p className="text-sm text-ink/85 leading-relaxed">
-                You're a developer building your own voice-agent product on top of an infra layer.
-                Vapi gives you primitives; Wireline <em>is</em> the product. Use Vapi if you want to
-                compose webhooks, auth, billing, and UI — use Wireline if you want a working
-                platform on day one.
               </p>
             </div>
           </div>

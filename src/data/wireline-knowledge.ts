@@ -21,7 +21,7 @@ export const WIRELINE_ONE_LINER =
   "Wireline runs your inbound support, outbound sales, and email follow-ups across one fleet of AI agents — trained on your playbook, available 24/7, and improving with every interaction.";
 
 export const WIRELINE_VOICE_STACK =
-  "Live calls run through Vapi with low-latency speech-to-text and ElevenLabs voice synthesis. Wireline uses fast voice models for the phone runtime, while Claude powers coaching, written review, and higher-reasoning workflows.";
+  "Live calls run through our voice bridge with low-latency speech-to-text and ElevenLabs voice synthesis. Wireline uses fast voice models for the phone runtime, while Claude powers coaching, written review, and higher-reasoning workflows.";
 
 const PLAN_BEST_FOR: Record<string, string> = {
   personal: "Solo operators, side hustles, founders testing the waters.",

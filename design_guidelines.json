@@ -1,0 +1,100 @@
+{
+  "theme_and_archetype": {
+    "archetype": "4 (Swiss & High-Contrast)",
+    "theme": "Light Theme",
+    "rationale": "Wireline is a B2B SaaS platform for fleet management of agents. It requires an authoritative, clean, and function-first interface. We are elevating this with a high-end Swiss brutalist approach to distance it from generic SaaS templates."
+  },
+  "typography": {
+    "headings": {
+      "font_family": "'Cabinet Grotesk', sans-serif",
+      "classes": "font-sans font-bold tracking-tight text-neutral-900",
+      "h1_max": "text-5xl md:text-6xl",
+      "h2": "text-3xl md:text-4xl"
+    },
+    "body": {
+      "font_family": "'IBM Plex Sans', sans-serif",
+      "classes": "font-sans leading-relaxed text-neutral-700"
+    },
+    "mono": {
+      "font_family": "'JetBrains Mono', monospace",
+      "classes": "font-mono text-sm tracking-tight"
+    },
+    "labels": "uppercase text-xs tracking-[0.2em] font-medium text-neutral-500",
+    "instructions": "Import these fonts via Google Fonts or Fontshare in the root index.css or layout component."
+  },
+  "colors": {
+    "background": {
+      "primary": "#FFFFFF",
+      "secondary": "#F5F5F5",
+      "tertiary": "#E5E5E5"
+    },
+    "text": {
+      "primary": "#0A0A0A",
+      "secondary": "#525252",
+      "inverse": "#FFFFFF"
+    },
+    "accents": {
+      "primary": "#0033CC",
+      "primary_hover": "#002299",
+      "alert_red": "#FF3B30",
+      "alert_green": "#34C759"
+    },
+    "borders": "#E5E5E5",
+    "rules": "Never use pure #000000. Use #0A0A0A. Use pure #FFFFFF for the base canvas. Color is functional: only use International Klein Blue (#0033CC) for primary actions and Signal Red (#FF3B30) for alerts/offline statuses."
+  },
+  "spacing_and_layout": {
+    "marketing_pages": {
+      "grid": "MODE A: The 'Tetris' Grid. Base grid-cols-1 md:grid-cols-12. Gap-8. Use bento-box style layouts for the feature comparison matrix.",
+      "spacing": "Generous spacing. Use py-24 or py-32 for sections."
+    },
+    "dashboard_fleet_management": {
+      "grid": "MODE B: The 'Control Room' Grid. Base grid-cols-1 md:grid-cols-4. Tight gaps (gap-4 or gap-6).",
+      "spacing": "Dense, compact spacing to maximize data visibility."
+    },
+    "containers": "Any container with a border MUST have generous padding (p-6 or p-8) to prevent text collision."
+  },
+  "surfaces": {
+    "dashboard_cards": "Flat background, sharp corners (rounded-none or max rounded-sm), 1px subtle border (border-neutral-200). No shadows by default. On hover, slight lift (-translate-y-1) and shadow-lg.",
+    "navigation": "Crystal Glass variant. bg-white/70 or bg-white/80, backdrop-blur-xl, border-b border-neutral-200. Must have z-50.",
+    "marketing_hero": "If using a background image, use a subtle gradient overlay (bg-gradient-to-r from-white/90 via-white/70 to-transparent) to ensure text contrast."
+  },
+  "motion": {
+    "hover_states": "All interactive elements must have hover states. focus:ring-2 focus:ring-blue-600 focus:outline-none.",
+    "transitions": "Use transition-transform transition-colors duration-200 ease-out.",
+    "accessibility": "Respect prefers-reduced-motion."
+  },
+  "components": {
+    "shadcn_overrides": {
+      "tabs": "Override TabsList with h-auto flex-wrap.",
+      "buttons": "rounded-sm font-medium tracking-tight.",
+      "inputs": "rounded-sm border-neutral-300 focus:ring-blue-600 focus:border-blue-600."
+    },
+    "icons": "Use @phosphor-icons/react for crisp, technical icons appropriate for fleet management.",
+    "testing": "All interactive elements (buttons, links, inputs, dialog triggers) MUST include a data-testid attribute formatted as kebab-case role-based (e.g., data-testid='login-submit-button')."
+  },
+  "image_urls": {
+    "hero_background": {
+      "url": "https://static.prod-images.emergentagent.com/jobs/26ac8abe-def8-4ce8-8d65-083fd6e14d41/images/1a79a223b290c74aab773e441bf50bb4bbfd115490cc4ab1a7f3b8e2da5fbdd1.png",
+      "description": "Abstract architectural visualization of interconnected glowing fiber-optic wires forming a structured network grid. Use in the marketing landing page hero section."
+    },
+    "feature_matrix_art": {
+      "url": "https://static.prod-images.emergentagent.com/jobs/26ac8abe-def8-4ce8-8d65-083fd6e14d41/images/a205c156ea9d56f2e47fdf1c48e18f90c2158ee645dabedfeec1b92a25871cc9.png",
+      "description": "Minimalist geometric data visualization art. Perfect for the feature comparison matrix or 'Insights' section on the public site."
+    },
+    "data_center_rack": {
+      "url": "https://images.unsplash.com/photo-1775519520461-6b6e068d9250?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzV8MHwxfHNlYXJjaHwyfHxzZXJ2ZXIlMjByYWNrJTIwZGF0YSUyMGNlbnRlcnxlbnwwfHx8fDE3Nzk5NDE4OTd8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Server racks. Use for 'Fleet Management' or 'Infrastructure' feature blocks."
+    },
+    "business_meeting": {
+      "url": "https://images.unsplash.com/photo-1681949287382-052ea3954a51?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NjZ8MHwxfHNlYXJjaHwyfHxidXNpbmVzcyUyMG1lZXRpbmclMjBtb2Rlcm4lMjBvZmZpY2V8ZW58MHx8fHwxNzc5OTQxODk3fDA&ixlib=rb-4.1.0&q=85",
+      "description": "Professional team. Use for the 'About' or 'Team Collaboration' sections."
+    }
+  },
+  "instructions_to_main_agent": [
+    "COPY/UX UPDATE (CRITICAL): The current app mentions 'vapi agents' or 'vapi'. You MUST sweep the entire frontend (components, pages, marketing site) and replace all user-facing mentions of 'vapi agents' or 'vapi' with 'Wireline Agents' or 'Wireline'. Do this E2E.",
+    "MARKETING PAGE: Redesign the landing page and feature comparison matrix using Mode A (Tetris Grid, Bento boxes). Apply the provided typography and color guidelines. Use the 'hero_background' image with a white overlay for contrast.",
+    "DASHBOARD/FLEET MANAGEMENT: Redesign the dashboard (Insights, Fleet Management, Setup) using Mode B (Control Room Grid). Optimize data density, use traffic-light status badges (Red/Green) for agent status, and remove excessive borders.",
+    "TESTING: Ensure every new or modified interactive element has a 'data-testid' attribute.",
+    "ENVIRONMENT: Apply these changes to the .js files in the components/pages as specified by the problem statement requirements."
+  ]
+}

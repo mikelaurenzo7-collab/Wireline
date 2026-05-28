@@ -20,7 +20,7 @@
  *      /public/sounds/wireline-jingle.mp3, commits.
  *   2. This page plays that MP3 in a hidden <audio> element on click.
  *   3. For real inbound calls, /api/twilio-webhook/singing-receptionist
- *      plays the same MP3 via TwiML before bridging to Vapi (SIP).
+ *      plays the same MP3 via TwiML before bridging to our voice engine (SIP).
  */
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";

@@ -112,10 +112,10 @@ export default function LandingPage() {
               </div>
 
               <p className="mt-4 text-caption max-w-md lg:hidden">
-                Scroll to call any live line — real Vapi agents, no signup required.
+                Scroll to call any live line — real Wireline agents, no signup required.
               </p>
               <p className="mt-4 text-caption max-w-md hidden lg:block">
-                Dial any line on the right from your phone — real Vapi agents, no signup required.
+                Dial any line on the right from your phone — real Wireline agents, no signup required.
               </p>
 
               <div className="mt-6 lg:mt-auto lg:pt-4 hidden lg:block">
