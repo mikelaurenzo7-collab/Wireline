@@ -377,7 +377,7 @@ export default function AuthPortal() {
         path={isSignUp ? "/signup" : "/signin"}
         noIndex
       />
-      <div className="marketing-surface h-dvh max-h-dvh flex flex-col overflow-hidden bg-paper relative">
+      <div className="marketing-surface min-h-dvh lg:h-dvh lg:max-h-dvh flex flex-col lg:overflow-hidden bg-paper relative">
         <div
           className="pointer-events-none absolute inset-0 z-0"
           aria-hidden
@@ -389,7 +389,10 @@ export default function AuthPortal() {
 
         <PublicSiteHeader active={isSignUp ? "signup" : "signin"} />
 
-        <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-4 min-h-0 overflow-y-auto">
+        <div
+          className="relative z-10 flex-1 flex items-center justify-center px-4 py-6 min-h-0 overflow-y-auto"
+          style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))" }}
+        >
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}

@@ -1,23 +1,11 @@
 /**
  * PublicChangelog.tsx — public-facing changelog at /changelog.
- *
- * Mirrors the in-app Changelog component (used by signed-in operators)
- * but renders without the AppShell chrome and includes a "Subscribe"
- * placeholder for email-list growth. Every B2B SaaS in 2026 publishes
- * one of these — the absence reads as "side project" and the presence
- * reads as "real company that shipped real things."
- *
- * Data source: a curated, hand-edited list of releases right here in
- * this file. Single source of truth; cheap to update; easy to audit.
- * When the velocity demands more, this can flip to a CMS or a
- * markdown-folder build step — but until then, in-file is correct.
  */
 import React from "react";
 import { motion } from "motion/react";
-import { Link } from "react-router-dom";
-import { ArrowLeft, Rocket, Shield, Sparkles, Wrench, Zap } from "lucide-react";
-import WirelineMark from "./WirelineMark";
+import { Rocket, Shield, Sparkles, Wrench, Zap } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
+import MarketingChrome from "./marketing/MarketingChrome";
 
 type EntryTag = "launch" | "feature" | "infra" | "polish" | "security";
 
@@ -78,8 +66,8 @@ const ENTRIES: ChangelogEntry[] = [
   {
     date: "Jan 27, 2026",
     tag: "polish",
-    title: "Trust signals + ROI calculator on the landing",
-    body: "Industry verticals, security/compliance posture, and a moment-of-truth ROI calculator with industry presets all live on the marketing surface. Honest math: 82% missed-call recovery, $22/hr admin median, $499/mo Wireline Pro baseline.",
+    title: "Marketing surface + mobile-first public pages",
+    body: "Unified navigation, typography, and conversion rails across landing, pricing, demos, and trust pages. Live agent directory on the home page with tap-to-dial rows on mobile. Pricing ROI tools remain on /pricing only.",
   },
   {
     date: "Jan 27, 2026",
@@ -121,33 +109,9 @@ export default function PublicChangelog() {
         description="Every shipped improvement to Wireline — features, infrastructure, polish, security. Updated when we ship."
         path="/changelog"
       />
-      <div className="min-h-dvh bg-paper relative">
-        <div className="scanline" />
-
-        <header className="border-b border-black/5 bg-white/60 backdrop-blur sticky top-0 z-10">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2.5 group" aria-label="Wireline home">
-              <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: "#4F1E7B" }}
-              >
-                <WirelineMark className="w-4 h-4 text-on-brand" strokeWidth={130} />
-              </div>
-              <span className="brand-wordmark text-[15px] leading-none !text-[#4F1E7B] !filter-none">
-                WIRELINE
-              </span>
-            </Link>
-            <Link
-              to="/"
-              className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink transition-colors"
-            >
-              <ArrowLeft className="w-3 h-3" />
-              Back home
-            </Link>
-          </div>
-        </header>
-
-        <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <MarketingChrome stickyCta={false}>
+        <div className="scanline pointer-events-none fixed inset-0 z-0 opacity-20" aria-hidden />
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -156,14 +120,10 @@ export default function PublicChangelog() {
           >
             <div className="flex items-center gap-2 mb-3">
               <span className="hero-accent-line" style={{ background: "#4F1E7B" }} />
-              <span className="text-[8.5px] uppercase tracking-[0.5em] text-muted/65 font-semibold">
-                Shipping log
-              </span>
+              <span className="text-eyebrow">Shipping log</span>
             </div>
-            <h1 className="font-display italic text-4xl sm:text-5xl text-ink leading-tight tracking-tight mb-3">
-              Every change we've shipped.
-            </h1>
-            <p className="text-[13px] text-muted/85 leading-relaxed max-w-prose">
+            <h1 className="marketing-hero-title mb-3">Every change we've shipped.</h1>
+            <p className="marketing-hero-lead">
               Wireline ships almost daily. This page is hand-curated — when a release is worth
               writing down, it lands here. Subscribe via the in-app Changelog drawer for real-time
               updates after you sign up.
@@ -181,19 +141,17 @@ export default function PublicChangelog() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.3 }}
                   transition={{ duration: 0.4, delay: Math.min(idx * 0.04, 0.4) }}
-                  className="relative pl-4 sm:pl-6"
+                  className="relative pl-4 sm:pl-6 marketing-panel-muted p-4 sm:p-5"
                 >
                   <span
                     aria-hidden="true"
-                    className="absolute left-0 top-2 w-1.5 h-1.5 rounded-full"
+                    className="absolute left-0 top-6 w-1.5 h-1.5 rounded-full"
                     style={{ background: "#4F1E7B" }}
                   />
                   <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                    <span className="text-[9px] uppercase tracking-[0.3em] text-muted/65 font-semibold">
-                      {entry.date}
-                    </span>
+                    <span className="text-eyebrow !text-[0.625rem]">{entry.date}</span>
                     <span
-                      className={`inline-flex items-center gap-1 text-[8.5px] uppercase tracking-[0.22em] font-semibold px-2 py-0.5 rounded-full border leading-none ${meta.tone}`}
+                      className={`inline-flex items-center gap-1 text-eyebrow !text-[0.625rem] !tracking-[0.14em] px-2 py-0.5 rounded-full border leading-none ${meta.tone}`}
                     >
                       <Icon className="w-2.5 h-2.5" strokeWidth={2.2} />
                       {meta.label}
@@ -202,22 +160,22 @@ export default function PublicChangelog() {
                   <h2 className="font-display italic text-xl text-ink leading-tight mb-1">
                     {entry.title}
                   </h2>
-                  <p className="text-[12.5px] text-ink/80 leading-relaxed">{entry.body}</p>
+                  <p className="marketing-body">{entry.body}</p>
                 </motion.li>
               );
             })}
           </ol>
 
           <div className="mt-12 pt-6 border-t border-black/8">
-            <p className="text-[10px] uppercase tracking-[0.32em] text-muted/65 mb-2">Coming up</p>
-            <ul className="text-[12px] text-ink/80 space-y-1 list-disc pl-5">
+            <p className="text-eyebrow mb-2">Coming up</p>
+            <ul className="marketing-body space-y-1 list-disc pl-5">
               <li>iOS app — listen-in + whisper-coach on the go</li>
               <li>Recipe marketplace — community-contributed agent templates</li>
               <li>Annual Wireline Report — every Dec 31, your year in calls</li>
             </ul>
           </div>
-        </main>
-      </div>
+        </div>
+      </MarketingChrome>
     </>
   );
 }

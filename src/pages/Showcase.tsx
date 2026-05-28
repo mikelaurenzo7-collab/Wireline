@@ -27,7 +27,7 @@ import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { ArrowRight, Phone, Play, Pause, Sparkles, Volume2 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
-import WirelineMark from "../components/WirelineMark";
+import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import {
   WIRELINE_CONTACT_AGENTS,
   WIRELINE_DEMO_AGENTS,
@@ -170,7 +170,7 @@ function PhoneLineCard({ agent, label }: { agent: ContactAgent; label: string })
   return (
     <a
       href={`tel:${agent.tel}`}
-      className="group rounded-2xl border border-black/10 bg-white/35 p-4 transition-all hover:border-brand/40 hover:bg-white/55"
+      className="group marketing-panel p-4 min-h-[56px] transition-all hover:border-brand/30 hover:shadow-[0_8px_24px_-16px_rgba(79,30,123,0.2)]"
     >
       <div className="flex items-start gap-3">
         <div
@@ -196,89 +196,24 @@ function PhoneLineCard({ agent, label }: { agent: ContactAgent; label: string })
 
 export default function Showcase() {
   return (
-    <div className="min-h-dvh relative bg-paper text-ink">
+    <MarketingPageFrame mainClassName="!px-0 !py-0">
       <PageMeta
         title="Showcase — Playable AI Agent Templates · Wireline"
         description="Audition Wireline's voice agents in your browser before signing up. The marquee fun demo: a singing receptionist who sings the moment you connect, then catches herself with a normal greeting."
         path="/showcase"
       />
 
-      {/* Aurora — matches /about + /compare so the public surface feels like one product. */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <motion.div
-          className="absolute -top-[25%] -left-[15%] w-[40vw] h-[40vw] rounded-full"
-          style={{
-            background: "radial-gradient(circle, rgba(79, 30, 123 ,0.10), transparent 65%)",
-          }}
-          animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
-          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute -bottom-[20%] -right-[15%] w-[40vw] h-[40vw] rounded-full"
-          style={{
-            background: "radial-gradient(circle, rgba(236, 72, 153 ,0.10), transparent 65%)",
-          }}
-          animate={{ x: [0, -25, 0], y: [0, 25, 0] }}
-          transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
-        />
-      </div>
-
-      <header className="relative z-10 px-4 sm:px-6 lg:px-10 py-5 flex items-center justify-between gap-3">
-        <Link to="/" className="flex items-center gap-2.5 min-w-0">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{
-              background: "#4F1E7B",
-              boxShadow:
-                "0 4px 14px -4px rgba(79, 30, 123 ,0.55), 0 0 0 1px rgba(255,255,255,0.22) inset",
-            }}
-          >
-            <WirelineMark className="w-4 h-4 text-on-brand" strokeWidth={130} />
-          </div>
-          <span className="font-display italic text-xl text-ink">Wireline</span>
-        </Link>
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <Link
-            to="/pricing"
-            className="hidden sm:inline text-[11px] uppercase tracking-[0.3em] text-muted/70 hover:text-ink transition-colors"
-          >
-            Pricing
-          </Link>
-          <Link
-            to="/compare"
-            className="hidden sm:inline text-[11px] uppercase tracking-[0.3em] text-muted/70 hover:text-ink transition-colors"
-          >
-            Compare
-          </Link>
-          <Link
-            to="/about"
-            className="hidden md:inline text-[11px] uppercase tracking-[0.3em] text-muted/70 hover:text-ink transition-colors"
-          >
-            About
-          </Link>
-          <Link
-            to="/"
-            className="shrink-0 px-3 sm:px-4 py-2 rounded-full bg-brand text-on-brand text-[10px] sm:text-[11px] uppercase tracking-[0.16em] sm:tracking-[0.28em] hover:opacity-90 transition-opacity"
-          >
-            Start free trial
-          </Link>
-        </div>
-      </header>
-
-      {/* Hero */}
-      <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 pt-12 pb-12 sm:pt-20 sm:pb-16">
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 pt-4 pb-10 sm:pt-8 sm:pb-14">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <p className="text-[10px] uppercase tracking-[0.4em] text-brand mb-4 font-medium">
-            The playable showcase
-          </p>
-          <h1 className="font-display italic text-5xl sm:text-6xl leading-[1.05] tracking-tight text-ink text-balance mb-6">
+          <p className="text-eyebrow text-brand mb-4">The playable showcase</p>
+          <h1 className="marketing-hero-title text-4xl sm:text-5xl mb-6">
             Audition the agents before you deploy one.
           </h1>
-          <p className="text-base sm:text-lg text-ink/75 leading-relaxed max-w-2xl">
+          <p className="marketing-hero-lead max-w-2xl">
             Every template below is a real Wireline persona — same voice engine, same brain, same
             hand-off rules — packaged so you can hear it without picking up the phone. Click play to
             sample. Like what you hear? Spin up your own.
@@ -287,12 +222,10 @@ export default function Showcase() {
       </section>
 
       {/* Showcase cards */}
-      <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 pb-20">
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 pb-16">
         <div className="flex items-center gap-2 mb-6">
           <Volume2 className="w-4 h-4 text-brand" strokeWidth={2.2} />
-          <p className="text-[10px] uppercase tracking-[0.4em] text-brand font-medium">
-            Press play
-          </p>
+          <p className="text-eyebrow text-brand">Press play</p>
         </div>
         <div className="grid grid-cols-1 gap-5">
           {SHOWCASE_AGENTS.map((agent) => (
@@ -301,13 +234,11 @@ export default function Showcase() {
         </div>
       </section>
 
-      <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 pb-20">
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 pb-16">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-[10px] uppercase tracking-[0.32em] text-brand font-medium">
-                Wireline team
-              </span>
+              <span className="text-eyebrow text-brand">Wireline team</span>
               <span className="h-px flex-1 bg-brand/20" />
             </div>
             <div className="grid grid-cols-1 gap-3">
@@ -331,58 +262,24 @@ export default function Showcase() {
       </section>
 
       {/* CTA */}
-      <section className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 pb-24 text-center">
-        <h2 className="font-display italic text-4xl sm:text-5xl text-ink mb-4 text-balance">
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 pb-8 text-center">
+        <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-4 text-balance">
           Deploy your own in under a minute.
         </h2>
-        <p className="text-sm sm:text-base text-ink/70 max-w-xl mx-auto mb-6 leading-relaxed">
+        <p className="marketing-hero-lead mx-auto mb-6">
           Pick a voice. Drop a knowledge base. Wireline writes the system prompt + first-message for
           you. Live in production with a real number, 14-day free trial, no credit card.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
-          >
+          <Link to="/signup" className="marketing-btn-primary">
             Start free trial
             <ArrowRight className="w-4 h-4" />
           </Link>
-          <Link
-            to="/compare"
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-full glass border border-black/12 text-ink text-[11px] uppercase tracking-[0.3em] font-medium hover:border-brand/40 transition-all"
-          >
+          <Link to="/compare" className="marketing-btn-secondary">
             Compare vs competitors
           </Link>
         </div>
       </section>
-
-      <footer className="relative z-10 border-t border-black/8 py-8 px-4 sm:px-6 lg:px-10 xl:px-14 max-w-6xl mx-auto">
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] text-muted/60">
-          <Link to="/" className="hover:text-ink transition-colors">
-            Wireline
-          </Link>
-          <span aria-hidden="true">·</span>
-          <Link to="/pricing" className="hover:text-ink transition-colors">
-            Pricing
-          </Link>
-          <span aria-hidden="true">·</span>
-          <Link to="/compare" className="hover:text-ink transition-colors">
-            Compare
-          </Link>
-          <span aria-hidden="true">·</span>
-          <Link to="/about" className="hover:text-ink transition-colors">
-            About
-          </Link>
-          <span aria-hidden="true">·</span>
-          <Link to="/privacy" className="hover:text-ink transition-colors">
-            Privacy
-          </Link>
-          <span aria-hidden="true">·</span>
-          <Link to="/terms" className="hover:text-ink transition-colors">
-            Terms
-          </Link>
-        </div>
-      </footer>
-    </div>
+    </MarketingPageFrame>
   );
 }

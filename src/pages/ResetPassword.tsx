@@ -3,9 +3,10 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lock, AlertTriangle, Check } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import WirelineMark from "../components/WirelineMark";
+import { Link } from "react-router-dom";
 import { getPasswordPolicyError } from "../lib/password-policy";
 import { PageMeta } from "../lib/page-meta";
+import MarketingChrome from "../components/marketing/MarketingChrome";
 
 /**
  * /reset-password?token=<raw>
@@ -95,142 +96,114 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-dvh flex items-center justify-center relative overflow-hidden bg-paper">
+    <MarketingChrome stickyCta={false} footer={false}>
       <PageMeta
         title="Reset Password"
         description="Reset your Wireline account password."
         path="/reset-password"
         noIndex
       />
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div
-          className="absolute -top-[25%] -left-[15%] w-[70vw] h-[70vw] max-w-[640px] max-h-[640px] rounded-full"
-          style={{
-            background: "radial-gradient(circle, rgba(79, 30, 123 ,0.16), transparent 60%)",
-          }}
-        />
-        <div
-          className="absolute -bottom-[20%] -right-[15%] w-[65vw] h-[65vw] max-w-[600px] max-h-[600px] rounded-full"
-          style={{
-            background: "radial-gradient(circle, rgba(79, 30, 123 ,0.16), transparent 60%)",
-          }}
-        />
-      </div>
-
-      <div className="relative z-10 w-full max-w-md p-6 sm:p-8 mx-4">
-        <div className="flex items-center gap-3 mb-10">
-          <div
-            className="relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{
-              background: "#4F1E7B",
-              boxShadow:
-                "0 8px 24px -8px rgba(79, 30, 123 ,0.60), 0 0 0 1px rgba(255,255,255,0.22) inset",
-            }}
-          >
-            <WirelineMark className="w-5 h-5 text-paper" strokeWidth={130} />
-          </div>
-          <div>
-            <span className="brand-wordmark text-2xl leading-none">WIRELINE</span>
-            <p className="text-[8px] tracking-[0.42em] uppercase text-muted mt-0.5">
+      <div className="flex flex-1 items-center justify-center px-4 py-8">
+        <div className="w-full max-w-md rounded-2xl border border-black/8 bg-[#FAF8F5] p-6 sm:p-8">
+          <div className="mb-6">
+            <h1 className="font-display italic text-2xl sm:text-3xl text-ink leading-tight">
               Reset password
-            </p>
+            </h1>
+            <p className="text-caption mt-1.5">Choose a new password for your operator account.</p>
           </div>
-        </div>
 
-        {success ? (
-          <div className="space-y-4 p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/30">
-            <div className="flex items-center gap-3 text-emerald-500">
-              <Check className="w-5 h-5" />
-              <span className="text-sm font-medium">Password updated. Signing you in…</span>
-            </div>
-          </div>
-        ) : !token ? (
-          <div className="space-y-4 p-6 rounded-2xl bg-rose-500/10 border border-rose-500/30">
-            <div className="flex items-start gap-3 text-rose-500">
-              <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
-              <span className="text-sm leading-relaxed">
-                This reset link is missing its token. Request a new one from the{" "}
-                <a href="/" className="underline">
-                  sign-in page
-                </a>
-                .
-              </span>
-            </div>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <p className="text-sm text-muted/80 mb-6 leading-relaxed">
-              Pick a new password to finish resetting your Wireline account. Use at least 8
-              characters with uppercase, lowercase, and a number.
-            </p>
-
-            <div className="space-y-2">
-              <label className="app-section-title/80 flex items-center gap-1.5">
-                <Lock className="w-3 h-3 text-brand" />
-                New password
-              </label>
-              <input
-                type="password"
-                required
-                minLength={8}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="auth-input tracking-[0.32em]"
-                placeholder="••••••••••••"
-                autoComplete="new-password"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="app-section-title/80 flex items-center gap-1.5">
-                <Lock className="w-3 h-3 text-brand" />
-                Confirm new password
-              </label>
-              <input
-                type="password"
-                required
-                minLength={8}
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                className="auth-input tracking-[0.32em]"
-                placeholder="••••••••••••"
-                autoComplete="new-password"
-              />
-            </div>
-
-            {error && (
-              <div
-                role="alert"
-                className="flex items-start gap-3 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs"
-              >
-                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span className="leading-relaxed">{error}</span>
+          {success ? (
+            <div className="space-y-4 p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/30">
+              <div className="flex items-center gap-3 text-emerald-500">
+                <Check className="w-5 h-5" />
+                <span className="text-sm font-medium">Password updated. Signing you in…</span>
               </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading || !password || password !== confirm}
-              className="w-full px-5 py-3.5 min-h-[48px] rounded-xl text-sm font-medium text-paper transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.99]"
-              style={{
-                background: "#4F1E7B",
-                boxShadow: "0 8px 24px -8px rgba(79, 30, 123 ,0.50)",
-              }}
-            >
-              {loading ? "Updating…" : "Reset password"}
-            </button>
-
-            <div className="text-center pt-2">
-              <a
-                href="/"
-                className="text-[10px] uppercase tracking-[0.3em] text-muted/60 hover:text-brand transition-colors"
-              >
-                ← Back to sign in
-              </a>
             </div>
-          </form>
-        )}
+          ) : !token ? (
+            <div className="space-y-4 p-6 rounded-2xl bg-rose-500/10 border border-rose-500/30">
+              <div className="flex items-start gap-3 text-rose-500">
+                <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+                <span className="text-sm leading-relaxed">
+                  This reset link is missing its token. Request a new one from the{" "}
+                  <Link to="/signin" className="underline text-brand">
+                    sign-in page
+                  </Link>
+                  .
+                </span>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <p className="text-sm text-muted/80 mb-6 leading-relaxed">
+                Pick a new password to finish resetting your Wireline account. Use at least 8
+                characters with uppercase, lowercase, and a number.
+              </p>
+
+              <div className="space-y-2">
+                <label className="app-section-title/80 flex items-center gap-1.5">
+                  <Lock className="w-3 h-3 text-brand" />
+                  New password
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={8}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="auth-input tracking-[0.32em]"
+                  placeholder="••••••••••••"
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="app-section-title/80 flex items-center gap-1.5">
+                  <Lock className="w-3 h-3 text-brand" />
+                  Confirm new password
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={8}
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  className="auth-input tracking-[0.32em]"
+                  placeholder="••••••••••••"
+                  autoComplete="new-password"
+                />
+              </div>
+
+              {error && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-3 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs"
+                >
+                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span className="leading-relaxed">{error}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading || !password || password !== confirm}
+                className="w-full px-5 py-3.5 min-h-[48px] rounded-xl text-sm font-medium text-paper transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.99]"
+                style={{
+                  background: "#4F1E7B",
+                  boxShadow: "0 8px 24px -8px rgba(79, 30, 123 ,0.50)",
+                }}
+              >
+                {loading ? "Updating…" : "Reset password"}
+              </button>
+
+              <div className="text-center pt-2">
+                <Link to="/signin" className="text-caption font-medium text-brand hover:underline">
+                  ← Back to sign in
+                </Link>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
-    </div>
+    </MarketingChrome>
   );
 }

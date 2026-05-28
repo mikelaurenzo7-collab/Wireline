@@ -687,6 +687,75 @@
   max-width: 42rem;
 }
 
+/* Mobile conversion rail + shared marketing CTAs */
+.marketing-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--color-on-brand);
+  background: var(--color-brand);
+  box-shadow: 0 6px 20px -6px rgba(79, 30, 123, 0.55);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.marketing-btn-primary:hover {
+  background: #6a25a3;
+}
+
+.marketing-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  background: color-mix(in srgb, white 55%, transparent);
+  border: 1px solid color-mix(in srgb, black 12%, transparent);
+  transition: background 0.15s ease;
+}
+
+.marketing-btn-secondary:hover {
+  background: white;
+}
+
+.marketing-has-sticky-cta {
+  padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 1024px) {
+  .marketing-has-sticky-cta {
+    padding-bottom: 0;
+  }
+}
+
+/* Trust / status cards on public pages */
+.marketing-panel {
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, black 8%, transparent);
+  background: white;
+}
+
+.marketing-panel-muted {
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, black 8%, transparent);
+  background: color-mix(in srgb, white 70%, transparent);
+}
+
+.marketing-body {
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--color-ink) 85%, transparent);
+}
+
 /* Dense tables / lists in app panels */
 .app-meta {
   font-size: 0.75rem;

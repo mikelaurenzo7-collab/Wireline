@@ -11,9 +11,7 @@
  */
 import React from "react";
 import { motion } from "motion/react";
-import { Link } from "react-router-dom";
 import {
-  ArrowLeft,
   Lock,
   ShieldCheck,
   KeyRound,
@@ -25,8 +23,8 @@ import {
   Database,
   BugPlay,
 } from "lucide-react";
-import WirelineMark from "./WirelineMark";
 import { PageMeta } from "../lib/page-meta";
+import MarketingChrome from "./marketing/MarketingChrome";
 
 const SECTIONS = [
   {
@@ -132,33 +130,9 @@ export default function Security() {
         description="How Wireline handles encryption, webhook signatures, HIPAA controls, PCI scope, GDPR rights, and responsible disclosure. Honest, in detail."
         path="/security"
       />
-      <div className="min-h-dvh bg-paper relative">
-        <div className="scanline" />
-
-        <header className="border-b border-black/5 bg-white/60 backdrop-blur sticky top-0 z-10">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2.5 group" aria-label="Wireline home">
-              <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: "#4F1E7B" }}
-              >
-                <WirelineMark className="w-4 h-4 text-on-brand" strokeWidth={130} />
-              </div>
-              <span className="brand-wordmark text-[15px] leading-none !text-[#4F1E7B] !filter-none">
-                WIRELINE
-              </span>
-            </Link>
-            <Link
-              to="/"
-              className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink transition-colors"
-            >
-              <ArrowLeft className="w-3 h-3" />
-              Back home
-            </Link>
-          </div>
-        </header>
-
-        <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <MarketingChrome stickyCta={false}>
+        <div className="scanline pointer-events-none fixed inset-0 z-0 opacity-30" aria-hidden />
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -167,22 +141,18 @@ export default function Security() {
           >
             <div className="flex items-center gap-2 mb-3">
               <span className="hero-accent-line" style={{ background: "#4F1E7B" }} />
-              <span className="text-[8.5px] uppercase tracking-[0.5em] text-muted/65 font-semibold">
-                Security · Compliance · Honesty
-              </span>
+              <span className="text-eyebrow">Security · Compliance · Honesty</span>
             </div>
-            <h1 className="font-display italic text-4xl sm:text-5xl text-ink leading-tight tracking-tight mb-3">
+            <h1 className="marketing-hero-title mb-3">
               How we keep your calls — and your data — safe.
             </h1>
-            <p className="text-[13px] text-muted/85 leading-relaxed max-w-prose">
+            <p className="marketing-hero-lead max-w-prose">
               Wireline runs every call on infrastructure designed for the moments that matter: a
               customer trusting you, a regulator auditing you, a hacker testing you. This page is
               the honest summary of what we ship today, where we still have work to do, and how to
               reach us if you find something we missed.
             </p>
-            <p className="mt-4 text-[10px] uppercase tracking-[0.32em] text-muted/65">
-              Last updated · May 27, 2026
-            </p>
+            <p className="mt-4 text-eyebrow !text-[0.625rem]">Last updated · May 27, 2026</p>
           </motion.div>
 
           <div className="space-y-7">
@@ -198,7 +168,7 @@ export default function Security() {
                   <Icon className="w-4 h-4 text-[#4F1E7B]" strokeWidth={1.8} />
                   <h2 className="font-display italic text-lg text-ink leading-tight">{title}</h2>
                 </div>
-                <ul className="space-y-1.5 text-[12.5px] text-ink/85 leading-relaxed">
+                <ul className="space-y-1.5 marketing-body">
                   {items.map((line, i) => (
                     <li key={i} className="pl-5 relative">
                       <span
@@ -214,10 +184,8 @@ export default function Security() {
           </div>
 
           <div className="mt-12 pt-6 border-t border-black/8">
-            <p className="text-[10px] uppercase tracking-[0.32em] text-muted/65 mb-2">
-              On the roadmap
-            </p>
-            <ul className="text-[12px] text-ink/80 space-y-1 list-disc pl-5">
+            <p className="text-eyebrow mb-2">On the roadmap</p>
+            <ul className="marketing-body space-y-1 list-disc pl-5">
               <li>SOC 2 Type II certification — audit firm engaged, target 2026 Q4.</li>
               <li>
                 Supabase RLS policy coverage + GraphQL exposure cleanup for all tenant tables.
@@ -228,14 +196,14 @@ export default function Security() {
             </ul>
           </div>
 
-          <div className="mt-10 text-[11px] uppercase tracking-[0.32em] text-muted/65 text-center">
+          <div className="mt-10 text-caption text-center">
             Questions?{" "}
             <a href="mailto:security@trywireline.com" className="text-[#4F1E7B] hover:underline">
               security@trywireline.com
             </a>
           </div>
-        </main>
-      </div>
+        </div>
+      </MarketingChrome>
     </>
   );
 }

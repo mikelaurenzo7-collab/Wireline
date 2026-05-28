@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Shield, FileText, Trash2, ArrowLeft, Video } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
+import MarketingChrome from "./marketing/MarketingChrome";
 
 const LAST_UPDATED = "May 9, 2026";
 
@@ -17,13 +18,13 @@ function LegalLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-dvh bg-paper text-ink">
-      <div className="max-w-3xl mx-auto px-5 sm:px-6 py-10 sm:py-16">
+    <MarketingChrome stickyCta={false}>
+      <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
         <Link
           to="/"
-          className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-muted hover:text-ink transition-colors mb-10 -mx-2 px-2 py-2 rounded-lg hover:bg-black/[0.03]"
+          className="inline-flex items-center gap-2 text-caption font-medium text-muted hover:text-ink transition-colors mb-8 -mx-2 px-2 py-2 rounded-lg hover:bg-black/[0.03] min-h-[44px]"
         >
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to app
+          <ArrowLeft className="w-3.5 h-3.5" /> Back home
         </Link>
 
         <div className="flex items-center gap-3 mb-2">
@@ -33,29 +34,38 @@ function LegalLayout({
           >
             <Icon className="w-5 h-5 text-on-brand" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">{title}</h1>
+          <h1 className="marketing-hero-title text-2xl sm:text-3xl">{title}</h1>
         </div>
-        <p className="text-[11px] text-muted mb-10">Last updated: {LAST_UPDATED}</p>
+        <p className="text-eyebrow !text-[0.625rem] mb-10">Last updated: {LAST_UPDATED}</p>
 
         <div className="prose prose-sm sm:prose-base max-w-none space-y-8 text-ink/85 leading-relaxed">
           {children}
         </div>
 
-        <div className="mt-16 pt-8 border-t border-black/8 flex flex-wrap gap-x-4 gap-y-2 text-[10px] text-muted/60">
-          <Link to="/privacy" className="hover:text-muted transition-colors py-1">
+        <div className="mt-16 pt-8 border-t border-black/8 flex flex-wrap gap-x-4 gap-y-2 text-caption">
+          <Link
+            to="/privacy"
+            className="hover:text-ink transition-colors min-h-[44px] inline-flex items-center"
+          >
             Privacy Policy
           </Link>
           <span aria-hidden="true">·</span>
-          <Link to="/terms" className="hover:text-muted transition-colors py-1">
+          <Link
+            to="/terms"
+            className="hover:text-ink transition-colors min-h-[44px] inline-flex items-center"
+          >
             Terms of Service
           </Link>
           <span aria-hidden="true">·</span>
-          <Link to="/privacy#ccpa" className="hover:text-muted transition-colors py-1">
+          <Link
+            to="/privacy#ccpa"
+            className="hover:text-ink transition-colors min-h-[44px] inline-flex items-center"
+          >
             Do Not Sell My Information
           </Link>
         </div>
       </div>
-    </div>
+    </MarketingChrome>
   );
 }
 

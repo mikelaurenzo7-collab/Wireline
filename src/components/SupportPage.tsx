@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import { WIRELINE_FEATURED_TEAM_AGENT } from "../data/contact-agents";
+import MarketingChrome from "./marketing/MarketingChrome";
 
 const ISSUE_TYPES = [
   { value: "billing", label: "Billing or refund" },
@@ -82,18 +83,18 @@ export function SupportPage() {
   };
 
   return (
-    <div className="min-h-dvh bg-paper text-ink">
+    <MarketingChrome stickyCta={false}>
       <PageMeta
         title="Support — Wireline"
         description={`Get help with Wireline. Call ${supportAgent.display} for instant agent triage, or open a ticket. Billing, technical, feature, agent-quality requests all in one place.`}
         path="/support"
       />
-      <div className="max-w-3xl mx-auto px-5 sm:px-6 py-10 sm:py-16">
+      <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
         <Link
           to="/"
-          className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-muted hover:text-ink transition-colors mb-10 -mx-2 px-2 py-2 rounded-lg hover:bg-black/[0.03]"
+          className="inline-flex items-center gap-2 text-caption font-medium text-muted hover:text-ink transition-colors mb-8 -mx-2 px-2 py-2 rounded-lg hover:bg-black/[0.03] min-h-[44px]"
         >
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to app
+          <ArrowLeft className="w-3.5 h-3.5" /> Back home
         </Link>
 
         <div className="flex items-center gap-3 mb-2">
@@ -103,9 +104,9 @@ export function SupportPage() {
           >
             <ShieldCheck className="w-5 h-5 text-on-brand" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Support</h1>
+          <h1 className="marketing-hero-title text-3xl sm:text-4xl">Support</h1>
         </div>
-        <p className="text-[13px] text-muted leading-relaxed mb-10 max-w-2xl">
+        <p className="marketing-hero-lead mb-10 max-w-2xl">
           We aim for a first reply within 1 business day on every ticket. Urgent production issues
           (your line is down, an agent is misbehaving on a live call) — call us directly so we can
           fix it in real time.
@@ -115,38 +116,38 @@ export function SupportPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-10">
           <a
             href={`tel:${supportAgent.tel}`}
-            className="rounded-2xl border border-black/10 p-4 hover:border-brand/40 hover:bg-black/[0.02] transition-all group"
+            className="marketing-panel p-4 min-h-[88px] hover:border-brand/30 hover:shadow-[0_8px_24px_-16px_rgba(79,30,123,0.25)] transition-all group"
           >
             <div className="w-9 h-9 rounded-lg bg-brand/10 flex items-center justify-center mb-3">
               <Phone className="w-4 h-4 text-brand" />
             </div>
-            <p className="text-[12px] font-medium text-ink mb-1">Call us now</p>
-            <p className="text-[11px] text-muted leading-relaxed">
+            <p className="text-sm font-semibold text-ink mb-1">Call us now</p>
+            <p className="text-caption leading-relaxed">
               {supportAgent.display} — {supportAgent.name} picks up 24/7. Urgent issues get
               escalated to a human within minutes.
             </p>
           </a>
           <a
             href="mailto:trywireline@yahoo.com"
-            className="rounded-2xl border border-black/10 p-4 hover:border-brand/40 hover:bg-black/[0.02] transition-all group"
+            className="marketing-panel p-4 min-h-[88px] hover:border-brand/30 hover:shadow-[0_8px_24px_-16px_rgba(79,30,123,0.25)] transition-all group"
           >
             <div className="w-9 h-9 rounded-lg bg-brand/10 flex items-center justify-center mb-3">
               <Mail className="w-4 h-4 text-brand" />
             </div>
-            <p className="text-[12px] font-medium text-ink mb-1">Email us</p>
-            <p className="text-[11px] text-muted leading-relaxed">
+            <p className="text-sm font-semibold text-ink mb-1">Email us</p>
+            <p className="text-caption leading-relaxed">
               trywireline@yahoo.com — 1 business day response, faster on billing + access issues.
             </p>
           </a>
           <Link
             to="/train"
-            className="rounded-2xl border border-black/10 p-4 hover:border-brand/40 hover:bg-black/[0.02] transition-all group"
+            className="marketing-panel p-4 min-h-[88px] hover:border-brand/30 hover:shadow-[0_8px_24px_-16px_rgba(79,30,123,0.25)] transition-all group"
           >
             <div className="w-9 h-9 rounded-lg bg-brand/10 flex items-center justify-center mb-3">
               <MessageSquare className="w-4 h-4 text-brand" />
             </div>
-            <p className="text-[12px] font-medium text-ink mb-1">Ask your agent</p>
-            <p className="text-[11px] text-muted leading-relaxed">
+            <p className="text-sm font-semibold text-ink mb-1">Ask your agent</p>
+            <p className="text-caption leading-relaxed">
               Already a customer? Open the Workspace tab on any of your agents and ask them directly
               — they know your account.
             </p>
@@ -154,7 +155,7 @@ export function SupportPage() {
         </div>
 
         {/* Ticket form */}
-        <div className="rounded-2xl border border-black/10 p-6 bg-paper">
+        <div className="marketing-panel p-6">
           <h2 className="font-display italic text-xl text-ink mb-1">Open a ticket</h2>
           <p className="text-[12px] text-muted mb-6 leading-relaxed">
             Pick the closest category — it routes to the right person faster.
@@ -293,6 +294,6 @@ export function SupportPage() {
           . You can request deletion at any time via account settings.
         </p>
       </div>
-    </div>
+    </MarketingChrome>
   );
 }

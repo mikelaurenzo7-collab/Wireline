@@ -32,7 +32,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
-import WirelineMark from "../components/WirelineMark";
+import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { signupHrefForWedge } from "../lib/signup-intent";
 
 export type VerticalKey =
@@ -650,7 +650,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
   };
 
   return (
-    <div className="min-h-dvh relative bg-paper text-ink">
+    <MarketingPageFrame mainClassName="!px-0 !py-0">
       <PageMeta
         title={cfg.metaTitle}
         description={cfg.metaDescription}
@@ -658,62 +658,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         structuredData={structuredData}
       />
 
-      {/* Aurora backdrop — toned down. The wedge pages compete with
-          /pricing for sales attention; matching the visual density of
-          Pricing.tsx keeps them feeling like the same product, not a
-          separate microsite. */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <motion.div
-          className="absolute -top-[25%] -left-[15%] w-[40vw] h-[40vw] rounded-full"
-          style={{
-            background: "radial-gradient(circle, rgba(79, 30, 123 ,0.10), transparent 65%)",
-          }}
-          animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
-          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute -bottom-[20%] -right-[15%] w-[40vw] h-[40vw] rounded-full"
-          style={{
-            background: "radial-gradient(circle, rgba(79, 30, 123 ,0.10), transparent 65%)",
-          }}
-          animate={{ x: [0, -25, 0], y: [0, 25, 0] }}
-          transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
-        />
-      </div>
-
-      {/* Top brand bar */}
-      <header className="relative z-10 px-4 sm:px-6 lg:px-10 py-5 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{
-              background: "#4F1E7B",
-              boxShadow:
-                "0 4px 14px -4px rgba(79, 30, 123 ,0.55), 0 0 0 1px rgba(255,255,255,0.22) inset",
-            }}
-          >
-            <WirelineMark className="w-4 h-4 text-on-brand" strokeWidth={130} />
-          </div>
-          <span className="font-display italic text-xl text-ink">Wireline</span>
-        </Link>
-        <div className="flex items-center gap-3">
-          <Link
-            to="/pricing"
-            className="text-[11px] uppercase tracking-[0.3em] text-muted/70 hover:text-ink transition-colors"
-          >
-            Pricing
-          </Link>
-          <CtaLink
-            href={cfg.primaryCta.href}
-            className="px-4 py-2 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.28em] hover:opacity-90 transition-opacity"
-          >
-            Get started
-          </CtaLink>
-        </div>
-      </header>
-
-      {/* Hero */}
-      <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 pt-12 pb-16 sm:pt-20 sm:pb-24">
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 pt-4 pb-14 sm:pt-10 sm:pb-20">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -928,29 +873,11 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         </div>
       </section>
 
-      {/* Trust footer */}
-      <footer className="relative z-10 border-t border-black/8 py-8 px-4 sm:px-6 lg:px-10 max-w-5xl mx-auto">
-        <p className="text-[10px] text-muted/60 text-center max-w-2xl mx-auto leading-relaxed">
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 pb-8">
+        <p className="text-caption text-center max-w-2xl mx-auto leading-relaxed">
           {cfg.trustLine}
         </p>
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mt-4 text-[9px] text-muted/70">
-          <Link to="/" className="hover:text-ink transition-colors">
-            Wireline
-          </Link>
-          <span aria-hidden="true">·</span>
-          <Link to="/pricing" className="hover:text-ink transition-colors">
-            Pricing
-          </Link>
-          <span aria-hidden="true">·</span>
-          <Link to="/privacy" className="hover:text-ink transition-colors">
-            Privacy
-          </Link>
-          <span aria-hidden="true">·</span>
-          <Link to="/terms" className="hover:text-ink transition-colors">
-            Terms
-          </Link>
-        </div>
-      </footer>
-    </div>
+      </section>
+    </MarketingPageFrame>
   );
 }

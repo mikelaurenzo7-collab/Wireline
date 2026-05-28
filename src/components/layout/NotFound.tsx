@@ -47,11 +47,11 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
         transition={{ delay: 0.1, duration: 0.5 }}
         className="space-y-3 max-w-md"
       >
-        <p className="text-[10px] uppercase tracking-[0.6em] text-muted">Error 404</p>
+        <p className="text-eyebrow">Error 404</p>
         <h2 className="font-display italic text-2xl md:text-3xl text-ink leading-tight">
           Page not found
         </h2>
-        <p className="text-ink/55 text-sm leading-relaxed">
+        <p className="text-caption leading-relaxed max-w-md">
           {location.pathname && location.pathname !== "/" && (
             <>
               We couldn't find{" "}
@@ -100,8 +100,8 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
                 <Phone className="w-4 h-4 text-on-brand" strokeWidth={2.4} />
               </div>
               <div className="text-left flex-1 min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.32em] text-muted">Try the demo</p>
-                <p className="text-[12px] text-ink font-medium truncate">(630) 581-1834</p>
+                <p className="text-eyebrow !text-[0.625rem]">Try the demo</p>
+                <p className="text-sm text-ink font-medium truncate">(630) 581-1834</p>
               </div>
             </a>
             <NotFoundCard
@@ -147,7 +147,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
           className="text-[10px] uppercase tracking-[0.42em] text-muted/60"
         >
           Already have an account?{" "}
-          <Link to="/" className="text-brand hover:opacity-80 transition-opacity">
+          <Link to="/signin" className="text-brand hover:opacity-80 transition-opacity">
             Sign in →
           </Link>
         </motion.p>

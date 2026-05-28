@@ -18,7 +18,6 @@
  */
 import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Link } from "react-router-dom";
 import {
   PhoneCall,
   Brain,
@@ -27,10 +26,9 @@ import {
   AlertTriangle,
   XCircle,
   Loader2,
-  ArrowLeft,
 } from "lucide-react";
-import WirelineMark from "./WirelineMark";
 import { PageMeta } from "../lib/page-meta";
+import MarketingChrome from "./marketing/MarketingChrome";
 
 type ComponentState = "operational" | "degraded" | "outage" | "unknown";
 type OverallState = "operational" | "degraded" | "outage" | "unknown";
@@ -148,40 +146,15 @@ export default function Status() {
         description="Live operational status of Wireline's voice runtime, fallback path, and reasoning layer. Updated every 60 seconds."
         path="/status"
       />
-      <div className="min-h-dvh bg-paper relative">
-        <div className="scanline" />
-
-        {/* Header strip — minimal, mirrors the marketing chrome */}
-        <header className="border-b border-black/5 bg-white/60 backdrop-blur sticky top-0 z-10">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2.5 group" aria-label="Wireline home">
-              <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: "#4F1E7B" }}
-              >
-                <WirelineMark className="w-4 h-4 text-on-brand" strokeWidth={130} />
-              </div>
-              <span className="brand-wordmark text-[15px] leading-none !text-[#4F1E7B] !filter-none">
-                WIRELINE
-              </span>
-            </Link>
-            <Link
-              to="/"
-              className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink transition-colors"
-            >
-              <ArrowLeft className="w-3 h-3" />
-              Back home
-            </Link>
-          </div>
-        </header>
-
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <MarketingChrome stickyCta={false}>
+        <div className="scanline pointer-events-none fixed inset-0 z-0 opacity-30" aria-hidden />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
           {/* Overall status card */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="rounded-2xl border border-black/8 bg-white p-6 sm:p-8 mb-6 relative overflow-hidden"
+            className="marketing-panel p-6 sm:p-8 mb-6 relative overflow-hidden"
             data-testid="status-overall"
           >
             <div
@@ -191,9 +164,7 @@ export default function Status() {
             <div className="relative">
               <div className="flex items-center gap-2 mb-3">
                 <span className="hero-accent-line" style={{ background: "#4F1E7B" }} />
-                <span className="text-[8.5px] uppercase tracking-[0.5em] text-muted/65 font-semibold">
-                  Live system status
-                </span>
+                <span className="text-eyebrow">Live system status</span>
               </div>
               <div className="flex items-start gap-4">
                 <div
@@ -206,7 +177,7 @@ export default function Status() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h1 className="font-display italic text-3xl sm:text-4xl text-ink leading-tight tracking-tight mb-1">
+                  <h1 className="marketing-hero-title text-3xl sm:text-4xl mb-1">
                     {loading
                       ? "Checking…"
                       : overall === "operational"
@@ -217,7 +188,7 @@ export default function Status() {
                             ? "Outage in progress"
                             : "Status temporarily unavailable"}
                   </h1>
-                  <p className="text-[12px] text-muted/80 leading-relaxed">
+                  <p className="marketing-body">
                     {data?.last_checked ? (
                       <>
                         Last checked{" "}
@@ -259,7 +230,7 @@ export default function Status() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.1 + idx * 0.05 }}
-                    className="rounded-xl border border-black/8 bg-white p-4 relative overflow-hidden"
+                    className="marketing-panel p-4 relative overflow-hidden"
                     data-testid={`status-component-${key}`}
                   >
                     <div
@@ -276,10 +247,8 @@ export default function Status() {
                           {stateMeta.label}
                         </span>
                       </div>
-                      <p className="text-[13px] font-semibold text-ink mb-1">{meta.label}</p>
-                      <p className="text-[10.5px] text-muted/70 leading-relaxed">
-                        {meta.description}
-                      </p>
+                      <p className="text-sm font-semibold text-ink mb-1">{meta.label}</p>
+                      <p className="text-caption leading-relaxed">{meta.description}</p>
                     </div>
                   </motion.div>
                 );
@@ -288,11 +257,9 @@ export default function Status() {
           </div>
 
           {/* Reassurance footer */}
-          <div className="rounded-xl border border-black/8 bg-white/70 p-4 sm:p-5">
-            <p className="text-[8.5px] uppercase tracking-[0.5em] text-muted/65 font-semibold mb-2">
-              How we measure
-            </p>
-            <p className="text-[12.5px] text-ink/85 leading-relaxed">
+          <div className="marketing-panel-muted p-4 sm:p-5">
+            <p className="text-eyebrow mb-2">How we measure</p>
+            <p className="marketing-body">
               Every 60 seconds, Wireline pings each production LLM tier with a 1-token probe.
               Operational means the model responded within timeout. Degraded means the layer is
               unconfigured or partially available. Outage means the layer is failing. We never
@@ -313,8 +280,8 @@ export default function Status() {
               </a>
             </div>
           </div>
-        </main>
-      </div>
+        </div>
+      </MarketingChrome>
     </>
   );
 }

@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { PageMeta } from "../lib/page-meta";
-import WirelineMark from "../components/WirelineMark";
+import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { Check, ArrowRight, Phone, Zap, ShieldCheck, Sparkles } from "lucide-react";
 
 type Tier = {
@@ -220,71 +220,13 @@ export default function Pricing() {
   };
 
   return (
-    <div className="min-h-dvh relative">
+    <MarketingPageFrame mainClassName="!px-0 !py-0">
       <PageMeta
         title="Plans & Pricing"
         description="Wireline pricing plans from $49/month Personal to Enterprise custom. Every plan includes AI voice agents, real-time call logs, sentiment scoring, and the Wireline Demo Line. 14-day free trial, no credit card required."
         path="/pricing"
         structuredData={pricingStructuredData}
       />
-      {/* Aurora backdrop — toned down so the tier cards win the eye.
-          Previously 60vw at 0.18 opacity dominated the hero on 1366×768
-          laptops; now 40vw at 0.10 reads as ambient accent. */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <motion.div
-          className="absolute -top-[25%] -left-[15%] w-[40vw] h-[40vw] rounded-full"
-          style={{
-            background: "radial-gradient(circle, rgba(79, 30, 123 ,0.10), transparent 65%)",
-          }}
-          animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
-          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute -bottom-[20%] -right-[15%] w-[40vw] h-[40vw] rounded-full"
-          style={{
-            background: "radial-gradient(circle, rgba(79, 30, 123 ,0.10), transparent 65%)",
-          }}
-          animate={{ x: [0, -25, 0], y: [0, 25, 0] }}
-          transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
-        />
-      </div>
-
-      {/* Top brand bar (minimal — public page, no app nav) */}
-      <header className="relative z-10 px-4 sm:px-6 lg:px-10 xl:px-14 py-5 flex items-center justify-between gap-3">
-        <Link to="/" className="flex items-center gap-2.5">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{
-              background: "#4F1E7B",
-              boxShadow:
-                "0 4px 14px -4px rgba(79, 30, 123 ,0.55), 0 0 0 1px rgba(255,255,255,0.22) inset",
-            }}
-          >
-            <WirelineMark className="w-4 h-4 text-paper" strokeWidth={130} />
-          </div>
-          <span className="brand-wordmark text-[16px] leading-none">WIRELINE</span>
-        </Link>
-        <div className="flex items-center gap-3">
-          <Link
-            to="/compare"
-            className="text-[11px] uppercase tracking-[0.3em] text-muted/70 hover:text-ink transition-colors"
-          >
-            Compare
-          </Link>
-          <Link
-            to="/about"
-            className="hidden sm:inline text-[11px] uppercase tracking-[0.3em] text-muted/70 hover:text-ink transition-colors"
-          >
-            About
-          </Link>
-          <Link
-            to="/signup?plan=starter"
-            className="px-4 py-2 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.28em] hover:opacity-90 transition-opacity"
-          >
-            Start free trial
-          </Link>
-        </div>
-      </header>
 
       {/* Hero */}
       <section className="relative z-10 px-4 sm:px-6 lg:px-10 xl:px-14 pt-4 sm:pt-6 pb-10 max-w-6xl mx-auto text-center">
@@ -652,46 +594,6 @@ export default function Pricing() {
           </p>
         </motion.div>
       </section>
-
-      <footer className="relative z-10 border-t border-black/8 py-8 px-4 sm:px-6 lg:px-10 xl:px-14 max-w-6xl mx-auto">
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] text-muted/60">
-          <Link to="/" className="hover:text-ink transition-colors">
-            Wireline
-          </Link>
-          <span aria-hidden="true">·</span>
-          <Link to="/compare" className="hover:text-ink transition-colors">
-            Compare
-          </Link>
-          <span aria-hidden="true">·</span>
-          <Link to="/about" className="hover:text-ink transition-colors">
-            About
-          </Link>
-          <span aria-hidden="true">·</span>
-          <Link to="/showcase" className="hover:text-ink transition-colors">
-            Showcase
-          </Link>
-          <span aria-hidden="true">·</span>
-          <Link to="/status" className="hover:text-ink transition-colors">
-            Status
-          </Link>
-          <span aria-hidden="true">·</span>
-          <Link to="/security" className="hover:text-ink transition-colors">
-            Security
-          </Link>
-          <span aria-hidden="true">·</span>
-          <Link to="/changelog" className="hover:text-ink transition-colors">
-            Changelog
-          </Link>
-          <span aria-hidden="true">·</span>
-          <Link to="/privacy" className="hover:text-ink transition-colors">
-            Privacy
-          </Link>
-          <span aria-hidden="true">·</span>
-          <Link to="/terms" className="hover:text-ink transition-colors">
-            Terms
-          </Link>
-        </div>
-      </footer>
-    </div>
+    </MarketingPageFrame>
   );
 }

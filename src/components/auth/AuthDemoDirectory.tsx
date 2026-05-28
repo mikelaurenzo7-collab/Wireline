@@ -7,38 +7,59 @@ function AgentContactCard({
   agent,
   isDemo,
   dense = false,
+  landing = false,
 }: {
   agent: ContactAgent;
   isDemo?: boolean;
   dense?: boolean;
+  landing?: boolean;
 }) {
   if (dense) {
-    return (
-      <div className="rounded-lg border border-black/8 bg-white/65 px-2 py-1.5 hover:border-brand/20 transition-colors">
-        <div className="flex items-center gap-2 min-w-0">
-          <div
-            className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
-            style={{ background: isDemo ? "rgba(0,0,0,0.04)" : `${agent.tint}18` }}
-          >
-            <Phone
-              className="w-3 h-3"
-              style={{ color: isDemo ? "#6B635A" : agent.tint }}
-              strokeWidth={2.4}
-            />
+    const card = (
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div
+          className={cn(
+            "rounded-lg flex items-center justify-center shrink-0",
+            landing ? "w-9 h-9" : "w-6 h-6",
+          )}
+          style={{ background: isDemo ? "rgba(0,0,0,0.04)" : `${agent.tint}18` }}
+        >
+          <Phone
+            className={landing ? "w-4 h-4" : "w-3 h-3"}
+            style={{ color: isDemo ? "#6B635A" : agent.tint }}
+            strokeWidth={2.4}
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline gap-1.5 min-w-0">
+            <span
+              className={cn("font-semibold text-ink truncate", landing ? "text-sm" : "text-[11px]")}
+            >
+              {agent.name}
+            </span>
+            <span
+              className={cn(
+                "shrink-0 uppercase tracking-wide font-semibold px-1.5 py-0.5 rounded",
+                landing ? "text-[10px]" : "text-[9px]",
+                isDemo ? "text-amber-800/80 bg-amber-500/10" : "text-brand bg-brand/10",
+              )}
+            >
+              {isDemo ? "Demo" : "Team"}
+            </span>
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-baseline gap-1 min-w-0">
-              <span className="text-[11px] font-semibold text-ink truncate">{agent.name}</span>
-              <span
-                className={cn(
-                  "shrink-0 text-[9px] uppercase tracking-wide font-semibold px-1 py-px rounded",
-                  isDemo ? "text-amber-800/80 bg-amber-500/10" : "text-brand bg-brand/10",
-                )}
-              >
-                {isDemo ? "Demo" : "Team"}
-              </span>
-            </div>
-            <p className="text-[10px] leading-tight text-muted truncate">{agent.role}</p>
+          <p
+            className={cn(
+              "leading-snug text-muted truncate",
+              landing ? "text-xs mt-0.5" : "text-[10px] leading-tight",
+            )}
+          >
+            {agent.role}
+          </p>
+          {landing ? (
+            <p className="font-mono tabular-nums text-brand mt-1 text-sm font-medium">
+              {agent.display}
+            </p>
+          ) : (
             <a
               href={`tel:${agent.tel}`}
               className="font-mono text-[11px] tabular-nums text-ink/90 hover:text-brand hover:underline underline-offset-2"
@@ -46,8 +67,26 @@ function AgentContactCard({
             >
               {agent.display}
             </a>
-          </div>
+          )}
         </div>
+      </div>
+    );
+
+    if (landing) {
+      return (
+        <a
+          href={`tel:${agent.tel}`}
+          className="block rounded-xl border border-black/8 bg-white/70 px-3 py-3 min-h-[56px] hover:border-brand/30 hover:bg-white active:scale-[0.99] transition-all"
+          aria-label={`Call ${agent.name} at ${agent.display}`}
+        >
+          {card}
+        </a>
+      );
+    }
+
+    return (
+      <div className="rounded-lg border border-black/8 bg-white/65 px-2 py-1.5 hover:border-brand/20 transition-colors">
+        {card}
       </div>
     );
   }
@@ -121,12 +160,18 @@ export function AuthDemoDirectory({
 
   if (variant === "landing") {
     return (
-      <div className={cn("grid grid-cols-2 gap-1.5 auto-rows-min content-start h-full", className)}>
+      <div
+        className={cn(
+          "grid gap-2 auto-rows-min content-start",
+          "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 lg:gap-1.5",
+          className,
+        )}
+      >
         {wirelineAgents.map((agent) => (
-          <AgentContactCard key={agent.tel} agent={agent} dense />
+          <AgentContactCard key={agent.tel} agent={agent} dense landing />
         ))}
         {demoAgents.map((agent) => (
-          <AgentContactCard key={agent.tel} agent={agent} isDemo dense />
+          <AgentContactCard key={agent.tel} agent={agent} isDemo dense landing />
         ))}
       </div>
     );

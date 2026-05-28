@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import AppShell from "./components/layout/AppShell";
 import NotFound from "./components/layout/NotFound";
+import MarketingChrome from "./components/marketing/MarketingChrome";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { BrandingProvider } from "./contexts/BrandingContext";
 import { MotionConfig } from "motion/react";
@@ -40,6 +41,14 @@ const ZoomDocs = lazy(() =>
 const SupportPage = lazy(() =>
   import("./components/SupportPage").then((m) => ({ default: m.SupportPage })),
 );
+
+function PublicNotFound() {
+  return (
+    <MarketingChrome stickyCta={false}>
+      <NotFound mode="public" />
+    </MarketingChrome>
+  );
+}
 
 function AppContent() {
   const { user } = useAuth();
@@ -232,9 +241,9 @@ function AppContent() {
   // instead of bouncing into the sign-in form.
   if (location.pathname === "/not-found" || location.pathname === "/404") {
     return (
-      <div className="min-h-dvh relative bg-paper">
-        <NotFound mode="public" />
-      </div>
+      <Suspense fallback={<div className="min-h-dvh bg-paper marketing-surface" />}>
+        <PublicNotFound />
+      </Suspense>
     );
   }
 
