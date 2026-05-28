@@ -138,7 +138,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
         className="mt-0 shrink-0"
         aria-label="ROI snapshot"
       >
-        <div className="rounded-2xl border border-brand/15 bg-white/70 p-3 shadow-[0_8px_28px_-18px_rgba(79,30,123,0.22)]">
+        <div className="rounded-2xl border border-brand/15 bg-[#FAF8F5]/70 p-3 shadow-[0_8px_28px_-18px_rgba(79,30,123,0.22)]">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-eyebrow !text-brand">ROI snapshot</p>
@@ -173,7 +173,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
       aria-labelledby="roi-heading"
       data-testid="roi-calculator"
     >
-      <div className="rounded-2xl border border-[#4F1E7B]/12 bg-gradient-to-br from-[#FAF8F5] via-white to-[#FAF8F5] p-4 sm:p-5 shadow-[0_8px_32px_-12px_rgba(79,30,123,0.12)]">
+      <div className="rounded-2xl border border-[#4F1E7B]/12 bg-gradient-to-br from-[#FAF8F5] via-[#FAF8F5] to-[#FAF8F5] p-4 sm:p-5 shadow-[0_8px_32px_-12px_rgba(79,30,123,0.12)]">
         <div className="flex items-center gap-2 mb-3">
           <span className="hero-accent-line" style={{ background: "#4F1E7B" }} />
           <h2
@@ -204,7 +204,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
                   "text-[10px] uppercase tracking-[0.22em] font-medium px-2.5 py-1 rounded-full border transition-all " +
                   (active
                     ? "bg-[#4F1E7B] text-paper border-[#4F1E7B]"
-                    : "bg-white text-muted/75 border-black/10 hover:border-[#4F1E7B]/30 hover:text-ink")
+                    : "bg-[#FAF8F5] text-muted/75 border-black/10 hover:border-[#4F1E7B]/30 hover:text-ink")
                 }
               >
                 {p.label}
@@ -250,7 +250,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
           </div>
 
           {/* Output column */}
-          <div className="rounded-xl border border-[#4F1E7B]/15 bg-white p-4 flex flex-col">
+          <div className="rounded-xl border border-[#4F1E7B]/15 bg-[#FAF8F5] p-4 flex flex-col">
             <div className="grid grid-cols-2 gap-3 mb-3">
               <Stat
                 label="Revenue recovered"

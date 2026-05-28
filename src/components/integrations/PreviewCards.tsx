@@ -189,7 +189,7 @@ export function SMSPreviewCard() {
               {[0, 1, 2].map((i) => (
                 <div
                   key={i}
-                  className="w-1.5 h-1.5 rounded-full bg-white"
+                  className="w-1.5 h-1.5 rounded-full bg-[#FFFFFF]"
                   style={{ animation: `typing-dot-bounce 1.2s ease-in-out ${i * 0.18}s infinite` }}
                 />
               ))}
@@ -386,7 +386,7 @@ export function ShopifyPreviewCard() {
           style={{ borderColor: "rgba(255,255,255,0.06)" }}
         >
           <span style={{ color: "rgba(255,255,255,0.45)" }}>
-            Tracking: <span className="font-mono text-white/70">1Z999AA10</span>
+            Tracking: <span className="font-mono" style={{ color: "rgba(255,255,255,0.7)" }}>1Z999AA10</span>
           </span>
           <span className="font-medium text-white">$178.00</span>
         </div>

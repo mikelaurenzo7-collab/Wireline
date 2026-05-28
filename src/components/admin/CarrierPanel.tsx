@@ -508,7 +508,7 @@ export function CarrierPanel({
             >
               <span
                 className={cn(
-                  "absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow",
+                  "absolute top-0.5 w-5 h-5 rounded-full bg-[#FFFFFF] transition-all shadow",
                   settings.twilio_messaging_enabled ? "left-5" : "left-0.5",
                 )}
               />
@@ -621,7 +621,7 @@ export function CarrierPanel({
               >
                 <span
                   className={cn(
-                    "absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow",
+                    "absolute top-0.5 w-5 h-5 rounded-full bg-[#FFFFFF] transition-all shadow",
                     settings.twilio_manager_alerts_enabled ? "left-5" : "left-0.5",
                   )}
                 />

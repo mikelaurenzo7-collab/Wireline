@@ -76,7 +76,7 @@ function AgentContactCard({
       return (
         <a
           href={`tel:${agent.tel}`}
-          className="block rounded-xl border border-black/8 bg-white/70 px-3 py-3 min-h-[56px] hover:border-brand/30 hover:bg-white active:scale-[0.99] transition-all"
+          className="block rounded-xl border border-black/8 bg-paper/70 px-3 py-3 min-h-[56px] hover:border-brand/30 hover:bg-paper active:scale-[0.99] transition-all"
           aria-label={`Call ${agent.name} at ${agent.display}`}
         >
           {card}

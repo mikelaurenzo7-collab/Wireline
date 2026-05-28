@@ -90,7 +90,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                 >
                   <div
                     className={cn(
-                      "w-5 h-5 rounded-full bg-white transition-all shadow-lg",
+                      "w-5 h-5 rounded-full bg-[#FFFFFF] transition-all shadow-lg",
                       settings.prospecting_enabled ? "translate-x-7" : "translate-x-0",
                     )}
                   />

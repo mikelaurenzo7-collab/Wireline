@@ -98,7 +98,7 @@ export function ActionFeed({
         {actions.length === 0 ? (
           <div className="h-64 flex flex-col items-center justify-center gap-4 text-center border border-dashed border-black/8 rounded-[2rem] bg-black/[0.01] relative overflow-hidden">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(79, 30, 123 ,0.03),transparent)]" />
-            <div className="w-12 h-12 rounded-2xl bg-white brutal-border flex items-center justify-center relative">
+            <div className="w-12 h-12 rounded-2xl bg-paper brutal-border flex items-center justify-center relative">
               <Sparkles className="w-5 h-5 text-brand" />
               <motion.div
                 animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}

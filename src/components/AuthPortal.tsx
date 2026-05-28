@@ -191,7 +191,7 @@ function OAuthSignInButtons({
             onClick={() => start(p.id)}
             disabled={disabled || !!pending}
             aria-label={`Continue with ${p.label}`}
-            className="min-h-[52px] py-2.5 inline-flex flex-col items-center justify-center gap-1 border border-ink/[0.08] bg-white/70 text-ink text-[11px] font-semibold hover:border-brand/30 hover:bg-white disabled:opacity-50 transition-all"
+            className="min-h-[52px] py-2.5 inline-flex flex-col items-center justify-center gap-1 border border-ink/[0.08] bg-paper/70 text-ink text-[11px] font-semibold hover:border-brand/30 hover:bg-paper disabled:opacity-50 transition-all"
           >
             {pending === p.id ? <Loader2 className="w-5 h-5 animate-spin" /> : p.icon}
             <span>{p.label}</span>

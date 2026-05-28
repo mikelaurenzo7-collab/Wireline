@@ -506,7 +506,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 }
                 placeholder="+1 555 123 4567"
                 aria-label="Per-agent escalation phone number"
-                className="w-full h-9 px-3 rounded-lg border border-black/12 bg-white text-[12px] focus:outline-none focus:border-[#4F1E7B]/40 focus:ring-2 focus:ring-[#4F1E7B]/12 transition-all"
+                className="w-full h-9 px-3 rounded-lg border border-black/12 bg-paper text-[12px] focus:outline-none focus:border-[#4F1E7B]/40 focus:ring-2 focus:ring-[#4F1E7B]/12 transition-all"
                 data-testid="escalation-phone-input"
               />
             </label>
@@ -524,7 +524,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 }
                 placeholder="lead@yourcompany.com"
                 aria-label="Per-agent escalation email"
-                className="w-full h-9 px-3 rounded-lg border border-black/12 bg-white text-[12px] focus:outline-none focus:border-[#4F1E7B]/40 focus:ring-2 focus:ring-[#4F1E7B]/12 transition-all"
+                className="w-full h-9 px-3 rounded-lg border border-black/12 bg-paper text-[12px] focus:outline-none focus:border-[#4F1E7B]/40 focus:ring-2 focus:ring-[#4F1E7B]/12 transition-all"
                 data-testid="escalation-email-input"
               />
             </label>
@@ -543,7 +543,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               "mt-3 flex items-start gap-3 p-3 rounded-lg border transition-all cursor-pointer " +
               (value.escalation_handoff_enabled && value.escalation_phone
                 ? "border-emerald-500/30 bg-emerald-500/[0.04]"
-                : "border-black/10 bg-white hover:border-black/20")
+                : "border-black/10 bg-paper hover:border-black/20")
             }
           >
             <input
