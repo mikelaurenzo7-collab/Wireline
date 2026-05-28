@@ -6,6 +6,7 @@ import { log, auditLogger, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
+import { validateBody, applyRoleSchema, agentManualEntrySchema } from "../lib/api-validation";
 import {
   getErrorMessage,
   sanitizeForAudit,
@@ -107,6 +108,7 @@ router.get("/api/agents/roles", (_req, res) => {
 router.post(
   "/api/agents/:id/apply-role",
   authenticateUser,
+  validateBody(applyRoleSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { role } = req.body;
@@ -335,6 +337,7 @@ router.get(
 router.post(
   "/api/agent-config/:id/manual",
   authenticateUser,
+  validateBody(agentManualEntrySchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { type, content, overrideId } = req.body;

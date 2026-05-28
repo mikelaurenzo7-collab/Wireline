@@ -4,6 +4,7 @@ import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
+import { validateBody, inviteTeamMemberSchema } from "../lib/api-validation";
 import { getErrorMessage } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -29,6 +30,7 @@ router.get("/api/team", authenticateUser, async (req: AuthenticatedRequest, res:
 router.post(
   "/api/team/invite",
   authenticateUser,
+  validateBody(inviteTeamMemberSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { email, role } = req.body;

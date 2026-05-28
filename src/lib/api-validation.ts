@@ -293,6 +293,132 @@ export const updatePaymentMethodSchema = z.object({
 });
 
 // ============================================================================
+// Team Route Schemas
+// ============================================================================
+
+export const inviteTeamMemberSchema = z.object({
+  email: emailSchema,
+  role: z.enum(["admin", "member", "viewer"]).default("member"),
+});
+
+// ============================================================================
+// Knowledge Route Schemas
+// ============================================================================
+
+export const addKnowledgeSchema = z.object({
+  content: z.string().min(1, "Content is required").max(10000),
+  agent_id: z.string().optional(),
+});
+
+export const updateKnowledgeSchema = z.object({
+  content: z.string().min(1, "Content is required").max(10000),
+});
+
+// ============================================================================
+// Goal Route Schemas
+// ============================================================================
+
+export const createGoalSchema = z.object({
+  metric: z.string().min(1, "Metric is required"),
+  target: z.number().int().min(1, "Target must be at least 1"),
+  label: z.string().max(200).optional(),
+});
+
+// ============================================================================
+// SMS Route Schemas
+// ============================================================================
+
+export const sendSmsSchema = z.object({
+  to: phoneSchema,
+  body: z.string().min(1, "Message body is required").max(1600),
+  agentId: z.string().optional(),
+});
+
+// ============================================================================
+// Agent Config Schemas (apply-role, manual entry)
+// ============================================================================
+
+export const applyRoleSchema = z.object({
+  role: z.string().min(1, "Role is required"),
+});
+
+export const agentManualEntrySchema = z.object({
+  type: z.enum(["personality", "directive", "knowledge"]),
+  content: z.string().min(1, "Content is required").max(50000),
+  overrideId: z.string().optional(),
+});
+
+// ============================================================================
+// Spend Budget Schema
+// ============================================================================
+
+export const spendBudgetSchema = z.object({
+  monthly_limit_usd: z.number().min(0).default(0),
+  warn_threshold_pct: z.number().int().min(1).max(99).default(80),
+  hard_cap: z.boolean().default(false),
+  enabled: z.boolean().default(true),
+});
+
+// ============================================================================
+// Cadence Route Schemas
+// ============================================================================
+
+export const createCadenceSchema = z.object({
+  name: z.string().min(1, "Name is required").max(200),
+  description: z.string().max(1000).optional().nullable(),
+  agentId: z.string().optional().nullable(),
+  steps: z.array(z.record(z.string(), z.unknown())).min(1, "At least one step is required"),
+  active: z.boolean().default(true),
+});
+
+export const updateCadenceSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  description: z.string().max(1000).optional().nullable(),
+  agentId: z.string().optional().nullable(),
+  steps: z.array(z.record(z.string(), z.unknown())).optional(),
+  active: z.boolean().optional(),
+});
+
+// ============================================================================
+// Intake Route Schemas
+// ============================================================================
+
+export const createIntakeKeySchema = z.object({
+  name: z.string().min(1, "Name is required").max(80),
+  default_agent_id: z.string().optional().nullable(),
+  auto_dial: z.boolean().default(false),
+});
+
+export const updateIntakeKeySchema = z.object({
+  name: z.string().min(1).max(80).optional(),
+  active: z.boolean().optional(),
+  default_agent_id: z.string().optional().nullable(),
+  auto_dial: z.boolean().optional(),
+});
+
+// ============================================================================
+// Pronunciation Route Schemas
+// ============================================================================
+
+export const pronunciationEntrySchema = z.object({
+  word: z.string().min(1, "Word is required").max(100),
+  pronunciation: z.string().min(1, "Pronunciation is required").max(200),
+  agentId: z.string().optional(),
+});
+
+// ============================================================================
+// Fleet Task Schemas
+// ============================================================================
+
+export const updateFleetTaskSchema = z.object({
+  status: z.enum(["open", "in_progress", "done", "cancelled"]).optional(),
+  priority: z.enum(["low", "medium", "high", "critical"]).optional(),
+  due_date: z.string().optional().nullable(),
+  agent_id: z.string().optional().nullable(),
+  resolution_notes: z.string().max(5000).optional(),
+});
+
+// ============================================================================
 // Validation Helpers
 // ============================================================================
 

@@ -5,6 +5,7 @@ import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, desc, like, ne, gte } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
+import { validateBody, updateFleetTaskSchema } from "../lib/api-validation";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { parseFormData, FleetTaskCreateSchema } from "../lib/form-validators";
 import { compileActivityFeed } from "../lib/fleet-activity";
@@ -271,6 +272,7 @@ router.post(
 router.patch(
   "/api/fleet/tasks/:id",
   authenticateUser,
+  validateBody(updateFleetTaskSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { status, priority, due_date, agent_id, resolution_notes } = req.body;

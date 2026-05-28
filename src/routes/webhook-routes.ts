@@ -5,6 +5,7 @@ import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { getErrorMessage } from "../lib/server-utils";
 import { authenticateUser } from "../middleware/auth";
+import { validateBody, createWebhookSchema, updateWebhookSchema } from "../lib/api-validation";
 import { validateWebhookUrl } from "../lib/webhook-validators";
 import {
   WEBHOOK_EVENTS,
@@ -51,6 +52,7 @@ router.post(
   authenticateUser,
   requirePermission("webhooks.manage"),
   webhooksRateLimit,
+  validateBody(createWebhookSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { name, url, events, secret, active } = req.body;

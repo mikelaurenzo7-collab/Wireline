@@ -53,6 +53,8 @@ import {
   RoleBadge,
   type RoleValue,
 } from "./fleet/helpers";
+// Sidebar extracted during the 2026 audit god-file slicing pass.
+import AgentListPanel from "./fleet-settings/AgentListPanel";
 
 // Re-export the public surface so existing consumers
 // (`import { AGENT_ROLES } from "./FleetSettings"`) keep working
@@ -200,8 +202,17 @@ export default function FleetSettings() {
     }
   };
 
-  const handleCreateAgent = async () => {
-    if (!newAgentName || !newAgentId) return;
+  const handleCreateAgent = async (overrideData?: {
+    id: string;
+    name: string;
+    channel: string;
+    role: string;
+  }) => {
+    const agentId = overrideData?.id || newAgentId;
+    const agentName = overrideData?.name || newAgentName;
+    const agentChannel = overrideData?.channel || newAgentChannel;
+    const agentRole = overrideData?.role || newAgentRole;
+    if (!agentName || !agentId) return;
 
     if (subscription.status !== "active") {
       toastWarning("Subscription required", "Activate a billing plan to deploy agents.");
@@ -222,10 +233,10 @@ export default function FleetSettings() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: newAgentId,
-          name: newAgentName,
-          channel: newAgentChannel,
-          role: newAgentRole,
+          id: agentId,
+          name: agentName,
+          channel: agentChannel,
+          role: agentRole,
         }),
       });
       const data = await safeJson(resp);
@@ -247,7 +258,7 @@ export default function FleetSettings() {
 
       setNewAgentName("");
       setNewAgentId("");
-      toastSuccess("Agent deployed", newAgentName);
+      toastSuccess("Agent deployed", agentName);
       await fetchAgents();
     } catch {
       toastError("Deployment failed", "Could not reach the server. Please try again.");
@@ -502,259 +513,23 @@ export default function FleetSettings() {
             style={{ display: activeTab === "fleet" ? undefined : "none" }}
             className="h-full flex flex-col md:flex-row"
           >
-            {/* Sidebar: Agents List — full-width on mobile; collapses when an
-          agent is selected so the detail editor gets the full viewport. */}
-            <aside
-              className={cn(
-                "w-full md:w-[350px] lg:w-[420px] border-b md:border-b-0 md:border-r border-white/8 h-auto md:h-full flex flex-col shrink-0",
-                selectedAgent && "hidden md:flex",
-              )}
-            >
-              <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between gap-3 shrink-0">
-                <div className="min-w-0">
-                  <div className="text-[10px] uppercase tracking-[0.45em] text-brand/80">
-                    Fleet · Agents
-                  </div>
-                  <h2 className="font-display italic lowercase text-2xl text-ink leading-none mt-0.5 flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-brand" />
-                    your agents
-                  </h2>
-                </div>
-                <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70 tabular-nums shrink-0">
-                  {agents.length}
-                </span>
-              </div>
-
-              <div className="px-3 py-3 flex-1 overflow-y-auto space-y-2 scrollbar-hide">
-                <AnimatePresence mode="popLayout">
-                  {isLoading ? (
-                    <div
-                      role="status"
-                      aria-live="polite"
-                      className="flex flex-col items-center justify-center gap-3 py-12"
-                    >
-                      <Loader2 className="w-5 h-5 animate-spin text-brand" aria-hidden="true" />
-                      <span className="app-section-title/70">Loading fleet</span>
-                    </div>
-                  ) : agents.length === 0 ? (
-                    <div className="rounded-xl glass border border-white/10 border-dashed py-10 text-center px-4">
-                      <Bot className="w-8 h-8 text-brand/70 mx-auto mb-3" />
-                      <p className="font-display italic lowercase text-xl text-ink leading-tight">
-                        no agents yet
-                      </p>
-                      <p className="text-caption mt-2 leading-relaxed">
-                        Create your first AI agent below — it will answer calls, book appointments,
-                        and follow up for you.
-                      </p>
-                    </div>
-                  ) : (
-                    agents.map((agent) => (
-                      <motion.div
-                        layout
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        key={agent.id}
-                        className={cn(
-                          "w-full flex items-center gap-1 transition-all rounded-xl border group overflow-hidden",
-                          selectedAgent?.id === agent.id
-                            ? "border-brand/35"
-                            : "glass border-white/8 hover:border-white/18",
-                        )}
-                        style={
-                          selectedAgent?.id === agent.id
-                            ? {
-                                background:
-                                  "linear-gradient(135deg, rgba(79, 30, 123 ,0.08), rgba(79, 30, 123 ,0.05))",
-                              }
-                            : undefined
-                        }
-                      >
-                        {/* Selected indicator bar */}
-                        {selectedAgent?.id === agent.id && (
-                          <div
-                            className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full"
-                            style={{ background: "linear-gradient(to bottom, #4F1E7B, #4F1E7B)" }}
-                          />
-                        )}
-
-                        <button
-                          onClick={() => {
-                            setSelectedAgent(agent);
-                            fetchAgentPerformance(agent.id);
-                          }}
-                          className="flex-1 text-left px-3 py-3 flex items-center gap-2.5 min-w-0"
-                        >
-                          <div
-                            className={cn(
-                              "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all border",
-                              selectedAgent?.id === agent.id
-                                ? "border-brand/35 bg-brand/12 text-brand"
-                                : "border-white/10 bg-white/3 text-ink/50 group-hover:text-ink group-hover:bg-white/8",
-                            )}
-                          >
-                            {agent.channel === "email" ? (
-                              <Mail className="w-4 h-4" />
-                            ) : (
-                              <Bot className="w-4 h-4" />
-                            )}
-                          </div>
-                          <div className="overflow-hidden flex-1 min-w-0">
-                            <div className="font-display italic text-base text-ink leading-tight truncate">
-                              {agent.name}
-                            </div>
-                            <div className="flex items-center flex-wrap gap-1.5 mt-1">
-                              <RoleBadge role={agent.role} size="xs" />
-                              <span className="text-[8px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded-full bg-white/5 border border-white/8 text-muted/70 leading-none">
-                                {agent.channel}
-                              </span>
-                              {agentStats[agent.id] && (
-                                <span className="text-[8px] font-mono px-1.5 py-0.5 rounded-full bg-white/5 border border-white/8 text-muted/60 leading-none">
-                                  {agentStats[agent.id].callCount} calls
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteConfirm({ id: agent.id, name: agent.name });
-                          }}
-                          disabled={isDeletingAgent === agent.id}
-                          title="Delete agent"
-                          aria-label={`Delete agent ${agent.name}`}
-                          className="mr-2 shrink-0 w-7 h-7 rounded-lg glass border border-white/8 flex items-center justify-center text-muted/60 hover:text-rose-500 hover:border-rose-500/30 hover:bg-rose-500/8 disabled:opacity-40 transition-all"
-                        >
-                          {isDeletingAgent === agent.id ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-3 h-3" />
-                          )}
-                        </button>
-                      </motion.div>
-                    ))
-                  )}
-                </AnimatePresence>
-
-                <motion.div
-                  layout
-                  className="pt-4 mt-4 border-t border-white/8 border-dashed space-y-3"
-                >
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <h3 className="text-[10px] uppercase tracking-[0.3em] text-ink">
-                      Create a new agent
-                    </h3>
-                    <div className="flex items-center gap-1.5">
-                      <ClaudeRecipeButton recipe="agent-forge" label="Forge" variant="ghost" />
-                      <button
-                        onClick={() => setSeedConfirmOpen(true)}
-                        className="px-2.5 py-1 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink hover:border-white/30 transition-all flex items-center gap-1.5"
-                      >
-                        <Sparkles className="w-3 h-3" /> Seed
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex p-1 rounded-full glass border border-white/10">
-                    <button
-                      aria-pressed={newAgentChannel === "voice"}
-                      onClick={() => setNewAgentChannel("voice")}
-                      className={cn(
-                        "flex-1 py-1 rounded-full text-[10px] uppercase tracking-[0.25em] transition-colors",
-                        newAgentChannel === "voice"
-                          ? "bg-brand/15 text-brand"
-                          : "text-muted hover:text-ink",
-                      )}
-                    >
-                      Voice
-                    </button>
-                    <button
-                      aria-pressed={newAgentChannel === "email"}
-                      onClick={() => setNewAgentChannel("email")}
-                      className={cn(
-                        "flex-1 py-1 rounded-full text-[10px] uppercase tracking-[0.25em] transition-colors",
-                        newAgentChannel === "email"
-                          ? "bg-brand/15 text-brand"
-                          : "text-muted hover:text-ink",
-                      )}
-                    >
-                      Email
-                    </button>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
-                        <Briefcase className="w-2.5 h-2.5 text-brand" /> Business role
-                      </label>
-                      <div className="relative">
-                        <select
-                          aria-label="Business role"
-                          value={newAgentRole}
-                          onChange={(e) => setNewAgentRole(e.target.value as RoleValue)}
-                          className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-3 pr-7 py-2 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
-                        >
-                          {AGENT_ROLES.map((r) => (
-                            <option key={r.value} value={r.value}>
-                              {r.label}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none rotate-90" />
-                      </div>
-                      <p className="text-[10px] text-muted/70 leading-relaxed">
-                        {AGENT_ROLES.find((r) => r.value === newAgentRole)?.description}
-                      </p>
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
-                        Agent ID{" "}
-                        <span className="text-muted/65 normal-case tracking-normal">
-                          (lowercase, no spaces)
-                        </span>
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. sales-bot-1"
-                        value={newAgentId}
-                        onChange={(e) =>
-                          setNewAgentId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
-                        }
-                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 font-mono"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
-                        Agent name{" "}
-                        <span className="text-muted/65 normal-case tracking-normal">
-                          (what callers will hear)
-                        </span>
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Sophie"
-                        value={newAgentName}
-                        onChange={(e) => setNewAgentName(e.target.value)}
-                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleCreateAgent}
-                    disabled={isCreating || !newAgentId || !newAgentName}
-                    className="brutal-btn w-full !py-2.5 !text-[11px] !tracking-[0.3em] disabled:opacity-50"
-                  >
-                    {isCreating ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Plus className="w-3.5 h-3.5" />
-                    )}
-                    Create agent
-                  </button>
-                </motion.div>
-              </div>
-            </aside>
+            {/* Sidebar: Agents List — extracted to fleet-settings/AgentListPanel.tsx */}
+            <AgentListPanel
+              agents={agents}
+              selectedAgent={selectedAgent}
+              isLoading={isLoading}
+              isCreating={isCreating}
+              isDeletingAgent={isDeletingAgent}
+              agentStats={agentStats}
+              subscription={subscription}
+              onSelectAgent={setSelectedAgent}
+              onDeleteAgent={(agent) => setDeleteConfirm(agent)}
+              onCreateAgent={({ id, name, channel, role }) => {
+                handleCreateAgent({ id, name, channel, role });
+              }}
+              onSeedFleet={() => setSeedConfirmOpen(true)}
+              onFetchPerformance={fetchAgentPerformance}
+            />
 
             {/* Main Panel: Agent Configuration — hidden on mobile when nothing
           is selected (the list takes the full viewport in that state). */}

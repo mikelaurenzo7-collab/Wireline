@@ -4,6 +4,7 @@ import { log, auditLogger, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, count } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
+import { validateBody, spendBudgetSchema } from "../lib/api-validation";
 import { getErrorMessage } from "../lib/server-utils";
 import { stripe, stripeAvailable, syncSubscriptionFromStripe } from "../lib/stripe-helpers";
 import { clearBudgetCache, getBudgetSnapshot } from "../lib/spend-guards";
@@ -164,46 +165,51 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
 
 // ─── Spend budget ──────────────────────────────────────────────────────────
 
-router.put("/spend/budget", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const limit = Number(req.body.monthly_limit_usd ?? 0);
-    const warn = Math.round(Number(req.body.warn_threshold_pct ?? 80));
-    const hardCap = !!req.body.hard_cap;
-    const enabled = req.body.enabled !== false;
-    if (!Number.isFinite(limit) || limit < 0)
-      return res.status(400).json({ error: "monthly_limit_usd must be a non-negative number" });
-    if (!Number.isInteger(warn) || warn < 1 || warn > 99)
-      return res.status(400).json({ error: "warn_threshold_pct must be 1–99" });
+router.put(
+  "/spend/budget",
+  authenticateUser,
+  validateBody(spendBudgetSchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const limit = Number(req.body.monthly_limit_usd ?? 0);
+      const warn = Math.round(Number(req.body.warn_threshold_pct ?? 80));
+      const hardCap = !!req.body.hard_cap;
+      const enabled = req.body.enabled !== false;
+      if (!Number.isFinite(limit) || limit < 0)
+        return res.status(400).json({ error: "monthly_limit_usd must be a non-negative number" });
+      if (!Number.isInteger(warn) || warn < 1 || warn > 99)
+        return res.status(400).json({ error: "warn_threshold_pct must be 1–99" });
 
-    const [data] = (await drizzle
-      .insert(schema.spendBudgets)
-      .values({
-        userId: req.user.id,
-        monthlyLimitUsd: limit.toString(),
-        hardCap,
-        warnThresholdPct: warn,
-        enabled,
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: schema.spendBudgets.userId,
-        set: {
+      const [data] = (await drizzle
+        .insert(schema.spendBudgets)
+        .values({
+          userId: req.user.id,
           monthlyLimitUsd: limit.toString(),
           hardCap,
           warnThresholdPct: warn,
           enabled,
           updatedAt: new Date(),
-        },
-      })
-      .returning()) as any[];
+        })
+        .onConflictDoUpdate({
+          target: schema.spendBudgets.userId,
+          set: {
+            monthlyLimitUsd: limit.toString(),
+            hardCap,
+            warnThresholdPct: warn,
+            enabled,
+            updatedAt: new Date(),
+          },
+        })
+        .returning()) as any[];
 
-    clearBudgetCache(req.user.id);
-    res.json({ budget: data });
-  } catch (e: any) {
-    log.error("Failed to save budget", { error: getErrorMessage(e) });
-    res.status(500).json({ error: "Failed to save budget" });
-  }
-});
+      clearBudgetCache(req.user.id);
+      res.json({ budget: data });
+    } catch (e: any) {
+      log.error("Failed to save budget", { error: getErrorMessage(e) });
+      res.status(500).json({ error: "Failed to save budget" });
+    }
+  },
+);
 
 router.get("/spend/status", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
