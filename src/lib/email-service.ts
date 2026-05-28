@@ -326,6 +326,96 @@ export async function sendUrgentEscalationEmail(opts: {
   };
 }
 
+export async function sendPaymentFailedEmail(opts: {
+  to: string;
+  amountDisplay: string;
+  invoiceUrl?: string;
+  updateCardUrl: string;
+}): Promise<SendResult> {
+  const subject = "Your Wireline payment failed";
+  const text = [
+    "Hi,",
+    "",
+    `A recent payment of ${opts.amountDisplay} for your Wireline subscription was declined.`,
+    "",
+    "To keep your agents live, update your payment method:",
+    "",
+    opts.updateCardUrl,
+    "",
+    opts.invoiceUrl ? `View invoice: ${opts.invoiceUrl}` : "",
+    "",
+    "If you have questions, reply to this email — we're happy to help.",
+    "",
+    "— Wireline",
+  ]
+    .filter((s) => s !== undefined)
+    .join("\n");
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1A1A23;">
+      <h2 style="margin: 0 0 16px; font-weight: 600;">Payment failed</h2>
+      <p style="margin: 0 0 16px; line-height: 1.55;">A recent payment of <strong>${escapeHtml(opts.amountDisplay)}</strong> for your Wireline subscription was declined.</p>
+      <p style="margin: 0 0 24px; line-height: 1.55;">To keep your agents live, update your payment method.</p>
+      <p style="margin: 0 0 24px;"><a href="${opts.updateCardUrl}" style="display: inline-block; background: #4F1E7B; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Update payment method</a></p>
+      ${opts.invoiceUrl ? `<p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;"><a href="${opts.invoiceUrl}" style="color: #4F1E7B;">View invoice</a></p>` : ""}
+      <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you have questions, reply to this email — we're happy to help.</p>
+    </div>
+  `;
+  if (process.env.RESEND_API_KEY) {
+    return await sendViaResend({ to: opts.to, subject, html, text });
+  }
+  log.warn("[email-service] payment failed email skipped — RESEND_API_KEY missing.", {
+    to: opts.to,
+  });
+  return {
+    ok: false,
+    provider: "no-transport",
+    error: "Email transport not configured (RESEND_API_KEY missing)",
+  };
+}
+
+export async function sendTrialEndingSoonEmail(opts: {
+  to: string;
+  daysLeft: number;
+  checkoutUrl: string;
+}): Promise<SendResult> {
+  const dayWord = opts.daysLeft === 1 ? "1 day" : `${opts.daysLeft} days`;
+  const subject = `Your Wireline trial ends in ${dayWord}`;
+  const text = [
+    "Hi,",
+    "",
+    `Your Wireline 14-day free trial ends in ${dayWord}.`,
+    "",
+    "Upgrade now to keep your agents live — your phone number, call history, and agent configuration all carry over.",
+    "",
+    opts.checkoutUrl,
+    "",
+    "If you decide not to upgrade, your agents will stop answering calls when the trial ends.",
+    "",
+    "— Wireline",
+  ].join("\n");
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1A1A23;">
+      <h2 style="margin: 0 0 16px; font-weight: 600;">Your trial ends in ${escapeHtml(dayWord)}</h2>
+      <p style="margin: 0 0 16px; line-height: 1.55;">Your Wireline 14-day free trial ends in <strong>${escapeHtml(dayWord)}</strong>.</p>
+      <p style="margin: 0 0 24px; line-height: 1.55;">Upgrade now to keep your agents live — your phone number, call history, and agent configuration all carry over.</p>
+      <p style="margin: 0 0 24px;"><a href="${opts.checkoutUrl}" style="display: inline-block; background: #4F1E7B; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Upgrade now</a></p>
+      <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you decide not to upgrade, your agents will stop answering calls when the trial ends.</p>
+    </div>
+  `;
+  if (process.env.RESEND_API_KEY) {
+    return await sendViaResend({ to: opts.to, subject, html, text });
+  }
+  log.warn("[email-service] trial-ending-soon email skipped — RESEND_API_KEY missing.", {
+    to: opts.to,
+    daysLeft: opts.daysLeft,
+  });
+  return {
+    ok: false,
+    provider: "no-transport",
+    error: "Email transport not configured (RESEND_API_KEY missing)",
+  };
+}
+
 /** Tiny HTML escape — sufficient for the small set of user-supplied
  * strings (title, message, callId) we inject. */
 function escapeHtml(s: string): string {

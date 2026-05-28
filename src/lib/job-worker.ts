@@ -805,6 +805,33 @@ export async function handleJob(job: JobRow): Promise<void> {
       throw err;
     }
   }
+
+  if (job.type === "trial_ending_soon_email") {
+    const p = job.payload as { userId: string; daysLeft: number };
+    try {
+      const [userRow] = await drizzle
+        .select({ email: schema.users.email })
+        .from(schema.users)
+        .where(eq(schema.users.id, p.userId))
+        .limit(1);
+      if (!userRow?.email) return;
+      const appUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+      const { sendTrialEndingSoonEmail } = await import("./email-service");
+      const result = await sendTrialEndingSoonEmail({
+        to: userRow.email,
+        daysLeft: p.daysLeft ?? 3,
+        checkoutUrl: `${appUrl}/pricing`,
+      });
+      if (!result.ok) {
+        log.warn("trial_ending_soon_email send failed", { userId: p.userId, error: result.error });
+      } else {
+        log.info("trial_ending_soon_email sent", { userId: p.userId, daysLeft: p.daysLeft });
+      }
+    } catch (err: any) {
+      log.error("trial_ending_soon_email job failed", { userId: p.userId, error: err?.message });
+      throw err;
+    }
+  }
 }
 
 /**

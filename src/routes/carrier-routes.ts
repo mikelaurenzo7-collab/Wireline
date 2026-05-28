@@ -37,7 +37,8 @@ router.get(
         .orderBy(desc(schema.phoneNumbers.createdAt));
 
       res.json({ numbers: data || [] });
-    } catch {
+    } catch (err: any) {
+      log.error("GET /api/phone-numbers failed", { error: getErrorMessage(err) });
       res.json({ numbers: [] });
     }
   },
@@ -56,7 +57,8 @@ router.post(
         userId: req.user.id,
       });
       res.json({ success: true });
-    } catch {
+    } catch (err: any) {
+      log.error("POST /api/phone-numbers failed", { error: getErrorMessage(err) });
       res.status(500).json({ error: "Failed to add phone number" });
     }
   },

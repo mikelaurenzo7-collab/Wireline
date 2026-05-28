@@ -35,9 +35,11 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    const controller = new AbortController();
+
     const fetchBranding = async () => {
       try {
-        const r = await authFetch("/api/settings");
+        const r = await authFetch("/api/settings", { signal: controller.signal });
         if (r.ok) {
           const d = await r.json();
           const s = d.settings || d;
@@ -48,18 +50,18 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
           });
         }
       } catch (e: any) {
-        // AbortError fires when the user navigates away mid-fetch — that's
-        // not a real failure; silently ignore.
-
-        if (e?.name !== "AbortError" && !String(e?.message || "").includes("Failed to fetch")) {
-          // Unexpected error - already handled by authFetch error handling
+        if (e?.name === "AbortError" || String(e?.message || "").includes("Failed to fetch")) {
+          return;
         }
+        // Unexpected error — branding falls back to defaults; log for visibility
+        console.error("[BrandingContext] settings fetch failed:", e?.message ?? e);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchBranding();
+    return () => controller.abort();
   }, [user]);
 
   const updateBranding = (newSettings: Partial<BrandingSettings>) => {

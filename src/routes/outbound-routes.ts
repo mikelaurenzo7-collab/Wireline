@@ -309,7 +309,8 @@ router.post(
       }
 
       res.json({ success: true, inserted: insertedLeads.length });
-    } catch {
+    } catch (err: any) {
+      log.error("POST /api/outbound/bulk failed", { error: getErrorMessage(err) });
       res.status(500).json({ error: "Failed to queue leads" });
     }
   },

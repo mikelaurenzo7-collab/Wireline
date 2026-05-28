@@ -535,7 +535,7 @@ function StepCTA({
   if (stepId === "agent") return <ClaudeRecipeButton recipe="agent-forge" label="Forge an Agent" />;
   if (stepId === "knowledge")
     return <ClaudeRecipeButton recipe="knowledge-from-url" label="Ingest from URL" />;
-  if (stepId === "number") return <CTAButton to="/agents" label="Connect a Number" />;
+  if (stepId === "number") return <CTAButton to="/admin?tab=carrier" label="Provision a Number" />;
   if (stepId === "call")
     return (
       <CTAButton to="/" label="Start Test Call" icon={<PlayCircle className="w-3.5 h-3.5" />} />

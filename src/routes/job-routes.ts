@@ -270,6 +270,52 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
       trialsExpired = await sweepExpiredTrials();
     }
 
+    // Enqueue trial-ending-soon emails for users within 3 days of expiry.
+    // Idempotent: skip users who already received a warning job in the last 23h.
+    if (req._sweepMode === "cron" || !req._sweepMode) {
+      const now3d = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+      const trialsSoon = await drizzle
+        .select({ userId: schema.settings.userId, trialEndsAt: schema.settings.trialEndsAt })
+        .from(schema.settings)
+        .where(
+          and(
+            eq(schema.settings.subscriptionStatus, "trialing"),
+            lte(schema.settings.trialEndsAt, now3d),
+            gte(schema.settings.trialEndsAt, new Date()),
+          ),
+        );
+      if (trialsSoon.length > 0) {
+        const since23h = new Date(Date.now() - 23 * 60 * 60 * 1000);
+        const recentWarnings = await drizzle
+          .select({ userId: schema.jobs.userId })
+          .from(schema.jobs)
+          .where(
+            and(
+              eq(schema.jobs.type, "trial_ending_soon_email"),
+              gte(schema.jobs.createdAt, since23h),
+            ),
+          );
+        const alreadyWarned = new Set(recentWarnings.map((r) => r.userId));
+        for (const row of trialsSoon) {
+          if (alreadyWarned.has(row.userId)) continue;
+          const daysLeft = Math.max(
+            1,
+            Math.ceil(((row.trialEndsAt?.getTime() ?? 0) - Date.now()) / (24 * 60 * 60 * 1000)),
+          );
+          await enqueue(drizzle, {
+            userId: row.userId,
+            type: "trial_ending_soon_email",
+            payload: { userId: row.userId, daysLeft },
+          }).catch((e: unknown) =>
+            log.warn("trial_ending_soon_email enqueue failed", {
+              userId: row.userId,
+              error: getErrorMessage(e),
+            }),
+          );
+        }
+      }
+    }
+
     const mode = req._sweepMode || "cron";
     res.json({ processed, mode, trials_expired: trialsExpired });
     if (processed > 0) {

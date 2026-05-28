@@ -54,7 +54,8 @@ router.get(
         .limit(limit);
 
       res.json({ logs: data || [] });
-    } catch {
+    } catch (err: any) {
+      log.error("GET /api/audit failed", { error: getErrorMessage(err) });
       res.status(500).json({ error: "Audit fetch failed" });
     }
   },

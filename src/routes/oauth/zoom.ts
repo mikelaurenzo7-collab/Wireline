@@ -11,6 +11,7 @@ import {
   resolveUserIdFromOAuthSession,
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
+import { getErrorMessage } from "../../lib/server-utils";
 import {
   zoomOAuthConfigured,
   getZoomAuthUrl,
@@ -130,7 +131,8 @@ router.post(
     try {
       await disconnectZoom(userId);
       res.json({ ok: true });
-    } catch {
+    } catch (err: any) {
+      log.error("POST /api/oauth/zoom/disconnect failed", { error: getErrorMessage(err) });
       res.status(500).json({ error: "Failed to disconnect Zoom" });
     }
   },

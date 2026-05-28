@@ -164,7 +164,21 @@ export default function LiveOps() {
     fetchAll();
 
     let eventSource: EventSource | null = null;
-    let fallbackTimer: any = null;
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+    let failCount = 0;
+    const BACKOFF_MS = [2_000, 4_000, 8_000, 16_000, 30_000];
+    const MAX_FAILS = 10;
+
+    const scheduleFallbackPoll = () => {
+      if (!mountedRef.current || failCount >= MAX_FAILS) return;
+      const delay = BACKOFF_MS[Math.min(failCount, BACKOFF_MS.length - 1)];
+      fallbackTimer = setTimeout(() => {
+        if (!mountedRef.current) return;
+        fetchPresence();
+        failCount++;
+        scheduleFallbackPoll();
+      }, delay);
+    };
 
     const setupPresenceStream = () => {
       if (!user) return;
@@ -177,6 +191,7 @@ export default function LiveOps() {
           try {
             const payload = JSON.parse(event.data);
             if (payload.type === "presence" && mountedRef.current) {
+              failCount = 0; // reset backoff on successful message
               const signals = payload.signals || [];
               setCalls(
                 signals.map((s: any) => ({
@@ -209,19 +224,21 @@ export default function LiveOps() {
         };
 
         eventSource.onerror = () => {
-          // SSE failed or closed, trigger immediate poll fallback and set up interval
+          // SSE failed — fall back to exponential-backoff polling
           if (eventSource) {
             eventSource.close();
             eventSource = null;
           }
-          if (mountedRef.current && !fallbackTimer) {
+          if (mountedRef.current && fallbackTimer === null) {
             fetchPresence();
-            fallbackTimer = setInterval(fetchPresence, 5000);
+            failCount = 1;
+            scheduleFallbackPoll();
           }
         };
       } catch (_err) {
         fetchPresence();
-        fallbackTimer = setInterval(fetchPresence, 5000);
+        failCount = 1;
+        scheduleFallbackPoll();
       }
     };
 
@@ -233,7 +250,7 @@ export default function LiveOps() {
     return () => {
       mountedRef.current = false;
       if (eventSource) eventSource.close();
-      if (fallbackTimer) clearInterval(fallbackTimer);
+      if (fallbackTimer !== null) clearTimeout(fallbackTimer);
       clearInterval(slowTimer);
     };
   }, [fetchAll, fetchPresence, user]);

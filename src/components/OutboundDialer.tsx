@@ -61,10 +61,21 @@ export default function OutboundDialer() {
   const [callbacks, setCallbacks] = useState<any[]>([]);
   const [callbacksLoading, setCallbacksLoading] = useState(false);
 
+  // Voice-minute quota state for pre-flight dial gate
+  const [quotaUsed, setQuotaUsed] = useState<number | null>(null);
+  const [quotaLimit, setQuotaLimit] = useState<number | null>(null);
+
   useEffect(() => {
     fetchData();
     fetchCampaigns();
     fetchCallbacks();
+    authFetch("/api/quotas")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.usage?.voice_minutes_daily != null) setQuotaUsed(d.usage.voice_minutes_daily);
+        if (d?.limits?.voice_minutes_daily != null) setQuotaLimit(d.limits.voice_minutes_daily);
+      })
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time fetch on mount
   }, []);
 
@@ -513,6 +524,8 @@ export default function OutboundDialer() {
                     loadMoreLeads={loadMoreLeads}
                     leadsHasMore={leadsHasMore}
                     isLoadingMore={isLoadingMore}
+                    quotaUsed={quotaUsed}
+                    quotaLimit={quotaLimit}
                   />
                 ),
               },

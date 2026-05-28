@@ -11,6 +11,7 @@ import {
   resolveUserIdFromOAuthSession,
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
+import { getErrorMessage } from "../../lib/server-utils";
 import {
   slackOAuthConfigured,
   getSlackAuthUrl,
@@ -147,7 +148,8 @@ router.post(
     try {
       await disconnectSlack(userId);
       res.json({ ok: true });
-    } catch {
+    } catch (err: any) {
+      log.error("POST /api/oauth/slack/disconnect failed", { error: getErrorMessage(err) });
       res.status(500).json({ error: "Failed to disconnect Slack" });
     }
   },
@@ -162,7 +164,8 @@ router.get(
     try {
       const channels = await listSlackChannels(userId);
       res.json({ channels });
-    } catch {
+    } catch (err: any) {
+      log.error("GET /api/oauth/slack/channels failed", { error: getErrorMessage(err) });
       res.status(500).json({ error: "Failed to list Slack channels" });
     }
   },
@@ -179,7 +182,8 @@ router.post(
     try {
       await setSlackDefaultChannel(userId, channel_id);
       res.json({ ok: true });
-    } catch {
+    } catch (err: any) {
+      log.error("POST /api/oauth/slack/default-channel failed", { error: getErrorMessage(err) });
       res.status(500).json({ error: "Failed to set default channel" });
     }
   },

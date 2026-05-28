@@ -17,13 +17,18 @@ import type { AuthenticatedRequest } from "../../types/auth";
 function authorizeMigration(req: Request, res: Response): boolean {
   const provided = req.headers["x-migration-token"] as string | undefined;
   const expected = process.env.MIGRATION_TOKEN;
-  if (provided && expected && provided.length === expected.length) {
+  if (provided && expected) {
     try {
-      if (crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(expected))) {
+      const providedBuf = Buffer.from(provided, "utf8");
+      const expectedBuf = Buffer.from(expected, "utf8");
+      if (
+        providedBuf.length === expectedBuf.length &&
+        crypto.timingSafeEqual(providedBuf, expectedBuf)
+      ) {
         return true;
       }
     } catch {
-      /* length mismatch — fall through to owner-email check */
+      /* fall through to owner-email check */
     }
   }
   const ownerEmail = process.env.OWNER_EMAIL;

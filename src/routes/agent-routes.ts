@@ -205,7 +205,8 @@ router.get(
       res.setHeader("Content-Disposition", `attachment; filename="${safeName}_config.json"`);
       res.setHeader("Content-Type", "application/json");
       res.json(exportData);
-    } catch {
+    } catch (e) {
+      log.error("Agent export failed", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Export failed" });
     }
   },
@@ -284,7 +285,8 @@ router.post(
       };
 
       res.json({ success: true, imported });
-    } catch {
+    } catch (e) {
+      log.error("Agent import failed", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Import failed" });
     }
   },
@@ -423,7 +425,8 @@ router.delete(
           .delete(schema.knowledge)
           .where(and(eq(schema.knowledge.id, BigInt(rowId)), eq(schema.knowledge.userId, userId)));
       res.json({ success: true });
-    } catch {
+    } catch (e) {
+      log.error("Agent row delete failed", { type: req.params.type, error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to delete" });
     }
   },
@@ -1088,7 +1091,8 @@ router.post(
         return res.status(502).json({ error: "Optimizer returned malformed JSON." });
       }
       res.json(parsed);
-    } catch {
+    } catch (e) {
+      log.error("Agent optimization protocol failed", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Optimization protocol failed" });
     }
   },
@@ -1240,7 +1244,11 @@ router.get(
         .orderBy(desc(schema.agentLessons.createdAt))
         .limit(200);
       res.json({ lessons });
-    } catch {
+    } catch (e) {
+      log.error("Failed to fetch agent lessons", {
+        agentId: req.params.id,
+        error: getErrorMessage(e),
+      });
       res.status(500).json({ error: "Failed to fetch lessons" });
     }
   },
@@ -1298,7 +1306,8 @@ router.post(
       });
 
       res.json({ success: true });
-    } catch {
+    } catch (e) {
+      log.error("Agent lesson promotion failed", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Promotion failed" });
     }
   },
@@ -1318,7 +1327,11 @@ router.delete(
           ),
         );
       res.json({ success: true });
-    } catch {
+    } catch (e) {
+      log.error("Agent lesson delete failed", {
+        lessonId: req.params.lessonId,
+        error: getErrorMessage(e),
+      });
       res.status(500).json({ error: "Delete failed" });
     }
   },
