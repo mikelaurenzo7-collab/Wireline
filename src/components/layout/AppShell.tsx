@@ -12,7 +12,7 @@ import RouteAccentStrip from "./RouteAccentStrip";
 import TrialBanner from "./TrialBanner";
 import EmailVerifyBanner from "./EmailVerifyBanner";
 import AppRoutes from "../../routes/AppRoutes";
-import { PAGE_TITLES } from "../../constants/navigation";
+import { NAV_GROUPS, PAGE_TITLES } from "../../constants/navigation";
 import { useBranding } from "../../contexts/BrandingContext";
 import { useViewTransitionRoute } from "../../hooks/useViewTransitionRoute";
 
@@ -246,6 +246,10 @@ export default function AppShell() {
         <RouteAccentStrip />
         <EmailVerifyBanner />
         <TrialBanner />
+        <DesktopContextBar
+          pathname={location.pathname}
+          onShowShortcuts={() => setShowShortcuts(true)}
+        />
 
         <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
           <div className="flex-1 overflow-hidden relative z-10 min-h-0">
@@ -269,6 +273,56 @@ export default function AppShell() {
 
       {/* iOS-style fixed bottom navigation — primary 4 destinations + More */}
       <BottomNavBar onOpenMenu={() => setDrawerOpen(true)} badges={navBadges} />
+    </div>
+  );
+}
+
+function getDesktopBreadcrumb(pathname: string): { eyebrow?: string; title: string } {
+  const exactTitle = PAGE_TITLES[pathname];
+  if (exactTitle) {
+    for (const group of NAV_GROUPS) {
+      const match = group.items.find(
+        (item) =>
+          item.path === pathname ||
+          item.matches?.some((m) => pathname === m || pathname.startsWith(`${m}/`)),
+      );
+      if (match) return { eyebrow: group.label, title: exactTitle };
+    }
+    return { title: exactTitle };
+  }
+  if (pathname.startsWith("/contact/")) return { eyebrow: "Activity", title: "Contact Profile" };
+  const prefix = `/${pathname.split("/").filter(Boolean)[0] || ""}`;
+  return { title: PAGE_TITLES[prefix] || "Workspace" };
+}
+
+function DesktopContextBar({
+  pathname,
+  onShowShortcuts,
+}: {
+  pathname: string;
+  onShowShortcuts: () => void;
+}) {
+  const breadcrumb = getDesktopBreadcrumb(pathname);
+  return (
+    <div className="hidden lg:flex shrink-0 items-center justify-between gap-4 border-b border-black/5 bg-paper/72 px-5 py-3 backdrop-blur-xl">
+      <div className="min-w-0">
+        {breadcrumb.eyebrow && (
+          <p className="text-[10px] uppercase tracking-[0.26em] text-muted/60">
+            {breadcrumb.eyebrow}
+          </p>
+        )}
+        <h1 className="font-display italic text-[22px] leading-tight text-ink truncate">
+          {breadcrumb.title}
+        </h1>
+      </div>
+      <button
+        type="button"
+        onClick={onShowShortcuts}
+        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-black/8 bg-white/55 px-4 text-[10px] uppercase tracking-[0.22em] text-muted/75 transition-colors hover:border-brand/25 hover:text-brand"
+        aria-label="Open keyboard shortcuts"
+      >
+        Press ?
+      </button>
     </div>
   );
 }
