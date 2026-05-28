@@ -156,9 +156,6 @@ new_block = """      try {
           });
         });
 
-        // Phone number is INCLUDED in every monthly tier — auto-provision a
-        // Wireline number from our Twilio pool on the tenant's first agent
-        // creation so they never wire Twilio themselves.
         void import("../lib/phone-provisioning")
           .then(({ provisionTenantNumber }) =>
             provisionTenantNumber(req.user.id, {
