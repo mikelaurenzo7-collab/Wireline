@@ -1,11 +1,11 @@
 /**
- * Single source of truth for the 10 AI agents featured on the landing
+ * Single source of truth for the 8 AI agents featured on the landing
  * page + in the in-app /help console.
  *
- * Layout (per Mike's call): 3 Wireline employees + 7 vertical demo
- * agents. The 3 employees all run on (630) numbers for company
+ * Layout (per Mike's call): 2 Wireline employees + 6 vertical demo
+ * agents. The 2 employees all run on (630) numbers for company
  * uniformity — they ARE Wireline's customer-service team and route to
- * each other when a call lands on the wrong line. The 7 demo agents
+ * each other when a call lands on the wrong line. The 6 demo agents
  * each role-play one industry vertical Wireline sells into.
  *
  * Used in:
@@ -97,22 +97,10 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     defaultVibe: "playful",
     voiceId: "TX3LPaxmHKxFdv7VOQHJ",
   },
-  {
-    name: "Maya",
-    role: "Wireline Specialist",
-    scope: ALL_ENCOMPASSING_SCOPE,
-    firstMessage: "Hi, thanks for calling Wireline — this is Maya. Who am I speaking with?",
-    voiceId: "XB0fDUnXU5powFXDhCwa",
-    handles: ALL_ENCOMPASSING_HANDLES,
-    tel: "+16306425927",
-    display: "(630) 642-5927",
-    tint: "#4F1E7B",
-    defaultVibe: "warm",
-  },
 ];
 
 /**
- * 7 vertical demo agents — each role-plays one industry Wireline
+ * 6 vertical demo agents — each role-plays one industry Wireline
  * sells into, so a prospect can call the line for their own vertical
  * and hear exactly what their customers would experience.
  */
@@ -187,20 +175,6 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     display: "(904) 460-1596",
     tint: "#06b6d4",
     defaultVibe: "authoritative",
-  },
-  {
-    name: "Nico",
-    role: "Restaurant Demo",
-    scope:
-      "Role-plays a restaurant phone host — takes reservations, captures takeout orders accurately, handles allergen questions, fields private-event inquiries.",
-    firstMessage:
-      "Thanks for calling the Wireline restaurant demo — this is Nico! Who am I speaking with?",
-    voiceId: "pNInz6obpgDQGcFmaJgB",
-    handles: "restaurant, reservation, takeout, catering, private event",
-    tel: "+12075935155",
-    display: "(207) 593-5155",
-    tint: "#f43f5e",
-    defaultVibe: "playful",
   },
   {
     name: "Jake",

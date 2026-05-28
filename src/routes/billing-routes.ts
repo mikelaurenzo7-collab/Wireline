@@ -467,6 +467,7 @@ router.get(
         subscription: sub
           ? {
               plan: sub.plan,
+              plan_id: sub.plan,
               plan_name: planMeta?.name || null,
               max_agents: planMeta?.max_agents || null,
               status: sub.status,
@@ -807,20 +808,21 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const [settingsRow] = await drizzle
+      const [row] = await drizzle
         .select({
-          plan_id: schema.settings.planId,
+          plan_id: schema.subscriptions.plan,
           extra_agents: schema.settings.extraAgents,
         })
         .from(schema.settings)
+        .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
         .where(eq(schema.settings.userId, req.user!.id))
         .limit(1);
-      const plan = planById(settingsRow?.plan_id || "personal");
+      const plan = planById(row?.plan_id || "personal");
       res.json({
         plan_id: plan?.id || "personal",
         plan_name: plan?.name || "Personal",
         included_agents: plan?.max_agents ?? 1,
-        extra_agents: settingsRow?.extra_agents ?? 0,
+        extra_agents: row?.extra_agents ?? 0,
         extra_agent_price_usd: plan?.extra_agent_price_usd ?? null,
         configured: !!plan?.extraAgentPriceIdEnv && !!process.env[plan.extraAgentPriceIdEnv],
       });
@@ -843,15 +845,16 @@ router.post(
       }
 
       // Look up the tenant's current settings + subscription.
-      const [settingsRow] = await drizzle
+      const [row] = await drizzle
         .select({
-          plan_id: schema.settings.planId,
+          plan_id: schema.subscriptions.plan,
           extra_agents: schema.settings.extraAgents,
         })
         .from(schema.settings)
+        .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
         .where(eq(schema.settings.userId, req.user!.id))
         .limit(1);
-      const plan = planById(settingsRow?.plan_id || "personal");
+      const plan = planById(row?.plan_id || "personal");
       if (!plan) return res.status(400).json({ error: "Plan not found" });
 
       const priceIdEnv = plan.extraAgentPriceIdEnv;
@@ -864,44 +867,46 @@ router.post(
 
       // If Stripe is configured, adjust the subscription item quantity
       // to match. If not configured (dev), just persist the DB column.
-      if (stripeAvailable() && target > 0) {
+      if (stripeAvailable()) {
         const [subRow] = await drizzle
           .select({ stripe_subscription_id: schema.subscriptions.stripeSubscriptionId })
           .from(schema.subscriptions)
           .where(eq(schema.subscriptions.userId, req.user!.id))
           .limit(1);
         const subscriptionId = subRow?.stripe_subscription_id;
-        if (!subscriptionId) {
+        if (target > 0 && !subscriptionId) {
           return res.status(400).json({
             error:
               "No active subscription found. Upgrade to a paid plan first to purchase extra agents.",
           });
         }
-        try {
-          // Find existing extra-agent line item (if any).
-          const sub = await stripe.subscriptions.retrieve(subscriptionId);
-          const existing = sub.items.data.find((i) => i.price?.id === priceId);
-          if (existing) {
-            if (target === 0) {
-              await stripe.subscriptionItems.del(existing.id);
-            } else {
-              await stripe.subscriptionItems.update(existing.id, { quantity: target });
+        if (subscriptionId) {
+          try {
+            // Find existing extra-agent line item (if any).
+            const sub = await stripe.subscriptions.retrieve(subscriptionId);
+            const existing = sub.items.data.find((i) => i.price?.id === priceId);
+            if (existing) {
+              if (target === 0) {
+                await stripe.subscriptionItems.del(existing.id);
+              } else {
+                await stripe.subscriptionItems.update(existing.id, { quantity: target });
+              }
+            } else if (target > 0) {
+              await stripe.subscriptionItems.create({
+                subscription: subscriptionId,
+                price: priceId,
+                quantity: target,
+              });
             }
-          } else if (target > 0) {
-            await stripe.subscriptionItems.create({
-              subscription: subscriptionId,
-              price: priceId,
-              quantity: target,
+          } catch (e) {
+            log.error("Stripe subscription item adjust failed", {
+              error: getErrorMessage(e),
+              userId: req.user!.id,
+            });
+            return res.status(502).json({
+              error: "Couldn't update Stripe subscription. Try again or contact support.",
             });
           }
-        } catch (e) {
-          log.error("Stripe subscription item adjust failed", {
-            error: getErrorMessage(e),
-            userId: req.user!.id,
-          });
-          return res.status(502).json({
-            error: "Couldn't update Stripe subscription. Try again or contact support.",
-          });
         }
       }
 

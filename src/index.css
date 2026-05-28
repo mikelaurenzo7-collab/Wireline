@@ -608,16 +608,19 @@
 .card-interactive {
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
               box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-              border-color 0.2s ease;
+              border-color 0.22s ease,
+              background-color 0.22s ease;
 }
 .card-interactive:hover {
   transform: translateY(-2px);
+  border-color: rgba(79, 30, 123, 0.24);
   box-shadow:
-    0 8px 24px -8px rgba(79, 30, 123, 0.10),
-    0 16px 48px -16px rgba(0, 0, 0, 0.06);
+    0 12px 32px -10px rgba(79, 30, 123, 0.14),
+    0 20px 56px -16px rgba(26, 22, 20, 0.08),
+    0 0 0 1px rgba(79, 30, 123, 0.08) inset;
 }
 .card-interactive:active {
-  transform: translateY(0) scale(0.99);
+  transform: translateY(0) scale(0.985);
   transition-duration: 0.1s;
 }
 
@@ -1546,6 +1549,57 @@ select:focus {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  /* Aurora orbs and scanlines are decorative-only â€” hide entirely. */
+  /* Aurora orbs and scanlines are decorative-only — hide entirely. */
   .scanline { display: none !important; }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   E2E PREMIUM DESIGN POLISH — LUXURY & EDITORIAL TECH DETAILS
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Premium page tabs styling and interaction */
+[role="tab"] {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              color 0.22s ease,
+              background-color 0.22s ease,
+              box-shadow 0.22s ease;
+}
+[role="tab"]:not([aria-selected="true"]):hover {
+  transform: translateY(-0.5px);
+  color: var(--color-ink) !important;
+  background-color: rgba(79, 30, 123, 0.05) !important;
+  box-shadow: 0 1px 0 rgba(79, 30, 123, 0.08);
+}
+[role="tab"]:active {
+  transform: scale(0.98);
+}
+
+/* Enhanced glass card reflections and colors on hover */
+.glass.card-interactive:hover {
+  background:
+    linear-gradient(180deg, rgba(248, 243, 235, 0.92), rgba(245, 239, 229, 0.72)),
+    rgba(239, 233, 220, 0.75);
+  border-color: rgba(79, 30, 123, 0.22);
+}
+.glass-strong.card-interactive:hover {
+  background:
+    linear-gradient(180deg, rgba(249, 244, 236, 0.98), rgba(246, 241, 231, 0.90)),
+    rgba(239, 233, 220, 0.96);
+  border-color: rgba(79, 30, 123, 0.26);
+}
+
+/* Premium text link transitions inside app content */
+.app-surface a:not([class*="btn"]):not([class*="brutal"]):not([class*="group"]) {
+  transition: color 0.18s ease;
+}
+.app-surface a:not([class*="btn"]):not([class*="brutal"]):not([class*="group"]):hover {
+  color: var(--color-brand) !important;
+}
+
+/* Smooth brand highlight outlines for form elements on focus */
+.input-field, .input-base, .textarea-base, select {
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.input-field:focus, .input-base:focus, .textarea-base:focus, select:focus {
+  box-shadow: 0 0 0 1px rgba(79, 30, 123, 0.25), 0 0 8px rgba(79, 30, 123, 0.08);
 }

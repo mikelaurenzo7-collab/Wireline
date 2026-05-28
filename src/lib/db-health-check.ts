@@ -196,7 +196,7 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
 
     // 8. Check for bloat in heavily updated tables
     const bloatCheck = await client.query(`
-      SELECT schemaname, tablename, 
+      SELECT schemaname, relname as tablename, 
         n_tup_ins as inserts,
         n_tup_upd as updates,
         n_tup_del as deletes
@@ -263,7 +263,7 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
 
     // 12. Check for unused indexes (maintenance recommendation)
     const unusedIndexes = await client.query(`
-      SELECT schemaname, tablename, indexrelname
+      SELECT schemaname, relname as tablename, indexrelname
       FROM pg_stat_user_indexes
       WHERE idx_scan = 0 
       AND schemaname = 'public'
