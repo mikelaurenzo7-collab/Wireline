@@ -252,7 +252,7 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
           })
           .onConflictDoUpdate({
             target: schema.signalPresence.id,
-            set: { status, startedAt: new Date() },
+            set: { status },
           });
 
         // Update lead status to "Connected" when call is in-progress

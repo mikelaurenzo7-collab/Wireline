@@ -33,7 +33,8 @@ router.get("/api/settings", authenticateUser, async (req: AuthenticatedRequest, 
     }
 
     res.json({ settings: safe });
-  } catch {
+  } catch (error) {
+    log.error("Failed to fetch settings", { error: getErrorMessage(error) });
     res.json({ settings: {} });
   }
 });
