@@ -191,7 +191,15 @@ no longer loads on routes that never open it.
    no-op. The genuine 18 KB system frame is on the **voice** path
    (`agent-runtime.ts` → Vapi), which Vapi/ElevenLabs runs — not these
    first-party SDK calls.
-3. **Tenant backfill migration.** One-shot SQL endpoint that flips existing `google` / `gemini-3.5-flash` settings rows to `anthropic` / `claude-sonnet-4-6` — gated, dry-run-first, audited.
+3. **Tenant backfill migration.** ✅ Shipped. `POST
+   /api/admin/migrate-voice-llm-backfill` flips existing `google` /
+   `gemini-3.5-flash` voice-LLM settings rows to `anthropic` /
+   `claude-sonnet-4-6`. Owner-gated (OWNER_EMAIL or X-Migration-Token via
+   the shared `authorizeMigration`), dry-run by default (counts candidates
+   and reports the planned change; only mutates when called with
+   `{ "apply": true }`), scoped strictly to the legacy pair so re-runs are
+   idempotent, and writes a `settings.updated` audit event on apply.
+   **File:** `src/routes/admin-migrate/voice-llm-backfill.ts`.
 4. **Tighten `--max-warnings 1100` → 700 over Q1.** Ratchet down 100 warnings per cycle via `eslint --max-warnings` in CI.
 5. **Strict-mode allowlist → cover every `*.test.ts` peer.** In progress —
    the 2026 audit follow-up added `safe-date.ts`, `safe-number.ts`,
