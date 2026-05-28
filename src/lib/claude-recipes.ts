@@ -118,6 +118,7 @@ Qualify this lead now.`;
     user,
     tool: TOOLS.qualify,
     deepThink: true,
+    cacheSystem: true,
     maxTokens: 4096,
     complexity: "medium",
   });
@@ -150,6 +151,7 @@ Generate ${input.count ?? 5} drills covering a range of difficulties.`;
     system,
     user,
     tool: TOOLS.objectionDrill,
+    cacheSystem: true,
     maxTokens: 4096,
     complexity: "medium",
   });
@@ -195,6 +197,7 @@ CTA: ${input.callToAction ?? "ask for a 15-minute intro call"}.`;
     system,
     user,
     tool: TOOLS.coldEmail,
+    cacheSystem: true,
     maxTokens: 2048,
     complexity: "medium",
   });
@@ -306,6 +309,7 @@ Deliver the review now.`;
     user,
     tool: TOOLS.agentReview,
     deepThink: true,
+    cacheSystem: true,
     maxTokens: 8192,
     complexity: "medium",
   });
@@ -1012,6 +1016,7 @@ ${input.summaries.map((s, i) => `${i + 1}. [${s.intent_label || "?"}] ${s.summar
     user,
     tool: TOOLS.topicClusters,
     deepThink: false,
+    cacheSystem: true,
     maxTokens: 4096,
     complexity: "medium",
   });
@@ -1050,6 +1055,7 @@ ${input.failedCalls
     user,
     tool: TOOLS.failureModes,
     deepThink: true,
+    cacheSystem: true,
     maxTokens: 4096,
     complexity: "medium",
   });
@@ -1098,6 +1104,7 @@ ${input.facts.map((f) => `[id=${f.id}${f.agent_name ? ` · ${f.agent_name}` : ""
     user,
     tool: TOOLS.knowledgeDedupe,
     deepThink: false,
+    cacheSystem: true,
     maxTokens: 4096,
     complexity: "simple",
   });
@@ -1309,6 +1316,7 @@ Score each dimension 0–20 and provide a concise, actionable coaching note.`;
     user,
     tool: TOOLS.qaScore,
     deepThink: false,
+    cacheSystem: true,
     maxTokens: 512,
     complexity: "medium",
   });

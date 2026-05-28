@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 // GDPR account-deletion helpers.
 //
 // `purgeAccount` performs the irreversible hard-delete cascade across every
@@ -102,9 +101,10 @@ export async function purgeAccount(
       await tx.execute(sql`DELETE FROM wireline_users WHERE id = ${userId}`);
       return { ok: true, tablesTouched, authRemoved: true };
     });
-  } catch (error: any) {
-    log.error("account purge transaction failed", { error: error.message });
-    return { ok: false, tablesTouched, authRemoved: false, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    log.error("account purge transaction failed", { error: message });
+    return { ok: false, tablesTouched, authRemoved: false, error: message };
   }
 }
 

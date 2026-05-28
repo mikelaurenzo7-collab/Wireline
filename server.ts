@@ -215,6 +215,11 @@ startMemoryCleanup();
 
 // Performance and Timeouts
 app.use("/api", performanceMonitoring(2000));
+// Per-user/IP rate limit on every Claude endpoint. Defence-in-depth against
+// token leakage and runaway spend: a leaked auth token without this cap can
+// drain the Anthropic budget in minutes. Mounted before timeout so 429s are
+// returned cheaply without waiting on Anthropic.
+app.use("/api/claude", claudeRateLimiter);
 app.use("/api/claude", timeoutMiddleware(30_000));
 app.use("/api/emails", timeoutMiddleware(15_000));
 app.use("/api/phone-numbers", timeoutMiddleware(10_000));

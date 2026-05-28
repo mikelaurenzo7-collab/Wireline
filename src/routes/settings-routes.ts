@@ -401,7 +401,12 @@ router.delete(
           scheduledPurgeAt: queueRow.scheduledPurgeAt,
           ip: req.ip,
         })
-        .catch(() => {});
+        .catch((err) =>
+          log.warn("audit logAccountDeletionRequested failed", {
+            uid,
+            error: getErrorMessage(err),
+          }),
+        );
 
       return res.status(202).json({
         status: "pending",
@@ -448,7 +453,12 @@ router.post(
         .set({ status: "cancelled", cancelledAt: new Date() })
         .where(eq(deletionQueue.id, existing.id));
 
-      void auditLogger.logAccountDeletionCancelled({ userId: uid, ip: req.ip }).catch(() => {});
+      void auditLogger.logAccountDeletionCancelled({ userId: uid, ip: req.ip }).catch((err) =>
+        log.warn("audit logAccountDeletionCancelled failed", {
+          uid,
+          error: getErrorMessage(err),
+        }),
+      );
 
       return res.json({ status: "cancelled" });
     } catch (err: any) {

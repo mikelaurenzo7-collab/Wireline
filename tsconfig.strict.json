@@ -54,6 +54,13 @@
     "src/lib/signup-intent.ts",
     // CSP builder — pure helper with snapshot test coverage.
     "src/lib/csp.ts",
+    // ─── Added 2026-Q2 audit (production-readiness pass) ───────────
+    // Account deletion helper — pure constant + small functions.
+    "src/lib/account-deletion.ts",
+    // TCPA consent helpers — pure validation logic.
+    "src/lib/tcpa-consent.ts",
+    // Postgres error code normalisation — pure helper.
+    "src/lib/pg-errors.ts",
     // Test suites corresponding to the strict-clean modules
     "src/lib/agent-runtime.test.ts",
     "src/lib/personality-vibes.test.ts",
@@ -62,6 +69,9 @@
     "src/lib/password-policy.test.ts",
     "src/lib/form-validators.test.ts",
     "src/lib/signup-intent.test.ts",
-    "src/lib/csp.test.ts"
+    "src/lib/csp.test.ts",
+    "src/lib/account-deletion.test.ts",
+    "src/lib/tcpa-consent.test.ts",
+    "src/lib/pg-errors.test.ts"
   ]
 }

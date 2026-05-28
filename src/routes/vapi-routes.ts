@@ -795,12 +795,22 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
                       reason: toolCall.function.arguments?.reason || null,
                     },
                   })
-                  .catch(() => {});
+                  .catch((err) =>
+                    log.warn("audit logDnc(agent_tool) failed", {
+                      phone: rawPhone,
+                      error: err instanceof Error ? err.message : String(err),
+                    }),
+                  );
 
                 // Real-time termination for the current call if it's the same number
                 const { SentinelService } = await import("../services/sentinel");
                 const sentinel = new SentinelService();
-                void sentinel.terminateActiveCallsForNumber(normalizedPhone).catch(() => {});
+                void sentinel.terminateActiveCallsForNumber(normalizedPhone).catch((err) =>
+                  log.error("sentinel terminate-on-agent-DNC failed", {
+                    phone: normalizedPhone,
+                    error: err instanceof Error ? err.message : String(err),
+                  }),
+                );
 
                 push({
                   toolCallId: toolCall.id,
@@ -904,7 +914,8 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
 
           if (toolCall.function.name === "send_contract") {
             try {
-              const { recipient_name, recipient_email, template_id } = toolCall.function.arguments || {};
+              const { recipient_name, recipient_email, template_id } =
+                toolCall.function.arguments || {};
               const { sendContract } = await import("../lib/docusign-service");
               const result = await sendContract({
                 recipientName: recipient_name,
@@ -1198,7 +1209,8 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
 
           if (toolCall.function.name === "log_payment_promise") {
             try {
-              const { amount_promised, payment_date, payment_method } = toolCall.function.arguments || {};
+              const { amount_promised, payment_date, payment_method } =
+                toolCall.function.arguments || {};
               await drizzle.insert(schema.auditLog).values({
                 userId: agent.user_id,
                 action: "payment_promise",

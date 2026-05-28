@@ -97,13 +97,18 @@ router.post("/dnc", authenticateUser, async (req: AuthenticatedRequest, res: Res
           ip: req.ip,
           metadata: { requested: rows.length },
         })
-        .catch(() => {});
+        .catch((err) => log.warn("audit logDnc(added) failed", { error: getErrorMessage(err) }));
 
       // Mid-call compliance enforcement: terminate active calls for newly suppressed numbers
       const { SentinelService } = await import("../services/sentinel");
       const sentinel = new SentinelService();
       for (const row of rows) {
-        void sentinel.terminateActiveCallsForNumber(row.phone).catch(() => {});
+        void sentinel.terminateActiveCallsForNumber(row.phone).catch((err) =>
+          log.error("sentinel terminate-on-DNC failed", {
+            phone: row.phone,
+            error: getErrorMessage(err),
+          }),
+        );
       }
     }
     res.json({ success: true, added });
@@ -127,7 +132,7 @@ router.delete("/dnc/:id", authenticateUser, async (req: AuthenticatedRequest, re
         ip: req.ip,
         metadata: { dnc_id: req.params.id },
       })
-      .catch(() => {});
+      .catch((err) => log.warn("audit logDnc(removed) failed", { error: getErrorMessage(err) }));
     res.json({ success: true });
   } catch (e: any) {
     log.error("DNC delete failed", { error: getErrorMessage(e) });

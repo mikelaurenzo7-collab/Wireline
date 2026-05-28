@@ -469,6 +469,8 @@ export default function AuthPortal() {
                       type="email"
                       required
                       autoComplete="email"
+                      inputMode="email"
+                      spellCheck={false}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="auth-input"
@@ -529,6 +531,25 @@ export default function AuthPortal() {
                         <p className="text-caption" style={{ color: pwStrength.color }}>
                           {pwStrength.label}
                         </p>
+                      )}
+                      {isSignUp && (
+                        <ul
+                          className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5 text-caption text-muted/80"
+                          aria-label="Password requirements"
+                        >
+                          <li className={password.length >= 8 ? "text-brand" : ""}>
+                            {password.length >= 8 ? "✓" : "•"} 8+ characters
+                          </li>
+                          <li className={/[A-Z]/.test(password) ? "text-brand" : ""}>
+                            {/[A-Z]/.test(password) ? "✓" : "•"} Uppercase letter
+                          </li>
+                          <li className={/[a-z]/.test(password) ? "text-brand" : ""}>
+                            {/[a-z]/.test(password) ? "✓" : "•"} Lowercase letter
+                          </li>
+                          <li className={/[0-9]/.test(password) ? "text-brand" : ""}>
+                            {/[0-9]/.test(password) ? "✓" : "•"} Number
+                          </li>
+                        </ul>
                       )}
                     </div>
                   )}
