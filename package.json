@@ -25,7 +25,6 @@
     "check-prod-env": "node scripts/check-prod-env.mjs",
     "docs:check": "node scripts/check-readme-pricing.mjs",
     "smoke:server": "VERCEL=1 node -e \"require('./dist/server.cjs'); console.log('server bundle imports')\"",
-    "loop:tick": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-wireline-loop.ps1",
     "oauth:redirects": "node scripts/print-oauth-redirects.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -38,8 +37,6 @@
     "e2e": "npm run test:e2e",
     "test:e2e": "playwright test tests/e2e",
     "test:e2e:ui": "playwright test tests/e2e --ui",
-    "test:visual": "playwright test tests/visual --project=chromium",
-    "test:visual:update": "playwright test tests/visual --project=chromium --update-snapshots",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage"
