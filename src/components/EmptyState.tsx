@@ -2,6 +2,7 @@ import { motion } from "motion/react";
 import { Link } from "react-router-dom";
 import { LucideIcon } from "lucide-react";
 import { cn } from "../lib/utils";
+import { resolveBrandAccent } from "../lib/brand-token";
 
 interface Action {
   label: string;
@@ -29,12 +30,7 @@ export default function EmptyState({
 }: Props) {
   // Resolve the brand accent at runtime so palette changes propagate
   // without touching component code. SSR-safe fallback to brand purple.
-  const resolvedAccent =
-    accent ??
-    (typeof window !== "undefined"
-      ? getComputedStyle(document.documentElement).getPropertyValue("--color-brand").trim() ||
-        "#4F1E7B"
-      : "#4F1E7B");
+  const resolvedAccent = resolveBrandAccent(accent);
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}

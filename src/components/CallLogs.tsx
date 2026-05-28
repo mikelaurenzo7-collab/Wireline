@@ -32,6 +32,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
+import { resolveBrandAccent } from "../lib/brand-token";
 import { formatDate, formatTime } from "../lib/safe-date";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
@@ -192,7 +193,6 @@ export default function CallLogs() {
                     icon={Phone}
                     title="No calls yet"
                     description="When your agents handle calls, transcripts and analytics will appear here. Wire a phone number in Settings to go live."
-                    accent="#4F1E7B"
                     actions={[
                       { label: "Go to Settings", to: "/admin", primary: true },
                       { label: "Start Outbound", to: "/outbound" },
@@ -214,10 +214,8 @@ export default function CallLogs() {
                           {/* Active indicator bar */}
                           {selectedCall?.id === call.id && (
                             <div
-                              className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full"
-                              style={{
-                                background: "linear-gradient(to bottom, #4F1E7B, #4F1E7B, #4F1E7B)",
-                              }}
+                              className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full bg-brand"
+                              aria-hidden="true"
                             />
                           )}
 
@@ -404,16 +402,18 @@ function CallDetail({
     return "linear-gradient(90deg, #E8466A, #F87171)";
   };
 
-  const qaColor = (score: number) =>
-    score >= 90
-      ? "#4F1E7B"
+  const qaColor = (score: number) => {
+    const brand = resolveBrandAccent();
+    return score >= 90
+      ? brand
       : score >= 75
         ? "#10B981"
         : score >= 60
           ? "#FFD166"
           : score >= 40
             ? "#FF9A5C"
-            : "#4F1E7B";
+            : brand;
+  };
 
   return (
     <Panel
@@ -532,15 +532,10 @@ function CallDetail({
                   <Stat
                     label="Duration"
                     value={formatDuration(call.duration_seconds || 0)}
-                    accent="#4F1E7B"
                     icon={Clock}
                   />
-                  <Stat
-                    label="Cost"
-                    value={`$${Number(call.cost ?? 0).toFixed(4)}`}
-                    accent="#4F1E7B"
-                  />
-                  <Stat label="Lead score" value={`${call.lead_score ?? 0}`} accent="#4F1E7B" />
+                  <Stat label="Cost" value={`$${Number(call.cost ?? 0).toFixed(4)}`} />
+                  <Stat label="Lead score" value={`${call.lead_score ?? 0}`} />
                   <Stat
                     label="Sentiment"
                     value={
@@ -757,14 +752,15 @@ function Stat({
 }: {
   label: string;
   value: React.ReactNode;
-  accent: string;
+  accent?: string;
   icon?: React.ComponentType<{ className?: string }>;
 }) {
+  const resolvedAccent = resolveBrandAccent(accent);
   return (
     <div className="rounded-lg glass border border-black/8 p-2.5">
       <div
         className="text-[8px] uppercase tracking-[0.28em] text-muted mb-1 flex items-center gap-1"
-        style={{ color: accent }}
+        style={{ color: resolvedAccent }}
       >
         {Icon && <Icon className="w-3 h-3" />}
         {label}
@@ -903,7 +899,7 @@ function RecordingPlayer({ url }: { url: string }) {
           className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-100"
           style={{
             width: `${pct}%`,
-            background: "linear-gradient(90deg, #4F1E7B, #7B3FA0)",
+            background: "linear-gradient(90deg, var(--color-brand), #7B3FA0)",
           }}
         />
         {/* Hover thumb */}
@@ -929,7 +925,7 @@ function RecordingPlayer({ url }: { url: string }) {
           onClick={togglePlay}
           aria-label={playing ? "Pause" : "Play"}
           className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-lg"
-          style={{ background: "linear-gradient(135deg, #4F1E7B, #7B3FA0)" }}
+          style={{ background: "linear-gradient(135deg, var(--color-brand), #7B3FA0)" }}
         >
           {playing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
         </button>
