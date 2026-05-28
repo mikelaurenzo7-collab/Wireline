@@ -47,7 +47,11 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
           className,
         )}
       >
-        <Link to="/" className="flex items-center gap-3 group min-w-0" data-testid="header-logo-home">
+        <Link
+          to="/"
+          className="flex items-center gap-3 group min-w-0"
+          data-testid="header-logo-home"
+        >
           <div
             className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-[1.02] border border-black/10 shadow-sm"
             style={{
@@ -60,7 +64,9 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
             <span className="font-sans font-black tracking-tight text-xl leading-none text-ink block truncate">
               WIRELINE
             </span>
-            <span className="text-[10px] uppercase tracking-widest font-bold text-black/50 hidden sm:block mt-0.5">Voice + email agents</span>
+            <span className="text-[10px] uppercase tracking-widest font-bold text-black/50 hidden sm:block mt-0.5">
+              Voice + email agents
+            </span>
           </div>
         </Link>
 
@@ -150,14 +156,14 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
             >
               <Link
                 to="/signin"
-                className="marketing-btn-secondary w-full min-h-[48px]"
+                className="marketing-btn-secondary w-full min-h-[48px] rounded-sm text-xs tracking-widest font-bold bg-white text-ink border-black/20"
                 onClick={() => setMenuOpen(false)}
               >
                 Sign in
               </Link>
               <Link
                 to="/signup"
-                className="marketing-btn-primary w-full min-h-[48px]"
+                className="marketing-btn-primary w-full min-h-[48px] rounded-sm text-xs tracking-widest font-bold border border-transparent shadow-sm"
                 onClick={() => setMenuOpen(false)}
               >
                 Start free trial

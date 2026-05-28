@@ -12,7 +12,7 @@ type BrandingSettings = {
 const DEFAULT_BRANDING: BrandingSettings = {
   brand_name: "Wireline",
   brand_logo_url: "",
-  primary_color: "#4F1E7B",
+  primary_color: "#0A0A0A",
 };
 
 type BrandingContextType = {
@@ -50,7 +50,7 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
       } catch (e: any) {
         // AbortError fires when the user navigates away mid-fetch — that's
         // not a real failure; silently ignore.
-         
+
         if (e?.name !== "AbortError" && !String(e?.message || "").includes("Failed to fetch")) {
           // Unexpected error - already handled by authFetch error handling
         }

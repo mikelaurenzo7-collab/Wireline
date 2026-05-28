@@ -82,7 +82,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     handles: ALL_ENCOMPASSING_HANDLES,
     tel: "+16306425661",
     display: "(630) 642-5661",
-    tint: "#4F1E7B",
+    tint: "#0A0A0A",
     defaultVibe: "warm",
   },
   {
@@ -93,7 +93,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     handles: ALL_ENCOMPASSING_HANDLES,
     tel: "+16305811834",
     display: "(630) 581-1834",
-    tint: "#4F1E7B",
+    tint: "#0A0A0A",
     defaultVibe: "playful",
     voiceId: "TX3LPaxmHKxFdv7VOQHJ",
   },
@@ -106,7 +106,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     handles: ALL_ENCOMPASSING_HANDLES,
     tel: "+16306425927",
     display: "(630) 642-5927",
-    tint: "#4F1E7B",
+    tint: "#0A0A0A",
     defaultVibe: "warm",
   },
 ];

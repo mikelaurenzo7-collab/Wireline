@@ -299,7 +299,9 @@ export default function LiveOps() {
                 actual data. */}
               <div className="flex flex-wrap items-center gap-4 sm:gap-6 px-4 sm:px-6 py-4 bg-white border border-black/10 rounded-sm shadow-sm max-md:w-full max-md:grid max-md:grid-cols-2">
                 <div className="flex flex-col">
-                  <span className="text-[10px] uppercase tracking-widest font-bold text-black/50">Live Calls</span>
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-black/50">
+                    Live Calls
+                  </span>
                   <span className="text-sm font-mono font-black tracking-tight text-ink">
                     {calls.length} active
                   </span>
@@ -311,7 +313,9 @@ export default function LiveOps() {
                   className="flex flex-col text-left hover:opacity-70 transition-opacity"
                   title="View fleet"
                 >
-                  <span className="text-[10px] uppercase tracking-widest font-bold text-black/50">Fleet Size</span>
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-black/50">
+                    Fleet Size
+                  </span>
                   <span className="text-sm font-mono font-black tracking-tight text-ink">
                     {stats?.agents?.length ?? 0} agents
                   </span>
@@ -336,11 +340,13 @@ export default function LiveOps() {
           <OnboardingQuickstart />
         </section>
 
-              {/* Dashboard Grid — compressed for 1366×768 laptop viewports.
+        {/* Dashboard Grid — compressed for 1366×768 laptop viewports.
             Tightened to p-5, min-h-[280px], gap-4. Internal Live Monitor still uses its
             own card. */}
         <section className="space-y-4 pt-6 border-t border-black/10 mt-6">
-          <span className="text-[10px] uppercase tracking-widest font-bold text-black/50 block">Live operations</span>
+          <span className="text-[10px] uppercase tracking-widest font-bold text-black/50 block">
+            Live operations
+          </span>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             {/* Left Column: Live Monitor (8/12) */}
             <div className="lg:col-span-8 space-y-4">
@@ -363,7 +369,9 @@ export default function LiveOps() {
                   {sentimentData.length === 0 ? (
                     <div className="h-48 flex flex-col items-center justify-center gap-2 text-center border border-black/10 rounded-sm bg-black/[0.02] px-6 shadow-inner">
                       <Activity className="w-5 h-5 text-black/30" />
-                      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-black/60">No conversations yet</p>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-black/60">
+                        No conversations yet
+                      </p>
                       <p className="text-xs leading-relaxed text-black/50 font-medium">
                         Make your first call to{" "}
                         <a href="tel:+16306425661" className="text-ink hover:underline font-bold">
@@ -395,7 +403,7 @@ export default function LiveOps() {
                             <Tooltip
                               contentStyle={{
                                 background: "rgba(28, 25, 23, 0.95)",
-                                border: "1px solid rgba(79, 30, 123 , 0.3)",
+                                border: "1px solid rgba(0, 0, 0 , 0.3)",
                                 borderRadius: "12px",
                                 boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
                               }}
@@ -444,13 +452,17 @@ export default function LiveOps() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="p-4 rounded-sm bg-black/[0.02] border border-black/10 shadow-inner">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-black/50 block mb-1">Cost / Min</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-black/50 block mb-1">
+                        Cost / Min
+                      </span>
                       <span className="text-2xl font-black tracking-tighter text-ink">
                         ${stats?.unitEconomics?.costPerMinute ?? "0.00"}
                       </span>
                     </div>
                     <div className="p-4 rounded-sm bg-black/[0.02] border border-black/10 shadow-inner">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-black/50 block mb-1">Cost / Lead</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-black/50 block mb-1">
+                        Cost / Lead
+                      </span>
                       <span className="text-2xl font-black tracking-tighter text-ink">
                         ${stats?.unitEconomics?.costPerLead ?? "0.00"}
                       </span>
@@ -459,7 +471,9 @@ export default function LiveOps() {
 
                   <div className="mt-4 p-4 rounded-sm bg-black/5 border border-black/15 shadow-sm">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-ink">Fleet ROI Projection</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-ink">
+                        Fleet ROI Projection
+                      </span>
                       <span className="text-[10px] font-mono font-bold text-emerald-600 tracking-widest">
                         EXCELLENT
                       </span>

@@ -265,7 +265,7 @@ export default function Pricing() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.22, duration: 0.6 }}
-          className="text-[11px] uppercase tracking-[0.3em] text-brand/85 mt-5 mb-1"
+          className="text-[10px] uppercase tracking-widest font-bold text-black/60 mt-5 mb-1"
         >
           Built for every service business
         </motion.p>
@@ -278,25 +278,36 @@ export default function Pricing() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.28, duration: 0.6 }}
-          className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-eyebrow opacity-90"
+          className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[10px] uppercase tracking-widest font-bold opacity-90"
         >
-          <Link to="/for/home-services" className="hover:text-brand transition-colors">
+          <Link
+            to="/for/home-services"
+            className="text-black/50 hover:text-black transition-colors"
+          >
             Home Services
           </Link>
-          <span aria-hidden="true">·</span>
-          <Link to="/for/medical" className="hover:text-brand transition-colors">
+          <span aria-hidden="true" className="text-black/30">
+            ·
+          </span>
+          <Link to="/for/medical" className="text-black/50 hover:text-black transition-colors">
             Medical
           </Link>
-          <span aria-hidden="true">·</span>
-          <Link to="/for/legal" className="hover:text-brand transition-colors">
+          <span aria-hidden="true" className="text-black/30">
+            ·
+          </span>
+          <Link to="/for/legal" className="text-black/50 hover:text-black transition-colors">
             Legal
           </Link>
-          <span aria-hidden="true">·</span>
-          <Link to="/for/real-estate" className="hover:text-brand transition-colors">
+          <span aria-hidden="true" className="text-black/30">
+            ·
+          </span>
+          <Link to="/for/real-estate" className="text-black/50 hover:text-black transition-colors">
             Real Estate
           </Link>
-          <span aria-hidden="true">·</span>
-          <span className="text-muted/70">+ every other vertical</span>
+          <span aria-hidden="true" className="text-black/30">
+            ·
+          </span>
+          <span className="text-black/30">+ every other vertical</span>
         </motion.div>
       </section>
 
@@ -311,19 +322,19 @@ export default function Pricing() {
               title: "Voice + SMS + Email — one agent",
               blurb:
                 "One conversation, three channels. Most platforms make you stitch separate vendors together.",
-              accent: "#4F1E7B",
+              accent: "#0A0A0A",
             },
             {
               title: "Supervisor cockpit with agent transparency",
               blurb:
                 "See what your agents are about to do BEFORE they do it — draft vs. auto autonomy per action.",
-              accent: "#4F1E7B",
+              accent: "#0A0A0A",
             },
             {
               title: "TCPA compliance in code",
               blurb:
                 "Per-state opt-in rules, append-only consent ledger, automatic DNC. Your lawyers can read the rules.",
-              accent: "#4F1E7B",
+              accent: "#0A0A0A",
             },
           ].map((c, i) => (
             <motion.div
@@ -331,22 +342,19 @@ export default function Pricing() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 + i * 0.06, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="rounded-2xl glass border border-white/8 p-5 relative overflow-hidden"
+              className="rounded-sm bg-white border border-black/10 p-5 relative overflow-hidden shadow-sm hover:shadow-md transition-shadow"
             >
               <div
-                className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"
+                className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-5 blur-2xl pointer-events-none"
                 style={{ background: c.accent }}
               />
-              <p
-                className="text-[9px] uppercase tracking-[0.36em] mb-2"
-                style={{ color: c.accent }}
-              >
+              <p className="text-[9px] uppercase tracking-[0.2em] font-bold mb-2 text-black/40">
                 Why Wireline
               </p>
-              <h3 className="font-display italic text-lg text-ink leading-tight mb-1.5">
+              <h3 className="font-display italic text-lg text-ink leading-tight mb-1.5 font-semibold">
                 {c.title}
               </h3>
-              <p className="text-[12px] text-muted/85 leading-relaxed">{c.blurb}</p>
+              <p className="text-xs text-ink/70 leading-relaxed font-medium">{c.blurb}</p>
             </motion.div>
           ))}
         </div>
@@ -365,32 +373,30 @@ export default function Pricing() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + i * 0.08, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className={`relative rounded-3xl p-4 lg:p-5 flex flex-col ${
-                tier.highlight ? "aurora-ring md:scale-[1.02] md:-my-1 md:z-10" : ""
+              className={`relative rounded-none p-4 lg:p-5 flex flex-col ${
+                tier.highlight ? "md:scale-[1.02] md:-my-1 md:z-10 shadow-xl" : ""
               }`}
             >
               <div
-                className={`relative rounded-3xl ${
+                className={`relative rounded-none ${
                   tier.highlight
-                    ? "glass-strong border-2 border-brand/40"
-                    : "glass border border-white/8"
-                } p-5 flex flex-col flex-1 overflow-hidden`}
+                    ? "bg-white border-2 border-black"
+                    : "bg-white border border-black/10 shadow-sm hover:shadow-md hover:border-black/20"
+                } p-5 flex flex-col flex-1 overflow-hidden transition-all duration-300`}
                 style={
                   tier.highlight
                     ? {
-                        boxShadow:
-                          "0 0 60px -15px rgba(79, 30, 123 ,0.55), 0 24px 48px -16px rgba(79, 30, 123 ,0.35), 0 0 0 1px rgba(255,255,255,0.08) inset",
+                        boxShadow: "0 24px 48px -16px rgba(0, 0, 0 ,0.15)",
                       }
                     : undefined
                 }
               >
                 {tier.highlight && (
                   <span
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full text-eyebrow font-semibold z-10"
+                    className="absolute top-0 left-1/2 -translate-x-1/2 px-3 py-1 rounded-b-sm text-[9px] uppercase tracking-widest font-bold z-10"
                     style={{
-                      background: "#4F1E7B",
+                      background: "#0A0A0A",
                       color: "#fff",
-                      boxShadow: "0 6px 18px -4px rgba(79, 30, 123 ,0.6)",
                     }}
                   >
                     Most popular
@@ -420,19 +426,11 @@ export default function Pricing() {
                 )}
                 <a
                   href={tier.ctaHref}
-                  className={`group flex w-full min-h-[48px] items-center justify-center text-center py-3.5 rounded-xl text-[11px] uppercase tracking-[0.32em] font-medium transition-all mb-6 ${
+                  className={`group flex w-full min-h-[48px] items-center justify-center text-center py-3.5 rounded-sm text-[11px] uppercase tracking-widest font-bold transition-all mb-6 ${
                     tier.highlight
-                      ? "text-on-brand hover:opacity-90"
-                      : "border border-white/15 text-ink hover:border-white/30 hover:bg-white/5"
+                      ? "bg-black text-white hover:bg-black/80 hover:shadow-md"
+                      : "bg-white border border-black/20 text-ink hover:border-black/40 hover:shadow-sm"
                   }`}
-                  style={
-                    tier.highlight
-                      ? {
-                          background: "#4F1E7B",
-                          boxShadow: "0 6px 20px -6px rgba(79, 30, 123 ,0.55)",
-                        }
-                      : undefined
-                  }
                 >
                   <span className="inline-flex items-center gap-2">
                     {tier.cta}
@@ -472,18 +470,12 @@ export default function Pricing() {
           {VALUE_BULLETS.map(({ icon: Icon, text }) => (
             <div
               key={text}
-              className="rounded-2xl glass border border-white/8 p-4 flex items-start gap-3"
+              className="rounded-sm bg-white border border-black/10 p-4 flex items-start gap-3 shadow-sm hover:shadow-md transition-shadow"
             >
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/8"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgba(79, 30, 123 ,0.18), rgba(79, 30, 123 ,0.12))",
-                }}
-              >
-                <Icon className="w-4 h-4 text-brand" strokeWidth={2.2} />
+              <div className="w-8 h-8 rounded-sm bg-black/5 flex items-center justify-center shrink-0 border border-black/10">
+                <Icon className="w-4 h-4 text-black" strokeWidth={2.2} />
               </div>
-              <p className="text-[12px] text-ink/80 leading-snug">{text}</p>
+              <p className="text-xs text-ink/80 leading-snug font-medium">{text}</p>
             </div>
           ))}
         </motion.div>
@@ -499,7 +491,9 @@ export default function Pricing() {
           className="mt-14 max-w-5xl mx-auto"
         >
           <div className="text-center mb-6">
-            <p className="text-eyebrow text-brand mb-2">ROI snapshot · vs traditional headcount</p>
+            <p className="text-[10px] uppercase tracking-widest font-bold text-black/60 mb-2">
+              ROI snapshot · vs traditional headcount
+            </p>
             <h3 className="font-display italic text-2xl text-ink leading-tight">
               How much you save replacing one human role
             </h3>
@@ -539,16 +533,18 @@ export default function Pricing() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.95 + i * 0.06, duration: 0.5 }}
-                  className="rounded-2xl glass border border-white/10 p-5 relative overflow-hidden"
+                  className="rounded-sm bg-white border border-black/10 p-5 relative overflow-hidden shadow-sm"
                 >
                   <div
-                    className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-20 blur-3xl pointer-events-none"
+                    className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-10 blur-3xl pointer-events-none"
                     style={{ background: "#10B981" }}
                   />
-                  <p className="app-section-title opacity-90 mb-1">Replace</p>
-                  <p className="text-[14px] font-semibold text-ink mb-3">{row.role}</p>
-                  <div className="space-y-1.5 mb-3 text-[11px]">
-                    <div className="flex justify-between text-muted/80">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-black/50 mb-1">
+                    Replace
+                  </p>
+                  <p className="text-sm font-bold text-ink mb-3">{row.role}</p>
+                  <div className="space-y-1.5 mb-3 text-[11px] font-medium">
+                    <div className="flex justify-between text-black/60">
                       <span>Human ({row.humanCostLabel})</span>
                       <span className="tabular-nums line-through">
                         ${row.humanCost.toLocaleString()}/yr
@@ -558,14 +554,18 @@ export default function Pricing() {
                       <span>
                         Wireline {row.tier} ({row.tierLabel})
                       </span>
-                      <span className="tabular-nums">${row.tierCost.toLocaleString()}/yr</span>
+                      <span className="tabular-nums font-bold">
+                        ${row.tierCost.toLocaleString()}/yr
+                      </span>
                     </div>
                   </div>
-                  <div className="pt-3 border-t border-white/10 flex items-baseline justify-between">
-                    <span className="text-eyebrow text-emerald-600">You save</span>
-                    <span className="font-display italic text-2xl text-emerald-600 tabular-nums">
+                  <div className="pt-3 border-t border-black/10 flex items-baseline justify-between">
+                    <span className="text-[10px] uppercase tracking-widest font-bold text-emerald-700">
+                      You save
+                    </span>
+                    <span className="font-display italic text-2xl text-emerald-600 tabular-nums font-bold">
                       ${savings.toLocaleString()}
-                      <span className="text-[11px] text-emerald-600/70 ml-1">/yr ({pct}%)</span>
+                      <span className="text-[10px] text-emerald-700/70 ml-1">/yr ({pct}%)</span>
                     </span>
                   </div>
                 </motion.div>
@@ -585,8 +585,10 @@ export default function Pricing() {
           transition={{ delay: 0.9, duration: 0.6 }}
           className="mt-14 max-w-3xl mx-auto text-center space-y-3"
         >
-          <p className="text-eyebrow/70">No long-term contracts · Cancel anytime · USD pricing</p>
-          <p className="text-[12px] text-muted/65">
+          <p className="text-[10px] uppercase tracking-widest font-bold text-black/50">
+            No long-term contracts · Cancel anytime · USD pricing
+          </p>
+          <p className="text-[12px] text-ink/70 font-medium">
             Voice minutes are pooled across all agents in your workspace. Overage is tier-based
             (Personal: $0.20/min · Starter: $0.18/min · Pro: $0.15/min · Business: $0.14/min) —
             priced near our cost, not a profit center. Most teams stay well inside plan. Email

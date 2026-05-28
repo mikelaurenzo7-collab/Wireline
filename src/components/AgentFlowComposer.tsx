@@ -710,7 +710,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       className={cn(
                         "relative z-10 flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer group",
                         activeStepId === step.id
-                          ? "bg-brand/10 border-brand/40 shadow-[0_0_15px_rgba(79, 30, 123 ,0.1)]"
+                          ? "bg-brand/10 border-brand/40 shadow-[0_0_15px_rgba(0, 0, 0 ,0.1)]"
                           : "glass border-white/10 hover:border-white/30",
                       )}
                     >
@@ -893,7 +893,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       .split(/\s+/)
                       .filter(Boolean).length;
                     // ~155 words per minute average TTS rate at
-                    // Vapi's default speed; ~12 words ≈ 5 seconds.
+                    // Voice Engine's default speed; ~12 words ≈ 5 seconds.
                     const seconds = Math.max(0, Math.round((words / 155) * 60));
                     const tooLong = words > 200;
                     const tooShort = words > 0 && words < 8;

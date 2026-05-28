@@ -192,7 +192,7 @@ export default function CallLogs() {
                     icon={Phone}
                     title="No calls yet"
                     description="When your agents handle calls, transcripts and analytics will appear here. Wire a phone number in Settings to go live."
-                    accent="#4F1E7B"
+                    accent="#0A0A0A"
                     actions={[
                       { label: "Go to Settings", to: "/admin", primary: true },
                       { label: "Start Outbound", to: "/outbound" },
@@ -216,7 +216,7 @@ export default function CallLogs() {
                             <div
                               className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full"
                               style={{
-                                background: "linear-gradient(to bottom, #4F1E7B, #4F1E7B, #4F1E7B)",
+                                background: "linear-gradient(to bottom, #0A0A0A, #0A0A0A, #0A0A0A)",
                               }}
                             />
                           )}
@@ -406,14 +406,14 @@ function CallDetail({
 
   const qaColor = (score: number) =>
     score >= 90
-      ? "#4F1E7B"
+      ? "#0A0A0A"
       : score >= 75
         ? "#10B981"
         : score >= 60
           ? "#FFD166"
           : score >= 40
             ? "#FF9A5C"
-            : "#4F1E7B";
+            : "#0A0A0A";
 
   return (
     <Panel
@@ -532,15 +532,15 @@ function CallDetail({
                   <Stat
                     label="Duration"
                     value={formatDuration(call.duration_seconds || 0)}
-                    accent="#4F1E7B"
+                    accent="#0A0A0A"
                     icon={Clock}
                   />
                   <Stat
                     label="Cost"
                     value={`$${Number(call.cost ?? 0).toFixed(4)}`}
-                    accent="#4F1E7B"
+                    accent="#0A0A0A"
                   />
-                  <Stat label="Lead score" value={`${call.lead_score ?? 0}`} accent="#4F1E7B" />
+                  <Stat label="Lead score" value={`${call.lead_score ?? 0}`} accent="#0A0A0A" />
                   <Stat
                     label="Sentiment"
                     value={
@@ -660,7 +660,7 @@ function CallDetail({
                   </p>
                 ) : (
                   transcriptLines.map((line: string, i: number) => {
-                    // Parse "Speaker: content" — real Vapi transcripts use the
+                    // Parse "Speaker: content" — real transcripts use the
                     // actual agent name (e.g. "Liam:") not the canonical "AI:".
                     // Match any leading "Word:" and bucket by known patterns so
                     // every line shows a meaningful label instead of "System".
@@ -903,7 +903,7 @@ function RecordingPlayer({ url }: { url: string }) {
           className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-100"
           style={{
             width: `${pct}%`,
-            background: "linear-gradient(90deg, #4F1E7B, #7B3FA0)",
+            background: "linear-gradient(90deg, #0A0A0A, #7B3FA0)",
           }}
         />
         {/* Hover thumb */}
@@ -929,7 +929,7 @@ function RecordingPlayer({ url }: { url: string }) {
           onClick={togglePlay}
           aria-label={playing ? "Pause" : "Play"}
           className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-lg"
-          style={{ background: "linear-gradient(135deg, #4F1E7B, #7B3FA0)" }}
+          style={{ background: "linear-gradient(135deg, #0A0A0A, #7B3FA0)" }}
         >
           {playing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
         </button>

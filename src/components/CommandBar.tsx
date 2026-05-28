@@ -352,7 +352,7 @@ export default function CommandBar() {
                 className="absolute inset-0 rounded-2xl"
                 style={{
                   background:
-                    "linear-gradient(135deg, rgba(79, 30, 123 ,0.6), rgba(79, 30, 123 ,0.4) 50%, rgba(79, 30, 123 ,0.5))",
+                    "linear-gradient(135deg, rgba(0, 0, 0 ,0.6), rgba(0, 0, 0 ,0.4) 50%, rgba(0, 0, 0 ,0.5))",
                 }}
               />
             </div>

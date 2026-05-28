@@ -223,7 +223,7 @@ function getPasswordStrength(pw: string): PasswordStrength {
     1: { label: "Weak", color: "#FF9A5C" },
     2: { label: "Fair", color: "#FFD166" },
     3: { label: "Good", color: "#4DFFC4" },
-    4: { label: "Strong", color: "#4F1E7B" },
+    4: { label: "Strong", color: "#0A0A0A" },
   };
   return { score: clamped, ...meta[clamped] };
 }
@@ -383,7 +383,7 @@ export default function AuthPortal() {
           aria-hidden
           style={{
             background:
-              "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(79,30,123,0.12), transparent 55%)",
+              "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(0,0,0,0.12), transparent 55%)",
           }}
         />
 
@@ -400,10 +400,10 @@ export default function AuthPortal() {
             className="w-full max-w-[420px]"
           >
             <div
-              className="rounded-2xl border border-black/8 bg-[#FAF8F5] overflow-hidden"
+              className="rounded-sm border border-black/10 bg-white overflow-hidden shadow-sm"
               style={{
                 boxShadow:
-                  "0 1px 0 rgba(255,255,255,0.9) inset, 0 20px 50px -24px rgba(79, 30, 123, 0.2)",
+                  "0 4px 20px -8px rgba(0, 0, 0, 0.15), 0 1px 3px -1px rgba(0, 0, 0, 0.10)",
               }}
             >
               <div className="p-6 sm:p-8">
@@ -598,7 +598,7 @@ export default function AuthPortal() {
                   <button
                     type="submit"
                     disabled={loading || (isSignUp && !agreedToTerms)}
-                    className="w-full flex items-center justify-center gap-2 min-h-[48px] py-3.5 rounded-full text-sm font-semibold text-on-brand bg-brand hover:bg-[#6A25A3] transition-all disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2 min-h-[48px] py-3.5 rounded-sm text-xs tracking-widest uppercase font-bold text-white bg-black hover:bg-black/80 transition-all disabled:opacity-50"
                   >
                     {loading ? (
                       <>

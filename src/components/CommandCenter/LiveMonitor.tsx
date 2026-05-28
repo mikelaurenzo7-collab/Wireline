@@ -86,14 +86,14 @@ export function LiveMonitor({ calls }: { calls: LiveCall[] }) {
                     <div className="flex items-center gap-2 mt-0.5">
                       <span
                         className={clsx(
-                          "text-[9px] font-medium uppercase tracking-wider",
-                          call.status === "escalated" ? "text-rose-600" : "text-brand",
+                          "text-[9px] font-bold uppercase tracking-widest",
+                          call.status === "escalated" ? "text-rose-600" : "text-black",
                         )}
                       >
                         {call.sentiment_label}
                       </span>
-                      <span className="w-1 h-1 rounded-full bg-black/10" />
-                      <span className="text-[9px] text-muted/60 font-mono">
+                      <span className="w-1 h-1 rounded-full bg-black/20" />
+                      <span className="text-[9px] text-black/50 font-mono font-bold tracking-widest">
                         ID: {call.id.substring(0, 8)}
                       </span>
                     </div>
@@ -118,9 +118,9 @@ export function LiveMonitor({ calls }: { calls: LiveCall[] }) {
                       "AI is synthesizing intent and identifying high-leverage follow-up actions..."}
                   </p>
                   <div className="absolute bottom-3 right-3 flex gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-brand/40 animate-bounce [animation-delay:-0.3s]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-brand/40 animate-bounce [animation-delay:-0.15s]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-brand/40 animate-bounce" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-black/40 animate-bounce [animation-delay:-0.3s]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-black/40 animate-bounce [animation-delay:-0.15s]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-black/40 animate-bounce" />
                   </div>
                 </div>
 
@@ -134,8 +134,8 @@ export function LiveMonitor({ calls }: { calls: LiveCall[] }) {
                     </div>
                     <span
                       className={clsx(
-                        "text-[10px] font-mono font-bold",
-                        call.urgency > 7 ? "text-rose-500" : "text-brand",
+                        "text-[10px] font-mono font-bold tracking-widest",
+                        call.urgency > 7 ? "text-rose-500" : "text-black",
                       )}
                     >
                       {call.urgency * 10}%
@@ -147,14 +147,14 @@ export function LiveMonitor({ calls }: { calls: LiveCall[] }) {
                       animate={{ width: `${call.urgency * 10}%` }}
                       transition={{ duration: 1.5, ease: "easeOut" }}
                       className={clsx(
-                        "h-full rounded-full transition-colors duration-500",
-                        call.urgency > 7 ? "bg-rose-500" : "bg-gradient-to-r from-brand to-brand-2",
+                        "h-full rounded-sm transition-colors duration-500",
+                        call.urgency > 7 ? "bg-rose-500" : "bg-black",
                       )}
                       style={{
                         boxShadow:
                           call.urgency > 7
                             ? "0 0 10px rgba(244,63,94,0.4)"
-                            : "0 0 10px rgba(79, 30, 123 ,0.3)",
+                            : "0 0 10px rgba(0, 0, 0 ,0.3)",
                       }}
                     />
                   </div>

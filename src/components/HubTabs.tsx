@@ -48,9 +48,9 @@ export default function HubTabs({ tabs, label, className }: HubTabsProps) {
               style={
                 active
                   ? {
-                      background: "#4F1E7B",
+                      background: "#0A0A0A",
                       boxShadow:
-                        "0 3px 12px -6px rgba(79, 30, 123 ,0.50), 0 0 0 1px rgba(255,255,255,0.18) inset",
+                        "0 3px 12px -6px rgba(0, 0, 0 ,0.50), 0 0 0 1px rgba(255,255,255,0.18) inset",
                     }
                   : undefined
               }

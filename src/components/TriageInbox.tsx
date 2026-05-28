@@ -268,7 +268,7 @@ export default function TriageInbox() {
               onFetchFailed={fetchData}
             />
           </WidgetBoundary>,
-          "#4F1E7B",
+          "#0A0A0A",
         )}
         {/* Knowledge gaps — second row, third column */}
         <div className="lg:col-start-2 lg:row-start-2 hidden lg:block">
@@ -356,10 +356,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
             <div className="flex items-center gap-2 mt-1 text-[8px] uppercase tracking-[0.26em] text-muted/65">
               <span>{formatDate(c.created_at)}</span>
               <span className="w-1 h-1 rounded-full bg-white/15" />
-              <span
-                className="text-brand/80"
-                style={{ textShadow: "0 0 10px rgba(79, 30, 123 ,0.5)" }}
-              >
+              <span className="text-brand/80" style={{ textShadow: "0 0 10px rgba(0, 0, 0 ,0.5)" }}>
                 {c.intent_label} intent
               </span>
               {c.sentiment && (

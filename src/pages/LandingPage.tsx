@@ -41,7 +41,7 @@ export default function LandingPage() {
           <div
             className="absolute -top-32 -right-24 w-[min(520px,55vw)] h-[min(520px,55vw)] rounded-full opacity-50"
             style={{
-              background: "radial-gradient(closest-side, rgba(79,30,123,0.16), transparent 72%)",
+              background: "radial-gradient(closest-side, rgba(0,0,0,0.16), transparent 72%)",
               filter: "blur(40px)",
             }}
           />
@@ -66,12 +66,14 @@ export default function LandingPage() {
               className="flex flex-col justify-center lg:min-h-0 lg:py-12"
             >
               <div className="flex items-center gap-2 mb-3">
-                <span className="hero-accent-line shrink-0" style={{ background: "#4F1E7B" }} />
+                <span className="hero-accent-line shrink-0" style={{ background: "#0A0A0A" }} />
                 <span className="text-eyebrow">One fleet · phone · SMS · email</span>
               </div>
 
               <h1 className="font-display italic text-[clamp(2.5rem,8vw,5rem)] leading-[1.05] tracking-tighter text-balance text-ink drop-shadow-sm pb-1 pt-1">
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-ink to-ink/70">Every conversation</span>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-ink to-ink/70">
+                  Every conversation
+                </span>
                 <br />
                 answered like your best rep.
               </h1>
@@ -85,7 +87,7 @@ export default function LandingPage() {
                 {PROOF.map((item) => (
                   <div
                     key={item.label}
-                    className="rounded-2xl border border-black/8 bg-white/60 px-4 py-3 min-w-[5.5rem] flex-1 sm:flex-none shadow-[0_2px_10px_-4px_rgba(79,30,123,0.1)] backdrop-blur-md"
+                    className="rounded-2xl border border-black/8 bg-white/60 px-4 py-3 min-w-[5.5rem] flex-1 sm:flex-none shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] backdrop-blur-md"
                   >
                     <p className="font-display italic text-xl leading-none text-ink">
                       {item.value}
@@ -109,7 +111,7 @@ export default function LandingPage() {
               transition={{ delay: 0.08, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
               className="flex flex-col lg:min-h-0 lg:py-12 mt-6 lg:mt-0"
             >
-              <div className="rounded-[1.5rem] border border-black/8 bg-white/70 backdrop-blur-2xl p-4 sm:p-5 lg:p-6 shadow-[0_12px_40px_-20px_rgba(79,30,123,0.28)] flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden relative">
+              <div className="rounded-[1.5rem] border border-black/8 bg-white/70 backdrop-blur-2xl p-4 sm:p-5 lg:p-6 shadow-[0_12px_40px_-20px_rgba(0,0,0,0.28)] flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden relative">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 shrink-0">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center shrink-0 border border-brand/20 shadow-sm">

@@ -564,7 +564,7 @@ export default function FleetSettings() {
                           selectedAgent?.id === agent.id
                             ? {
                                 background:
-                                  "linear-gradient(135deg, rgba(79, 30, 123 ,0.08), rgba(79, 30, 123 ,0.05))",
+                                  "linear-gradient(135deg, rgba(0, 0, 0 ,0.08), rgba(0, 0, 0 ,0.05))",
                               }
                             : undefined
                         }
@@ -573,7 +573,7 @@ export default function FleetSettings() {
                         {selectedAgent?.id === agent.id && (
                           <div
                             className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full"
-                            style={{ background: "linear-gradient(to bottom, #4F1E7B, #4F1E7B)" }}
+                            style={{ background: "linear-gradient(to bottom, #0A0A0A, #0A0A0A)" }}
                           />
                         )}
 
@@ -814,7 +814,7 @@ export default function FleetSettings() {
                           <div
                             className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
                             style={{
-                              background: "radial-gradient(circle, #4F1E7B, transparent)",
+                              background: "radial-gradient(circle, #0A0A0A, transparent)",
                             }}
                           />
 
@@ -1432,7 +1432,7 @@ export default function FleetSettings() {
                           <div
                             className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
                             style={{
-                              background: "radial-gradient(circle, #4F1E7B, transparent)",
+                              background: "radial-gradient(circle, #0A0A0A, transparent)",
                             }}
                           />
                           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">

@@ -8,7 +8,7 @@ export default function RouteFallback() {
           className="absolute inset-y-0 -left-1/3 w-1/3 rounded-full"
           style={{
             background:
-              "linear-gradient(90deg, transparent, rgba(79, 30, 123 ,0.95) 40%, rgba(79, 30, 123 ,0.85) 60%, transparent)",
+              "linear-gradient(90deg, transparent, rgba(0, 0, 0 ,0.95) 40%, rgba(0, 0, 0 ,0.85) 60%, transparent)",
             animation: "route-progress-sweep 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite",
           }}
         />
@@ -47,7 +47,7 @@ export default function RouteFallback() {
         className="shrink-0 h-px mb-6"
         style={{
           background:
-            "linear-gradient(90deg, rgba(79, 30, 123 ,0.20) 0%, rgba(79, 30, 123 ,0.15) 40%, rgba(79, 30, 123 ,0.10) 70%, transparent 100%)",
+            "linear-gradient(90deg, rgba(0, 0, 0 ,0.20) 0%, rgba(0, 0, 0 ,0.15) 40%, rgba(0, 0, 0 ,0.10) 70%, transparent 100%)",
         }}
         aria-hidden="true"
       />

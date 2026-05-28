@@ -33,7 +33,10 @@ function AgentContactCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-1.5 min-w-0">
             <span
-              className={cn("font-semibold text-ink truncate", landing ? "text-sm sm:text-base tracking-tight" : "text-[11px]")}
+              className={cn(
+                "font-semibold text-ink truncate",
+                landing ? "text-sm sm:text-base tracking-tight" : "text-[11px]",
+              )}
             >
               {agent.name}
             </span>
@@ -76,9 +79,9 @@ function AgentContactCard({
       return (
         <a
           href={`tel:${agent.tel}`}
-          className="block rounded-2xl border border-black/8 bg-white/80 backdrop-blur-sm p-4 min-h-[5rem] hover:border-brand/30 hover:shadow-[0_8px_30px_-10px_rgba(79,30,123,0.15)] active:scale-[0.98] transition-all"
+          className="block rounded-2xl border border-black/8 bg-white/80 backdrop-blur-sm p-4 min-h-[5rem] hover:border-brand/30 hover:shadow-[0_8px_30px_-10px_rgba(0,0,0,0.15)] active:scale-[0.98] transition-all"
           aria-label={`Call ${agent.name} at ${agent.display}`}
-          data-testid={`call-agent-${agent.name.toLowerCase().replace(/\s+/g, '-')}`}
+          data-testid={`call-agent-${agent.name.toLowerCase().replace(/\s+/g, "-")}`}
         >
           {card}
         </a>
@@ -187,7 +190,9 @@ export function AuthDemoDirectory({
         aria-expanded={expanded}
       >
         <div>
-          <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-ink">Try live agents</p>
+          <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-ink">
+            Try live agents
+          </p>
           <p className="text-xs text-black/60 font-medium mt-0.5">
             {expanded
               ? `${totalCount} lines — dial from your phone`
@@ -197,10 +202,7 @@ export function AuthDemoDirectory({
           </p>
         </div>
         <ChevronDown
-          className={cn(
-            "w-4 h-4 shrink-0 text-ink transition-transform",
-            expanded && "rotate-180",
-          )}
+          className={cn("w-4 h-4 shrink-0 text-ink transition-transform", expanded && "rotate-180")}
         />
       </button>
 
@@ -209,7 +211,9 @@ export function AuthDemoDirectory({
       {expanded && (
         <div className="space-y-3 max-h-[min(42vh,380px)] overflow-y-auto scrollbar-hide pr-0.5 mt-4">
           <div>
-            <p className="mb-3 text-[10px] uppercase tracking-[0.2em] font-bold text-ink">Wireline agents</p>
+            <p className="mb-3 text-[10px] uppercase tracking-[0.2em] font-bold text-ink">
+              Wireline agents
+            </p>
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
               {wirelineAgents.map((agent) => (
                 <AgentContactCard key={agent.tel} agent={agent} isDemo={false} />
@@ -217,7 +221,9 @@ export function AuthDemoDirectory({
             </div>
           </div>
           <div className="pt-2">
-            <p className="mb-3 text-[10px] uppercase tracking-[0.2em] font-bold text-black/60">Demo agents</p>
+            <p className="mb-3 text-[10px] uppercase tracking-[0.2em] font-bold text-black/60">
+              Demo agents
+            </p>
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
               {demoAgents.map((agent) => (
                 <AgentContactCard key={agent.tel} agent={agent} isDemo />

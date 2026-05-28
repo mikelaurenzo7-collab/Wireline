@@ -95,8 +95,8 @@ export default function SettingsTabSwitcher() {
                 style={
                   activeTab === t.id
                     ? {
-                        background: "rgba(79, 30, 123, 0.15)",
-                        boxShadow: "0 0 0 1px rgba(79, 30, 123, 0.1) inset",
+                        background: "rgba(0, 0, 0, 0.15)",
+                        boxShadow: "0 0 0 1px rgba(0, 0, 0, 0.1) inset",
                       }
                     : undefined
                 }

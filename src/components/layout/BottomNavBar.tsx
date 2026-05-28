@@ -83,12 +83,11 @@ export default function BottomNavBar({ onOpenMenu, badges = {} }: Props) {
       aria-label="Primary navigation"
       className="md:hidden fixed bottom-0 left-0 right-0 z-[60] flex items-stretch"
       style={{
-        /* Translucent purple — identical tint to the TopBar so the app
-           feels bookended top and bottom with brand colour. */
-        background: "rgba(44, 9, 62, 0.88)",
+        /* Translucent black — Stark contrast for Control Room aesthetic */
+        background: "rgba(0, 0, 0, 0.90)",
         backdropFilter: "blur(24px) saturate(200%)",
         WebkitBackdropFilter: "blur(24px) saturate(200%)",
-        borderTop: "1px solid rgba(239, 233, 220, 0.10)",
+        borderTop: "1px solid rgba(255, 255, 255, 0.10)",
         /* All four safe-area insets: top is 0 at the bottom of the
            screen, bottom clears the home indicator / rounded-corner
            sensor housing, left/right handle landscape notch on older
@@ -96,7 +95,7 @@ export default function BottomNavBar({ onOpenMenu, badges = {} }: Props) {
         paddingBottom: "env(safe-area-inset-bottom)",
         paddingLeft: "env(safe-area-inset-left)",
         paddingRight: "env(safe-area-inset-right)",
-        boxShadow: "0 -1px 0 rgba(239,233,220,0.06), 0 -12px 32px -12px rgba(30,0,48,0.55)",
+        boxShadow: "0 -1px 0 rgba(255,255,255,0.06), 0 -12px 32px -12px rgba(0,0,0,0.55)",
       }}
     >
       {PRIMARY_TABS.map((tab) => {
@@ -120,8 +119,8 @@ export default function BottomNavBar({ onOpenMenu, badges = {} }: Props) {
                 aria-hidden="true"
                 className="absolute inset-x-2 top-1 bottom-5 rounded-2xl pointer-events-none"
                 style={{
-                  background: "rgba(239, 233, 220, 0.14)",
-                  boxShadow: "0 0 0 1px rgba(239, 233, 220, 0.12) inset",
+                  background: "rgba(255, 255, 255, 0.14)",
+                  boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.12) inset",
                 }}
               />
             )}
@@ -132,7 +131,7 @@ export default function BottomNavBar({ onOpenMenu, badges = {} }: Props) {
                 style={{
                   width: 22,
                   height: 22,
-                  color: active ? "#EFE9DC" : "rgba(239,233,220,0.42)",
+                  color: active ? "#FFFFFF" : "rgba(255,255,255,0.42)",
                   strokeWidth: active ? 2.5 : 1.75,
                 }}
               />
@@ -150,7 +149,7 @@ export default function BottomNavBar({ onOpenMenu, badges = {} }: Props) {
             {/* Label */}
             <span
               className="relative z-[1] text-[10px] font-medium tracking-[0.01em] transition-colors duration-150 leading-none"
-              style={{ color: active ? "#EFE9DC" : "rgba(239,233,220,0.42)" }}
+              style={{ color: active ? "#FFFFFF" : "rgba(255,255,255,0.42)" }}
             >
               {tab.label}
             </span>
@@ -171,14 +170,14 @@ export default function BottomNavBar({ onOpenMenu, badges = {} }: Props) {
             style={{
               width: 22,
               height: 22,
-              color: "rgba(239,233,220,0.42)",
+              color: "rgba(255,255,255,0.42)",
               strokeWidth: 1.75,
             }}
           />
         </div>
         <span
           className="text-[10px] font-medium tracking-[0.01em] leading-none"
-          style={{ color: "rgba(239,233,220,0.42)" }}
+          style={{ color: "rgba(255,255,255,0.42)" }}
         >
           More
         </span>

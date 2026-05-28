@@ -302,7 +302,7 @@ export default function EmailInbox() {
                     icon={Mail}
                     title="No threads yet"
                     description="Connect a Gmail or Outlook account in Carrier Bridge so agents can receive and reply to emails."
-                    accent="#4F1E7B"
+                    accent="#0A0A0A"
                     actions={[{ label: "Connect Email", to: "/integrations", primary: true }]}
                     className="h-full py-10"
                   />
@@ -333,7 +333,7 @@ export default function EmailInbox() {
                           {active && (
                             <div
                               className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full"
-                              style={{ background: "linear-gradient(to bottom, #4F1E7B, #4F1E7B)" }}
+                              style={{ background: "linear-gradient(to bottom, #0A0A0A, #0A0A0A)" }}
                             />
                           )}
 

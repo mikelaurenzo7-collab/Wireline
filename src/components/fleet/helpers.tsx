@@ -48,8 +48,8 @@ export function Sparkline({
     >
       <defs>
         <linearGradient id="sp-grad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#4F1E7B" stopOpacity="0.8" />
-          <stop offset="100%" stopColor="#4F1E7B" stopOpacity="0.8" />
+          <stop offset="0%" stopColor="#0A0A0A" stopOpacity="0.8" />
+          <stop offset="100%" stopColor="#0A0A0A" stopOpacity="0.8" />
         </linearGradient>
       </defs>
       <path

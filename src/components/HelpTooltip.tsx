@@ -80,9 +80,9 @@ export function HelpTooltip({ content, title, placement = "top", children }: Hel
             <div
               className="glass-elevated rounded-lg border px-3 py-2 shadow-xl"
               style={{
-                borderColor: "rgba(79, 30, 123 , 0.20)",
+                borderColor: "rgba(0, 0, 0 , 0.20)",
                 boxShadow:
-                  "0 1px 0 rgba(255,255,255,0.9) inset, 0 8px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(79, 30, 123 ,0.06)",
+                  "0 1px 0 rgba(255,255,255,0.9) inset, 0 8px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0, 0, 0 ,0.06)",
               }}
             >
               {title && (

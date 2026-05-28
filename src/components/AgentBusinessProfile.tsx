@@ -53,7 +53,7 @@ export interface BusinessProfile {
   /**
    * Warm-transfer toggle. When true AND escalation_phone is set, the
    * `escalate_to_human` tool transfers the LIVE caller to the configured
-   * phone in real time (via Vapi destination) instead of just queueing
+   * phone in real time (via Voice Engine destination) instead of just queueing
    * an async alert. Opt-in: the operator must explicitly enable.
    */
   escalation_handoff_enabled?: boolean;
@@ -285,7 +285,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
       <Section
         icon={Clock}
         title="Business hours"
-        accent="#4F1E7B"
+        accent="#0A0A0A"
         hint="When this agent should engage. Outbound dials outside these hours are refused; inbound calls hear the out-of-hours message."
       >
         <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -372,7 +372,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
       <Section
         icon={ShieldCheck}
         title="Compliance preset"
-        accent="#4F1E7B"
+        accent="#0A0A0A"
         hint="Auto-injects required disclosures into the agent's system prompt. Pick the regime your business is regulated under."
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -409,7 +409,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
       <Section
         icon={Target}
         title="Optimization target"
-        accent="#4F1E7B"
+        accent="#0A0A0A"
         hint="Subtle nudge to bias the agent toward the outcome that matters for this surface."
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -486,7 +486,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
           <p className="text-eyebrow/65 font-semibold mb-1">Route alerts to (this agent only)</p>
           <p className="text-[10px] text-muted/65 mb-3 leading-relaxed">
             Both optional. Leave blank to use the tenant-wide Manager Alert Number from{" "}
-            <a href="/admin?tab=carrier" className="text-[#4F1E7B] hover:underline">
+            <a href="/admin?tab=carrier" className="text-[#0A0A0A] hover:underline">
               Settings → Carrier
             </a>
             .
@@ -506,7 +506,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 }
                 placeholder="+1 555 123 4567"
                 aria-label="Per-agent escalation phone number"
-                className="w-full h-9 px-3 rounded-lg border border-black/12 bg-white text-[12px] focus:outline-none focus:border-[#4F1E7B]/40 focus:ring-2 focus:ring-[#4F1E7B]/12 transition-all"
+                className="w-full h-9 px-3 rounded-lg border border-black/12 bg-white text-[12px] focus:outline-none focus:border-[#0A0A0A]/40 focus:ring-2 focus:ring-[#0A0A0A]/12 transition-all"
                 data-testid="escalation-phone-input"
               />
             </label>
@@ -524,7 +524,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 }
                 placeholder="lead@yourcompany.com"
                 aria-label="Per-agent escalation email"
-                className="w-full h-9 px-3 rounded-lg border border-black/12 bg-white text-[12px] focus:outline-none focus:border-[#4F1E7B]/40 focus:ring-2 focus:ring-[#4F1E7B]/12 transition-all"
+                className="w-full h-9 px-3 rounded-lg border border-black/12 bg-white text-[12px] focus:outline-none focus:border-[#0A0A0A]/40 focus:ring-2 focus:ring-[#0A0A0A]/12 transition-all"
                 data-testid="escalation-email-input"
               />
             </label>

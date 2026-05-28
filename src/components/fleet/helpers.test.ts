@@ -29,7 +29,7 @@ describe("PREMIUM_VOICES catalog", () => {
     }
   });
 
-  it("voice ids are unique (Vapi rejects duplicate selection)", () => {
+  it("voice ids are unique (Voice Engine rejects duplicate selection)", () => {
     const ids = PREMIUM_VOICES.map((v) => v.id);
     expect(new Set(ids).size).toBe(ids.length);
   });

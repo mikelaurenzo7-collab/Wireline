@@ -52,7 +52,7 @@ export default function AdminSettings() {
     target_employee_ranges: ["1,10", "11,50"] as string[],
     brand_name: "",
     brand_logo_url: "",
-    primary_color: "#4F1E7B",
+    primary_color: "#0A0A0A",
   });
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [agents, setAgents] = useState<any[]>([]);
@@ -222,7 +222,7 @@ export default function AdminSettings() {
           target_employee_ranges: settingsRes.target_employee_ranges || ["1,10", "11,50"],
           brand_name: settingsRes.brand_name || "",
           brand_logo_url: settingsRes.brand_logo_url || "",
-          primary_color: settingsRes.primary_color || "#4F1E7B",
+          primary_color: settingsRes.primary_color || "#0A0A0A",
         });
       }
       setAgents(agentsRes.agents || []);

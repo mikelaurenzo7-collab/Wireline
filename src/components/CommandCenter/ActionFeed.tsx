@@ -84,15 +84,15 @@ export function ActionFeed({
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-        <div className="flex items-center justify-between mb-6 border-b border-black/10 pb-4">
-          <h3 className="app-section-title flex items-center gap-2 text-ink uppercase tracking-widest font-bold">
-            <Sparkles className="w-4 h-4 text-ink" />
-            Intelligence Hub
-          </h3>
-          <span className="text-[10px] font-mono text-muted/80 font-bold bg-black/5 px-2 py-0.5 rounded-sm uppercase tracking-widest">
-            {actions.filter((a) => a.status === "pending").length} PENDING
-          </span>
-        </div>
+      <div className="flex items-center justify-between mb-6 border-b border-black/10 pb-4">
+        <h3 className="app-section-title flex items-center gap-2 text-ink uppercase tracking-widest font-bold">
+          <Sparkles className="w-4 h-4 text-ink" />
+          Intelligence Hub
+        </h3>
+        <span className="text-[10px] font-mono text-muted/80 font-bold bg-black/5 px-2 py-0.5 rounded-sm uppercase tracking-widest">
+          {actions.filter((a) => a.status === "pending").length} PENDING
+        </span>
+      </div>
 
       <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-3 custom-scrollbar">
         {actions.length === 0 ? (
@@ -208,7 +208,7 @@ export function ActionFeed({
                               </button>
                               <button
                                 onClick={(e) => handleApprove(action.id, e)}
-                                className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 flex items-center justify-center transition-colors"
+                                className="w-7 h-7 rounded-sm bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 flex items-center justify-center transition-colors"
                                 title="Approve"
                               >
                                 <Check className="w-3.5 h-3.5" />
@@ -216,13 +216,13 @@ export function ActionFeed({
                             </div>
                           )}
                           {isExpanded ? (
-                            <ChevronUp className="w-4 h-4 text-muted/60" />
+                            <ChevronUp className="w-4 h-4 text-black/40" />
                           ) : (
-                            <ChevronDown className="w-4 h-4 text-muted/60" />
+                            <ChevronDown className="w-4 h-4 text-black/40" />
                           )}
                         </div>
                       ) : (
-                        <AlertCircle className="w-4 h-4 text-muted/60" />
+                        <AlertCircle className="w-4 h-4 text-black/40" />
                       )}
                     </div>
                   </div>
@@ -294,14 +294,14 @@ export function ActionFeed({
                             <button
                               disabled={isProcessing}
                               onClick={(e) => handleReject(action.id, e)}
-                              className="flex-1 h-9 rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-600 text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-rose-500/10 transition-all disabled:opacity-50"
+                              className="flex-1 h-9 rounded-sm border border-rose-500/20 bg-rose-500/5 text-rose-600 text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-rose-500/10 transition-all disabled:opacity-50"
                             >
                               Dismiss Action
                             </button>
                             <button
                               disabled={isProcessing}
                               onClick={(e) => handleApprove(action.id, e)}
-                              className="disabled:opacity-50 disabled:cursor-not-allowed flex-[2] h-9 rounded-xl brutal-btn !py-0 !text-[10px] !tracking-[0.2em] !font-bold flex items-center justify-center gap-2"
+                              className="disabled:opacity-50 disabled:cursor-not-allowed flex-[2] h-9 rounded-sm brutal-btn !py-0 !text-[10px] !tracking-widest !font-bold flex items-center justify-center gap-2"
                             >
                               {isProcessing ? (
                                 <Clock className="w-3.5 h-3.5 animate-spin" />

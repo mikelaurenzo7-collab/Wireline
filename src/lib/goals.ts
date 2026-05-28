@@ -57,7 +57,7 @@ export const GOAL_METRICS: readonly GoalMetricDef[] = [
     label: "Calls handled",
     unit: "calls",
     description: "Total inbound and outbound calls your fleet completes this month.",
-    accent: "#4F1E7B",
+    accent: "#0A0A0A",
   },
   {
     id: "appointments_booked",

@@ -251,13 +251,13 @@ function renderDigestEmail(d: {
   const next = nextActionFromOutcome(d.outcomeTag);
   return [
     `<div style="font-family: -apple-system, system-ui, sans-serif; max-width: 560px; line-height: 1.55; color: #1a1a1a;">`,
-    `<p style="font-size:11px;text-transform:uppercase;letter-spacing:.3em;color:#4F1E7B;margin:0 0 4px;">Wireline · Post-call digest</p>`,
+    `<p style="font-size:11px;text-transform:uppercase;letter-spacing:.3em;color:#0A0A0A;margin:0 0 4px;">Wireline · Post-call digest</p>`,
     `<h2 style="margin:0 0 8px;font-size:22px;font-style:italic;font-weight:500;">${d.outcomeTag.toUpperCase()} — ${d.agentName || "Agent"} → ${d.customerName || d.customerNumber || "caller"}</h2>`,
     `<p style="margin:0 0 16px;font-size:13px;color:#666;">${d.direction || "Call"} · ${dur} min · ${d.sentiment || "neutral"} sentiment${d.campaignSource ? ` · Campaign: <strong>${d.campaignSource}</strong>` : ""}</p>`,
     `<div style="background:#f7f7f9;border-radius:12px;padding:14px 16px;margin:0 0 16px;font-size:14px;">${(d.summary || "(no summary captured)").replace(/\n/g, "<br/>")}</div>`,
     `<p style="margin:0 0 6px;font-size:13px;"><strong>Next action:</strong> ${next}</p>`,
     `<p style="margin:0 0 16px;font-size:12px;color:#666;">${d.crmLogged ? "✅ Logged to your CRM." : "ℹ︎ No CRM connected — connect HubSpot or Salesforce in /integrations to auto-log."}</p>`,
-    `<p style="margin:24px 0 0;font-size:12px;color:#888;">Open the call <a href="https://trywireline.com/logs" style="color:#4F1E7B;text-decoration:none;">in Wireline →</a></p>`,
+    `<p style="margin:24px 0 0;font-size:12px;color:#888;">Open the call <a href="https://trywireline.com/logs" style="color:#0A0A0A;text-decoration:none;">in Wireline →</a></p>`,
     `</div>`,
   ].join("");
 }

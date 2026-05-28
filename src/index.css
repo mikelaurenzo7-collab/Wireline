@@ -186,15 +186,15 @@
     background: transparent;
   }
   .scrollbar-hide::-webkit-scrollbar-thumb {
-    background: rgba(79, 30, 123, 0.18);
+    background: rgba(0, 0, 0, 0.18);
     border-radius: 999px;
   }
   .scrollbar-hide::-webkit-scrollbar-thumb:hover {
-    background: rgba(79, 30, 123, 0.42);
+    background: rgba(0, 0, 0, 0.42);
   }
   .scrollbar-hide {
     scrollbar-width: thin;
-    scrollbar-color: rgba(79, 30, 123, 0.18) transparent;
+    scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
   }
 
   ::-webkit-scrollbar {
@@ -207,14 +207,14 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: rgba(79, 30, 123, 0.35);
+    background: rgba(0, 0, 0, 0.35);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: padding-box;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(79, 30, 123, 0.60);
+    background: rgba(0, 0, 0, 0.60);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: padding-box;
@@ -226,7 +226,7 @@
 
   /* Immersive auth inputs — stronger placeholder contrast + focus ring */
   .auth-input {
-    @apply w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-[13px] text-ink placeholder:text-ink/50 focus:border-[#4F1E7B]/60 focus:bg-white/90 transition-all;
+    @apply w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-[13px] text-ink placeholder:text-ink/50 focus:border-[#0A0A0A]/60 focus:bg-white/90 transition-all;
     /* WCAG 4.5:1+ placeholder on cream */
   }
   .auth-input::placeholder {
@@ -234,7 +234,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid rgba(79, 30, 123, 0.60);
+    outline: 2px solid rgba(0, 0, 0, 0.60);
     outline-offset: 2px;
   }
 
@@ -288,18 +288,18 @@
   @apply border border-black/8 rounded-xl;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.70) inset,
-    0 0 0 1px rgba(79, 30, 123, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.05),
     0 8px 24px -8px rgba(0, 0, 0, 0.10),
-    0 4px 12px -4px rgba(79, 30, 123, 0.08);
+    0 4px 12px -4px rgba(0, 0, 0, 0.08);
 }
 
 @utility brutal-border-lg {
   @apply border border-black/9 rounded-2xl;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.70) inset,
-    0 0 0 1px rgba(79, 30, 123, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.06),
     0 20px 60px -20px rgba(0, 0, 0, 0.12),
-    0 8px 28px -8px rgba(79, 30, 123, 0.10);
+    0 8px 28px -8px rgba(0, 0, 0, 0.10);
 }
 
 @utility brutal-btn {
@@ -363,8 +363,8 @@
 
 @utility indicator-glow {
   box-shadow:
-    0 0 16px rgba(79, 30, 123, 0.40),
-    0 0 32px rgba(79, 30, 123, 0.18);
+    0 0 16px rgba(0, 0, 0, 0.40),
+    0 0 32px rgba(0, 0, 0, 0.18);
 }
 
 @utility scanline {
@@ -374,8 +374,8 @@
       to bottom,
       transparent 0,
       transparent 3px,
-      rgba(79, 30, 123, 0.008) 3px,
-      rgba(79, 30, 123, 0.008) 4px
+      rgba(0, 0, 0, 0.008) 3px,
+      rgba(0, 0, 0, 0.008) 4px
     );
   mix-blend-mode: screen;
 }
@@ -385,14 +385,14 @@
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.80) inset,
     0 8px 32px -8px rgba(0, 0, 0, 0.12),
-    0 4px 16px -4px rgba(79, 30, 123, 0.14);
+    0 4px 16px -4px rgba(0, 0, 0, 0.14);
 }
 
 .brutal-shadow-brand {
   box-shadow:
-    0 0 0 1px rgba(79, 30, 123, 0.25) inset,
-    0 8px 24px -6px rgba(79, 30, 123, 0.30),
-    0 14px 40px -10px rgba(79, 30, 123, 0.18);
+    0 0 0 1px rgba(0, 0, 0, 0.25) inset,
+    0 8px 24px -6px rgba(0, 0, 0, 0.30),
+    0 14px 40px -10px rgba(0, 0, 0, 0.18);
 }
 
 /* Display headline accent â€” solid brand teal on the editorial italic
@@ -400,21 +400,21 @@
  * operator console no longer looks like every other "AI startup". */
 .text-aurora {
   @apply font-display italic;
-  color: #4F1E7B;
+  color: #0A0A0A;
 }
 
 /* Legacy alias â€” same treatment. */
 .text-stroke {
-  color: #4F1E7B;
-  filter: drop-shadow(0 0 16px rgba(79, 30, 123, 0.20));
+  color: #0A0A0A;
+  filter: drop-shadow(0 0 16px rgba(0, 0, 0, 0.20));
 }
 
 .brand-wordmark {
   @apply font-display uppercase font-normal;
   letter-spacing: 0;
   text-rendering: geometricPrecision;
-  color: #4F1E7B;
-  filter: drop-shadow(0 0 10px rgba(79, 30, 123, 0.18));
+  color: #0A0A0A;
+  filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.18));
 }
 
 /* Subtle brand-tinted ring for emphasized surfaces. Previously a 3-stop
@@ -429,7 +429,7 @@
   inset: 0;
   padding: 1px;
   border-radius: inherit;
-  background: rgba(79, 30, 123, 0.45);
+  background: rgba(0, 0, 0, 0.45);
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
@@ -447,7 +447,7 @@
  * every card. Drop opacity drastically below the md breakpoint. */
 @media (max-width: 767px) {
   .aurora-ring::before {
-    background: rgba(79, 30, 123, 0.18);
+    background: rgba(0, 0, 0, 0.18);
   }
 }
 
@@ -551,7 +551,7 @@
 }
 
 .shimmer-line {
-  background: linear-gradient(90deg, transparent 0%, rgba(79, 30, 123 , 0.45) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.45) 50%, transparent 100%);
   background-size: 200% 100%;
   animation: shimmer 2.4s linear infinite;
 }
@@ -592,9 +592,9 @@
 /* Soft glow ring for focused / selected items */
 .ring-aurora {
   box-shadow:
-    0 0 0 1px rgba(79, 30, 123 , 0.50),
-    0 0 20px rgba(79, 30, 123 , 0.25),
-    0 0 40px rgba(79, 30, 123 , 0.10);
+    0 0 0 1px rgba(0, 0, 0, 0.50),
+    0 0 20px rgba(0, 0, 0, 0.25),
+    0 0 40px rgba(0, 0, 0, 0.10);
 }
 
 .font-display {
@@ -692,12 +692,12 @@
   letter-spacing: 0.01em;
   color: var(--color-on-brand);
   background: var(--color-brand);
-  box-shadow: 0 6px 20px -6px rgba(79, 30, 123, 0.55);
+  box-shadow: 0 6px 20px -6px rgba(0, 0, 0, 0.55);
   transition: background 0.15s ease, transform 0.15s ease;
 }
 
 .marketing-btn-primary:hover {
-  background: #6a25a3;
+  background: #1A1A1A;
 }
 
 .marketing-btn-secondary {
@@ -870,9 +870,9 @@ textarea:focus,
 select:focus {
   outline: none;
   box-shadow:
-    0 0 0 2px rgba(79, 30, 123 , 0.28),
-    0 0 14px rgba(79, 30, 123 , 0.12);
-  border-color: rgba(79, 30, 123 , 0.45);
+    0 0 0 2px rgba(0, 0, 0, 0.28),
+    0 0 14px rgba(0, 0, 0, 0.12);
+  border-color: rgba(0, 0, 0, 0.45);
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  EXTENDED DESIGN SYSTEM  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -956,7 +956,7 @@ select:focus {
 /* Section separator â€” soft brand line */
 .section-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(79, 30, 123, 0.30) 50%, transparent);
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.30) 50%, transparent);
 }
 
 /* Compact metric display */
@@ -995,17 +995,17 @@ select:focus {
   transform: translateY(-2px);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.90) inset,
-    0 0 0 1px rgba(79, 30, 123, 0.10),
+    0 0 0 1px rgba(0, 0, 0, 0.10),
     0 12px 36px -10px rgba(0, 0, 0, 0.12),
-    0 6px 20px -6px rgba(79, 30, 123, 0.14);
-  border-color: rgba(79, 30, 123, 0.20);
+    0 6px 20px -6px rgba(0, 0, 0, 0.14);
+  border-color: rgba(0, 0, 0, 0.20);
 }
 
 /* Brand badge â€” soft teal pill */
 .badge-aurora {
-  background: rgba(79, 30, 123, 0.10);
-  border: 1px solid rgba(79, 30, 123, 0.30);
-  color: #4F1E7B;
+  background: rgba(0, 0, 0, 0.10);
+  border: 1px solid rgba(0, 0, 0, 0.30);
+  color: #0A0A0A;
   @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-medium uppercase tracking-[0.20em] leading-none;
 }
 
@@ -1016,9 +1016,9 @@ select:focus {
 
 /* Sidebar nav item â€” active solid pill */
 .nav-active-bg {
-  background: #4F1E7B;
+  background: #0A0A0A;
   box-shadow:
-    0 4px 14px -6px rgba(79,30,123,0.45),
+    0 4px 14px -6px rgba(0, 0, 0, 0.45),
     0 0 0 1px rgba(255,255,255,0.18) inset;
 }
 
@@ -1027,8 +1027,8 @@ select:focus {
   height: 3px;
   width: 48px;
   border-radius: 999px;
-  background: #4F1E7B;
-  box-shadow: 0 0 10px rgba(79, 30, 123, 0.40);
+  background: #0A0A0A;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.40);
 }
 
 /* Glow on hover for icon buttons */
@@ -1046,7 +1046,7 @@ select:focus {
   outline: none;
   box-shadow:
     0 0 0 2px var(--color-paper),
-    0 0 0 4px rgba(79, 30, 123, 0.45);
+    0 0 0 4px rgba(0, 0, 0, 0.45);
   border-radius: inherit;
 }
 
@@ -1067,7 +1067,7 @@ select:focus {
 .native-scroll {
   @apply overflow-y-auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(79, 30, 123, 0.20) transparent;
+  scrollbar-color: rgba(0, 0, 0, 0.20) transparent;
   /* Contain overscroll — rubber-bands within the panel only, not the page.
      Also prevents the URL bar from reappearing mid-scroll on Safari.
      NOTE: touch-action intentionally omitted — pan-y would block horizontal
@@ -1161,7 +1161,7 @@ select:focus {
 /* Panel header decoration bar â€” soft brand fade */
 .panel-header-rule {
   height: 1px;
-  background: linear-gradient(90deg, rgba(79,30,123,0.45) 0%, transparent 100%);
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.45) 0%, transparent 100%);
 }
 
 /* Auth form input â€” tall, light, branded */
@@ -1188,9 +1188,9 @@ select:focus {
 
 /* Brand accent chip / tag */
 .chip-brand {
-  background: rgba(79, 30, 123, 0.10);
-  border: 1px solid rgba(79, 30, 123, 0.30);
-  color: #4F1E7B;
+  background: rgba(0, 0, 0, 0.10);
+  border: 1px solid rgba(0, 0, 0, 0.30);
+  color: #0A0A0A;
   @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.35em] leading-none font-medium;
 }
 
@@ -1200,7 +1200,7 @@ select:focus {
   background: rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(79, 30, 123, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .card-interactive-premium {
@@ -1213,7 +1213,7 @@ select:focus {
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, rgba(79, 30, 123, 0.25) 0%, transparent 60%);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.25) 0%, transparent 60%);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
@@ -1225,15 +1225,15 @@ select:focus {
 .card-interactive-premium:hover {
   transform: translateY(-3px) scale(1.01);
   box-shadow: 
-    0 20px 40px -15px rgba(79, 30, 123, 0.08),
-    0 0 0 1px rgba(79, 30, 123, 0.18);
+    0 20px 40px -15px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.18);
 }
 .card-interactive-premium:hover::before {
   opacity: 1;
 }
 
 .neon-glow-teal {
-  text-shadow: 0 0 8px rgba(79, 30, 123, 0.35);
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.35);
 }
 
 /* Futuristic Recharts Custom Tooltip Glassmorphic component */
@@ -1241,7 +1241,7 @@ select:focus {
   background: rgba(28, 25, 23, 0.92) !important;
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
-  border: 1px solid rgba(79, 30, 123, 0.3) !important;
+  border: 1px solid rgba(0, 0, 0, 0.3) !important;
   border-radius: 12px !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
   padding: 12px !important;
@@ -1252,9 +1252,9 @@ select:focus {
   @apply relative flex items-center justify-center w-5 h-5 rounded-md border border-black/12 transition-all cursor-pointer;
 }
 .neon-checkbox.active {
-  background: linear-gradient(135deg, #4F1E7B, #10B981);
-  border-color: #4F1E7B;
-  box-shadow: 0 0 10px rgba(79, 30, 123, 0.45);
+  background: linear-gradient(135deg, #0A0A0A, #10B981);
+  border-color: #0A0A0A;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.45);
 }
 
 /* AgentIntegrationCanvas — flowing data-line effect on active SVG lines */
@@ -1349,7 +1349,7 @@ select:focus {
       0 1px 0 rgba(255, 255, 255, 0.85) inset,
       0 -1px 0 rgba(0, 0, 0, 0.04),
       0 12px 40px -16px rgba(0, 0, 0, 0.12),
-      0 4px 16px -6px rgba(79, 30, 123, 0.08);
+      0 4px 16px -6px rgba(0, 0, 0, 0.08);
   }
 
   .panel-scroll {
@@ -1386,7 +1386,7 @@ select:focus {
 /* Animated Neural Synapse connection pulses */
 @keyframes synapse-glow {
   0%, 100% { opacity: 0.2; transform: scale(0.95); filter: drop-shadow(0 0 0 transparent); }
-  50% { opacity: 1; transform: scale(1.05); filter: drop-shadow(0 0 6px rgba(79, 30, 123, 0.8)); }
+  50% { opacity: 1; transform: scale(1.05); filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.8)); }
 }
 .synapse-pulse {
   animation: synapse-glow 2.5s infinite ease-in-out;
