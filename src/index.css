@@ -6,7 +6,7 @@
    Inspired by the parchment warmth of Claude/Anthropic's palette.
    Soft cream backgrounds with luminous aurora gradients as accents,
    frosted cream glass surfaces, and dark warm-ink typography on an
-   editorial Instrument Serif italic display face.
+   editorial DM Serif Display italic display face paired with Inter.
    Existing utility class names continue to work automatically.
    â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
@@ -88,6 +88,9 @@
   body {
     @apply font-sans bg-paper text-ink selection:bg-brand/20 selection:text-ink antialiased overflow-x-hidden;
     background: var(--color-paper);
+    font-optical-sizing: auto;
+    font-feature-settings: "cv11", "ss01";
+    letter-spacing: -0.011em;
     /* iOS Safari paints a translucent blue rectangle over any tap. We
      * have our own hover/active states (motion + scale) — kill the
      * default flash so taps feel like a native app. */
@@ -136,8 +139,9 @@
   }
 
   /* Readability floor — enforce minimum 11px across all viewports.
-     The old 8px/9px micro-type was borderline unreadable even on
+     The old 7–9px micro-type was borderline unreadable even on
      Retina displays. 11px Inter is clear at arm's length. */
+  .text-\[7px\],
   .text-\[8px\],
   .text-\[8\.5px\],
   .text-\[9px\] {
@@ -149,8 +153,9 @@
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-display font-normal;
-    letter-spacing: 0;
+    letter-spacing: -0.01em;
     text-wrap: balance;
+    font-feature-settings: normal;
   }
 
   p,
@@ -297,15 +302,15 @@
 /* Button size variants — use alongside brutal-btn to avoid !py- overrides. */
 .brutal-btn-xs {
   padding: 0.25rem 0.625rem;
-  font-size: 9px;
+  font-size: 11px;
   gap: 0.25rem;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.18em;
 }
 .brutal-btn-sm {
   padding: 0.375rem 0.75rem;
-  font-size: 10px;
+  font-size: 12px;
   gap: 0.3rem;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
 }
 .brutal-btn-lg {
   padding: 0.875rem 1.75rem;

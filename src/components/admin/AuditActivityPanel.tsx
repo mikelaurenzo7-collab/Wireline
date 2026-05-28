@@ -190,7 +190,7 @@ export function AuditActivityPanel() {
                       dataKey="date"
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fontSize: 9, fill: "rgba(0,0,0,0.4)" }}
+                      tick={{ fontSize: 11, fill: "rgba(0,0,0,0.55)" }}
                       tickFormatter={(val) =>
                         new Date(val).toLocaleDateString(undefined, {
                           month: "short",
@@ -274,7 +274,7 @@ export function AuditActivityPanel() {
                           ? `$${Number(entry.costUsd ?? entry.cost_usd).toFixed(5)}`
                           : "—"}
                       </span>
-                      <span className="text-[8px] text-muted/50 tabular-nums w-24 text-right">
+                      <span className="text-[8px] text-muted/65 tabular-nums w-24 text-right">
                         {formatDateTime(
                           entry.createdAt ?? entry.created_at,
                           { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" },

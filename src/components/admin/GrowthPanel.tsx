@@ -130,7 +130,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                         e.key === "Enter" && addTag("target_titles", newTitle, setNewTitle)
                       }
                       placeholder="e.g. CEO, Sales VP"
-                      className="flex-1 text-sm bg-black/5 border border-black/10 rounded-xl px-4 py-2.5 outline-none focus:border-brand/50 transition-all placeholder:text-muted/40"
+                      className="flex-1 text-sm bg-black/5 border border-black/10 rounded-xl px-4 py-2.5 outline-none focus:border-brand/50 transition-all placeholder:text-muted/60"
                     />
                     <button
                       onClick={() => addTag("target_titles", newTitle, setNewTitle)}
@@ -180,7 +180,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                         addTag("target_industries", newIndustry, setNewIndustry)
                       }
                       placeholder="e.g. Fintech, SaaS"
-                      className="flex-1 text-sm bg-black/5 border border-black/10 rounded-xl px-4 py-2.5 outline-none focus:border-brand/50 transition-all placeholder:text-muted/40"
+                      className="flex-1 text-sm bg-black/5 border border-black/10 rounded-xl px-4 py-2.5 outline-none focus:border-brand/50 transition-all placeholder:text-muted/60"
                     />
                     <button
                       onClick={() => addTag("target_industries", newIndustry, setNewIndustry)}
@@ -229,7 +229,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                         e.key === "Enter" && addTag("target_states", newState, setNewState)
                       }
                       placeholder="e.g. CA, NY, Texas"
-                      className="flex-1 text-sm bg-black/5 border border-black/10 rounded-xl px-4 py-2.5 outline-none focus:border-brand/50 transition-all placeholder:text-muted/40"
+                      className="flex-1 text-sm bg-black/5 border border-black/10 rounded-xl px-4 py-2.5 outline-none focus:border-brand/50 transition-all placeholder:text-muted/60"
                     />
                     <button
                       onClick={() => addTag("target_states", newState, setNewState)}

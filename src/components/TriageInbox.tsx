@@ -353,7 +353,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
               {c.customer_number || "Unknown caller"}
             </span>
             <p className="text-[11px] text-muted/70 truncate">{c.summary}</p>
-            <div className="flex items-center gap-2 mt-1 text-[8px] uppercase tracking-[0.26em] text-muted/50">
+            <div className="flex items-center gap-2 mt-1 text-[8px] uppercase tracking-[0.26em] text-muted/65">
               <span>{formatDate(c.created_at)}</span>
               <span className="w-1 h-1 rounded-full bg-white/15" />
               <span
@@ -751,7 +751,7 @@ function Empty({
 }) {
   return (
     <div className="h-full flex flex-col items-center justify-center gap-3 px-6 text-center">
-      <Icon className={cn("w-10 h-10", green ? "text-emerald-500/60" : "text-muted/50")} />
+      <Icon className={cn("w-10 h-10", green ? "text-emerald-500/60" : "text-muted/65")} />
       <p
         className={cn(
           "text-[10px] uppercase tracking-[0.4em]",

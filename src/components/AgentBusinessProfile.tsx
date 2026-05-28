@@ -737,7 +737,7 @@ function Field({
 
 function CharCount({ value, max }: { value: string; max: number }) {
   const len = value.length;
-  const tone = len > max * 0.9 ? "text-amber-600" : "text-muted/50";
+  const tone = len > max * 0.9 ? "text-amber-600" : "text-muted/65";
   return (
     <p className={cn("text-[9px] tabular-nums text-right", tone)}>
       {len}/{max}

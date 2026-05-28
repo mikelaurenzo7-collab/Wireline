@@ -838,7 +838,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
                 </span>
                 <span
                   aria-hidden="true"
-                  className="text-muted/50 transition-transform group-open:rotate-45 text-xl leading-none mt-0.5"
+                  className="text-muted/65 transition-transform group-open:rotate-45 text-xl leading-none mt-0.5"
                 >
                   +
                 </span>

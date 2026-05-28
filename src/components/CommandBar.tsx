@@ -364,7 +364,7 @@ export default function CommandBar() {
                 autoFocus
                 aria-label="Command search input"
                 placeholder="Jump anywhere or take an action…"
-                className="flex-1 bg-transparent border-none outline-none text-[14px] text-ink placeholder:text-muted/50 font-normal"
+                className="flex-1 bg-transparent border-none outline-none text-[14px] text-ink placeholder:text-muted/65 font-normal"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={onKeyDown}
@@ -439,7 +439,7 @@ export default function CommandBar() {
                                         "hidden sm:flex items-center px-1.5 py-0.5 rounded-md border text-[9px] leading-none uppercase tracking-[0.2em] transition-all",
                                         isSelected
                                           ? "bg-brand/15 border-brand/30 text-brand"
-                                          : "glass border-white/15 text-muted/50",
+                                          : "glass border-white/15 text-muted/65",
                                       )}
                                     >
                                       {cmd.shortcut}
@@ -465,7 +465,7 @@ export default function CommandBar() {
               ) : (
                 <div className="py-16 flex flex-col items-center justify-center gap-3">
                   <Terminal className="w-8 h-8 text-muted/30" />
-                  <p className="text-[10px] uppercase tracking-[0.4em] text-muted/50">
+                  <p className="text-[10px] uppercase tracking-[0.4em] text-muted/65">
                     No matching commands
                   </p>
                 </div>
@@ -473,7 +473,7 @@ export default function CommandBar() {
 
               {/* Footer */}
               <div className="sticky bottom-0 px-5 py-2.5 border-t border-white/8 flex items-center justify-between bg-paper/60 backdrop-blur-sm">
-                <div className="flex items-center gap-3 text-[8px] uppercase tracking-[0.28em] text-muted/50">
+                <div className="flex items-center gap-3 text-[8px] uppercase tracking-[0.28em] text-muted/65">
                   <span className="flex items-center gap-1">
                     <kbd
                       className="px-1 py-0.5 rounded glass border border-white/12 text-[7px]"
@@ -502,7 +502,7 @@ export default function CommandBar() {
                     Close
                   </span>
                 </div>
-                <span className="text-[8px] uppercase tracking-[0.4em] text-muted/40">
+                <span className="text-[8px] uppercase tracking-[0.4em] text-muted/60">
                   WIRELINE
                 </span>
               </div>

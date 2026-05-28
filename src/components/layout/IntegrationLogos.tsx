@@ -199,7 +199,7 @@ export default function IntegrationLogos() {
       className="mt-10 pt-8 border-t border-white/8"
       aria-label="Wireline integrations"
     >
-      <p className="text-[8px] uppercase tracking-[0.5em] text-muted/55 mb-3 text-center">
+      <p className="text-[8px] uppercase tracking-[0.5em] text-muted/70 mb-3 text-center">
         Integrates with
       </p>
       <LogoRow logos={INTEGRATIONS} height={16} />

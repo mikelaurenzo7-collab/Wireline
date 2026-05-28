@@ -201,7 +201,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                         {lesson.lesson}
                       </p>
 
-                      <p className="text-[8px] uppercase tracking-[0.3em] text-muted/50">
+                      <p className="text-[8px] uppercase tracking-[0.3em] text-muted/65">
                         Captured{" "}
                         {formatDateTime(lesson.created_at, {
                           month: "short",

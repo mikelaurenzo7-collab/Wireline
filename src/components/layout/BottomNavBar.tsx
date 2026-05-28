@@ -132,7 +132,7 @@ export default function BottomNavBar({ onOpenMenu, badges = {} }: Props) {
                 style={{
                   width: 22,
                   height: 22,
-                  color: active ? "#EFE9DC" : "rgba(239,233,220,0.42)",
+                  color: active ? "#EFE9DC" : "rgba(239,233,220,0.58)",
                   strokeWidth: active ? 2.5 : 1.75,
                 }}
               />
@@ -150,7 +150,7 @@ export default function BottomNavBar({ onOpenMenu, badges = {} }: Props) {
             {/* Label */}
             <span
               className="relative z-[1] text-[10px] font-medium tracking-[0.01em] transition-colors duration-150 leading-none"
-              style={{ color: active ? "#EFE9DC" : "rgba(239,233,220,0.42)" }}
+              style={{ color: active ? "#EFE9DC" : "rgba(239,233,220,0.58)" }}
             >
               {tab.label}
             </span>
@@ -171,14 +171,14 @@ export default function BottomNavBar({ onOpenMenu, badges = {} }: Props) {
             style={{
               width: 22,
               height: 22,
-              color: "rgba(239,233,220,0.42)",
+              color: "rgba(239,233,220,0.58)",
               strokeWidth: 1.75,
             }}
           />
         </div>
         <span
           className="text-[10px] font-medium tracking-[0.01em] leading-none"
-          style={{ color: "rgba(239,233,220,0.42)" }}
+          style={{ color: "rgba(239,233,220,0.58)" }}
         >
           More
         </span>

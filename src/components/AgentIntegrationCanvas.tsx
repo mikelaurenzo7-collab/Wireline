@@ -139,7 +139,7 @@ function SlackPreviewCard() {
               <span className="text-[11px] font-semibold" style={{ color: "#E8E8E8" }}>
                 Wireline Agent
               </span>
-              <span className="text-[9px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+              <span className="text-[9px]" style={{ color: "rgba(255,255,255,0.65)" }}>
                 just now
               </span>
             </div>
@@ -316,7 +316,7 @@ function CalendarPreviewCard() {
         </div>
         <div
           className="flex items-center gap-1.5 text-[10px] transition-all duration-500"
-          style={{ color: confirmed ? "rgba(52,168,83,0.9)" : "rgba(255,255,255,0.45)" }}
+          style={{ color: confirmed ? "rgba(52,168,83,0.9)" : "rgba(255,255,255,0.72)" }}
         >
           <div
             className="w-4 h-4 rounded-full text-[7px] font-bold text-white flex items-center justify-center transition-all duration-500"
@@ -363,7 +363,7 @@ function ShopifyPreviewCard() {
           />
           <div>
             <div className="text-xs text-white font-medium">Merino Wool Throw — Forest</div>
-            <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.45)" }}>
+            <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.72)" }}>
               Qty 2 · $89.00 each
             </div>
           </div>
@@ -397,7 +397,7 @@ function ShopifyPreviewCard() {
           className="flex items-center justify-between text-[10px] pt-1 border-t"
           style={{ borderColor: "rgba(255,255,255,0.06)" }}
         >
-          <span style={{ color: "rgba(255,255,255,0.45)" }}>
+          <span style={{ color: "rgba(255,255,255,0.72)" }}>
             Tracking: <span className="font-mono text-white/70">1Z999AA10</span>
           </span>
           <span className="font-medium text-white">$178.00</span>
@@ -427,7 +427,7 @@ function SquarePreviewCard() {
         <div className="flex items-center justify-between">
           <div>
             <div className="text-xs text-white font-medium">Invoice #INV-0047</div>
-            <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.45)" }}>
+            <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.72)" }}>
               Landscaping · Spring Package
             </div>
           </div>
@@ -484,7 +484,7 @@ function DocuSignPreviewCard() {
           </div>
           <div>
             <div className="text-xs text-white font-medium">Service Agreement 2025</div>
-            <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.45)" }}>
+            <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.72)" }}>
               Sent to john@acmecorp.com
             </div>
           </div>
@@ -555,7 +555,7 @@ function MetaPreviewCard() {
         <div className="flex items-center justify-between">
           <div
             className="text-[9px] uppercase tracking-[0.25em]"
-            style={{ color: "rgba(255,255,255,0.45)" }}
+            style={{ color: "rgba(255,255,255,0.72)" }}
           >
             Conversion Event
           </div>
@@ -692,7 +692,7 @@ function GeminiPreviewCard() {
             border: "1px solid rgba(255,255,255,0.08)",
           }}
         >
-          <Search size={10} style={{ color: "rgba(255,255,255,0.35)" }} />
+          <Search size={10} style={{ color: "rgba(255,255,255,0.65)" }} />
           <span style={{ color: "rgba(255,255,255,0.6)" }}>"Acme Corp pricing page 2025"</span>
         </div>
         <div className="space-y-2">
@@ -770,7 +770,7 @@ function TeamsPreviewCard() {
           <div>
             <div className="text-[10px] font-semibold text-white">
               Wireline Bot{" "}
-              <span className="text-[8px] font-normal" style={{ color: "rgba(255,255,255,0.35)" }}>
+              <span className="text-[8px] font-normal" style={{ color: "rgba(255,255,255,0.65)" }}>
                 just now
               </span>
             </div>
@@ -848,7 +848,7 @@ function ExcelPreviewCard() {
                   <td
                     key={j}
                     className="px-2 py-1.5 whitespace-nowrap"
-                    style={{ color: i === 0 ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.45)" }}
+                    style={{ color: i === 0 ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.72)" }}
                   >
                     {cell}
                   </td>
@@ -923,7 +923,7 @@ function SheetsPreviewCard() {
                   <td
                     key={j}
                     className="px-2 py-1.5 whitespace-nowrap"
-                    style={{ color: i === 0 ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.45)" }}
+                    style={{ color: i === 0 ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.72)" }}
                   >
                     {cell}
                   </td>
@@ -1642,7 +1642,7 @@ export default function AgentIntegrationCanvas({
                       Connect →
                     </a>
                   )}
-                  <span className="text-muted/50">
+                  <span className="text-muted/65">
                     {getEnabledCount(activeKey)}/{getTotalCount(activeKey)} tools on
                   </span>
                 </div>
@@ -1665,7 +1665,7 @@ export default function AgentIntegrationCanvas({
                 <div className="space-y-1.5">
                   <div
                     className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.28em]"
-                    style={{ color: "rgba(255,255,255,0.35)" }}
+                    style={{ color: "rgba(255,255,255,0.65)" }}
                   >
                     <Activity size={9} />
                     Recent Activity
@@ -1694,7 +1694,7 @@ export default function AgentIntegrationCanvas({
                           }}
                         />
                         <span className="flex-1 text-muted/80 truncate">{item.text}</span>
-                        <span className="text-muted/40 shrink-0 pl-2">{item.time}</span>
+                        <span className="text-muted/60 shrink-0 pl-2">{item.time}</span>
                       </div>
                     ))}
                   </div>

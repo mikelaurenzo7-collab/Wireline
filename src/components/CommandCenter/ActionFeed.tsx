@@ -89,7 +89,7 @@ export function ActionFeed({
           <Sparkles className="w-3.5 h-3.5 text-brand" />
           Intelligence Hub
         </h3>
-        <span className="text-[9px] font-mono text-muted/50 bg-black/5 px-2 py-0.5 rounded-full">
+        <span className="text-[9px] font-mono text-muted/65 bg-black/5 px-2 py-0.5 rounded-full">
           {actions.filter((a) => a.status === "pending").length} PENDING
         </span>
       </div>
@@ -222,13 +222,13 @@ export function ActionFeed({
                             </div>
                           )}
                           {isExpanded ? (
-                            <ChevronUp className="w-4 h-4 text-muted/40" />
+                            <ChevronUp className="w-4 h-4 text-muted/60" />
                           ) : (
-                            <ChevronDown className="w-4 h-4 text-muted/40" />
+                            <ChevronDown className="w-4 h-4 text-muted/60" />
                           )}
                         </div>
                       ) : (
-                        <AlertCircle className="w-4 h-4 text-muted/40" />
+                        <AlertCircle className="w-4 h-4 text-muted/60" />
                       )}
                     </div>
                   </div>

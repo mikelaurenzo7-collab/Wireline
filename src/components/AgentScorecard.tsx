@@ -197,7 +197,7 @@ function Sparkline({ values }: { values: number[] }) {
   const safe = Array.isArray(values) ? values.map((v) => (Number.isFinite(v) ? v : 0)) : [];
   if (safe.length < 2) {
     return (
-      <div className="text-[9px] uppercase tracking-[0.3em] text-muted/40 text-right">
+      <div className="text-[9px] uppercase tracking-[0.3em] text-muted/60 text-right">
         no trend yet
       </div>
     );

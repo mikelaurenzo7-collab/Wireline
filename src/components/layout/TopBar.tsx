@@ -244,7 +244,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 >
                   {breadcrumb.eyebrow && (
                     <>
-                      <span className="text-[9px] uppercase tracking-[0.42em] text-[#EFE9DC]/45 font-semibold whitespace-nowrap">
+                      <span className="text-[9px] uppercase tracking-[0.42em] text-[#EFE9DC]/62 font-semibold whitespace-nowrap">
                         {breadcrumb.eyebrow}
                       </span>
                       <span aria-hidden="true" className="text-[#EFE9DC]/25">
@@ -295,7 +295,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
               title="Search ( / )"
             >
               <Search className="w-4 h-4" />
-              <span className="hidden md:inline ml-1.5 text-[10px] text-[#EFE9DC]/50">/</span>
+              <span className="hidden md:inline ml-1.5 text-[10px] text-[#EFE9DC]/65">/</span>
             </button>
 
             {/* Keyboard shortcut hint — desktop only */}
@@ -498,7 +498,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                   if (visibleItems.length === 0) return null;
                   return (
                     <div key={group.label}>
-                      <div className="px-2 mb-1 text-[8px] font-semibold uppercase tracking-[0.42em] text-muted/55">
+                      <div className="px-2 mb-1 text-[8px] font-semibold uppercase tracking-[0.42em] text-muted/70">
                         {group.label}
                       </div>
                       <div className="space-y-0.5">

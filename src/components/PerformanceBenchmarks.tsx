@@ -95,10 +95,10 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
                   {item.user}
                   <span className="text-muted/60 ml-0.5 text-[9px]">{item.unit}</span>
                 </span>
-                <span className="text-muted/40 text-[9px]">vs</span>
+                <span className="text-muted/60 text-[9px]">vs</span>
                 <span className="font-mono text-[11px] text-ink/50">
                   {item.benchmark}
-                  <span className="text-muted/40 ml-0.5 text-[9px]">{item.unit}</span>
+                  <span className="text-muted/60 ml-0.5 text-[9px]">{item.unit}</span>
                 </span>
               </div>
             </div>
@@ -122,7 +122,7 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
           </div>
 
           {/* Expand chevron */}
-          <div className="shrink-0 text-muted/40 group-hover:text-muted/70 transition-colors">
+          <div className="shrink-0 text-muted/60 group-hover:text-muted/70 transition-colors">
             {expanded ? (
               <ChevronUp className="w-3.5 h-3.5" />
             ) : (
@@ -224,7 +224,7 @@ export default function PerformanceBenchmarks() {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3 py-8">
         <TrendingUp className="w-8 h-8 text-muted/30" />
-        <p className="text-[9px] uppercase tracking-[0.5em] text-muted/50">
+        <p className="text-[9px] uppercase tracking-[0.5em] text-muted/65">
           No call data in the last 30 days
         </p>
         <Link

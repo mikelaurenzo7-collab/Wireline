@@ -276,7 +276,7 @@ export default function VoiceFineTuningPanel({
                 "disabled:opacity-50 disabled:cursor-not-allowed",
                 "inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.25em] transition-colors",
                 atDefaults
-                  ? "text-muted/40 cursor-not-allowed"
+                  ? "text-muted/60 cursor-not-allowed"
                   : "text-muted/80 hover:text-brand cursor-pointer",
               )}
             >

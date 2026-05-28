@@ -223,10 +223,10 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         />
         {effective && (
           <>
-            <span className="flex-1 text-left text-[11px] text-[#EFE9DC]/50 group-hover:text-[#EFE9DC]/75 transition-colors">
+            <span className="flex-1 text-left text-[11px] text-[#EFE9DC]/65 group-hover:text-[#EFE9DC]/75 transition-colors">
               Search…
             </span>
-            <kbd className="text-[9px] font-mono px-1.5 py-0.5 rounded border border-white/12 bg-white/4 text-[#EFE9DC]/45 leading-none">
+            <kbd className="text-[9px] font-mono px-1.5 py-0.5 rounded border border-white/12 bg-white/4 text-[#EFE9DC]/62 leading-none">
               /
             </kbd>
           </>
@@ -259,7 +259,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                       className="w-1 h-1 rounded-full shrink-0"
                       style={{ background: accent }}
                     />
-                    <span className="text-[8px] uppercase tracking-[0.42em] text-[#EFE9DC]/45 font-semibold">
+                    <span className="text-[8px] uppercase tracking-[0.42em] text-[#EFE9DC]/62 font-semibold">
                       {group.label}
                     </span>
                   </motion.div>
@@ -372,7 +372,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         <button
           type="button"
           onClick={() => setUserOverride(!expanded)}
-          className="w-full h-7 mt-0.5 flex items-center justify-center gap-2 px-2 rounded-lg text-[#EFE9DC]/35 hover:text-[#EFE9DC]/75 hover:bg-white/6 transition-all"
+          className="w-full h-7 mt-0.5 flex items-center justify-center gap-2 px-2 rounded-lg text-[#EFE9DC]/55 hover:text-[#EFE9DC]/75 hover:bg-white/6 transition-all"
           aria-label={expanded ? "Collapse navigation" : "Expand navigation"}
           aria-pressed={expanded}
           title={expanded ? "Collapse rail" : "Expand rail"}
@@ -492,7 +492,7 @@ function RailItem({ item, active, badge, expanded, accent, shortcut }: RailItemP
                   minWidth: 14,
                   height: 14,
                   padding: "0 4px",
-                  fontSize: 8,
+                  fontSize: 11,
                 }
           }
         >
@@ -600,7 +600,7 @@ function TierInline() {
   // account row never looks empty.
   if (!tier?.plan_name) {
     return (
-      <p className="text-[8.5px] uppercase tracking-[0.25em] text-[#EFE9DC]/45 leading-none mt-1 truncate">
+      <p className="text-[8.5px] uppercase tracking-[0.25em] text-[#EFE9DC]/62 leading-none mt-1 truncate">
         {user?.email?.split("@")[1]}
       </p>
     );

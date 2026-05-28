@@ -168,8 +168,8 @@ function OAuthSignInButtons({
   ];
 
   return (
-    <div className="relative z-10 space-y-3 mb-5">
-      <div className="grid grid-cols-3 gap-3">
+    <div className="relative z-10 space-y-2.5 mb-4">
+      <div className="grid grid-cols-3 gap-2.5">
         {providers.map((p) => (
           <button
             key={p.id}
@@ -178,7 +178,7 @@ function OAuthSignInButtons({
             disabled={disabled || !!pending}
             aria-label={`Continue with ${p.label}`}
             title={`Continue with ${p.label}`}
-            className="min-h-[52px] py-2.5 inline-flex flex-col items-center justify-center gap-1.5 rounded-xl border border-black/10 bg-white/70 text-ink text-[11px] uppercase tracking-[0.16em] font-medium hover:border-[#4F1E7B]/40 hover:bg-white hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="min-h-[48px] py-2 inline-flex flex-col items-center justify-center gap-1 rounded-xl border border-black/10 bg-white/70 text-ink text-[11px] uppercase tracking-[0.16em] font-medium hover:border-[#4F1E7B]/40 hover:bg-white hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {pending === p.id ? <Loader2 className="w-5 h-5 animate-spin" /> : p.icon}
             <span>{p.label}</span>
@@ -362,7 +362,7 @@ export default function AuthPortal() {
         path={pathname === "/signup" ? "/signup" : undefined}
         noIndex={true}
       />
-      <div className="min-h-dvh flex flex-col items-center justify-center relative overflow-hidden bg-paper px-4 py-6 sm:py-8">
+      <div className="min-h-dvh flex flex-col items-center justify-center relative overflow-hidden bg-paper px-4 py-4 sm:py-6">
         <div className="pointer-events-none fixed inset-0 z-0 bg-paper" />
         <div className="scanline" />
 
@@ -394,7 +394,7 @@ export default function AuthPortal() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="relative z-10 mb-6"
+          className="relative z-10 mb-4"
         >
           <Link to="/" className="flex items-center gap-3">
             <div
@@ -431,10 +431,10 @@ export default function AuthPortal() {
                 "0 1px 0 rgba(255,255,255,0.9) inset, 0 20px 50px -24px rgba(79,30,123,0.18), 0 8px 24px -12px rgba(0,0,0,0.10)",
             }}
           >
-            <div className="relative p-6 sm:p-8">
+            <div className="relative p-5 sm:p-6">
               {/* Header */}
-              <div className="relative z-10 mb-6">
-                <h1 className="font-display italic text-3xl text-ink leading-tight mb-1">
+              <div className="relative z-10 mb-4">
+                <h1 className="font-display italic text-2xl text-ink leading-tight mb-1">
                   {isReset ? "Reset password" : isSignUp ? "Create account" : "Welcome back"}
                 </h1>
                 <p className="text-[13px] text-ink/60">
@@ -454,14 +454,14 @@ export default function AuthPortal() {
               {/* Tab toggle */}
               {!isReset && (
                 <div className="relative z-10 mb-5">
-                  <div className="relative flex p-1 rounded-2xl bg-black/5 border border-black/5">
+                  <div className="relative flex p-0.5 rounded-xl bg-black/5 border border-black/5">
                     <motion.div
                       layout
-                      className="absolute inset-y-1 w-[calc(50%-4px)] rounded-xl"
+                      className="absolute inset-y-0.5 w-[calc(50%-2px)] rounded-lg"
                       style={{
                         background: "rgba(79, 30, 123, 0.12)",
                         border: "1px solid rgba(79, 30, 123, 0.25)",
-                        left: isSignUp ? "calc(50% + 2px)" : "4px",
+                        left: isSignUp ? "calc(50% + 1px)" : "2px",
                         boxShadow: "0 4px 12px -4px rgba(79, 30, 123, 0.2)",
                       }}
                       transition={{ type: "spring", stiffness: 400, damping: 34 }}
@@ -474,7 +474,7 @@ export default function AuthPortal() {
                         key={String(opt.value)}
                         onClick={() => setIsSignUp(opt.value)}
                         className={
-                          "relative z-10 flex-1 py-2.5 text-[11px] uppercase tracking-[0.25em] transition-colors font-medium " +
+                          "relative z-10 flex-1 py-2 text-[11px] uppercase tracking-[0.25em] transition-colors font-medium " +
                           (isSignUp === opt.value ? "text-ink" : "text-ink/45 hover:text-ink/65")
                         }
                       >
@@ -677,7 +677,7 @@ export default function AuthPortal() {
                 <button
                   type="submit"
                   disabled={loading || (isSignUp && !agreedToTerms)}
-                  className="native-tap-squish w-full flex items-center justify-center gap-2 py-3.5 px-6 text-[12px] tracking-[0.25em] uppercase font-medium rounded-full cursor-pointer text-on-brand bg-[#4F1E7B] hover:bg-[#6A25A3] max-md:hover:translate-y-0 hover:-translate-y-[1px] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
+                  className="native-tap-squish w-full flex items-center justify-center gap-2 py-3 px-6 text-[12px] tracking-[0.25em] uppercase font-medium rounded-full cursor-pointer text-on-brand bg-[#4F1E7B] hover:bg-[#6A25A3] max-md:hover:translate-y-0 hover:-translate-y-[1px] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
                   style={{ boxShadow: "0 4px 12px -2px rgba(79,30,123,0.3)" }}
                 >
                   {loading ? (
@@ -708,9 +708,9 @@ export default function AuthPortal() {
           <RoiCalculator compact />
 
           {/* Footer */}
-          <div className="mt-4 flex items-center justify-center gap-3">
+          <div className="mt-3 flex items-center justify-center gap-2">
             <ShieldCheck className="w-3 h-3 text-ink/30" />
-            <span className="text-[11px] uppercase tracking-[0.2em] text-ink/40">
+            <span className="text-[11px] uppercase tracking-[0.18em] text-ink/40">
               TLS Encrypted · Secured Infrastructure
             </span>
           </div>

@@ -519,7 +519,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
               "disabled:opacity-50 disabled:cursor-not-allowed",
               "w-full px-4 py-3 rounded-xl border flex items-start gap-3 text-left transition-all",
               !gmailConnected
-                ? "bg-black/20 border-white/5 text-muted/50 cursor-not-allowed"
+                ? "bg-black/20 border-white/5 text-muted/65 cursor-not-allowed"
                 : enabled
                   ? "bg-brand-2/15 border-brand-2/40 text-brand-2"
                   : "bg-black/5 border-black/10 text-ink/80 hover:border-black/20",

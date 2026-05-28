@@ -131,37 +131,29 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
   if (compact) {
     return (
       <motion.section
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-        className="mt-4"
+        transition={{ delay: 0.15, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="mt-3"
         aria-label="ROI snapshot"
       >
-        <div className="rounded-2xl border border-brand/15 bg-white/70 p-3 shadow-[0_8px_28px_-18px_rgba(79,30,123,0.22)]">
-          <div className="flex items-start justify-between gap-3">
+        <div className="rounded-xl border border-brand/12 bg-white/60 px-4 py-2.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Calculator className="w-4 h-4 text-brand shrink-0" />
             <div className="min-w-0">
-              <p className="text-[8px] uppercase tracking-[0.28em] text-brand font-semibold">
-                ROI snapshot
-              </p>
-              <p className="mt-1 font-display italic text-lg leading-none text-ink">
+              <span className="font-display italic text-base leading-none text-ink">
                 {fmtUsd(results.totalRecovered)}
-                <span className="ml-1 text-[10px] font-sans not-italic tracking-[0.16em] uppercase text-muted/60">
-                  /yr found
-                </span>
-              </p>
-            </div>
-            <div className="shrink-0 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-[9px] uppercase tracking-[0.22em] text-emerald-700">
-              {results.paybackDays}d payback
+              </span>
+              <span className="ml-1.5 text-[11px] font-sans not-italic text-ink/50">
+                /yr recovered
+              </span>
             </div>
           </div>
-          <p className="mt-2 text-[10px] leading-relaxed text-muted/75">
-            Default math: 12 missed calls/week at $180/job.
-          </p>
           <a
             href="/pricing#roi"
-            className="mt-2 inline-flex min-h-9 items-center rounded-full text-[9px] uppercase tracking-[0.24em] text-brand hover:underline"
+            className="shrink-0 text-[11px] uppercase tracking-[0.18em] text-brand hover:underline"
           >
-            See full ROI math →
+            ROI math →
           </a>
         </div>
       </motion.section>
@@ -305,7 +297,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
         </div>
 
         {/* Honest footer */}
-        <p className="mt-3 text-[8.5px] uppercase tracking-[0.22em] text-muted/45 leading-relaxed">
+        <p className="mt-3 text-[8.5px] uppercase tracking-[0.22em] text-muted/60 leading-relaxed">
           Assumes Wireline recovers 82% of missed calls (the rest were wrong-numbers or
           window-shoppers). Labor saved uses $22/hr (US BLS 2025 admin-assistant median). Wireline
           Pro tier billed at $499/mo. Switch tiers anytime.

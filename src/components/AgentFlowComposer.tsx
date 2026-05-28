@@ -631,7 +631,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                 <Sparkles className="w-3 h-3 text-brand" />
                 Insert a snippet
               </span>
-              <span className="text-muted/50">{showSnippets ? "−" : "+"}</span>
+              <span className="text-muted/65">{showSnippets ? "−" : "+"}</span>
             </button>
             {showSnippets && (
               <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
@@ -714,7 +714,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                           : "glass border-white/10 hover:border-white/30",
                       )}
                     >
-                      <div className="cursor-grab active:cursor-grabbing text-muted/40 hover:text-ink/60 transition-colors shrink-0">
+                      <div className="cursor-grab active:cursor-grabbing text-muted/60 hover:text-ink/60 transition-colors shrink-0">
                         <GripVertical className="w-4 h-4" />
                       </div>
 
@@ -749,7 +749,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                         onClick={(e) => handleDuplicateStep(step.id, e)}
                         aria-label="Duplicate stage"
                         title="Duplicate stage"
-                        className="w-7 h-7 rounded-md flex items-center justify-center text-muted/40 hover:text-brand hover:bg-brand/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                        className="w-7 h-7 rounded-md flex items-center justify-center text-muted/60 hover:text-brand hover:bg-brand/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
                       >
                         <Copy className="w-3.5 h-3.5" />
                       </button>
@@ -757,7 +757,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                         onClick={(e) => handleRemoveStep(step.id, e)}
                         aria-label="Delete stage"
                         title="Delete stage"
-                        className="w-7 h-7 rounded-md flex items-center justify-center text-muted/40 hover:text-rose-500 hover:bg-rose-500/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                        className="w-7 h-7 rounded-md flex items-center justify-center text-muted/60 hover:text-rose-500 hover:bg-rose-500/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -792,7 +792,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       value={activeStep.name}
                       onChange={(e) => handleUpdateStep(activeStep.id, "name", e.target.value)}
                       placeholder="Stage Name"
-                      className="bg-transparent text-xl font-display italic text-ink outline-none placeholder:text-muted/40 w-full"
+                      className="bg-transparent text-xl font-display italic text-ink outline-none placeholder:text-muted/60 w-full"
                     />
                     <div className="text-[10px] uppercase tracking-[0.3em] text-muted/60 mt-0.5">
                       Stage definition
@@ -878,7 +878,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       handleUpdateStep(activeStep.id, "instructions", e.target.value)
                     }
                     placeholder="e.g. You are now qualifying the lead. Ask about their budget and timeline. Do not mention specific pricing yet."
-                    className="w-full h-40 bg-black/10 border border-white/10 rounded-xl p-4 text-sm text-ink leading-relaxed resize-none focus:outline-none focus:border-brand/40 transition-colors placeholder:text-muted/30"
+                    className="w-full h-40 bg-black/10 border border-white/10 rounded-xl p-4 text-sm text-ink leading-relaxed resize-none focus:outline-none focus:border-brand/40 transition-colors placeholder:text-muted/55"
                   />
                   {/* Pacing / length hints — operators tend to write
                       either too terse ("be friendly") or too verbose
@@ -908,7 +908,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                           {tooLong && " · too long for one stage, consider splitting"}
                           {tooShort && " · too vague, agent will need more guidance"}
                         </span>
-                        {words > 0 && <span className="text-muted/40">target 30–150 words</span>}
+                        {words > 0 && <span className="text-muted/60">target 30–150 words</span>}
                       </div>
                     );
                   })()}
@@ -1002,7 +1002,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                           handleUpdateStep(activeStep.id, "transitionCondition", e.target.value)
                         }
                         placeholder="e.g. The user has provided their email address and expressed interest in a demo."
-                        className="w-full h-24 bg-black/10 border border-emerald-500/20 rounded-xl pl-12 pr-4 py-4 text-sm text-ink leading-relaxed resize-none focus:outline-none focus:border-emerald-500/50 transition-colors placeholder:text-muted/30"
+                        className="w-full h-24 bg-black/10 border border-emerald-500/20 rounded-xl pl-12 pr-4 py-4 text-sm text-ink leading-relaxed resize-none focus:outline-none focus:border-emerald-500/50 transition-colors placeholder:text-muted/55"
                       />
                     </div>
 

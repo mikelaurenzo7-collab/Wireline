@@ -308,7 +308,7 @@ export default function VoiceLibraryPanel() {
                   "shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all",
                   v.preview_url
                     ? "bg-brand/10 text-brand hover:bg-brand/20"
-                    : "bg-black/5 text-muted/40 cursor-not-allowed",
+                    : "bg-black/5 text-muted/60 cursor-not-allowed",
                 )}
                 aria-label={`Play preview of ${v.name}`}
               >

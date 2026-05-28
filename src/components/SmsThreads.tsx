@@ -278,7 +278,7 @@ export default function SmsThreads() {
                           }}
                           placeholder="Type a reply…"
                           disabled={sending}
-                          className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 disabled:opacity-50"
+                          className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 disabled:opacity-50"
                         />
                         <button
                           onClick={handleSend}

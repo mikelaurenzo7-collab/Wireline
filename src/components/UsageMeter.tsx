@@ -83,7 +83,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
         />
         <span className="text-muted/70 font-semibold tracking-wider">VOICE</span>
         <span className="text-ink font-bold tabular-nums">{used.toLocaleString()}</span>
-        <span className="text-muted/40 font-light">/</span>
+        <span className="text-muted/60 font-light">/</span>
         <span className="text-muted/70 tabular-nums">{included.toLocaleString()}</span>
       </div>
     );
@@ -122,7 +122,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
             <span className="text-ink tabular-nums text-base font-bold">
               {used.toLocaleString()}
             </span>
-            <span className="text-muted/50"> / {included.toLocaleString()}</span>
+            <span className="text-muted/65"> / {included.toLocaleString()}</span>
           </div>
           <p className="text-[9px] uppercase tracking-[0.3em] text-brand font-semibold mt-0.5">
             {pct}% used
