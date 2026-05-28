@@ -161,7 +161,9 @@ router.get(
         drizzle
           .select({ content: schema.personality.content })
           .from(schema.personality)
-          .where(eq(schema.personality.agentId, agentId))
+          .where(
+            and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)),
+          )
           .limit(1),
         drizzle
           .select({ content: schema.directives.content, priority: schema.directives.priority })
@@ -307,7 +309,9 @@ router.get(
         drizzle
           .select({ content: schema.personality.content })
           .from(schema.personality)
-          .where(eq(schema.personality.agentId, agentId))
+          .where(
+            and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)),
+          )
           .limit(1),
         drizzle
           .select()

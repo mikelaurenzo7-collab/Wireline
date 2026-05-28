@@ -423,11 +423,15 @@ export const updateFleetTaskSchema = z.object({
 // ============================================================================
 
 /**
- * Sanitize string input to prevent XSS
+ * Sanitize string input to prevent XSS by encoding HTML special characters.
  */
 export function sanitizeString(input: string): string {
   return input
-    .replace(/[<>]/g, "") // Remove angle brackets
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
     .trim();
 }
 

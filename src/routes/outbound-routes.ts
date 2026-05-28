@@ -309,7 +309,8 @@ router.post(
       }
 
       res.json({ success: true, inserted: insertedLeads.length });
-    } catch {
+    } catch (error) {
+      log.error("Failed to queue leads", { error: getErrorMessage(error) });
       res.status(500).json({ error: "Failed to queue leads" });
     }
   },

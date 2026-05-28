@@ -33,8 +33,9 @@ router.get("/api/settings", authenticateUser, async (req: AuthenticatedRequest, 
     }
 
     res.json({ settings: safe });
-  } catch {
-    res.json({ settings: {} });
+  } catch (error) {
+    log.error("Failed to fetch settings", { error: getErrorMessage(error) });
+    res.status(500).json({ error: "Failed to fetch settings" });
   }
 });
 
@@ -92,7 +93,7 @@ router.get(
         preferences: data?.preferences ?? {},
       });
     } catch (error) {
-      log.error("Failed to fetch user preferences", { error });
+      log.error("Failed to fetch user preferences", { error: getErrorMessage(error) });
       res.status(500).json({ error: "Failed to fetch preferences" });
     }
   },

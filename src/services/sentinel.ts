@@ -193,9 +193,12 @@ export class SentinelService {
   }
 
   private checkBaselineTCPA(): SentinelResult {
+    // Use proper timezone conversion for Eastern Time instead of hard-coded offset
     const now = new Date();
-    const hour = now.getUTCHours() - 5; // Rough Est Central fallback
-    if (hour < 8 || hour >= 21) {
+    const etHour = new Date(
+      now.toLocaleString("en-US", { timeZone: "America/New_York" }),
+    ).getHours();
+    if (etHour < 8 || etHour >= 21) {
       return { allowed: false, reason: "OUTSIDE_TCPA_HOURS_EST_FALLBACK" };
     }
     return { allowed: true };

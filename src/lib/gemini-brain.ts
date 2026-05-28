@@ -1,7 +1,27 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { z } from "zod";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
+
+const LiveSentimentSchema = z.object({
+  sentiment: z.string().default("neutral"),
+  urgency: z.number().min(0).max(10).default(0),
+  escalate: z.boolean().default(false),
+  reason: z.string().default(""),
+});
+
+const PostCallAnalysisSchema = z.object({
+  lead_score: z.number().min(0).max(100).default(0),
+  intent_label: z.string().default("none"),
+  sentiment: z.string().default("neutral"),
+  lesson: z.string().default(""),
+  coaching_note: z.string().default(""),
+  action_items: z
+    .array(z.object({ description: z.string(), priority: z.string().optional() }))
+    .optional(),
+  knowledge_gaps: z.array(z.string()).optional(),
+});
 
 const genAI = process.env.GEMINI_API_KEY
   ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
@@ -103,7 +123,17 @@ export async function analyzeLiveSentiment(transcript: string): Promise<{
     const result = await model.generateContent(prompt);
     const text = result.response.text().trim();
     const jsonStr = text.replace(/```json|```/g, "").trim();
-    return JSON.parse(jsonStr);
+    const parsed = LiveSentimentSchema.safeParse(JSON.parse(jsonStr));
+    if (!parsed.success) {
+      log.warn("Gemini live analysis returned invalid shape", { error: parsed.error.message });
+      return {
+        sentiment: "neutral",
+        urgency: 0,
+        escalate: false,
+        reason: "Invalid response shape",
+      };
+    }
+    return parsed.data;
   } catch (err) {
     log.error("Gemini live analysis failed", { error: getErrorMessage(err) });
     return { sentiment: "neutral", urgency: 0, escalate: false, reason: "Analysis failed" };
@@ -155,7 +185,18 @@ export async function postCallAnalysis(params: { transcript: string; summary: st
     const result = await model.generateContent(prompt);
     const text = result.response.text().trim();
     const jsonStr = text.replace(/```json|```/g, "").trim();
-    return JSON.parse(jsonStr);
+    const parsed = PostCallAnalysisSchema.safeParse(JSON.parse(jsonStr));
+    if (!parsed.success) {
+      log.warn("Gemini post-call analysis returned invalid shape", { error: parsed.error.message });
+      return {
+        lead_score: 0,
+        intent_label: "none",
+        sentiment: "neutral",
+        lesson: "",
+        coaching_note: "Invalid response shape",
+      };
+    }
+    return parsed.data;
   } catch (err) {
     log.error("Gemini post-call analysis failed", { error: getErrorMessage(err) });
     return {

@@ -130,7 +130,7 @@ export class CampaignDialerService {
             .update(schema.outboundLeads)
             .set({
               status: "Dialing",
-              attempts: (lead.attempts || 0) + 1,
+              attempts: sql`${schema.outboundLeads.attempts} + 1`,
               lastCalledAt: new Date(),
               callId: result.callId,
             })
@@ -149,7 +149,7 @@ export class CampaignDialerService {
           .update(schema.outboundLeads)
           .set({
             status: "Error",
-            attempts: (lead.attempts || 0) + 1,
+            attempts: sql`${schema.outboundLeads.attempts} + 1`,
             lastCalledAt: new Date(),
             metadata: { ...((lead.metadata as object) || {}), lastError: result.error },
           })

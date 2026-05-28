@@ -207,7 +207,7 @@ export async function failJob(
   await db
     .update(schema.jobs)
     .set({
-      status: (exhausted ? "dead" : "failed") as JobStatus,
+      status: (exhausted ? "dead" : "pending") as JobStatus,
       error: errorMessage.slice(0, 2000),
       finishedAt: exhausted ? new Date() : null,
       runAt: nextRunAt ?? new Date(),

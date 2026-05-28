@@ -84,6 +84,15 @@ export async function syncOutlookCalendar(userId: string) {
       for (const event of events) {
         if (!event.id || !event.start?.dateTime || !event.end?.dateTime) continue;
 
+        // Graph API returns dateTime without "Z" suffix when timeZone is specified
+        // separately. Only append "Z" if the string doesn't already contain timezone info.
+        const parseGraphDateTime = (dt: string): Date => {
+          if (/[Zz]$/.test(dt) || /[+-]\d{2}:\d{2}$/.test(dt)) {
+            return new Date(dt);
+          }
+          return new Date(dt + "Z");
+        };
+
         await drizzle
           .insert(schema.calendarEvents)
           .values({
@@ -91,9 +100,8 @@ export async function syncOutlookCalendar(userId: string) {
             accountId: account.id,
             externalEventId: event.id,
             title: event.subject || "Busy",
-            // Graph API returns time with a timezone object, we'll try to convert to ISO
-            startTime: new Date(event.start.dateTime + "Z"),
-            endTime: new Date(event.end.dateTime + "Z"),
+            startTime: parseGraphDateTime(event.start.dateTime),
+            endTime: parseGraphDateTime(event.end.dateTime),
             status: event.showAs || "confirmed",
             updatedAt: new Date(),
           })
@@ -101,8 +109,8 @@ export async function syncOutlookCalendar(userId: string) {
             target: [schema.calendarEvents.accountId, schema.calendarEvents.externalEventId],
             set: {
               title: event.subject || "Busy",
-              startTime: new Date(event.start.dateTime + "Z"),
-              endTime: new Date(event.end.dateTime + "Z"),
+              startTime: parseGraphDateTime(event.start.dateTime),
+              endTime: parseGraphDateTime(event.end.dateTime),
               status: event.showAs || "confirmed",
               updatedAt: new Date(),
             },
