@@ -41,7 +41,7 @@ export default function TriggerIntelligenceFeed({ activity }: { activity: Activi
               <Waves className="w-5 h-5 text-brand/60" />
             </div>
           </div>
-          <p className="text-[9px] uppercase tracking-[0.5em] text-muted/65">Awaiting signals…</p>
+          <p className="text-[9px] uppercase tracking-[0.5em] text-muted/70">Awaiting signals…</p>
         </div>
       ) : (
         <ul className="flex-1 divide-y divide-white/5 overflow-y-auto scrollbar-hide">
@@ -78,7 +78,7 @@ export default function TriggerIntelligenceFeed({ activity }: { activity: Activi
                       >
                         {item.trigger}
                       </span>
-                      <span className="text-[8px] font-mono text-muted/65 shrink-0 tabular-nums">
+                      <span className="text-[8px] font-mono text-muted/70 shrink-0 tabular-nums">
                         {formatTime(item.timestamp, {
                           hour: "2-digit",
                           minute: "2-digit",

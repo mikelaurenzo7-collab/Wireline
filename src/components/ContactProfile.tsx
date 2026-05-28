@@ -260,7 +260,7 @@ export default function ContactProfile() {
             const timeline = Array.isArray(data.timeline) ? data.timeline : [];
             if (timeline.length === 0) {
               return (
-                <div className="p-16 text-center text-muted/60 text-[11px] uppercase tracking-[0.4em]">
+                <div className="p-16 text-center text-muted/70 text-[11px] uppercase tracking-[0.4em]">
                   No interactions on file.
                 </div>
               );

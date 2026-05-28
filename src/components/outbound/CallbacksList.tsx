@@ -28,9 +28,9 @@ export default function CallbacksList({
   if (callbacks.length === 0) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3 px-6 text-center">
-        <CalendarClock className="w-10 h-10 text-muted/55" />
+        <CalendarClock className="w-10 h-10 text-muted/70" />
         <p className="text-[11px] uppercase tracking-[0.35em] text-muted">No scheduled callbacks</p>
-        <p className="text-[10px] text-muted/60 max-w-xs">
+        <p className="text-[10px] text-muted/70 max-w-xs">
           When agents use the schedule_callback tool during a call, those contacts appear here and
           are auto-dialed at the promised time.
         </p>
@@ -111,7 +111,7 @@ export default function CallbacksList({
                     {cb.last_contact_summary}
                   </p>
                 )}
-                <p className="text-[9px] text-muted/65 mt-1">
+                <p className="text-[9px] text-muted/70 mt-1">
                   {scheduledAt.toLocaleString("en-US", {
                     weekday: "short",
                     month: "short",

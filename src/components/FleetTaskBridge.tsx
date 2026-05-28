@@ -244,7 +244,7 @@ export default function FleetTaskBridge() {
                             <Mail className="w-3.5 h-3.5" />
                           )}
                         </div>
-                        <ChevronRight className="w-3 h-3 text-muted/65" />
+                        <ChevronRight className="w-3 h-3 text-muted/70" />
                         <div
                           className={cn(
                             "w-8 h-8 rounded-lg glass border flex items-center justify-center shrink-0",
@@ -299,7 +299,7 @@ export default function FleetTaskBridge() {
                         Overdue
                       </span>
                     )}
-                    <span className="text-[9px] uppercase tracking-[0.3em] text-muted/65 ml-auto">
+                    <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70 ml-auto">
                       <Clock className="w-2.5 h-2.5 inline mr-1" />
                       {formatTime(task.created_at, { hour: "2-digit", minute: "2-digit" })}
                     </span>
@@ -355,7 +355,7 @@ export default function FleetTaskBridge() {
                         onChange={(e) =>
                           setResolutionNotes({ ...resolutionNotes, [task.id]: e.target.value })
                         }
-                        className="w-full text-xs bg-black/5 border border-black/10 rounded-lg px-2.5 py-1.5 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 resize-none"
+                        className="w-full text-xs bg-black/5 border border-black/10 rounded-lg px-2.5 py-1.5 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 resize-none"
                       />
                       <button
                         onClick={() => updateStatus(task.id, "completed")}

@@ -84,7 +84,7 @@ export function CallPlaybookForm({
           <ResultCard title="Opening Hook" copyText={playbook.opening_hook}>
             <p className="text-ink/90 italic text-sm leading-relaxed">"{playbook.opening_hook}"</p>
             {playbook.purpose_statement && (
-              <p className="text-ink/60 text-sm mt-2">Then: "{playbook.purpose_statement}"</p>
+              <p className="text-ink/70 text-sm mt-2">Then: "{playbook.purpose_statement}"</p>
             )}
           </ResultCard>
 
@@ -98,7 +98,7 @@ export function CallPlaybookForm({
                     </p>
                     <p className="text-muted text-[11px] mt-0.5">Intent: {q.intent}</p>
                     {q.follow_up && (
-                      <p className="text-ink/60 text-[11px] mt-1">Follow-up: "{q.follow_up}"</p>
+                      <p className="text-ink/70 text-[11px] mt-1">Follow-up: "{q.follow_up}"</p>
                     )}
                   </div>
                 ))}

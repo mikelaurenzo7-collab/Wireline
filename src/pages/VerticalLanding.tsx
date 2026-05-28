@@ -741,7 +741,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         <blockquote className="rounded-2xl glass border-l-4 border-brand p-6 sm:p-8 italic text-lg sm:text-xl text-ink/85 leading-relaxed">
           {cfg.scriptPreview}
         </blockquote>
-        <p className="text-[10px] text-muted/60 mt-3 leading-relaxed">
+        <p className="text-[10px] text-muted/70 mt-3 leading-relaxed">
           Wireline composes this script from your business name, role, calendar, and CRM. You
           customize tone + flow in 5 minutes — no developer required.
         </p>
@@ -777,7 +777,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
                 </span>
                 <span
                   aria-hidden="true"
-                  className="text-muted/65 transition-transform group-open:rotate-45 text-xl leading-none mt-0.5"
+                  className="text-muted/70 transition-transform group-open:rotate-45 text-xl leading-none mt-0.5"
                 >
                   +
                 </span>

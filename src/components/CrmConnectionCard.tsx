@@ -525,7 +525,7 @@ export default function CrmConnectionCard() {
                             placeholder="your-store.myshopify.com"
                             spellCheck={false}
                             autoCapitalize="off"
-                            className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink placeholder:text-muted/65 outline-none focus:border-emerald-500/40"
+                            className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink placeholder:text-muted/70 outline-none focus:border-emerald-500/40"
                           />
                           {shopError ? (
                             <p className="text-[9px] text-rose-500 leading-snug">{shopError}</p>

@@ -109,7 +109,7 @@ export default function AppPageIntro({
                   ref={closeButtonRef}
                   type="button"
                   onClick={() => setMobileActionsOpen(false)}
-                  className="w-11 h-11 rounded-lg flex items-center justify-center text-ink/50 hover:text-ink hover:bg-black/5"
+                  className="w-11 h-11 rounded-lg flex items-center justify-center text-ink/70 hover:text-ink hover:bg-black/5"
                   aria-label="Close actions"
                 >
                   <X className="w-4 h-4" />

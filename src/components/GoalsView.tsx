@@ -342,7 +342,7 @@ function EmptyMetricCard({
         <h3 className="font-display italic text-lg text-ink/80 leading-tight">{metric.label}</h3>
       </div>
       <p className="text-caption leading-relaxed">{metric.description}</p>
-      <p className="text-[11px] text-ink/60 tabular-nums">
+      <p className="text-[11px] text-ink/70 tabular-nums">
         <span className="font-display italic text-xl text-ink/75">{num(current)}</span>{" "}
         {metric.unit} so far this month
       </p>
@@ -431,7 +431,7 @@ export default function GoalsView() {
     return (
       <div className="py-20 flex flex-col items-center gap-3">
         <Loader2 className="w-7 h-7 text-brand animate-spin" />
-        <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60">Loading goals</p>
+        <p className="text-[9px] uppercase tracking-[0.5em] text-muted/70">Loading goals</p>
       </div>
     );
   }

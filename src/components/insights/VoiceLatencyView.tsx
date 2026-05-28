@@ -103,7 +103,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
               </li>
             ))}
           </ul>
-          <p className="text-[10px] text-muted/65 mt-4 leading-relaxed text-pretty">
+          <p className="text-[10px] text-muted/70 mt-4 leading-relaxed text-pretty">
             These limits keep voice tool fan-out and assistant payloads bounded so callers hear
             answers faster — the same caps described on the Compare page vs DIY voice stacks.
           </p>

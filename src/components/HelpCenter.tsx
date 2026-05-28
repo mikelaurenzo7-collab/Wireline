@@ -139,7 +139,7 @@ export default function HelpCenter() {
                   <AgentCard key={a.tel} agent={a} isDemo />
                 ))}
               </div>
-              <p className="text-[10px] text-muted/60 mt-3 leading-relaxed">
+              <p className="text-[10px] text-muted/70 mt-3 leading-relaxed">
                 Ria is the concierge line: ask for a use case and she will role-play it. The other
                 demo lines are direct industry examples and will also answer Wireline product
                 questions when asked.

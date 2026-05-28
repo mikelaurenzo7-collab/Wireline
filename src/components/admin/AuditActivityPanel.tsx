@@ -262,7 +262,7 @@ export function AuditActivityPanel() {
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       {(entry.latencyMs || entry.latency_ms) && (
-                        <span className="text-[8px] font-mono text-muted/60 tabular-nums flex items-center gap-1">
+                        <span className="text-[8px] font-mono text-muted/70 tabular-nums flex items-center gap-1">
                           <Clock className="w-2.5 h-2.5" />
                           {entry.latencyMs || entry.latency_ms}ms
                         </span>
@@ -272,7 +272,7 @@ export function AuditActivityPanel() {
                           ? `$${Number(entry.costUsd ?? entry.cost_usd).toFixed(5)}`
                           : "—"}
                       </span>
-                      <span className="text-[8px] text-muted/65 tabular-nums w-24 text-right">
+                      <span className="text-[8px] text-muted/70 tabular-nums w-24 text-right">
                         {formatDateTime(
                           entry.createdAt ?? entry.created_at,
                           { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" },

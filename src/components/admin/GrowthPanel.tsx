@@ -128,7 +128,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                         e.key === "Enter" && addTag("target_titles", newTitle, setNewTitle)
                       }
                       placeholder="e.g. CEO, Sales VP"
-                      className="flex-1 text-sm bg-black/5 border border-black/10 rounded-xl px-4 py-2.5 outline-none focus:border-brand/50 transition-all placeholder:text-muted/60"
+                      className="flex-1 text-sm bg-black/5 border border-black/10 rounded-xl px-4 py-2.5 outline-none focus:border-brand/50 transition-all placeholder:text-muted/70"
                     />
                     <button
                       onClick={() => addTag("target_titles", newTitle, setNewTitle)}
@@ -178,7 +178,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                         addTag("target_industries", newIndustry, setNewIndustry)
                       }
                       placeholder="e.g. Fintech, SaaS"
-                      className="flex-1 text-sm bg-black/5 border border-black/10 rounded-xl px-4 py-2.5 outline-none focus:border-brand/50 transition-all placeholder:text-muted/60"
+                      className="flex-1 text-sm bg-black/5 border border-black/10 rounded-xl px-4 py-2.5 outline-none focus:border-brand/50 transition-all placeholder:text-muted/70"
                     />
                     <button
                       onClick={() => addTag("target_industries", newIndustry, setNewIndustry)}
@@ -227,7 +227,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                         e.key === "Enter" && addTag("target_states", newState, setNewState)
                       }
                       placeholder="e.g. CA, NY, Texas"
-                      className="flex-1 text-sm bg-black/5 border border-black/10 rounded-xl px-4 py-2.5 outline-none focus:border-brand/50 transition-all placeholder:text-muted/60"
+                      className="flex-1 text-sm bg-black/5 border border-black/10 rounded-xl px-4 py-2.5 outline-none focus:border-brand/50 transition-all placeholder:text-muted/70"
                     />
                     <button
                       onClick={() => addTag("target_states", newState, setNewState)}
@@ -298,7 +298,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                           "px-2 py-2 rounded-xl border text-[10px] font-bold transition-all",
                           (settings.target_employee_ranges || []).includes(range.value)
                             ? "bg-brand/10 border-brand/40 text-brand shadow-[0_0_10px_rgba(79, 30, 123 ,0.1)]"
-                            : "bg-black/5 border-black/10 text-muted/60 hover:border-black/20",
+                            : "bg-black/5 border-black/10 text-muted/70 hover:border-black/20",
                         )}
                       >
                         {range.label}
@@ -377,7 +377,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
             </div>
 
             <div className="p-4 rounded-xl bg-black/20 border border-white/5">
-              <p className="text-[9px] uppercase tracking-widest text-muted/60 mb-2">
+              <p className="text-[9px] uppercase tracking-widest text-muted/70 mb-2">
                 Strategy Advice
               </p>
               <p className="text-[10px] italic text-muted leading-relaxed">

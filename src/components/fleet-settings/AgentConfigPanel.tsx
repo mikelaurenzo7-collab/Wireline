@@ -325,7 +325,7 @@ export default function AgentConfigPanel({
                                   {s.avgScore > 0 ? (
                                     s.avgScore
                                   ) : (
-                                    <span className="text-muted/60 text-sm not-italic">
+                                    <span className="text-muted/70 text-sm not-italic">
                                       —
                                     </span>
                                   )}
@@ -346,7 +346,7 @@ export default function AgentConfigPanel({
                                     fetchAgentPerformance(selectedAgent.id, true)
                                   }
                                   title="Refresh stats"
-                                  className="absolute top-2 right-2 w-5 h-5 flex items-center justify-center rounded-full glass border border-white/10 text-muted/65 hover:text-brand transition-colors"
+                                  className="absolute top-2 right-2 w-5 h-5 flex items-center justify-center rounded-full glass border border-white/10 text-muted/70 hover:text-brand transition-colors"
                                 >
                                   <RefreshCw className="w-2.5 h-2.5" />
                                 </button>
@@ -365,7 +365,7 @@ export default function AgentConfigPanel({
                                   {s.sparkline.map((v: number, i: number) => (
                                     <span
                                       key={`day-${i}`}
-                                      className="text-[8px] font-mono tabular-nums text-muted/65"
+                                      className="text-[8px] font-mono tabular-nums text-muted/70"
                                       title={`${v} call${v !== 1 ? "s" : ""}`}
                                     >
                                       {v}
@@ -388,7 +388,7 @@ export default function AgentConfigPanel({
                         value={selectedAgent.website_url || ""}
                         onChange={(e) => updateAgentMeta({ website_url: e.target.value })}
                         placeholder="https://example.com"
-                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65"
+                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -404,7 +404,7 @@ export default function AgentConfigPanel({
                           updateAgentMeta({ transfer_phone: e.target.value })
                         }
                         placeholder="+1 800 555 0100"
-                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 tabular-nums"
+                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 tabular-nums"
                       />
                     </div>
                   </div>
@@ -517,7 +517,7 @@ export default function AgentConfigPanel({
                                 );
                               })}
                             </div>
-                            <p className="text-[9px] text-muted/60 leading-relaxed">
+                            <p className="text-[9px] text-muted/70 leading-relaxed">
                               Voice stays consistent. Vibe shifts the script — same agent,
                               different tonal register per use case.
                             </p>
@@ -569,7 +569,7 @@ export default function AgentConfigPanel({
                               className="w-full accent-brand cursor-pointer"
                               aria-label="ElevenLabs speaking rate"
                             />
-                            <p className="text-[9px] text-muted/60 leading-relaxed">
+                            <p className="text-[9px] text-muted/70 leading-relaxed">
                               0.7 = slower (elderly callers). 1.2 = faster (impatient
                               callers). ElevenLabs voices only.
                             </p>
@@ -596,7 +596,7 @@ export default function AgentConfigPanel({
                             onChange={(e) =>
                               updateAgentMeta({ first_message: e.target.value })
                             }
-                            className="w-full text-base bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 font-display italic"
+                            className="w-full text-base bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 font-display italic"
                           />
                         </div>
                       </div>
@@ -684,7 +684,7 @@ export default function AgentConfigPanel({
                                   updateAgentMeta({ email_signature: e.target.value })
                                 }
                                 placeholder="— Best, Agent"
-                                className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-emerald-400/50 text-ink placeholder:text-muted/65"
+                                className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-emerald-400/50 text-ink placeholder:text-muted/70"
                               />
                             </div>
                           </div>
@@ -767,7 +767,7 @@ export default function AgentConfigPanel({
                             );
                           })}
                         </div>
-                        <p className="text-[9px] text-muted/60 leading-relaxed">
+                        <p className="text-[9px] text-muted/70 leading-relaxed">
                           Inherit uses the tenant-wide setting. Full Auto executes actions
                           immediately. Supervised queues for approval on high-risk actions.
                           Draft Only always requires operator sign-off.
@@ -829,7 +829,7 @@ export default function AgentConfigPanel({
                     onChange={(e) =>
                       setAgentConfig({ ...agentConfig, personality: e.target.value })
                     }
-                    className="relative z-10 w-full h-48 px-4 py-3 rounded-xl bg-black/5 border border-black/10 text-ink outline-none focus:border-brand/50 transition-all resize-none text-sm leading-relaxed placeholder:text-muted/65"
+                    className="relative z-10 w-full h-48 px-4 py-3 rounded-xl bg-black/5 border border-black/10 text-ink outline-none focus:border-brand/50 transition-all resize-none text-sm leading-relaxed placeholder:text-muted/70"
                     placeholder="Define the agent's identity, tone, and behavioral patterns…"
                   />
                 </section>
@@ -973,7 +973,7 @@ export default function AgentConfigPanel({
                             e.key === "Enter" && saveManualEntry("directive", newDirective)
                           }
                           placeholder="e.g. Always verify date of birth…"
-                          className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-muted/65"
+                          className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-muted/70"
                         />
                         <button
                           onClick={() => saveManualEntry("directive", newDirective)}
@@ -1099,7 +1099,7 @@ export default function AgentConfigPanel({
                             e.key === "Enter" && saveManualEntry("knowledge", newKnowledge)
                           }
                           placeholder="e.g. Office closes at 5pm…"
-                          className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-muted/65"
+                          className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-muted/70"
                         />
                         <button
                           onClick={() => saveManualEntry("knowledge", newKnowledge)}

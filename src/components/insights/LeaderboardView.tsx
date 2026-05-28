@@ -127,7 +127,7 @@ export default function LeaderboardView({ days }: { days: number }) {
                       ? "text-emerald-500"
                       : a.rank_delta < 0
                         ? "text-rose-500"
-                        : "text-muted/65",
+                        : "text-muted/70",
                   )}
                 >
                   {a.rank_delta > 0 ? `+${a.rank_delta}` : a.rank_delta === 0 ? "—" : a.rank_delta}

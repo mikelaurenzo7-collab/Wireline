@@ -152,7 +152,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
         <div className="relative mt-5 pt-4 border-t border-brand/10 grid grid-cols-3 gap-4">
           {data.secondary.map((s, i) => (
             <div key={`${s.label}-${i}`} className="min-w-0 flex flex-col gap-1">
-              <div className="text-[9px] uppercase tracking-[0.25em] font-semibold text-muted/60 truncate">
+              <div className="text-[9px] uppercase tracking-[0.25em] font-semibold text-muted/70 truncate">
                 {s.label}
               </div>
               <div className="font-display italic text-xl font-bold text-ink leading-none tabular-nums truncate">
@@ -169,7 +169,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
 function DeltaPill({ pct }: { pct: number }) {
   if (!Number.isFinite(pct) || pct === 0) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-mono font-medium bg-white/5 border border-white/10 text-muted/60">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-mono font-medium bg-white/5 border border-white/10 text-muted/70">
         flat
       </span>
     );
@@ -195,7 +195,7 @@ function Sparkline({ values }: { values: number[] }) {
   const safe = Array.isArray(values) ? values.map((v) => (Number.isFinite(v) ? v : 0)) : [];
   if (safe.length < 2) {
     return (
-      <div className="text-[9px] uppercase tracking-[0.3em] text-muted/60 text-right">
+      <div className="text-[9px] uppercase tracking-[0.3em] text-muted/70 text-right">
         no trend yet
       </div>
     );

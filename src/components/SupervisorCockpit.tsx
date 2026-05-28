@@ -318,7 +318,7 @@ export default function SupervisorCockpit() {
               </div>
             ) : calls.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <Activity className="w-8 h-8 text-muted/60 mb-3" />
+                <Activity className="w-8 h-8 text-muted/70 mb-3" />
                 <p className="text-sm text-ink/80">Floor is quiet</p>
                 <p className="text-[11px] text-muted/70 mt-1 max-w-xs">
                   Live calls appear here as agents pick up. SLA flags + sentiment update in real
@@ -354,7 +354,7 @@ export default function SupervisorCockpit() {
                         <span className="text-[9px] uppercase tracking-[0.25em] text-muted/70">
                           {agent?.name || "—"}
                         </span>
-                        <span className="text-[9px] text-muted/65">·</span>
+                        <span className="text-[9px] text-muted/70">·</span>
                         <span className="text-[9px] uppercase tracking-[0.25em] text-brand">
                           {c.sentiment_label}
                         </span>

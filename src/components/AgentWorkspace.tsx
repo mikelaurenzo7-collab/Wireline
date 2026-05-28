@@ -329,7 +329,7 @@ export default function AgentWorkspace({ agentId, agentName = "agent" }: AgentWo
             placeholder={`Message ${agentName}…  (⌘+Enter to send)`}
             rows={2}
             disabled={isSending || isUploading}
-            className="flex-1 resize-none rounded-2xl glass border border-black/10 px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/65 outline-none focus:border-brand/40 transition-colors disabled:opacity-60 leading-relaxed"
+            className="flex-1 resize-none rounded-2xl glass border border-black/10 px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors disabled:opacity-60 leading-relaxed"
           />
           <button
             onClick={send}

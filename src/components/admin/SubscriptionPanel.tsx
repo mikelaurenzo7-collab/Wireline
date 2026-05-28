@@ -205,7 +205,7 @@ export function SubscriptionPanel({
               </button>
             </div>
           </div>
-          <div className="flex items-center gap-3 text-[10px] text-muted/60 border-t border-white/5 pt-3">
+          <div className="flex items-center gap-3 text-[10px] text-muted/70 border-t border-white/5 pt-3">
             <Link to="/privacy" className="hover:text-muted">
               Privacy Policy
             </Link>

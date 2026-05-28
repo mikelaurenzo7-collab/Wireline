@@ -144,7 +144,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.5 }}
-          className="text-[10px] uppercase tracking-[0.42em] text-muted/60"
+          className="text-[10px] uppercase tracking-[0.42em] text-muted/70"
         >
           Already have an account?{" "}
           <Link to="/signin" className="text-brand hover:opacity-80 transition-opacity">

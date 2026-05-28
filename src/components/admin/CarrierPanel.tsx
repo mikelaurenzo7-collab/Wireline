@@ -158,7 +158,7 @@ export function CarrierPanel({
               onChange={(e) =>
                 onUpdateSettings({ ...settings, vapi_phone_number_id: e.target.value })
               }
-              className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 font-mono"
+              className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 font-mono"
               placeholder="e.g. 3c7a9f…"
             />
           </div>
@@ -332,7 +332,7 @@ export function CarrierPanel({
                     <div className="font-display italic text-lg text-ink leading-none tabular-nums truncate">
                       {pt.phone_number}
                     </div>
-                    <div className="text-[9px] uppercase tracking-[0.3em] text-muted/60 mt-1 font-mono">
+                    <div className="text-[9px] uppercase tracking-[0.3em] text-muted/70 mt-1 font-mono">
                       {pt.vapi_number_id?.substring(0, 16)}…
                     </div>
                   </div>
@@ -356,7 +356,7 @@ export function CarrierPanel({
                         /* silent — operator will see no save indicator */
                       }
                     }}
-                    className="text-[11px] bg-black/5 border border-black/10 rounded-lg px-2.5 py-1.5 outline-none focus:border-brand/50 text-ink min-w-[200px] placeholder:text-muted/65"
+                    className="text-[11px] bg-black/5 border border-black/10 rounded-lg px-2.5 py-1.5 outline-none focus:border-brand/50 text-ink min-w-[200px] placeholder:text-muted/70"
                   />
                   <div className="flex items-center gap-2 shrink-0">
                     <LinkIcon className="w-3 h-3 text-brand" />
@@ -532,9 +532,9 @@ export function CarrierPanel({
                 onUpdateSettings({ ...settings, twilio_sms_from_number: e.target.value })
               }
               placeholder="+1 800 555 0100"
-              className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 font-mono"
+              className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 font-mono"
             />
-            <p className="text-[10px] text-muted/60 leading-relaxed">
+            <p className="text-[10px] text-muted/70 leading-relaxed">
               A Twilio-verified number you own. Outbound texts go from this number.
             </p>
           </div>
@@ -554,9 +554,9 @@ export function CarrierPanel({
                 onUpdateSettings({ ...settings, twilio_messaging_service_sid: e.target.value })
               }
               placeholder="MG••••••••••••••••••••••••••••••••"
-              className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 font-mono"
+              className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 font-mono"
             />
-            <p className="text-[10px] text-muted/60 leading-relaxed">
+            <p className="text-[10px] text-muted/70 leading-relaxed">
               Twilio's pool of numbers with auto-failover. Overrides the single sender above.
             </p>
           </div>
@@ -649,9 +649,9 @@ export function CarrierPanel({
                     })
                   }
                   placeholder="+1 555 555 0100"
-                  className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 font-mono"
+                  className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 font-mono"
                 />
-                <p className="text-[10px] text-muted/60 leading-relaxed">
+                <p className="text-[10px] text-muted/70 leading-relaxed">
                   Standard messaging rates apply. We send no more than ~5 alerts per day per agent
                   under normal use.
                 </p>

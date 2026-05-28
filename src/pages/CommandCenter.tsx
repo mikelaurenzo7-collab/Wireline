@@ -347,7 +347,7 @@ export default function LiveOps() {
                 <button
                   onClick={() => navigate("/agents")}
                   title="Create an agent first → /agents"
-                  className="app-primary-btn flex items-center gap-2 px-6 py-3 rounded-2xl border border-black/10 bg-white/55 text-ink hover:border-brand/25 transition-colors"
+                  className="app-primary-btn flex items-center gap-2 px-6 py-3 rounded-2xl border border-black/10 bg-paper/55 text-ink hover:border-brand/25 transition-colors"
                 >
                   <Zap className="w-4 h-4" />
                   <span className="text-xs font-black uppercase tracking-widest">
@@ -431,7 +431,7 @@ export default function LiveOps() {
 
                   {sentimentData.length === 0 ? (
                     <div className="h-48 flex flex-col items-center justify-center gap-2 text-center border border-dashed border-black/8 rounded-2xl bg-black/[0.01] px-6">
-                      <Activity className="w-6 h-6 text-muted/55" />
+                      <Activity className="w-6 h-6 text-muted/70" />
                       <p className="text-caption font-medium">No conversations yet</p>
                       <p className="text-caption leading-relaxed">
                         Make your first call to{" "}

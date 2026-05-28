@@ -86,7 +86,7 @@ export function IntegrationPlaybookPanel({
             aria-label="Close integration panel"
             className="p-1 rounded-lg hover:bg-white/8 transition-colors shrink-0"
           >
-            <X className="w-3.5 h-3.5 text-muted/60" />
+            <X className="w-3.5 h-3.5 text-muted/70" />
           </button>
         </div>
 
@@ -113,7 +113,7 @@ export function IntegrationPlaybookPanel({
                 Connect →
               </a>
             )}
-            <span className="text-muted/65">
+            <span className="text-muted/70">
               {getEnabledCount(activeKey)}/{getTotalCount(activeKey)} tools on
             </span>
           </div>
@@ -165,7 +165,7 @@ export function IntegrationPlaybookPanel({
                     }}
                   />
                   <span className="flex-1 text-muted/80 truncate">{item.text}</span>
-                  <span className="text-muted/65 shrink-0 pl-2">{item.time}</span>
+                  <span className="text-muted/70 shrink-0 pl-2">{item.time}</span>
                 </div>
               ))}
             </div>

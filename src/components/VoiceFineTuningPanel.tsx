@@ -88,7 +88,7 @@ function SliderRow({
             tabIndex={0}
           >
             <Info
-              className="w-2.5 h-2.5 text-muted/60 hover:text-brand cursor-help"
+              className="w-2.5 h-2.5 text-muted/70 hover:text-brand cursor-help"
               aria-label={`What does ${label} do?`}
             />
             {showTip && (
@@ -190,7 +190,7 @@ export default function VoiceFineTuningPanel({
             />
           )}
         </span>
-        <span className="text-[9px] uppercase tracking-[0.25em] text-muted/60">
+        <span className="text-[9px] uppercase tracking-[0.25em] text-muted/70">
           {advancedOpen ? "Hide advanced" : "Show advanced"}
         </span>
       </button>
@@ -236,7 +236,7 @@ export default function VoiceFineTuningPanel({
               <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
                 Speaker boost
               </label>
-              <p className="text-[9px] text-muted/60 leading-relaxed">
+              <p className="text-[9px] text-muted/70 leading-relaxed">
                 Lifts loudness and presence. Turn off for soft, intimate voices.
               </p>
             </div>
@@ -276,7 +276,7 @@ export default function VoiceFineTuningPanel({
                 "disabled:opacity-50 disabled:cursor-not-allowed",
                 "inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.25em] transition-colors",
                 atDefaults
-                  ? "text-muted/60 cursor-not-allowed"
+                  ? "text-muted/70 cursor-not-allowed"
                   : "text-muted/80 hover:text-brand cursor-pointer",
               )}
             >

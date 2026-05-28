@@ -296,9 +296,9 @@ export default function DeployAgentModal({
                     }}
                     maxLength={80}
                     placeholder="e.g. Sarah, Front Desk, Closer #2"
-                    className="w-full bg-black/5 border border-black/10 rounded-xl px-4 py-3 text-[15px] text-ink placeholder:text-muted/65 outline-none focus:border-brand/50 focus:bg-white/40 transition-colors"
+                    className="w-full bg-black/5 border border-black/10 rounded-xl px-4 py-3 text-[15px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/50 focus:bg-white/40 transition-colors"
                   />
-                  <p className="text-[10px] text-muted/65">
+                  <p className="text-[10px] text-muted/70">
                     What callers and your team will see. You can change this any time in /agents.
                   </p>
                 </div>
@@ -313,7 +313,7 @@ export default function DeployAgentModal({
                       <button
                         type="button"
                         onClick={() => setShowVoiceList((v) => !v)}
-                        className="text-[10px] uppercase tracking-[0.32em] text-muted/65 hover:text-brand transition-colors"
+                        className="text-[10px] uppercase tracking-[0.32em] text-muted/70 hover:text-brand transition-colors"
                       >
                         {showVoiceList ? "Hide options" : "Pick a specific voice"}
                       </button>
@@ -355,7 +355,7 @@ export default function DeployAgentModal({
                           transition={{ duration: 0.25 }}
                           className="space-y-1.5 overflow-hidden"
                         >
-                          <p className="text-[10px] uppercase tracking-[0.32em] text-muted/65 pt-1">
+                          <p className="text-[10px] uppercase tracking-[0.32em] text-muted/70 pt-1">
                             Specific {gender} voice
                           </p>
                           {voicesForGender.map((v) => {
@@ -385,7 +385,7 @@ export default function DeployAgentModal({
 
                     {selectedVoice && !showVoiceList && (
                       <div className="space-y-1.5">
-                        <p className="text-[10px] text-muted/65">
+                        <p className="text-[10px] text-muted/70">
                           Picked: <span className="text-ink/75">{selectedVoice.name}</span>
                         </p>
                         {/* Real per-voice audio preview via the
@@ -415,7 +415,7 @@ export default function DeployAgentModal({
                   type="button"
                   onClick={() => !deploying && onClose()}
                   disabled={deploying}
-                  className="text-[11px] uppercase tracking-[0.32em] text-muted/65 hover:text-ink transition-colors disabled:opacity-40"
+                  className="text-[11px] uppercase tracking-[0.32em] text-muted/70 hover:text-ink transition-colors disabled:opacity-40"
                 >
                   Cancel
                 </button>
@@ -428,7 +428,7 @@ export default function DeployAgentModal({
                     "group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] uppercase tracking-[0.32em] font-semibold transition-all",
                     canSubmit
                       ? "text-paper shadow-lg shadow-brand/30 hover:shadow-brand/40 active:scale-[0.98]"
-                      : "text-muted/60 bg-black/8 cursor-not-allowed",
+                      : "text-muted/70 bg-black/8 cursor-not-allowed",
                   )}
                   style={canSubmit ? { background: "#4F1E7B" } : undefined}
                 >
@@ -499,7 +499,7 @@ function GenderTile({
         </div>
         <div className="min-w-0">
           <p className="text-[12px] font-semibold tracking-wide">{label}</p>
-          <p className="text-[10px] text-muted/65 truncate">{sublabel}</p>
+          <p className="text-[10px] text-muted/70 truncate">{sublabel}</p>
         </div>
       </div>
     </button>

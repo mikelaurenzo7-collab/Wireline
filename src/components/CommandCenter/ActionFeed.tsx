@@ -89,7 +89,7 @@ export function ActionFeed({
           <Sparkles className="w-3.5 h-3.5 text-brand" />
           Intelligence Hub
         </h3>
-        <span className="text-[9px] font-mono text-muted/65 bg-black/5 px-2 py-0.5 rounded-full">
+        <span className="text-[9px] font-mono text-muted/70 bg-black/5 px-2 py-0.5 rounded-full">
           {actions.filter((a) => a.status === "pending").length} PENDING
         </span>
       </div>
@@ -184,7 +184,7 @@ export function ActionFeed({
                           >
                             {action.priority}
                           </span>
-                          <span className="text-[9px] text-muted/60 font-mono">
+                          <span className="text-[9px] text-muted/70 font-mono">
                             {new Date(action.created_at).toLocaleTimeString([], {
                               hour: "2-digit",
                               minute: "2-digit",
@@ -222,13 +222,13 @@ export function ActionFeed({
                             </div>
                           )}
                           {isExpanded ? (
-                            <ChevronUp className="w-4 h-4 text-muted/60" />
+                            <ChevronUp className="w-4 h-4 text-muted/70" />
                           ) : (
-                            <ChevronDown className="w-4 h-4 text-muted/60" />
+                            <ChevronDown className="w-4 h-4 text-muted/70" />
                           )}
                         </div>
                       ) : (
-                        <AlertCircle className="w-4 h-4 text-muted/60" />
+                        <AlertCircle className="w-4 h-4 text-muted/70" />
                       )}
                     </div>
                   </div>
@@ -277,7 +277,7 @@ export function ActionFeed({
                               <div className="grid grid-cols-2 gap-3">
                                 {Object.entries(action.payload || {}).map(([key, val]) => (
                                   <div key={key} className="flex flex-col gap-1">
-                                    <span className="text-[9px] uppercase tracking-wider text-muted/60">
+                                    <span className="text-[9px] uppercase tracking-wider text-muted/70">
                                       {key}
                                     </span>
                                     <span className="text-[10px] font-medium text-ink truncate">

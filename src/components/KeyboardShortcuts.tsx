@@ -135,7 +135,7 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
                   ref={closeRef}
                   onClick={onClose}
                   aria-label="Close keyboard shortcuts"
-                  className="w-11 h-11 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-ink/50 hover:text-ink hover:bg-white/8 border border-white/8 hover:border-white/20 transition-all"
+                  className="w-11 h-11 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-ink/70 hover:text-ink hover:bg-white/8 border border-white/8 hover:border-white/20 transition-all"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -172,7 +172,7 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
               <div className="px-6 py-3 border-t border-white/8 flex items-center justify-center gap-2 text-[10px] text-muted">
                 <Kbd>?</Kbd>
                 <span>
-                  Press <strong className="text-ink/60">?</strong> anytime to show this panel
+                  Press <strong className="text-ink/70">?</strong> anytime to show this panel
                 </span>
               </div>
             </div>

@@ -176,7 +176,7 @@ export default function About() {
         </section>
 
         <footer className="relative z-10 border-t border-black/8 py-8 px-4 sm:px-6 lg:px-10 xl:px-14 max-w-6xl mx-auto">
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] text-muted/60">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] text-muted/70">
             <Link to="/" className="hover:text-ink transition-colors">
               Wireline
             </Link>

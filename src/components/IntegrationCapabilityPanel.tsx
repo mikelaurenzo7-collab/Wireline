@@ -109,7 +109,7 @@ export default function IntegrationCapabilityPanel({
                         "inline-flex px-1.5 py-0.5 rounded text-[8px] font-mono uppercase tracking-wide border",
                         on
                           ? "border-current/25 bg-current/8"
-                          : "border-black/10 bg-black/4 text-muted/60",
+                          : "border-black/10 bg-black/4 text-muted/70",
                       )}
                       style={
                         on ? { color: accentColor, borderColor: `${accentColor}35` } : undefined
@@ -148,13 +148,13 @@ export default function IntegrationCapabilityPanel({
                 <Wrench className="w-3 h-3" />
                 Fine-tune tools
               </span>
-              <span className="text-[9px] text-muted/65 tabular-nums">
+              <span className="text-[9px] text-muted/70 tabular-nums">
                 {integrationTools.filter((t) => enabledSet.has(t.name)).length}/
                 {integrationTools.length}
               </span>
               <ChevronDown
                 className={cn(
-                  "w-3.5 h-3.5 text-muted/60 transition-transform shrink-0",
+                  "w-3.5 h-3.5 text-muted/70 transition-transform shrink-0",
                   toolsOpen && "rotate-180",
                 )}
               />

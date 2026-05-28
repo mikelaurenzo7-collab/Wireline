@@ -481,7 +481,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 {/* 44pt close button */}
                 <button
                   onClick={() => onDrawerChange(false)}
-                  className="w-11 h-11 rounded-lg flex items-center justify-center text-ink/60 hover:text-ink hover:bg-black/5 transition-colors"
+                  className="w-11 h-11 rounded-lg flex items-center justify-center text-ink/70 hover:text-ink hover:bg-black/5 transition-colors"
                   aria-label="Close navigation"
                 >
                   <X className="w-4 h-4" />

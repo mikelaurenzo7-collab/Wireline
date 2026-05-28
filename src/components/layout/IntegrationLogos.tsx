@@ -291,7 +291,7 @@ function LogoRow({ logos, height = 22 }: { logos: LogoDef[]; height?: number }) 
       {logos.map((logo) => (
         <div
           key={logo.name}
-          className="text-ink/60 hover:text-ink transition-colors duration-200"
+          className="text-ink/70 hover:text-ink transition-colors duration-200"
           title={logo.name}
           style={{
             height,
@@ -332,7 +332,7 @@ export default function IntegrationLogos({ compact = false }: { compact?: boolea
         <p
           className={
             compact
-              ? "text-[8px] uppercase tracking-[0.4em] text-muted/65 mb-2 text-center"
+              ? "text-[8px] uppercase tracking-[0.4em] text-muted/70 mb-2 text-center"
               : "text-[9px] uppercase tracking-[0.5em] text-muted/70 mb-3 text-center"
           }
         >
@@ -349,7 +349,7 @@ export default function IntegrationLogos({ compact = false }: { compact?: boolea
         <p
           className={
             compact
-              ? "text-[8px] uppercase tracking-[0.4em] text-muted/65 mb-2 text-center"
+              ? "text-[8px] uppercase tracking-[0.4em] text-muted/70 mb-2 text-center"
               : "text-[9px] uppercase tracking-[0.5em] text-muted/70 mb-3 text-center"
           }
         >

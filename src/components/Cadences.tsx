@@ -320,7 +320,7 @@ export default function Cadences() {
                     >
                       {stepIcon(s.type)} {s.type}
                       {s.delayHours > 0 && (
-                        <span className="text-muted/60 normal-case">+{s.delayHours}h</span>
+                        <span className="text-muted/70 normal-case">+{s.delayHours}h</span>
                       )}
                     </span>
                   ))}
@@ -421,7 +421,7 @@ export default function Cadences() {
                       <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none" />
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Clock className="w-3 h-3 text-muted/60" />
+                      <Clock className="w-3 h-3 text-muted/70" />
                       <input
                         type="number"
                         inputMode="numeric"

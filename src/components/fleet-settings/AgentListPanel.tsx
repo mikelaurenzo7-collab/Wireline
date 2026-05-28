@@ -124,7 +124,7 @@ export default function AgentListPanel({
                       "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all border",
                       selectedAgent?.id === agent.id
                         ? "border-brand/35 bg-brand/12 text-brand"
-                        : "border-white/10 bg-white/3 text-ink/50 group-hover:text-ink group-hover:bg-white/8",
+                        : "border-white/10 bg-white/3 text-ink/70 group-hover:text-ink group-hover:bg-white/8",
                     )}
                   >
                     {agent.channel === "email" ? (
@@ -143,7 +143,7 @@ export default function AgentListPanel({
                         {agent.channel}
                       </span>
                       {agentStats[agent.id] && (
-                        <span className="text-[8px] font-mono px-1.5 py-0.5 rounded-full bg-white/5 border border-white/8 text-muted/60 leading-none">
+                        <span className="text-[8px] font-mono px-1.5 py-0.5 rounded-full bg-white/5 border border-white/8 text-muted/70 leading-none">
                           {agentStats[agent.id].callCount} calls
                         </span>
                       )}
@@ -158,7 +158,7 @@ export default function AgentListPanel({
                   disabled={isDeletingAgent === agent.id}
                   title="Delete agent"
                   aria-label={`Delete agent ${agent.name}`}
-                  className="mr-2 shrink-0 w-7 h-7 rounded-lg glass border border-white/8 flex items-center justify-center text-muted/60 hover:text-rose-500 hover:border-rose-500/30 hover:bg-rose-500/8 disabled:opacity-40 transition-all"
+                  className="mr-2 shrink-0 w-7 h-7 rounded-lg glass border border-white/8 flex items-center justify-center text-muted/70 hover:text-rose-500 hover:border-rose-500/30 hover:bg-rose-500/8 disabled:opacity-40 transition-all"
                 >
                   {isDeletingAgent === agent.id ? (
                     <Loader2 className="w-3 h-3 animate-spin" />

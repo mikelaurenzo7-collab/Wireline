@@ -56,7 +56,7 @@ export default class WidgetBoundary extends Component<Props, State> {
           {this.props.label && (
             <p className="text-[11px] text-ink/80 font-medium">{this.props.label}</p>
           )}
-          <p className="text-[10px] text-muted/65 max-w-[220px] leading-relaxed mt-1">
+          <p className="text-[10px] text-muted/70 max-w-[220px] leading-relaxed mt-1">
             The rest of the page is fine. We've logged the error.
           </p>
         </div>

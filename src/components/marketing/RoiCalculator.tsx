@@ -190,7 +190,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
 
         {/* Industry preset row */}
         <div className="flex flex-wrap gap-1.5 mb-4">
-          <span className="text-[8.5px] uppercase tracking-[0.25em] text-muted/55 mr-1 leading-none self-center">
+          <span className="text-[8.5px] uppercase tracking-[0.25em] text-muted/70 mr-1 leading-none self-center">
             Pick yours →
           </span>
           {PRESETS.map((p) => {
@@ -267,19 +267,19 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
                   : "border-amber-500/25 bg-amber-500/8")
               }
             >
-              <p className="text-[8.5px] uppercase tracking-[0.3em] text-muted/65 leading-none mb-1">
+              <p className="text-[8.5px] uppercase tracking-[0.3em] text-muted/70 leading-none mb-1">
                 Net annual savings (after Wireline Pro)
               </p>
               <p className="font-display italic text-3xl leading-none text-ink">
                 {fmtUsd(Math.max(0, results.netAnnual))}
-                <span className="text-[10px] text-muted/55 ml-2 tracking-[0.2em] uppercase font-sans not-italic">
+                <span className="text-[10px] text-muted/70 ml-2 tracking-[0.2em] uppercase font-sans not-italic">
                   / yr
                 </span>
               </p>
             </div>
             <div className="flex items-center justify-between gap-3 mt-auto">
               <div>
-                <p className="text-[8.5px] uppercase tracking-[0.3em] text-muted/65 leading-none mb-1">
+                <p className="text-[8.5px] uppercase tracking-[0.3em] text-muted/70 leading-none mb-1">
                   Payback in
                 </p>
                 <p className="font-display italic text-xl leading-none text-[#4F1E7B]">
@@ -356,7 +356,7 @@ function Stat({ label, value, tone }: { label: string; value: string; tone: "eme
   const toneClass = tone === "emerald" ? "text-emerald-700" : "text-[#4F1E7B]";
   return (
     <div>
-      <p className="text-[8.5px] uppercase tracking-[0.3em] text-muted/65 leading-none mb-1">
+      <p className="text-[8.5px] uppercase tracking-[0.3em] text-muted/70 leading-none mb-1">
         {label}
       </p>
       <p className={`font-display italic text-lg leading-none ${toneClass}`}>{value}</p>

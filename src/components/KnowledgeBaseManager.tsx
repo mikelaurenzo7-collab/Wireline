@@ -571,7 +571,7 @@ export default function KnowledgeBaseManager() {
               />
             ) : (
               <div className="p-16 text-center">
-                <BookOpen className="w-10 h-10 mx-auto text-muted/60 mb-3" />
+                <BookOpen className="w-10 h-10 mx-auto text-muted/70 mb-3" />
                 <p className="text-[11px] uppercase tracking-[0.4em] text-muted">
                   No matches for this filter
                 </p>
@@ -610,11 +610,11 @@ export default function KnowledgeBaseManager() {
                         <Sparkles className="w-2.5 h-2.5" /> {row.agent_name}
                       </span>
                       {row.agent_archetype && (
-                        <span className="text-[8px] uppercase tracking-[0.3em] text-muted/60">
+                        <span className="text-[8px] uppercase tracking-[0.3em] text-muted/70">
                           {row.agent_archetype}
                         </span>
                       )}
-                      <span className="text-[8px] uppercase tracking-[0.28em] text-muted/65 ml-auto">
+                      <span className="text-[8px] uppercase tracking-[0.28em] text-muted/70 ml-auto">
                         {formatDate(row.created_at)}
                       </span>
                     </div>
@@ -665,7 +665,7 @@ export default function KnowledgeBaseManager() {
                       <>
                         <button
                           onClick={() => startEdit(row)}
-                          className="h-8 px-3 rounded-lg glass border border-white/10 text-[9px] uppercase tracking-[0.25em] text-ink/60 hover:text-brand hover:border-brand/35 flex items-center gap-1.5"
+                          className="h-8 px-3 rounded-lg glass border border-white/10 text-[9px] uppercase tracking-[0.25em] text-ink/70 hover:text-brand hover:border-brand/35 flex items-center gap-1.5"
                         >
                           <Pencil className="w-3 h-3" /> Edit
                         </button>
@@ -685,7 +685,7 @@ export default function KnowledgeBaseManager() {
                             </button>
                             <button
                               onClick={() => setConfirmDelete(null)}
-                              className="h-8 px-2 rounded-lg glass border border-white/10 text-[9px] uppercase tracking-[0.25em] text-ink/60"
+                              className="h-8 px-2 rounded-lg glass border border-white/10 text-[9px] uppercase tracking-[0.25em] text-ink/70"
                             >
                               Cancel
                             </button>
@@ -707,7 +707,7 @@ export default function KnowledgeBaseManager() {
             })}
           </div>
 
-          <div className="px-6 py-3 border-t border-white/5 text-[10px] uppercase tracking-[0.3em] text-muted/60 bg-black/10 flex items-center gap-2">
+          <div className="px-6 py-3 border-t border-white/5 text-[10px] uppercase tracking-[0.3em] text-muted/70 bg-black/10 flex items-center gap-2">
             <FileText className="w-3 h-3" />
             Edits apply to live agent calls immediately. Deletions are permanent.
           </div>
@@ -809,7 +809,7 @@ function DedupePanel({
           <button
             onClick={onClose}
             aria-label="Close"
-            className="w-9 h-9 rounded-full glass border border-white/10 hover:border-white/30 flex items-center justify-center text-ink/60 hover:text-ink"
+            className="w-9 h-9 rounded-full glass border border-white/10 hover:border-white/30 flex items-center justify-center text-ink/70 hover:text-ink"
           >
             <X className="w-4 h-4" />
           </button>
@@ -922,7 +922,7 @@ function DedupePanel({
         </div>
 
         <div className="flex items-center justify-between gap-3 pt-2 border-t border-white/10">
-          <div className="text-[11px] text-ink/60">
+          <div className="text-[11px] text-ink/70">
             {totalToDelete > 0 ? (
               <>
                 Will delete <span className="text-rose-500 font-medium">{totalToDelete}</span>{" "}

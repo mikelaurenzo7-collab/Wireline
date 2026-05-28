@@ -361,7 +361,7 @@ export default function PronunciationDictionaryPanel() {
         )}
       </div>
 
-      <p className="text-[10px] text-muted/60 text-center mt-4 leading-relaxed">
+      <p className="text-[10px] text-muted/70 text-center mt-4 leading-relaxed">
         Dictionaries sync to ElevenLabs and apply to every 11labs voice your agents use. Toggle
         Active off to pause a dictionary without deleting it.
       </p>

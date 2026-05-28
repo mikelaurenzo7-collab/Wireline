@@ -265,11 +265,11 @@ export default function Status() {
               unconfigured or partially available. Outage means the layer is failing. We never
               store, log, or render the content of these probes.
             </p>
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[9.5px] uppercase tracking-[0.32em] text-muted/65">
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[9.5px] uppercase tracking-[0.32em] text-muted/70">
               <span>Probe interval · 60s</span>
-              <span className="text-muted/55">·</span>
+              <span className="text-muted/70">·</span>
               <span>Public cache · 60s</span>
-              <span className="text-muted/55">·</span>
+              <span className="text-muted/70">·</span>
               <a
                 href="https://twitter.com/intent/tweet?text=%40trywireline+status"
                 target="_blank"

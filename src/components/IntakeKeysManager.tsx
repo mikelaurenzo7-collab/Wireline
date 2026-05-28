@@ -275,7 +275,7 @@ export default function IntakeKeysManager() {
                     "disabled:opacity-50 disabled:cursor-not-allowed",
                     "w-full px-4 py-3 rounded-xl border flex items-start gap-3 text-left transition-all",
                     !defaultAgentId
-                      ? "bg-black/20 border-white/5 text-muted/65 cursor-not-allowed"
+                      ? "bg-black/20 border-white/5 text-muted/70 cursor-not-allowed"
                       : autoDial
                         ? "bg-brand-2/15 border-brand-2/40 text-brand-2"
                         : "bg-black/5 border-black/10 text-ink/80 hover:border-black/20",
@@ -332,7 +332,7 @@ export default function IntakeKeysManager() {
             </div>
           )}
           {!loading && keys.length === 0 && (
-            <div className="text-xs text-ink/50 italic">
+            <div className="text-xs text-ink/70 italic">
               No keys yet. Create one to start accepting inbound leads.
             </div>
           )}
@@ -389,7 +389,7 @@ export default function IntakeKeysManager() {
                       "disabled:opacity-50 disabled:cursor-not-allowed",
                       "h-9 px-3 rounded-lg text-[10px] uppercase tracking-[0.25em] flex items-center gap-1.5 transition-all",
                       !k.default_agent_id
-                        ? "glass border border-black/5 text-muted/60 cursor-not-allowed"
+                        ? "glass border border-black/5 text-muted/70 cursor-not-allowed"
                         : k.auto_dial
                           ? "bg-amber-500/15 border border-amber-500/40 text-amber-600 hover:bg-amber-500/25"
                           : "glass border border-black/8 text-ink/70 hover:text-amber-600 hover:border-amber-500/40",

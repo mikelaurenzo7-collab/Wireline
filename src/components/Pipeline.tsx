@@ -158,7 +158,7 @@ export default function Pipeline() {
                   >
                     <div className="space-y-2">
                       {leads.length === 0 && !loading && (
-                        <p className="text-[11px] text-muted/60 italic px-2 py-4 text-center">
+                        <p className="text-[11px] text-muted/70 italic px-2 py-4 text-center">
                           No leads in this stage yet.
                         </p>
                       )}
@@ -236,7 +236,7 @@ export default function Pipeline() {
                             </p>
                           )}
                           <div className="flex items-center justify-between mt-2">
-                            <span className="text-[9px] text-muted/60">
+                            <span className="text-[9px] text-muted/70">
                               {lead.attempts ?? 0} attempt{(lead.attempts ?? 0) === 1 ? "" : "s"}
                             </span>
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -252,7 +252,7 @@ export default function Pipeline() {
                                     → {s.label}
                                   </button>
                                 ))}
-                              <ChevronRight className="w-3 h-3 text-muted/60" />
+                              <ChevronRight className="w-3 h-3 text-muted/70" />
                             </div>
                           </div>
                         </motion.div>

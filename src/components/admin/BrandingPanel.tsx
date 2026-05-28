@@ -65,7 +65,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
           </div>
 
           <div className="flex flex-col items-center justify-center p-6 border border-white/5 bg-white/5 rounded-2xl">
-            <p className="text-[9px] uppercase tracking-[0.32em] text-muted/60 mb-6">Preview</p>
+            <p className="text-[9px] uppercase tracking-[0.32em] text-muted/70 mb-6">Preview</p>
             <div className="w-full p-6 rounded-3xl brutal-border bg-paper relative overflow-hidden group">
               <div
                 className="absolute inset-0 opacity-10 pointer-events-none"

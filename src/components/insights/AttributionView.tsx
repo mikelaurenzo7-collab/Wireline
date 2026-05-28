@@ -37,7 +37,7 @@ export default function AttributionView({ days }: { days: number }) {
   if (totalCalls === 0) {
     return (
       <div className="p-6 text-center">
-        <Megaphone className="w-10 h-10 text-muted/55 mx-auto mb-3" />
+        <Megaphone className="w-10 h-10 text-muted/70 mx-auto mb-3" />
         <p className="text-[13px] text-ink/85 mb-2">No tagged calls yet</p>
         <p className="text-[11px] text-muted/70 max-w-md mx-auto leading-relaxed">
           Tag your phone numbers with a campaign label in{" "}

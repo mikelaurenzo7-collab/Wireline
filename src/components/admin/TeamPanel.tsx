@@ -98,11 +98,11 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
               <div className="grid grid-cols-1 gap-2">
                 {members.length === 0 ? (
                   <div className="py-20 text-center glass border border-dashed border-black/10 rounded-2xl">
-                    <User className="w-8 h-8 text-muted/55 mx-auto mb-3" />
+                    <User className="w-8 h-8 text-muted/70 mx-auto mb-3" />
                     <p className="text-xs text-muted uppercase tracking-widest font-medium">
                       No team members found
                     </p>
-                    <p className="text-[10px] text-muted/60 mt-1">
+                    <p className="text-[10px] text-muted/70 mt-1">
                       Invite your first colleague to begin collaborating.
                     </p>
                   </div>

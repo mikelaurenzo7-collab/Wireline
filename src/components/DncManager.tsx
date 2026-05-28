@@ -286,7 +286,7 @@ export default function DncManager() {
                     placeholder="Search numbers…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="h-8 w-44 pl-8 pr-3 rounded-full glass border border-white/10 text-[11px] text-ink placeholder:text-muted/60 focus:border-brand/40 focus:outline-none transition-all"
+                    className="h-8 w-44 pl-8 pr-3 rounded-full glass border border-white/10 text-[11px] text-ink placeholder:text-muted/70 focus:border-brand/40 focus:outline-none transition-all"
                   />
                 </div>
               }
@@ -350,11 +350,11 @@ export default function DncManager() {
                             {entry.phone_raw || entry.phone}
                           </p>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[8px] text-muted/60">
+                            <span className="text-[8px] text-muted/70">
                               {formatDate(entry.created_at)}
                             </span>
                             <span className="w-1 h-1 rounded-full bg-white/15" />
-                            <span className="text-[8px] text-muted/60">
+                            <span className="text-[8px] text-muted/70">
                               {reasonLabel(entry.reason)}
                             </span>
                           </div>
@@ -463,7 +463,7 @@ export default function DncManager() {
                         value={addPhone}
                         onChange={(e) => setAddPhone(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                        className="w-full h-10 pl-9 pr-4 rounded-xl glass border border-white/10 text-sm text-ink placeholder:text-muted/65 focus:border-rose-400/50 focus:outline-none transition-all"
+                        className="w-full h-10 pl-9 pr-4 rounded-xl glass border border-white/10 text-sm text-ink placeholder:text-muted/70 focus:border-rose-400/50 focus:outline-none transition-all"
                       />
                     </div>
                   </div>

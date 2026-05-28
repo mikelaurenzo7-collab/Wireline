@@ -364,7 +364,7 @@ export default function CommandBar() {
                 autoFocus
                 aria-label="Command search input"
                 placeholder="Jump anywhere or take an action…"
-                className="flex-1 bg-transparent border-none outline-none text-[14px] text-ink placeholder:text-muted/65 font-normal"
+                className="flex-1 bg-transparent border-none outline-none text-[14px] text-ink placeholder:text-muted/70 font-normal"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={onKeyDown}
@@ -383,7 +383,7 @@ export default function CommandBar() {
                     if (catCmds.length === 0) return null;
                     return (
                       <div key={category} className="mb-1 last:mb-0">
-                        <div className="px-5 pt-3 pb-1.5 text-[8px] uppercase tracking-[0.4em] text-muted/60 flex items-center gap-2">
+                        <div className="px-5 pt-3 pb-1.5 text-[8px] uppercase tracking-[0.4em] text-muted/70 flex items-center gap-2">
                           <span className="h-px flex-1 bg-white/8" />
                           {category}
                           <span className="h-px flex-1 bg-white/8" />
@@ -426,7 +426,7 @@ export default function CommandBar() {
                                   >
                                     {cmd.label}
                                   </div>
-                                  <div className="text-[10px] text-muted/60 truncate leading-none">
+                                  <div className="text-[10px] text-muted/70 truncate leading-none">
                                     {cmd.description}
                                   </div>
                                 </div>
@@ -439,7 +439,7 @@ export default function CommandBar() {
                                         "hidden sm:flex items-center px-1.5 py-0.5 rounded-md border text-[9px] leading-none uppercase tracking-[0.2em] transition-all",
                                         isSelected
                                           ? "bg-brand/15 border-brand/30 text-brand"
-                                          : "glass border-white/15 text-muted/65",
+                                          : "glass border-white/15 text-muted/70",
                                       )}
                                     >
                                       {cmd.shortcut}
@@ -450,7 +450,7 @@ export default function CommandBar() {
                                       "w-3.5 h-3.5 transition-all",
                                       isSelected
                                         ? "text-brand opacity-100"
-                                        : "text-muted/55 opacity-0 group-hover:opacity-100",
+                                        : "text-muted/70 opacity-0 group-hover:opacity-100",
                                     )}
                                   />
                                 </div>
@@ -464,14 +464,14 @@ export default function CommandBar() {
                 </div>
               ) : (
                 <div className="py-16 flex flex-col items-center justify-center gap-3">
-                  <Terminal className="w-8 h-8 text-muted/55" />
+                  <Terminal className="w-8 h-8 text-muted/70" />
                   <p className="app-section-title/65">No matching commands</p>
                 </div>
               )}
 
               {/* Footer */}
               <div className="sticky bottom-0 px-5 py-2.5 border-t border-white/8 flex items-center justify-between bg-paper/60 backdrop-blur-sm">
-                <div className="flex items-center gap-3 text-[8px] uppercase tracking-[0.28em] text-muted/65">
+                <div className="flex items-center gap-3 text-[8px] uppercase tracking-[0.28em] text-muted/70">
                   <span className="flex items-center gap-1">
                     <kbd
                       className="px-1 py-0.5 rounded glass border border-white/12 text-[7px]"
@@ -500,7 +500,7 @@ export default function CommandBar() {
                     Close
                   </span>
                 </div>
-                <span className="text-[8px] uppercase tracking-[0.4em] text-muted/60">
+                <span className="text-[8px] uppercase tracking-[0.4em] text-muted/70">
                   WIRELINE
                 </span>
               </div>

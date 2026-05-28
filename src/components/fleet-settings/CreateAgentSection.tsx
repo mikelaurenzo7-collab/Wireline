@@ -102,7 +102,7 @@ export default function CreateAgentSection({
         <div className="space-y-1.5">
           <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
             Agent ID{" "}
-            <span className="text-muted/65 normal-case tracking-normal">
+            <span className="text-muted/70 normal-case tracking-normal">
               (lowercase, no spaces)
             </span>
           </label>
@@ -111,13 +111,13 @@ export default function CreateAgentSection({
             placeholder="e.g. sales-bot-1"
             value={newAgentId}
             onChange={(e) => setNewAgentId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-            className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 font-mono"
+            className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 font-mono"
           />
         </div>
         <div className="space-y-1.5">
           <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
             Agent name{" "}
-            <span className="text-muted/65 normal-case tracking-normal">
+            <span className="text-muted/70 normal-case tracking-normal">
               (what callers will hear)
             </span>
           </label>
@@ -126,7 +126,7 @@ export default function CreateAgentSection({
             placeholder="e.g. Sophie"
             value={newAgentName}
             onChange={(e) => setNewAgentName(e.target.value)}
-            className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65"
+            className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70"
           />
         </div>
       </div>

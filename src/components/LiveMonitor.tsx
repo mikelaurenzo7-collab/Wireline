@@ -281,7 +281,7 @@ export default function LiveMonitor() {
               <Radio className="w-4 h-4 text-brand animate-pulse" />
             </div>
           </div>
-          <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60">
+          <p className="text-[9px] uppercase tracking-[0.5em] text-muted/70">
             Establishing connection…
           </p>
         </div>
@@ -389,7 +389,7 @@ export default function LiveMonitor() {
                           }}
                         />
                         <div className="w-full h-full rounded-2xl glass border border-black/8 flex items-center justify-center">
-                          <PhoneOff className="w-7 h-7 text-muted/60" />
+                          <PhoneOff className="w-7 h-7 text-muted/70" />
                         </div>
                       </div>
                       <div className="space-y-1.5">
@@ -424,7 +424,7 @@ export default function LiveMonitor() {
                                 </span>
                                 <SentimentBadge label={sig.label} status={sig.status} />
                               </div>
-                              <div className="flex items-center gap-3 text-[9px] text-muted/60 mt-0.5">
+                              <div className="flex items-center gap-3 text-[9px] text-muted/70 mt-0.5">
                                 <span className="inline-flex items-center gap-1">
                                   <Bot className="w-2.5 h-2.5 text-brand" />
                                   {agentName(sig.agent_id)}
@@ -458,7 +458,7 @@ export default function LiveMonitor() {
                       animate={{ opacity: 1 }}
                       className="h-full min-h-[160px] flex items-center justify-center"
                     >
-                      <p className="text-[9px] uppercase tracking-[0.5em] text-muted/65">
+                      <p className="text-[9px] uppercase tracking-[0.5em] text-muted/70">
                         No recent activity
                       </p>
                     </motion.div>
@@ -511,7 +511,7 @@ export default function LiveMonitor() {
                         <p
                           className={cn(
                             "text-[9px] uppercase tracking-[0.28em]",
-                            isActive ? "text-emerald-600" : "text-muted/65",
+                            isActive ? "text-emerald-600" : "text-muted/70",
                           )}
                         >
                           {isActive ? "on call" : "idle"}
@@ -581,7 +581,7 @@ function ActivityRow({ ev, agentName }: { ev: ActivityEntry; agentName: (id: str
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2 text-[9px] text-muted/60">
+        <div className="flex items-center gap-2 text-[9px] text-muted/70">
           <span className="inline-flex items-center gap-1">
             <Bot className="w-2.5 h-2.5 text-brand" />
             {agentName(ev.agent_id)}
@@ -592,15 +592,15 @@ function ActivityRow({ ev, agentName }: { ev: ActivityEntry; agentName: (id: str
       </div>
 
       <div className="shrink-0 text-right">
-        <div className="text-[9px] text-muted/60 tabular-nums">{timeStr}</div>
+        <div className="text-[9px] text-muted/70 tabular-nums">{timeStr}</div>
         {isCall && ev.duration_seconds != null && (
-          <div className="text-[8px] text-muted/60 tabular-nums">
+          <div className="text-[8px] text-muted/70 tabular-nums">
             {Math.floor(ev.duration_seconds / 60)}m {ev.duration_seconds % 60}s
           </div>
         )}
       </div>
 
-      <ChevronRight className="w-3 h-3 text-muted/55 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <ChevronRight className="w-3 h-3 text-muted/70 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
     </div>
   );
 }

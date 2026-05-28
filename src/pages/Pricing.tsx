@@ -296,7 +296,7 @@ export default function Pricing() {
             Real Estate
           </Link>
           <span aria-hidden="true">·</span>
-          <span className="text-muted/70">+ every other vertical</span>
+          <span className="text-muted">+ every other vertical</span>
         </motion.div>
       </section>
 
@@ -399,13 +399,13 @@ export default function Pricing() {
 
                 <div className="mb-4">
                   <h2 className="font-display italic text-2xl text-ink mb-1">{tier.name}</h2>
-                  <p className="text-[11px] text-muted/75 leading-snug">{tier.blurb}</p>
+                  <p className="text-[11px] text-muted leading-snug">{tier.blurb}</p>
                 </div>
 
                 <div className="mb-5 flex items-baseline gap-1">
                   <span className="font-display italic text-4xl text-ink">{tier.price}</span>
                   {tier.cadence && (
-                    <span className="text-[10px] text-muted/70">{tier.cadence}</span>
+                    <span className="text-[10px] text-muted">{tier.cadence}</span>
                   )}
                 </div>
 
@@ -451,7 +451,7 @@ export default function Pricing() {
                     </li>
                   ))}
                   {tier.notIncluded?.map((f) => (
-                    <li key={f} className="flex items-start gap-2 opacity-40">
+                    <li key={f} className="flex items-start gap-2 opacity-55">
                       <span className="w-3.5 h-3.5 mt-0.5 shrink-0 text-muted">—</span>
                       <span className="line-through">{f}</span>
                     </li>
@@ -585,8 +585,8 @@ export default function Pricing() {
           transition={{ delay: 0.9, duration: 0.6 }}
           className="mt-14 max-w-3xl mx-auto text-center space-y-3"
         >
-          <p className="text-eyebrow/70">No long-term contracts · Cancel anytime · USD pricing</p>
-          <p className="text-[12px] text-muted/65">
+          <p className="text-eyebrow">No long-term contracts · Cancel anytime · USD pricing</p>
+          <p className="text-[12px] text-muted">
             Voice minutes are pooled across all agents in your workspace. Overage is tier-based
             (Personal: $0.20/min · Starter: $0.18/min · Pro: $0.15/min · Business: $0.14/min) —
             priced near our cost, not a profit center. Most teams stay well inside plan. Email

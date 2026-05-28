@@ -143,7 +143,7 @@ export default function WebhooksManager() {
             <PanelSkeleton rows={3} />
           ) : hooks.length === 0 ? (
             <div className="rounded-xl bg-black/20 border border-dashed border-white/10 p-6 text-center space-y-2">
-              <Webhook className="w-8 h-8 text-muted/60 mx-auto" />
+              <Webhook className="w-8 h-8 text-muted/70 mx-auto" />
               <p className="text-[11px] uppercase tracking-[0.4em] text-muted">
                 No webhooks configured
               </p>
@@ -258,7 +258,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
       <div className="space-y-1.5">
         <label className="app-section-title">
           Signing Secret{" "}
-          <span className="text-muted/60">
+          <span className="text-muted/70">
             (optional — when set, body is signed as X-Wireline-Signature: sha256=&lt;hex&gt;)
           </span>
         </label>
@@ -425,7 +425,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
               </span>
             )}
           </div>
-          <div className="text-xs font-mono text-ink/60 truncate">{hook.url}</div>
+          <div className="text-xs font-mono text-ink/70 truncate">{hook.url}</div>
           <div className="flex items-center gap-2 flex-wrap mt-2">
             {hook.events.map((e) => (
               <span
@@ -452,7 +452,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                 {"•".repeat(12)}
                 {hook.secret_last_four}
               </code>
-              <span className="uppercase tracking-[0.3em] text-muted/60">· last 4</span>
+              <span className="uppercase tracking-[0.3em] text-muted/70">· last 4</span>
             </div>
           )}
         </div>

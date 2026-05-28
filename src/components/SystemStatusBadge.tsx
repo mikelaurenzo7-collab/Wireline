@@ -94,7 +94,7 @@ export default function SystemStatusBadge() {
             dot alone communicates status, and the title attribute
             provides the full label on hover. Frees ~90px of TopBar
             width which Mike's ThinkPad needed back. */}
-        <span className="hidden xl:inline text-[10px] uppercase tracking-[0.28em] text-ink/60">
+        <span className="hidden xl:inline text-[10px] uppercase tracking-[0.28em] text-ink/70">
           {overall === "ok"
             ? "Live"
             : overall === "degraded"

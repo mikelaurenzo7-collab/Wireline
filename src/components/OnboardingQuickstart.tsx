@@ -375,7 +375,7 @@ export default function OnboardingQuickstart({
                   <p className="text-sm font-medium text-ink leading-tight">
                     Your agent is ready to talk
                   </p>
-                  <p className="text-xs text-ink/50 mt-0.5">
+                  <p className="text-xs text-ink/65 mt-0.5">
                     Open the dashboard and select <strong>Start Test Call</strong> to place a live
                     browser test.
                   </p>
@@ -493,7 +493,7 @@ const Step: React.FC<{
         </div>
         <div className="relative z-10 flex-1">
           <h3 className="font-display italic text-lg text-ink leading-tight mb-1">{step.title}</h3>
-          <p className="text-[12px] text-ink/60 leading-snug">{step.body}</p>
+          <p className="text-[12px] text-ink/70 leading-snug">{step.body}</p>
         </div>
         <div className="relative z-10 flex items-center gap-2 mt-auto">
           {done ? (
@@ -651,7 +651,7 @@ function AllSetCard({ onDismiss }: { onDismiss: () => void }) {
             <h3 className="font-display italic text-3xl text-ink leading-tight">
               You're live on Wireline
             </h3>
-            <p className="text-[12px] text-ink/55 mt-1.5 leading-relaxed max-w-[220px] mx-auto">
+            <p className="text-[12px] text-ink/70 mt-1.5 leading-relaxed max-w-[220px] mx-auto">
               Your agents are running. Here's what to do next.
             </p>
           </div>
@@ -674,7 +674,7 @@ function AllSetCard({ onDismiss }: { onDismiss: () => void }) {
                 </div>
                 <div className="text-[8px] uppercase tracking-[0.24em] text-muted">{hint}</div>
               </div>
-              <ArrowRight className="w-3.5 h-3.5 text-muted/60 group-hover:text-brand transition-colors shrink-0" />
+              <ArrowRight className="w-3.5 h-3.5 text-muted/70 group-hover:text-brand transition-colors shrink-0" />
             </Link>
           ))}
         </div>

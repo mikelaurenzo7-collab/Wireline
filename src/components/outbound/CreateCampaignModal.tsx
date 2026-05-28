@@ -39,7 +39,7 @@ export default function CreateCampaignModal({
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const inputCls =
-    "w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 transition-all";
+    "w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 transition-all";
 
   const save = async () => {
     if (!form.name.trim()) {

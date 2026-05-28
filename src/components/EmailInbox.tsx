@@ -316,7 +316,7 @@ export default function EmailInbox() {
                           ? "bg-rose-500/12 text-rose-500 border-rose-500/25"
                           : score >= 50
                             ? "bg-brand/12 text-brand border-brand/25"
-                            : "bg-black/4 text-muted/60 border-black/8";
+                            : "bg-black/4 text-muted/70 border-black/8";
                       return (
                         <motion.button
                           layout
@@ -352,10 +352,10 @@ export default function EmailInbox() {
                           {/* Content */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2 mb-0.5">
-                              <span className="text-[9px] uppercase tracking-[0.24em] text-muted/60 truncate">
+                              <span className="text-[9px] uppercase tracking-[0.24em] text-muted/70 truncate">
                                 {thread.customer_email}
                               </span>
-                              <span className="text-[8px] tabular-nums text-muted/65 shrink-0">
+                              <span className="text-[8px] tabular-nums text-muted/70 shrink-0">
                                 {formatDate(thread.last_message_at)}
                               </span>
                             </div>
@@ -499,7 +499,7 @@ export default function EmailInbox() {
                                 {msg.content}
                               </p>
                             </div>
-                            <span className="text-[9px] uppercase tracking-[0.3em] text-muted/65 mt-1.5 tabular-nums">
+                            <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70 mt-1.5 tabular-nums">
                               {formatTime(msg.created_at)}
                             </span>
                           </motion.div>
@@ -551,7 +551,7 @@ export default function EmailInbox() {
                           value={replyText}
                           onChange={(e) => setReplyText(e.target.value)}
                           placeholder="Type a reply or ask the agent to draft one…"
-                          className="w-full px-3 pb-3 min-h-[100px] outline-none text-ink text-sm leading-relaxed resize-none bg-transparent placeholder:text-muted/65"
+                          className="w-full px-3 pb-3 min-h-[100px] outline-none text-ink text-sm leading-relaxed resize-none bg-transparent placeholder:text-muted/70"
                         />
                       </div>
                       <div className="flex items-center justify-between gap-3">

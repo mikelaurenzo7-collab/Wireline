@@ -101,7 +101,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
             <Brain className="w-3 h-3 text-brand" />
           </div>
         </div>
-        <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60">Loading observations…</p>
+        <p className="text-[9px] uppercase tracking-[0.5em] text-muted/70">Loading observations…</p>
       </div>
     );
   }
@@ -160,12 +160,12 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                 >
                   <div className="flex gap-3 items-start">
                     <div className="w-8 h-8 rounded-lg glass border border-white/10 flex items-center justify-center shrink-0 mt-0.5 group-hover:border-brand/30 transition-colors">
-                      <Terminal className="w-3.5 h-3.5 text-muted/60 group-hover:text-brand transition-colors" />
+                      <Terminal className="w-3.5 h-3.5 text-muted/70 group-hover:text-brand transition-colors" />
                     </div>
 
                     <div className="flex-1 min-w-0 space-y-2">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-[8px] uppercase tracking-[0.3em] text-muted/60">
+                        <span className="text-[8px] uppercase tracking-[0.3em] text-muted/70">
                           Observation · {formatDate(lesson.created_at)}
                         </span>
                         <div className="flex items-center gap-1.5">
@@ -186,7 +186,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                             onClick={() => deleteLesson(lesson.id)}
                             disabled={isDeleting === lesson.id}
                             title="Discard"
-                            className="h-7 w-7 rounded-lg glass border border-white/10 text-muted/60 hover:text-rose-500 hover:border-rose-500/30 transition-all flex items-center justify-center disabled:opacity-50"
+                            className="h-7 w-7 rounded-lg glass border border-white/10 text-muted/70 hover:text-rose-500 hover:border-rose-500/30 transition-all flex items-center justify-center disabled:opacity-50"
                           >
                             {isDeleting === lesson.id ? (
                               <Loader2 className="w-3 h-3 animate-spin" />
@@ -201,7 +201,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                         {lesson.lesson}
                       </p>
 
-                      <p className="text-[8px] uppercase tracking-[0.3em] text-muted/65">
+                      <p className="text-[8px] uppercase tracking-[0.3em] text-muted/70">
                         Captured{" "}
                         {formatDateTime(lesson.created_at, {
                           month: "short",

@@ -69,7 +69,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               The rest of the app is fine — only this view failed. Reload the page or head back to
               the dashboard.
             </p>
-            <details className="relative z-10 rounded-xl bg-black/30 border border-white/8 p-4 text-xs text-ink/60 font-mono overflow-x-auto">
+            <details className="relative z-10 rounded-xl bg-black/30 border border-white/8 p-4 text-xs text-ink/70 font-mono overflow-x-auto">
               <summary className="cursor-pointer text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink transition-colors">
                 Error details
               </summary>

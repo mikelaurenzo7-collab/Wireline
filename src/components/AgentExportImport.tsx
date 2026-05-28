@@ -91,7 +91,7 @@ export default function AgentExportImport({ agentId, agentName }: Props) {
       <button
         onClick={handleExport}
         disabled={isExporting}
-        className="h-8 px-3 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/60 hover:text-brand hover:border-brand/30 transition-all flex items-center gap-1.5 disabled:opacity-40"
+        className="h-8 px-3 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/70 hover:text-brand hover:border-brand/30 transition-all flex items-center gap-1.5 disabled:opacity-40"
         title="Export agent config as JSON"
       >
         {isExporting ? (
@@ -107,7 +107,7 @@ export default function AgentExportImport({ agentId, agentName }: Props) {
       <button
         onClick={() => fileRef.current?.click()}
         disabled={isImporting}
-        className="h-8 px-3 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/60 hover:text-brand hover:border-brand/30 transition-all flex items-center gap-1.5 disabled:opacity-40"
+        className="h-8 px-3 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/70 hover:text-brand hover:border-brand/30 transition-all flex items-center gap-1.5 disabled:opacity-40"
         title="Import agent config from JSON"
       >
         {isImporting ? (

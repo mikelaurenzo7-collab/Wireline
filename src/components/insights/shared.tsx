@@ -46,7 +46,7 @@ export function Spinner() {
           />
         </div>
       </div>
-      <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60 animate-pulse">
+      <p className="text-[9px] uppercase tracking-[0.5em] text-muted/70 animate-pulse">
         Computing…
       </p>
     </div>

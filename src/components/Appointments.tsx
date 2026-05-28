@@ -167,7 +167,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
   };
 
   const inputCls =
-    "w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/65 transition-all";
+    "w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 transition-all";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -437,7 +437,7 @@ function CalendarGrid({
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div
             key={d}
-            className="py-2 text-center text-[9px] uppercase tracking-[0.3em] text-muted/60"
+            className="py-2 text-center text-[9px] uppercase tracking-[0.3em] text-muted/70"
           >
             {d}
           </div>
@@ -490,7 +490,7 @@ function CalendarGrid({
                         );
                       })}
                       {dayAppts.length > 3 && (
-                        <div className="text-[8px] text-muted/60 pl-1">
+                        <div className="text-[8px] text-muted/70 pl-1">
                           +{dayAppts.length - 3} more
                         </div>
                       )}
@@ -734,7 +734,7 @@ export default function AppointmentsView() {
                         animate={{ opacity: 1 }}
                         className="h-full min-h-[200px] flex items-center justify-center"
                       >
-                        <p className="text-[9px] uppercase tracking-[0.5em] text-muted/65">
+                        <p className="text-[9px] uppercase tracking-[0.5em] text-muted/70">
                           No completed appointments yet
                         </p>
                       </motion.div>
@@ -859,8 +859,8 @@ function AppointmentRow({
 
           {appt.notes && (
             <div className="flex items-start gap-1.5 mt-1">
-              <StickyNote className="w-3 h-3 text-muted/65 shrink-0 mt-0.5" />
-              <p className="text-[10px] text-muted/60 leading-snug line-clamp-2">{appt.notes}</p>
+              <StickyNote className="w-3 h-3 text-muted/70 shrink-0 mt-0.5" />
+              <p className="text-[10px] text-muted/70 leading-snug line-clamp-2">{appt.notes}</p>
             </div>
           )}
         </div>

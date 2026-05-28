@@ -117,7 +117,7 @@ export default function CallLogs() {
           type="search"
           aria-label="Search calls"
           placeholder="Search signals…"
-          className="h-9 w-full sm:w-44 lg:w-60 pl-8 pr-3 rounded-full glass border border-black/10 text-[11px] text-ink placeholder:text-muted/60 focus:border-brand/40 focus:outline-none transition-all"
+          className="h-9 w-full sm:w-44 lg:w-60 pl-8 pr-3 rounded-full glass border border-black/10 text-[11px] text-ink placeholder:text-muted/70 focus:border-brand/40 focus:outline-none transition-all"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -252,7 +252,7 @@ export default function CallLogs() {
                                     ? "bg-emerald-500/12 text-emerald-600 border-emerald-500/20"
                                     : (call.lead_score || 0) >= 50
                                       ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                                      : "bg-black/[0.06] text-muted/60 border-transparent",
+                                      : "bg-black/[0.06] text-muted/70 border-transparent",
                                 )}
                               >
                                 {call.lead_score || 0}
@@ -284,7 +284,7 @@ export default function CallLogs() {
                             <div className="text-[9px] text-muted/80">
                               {formatDate(call.created_at)}
                             </div>
-                            <div className="text-[8px] text-muted/65 uppercase tracking-[0.2em]">
+                            <div className="text-[8px] text-muted/70 uppercase tracking-[0.2em]">
                               {formatTime(call.created_at, { hour: "2-digit", minute: "2-digit" })}
                             </div>
                           </div>
@@ -314,13 +314,13 @@ export default function CallLogs() {
                 <Panel title="Call Detail" hint="Select a call" icon={FileText}>
                   <div className="h-full flex flex-col items-center justify-center gap-4 text-center">
                     <div className="w-16 h-16 rounded-2xl glass border border-black/8 flex items-center justify-center">
-                      <FileText className="w-8 h-8 text-muted/55" />
+                      <FileText className="w-8 h-8 text-muted/70" />
                     </div>
                     <div>
-                      <p className="text-sm font-display italic text-ink/60 mb-1">
+                      <p className="text-sm font-display italic text-ink/70 mb-1">
                         No call selected
                       </p>
-                      <p className="text-[10px] text-muted/65 leading-relaxed max-w-[200px]">
+                      <p className="text-[10px] text-muted/70 leading-relaxed max-w-[200px]">
                         Click any call on the left to view the full transcript, summary, and QA
                         analysis.
                       </p>
@@ -344,7 +344,7 @@ function SentimentDot({ sentiment }: { sentiment?: string | null }) {
     );
   if (s === "negative")
     return <Frown className="w-3 h-3 text-rose-400 shrink-0" aria-label="Negative sentiment" />;
-  return <Meh className="w-3 h-3 text-muted/60 shrink-0" aria-label="Neutral sentiment" />;
+  return <Meh className="w-3 h-3 text-muted/70 shrink-0" aria-label="Neutral sentiment" />;
 }
 
 function CallDetail({
@@ -583,7 +583,7 @@ function CallDetail({
                         style={{ color: qaColor(qaScore) }}
                       >
                         {qaScore}
-                        <span className="text-xs text-muted/60 ml-1 not-italic">/100</span>
+                        <span className="text-xs text-muted/70 ml-1 not-italic">/100</span>
                       </div>
                     </div>
                     <div className="space-y-2 mb-3">
@@ -655,7 +655,7 @@ function CallDetail({
                 className="h-full overflow-y-auto scrollbar-hide p-4 space-y-2"
               >
                 {transcriptLines.length === 0 ? (
-                  <p className="text-muted/60 text-[10px] uppercase tracking-[0.4em] text-center py-12">
+                  <p className="text-muted/70 text-[10px] uppercase tracking-[0.4em] text-center py-12">
                     No transcript available
                   </p>
                 ) : (
@@ -733,9 +733,9 @@ function CallDetail({
                   <RecordingPlayer url={call.recording_url} />
                 ) : (
                   <div className="h-full min-h-[200px] flex flex-col items-center justify-center gap-2">
-                    <Activity className="w-6 h-6 text-muted/60" />
+                    <Activity className="w-6 h-6 text-muted/70" />
                     <p className="text-eyebrow/60">No recording available</p>
-                    <p className="text-[10px] text-muted/60">
+                    <p className="text-[10px] text-muted/70">
                       Recordings are stored by the voice carrier when enabled
                     </p>
                   </div>
@@ -946,7 +946,7 @@ function RecordingPlayer({ url }: { url: string }) {
         {/* Time */}
         <span className="text-[10px] font-mono text-muted tabular-nums ml-1">
           {fmtTime(currentTime)}
-          <span className="text-muted/60 mx-0.5">/</span>
+          <span className="text-muted/70 mx-0.5">/</span>
           {fmtTime(duration)}
         </span>
 

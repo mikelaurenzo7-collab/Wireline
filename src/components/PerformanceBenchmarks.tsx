@@ -93,12 +93,12 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
               <div className="flex items-center gap-2 shrink-0 ml-3">
                 <span className="font-mono text-[11px] text-brand">
                   {item.user}
-                  <span className="text-muted/60 ml-0.5 text-[9px]">{item.unit}</span>
+                  <span className="text-muted/70 ml-0.5 text-[9px]">{item.unit}</span>
                 </span>
-                <span className="text-muted/60 text-[9px]">vs</span>
-                <span className="font-mono text-[11px] text-ink/50">
+                <span className="text-muted/70 text-[9px]">vs</span>
+                <span className="font-mono text-[11px] text-ink/70">
                   {item.benchmark}
-                  <span className="text-muted/60 ml-0.5 text-[9px]">{item.unit}</span>
+                  <span className="text-muted/70 ml-0.5 text-[9px]">{item.unit}</span>
                 </span>
               </div>
             </div>
@@ -122,7 +122,7 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
           </div>
 
           {/* Expand chevron */}
-          <div className="shrink-0 text-muted/60 group-hover:text-muted/70 transition-colors">
+          <div className="shrink-0 text-muted/70 group-hover:text-muted/70 transition-colors">
             {expanded ? (
               <ChevronUp className="w-3.5 h-3.5" />
             ) : (
@@ -142,7 +142,7 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
             className="overflow-hidden"
           >
             <div
-              className={`mx-4 mb-3 px-3 py-2.5 rounded-lg glass border text-[11px] text-ink/60 leading-relaxed ${cfg.borderColor}`}
+              className={`mx-4 mb-3 px-3 py-2.5 rounded-lg glass border text-[11px] text-ink/70 leading-relaxed ${cfg.borderColor}`}
             >
               💡 {item.tip}
             </div>
@@ -223,8 +223,8 @@ export default function PerformanceBenchmarks() {
   if (data.total_calls === 0) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3 py-8">
-        <TrendingUp className="w-8 h-8 text-muted/55" />
-        <p className="text-[9px] uppercase tracking-[0.5em] text-muted/65">
+        <TrendingUp className="w-8 h-8 text-muted/70" />
+        <p className="text-[9px] uppercase tracking-[0.5em] text-muted/70">
           No call data in the last 30 days
         </p>
         <Link

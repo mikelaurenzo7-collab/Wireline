@@ -315,7 +315,7 @@ export default function AgentTraining() {
               <Sparkles className="w-3 h-3 text-on-brand" strokeWidth={2.5} />
             </div>
             <span className="text-[10px] uppercase tracking-[0.14em] text-brand">AI assists</span>
-            <span className="text-[11px] text-ink/60">— one-click recipes</span>
+            <span className="text-[11px] text-ink/70">— one-click recipes</span>
             <ChevronDown className="ml-auto w-3.5 h-3.5 text-muted transition-transform group-open:rotate-180" />
           </summary>
           <div className="mt-2 p-3 rounded-xl glass border border-white/10 flex flex-wrap items-center gap-1.5">
@@ -595,7 +595,7 @@ export default function AgentTraining() {
                     <textarea
                       value={personalityDraft}
                       onChange={(e) => setPersonalityDraft(e.target.value)}
-                      className="w-full min-h-[180px] p-3 rounded-xl bg-black/5 border border-black/10 text-sm text-ink outline-none focus:border-brand/50 resize-none leading-relaxed placeholder:text-muted/65"
+                      className="w-full min-h-[180px] p-3 rounded-xl bg-black/5 border border-black/10 text-sm text-ink outline-none focus:border-brand/50 resize-none leading-relaxed placeholder:text-muted/70"
                       placeholder="Define the core identity heuristics…"
                     />
                   ) : (
@@ -604,7 +604,7 @@ export default function AgentTraining() {
                         {personality ? (
                           `"${personality}"`
                         ) : (
-                          <span className="text-muted/60 not-italic text-base">
+                          <span className="text-muted/70 not-italic text-base">
                             No personality set yet — click Edit to describe how your agent should
                             speak and behave.
                           </span>
@@ -681,7 +681,7 @@ export default function AgentTraining() {
                             ) : (
                               <div className="flex gap-2 items-start justify-between">
                                 <div className="flex-1 min-w-0">
-                                  <div className="text-[9px] uppercase tracking-[0.3em] text-muted/60 mb-1">
+                                  <div className="text-[9px] uppercase tracking-[0.3em] text-muted/70 mb-1">
                                     Priority {d.priority}
                                   </div>
                                   <div className="text-sm text-ink/90 leading-relaxed">
@@ -724,7 +724,7 @@ export default function AgentTraining() {
                           e.key === "Enter" && saveManualEntry("directive", newDirective)
                         }
                         placeholder="e.g. Never discuss competitor pricing"
-                        className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-muted/65"
+                        className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-muted/70"
                       />
                       <button
                         onClick={() => saveManualEntry("directive", newDirective)}
@@ -839,7 +839,7 @@ export default function AgentTraining() {
                           e.key === "Enter" && saveManualEntry("knowledge", newKnowledge)
                         }
                         placeholder="e.g. Our return policy is 30 days, no questions"
-                        className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-muted/65"
+                        className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-muted/70"
                       />
                       <button
                         onClick={() => saveManualEntry("knowledge", newKnowledge)}
@@ -887,8 +887,8 @@ export default function AgentTraining() {
                         </div>
                         <p className="text-sm text-ink/90 leading-relaxed">{lesson.lesson}</p>
                         <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/8">
-                          <Clock className="w-3 h-3 text-muted/60" />
-                          <span className="text-[9px] uppercase tracking-[0.3em] text-muted/60">
+                          <Clock className="w-3 h-3 text-muted/70" />
+                          <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
                             {formatDate(lesson.created_at)}
                           </span>
                         </div>

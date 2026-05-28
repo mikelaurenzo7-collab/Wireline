@@ -84,7 +84,7 @@ function AgentCard({
             <span
               className={`font-mono text-[10px] uppercase tracking-[0.2em] px-2 py-0.5 leading-none ${
                 isDemo
-                  ? "text-ink/50 border border-ink/12"
+                  ? "text-ink/70 border border-ink/12"
                   : "text-brand bg-brand/8 border border-brand/20"
               }`}
             >
@@ -92,7 +92,7 @@ function AgentCard({
             </span>
           </div>
           <p
-            className={`text-ink/60 leading-relaxed ${featured ? "text-sm max-w-sm" : "text-[13px]"}`}
+            className={`text-ink/70 leading-relaxed ${featured ? "text-sm max-w-sm" : "text-[13px]"}`}
           >
             {agent.role}
           </p>
@@ -103,7 +103,7 @@ function AgentCard({
           >
             {agent.display}
           </span>
-          <span className="flex items-center gap-1.5 text-ink/40 group-hover:text-brand transition-colors text-[11px] font-mono uppercase tracking-[0.15em]">
+          <span className="flex items-center gap-1.5 text-ink/55 group-hover:text-brand transition-colors text-[11px] font-mono uppercase tracking-[0.15em]">
             Call
             <ArrowUpRight className="w-3.5 h-3.5" />
           </span>
@@ -148,7 +148,7 @@ export default function LandingPage() {
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
               className="text-center"
             >
-              <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/50 mb-6 lg:mb-8">
+              <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/70 mb-6 lg:mb-8">
                 Voice + Email + SMS — One fleet
               </p>
 
@@ -173,7 +173,7 @@ export default function LandingPage() {
                 <a
                   href={`tel:${WIRELINE_CONTACT_AGENTS[0]?.tel || "+16305811834"}`}
                   data-testid="hero-cta-call"
-                  className="inline-flex items-center gap-2 text-ink/60 hover:text-brand transition-colors text-sm font-medium"
+                  className="inline-flex items-center gap-2 text-ink/70 hover:text-brand transition-colors text-sm font-medium"
                 >
                   <Phone className="w-4 h-4" />
                   <span>Talk to {WIRELINE_CONTACT_AGENTS[0]?.name || "us"} now</span>
@@ -189,7 +189,7 @@ export default function LandingPage() {
               className="mt-12 lg:mt-16 flex flex-wrap items-center justify-center gap-x-5 gap-y-2"
             >
               {TRUST_BADGES.map((badge) => (
-                <span key={badge} className="font-mono text-[11px] tracking-[0.12em] text-ink/40">
+                <span key={badge} className="font-mono text-[11px] tracking-[0.12em] text-ink/55">
                   {badge}
                 </span>
               ))}
@@ -220,7 +220,7 @@ export default function LandingPage() {
                   <p className="font-display italic text-[clamp(2.5rem,5vw,4rem)] leading-none text-ink tracking-tight">
                     {stat.value}
                   </p>
-                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/45 mt-3">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/55 mt-3">
                     {stat.label}
                   </p>
                 </motion.div>
@@ -239,12 +239,12 @@ export default function LandingPage() {
               transition={{ duration: 0.5 }}
               className="mb-10 lg:mb-14"
             >
-              <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/45 mb-3">
+              <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/55 mb-3">
                 Live right now
               </p>
               <h2 className="font-display italic text-[clamp(1.8rem,4vw,3rem)] leading-[1.05] text-ink max-w-2xl">
                 Call any agent from your phone.{" "}
-                <span className="text-ink/40">No signup required.</span>
+                <span className="text-ink/55">No signup required.</span>
               </h2>
             </motion.div>
 
@@ -282,7 +282,7 @@ export default function LandingPage() {
               <h2 className="font-display italic text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.05] text-ink mb-6">
                 Ready to run your fleet?
               </h2>
-              <p className="text-ink/55 text-lg max-w-lg mx-auto mb-8">
+              <p className="text-ink/65 text-lg max-w-lg mx-auto mb-8">
                 14-day free trial. No credit card. Your first agent goes live in under 10 minutes.
               </p>
               <Link
@@ -307,13 +307,13 @@ export default function LandingPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12 mb-16">
               <div className="col-span-2 md:col-span-1">
                 <p className="font-display italic text-2xl text-paper/90 mb-3">Wireline</p>
-                <p className="text-[13px] text-paper/45 leading-relaxed max-w-xs">
+                <p className="text-[13px] text-paper/55 leading-relaxed max-w-xs">
                   AI voice + email agents for every business. One fleet, your playbook, 24/7.
                 </p>
               </div>
               {FOOTER_COLS.map((col) => (
                 <div key={col.title}>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-paper/35 mb-4">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-paper/45 mb-4">
                     {col.title}
                   </p>
                   <ul className="space-y-2.5">
@@ -333,21 +333,21 @@ export default function LandingPage() {
             </div>
 
             <div className="border-t border-paper/[0.08] pt-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <p className="font-mono text-[11px] text-paper/30 tracking-[0.08em]">
+              <p className="font-mono text-[11px] text-paper/40 tracking-[0.08em]">
                 &copy; {new Date().getFullYear()} Wireline Inc.
               </p>
               <div className="flex items-center gap-4">
                 <Link
                   to="/signin"
                   data-testid="footer-signin"
-                  className="text-[13px] text-paper/45 hover:text-paper transition-colors"
+                  className="text-[13px] text-paper/55 hover:text-paper transition-colors"
                 >
                   Sign in
                 </Link>
                 <Link
                   to="/signup"
                   data-testid="footer-signup"
-                  className="text-[13px] text-paper/45 hover:text-paper transition-colors"
+                  className="text-[13px] text-paper/55 hover:text-paper transition-colors"
                 >
                   Create account
                 </Link>

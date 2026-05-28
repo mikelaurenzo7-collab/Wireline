@@ -354,7 +354,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
               {c.customer_number || "Unknown caller"}
             </span>
             <p className="text-[11px] text-muted/70 truncate">{c.summary}</p>
-            <div className="flex items-center gap-2 mt-1 text-[8px] uppercase tracking-[0.26em] text-muted/65">
+            <div className="flex items-center gap-2 mt-1 text-[8px] uppercase tracking-[0.26em] text-muted/70">
               <span>{formatDate(c.created_at)}</span>
               <span className="w-1 h-1 rounded-full bg-white/15" />
               <span
@@ -370,7 +370,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
               )}
             </div>
             {c.coaching_note && (
-              <p className="text-[10px] text-muted/60 mt-0.5 line-clamp-1 pr-2">
+              <p className="text-[10px] text-muted/70 mt-0.5 line-clamp-1 pr-2">
                 {c.coaching_note}
               </p>
             )}
@@ -385,7 +385,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
               }}
               label="Enrich"
             />
-            <div className="w-8 h-8 rounded-xl glass border border-white/8 flex items-center justify-center text-ink/50 transition-all group-hover:border-white/15 group-hover:text-brand">
+            <div className="w-8 h-8 rounded-xl glass border border-white/8 flex items-center justify-center text-ink/70 transition-all group-hover:border-white/15 group-hover:text-brand">
               <ChevronRight className="w-3.5 h-3.5" />
             </div>
           </div>
@@ -670,7 +670,7 @@ const OpenTaskRow: React.FC<{
         {completing ? (
           <Loader2 className="w-2.5 h-2.5 animate-spin text-emerald-400" />
         ) : (
-          <Check className="w-2.5 h-2.5 text-muted/55 group-hover:text-emerald-400 group-active:text-emerald-400 transition-colors" />
+          <Check className="w-2.5 h-2.5 text-muted/70 group-hover:text-emerald-400 group-active:text-emerald-400 transition-colors" />
         )}
       </button>
 
@@ -752,7 +752,7 @@ function Empty({
 }) {
   return (
     <div className="h-full flex flex-col items-center justify-center gap-3 px-6 text-center">
-      <Icon className={cn("w-10 h-10", green ? "text-emerald-500/60" : "text-muted/65")} />
+      <Icon className={cn("w-10 h-10", green ? "text-emerald-500/60" : "text-muted/70")} />
       <p
         className={cn(
           "text-[10px] uppercase tracking-[0.4em]",

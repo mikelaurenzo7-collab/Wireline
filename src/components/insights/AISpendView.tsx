@@ -151,7 +151,7 @@ function SpendBudgetCard() {
             <div className="flex items-baseline justify-between">
               <div className="font-display italic text-3xl text-ink leading-none">
                 ${safeFixed(used, 2)}{" "}
-                <span className="text-ink/50 text-xl">/ ${safeFixed(limit, 2)}</span>
+                <span className="text-ink/70 text-xl">/ ${safeFixed(limit, 2)}</span>
               </div>
               <div className="app-section-title">{safeFixed(pct, 1)}% used</div>
             </div>
@@ -177,7 +177,7 @@ function SpendBudgetCard() {
             )}
           </div>
         ) : (
-          <div className="text-sm text-ink/60">
+          <div className="text-sm text-ink/70">
             No monthly limit set. Configure one below to enable warnings and (optionally) a hard
             cap.
           </div>
@@ -229,7 +229,7 @@ function SpendBudgetCard() {
         </div>
 
         <div className="flex items-center justify-between gap-4 pt-1">
-          <div className="text-[11px] text-ink/50">
+          <div className="text-[11px] text-ink/70">
             Threshold crossings fire <span className="font-mono text-ink/75">spend.warning</span>{" "}
             and <span className="font-mono text-ink/75">spend.exceeded</span> webhook events — wire
             them to Slack/CRM in Admin.

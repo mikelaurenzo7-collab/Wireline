@@ -357,7 +357,7 @@ export default function StripeBillingCard() {
                   )}
                 </button>
                 {!plan.configured && (
-                  <p className="text-[9px] uppercase tracking-[0.28em] text-muted/60 text-center leading-relaxed">
+                  <p className="text-[9px] uppercase tracking-[0.28em] text-muted/70 text-center leading-relaxed">
                     Available soon — contact us to start on this tier
                   </p>
                 )}
@@ -370,7 +370,7 @@ export default function StripeBillingCard() {
             <Shield className="w-3 h-3" />
             Stripe · PCI DSS Level 1 · Cancel anytime
           </div>
-          <div className="flex items-center gap-3 text-[9px] text-muted/60 uppercase tracking-[0.2em]">
+          <div className="flex items-center gap-3 text-[9px] text-muted/70 uppercase tracking-[0.2em]">
             <a href="/privacy" className="hover:text-muted/70 transition-colors">
               Privacy
             </a>
@@ -433,7 +433,7 @@ function ActiveSubCard({
           </div>
           <div className="space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[9px] uppercase tracking-[0.45em] text-muted/60">
+              <span className="text-[9px] uppercase tracking-[0.45em] text-muted/70">
                 Current plan
               </span>
               <span

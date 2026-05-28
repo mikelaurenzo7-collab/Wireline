@@ -323,7 +323,7 @@ export default function FounderDashboard() {
               onChange={(e) => setBroadcast(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && sendBroadcast()}
               placeholder="e.g. From today, always confirm the caller's email by spelling it back."
-              className="flex-1 bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 text-sm text-ink outline-none focus:border-brand/40 transition-colors placeholder:text-muted/65"
+              className="flex-1 bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 text-sm text-ink outline-none focus:border-brand/40 transition-colors placeholder:text-muted/70"
             />
             <button
               onClick={sendBroadcast}
@@ -334,7 +334,7 @@ export default function FounderDashboard() {
               Send to all 6
             </button>
           </div>
-          <p className="text-[10px] text-muted/60 mt-2">
+          <p className="text-[10px] text-muted/70 mt-2">
             Lands in every staff member's chat memory — they'll factor it into future calls.
           </p>
         </div>

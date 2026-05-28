@@ -427,7 +427,7 @@ function TemplateCard({
         {/* Name */}
         <div>
           <h3 className="font-display italic text-lg text-ink leading-tight">{template.name}</h3>
-          <p className="text-xs text-ink/60 leading-relaxed mt-1">{template.description}</p>
+          <p className="text-xs text-ink/70 leading-relaxed mt-1">{template.description}</p>
         </div>
 
         {/* First-message speech bubble on hover */}
@@ -486,7 +486,7 @@ function CustomAgentCard() {
       </div>
       <div className="space-y-1">
         <h3 className="font-display italic text-lg text-ink">Custom Agent</h3>
-        <p className="text-xs text-ink/50 leading-relaxed max-w-[200px]">
+        <p className="text-xs text-ink/70 leading-relaxed max-w-[200px]">
           Let Claude Forge design a bespoke agent for your exact use case.
         </p>
       </div>
@@ -614,14 +614,14 @@ export default function AgentTemplates() {
       <div className="px-4 py-3 border-b border-white/8 flex flex-col gap-3 shrink-0">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted/60 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted/70 pointer-events-none" />
           <input
             type="search"
             aria-label="Search templates"
             placeholder="Search templates…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm bg-black/5 border border-black/10 rounded-xl outline-none focus:border-brand/50 text-ink placeholder:text-muted/65"
+            className="w-full pl-9 pr-4 py-2 text-sm bg-black/5 border border-black/10 rounded-xl outline-none focus:border-brand/50 text-ink placeholder:text-muted/70"
           />
         </div>
 

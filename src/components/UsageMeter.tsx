@@ -47,7 +47,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
     return (
       <div
         className={cn(
-          "flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-muted/60",
+          "flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-muted/70",
           compact ? "py-1.5 px-3" : "py-4 px-5",
         )}
       >
@@ -83,7 +83,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
         />
         <span className="text-muted/70 font-semibold tracking-wider">VOICE</span>
         <span className="text-ink font-bold tabular-nums">{used.toLocaleString()}</span>
-        <span className="text-muted/60 font-light">/</span>
+        <span className="text-muted/70 font-light">/</span>
         <span className="text-muted/70 tabular-nums">{included.toLocaleString()}</span>
       </div>
     );
@@ -112,7 +112,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
             <h4 className="font-display italic text-lg text-ink leading-tight font-bold">
               Voice minutes
             </h4>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-muted/65 font-medium">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70 font-medium">
               This month · resets {resetLabel}
             </p>
           </div>
@@ -122,7 +122,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
             <span className="text-ink tabular-nums text-base font-bold">
               {used.toLocaleString()}
             </span>
-            <span className="text-muted/65"> / {included.toLocaleString()}</span>
+            <span className="text-muted/70"> / {included.toLocaleString()}</span>
           </div>
           <p className="text-[9px] uppercase tracking-[0.3em] text-brand font-semibold mt-0.5">
             {pct}% used

@@ -262,7 +262,7 @@ export default function DailyBrief() {
             <h2 className="font-display italic text-3xl md:text-5xl text-ink leading-tight">
               {brief.headline}
             </h2>
-            <p className="text-ink/60 text-sm md:text-base leading-relaxed max-w-3xl">
+            <p className="text-ink/70 text-sm md:text-base leading-relaxed max-w-3xl">
               {brief.key_metrics_takeaway}
             </p>
           </div>
@@ -488,7 +488,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
         <button
           onClick={onClose}
           aria-label="Close"
-          className="w-9 h-9 rounded-full glass border border-white/10 hover:border-white/30 flex items-center justify-center text-ink/60 hover:text-ink"
+          className="w-9 h-9 rounded-full glass border border-white/10 hover:border-white/30 flex items-center justify-center text-ink/70 hover:text-ink"
         >
           <XIcon className="w-4 h-4" />
         </button>
@@ -519,7 +519,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
               "disabled:opacity-50 disabled:cursor-not-allowed",
               "w-full px-4 py-3 rounded-xl border flex items-start gap-3 text-left transition-all",
               !gmailConnected
-                ? "bg-black/20 border-white/5 text-muted/65 cursor-not-allowed"
+                ? "bg-black/20 border-white/5 text-muted/70 cursor-not-allowed"
                 : enabled
                   ? "bg-brand-2/15 border-brand-2/40 text-brand-2"
                   : "bg-black/5 border-black/10 text-ink/80 hover:border-black/20",

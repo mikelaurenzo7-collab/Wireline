@@ -45,7 +45,7 @@ export function LiveMonitor({ calls }: { calls: LiveCall[] }) {
               <div className="w-12 h-12 rounded-2xl bg-black/5 flex items-center justify-center mb-4">
                 <Zap className="w-6 h-6 text-muted/20" />
               </div>
-              <p className="text-muted/65 text-[10px] uppercase tracking-[0.3em]">
+              <p className="text-muted/70 text-[10px] uppercase tracking-[0.3em]">
                 Carrier network idle
               </p>
             </motion.div>
@@ -94,7 +94,7 @@ export function LiveMonitor({ calls }: { calls: LiveCall[] }) {
                         {call.sentiment_label}
                       </span>
                       <span className="w-1 h-1 rounded-full bg-black/10" />
-                      <span className="text-[9px] text-muted/60 font-mono">
+                      <span className="text-[9px] text-muted/70 font-mono">
                         ID: {call.id.substring(0, 8)}
                       </span>
                     </div>
@@ -128,7 +128,7 @@ export function LiveMonitor({ calls }: { calls: LiveCall[] }) {
                 <div className="relative">
                   <div className="flex justify-between items-center mb-2">
                     <div className="flex items-center gap-2">
-                      <MessageSquareText className="w-3 h-3 text-muted/60" />
+                      <MessageSquareText className="w-3 h-3 text-muted/70" />
                       <span className="text-[9px] uppercase tracking-[0.2em] text-muted font-bold">
                         Sentiment Score
                       </span>

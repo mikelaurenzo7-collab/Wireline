@@ -248,7 +248,7 @@ export default function ProductTour() {
                     }}
                   />
                 ))}
-                <span className="ml-1 text-[9px] text-muted/60 tabular-nums">
+                <span className="ml-1 text-[9px] text-muted/70 tabular-nums">
                   {stepIndex + 1} / {TOUR_STEPS.length}
                 </span>
               </div>

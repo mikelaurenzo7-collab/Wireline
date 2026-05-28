@@ -96,7 +96,7 @@ function StatCard({
       <div className="relative z-10">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[10px] uppercase tracking-[0.3em] text-muted">{label}</span>
-          <Icon className="w-3.5 h-3.5 text-muted/60" />
+          <Icon className="w-3.5 h-3.5 text-muted/70" />
         </div>
         <p className="text-2xl font-display italic text-ink">{value}</p>
       </div>
@@ -454,7 +454,7 @@ export default function AuditLog() {
                     // Trigger search (already handled by useMemo)
                   }
                 }}
-                className="w-full pl-11 pr-4 py-3 rounded-xl glass border border-white/10 text-sm text-ink placeholder:text-muted/65 focus:outline-none focus:border-brand/40 transition-all"
+                className="w-full pl-11 pr-4 py-3 rounded-xl glass border border-white/10 text-sm text-ink placeholder:text-muted/70 focus:outline-none focus:border-brand/40 transition-all"
               />
             </div>
             <div className="relative">

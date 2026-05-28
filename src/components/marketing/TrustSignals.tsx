@@ -141,7 +141,7 @@ export default function TrustSignals() {
               className="w-3.5 h-3.5 text-[#4F1E7B] group-hover:scale-110 transition-transform"
               strokeWidth={1.8}
             />
-            <span className="text-[8px] uppercase tracking-[0.18em] text-muted/65 text-center leading-tight">
+            <span className="text-[8px] uppercase tracking-[0.18em] text-muted/70 text-center leading-tight">
               {label}
             </span>
           </div>
@@ -169,7 +169,7 @@ export default function TrustSignals() {
                 </span>
               </div>
               <p className="text-[11px] font-semibold text-ink leading-none mb-0.5">{label}</p>
-              <p className="text-[9px] text-muted/65 leading-tight">{detail}</p>
+              <p className="text-[9px] text-muted/70 leading-tight">{detail}</p>
             </div>
           );
         })}
@@ -178,7 +178,7 @@ export default function TrustSignals() {
       {/* Status-page deep link — the single most under-rated trust
           signal in B2B SaaS. If we publish uptime, prospects believe
           we run a real shop. */}
-      <div className="mt-3 flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-[9px] uppercase tracking-[0.32em] text-muted/65">
+      <div className="mt-3 flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-[9px] uppercase tracking-[0.32em] text-muted/70">
         <a
           href="/status"
           className="inline-flex items-center gap-1.5 hover:text-ink transition-colors"

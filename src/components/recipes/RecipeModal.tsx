@@ -138,7 +138,7 @@ export function RecipeModal({
             <button
               onClick={onClose}
               aria-label="Close"
-              className="w-10 h-10 rounded-full glass border border-white/10 flex items-center justify-center text-ink/60 hover:text-ink hover:border-brand/40 transition-all"
+              className="w-10 h-10 rounded-full glass border border-white/10 flex items-center justify-center text-ink/70 hover:text-ink hover:border-brand/40 transition-all"
             >
               <X className="w-4 h-4" />
             </button>

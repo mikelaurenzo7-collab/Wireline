@@ -116,7 +116,7 @@ export function ObjectionDrillForm({
                 <div className="text-[10px] uppercase tracking-[0.3em] text-muted mb-1">
                   Coaching Note
                 </div>
-                <p className="text-ink/60 text-xs leading-relaxed">{s.coaching_note}</p>
+                <p className="text-ink/70 text-xs leading-relaxed">{s.coaching_note}</p>
               </div>
             </div>
           ))}
