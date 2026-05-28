@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Express middleware operates on heterogeneous request/response shapes. */
+ 
 import type { Request, Response, NextFunction } from "express";
 import type { User } from "../types/auth";
 import { log, auditLogger } from "../lib/server-context";
@@ -24,9 +24,12 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
     // Idempotent check
     if (authedReq.user?.id) return next();
 
+    // Bearer-in-Authorization-header only — Wireline intentionally has no
+    // cookie sessions (see README). Accepting a cookie-borne token would add
+    // a CSRF surface with no functional benefit (cookie-parser is never wired,
+    // so any cookie path was dead code regardless).
     const authHeader = req.headers.authorization;
-    const cookieToken = (req as any).cookies?.["wireline_session"];
-    const token = authHeader?.split(" ")[1] || cookieToken;
+    const token = authHeader?.split(" ")[1];
 
     if (!token) {
       return res.status(401).json({ error: "No authorization token provided" });

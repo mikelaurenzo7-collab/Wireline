@@ -216,11 +216,9 @@ export function verifyOAuthState(state: string | undefined): VerifiedOAuthState 
 }
 
 export async function resolveUserIdFromOAuthSession(req: express.Request): Promise<string | null> {
+  // Bearer-in-Authorization-header only — no cookie sessions (see README).
   const authHeader = req.headers.authorization;
-  const cookieToken = (req as express.Request & { cookies?: Record<string, string> }).cookies?.[
-    "wireline_session"
-  ];
-  const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : cookieToken;
+  const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
   if (!bearerToken) return null;
 
   const secret = getInternalJwtSecret() || "";
