@@ -179,9 +179,14 @@ export default function ContactProfile() {
           <p className="text-[10px] uppercase tracking-[0.6em] text-muted">
             {formatPhone(data.number)}
           </p>
-          <h1 className="font-display italic text-6xl md:text-7xl lg:text-[6.5rem] leading-[0.9] tracking-tight text-ink">
+          {/* Visually the customer's name is the dominant page header,
+              but semantically AppShell's DesktopContextBar already
+              renders the page H1 on lg+. Using H2 here keeps one H1
+              per page (a11y) and preserves the editorial branded
+              treatment unchanged. */}
+          <h2 className="font-display italic text-6xl md:text-7xl lg:text-[6.5rem] leading-[0.9] tracking-tight text-ink">
             {displayName}
-          </h1>
+          </h2>
           <p className="text-ink/65 text-sm">Last touch · {lastTouch}</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">

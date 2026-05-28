@@ -19,39 +19,39 @@ import { authFetch, safeJson, TRIAL_GATE_EVENT, type TrialGateBlockDetail } from
 import { cn } from "../lib/utils";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { getStoredSignupIntent, recommendedPlanFromIntent } from "../lib/signup-intent";
+import { STRIPE_PLANS } from "../lib/plan-catalog";
 
 /**
- * Self-serve tiers we surface in the picker. Enterprise is intentionally
- * not in the picker — it's contact-sales only (price_usd_monthly = 0)
- * and goes through the checkout endpoint with a 400.
+ * Self-serve tiers we surface in the picker.
+ *
+ * Prices come from STRIPE_PLANS (src/lib/plan-catalog.ts) — the same
+ * SSOT the README pricing table, the AdminSettings billing card, and
+ * the server-side checkout flow all read. Hardcoding prices here was
+ * a drift footgun: a catalogue change could leave the modal showing a
+ * stale price while Stripe charges the new one ("I clicked $149 and
+ * got billed $179"). The per-tier marketing pitch is modal-specific
+ * and stays in a dictionary keyed on the catalog id.
+ *
+ * Enterprise is intentionally excluded — it's contact-sales only
+ * (`price_usd_monthly = 0`) and the checkout endpoint returns 400.
+ *
+ * The "Recommended" pill is rendered from `recommendedPlanId` below,
+ * derived from the user's stored signup intent — NOT from a static
+ * flag on this list. Don't add one here; it would never be read.
  */
-const SELF_SERVE_TIERS = [
-  {
-    id: "personal",
-    label: "Personal",
-    price: 49,
-    pitch: "Solo operator · 1 agent · dedicated number",
-  },
-  {
-    id: "starter",
-    label: "Starter",
-    price: 149,
-    pitch: "Small team · 3 agents · CRM sync · best for most",
-    recommended: true,
-  },
-  {
-    id: "pro",
-    label: "Pro",
-    price: 499,
-    pitch: "Growing org · 10 agents · supervisor cockpit",
-  },
-  {
-    id: "business",
-    label: "Business",
-    price: 1499,
-    pitch: "Multi-team · 25 agents · priority support",
-  },
-];
+const TIER_PITCH: Record<string, string> = {
+  personal: "Solo operator · 1 agent · dedicated number",
+  starter: "Small team · 3 agents · CRM sync · best for most",
+  pro: "Growing org · 10 agents · supervisor cockpit",
+  business: "Multi-team · 25 agents · priority support",
+};
+
+const SELF_SERVE_TIERS = STRIPE_PLANS.filter((p) => p.id !== "enterprise").map((p) => ({
+  id: p.id,
+  label: p.name,
+  price: p.price_usd_monthly,
+  pitch: TIER_PITCH[p.id] ?? "",
+}));
 
 function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: string } {
   switch (detail.code) {

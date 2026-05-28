@@ -19,7 +19,7 @@ import {
   Users,
   Zap,
 } from "lucide-react";
-import { authFetch } from "../lib/api";
+import { authFetch, readApiJson } from "../lib/api";
 import WirelineMark from "./WirelineMark";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { useToast } from "../contexts/ToastContext";
@@ -97,33 +97,59 @@ export default function OnboardingQuickstart({
   };
 
   useEffect(() => {
+    // All five reads tolerate failure — a 401/5xx/HTML-error page must
+    // never surface as a thrown SyntaxError inside .json(). readApiJson
+    // already wraps that: it returns { ok: false, status, error } on any
+    // non-OK response or non-JSON body, so each .catch(()=>0) below now
+    // catches only genuine network failures (no JSON parse leaks). The
+    // count helpers normalise the OK branch to a number so the rest of
+    // the effect is shape-stable.
+    const countAt = async <K extends string>(url: string, key: K): Promise<number> => {
+      try {
+        const out = await readApiJson<Record<K, unknown[]>>(await authFetch(url));
+        if (!out.ok) return 0;
+        const arr = out.data[key];
+        return Array.isArray(arr) ? arr.length : 0;
+      } catch {
+        return 0;
+      }
+    };
+    const totalAt = async (url: string): Promise<number> => {
+      try {
+        const out = await readApiJson<{ total?: number }>(await authFetch(url));
+        return out.ok && typeof out.data.total === "number" ? out.data.total : 0;
+      } catch {
+        return 0;
+      }
+    };
+
     (async () => {
       try {
         const [a, k, n, c, billingStatus] = await Promise.all([
-          authFetch("/api/agents")
-            .then((r) => r.json())
-            .then((d) => d.agents?.length ?? 0)
-            .catch(() => 0),
-          authFetch("/api/agent-config/default-agent")
-            .then((r) => r.json())
-            .then((d) => d.knowledge?.length ?? 0)
-            .catch(() => 0),
-          authFetch("/api/phone-numbers")
-            .then((r) => r.json())
-            .then((d) => d.numbers?.length ?? 0)
-            .catch(() => 0),
-          authFetch("/api/calls?limit=1")
-            .then((r) => r.json())
-            .then((d) => d.total ?? 0)
-            .catch(() => 0),
-          authFetch("/api/billing/status")
-            .then((r) => r.json())
-            .then((d) => ({
-              planId:
-                d.subscription?.plan_id || d.subscription?.plan || d.signup_intent?.plan_id || null,
-              signupWedge: d.signup_intent?.wedge || null,
-            }))
-            .catch(() => null),
+          countAt("/api/agents", "agents"),
+          countAt("/api/agent-config/default-agent", "knowledge"),
+          countAt("/api/phone-numbers", "numbers"),
+          totalAt("/api/calls?limit=1"),
+          (async () => {
+            try {
+              const out = await readApiJson<{
+                subscription?: { plan_id?: string; plan?: string };
+                signup_intent?: { plan_id?: string; wedge?: string };
+              }>(await authFetch("/api/billing/status"));
+              if (!out.ok) return null;
+              const d = out.data;
+              return {
+                planId:
+                  d.subscription?.plan_id ||
+                  d.subscription?.plan ||
+                  d.signup_intent?.plan_id ||
+                  null,
+                signupWedge: d.signup_intent?.wedge || null,
+              };
+            } catch {
+              return null;
+            }
+          })(),
         ]);
         setProgress({ agents: a, knowledge: k, numbers: n, calls: c });
         setPlanId(billingStatus?.planId || null);

@@ -302,10 +302,14 @@ export default function KnowledgeBaseManager() {
             <p className="text-[10px] uppercase tracking-[0.6em] text-muted">
               Cross-Agent Intelligence
             </p>
-            <h1 className="font-display italic text-3xl md:text-4xl leading-[0.95] tracking-tight">
+            {/* Visually the editorial page header, semantically a subhead —
+                AppShell's DesktopContextBar already renders the page H1
+                on lg+ ("Knowledge"). Using H2 keeps one H1 per page (a11y)
+                and preserves the brand split-colour treatment unchanged. */}
+            <h2 className="font-display italic text-3xl md:text-4xl leading-[0.95] tracking-tight">
               <span className="text-aurora">Knowledge</span>{" "}
               <span className="text-ink/90">Atlas</span>
-            </h1>
+            </h2>
             <p className="text-ink/65 max-w-2xl text-sm md:text-base leading-relaxed">
               Every fact your agents know — searchable, editable, prunable. Catch duplicates, fix
               errors, retire stale info.
