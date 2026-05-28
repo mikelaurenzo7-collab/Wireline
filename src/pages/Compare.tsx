@@ -15,7 +15,6 @@ import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { Check, X, Minus, ArrowRight } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
-import WirelineMark from "../components/WirelineMark";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 
 type Cell = true | false | "partial";
