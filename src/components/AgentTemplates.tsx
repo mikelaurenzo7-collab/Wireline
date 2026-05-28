@@ -487,7 +487,7 @@ function CustomAgentCard() {
       <div className="space-y-1">
         <h3 className="font-display italic text-lg text-ink">Custom Agent</h3>
         <p className="text-xs text-ink/70 leading-relaxed max-w-[200px]">
-          Let Claude Forge design a bespoke agent for your exact use case.
+          Let Wireline Forge design a bespoke agent for your exact use case.
         </p>
       </div>
       <ClaudeRecipeButton recipe="agent-forge" label="Open Agent Forge" variant="ghost" />
