@@ -165,7 +165,7 @@ export default function PageShell({
           <div
             role="tablist"
             aria-label="Page sub-navigation"
-            className="flex items-center gap-0.5 p-0.5 rounded-xl glass border border-black/8"
+            className="flex items-center gap-0.5 p-0.5 glass border border-black/8"
           >
             {tabs.map((tab, i) => {
               const Icon = tab.icon;
@@ -187,14 +187,14 @@ export default function PageShell({
                     else if (e.key === "End") setActiveId(tabs[tabs.length - 1].id);
                   }}
                   className={cn(
-                    "relative shrink-0 inline-flex min-h-11 sm:min-h-10 items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[11px] uppercase tracking-[0.1em] font-medium",
+                    "relative shrink-0 inline-flex min-h-11 sm:min-h-10 items-center gap-1.5 px-3 py-1.5 transition-all text-[11px] uppercase tracking-[0.1em] font-medium",
                     active ? "text-on-brand" : "text-muted hover:text-ink hover:bg-black/5",
                   )}
                 >
                   {active && (
                     <motion.div
                       layoutId="tab-active-bg"
-                      className="absolute inset-0 rounded-lg"
+                      className="absolute inset-0"
                       style={{
                         background: "#4F1E7B",
                         boxShadow:
@@ -251,14 +251,14 @@ export default function PageShell({
                     else if (e.key === "End") setActiveId(tabs[tabs.length - 1].id);
                   }}
                   className={cn(
-                    "native-tap-squish relative shrink-0 inline-flex min-h-11 items-center gap-1.5 px-3 py-2 rounded-xl transition-all text-[11px] uppercase tracking-[0.1em] font-medium whitespace-nowrap",
+                    "native-tap-squish relative shrink-0 inline-flex min-h-11 items-center gap-1.5 px-3 py-2 transition-all text-[11px] uppercase tracking-[0.1em] font-medium whitespace-nowrap",
                     active ? "text-on-brand" : "text-muted",
                   )}
                 >
                   {active && (
                     <motion.div
                       layoutId="mobile-tab-active-bg"
-                      className="absolute inset-0 rounded-xl"
+                      className="absolute inset-0"
                       style={{
                         background: "#4F1E7B",
                         boxShadow:
@@ -361,7 +361,7 @@ export default function PageShell({
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 360, damping: 32 }}
-              className="fixed bottom-0 left-0 right-0 z-[201] glass-elevated rounded-t-[1.35rem] border-t border-black/10 md:hidden select-none"
+              className="fixed bottom-0 left-0 right-0 z-[201] glass-elevated border-t border-black/10 md:hidden select-none"
               style={{
                 paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
                 boxShadow:
@@ -443,7 +443,7 @@ export function Panel({
   return (
     <section
       className={cn(
-        "relative rounded-xl glass border border-black/8 flex flex-col h-full min-h-0 overflow-hidden",
+        "relative glass border border-black/8 flex flex-col h-full min-h-0 overflow-hidden",
         "panel-mobile-surface",
         className,
       )}
@@ -465,7 +465,7 @@ export function Panel({
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 min-w-0">
             {Icon && (
               <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-black/8"
+                className="w-8 h-8 flex items-center justify-center shrink-0 border border-black/8"
                 style={{
                   background: `linear-gradient(135deg, ${accent}18, ${accent}06)`,
                   color: accent,
@@ -529,7 +529,7 @@ export function StatTile({
 }) {
   const trendPositive = trend && trend.value >= 0;
   return (
-    <div className="stat-tile-mobile relative rounded-xl glass border border-black/8 p-4 max-md:p-5 overflow-hidden card-interactive">
+    <div className="stat-tile-mobile relative glass border border-black/8 p-4 max-md:p-5 overflow-hidden card-interactive">
       {/* Ambient glow */}
       <div
         className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"
@@ -546,7 +546,7 @@ export function StatTile({
           <p className="text-eyebrow leading-none">{label}</p>
           {Icon && (
             <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center border border-black/8 shrink-0"
+              className="w-7 h-7 flex items-center justify-center border border-black/8 shrink-0"
               style={{
                 background: `linear-gradient(135deg, ${accent}18, ${accent}06)`,
                 color: accent,

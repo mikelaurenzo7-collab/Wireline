@@ -191,7 +191,7 @@ function OAuthSignInButtons({
             onClick={() => start(p.id)}
             disabled={disabled || !!pending}
             aria-label={`Continue with ${p.label}`}
-            className="min-h-[52px] py-2.5 inline-flex flex-col items-center justify-center gap-1 rounded-xl border border-black/10 bg-white/80 text-ink text-[11px] font-semibold hover:border-brand/35 hover:bg-white disabled:opacity-50 transition-all"
+            className="min-h-[52px] py-2.5 inline-flex flex-col items-center justify-center gap-1 border border-ink/[0.08] bg-white/70 text-ink text-[11px] font-semibold hover:border-brand/30 hover:bg-white disabled:opacity-50 transition-all"
           >
             {pending === p.id ? <Loader2 className="w-5 h-5 animate-spin" /> : p.icon}
             <span>{p.label}</span>
@@ -383,7 +383,7 @@ export default function AuthPortal() {
           aria-hidden
           style={{
             background:
-              "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(79,30,123,0.12), transparent 55%)",
+              "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(79,30,123,0.06), transparent 55%)",
           }}
         />
 
@@ -400,10 +400,10 @@ export default function AuthPortal() {
             className="w-full max-w-[420px]"
           >
             <div
-              className="rounded-2xl border border-black/8 bg-[#FAF8F5] overflow-hidden"
+              className="border border-ink/[0.06] bg-paper overflow-hidden"
               style={{
                 boxShadow:
-                  "0 1px 0 rgba(255,255,255,0.9) inset, 0 20px 50px -24px rgba(79, 30, 123, 0.2)",
+                  "0 1px 0 rgba(255,255,255,0.9) inset, 0 24px 64px -24px rgba(26, 22, 20, 0.12), 0 8px 24px -12px rgba(79, 30, 123, 0.08)",
               }}
             >
               <div className="p-6 sm:p-8">
@@ -427,10 +427,10 @@ export default function AuthPortal() {
 
                 {!isReset && (
                   <div className="mb-5">
-                    <div className="relative flex p-1 rounded-xl bg-black/5 border border-black/6">
+                    <div className="relative flex p-1 bg-ink/[0.04] border border-ink/[0.06]">
                       <motion.div
                         layout
-                        className="absolute inset-y-1 w-[calc(50%-4px)] rounded-lg bg-brand/12 border border-brand/25"
+                        className="absolute inset-y-1 w-[calc(50%-4px)] bg-brand/10 border border-brand/20"
                         style={{ left: isSignUp ? "calc(50% + 2px)" : "4px" }}
                         transition={{ type: "spring", stiffness: 400, damping: 34 }}
                       />
@@ -553,7 +553,7 @@ export default function AuthPortal() {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="flex gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-700 text-sm"
+                        className="flex gap-2 p-3 bg-rose-500/10 border border-rose-500/25 text-rose-700 text-sm"
                       >
                         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                         <span>{error}</span>
@@ -564,7 +564,7 @@ export default function AuthPortal() {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="flex gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-800 text-sm"
+                        className="flex gap-2 p-3 bg-emerald-500/10 border border-emerald-500/25 text-emerald-800 text-sm"
                       >
                         <Check className="w-4 h-4 shrink-0 mt-0.5" />
                         <span>{message}</span>
@@ -598,7 +598,7 @@ export default function AuthPortal() {
                   <button
                     type="submit"
                     disabled={loading || (isSignUp && !agreedToTerms)}
-                    className="w-full flex items-center justify-center gap-2 min-h-[48px] py-3.5 rounded-full text-sm font-semibold text-on-brand bg-brand hover:bg-[#6A25A3] transition-all disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2 min-h-[48px] py-3.5 text-sm font-semibold text-white bg-brand hover:bg-[#3d1660] transition-all disabled:opacity-50"
                   >
                     {loading ? (
                       <>

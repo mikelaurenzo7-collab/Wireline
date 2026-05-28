@@ -141,20 +141,7 @@ export default function LandingPage() {
           data-testid="hero-section"
           className="relative min-h-[85vh] flex flex-col justify-center px-6 lg:px-12 pt-24 pb-16 lg:pt-28 lg:pb-24 overflow-hidden"
         >
-          {/* Background 3D spheres graphic — decorative */}
-          <div
-            className="absolute top-0 right-0 w-[50vw] max-w-[600px] h-full pointer-events-none select-none opacity-[0.18] lg:opacity-[0.22]"
-            aria-hidden
-          >
-            <img
-              src="https://static.prod-images.emergentagent.com/jobs/54584c6e-3405-4f20-a1e6-8648db882043/images/2d4d0bfed009adc6b8a18e9dc585a7a7c7f7a94b4abe19de936073f3ca1a4607.png"
-              alt=""
-              className="w-full h-full object-contain object-right-top"
-              loading="eager"
-            />
-          </div>
-
-          <div className="relative z-10 max-w-7xl mx-auto w-full">
+          <div className="max-w-7xl mx-auto w-full">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

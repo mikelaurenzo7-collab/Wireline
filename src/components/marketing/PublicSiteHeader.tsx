@@ -93,22 +93,27 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
             ))}
           </nav>
 
-          {/* Right actions — SINGLE primary CTA + Sign in text link */}
+          {/* Right actions — context-aware CTA. Hide primary CTA on auth pages
+              to avoid redundancy with the inline auth card. */}
           <div className="flex items-center gap-3 shrink-0">
-            <Link
-              to="/signin"
-              data-testid="header-signin"
-              className="hidden sm:inline-flex text-[13px] font-medium text-ink/55 hover:text-ink transition-colors"
-            >
-              Sign in
-            </Link>
-            <Link
-              to="/signup"
-              data-testid="header-cta"
-              className="hidden sm:inline-flex items-center gap-2 bg-brand text-white text-[13px] font-medium px-5 py-2 hover:bg-[#3d1660] transition-colors duration-300"
-            >
-              Start trial
-            </Link>
+            {active !== "signup" && (
+              <Link
+                to="/signin"
+                data-testid="header-signin"
+                className="hidden sm:inline-flex text-[13px] font-medium text-ink/55 hover:text-ink transition-colors"
+              >
+                Sign in
+              </Link>
+            )}
+            {active !== "signin" && active !== "signup" && (
+              <Link
+                to="/signup"
+                data-testid="header-cta"
+                className="hidden sm:inline-flex items-center gap-2 bg-brand text-white text-[13px] font-medium px-5 py-2 hover:bg-[#3d1660] transition-colors duration-300"
+              >
+                Start trial
+              </Link>
+            )}
 
             {/* Mobile hamburger */}
             <button

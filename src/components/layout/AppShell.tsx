@@ -302,7 +302,7 @@ function DesktopContextBar({
 }) {
   const breadcrumb = getDesktopBreadcrumb(pathname);
   return (
-    <div className="hidden lg:flex shrink-0 items-center justify-between gap-4 border-b border-black/5 bg-paper/72 px-5 py-3 backdrop-blur-xl">
+    <div className="hidden lg:flex shrink-0 items-center justify-between gap-4 border-b border-ink/[0.06] bg-paper/72 px-5 py-3 backdrop-blur-xl">
       <div className="min-w-0">
         {breadcrumb.eyebrow && <p className="text-eyebrow mb-0.5">{breadcrumb.eyebrow}</p>}
         <h1 className="font-display italic text-[1.35rem] sm:text-[22px] leading-tight text-ink truncate">
@@ -312,7 +312,7 @@ function DesktopContextBar({
       <button
         type="button"
         onClick={onShowShortcuts}
-        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-black/8 bg-white/55 px-4 text-eyebrow transition-colors hover:border-brand/25 hover:text-brand"
+        className="inline-flex min-h-11 items-center gap-2 border border-ink/[0.08] bg-white/40 px-4 text-eyebrow transition-colors hover:border-brand/25 hover:text-brand"
         aria-label="Open keyboard shortcuts"
       >
         Press ?

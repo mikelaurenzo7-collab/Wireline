@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@9..144,400..700;1,400..700&family=DM+Sans:ital,opsz,wght@9..40,400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -11,9 +11,9 @@
    â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 @theme {
-  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Fraunces", "Georgia", "Times New Roman", serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
   /* Readable muted copy on cream — WCAG-friendly against #EFE9DC */
   --color-muted: #4A443D;
@@ -91,13 +91,11 @@
   body {
     @apply font-sans bg-paper text-ink text-[15px] leading-relaxed selection:bg-brand/20 selection:text-ink antialiased overflow-x-hidden;
     background: var(--color-paper);
-    /* iOS Safari paints a translucent blue rectangle over any tap. We
-     * have our own hover/active states (motion + scale) — kill the
-     * default flash so taps feel like a native app. */
     -webkit-tap-highlight-color: transparent;
-    /* Overscroll bounce on the body root scrolls a blank gap into view
-     * on iOS. Contain it. */
     overscroll-behavior-y: none;
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     min-height: 100%;
     min-height: 100dvh;
     padding-left: env(safe-area-inset-left, 0);
@@ -224,13 +222,13 @@
     color-scheme: light;
   }
 
-  /* Immersive auth inputs — stronger placeholder contrast + focus ring */
+  /* Immersive auth inputs — branded focus ring */
   .auth-input {
-    @apply w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-[13px] text-ink placeholder:text-ink/50 focus:border-[#4F1E7B]/60 focus:bg-white/90 transition-all;
+    @apply w-full border border-ink/[0.08] bg-white/60 px-4 py-3 text-[13px] text-ink placeholder:text-ink/40 focus:border-brand/60 focus:bg-white/80 transition-all;
     /* WCAG 4.5:1+ placeholder on cream */
   }
   .auth-input::placeholder {
-    color: rgba(28, 25, 23, 0.55); /* ink at ~55% for 4.5:1+ on #FAF8F5 */
+    color: rgba(26, 22, 20, 0.45);
   }
 
   :focus-visible {
@@ -285,7 +283,7 @@
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  AURORA UTILITIES  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 @utility brutal-border {
-  @apply border border-black/8 rounded-xl;
+  @apply border border-black/8;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.70) inset,
     0 0 0 1px rgba(79, 30, 123, 0.05),
@@ -294,7 +292,7 @@
 }
 
 @utility brutal-border-lg {
-  @apply border border-black/9 rounded-2xl;
+  @apply border border-black/9;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.70) inset,
     0 0 0 1px rgba(79, 30, 123, 0.06),
@@ -303,7 +301,7 @@
 }
 
 @utility brutal-btn {
-  @apply relative inline-flex items-center justify-center gap-2 px-5 py-2.5 font-medium tracking-[0.10em] uppercase text-[11px] rounded-xl transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:grayscale disabled:pointer-events-none overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-paper;
+  @apply relative inline-flex items-center justify-center gap-2 px-5 py-2.5 font-medium tracking-[0.10em] uppercase text-[11px] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:grayscale disabled:pointer-events-none overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-paper;
   color: #FAF8F4;
   background: #4F1E7B;
   box-shadow:
@@ -333,7 +331,7 @@
 }
 
 .brutal-btn:hover {
-  background: #6A25A3;
+  background: #3d1660;
   transform: translateY(-1px);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.30) inset,
@@ -354,7 +352,7 @@
 }
 
 @utility brutal-card {
-  @apply relative overflow-hidden p-6 md:p-8 rounded-2xl border border-black/8;
+  @apply relative overflow-hidden p-6 md:p-8 border border-black/8;
   background:
     linear-gradient(180deg, rgba(247, 242, 234, 0.80), rgba(245, 239, 229, 0.55)),
     rgba(239, 233, 220, 0.75);
@@ -699,8 +697,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  border-radius: 9999px;
+  padding: 0.75rem 1.5rem;
   font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -711,7 +708,7 @@
 }
 
 .marketing-btn-primary:hover {
-  background: #6a25a3;
+  background: #3d1660;
 }
 
 .marketing-btn-secondary {
@@ -719,18 +716,18 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  border-radius: 9999px;
+  padding: 0.75rem 1.5rem;
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--color-ink);
-  background: color-mix(in srgb, white 55%, transparent);
-  border: 1px solid color-mix(in srgb, black 12%, transparent);
-  transition: background 0.15s ease;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--color-ink) 12%, transparent);
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .marketing-btn-secondary:hover {
-  background: white;
+  background: color-mix(in srgb, white 60%, transparent);
+  border-color: color-mix(in srgb, var(--color-ink) 20%, transparent);
 }
 
 .marketing-has-sticky-cta {
@@ -756,13 +753,11 @@
 
 /* Trust / status cards on public pages */
 .marketing-panel {
-  border-radius: 1rem;
   border: 1px solid color-mix(in srgb, black 8%, transparent);
   background: white;
 }
 
 .marketing-panel-muted {
-  border-radius: 1rem;
   border: 1px solid color-mix(in srgb, black 8%, transparent);
   background: color-mix(in srgb, white 70%, transparent);
 }
@@ -1179,23 +1174,24 @@ select:focus {
 }
 
 /* Auth form input â€” tall, light, branded */
+/* Auth form input — unified: light, tall, branded */
 .auth-input {
-  @apply w-full px-5 rounded-xl bg-black/5 border border-black/12 outline-none
-         text-ink text-sm placeholder:text-muted/50 focus:border-brand/50
-         focus:bg-white/70 transition-all;
+  @apply w-full px-5 bg-white/60 border border-ink/[0.08] outline-none
+         text-ink text-sm placeholder:text-ink/40 focus:border-brand/50
+         focus:bg-white/80 transition-all;
   height: 52px;
 }
 
 /* Empty state helper */
 .empty-state-icon {
-  @apply w-16 h-16 rounded-2xl flex items-center justify-center mx-auto;
+  @apply w-16 h-16 flex items-center justify-center mx-auto;
   background: linear-gradient(135deg, rgba(0,0,0,0.05), rgba(0,0,0,0.02));
   border: 1px solid rgba(0,0,0,0.08);
 }
 
 /* Segmented control / tab-toggle surface */
 .tab-toggle-surface {
-  @apply relative flex p-1 rounded-2xl;
+  @apply relative flex p-1;
   background: rgba(0, 0, 0, 0.06);
   border: 1px solid rgba(0, 0, 0, 0.08);
 }
@@ -1205,7 +1201,7 @@ select:focus {
   background: rgba(79, 30, 123, 0.10);
   border: 1px solid rgba(79, 30, 123, 0.30);
   color: #4F1E7B;
-  @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.35em] leading-none font-medium;
+  @apply inline-flex items-center gap-1.5 px-3 py-1 text-[10px] uppercase tracking-[0.35em] leading-none font-medium;
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  PREMIUM ENTERPRISE GLOWS  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -1357,7 +1353,7 @@ select:focus {
   }
 
   .mobile-route-stack .panel-mobile-surface {
-    border-radius: 1.125rem 1.125rem 0 0;
+    border-radius: 0;
     border-bottom: none;
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.85) inset,

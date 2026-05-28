@@ -234,7 +234,7 @@ export default function Pricing() {
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-white/8 mb-4"
+          className="inline-flex items-center gap-2 px-3 py-1.5 glass border border-white/8 mb-4"
         >
           <span className="w-2 h-2 rounded-full bg-emerald-500" />
           <span className="text-eyebrow">Pricing · Start free, upgrade when ready</span>
@@ -370,7 +370,7 @@ export default function Pricing() {
               }`}
             >
               <div
-                className={`relative rounded-3xl ${
+                className={`relative ${
                   tier.highlight
                     ? "glass-strong border-2 border-brand/40"
                     : "glass border border-white/8"
@@ -386,7 +386,7 @@ export default function Pricing() {
               >
                 {tier.highlight && (
                   <span
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full text-eyebrow font-semibold z-10"
+                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-1 text-eyebrow font-semibold z-10"
                     style={{
                       background: "#4F1E7B",
                       color: "#fff",
@@ -411,7 +411,7 @@ export default function Pricing() {
 
                 {tier.cta === "Start free trial" && (
                   <p
-                    className="mb-2 text-[9px] uppercase tracking-[0.30em] font-medium inline-flex items-center gap-1.5 self-start px-2 py-1 rounded-md bg-emerald-500/12 border border-emerald-500/30 text-emerald-600"
+                    className="mb-2 text-[9px] uppercase tracking-[0.30em] font-medium inline-flex items-center gap-1.5 self-start px-2 py-1 bg-emerald-500/12 border border-emerald-500/30 text-emerald-600"
                     title="No credit card required"
                   >
                     <Check className="w-3 h-3" strokeWidth={2.8} />
@@ -420,7 +420,7 @@ export default function Pricing() {
                 )}
                 <a
                   href={tier.ctaHref}
-                  className={`group flex w-full min-h-[48px] items-center justify-center text-center py-3.5 rounded-xl text-[11px] uppercase tracking-[0.32em] font-medium transition-all mb-6 ${
+                  className={`group flex w-full min-h-[48px] items-center justify-center text-center py-3.5 text-[11px] uppercase tracking-[0.32em] font-medium transition-all mb-6 ${
                     tier.highlight
                       ? "text-on-brand hover:opacity-90"
                       : "border border-white/15 text-ink hover:border-white/30 hover:bg-white/5"
