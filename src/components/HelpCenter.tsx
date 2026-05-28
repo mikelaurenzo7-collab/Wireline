@@ -74,7 +74,7 @@ function AgentCard({
             </p>
           )}
         </div>
-        <ArrowRight className="w-4 h-4 text-ink/40 group-hover:text-ink group-hover:translate-x-1 transition-all shrink-0 mt-1" />
+        <ArrowRight className="w-4 h-4 text-ink/55 group-hover:text-ink group-hover:translate-x-1 transition-all shrink-0 mt-1" />
       </div>
     </a>
   );

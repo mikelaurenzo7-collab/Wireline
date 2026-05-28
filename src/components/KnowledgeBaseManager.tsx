@@ -693,7 +693,7 @@ export default function KnowledgeBaseManager() {
                         ) : (
                           <button
                             onClick={() => setConfirmDelete(row.id)}
-                            className="h-8 w-8 rounded-lg glass border border-white/10 text-ink/40 hover:text-rose-500 hover:border-rose-500/30 flex items-center justify-center"
+                            className="h-8 w-8 rounded-lg glass border border-white/10 text-ink/55 hover:text-rose-500 hover:border-rose-500/30 flex items-center justify-center"
                             title="Delete"
                           >
                             <Trash2 className="w-3.5 h-3.5" />

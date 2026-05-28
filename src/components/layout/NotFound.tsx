@@ -187,7 +187,7 @@ function NotFoundCard({
         <p className="text-[10px] uppercase tracking-[0.32em] text-muted">{hint}</p>
         <p className="text-[12px] text-ink font-medium">{label}</p>
       </div>
-      <ChevronRight className="w-4 h-4 text-ink/30 group-hover:text-ink group-hover:translate-x-0.5 transition-all shrink-0" />
+      <ChevronRight className="w-4 h-4 text-ink/55 group-hover:text-ink group-hover:translate-x-0.5 transition-all shrink-0" />
     </Link>
   );
 }

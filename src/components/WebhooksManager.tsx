@@ -540,7 +540,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                 <div className="text-[10px] text-muted italic py-3">Loading deliveries…</div>
               )}
               {deliveries && deliveries.length === 0 && (
-                <div className="text-[10px] text-ink/40 italic py-3">
+                <div className="text-[10px] text-ink/55 italic py-3">
                   No deliveries yet. Hit Test or trigger an event.
                 </div>
               )}

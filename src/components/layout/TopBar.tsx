@@ -524,7 +524,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                   <button
                     onClick={() => signOut()}
                     aria-label="Sign out"
-                    className="w-11 h-11 rounded-md flex items-center justify-center text-ink/40 hover:text-rose-600 hover:bg-rose-500/8 border border-black/7 hover:border-rose-500/35 transition-colors"
+                    className="w-11 h-11 rounded-md flex items-center justify-center text-ink/55 hover:text-rose-600 hover:bg-rose-500/8 border border-black/7 hover:border-rose-500/35 transition-colors"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                   </button>

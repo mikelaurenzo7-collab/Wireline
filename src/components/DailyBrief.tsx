@@ -562,7 +562,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 onChange={(e) => setSendAt(e.target.value)}
                 className="w-full h-11 px-4 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
               />
-              <span className="text-[10px] text-ink/40 leading-snug">
+              <span className="text-[10px] text-ink/55 leading-snug">
                 13:00 UTC ≈ 9 AM ET / 6 AM PT. Convert your local time before saving.
               </span>
             </label>

@@ -111,7 +111,7 @@ export default function SystemStatusBadge() {
             <span className="app-section-title">System Health</span>
             <button
               onClick={() => setOpen(false)}
-              className="text-ink/40 hover:text-ink transition-colors text-xs"
+              className="text-ink/55 hover:text-ink transition-colors text-xs"
             >
               ✕
             </button>
@@ -131,7 +131,7 @@ export default function SystemStatusBadge() {
           ))}
 
           <div className="pt-2 border-t border-white/8 flex items-center justify-between">
-            <span className="text-[9px] text-ink/30 uppercase tracking-wider">
+            <span className="text-[9px] text-ink/55 uppercase tracking-wider">
               {health.status === "ok" ? "Nominal" : "Degraded"}
             </span>
             <button
@@ -169,7 +169,7 @@ function StatusRow({ label, ok, detail }: { label: string; ok: boolean; detail: 
         )}
         <span className="text-[11px] text-ink/80">{label}</span>
       </div>
-      <span className={cn("text-[10px]", ok ? "text-ink/40" : "text-amber-400/80")}>{detail}</span>
+      <span className={cn("text-[10px]", ok ? "text-ink/55" : "text-amber-400/80")}>{detail}</span>
     </div>
   );
 }

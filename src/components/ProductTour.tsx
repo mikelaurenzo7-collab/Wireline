@@ -219,7 +219,7 @@ export default function ProductTour() {
               <button
                 onClick={dismiss}
                 aria-label="Skip tour"
-                className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-ink/40 hover:text-ink/80 hover:bg-white/8 transition-all"
+                className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-ink/55 hover:text-ink/80 hover:bg-white/8 transition-all"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -257,7 +257,7 @@ export default function ProductTour() {
                 {!isLast && stepIndex > 0 && (
                   <button
                     onClick={dismiss}
-                    className="text-[10px] uppercase tracking-[0.3em] text-ink/40 hover:text-ink/70 transition-all"
+                    className="text-[10px] uppercase tracking-[0.3em] text-ink/55 hover:text-ink/70 transition-all"
                   >
                     Skip
                   </button>
