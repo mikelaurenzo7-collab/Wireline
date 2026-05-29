@@ -106,6 +106,7 @@ export default function AgentWorkspace({
   // resolved state instead of re-firing. Keyed by `${messageId}:${kind}:${id}`.
   const [resolved, setResolved] = useState<Record<string, "done" | "dismissed">>({});
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [busyLabel, setBusyLabel] = useState<string>("");
   // Per-card TCPA consent ticks. A call card can only dial once the operator
   // explicitly attests prior express written consent for that number.
   const [consentKeys, setConsentKeys] = useState<Record<string, boolean>>({});
@@ -240,6 +241,7 @@ export default function AgentWorkspace({
   const approveChange = useCallback(
     async (key: string, change: ProposedChange) => {
       setBusyKey(key);
+      setBusyLabel("Applying configuration…");
       try {
         const r = await authFetch(
           `/api/agents/${encodeURIComponent(agentId)}/workspace/apply-change`,
@@ -264,6 +266,7 @@ export default function AgentWorkspace({
   const approveToggle = useCallback(
     async (key: string, toggle: ProposedToolToggle) => {
       setBusyKey(key);
+      setBusyLabel(toggle.enable ? "Connecting capability…" : "Disconnecting…");
       try {
         const r = await authFetch(
           `/api/agents/${encodeURIComponent(agentId)}/workspace/toggle-tool`,
@@ -290,6 +293,13 @@ export default function AgentWorkspace({
   const approveAction = useCallback(
     async (key: string, action: ProposedAction) => {
       setBusyKey(key);
+      setBusyLabel(
+        action.kind === "make_call"
+          ? "Connecting call…"
+          : action.kind === "send_text_message"
+            ? "Sending text…"
+            : "Sending email…",
+      );
       try {
         if (action.kind === "make_call") {
           const r = await authFetch("/api/outbound/dial", {
@@ -557,6 +567,7 @@ export default function AgentWorkspace({
                             detail={c.summary || c.value}
                             state={state}
                             busy={busyKey === key}
+                            busyLabel={busyKey === key ? busyLabel : undefined}
                             approveLabel="Apply"
                             onApprove={() => approveChange(key, c)}
                             onDismiss={() => markResolved(key, "dismissed")}
@@ -575,6 +586,7 @@ export default function AgentWorkspace({
                             detail={t.reason}
                             state={state}
                             busy={busyKey === key}
+                            busyLabel={busyKey === key ? busyLabel : undefined}
                             approveLabel={t.enable ? "Enable" : "Disable"}
                             onApprove={() => approveToggle(key, t)}
                             onDismiss={() => markResolved(key, "dismissed")}
@@ -608,6 +620,7 @@ export default function AgentWorkspace({
                             detail={detail}
                             state={state}
                             busy={busyKey === key}
+                            busyLabel={busyKey === key ? busyLabel : undefined}
                             approveLabel={a.kind === "make_call" ? "Call now" : "Send"}
                             consent={
                               a.kind === "make_call"
@@ -725,6 +738,7 @@ interface ProposalCardProps {
   detail?: string;
   state?: "done" | "dismissed";
   busy: boolean;
+  busyLabel?: string;
   approveLabel: string;
   consent?: { checked: boolean; onChange: (v: boolean) => void };
   onApprove: () => void;
@@ -744,6 +758,7 @@ function ProposalCard({
   detail,
   state,
   busy,
+  busyLabel,
   approveLabel,
   consent,
   onApprove,
@@ -771,6 +786,21 @@ function ProposalCard({
           )}
         </div>
       </div>
+      {/* Live execution progress bar */}
+      {busy && (
+        <motion.div
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          className="mt-2 h-0.5 rounded-full bg-brand/20 overflow-hidden origin-left"
+        >
+          <motion.div
+            className="h-full bg-brand rounded-full"
+            animate={{ x: ["-100%", "100%"] }}
+            transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+            style={{ width: "40%" }}
+          />
+        </motion.div>
+      )}
       {state ? (
         <motion.div
           initial={{ opacity: 0, y: -4 }}
@@ -813,7 +843,7 @@ function ProposalCard({
               {busy ? (
                 <>
                   <Loader2 className="w-3 h-3 animate-spin" />
-                  Executing…
+                  {busyLabel || "Executing…"}
                 </>
               ) : (
                 <>
