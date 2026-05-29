@@ -42,7 +42,6 @@ const h = vi.hoisted(() => {
   // Map a stored call into the full row shape the route handlers select.
   const mapCall = (c: (typeof state.calls)[number]) => ({
     ...c,
-    id: Number(c.id), // bigint → number so the recent-calls route can res.json() it
     createdAt: new Date(),
     durationSeconds: 60,
     sentiment: "neutral",

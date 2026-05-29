@@ -144,7 +144,7 @@ router.get(
         .orderBy(desc(schema.callLogs.createdAt))
         .limit(limit);
 
-      res.json({ calls: rows });
+      res.json({ calls: rows.map((r) => ({ ...r, id: Number(r.id) })) });
     } catch (err) {
       log.error("GET /insights/latency/recent failed", {
         userId: req.user.id,

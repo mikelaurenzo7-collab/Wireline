@@ -13,7 +13,7 @@ test.describe("Fast Start Wizard", () => {
     await page.goto("/auth");
     await page.fill('[data-testid="email-input"]', "test@example.com");
     await page.fill('[data-testid="password-input"]', "password123");
-    await page.click('[data-testid="sign-in-button"]");
+    await page.click('[data-testid="sign-in-button"]');
     await page.waitForURL("**/dashboard**");
   });
 
@@ -103,7 +103,7 @@ test.describe("Fast Start Wizard", () => {
     ).toBeVisible();
 
     // Fill with short input
-    await page.fill('textarea', "Hi");
+    await page.fill("textarea", "Hi");
     await page.click('button:has-text("Continue")');
     await expect(
       page.getByText("Tell us a bit more — at least 10 characters so we understand what you do."),
@@ -116,9 +116,7 @@ test.describe("Fast Start Wizard", () => {
     // Step 2: Try invalid URL
     await page.fill('input[type="url"]', "not-a-valid-url");
     await page.click('button:has-text("Continue")');
-    await expect(
-      page.getByText("That doesn't look like a valid website URL"),
-    ).toBeVisible();
+    await expect(page.getByText("That doesn't look like a valid website URL")).toBeVisible();
   });
 
   test("Wizard allows skipping optional steps", async ({ page }) => {
@@ -126,7 +124,10 @@ test.describe("Fast Start Wizard", () => {
     await page.click('button:has-text("Fast Start Wizard")');
 
     // Step 1: Fill required
-    await page.fill("textarea", "We're a dental practice in Chicago offering comprehensive dental care.");
+    await page.fill(
+      "textarea",
+      "We're a dental practice in Chicago offering comprehensive dental care.",
+    );
     await page.click('button:has-text("Continue")');
 
     // Step 2: Skip website
