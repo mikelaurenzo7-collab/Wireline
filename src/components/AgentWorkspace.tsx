@@ -481,16 +481,30 @@ export default function AgentWorkspace({
 
   if (isSharedView) {
     return (
-      <div className="flex flex-col h-full min-h-0 items-center justify-center py-16 text-center px-6">
-        <div className="w-12 h-12 rounded-2xl bg-brand/10 flex items-center justify-center mb-4 mx-auto">
-          <MessageSquare className="w-5 h-5 text-brand" />
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="flex flex-col h-full min-h-0 items-center justify-center py-16 text-center px-6"
+      >
+        <div className="relative mb-5">
+          <span
+            aria-hidden="true"
+            className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
+          />
+          <span className="relative flex w-14 h-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-lg shadow-brand/25 aurora-ring">
+            <MessageSquare className="w-6 h-6" />
+          </span>
         </div>
-        <h3 className="font-display italic text-xl text-ink mb-2">Select an agent above</h3>
-        <p className="text-[12px] text-muted leading-relaxed max-w-xs">
-          Each agent has its own private workspace. Pick one from the dropdown to open its chat
-          thread.
+        <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70 mb-3">
+          Workspace
         </p>
-      </div>
+        <h3 className="font-display italic text-2xl text-ink mb-3">Select an agent above</h3>
+        <p className="text-[13px] text-muted leading-relaxed max-w-sm">
+          Each agent has its own private workspace. Pick one from the rail to open its chat thread,
+          training, connectors, and memory.
+        </p>
+      </motion.div>
     );
   }
 
