@@ -158,7 +158,7 @@ export default function FastStartWizard({
   // Form state
   const [businessDescription, setBusinessDescription] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
-  const [selectedVoiceId, setSelectedVoiceId] = useState<string>(DEFAULT_VOICE_BY_GENDER.neutral);
+  const [selectedVoiceId, setSelectedVoiceId] = useState<string>(DEFAULT_VOICE_BY_GENDER.female);
   const [areaCode, setAreaCode] = useState("");
   const [_generatedAgent, setGeneratedAgent] = useState<{ id: string; name: string } | null>(null);
   const [_provisionedNumber, setProvisionedNumber] = useState<string | null>(null);
@@ -178,7 +178,7 @@ export default function FastStartWizard({
       setIsSubmitting(false);
       setBusinessDescription("");
       setWebsiteUrl("");
-      setSelectedVoiceId(DEFAULT_VOICE_BY_GENDER.neutral);
+      setSelectedVoiceId(DEFAULT_VOICE_BY_GENDER.female);
       setAreaCode("");
       setGeneratedAgent(null);
       setProvisionedNumber(null);
