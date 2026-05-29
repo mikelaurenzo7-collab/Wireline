@@ -77,7 +77,7 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run E2E tests
+      - name: Run E2E + accessibility tests
         # Scope to chromium — we only install one browser to keep CI fast and
         # cheap. Firefox/WebKit coverage can be added when we have time to
         # fund the extra minutes.

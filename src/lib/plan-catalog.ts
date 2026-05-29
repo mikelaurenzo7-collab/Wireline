@@ -69,6 +69,13 @@ export type StripePlan = {
    * adjusted via the wireline_extra_agents column on settings.
    */
   extraAgentPriceIdEnv?: string;
+  /**
+   * Annual price = monthly × 12 × 0.80 (20% discount for yearly commitment).
+   * 0 for Enterprise (contact sales).
+   */
+  price_usd_annual: number;
+  /** Env var holding the Stripe price_… id for the annual billing interval. */
+  annualPriceIdEnv: string;
 };
 
 export const STRIPE_PLANS: StripePlan[] = [
@@ -83,6 +90,8 @@ export const STRIPE_PLANS: StripePlan[] = [
     priceIdEnv: "STRIPE_PERSONAL_PRICE_ID",
     extra_agent_price_usd: 49,
     extraAgentPriceIdEnv: "STRIPE_PERSONAL_EXTRA_AGENT_PRICE_ID",
+    price_usd_annual: 470,
+    annualPriceIdEnv: "STRIPE_PERSONAL_ANNUAL_PRICE_ID",
     features: [
       "1 AI voice agent (voice + email)",
       "Dedicated voice number INCLUDED — no Twilio bill",
@@ -105,6 +114,8 @@ export const STRIPE_PLANS: StripePlan[] = [
     priceIdEnv: "STRIPE_STARTER_PRICE_ID",
     extra_agent_price_usd: 45,
     extraAgentPriceIdEnv: "STRIPE_STARTER_EXTRA_AGENT_PRICE_ID",
+    price_usd_annual: 1_430,
+    annualPriceIdEnv: "STRIPE_STARTER_ANNUAL_PRICE_ID",
     features: [
       "3 AI agents (voice + email)",
       "2 dedicated voice numbers INCLUDED — no Twilio bill",
@@ -128,6 +139,8 @@ export const STRIPE_PLANS: StripePlan[] = [
     priceIdEnv: "STRIPE_PRO_PRICE_ID",
     extra_agent_price_usd: 40,
     extraAgentPriceIdEnv: "STRIPE_PRO_EXTRA_AGENT_PRICE_ID",
+    price_usd_annual: 4_790,
+    annualPriceIdEnv: "STRIPE_PRO_ANNUAL_PRICE_ID",
     features: [
       "10 AI agents (voice + email)",
       "5 dedicated voice numbers INCLUDED — no Twilio bill",
@@ -154,6 +167,8 @@ export const STRIPE_PLANS: StripePlan[] = [
     priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
     extra_agent_price_usd: 35,
     extraAgentPriceIdEnv: "STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID",
+    price_usd_annual: 14_390,
+    annualPriceIdEnv: "STRIPE_BUSINESS_ANNUAL_PRICE_ID",
     features: [
       "25 AI agents (voice + email)",
       "10 dedicated voice numbers INCLUDED — no Twilio bill",
@@ -176,6 +191,8 @@ export const STRIPE_PLANS: StripePlan[] = [
     overage_per_min_usd: 0.11,
     included_phone_numbers: 25,
     priceIdEnv: "STRIPE_ENTERPRISE_PRICE_ID",
+    price_usd_annual: 0,
+    annualPriceIdEnv: "STRIPE_ENTERPRISE_ANNUAL_PRICE_ID",
     features: [
       "Up to 100 agents (custom bundles)",
       "25 numbers INCLUDED + BYO carrier option",
@@ -210,12 +227,14 @@ export function plansForClient() {
       id: p.id,
       name: p.name,
       price_usd_monthly: p.price_usd_monthly,
+      price_usd_annual: p.price_usd_annual,
       max_agents: p.max_agents,
       voice_minutes_monthly: p.voice_minutes_monthly,
       overage_per_min_usd: p.overage_per_min_usd,
       included_phone_numbers: p.included_phone_numbers,
       features: p.features,
       configured: !contactSales && !!process.env[p.priceIdEnv],
+      annual_configured: !contactSales && !!process.env[p.annualPriceIdEnv],
       contact_sales: contactSales,
     };
   });
