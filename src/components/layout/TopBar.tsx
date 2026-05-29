@@ -423,12 +423,14 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
               </AnimatePresence>
             </div>
 
-            {/* Hamburger — tablet only (md → lg). On mobile (< md) the
-                BottomNavBar "More" tab handles drawer opening, so this
-                button is hidden. On desktop (lg+) the inline nav renders. */}
+            {/* Hamburger — phone + tablet (< lg). Opens the slide-in nav
+                drawer. On mobile this is now the primary way to reach every
+                destination (the bottom tab bar was removed to match how
+                top SaaS render on mobile web). On desktop (lg+) the Aurora
+                rail carries the nav instead. */}
             <button
               onClick={() => onDrawerChange(true)}
-              className="hidden md:flex lg:hidden w-10 h-10 rounded-lg items-center justify-center hover:bg-white/5 active:scale-95 transition-all"
+              className="flex lg:hidden w-10 h-10 rounded-lg items-center justify-center hover:bg-white/5 active:scale-95 transition-all"
               aria-label="Open navigation"
             >
               <Menu className="w-5 h-5 text-[#EFE9DC]" />

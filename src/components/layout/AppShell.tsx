@@ -7,7 +7,6 @@ import ErrorBoundary from "../ErrorBoundary";
 import AuroraBackdrop from "./AuroraBackdrop";
 import TopBar from "./TopBar";
 import Sidebar from "./Sidebar";
-import BottomNavBar from "./BottomNavBar";
 import RouteAccentStrip from "./RouteAccentStrip";
 import TrialBanner from "./TrialBanner";
 import EmailVerifyBanner from "./EmailVerifyBanner";
@@ -23,12 +22,11 @@ const KeyboardShortcuts = lazy(() => import("../KeyboardShortcuts"));
 
 export default function AppShell() {
   const [showShortcuts, setShowShortcuts] = useState(false);
-  // Lifted from TopBar so BottomNavBar can also open the nav drawer.
+  // Lifted from TopBar so the left-edge swipe gesture can also open the drawer.
   const [drawerOpen, setDrawerOpen] = useState(false);
   // Tracks the start point of a left-edge swipe gesture.
   const edgeSwipe = useRef<{ x: number; y: number } | null>(null);
-  // Lifted from TopBar so both TopBar desktop nav and BottomNavBar share
-  // the same badge data from a single polling source.
+  // Shared nav badge counts from a single polling source (TopBar + drawer).
   const [navBadges, setNavBadges] = useState<Record<string, number>>({});
   const { user, loading } = useAuth();
   const { branding } = useBranding();
@@ -257,20 +255,8 @@ export default function AppShell() {
               </ErrorBoundary>
             </div>
           </div>
-
-          {/* Spacer for the fixed BottomNavBar — reserves exactly the bar
-              height + home indicator clearance so the last row of content
-              is never obscured on mobile. Invisible on md+. */}
-          <div
-            className="md:hidden shrink-0"
-            aria-hidden="true"
-            style={{ height: "calc(49px + env(safe-area-inset-bottom))" }}
-          />
         </div>
       </main>
-
-      {/* iOS-style fixed bottom navigation — primary 4 destinations + More */}
-      <BottomNavBar onOpenMenu={() => setDrawerOpen(true)} badges={navBadges} />
     </div>
   );
 }

@@ -1482,7 +1482,10 @@ select:focus {
   .mobile-page-canvas {
     padding-left: 0;
     padding-right: 0;
-    /* Fill visible viewport between top bar + bottom tab bar. */
+    /* Fill the viewport beneath the top bar. The bottom tab bar was
+       removed, so reserve home-indicator / browser-chrome clearance here
+       instead of via a spacer — at least 0.5rem of breathing room. */
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
     min-height: 0;
     flex: 1 1 auto;
   }

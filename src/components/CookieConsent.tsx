@@ -21,27 +21,6 @@ export default function CookieConsent() {
     }
   }, []);
 
-  const publicPrefixes = [
-    "/pricing",
-    "/compare",
-    "/about",
-    "/showcase",
-    "/for/",
-    "/privacy",
-    "/terms",
-    "/status",
-    "/security",
-    "/changelog",
-    "/support",
-    "/",
-    "/signup",
-    "/signin",
-    "/signin",
-    "/reset-password",
-  ];
-  const isPublicRoute =
-    location.pathname !== "/" && publicPrefixes.some((p) => location.pathname.startsWith(p));
-  const clearMobileBottomNav = hasSession && !isPublicRoute;
   const clearMarketingSticky = !hasSession && isMarketingStickyCtaRoute(location.pathname);
 
   const dismiss = () => {
@@ -75,11 +54,7 @@ export default function CookieConsent() {
             // iOS home-bar / dynamic island clearance — push the
             // banner up above the bottom safe area on iPhone X+.
             paddingBottom: "env(safe-area-inset-bottom, 0)",
-            bottom: clearMobileBottomNav
-              ? "calc(49px + env(safe-area-inset-bottom, 0px))"
-              : clearMarketingSticky
-                ? MARKETING_STICKY_CTA_BOTTOM
-                : 0,
+            bottom: clearMarketingSticky ? MARKETING_STICKY_CTA_BOTTOM : 0,
           }}
         >
           {/* Slim bottom bar — full width, never overlaps content columns */}
