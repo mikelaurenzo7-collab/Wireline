@@ -551,6 +551,31 @@ export const directorConversationMessages = pgTable(
   }),
 );
 
+// Director profile — the account-level "business brief" the Director carries.
+//
+// This is the Director's equivalent of an agent's Training inputs: instead of
+// per-agent knowledge/voice/flow, it stores the operator's business context so
+// the Director's strategic replies are grounded ("you run a 3-van HVAC shop,
+// goal is more booked jobs") plus a couple of behaviour toggles. One row per
+// user, lazily upserted. The canonical business NAME stays on
+// wireline_settings.business_name; everything here is Director-specific.
+export const directorProfile = pgTable("wireline_director_profile", {
+  userId: uuid("user_id").primaryKey(),
+  // What the business does / sells (free text the operator types).
+  industry: text("industry"),
+  offerings: text("offerings"),
+  // The single outcome the operator cares most about right now.
+  primaryGoal: text("primary_goal"),
+  // Any extra durable context the Director should always keep in mind.
+  notes: text("notes"),
+  // Behaviour toggles. autoSuggestAgents → the Director proactively surfaces
+  // create_agent / open_agent_chat chips. deepAnalysisDefault → every turn runs
+  // on the Opus deep-analysis tier instead of only on explicit "audit" asks.
+  autoSuggestAgents: boolean("auto_suggest_agents").default(true).notNull(),
+  deepAnalysisDefault: boolean("deep_analysis_default").default(false).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 // 2.2 COMMITMENTS & LOGISTICS
 export const appointments = pgTable(
   "wireline_appointments",

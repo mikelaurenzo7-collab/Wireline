@@ -22,7 +22,11 @@ import { claudeRateLimiter } from "../middleware/api-rate-limits";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
-import { planDirector, type DirectorFleetAgent } from "../lib/director-planner";
+import {
+  planDirector,
+  type DirectorFleetAgent,
+  type DirectorProfile,
+} from "../lib/director-planner";
 
 const router = express.Router();
 
@@ -51,6 +55,21 @@ async function ensureDirectorTable(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_director_conv_user
       ON wireline_director_conversation_messages (user_id, created_at DESC);
   `);
+  // The Director's business brief — its equivalent of an agent's Training
+  // inputs. Lazily ensured for the same reason as the messages table: the
+  // Director must work on a fresh deploy before any migration has run.
+  await drizzle.execute(sql`
+    CREATE TABLE IF NOT EXISTS wireline_director_profile (
+      user_id              UUID PRIMARY KEY,
+      industry             TEXT,
+      offerings            TEXT,
+      primary_goal         TEXT,
+      notes                TEXT,
+      auto_suggest_agents  BOOLEAN NOT NULL DEFAULT TRUE,
+      deep_analysis_default BOOLEAN NOT NULL DEFAULT FALSE,
+      updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
   directorTableEnsured = true;
 }
 
@@ -62,6 +81,274 @@ async function loadFleet(userId: string): Promise<DirectorFleetAgent[]> {
     .orderBy(desc(schema.agents.createdAt));
   return rows.map((r) => ({ id: r.id, name: r.name ?? null, role: r.role ?? null }));
 }
+
+/**
+ * Load the Director's business brief. The canonical business NAME lives on
+ * wireline_settings; the rest (industry, offerings, goal, notes, toggles)
+ * lives on the Director profile. Returns sensible defaults for a fresh account
+ * so the planner + UI never have to null-check.
+ */
+async function loadProfile(userId: string): Promise<DirectorProfile> {
+  const [[profileRow], [settingsRow]] = await Promise.all([
+    drizzle
+      .select()
+      .from(schema.directorProfile)
+      .where(eq(schema.directorProfile.userId, userId))
+      .limit(1),
+    drizzle
+      .select({ businessName: schema.settings.businessName })
+      .from(schema.settings)
+      .where(eq(schema.settings.userId, userId))
+      .limit(1),
+  ]);
+  return {
+    businessName: settingsRow?.businessName ?? null,
+    industry: profileRow?.industry ?? null,
+    offerings: profileRow?.offerings ?? null,
+    primaryGoal: profileRow?.primaryGoal ?? null,
+    notes: profileRow?.notes ?? null,
+    autoSuggestAgents: profileRow?.autoSuggestAgents ?? true,
+    deepAnalysisDefault: profileRow?.deepAnalysisDefault ?? false,
+  };
+}
+
+interface DirectorConnectors {
+  email: { connected: boolean; count: number };
+  calendar: { connected: boolean };
+  crm: { connected: boolean; type: string | null };
+  sms: { connected: boolean };
+  phone: { connected: boolean };
+}
+
+/**
+ * Snapshot of the account-level channels the fleet can act through. These are
+ * connected once per account (not per agent), so the Director — the
+ * account-level manager — is the natural place to surface them. Best-effort:
+ * a failed sub-query degrades that channel to "not connected" rather than
+ * failing the whole overview.
+ */
+async function loadConnectors(userId: string): Promise<DirectorConnectors> {
+  const [emailRows, [calendarRow], [settingsRow]] = await Promise.all([
+    drizzle
+      .select({ id: schema.emailAccounts.id })
+      .from(schema.emailAccounts)
+      .where(eq(schema.emailAccounts.userId, userId))
+      .catch(() => [] as { id: string }[]),
+    drizzle
+      .select({ id: schema.calendarAccounts.id })
+      .from(schema.calendarAccounts)
+      .where(eq(schema.calendarAccounts.userId, userId))
+      .limit(1)
+      .catch(() => [] as { id: string }[]),
+    drizzle
+      .select({
+        crmType: schema.settings.crmType,
+        twilioMessagingEnabled: schema.settings.twilioMessagingEnabled,
+        twilioSmsFromNumber: schema.settings.twilioSmsFromNumber,
+        vapiPhoneInboundAgentId: schema.settings.vapiPhoneInboundAgentId,
+        vapiPhoneNumberId: schema.settings.vapiPhoneNumberId,
+      })
+      .from(schema.settings)
+      .where(eq(schema.settings.userId, userId))
+      .limit(1)
+      .catch(() => [] as Record<string, unknown>[]),
+  ]);
+
+  const crmType = (settingsRow?.crmType as string | null) ?? null;
+  const smsConnected =
+    settingsRow?.twilioMessagingEnabled === true || !!settingsRow?.twilioSmsFromNumber;
+  const phoneConnected = !!settingsRow?.vapiPhoneInboundAgentId || !!settingsRow?.vapiPhoneNumberId;
+
+  return {
+    email: { connected: emailRows.length > 0, count: emailRows.length },
+    calendar: { connected: !!calendarRow },
+    crm: { connected: !!crmType, type: crmType },
+    sms: { connected: smsConnected },
+    phone: { connected: phoneConnected },
+  };
+}
+
+/**
+ * Aggregate fleet activity (last 7 days). Best-effort — a failed stats query
+ * must never block the chat or the overview, so callers get `undefined` on
+ * failure and the planner/UI fall back to "not available".
+ */
+async function loadStats(
+  userId: string,
+): Promise<{ calls7d: number; bookings7d: number } | undefined> {
+  try {
+    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const [[calls], [bookings]] = await Promise.all([
+      drizzle
+        .select({ n: sql<number>`count(*)::int` })
+        .from(schema.callLogs)
+        .where(and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, since))),
+      drizzle
+        .select({ n: sql<number>`count(*)::int` })
+        .from(schema.appointments)
+        .where(
+          and(eq(schema.appointments.userId, userId), gte(schema.appointments.createdAt, since)),
+        ),
+    ]);
+    return { calls7d: calls?.n ?? 0, bookings7d: bookings?.n ?? 0 };
+  } catch {
+    return undefined;
+  }
+}
+
+interface DirectorRecentCall {
+  summary: string | null;
+  sentiment: string | null;
+  intent: string | null;
+  outcome: string | null;
+  direction: string | null;
+  customerNumber: string | null;
+  durationSeconds: number | null;
+  agentId: string | null;
+  createdAt: string | null;
+}
+
+/**
+ * The most recent calls across the WHOLE fleet (account-level). Lets the
+ * Director surface "latest calls" without the operator hopping to /logs —
+ * the Director is the boss of every agent, so it sees all their activity.
+ */
+async function loadRecentCalls(userId: string, limit = 6): Promise<DirectorRecentCall[]> {
+  try {
+    const rows = await drizzle
+      .select({
+        summary: schema.callLogs.summary,
+        sentiment: schema.callLogs.sentiment,
+        intent: schema.callLogs.intentLabel,
+        outcome: schema.callLogs.outcomeTag,
+        direction: schema.callLogs.direction,
+        customerNumber: schema.callLogs.customerNumber,
+        durationSeconds: schema.callLogs.durationSeconds,
+        agentId: schema.callLogs.agentId,
+        createdAt: schema.callLogs.createdAt,
+      })
+      .from(schema.callLogs)
+      .where(eq(schema.callLogs.userId, userId))
+      .orderBy(desc(schema.callLogs.createdAt))
+      .limit(limit);
+    return rows.map((r) => ({
+      summary: r.summary ?? null,
+      sentiment: r.sentiment ?? null,
+      intent: r.intent ?? null,
+      outcome: r.outcome ?? null,
+      direction: r.direction ?? null,
+      customerNumber: r.customerNumber ?? null,
+      durationSeconds: r.durationSeconds ?? null,
+      agentId: r.agentId ?? null,
+      createdAt: r.createdAt ? new Date(r.createdAt).toISOString() : null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+// GET /api/director/overview — everything the Director's Memory / Connectors /
+// Training tabs + mission-control dock render: fleet snapshot, 7-day activity,
+// account-level channel connections, the saved business brief, and the latest
+// calls across the whole fleet. One round-trip so the workspace hydrates
+// without a fan-out of calls.
+router.get(
+  "/api/director/overview",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      await ensureDirectorTable();
+      const [fleet, stats, connectors, profile, recentCalls, [countRow]] = await Promise.all([
+        loadFleet(req.user.id),
+        loadStats(req.user.id),
+        loadConnectors(req.user.id),
+        loadProfile(req.user.id),
+        loadRecentCalls(req.user.id),
+        drizzle
+          .select({ n: sql<number>`count(*)::int` })
+          .from(schema.directorConversationMessages)
+          .where(eq(schema.directorConversationMessages.userId, req.user.id)),
+      ]);
+      res.json({
+        fleet,
+        stats: stats ?? null,
+        connectors,
+        profile,
+        recentCalls,
+        messageCount: countRow?.n ?? 0,
+      });
+    } catch (e) {
+      log.error("director overview failed", { error: getErrorMessage(e) });
+      res.status(500).json({ error: "Failed to load Director overview" });
+    }
+  },
+);
+
+// PUT /api/director/profile — save the business brief + behaviour toggles.
+// The business NAME is mirrored to wireline_settings (the app-wide source of
+// truth); everything else upserts into wireline_director_profile.
+router.put(
+  "/api/director/profile",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      await ensureDirectorTable();
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const clip = (v: unknown, max: number): string | null => {
+        if (typeof v !== "string") return null;
+        const t = v.trim();
+        return t ? t.slice(0, max) : null;
+      };
+      const businessName = clip(body.businessName, 200);
+      const industry = clip(body.industry, 500);
+      const offerings = clip(body.offerings, 2000);
+      const primaryGoal = clip(body.primaryGoal, 500);
+      const notes = clip(body.notes, 4000);
+      const autoSuggestAgents = body.autoSuggestAgents !== false;
+      const deepAnalysisDefault = body.deepAnalysisDefault === true;
+
+      await drizzle
+        .insert(schema.directorProfile)
+        .values({
+          userId: req.user.id,
+          industry,
+          offerings,
+          primaryGoal,
+          notes,
+          autoSuggestAgents,
+          deepAnalysisDefault,
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: schema.directorProfile.userId,
+          set: {
+            industry,
+            offerings,
+            primaryGoal,
+            notes,
+            autoSuggestAgents,
+            deepAnalysisDefault,
+            updatedAt: new Date(),
+          },
+        });
+
+      // Mirror the business name onto the account settings row if provided, so
+      // the rest of the app (out-of-hours templates, briefs) stays in sync.
+      if (businessName !== null) {
+        await drizzle
+          .update(schema.settings)
+          .set({ businessName })
+          .where(eq(schema.settings.userId, req.user.id));
+      }
+
+      const profile = await loadProfile(req.user.id);
+      res.json({ profile });
+    } catch (e) {
+      log.error("director profile save failed", { error: getErrorMessage(e) });
+      res.status(500).json({ error: "Failed to save Director profile" });
+    }
+  },
+);
 
 // GET /api/director/messages — load thread history + fleet snapshot.
 router.get(
@@ -110,34 +397,11 @@ router.post(
         return res.status(400).json({ error: "Message too long — keep under 4000 chars" });
       }
 
-      const fleet = await loadFleet(req.user.id);
-
-      // Aggregate fleet activity (last 7 days) for context. Best-effort —
-      // a failed stats query must never block the chat.
-      let stats: { calls7d?: number; bookings7d?: number } | undefined;
-      try {
-        const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        const [[calls], [bookings]] = await Promise.all([
-          drizzle
-            .select({ n: sql<number>`count(*)::int` })
-            .from(schema.callLogs)
-            .where(
-              and(eq(schema.callLogs.userId, req.user.id), gte(schema.callLogs.createdAt, since)),
-            ),
-          drizzle
-            .select({ n: sql<number>`count(*)::int` })
-            .from(schema.appointments)
-            .where(
-              and(
-                eq(schema.appointments.userId, req.user.id),
-                gte(schema.appointments.createdAt, since),
-              ),
-            ),
-        ]);
-        stats = { calls7d: calls?.n ?? 0, bookings7d: bookings?.n ?? 0 };
-      } catch {
-        stats = undefined;
-      }
+      const [fleet, stats, profile] = await Promise.all([
+        loadFleet(req.user.id),
+        loadStats(req.user.id),
+        loadProfile(req.user.id),
+      ]);
 
       // Thread history for LLM context (most recent first → reverse for order).
       const priorMessages = await drizzle
@@ -168,7 +432,13 @@ router.post(
           "I can't respond right now — the LLM isn't configured. Your message is saved; try again later.";
       } else {
         try {
-          const plan = await planDirector({ operatorMessage, history, fleet, stats });
+          const plan = await planDirector({
+            operatorMessage,
+            history,
+            fleet,
+            stats: stats ?? undefined,
+            profile,
+          });
           reply = plan.reply;
           suggestions = plan.suggestions;
           model = plan.model;

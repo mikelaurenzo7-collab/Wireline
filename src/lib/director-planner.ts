@@ -50,6 +50,23 @@ export interface DirectorFleetAgent {
   role: string | null;
 }
 
+/**
+ * The operator's business brief — the Director's equivalent of an agent's
+ * training inputs. Grounds every reply so the Director talks about THIS
+ * business instead of giving generic advice.
+ */
+export interface DirectorProfile {
+  businessName?: string | null;
+  industry?: string | null;
+  offerings?: string | null;
+  primaryGoal?: string | null;
+  notes?: string | null;
+  /** When true the Director proactively surfaces navigation chips. */
+  autoSuggestAgents?: boolean;
+  /** When true every turn runs on the Opus deep-analysis tier. */
+  deepAnalysisDefault?: boolean;
+}
+
 export interface PlanDirectorInput {
   operatorMessage: string;
   history: Array<{ role: "operator" | "director"; content: string }>;
@@ -60,6 +77,8 @@ export interface PlanDirectorInput {
     bookings7d?: number;
     openTasks?: number;
   };
+  /** The operator's saved business brief + Director behaviour toggles. */
+  profile?: DirectorProfile;
 }
 
 /**
@@ -112,8 +131,22 @@ const DIRECTOR_TOOL: ToolSchema = {
   },
 };
 
+function buildProfileBlock(profile: DirectorProfile | undefined): string {
+  if (!profile) return "Business brief: (the operator hasn't filled one in yet).";
+  const lines: string[] = [];
+  if (profile.businessName) lines.push(`- Business: ${profile.businessName}`);
+  if (profile.industry) lines.push(`- Industry / what they do: ${profile.industry}`);
+  if (profile.offerings) lines.push(`- Products / services: ${profile.offerings}`);
+  if (profile.primaryGoal) lines.push(`- Primary goal right now: ${profile.primaryGoal}`);
+  if (profile.notes) lines.push(`- Operator notes: ${profile.notes}`);
+  if (lines.length === 0) {
+    return "Business brief: (the operator hasn't filled one in yet — ask what their business does and nudge them to complete it in the Training tab).";
+  }
+  return `The operator's business brief (use it to ground every reply):\n${lines.join("\n")}`;
+}
+
 function buildSystemPrompt(input: PlanDirectorInput, deep: boolean): string {
-  const { fleet, stats } = input;
+  const { fleet, stats, profile } = input;
   const fleetLines =
     fleet.length === 0
       ? "(No agents yet — the operator hasn't created their first agent.)"
@@ -125,6 +158,11 @@ function buildSystemPrompt(input: PlanDirectorInput, deep: boolean): string {
     ? `Fleet activity (last 7 days): ${stats.calls7d ?? 0} calls, ${stats.bookings7d ?? 0} bookings, ${stats.openTasks ?? 0} open tasks.`
     : "Fleet activity: (not available).";
 
+  const suggestChips =
+    profile?.autoSuggestAgents === false
+      ? "Suggestion chips are OFF by the operator's preference — only attach a chip if they explicitly ask where to go."
+      : "Use suggestion chips instead of telling them to navigate. Keep to 0–3, only when useful.";
+
   return `You are the Director — the operator's always-on AI manager inside Wireline. You sit ABOVE the individual AI agents: you help the operator plan their fleet, decide what agents to hire, coach those agents' behaviour, and read the room across every call/email/text.
 
 Who you're talking to: the operator who owns this account. They direct the whole business through chat; you're their right hand.
@@ -133,10 +171,12 @@ Your job each turn:
 1. Reply directly, warmly, and decisively — like a seasoned ops leader. No filler, no "as an AI".
 2. When the operator has NO agents yet, your priority is to help them stand up their first agent: ask what their business does (if unknown) and recommend a concrete first agent (role + what it should handle), then attach a "create_agent" suggestion.
 3. When they DO have agents, help them get more out of the fleet: which agent to coach, what to turn on, what the numbers say. Attach an open_agent_chat suggestion (with that agent's id) when pointing them at a specific agent.
-4. Use suggestion chips instead of telling them to navigate. Keep to 0–3, only when useful.
+4. ${suggestChips}
 5. You do not change agent settings yourself — that happens in each agent's own chat. You advise and route.
 
 ${deep ? "DEEP MODE: the operator asked for serious strategic analysis. Take your time, reason across the whole fleet, and deliver a structured, prioritized plan." : "Keep replies tight and skimmable."}
+
+${buildProfileBlock(profile)}
 
 The operator's fleet:
 ${fleetLines}
@@ -219,7 +259,10 @@ export function normalizeDirectorPlan(
  * model layer is unavailable — the caller decides the fallback copy.
  */
 export async function planDirector(input: PlanDirectorInput): Promise<DirectorPlan> {
-  const deep = wantsDeepAnalysis(input.operatorMessage);
+  // Deep tier fires on an explicit "audit/strategy" ask OR when the operator
+  // has switched on always-deep analysis in their Director brief.
+  const deep =
+    wantsDeepAnalysis(input.operatorMessage) || input.profile?.deepAnalysisDefault === true;
   const model = deep ? CLAUDE_MODELS.OPUS : CLAUDE_MODELS.SONNET;
   const raw = await runStructured<RawDirectorReply>({
     system: buildSystemPrompt(input, deep),

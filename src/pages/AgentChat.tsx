@@ -18,6 +18,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Plus, LayoutDashboard, X, Compass } from "lucide-react";
 import AgentWorkspace from "../components/AgentWorkspace";
 import AgentDock from "../components/AgentDock";
+import DirectorDock from "../components/DirectorDock";
 import DirectorWorkspace from "../components/DirectorWorkspace";
 import { useAgents } from "../contexts/AgentsContext";
 import { useVisualViewportVar } from "../lib/use-visual-viewport";
@@ -84,6 +85,22 @@ export default function AgentChat() {
   // redirects, fall back to the Director view so we never read undefined.
   const activeAgent = isDirector ? undefined : selected;
   const showDirector = isDirector || !activeAgent;
+
+  // Mission-control dock content. The Director gets an account-level dock
+  // (fleet pulse + quick pulls into call logs / analytics / etc.); each agent
+  // gets its own agent-scoped dock. Rendered into both the desktop aside and
+  // the mobile slide-over below.
+  const dock = showDirector ? (
+    <DirectorDock />
+  ) : activeAgent ? (
+    <AgentDock
+      key={activeAgent.id}
+      agentId={activeAgent.id}
+      agentName={activeAgent.name}
+      enabledTools={liveTools}
+      onLaunch={launchPrompt}
+    />
+  ) : null;
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 h-[calc(var(--app-vvh,100dvh)-9rem)] min-h-[480px]">
@@ -202,18 +219,12 @@ export default function AgentChat() {
         )}
       </motion.div>
 
-      {/* Mission-control dock — agents only (the Director routes via chips). */}
-      {!showDirector && activeAgent && (
+      {/* Mission-control dock — the Director gets an account-level dock (quick
+          pulls into call logs, analytics, etc.); each agent gets its own
+          agent-scoped dock. Both share the desktop aside + mobile slide-over. */}
+      {dock && (
         <>
-          <aside className="hidden xl:block xl:w-[19rem] shrink-0 min-h-0">
-            <AgentDock
-              key={activeAgent.id}
-              agentId={activeAgent.id}
-              agentName={activeAgent.name}
-              enabledTools={liveTools}
-              onLaunch={launchPrompt}
-            />
-          </aside>
+          <aside className="hidden xl:block xl:w-[19rem] shrink-0 min-h-0">{dock}</aside>
 
           {/* Mobile / tablet dock trigger */}
           <button
@@ -251,14 +262,7 @@ export default function AgentChat() {
                       <X className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="h-[calc(100%-2.5rem)]">
-                    <AgentDock
-                      agentId={activeAgent.id}
-                      agentName={activeAgent.name}
-                      enabledTools={liveTools}
-                      onLaunch={launchPrompt}
-                    />
-                  </div>
+                  <div className="h-[calc(100%-2.5rem)]">{dock}</div>
                 </motion.aside>
               </>
             )}

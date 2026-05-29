@@ -268,7 +268,18 @@ export default function AgentWorkspace({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: text }),
       });
-      if (!r.ok) throw new Error("Send failed");
+      if (!r.ok) {
+        // Surface a useful reason instead of silently dropping the turn —
+        // the most common causes are rate limiting and a transient backend
+        // hiccup. The operator's text is restored below so nothing is lost.
+        let detail = "Try again in a moment";
+        if (r.status === 429) detail = "You're sending a bit fast — give it a few seconds";
+        else {
+          const body = await r.json().catch(() => null);
+          if (body?.error) detail = String(body.error);
+        }
+        throw new Error(detail);
+      }
       const data = await r.json();
       const proposals: MessageProposals = {
         changes: Array.isArray(data.changes) ? data.changes : [],
@@ -287,11 +298,11 @@ export default function AgentWorkspace({
         proposals: hasProposals ? proposals : undefined,
       };
       setMessages((prev) => [...prev, agentReply]);
-    } catch {
+    } catch (e) {
       // Roll back the optimistic operator message and surface error.
       setMessages((prev) => prev.filter((m) => m.id !== optimisticOperator.id));
       setInput(text);
-      toastError("Couldn't send", "Try again in a moment");
+      toastError("Couldn't send", e instanceof Error ? e.message : "Try again in a moment");
     } finally {
       setIsSending(false);
       inputRef.current?.focus();
