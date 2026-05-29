@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { motion } from "motion/react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Sparkles,
   Hammer,
@@ -18,6 +18,7 @@ import {
   BarChart3,
   Users,
   Zap,
+  Rocket,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import WirelineMark from "./WirelineMark";
@@ -25,6 +26,8 @@ import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { useToast } from "../contexts/ToastContext";
 import { Skeleton } from "./Skeleton";
 import { getSignupWedgeRecommendation } from "../lib/signup-intent";
+import FastStartWizard from "./FastStartWizard";
+import YoureLiveModal from "./YoureLiveModal";
 
 interface ProgressData {
   agents: number;
@@ -83,6 +86,19 @@ export default function OnboardingQuickstart({
   const [signupWedge, setSignupWedge] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const { success: toastSuccess } = useToast();
+  const navigate = useNavigate();
+
+  // Fast Start Wizard state
+  const [showFastStart, setShowFastStart] = useState(false);
+
+  // You're Live celebration state
+  const [showYoureLive, setShowYoureLive] = useState(false);
+  const [completionData, setCompletionData] = useState<{
+    agentName: string;
+    phoneNumber: string | null;
+    timeToFirstCallMs: number;
+    knowledgeItems: number;
+  } | null>(null);
 
   // Check if user has dismissed the onboarding card
   useEffect(() => {
@@ -265,7 +281,41 @@ export default function OnboardingQuickstart({
 
   // When all 4 steps are complete, show a compact "you're all set" card.
   if (completedCount === STEPS.length) {
-    return <AllSetCard onDismiss={handleDismiss} />;
+    return (
+      <>
+        <AllSetCard
+          onDismiss={handleDismiss}
+          onCelebrate={() => {
+            // Show the celebration modal with time to first call
+            const startTs = localStorage.getItem("wireline_onboarding_start");
+            const elapsedMs = startTs ? Date.now() - parseInt(startTs, 10) : 0;
+
+            setCompletionData({
+              agentName: progress?.agents > 0 ? "Your AI Agent" : "My Receptionist",
+              phoneNumber: progress?.numbers > 0 ? null : null, // Would need actual number from state
+              timeToFirstCallMs: elapsedMs,
+              knowledgeItems: progress?.knowledge ?? 0,
+            });
+            setShowYoureLive(true);
+          }}
+        />
+
+        <AnimatePresence>
+          {showYoureLive && completionData && (
+            <YoureLiveModal
+              isOpen={showYoureLive}
+              onClose={() => setShowYoureLive(false)}
+              agentName={completionData.agentName}
+              phoneNumber={completionData.phoneNumber}
+              timeToFirstCallMs={completionData.timeToFirstCallMs}
+              knowledgeItems={completionData.knowledgeItems}
+              onTestCall={() => navigate("/")}
+              onViewDashboard={() => navigate("/")}
+            />
+          )}
+        </AnimatePresence>
+      </>
+    );
   }
 
   // Find the first incomplete step so we can spotlight it.
@@ -325,6 +375,31 @@ export default function OnboardingQuickstart({
             </div>
           </div>
         </div>
+
+        {/* Fast Start CTA — one-shot wizard for <8min time-to-first-call */}
+        {completedCount < 2 && (
+          <div className="relative z-10 px-3 md:px-4 pt-3">
+            <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 to-brand/5 p-3 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-[9px] uppercase tracking-[0.34em] text-emerald-600 mb-1 flex items-center gap-1.5">
+                  <Rocket className="w-3 h-3" /> Fastest path to live
+                </p>
+                <p className="text-xs text-ink/70 leading-relaxed">
+                  Skip the individual steps. Our guided wizard combines agent creation, business
+                  knowledge, voice, and phone number into one streamlined flow — under 3 minutes.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowFastStart(true)}
+                className="shrink-0 px-4 py-2.5 rounded-full bg-gradient-to-r from-emerald-500 to-brand text-white text-[10px] uppercase tracking-[0.28em] hover:shadow-lg hover:shadow-brand/20 transition-all inline-flex items-center justify-center gap-1.5"
+              >
+                <Rocket className="w-3.5 h-3.5" />
+                Fast Start Wizard
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {wedgeRecommendation && !completion.agent && (
           <div className="relative z-10 px-3 md:px-4 pt-3">
@@ -425,6 +500,58 @@ export default function OnboardingQuickstart({
           </div>
         )}
       </div>
+
+      {/* Fast Start Wizard Modal */}
+      <AnimatePresence>
+        {showFastStart && (
+          <FastStartWizard
+            isOpen={showFastStart}
+            onClose={() => setShowFastStart(false)}
+            onComplete={(result) => {
+              // Update local progress state
+              setProgress((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      agents: 1,
+                      knowledge: result.knowledgeItems,
+                      numbers: result.phoneNumber ? 1 : 0,
+                    }
+                  : prev,
+              );
+
+              // Show celebration modal
+              setCompletionData({
+                agentName: result.agentName,
+                phoneNumber: result.phoneNumber,
+                timeToFirstCallMs: result.timeToCompleteMs,
+                knowledgeItems: result.knowledgeItems,
+              });
+
+              // Small delay for smooth transition
+              setTimeout(() => {
+                setShowYoureLive(true);
+              }, 300);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* You're Live Celebration Modal */}
+      <AnimatePresence>
+        {showYoureLive && completionData && (
+          <YoureLiveModal
+            isOpen={showYoureLive}
+            onClose={() => setShowYoureLive(false)}
+            agentName={completionData.agentName}
+            phoneNumber={completionData.phoneNumber}
+            timeToFirstCallMs={completionData.timeToFirstCallMs}
+            knowledgeItems={completionData.knowledgeItems}
+            onTestCall={() => navigate("/")}
+            onViewDashboard={() => navigate("/")}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
@@ -600,7 +727,13 @@ const POWER_LINKS = [
   { to: "/agents", icon: Users, label: "Manage Agents", hint: "Edit & train" },
 ] as const;
 
-function AllSetCard({ onDismiss }: { onDismiss: () => void }) {
+function AllSetCard({
+  onDismiss,
+  onCelebrate,
+}: {
+  onDismiss: () => void;
+  onCelebrate?: () => void;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.97 }}
@@ -654,6 +787,17 @@ function AllSetCard({ onDismiss }: { onDismiss: () => void }) {
             <p className="text-[12px] text-ink/70 mt-1.5 leading-relaxed max-w-[220px] mx-auto">
               Your agents are running. Here's what to do next.
             </p>
+
+            {/* Celebrate button */}
+            {onCelebrate && (
+              <button
+                onClick={onCelebrate}
+                className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand text-white text-[11px] uppercase tracking-[0.24em] hover:bg-brand/90 transition-all"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                View Your Achievement
+              </button>
+            )}
           </div>
         </div>
 
