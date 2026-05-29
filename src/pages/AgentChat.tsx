@@ -13,7 +13,7 @@
  * a horizontal switcher and the dock opens as a slide-over.
  */
 import React, { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { Plus, LayoutDashboard, X, Compass } from "lucide-react";
 import AgentWorkspace from "../components/AgentWorkspace";
@@ -43,6 +43,7 @@ function roleLabel(role: string | null): string {
 export default function AgentChat() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { agents, loading } = useAgents();
   // Keep the chat (now the primary surface) keyboard-aware on mobile: the
   // composer must stay above the software keyboard, which doesn't shrink dvh.
@@ -76,6 +77,16 @@ export default function AgentChat() {
     setComposerSeed({ text, nonce: nonceRef.current });
     setDockOpen(false);
   };
+
+  // Hand-off from the Director: it navigates here with a drafted instruction
+  // in navigation state. Seed it into this agent's composer once the agent has
+  // resolved, then clear the state so a refresh doesn't re-seed.
+  useEffect(() => {
+    const seed = (location.state as { seed?: string } | null)?.seed;
+    if (!seed || loading || isDirector || !selected) return;
+    launchPrompt(seed);
+    navigate(`/chat/${selected.id}`, { replace: true, state: null });
+  }, [location.state, loading, isDirector, selected, navigate]);
 
   if (loading) {
     return <div className="min-h-[60vh]" aria-busy="true" />;

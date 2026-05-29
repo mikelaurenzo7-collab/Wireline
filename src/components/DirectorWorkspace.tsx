@@ -33,11 +33,15 @@ import {
   BarChart3,
   Plug,
   Brain,
+  Phone,
+  Mail,
+  MessageCircle,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { useAgents } from "../contexts/AgentsContext";
 import { cn } from "../lib/utils";
+import ProposalCard from "./ProposalCard";
 
 const DirectorTraining = lazy(() => import("./DirectorTraining"));
 const DirectorConnectors = lazy(() => import("./DirectorConnectors"));
@@ -56,13 +60,30 @@ interface DirectorSuggestion {
   agentId?: string;
 }
 
+type DelegationChannel = "call" | "email" | "text";
+
+interface DirectorDelegation {
+  agentId: string;
+  agentName: string;
+  channel: DelegationChannel;
+  label: string;
+  draft: string;
+}
+
 interface DirectorMessage {
   id: string;
   role: "operator" | "director";
   content: string;
   createdAt: string;
   suggestions?: DirectorSuggestion[];
+  delegations?: DirectorDelegation[];
 }
+
+const DELEGATION_ICON: Record<DelegationChannel, React.ElementType> = {
+  call: Phone,
+  email: Mail,
+  text: MessageCircle,
+};
 
 // ── Shared overview shapes (mirror /api/director/overview) ──────────────
 export interface DirectorProfileData {
@@ -221,6 +242,21 @@ export default function DirectorWorkspace() {
     }
   }, [messages, activeTab]);
 
+  // Delegations the operator has waved off, keyed by `${messageId}:${index}`
+  // so they collapse to a resolved state instead of lingering.
+  const [dismissedDelegations, setDismissedDelegations] = useState<Record<string, boolean>>({});
+
+  const handDelegation = useCallback(
+    (d: DirectorDelegation) => {
+      // Hand the drafted task to the purchased agent: open its chat with the
+      // instruction pre-seeded into the composer. The agent then proposes and
+      // executes it under its own gates (calls are paid-only) — the Director
+      // directs, it never sends or dials itself.
+      navigate(`/chat/${d.agentId}`, { state: { seed: d.draft } });
+    },
+    [navigate],
+  );
+
   const runSuggestion = useCallback(
     (s: DirectorSuggestion) => {
       switch (s.kind) {
@@ -287,6 +323,7 @@ export default function DirectorWorkspace() {
           content: data.reply || "(empty reply)",
           createdAt: new Date().toISOString(),
           suggestions: Array.isArray(data.suggestions) ? data.suggestions : undefined,
+          delegations: Array.isArray(data.delegations) ? data.delegations : undefined,
         };
         setMessages((prev) => [...prev, reply]);
       } catch (e) {
@@ -504,6 +541,30 @@ export default function DirectorWorkspace() {
                               <Icon className="w-3.5 h-3.5" />
                               {s.label}
                             </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {m.delegations && m.delegations.length > 0 && (
+                      <div className="mt-2 space-y-2">
+                        {m.delegations.map((d, i) => {
+                          const key = `${m.id}:${i}`;
+                          const Icon = DELEGATION_ICON[d.channel];
+                          return (
+                            <ProposalCard
+                              key={key}
+                              icon={<Icon className="w-3.5 h-3.5" />}
+                              tone="amber"
+                              title={d.label}
+                              detail={`Hand to ${d.agentName} · ${d.draft}`}
+                              state={dismissedDelegations[key] ? "dismissed" : undefined}
+                              busy={false}
+                              approveLabel={`Open ${d.agentName}`}
+                              onApprove={() => handDelegation(d)}
+                              onDismiss={() =>
+                                setDismissedDelegations((prev) => ({ ...prev, [key]: true }))
+                              }
+                            />
                           );
                         })}
                       </div>

@@ -37,9 +37,32 @@ export interface DirectorSuggestion {
   agentId?: string;
 }
 
+/**
+ * The Director never sends messages or places calls itself — it's the manager.
+ * Instead it DELEGATES: drafts the call/email/text and hands it to the right
+ * purchased agent, whose own (already-gated) chat executes it. Calls in
+ * particular are paid-only and run through the agent's outbound path, so the
+ * Director routing them to an agent keeps every gate intact.
+ */
+export const DIRECTOR_DELEGATION_CHANNELS = ["call", "email", "text"] as const;
+export type DirectorDelegationChannel = (typeof DIRECTOR_DELEGATION_CHANNELS)[number];
+
+export interface DirectorDelegation {
+  /** The purchased agent that will carry out the task (from the fleet). */
+  agentId: string;
+  agentName: string;
+  channel: DirectorDelegationChannel;
+  /** Short label for the hand-off card. */
+  label: string;
+  /** A ready-to-send instruction seeded into the agent's composer. */
+  draft: string;
+}
+
 export interface DirectorPlan {
   reply: string;
   suggestions: DirectorSuggestion[];
+  /** Tasks the Director hands to a purchased agent to execute. */
+  delegations: DirectorDelegation[];
   /** Which model tier handled this turn (for UI/telemetry). */
   model: "sonnet" | "opus";
 }
@@ -126,6 +149,37 @@ const DIRECTOR_TOOL: ToolSchema = {
           additionalProperties: false,
         },
       },
+      delegations: {
+        type: "array",
+        description:
+          "Tasks you hand to a purchased agent to carry out (place a call, send an email/text). " +
+          "You NEVER do these yourself — you're the manager. Only include when the operator asks " +
+          "to contact someone AND they own an agent suited to it. Pick the best agent by role and " +
+          "use its agent_id from the fleet. `draft` is a complete, ready-to-send instruction the " +
+          "agent will execute (e.g. 'Call John Doe at +1 555 010 0000 to confirm his Tuesday 2pm " +
+          "AC tune-up.'). The operator opens that agent and approves; the agent runs it under its " +
+          "own gates (calls are paid-only).",
+        items: {
+          type: "object",
+          properties: {
+            agent_id: {
+              type: "string",
+              description: "An existing agent id from the operator's fleet that will do the task.",
+            },
+            channel: { type: "string", enum: [...DIRECTOR_DELEGATION_CHANNELS] },
+            label: {
+              type: "string",
+              description: "Short label for the hand-off card (≤60 chars).",
+            },
+            draft: {
+              type: "string",
+              description: "The complete instruction to seed into the agent's chat (≤600 chars).",
+            },
+          },
+          required: ["agent_id", "channel", "label", "draft"],
+          additionalProperties: false,
+        },
+      },
     },
     required: ["reply"],
   },
@@ -173,6 +227,7 @@ Your job each turn:
 3. When they DO have agents, help them get more out of the fleet: which agent to coach, what to turn on, what the numbers say. Attach an open_agent_chat suggestion (with that agent's id) when pointing them at a specific agent.
 4. ${suggestChips}
 5. You do not change agent settings yourself — that happens in each agent's own chat. You advise and route.
+6. You NEVER place calls or send messages yourself. You are the manager: when the operator wants someone contacted, DELEGATE the task to the best-suited purchased agent via the delegations field (draft the call/email/text and hand it off by agent_id). The operator opens that agent and approves; the agent executes it. Calling is paid-only and only purchased agents can do it — if the operator has no suitable agent, recommend creating one with a create_agent suggestion instead of delegating.
 
 ${deep ? "DEEP MODE: the operator asked for serious strategic analysis. Take your time, reason across the whole fleet, and deliver a structured, prioritized plan." : "Keep replies tight and skimmable."}
 
@@ -196,6 +251,7 @@ function buildUserContent(input: PlanDirectorInput): string {
 interface RawDirectorReply {
   reply?: unknown;
   suggestions?: unknown;
+  delegations?: unknown;
 }
 
 function clampString(value: unknown, maxLen: number): string | null {
@@ -250,7 +306,39 @@ export function normalizeDirectorPlan(
     }
   }
 
-  return { reply, suggestions, model };
+  // Delegations — only valid when they target an agent the operator actually
+  // owns. Anything malformed or pointing at an unknown agent is dropped, so
+  // the UI never offers a hand-off that can't execute.
+  const fleetById = new Map(fleet.map((a) => [a.id, a]));
+  const delegations: DirectorDelegation[] = [];
+  if (Array.isArray(raw.delegations)) {
+    for (const d of raw.delegations) {
+      if (!d || typeof d !== "object") continue;
+      const rec = d as Record<string, unknown>;
+      const agentId = clampString(rec.agent_id, 64);
+      if (!agentId || !fleetById.has(agentId)) continue;
+      const channel = rec.channel;
+      if (
+        typeof channel !== "string" ||
+        !(DIRECTOR_DELEGATION_CHANNELS as readonly string[]).includes(channel)
+      ) {
+        continue;
+      }
+      const draft = clampString(rec.draft, 600);
+      if (!draft) continue;
+      const agent = fleetById.get(agentId)!;
+      delegations.push({
+        agentId,
+        agentName: agent.name || "your agent",
+        channel: channel as DirectorDelegationChannel,
+        label: clampString(rec.label, 60) || `Hand to ${agent.name || "agent"}`,
+        draft,
+      });
+      if (delegations.length >= 3) break;
+    }
+  }
+
+  return { reply, suggestions, delegations, model };
 }
 
 /**

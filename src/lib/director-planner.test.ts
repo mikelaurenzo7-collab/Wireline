@@ -100,3 +100,70 @@ describe("normalizeDirectorPlan — suggestions", () => {
     expect(plan.suggestions.filter((s) => s.kind === "view_ops")).toHaveLength(1);
   });
 });
+
+describe("normalizeDirectorPlan — delegations", () => {
+  it("keeps a valid delegation and resolves the agent name", () => {
+    const plan = normalizeDirectorPlan(
+      {
+        reply: "On it",
+        delegations: [
+          {
+            agent_id: "agent-1",
+            channel: "call",
+            label: "Call the lead",
+            draft: "Call John at +1 555 010 0000 about his quote.",
+          },
+        ],
+      },
+      FLEET,
+      "sonnet",
+    );
+    expect(plan.delegations).toHaveLength(1);
+    expect(plan.delegations[0].agentName).toBe("Ava");
+    expect(plan.delegations[0].channel).toBe("call");
+  });
+
+  it("drops delegations that target an agent the operator doesn't own", () => {
+    const plan = normalizeDirectorPlan(
+      {
+        reply: "x",
+        delegations: [{ agent_id: "ghost", channel: "email", label: "Email", draft: "hi" }],
+      },
+      FLEET,
+      "sonnet",
+    );
+    expect(plan.delegations).toHaveLength(0);
+  });
+
+  it("drops delegations with an invalid channel or missing draft", () => {
+    const plan = normalizeDirectorPlan(
+      {
+        reply: "x",
+        delegations: [
+          { agent_id: "agent-1", channel: "fax", label: "Fax", draft: "hi" },
+          { agent_id: "agent-2", channel: "text", label: "Text", draft: "   " },
+        ],
+      },
+      FLEET,
+      "sonnet",
+    );
+    expect(plan.delegations).toHaveLength(0);
+  });
+
+  it("caps delegations at 3", () => {
+    const plan = normalizeDirectorPlan(
+      {
+        reply: "x",
+        delegations: Array.from({ length: 5 }, () => ({
+          agent_id: "agent-1",
+          channel: "email",
+          label: "Email",
+          draft: "Reach out to the customer.",
+        })),
+      },
+      FLEET,
+      "sonnet",
+    );
+    expect(plan.delegations.length).toBeLessThanOrEqual(3);
+  });
+});

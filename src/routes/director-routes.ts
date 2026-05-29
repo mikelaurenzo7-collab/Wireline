@@ -425,6 +425,7 @@ router.post(
 
       let reply: string;
       let suggestions: unknown[] = [];
+      let delegations: unknown[] = [];
       let model: "sonnet" | "opus" = "sonnet";
 
       if (!process.env.ANTHROPIC_API_KEY) {
@@ -441,6 +442,7 @@ router.post(
           });
           reply = plan.reply;
           suggestions = plan.suggestions;
+          delegations = plan.delegations;
           model = plan.model;
         } catch (e) {
           log.error("director planner failed", { error: getErrorMessage(e) });
@@ -455,7 +457,7 @@ router.post(
         content: reply,
       });
 
-      res.json({ reply, suggestions, model });
+      res.json({ reply, suggestions, delegations, model });
     } catch (e) {
       log.error("director POST failed", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to send message" });
