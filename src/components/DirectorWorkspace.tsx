@@ -201,17 +201,32 @@ export default function DirectorWorkspace() {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* Compact header — the rail already identifies the Director, so we
-          only show a slim action bar with the clear-thread affordance. */}
+      {/* Identity header — gives the Director presence in conversation:
+          medallion + name + live status, with the clear-thread affordance. */}
       {messages.length > 0 && (
-        <div className="shrink-0 flex items-center justify-end px-3 py-2 border-b border-black/8">
+        <div className="shrink-0 flex items-center justify-between gap-2 px-3 py-2.5 border-b border-black/8">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="shrink-0 flex w-8 h-8 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25">
+              <Sparkles className="w-4 h-4" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[13px] font-semibold text-ink leading-tight truncate">Director</p>
+              <p className="flex items-center gap-1.5 text-[10px] text-muted leading-tight">
+                <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500/60" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                </span>
+                Always-on manager
+              </p>
+            </div>
+          </div>
           <button
             onClick={clearThread}
             className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.22em] text-muted hover:text-rose-600 hover:bg-rose-500/8 transition-colors"
             aria-label="Clear Director thread"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            Clear
+            <span className="hidden sm:inline">Clear</span>
           </button>
         </div>
       )}
@@ -282,11 +297,26 @@ export default function DirectorWorkspace() {
           </motion.div>
         ) : (
           messages.map((m) => (
-            <div
+            <motion.div
               key={m.id}
-              className={cn("flex", m.role === "operator" ? "justify-end" : "justify-start")}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className={cn(
+                "flex items-end gap-2",
+                m.role === "operator" ? "justify-end" : "justify-start",
+              )}
             >
-              <div className={cn("max-w-[88%] min-w-0", m.role === "operator" && "items-end")}>
+              {/* Director avatar — anchors the thread to a named manager */}
+              {m.role === "director" && (
+                <span
+                  className="shrink-0 flex w-7 h-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20 mb-0.5"
+                  aria-hidden="true"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                </span>
+              )}
+              <div className={cn("max-w-[84%] min-w-0", m.role === "operator" && "items-end")}>
                 <div
                   className={cn(
                     "rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap break-words",
@@ -298,24 +328,25 @@ export default function DirectorWorkspace() {
                   {m.content}
                 </div>
                 {m.suggestions && m.suggestions.length > 0 && (
-                  <div className="mt-1.5 flex flex-wrap gap-1">
+                  <div className="mt-2 flex flex-wrap gap-1.5">
                     {m.suggestions.map((s, i) => {
                       const Icon = SUGGESTION_ICON[s.kind];
                       return (
                         <button
                           key={`${s.kind}-${i}`}
                           onClick={() => runSuggestion(s)}
-                          className="inline-flex items-center gap-1 text-[11px] font-medium text-brand rounded-full border border-brand/30 bg-brand/[0.06] px-2 py-1 min-h-[28px] hover:bg-brand/10 transition-colors"
+                          className="group inline-flex items-center gap-1.5 text-[11px] font-medium text-brand rounded-full border border-brand/30 bg-brand/[0.06] px-2.5 py-1 min-h-[28px] hover:bg-brand/12 hover:border-brand/45 hover:-translate-y-px transition-all duration-200"
                         >
                           <Icon className="w-3 h-3" />
                           {s.label}
+                          <ArrowUpRight className="w-2.5 h-2.5 opacity-0 -ml-1 group-hover:opacity-100 group-hover:ml-0 transition-all duration-200" />
                         </button>
                       );
                     })}
                   </div>
                 )}
               </div>
-            </div>
+            </motion.div>
           ))
         )}
         {isSending && (
@@ -323,8 +354,14 @@ export default function DirectorWorkspace() {
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="flex justify-start"
+            className="flex items-end gap-2 justify-start"
           >
+            <span
+              className="shrink-0 flex w-7 h-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20 mb-0.5"
+              aria-hidden="true"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+            </span>
             <div className="glass border border-brand/20 rounded-2xl rounded-bl-md px-3 py-2 space-y-0.5">
               <div className="flex items-center gap-2 text-[11px] text-ink/80">
                 <span className="relative flex h-2 w-2">
