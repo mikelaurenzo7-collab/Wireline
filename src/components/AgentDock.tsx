@@ -235,7 +235,11 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
               >
                 <s.icon className="w-3.5 h-3.5 text-brand/80 mb-1" />
                 <span className="text-[15px] font-display leading-none text-ink tabular-nums">
-                  {loading ? "·" : s.value}
+                  {loading ? (
+                    <span className="inline-block w-4 h-3 rounded bg-black/8 animate-pulse" />
+                  ) : (
+                    s.value
+                  )}
                 </span>
                 <span className="mt-0.5 text-[8px] uppercase tracking-[0.12em] text-muted/70">
                   {s.label}

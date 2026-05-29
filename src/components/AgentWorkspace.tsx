@@ -629,13 +629,33 @@ export default function AgentWorkspace({
               </motion.div>
             ))}
             {isSending && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                className="flex gap-3"
+              >
                 <div className="shrink-0 w-7 h-7 rounded-full bg-paper border border-black/12 flex items-center justify-center text-[10px] font-semibold text-ink">
                   {agentName.slice(0, 1).toUpperCase()}
                 </div>
-                <div className="glass border border-black/8 rounded-2xl rounded-tl-md px-3.5 py-2.5 flex items-center gap-2 text-[12px] text-muted">
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  {agentName} is typing…
+                <div className="glass border border-brand/20 rounded-2xl rounded-tl-md px-3.5 py-2.5 space-y-1.5">
+                  <div className="flex items-center gap-2 text-[12px] text-ink/80">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-brand" />
+                    </span>
+                    <span className="font-medium">{agentName} is thinking…</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] text-muted/70">
+                    <motion.span
+                      animate={{ opacity: [0.4, 1, 0.4] }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                      className="inline-flex items-center gap-1"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      Analyzing context & drafting response
+                    </motion.span>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -672,7 +692,7 @@ export default function AgentWorkspace({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder={`Message ${agentName}…  (⌘+Enter to send)`}
+            placeholder={`Message ${agentName}…  (${navigator.platform?.includes("Mac") ? "⌘" : "Ctrl"}+Enter to send)`}
             rows={2}
             disabled={isSending || isUploading}
             className="flex-1 resize-none rounded-2xl glass border border-black/10 px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors disabled:opacity-60 leading-relaxed"
@@ -731,10 +751,13 @@ function ProposalCard({
 }: ProposalCardProps) {
   const approveDisabled = busy || (!!consent && !consent.checked);
   return (
-    <div
+    <motion.div
+      layout
+      animate={state ? { scale: 0.98, opacity: state === "dismissed" ? 0.5 : 1 } : { scale: 1, opacity: 1 }}
+      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
-        "rounded-xl border px-3 py-2.5 text-ink",
-        state === "dismissed" ? "opacity-50 border-black/8 bg-black/3" : TONE_CLASSES[tone],
+        "rounded-xl border px-3 py-2.5 text-ink transition-colors",
+        state === "dismissed" ? "border-black/8 bg-black/3" : TONE_CLASSES[tone],
       )}
     >
       <div className="flex items-start gap-2">
@@ -749,14 +772,23 @@ function ProposalCard({
         </div>
       </div>
       {state ? (
-        <p
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
           className={cn(
-            "mt-2 text-[10px] uppercase tracking-[0.18em]",
+            "mt-2 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em]",
             state === "done" ? "text-emerald-600" : "text-muted/70",
           )}
         >
-          {state === "done" ? "✓ Applied" : "Dismissed"}
-        </p>
+          {state === "done" ? (
+            <>
+              <Check className="w-3 h-3" />
+              <span>Successfully executed</span>
+            </>
+          ) : (
+            <span>Dismissed</span>
+          )}
+        </motion.div>
       ) : (
         <>
           {consent && (
@@ -778,8 +810,17 @@ function ProposalCard({
               disabled={approveDisabled}
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-brand text-on-brand text-[11px] font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
             >
-              {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-              {approveLabel}
+              {busy ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Executing…
+                </>
+              ) : (
+                <>
+                  <Check className="w-3 h-3" />
+                  {approveLabel}
+                </>
+              )}
             </button>
             <button
               onClick={onDismiss}
@@ -792,6 +833,6 @@ function ProposalCard({
           </div>
         </>
       )}
-    </div>
+    </motion.div>
   );
 }

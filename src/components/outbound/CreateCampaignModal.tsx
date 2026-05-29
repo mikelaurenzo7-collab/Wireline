@@ -77,7 +77,7 @@ export default function CreateCampaignModal({
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.96, opacity: 0, y: 16 }}
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-md rounded-2xl glass-strong border border-white/15 shadow-2xl overflow-hidden"
+        className="relative w-full max-w-md max-h-[calc(100dvh-2rem)] rounded-2xl glass-strong border border-white/15 shadow-2xl overflow-hidden"
       >
         <header className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
           <div>
