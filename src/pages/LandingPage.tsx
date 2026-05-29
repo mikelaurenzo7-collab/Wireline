@@ -193,9 +193,8 @@ export default function LandingPage() {
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
               className="text-center"
             >
-              <span className="inline-flex items-center gap-2 border border-ink/15 bg-ink/[0.03] px-4 py-1.5 mb-7 lg:mb-9">
-                <span className="w-1.5 h-1.5 bg-brand" aria-hidden="true" />
-                <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/70">
+              <span className="inline-flex items-center border border-ink/15 bg-ink/[0.03] px-5 py-2.5 mb-7 lg:mb-9">
+                <span className="font-mono text-[13px] uppercase tracking-[0.22em] text-ink/85">
                   Phone + Email + SMS
                 </span>
               </span>
