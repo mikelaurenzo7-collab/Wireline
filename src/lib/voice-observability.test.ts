@@ -21,10 +21,17 @@ vi.mock("./server-context", () => ({
     })),
     select: vi.fn(() => ({
       from: vi.fn(() => ({
-        where: vi.fn(() => ({
-          orderBy: vi.fn().mockReturnThis(),
-          limit: vi.fn().mockResolvedValue(mockCallLogs),
-        })),
+        // `.where()` is awaited directly by computeVoiceHealthWindow /
+        // getLatencyTrends, and chained through `.orderBy()` / `.limit()`
+        // elsewhere — so it must be a thenable that also carries both methods.
+        where: vi.fn(() => {
+          const result: any = {
+            orderBy: vi.fn(() => result),
+            limit: vi.fn().mockResolvedValue(mockCallLogs),
+            then: (resolve: (value: any[]) => unknown) => resolve(mockCallLogs),
+          };
+          return result;
+        }),
       })),
     })),
     insert: vi.fn(),

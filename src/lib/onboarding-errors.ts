@@ -330,12 +330,9 @@ export function logOnboardingError(
     console.error("[Onboarding Error]", payload);
   }
 
-  // Send to analytics if available
-  type PlausibleFn = (event: string, opts?: { props?: Record<string, string> }) => void;
-  type PlausibleWindow = Window & { plausible?: PlausibleFn };
-  const win = typeof window !== "undefined" ? (window as PlausibleWindow) : null;
-  if (win?.plausible) {
-    win.plausible("OnboardingError", {
+  // Send to analytics if available (window.plausible is typed globally in vite-env.d.ts)
+  if (typeof window !== "undefined" && window.plausible) {
+    window.plausible("OnboardingError", {
       props: {
         step,
         error_type: friendlyError.title,

@@ -522,14 +522,15 @@ export default function FastStartWizard({
                               : "border-black/10 hover:border-black/20"
                           }`}
                         >
-                          <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center justify-between">
                             <span className="text-sm font-medium text-ink">{voice.name}</span>
                             {selectedVoiceId === voice.id && (
                               <Check className="w-4 h-4 text-brand" />
                             )}
                           </div>
-                          <p className="text-xs text-muted">{voice.description}</p>
-                          <p className="text-[10px] text-brand mt-2">{voice.personality}</p>
+                          <p className="text-[10px] uppercase tracking-[0.18em] text-muted mt-2">
+                            {voice.provider}
+                          </p>
                         </button>
                       ))}
                     </div>

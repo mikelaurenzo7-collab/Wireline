@@ -39,32 +39,53 @@ const h = vi.hoisted(() => {
     },
   };
 
+  // Map a stored call into the full row shape the route handlers select.
+  const mapCall = (c: (typeof state.calls)[number]) => ({
+    ...c,
+    id: Number(c.id), // bigint → number so the recent-calls route can res.json() it
+    createdAt: new Date(),
+    durationSeconds: 60,
+    sentiment: "neutral",
+    outcomeTag: null,
+    ttfAudioMs: null,
+    pipelineError: null,
+    latencyP50Ms: null,
+    latencyP95Ms: null,
+  });
+
+  // Resolve the rows a given WHERE condition should yield. Handles the three
+  // shapes the routes/lib produce: vapiCallId lookup, per-user listing, and
+  // the composite `and(...)` window used by computeVoiceHealthWindow.
+  const computeRows = (cond: any): any[] => {
+    if (cond?.left === schema.callLogs.vapiCallId) {
+      const found = state.calls.find((c) => c.vapiCallId === cond.right);
+      return found ? [{ userId: found.userId }] : [];
+    }
+    if (cond?.left === schema.callLogs.userId) {
+      return state.calls.filter((c) => c.userId === cond.right).map(mapCall);
+    }
+    if (cond?.op === "and") {
+      return state.calls.map(mapCall);
+    }
+    return [];
+  };
+
   const drizzle = {
     select: vi.fn((_shape?: Record<string, string>) => ({
       from: vi.fn(() => ({
-        where: vi.fn((cond: any) => ({
-          limit: vi.fn(async (_n: number) => {
-            // Simulate lookup by vapiCallId
-            if (cond?.left === schema.callLogs.vapiCallId) {
-              const found = state.calls.find((c) => c.vapiCallId === cond.right);
-              return found ? [{ userId: found.userId }] : [];
-            }
-            // Return all calls for this user
-            if (cond?.left === schema.callLogs.userId) {
-              return state.calls
-                .filter((c) => c.userId === cond.right)
-                .map((c) => ({
-                  ...c,
-                  createdAt: new Date(),
-                  durationSeconds: 60,
-                  sentiment: "neutral",
-                  outcomeTag: null,
-                }));
-            }
-            return [];
-          }),
-          orderBy: vi.fn().mockReturnThis(),
-        })),
+        // `.where()` must be awaitable on its own (computeVoiceHealthWindow /
+        // getLatencyTrends await it directly) while still chaining to
+        // `.orderBy()` / `.limit()` for the recent-calls query. Return a
+        // thenable that carries both methods.
+        where: vi.fn((cond: any) => {
+          const rows = computeRows(cond);
+          const result: any = {
+            orderBy: vi.fn(() => result),
+            limit: vi.fn(async (n: number) => rows.slice(0, n)),
+            then: (resolve: (value: any[]) => unknown) => resolve(rows),
+          };
+          return result;
+        }),
       })),
     })),
     update: vi.fn(() => ({

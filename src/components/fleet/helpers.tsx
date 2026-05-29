@@ -129,6 +129,7 @@ export const PREMIUM_VOICES = [
 export const DEFAULT_VOICE_BY_GENDER = {
   female: "EXAVITQu4vr4xnSDxMaL", // 11labs Sarah Soft — warm + approachable, broad fit
   male: "TX3LPaxmHKxFdv7VOQHJ", // 11labs Liam — confident + energetic, broad fit
+  neutral: "alloy", // OpenAI Alex — neutral + energetic, used by the FastStart wizard default
 } as const;
 
 // ──────────────────────────────────────────────────────────────────────

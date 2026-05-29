@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { ArrowRight, Phone, ArrowUpRight, Plus } from "lucide-react";
 import PublicSiteHeader from "../components/marketing/PublicSiteHeader";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
+import { HeroDecorations } from "../components/marketing/HeroDecorations";
 import { RobotHead } from "../components/marketing/RobotHead";
 import { PageMeta } from "../lib/page-meta";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
@@ -90,75 +91,6 @@ const FOOTER_COLS = [
     ],
   },
 ];
-
-function RobotWithPhone({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      width="148"
-      height="205"
-      viewBox="0 0 148 205"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-      aria-hidden
-    >
-      {/* Antenna */}
-      <line x1="62" y1="24" x2="62" y2="8" stroke="#1A1614" strokeWidth="2.5" strokeLinecap="round" />
-      <circle cx="62" cy="5" r="5" fill="#10B981" stroke="#1A1614" strokeWidth="1.5" />
-
-      {/* Head */}
-      <rect x="16" y="24" width="92" height="58" rx="11" fill="#4F1E7B" stroke="#1A1614" strokeWidth="1.5" />
-      <rect x="22" y="28" width="80" height="16" rx="4" fill="white" fillOpacity="0.1" />
-
-      {/* Eyes */}
-      <circle cx="46" cy="50" r="10" fill="#EFE9DC" />
-      <circle cx="78" cy="50" r="10" fill="#EFE9DC" />
-      <circle cx="48" cy="49" r="4" fill="#4F1E7B" />
-      <circle cx="80" cy="49" r="4" fill="#4F1E7B" />
-      <circle cx="49.5" cy="47.5" r="1.5" fill="white" />
-      <circle cx="81.5" cy="47.5" r="1.5" fill="white" />
-
-      {/* Mouth */}
-      <path d="M44 68 Q62 76 80 68" stroke="#EFE9DC" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-
-      {/* Body */}
-      <rect x="20" y="86" width="84" height="74" rx="10" fill="#4F1E7B" stroke="#1A1614" strokeWidth="1.5" />
-      <rect x="27" y="92" width="70" height="16" rx="4" fill="white" fillOpacity="0.1" />
-
-      {/* Chest panel */}
-      <circle cx="45" cy="126" r="9" fill="#3B154C" />
-      <circle cx="45" cy="126" r="5.5" fill="#10B981" />
-      <rect x="60" y="118" width="16" height="18" rx="3" fill="#3B154C" />
-      <line x1="63" y1="123" x2="73" y2="123" stroke="#EFE9DC" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.8" />
-      <line x1="63" y1="127" x2="71" y2="127" stroke="#EFE9DC" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.8" />
-      <line x1="63" y1="131" x2="69" y2="131" stroke="#EFE9DC" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.8" />
-
-      {/* Left arm */}
-      <rect x="2" y="90" width="16" height="58" rx="7" fill="#4F1E7B" stroke="#1A1614" strokeWidth="1.5" />
-
-      {/* Right arm raised to hold phone — outline then fill */}
-      <path d="M104 96 C110 84 118 64 124 46" stroke="#1A1614" strokeWidth="23" strokeLinecap="round" fill="none" />
-      <path d="M104 96 C110 84 118 64 124 46" stroke="#4F1E7B" strokeWidth="20" strokeLinecap="round" fill="none" />
-
-      {/* Phone */}
-      <rect x="116" y="10" width="24" height="40" rx="5" fill="#10B981" stroke="#1A1614" strokeWidth="1.5" />
-      <rect x="120" y="14" width="16" height="24" rx="2" fill="#EFE9DC" fillOpacity="0.9" />
-      {/* Signal waves on screen */}
-      <path d="M122 19 Q128 16 134 19" stroke="#4F1E7B" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      <path d="M120 24 Q128 19 136 24" stroke="#4F1E7B" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      {/* Home button */}
-      <circle cx="128" cy="44" r="2.5" fill="#3B154C" />
-
-      {/* Legs */}
-      <rect x="34" y="158" width="24" height="42" rx="8" fill="#4F1E7B" stroke="#1A1614" strokeWidth="1.5" />
-      <rect x="66" y="158" width="24" height="42" rx="8" fill="#4F1E7B" stroke="#1A1614" strokeWidth="1.5" />
-
-      {/* Feet */}
-      <rect x="26" y="192" width="38" height="12" rx="5" fill="#3B154C" stroke="#1A1614" strokeWidth="1.5" />
-      <rect x="62" y="192" width="38" height="12" rx="5" fill="#3B154C" stroke="#1A1614" strokeWidth="1.5" />
-    </svg>
-  );
-}
 
 function AgentCard({
   agent,
@@ -254,19 +186,8 @@ export default function LandingPage() {
           data-testid="hero-section"
           className="relative min-h-[85svh] flex flex-col justify-center px-6 lg:px-12 pt-24 pb-16 lg:pt-28 lg:pb-24 overflow-hidden"
         >
-          {/* Decorative robots — empty side areas on large screens */}
-          <div
-            className="absolute left-6 xl:left-10 bottom-16 hidden xl:block pointer-events-none"
-            aria-hidden
-          >
-            <RobotHead variant={3} size={72} animated />
-          </div>
-          <div
-            className="absolute right-6 xl:right-10 bottom-8 hidden xl:block pointer-events-none opacity-80"
-            aria-hidden
-          >
-            <RobotWithPhone />
-          </div>
+          {/* Robot mascot family scattered through the hero corners (lg+) */}
+          <HeroDecorations />
 
           <div className="max-w-7xl mx-auto w-full">
             <motion.div
@@ -376,8 +297,25 @@ export default function LandingPage() {
         </section>
 
         {/* ─── Final CTA ──────────────────────────────────────────── */}
-        <section data-testid="final-cta" className="px-6 lg:px-12 pb-24 lg:pb-32">
-          <div className="max-w-7xl mx-auto text-center">
+        <section
+          data-testid="final-cta"
+          className="relative px-6 lg:px-12 pb-24 lg:pb-32 overflow-hidden"
+        >
+          {/* Robot mascots flank the closing pitch (lg+) */}
+          <div
+            className="pointer-events-none absolute inset-0 hidden lg:block"
+            aria-hidden="true"
+            data-testid="final-cta-decorations"
+          >
+            <div className="absolute left-10 top-1/2 -translate-y-1/2 opacity-40 hover:opacity-70 transition-opacity duration-500">
+              <RobotHead variant={2} size={64} animated />
+            </div>
+            <div className="absolute right-10 top-1/2 -translate-y-1/2 opacity-40 hover:opacity-70 transition-opacity duration-500">
+              <RobotHead variant={4} size={64} animated />
+            </div>
+          </div>
+
+          <div className="relative max-w-7xl mx-auto text-center">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}

@@ -22,7 +22,8 @@ export type WebhookEvent =
   | "slack.message_sent"
   | "slo.jobs.critical"
   | "slo.webhooks.degraded"
-  | "slo.enrichment.dead";
+  | "slo.enrichment.dead"
+  | "voice.degradation";
 
 /** All webhook event identifiers that can be subscribed to. Keep in sync with WebhookEvent. */
 export const WEBHOOK_EVENTS: WebhookEvent[] = [
@@ -42,6 +43,7 @@ export const WEBHOOK_EVENTS: WebhookEvent[] = [
   "slo.jobs.critical",
   "slo.webhooks.degraded",
   "slo.enrichment.dead",
+  "voice.degradation",
 ];
 
 /** Semantic version for CRM consumers parsing `call.completed.data`. Bump when shape changes. */
