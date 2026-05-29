@@ -36,6 +36,51 @@ export const PUBLIC_ROUTES = [
   { path: "/signup", name: "signup", title: /Wireline/i },
 ] as const;
 
+/** Extended public routes including legal, status, and info pages. */
+export const EXTENDED_PUBLIC_ROUTES = [
+  { path: "/status", name: "status", title: /Wireline/i },
+  { path: "/changelog", name: "changelog", title: /Wireline/i },
+  { path: "/security", name: "security", title: /Wireline/i },
+  { path: "/privacy", name: "privacy", title: /Wireline/i },
+  { path: "/terms", name: "terms", title: /Wireline/i },
+  { path: "/support", name: "support", title: /Wireline/i },
+  { path: "/developers", name: "developers", title: /Wireline/i },
+] as const;
+
+/** All authenticated routes that must redirect to signin when unauthenticated. */
+export const AUTHENTICATED_ROUTES = [
+  { path: "/chat", name: "chat" },
+  { path: "/ops", name: "live-ops" },
+  { path: "/phone", name: "phone" },
+  { path: "/email", name: "email" },
+  { path: "/sms", name: "sms" },
+  { path: "/activity", name: "activity" },
+  { path: "/cockpit", name: "cockpit" },
+  { path: "/triage", name: "triage" },
+  { path: "/insights", name: "insights" },
+  { path: "/appointments", name: "appointments" },
+  { path: "/training", name: "training" },
+  { path: "/knowledge", name: "knowledge" },
+  { path: "/agents", name: "agents" },
+  { path: "/integrations", name: "integrations" },
+  { path: "/admin", name: "admin" },
+  { path: "/dnc", name: "dnc" },
+  { path: "/audit", name: "audit" },
+  { path: "/help", name: "help" },
+  { path: "/pipeline", name: "pipeline" },
+  { path: "/founder", name: "founder" },
+] as const;
+
+/** Legacy redirects that must forward to new paths. */
+export const LEGACY_REDIRECTS = [
+  { from: "/dashboard", to: "/ops" },
+  { from: "/command", to: "/ops" },
+  { from: "/live", to: "/ops" },
+  { from: "/logs", to: "/phone" },
+  { from: "/inbox", to: "/email" },
+  { from: "/train", to: "/training" },
+] as const;
+
 /** Industry wedge landing pages reached from outbound DMs (/for/<slug>). */
 export const VERTICAL_WEDGES = [
   { slug: "home-services", headline: /after-hours calls/i },
