@@ -18,8 +18,8 @@ export default function EmailPage() {
       {/* ─── Header ────────────────────────────────────────────────── */}
       <header className="shrink-0 mb-3 sm:mb-4 lg:hidden">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-brand/8 flex items-center justify-center shrink-0">
-            <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-brand" />
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25 flex items-center justify-center shrink-0">
+            <Mail className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div className="min-w-0 flex-1">
             <h1 className="text-sm sm:text-lg font-semibold text-foreground">Email</h1>
