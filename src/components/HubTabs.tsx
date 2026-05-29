@@ -47,7 +47,7 @@ export default function HubTabs({ tabs, label, className }: HubTabsProps) {
               to={t.path}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "relative shrink-0 inline-flex min-h-10 items-center gap-1.5 px-3 py-1.5 transition-colors text-[11px] uppercase tracking-[0.1em] font-medium",
+                "group relative shrink-0 inline-flex min-h-10 items-center gap-1.5 px-3 py-1.5 transition-colors text-[11px] uppercase tracking-[0.1em] font-medium",
                 active ? "text-on-brand" : "text-muted hover:text-ink hover:bg-ink/[0.04]",
               )}
             >
@@ -65,7 +65,7 @@ export default function HubTabs({ tabs, label, className }: HubTabsProps) {
                   transition={{ type: "spring", stiffness: 380, damping: 32 }}
                 />
               )}
-              <Icon className="relative z-[1] w-3 h-3" />
+              <Icon className="relative z-[1] w-3 h-3 transition-transform duration-200 group-hover:scale-110" />
               <span className="relative z-[1]">{t.label}</span>
             </Link>
           );

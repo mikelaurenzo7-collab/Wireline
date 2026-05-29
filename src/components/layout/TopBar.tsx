@@ -143,7 +143,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
         )}
         <item.icon
           className={cn(
-            "relative z-10 w-4 h-4 shrink-0 transition-transform duration-300 group-hover:scale-110",
+            "relative z-10 w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110",
             isDrawer
               ? active
                 ? ""
@@ -171,7 +171,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
           <span
             aria-label={`${badge} item${badge === 1 ? "" : "s"} need attention in ${item.label}`}
             className={cn(
-              "relative z-10 shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full text-[9px] font-mono leading-none flex items-center justify-center transition-all duration-300 group-hover:scale-105",
+              "relative z-10 shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full text-[9px] font-mono leading-none flex items-center justify-center transition-transform duration-200 group-hover:scale-105",
               active
                 ? "bg-white/25 text-paper"
                 : "bg-rose-500/20 text-rose-400 border border-rose-500/30",
