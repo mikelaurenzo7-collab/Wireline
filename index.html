@@ -206,6 +206,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://plausible.io" crossorigin />
+
+    <!-- Font stylesheet loaded here (not via CSS @import) so the browser's
+         preload scanner discovers it immediately at HTML parse time instead
+         of waiting for index.css to download + parse. Eliminates a
+         render-blocking request waterfall and speeds up first text paint.
+         Pairs with the gstatic/googleapis preconnects above. -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    />
     <link rel="dns-prefetch" href="https://api.anthropic.com" />
     <link rel="dns-prefetch" href="https://api.vapi.ai" />
 
