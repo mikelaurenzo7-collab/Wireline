@@ -56,6 +56,17 @@ const OWNER_ROUTING_TOOL_NAMES: ReadonlySet<ShowcaseToolName> = new Set([
   "escalate_to_human",
 ]);
 
+/**
+ * Additional tool names the handler accepts that also route tasks to the
+ * owner's triage inbox. These aren't part of the published SHOWCASE_TOOL_NAMES
+ * list (they are legacy/internal), but the handler still processes them —
+ * so they must be blocked for demo agents.
+ */
+const OWNER_ROUTING_EXTRA_TOOL_NAMES: ReadonlySet<string> = new Set([
+  "create_fleet_task",
+  "capture_customer_profile",
+]);
+
 export function showcaseToolNamesForKind(kind: ShowcaseKind): ShowcaseToolName[] {
   if (kind === "demo") {
     return SHOWCASE_TOOL_NAMES.filter((name) => !OWNER_ROUTING_TOOL_NAMES.has(name));
@@ -65,7 +76,10 @@ export function showcaseToolNamesForKind(kind: ShowcaseKind): ShowcaseToolName[]
 
 /** True only for owner-routing tools that a demo agent must not be able to fire. */
 export function isOwnerRoutingShowcaseTool(toolName: string): boolean {
-  return OWNER_ROUTING_TOOL_NAMES.has(toolName as ShowcaseToolName);
+  return (
+    OWNER_ROUTING_TOOL_NAMES.has(toolName as ShowcaseToolName) ||
+    OWNER_ROUTING_EXTRA_TOOL_NAMES.has(toolName)
+  );
 }
 
 type ShowcaseToolDef = {

@@ -68,10 +68,16 @@ describe("isOwnerRoutingShowcaseTool", () => {
     expect(isOwnerRoutingShowcaseTool("schedule_callback")).toBe(true);
   });
 
+  it("flags legacy/internal tools that also route to the owner", () => {
+    expect(isOwnerRoutingShowcaseTool("create_fleet_task")).toBe(true);
+    expect(isOwnerRoutingShowcaseTool("capture_customer_profile")).toBe(true);
+  });
+
   it("does not flag self-service or unknown tools", () => {
     expect(isOwnerRoutingShowcaseTool("send_signup_link")).toBe(false);
     expect(isOwnerRoutingShowcaseTool("create_account")).toBe(false);
     expect(isOwnerRoutingShowcaseTool("send_payment_link")).toBe(false);
+    expect(isOwnerRoutingShowcaseTool("view_recent_interactions")).toBe(false);
     expect(isOwnerRoutingShowcaseTool("not_a_tool")).toBe(false);
   });
 });
