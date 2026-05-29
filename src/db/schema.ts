@@ -1210,6 +1210,16 @@ export const consentLog = pgTable(
   }),
 );
 
+// 4.2.2 EMAIL SUPPRESSION LIST (CAN-SPAM / RFC 8058 one-click unsubscribe)
+// Global, email-keyed opt-out list for commercial / relationship-marketing
+// email. Checked before sending such mail; written by /api/email/unsubscribe.
+// Intentionally NOT tenant-scoped — an opt-out is honored across all accounts.
+export const emailSuppressions = pgTable("wireline_email_suppressions", {
+  email: text("email").primaryKey(),
+  reason: text("reason"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
 // 4.3 ONBOARDING & PROGRESS
 export const onboardingProgress = pgTable(
   "wireline_onboarding_progress",

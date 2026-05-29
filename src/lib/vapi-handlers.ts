@@ -16,8 +16,10 @@ import {
   getConsentRuleForPhone,
   buildConsentLedgerRow,
   detectOptOut,
+  detectRecordingDisclosure,
   CONSENT_RULE_VERSION,
 } from "./tcpa-consent";
+import { reportError } from "./error-reporter";
 import { persistClaudeAuditRecords } from "../middleware/audit-middleware";
 import { getDefaultChannel, postMessage as slackPostMessage } from "./slack-service";
 import { trackVoiceMinutes } from "./voice-usage";
@@ -288,14 +290,39 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
   // 4. Compliance Ledger (TCPA)
   try {
     const { rule, state } = getConsentRuleForPhone(call?.customer?.number);
+
+    // Evidence-based disclosure logging. We do NOT blindly assert
+    // "disclosure_played" for every call — a ledger row claiming a
+    // disclosure the transcript contradicts is a falsified business record
+    // and worse than no record in TCPA litigation. Instead we verify the
+    // disclosure language is present in the transcript:
+    //   - found            → disclosure_played, with the matched line as evidence
+    //   - transcript, none → disclosure_not_detected (a real compliance signal)
+    //   - no transcript    → disclosure_played, delivery "unverifiable"
+    const transcript = message.transcript || "";
+    const disclosure = detectRecordingDisclosure(transcript);
+    const hasTranscript = transcript.trim().length > 0;
+
+    const disclosureEvent =
+      disclosure.found || !hasTranscript ? "disclosure_played" : "disclosure_not_detected";
+    const delivery = disclosure.found
+      ? "verified"
+      : hasTranscript
+        ? "not_detected"
+        : "unverifiable";
+
     const ledgerRow = buildConsentLedgerRow({
       user_id: userId,
       call_id: call?.id,
       customer_number: call?.customer?.number || "unknown",
-      event: "disclosure_played",
+      event: disclosureEvent,
       rule_version: CONSENT_RULE_VERSION,
       rule,
       state,
+      metadata: {
+        delivery,
+        ...(disclosure.found ? { evidence: disclosure.excerpt } : {}),
+      },
     });
 
     await drizzle.insert(schema.consentLog).values({
@@ -308,6 +335,24 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       state: ledgerRow.state,
       metadata: ledgerRow.metadata,
     });
+
+    // A two-party-state call that completed without a detectable disclosure
+    // is a genuine compliance exposure ($500–$5,000/call). Surface it loudly
+    // so the operator can act, rather than burying it as a silent ledger row.
+    if (disclosureEvent === "disclosure_not_detected" && rule === "two_party") {
+      log.warn("TCPA: recording disclosure not detected on two-party-state call", {
+        userId,
+        callId: call?.id,
+        state,
+      });
+      reportError(new Error("TCPA recording disclosure not detected on two-party call"), {
+        userId,
+        callId: call?.id,
+        state,
+        rule,
+        tags: { compliance: "tcpa_disclosure_missing" },
+      });
+    }
 
     const optOut = detectOptOut(message.transcript || "");
     if (optOut.found) {

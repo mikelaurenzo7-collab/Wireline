@@ -8,6 +8,7 @@ import {
   listTwoPartyStates,
   buildConsentLedgerRow,
   detectOptOut,
+  detectRecordingDisclosure,
 } from "./tcpa-consent";
 
 describe("TCPA Consent Compliance", () => {
@@ -214,6 +215,44 @@ describe("TCPA Consent Compliance", () => {
       expect(detectOptOut("hello who is this?").found).toBe(false);
       expect(detectOptOut("").found).toBe(false);
       expect(detectOptOut(null).found).toBe(false);
+    });
+  });
+
+  describe("detectRecordingDisclosure", () => {
+    it("matches the disclosure language the agent actually says", () => {
+      // The exact phrasings buildConsentDisclosure() generates:
+      const twoParty = buildConsentDisclosure({ rule: "two_party", businessName: "Acme" });
+      const oneParty = buildConsentDisclosure({ rule: "one_party", businessName: "Acme" });
+      expect(detectRecordingDisclosure(twoParty).found).toBe(true);
+      expect(detectRecordingDisclosure(oneParty).found).toBe(true);
+    });
+
+    it("matches inside a fuller transcript and returns an evidence excerpt", () => {
+      const transcript =
+        "Agent: Hi there! Quick note before we begin: this call is being recorded " +
+        "for quality, training, and compliance purposes by Acme. Customer: sure, go ahead.";
+      const r = detectRecordingDisclosure(transcript);
+      expect(r.found).toBe(true);
+      expect(r.excerpt).toContain("recorded");
+      expect((r.excerpt || "").length).toBeLessThanOrEqual(120);
+    });
+
+    it("matches common paraphrases an LLM agent may use", () => {
+      expect(detectRecordingDisclosure("just so you know, this call may be recorded").found).toBe(
+        true,
+      );
+      expect(detectRecordingDisclosure("your call is being recorded today").found).toBe(true);
+      expect(detectRecordingDisclosure("everything here is recorded for quality").found).toBe(true);
+    });
+
+    it("does NOT treat a generic mention of recording as a disclosure", () => {
+      // A caller asking about recording is not the agent disclosing it.
+      expect(detectRecordingDisclosure("are you guys recording right now?").found).toBe(false);
+      expect(detectRecordingDisclosure("I record all my own calls too").found).toBe(false);
+      expect(detectRecordingDisclosure("hello, how can I help?").found).toBe(false);
+      expect(detectRecordingDisclosure("").found).toBe(false);
+      expect(detectRecordingDisclosure(null).found).toBe(false);
+      expect(detectRecordingDisclosure(undefined).found).toBe(false);
     });
   });
 });

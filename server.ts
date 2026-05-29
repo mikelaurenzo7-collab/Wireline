@@ -31,6 +31,7 @@ import path from "path";
 import { randomUUID } from "node:crypto";
 import { db, IS_PROD, log } from "./src/lib/server-context";
 import { getErrorMessage } from "./src/lib/server-utils";
+import { reportError } from "./src/lib/error-reporter";
 import { AppError, formatErrorResponse } from "./src/lib/api-error";
 import { validateStartupEnv } from "./src/lib/startup";
 import { buildCSP, buildConnectSrcs } from "./src/lib/csp";
@@ -86,6 +87,7 @@ import smsRouter from "./src/routes/sms-routes";
 import outboundRouter from "./src/routes/outbound-routes";
 import driveRouter from "./src/routes/drive-routes";
 import emailRouter from "./src/routes/email-routes";
+import emailUnsubscribeRouter from "./src/routes/email-unsubscribe-routes";
 import calendarRouter from "./src/routes/calendar-routes";
 import settingsRouter from "./src/routes/settings-routes";
 import teamRouter from "./src/routes/team-routes";
@@ -258,6 +260,7 @@ app.use(smsRouter);
 app.use(outboundRouter);
 app.use(driveRouter);
 app.use(emailRouter);
+app.use(emailUnsubscribeRouter);
 app.use(calendarRouter);
 app.use(settingsRouter);
 app.use(vapiRouter);
@@ -307,12 +310,23 @@ app.use(
         error: getErrorMessage(err),
         stack: errObj?.stack,
       });
+      reportError(err, {
+        requestId,
+        method: req.method,
+        path: req.path,
+        tags: { source: "express_global_handler" },
+      });
     }
 
     const { status, body } = formatErrorResponse(err, requestId);
     res.status(status).json(body);
   },
 );
+
+// Background job worker handle — assigned at module init below, stopped in
+// the graceful-shutdown path so we stop polling for new jobs on SIGTERM/SIGINT.
+// Declared here (before startServer) so the shutdown closure can reference it.
+let stopWorker: (() => void) | undefined;
 
 // Vite / Static Serving
 async function startServer() {
@@ -365,11 +379,13 @@ async function startServer() {
     if (shuttingDown) return;
     shuttingDown = true;
     log.info(`Received ${signal} — starting graceful shutdown`);
+    // Stop polling for new background jobs first so in-flight work can drain.
+    stopWorker?.();
     const forceTimer = setTimeout(() => {
       log.error("Graceful shutdown timed out — forcing exit");
       process.exit(1);
     }, GRACE_MS);
-    (forceTimer as any).unref?.();
+    (forceTimer as { unref?: () => void }).unref?.();
     server.close((err?: Error) => {
       clearTimeout(forceTimer);
       if (err) {
@@ -386,7 +402,7 @@ async function startServer() {
 }
 
 // Background Worker
-let stopWorker: (() => void) | undefined = initJobWorker() || undefined;
+stopWorker = initJobWorker() || undefined;
 
 // Safety nets
 process.on("unhandledRejection", (reason: unknown) => {
@@ -395,11 +411,13 @@ process.on("unhandledRejection", (reason: unknown) => {
     error: r?.message || String(reason),
     stack: r?.stack,
   });
+  reportError(reason, { tags: { source: "unhandledRejection" } });
 });
 process.on("uncaughtException", (err: Error) => {
   log.error("uncaughtException", { error: err.message, stack: err.stack });
+  reportError(err, { tags: { source: "uncaughtException" } });
   if (process.env.VERCEL !== "1") {
-    (setTimeout(() => process.exit(1), 100) as any).unref?.();
+    (setTimeout(() => process.exit(1), 100) as { unref?: () => void }).unref?.();
   }
 });
 
