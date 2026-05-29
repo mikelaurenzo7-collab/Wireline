@@ -2,9 +2,11 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    // Only pick up unit tests under src/ so Playwright e2e specs under tests/
-    // are not double-collected by vitest.
-    include: ["src/**/*.test.{ts,tsx}"],
+    // Unit tests under src/ plus the integration suites under tests/integration
+    // (tenant-isolation, escalation rate limiting). Playwright e2e specs live
+    // in tests/e2e with a .spec.ts extension and are intentionally excluded so
+    // they are not double-collected by vitest.
+    include: ["src/**/*.test.{ts,tsx}", "tests/integration/**/*.test.ts"],
     environment: "node",
     globals: false,
     // Keep server bundling tools out of the way during unit runs.

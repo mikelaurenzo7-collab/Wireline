@@ -31,7 +31,7 @@ const TENANT_B = "user-tenant-b-456";
 const TENANT_C = "user-tenant-c-789";
 
 // Test data store simulating multi-tenant database
-tenantDB: TenantData;
+let tenantDB: TenantData;
 
 function createTestDB(): TenantData {
   const db: TenantData = {

@@ -21,11 +21,18 @@ const escalationRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many escalation requests from this source." },
+  // Disable express-rate-limit's proxy validation: under supertest we set
+  // X-Forwarded-For without a real proxy chain, which would otherwise emit a
+  // ValidationError. Keying is driven by trust-proxy + XFF below.
+  validate: false,
 });
 
 // Minimal mount that mirrors production wiring (limiter first, then handler).
 function createEscalationTestApp() {
   const app = express();
+  // Honor X-Forwarded-For so the per-IP isolation test exercises distinct
+  // client IPs (mirrors production behind Vercel's edge, trust proxy = 1).
+  app.set("trust proxy", true);
   app.use(express.json());
 
   app.post("/api/escalate", escalationRateLimiter, (_req: Request, res: Response) => {
