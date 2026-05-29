@@ -354,7 +354,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
-              className="mb-10 lg:mb-14"
+              className="mb-10 lg:mb-14 text-center"
             >
               <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-3">
                 Questions, answered
