@@ -1,212 +1,157 @@
 #!/usr/bin/env tsx
 /**
- * AuthZ Matrix Generator
+ * generate-authz-matrix.ts
  *
- * Parses all route files and generates a comprehensive authorization matrix.
- * Fails CI if any route lacks explicit authentication or a documented public exemption.
+ * Scans every route file and produces a default-deny authorization matrix.
+ * Fails CI if any non-public route lacks authenticateUser / requirePermission.
  *
- * Owner-grade security: No route should be unprotected by accident.
+ * Usage:
+ *   npx tsx scripts/generate-authz-matrix.ts
+ *   npm run verify  (includes this via docs:check or a dedicated step)
  */
 
-import * as fs from "node:fs";
-import * as path from "node:path";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-interface RouteInfo {
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROUTES_DIR = path.resolve(__dirname, "../src/routes");
+const OUTPUT_FILE = path.resolve(__dirname, "../docs/AUTHZ_MATRIX.md");
+
+interface RouteEntry {
   file: string;
-  routePrefix: string;
-  methods: string[];
-  hasAuthenticateUser: boolean;
+  method: string;
+  path: string;
+  hasAuth: boolean;
   hasRequirePermission: boolean;
-  hasRequireRole: boolean;
-  isPubliclyDocumented: boolean;
-  publicReason?: string;
+  isPublicExempt: boolean;
+  line: number;
 }
 
-const ROUTES_DIR = path.join(__dirname, "..", "src", "routes");
-const PUBLICLY_DOCUMENTED_PATHS = new Set([
-  "/api/webhooks/meta/leads",
-  "/api/webhooks/elevenlabs",
-  "/api/twilio-webhook",
-  "/api/escalate",
-  "/api/stripe-webhook",
-  "/api/health",
-]);
+const PUBLIC_EXEMPT_PATTERNS = [
+  /^\/api\/health/,
+  /^\/api\/public\//,
+  /^\/api\/email-unsubscribe/,
+  /^\/api\/stripe-webhook/,
+  /^\/api\/twilio-webhook/,
+  /^\/api\/meta-webhook/,
+  /^\/api\/vapi\/webhook/,
+  /^\/api\/escalation/,
+  /^\/api\/webhooks\/elevenlabs/,
+  /^\/api\/oauth\//,
+  /^\/api\/auth\//,
+];
 
-const PUBLIC_REASONS: Record<string, string> = {
-  "meta-webhook-routes": "Meta Lead Ads webhook — signature verified",
-  "webhooks-elevenlabs-routes": "ElevenLabs voice cloning webhook — signature verified",
-  "twilio-webhook": "Twilio SMS webhook — signature verified, TCPA compliance",
-  "escalation-routes": "Vapi escalation webhook — signature + rate limit verified",
-  "billing-routes": "Stripe webhook — signature + idempotency verified (sub-path)",
-  "health-routes": "Health probes — intentionally minimal public surface",
-  "public-stats-routes": "Public statistics — intentionally public",
-};
+const AUTH_MIDDLEWARE = ["authenticateUser", "requirePermission", "requireInternalJwtSecret"];
 
-function analyzeRouteFile(filePath: string): RouteInfo {
-  const content = fs.readFileSync(filePath, "utf-8");
+function isPublicExempt(routePath: string): boolean {
+  return PUBLIC_EXEMPT_PATTERNS.some((re) => re.test(routePath));
+}
+
+function scanFile(filePath: string): RouteEntry[] {
+  const content = fs.readFileSync(filePath, "utf8");
+  const lines = content.split("\n");
+  const entries: RouteEntry[] = [];
   const fileName = path.basename(filePath);
 
-  // Check for auth patterns
-  const hasAuthenticateUser =
-    content.includes("authenticateUser") && !content.includes("// authenticateUser");
-  const hasRequirePermission = content.includes("requirePermission");
-  const hasRequireRole = content.includes("requireRole");
+  // Match router.METHOD("/path", middleware..., handler)
+  const routeRegex =
+    /router\.(get|post|put|patch|delete|use)\s*\(\s*["'`]([^"'`]+)["'`]\s*,?\s*([^)]*)\)/g;
 
-  // Extract route mount points
-  const routerMounts: string[] = [];
-  const methodMatches = content.matchAll(
-    /router\.(get|post|put|delete|patch)\s*\(\s*["'`]([^"'`]+)["'`]/g
-  );
-  for (const match of methodMatches) {
-    routerMounts.push(match[2]);
+  let match;
+  while ((match = routeRegex.exec(content)) !== null) {
+    const method = match[1].toUpperCase();
+    const routePath = match[2];
+    const middlewareChain = match[3] || "";
+
+    const hasAuth = AUTH_MIDDLEWARE.some((m) => middlewareChain.includes(m));
+    const hasRequirePermission = middlewareChain.includes("requirePermission");
+    const isExempt = isPublicExempt(routePath);
+
+    // Find approximate line number
+    const lineNumber =
+      lines.findIndex((l, idx) => idx >= match!.index && l.includes(routePath)) + 1 || 0;
+
+    entries.push({
+      file: fileName,
+      method,
+      path: routePath,
+      hasAuth,
+      hasRequirePermission,
+      isPublicExempt: isExempt,
+      line: lineNumber,
+    });
   }
 
-  // Determine route prefix from first mount or file conventions
-  let routePrefix = routerMounts[0] || "/api/unknown";
-  if (routePrefix.startsWith("/")) {
-    // Keep as-is
-  } else if (routePrefix.startsWith("\"")) {
-    routePrefix = routePrefix.slice(1, -1);
-  }
-
-  // Check if publicly documented
-  const baseName = fileName.replace(".ts", "");
-  const isPubliclyDocumented =
-    PUBLICLY_DOCUMENTED_PATHS.has(routePrefix) ||
-    PUBLIC_REASONS[baseName] !== undefined ||
-    fileName.includes("public") ||
-    fileName.includes("auth-routes") || // Auth flows are obviously public
-    fileName.includes("oauth");
-
-  const publicReason =
-    PUBLIC_REASONS[baseName] ||
-    (fileName.includes("auth") ? "Authentication flows — must be public" : undefined);
-
-  return {
-    file: fileName,
-    routePrefix,
-    methods: [...new Set([...content.matchAll(/router\.(get|post|put|delete|patch)/g)].map((m) => m[1]))],
-    hasAuthenticateUser,
-    hasRequirePermission,
-    hasRequireRole,
-    isPubliclyDocumented,
-    publicReason,
-  };
+  return entries;
 }
 
-function generateMatrix(routes: RouteInfo[]): string {
-  const now = new Date().toISOString();
-
-  let markdown = `# Authorization Matrix — Generated ${now}\n\n`;
-  markdown += `> **Owner-grade security requirement:** Every route must either:\n`;
-  markdown += `> 1. Use \`authenticateUser\` middleware, OR\n`;
-  markdown += `> 2. Be explicitly documented as public with security justification\n\n`;
-
-  // Group by protection status
-  const protectedRoutes = routes.filter(
-    (r) => r.hasAuthenticateUser || r.hasRequirePermission || r.hasRequireRole
-  );
-  const publicRoutes = routes.filter((r) => r.isPubliclyDocumented);
-  const unprotectedRoutes = routes.filter(
-    (r) =>
-      !r.hasAuthenticateUser &&
-      !r.hasRequirePermission &&
-      !r.hasRequireRole &&
-      !r.isPubliclyDocumented
-  );
-
-  markdown += `## Summary\n\n`;
-  markdown += `- **Total route modules:** ${routes.length}\n`;
-  markdown += `- **Protected (auth required):** ${protectedRoutes.length}\n`;
-  markdown += `- **Public (documented):** ${publicRoutes.length}\n`;
-  markdown += `- **⚠️ UNPROTECTED:** ${unprotectedRoutes.length}\n\n`;
-
-  if (unprotectedRoutes.length > 0) {
-    markdown += `## 🚨 UNPROTECTED ROUTES (CI FAILURE)\n\n`;
-    markdown += `| File | Route Prefix | Status |\n`;
-    markdown += `|------|--------------|--------|\n`;
-    for (const route of unprotectedRoutes) {
-      markdown += `| ${route.file} | ${route.routePrefix} | **UNPROTECTED** |\n`;
-    }
-    markdown += `\n`;
-  }
-
-  markdown += `## Protected Routes\n\n`;
-  markdown += `| File | Route Prefix | Auth Method | RBAC |\n`;
-  markdown += `|------|--------------|-------------|------|\n`;
-  for (const route of protectedRoutes) {
-    const authMethods = [
-      route.hasAuthenticateUser && "authenticateUser",
-      route.hasRequirePermission && "requirePermission",
-      route.hasRequireRole && "requireRole",
-    ]
-      .filter(Boolean)
-      .join(", ");
-    const rbac = route.hasRequirePermission || route.hasRequireRole ? "✅" : "—";
-    markdown += `| ${route.file} | ${route.routePrefix} | ${authMethods} | ${rbac} |\n`;
-  }
-
-  markdown += `\n## Public Routes (Documented)\n\n`;
-  markdown += `| File | Route Prefix | Security Justification |\n`;
-  markdown += `|------|--------------|------------------------|\n`;
-  for (const route of publicRoutes) {
-    markdown += `| ${route.file} | ${route.routePrefix} | ${route.publicReason || "N/A"} |\n`;
-  }
-
-  markdown += `\n## CI Enforcement\n\n`;
-  markdown += `This matrix is auto-generated. CI fails if:\n`;
-  markdown += `- Any route file lacks authentication AND lacks public justification\n`;
-  markdown += `- New routes are added without explicit auth or documentation\n\n`;
-
-  return markdown;
-}
-
-function main(): void {
-  console.log("🔍 Analyzing route authorization patterns...\n");
-
-  if (!fs.existsSync(ROUTES_DIR)) {
-    console.error(`❌ Routes directory not found: ${ROUTES_DIR}`);
-    process.exit(1);
-  }
-
-  const routeFiles = fs
+function main() {
+  const files = fs
     .readdirSync(ROUTES_DIR)
-    .filter((f) => f.endsWith("-routes.ts") && !f.includes(".test."))
+    .filter((f) => f.endsWith("-routes.ts") || f.endsWith("-webhook.ts") || f === "twilio-webhook.ts")
     .map((f) => path.join(ROUTES_DIR, f));
 
-  console.log(`Found ${routeFiles.length} route files`);
-
-  const routes: RouteInfo[] = [];
-  for (const filePath of routeFiles) {
-    routes.push(analyzeRouteFile(filePath));
+  const allEntries: RouteEntry[] = [];
+  for (const file of files) {
+    allEntries.push(...scanFile(file));
   }
 
-  // Generate and write matrix
-  const matrix = generateMatrix(routes);
-  const outputPath = path.join(__dirname, "..", "AUTHZ_MATRIX.md");
-  fs.writeFileSync(outputPath, matrix);
-  console.log(`\n✅ Matrix written to: ${outputPath}`);
-
-  // Check for violations
-  const violations = routes.filter(
-    (r) =>
-      !r.hasAuthenticateUser &&
-      !r.hasRequirePermission &&
-      !r.hasRequireRole &&
-      !r.isPubliclyDocumented
+  // Deduplicate by file+method+path
+  const unique = new Map<string, RouteEntry>();
+  for (const e of allEntries) {
+    const key = `${e.file}:${e.method}:${e.path}`;
+    if (!unique.has(key)) unique.set(key, e);
+  }
+  const entries = Array.from(unique.values()).sort((a, b) =>
+    a.file.localeCompare(b.file) || a.path.localeCompare(b.path),
   );
 
+  const violations = entries.filter(
+    (e) => !e.hasAuth && !e.isPublicExempt && !e.hasRequirePermission,
+  );
+
+  // Generate markdown
+  let md = `# Wireline Authorization Matrix (Auto-Generated)\n\n`;
+  md += `**Generated:** ${new Date().toISOString()}\n`;
+  md += `**Total routes scanned:** ${entries.length}\n`;
+  md += `**Violations (missing auth):** ${violations.length}\n\n`;
+
+  md += `## Summary by Risk Tier\n\n`;
+  md += `| Tier | Description | Count |\n`;
+  md += `|------|-------------|-------|\n`;
+  md += `| Critical | Money, data, or destructive ops | ${entries.filter((e) => e.path.includes("billing") || e.path.includes("admin") || e.path.includes("purge")).length} |\n`;
+  md += `| High | Tenant data & integrations | ${entries.filter((e) => e.path.includes("webhook") || e.path.includes("agent")).length} |\n`;
+  md += `| Standard | Dashboard & settings | ${entries.length - violations.length} |\n`;
+  md += `| Public (exempt) | No auth required by design | ${entries.filter((e) => e.isPublicExempt).length} |\n\n`;
+
+  md += `## Full Matrix\n\n`;
+  md += `| File | Method | Path | Auth? | RBAC? | Public Exempt? | Status |\n`;
+  md += `|------|--------|------|-------|-------|----------------|--------|\n`;
+
+  for (const e of entries) {
+    const status = e.isPublicExempt
+      ? "✅ Public"
+      : e.hasAuth || e.hasRequirePermission
+        ? "✅ Protected"
+        : "❌ MISSING AUTH";
+    md += `| ${e.file} | ${e.method} | \`${e.path}\` | ${e.hasAuth ? "✅" : "—"} | ${e.hasRequirePermission ? "✅" : "—"} | ${e.isPublicExempt ? "✅" : "—"} | ${status} |\n`;
+  }
+
+  fs.writeFileSync(OUTPUT_FILE, md, "utf8");
+  console.log(`AuthZ matrix written to ${OUTPUT_FILE}`);
+  console.log(`Violations found: ${violations.length}`);
+
   if (violations.length > 0) {
-    console.error(`\n🚨 CI FAILURE: ${violations.length} unprotected routes found:`);
-    for (const v of violations) {
-      console.error(`   - ${v.file} (${v.routePrefix})`);
+    console.error("\n❌ Default-deny violation(s) detected:");
+    for (const v of violations.slice(0, 10)) {
+      console.error(`   ${v.file}:${v.line}  ${v.method} ${v.path}`);
     }
-    console.error(`\n   Fix: Add authenticateUser middleware or document public exemption`);
+    if (violations.length > 10) console.error(`   ... and ${violations.length - 10} more`);
     process.exit(1);
   }
 
-  console.log("\n✅ All routes properly protected or documented as public");
-  process.exit(0);
+  console.log("✅ All routes either protected or explicitly public-exempt.");
 }
 
 main();

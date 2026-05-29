@@ -4,6 +4,12 @@ import { motion } from "motion/react";
 import { ArrowRight, Phone, ArrowUpRight, Plus } from "lucide-react";
 import PublicSiteHeader from "../components/marketing/PublicSiteHeader";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
+import { HeroDecorations } from "../components/marketing/HeroDecorations";
+import {
+  RobotHeadTopLeft,
+  RobotHeadBottomRight,
+  RobotHeadTopRight,
+} from "../components/marketing/RobotHead";
 import { PageMeta } from "../lib/page-meta";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import { WIRELINE_CONTACT_AGENTS } from "../data/contact-agents";
@@ -184,6 +190,7 @@ export default function LandingPage() {
           data-testid="hero-section"
           className="relative min-h-[85svh] flex flex-col justify-center px-6 lg:px-12 pt-24 pb-16 lg:pt-28 lg:pb-24 overflow-hidden"
         >
+          <HeroDecorations />
           <div className="max-w-7xl mx-auto w-full">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -244,7 +251,11 @@ export default function LandingPage() {
         </section>
 
         {/* ─── Agent Directory — Bento Grid ───────────────────────── */}
-        <section data-testid="agent-directory" className="px-6 lg:px-12 pt-4 pb-20 lg:pb-28">
+        <section data-testid="agent-directory" className="px-6 lg:px-12 pt-4 pb-20 lg:pb-28 relative overflow-hidden">
+          {/* Subtle robot decoration — top right, clear of heading */}
+          <div className="absolute top-8 right-8 lg:right-16 opacity-30 hover:opacity-60 transition-all duration-500 pointer-events-none hidden lg:block" aria-hidden="true">
+            <RobotHeadTopRight size={42} animated />
+          </div>
           <div className="max-w-7xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
@@ -292,7 +303,14 @@ export default function LandingPage() {
         </section>
 
         {/* ─── Final CTA ──────────────────────────────────────────── */}
-        <section data-testid="final-cta" className="px-6 lg:px-12 pb-24 lg:pb-32">
+        <section data-testid="final-cta" className="px-6 lg:px-12 pb-24 lg:pb-32 relative overflow-hidden">
+          {/* Balanced side robots — clear of CTA button */}
+          <div className="absolute left-8 lg:left-16 top-1/2 -translate-y-1/2 opacity-35 hover:opacity-70 transition-all duration-500 pointer-events-none hidden lg:block" aria-hidden="true">
+            <RobotHeadTopLeft size={48} animated />
+          </div>
+          <div className="absolute right-8 lg:right-16 top-1/2 -translate-y-1/2 opacity-35 hover:opacity-70 transition-all duration-500 pointer-events-none hidden lg:block" aria-hidden="true">
+            <RobotHeadBottomRight size={48} animated />
+          </div>
           <div className="max-w-7xl mx-auto text-center">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -319,7 +337,15 @@ export default function LandingPage() {
         </section>
 
         {/* ─── Proof Tiles ────────────────────────────────────────── */}
-        <section data-testid="proof-section" className="px-6 lg:px-12 py-20 lg:py-28">
+        <section data-testid="proof-section" className="px-6 lg:px-12 py-20 lg:py-28 relative overflow-hidden">
+          {/* Left accent robot */}
+          <div className="absolute left-6 lg:left-10 top-1/3 opacity-25 hover:opacity-50 transition-all duration-500 pointer-events-none hidden xl:block" aria-hidden="true">
+            <RobotHeadTopLeft size={38} animated />
+          </div>
+          {/* Right accent robot */}
+          <div className="absolute right-6 lg:right-10 bottom-1/3 opacity-25 hover:opacity-50 transition-all duration-500 pointer-events-none hidden xl:block" aria-hidden="true">
+            <RobotHeadBottomRight size={44} animated />
+          </div>
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08]">
               {STATS.map((stat, i) => (
@@ -346,8 +372,12 @@ export default function LandingPage() {
         {/* ─── FAQ — top-of-funnel objection handling ──────────────── */}
         <section
           data-testid="faq-section"
-          className="px-6 lg:px-12 py-20 lg:py-28 border-t border-ink/[0.08]"
+          className="px-6 lg:px-12 py-20 lg:py-28 border-t border-ink/[0.08] relative overflow-hidden"
         >
+          {/* Quiet companion near FAQ heading */}
+          <div className="absolute right-8 lg:right-12 top-12 opacity-30 hover:opacity-55 transition-all duration-500 pointer-events-none hidden lg:block" aria-hidden="true">
+            <RobotHeadTopRight size={36} animated />
+          </div>
           <div className="max-w-3xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 12 }}

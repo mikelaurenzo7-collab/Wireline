@@ -32,24 +32,24 @@ export function HeroDecorations({ className = "" }: HeroDecorationsProps) {
           animation: "hero-decor-fade 800ms cubic-bezier(0.23, 1, 0.32, 1) both",
         }}
       >
-      {/* Top Left */}
-      <div className="absolute left-8 top-8 opacity-60 hover:opacity-90 transition-all duration-500">
-        <RobotHeadTopLeft size={72} animated />
+      {/* Top Left — clear fixed header logo */}
+      <div className="absolute left-10 top-20 opacity-55 hover:opacity-90 transition-all duration-500">
+        <RobotHeadTopLeft size={66} animated />
       </div>
 
-      {/* Top Right */}
-      <div className="absolute right-8 top-12 opacity-50 hover:opacity-85 transition-all duration-500 delay-75">
-        <RobotHeadTopRight size={64} animated />
+      {/* Top Right — clear fixed header "Start trial" button */}
+      <div className="absolute right-10 top-24 opacity-45 hover:opacity-85 transition-all duration-500 delay-75">
+        <RobotHeadTopRight size={58} animated />
       </div>
 
-      {/* Bottom Left — slightly lower, playful */}
-      <div className="absolute bottom-20 left-12 opacity-45 hover:opacity-80 transition-all duration-500 delay-150">
-        <RobotHeadBottomLeft size={58} animated />
+      {/* Bottom Left — breathing room from content */}
+      <div className="absolute bottom-24 left-14 opacity-40 hover:opacity-80 transition-all duration-500 delay-150">
+        <RobotHeadBottomLeft size={52} animated />
       </div>
 
-      {/* Bottom Right — largest, anchoring the composition */}
-      <div className="absolute bottom-16 right-10 opacity-55 hover:opacity-90 transition-all duration-500 delay-100">
-        <RobotHeadBottomRight size={78} animated />
+      {/* Bottom Right — balanced anchor */}
+      <div className="absolute bottom-20 right-12 opacity-50 hover:opacity-90 transition-all duration-500 delay-100">
+        <RobotHeadBottomRight size={70} animated />
       </div>
       </div>
     </>
