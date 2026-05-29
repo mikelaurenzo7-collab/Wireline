@@ -86,16 +86,16 @@ export default function AgentChat() {
   const showDirector = isDirector || !activeAgent;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 h-[calc(var(--app-vvh,100dvh)-9rem)] min-h-[480px]">
+    <div className="flex flex-col lg:flex-row gap-2 lg:gap-4 h-[calc(var(--app-vvh,100dvh)-7rem)] sm:h-[calc(var(--app-vvh,100dvh)-9rem)] min-h-[400px]">
       {/* Rail — Director pinned on top, fleet below. Vertical on desktop,
-          horizontal switcher on mobile. */}
+          compact horizontal switcher on mobile. */}
       <aside className="shrink-0 lg:w-56">
-        <div className="flex lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible scrollbar-hide pb-1 lg:pb-0">
+        <div className="flex lg:flex-col gap-1 lg:gap-1.5 overflow-x-auto lg:overflow-visible scrollbar-hide pb-0.5 lg:pb-0">
           {/* Director — always present */}
           <button
             onClick={() => navigate("/chat")}
             className={cn(
-              "shrink-0 lg:w-full text-left rounded-xl px-3 py-2.5 border transition-all flex items-center gap-2.5",
+              "shrink-0 lg:w-full text-left rounded-xl px-2.5 lg:px-3 py-2 lg:py-2.5 border transition-all flex items-center gap-2",
               showDirector
                 ? "border-brand/40 bg-brand/[0.06]"
                 : "border-black/8 glass hover:border-brand/25",
@@ -103,30 +103,21 @@ export default function AgentChat() {
           >
             <span
               className={cn(
-                "shrink-0 w-8 h-8 rounded-full flex items-center justify-center relative",
+                "shrink-0 w-7 h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center relative",
                 showDirector
                   ? "bg-gradient-to-br from-brand to-brand/70 text-on-brand"
                   : "bg-paper border border-black/12 text-ink",
               )}
               aria-hidden="true"
             >
-              <Compass className="w-4 h-4" />
+              <Compass className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
             </span>
-            <span className="min-w-0">
-              <span className="block text-[12px] font-medium text-ink truncate max-w-[8.5rem] lg:max-w-none">
+            <span className="min-w-0 hidden sm:block">
+              <span className="block text-[11px] lg:text-[12px] font-medium text-ink truncate max-w-[7rem] lg:max-w-none">
                 Director
-              </span>
-              <span className="block text-[10px] uppercase tracking-[0.18em] text-muted/70 truncate">
-                Your manager
               </span>
             </span>
           </button>
-
-          {agents.length > 0 && (
-            <div className="hidden lg:block text-[10px] uppercase tracking-[0.22em] text-muted/70 px-2 mt-3 mb-1">
-              Your fleet
-            </div>
-          )}
 
           {agents.map((a) => {
             const isActive = !showDirector && a.id === activeAgent?.id;
@@ -135,7 +126,7 @@ export default function AgentChat() {
                 key={a.id}
                 onClick={() => navigate(`/chat/${a.id}`)}
                 className={cn(
-                  "shrink-0 lg:w-full text-left rounded-xl px-3 py-2.5 border transition-all flex items-center gap-2.5",
+                  "shrink-0 lg:w-full text-left rounded-xl px-2.5 lg:px-3 py-2 lg:py-2.5 border transition-all flex items-center gap-2",
                   isActive
                     ? "border-brand/40 bg-brand/[0.06]"
                     : "border-black/8 glass hover:border-brand/25",
@@ -143,7 +134,7 @@ export default function AgentChat() {
               >
                 <span
                   className={cn(
-                    "shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-semibold relative",
+                    "shrink-0 w-7 h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center text-[11px] lg:text-[12px] font-semibold relative",
                     isActive
                       ? "bg-brand text-on-brand"
                       : "bg-paper border border-black/12 text-ink",
@@ -152,14 +143,14 @@ export default function AgentChat() {
                 >
                   {a.name.slice(0, 1).toUpperCase()}
                   {isActive && (
-                    <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-paper" />
+                    <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 lg:w-2.5 lg:h-2.5 rounded-full bg-emerald-500 border-2 border-paper" />
                   )}
                 </span>
-                <span className="min-w-0">
-                  <span className="block text-[12px] font-medium text-ink truncate max-w-[8.5rem] lg:max-w-none">
+                <span className="min-w-0 hidden sm:block">
+                  <span className="block text-[11px] lg:text-[12px] font-medium text-ink truncate max-w-[7rem] lg:max-w-none">
                     {a.name}
                   </span>
-                  <span className="block text-[10px] uppercase tracking-[0.18em] text-muted/70 truncate">
+                  <span className="block text-[9px] lg:text-[10px] uppercase tracking-[0.18em] text-muted/70 truncate">
                     {roleLabel(a.role)}
                   </span>
                 </span>
@@ -167,16 +158,16 @@ export default function AgentChat() {
             );
           })}
 
-          {/* Add-agent affordance — keeps creation one tap away from the rail */}
+          {/* Add-agent affordance */}
           <button
             onClick={() => navigate("/agents")}
-            className="shrink-0 lg:w-full text-left rounded-xl px-3 py-2.5 border border-dashed border-black/15 text-muted hover:border-brand/30 hover:text-ink transition-all flex items-center gap-2.5 lg:mt-1"
+            className="shrink-0 lg:w-full text-left rounded-xl px-2.5 lg:px-3 py-2 lg:py-2.5 border border-dashed border-black/15 text-muted hover:border-brand/30 hover:text-ink transition-all flex items-center gap-2 lg:mt-1"
           >
-            <span className="shrink-0 w-8 h-8 rounded-full bg-black/[0.03] border border-black/10 flex items-center justify-center">
-              <Plus className="w-4 h-4" />
+            <span className="shrink-0 w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-black/[0.03] border border-black/10 flex items-center justify-center">
+              <Plus className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
             </span>
-            <span className="block text-[12px] font-medium truncate">
-              {agents.length === 0 ? "Create your first agent" : "Add agent"}
+            <span className="hidden sm:block text-[11px] lg:text-[12px] font-medium truncate">
+              {agents.length === 0 ? "Create first" : "Add"}
             </span>
           </button>
         </div>

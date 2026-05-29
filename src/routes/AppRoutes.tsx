@@ -11,12 +11,8 @@ const ContactProfile = lazy(() => import("../components/ContactProfile"));
 const InsightsView = lazy(() => import("../components/InsightsView"));
 const AppointmentsView = lazy(() => import("../components/Appointments"));
 const FleetSettings = lazy(() => import("../components/FleetSettings"));
-const OutboundDialer = lazy(() => import("../components/OutboundDialer"));
 const AdminSettings = lazy(() => import("../components/AdminSettings"));
 const Integrations = lazy(() => import("../components/Integrations"));
-const CallLogs = lazy(() => import("../components/CallLogs"));
-const EmailInbox = lazy(() => import("../components/EmailInbox"));
-const SmsThreads = lazy(() => import("../components/SmsThreads"));
 const KnowledgeBaseManager = lazy(() => import("../components/KnowledgeBaseManager"));
 const DncManager = lazy(() => import("../components/DncManager"));
 const AuditLog = lazy(() => import("../components/AuditLog"));
@@ -29,6 +25,11 @@ const Pipeline = lazy(() => import("../components/Pipeline"));
 const FounderDashboard = lazy(() => import("../components/FounderDashboard"));
 const SupervisorCockpit = lazy(() => import("../components/SupervisorCockpit"));
 const AgentChat = lazy(() => import("../pages/AgentChat"));
+const Training = lazy(() => import("../pages/Training"));
+const PhonePage = lazy(() => import("../pages/PhonePage"));
+const EmailPage = lazy(() => import("../pages/EmailPage"));
+const SmsPage = lazy(() => import("../pages/SmsPage"));
+const ActivityPage = lazy(() => import("../pages/ActivityPage"));
 
 export default function AppRoutes() {
   return (
@@ -94,22 +95,23 @@ export default function AppRoutes() {
               </PageTransition>
             }
           />
+          {/* ── Channel pages (dedicated sidebar slots) ──────────────── */}
           <Route
-            path="/logs"
+            path="/phone"
             element={
               <PageTransition>
                 <ErrorBoundary>
-                  <CallLogs />
+                  <PhonePage />
                 </ErrorBoundary>
               </PageTransition>
             }
           />
           <Route
-            path="/inbox"
+            path="/email"
             element={
               <PageTransition>
                 <ErrorBoundary>
-                  <EmailInbox />
+                  <EmailPage />
                 </ErrorBoundary>
               </PageTransition>
             }
@@ -119,11 +121,15 @@ export default function AppRoutes() {
             element={
               <PageTransition>
                 <ErrorBoundary>
-                  <SmsThreads />
+                  <SmsPage />
                 </ErrorBoundary>
               </PageTransition>
             }
           />
+          {/* Legacy channel routes → redirect to new dedicated pages */}
+          <Route path="/logs" element={<Navigate to="/phone" replace />} />
+          <Route path="/inbox" element={<Navigate to="/email" replace />} />
+          <Route path="/outbound" element={<Navigate to="/phone?tab=outbound" replace />} />
           {/* /cockpit — Floor supervisor view (distinct from / Live Ops).
               / is owner pulse + action feed; /cockpit is per-agent availability + listen/whisper. */}
           <Route
@@ -132,16 +138,6 @@ export default function AppRoutes() {
               <PageTransition>
                 <ErrorBoundary>
                   <SupervisorCockpit />
-                </ErrorBoundary>
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/outbound"
-            element={
-              <PageTransition>
-                <ErrorBoundary>
-                  <OutboundDialer />
                 </ErrorBoundary>
               </PageTransition>
             }
@@ -156,8 +152,30 @@ export default function AppRoutes() {
               </PageTransition>
             }
           />
-          {/* /train is now part of the chat workspace — redirect legacy bookmarks. */}
-          <Route path="/train" element={<Navigate to="/chat" replace />} />
+          {/* Training — elevated from chat tab to its own dedicated page. */}
+          <Route
+            path="/training"
+            element={
+              <PageTransition>
+                <ErrorBoundary>
+                  <Training />
+                </ErrorBoundary>
+              </PageTransition>
+            }
+          />
+          {/* /train legacy bookmarks → new dedicated training page. */}
+          <Route path="/train" element={<Navigate to="/training" replace />} />
+          {/* Activity — cross-channel history hub */}
+          <Route
+            path="/activity"
+            element={
+              <PageTransition>
+                <ErrorBoundary>
+                  <ActivityPage />
+                </ErrorBoundary>
+              </PageTransition>
+            }
+          />
           <Route
             path="/knowledge"
             element={
