@@ -79,6 +79,30 @@ describe("handleShowcaseToolCalls — demo escalation boundary", () => {
     expect(results[0].result).toMatch(/demo/i);
   });
 
+  it("does NOT queue an owner task when a demo line tries create_fleet_task", async () => {
+    const results = await handleShowcaseToolCalls({
+      payload: {},
+      message: toolCallMessage("create_fleet_task", { description: "follow up please" }),
+      showcaseAgentName: "Marcus",
+      showcaseKind: "demo",
+    });
+
+    expect(insertCalls).toHaveLength(0);
+    expect(results[0].result).toMatch(/demo/i);
+  });
+
+  it("does NOT queue an owner task when a demo line tries capture_customer_profile", async () => {
+    const results = await handleShowcaseToolCalls({
+      payload: {},
+      message: toolCallMessage("capture_customer_profile", { name: "John", email: "j@test.com" }),
+      showcaseAgentName: "Marcus",
+      showcaseKind: "demo",
+    });
+
+    expect(insertCalls).toHaveLength(0);
+    expect(results[0].result).toMatch(/demo/i);
+  });
+
   it("DOES queue an owner task when a real Wireline employee line escalates", async () => {
     const results = await handleShowcaseToolCalls({
       payload: {},
@@ -90,5 +114,18 @@ describe("handleShowcaseToolCalls — demo escalation boundary", () => {
     expect(insertCalls).toHaveLength(1);
     expect(insertCalls[0].taskType).toBe("human_escalation");
     expect(results[0].result).toMatch(/team/i);
+  });
+
+  it("DOES queue a fleet task when a real Wireline employee line uses create_fleet_task", async () => {
+    const results = await handleShowcaseToolCalls({
+      payload: {},
+      message: toolCallMessage("create_fleet_task", { description: "customer needs follow-up" }),
+      showcaseAgentName: "Sarah",
+      showcaseKind: "cs",
+    });
+
+    expect(insertCalls).toHaveLength(1);
+    expect(insertCalls[0].taskType).toBe("showcase_follow_up");
+    expect(results[0].result).toMatch(/team|along/i);
   });
 });
