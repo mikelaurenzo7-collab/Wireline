@@ -80,10 +80,25 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      # Derive the Vercel preview URL from the branch name so e2e tests run
+      # against a real deployment (with a live database) rather than a
+      # no-DB local server. Branch slug rules: slashes → dashes, uppercase
+      # → lowercase, non-alphanumeric → dashes.
+      - name: Resolve Vercel preview URL
+        id: preview
+        run: |
+          BRANCH="${{ github.head_ref || github.ref_name }}"
+          SLUG=$(echo "$BRANCH" | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]' | sed 's/-\+/-/g' | sed 's/^-\|-$//g')
+          echo "url=https://wireline-git-${SLUG}-revaluate.vercel.app" >> "$GITHUB_OUTPUT"
+
       - name: Run E2E + accessibility tests
         # Scope to chromium — we only install one browser to keep CI fast and
         # cheap. Firefox/WebKit coverage can be added when we have time to
         # fund the extra minutes.
+        # Point at the Vercel preview so tests that require a live database
+        # (authenticated-dashboard, api-health) work correctly.
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ steps.preview.outputs.url }}
         run: npx playwright test --project=chromium
 
       - name: Upload Playwright report

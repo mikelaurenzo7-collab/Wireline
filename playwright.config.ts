@@ -15,6 +15,9 @@ export default defineConfig({
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3000",
     trace: "on-first-retry",
+    // Preview deployments use Vercel's TLS cert which may not be in the CA
+    // bundle of older CI runner images; ignore in preview mode only.
+    ignoreHTTPSErrors: !!process.env.PLAYWRIGHT_BASE_URL,
   },
   projects: [
     {
