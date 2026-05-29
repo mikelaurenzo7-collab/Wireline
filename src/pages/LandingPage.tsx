@@ -182,7 +182,7 @@ export default function LandingPage() {
         {/* ─── Hero ───────────────────────────────────────────────── */}
         <section
           data-testid="hero-section"
-          className="relative min-h-[85vh] flex flex-col justify-center px-6 lg:px-12 pt-24 pb-16 lg:pt-28 lg:pb-24 overflow-hidden"
+          className="relative min-h-[85svh] flex flex-col justify-center px-6 lg:px-12 pt-24 pb-16 lg:pt-28 lg:pb-24 overflow-hidden"
         >
           <div className="max-w-7xl mx-auto w-full">
             <motion.div

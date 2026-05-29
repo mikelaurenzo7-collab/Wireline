@@ -269,6 +269,19 @@
     color-scheme: light;
   }
 
+  /* Branded text selection — a warm purple wash with ink-dark glyphs
+     instead of the browser's stock blue. A small thing, but it's the
+     kind of detail that makes the whole product feel hand-finished on
+     every device that can select text (desktop drag, mobile long-press). */
+  ::selection {
+    background: rgba(79, 30, 123, 0.18);
+    color: #1A1614;
+  }
+  ::-moz-selection {
+    background: rgba(79, 30, 123, 0.18);
+    color: #1A1614;
+  }
+
   /* Immersive auth inputs — branded focus ring */
   .auth-input {
     @apply w-full border border-ink/[0.08] bg-white/60 px-4 py-3 text-[13px] text-ink placeholder:text-ink/65 focus:border-brand/60 focus:bg-white/80 transition-all;

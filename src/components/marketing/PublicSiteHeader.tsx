@@ -90,15 +90,25 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-1" aria-label="Site">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className="px-3 py-2 text-[13px] font-medium text-ink/65 hover:text-ink transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {NAV_LINKS.map((link) => {
+              const isActive =
+                location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  aria-current={isActive ? "page" : undefined}
+                  className={cn(
+                    "relative px-3 py-2 text-[13px] font-medium transition-colors after:absolute after:inset-x-3 after:-bottom-px after:h-px after:origin-left after:bg-brand after:transition-transform after:duration-300",
+                    isActive
+                      ? "text-ink after:scale-x-100"
+                      : "text-ink/65 hover:text-ink after:scale-x-0 hover:after:scale-x-100 after:bg-ink/20",
+                  )}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Right actions — context-aware CTA. Hide primary CTA on auth pages
@@ -159,16 +169,26 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
             style={{ maxHeight: "calc(100dvh - 5.5rem - env(safe-area-inset-bottom, 0px))" }}
           >
             <nav className="flex-1 overflow-y-auto py-2" aria-label="Mobile">
-              {MOBILE_LINKS.map((link) => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  className="flex items-center min-h-[48px] px-5 text-[15px] font-medium text-ink hover:bg-ink/[0.03]"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {MOBILE_LINKS.map((link) => {
+                const isActive =
+                  location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
+                return (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    aria-current={isActive ? "page" : undefined}
+                    className={cn(
+                      "flex items-center min-h-[48px] px-5 text-[15px] font-medium border-l-2 transition-colors",
+                      isActive
+                        ? "text-ink border-brand bg-brand/[0.06]"
+                        : "text-ink/80 border-transparent hover:bg-ink/[0.03]",
+                    )}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
             </nav>
             <div
               className="shrink-0 border-t border-ink/[0.08] p-4 flex flex-col gap-2.5"

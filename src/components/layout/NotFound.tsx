@@ -17,7 +17,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
   const isPublic = mode === "public";
 
   return (
-    <div className="min-h-[80vh] flex flex-col items-center justify-center gap-8 text-center px-6 py-12 relative">
+    <div className="min-h-[80svh] flex flex-col items-center justify-center gap-8 text-center px-6 py-12 relative">
       {/* Subtle aurora glow behind the 404 mark */}
       <div
         aria-hidden="true"

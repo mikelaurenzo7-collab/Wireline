@@ -45,7 +45,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     if ("fallback" in this.props) return this.props.fallback;
 
     return (
-      <div className="min-h-[70vh] flex items-center justify-center p-6">
+      <div className="min-h-[70svh] flex items-center justify-center p-6">
         <div className="relative aurora-ring rounded-3xl max-w-xl w-full">
           <div className="relative rounded-3xl glass-strong overflow-hidden p-8 md:p-10 space-y-6">
             <div
