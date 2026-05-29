@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from "react";
 import { Shield, LayoutGrid } from "lucide-react";
 import { cn } from "../lib/utils";
 import { authFetch, safeJson } from "../lib/api";
+import { AGENTS_CHANGED_EVENT } from "../contexts/AgentsContext";
 import ConfirmModal from "./ConfirmModal";
 import { useToast } from "../contexts/ToastContext";
 import AgentTemplates from "./AgentTemplates";
@@ -126,6 +127,10 @@ export default function FleetSettings() {
       if (!selectedAgent && agentsRes.agents?.length > 0) {
         setSelectedAgent(agentsRes.agents[0]);
       }
+
+      // Notify the app-wide agents context so the chat rail + anything else
+      // built on it reflect newly created/deleted agents without a reload.
+      window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
     } catch (e) {
       console.error(e);
       toastError("Agent fleet unavailable", "Could not load agents. Please refresh.");

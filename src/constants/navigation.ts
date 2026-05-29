@@ -1,6 +1,7 @@
 import {
   Users,
   MessageSquare,
+  MessagesSquare,
   Radio,
   Inbox,
   BarChart3,
@@ -53,6 +54,12 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { label: "Agents", path: "/agents", icon: Users, dataTour: "agents" },
       {
+        label: "Chat",
+        path: "/chat",
+        icon: MessagesSquare,
+        matches: ["/chat"],
+      },
+      {
         label: "Training",
         path: "/train",
         icon: MessageSquare,
@@ -102,6 +109,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "/train": "Training",
   "/knowledge": "Knowledge",
   "/agents": "Agents",
+  "/chat": "Chat",
   "/founder": "Founder",
   "/integrations": "Integrations",
   "/admin": "Settings",
@@ -122,6 +130,7 @@ export const ROUTE_ACCENTS: Record<string, [string, string]> = {
   "/outbound": ["#4F1E7B", "#FFC07D"],
   "/appointments": ["#10B981", "#4F1E7B"],
   "/agents": ["#4F1E7B", "#3B154C"],
+  "/chat": ["#4F1E7B", "#10B981"],
   "/train": ["#4F1E7B", "#FFC07D"],
   "/knowledge": ["#10B981", "#4F1E7B"],
   "/integrations": ["#4F1E7B", "#10B981"],

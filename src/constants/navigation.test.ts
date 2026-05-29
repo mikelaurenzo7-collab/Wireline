@@ -27,9 +27,9 @@ describe("Top-bar navigation IA", () => {
     expect(ws.items.map((i) => i.path)).toEqual(["/", "/triage", "/insights"]);
   });
 
-  it("Fleet group has Agents, Training, Cockpit", () => {
+  it("Fleet group has Agents, Chat, Training, Cockpit", () => {
     const fl = NAV_GROUPS.find((g) => g.label === "Fleet")!;
-    expect(fl.items.map((i) => i.path)).toEqual(["/agents", "/train", "/cockpit"]);
+    expect(fl.items.map((i) => i.path)).toEqual(["/agents", "/chat", "/train", "/cockpit"]);
   });
 
   it("Activity group has Activity and Pipeline", () => {

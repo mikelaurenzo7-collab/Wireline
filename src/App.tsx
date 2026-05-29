@@ -8,6 +8,7 @@ import CookieConsent from "./components/CookieConsent";
 import ToastStack from "./components/Toast";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
+import { AgentsProvider } from "./contexts/AgentsContext";
 import AppShell from "./components/layout/AppShell";
 import NotFound from "./components/layout/NotFound";
 import MarketingChrome from "./components/marketing/MarketingChrome";
@@ -304,7 +305,11 @@ function AppContent() {
   }
 
   // AppShell already renders the ⌘K CommandBar — don't double-mount.
-  return <AppShell />;
+  return (
+    <AgentsProvider>
+      <AppShell />
+    </AgentsProvider>
+  );
 }
 
 export default function App() {

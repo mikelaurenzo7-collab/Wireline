@@ -20,13 +20,24 @@
  */
 import express, { type Response } from "express";
 import { and, desc, eq } from "drizzle-orm";
-import Anthropic from "@anthropic-ai/sdk";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser } from "../middleware/auth";
+import { claudeRateLimiter } from "../middleware/api-rate-limits";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
-import { CLAUDE_MODELS } from "../lib/claude-models";
+import {
+  planWorkspace,
+  WORKSPACE_FIELDS,
+  WORKSPACE_VIBE_OPTIONS,
+  type WorkspaceFieldKey,
+} from "../lib/workspace-planner";
+import {
+  isAgentToolName,
+  resolveAgentTools,
+  normalizeEnabledTools,
+} from "../lib/agent-capabilities";
+import { executeAction } from "../lib/action-engine";
 
 const router = express.Router();
 
@@ -39,57 +50,6 @@ const MAX_THREAD_LENGTH = 200;
 // influence the agent's response. Keeps token cost predictable.
 const CLAUDE_CONTEXT_WINDOW = 40;
 
-// Builds the system prompt for the workspace agent. Mirrors the voice
-// agent's identity (so the operator IS talking to the same character)
-// but reframes the audience: the operator, not the caller.
-function buildWorkspaceSystemPrompt(
-  agent: {
-    name: string | null;
-    role: string | null;
-    archetype: string | null;
-    personality_vibe: string | null;
-  },
-  recentCalls: Array<{
-    summary: string | null;
-    sentiment: string | null;
-    intent: string | null;
-    created_at: Date | null;
-  }>,
-) {
-  const name = agent.name || "the agent";
-  const role = agent.role || "AI receptionist";
-  const archetype = agent.archetype || "warm professional";
-  const vibe = agent.personality_vibe || "warm";
-
-  const callsSummary =
-    recentCalls.length === 0
-      ? "(No calls handled yet — this agent hasn't taken any conversations to learn from.)"
-      : recentCalls
-          .map(
-            (c, i) =>
-              `${i + 1}. [${c.sentiment || "neutral"} / ${c.intent || "unknown"}] ${c.summary || "(no summary)"}`,
-          )
-          .join("\n");
-
-  return `You are ${name}, a Wireline AI ${role} (archetype: ${archetype}, vibe: ${vibe}). You're currently in a private chat with your operator — the person who owns and manages you. This is your one-on-one channel where they coach you, give you context about the business, and direct your performance.
-
-This is NOT a caller conversation. The operator is the person paying for your service. Be:
-- Direct and helpful, not salesy
-- Receptive to coaching — they're telling you how they want you to behave
-- Concrete with specifics — when they ask "how did calls go?", reference actual call summaries below
-- Honest about what you don't know — say so plainly if you can't answer
-- Brief by default; expand only when the operator asks for depth
-
-Stay in character as ${name}. Use first-person — you ARE the agent they configured, not a separate AI describing it.
-
-If the operator gives you new direction (e.g. "be warmer on price objections" or "always mention our same-day install"), acknowledge it explicitly and note that it will apply to future calls. You don't have authority to silently change your own configuration — confirmable directives become lessons in the next sync.
-
-Recent call summaries (last ${recentCalls.length} calls handled):
-${callsSummary}
-
-The operator is now writing to you. Reply as ${name}.`;
-}
-
 // GET /api/agents/:id/workspace/messages — load thread history.
 router.get(
   "/api/agents/:id/workspace/messages",
@@ -98,7 +58,12 @@ router.get(
     try {
       const agentId = req.params.id;
       const [agent] = await drizzle
-        .select({ id: schema.agents.id, name: schema.agents.name })
+        .select({
+          id: schema.agents.id,
+          name: schema.agents.name,
+          role: schema.agents.role,
+          enabledTools: schema.agents.enabledTools,
+        })
         .from(schema.agents)
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
         .limit(1);
@@ -116,9 +81,16 @@ router.get(
         .orderBy(desc(schema.agentConversationMessages.createdAt))
         .limit(MAX_THREAD_LENGTH);
 
-      // Return newest-last so the UI can append directly.
+      // Return newest-last so the UI can append directly. We also surface
+      // the agent's resolved capabilities so the chat can render its
+      // "Connectors" panel without a second round-trip.
       res.json({
-        agent: { id: agent.id, name: agent.name },
+        agent: {
+          id: agent.id,
+          name: agent.name,
+          role: agent.role,
+          enabledTools: resolveAgentTools(agent.role ?? undefined, agent.enabledTools),
+        },
         messages: messages.reverse().map((m) => ({
           id: String(m.id),
           role: m.role,
@@ -137,6 +109,9 @@ router.get(
 router.post(
   "/api/agents/:id/workspace/messages",
   authenticateUser,
+  // Per-user throttle (60/min) so a spammy operator can't run up model
+  // cost — cheaper + safer than downgrading the model's intelligence.
+  claudeRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const agentId = req.params.id;
@@ -148,14 +123,23 @@ router.post(
         return res.status(400).json({ error: "Message too long — keep under 4000 chars" });
       }
 
-      // Load agent + recent call context.
+      // Load agent + current config (the planner proposes changes against
+      // the live values) + recent call context.
       const [agent] = await drizzle
         .select({
           id: schema.agents.id,
           name: schema.agents.name,
           role: schema.agents.role,
           archetype: schema.agents.archetype,
-          personality_vibe: schema.agents.personalityVibe,
+          personalityVibe: schema.agents.personalityVibe,
+          firstMessage: schema.agents.firstMessage,
+          emailAgentTone: schema.agents.emailAgentTone,
+          emailSignature: schema.agents.emailSignature,
+          outOfHoursMessage: schema.agents.outOfHoursMessage,
+          transferPhone: schema.agents.transferPhone,
+          escalationEmail: schema.agents.escalationEmail,
+          escalationPhone: schema.agents.escalationPhone,
+          enabledTools: schema.agents.enabledTools,
         })
         .from(schema.agents)
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
@@ -167,7 +151,6 @@ router.post(
           summary: schema.callLogs.summary,
           sentiment: schema.callLogs.sentimentLabel,
           intent: schema.callLogs.intentLabel,
-          created_at: schema.callLogs.createdAt,
         })
         .from(schema.callLogs)
         .where(and(eq(schema.callLogs.agentId, agentId), eq(schema.callLogs.userId, req.user.id)))
@@ -187,7 +170,10 @@ router.post(
         .orderBy(desc(schema.agentConversationMessages.createdAt))
         .limit(CLAUDE_CONTEXT_WINDOW);
 
-      const chronological = priorMessages.reverse();
+      const history = priorMessages.reverse().map((m) => ({
+        role: m.role === "operator" ? ("operator" as const) : ("agent" as const),
+        content: m.content,
+      }));
 
       // Persist the operator's message immediately so it survives any LLM failure downstream.
       await drizzle.insert(schema.agentConversationMessages).values({
@@ -197,51 +183,29 @@ router.post(
         content: operatorMessage,
       });
 
-      // Build the Anthropic-style messages array — alternating turns.
-      // operator → user, agent → assistant. The new operator message
-      // is the last user turn.
-      const turns: Array<{ role: "user" | "assistant"; content: string }> = [];
-      for (const m of chronological) {
-        turns.push({
-          role: m.role === "operator" ? "user" : "assistant",
-          content: m.content,
-        });
-      }
-      turns.push({ role: "user", content: operatorMessage });
+      let reply: string;
+      let changes: unknown[] = [];
+      let toolToggles: unknown[] = [];
+      let actions: unknown[] = [];
 
-      const systemPrompt = buildWorkspaceSystemPrompt(agent as any, recentCalls);
-
-      // Direct SDK call — multi-turn isn't covered by claude-brain's
-      // runCompletion helper (single-user-turn signature).
-      const apiKey = process.env.ANTHROPIC_API_KEY;
-      let agentReply: string;
-      if (!apiKey) {
-        agentReply =
+      if (!process.env.ANTHROPIC_API_KEY) {
+        reply =
           "I can't respond right now — the LLM isn't configured. Your message is saved; try again later.";
       } else {
         try {
-          const client = new Anthropic({ apiKey });
-          const response = await client.messages.create({
-            model: CLAUDE_MODELS.SONNET,
-            max_tokens: 1024,
-            system: [
-              {
-                type: "text",
-                text: systemPrompt,
-                cache_control: { type: "ephemeral" },
-              },
-            ],
-            messages: turns,
+          const plan = await planWorkspace({
+            operatorMessage,
+            history,
+            agent,
+            recentCalls,
           });
-          agentReply =
-            response.content
-              .filter((b: any) => b.type === "text")
-              .map((b: any) => b.text)
-              .join("\n")
-              .trim() || "(no reply — the model returned an empty response)";
+          reply = plan.reply;
+          changes = plan.changes;
+          toolToggles = plan.toolToggles;
+          actions = plan.actions;
         } catch (e) {
-          log.error("workspace LLM call failed", { error: getErrorMessage(e), agentId });
-          agentReply =
+          log.error("workspace planner failed", { error: getErrorMessage(e), agentId });
+          reply =
             "Sorry — I'm having trouble responding right now. Your message is saved; try again in a moment.";
         }
       }
@@ -250,10 +214,10 @@ router.post(
         userId: req.user.id,
         agentId,
         role: "agent",
-        content: agentReply,
+        content: reply,
       });
 
-      res.json({ reply: agentReply });
+      res.json({ reply, changes, toolToggles, actions });
     } catch (e) {
       log.error("workspace POST failed", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to send message" });
@@ -378,6 +342,160 @@ router.delete(
     } catch (e) {
       log.error("workspace clear failed", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to clear workspace" });
+    }
+  },
+);
+
+// Shared owner-or-404 lookup for the action endpoints below.
+async function findOwnedAgent(agentId: string, userId: string) {
+  const [agent] = await drizzle
+    .select({
+      id: schema.agents.id,
+      name: schema.agents.name,
+      role: schema.agents.role,
+      enabledTools: schema.agents.enabledTools,
+    })
+    .from(schema.agents)
+    .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+    .limit(1);
+  return agent ?? null;
+}
+
+// POST /api/agents/:id/workspace/apply-change — apply a single allowlisted
+// config change the operator approved from a chat proposal card. Only the
+// fields in WORKSPACE_FIELDS can be written this way; values are validated
+// the same way the planner validates them before proposing.
+router.post(
+  "/api/agents/:id/workspace/apply-change",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const agentId = req.params.id;
+      const field = String(req.body?.field || "") as WorkspaceFieldKey;
+      const rawValue = req.body?.value;
+      const spec = WORKSPACE_FIELDS[field];
+      if (!spec) return res.status(400).json({ error: "Unknown field" });
+      if (typeof rawValue !== "string" || !rawValue.trim()) {
+        return res.status(400).json({ error: "Value required" });
+      }
+      let value = rawValue.trim().slice(0, spec.maxLen);
+      if (spec.kind === "vibe") {
+        value = value.toLowerCase();
+        if (!(WORKSPACE_VIBE_OPTIONS as readonly string[]).includes(value)) {
+          return res.status(400).json({
+            error: `Vibe must be one of: ${WORKSPACE_VIBE_OPTIONS.join(", ")}`,
+          });
+        }
+      } else if (spec.kind === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        return res.status(400).json({ error: "That doesn't look like a valid email." });
+      } else if (spec.kind === "phone" && !/^[+\d][\d\s()-]{5,19}$/.test(value)) {
+        return res.status(400).json({ error: "That doesn't look like a valid phone number." });
+      }
+
+      const agent = await findOwnedAgent(agentId, req.user.id);
+      if (!agent) return res.status(404).json({ error: "Agent not found" });
+
+      await drizzle
+        .update(schema.agents)
+        .set({ [spec.column]: value })
+        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)));
+
+      log.info("workspace config change applied", { agentId, field });
+      res.json({ success: true, field, label: spec.label, value });
+    } catch (e) {
+      log.error("workspace apply-change failed", { error: getErrorMessage(e) });
+      res.status(500).json({ error: "Failed to apply change" });
+    }
+  },
+);
+
+// POST /api/agents/:id/workspace/toggle-tool — turn a capability on/off for
+// the agent from a chat proposal card. Writes the resolved enabled_tools
+// array so the change is explicit (never reverts to role defaults silently).
+router.post(
+  "/api/agents/:id/workspace/toggle-tool",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const agentId = req.params.id;
+      const tool = req.body?.tool;
+      const enable = req.body?.enable;
+      if (!isAgentToolName(tool)) return res.status(400).json({ error: "Unknown tool" });
+      if (typeof enable !== "boolean")
+        return res.status(400).json({ error: "enable must be boolean" });
+
+      const agent = await findOwnedAgent(agentId, req.user.id);
+      if (!agent) return res.status(404).json({ error: "Agent not found" });
+
+      const current = resolveAgentTools(agent.role ?? undefined, agent.enabledTools);
+      const next = enable
+        ? Array.from(new Set([...current, tool]))
+        : current.filter((t) => t !== tool);
+
+      await drizzle
+        .update(schema.agents)
+        .set({ enabledTools: normalizeEnabledTools(next) })
+        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)));
+
+      log.info("workspace tool toggled", { agentId, tool, enable });
+      res.json({ success: true, tool, enable, enabledTools: next });
+    } catch (e) {
+      log.error("workspace toggle-tool failed", { error: getErrorMessage(e) });
+      res.status(500).json({ error: "Failed to toggle capability" });
+    }
+  },
+);
+
+// POST /api/agents/:id/workspace/run-action — execute an approved
+// communication action (email/text) the agent drafted in chat. Routes
+// through the existing Action Engine, which enforces per-agent tool
+// authorization + supervisor review. Outbound CALLS are intentionally NOT
+// handled here — the client routes those to /api/outbound/dial so the
+// DNC/TCPA/quota gates run unchanged.
+router.post(
+  "/api/agents/:id/workspace/run-action",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const agentId = req.params.id;
+      const kind = String(req.body?.kind || "");
+      const to = String(req.body?.to || "").trim();
+      const subject = String(req.body?.subject || "").trim();
+      const body = String(req.body?.body || "").trim();
+
+      if (kind !== "send_email" && kind !== "send_text_message") {
+        return res.status(400).json({ error: "Unsupported action for this endpoint" });
+      }
+      if (!to) return res.status(400).json({ error: "Recipient required" });
+      if (!body) return res.status(400).json({ error: "Message body required" });
+
+      const agent = await findOwnedAgent(agentId, req.user.id);
+      if (!agent) return res.status(404).json({ error: "Agent not found" });
+
+      const payload =
+        kind === "send_email" ? { to, subject: subject || "Follow-up", body } : { to, body };
+
+      const result = await executeAction(
+        req.user.id,
+        {
+          type: kind,
+          priority: "high",
+          payload,
+          reasoning: "Operator-approved action from agent chat",
+          agentId,
+        },
+        { sourceId: agentId, sourceType: "workspace_chat" },
+        "auto",
+      );
+
+      if (!result.success) {
+        return res.status(400).json({ error: result.error || "Action failed" });
+      }
+      log.info("workspace action executed", { agentId, kind });
+      res.json({ success: true, kind });
+    } catch (e) {
+      log.error("workspace run-action failed", { error: getErrorMessage(e) });
+      res.status(500).json({ error: "Failed to run action" });
     }
   },
 );

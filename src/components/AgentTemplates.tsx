@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { authFetch, safeJson, isApiErrorBody } from "../lib/api";
+import { AGENTS_CHANGED_EVENT } from "../contexts/AgentsContext";
 import { cn } from "../lib/utils";
 import { useToast } from "../contexts/ToastContext";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
@@ -600,6 +601,7 @@ export default function AgentTemplates() {
       setModalTemplate(null);
       setDeploying(null);
       await refetchAgents();
+      window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
       navigate("/agents");
     } catch {
       toastError("Deployment failed", "Could not reach the server. Please try again.");

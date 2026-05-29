@@ -30,6 +30,7 @@ const Security = lazy(() => import("../components/Security"));
 const Pipeline = lazy(() => import("../components/Pipeline"));
 const FounderDashboard = lazy(() => import("../components/FounderDashboard"));
 const SupervisorCockpit = lazy(() => import("../components/SupervisorCockpit"));
+const AgentChat = lazy(() => import("../pages/AgentChat"));
 
 export default function AppRoutes() {
   return (
@@ -187,6 +188,26 @@ export default function AppRoutes() {
               <PageTransition>
                 <ErrorBoundary>
                   <FleetSettings />
+                </ErrorBoundary>
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/chat"
+            element={
+              <PageTransition>
+                <ErrorBoundary>
+                  <AgentChat />
+                </ErrorBoundary>
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/chat/:id"
+            element={
+              <PageTransition>
+                <ErrorBoundary>
+                  <AgentChat />
                 </ErrorBoundary>
               </PageTransition>
             }
