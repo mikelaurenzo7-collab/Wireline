@@ -109,13 +109,13 @@ export default function Training() {
                 key={agent.id}
                 onClick={() => selectAgent(agent.id)}
                 className={cn(
-                  "shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border transition-all text-sm",
+                  "shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-xl border transition-all text-sm min-h-[44px]",
                   agent.id === selectedAgentId
                     ? "border-brand/40 bg-brand/[0.06] text-foreground font-medium"
                     : "border-border/50 bg-surface/50 text-muted hover:border-brand/20 hover:bg-brand/[0.03]",
                 )}
               >
-                <Bot className="w-3.5 h-3.5 shrink-0" />
+                <Bot className="w-4 h-4 shrink-0" />
                 <span className="truncate max-w-[120px]">{agent.name}</span>
               </button>
             ))}
@@ -177,15 +177,17 @@ export default function Training() {
       <main className="flex-1 min-w-0 min-h-0 flex flex-col rounded-xl border border-border/50 bg-surface/20 overflow-hidden">
         {/* Header with sub-tab navigation */}
         <header className="shrink-0 border-b border-border/50 bg-surface/40 backdrop-blur-sm">
-          <div className="flex items-center gap-3 px-4 py-3 sm:px-5">
-            <div className="w-8 h-8 rounded-lg bg-brand/10 flex items-center justify-center shrink-0">
-              <GraduationCap className="w-4 h-4 text-brand" />
+          <div className="flex items-center gap-3 px-4 py-2.5 sm:px-5 lg:py-2">
+            <div className="w-8 h-8 lg:w-7 lg:h-7 rounded-lg bg-brand/10 flex items-center justify-center shrink-0">
+              <GraduationCap className="w-4 h-4 lg:w-3.5 lg:h-3.5 text-brand" />
             </div>
             <div className="min-w-0 flex-1">
               <h1 className="text-sm font-semibold text-foreground truncate">
                 {selectedAgent?.name ?? "Training"}
               </h1>
-              <p className="text-[11px] text-muted truncate">Teach, tune, and refine your agent</p>
+              <p className="text-[11px] text-muted truncate lg:hidden">
+                Teach, tune, and refine your agent
+              </p>
             </div>
           </div>
           {/* Sub-tab pills — horizontally scrollable on mobile */}
