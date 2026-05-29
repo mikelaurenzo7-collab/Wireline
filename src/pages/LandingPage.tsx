@@ -5,11 +5,6 @@ import { ArrowRight, Phone, ArrowUpRight, Plus } from "lucide-react";
 import PublicSiteHeader from "../components/marketing/PublicSiteHeader";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import { HeroDecorations } from "../components/marketing/HeroDecorations";
-import {
-  RobotHeadTopLeft,
-  RobotHeadBottomRight,
-  RobotHeadTopRight,
-} from "../components/marketing/RobotHead";
 import { PageMeta } from "../lib/page-meta";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import { WIRELINE_CONTACT_AGENTS } from "../data/contact-agents";
@@ -251,23 +246,19 @@ export default function LandingPage() {
         </section>
 
         {/* ─── Agent Directory — Bento Grid ───────────────────────── */}
-        <section data-testid="agent-directory" className="px-6 lg:px-12 pt-4 pb-20 lg:pb-28 relative overflow-hidden">
-          {/* Subtle robot decoration — top right, clear of heading */}
-          <div className="absolute top-8 right-8 lg:right-16 opacity-30 hover:opacity-60 transition-all duration-500 pointer-events-none hidden lg:block" aria-hidden="true">
-            <RobotHeadTopRight size={42} animated />
-          </div>
+        <section data-testid="agent-directory" className="px-6 lg:px-12 pt-4 pb-20 lg:pb-28">
           <div className="max-w-7xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
-              className="mb-10 lg:mb-14"
+              className="mb-10 lg:mb-14 text-center"
             >
               <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-3">
                 Live right now
               </p>
-              <h2 className="font-display italic text-[clamp(1.8rem,4vw,3rem)] leading-[1.05] text-ink max-w-2xl">
+              <h2 className="font-display italic text-[clamp(1.8rem,4vw,3rem)] leading-[1.05] text-ink max-w-2xl mx-auto">
                 Talk to the Wireline team. <span className="text-ink/65">No signup required.</span>
               </h2>
             </motion.div>
@@ -303,14 +294,7 @@ export default function LandingPage() {
         </section>
 
         {/* ─── Final CTA ──────────────────────────────────────────── */}
-        <section data-testid="final-cta" className="px-6 lg:px-12 pb-24 lg:pb-32 relative overflow-hidden">
-          {/* Balanced side robots — clear of CTA button */}
-          <div className="absolute left-8 lg:left-16 top-1/2 -translate-y-1/2 opacity-35 hover:opacity-70 transition-all duration-500 pointer-events-none hidden lg:block" aria-hidden="true">
-            <RobotHeadTopLeft size={48} animated />
-          </div>
-          <div className="absolute right-8 lg:right-16 top-1/2 -translate-y-1/2 opacity-35 hover:opacity-70 transition-all duration-500 pointer-events-none hidden lg:block" aria-hidden="true">
-            <RobotHeadBottomRight size={48} animated />
-          </div>
+        <section data-testid="final-cta" className="px-6 lg:px-12 pb-16 lg:pb-20">
           <div className="max-w-7xl mx-auto text-center">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -333,19 +317,17 @@ export default function LandingPage() {
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </motion.div>
+
+            {/* Integration logos — moved here: directly under the CTA, above
+                the proof claims. Fills the open area and shortens the page. */}
+            <div className="mt-16 lg:mt-20 pt-10 lg:pt-12 border-t border-ink/[0.08] max-w-5xl mx-auto">
+              <IntegrationLogos compact />
+            </div>
           </div>
         </section>
 
         {/* ─── Proof Tiles ────────────────────────────────────────── */}
-        <section data-testid="proof-section" className="px-6 lg:px-12 py-20 lg:py-28 relative overflow-hidden">
-          {/* Left accent robot */}
-          <div className="absolute left-6 lg:left-10 top-1/3 opacity-25 hover:opacity-50 transition-all duration-500 pointer-events-none hidden xl:block" aria-hidden="true">
-            <RobotHeadTopLeft size={38} animated />
-          </div>
-          {/* Right accent robot */}
-          <div className="absolute right-6 lg:right-10 bottom-1/3 opacity-25 hover:opacity-50 transition-all duration-500 pointer-events-none hidden xl:block" aria-hidden="true">
-            <RobotHeadBottomRight size={44} animated />
-          </div>
+        <section data-testid="proof-section" className="px-6 lg:px-12 py-20 lg:py-28">
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08]">
               {STATS.map((stat, i) => (
@@ -372,12 +354,8 @@ export default function LandingPage() {
         {/* ─── FAQ — top-of-funnel objection handling ──────────────── */}
         <section
           data-testid="faq-section"
-          className="px-6 lg:px-12 py-20 lg:py-28 border-t border-ink/[0.08] relative overflow-hidden"
+          className="px-6 lg:px-12 py-20 lg:py-28 border-t border-ink/[0.08]"
         >
-          {/* Quiet companion near FAQ heading */}
-          <div className="absolute right-8 lg:right-12 top-12 opacity-30 hover:opacity-55 transition-all duration-500 pointer-events-none hidden lg:block" aria-hidden="true">
-            <RobotHeadTopRight size={36} animated />
-          </div>
           <div className="max-w-3xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
@@ -420,13 +398,6 @@ export default function LandingPage() {
                 </motion.details>
               ))}
             </div>
-          </div>
-        </section>
-
-        {/* ─── Integration Logos Ribbon ────────────────────────────── */}
-        <section className="border-y border-ink/[0.08] py-10 lg:py-12 px-6 lg:px-12">
-          <div className="max-w-7xl mx-auto">
-            <IntegrationLogos compact />
           </div>
         </section>
 
