@@ -17,7 +17,7 @@ interface Props {
   isCreating: boolean;
   isDeletingAgent: string | null;
   agentStats: Record<string, any>;
-  subscription: { status: string; max_agents: number };
+  subscription: { status: string; max_agents: number | null };
   onSelectAgent: (agent: any) => void;
   onDeleteAgent: (agent: { id: string; name: string }) => void;
   onCreateAgent: (data: { id: string; name: string; channel: string; role: RoleValue }) => void;

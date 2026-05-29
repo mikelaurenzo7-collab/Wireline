@@ -36,6 +36,7 @@ import type { Request, Response, NextFunction } from "express";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, sql } from "drizzle-orm";
+import { isOwnerEmail } from "./auth-service";
 
 export const TRIAL_DAYS = 14;
 export const TRIAL_MAX_AGENTS = 1;
@@ -246,6 +247,7 @@ async function isEmailVerified(userId: string): Promise<boolean> {
 export async function enforceTrialAgentCap(req: Request, res: Response, next: NextFunction) {
   const userId = (req as any)?.user?.id as string | undefined;
   if (!userId) return next();
+  if (isOwnerEmail((req as any)?.user?.email)) return next();
 
   // Email-verification gate runs FIRST. An unverified caller can poke
   // the product but can't add agents — same 402 pattern as trial
