@@ -967,6 +967,14 @@ const TONE_CLASSES: Record<ProposalCardProps["tone"], string> = {
   amber: "border-amber-500/30 bg-amber-500/[0.05]",
 };
 
+// Tone-matched icon chips give each proposal a clear visual category at a
+// glance (config change vs. tool toggle vs. live action).
+const TONE_ICON_CLASSES: Record<ProposalCardProps["tone"], string> = {
+  brand: "bg-brand/10 text-brand",
+  emerald: "bg-emerald-500/12 text-emerald-600",
+  amber: "bg-amber-500/12 text-amber-600",
+};
+
 function ProposalCard({
   icon,
   tone,
@@ -993,8 +1001,15 @@ function ProposalCard({
         state === "dismissed" ? "border-black/8 bg-black/3" : TONE_CLASSES[tone],
       )}
     >
-      <div className="flex items-start gap-2">
-        <span className="mt-0.5 shrink-0 text-ink/70">{icon}</span>
+      <div className="flex items-start gap-2.5">
+        <span
+          className={cn(
+            "mt-0.5 shrink-0 flex w-6 h-6 items-center justify-center rounded-lg",
+            state === "dismissed" ? "bg-black/5 text-muted/60" : TONE_ICON_CLASSES[tone],
+          )}
+        >
+          {icon}
+        </span>
         <div className="min-w-0 flex-1">
           <p className="text-[12px] font-medium leading-snug">{title}</p>
           {detail && (
@@ -1056,7 +1071,7 @@ function ProposalCard({
             <button
               onClick={onApprove}
               disabled={approveDisabled}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-brand text-on-brand text-[11px] font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[11px] font-medium shadow-sm shadow-brand/20 hover:opacity-95 active:scale-95 transition-all duration-200 disabled:opacity-40 disabled:shadow-none"
             >
               {busy ? (
                 <>
