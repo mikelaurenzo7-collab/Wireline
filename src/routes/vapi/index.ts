@@ -106,6 +106,7 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
       payload,
       message,
       showcaseAgentName: showcaseRoute.agent.name,
+      showcaseKind: showcaseRoute.kind,
     });
     return res.json({ results });
   }

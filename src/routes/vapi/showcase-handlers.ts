@@ -3,6 +3,7 @@ import { asc, eq, sql } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
 import { drizzle, log } from "../../lib/server-context";
+import { isOwnerRoutingShowcaseTool } from "../../lib/showcase-assistant";
 import { sanitizePhone } from "../../lib/vapi-helpers";
 import {
   handleCreateAccount,
@@ -101,6 +102,7 @@ export async function handleShowcaseToolCalls(args: {
   payload: Record<string, unknown>;
   message: Record<string, any>;
   showcaseAgentName: string;
+  showcaseKind: "cs" | "demo";
 }) {
   const toolCalls = Array.isArray(args.message.toolCalls) ? args.message.toolCalls : [];
   const callContext = extractShowcaseCallContext(args.payload, args.message);
@@ -110,6 +112,22 @@ export async function handleShowcaseToolCalls(args: {
   for (const toolCall of toolCalls) {
     const toolName = toolCall?.function?.name;
     const toolArgs = (toolCall?.function?.arguments || {}) as Record<string, any>;
+
+    // Demo lines are pure showcases on the public landing page. They must
+    // never page the founder (Mike) — no escalations, no callbacks, no
+    // follow-up tasks. Even if the model hallucinates an owner-routing
+    // tool, short-circuit here so a demo call can never land a task in
+    // the owner's triage inbox. Only the real Wireline employee lines
+    // ("cs") are allowed to escalate to a human.
+    if (args.showcaseKind === "demo" && isOwnerRoutingShowcaseTool(toolName)) {
+      results.push({
+        toolCallId: toolCall.id,
+        result:
+          "This is a live Wireline demo, so I can't transfer you or set up a callback from our team. " +
+          "If you'd like to talk to the real Wireline team, I can email you a link to start a free trial.",
+      });
+      continue;
+    }
 
     if (toolName === "send_signup_link") {
       const { sendSignupLinkEmail } = await import("../../lib/email-service");
