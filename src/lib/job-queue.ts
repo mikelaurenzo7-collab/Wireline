@@ -23,6 +23,7 @@
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, lte, gte, inArray } from "drizzle-orm";
+import { reportError } from "./error-reporter";
 
 type DrizzleDB = typeof drizzle;
 
@@ -216,6 +217,17 @@ export async function failJob(
       updatedAt: new Date(),
     })
     .where(eq(schema.jobs.id, job.id));
+
+  // Alert only on dead-letter (retries exhausted) — transient failures that
+  // will be retried are noise. A dead job means real work (post-call
+  // analysis, webhook delivery, account purge) was silently dropped.
+  if (exhausted) {
+    reportError(new Error(`Job dead-lettered: ${errorMessage}`), {
+      jobId: job.id,
+      attempts: job.attempts ?? 0,
+      tags: { source: "job_queue", outcome: "dead_letter" },
+    });
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────

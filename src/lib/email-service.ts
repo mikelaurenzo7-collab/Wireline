@@ -20,6 +20,12 @@
 
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
+import {
+  isEmailSuppressed,
+  buildListUnsubscribeHeaders,
+  buildComplianceFooterText,
+  buildComplianceFooterHtml,
+} from "./email-compliance";
 
 const DEFAULT_FROM = "Wireline <noreply@trywireline.com>";
 
@@ -41,6 +47,8 @@ async function sendViaResend(args: {
   subject: string;
   html: string;
   text: string;
+  /** Extra SMTP headers (e.g. RFC 8058 List-Unsubscribe) for bulk/marketing mail. */
+  headers?: Record<string, string>;
 }): Promise<SendResult> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -60,6 +68,7 @@ async function sendViaResend(args: {
         subject: args.subject,
         html: args.html,
         text: args.text,
+        ...(args.headers && Object.keys(args.headers).length ? { headers: args.headers } : {}),
       }),
     });
     const body = await res.text();
@@ -378,21 +387,33 @@ export async function sendTrialEndingSoonEmail(opts: {
   daysLeft: number;
   checkoutUrl: string;
 }): Promise<SendResult> {
+  // This is the one clearly *commercial* (upsell) email Wireline sends, so it
+  // gets the full CAN-SPAM + bulk-sender treatment: honor opt-outs, RFC 8058
+  // one-click unsubscribe headers, and a footer with a working unsubscribe
+  // link + physical postal address. (Transactional mail above is exempt.)
+  if (await isEmailSuppressed(opts.to)) {
+    log.info("[email-service] trial-ending-soon email skipped — recipient unsubscribed.", {
+      to: opts.to,
+    });
+    return { ok: false, provider: "no-transport", error: "Recipient has unsubscribed" };
+  }
+
   const dayWord = opts.daysLeft === 1 ? "1 day" : `${opts.daysLeft} days`;
   const subject = `Your Wireline trial ends in ${dayWord}`;
-  const text = [
-    "Hi,",
-    "",
-    `Your Wireline 14-day free trial ends in ${dayWord}.`,
-    "",
-    "Upgrade now to keep your agents live — your phone number, call history, and agent configuration all carry over.",
-    "",
-    opts.checkoutUrl,
-    "",
-    "If you decide not to upgrade, your agents will stop answering calls when the trial ends.",
-    "",
-    "— Wireline",
-  ].join("\n");
+  const text =
+    [
+      "Hi,",
+      "",
+      `Your Wireline 14-day free trial ends in ${dayWord}.`,
+      "",
+      "Upgrade now to keep your agents live — your phone number, call history, and agent configuration all carry over.",
+      "",
+      opts.checkoutUrl,
+      "",
+      "If you decide not to upgrade, your agents will stop answering calls when the trial ends.",
+      "",
+      "— Wireline",
+    ].join("\n") + buildComplianceFooterText(opts.to);
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1A1A23;">
       <h2 style="margin: 0 0 16px; font-weight: 600;">Your trial ends in ${escapeHtml(dayWord)}</h2>
@@ -400,10 +421,17 @@ export async function sendTrialEndingSoonEmail(opts: {
       <p style="margin: 0 0 24px; line-height: 1.55;">Upgrade now to keep your agents live — your phone number, call history, and agent configuration all carry over.</p>
       <p style="margin: 0 0 24px;"><a href="${opts.checkoutUrl}" style="display: inline-block; background: #4F1E7B; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Upgrade now</a></p>
       <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you decide not to upgrade, your agents will stop answering calls when the trial ends.</p>
+      ${buildComplianceFooterHtml(opts.to)}
     </div>
   `;
   if (process.env.RESEND_API_KEY) {
-    return await sendViaResend({ to: opts.to, subject, html, text });
+    return await sendViaResend({
+      to: opts.to,
+      subject,
+      html,
+      text,
+      headers: buildListUnsubscribeHeaders(opts.to),
+    });
   }
   log.warn("[email-service] trial-ending-soon email skipped — RESEND_API_KEY missing.", {
     to: opts.to,
