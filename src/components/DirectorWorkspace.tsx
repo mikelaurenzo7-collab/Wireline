@@ -18,7 +18,6 @@ import {
   Send,
   Loader2,
   Trash2,
-  Compass,
   Sparkles,
   Plus,
   MessagesSquare,
@@ -191,54 +190,43 @@ export default function DirectorWorkspace() {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* Header */}
-      <div className="shrink-0 flex items-center justify-between gap-3 px-4 py-3 border-b border-black/8">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span className="shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand/70 text-on-brand flex items-center justify-center">
-            <Compass className="w-4.5 h-4.5" />
-          </span>
-          <div className="min-w-0">
-            <div className="text-[13px] font-semibold text-ink leading-tight">Director</div>
-            <div className="text-[10px] uppercase tracking-[0.18em] text-muted/70">
-              Your AI manager
-            </div>
-          </div>
-        </div>
-        {messages.length > 0 && (
+      {/* Compact header — the rail already identifies the Director, so we
+          only show a slim action bar with the clear-thread affordance. */}
+      {messages.length > 0 && (
+        <div className="shrink-0 flex items-center justify-end px-3 py-2 border-b border-black/8">
           <button
             onClick={clearThread}
-            className="shrink-0 inline-flex items-center gap-1.5 text-[11px] text-muted hover:text-ink transition-colors"
+            className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.22em] text-muted hover:text-rose-600 hover:bg-rose-500/8 transition-colors"
             aria-label="Clear Director thread"
           >
             <Trash2 className="w-3.5 h-3.5" />
             Clear
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-4">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-3">
         {isLoading ? (
           <div className="flex items-center justify-center py-12 text-muted" aria-busy="true">
             <Loader2 className="w-5 h-5 animate-spin" />
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center text-center py-10 px-2 max-w-md mx-auto">
-            <span className="w-12 h-12 rounded-2xl bg-brand/10 flex items-center justify-center mb-3">
-              <Sparkles className="w-5 h-5 text-brand" />
+          <div className="flex flex-col items-center text-center py-8 px-2 max-w-sm mx-auto">
+            <span className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center mb-3">
+              <Sparkles className="w-4.5 h-4.5 text-brand" />
             </span>
-            <h2 className="font-display italic text-xl text-ink mb-1.5">Meet your Director</h2>
-            <p className="text-[13px] text-muted leading-relaxed mb-5">
+            <h2 className="font-display italic text-lg text-ink mb-1">Meet your Director</h2>
+            <p className="text-[12px] text-muted leading-relaxed mb-4">
               I&apos;m your always-on manager. Tell me about your business and I&apos;ll help you
-              hire the right agents, coach them, and read the room across every call. Ask me
-              anything to get started.
+              hire the right agents, coach them, and read the room across every call.
             </p>
-            <div className="flex flex-col gap-2 w-full">
+            <div className="flex flex-col gap-1.5 w-full">
               {STARTER_PROMPTS.map((p) => (
                 <button
                   key={p}
                   onClick={() => send(p)}
-                  className="text-left text-[12.5px] text-ink rounded-xl border border-black/10 glass px-3.5 py-2.5 hover:border-brand/30 transition-colors"
+                  className="text-left text-[12px] text-ink rounded-xl border border-black/10 glass px-3 py-2.5 hover:border-brand/30 transition-colors"
                 >
                   {p}
                 </button>
@@ -251,10 +239,10 @@ export default function DirectorWorkspace() {
               key={m.id}
               className={cn("flex", m.role === "operator" ? "justify-end" : "justify-start")}
             >
-              <div className={cn("max-w-[85%] min-w-0", m.role === "operator" && "items-end")}>
+              <div className={cn("max-w-[88%] min-w-0", m.role === "operator" && "items-end")}>
                 <div
                   className={cn(
-                    "rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap break-words",
+                    "rounded-2xl px-3 py-2 text-[13px] leading-relaxed whitespace-pre-wrap break-words",
                     m.role === "operator"
                       ? "bg-brand text-on-brand rounded-br-md"
                       : "glass border border-black/8 text-ink rounded-bl-md",
@@ -263,16 +251,16 @@ export default function DirectorWorkspace() {
                   {m.content}
                 </div>
                 {m.suggestions && m.suggestions.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
+                  <div className="mt-1.5 flex flex-wrap gap-1">
                     {m.suggestions.map((s, i) => {
                       const Icon = SUGGESTION_ICON[s.kind];
                       return (
                         <button
                           key={`${s.kind}-${i}`}
                           onClick={() => runSuggestion(s)}
-                          className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-brand rounded-full border border-brand/30 bg-brand/[0.06] px-2.5 py-1 hover:bg-brand/10 transition-colors"
+                          className="inline-flex items-center gap-1 text-[11px] font-medium text-brand rounded-full border border-brand/30 bg-brand/[0.06] px-2 py-1 min-h-[28px] hover:bg-brand/10 transition-colors"
                         >
-                          <Icon className="w-3.5 h-3.5" />
+                          <Icon className="w-3 h-3" />
                           {s.label}
                         </button>
                       );
@@ -290,26 +278,22 @@ export default function DirectorWorkspace() {
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className="flex justify-start"
           >
-            <div className="glass border border-brand/20 rounded-2xl rounded-bl-md px-3.5 py-2.5 space-y-1">
-              <div className="flex items-center gap-2 text-[12px] text-ink/80">
+            <div className="glass border border-brand/20 rounded-2xl rounded-bl-md px-3 py-2 space-y-0.5">
+              <div className="flex items-center gap-2 text-[11px] text-ink/80">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-brand" />
                 </span>
-                <span className="font-medium">Director is thinking…</span>
+                <span className="font-medium">Thinking…</span>
               </div>
-              <p className="text-[10px] text-muted/70 flex items-center gap-1">
-                <Sparkles className="w-3 h-3" />
-                Analyzing your fleet & formulating strategy
-              </p>
             </div>
           </motion.div>
         )}
       </div>
 
       {/* Composer */}
-      <div className="shrink-0 border-t border-black/8 p-3">
-        <div className="flex items-end gap-2 rounded-2xl border border-black/10 glass px-3 py-2 focus-within:border-brand/40 transition-colors">
+      <div className="shrink-0 border-t border-black/8 px-3 py-2">
+        <div className="flex items-end gap-1.5 rounded-xl border border-black/10 glass px-2.5 py-1.5 focus-within:border-brand/40 transition-colors">
           <textarea
             ref={inputRef}
             value={input}
@@ -317,12 +301,12 @@ export default function DirectorWorkspace() {
             onKeyDown={onKeyDown}
             rows={1}
             placeholder="Ask your Director anything…"
-            className="flex-1 resize-none bg-transparent text-[13px] text-ink placeholder:text-muted/60 outline-none max-h-32 py-1"
+            className="flex-1 resize-none bg-transparent text-[13px] text-ink placeholder:text-muted/60 outline-none max-h-24 py-1"
           />
           <button
             onClick={() => send(input)}
             disabled={!input.trim() || isSending}
-            className="shrink-0 w-9 h-9 rounded-xl bg-brand text-on-brand flex items-center justify-center disabled:opacity-40 transition-opacity"
+            className="shrink-0 w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-brand text-on-brand flex items-center justify-center disabled:opacity-40 transition-opacity"
             aria-label="Send message"
           >
             {isSending ? (
