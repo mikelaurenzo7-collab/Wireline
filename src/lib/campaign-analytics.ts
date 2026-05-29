@@ -47,9 +47,10 @@ const num = (n: unknown): number => {
   return Number.isFinite(v) ? v : 0;
 };
 
-export function computeOutcomeBreakdown(
-  leads: CampaignLeadRow[],
-): { total: number; outcomes: OutcomeBucket[] } {
+export function computeOutcomeBreakdown(leads: CampaignLeadRow[]): {
+  total: number;
+  outcomes: OutcomeBucket[];
+} {
   const total = leads.length;
   const map = new Map<string, number>();
   for (const l of leads) {
@@ -74,19 +75,17 @@ export function computeCallStats(
   // Answered = duration strictly greater than the floor, so a call of
   // exactly minAnswered seconds is treated as not-answered. Matches
   // the inline filter the route handler used.
-  const answered = rows.filter(r => (r.duration_seconds ?? 0) > minAnswered);
+  const answered = rows.filter((r) => (r.duration_seconds ?? 0) > minAnswered);
   const avg_duration_sec = answered.length
     ? Math.round(answered.reduce((s, r) => s + (r.duration_seconds ?? 0), 0) / answered.length)
     : 0;
   // Cost sums every row (answered or not) — voicemail attempts still
   // cost money. Rounded to 4 decimals like the rest of the cost
   // surfaces in the app.
-  const total_cost_usd = Number(
-    rows.reduce((s, r) => s + num(r.cost_usd), 0).toFixed(4),
-  );
+  const total_cost_usd = Number(rows.reduce((s, r) => s + num(r.cost_usd), 0).toFixed(4));
   // Lead score average runs over rows that have a non-null score.
   // null != 0, since 0 is a valid "no qualification yet" signal.
-  const scored = rows.filter(r => r.lead_score != null);
+  const scored = rows.filter((r) => r.lead_score != null);
   const avg_lead_score = scored.length
     ? Math.round(scored.reduce((s, r) => s + (r.lead_score ?? 0), 0) / scored.length)
     : 0;

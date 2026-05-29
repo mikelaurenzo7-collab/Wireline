@@ -195,26 +195,24 @@ export function computeContactStats(input: {
 }): ContactStats {
   const { calls, leads, appts, emails, customerName } = input;
   const totalCalls = calls.length;
-  const totalMinutes = Math.round(
-    calls.reduce((s, c) => s + (c.duration_seconds ?? 0), 0) / 60,
-  );
-  const totalCost = Number(
-    calls.reduce((s, c) => s + num(c.cost), 0).toFixed(2),
-  );
-  const avgScore = totalCalls > 0
-    ? Math.round(calls.reduce((s, c) => s + (c.lead_score ?? 0), 0) / totalCalls)
-    : 0;
-  const lastTouch = calls[0]?.created_at ?? emails[0]?.last_message_at ?? leads[0]?.created_at ?? null;
-  const matchingAppts = appts.filter(a => nameMatches(a.customer_name, customerName)).length;
+  const totalMinutes = Math.round(calls.reduce((s, c) => s + (c.duration_seconds ?? 0), 0) / 60);
+  const totalCost = Number(calls.reduce((s, c) => s + num(c.cost), 0).toFixed(2));
+  const avgScore =
+    totalCalls > 0
+      ? Math.round(calls.reduce((s, c) => s + (c.lead_score ?? 0), 0) / totalCalls)
+      : 0;
+  const lastTouch =
+    calls[0]?.created_at ?? emails[0]?.last_message_at ?? leads[0]?.created_at ?? null;
+  const matchingAppts = appts.filter((a) => nameMatches(a.customer_name, customerName)).length;
 
   return {
-    total_calls:    totalCalls,
-    total_minutes:  totalMinutes,
-    total_cost:     totalCost,
+    total_calls: totalCalls,
+    total_minutes: totalMinutes,
+    total_cost: totalCost,
     avg_lead_score: avgScore,
-    last_touch:     lastTouch,
+    last_touch: lastTouch,
     outbound_leads: leads.length,
-    appointments:   matchingAppts,
+    appointments: matchingAppts,
   };
 }
 
@@ -233,7 +231,7 @@ export function buildContactProfile(input: {
   const customerName = leads[0]?.customer_name ?? appts[0]?.customer_name ?? null;
   const timeline = buildContactTimeline({ calls, appts, emails, customerName });
   const stats = computeContactStats({ calls, leads, appts, emails, customerName });
-  const matchingAppts = appts.filter(a => nameMatches(a.customer_name, customerName));
+  const matchingAppts = appts.filter((a) => nameMatches(a.customer_name, customerName));
 
   return {
     number,

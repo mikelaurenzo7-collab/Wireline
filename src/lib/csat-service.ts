@@ -65,12 +65,7 @@ export async function sendPostCallCsatSms(params: {
       const [dncRow] = await drizzle
         .select({ id: schema.dncList.id })
         .from(schema.dncList)
-        .where(
-          and(
-            eq(schema.dncList.userId, userId),
-            eq(schema.dncList.phone, e164),
-          ),
-        )
+        .where(and(eq(schema.dncList.userId, userId), eq(schema.dncList.phone, e164)))
         .limit(1);
       if (dncRow) {
         return { sent: false, reason: "dnc_listed" };
@@ -121,12 +116,7 @@ export async function processCsatReply(params: {
     const [recent] = await drizzle
       .select({ id: schema.callLogs.id })
       .from(schema.callLogs)
-      .where(
-        and(
-          eq(schema.callLogs.userId, userId),
-          eq(schema.callLogs.customerNumber, e164),
-        ),
-      )
+      .where(and(eq(schema.callLogs.userId, userId), eq(schema.callLogs.customerNumber, e164)))
       .orderBy(desc(schema.callLogs.createdAt))
       .limit(1);
 

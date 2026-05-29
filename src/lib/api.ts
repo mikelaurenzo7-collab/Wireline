@@ -7,7 +7,6 @@ const DEFAULT_TIMEOUT_MS = 120_000;
 // Logger stub for client-side (avoid console.error in production)
 const logError = (message: string, ...args: any[]) => {
   if (process.env.NODE_ENV !== "production" && typeof console !== "undefined") {
-     
     console.error(message, ...args);
   }
 };

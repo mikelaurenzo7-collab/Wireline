@@ -143,10 +143,14 @@ export function formatRelative(input: unknown, fallback = DEFAULT_FALLBACK): str
   const d = toDate(input);
   if (!d) return fallback;
   const ms = Date.now() - d.getTime();
-  if (ms < 0)        return safeFormat(d, (x) => x.toLocaleDateString(), fallback);
-  if (ms < 60_000)   return "just now";
+  if (ms < 0) return safeFormat(d, (x) => x.toLocaleDateString(), fallback);
+  if (ms < 60_000) return "just now";
   if (ms < 3_600_000) return `${Math.floor(ms / 60_000)}m ago`;
   if (ms < 86_400_000) return `${Math.floor(ms / 3_600_000)}h ago`;
   if (ms < 7 * 86_400_000) return `${Math.floor(ms / 86_400_000)}d ago`;
-  return safeFormat(d, (x) => x.toLocaleDateString(undefined, { month: "short", day: "numeric" }), fallback);
+  return safeFormat(
+    d,
+    (x) => x.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+    fallback,
+  );
 }

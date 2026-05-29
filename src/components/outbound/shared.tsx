@@ -1,4 +1,3 @@
- 
 /**
  * Outbound domain — shared constants and types.
  * Extracted from the monolithic OutboundDialer.tsx.

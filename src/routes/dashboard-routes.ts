@@ -8,7 +8,11 @@ import { authenticateUser } from "../middleware/auth";
 import { computeDashboardStats } from "../lib/dashboard-stats";
 import { computeDashboardBenchmarks } from "../lib/dashboard-benchmarks";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
-import { getCachedDashboard, setCachedDashboard, invalidateDashboard } from "../lib/dashboard-cache";
+import {
+  getCachedDashboard,
+  setCachedDashboard,
+  invalidateDashboard,
+} from "../lib/dashboard-cache";
 
 const router = Router();
 

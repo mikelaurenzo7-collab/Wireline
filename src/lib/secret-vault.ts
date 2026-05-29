@@ -63,7 +63,9 @@ export function getDataKey(): Buffer {
     }
   }
   if (buf.length !== KEY_BYTES) {
-    throw new Error(`WIRELINE_DATA_KEY must decode to exactly ${KEY_BYTES} bytes (got ${buf.length}).`);
+    throw new Error(
+      `WIRELINE_DATA_KEY must decode to exactly ${KEY_BYTES} bytes (got ${buf.length}).`,
+    );
   }
   cachedKey = buf;
   cachedKeyEnv = raw;
@@ -126,7 +128,7 @@ export function looksEncrypted(value: unknown): value is string {
   if (typeof value !== "string") return false;
   if (!value.startsWith(VERSION + ".")) return false;
   const parts = value.split(".");
-  return parts.length === 4 && parts.every(p => p.length > 0);
+  return parts.length === 4 && parts.every((p) => p.length > 0);
 }
 
 /**

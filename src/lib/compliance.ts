@@ -23,10 +23,7 @@ export async function isDncBlocked(userId: string, phone: string): Promise<boole
   const [data] = await drizzle
     .select({ id: schema.dncList.id })
     .from(schema.dncList)
-    .where(and(
-      eq(schema.dncList.userId, userId),
-      eq(schema.dncList.phone, normalized)
-    ))
+    .where(and(eq(schema.dncList.userId, userId), eq(schema.dncList.phone, normalized)))
     .limit(1);
   return !!data;
 }

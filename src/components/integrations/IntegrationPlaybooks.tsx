@@ -4,11 +4,7 @@ import { X, Activity } from "lucide-react";
 import { type ToolIntegration, type AgentToolName } from "../../lib/agent-capabilities";
 import { getIntegrationPlaybook } from "../../lib/integration-playbooks";
 import IntegrationCapabilityPanel from "../IntegrationCapabilityPanel";
-import {
-  type IntegrationMeta,
-  resolveConnected,
-  ACTIVITY_LOG,
-} from "./PreviewCards";
+import { type IntegrationMeta, resolveConnected, ACTIVITY_LOG } from "./PreviewCards";
 
 interface PlaybookPanelProps {
   activeKey: ToolIntegration;
@@ -100,9 +96,7 @@ export function IntegrationPlaybookPanel({
                 boxShadow: isConnected ? "0 0 4px #10B981" : "none",
               }}
             />
-            <span className="text-muted/70">
-              {isConnected ? "Connected" : "Not connected"}
-            </span>
+            <span className="text-muted/70">{isConnected ? "Connected" : "Not connected"}</span>
           </div>
           <div className="flex items-center gap-3">
             {!isConnected && (
@@ -160,8 +154,7 @@ export function IntegrationPlaybookPanel({
                   <div
                     className="w-1 h-1 rounded-full shrink-0"
                     style={{
-                      background:
-                        i === 0 ? activeIntegration.color : "rgba(255,255,255,0.18)",
+                      background: i === 0 ? activeIntegration.color : "rgba(255,255,255,0.18)",
                     }}
                   />
                   <span className="flex-1 text-muted/80 truncate">{item.text}</span>
@@ -179,8 +172,13 @@ export function IntegrationPlaybookPanel({
 // Helpers for counting tools
 import { AGENT_TOOL_CATALOG } from "../../lib/agent-capabilities";
 
-function AGENT_TOOL_CATALOG_FILTERED_COUNT(key: ToolIntegration, selectedToolNames: readonly AgentToolName[]) {
-  return AGENT_TOOL_CATALOG.filter((t) => t.integration === key && selectedToolNames.includes(t.name)).length;
+function AGENT_TOOL_CATALOG_FILTERED_COUNT(
+  key: ToolIntegration,
+  selectedToolNames: readonly AgentToolName[],
+) {
+  return AGENT_TOOL_CATALOG.filter(
+    (t) => t.integration === key && selectedToolNames.includes(t.name),
+  ).length;
 }
 
 function AGENT_TOOL_CATALOG_TOTAL_COUNT(key: ToolIntegration) {

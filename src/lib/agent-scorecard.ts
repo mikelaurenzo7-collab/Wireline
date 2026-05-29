@@ -13,11 +13,11 @@
 // ────────────────────────────────────────────────────────────────────────
 
 export type KpiFocus =
-  | 'general'
-  | 'conversions'
-  | 'qualifications'
-  | 'resolutions'
-  | 'satisfaction';
+  | "general"
+  | "conversions"
+  | "qualifications"
+  | "resolutions"
+  | "satisfaction";
 
 export interface CallLogRow {
   id: string;
@@ -32,15 +32,27 @@ export interface CallLogRow {
   createdAt?: string | Date;
 }
 
-export interface AppointmentRow { id: string; created_at?: string; createdAt?: string | Date }
-export interface FollowUpTaskRow { id: string; source_id?: string | null; sourceId?: string | null; source_type?: string | null; sourceType?: string | null; created_at?: string; createdAt?: string | Date }
+export interface AppointmentRow {
+  id: string;
+  created_at?: string;
+  createdAt?: string | Date;
+}
+export interface FollowUpTaskRow {
+  id: string;
+  source_id?: string | null;
+  sourceId?: string | null;
+  source_type?: string | null;
+  sourceType?: string | null;
+  created_at?: string;
+  createdAt?: string | Date;
+}
 
 export interface ScorecardInput {
   focus: KpiFocus | string;
-  windowDays: number;            // current period length in days
-  now: number;                   // ms since epoch — injected for testability
+  windowDays: number; // current period length in days
+  now: number; // ms since epoch — injected for testability
   currentLogs: CallLogRow[];
-  priorLogs:   CallLogRow[];     // same-length window immediately before
+  priorLogs: CallLogRow[]; // same-length window immediately before
   appointments: AppointmentRow[];
   openFollowUps: FollowUpTaskRow[];
 }
@@ -48,20 +60,20 @@ export interface ScorecardInput {
 export interface PrimaryMetric {
   label: string;
   value: number;
-  format: 'percent' | 'number' | 'seconds' | 'score';
+  format: "percent" | "number" | "seconds" | "score";
   delta_pct: number;
   trend: number[];
 }
 export interface SecondaryMetric {
   label: string;
   value: number;
-  format: 'number' | 'seconds' | 'score' | 'percent';
+  format: "number" | "seconds" | "score" | "percent";
 }
 
 export interface ScorecardResult {
   kpi_focus: KpiFocus | string;
   window_days: number;
-  primary:   PrimaryMetric;
+  primary: PrimaryMetric;
   secondary: SecondaryMetric[];
   sample_size: number;
 }
@@ -80,17 +92,20 @@ export function pctDelta(current: number, prior: number): number {
  * sparkline; bucket count is capped at 60 so a year-long window doesn't
  * produce a 365-element array.
  */
-export function buildTrend(
-  logs: CallLogRow[],
-  now: number,
-  windowDays: number,
-): number[] {
+export function buildTrend(logs: CallLogRow[], now: number, windowDays: number): number[] {
   const buckets = Math.max(1, Math.min(windowDays, 60) | 0);
   const windowMs = windowDays * 24 * 60 * 60 * 1000;
   const bucketMs = windowMs / buckets;
   const trend = Array(buckets).fill(0) as number[];
   for (const r of logs) {
-    const t = Date.parse(r.created_at ?? (typeof r.createdAt === 'string' ? r.createdAt : r.createdAt instanceof Date ? r.createdAt.toISOString() : ''));
+    const t = Date.parse(
+      r.created_at ??
+        (typeof r.createdAt === "string"
+          ? r.createdAt
+          : r.createdAt instanceof Date
+            ? r.createdAt.toISOString()
+            : ""),
+    );
     if (!Number.isFinite(t)) continue;
     const idx = Math.min(buckets - 1, Math.max(0, Math.floor((t - (now - windowMs)) / bucketMs)));
     trend[idx]++;
@@ -110,16 +125,23 @@ export function computeScorecard(input: ScorecardInput): ScorecardResult {
   const totalCalls = cur.length;
   const priorTotalCalls = prev.length;
 
-  const totalDurationSec = cur.reduce((s, r) => s + (r.duration_seconds ?? r.durationSeconds ?? 0), 0);
+  const totalDurationSec = cur.reduce(
+    (s, r) => s + (r.duration_seconds ?? r.durationSeconds ?? 0),
+    0,
+  );
   const avgDurationSec = totalCalls > 0 ? Math.round(totalDurationSec / totalCalls) : 0;
 
-  const scoredValues = cur.filter(r => (r.lead_score ?? r.leadScore ?? 0) > 0).map(r => (r.lead_score ?? r.leadScore) as number);
-  const priorScoredValues = prev.filter(r => (r.lead_score ?? r.leadScore ?? 0) > 0).map(r => (r.lead_score ?? r.leadScore) as number);
+  const scoredValues = cur
+    .filter((r) => (r.lead_score ?? r.leadScore ?? 0) > 0)
+    .map((r) => (r.lead_score ?? r.leadScore) as number);
+  const priorScoredValues = prev
+    .filter((r) => (r.lead_score ?? r.leadScore ?? 0) > 0)
+    .map((r) => (r.lead_score ?? r.leadScore) as number);
   const avgLead = avg(scoredValues);
   const priorAvgLead = avg(priorScoredValues);
 
-  const positive = cur.filter(r => (r.sentiment || '').toLowerCase() === 'positive').length;
-  const priorPositive = prev.filter(r => (r.sentiment || '').toLowerCase() === 'positive').length;
+  const positive = cur.filter((r) => (r.sentiment || "").toLowerCase() === "positive").length;
+  const priorPositive = prev.filter((r) => (r.sentiment || "").toLowerCase() === "positive").length;
   const positiveRate = totalCalls > 0 ? positive / totalCalls : 0;
   const priorPositiveRate = priorTotalCalls > 0 ? priorPositive / priorTotalCalls : 0;
 
@@ -128,13 +150,13 @@ export function computeScorecard(input: ScorecardInput): ScorecardResult {
 
   const openFollowUpCallIds = new Set(
     (openFollowUps ?? [])
-      .map(t => {
+      .map((t) => {
         const sid = t.source_id ?? t.sourceId;
-        return typeof sid === 'string' ? sid : null;
+        return typeof sid === "string" ? sid : null;
       })
       .filter(Boolean) as string[],
   );
-  const resolved = cur.filter(r => !openFollowUpCallIds.has(r.id)).length;
+  const resolved = cur.filter((r) => !openFollowUpCallIds.has(r.id)).length;
   const resolutionRate = totalCalls > 0 ? resolved / totalCalls : 0;
 
   const trend = buildTrend(cur, now, windowDays);
@@ -143,81 +165,81 @@ export function computeScorecard(input: ScorecardInput): ScorecardResult {
   let secondary: SecondaryMetric[];
 
   switch (focus) {
-    case 'conversions': {
+    case "conversions": {
       // Prior-period appointments would need a second query — left at 0
       // intentionally so we don't synthesize a misleading delta.
       primary = {
-        label: 'Conversion rate',
+        label: "Conversion rate",
         value: conversionRate,
-        format: 'percent',
+        format: "percent",
         delta_pct: pctDelta(conversionRate, 0),
         trend,
       };
       secondary = [
-        { label: 'Conversions',     value: apptCount,      format: 'number' },
-        { label: 'Calls handled',   value: totalCalls,     format: 'number' },
-        { label: 'Avg call length', value: avgDurationSec, format: 'seconds' },
+        { label: "Conversions", value: apptCount, format: "number" },
+        { label: "Calls handled", value: totalCalls, format: "number" },
+        { label: "Avg call length", value: avgDurationSec, format: "seconds" },
       ];
       break;
     }
-    case 'qualifications': {
+    case "qualifications": {
       primary = {
-        label: 'Avg lead score',
+        label: "Avg lead score",
         value: Math.round(avgLead),
-        format: 'score',
+        format: "score",
         delta_pct: pctDelta(avgLead, priorAvgLead),
         trend,
       };
       secondary = [
-        { label: 'Calls handled',   value: totalCalls,           format: 'number' },
-        { label: 'Scored calls',    value: scoredValues.length,  format: 'number' },
-        { label: 'Avg call length', value: avgDurationSec,       format: 'seconds' },
+        { label: "Calls handled", value: totalCalls, format: "number" },
+        { label: "Scored calls", value: scoredValues.length, format: "number" },
+        { label: "Avg call length", value: avgDurationSec, format: "seconds" },
       ];
       break;
     }
-    case 'resolutions': {
+    case "resolutions": {
       primary = {
-        label: 'First-contact resolution',
+        label: "First-contact resolution",
         value: resolutionRate,
-        format: 'percent',
+        format: "percent",
         delta_pct: 0,
         trend,
       };
       secondary = [
-        { label: 'Calls handled',   value: totalCalls,                format: 'number' },
-        { label: 'Open follow-ups', value: openFollowUpCallIds.size,  format: 'number' },
-        { label: 'Avg call length', value: avgDurationSec,            format: 'seconds' },
+        { label: "Calls handled", value: totalCalls, format: "number" },
+        { label: "Open follow-ups", value: openFollowUpCallIds.size, format: "number" },
+        { label: "Avg call length", value: avgDurationSec, format: "seconds" },
       ];
       break;
     }
-    case 'satisfaction': {
+    case "satisfaction": {
       primary = {
-        label: 'Positive sentiment',
+        label: "Positive sentiment",
         value: positiveRate,
-        format: 'percent',
+        format: "percent",
         delta_pct: pctDelta(positiveRate, priorPositiveRate),
         trend,
       };
       secondary = [
-        { label: 'Positive calls', value: positive,             format: 'number' },
-        { label: 'Calls handled',  value: totalCalls,           format: 'number' },
-        { label: 'Avg lead score', value: Math.round(avgLead),  format: 'score' },
+        { label: "Positive calls", value: positive, format: "number" },
+        { label: "Calls handled", value: totalCalls, format: "number" },
+        { label: "Avg lead score", value: Math.round(avgLead), format: "score" },
       ];
       break;
     }
-    case 'general':
+    case "general":
     default: {
       primary = {
-        label: 'Calls handled',
+        label: "Calls handled",
         value: totalCalls,
-        format: 'number',
+        format: "number",
         delta_pct: pctDelta(totalCalls, priorTotalCalls),
         trend,
       };
       secondary = [
-        { label: 'Avg lead score',  value: Math.round(avgLead),  format: 'score' },
-        { label: 'Avg call length', value: avgDurationSec,       format: 'seconds' },
-        { label: 'Positive calls',  value: positive,             format: 'number' },
+        { label: "Avg lead score", value: Math.round(avgLead), format: "score" },
+        { label: "Avg call length", value: avgDurationSec, format: "seconds" },
+        { label: "Positive calls", value: positive, format: "number" },
       ];
     }
   }

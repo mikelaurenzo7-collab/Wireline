@@ -48,9 +48,7 @@ export default function AppPageIntro({
 
   return (
     <>
-      <div
-        className={cn("flex flex-col items-center text-center gap-2 pb-2 md:pb-3", className)}
-      >
+      <div className={cn("flex flex-col items-center text-center gap-2 pb-2 md:pb-3", className)}>
         <div className="min-w-0 w-full max-w-2xl">
           <div className="lg:hidden">
             {eyebrow && <p className="text-eyebrow text-brand mb-1">{eyebrow}</p>}

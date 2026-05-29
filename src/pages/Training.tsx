@@ -206,10 +206,7 @@ export default function Training() {
                       : "text-muted hover:text-foreground hover:bg-muted/8 border border-transparent",
                   )}
                 >
-                  <TabIcon
-                    className="w-3 h-3 sm:w-3.5 sm:h-3.5"
-                    strokeWidth={active ? 2.5 : 2}
-                  />
+                  <TabIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5" strokeWidth={active ? 2.5 : 2} />
                   {tab.label}
                 </button>
               );

@@ -136,36 +136,41 @@ router.get("/", authenticateUser, async (req: AuthenticatedRequest, res: Respons
 });
 
 /** POST /api/goals — create or update the goal for a metric. */
-router.post("/", authenticateUser, validateBody(createGoalSchema), async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const userId = req.user.id;
-    const metric = req.body?.metric;
-    if (!isGoalMetric(metric)) {
-      return res.status(400).json({ error: "Unknown or missing goal metric" });
-    }
-    const target = normalizeTarget(req.body?.target);
-    if (target === null) {
-      return res.status(400).json({ error: "Target must be a whole number of 1 or more" });
-    }
-    const label = normalizeLabel(req.body?.label);
+router.post(
+  "/",
+  authenticateUser,
+  validateBody(createGoalSchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user.id;
+      const metric = req.body?.metric;
+      if (!isGoalMetric(metric)) {
+        return res.status(400).json({ error: "Unknown or missing goal metric" });
+      }
+      const target = normalizeTarget(req.body?.target);
+      if (target === null) {
+        return res.status(400).json({ error: "Target must be a whole number of 1 or more" });
+      }
+      const label = normalizeLabel(req.body?.label);
 
-    const now = new Date();
-    const [row] = await drizzle
-      .insert(schema.goals)
-      .values({ userId, metric, target, label, createdAt: now, updatedAt: now })
-      .onConflictDoUpdate({
-        target: [schema.goals.userId, schema.goals.metric],
-        set: { target, label, updatedAt: now },
-      })
-      .returning();
+      const now = new Date();
+      const [row] = await drizzle
+        .insert(schema.goals)
+        .values({ userId, metric, target, label, createdAt: now, updatedAt: now })
+        .onConflictDoUpdate({
+          target: [schema.goals.userId, schema.goals.metric],
+          set: { target, label, updatedAt: now },
+        })
+        .returning();
 
-    const actuals = await loadMonthActuals(userId, now.getTime());
-    res.json({ ok: true, goal: serializeGoal(row, actuals, now.getTime()) });
-  } catch (err) {
-    log.error("POST /api/goals failed", { error: getErrorMessage(err) });
-    res.status(500).json({ error: "Failed to save goal" });
-  }
-});
+      const actuals = await loadMonthActuals(userId, now.getTime());
+      res.json({ ok: true, goal: serializeGoal(row, actuals, now.getTime()) });
+    } catch (err) {
+      log.error("POST /api/goals failed", { error: getErrorMessage(err) });
+      res.status(500).json({ error: "Failed to save goal" });
+    }
+  },
+);
 
 /** DELETE /api/goals/:id — remove a goal owned by the calling tenant. */
 router.delete("/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
