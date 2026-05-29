@@ -89,7 +89,7 @@ export default function AppShell() {
           T: "/triage",
           I: "/insights",
           A: "/agents",
-          R: "/train",
+          R: "/chat",
           O: "/outbound",
           S: "/admin",
         };

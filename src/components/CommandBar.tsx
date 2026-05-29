@@ -166,10 +166,10 @@ export default function CommandBar() {
     {
       id: "train",
       label: "Training",
-      description: "Train and tune agents",
+      description: "Train and tune agents (in Chat)",
       icon: MessageSquare,
       category: "Navigation",
-      action: () => navigate("/train"),
+      action: () => navigate("/chat"),
     },
     {
       id: "knowledge",

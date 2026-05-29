@@ -9,7 +9,6 @@ import NotFound from "../components/layout/NotFound";
 const TriageInbox = lazy(() => import("../components/TriageInbox"));
 const ContactProfile = lazy(() => import("../components/ContactProfile"));
 const InsightsView = lazy(() => import("../components/InsightsView"));
-const AgentTraining = lazy(() => import("../components/AgentTraining"));
 const AppointmentsView = lazy(() => import("../components/Appointments"));
 const FleetSettings = lazy(() => import("../components/FleetSettings"));
 const OutboundDialer = lazy(() => import("../components/OutboundDialer"));
@@ -157,16 +156,8 @@ export default function AppRoutes() {
               </PageTransition>
             }
           />
-          <Route
-            path="/train"
-            element={
-              <PageTransition>
-                <ErrorBoundary>
-                  <AgentTraining />
-                </ErrorBoundary>
-              </PageTransition>
-            }
-          />
+          {/* /train is now part of the chat workspace — redirect legacy bookmarks. */}
+          <Route path="/train" element={<Navigate to="/chat" replace />} />
           <Route
             path="/knowledge"
             element={

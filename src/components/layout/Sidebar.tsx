@@ -52,7 +52,7 @@ const SHORTCUTS: Record<string, string> = {
   "/triage": "g t",
   "/insights": "g i",
   "/agents": "g a",
-  "/train": "g r",
+  "/chat": "g r",
   "/logs": "g l",
   "/admin": "g s",
 };
