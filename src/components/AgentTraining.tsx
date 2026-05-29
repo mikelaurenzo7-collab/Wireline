@@ -76,6 +76,10 @@ export default function AgentTraining() {
     const params = new URLSearchParams(location.search);
     if (next === "database") params.delete("tab");
     else params.set("tab", next);
+    // Preserve the agent param for per-agent deep-links from chat.
+    if (selectedAgentId && selectedAgentId !== "default-agent") {
+      params.set("agent", selectedAgentId);
+    }
     const qs = params.toString();
     navigate(qs ? `/train?${qs}` : "/train", { replace: true });
   };
@@ -84,7 +88,9 @@ export default function AgentTraining() {
   const simVapiRef = useRef<VapiInstance | null>(null);
   const simMountedRef = useRef(true);
   const [agents, setAgents] = useState<any[]>([]);
-  const [selectedAgentId, setSelectedAgentId] = useState("default-agent");
+  // Honour ?agent=<id> deep-links from the chat workspace train button.
+  const initialAgent = new URLSearchParams(location.search).get("agent") || "default-agent";
+  const [selectedAgentId, setSelectedAgentId] = useState(initialAgent);
 
   const [knowledge, setKnowledge] = useState<any[]>([]);
   const [directives, setDirectives] = useState<any[]>([]);

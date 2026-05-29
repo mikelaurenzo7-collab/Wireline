@@ -28,7 +28,15 @@ import {
   Phone,
   MessageCircle,
   Plug,
+  GraduationCap,
+  Database,
+  Mic,
+  PlayCircle,
+  Workflow,
+  Blocks,
+  BookOpen,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
@@ -102,6 +110,8 @@ export default function AgentWorkspace({
   // Connectors / capabilities panel — built from the agent's resolved tools.
   const [enabledTools, setEnabledTools] = useState<string[]>([]);
   const [showConnectors, setShowConnectors] = useState(false);
+  const [showTrainingTools, setShowTrainingTools] = useState(false);
+  const navigate = useNavigate();
   // Tracks proposal cards the operator has acted on so they collapse to a
   // resolved state instead of re-firing. Keyed by `${messageId}:${kind}:${id}`.
   const [resolved, setResolved] = useState<Record<string, "done" | "dismissed">>({});
@@ -442,6 +452,19 @@ export default function AgentWorkspace({
             <Plug className="w-3 h-3" />
             {enabledTools.length} on
           </button>
+          <button
+            onClick={() => setShowTrainingTools((v) => !v)}
+            className={cn(
+              "shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.22em] transition-colors",
+              showTrainingTools
+                ? "text-brand bg-brand/10"
+                : "text-muted hover:text-ink hover:bg-black/5",
+            )}
+            title="Training & configuration tools"
+          >
+            <GraduationCap className="w-3 h-3" />
+            <span className="hidden sm:inline">Train</span>
+          </button>
         </div>
       </div>
 
@@ -456,29 +479,117 @@ export default function AgentWorkspace({
             className="shrink-0 overflow-hidden border-b border-black/8 bg-paper/40"
           >
             <div className="px-4 py-3">
-              <p className="text-[10px] uppercase tracking-[0.22em] text-muted/70 mb-2">
-                Capabilities — ask in chat to turn these on or off
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-muted/70">
+                  {agentName}&apos;s connectors &amp; capabilities
+                </p>
+                <button
+                  onClick={() => setShowConnectors(false)}
+                  className="w-6 h-6 rounded-md flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors"
+                  aria-label="Close connectors panel"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
               <div className="flex flex-wrap gap-1.5">
                 {AGENT_TOOL_CATALOG.map((tool) => {
                   const on = enabledTools.includes(tool.name);
                   return (
-                    <span
+                    <button
                       key={tool.name}
-                      title={tool.description}
+                      title={
+                        on
+                          ? tool.description
+                          : `${tool.description}\n\nAsk in chat to turn this on.`
+                      }
+                      onClick={() =>
+                        on ? undefined : setInput(`Turn on ${tool.label.toLowerCase()} for me.`)
+                      }
+                      disabled={on}
                       className={cn(
                         "inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] border transition-colors",
                         on
-                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700"
-                          : "bg-black/3 border-black/8 text-muted/60",
+                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 cursor-default"
+                          : "bg-black/3 border-black/8 text-muted/60 hover:border-brand/40 hover:text-ink cursor-pointer",
                       )}
                     >
-                      {on && <Check className="w-2.5 h-2.5" />}
+                      {on ? <Check className="w-2.5 h-2.5" /> : <Plug className="w-2.5 h-2.5" />}
                       {tool.label}
-                    </span>
+                    </button>
                   );
                 })}
               </div>
+              <div className="mt-2.5 flex items-center justify-between">
+                <p className="text-[9px] text-muted/60 leading-relaxed">
+                  Tap a disabled connector to ask {agentName} to enable it
+                </p>
+                <button
+                  onClick={() =>
+                    navigate(
+                      `/train?tab=actions${agentId !== "default-agent" ? `&agent=${agentId}` : ""}`,
+                    )
+                  }
+                  className="text-[9px] text-brand hover:text-brand/80 transition-colors"
+                >
+                  Full settings →
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Training tools panel — per-agent knowledge, config & test call */}
+      <AnimatePresence initial={false}>
+        {showTrainingTools && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className="shrink-0 overflow-hidden border-b border-black/8 bg-paper/40"
+          >
+            <div className="px-4 py-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-muted/70">
+                  {agentName}&apos;s training &amp; memory
+                </p>
+                <button
+                  onClick={() => setShowTrainingTools(false)}
+                  className="w-6 h-6 rounded-md flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors"
+                  aria-label="Close training panel"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                {[
+                  { icon: Database, label: "Knowledge", tab: "database" },
+                  { icon: Mic, label: "Voice", tab: "voices" },
+                  { icon: BookOpen, label: "Pronunciation", tab: "pronunciation" },
+                  { icon: PlayCircle, label: "Test call", tab: "simulator" },
+                  { icon: Workflow, label: "Flow", tab: "flow" },
+                  { icon: Blocks, label: "Capabilities", tab: "actions" },
+                ].map((item) => (
+                  <button
+                    key={item.tab}
+                    onClick={() =>
+                      navigate(
+                        `/train?tab=${item.tab}${agentId !== "default-agent" ? `&agent=${agentId}` : ""}`,
+                      )
+                    }
+                    className="flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl border border-black/8 glass hover:border-brand/30 hover:bg-brand/[0.04] transition-all group"
+                  >
+                    <item.icon className="w-4 h-4 text-muted group-hover:text-brand transition-colors" />
+                    <span className="text-[9px] uppercase tracking-[0.14em] text-ink/70 group-hover:text-ink transition-colors">
+                      {item.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-[9px] text-muted/60 leading-relaxed text-center">
+                Each agent has its own isolated memory — knowledge, voice, and config are unique per agent.
+              </p>
             </div>
           </motion.div>
         )}
