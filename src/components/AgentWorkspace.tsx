@@ -510,10 +510,26 @@ export default function AgentWorkspace({
 
   return (
     <div className="flex flex-col h-full min-h-0 relative">
-      {/* Compact header — agent name + panel toggle pills */}
+      {/* Identity header — agent presence (medallion + name + live status) */}
       <div className="shrink-0 border-b border-black/8">
-        <div className="flex items-center justify-between gap-2 px-3 py-2">
-          <p className="text-[12px] font-medium text-ink truncate">{agentName}</p>
+        <div className="flex items-center justify-between gap-2 px-3 py-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="shrink-0 flex w-8 h-8 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[12px] font-semibold shadow-sm shadow-brand/25">
+              {agentName.slice(0, 1).toUpperCase()}
+            </span>
+            <div className="min-w-0">
+              <p className="text-[13px] font-semibold text-ink leading-tight truncate">
+                {agentName}
+              </p>
+              <p className="flex items-center gap-1.5 text-[10px] text-muted leading-tight">
+                <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500/60" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                </span>
+                Your agent
+              </p>
+            </div>
+          </div>
           {messages.length > 0 && (
             <button
               onClick={clearThread}
@@ -536,15 +552,30 @@ export default function AgentWorkspace({
               <Loader2 className="w-4 h-4 animate-spin mr-2" /> Loading thread…
             </div>
           ) : messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center max-w-sm mx-auto px-2">
-              <div className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center mb-3">
-                <Sparkles className="w-4.5 h-4.5 text-brand" />
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col items-center justify-center py-10 text-center max-w-sm mx-auto px-3"
+            >
+              <div className="relative mb-5">
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
+                />
+                <span className="relative flex w-14 h-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand text-xl font-semibold shadow-lg shadow-brand/25 aurora-ring">
+                  {agentName.slice(0, 1).toUpperCase()}
+                </span>
               </div>
-              <h3 className="font-display italic text-lg text-ink mb-1.5">Chat with {agentName}</h3>
-              <p className="text-[11px] text-muted leading-relaxed">
-                Coach, give context, ask how calls went. The agent remembers everything here.
+              <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70 mb-3">
+                Direct line
               </p>
-              <div className="mt-4 flex flex-wrap justify-center gap-1.5">
+              <h3 className="font-display italic text-2xl text-ink mb-2.5">Chat with {agentName}</h3>
+              <p className="text-[12px] text-muted leading-relaxed max-w-xs">
+                Coach it, give context, ask how calls went, or direct changes in plain language —
+                {agentName} remembers everything in this thread.
+              </p>
+              <div className="mt-5 flex flex-wrap justify-center gap-1.5">
                 {[
                   "Update your greeting",
                   "Turn on texting",
@@ -554,13 +585,14 @@ export default function AgentWorkspace({
                   <button
                     key={suggestion}
                     onClick={() => setInput(suggestion)}
-                    className="px-2.5 py-1.5 rounded-full text-[10px] glass border border-black/8 hover:border-brand/40 text-ink/70 hover:text-ink transition-all"
+                    className="group inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] glass border border-black/10 hover:border-brand/30 hover:-translate-y-px text-ink/75 hover:text-ink transition-all duration-300"
                   >
                     {suggestion}
+                    <ArrowUpRight className="w-3 h-3 opacity-0 -ml-1 group-hover:opacity-100 group-hover:ml-0 text-brand transition-all duration-200" />
                   </button>
                 ))}
               </div>
-            </div>
+            </motion.div>
           ) : (
             <AnimatePresence initial={false}>
               {messages.map((m) => (
@@ -576,10 +608,10 @@ export default function AgentWorkspace({
                 >
                   <div
                     className={cn(
-                      "shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-semibold",
+                      "shrink-0 w-6 h-6 rounded-lg flex items-center justify-center text-[9px] font-semibold",
                       m.role === "operator"
                         ? "bg-brand/15 text-brand border border-brand/30"
-                        : "bg-paper border border-black/12 text-ink",
+                        : "bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20",
                     )}
                     aria-hidden="true"
                   >
@@ -587,9 +619,9 @@ export default function AgentWorkspace({
                   </div>
                   <div
                     className={cn(
-                      "max-w-[82%] rounded-2xl px-3 py-2 text-[13px] leading-relaxed",
+                      "max-w-[82%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed",
                       m.role === "operator"
-                        ? "bg-brand text-on-brand rounded-tr-md"
+                        ? "bg-gradient-to-br from-brand to-brand-deep text-on-brand rounded-tr-md shadow-sm shadow-brand/20"
                         : "glass border border-black/8 text-ink rounded-tl-md",
                     )}
                   >
@@ -691,7 +723,7 @@ export default function AgentWorkspace({
                   transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                   className="flex gap-2"
                 >
-                  <div className="shrink-0 w-6 h-6 rounded-full bg-paper border border-black/12 flex items-center justify-center text-[9px] font-semibold text-ink">
+                  <div className="shrink-0 w-6 h-6 rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20 flex items-center justify-center text-[9px] font-semibold">
                     {agentName.slice(0, 1).toUpperCase()}
                   </div>
                   <div className="glass border border-brand/20 rounded-2xl rounded-tl-md px-3 py-2 space-y-1">
@@ -795,7 +827,7 @@ export default function AgentWorkspace({
             <button
               onClick={send}
               disabled={!input.trim() || isSending || isUploading}
-              className="shrink-0 w-10 h-10 sm:w-9 sm:h-9 rounded-xl bg-brand text-on-brand flex items-center justify-center hover:opacity-90 active:scale-[0.985] transition-all disabled:opacity-30"
+              className="shrink-0 w-10 h-10 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand flex items-center justify-center shadow-sm shadow-brand/20 hover:opacity-95 active:scale-95 transition-all duration-200 disabled:opacity-30 disabled:shadow-none"
               aria-label="Send message"
             >
               {isSending ? (
