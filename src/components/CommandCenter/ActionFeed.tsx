@@ -96,21 +96,28 @@ export function ActionFeed({
 
       <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-3 custom-scrollbar">
         {actions.length === 0 ? (
-          <div className="h-64 flex flex-col items-center justify-center gap-4 text-center border border-dashed border-black/8 rounded-[2rem] bg-black/[0.01] relative overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(79, 30, 123 ,0.03),transparent)]" />
-            <div className="w-12 h-12 rounded-2xl bg-paper brutal-border flex items-center justify-center relative">
-              <Sparkles className="w-5 h-5 text-brand" />
-              <motion.div
-                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
-                transition={{ duration: 3, repeat: Infinity }}
-                className="absolute inset-0 bg-brand/20 rounded-2xl -z-10"
+          <div className="h-64 flex flex-col items-center justify-center gap-3 text-center border border-dashed border-black/8 rounded-[2rem] bg-black/[0.01] relative overflow-hidden">
+            <div className="relative">
+              <span
+                aria-hidden
+                className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
               />
+              <motion.div
+                aria-hidden
+                animate={{ scale: [1, 1.18, 1], opacity: [0.25, 0.5, 0.25] }}
+                transition={{ duration: 3, repeat: Infinity }}
+                className="absolute inset-0 bg-brand/25 rounded-2xl -z-10"
+              />
+              <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25 flex items-center justify-center">
+                <Sparkles className="w-5 h-5" />
+              </div>
             </div>
             <div className="space-y-1">
-              <p className="text-[10px] text-ink font-bold uppercase tracking-[0.3em]">
+              <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
                 Fleet synchronized
               </p>
-              <p className="text-[9px] text-muted max-w-[180px] leading-relaxed">
+              <p className="font-display italic text-lg text-ink leading-tight">All clear</p>
+              <p className="text-[11px] text-muted max-w-[200px] leading-relaxed mx-auto">
                 Autonomous agents are monitoring signals. No manual intervention required.
               </p>
             </div>

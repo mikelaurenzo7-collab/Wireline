@@ -22,9 +22,9 @@ export function LiveMonitor({ calls }: { calls: LiveCall[] }) {
         </h3>
         {calls.length > 0 && (
           <div className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500/60"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
             </span>
             <span className="text-[9px] font-mono text-emerald-600/80 uppercase tracking-wider">
               Operational
@@ -40,13 +40,27 @@ export function LiveMonitor({ calls }: { calls: LiveCall[] }) {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="col-span-full py-16 flex flex-col items-center justify-center border border-dashed border-black/8 rounded-3xl bg-black/[0.01]"
+              className="col-span-full py-16 flex flex-col items-center justify-center gap-3 text-center border border-dashed border-black/8 rounded-3xl bg-black/[0.01]"
             >
-              <div className="w-12 h-12 rounded-2xl bg-black/5 flex items-center justify-center mb-4">
-                <Zap className="w-6 h-6 text-muted/20" />
+              <div className="relative">
+                <span
+                  aria-hidden
+                  className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
+                />
+                <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25 flex items-center justify-center">
+                  <Zap className="w-6 h-6" />
+                </div>
               </div>
-              <p className="text-muted/70 text-[10px] uppercase tracking-[0.3em]">
-                Carrier network idle
+              <div className="space-y-1">
+                <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
+                  Carrier network idle
+                </p>
+                <p className="font-display italic text-lg text-ink leading-tight">
+                  Standing by for live calls
+                </p>
+              </div>
+              <p className="text-caption leading-relaxed max-w-[260px]">
+                Active conversations stream here in real time as your fleet picks up calls.
               </p>
             </motion.div>
           ) : (
@@ -70,10 +84,10 @@ export function LiveMonitor({ calls }: { calls: LiveCall[] }) {
                 <div className="relative flex items-center gap-4 mb-5">
                   <div
                     className={clsx(
-                      "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border transition-all",
+                      "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all",
                       call.status === "escalated"
-                        ? "bg-rose-500/10 border-rose-500/20 text-rose-500"
-                        : "bg-brand/10 border-brand/20 text-brand",
+                        ? "border bg-rose-500/10 border-rose-500/20 text-rose-500"
+                        : "bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25",
                     )}
                   >
                     <Phone

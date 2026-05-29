@@ -13,9 +13,17 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
   return (
     <div className="flex flex-col gap-6">
       <div className="p-6 rounded-2xl glass border border-white/10">
-        <h3 className="text-eyebrow mb-6 flex items-center gap-2">
-          <Bot className="w-3.5 h-3.5" /> Brand Identity
-        </h3>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25 flex items-center justify-center shrink-0">
+            <Bot className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
+              Appearance
+            </p>
+            <h3 className="font-display italic text-lg text-ink leading-tight">Brand Identity</h3>
+          </div>
+        </div>
 
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-4">

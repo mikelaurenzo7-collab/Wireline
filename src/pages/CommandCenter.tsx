@@ -351,7 +351,7 @@ export default function LiveOps() {
                     }
                   }}
                   disabled={activatingGrowth}
-                  className="app-primary-btn flex items-center gap-2 px-6 py-3 bg-brand text-on-brand rounded-2xl hover:bg-brand-2 transition-all shadow-xl shadow-brand/20 active:scale-95 disabled:opacity-60 disabled:cursor-wait"
+                  className="app-primary-btn flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-brand to-brand-deep text-on-brand rounded-2xl shadow-sm shadow-brand/20 transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-wait"
                 >
                   <Zap
                     className={clsx("w-4 h-4 fill-current", activatingGrowth && "animate-pulse")}
@@ -438,7 +438,7 @@ export default function LiveOps() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {/* Analytics: Sentiment */}
-                <div className="glass border-black/5 rounded-[2rem] p-4">
+                <div className="glass border-black/5 rounded-[2rem] p-4 hover:border-brand/30 hover:-translate-y-px hover:shadow-md hover:shadow-brand/5 transition-all duration-300">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="app-section-title flex items-center gap-2">
                       <Globe className="w-3.5 h-3.5 text-brand" />
@@ -447,9 +447,24 @@ export default function LiveOps() {
                   </div>
 
                   {sentimentData.length === 0 ? (
-                    <div className="h-48 flex flex-col items-center justify-center gap-2 text-center border border-dashed border-black/8 rounded-2xl bg-black/[0.01] px-6">
-                      <Activity className="w-6 h-6 text-muted/70" />
-                      <p className="text-caption font-medium">No conversations yet</p>
+                    <div className="h-48 flex flex-col items-center justify-center gap-3 text-center border border-dashed border-black/8 rounded-2xl bg-black/[0.01] px-6">
+                      <div className="relative">
+                        <span
+                          aria-hidden
+                          className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
+                        />
+                        <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25 flex items-center justify-center">
+                          <Activity className="w-5 h-5" />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
+                          Awaiting signal
+                        </p>
+                        <p className="font-display italic text-lg text-ink leading-tight">
+                          No conversations yet
+                        </p>
+                      </div>
                       <p className="text-caption leading-relaxed">
                         Make your first call to{" "}
                         <a href="tel:+16306425661" className="text-brand hover:underline">
@@ -515,7 +530,7 @@ export default function LiveOps() {
                 </div>
 
                 {/* Analytics: Unit Economics */}
-                <div className="glass border-black/5 rounded-[2rem] p-4">
+                <div className="glass border-black/5 rounded-[2rem] p-4 hover:border-brand/30 hover:-translate-y-px hover:shadow-md hover:shadow-brand/5 transition-all duration-300">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="app-section-title flex items-center gap-2">
                       <Zap className="w-3.5 h-3.5 text-brand" />
@@ -531,13 +546,13 @@ export default function LiveOps() {
                   <div className="grid grid-cols-2 gap-2">
                     <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
                       <span className="app-section-title block mb-1">Cost / Min</span>
-                      <span className="text-xl font-bold text-ink">
+                      <span className="font-display italic text-2xl text-ink tabular-nums">
                         ${stats?.unitEconomics?.costPerMinute ?? "0.00"}
                       </span>
                     </div>
                     <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
                       <span className="app-section-title block mb-1">Cost / Lead</span>
-                      <span className="text-xl font-bold text-ink">
+                      <span className="font-display italic text-2xl text-ink tabular-nums">
                         ${stats?.unitEconomics?.costPerLead ?? "0.00"}
                       </span>
                     </div>
@@ -565,7 +580,7 @@ export default function LiveOps() {
             {/* Right Column: Intelligence & Actions (4/12) */}
             <div className="lg:col-span-4 space-y-2">
               {/* Intelligence Hub (Action Feed) */}
-              <div className="glass border-black/5 rounded-[2rem] p-4 h-full min-h-[180px] flex flex-col">
+              <div className="glass border-black/5 rounded-[2rem] p-4 h-full min-h-[180px] flex flex-col hover:border-brand/30 hover:shadow-md hover:shadow-brand/5 transition-all duration-300">
                 <ActionFeed actions={actions} onRefresh={refresh} />
               </div>
             </div>
