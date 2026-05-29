@@ -43,31 +43,32 @@ export default function CookieConsent() {
     <AnimatePresence>
       {visible && (
         <motion.div
-          initial={{ y: 64, opacity: 0 }}
+          initial={{ y: 24, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 64, opacity: 0 }}
+          exit={{ y: 24, opacity: 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 36 }}
-          className="fixed bottom-0 left-0 right-0 z-[9999]"
+          className="fixed z-[9999] left-3 right-3 sm:left-5 sm:right-auto sm:max-w-sm"
           role="dialog"
           aria-label="Cookie notice"
           style={{
-            // iOS home-bar / dynamic island clearance — push the
-            // banner up above the bottom safe area on iPhone X+.
-            paddingBottom: "env(safe-area-inset-bottom, 0)",
-            bottom: clearMarketingSticky ? MARKETING_STICKY_CTA_BOTTOM : 0,
+            // Sit just above the bottom edge (and the iOS home bar). When the
+            // marketing sticky CTA is present, ride above it instead.
+            bottom: clearMarketingSticky
+              ? MARKETING_STICKY_CTA_BOTTOM
+              : "max(0.75rem, env(safe-area-inset-bottom, 0))",
           }}
         >
-          {/* Slim bottom bar — full width, never overlaps content columns */}
+          {/* Compact contained card — bottom-left, never spans the screen or
+              overlaps a centered CTA. */}
           <div
-            className="border-t border-black/8 backdrop-blur-xl px-3 sm:px-4 py-3 flex items-center gap-3"
-            style={{ background: "rgba(245,240,232,0.92)" }}
+            className="rounded-2xl border border-black/10 backdrop-blur-xl shadow-lg shadow-black/5 px-3.5 py-3 flex items-start gap-2.5"
+            style={{ background: "rgba(245,240,232,0.94)" }}
           >
             {/* Icon */}
             <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
               style={{
-                background:
-                  "linear-gradient(135deg, rgba(79, 30, 123 ,0.12), rgba(79, 30, 123 ,0.12))",
+                background: "rgba(79, 30, 123 ,0.12)",
                 border: "1px solid rgba(79, 30, 123 ,0.22)",
               }}
             >
@@ -75,15 +76,14 @@ export default function CookieConsent() {
             </div>
 
             {/* Copy */}
-            <p className="text-caption leading-relaxed flex-1 min-w-0">
-              We use only essential cookies to keep you signed in — no advertising or cross-site
-              tracking.{" "}
+            <p className="text-[12px] leading-relaxed flex-1 min-w-0 text-ink/80">
+              Essential cookies only — no ad or cross-site tracking.{" "}
               <Link
                 to="/privacy"
                 className="text-brand hover:text-brand/80 underline"
                 onClick={dismiss}
               >
-                Privacy policy
+                Privacy
               </Link>
               {" · "}
               <Link
@@ -100,7 +100,7 @@ export default function CookieConsent() {
               type="button"
               onClick={dismiss}
               aria-label="Dismiss cookie notice"
-              className="shrink-0 w-11 h-11 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center hover:bg-black/8 transition-colors text-muted hover:text-ink"
+              className="shrink-0 w-9 h-9 -mt-1 -mr-1.5 rounded-lg flex items-center justify-center hover:bg-black/8 transition-colors text-muted hover:text-ink"
             >
               <X className="w-4 h-4" />
             </button>
