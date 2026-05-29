@@ -6,7 +6,7 @@ import PublicSiteHeader from "../components/marketing/PublicSiteHeader";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import { PageMeta } from "../lib/page-meta";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
-import { WIRELINE_CONTACT_AGENTS, WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
+import { WIRELINE_CONTACT_AGENTS } from "../data/contact-agents";
 import type { ContactAgent } from "../data/contact-agents";
 
 const STATS = [
@@ -92,12 +92,10 @@ const FOOTER_COLS = [
 
 function AgentCard({
   agent,
-  isDemo,
   featured = false,
   delay = 0,
 }: {
   agent: ContactAgent;
-  isDemo: boolean;
   featured?: boolean;
   delay?: number;
 }) {
@@ -126,14 +124,8 @@ function AgentCard({
             >
               {agent.name}
             </span>
-            <span
-              className={`font-mono text-[10px] uppercase tracking-[0.2em] px-2 py-0.5 leading-none ${
-                isDemo
-                  ? "text-ink/70 border border-ink/12"
-                  : "text-brand bg-brand/8 border border-brand/20"
-              }`}
-            >
-              {isDemo ? "Demo" : "Team"}
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] px-2 py-0.5 leading-none text-brand bg-brand/8 border border-brand/20">
+              Team
             </span>
           </div>
           <p
@@ -163,12 +155,17 @@ export default function LandingPage() {
     captureSignupIntentFromLocation();
   }, []);
 
-  const allAgents = [
-    ...WIRELINE_CONTACT_AGENTS.map((a) => ({ agent: a, isDemo: false })),
-    ...WIRELINE_DEMO_AGENTS.map((a) => ({ agent: a, isDemo: true })),
-  ];
-  const featured = allAgents[0];
-  const rest = allAgents.slice(1);
+  // Landing page shows only the Wireline team lines — the real people a
+  // prospect talks to. Vertical demo agents live on the Demos tab
+  // (/showcase) and in the signed-in /help console, so they stay one
+  // click away without crowding the hero.
+  const teamAgents = WIRELINE_CONTACT_AGENTS;
+  const teamColsClass =
+    teamAgents.length <= 1
+      ? ""
+      : teamAgents.length === 2
+        ? "sm:grid-cols-2"
+        : "sm:grid-cols-2 lg:grid-cols-3";
 
   return (
     <>
@@ -194,9 +191,12 @@ export default function LandingPage() {
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
               className="text-center"
             >
-              <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/70 mb-6 lg:mb-8">
-                Phone + Email + SMS
-              </p>
+              <span className="inline-flex items-center gap-2 border border-ink/15 bg-ink/[0.03] px-4 py-1.5 mb-7 lg:mb-9">
+                <span className="w-1.5 h-1.5 bg-brand" aria-hidden="true" />
+                <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/70">
+                  Phone + Email + SMS
+                </span>
+              </span>
 
               <h1 className="font-display italic text-[clamp(2.5rem,7vw,5.5rem)] leading-[0.95] tracking-tight text-ink max-w-4xl mx-auto">
                 Every conversation, <span className="text-brand">answered like your best rep.</span>
@@ -257,30 +257,37 @@ export default function LandingPage() {
                 Live right now
               </p>
               <h2 className="font-display italic text-[clamp(1.8rem,4vw,3rem)] leading-[1.05] text-ink max-w-2xl">
-                Call any agent from your phone.{" "}
-                <span className="text-ink/65">No signup required.</span>
+                Talk to the Wireline team. <span className="text-ink/65">No signup required.</span>
               </h2>
             </motion.div>
 
-            {/* Asymmetric bento grid */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-px bg-ink/[0.08]">
-              {/* Featured agent — spans 8 cols */}
-              <div className="md:col-span-8">
-                <AgentCard agent={featured.agent} isDemo={featured.isDemo} featured delay={0} />
-              </div>
-              {/* Second agent — spans 4 cols */}
-              {rest[0] && (
-                <div className="md:col-span-4">
-                  <AgentCard agent={rest[0].agent} isDemo={rest[0].isDemo} delay={0.05} />
-                </div>
-              )}
-              {/* Remaining agents — alternating 4-col grid */}
-              {rest.slice(1).map(({ agent, isDemo }, i) => (
-                <div key={agent.tel} className="md:col-span-4">
-                  <AgentCard agent={agent} isDemo={isDemo} delay={0.05 + (i + 1) * 0.03} />
-                </div>
+            {/* Wireline team lines — equal cards in a single horizontal row */}
+            <div
+              className={`grid grid-cols-1 ${teamColsClass} gap-px bg-ink/[0.08] border border-ink/[0.08] max-w-5xl mx-auto`}
+            >
+              {teamAgents.map((agent, i) => (
+                <AgentCard key={agent.tel} agent={agent} delay={i * 0.05} />
               ))}
             </div>
+
+            {/* Vertical demo agents now live on the Demos tab — keep them
+                one click away for prospects who want their own industry. */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="mt-8 text-center"
+            >
+              <Link
+                to="/showcase"
+                data-testid="agent-directory-demos-link"
+                className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-ink/65 hover:text-brand transition-colors"
+              >
+                Want an agent for your industry? Hear a live demo
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </Link>
+            </motion.div>
           </div>
         </section>
 

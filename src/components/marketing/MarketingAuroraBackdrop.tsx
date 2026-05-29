@@ -1,27 +1,16 @@
-import { motion } from "motion/react";
-
-/** Shared ambient gradient — keeps public pages feeling like one product. */
+/**
+ * Shared marketing backdrop.
+ *
+ * Previously rendered two soft radial "aurora" blobs (a purple one anchored
+ * off the top-left edge, a terracotta one bottom-right). On the warm cream
+ * paper those blobs read as an accidental purple/cream smudge in the corner
+ * rather than an intentional accent — and the landing page, which builds its
+ * own surface, never had them, so the public site looked inconsistent
+ * page-to-page. The brand's aurora gradients were flattened to solid brand
+ * ink pre-launch (see `.text-aurora` in index.css); this backdrop now matches
+ * that decision with a clean, uniform paper canvas across every marketing
+ * page.
+ */
 export default function MarketingAuroraBackdrop() {
-  return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
-      <motion.div
-        className="absolute -top-[22%] -left-[12%] w-[min(520px,48vw)] h-[min(520px,48vw)] rounded-full"
-        style={{
-          background: "radial-gradient(circle, rgba(79,30,123,0.11), transparent 68%)",
-          filter: "blur(42px)",
-        }}
-        animate={{ x: [0, 18, 0], y: [0, -12, 0] }}
-        transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="absolute -bottom-[18%] -right-[10%] w-[min(440px,42vw)] h-[min(440px,42vw)] rounded-full"
-        style={{
-          background: "radial-gradient(circle, rgba(217,119,82,0.09), transparent 70%)",
-          filter: "blur(48px)",
-        }}
-        animate={{ x: [0, -14, 0], y: [0, 10, 0] }}
-        transition={{ duration: 28, repeat: Infinity, ease: "easeInOut" }}
-      />
-    </div>
-  );
+  return <div className="pointer-events-none fixed inset-0 z-0 bg-paper" aria-hidden />;
 }
