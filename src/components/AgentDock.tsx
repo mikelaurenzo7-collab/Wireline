@@ -202,12 +202,20 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
     <div className="flex flex-col h-full min-h-0 rounded-2xl border border-black/8 glass overflow-hidden">
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-black/8">
-        <div className="flex items-center gap-2 min-w-0">
-          <Activity className="w-4 h-4 text-brand shrink-0" />
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="shrink-0 flex w-8 h-8 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25">
+            <Activity className="w-4 h-4" />
+          </span>
           <div className="min-w-0">
-            <p className="text-[12px] font-medium text-ink truncate">Mission control</p>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-muted/70 truncate">
-              {agentName} · live
+            <p className="text-[12px] font-semibold text-ink truncate leading-tight">
+              Mission control
+            </p>
+            <p className="flex items-center gap-1.5 text-[10px] text-muted leading-tight">
+              <span className="relative flex h-1.5 w-1.5 shrink-0" aria-hidden="true">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500/60" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+              </span>
+              <span className="truncate">{agentName} · live</span>
             </p>
           </div>
         </div>
@@ -224,7 +232,7 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
       <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-5 scrollbar-hide">
         {/* Pulse */}
         <section>
-          <p className="text-[10px] uppercase tracking-[0.22em] text-muted/70 mb-2">
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted/70 mb-2">
             Pulse · last {pulse?.windowHours ?? 24}h
           </p>
           <div className="grid grid-cols-5 gap-1.5">
@@ -251,7 +259,7 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
 
         {/* Quick actions */}
         <section>
-          <p className="text-[10px] uppercase tracking-[0.22em] text-muted/70 mb-2">
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted/70 mb-2">
             Launch an action
           </p>
           <div className="grid grid-cols-2 gap-1.5">
@@ -259,7 +267,7 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
               <button
                 key={a.label}
                 onClick={() => onLaunch(a.text)}
-                className="group flex items-center gap-2 rounded-xl border border-black/8 glass px-2.5 py-2 text-left hover:border-brand/40 hover:bg-brand/[0.04] transition-all"
+                className="group flex items-center gap-2 rounded-xl border border-black/8 glass px-2.5 py-2 text-left hover:border-brand/40 hover:bg-brand/[0.04] hover:-translate-y-px transition-all duration-300"
               >
                 <a.icon className="w-3.5 h-3.5 text-brand shrink-0" />
                 <span className="text-[11px] font-medium text-ink truncate">{a.label}</span>
@@ -274,7 +282,9 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
         {/* Capabilities by integration */}
         <section>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] uppercase tracking-[0.22em] text-muted/70">Capabilities</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted/70">
+              Capabilities
+            </p>
             <span className="text-[9px] uppercase tracking-[0.18em] text-brand/80">
               {enabledCount}/{AGENT_TOOL_CATALOG.length} on
             </span>
@@ -330,7 +340,9 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
 
         {/* Recent call outcomes */}
         <section>
-          <p className="text-[10px] uppercase tracking-[0.22em] text-muted/70 mb-2">Latest calls</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted/70 mb-2">
+            Latest calls
+          </p>
           {overview && overview.recentCalls.length === 0 ? (
             <p className="text-[11px] text-muted/70 leading-relaxed">
               No calls yet. When {agentName} starts taking calls, the latest outcomes show here.
