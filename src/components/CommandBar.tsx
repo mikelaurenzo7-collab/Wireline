@@ -12,6 +12,7 @@ import {
   BarChart3,
   Calendar,
   MessageSquare,
+  MessagesSquare,
   MessageCircle,
   PhoneOutgoing,
   History,
@@ -20,7 +21,6 @@ import {
   Sparkles,
   Activity,
   Database,
-  Radio,
   Headphones,
   Crown,
   Kanban,
@@ -59,8 +59,17 @@ export default function CommandBar() {
   const commands: CommandItem[] = [
     // ── Navigation ─────────────────────────────────────────
     {
+      id: "chat",
+      label: "Chat",
+      description: "Direct your agents — the main control surface",
+      icon: MessagesSquare,
+      category: "Navigation",
+      shortcut: "C",
+      action: () => navigate("/chat"),
+    },
+    {
       id: "dash",
-      label: "Dashboard",
+      label: "Live Ops",
       description: "Live overview of agents and activity",
       icon: Activity,
       category: "Navigation",
@@ -135,14 +144,6 @@ export default function CommandBar() {
       icon: Kanban,
       category: "Navigation",
       action: () => navigate("/pipeline"),
-    },
-    {
-      id: "live",
-      label: "Live Monitor",
-      description: "Real-time agent activity grid",
-      icon: Radio,
-      category: "Navigation",
-      action: () => navigate("/live"),
     },
     {
       id: "cockpit",

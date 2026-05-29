@@ -19,7 +19,6 @@ const CallLogs = lazy(() => import("../components/CallLogs"));
 const EmailInbox = lazy(() => import("../components/EmailInbox"));
 const SmsThreads = lazy(() => import("../components/SmsThreads"));
 const KnowledgeBaseManager = lazy(() => import("../components/KnowledgeBaseManager"));
-const LiveMonitor = lazy(() => import("../components/LiveMonitor"));
 const DncManager = lazy(() => import("../components/DncManager"));
 const AuditLog = lazy(() => import("../components/AuditLog"));
 const LiveOps = lazy(() => import("../pages/CommandCenter"));
@@ -47,19 +46,12 @@ export default function AppRoutes() {
               </PageTransition>
             }
           />
-          {/* /dashboard and /command both redirect to / — single consolidated Home */}
+          {/* /dashboard, /command and /live all redirect to / — the live call
+              grid lives on Live Ops (/) and supervisory tooling on /cockpit, so
+              a separate standalone monitor was redundant. */}
           <Route path="/dashboard" element={<Navigate to="/" replace />} />
           <Route path="/command" element={<Navigate to="/" replace />} />
-          <Route
-            path="/live"
-            element={
-              <PageTransition>
-                <ErrorBoundary>
-                  <LiveMonitor />
-                </ErrorBoundary>
-              </PageTransition>
-            }
-          />
+          <Route path="/live" element={<Navigate to="/" replace />} />
           <Route
             path="/triage"
             element={

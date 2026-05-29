@@ -31,7 +31,6 @@ import { formatDate } from "../lib/safe-date";
 import SupervisedAgentTuner from "./SupervisedAgentTuner";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { HelpTooltip } from "./HelpTooltip";
-import AgentWorkspace from "./AgentWorkspace";
 import { useToast } from "../contexts/ToastContext";
 import AgentFlowComposer from "./AgentFlowComposer";
 import AgentActionEngine from "./AgentActionEngine";
@@ -39,17 +38,9 @@ import VoiceLibraryPanel from "./admin/VoiceLibraryPanel";
 import PronunciationDictionaryPanel from "./PronunciationDictionaryPanel";
 import HubTabs, { TRAINING_HUB } from "./HubTabs";
 
-type TrainingTab =
-  | "workspace"
-  | "database"
-  | "voices"
-  | "pronunciation"
-  | "simulator"
-  | "flow"
-  | "actions";
+type TrainingTab = "database" | "voices" | "pronunciation" | "simulator" | "flow" | "actions";
 
 const VALID_TRAINING_TABS: TrainingTab[] = [
-  "workspace",
   "database",
   "voices",
   "pronunciation",
@@ -74,7 +65,7 @@ export default function AgentTraining() {
   // landing for those panels.
   const initialTab: TrainingTab = (() => {
     const qs = new URLSearchParams(location.search).get("tab") as TrainingTab;
-    return VALID_TRAINING_TABS.includes(qs) ? qs : "workspace";
+    return VALID_TRAINING_TABS.includes(qs) ? qs : "database";
   })();
   const [activeTab, setActiveTabState] = useState<TrainingTab>(initialTab);
 
@@ -83,7 +74,7 @@ export default function AgentTraining() {
   const setActiveTab = (next: TrainingTab) => {
     setActiveTabState(next);
     const params = new URLSearchParams(location.search);
-    if (next === "workspace") params.delete("tab");
+    if (next === "database") params.delete("tab");
     else params.set("tab", next);
     const qs = params.toString();
     navigate(qs ? `/train?${qs}` : "/train", { replace: true });
@@ -302,6 +293,20 @@ export default function AgentTraining() {
               </select>
               <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none" />
             </div>
+            {/* Coaching moved to the main Chat surface — Training is now pure
+                configuration. Deep-link to the selected agent's chat so the
+                operator can converse without losing their place. */}
+            <button
+              type="button"
+              onClick={() =>
+                navigate(selectedAgentId !== "default-agent" ? `/chat/${selectedAgentId}` : "/chat")
+              }
+              className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg glass border border-white/10 text-[11px] text-ink hover:border-brand/40 hover:text-brand transition-colors"
+              title="Coaching lives in Chat now — direct this agent in plain language"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Coach in Chat</span>
+            </button>
           </div>
         </div>
 
@@ -370,12 +375,6 @@ export default function AgentTraining() {
           className="flex flex-wrap gap-1.5 max-w-[1400px] mx-auto w-full mt-2"
         >
           {[
-            {
-              id: "workspace",
-              label: "Coach",
-              icon: MessageSquare,
-              help: "Chat with your agent — coach it on new situations, give context, ask how recent calls went. The main place to teach.",
-            },
             {
               id: "database",
               label: "Knowledge",
@@ -912,24 +911,6 @@ export default function AgentTraining() {
               className="h-full"
             >
               <AgentFlowComposer agentId={selectedAgentId} />
-            </motion.div>
-          )}
-
-          {activeTab === "workspace" && (
-            <motion.div
-              key="workspace"
-              role="tabpanel"
-              id="training-panel-workspace"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute inset-0"
-            >
-              <AgentWorkspace
-                agentId={selectedAgentId}
-                agentName={agents.find((a) => a.id === selectedAgentId)?.name || "your agent"}
-              />
             </motion.div>
           )}
 

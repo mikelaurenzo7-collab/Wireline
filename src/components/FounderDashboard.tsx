@@ -383,7 +383,7 @@ export default function FounderDashboard() {
         <div className="mt-6 flex flex-wrap gap-2">
           {[
             { label: "Call logs + analytics", href: "/logs", icon: Phone },
-            { label: "Live call monitor", href: "/live", icon: Headphones },
+            { label: "Supervisor cockpit", href: "/cockpit", icon: Headphones },
             { label: "Agent training", href: "/train", icon: Sparkles },
           ].map((l) => (
             <a

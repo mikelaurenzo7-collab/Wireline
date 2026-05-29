@@ -105,7 +105,6 @@ export const PAGE_TITLES: Record<string, string> = {
   "/sms": "SMS",
   "/outbound": "Outbound",
   "/insights": "Insights",
-  "/live": "Live Monitor",
   "/cockpit": "Supervisor Cockpit",
   "/train": "Training",
   "/knowledge": "Knowledge",
@@ -123,7 +122,6 @@ export const PAGE_TITLES: Record<string, string> = {
 export const ROUTE_ACCENTS: Record<string, [string, string]> = {
   "/": ["#4F1E7B", "#10B981"],
   "/triage": ["#FFC07D", "#4F1E7B"],
-  "/live": ["#4F1E7B", "#10B981"],
   "/insights": ["#4F1E7B", "#FFC07D"],
   "/logs": ["#4F1E7B", "#3B154C"],
   "/inbox": ["#4F1E7B", "#10B981"],
