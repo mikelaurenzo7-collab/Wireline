@@ -26,6 +26,24 @@ that makes every agent read the caller's tone in real time, and a
 hard rule that the agent **never claims an action it doesn't have a
 tool for.** It's the brand line your competitors can't credibly copy.
 
+## Launch-ready for SMBs & everyday businesses
+
+Wireline is production-hardened and client-ready today. Every agent
+carries the same non-negotiable guardrails (business-hours enforcement,
+disallowed-topic blocks, escalation keywords, compliance modes for
+HIPAA/PCI/GDPR/financial/legal, and the iron rule: **never claim an
+action without a tool**). The adaptive core reads tone in real time
+and stays conversational. Lower-plan Claude or GPT stacks routinely
+hallucinate, fabricate follow-ups, or go silent on complex prompts;
+Wireline's Sonnet-4.6 voice path + Opus-4.7 reasoning layer + strict
+tool contracts deliver consistent, trustworthy performance at SMB
+scale without babysitting.
+
+Vertical demo templates (medical intake, real estate, insurance claims,
+outbound SDR) + self-serve Stripe plans + live supervisor cockpit +
+recipe library mean a non-technical owner can spin up a production
+agent in minutes and trust it with real customers.
+
 ## Live demo — call any of these numbers right now
 
 | Agent | Vibe | Number | Plays |

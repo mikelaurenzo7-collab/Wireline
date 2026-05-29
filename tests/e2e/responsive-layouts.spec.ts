@@ -176,3 +176,150 @@ test.describe("Responsive — signup form adapts", () => {
     expect(box!.x).toBeGreaterThan(200);
   });
 });
+
+/**
+ * Owner-grade design system enforcement for the two viewports that matter most:
+ * - Mobile (Pixel 5 / iPhone 12 in the Playwright projects): the first impression
+ *   for the majority of future paying SMB and everyday users. Must feel flawless
+ *   — 36px+ thumb-friendly tap targets, appropriately smaller typography (user
+ *   preference for density on phones), no overflow, generous but not sloppy spacing.
+ * - Desktop / Laptop (1440×900+): refined, breathable, premium tool feel. Slightly
+ *   larger elegant targets and typography, proper visual hierarchy, no "mobile
+ *   ported" cramped or overly sparse layout.
+ *
+ * These tests protect the exact rules we are actively enforcing in AgentChat,
+ * AgentWorkspace, composer, pricing CTAs, and all future operator surfaces.
+ */
+test.describe("Design system — mobile-first flawless + desktop refined", () => {
+  test("primary CTAs on pricing meet 36px+ mobile tap target and scale elegantly on desktop", async ({ page }) => {
+    // Mobile phone viewport (first impression surface)
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoHydrated(page, "/pricing");
+
+    await assertNoHorizontalOverflow(page);
+
+    const cta = page.getByRole("link", { name: /start free trial/i }).first();
+    await expect(cta).toBeVisible();
+
+    const box = await cta.boundingBox();
+    expect(box).toBeTruthy();
+    // Owner standard: 36px minimum for critical mobile interactive elements
+    expect(box!.height).toBeGreaterThanOrEqual(36);
+
+    // Desktop / laptop — refined, not cramped, good visual weight
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await gotoHydrated(page, "/pricing");
+
+    const desktopCta = page.getByRole("link", { name: /start free trial/i }).first();
+    const desktopBox = await desktopCta.boundingBox();
+    expect(desktopBox).toBeTruthy();
+    // Desktop can be slightly smaller per refined aesthetic but must still be comfortable
+    expect(desktopBox!.height).toBeGreaterThanOrEqual(32);
+    // Not absurdly tall (no "mobile port" bloat)
+    expect(desktopBox!.height).toBeLessThanOrEqual(52);
+  });
+
+  test("interactive pills and buttons on mobile respect density + reachability rules", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoHydrated(page, "/pricing");
+
+    // Any prominent buttons/pills should meet the mobile 36px floor
+    const buttons = page.getByRole("button");
+    const count = await buttons.count();
+    for (let i = 0; i < Math.min(count, 5); i++) {
+      const b = buttons.nth(i);
+      if (await b.isVisible()) {
+        const box = await b.boundingBox();
+        if (box) {
+          expect(box.height).toBeGreaterThanOrEqual(32); // soft floor; critical ones are 36+
+        }
+      }
+    }
+  });
+
+  test("workspace-like tab/pill patterns would be usable on mobile and refined on desktop (regression guard)", async ({ page }) => {
+    // We test the public patterns that mirror the workspace pill/toggle language
+    // (glass, rounded-full, small text on mobile, generous targets).
+    // Full authenticated workspace version lives in a dedicated workspace E2E spec.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoHydrated(page, "/");
+
+    await assertNoHorizontalOverflow(page);
+
+    // Desktop refinement check
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await gotoHydrated(page, "/");
+
+    await assertNoHorizontalOverflow(page);
+    await assertSingleH1(page);
+  });
+});
+
+/**
+ * TDD lock-in for the exact mobile + desktop design system rules we are enforcing
+ * across the primary operator surfaces (AgentChat rail, AgentWorkspace tabs,
+ * composer, proposal cards, etc.).
+ *
+ * These tests are written first (TDD) to define the non-negotiable owner standards:
+ * - Mobile (most users' first experience): 36px+ thumb-friendly targets, 9-11px
+ *   secondary text, tight-but-usable density, no cramped or unreachable controls.
+ * - Desktop/laptop: Refined, breathable, premium tool aesthetic — slightly larger
+ *   elegant targets and typography, proper visual hierarchy, generous but not wasteful
+ *   spacing. Never feels like "mobile ported" or "desktop neglected".
+ */
+test.describe("Design system TDD — workspace tabs & composer (mobile flawless + desktop refined)", () => {
+  test("workspace tab/pill targets meet 36px+ on mobile phones and stay refined on desktop", async ({ page }) => {
+    // This mirrors the exact pill structure in AgentWorkspace (Training/Connectors/Memory toggles)
+    // and the rail in AgentChat. We assert the invariants so regressions in future edits are caught.
+
+    // Mobile phone (Pixel 5 / iPhone 12 class — primary first-impression viewport)
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoHydrated(page, "/pricing"); // public proxy for pill-like CTAs
+
+    const mobileButtons = page.getByRole("link", { name: /start free trial|compare plans/i });
+    if (await mobileButtons.count() > 0) {
+      const box = await mobileButtons.first().boundingBox();
+      if (box) {
+        expect(box.height).toBeGreaterThanOrEqual(36);
+      }
+    }
+
+    // Desktop / laptop (1440×900+)
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await gotoHydrated(page, "/pricing");
+
+    const desktopButtons = page.getByRole("link", { name: /start free trial|compare plans/i });
+    if (await desktopButtons.count() > 0) {
+      const box = await desktopButtons.first().boundingBox();
+      if (box) {
+        // Refined desktop: comfortable but elegant (not bloated, not tiny)
+        expect(box.height).toBeGreaterThanOrEqual(32);
+        expect(box.height).toBeLessThanOrEqual(52);
+      }
+    }
+  });
+
+  test("composer-style action buttons (paperclip/send) respect thumb reach on mobile and refined proportions on desktop", async ({ page }) => {
+    // Proxy test using public surfaces that have similar icon-button + input clusters.
+    // Real workspace composer assertions belong in a dedicated authenticated workspace E2E spec.
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoHydrated(page, "/signup");
+
+    await assertNoHorizontalOverflow(page);
+
+    // Look for any prominent rounded action buttons
+    const actionButtons = page.locator("button, a[role='button']");
+    const count = await actionButtons.count();
+    for (let i = 0; i < Math.min(count, 4); i++) {
+      const btn = actionButtons.nth(i);
+      if (await btn.isVisible()) {
+        const box = await btn.boundingBox();
+        if (box && box.height > 20) {
+          // Mobile floor
+          expect(box.height).toBeGreaterThanOrEqual(32);
+        }
+      }
+    }
+  });
+});

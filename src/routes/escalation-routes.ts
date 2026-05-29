@@ -25,12 +25,25 @@
  */
 
 import { Router, Request, Response } from "express";
+import rateLimit from "express-rate-limit";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import twilio from "twilio";
 import { timingSafeEq, VAPI_WEBHOOK_SECRET } from "../lib/vapi-helpers";
 import { postMessage as slackPostMessage, getDefaultChannel } from "../lib/slack-service";
+
+// Targeted, tight rate limit on the public escalation webhook.
+// Real Vapi incidents during a busy period might legitimately produce a handful of escalations.
+// Abuse/flooding could spam the owner with SMS or pollute the triage queue.
+// 12 req / 60s per IP is generous for legitimate traffic and still blocks scripted attacks.
+const escalationRateLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 12,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many escalation requests from this source." },
+});
 
 const router = Router();
 
@@ -68,9 +81,12 @@ async function dispatchOwnerSms(
   }
 }
 
-router.post("/api/escalate", async (req: Request, res: Response) => {
-  // Auth — same secret as the main Vapi webhook (Vapi sends it as
-  // X-Vapi-Secret or X-Vapi-Signature). Reject mismatches.
+router.post(
+  "/api/escalate",
+  escalationRateLimiter,
+  async (req: Request, res: Response) => {
+    // Auth — same secret as the main Vapi webhook (Vapi sends it as
+    // X-Vapi-Secret or X-Vapi-Signature). Reject mismatches.
   const provided =
     (req.headers["x-vapi-secret"] as string | undefined) ||
     (req.headers["x-vapi-signature"] as string | undefined) ||

@@ -113,6 +113,7 @@ export default function AgentChat() {
               <Compass className="w-3.5 h-3.5" />
             </span>
             <span className="min-w-0 hidden sm:block">
+              {/* Mobile-first: 10px body on <sm (user preference for dense mobile), 12px on lg+. 36px+ tap targets enforced on rail items. */}
               <span className="block text-[10px] lg:text-[12px] font-medium text-ink truncate max-w-[7rem] lg:max-w-none">
                 Director
               </span>
@@ -126,6 +127,7 @@ export default function AgentChat() {
                 key={a.id}
                 onClick={() => navigate(`/chat/${a.id}`)}
                 className={cn(
+                  // Mobile-first dense: 36px min tap target (Apple HIG + user preference), tighter 1.5px py on mobile, 10-11px text.
                   "shrink-0 lg:w-full text-left rounded-xl px-2 lg:px-3 py-1.5 lg:py-2.5 border transition-all flex items-center gap-1.5 min-h-[36px] lg:min-h-0",
                   isActive
                     ? "border-brand/40 bg-brand/[0.06]"

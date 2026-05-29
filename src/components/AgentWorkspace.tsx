@@ -719,7 +719,11 @@ export default function AgentWorkspace({
           )}
         </div>
 
-        {/* Panel toggle pills — inline above the composer */}
+        {/* Panel toggle pills — inline above the composer.
+            Design rule (owner standard):
+            - Mobile (first impression for most users): 36-40px min tap targets, 10-11px text, generous thumb padding.
+            - Desktop/laptop: Elegant, slightly larger breathing room, refined hierarchy, no cramped feeling.
+            Both must feel flawless. */}
         <div className="shrink-0 flex items-center gap-1.5 px-3 pt-2 pb-1 overflow-x-auto scrollbar-hide">
           {WORKSPACE_TABS.filter((t) => t.id !== "chat").map((tab) => {
             const isOpen = panelOpen === tab.id;
@@ -728,7 +732,8 @@ export default function AgentWorkspace({
                 key={tab.id}
                 onClick={() => (isOpen ? closePanel() : openPanel(tab.id))}
                 className={cn(
-                  "shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[10px] font-medium transition-all min-h-[32px]",
+                  // Mobile: 36px+ min target (flawless thumb reach). Desktop: more generous py and refined text.
+                  "shrink-0 inline-flex items-center gap-1.5 px-3 sm:px-2.5 py-2 sm:py-1.5 rounded-full text-[11px] sm:text-[10px] font-medium transition-all min-h-[36px] sm:min-h-[32px]",
                   isOpen
                     ? "bg-brand/10 text-brand border border-brand/30"
                     : "glass border border-black/10 text-muted hover:text-ink hover:border-brand/25",
@@ -737,7 +742,7 @@ export default function AgentWorkspace({
                 aria-controls={`workspace-panel-${tab.id}`}
                 title={tab.help}
               >
-                <tab.icon className="w-3 h-3" />
+                <tab.icon className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
                 <span>{tab.label}</span>
                 {tab.id === "connectors" && enabledTools.length > 0 && (
                   <span className="text-[9px] text-muted/70">{enabledTools.length}</span>
@@ -747,9 +752,11 @@ export default function AgentWorkspace({
           })}
         </div>
 
-        {/* Composer */}
-        <div className="shrink-0 px-3 py-2 border-t border-black/8 bg-paper/50">
-          <div className="flex items-end gap-1.5">
+        {/* Composer — flawless on mobile (thumb-first) and refined on desktop/laptop.
+            Mobile: 40-44px easy thumb targets, slightly larger hit areas, tight but comfortable.
+            Desktop: Elegant proportions, better visual weight, generous but not wasteful spacing. */}
+        <div className="shrink-0 px-3 py-2.5 sm:py-2 border-t border-black/8 bg-paper/50">
+          <div className="flex items-end gap-2 sm:gap-1.5">
             {/* Hidden file input — paperclip button triggers it */}
             <input
               ref={fileInputRef}
@@ -761,7 +768,7 @@ export default function AgentWorkspace({
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading || isSending}
-              className="shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-xl glass border border-black/10 flex items-center justify-center text-muted hover:text-ink hover:border-brand/40 transition-all disabled:opacity-40"
+              className="shrink-0 w-10 h-10 sm:w-9 sm:h-9 rounded-xl glass border border-black/10 flex items-center justify-center text-muted hover:text-ink hover:border-brand/40 transition-all disabled:opacity-40 active:scale-[0.985]"
               aria-label="Attach PDF"
               title="Attach a PDF — the agent will read it and add to its knowledge"
             >
@@ -783,12 +790,12 @@ export default function AgentWorkspace({
               }
               rows={1}
               disabled={isSending || isUploading}
-              className="flex-1 resize-none rounded-xl glass border border-black/10 px-3 py-2 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors disabled:opacity-60 leading-relaxed max-h-24"
+              className="flex-1 resize-none rounded-2xl glass border border-black/10 px-3.5 py-2.5 sm:py-2 text-[14px] sm:text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors disabled:opacity-60 leading-relaxed max-h-24"
             />
             <button
               onClick={send}
               disabled={!input.trim() || isSending || isUploading}
-              className="shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-brand text-on-brand flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-30"
+              className="shrink-0 w-10 h-10 sm:w-9 sm:h-9 rounded-xl bg-brand text-on-brand flex items-center justify-center hover:opacity-90 active:scale-[0.985] transition-all disabled:opacity-30"
               aria-label="Send message"
             >
               {isSending ? (

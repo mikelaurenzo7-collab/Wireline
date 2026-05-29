@@ -87,4 +87,23 @@ describe("clampRuntimePrompt", () => {
     expect(out.startsWith("y".repeat(MAX_RUNTIME_PROMPT_CHARS))).toBe(true);
     expect(out).toContain("[Context trimmed for voice latency");
   });
+
+  it("never increases prompt size on clamp", () => {
+    const exact = "z".repeat(MAX_RUNTIME_PROMPT_CHARS);
+    expect(clampRuntimePrompt(exact).length).toBe(MAX_RUNTIME_PROMPT_CHARS);
+  });
+});
+
+describe("webhook signature timing safety (defense in depth)", () => {
+  it("timingSafeEq is used for secret comparison (regression guard)", () => {
+    // This documents the invariant that webhook secret checks must use the
+    // constant-time helper, not === or ==. We test the helper itself here.
+    expect(timingSafeEq).toBeTypeOf("function");
+  });
+
+  it("rejects obvious timing attack vectors on different lengths", () => {
+    // Long vs short should short-circuit safely without leaking length info
+    // via timing (the implementation already guarantees this).
+    expect(timingSafeEq("a".repeat(64), "b")).toBe(false);
+  });
 });

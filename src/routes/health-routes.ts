@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 import express, { Request, Response, NextFunction } from "express";
-import { drizzle } from "../lib/server-context";
+import { timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
+import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
 import { getHealthCapabilities, getIntegrationsStatus } from "../lib/integrations-registry";
@@ -389,24 +390,60 @@ router.get(
 );
 
 /**
- * GET /api/health/canary — On-demand demo-line health probe.
+ * GET /api/health/canary — On-demand or nightly demo-line health probe.
  *
- * Runs the same checks as the nightly canary job: verifies each
- * showcase number exists in Vapi and has a reachable assistant.
- * Authenticated (owner/admin only in practice since it makes
- * external Vapi API calls that could be rate-limited).
+ * Supports two auth modes with extreme precision:
+ * 1. CRON_SECRET Bearer token (for the Vercel nightly cron at 04:00 UTC).
+ *    Uses timingSafeEqual to prevent timing attacks.
+ * 2. Authenticated user (JWT) for manual on-demand runs from the UI.
  *
- * Returns the full CanaryRunResult so the operator can see exactly
- * which lines are healthy and which need attention.
+ * The nightly run catches Vapi number/ assistant drift before prospects do.
  */
-router.get("/canary", healthRateLimiter, authenticateUser, async (_req: Request, res: Response) => {
-  try {
-    const { runDemoLineCanary } = await import("../lib/demo-line-canary");
-    const result = await runDemoLineCanary();
-    res.status(result.allHealthy ? 200 : 503).json(result);
-  } catch (err: any) {
-    res.status(500).json({ error: getErrorMessage(err) });
+router.get("/canary", healthRateLimiter, async (req: Request, res: Response, next: NextFunction) => {
+  const expected = process.env.CRON_SECRET || "";
+  const authz = String(req.headers.authorization || "");
+  const token = authz.startsWith("Bearer ") ? authz.slice(7) : "";
+  const isCron =
+    expected.length >= 16 &&
+    token.length === expected.length &&
+    cryptoTimingSafeEqual(Buffer.from(token, "utf8"), Buffer.from(expected, "utf8"));
+
+  if (isCron) {
+    // Cron path — bypass user auth, run the probe, log outcome.
+    try {
+      const { runDemoLineCanary } = await import("../lib/demo-line-canary");
+      const result = await runDemoLineCanary();
+      if (!result.allHealthy) {
+        log.warn("Demo-line canary nightly run detected unhealthy lines", {
+          timestamp: result.timestamp,
+          failedLines: result.lines.filter((l) => !l.numberOk || !l.assistantOk).map((l) => l.tel),
+        });
+      }
+      return res.status(result.allHealthy ? 200 : 503).json(result);
+    } catch (err: any) {
+      log.error("Demo-line canary cron failed", { error: getErrorMessage(err) });
+      return res.status(500).json({ error: getErrorMessage(err) });
+    }
   }
+
+  // Not a cron — require normal user auth for on-demand use.
+  return authenticateUser(req as AuthenticatedRequest, res, next);
 });
+
+// The actual user-authenticated handler (chained after the gate above when not cron)
+router.get(
+  "/canary",
+  healthRateLimiter,
+  authenticateUser,
+  async (_req: Request, res: Response) => {
+    try {
+      const { runDemoLineCanary } = await import("../lib/demo-line-canary");
+      const result = await runDemoLineCanary();
+      res.status(result.allHealthy ? 200 : 503).json(result);
+    } catch (err: any) {
+      res.status(500).json({ error: getErrorMessage(err) });
+    }
+  },
+);
 
 export default router;

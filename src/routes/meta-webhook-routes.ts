@@ -1,11 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- vendor webhook payloads are JSON envelopes with provider-specific shapes. */
 import express, { Request, Response } from "express";
+import rateLimit from "express-rate-limit";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { decryptSecret } from "../lib/secret-vault";
 import { getErrorMessage } from "../lib/server-utils";
+
+// Targeted rate limit for Meta leadgen webhooks.
+// Meta retries failed deliveries with exponential backoff.
+// 60 requests per minute allows for legitimate retry bursts while
+// preventing leadgen bombing or DNC list pollution attacks.
+const metaRateLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many leadgen events. Please try again later." },
+});
 
 /**
  * Meta (Facebook) Lead Ads webhook.
@@ -145,6 +158,7 @@ function pickField(fields: MetaLeadField[], names: string[]): string | null {
 
 router.post(
   "/api/webhooks/meta/leads",
+  metaRateLimiter,
   express.raw({ type: "*/*" }),
   async (req: Request, res: Response) => {
     const sig = req.header("x-hub-signature-256");
