@@ -215,12 +215,11 @@
          the favicon since the mark is already mono-stroke on a solid
          tile; the color attribute overrides the SVG fill in Safari. -->
     <link rel="mask-icon" href="/favicon.svg" color="#4F1E7B" />
-    <!-- apple-touch-icon: iOS ignores the sizes attribute and uses the largest
-         file it finds. The bare (no sizes) entry is the canonical default iOS
-         will pick. Using the 1024px source — iOS applies its own rounded rect
-         mask at the correct resolution. A 180px asset should be generated and
-         referenced here once available. -->
-    <link rel="apple-touch-icon" href="/wireline-icon-1024.png" />
+    <!-- apple-touch-icon: iOS uses this for the home-screen icon. The 180px
+         PNG is generated at build time by scripts/render-image-assets.mjs
+         from scripts/apple-touch-icon.svg — the exact resolution iOS wants,
+         so it never has to downscale the 1024px source. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <!-- humans.txt — credits, stack, and "who built this" -->
     <link rel="author" type="text/plain" href="/humans.txt" />

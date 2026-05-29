@@ -49,7 +49,7 @@ export type ContactAgent = {
 };
 
 /**
- * The 3 Wireline employees. All on (630) numbers for company
+ * The 2 Wireline employees. All on (630) numbers for company
  * uniformity. Each is a FULL GENERALIST — every employee can handle
  * every kind of Wireline call: support, pricing, billing, technical,
  * onboarding, success. They can also sign a caller up for a Wireline
