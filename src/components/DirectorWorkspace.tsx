@@ -24,6 +24,8 @@ import {
   Activity,
   GraduationCap,
   BarChart3,
+  ArrowUpRight,
+  Compass,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
@@ -63,6 +65,15 @@ const STARTER_PROMPTS = [
   "What kind of agent should I hire first?",
   "Help me set up a sales agent for my business.",
   "Audit my fleet and tell me what to improve.",
+] as const;
+
+// What the Director is *for* — shown as a quiet capability strip on the
+// welcome screen so a first-time operator instantly grasps its remit.
+const DIRECTOR_CAPABILITIES = [
+  { icon: Compass, label: "Plan" },
+  { icon: Plus, label: "Hire" },
+  { icon: GraduationCap, label: "Coach" },
+  { icon: BarChart3, label: "Analyze" },
 ] as const;
 
 export default function DirectorWorkspace() {
@@ -212,27 +223,63 @@ export default function DirectorWorkspace() {
             <Loader2 className="w-5 h-5 animate-spin" />
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center text-center py-8 px-2 max-w-sm mx-auto">
-            <span className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center mb-3">
-              <Sparkles className="w-4.5 h-4.5 text-brand" />
-            </span>
-            <h2 className="font-display italic text-lg text-ink mb-1">Meet your Director</h2>
-            <p className="text-[12px] text-muted leading-relaxed mb-4">
-              I&apos;m your always-on manager. Tell me about your business and I&apos;ll help you
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="flex flex-col items-center text-center py-10 lg:py-14 px-3 max-w-md mx-auto"
+          >
+            {/* Branded medallion with a soft aurora halo */}
+            <div className="relative mb-5">
+              <span
+                aria-hidden="true"
+                className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
+              />
+              <span className="relative flex w-14 h-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-lg shadow-brand/25 aurora-ring">
+                <Sparkles className="w-6 h-6" />
+              </span>
+            </div>
+
+            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70 mb-3">
+              Your Director
+            </p>
+            <h2 className="font-display italic text-2xl lg:text-[1.75rem] leading-[1.1] text-ink mb-3">
+              Let&apos;s build your fleet.
+            </h2>
+            <p className="text-[13px] text-muted leading-relaxed mb-6 max-w-sm">
+              I&apos;m your always-on manager — tell me about your business and I&apos;ll help you
               hire the right agents, coach them, and read the room across every call.
             </p>
-            <div className="flex flex-col gap-1.5 w-full">
+
+            {/* Capability strip — instantly communicates the Director's remit */}
+            <div className="flex items-center justify-center gap-1.5 mb-7">
+              {DIRECTOR_CAPABILITIES.map((c, i) => (
+                <React.Fragment key={c.label}>
+                  {i > 0 && <span className="w-1 h-1 rounded-full bg-ink/15" aria-hidden="true" />}
+                  <span className="inline-flex items-center gap-1.5 px-1">
+                    <c.icon className="w-3.5 h-3.5 text-brand/60" aria-hidden="true" />
+                    <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
+                      {c.label}
+                    </span>
+                  </span>
+                </React.Fragment>
+              ))}
+            </div>
+
+            {/* Starter prompts — first-class cards with hover-revealed arrow */}
+            <div className="flex flex-col gap-2 w-full">
               {STARTER_PROMPTS.map((p) => (
                 <button
                   key={p}
                   onClick={() => send(p)}
-                  className="text-left text-[12px] text-ink rounded-xl border border-black/10 glass px-3 py-2.5 hover:border-brand/30 transition-colors"
+                  className="group flex items-center justify-between gap-3 text-left text-[13px] text-ink rounded-xl border border-black/10 glass px-3.5 py-3 hover:border-brand/30 hover:shadow-md hover:shadow-brand/5 hover:-translate-y-px transition-all duration-300"
                 >
-                  {p}
+                  <span className="min-w-0">{p}</span>
+                  <ArrowUpRight className="w-4 h-4 shrink-0 text-muted/50 group-hover:text-brand group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300" />
                 </button>
               ))}
             </div>
-          </div>
+          </motion.div>
         ) : (
           messages.map((m) => (
             <div
@@ -242,9 +289,9 @@ export default function DirectorWorkspace() {
               <div className={cn("max-w-[88%] min-w-0", m.role === "operator" && "items-end")}>
                 <div
                   className={cn(
-                    "rounded-2xl px-3 py-2 text-[13px] leading-relaxed whitespace-pre-wrap break-words",
+                    "rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap break-words",
                     m.role === "operator"
-                      ? "bg-brand text-on-brand rounded-br-md"
+                      ? "bg-gradient-to-br from-brand to-brand-deep text-on-brand rounded-br-md shadow-sm shadow-brand/20"
                       : "glass border border-black/8 text-ink rounded-bl-md",
                   )}
                 >
@@ -292,8 +339,8 @@ export default function DirectorWorkspace() {
       </div>
 
       {/* Composer */}
-      <div className="shrink-0 border-t border-black/8 px-3 py-2">
-        <div className="flex items-end gap-1.5 rounded-xl border border-black/10 glass px-2.5 py-1.5 focus-within:border-brand/40 transition-colors">
+      <div className="shrink-0 border-t border-black/8 px-3 py-2.5">
+        <div className="flex items-end gap-1.5 rounded-xl border border-black/10 glass px-2.5 py-1.5 transition-all duration-300 focus-within:border-brand/40 focus-within:shadow-md focus-within:shadow-brand/5">
           <textarea
             ref={inputRef}
             value={input}
@@ -306,7 +353,7 @@ export default function DirectorWorkspace() {
           <button
             onClick={() => send(input)}
             disabled={!input.trim() || isSending}
-            className="shrink-0 w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-brand text-on-brand flex items-center justify-center disabled:opacity-40 transition-opacity"
+            className="shrink-0 w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand flex items-center justify-center shadow-sm shadow-brand/20 disabled:opacity-40 disabled:shadow-none enabled:active:scale-95 transition-all duration-200"
             aria-label="Send message"
           >
             {isSending ? (

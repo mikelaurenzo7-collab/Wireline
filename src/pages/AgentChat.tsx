@@ -95,17 +95,17 @@ export default function AgentChat() {
           <button
             onClick={() => navigate("/chat")}
             className={cn(
-              "shrink-0 lg:w-full text-left rounded-xl px-2 lg:px-3 py-1.5 lg:py-2.5 border transition-all flex items-center gap-1.5 min-h-[36px] lg:min-h-0",
+              "shrink-0 lg:w-full text-left rounded-xl px-2 lg:px-3 py-1.5 lg:py-2.5 border transition-all duration-300 flex items-center gap-1.5 min-h-[36px] lg:min-h-0",
               showDirector
-                ? "border-brand/40 bg-brand/[0.06]"
-                : "border-black/8 glass hover:border-brand/25",
+                ? "border-brand/40 bg-brand/[0.06] shadow-sm shadow-brand/5 aurora-ring"
+                : "border-black/8 glass hover:border-brand/25 hover:-translate-y-px",
             )}
           >
             <span
               className={cn(
-                "shrink-0 w-7 h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center relative",
+                "shrink-0 w-7 h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center relative transition-transform",
                 showDirector
-                  ? "bg-gradient-to-br from-brand to-brand/70 text-on-brand"
+                  ? "bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25"
                   : "bg-paper border border-black/12 text-ink",
               )}
               aria-hidden="true"
@@ -128,17 +128,17 @@ export default function AgentChat() {
                 onClick={() => navigate(`/chat/${a.id}`)}
                 className={cn(
                   // Mobile-first dense: 36px min tap target (Apple HIG + user preference), tighter 1.5px py on mobile, 10-11px text.
-                  "shrink-0 lg:w-full text-left rounded-xl px-2 lg:px-3 py-1.5 lg:py-2.5 border transition-all flex items-center gap-1.5 min-h-[36px] lg:min-h-0",
+                  "shrink-0 lg:w-full text-left rounded-xl px-2 lg:px-3 py-1.5 lg:py-2.5 border transition-all duration-300 flex items-center gap-1.5 min-h-[36px] lg:min-h-0",
                   isActive
-                    ? "border-brand/40 bg-brand/[0.06]"
-                    : "border-black/8 glass hover:border-brand/25",
+                    ? "border-brand/40 bg-brand/[0.06] shadow-sm shadow-brand/5 aurora-ring"
+                    : "border-black/8 glass hover:border-brand/25 hover:-translate-y-px",
                 )}
               >
                 <span
                   className={cn(
-                    "shrink-0 w-7 h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center text-[11px] font-semibold relative",
+                    "shrink-0 w-7 h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center text-[11px] font-semibold relative transition-transform",
                     isActive
-                      ? "bg-brand text-on-brand"
+                      ? "bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25"
                       : "bg-paper border border-black/12 text-ink",
                   )}
                   aria-hidden="true"
