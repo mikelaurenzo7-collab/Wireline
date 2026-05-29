@@ -174,7 +174,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         <motion.div
           whileHover={{ rotate: 8, scale: 1.06 }}
           whileTap={{ scale: 0.96 }}
-          transition={{ type: "spring", stiffness: 400, damping: 20 }}
+          transition={{ type: "spring", stiffness: 380, damping: 28 }}
           className="relative w-8 h-8 shrink-0 rounded-lg flex items-center justify-center overflow-hidden"
           style={{
             background: "#EFE9DC",
@@ -444,7 +444,7 @@ function RailItem({ item, active, badge, expanded, accent, shortcut }: RailItemP
         className={cn(
           "relative z-10 w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110",
         )}
-        strokeWidth={active ? 2.4 : 1.75}
+        strokeWidth={active ? 2.5 : 1.75}
       />
       {expanded && (
         <>
@@ -472,7 +472,7 @@ function RailItem({ item, active, badge, expanded, accent, shortcut }: RailItemP
       )}
       {badge > 0 && (
         <span
-          aria-label={`${badge} item${badge === 1 ? "" : "s"} need attention`}
+          aria-label={`${badge} item${badge === 1 ? "" : "s"} need attention in ${item.label}`}
           className={cn(
             "relative z-10 shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full text-[9px] font-mono leading-none flex items-center justify-center font-semibold",
             active
@@ -661,7 +661,7 @@ function FooterItem({ to, icon: Icon, label, expanded, active }: FooterItemProps
           : "chrome-muted hover:text-[#EFE9DC] hover:bg-white/8",
       )}
     >
-      <Icon className="w-4 h-4 shrink-0" strokeWidth={active ? 2.4 : 1.75} />
+      <Icon className="w-4 h-4 shrink-0" strokeWidth={active ? 2.5 : 1.75} />
       {expanded && <span className="text-[12px] font-medium truncate">{label}</span>}
     </Link>
   );
