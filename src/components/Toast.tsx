@@ -84,11 +84,12 @@ export default function ToastStack() {
   const location = useLocation();
   const marketingSticky = !user && isMarketingStickyCtaRoute(location.pathname);
 
-  const mobileBottom = user
-    ? "calc(3.25rem + env(safe-area-inset-bottom, 0px))"
-    : marketingSticky
-      ? MARKETING_STICKY_CTA_BOTTOM
-      : "calc(0.75rem + env(safe-area-inset-bottom, 0px))";
+  // The mobile bottom tab bar was removed, so signed-in toasts now sit at the
+  // standard bottom gutter. Only the public marketing sticky CTA still needs
+  // extra clearance.
+  const mobileBottom = marketingSticky
+    ? MARKETING_STICKY_CTA_BOTTOM
+    : "calc(0.75rem + env(safe-area-inset-bottom, 0px))";
 
   return (
     <div

@@ -202,7 +202,7 @@ export default function ProductTour() {
           className={
             isCentered
               ? "fixed z-[920] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm px-4"
-              : "fixed z-[920] bottom-6 right-6 w-80"
+              : "fixed z-[920] bottom-[max(1.5rem,env(safe-area-inset-bottom,0px))] inset-x-4 sm:inset-x-auto sm:right-6 sm:w-80"
           }
         >
           <div
