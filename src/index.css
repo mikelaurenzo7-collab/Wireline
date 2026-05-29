@@ -315,6 +315,14 @@
       min-height: 44px;
     }
 
+    /* Opt-in 44pt hit area for standalone controls whose icon stays small
+       (e.g. a dismiss "×"). Grows the tap target on touch only, centred, so
+       the visual size is unchanged on desktop and dense rows are untouched. */
+    .touch-target {
+      min-width: 44px;
+      min-height: 44px;
+    }
+
     input,
     textarea,
     select {

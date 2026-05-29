@@ -245,7 +245,7 @@ export default function AgentChat() {
                   <div className="flex items-center justify-end mb-2">
                     <button
                       onClick={() => setDockOpen(false)}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors"
+                      className="touch-target w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors"
                       aria-label="Close mission control"
                     >
                       <X className="w-4 h-4" />

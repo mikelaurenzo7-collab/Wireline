@@ -89,7 +89,7 @@ export default function CreateCampaignModal({
           <button
             onClick={onClose}
             aria-label="Close"
-            className="w-8 h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
+            className="touch-target w-8 h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
           >
             <X className="w-4 h-4" />
           </button>

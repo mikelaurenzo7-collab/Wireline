@@ -81,6 +81,25 @@ test.describe("Wireline authenticated shell (mobile)", () => {
     });
   }
 
+  test("/chat renders the Director rail without horizontal overflow", async ({ page }) => {
+    // Chat is the primary surface. The Director is always present (even before
+    // any agents exist), so this is a fixture-independent smoke check that the
+    // chat-centric home loads and fits a phone viewport.
+    await page.goto("/chat", { waitUntil: "domcontentloaded" });
+    await expect(page).toHaveURL(/\/chat(\?|$)/);
+    await expect(page.getByRole("button", { name: /director/i })).toBeVisible({
+      timeout: 25_000,
+    });
+    await assertNoHorizontalOverflow(page);
+  });
+
+  test("/train redirects into the chat surface", async ({ page }) => {
+    // The standalone training page was retired; the route now redirects so old
+    // bookmarks still land somewhere useful.
+    await page.goto("/train", { waitUntil: "domcontentloaded" });
+    await expect(page).toHaveURL(/\/chat(\?|$)/);
+  });
+
   test("insights exposes mobile page actions sheet", async ({ page }) => {
     await page.goto("/insights", { waitUntil: "domcontentloaded" });
     await expect(page).toHaveURL(/\/insights/);

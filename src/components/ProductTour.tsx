@@ -219,7 +219,7 @@ export default function ProductTour() {
               <button
                 onClick={dismiss}
                 aria-label="Skip tour"
-                className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-ink/65 hover:text-ink/80 hover:bg-white/8 transition-all"
+                className="touch-target shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-ink/65 hover:text-ink/80 hover:bg-white/8 transition-all"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
