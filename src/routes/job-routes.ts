@@ -225,6 +225,31 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
       );
     }
 
+    // Daily at 04:00 UTC: demo-line canary — verifies all 8 showcase
+    // phone lines are still wired correctly in Vapi (number exists,
+    // assistant assigned and reachable). Fires owner alert on failure.
+    if (
+      now.getUTCHours() === 4 &&
+      now.getUTCMinutes() === 0 &&
+      (req._sweepMode === "cron" || !req._sweepMode)
+    ) {
+      const since23h = new Date(Date.now() - 23 * 60 * 60 * 1000);
+      const recentCanary = await drizzle
+        .select({ id: schema.jobs.id })
+        .from(schema.jobs)
+        .where(and(eq(schema.jobs.type, "demo_line_canary"), gte(schema.jobs.createdAt, since23h)))
+        .limit(1);
+      if (!recentCanary.length) {
+        await enqueue(drizzle, {
+          userId: SYSTEM_USER_ID,
+          type: "demo_line_canary",
+          payload: {},
+        }).catch((e: unknown) =>
+          log.warn("demo_line_canary enqueue failed", { error: getErrorMessage(e) }),
+        );
+      }
+    }
+
     if (req._sweepMode === "cron" || !req._sweepMode) {
       const dueDeletions = await drizzle
         .select({ id: schema.deletionQueue.id, userId: schema.deletionQueue.userId })

@@ -99,50 +99,55 @@ router.get("/", healthRateLimiter, async (_req: Request, res: Response) => {
  * now gated behind a valid JWT. Used by the in-app SystemPanel + the
  * monitoring stack (which signs in as a service account).
  */
-router.get("/internal", healthRateLimiter, authenticateUser, async (_req: Request, res: Response) => {
-  const dbStatus = await probeDatabase();
-  const status = dbStatus.ok ? "ok" : "degraded";
-  res.status(200).json({
-    status,
-    uptime_s: Math.round((process as any).uptime?.() || 0),
-    db: dbStatus,
-    capabilities: getHealthCapabilities(),
-    // Distinct identifiers per runtime so operators + monitoring can
-    // see exactly which model each layer is on. The in-app reasoning
-    // brain (post-call digest, recipes, QA) leads the voice-agent
-    // brain (constrained to whatever Vapi's allowlist accepts), and
-    // the 10 showcase agents on the landing page run a higher tier
-    // than the tenant default.
-    app_model: CLAUDE_MODEL_DEFAULT,
-    voice_agent_model: VAPI_TENANT_DEFAULT_MODEL,
-    voice_agent_premium_model: VAPI_PREMIUM_MODEL,
-    llm_tiering: {
-      voice_runtime: {
-        provider: "anthropic",
-        model: VAPI_TENANT_DEFAULT_MODEL,
-        reason:
-          "smartest model in voice's latency class (TTFT ~300-500ms); adaptive tone, reliable tool calls, consistent cadence",
+router.get(
+  "/internal",
+  healthRateLimiter,
+  authenticateUser,
+  async (_req: Request, res: Response) => {
+    const dbStatus = await probeDatabase();
+    const status = dbStatus.ok ? "ok" : "degraded";
+    res.status(200).json({
+      status,
+      uptime_s: Math.round((process as any).uptime?.() || 0),
+      db: dbStatus,
+      capabilities: getHealthCapabilities(),
+      // Distinct identifiers per runtime so operators + monitoring can
+      // see exactly which model each layer is on. The in-app reasoning
+      // brain (post-call digest, recipes, QA) leads the voice-agent
+      // brain (constrained to whatever Vapi's allowlist accepts), and
+      // the 10 showcase agents on the landing page run a higher tier
+      // than the tenant default.
+      app_model: CLAUDE_MODEL_DEFAULT,
+      voice_agent_model: VAPI_TENANT_DEFAULT_MODEL,
+      voice_agent_premium_model: VAPI_PREMIUM_MODEL,
+      llm_tiering: {
+        voice_runtime: {
+          provider: "anthropic",
+          model: VAPI_TENANT_DEFAULT_MODEL,
+          reason:
+            "smartest model in voice's latency class (TTFT ~300-500ms); adaptive tone, reliable tool calls, consistent cadence",
+        },
+        voice_fallback: {
+          provider: "google",
+          model: VAPI_VOICE_FALLBACK_MODEL,
+          reason: "sub-250ms TTFT backup used only on Anthropic outages",
+        },
+        reasoning_layer: {
+          provider: "anthropic",
+          model: CLAUDE_MODEL_DEFAULT,
+          reason:
+            "deepest adaptive reasoning; runs OFF the live wire (briefs, coaching, post-call) so latency is invisible",
+        },
+        grounded_search: {
+          provider: "google",
+          model: "gemini-2.5-flash",
+          reason: "native googleSearchRetrieval tool with citations",
+        },
       },
-      voice_fallback: {
-        provider: "google",
-        model: VAPI_VOICE_FALLBACK_MODEL,
-        reason: "sub-250ms TTFT backup used only on Anthropic outages",
-      },
-      reasoning_layer: {
-        provider: "anthropic",
-        model: CLAUDE_MODEL_DEFAULT,
-        reason:
-          "deepest adaptive reasoning; runs OFF the live wire (briefs, coaching, post-call) so latency is invisible",
-      },
-      grounded_search: {
-        provider: "google",
-        model: "gemini-2.5-flash",
-        reason: "native googleSearchRetrieval tool with citations",
-      },
-    },
-    timestamp: new Date().toISOString(),
-  });
-});
+      timestamp: new Date().toISOString(),
+    });
+  },
+);
 
 /**
  * Authenticated, structured integrations report. Used by the AdminSettings
@@ -382,5 +387,26 @@ router.get(
     }
   },
 );
+
+/**
+ * GET /api/health/canary — On-demand demo-line health probe.
+ *
+ * Runs the same checks as the nightly canary job: verifies each
+ * showcase number exists in Vapi and has a reachable assistant.
+ * Authenticated (owner/admin only in practice since it makes
+ * external Vapi API calls that could be rate-limited).
+ *
+ * Returns the full CanaryRunResult so the operator can see exactly
+ * which lines are healthy and which need attention.
+ */
+router.get("/canary", healthRateLimiter, authenticateUser, async (_req: Request, res: Response) => {
+  try {
+    const { runDemoLineCanary } = await import("../lib/demo-line-canary");
+    const result = await runDemoLineCanary();
+    res.status(result.allHealthy ? 200 : 503).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: getErrorMessage(err) });
+  }
+});
 
 export default router;
