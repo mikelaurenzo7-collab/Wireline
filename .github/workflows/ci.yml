@@ -32,7 +32,7 @@ jobs:
         run: npm audit --audit-level=high --omit=dev
 
       - name: Typecheck
-        run: npx tsc --noEmit
+        run: node --max-old-space-size=4096 ./node_modules/typescript/bin/tsc --noEmit
 
       - name: Guard — user_id in service-role inserts
         run: node scripts/check-user-id-inserts.mjs
