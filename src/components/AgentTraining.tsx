@@ -376,7 +376,7 @@ export default function AgentTraining({
                 "px-2.5 py-1.5 rounded-lg border text-[10px] uppercase tracking-[0.12em] flex items-center gap-1.5 transition-colors",
                 activeTab === tab.id
                   ? "bg-brand/15 border-brand/40 text-brand"
-                  : "glass border-white/10 text-muted hover:border-white/20 hover:text-ink",
+                  : "glass border-black/10 text-muted hover:border-brand/25 hover:text-ink",
               )}
             >
               <tab.icon className="w-3 h-3" />
@@ -693,9 +693,24 @@ export default function AgentTraining({
                   <div className="space-y-2 mb-3">
                     <AnimatePresence mode="popLayout">
                       {knowledge.length === 0 ? (
-                        <div className="py-8 text-center text-muted/70 text-[11px] leading-relaxed px-4">
-                          No knowledge entries yet — add a doc snippet, FAQ, or policy below so your
-                          agent answers consistently.
+                        <div className="py-10 flex flex-col items-center text-center">
+                          <div className="relative mb-4">
+                            <span
+                              aria-hidden="true"
+                              className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
+                            />
+                            <span className="relative flex w-11 h-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25">
+                              <BookOpen className="w-5 h-5" />
+                            </span>
+                          </div>
+                          <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70 mb-1">
+                            Knowledge base
+                          </p>
+                          <p className="font-display italic text-lg text-ink mb-1">No entries yet</p>
+                          <p className="text-[12px] text-muted max-w-[260px]">
+                            Upload a PDF, paste a policy, or add a FAQ below so {agentName} answers
+                            consistently.
+                          </p>
                         </div>
                       ) : (
                         knowledge.map((k) => (
