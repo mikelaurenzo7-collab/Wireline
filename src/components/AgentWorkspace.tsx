@@ -11,7 +11,7 @@
  * Selected via the existing AgentTraining agent picker so operators
  * don't have to navigate twice. Lives behind the "Workspace" tab.
  */
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Send,
@@ -28,11 +28,14 @@ import {
   Phone,
   MessageCircle,
   Plug,
+  GraduationCap,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
 import { AGENT_TOOL_CATALOG } from "../lib/agent-capabilities";
+
+const AgentTrainingInline = lazy(() => import("./AgentTraining"));
 
 /** Mirrors the planner's WorkspacePlan proposal shapes (server/lib/workspace-planner). */
 interface ProposedChange {
@@ -102,10 +105,13 @@ export default function AgentWorkspace({
   // Connectors / capabilities panel — built from the agent's resolved tools.
   const [enabledTools, setEnabledTools] = useState<string[]>([]);
   const [showConnectors, setShowConnectors] = useState(false);
+  // View mode: "chat" is the conversation, "train" shows inline training tools.
+  const [viewMode, setViewMode] = useState<"chat" | "train">("chat");
   // Tracks proposal cards the operator has acted on so they collapse to a
   // resolved state instead of re-firing. Keyed by `${messageId}:${kind}:${id}`.
   const [resolved, setResolved] = useState<Record<string, "done" | "dismissed">>({});
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [busyLabel, setBusyLabel] = useState<string>("");
   // Per-card TCPA consent ticks. A call card can only dial once the operator
   // explicitly attests prior express written consent for that number.
   const [consentKeys, setConsentKeys] = useState<Record<string, boolean>>({});
@@ -240,6 +246,7 @@ export default function AgentWorkspace({
   const approveChange = useCallback(
     async (key: string, change: ProposedChange) => {
       setBusyKey(key);
+      setBusyLabel("Applying configuration…");
       try {
         const r = await authFetch(
           `/api/agents/${encodeURIComponent(agentId)}/workspace/apply-change`,
@@ -264,6 +271,7 @@ export default function AgentWorkspace({
   const approveToggle = useCallback(
     async (key: string, toggle: ProposedToolToggle) => {
       setBusyKey(key);
+      setBusyLabel(toggle.enable ? "Connecting capability…" : "Disconnecting…");
       try {
         const r = await authFetch(
           `/api/agents/${encodeURIComponent(agentId)}/workspace/toggle-tool`,
@@ -290,6 +298,13 @@ export default function AgentWorkspace({
   const approveAction = useCallback(
     async (key: string, action: ProposedAction) => {
       setBusyKey(key);
+      setBusyLabel(
+        action.kind === "make_call"
+          ? "Connecting call…"
+          : action.kind === "send_text_message"
+            ? "Sending text…"
+            : "Sending email…",
+      );
       try {
         if (action.kind === "make_call") {
           const r = await authFetch("/api/outbound/dial", {
@@ -432,6 +447,19 @@ export default function AgentWorkspace({
             <Plug className="w-3 h-3" />
             {enabledTools.length} on
           </button>
+          <button
+            onClick={() => setViewMode((v) => (v === "train" ? "chat" : "train"))}
+            className={cn(
+              "shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.22em] transition-colors",
+              viewMode === "train"
+                ? "text-brand bg-brand/10"
+                : "text-muted hover:text-ink hover:bg-black/5",
+            )}
+            title="Training & configuration tools"
+          >
+            <GraduationCap className="w-3 h-3" />
+            <span className="hidden sm:inline">{viewMode === "train" ? "Chat" : "Train"}</span>
+          </button>
         </div>
       </div>
 
@@ -446,34 +474,77 @@ export default function AgentWorkspace({
             className="shrink-0 overflow-hidden border-b border-black/8 bg-paper/40"
           >
             <div className="px-4 py-3">
-              <p className="text-[10px] uppercase tracking-[0.22em] text-muted/70 mb-2">
-                Capabilities — ask in chat to turn these on or off
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-muted/70">
+                  {agentName}&apos;s connectors &amp; capabilities
+                </p>
+                <button
+                  onClick={() => setShowConnectors(false)}
+                  className="w-6 h-6 rounded-md flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors"
+                  aria-label="Close connectors panel"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
               <div className="flex flex-wrap gap-1.5">
                 {AGENT_TOOL_CATALOG.map((tool) => {
                   const on = enabledTools.includes(tool.name);
                   return (
-                    <span
+                    <button
                       key={tool.name}
-                      title={tool.description}
+                      title={
+                        on
+                          ? tool.description
+                          : `${tool.description}\n\nAsk in chat to turn this on.`
+                      }
+                      onClick={() =>
+                        on ? undefined : setInput(`Turn on ${tool.label.toLowerCase()} for me.`)
+                      }
+                      disabled={on}
                       className={cn(
                         "inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] border transition-colors",
                         on
-                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700"
-                          : "bg-black/3 border-black/8 text-muted/60",
+                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 cursor-default"
+                          : "bg-black/3 border-black/8 text-muted/60 hover:border-brand/40 hover:text-ink cursor-pointer",
                       )}
                     >
-                      {on && <Check className="w-2.5 h-2.5" />}
+                      {on ? <Check className="w-2.5 h-2.5" /> : <Plug className="w-2.5 h-2.5" />}
                       {tool.label}
-                    </span>
+                    </button>
                   );
                 })}
+              </div>
+              <div className="mt-2.5 flex items-center justify-between">
+                <p className="text-[9px] text-muted/60 leading-relaxed">
+                  Tap a disabled connector to ask {agentName} to enable it
+                </p>
+                <button
+                  onClick={() => setViewMode("train")}
+                  className="text-[9px] text-brand hover:text-brand/80 transition-colors"
+                >
+                  Full settings →
+                </button>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* Main content: chat or training, toggled by viewMode */}
+      {viewMode === "train" ? (
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center py-16 text-muted">
+                <Loader2 className="w-5 h-5 animate-spin" />
+              </div>
+            }
+          >
+            <AgentTrainingInline embeddedAgentId={agentId} />
+          </Suspense>
+        </div>
+      ) : (
+      <>
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-4">
         {isLoading && messages.length === 0 ? (
@@ -557,6 +628,7 @@ export default function AgentWorkspace({
                             detail={c.summary || c.value}
                             state={state}
                             busy={busyKey === key}
+                            busyLabel={busyKey === key ? busyLabel : undefined}
                             approveLabel="Apply"
                             onApprove={() => approveChange(key, c)}
                             onDismiss={() => markResolved(key, "dismissed")}
@@ -575,6 +647,7 @@ export default function AgentWorkspace({
                             detail={t.reason}
                             state={state}
                             busy={busyKey === key}
+                            busyLabel={busyKey === key ? busyLabel : undefined}
                             approveLabel={t.enable ? "Enable" : "Disable"}
                             onApprove={() => approveToggle(key, t)}
                             onDismiss={() => markResolved(key, "dismissed")}
@@ -608,6 +681,7 @@ export default function AgentWorkspace({
                             detail={detail}
                             state={state}
                             busy={busyKey === key}
+                            busyLabel={busyKey === key ? busyLabel : undefined}
                             approveLabel={a.kind === "make_call" ? "Call now" : "Send"}
                             consent={
                               a.kind === "make_call"
@@ -629,13 +703,33 @@ export default function AgentWorkspace({
               </motion.div>
             ))}
             {isSending && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                className="flex gap-3"
+              >
                 <div className="shrink-0 w-7 h-7 rounded-full bg-paper border border-black/12 flex items-center justify-center text-[10px] font-semibold text-ink">
                   {agentName.slice(0, 1).toUpperCase()}
                 </div>
-                <div className="glass border border-black/8 rounded-2xl rounded-tl-md px-3.5 py-2.5 flex items-center gap-2 text-[12px] text-muted">
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  {agentName} is typing…
+                <div className="glass border border-brand/20 rounded-2xl rounded-tl-md px-3.5 py-2.5 space-y-1.5">
+                  <div className="flex items-center gap-2 text-[12px] text-ink/80">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-brand" />
+                    </span>
+                    <span className="font-medium">{agentName} is thinking…</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] text-muted/70">
+                    <motion.span
+                      animate={{ opacity: [0.4, 1, 0.4] }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                      className="inline-flex items-center gap-1"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      Analyzing context & drafting response
+                    </motion.span>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -672,7 +766,7 @@ export default function AgentWorkspace({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder={`Message ${agentName}…  (⌘+Enter to send)`}
+            placeholder={`Message ${agentName}…  (${navigator.platform?.includes("Mac") ? "⌘" : "Ctrl"}+Enter to send)`}
             rows={2}
             disabled={isSending || isUploading}
             className="flex-1 resize-none rounded-2xl glass border border-black/10 px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors disabled:opacity-60 leading-relaxed"
@@ -694,6 +788,8 @@ export default function AgentWorkspace({
           Messages persist · agent uses thread + last 5 calls + uploaded files as context
         </p>
       </div>
+      </>
+      )}
     </div>
   );
 }
@@ -705,6 +801,7 @@ interface ProposalCardProps {
   detail?: string;
   state?: "done" | "dismissed";
   busy: boolean;
+  busyLabel?: string;
   approveLabel: string;
   consent?: { checked: boolean; onChange: (v: boolean) => void };
   onApprove: () => void;
@@ -724,6 +821,7 @@ function ProposalCard({
   detail,
   state,
   busy,
+  busyLabel,
   approveLabel,
   consent,
   onApprove,
@@ -731,10 +829,13 @@ function ProposalCard({
 }: ProposalCardProps) {
   const approveDisabled = busy || (!!consent && !consent.checked);
   return (
-    <div
+    <motion.div
+      layout
+      animate={state ? { scale: 0.98, opacity: state === "dismissed" ? 0.5 : 1 } : { scale: 1, opacity: 1 }}
+      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
-        "rounded-xl border px-3 py-2.5 text-ink",
-        state === "dismissed" ? "opacity-50 border-black/8 bg-black/3" : TONE_CLASSES[tone],
+        "rounded-xl border px-3 py-2.5 text-ink transition-colors",
+        state === "dismissed" ? "border-black/8 bg-black/3" : TONE_CLASSES[tone],
       )}
     >
       <div className="flex items-start gap-2">
@@ -748,15 +849,39 @@ function ProposalCard({
           )}
         </div>
       </div>
+      {/* Live execution progress bar */}
+      {busy && (
+        <motion.div
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          className="mt-2 h-0.5 rounded-full bg-brand/20 overflow-hidden origin-left"
+        >
+          <motion.div
+            className="h-full bg-brand rounded-full"
+            animate={{ x: ["-100%", "100%"] }}
+            transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+            style={{ width: "40%" }}
+          />
+        </motion.div>
+      )}
       {state ? (
-        <p
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
           className={cn(
-            "mt-2 text-[10px] uppercase tracking-[0.18em]",
+            "mt-2 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em]",
             state === "done" ? "text-emerald-600" : "text-muted/70",
           )}
         >
-          {state === "done" ? "✓ Applied" : "Dismissed"}
-        </p>
+          {state === "done" ? (
+            <>
+              <Check className="w-3 h-3" />
+              <span>Successfully executed</span>
+            </>
+          ) : (
+            <span>Dismissed</span>
+          )}
+        </motion.div>
       ) : (
         <>
           {consent && (
@@ -778,8 +903,17 @@ function ProposalCard({
               disabled={approveDisabled}
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-brand text-on-brand text-[11px] font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
             >
-              {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-              {approveLabel}
+              {busy ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  {busyLabel || "Executing…"}
+                </>
+              ) : (
+                <>
+                  <Check className="w-3 h-3" />
+                  {approveLabel}
+                </>
+              )}
             </button>
             <button
               onClick={onDismiss}
@@ -792,6 +926,6 @@ function ProposalCard({
           </div>
         </>
       )}
-    </div>
+    </motion.div>
   );
 }

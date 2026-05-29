@@ -56,10 +56,17 @@ type VapiInstance = {
   stop: () => void;
 };
 
-export default function AgentTraining() {
+interface AgentTrainingProps {
+  /** When rendered inside the chat drawer, receive the agent ID directly —
+   *  skip the agent picker and page-level chrome. */
+  embeddedAgentId?: string;
+}
+
+export default function AgentTraining({ embeddedAgentId }: AgentTrainingProps = {}) {
   const { error: toastError } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
+  const isEmbedded = Boolean(embeddedAgentId);
   // Honour ?tab=<name> deep-links. Legacy /admin?tab=voices and
   // /admin?tab=pronunciation now redirect here, so this is the canonical
   // landing for those panels.
@@ -76,6 +83,10 @@ export default function AgentTraining() {
     const params = new URLSearchParams(location.search);
     if (next === "database") params.delete("tab");
     else params.set("tab", next);
+    // Preserve the agent param for per-agent deep-links from chat.
+    if (selectedAgentId && selectedAgentId !== "default-agent") {
+      params.set("agent", selectedAgentId);
+    }
     const qs = params.toString();
     navigate(qs ? `/train?${qs}` : "/train", { replace: true });
   };
@@ -84,7 +95,9 @@ export default function AgentTraining() {
   const simVapiRef = useRef<VapiInstance | null>(null);
   const simMountedRef = useRef(true);
   const [agents, setAgents] = useState<any[]>([]);
-  const [selectedAgentId, setSelectedAgentId] = useState("default-agent");
+  // Honour ?agent=<id> deep-links from the chat workspace train button.
+  const initialAgent = embeddedAgentId || new URLSearchParams(location.search).get("agent") || "default-agent";
+  const [selectedAgentId, setSelectedAgentId] = useState(initialAgent);
 
   const [knowledge, setKnowledge] = useState<any[]>([]);
   const [directives, setDirectives] = useState<any[]>([]);
@@ -265,10 +278,16 @@ export default function AgentTraining() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <header className="shrink-0 px-3 md:px-4 py-2 sticky top-0 z-30 backdrop-blur-xl bg-paper/70 border-b border-white/8">
-        <div className="max-w-[1400px] mx-auto w-full">
-          <HubTabs tabs={TRAINING_HUB} label="Training sub-navigation" className="mb-2 md:mb-2" />
-        </div>
+      <header className={cn(
+        "shrink-0 px-3 md:px-4 py-2 sticky top-0 z-30 backdrop-blur-xl bg-paper/70 border-b border-white/8",
+        isEmbedded && "border-b-0"
+      )}>
+        {/* Page-level chrome: hub tabs + agent picker — hidden in embedded mode */}
+        {!isEmbedded && (
+          <>
+            <div className="max-w-[1400px] mx-auto w-full">
+              <HubTabs tabs={TRAINING_HUB} label="Training sub-navigation" className="mb-2 md:mb-2" />
+            </div>
         {/* Page title removed per design direction — the left nav
             already says "Training". The agent picker stays. */}
         <div className="flex flex-col lg:flex-row justify-end items-start lg:items-center gap-2 max-w-[1400px] mx-auto w-full">
@@ -368,6 +387,8 @@ export default function AgentTraining() {
             />
           </div>
         </details>
+          </>
+        )}
 
         <nav
           role="tablist"

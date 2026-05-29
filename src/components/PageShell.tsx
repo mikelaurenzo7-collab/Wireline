@@ -133,13 +133,8 @@ export default function PageShell({
     >
       {/* ── Page header — every route gets editorial hierarchy ─────────── */}
       {showPageHeader && (
-        <header className="shrink-0 mb-2 md:mb-3 flex flex-row items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            {/* On lg+ the TopBar breadcrumb already shows the group + page
-                title, so we hide the in-page eyebrow + title there to avoid a
-                duplicate header. Below lg the TopBar has no breadcrumb, so this
-                is the only wayfinding — keep it. Subtitle + actions stay at all
-                breakpoints (the breadcrumb never carries them). */}
+        <header className="shrink-0 mb-2 md:mb-3 flex flex-col items-center text-center gap-1">
+          <div className="min-w-0 w-full max-w-2xl">
             {(eyebrow || title) && (
               <div className="lg:hidden">
                 {eyebrow && <p className="text-eyebrow text-brand mb-1">{eyebrow}</p>}
@@ -155,7 +150,7 @@ export default function PageShell({
             )}
           </div>
           {actions && (
-            <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
+            <div className="flex flex-wrap items-center justify-center gap-2 shrink-0 mt-2">
               <div className="hidden md:flex items-center gap-2">{actions}</div>
               {!tabs?.length && (
                 <button
@@ -173,7 +168,7 @@ export default function PageShell({
 
       {/* ── Desktop tab strip (hidden on mobile) ───────────────────────── */}
       {tabs && tabs.length > 0 && (
-        <div className="shrink-0 md:mb-2 hidden md:flex items-center gap-1 overflow-x-auto scrollbar-hide relative">
+        <div className="shrink-0 md:mb-2 hidden md:flex items-center justify-center gap-1 overflow-x-auto scrollbar-hide relative">
           <div
             role="tablist"
             aria-label="Page sub-navigation"
