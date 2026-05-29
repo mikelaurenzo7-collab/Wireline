@@ -7,6 +7,10 @@ import {
   Kanban,
   Headphones,
   SlidersHorizontal,
+  GraduationCap,
+  Phone,
+  Mail,
+  MessageCircle,
 } from "lucide-react";
 
 export type NavItem = {
@@ -24,16 +28,17 @@ export type NavItem = {
   ownerOnly?: boolean;
 };
 
-// Three-group nav. Workspace = where you watch, decide, and run the fleet.
-// Activity = where conversations live + close. Settings sits as the trailing
-// tab since it's daily-touch (Branding, Carrier, Billing) — not buried in a
-// profile dropdown.
+// Four-group nav: Workspace (command), Channels (communication surfaces),
+// Activity (history + pipeline), Admin (settings).
 //
-// Training no longer earns its own surface: each agent is trained, wired, and
-// remembered inside ITS OWN chat (Chat · Training · Connectors · Memory tabs),
-// so the Director + per-agent threads under "Chat" are the single home for
-// building and coaching the fleet. Agents (roster + creation) live under
-// Settings — operators rarely add agents, so it doesn't earn a top-nav slot.
+// Chat remains the primary control surface — the Director + per-agent threads
+// are mission control. Training has been elevated to its own sidebar page
+// because the customization depth (knowledge, voices, pronunciation, simulator,
+// flow) warrants dedicated real-estate rather than a buried tab.
+//
+// Channels group surfaces Phone, Email, and SMS as first-class pages — these
+// are the communication arteries of the platform and operators need instant
+// access without hunting through sub-routes.
 //
 // Architecture note: /cockpit is its OWN page (SupervisorCockpit), distinct
 // from /ops (LiveOps). Live Ops is the owner's pulse — calls + actions + intel.
@@ -50,6 +55,12 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         matches: ["/chat"],
       },
       {
+        label: "Training",
+        path: "/training",
+        icon: GraduationCap,
+        dataTour: "training",
+      },
+      {
         label: "Live Ops",
         path: "/ops",
         icon: LayoutGrid,
@@ -62,13 +73,38 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     ],
   },
   {
+    label: "Channels",
+    items: [
+      {
+        label: "Phone",
+        path: "/phone",
+        icon: Phone,
+        dataTour: "phone",
+        matches: ["/logs", "/outbound"],
+      },
+      {
+        label: "Email",
+        path: "/email",
+        icon: Mail,
+        dataTour: "email",
+        matches: ["/inbox"],
+      },
+      {
+        label: "SMS",
+        path: "/sms",
+        icon: MessageCircle,
+        dataTour: "sms",
+      },
+    ],
+  },
+  {
     label: "Activity",
     items: [
       {
         label: "Activity",
-        path: "/logs",
+        path: "/activity",
         icon: Radio,
-        matches: ["/outbound", "/inbox", "/appointments", "/sms"],
+        matches: ["/appointments"],
       },
       { label: "Pipeline", path: "/pipeline", icon: Kanban },
     ],
@@ -92,7 +128,9 @@ export const PAGE_TITLES: Record<string, string> = {
   "/triage": "Triage",
   "/appointments": "Appointments",
   "/logs": "Call Logs",
+  "/phone": "Phone",
   "/inbox": "Email",
+  "/email": "Email",
   "/sms": "SMS",
   "/outbound": "Outbound",
   "/insights": "Insights",
@@ -100,6 +138,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "/knowledge": "Knowledge",
   "/agents": "Agents",
   "/chat": "Chat",
+  "/training": "Training",
   "/founder": "Founder",
   "/integrations": "Integrations",
   "/admin": "Settings",
@@ -107,6 +146,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "/audit": "Audit Log",
   "/help": "Help",
   "/pipeline": "Pipeline",
+  "/activity": "Activity",
 };
 
 export const ROUTE_ACCENTS: Record<string, [string, string]> = {
@@ -114,12 +154,15 @@ export const ROUTE_ACCENTS: Record<string, [string, string]> = {
   "/triage": ["#FFC07D", "#4F1E7B"],
   "/insights": ["#4F1E7B", "#FFC07D"],
   "/logs": ["#4F1E7B", "#3B154C"],
+  "/phone": ["#4F1E7B", "#10B981"],
   "/inbox": ["#4F1E7B", "#10B981"],
+  "/email": ["#4F1E7B", "#10B981"],
   "/sms": ["#4F1E7B", "#10B981"],
   "/outbound": ["#4F1E7B", "#FFC07D"],
   "/appointments": ["#10B981", "#4F1E7B"],
   "/agents": ["#4F1E7B", "#3B154C"],
   "/chat": ["#4F1E7B", "#10B981"],
+  "/training": ["#F59E0B", "#4F1E7B"],
   "/knowledge": ["#10B981", "#4F1E7B"],
   "/integrations": ["#4F1E7B", "#10B981"],
   "/admin": ["#4F1E7B", "#3B154C"],
@@ -129,6 +172,7 @@ export const ROUTE_ACCENTS: Record<string, [string, string]> = {
   "/help": ["#10B981", "#4F1E7B"],
   "/pipeline": ["#4F1E7B", "#10B981"],
   "/founder": ["#4F1E7B", "#FFC07D"],
+  "/activity": ["#4F1E7B", "#3B154C"],
 };
 
 export function getRouteAccent(pathname: string): [string, string] {

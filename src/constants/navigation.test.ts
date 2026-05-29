@@ -1,31 +1,29 @@
 /**
  * navigation.test.ts
  * ----------------------------------------------------------------------
- * Lock the navigation IA after the 2026 design pass. Three things go
- * wrong here historically:
+ * Lock the navigation IA after the 2026 design pass. Four groups:
+ * Workspace, Channels, Activity, Admin.
  *
- *   1. Settings drifts back out of the top nav (it's the 1-click home
- *      of Billing / Branding / Carrier — burying it kills velocity).
- *   2. Cockpit and Live Ops get reconfused (they're DIFFERENT views;
- *      Cockpit was redirect-stubbed to / for a while and the nav still
- *      advertised it — that's the bug the audit caught).
- *   3. A nav item gets added but its route handler doesn't render its
- *      own component — phantom tabs that 404 or redirect.
- *
- * These tests pin all three.
+ * Key invariants:
+ *   1. Chat remains the primary control surface (first item).
+ *   2. Training has its own dedicated sidebar slot.
+ *   3. Phone, Email, SMS each get their own Channels slot.
+ *   4. Cockpit and Live Ops remain distinct pages.
+ *   5. Settings stays visible in the top nav (not buried).
  */
 import { describe, expect, it } from "vitest";
 import { NAV_GROUPS, PAGE_TITLES } from "./navigation";
 
 describe("Top-bar navigation IA", () => {
-  it("ships exactly three groups in the documented order", () => {
-    expect(NAV_GROUPS.map((g) => g.label)).toEqual(["Workspace", "Activity", "Admin"]);
+  it("ships exactly four groups in the documented order", () => {
+    expect(NAV_GROUPS.map((g) => g.label)).toEqual(["Workspace", "Channels", "Activity", "Admin"]);
   });
 
-  it("Workspace group leads with Chat, then Live Ops, Triage, Insights, Cockpit", () => {
+  it("Workspace group leads with Chat, Training, then Live Ops, Triage, Insights, Cockpit", () => {
     const ws = NAV_GROUPS.find((g) => g.label === "Workspace")!;
     expect(ws.items.map((i) => i.path)).toEqual([
       "/chat",
+      "/training",
       "/ops",
       "/triage",
       "/insights",
@@ -37,10 +35,15 @@ describe("Top-bar navigation IA", () => {
     expect(NAV_GROUPS[0].items[0].path).toBe("/chat");
   });
 
-  it("Training is folded into chat — no standalone /train or /knowledge nav item", () => {
+  it("Training is its own dedicated sidebar page", () => {
     const paths = NAV_GROUPS.flatMap((g) => g.items).map((i) => i.path);
+    expect(paths).toContain("/training");
     expect(paths).not.toContain("/train");
-    expect(paths).not.toContain("/knowledge");
+  });
+
+  it("Channels group has Phone, Email, SMS as dedicated pages", () => {
+    const ch = NAV_GROUPS.find((g) => g.label === "Channels")!;
+    expect(ch.items.map((i) => i.path)).toEqual(["/phone", "/email", "/sms"]);
   });
 
   it("Cockpit lives in the Workspace group (Fleet group retired)", () => {
@@ -51,7 +54,7 @@ describe("Top-bar navigation IA", () => {
 
   it("Activity group has Activity and Pipeline", () => {
     const act = NAV_GROUPS.find((g) => g.label === "Activity")!;
-    expect(act.items.map((i) => i.path)).toEqual(["/logs", "/pipeline"]);
+    expect(act.items.map((i) => i.path)).toEqual(["/activity", "/pipeline"]);
   });
 
   it("Settings is in the top-bar nav (Admin group), not buried in the avatar menu", () => {

@@ -40,6 +40,7 @@ const AUTO_EXPAND_WIDTH = 1440; // viewport width that auto-expands the rail
 // Matches the route-accent palette already in use elsewhere.
 const GROUP_ACCENTS: Record<string, string> = {
   Workspace: "#4F1E7B", // brand purple
+  Channels: "#3B82F6", // vibrant blue — communication surfaces
   Fleet: "#F59E0B", // warm amber
   Activity: "#10B981", // emerald
   Admin: "#7C7469", // muted warm gray
@@ -53,6 +54,10 @@ const SHORTCUTS: Record<string, string> = {
   "/insights": "g i",
   "/agents": "g a",
   "/chat": "g r",
+  "/training": "g n",
+  "/phone": "g p",
+  "/email": "g e",
+  "/sms": "g m",
   "/logs": "g l",
   "/admin": "g s",
 };

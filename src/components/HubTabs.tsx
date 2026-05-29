@@ -80,15 +80,7 @@ export default function HubTabs({ tabs, label, className }: HubTabsProps) {
 // the same strip without drifting.
 // ──────────────────────────────────────────────────────────────────────────
 
-import {
-  MessageSquare,
-  MessageCircle,
-  Database,
-  History,
-  PhoneOutgoing,
-  Mail,
-  Calendar,
-} from "lucide-react";
+import { MessageSquare, MessageCircle, Database, History, Mail, Calendar } from "lucide-react";
 
 export const TRAINING_HUB: HubTabDef[] = [
   { label: "Chat", path: "/chat", icon: MessageSquare },
@@ -96,9 +88,8 @@ export const TRAINING_HUB: HubTabDef[] = [
 ];
 
 export const CHANNELS_HUB: HubTabDef[] = [
-  { label: "Logs", path: "/logs", icon: History },
-  { label: "Outbound", path: "/outbound", icon: PhoneOutgoing },
-  { label: "Email", path: "/inbox", icon: Mail },
+  { label: "Phone", path: "/phone", icon: History },
+  { label: "Email", path: "/email", icon: Mail },
   { label: "SMS", path: "/sms", icon: MessageCircle },
   { label: "Appointments", path: "/appointments", icon: Calendar },
 ];
