@@ -274,6 +274,25 @@ export const agents = pgTable(
      * the SCRIPT, not the voice.
      */
     personalityVibe: text("personality_vibe").default("warm"),
+    /**
+     * Operator-authored system prompt that fully REPLACES the
+     * auto-composed base identity prompt at call time. When set and
+     * non-empty, the Vapi assistant factory uses this text as the base
+     * identity block instead of the generated "## IDENTITY & MISSION"
+     * prompt (or the Wireline persona overlay), then still appends the
+     * call-specific dynamic blocks (caller profile, intel, sentiment,
+     * lead, flow, personality, directives, knowledge, lessons, date)
+     * AND runs the result through buildAgentRuntimeContext, so the
+     * compliance / escalation / do-not-discuss / voice-consistency
+     * guardrails can never be silently dropped.
+     *
+     * NULL (the default) → fall back to the auto-composed prompt,
+     * preserving existing behaviour for every agent that hasn't been
+     * overridden. Surfaced as the "System prompt" textarea in
+     * FleetSettings → AgentConfigPanel with a "Use auto-composed prompt"
+     * reset that sets this back to NULL.
+     */
+    systemPromptOverride: text("system_prompt_override"),
     complianceMode: text("compliance_mode").default("standard"),
     disallowedTopics: text("disallowed_topics").array(),
     escalationKeywords: text("escalation_keywords").array(),

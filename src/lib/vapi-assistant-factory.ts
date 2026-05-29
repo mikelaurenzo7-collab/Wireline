@@ -17,7 +17,11 @@ import {
   buildRoleToolDefsForTenant,
   VAPI_WEBHOOK_SECRET,
 } from "./vapi-helpers";
-import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./agent-runtime";
+import {
+  buildAgentRuntimeContext,
+  resolveAssistantBasePrompt,
+  type AgentRuntimeProfile,
+} from "./agent-runtime";
 import { buildCustomerIntelBlock } from "./customer-intel";
 import { getVoiceLatencyProfile } from "./voice-agent-profile";
 import {
@@ -414,10 +418,14 @@ Today is ${currentDateTime}.
   // block with the persona's full voice-optimized prompt. We still
   // append the dynamic blocks (caller profile, customer intel, sentiment
   // shift, lead context, current time) so personalization survives.
-  const systemPrompt = wirelinePersona
-    ? `${wirelinePersona.systemPrompt}
-
-## CALL-SPECIFIC CONTEXT
+  //
+  // An operator-set `system_prompt_override` takes precedence over both
+  // the auto-composed prompt and the persona overlay — it replaces the
+  // base identity in the same additive way (override text leads, the
+  // call-specific dynamic blocks follow). The runtime guardrails are
+  // still appended below by buildAgentRuntimeContext, so compliance /
+  // escalation / do-not-discuss / voice-consistency are never dropped.
+  const callSpecificContext = `## CALL-SPECIFIC CONTEXT
 ${callerProfile}
 ${customerIntelBlock}
 ${sentimentShift}
@@ -428,8 +436,14 @@ ${directivesBlock}
 ${knowledgeBlock}
 ${lessonsBlock}
 Today is ${currentDateTime}.
-  `
-    : baseSystemPrompt;
+  `;
+
+  const systemPrompt = resolveAssistantBasePrompt({
+    override: agentConfigRow?.systemPromptOverride,
+    personaPrompt: wirelinePersona?.systemPrompt,
+    autoComposedPrompt: baseSystemPrompt,
+    callSpecificContext,
+  });
 
   const runtimeProfile: AgentRuntimeProfile = {
     timezone: agentConfigRow?.timezone,

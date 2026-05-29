@@ -186,6 +186,7 @@ router.get(
           channel: agentData.channel,
           role: agentData.role,
           enabled_tools: agentData.enabledTools ?? null,
+          system_prompt_override: agentData.systemPromptOverride ?? null,
           personality: personalityRes[0]?.content ?? "",
           directives: (directivesRes ?? []).map(
             (d: { content: string; priority: number | null }) => ({
@@ -233,7 +234,15 @@ router.post(
         .limit(1);
       if (!ownedAgent) return res.status(404).json({ error: "Agent not found" });
 
-      const { personality, directives, knowledge, role, channel, enabled_tools } = payload.agent;
+      const {
+        personality,
+        directives,
+        knowledge,
+        role,
+        channel,
+        enabled_tools,
+        system_prompt_override,
+      } = payload.agent;
 
       if (personality) {
         await drizzle
@@ -271,6 +280,11 @@ router.post(
       if (typeof role === "string") importedAgentPatch.role = role;
       if (typeof channel === "string") importedAgentPatch.channel = channel;
       if (enabled_tools !== undefined) importedAgentPatch.enabledTools = toolConfig;
+      if (system_prompt_override === null) {
+        importedAgentPatch.systemPromptOverride = null;
+      } else if (typeof system_prompt_override === "string") {
+        importedAgentPatch.systemPromptOverride = system_prompt_override;
+      }
       if (Object.keys(importedAgentPatch).length > 0) {
         await drizzle
           .update(schema.agents)

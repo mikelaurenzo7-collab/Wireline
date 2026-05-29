@@ -21,6 +21,7 @@ import {
   applyBusinessVariables,
   kpiFocusLine,
   buildAgentRuntimeContext,
+  resolveAssistantBasePrompt,
   type AgentRuntimeProfile,
 } from "./agent-runtime";
 
@@ -310,5 +311,88 @@ describe("buildAgentRuntimeContext", () => {
     );
     expect(result.inHours).toBe(true);
     expect(result.outOfHoursMessage).toBeNull();
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────
+// resolveAssistantBasePrompt — override > persona > auto-composed
+// ────────────────────────────────────────────────────────────────────────
+
+describe("resolveAssistantBasePrompt", () => {
+  const CONTEXT = "## CALL-SPECIFIC CONTEXT\nCaller is Jane.\nToday is Monday.";
+  const AUTO = "## IDENTITY & MISSION\nYou are the auto-composed agent.";
+  const PERSONA = "## PERSONA\nYou are Wireline Reception.";
+
+  it("falls back to the auto-composed prompt when no override or persona", () => {
+    const prompt = resolveAssistantBasePrompt({
+      override: null,
+      personaPrompt: null,
+      autoComposedPrompt: AUTO,
+      callSpecificContext: CONTEXT,
+    });
+    expect(prompt).toBe(AUTO);
+  });
+
+  it("treats an empty/whitespace override as absent (preserves current behavior)", () => {
+    for (const override of ["", "   ", "\n\t "]) {
+      const prompt = resolveAssistantBasePrompt({
+        override,
+        personaPrompt: null,
+        autoComposedPrompt: AUTO,
+        callSpecificContext: CONTEXT,
+      });
+      expect(prompt).toBe(AUTO);
+    }
+  });
+
+  it("uses the persona overlay (with context appended) when no override", () => {
+    const prompt = resolveAssistantBasePrompt({
+      override: null,
+      personaPrompt: PERSONA,
+      autoComposedPrompt: AUTO,
+      callSpecificContext: CONTEXT,
+    });
+    expect(prompt).toContain(PERSONA);
+    expect(prompt).toContain("## CALL-SPECIFIC CONTEXT");
+    expect(prompt).not.toContain("## IDENTITY & MISSION");
+  });
+
+  it("override replaces the base identity and still appends dynamic context", () => {
+    const override = "You are a custom operator-authored agent. Be terse.";
+    const prompt = resolveAssistantBasePrompt({
+      override,
+      personaPrompt: PERSONA,
+      autoComposedPrompt: AUTO,
+      callSpecificContext: CONTEXT,
+    });
+    // Override wins over BOTH auto-composed and persona.
+    expect(prompt).toContain(override);
+    expect(prompt).not.toContain("## IDENTITY & MISSION");
+    expect(prompt).not.toContain("## PERSONA");
+    // Dynamic call-specific blocks are still appended.
+    expect(prompt).toContain("## CALL-SPECIFIC CONTEXT");
+    expect(prompt).toContain("Caller is Jane.");
+  });
+
+  it("override prompt still gains the runtime guardrails via buildAgentRuntimeContext", () => {
+    const override = "You are a custom operator-authored agent.";
+    const base = resolveAssistantBasePrompt({
+      override,
+      personaPrompt: null,
+      autoComposedPrompt: AUTO,
+      callSpecificContext: CONTEXT,
+    });
+    const { prompt } = buildAgentRuntimeContext(base, {
+      compliance_mode: "hipaa",
+      disallowed_topics: ["politics"],
+      escalation_keywords: ["lawyer"],
+    });
+    // Operator text survives…
+    expect(prompt).toContain(override);
+    // …and safety/compliance guardrails are layered on top, not dropped.
+    expect(prompt).toMatch(/HIPAA/);
+    expect(prompt).toMatch(/DO-NOT-DISCUSS/);
+    expect(prompt).toMatch(/IMMEDIATE-ESCALATION/);
+    expect(prompt).toMatch(/VOICE CONSISTENCY/);
   });
 });

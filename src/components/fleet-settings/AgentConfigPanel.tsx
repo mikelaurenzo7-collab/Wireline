@@ -19,6 +19,7 @@ import {
   Mail,
   Settings2,
   Save,
+  FileText,
   Pencil,
   Trash2,
   Plus,
@@ -663,6 +664,78 @@ export default function AgentConfigPanel({
                         </div>
                       </div>
                     )}
+
+                    {/* System prompt override — operators can replace the
+                        auto-composed base identity prompt. Call-specific
+                        context + safety guardrails are still appended at
+                        runtime, so this never disables compliance. */}
+                    {(() => {
+                      const overrideValue =
+                        typeof selectedAgent.system_prompt_override === "string"
+                          ? selectedAgent.system_prompt_override
+                          : "";
+                      const usingAutoComposed = !overrideValue.trim();
+                      return (
+                        <div className="rounded-xl glass border border-white/8 p-3 space-y-3">
+                          <div className="flex items-center justify-between gap-2 pb-2 border-b border-white/8">
+                            <div className="flex items-center gap-2">
+                              <FileText className="w-3.5 h-3.5 text-brand" />
+                              <h3 className="font-display italic lowercase text-base text-ink">
+                                system prompt
+                              </h3>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setSelectedAgent({
+                                  ...selectedAgent,
+                                  system_prompt_override: null,
+                                });
+                                void updateAgentMeta({ system_prompt_override: null });
+                              }}
+                              disabled={usingAutoComposed}
+                              className="shrink-0 inline-flex items-center gap-1.5 h-11 sm:h-8 px-3 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/80 hover:border-brand/40 hover:text-brand transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              <RefreshCw className="w-2.5 h-2.5" />
+                              Use auto-composed prompt
+                            </button>
+                          </div>
+                          <p className="text-[10px] text-muted/70 leading-relaxed">
+                            Override the auto-composed identity prompt. Caller context, knowledge,
+                            directives and the compliance / escalation guardrails are still appended
+                            automatically on every call. Leave blank to use the auto-composed
+                            prompt.
+                          </p>
+                          <textarea
+                            aria-label="System prompt override"
+                            value={overrideValue}
+                            maxLength={8000}
+                            onChange={(e) =>
+                              setSelectedAgent({
+                                ...selectedAgent,
+                                system_prompt_override: e.target.value,
+                              })
+                            }
+                            onBlur={(e) =>
+                              void updateAgentMeta({
+                                system_prompt_override: e.target.value.trim()
+                                  ? e.target.value
+                                  : null,
+                              })
+                            }
+                            className="w-full h-48 px-4 py-3 rounded-xl bg-black/5 border border-black/10 text-ink outline-none focus:border-brand/50 transition-all resize-none text-sm leading-relaxed placeholder:text-muted/70"
+                            placeholder="Leave blank to use the auto-composed prompt. Type here to define the agent's full identity, tone, and behavior — this replaces the generated base prompt."
+                          />
+                          <div className="flex items-center justify-between text-[9px] text-muted/70">
+                            <span>
+                              {usingAutoComposed
+                                ? "Using auto-composed prompt"
+                                : "Using custom override"}
+                            </span>
+                            <span className="tabular-nums">{overrideValue.length}/8000</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     <AgentIntegrationCanvas
                       agentName={selectedAgent.name}
