@@ -97,7 +97,7 @@ export default function Training() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 h-[calc(var(--app-vvh,100dvh)-7rem)] sm:h-[calc(var(--app-vvh,100dvh)-9rem)] min-h-[400px]">
+    <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 h-[calc(var(--app-vvh,100dvh)-7rem)] sm:h-[calc(var(--app-vvh,100dvh)-9rem)] lg:h-[calc(100dvh-8.5rem)] min-h-[400px]">
       {/* ─── Agent Selector Rail ────────────────────────────────────── */}
       {/* Desktop: vertical rail. Mobile: horizontal pill switcher */}
       <aside className="shrink-0 lg:w-52">

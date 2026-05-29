@@ -86,7 +86,7 @@ export default function AgentChat() {
   const showDirector = isDirector || !activeAgent;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-2 lg:gap-4 h-[calc(var(--app-vvh,100dvh)-7rem)] sm:h-[calc(var(--app-vvh,100dvh)-9rem)] min-h-[400px]">
+    <div className="flex flex-col lg:flex-row gap-2 lg:gap-4 h-[calc(var(--app-vvh,100dvh)-7rem)] sm:h-[calc(var(--app-vvh,100dvh)-9rem)] lg:h-[calc(100dvh-8.5rem)] min-h-[400px]">
       {/* Rail — Director pinned on top, fleet below. Vertical on desktop,
           compact horizontal switcher on mobile. */}
       <aside className="shrink-0 lg:w-56">
@@ -209,7 +209,7 @@ export default function AgentChat() {
           {/* Mobile / tablet dock trigger */}
           <button
             onClick={() => setDockOpen(true)}
-            className="xl:hidden fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] right-4 z-30 inline-flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-brand text-on-brand shadow-lg text-[12px] font-medium"
+            className="xl:hidden fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] right-4 z-30 inline-flex items-center gap-2 px-4 py-3 rounded-full bg-brand text-on-brand shadow-lg shadow-brand/25 text-[12px] font-medium min-h-[44px] active:scale-95 transition-transform"
             aria-label="Open mission control"
           >
             <LayoutDashboard className="w-4 h-4" />
@@ -236,10 +236,10 @@ export default function AgentChat() {
                   <div className="flex items-center justify-end mb-2">
                     <button
                       onClick={() => setDockOpen(false)}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors"
+                      className="w-11 h-11 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors"
                       aria-label="Close mission control"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-5 h-5 sm:w-4 sm:h-4" />
                     </button>
                   </div>
                   <div className="h-[calc(100%-2.5rem)]">

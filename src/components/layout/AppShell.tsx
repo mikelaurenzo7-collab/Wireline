@@ -261,7 +261,11 @@ export default function AppShell() {
   );
 }
 
-function getDesktopBreadcrumb(pathname: string): { eyebrow?: string; title: string } {
+function getDesktopBreadcrumb(pathname: string): {
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+} {
   const exactTitle = PAGE_TITLES[pathname];
   if (exactTitle) {
     for (const group of NAV_GROUPS) {
@@ -270,14 +274,29 @@ function getDesktopBreadcrumb(pathname: string): { eyebrow?: string; title: stri
           item.path === pathname ||
           item.matches?.some((m) => pathname === m || pathname.startsWith(`${m}/`)),
       );
-      if (match) return { eyebrow: group.label, title: exactTitle };
+      if (match)
+        return { eyebrow: group.label, title: exactTitle, subtitle: ROUTE_SUBTITLES[pathname] };
     }
-    return { title: exactTitle };
+    return { title: exactTitle, subtitle: ROUTE_SUBTITLES[pathname] };
   }
   if (pathname.startsWith("/contact/")) return { eyebrow: "Activity", title: "Contact Profile" };
   const prefix = `/${pathname.split("/").filter(Boolean)[0] || ""}`;
   return { title: PAGE_TITLES[prefix] || "Workspace" };
 }
+
+const ROUTE_SUBTITLES: Record<string, string> = {
+  "/phone": "Call history, outbound campaigns & live monitoring",
+  "/email": "Manage threads, drafts & automated responses",
+  "/sms": "Two-way conversations & automated follow-ups",
+  "/training": "Teach, tune & refine your agents",
+  "/activity": "Cross-channel history & scheduled events",
+  "/ops": "Active calls, queue depth & real-time metrics",
+  "/triage": "Flagged conversations needing review",
+  "/insights": "Performance analytics & trend discovery",
+  "/cockpit": "Agent availability & live call supervision",
+  "/pipeline": "Leads across the funnel",
+  "/admin": "Account configuration & integrations",
+};
 
 function DesktopContextBar({
   pathname,
@@ -302,9 +321,16 @@ function DesktopContextBar({
             {breadcrumb.eyebrow}
           </p>
         )}
-        <h1 className="font-display italic text-[1.35rem] sm:text-[22px] leading-tight text-ink truncate">
-          {breadcrumb.title}
-        </h1>
+        <div className="flex items-baseline gap-3">
+          <h1 className="font-display italic text-[1.35rem] sm:text-[22px] leading-tight text-ink truncate">
+            {breadcrumb.title}
+          </h1>
+          {breadcrumb.subtitle && (
+            <p className="hidden xl:block text-[12px] text-muted truncate max-w-sm">
+              {breadcrumb.subtitle}
+            </p>
+          )}
+        </div>
       </div>
       <button
         type="button"
@@ -312,7 +338,8 @@ function DesktopContextBar({
         className="inline-flex min-h-11 items-center gap-2 border border-ink/[0.08] bg-white/40 px-4 text-eyebrow transition-colors hover:border-brand/25 hover:text-brand"
         aria-label="Open keyboard shortcuts"
       >
-        Press ?
+        <kbd className="font-mono text-[10px]">?</kbd>
+        <span className="hidden xl:inline">Shortcuts</span>
       </button>
     </div>
   );
