@@ -361,7 +361,7 @@ export default function DispatchTab({
                         type="button"
                         onClick={triggerUploadCsv}
                         disabled={!hasOutboundConsent}
-                        className="w-full rounded-xl glass border border-dashed border-white/15 hover:border-brand/40 hover:bg-brand/5 transition-all py-8 flex flex-col items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full rounded-xl glass border border-dashed border-black/10 hover:border-brand/30 hover:-translate-y-px transition-all duration-300 py-8 flex flex-col items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isUploading ? (
                           <Loader2 className="w-7 h-7 text-brand animate-spin" />

@@ -125,7 +125,7 @@ export default function CampaignsTab({
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     className={cn(
-                      "px-4 py-3.5 cursor-pointer hover:bg-white/3 transition-colors group",
+                      "px-4 py-3.5 cursor-pointer glass border border-black/8 hover:border-brand/30 hover:-translate-y-px transition-all duration-300 group",
                       isSelected && "bg-brand/8 ring-1 ring-inset ring-brand/30",
                     )}
                     onClick={() => handleSelectCampaign(c)}
@@ -133,11 +133,10 @@ export default function CampaignsTab({
                     <div className="flex items-start gap-3">
                       <div
                         className={cn(
-                          "w-9 h-9 rounded-xl glass border flex items-center justify-center shrink-0 mt-0.5",
-                          statusMeta.iconBorder,
+                          "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25",
                         )}
                       >
-                        <Megaphone className={cn("w-4 h-4", statusMeta.text)} />
+                        <Megaphone className="w-4 h-4" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5 flex-wrap">
