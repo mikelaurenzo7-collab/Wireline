@@ -368,3 +368,38 @@ export function buildAgentRuntimeContext(
 
   return { prompt, inHours, outOfHoursMessage };
 }
+
+/**
+ * Resolve the base identity prompt for a Vapi assistant.
+ *
+ * Priority: operator override → Wireline persona overlay → auto-composed.
+ *
+ * When an operator override is present (non-empty after trimming) it
+ * REPLACES the base identity, exactly the way the persona overlay does:
+ * the override text leads and the call-specific dynamic context blocks
+ * (caller profile, intel, sentiment, lead, flow, personality,
+ * directives, knowledge, lessons, date) are appended after it. The
+ * auto-composed prompt already embeds those dynamic blocks inline, so it
+ * is returned untouched.
+ *
+ * This function deliberately does NOT add the runtime guardrails
+ * (compliance / escalation / do-not-discuss / voice-consistency) — those
+ * are layered on afterwards by buildAgentRuntimeContext, so they can
+ * never be silently dropped by an override.
+ */
+export function resolveAssistantBasePrompt(opts: {
+  override?: string | null;
+  personaPrompt?: string | null;
+  autoComposedPrompt: string;
+  callSpecificContext: string;
+}): string {
+  const override = typeof opts.override === "string" ? opts.override.trim() : "";
+  if (override) {
+    return `${override}\n\n${opts.callSpecificContext}`;
+  }
+  const persona = typeof opts.personaPrompt === "string" ? opts.personaPrompt.trim() : "";
+  if (persona) {
+    return `${persona}\n\n${opts.callSpecificContext}`;
+  }
+  return opts.autoComposedPrompt;
+}
