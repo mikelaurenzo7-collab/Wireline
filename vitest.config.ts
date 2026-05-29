@@ -15,13 +15,13 @@ export default defineConfig({
       reportsDirectory: "./coverage",
       // Ratchet thresholds: set just below the current measured floor so the
       // build fails on a coverage *regression* rather than enforcing an
-      // aspirational target the legacy UI tree can't yet meet. Raise these as
-      // direct tests are added for the money/identity paths (Phase 1).
+      // aspirational target the legacy UI tree can't yet meet. Raised after
+      // the 2026-Q2 test expansion (406 tests).
       thresholds: {
-        statements: 5,
-        branches: 45,
-        functions: 17,
-        lines: 5,
+        statements: 6,
+        branches: 50,
+        functions: 20,
+        lines: 6,
       },
     },
   },
