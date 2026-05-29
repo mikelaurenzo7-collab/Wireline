@@ -70,32 +70,33 @@ function ShowcaseCard({ agent }: { agent: ShowcaseAgent }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="glass border border-brand/25 p-6 sm:p-8"
+      className="glass border border-ink/[0.1] p-6 sm:p-8 transition-all duration-300 hover:border-brand/30"
     >
       <div className="flex items-start gap-4 mb-5">
         <div
           className="w-12 h-12 flex items-center justify-center shrink-0"
           style={{ background: agent.tint }}
+          aria-hidden="true"
         >
-          <Sparkles className="w-5 h-5 text-on-brand" strokeWidth={2.2} />
+          <Sparkles className="w-5 h-5 text-white" strokeWidth={2.2} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] uppercase tracking-[0.4em] text-brand/80 mb-1 font-medium">
+          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-brand mb-1.5">
             {agent.role}
           </p>
           <h3 className="font-display italic text-2xl sm:text-3xl text-ink leading-tight">
             {agent.name}
           </h3>
-          <p className="text-[12px] text-muted/70 mt-1">Voice: {agent.voiceLabel}</p>
+          <p className="text-[12px] text-ink/55 mt-1">Voice: {agent.voiceLabel}</p>
         </div>
       </div>
 
-      <p className="text-sm sm:text-base text-ink/80 leading-relaxed mb-4">{agent.tagline}</p>
+      <p className="text-sm sm:text-base text-ink/75 leading-relaxed mb-4">{agent.tagline}</p>
 
       {agent.preRollAudio ? (
         <>
-          <div className="bg-ink/5 border border-white/10 p-4 mb-4">
-            <p className="text-[11px] uppercase tracking-[0.3em] text-muted/70 mb-2">
+          <div className="bg-ink/[0.04] border border-ink/[0.08] p-4 mb-4">
+            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ink/55 mb-2">
               First-message script
             </p>
             <p className="text-sm text-ink/90 italic leading-relaxed">"{agent.firstMessage}"</p>
@@ -174,7 +175,7 @@ function PhoneLineCard({ agent, label }: { agent: ContactAgent; label: string })
           <Phone className="w-4 h-4" strokeWidth={2.3} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[9px] uppercase tracking-[0.24em] text-muted/70 mb-1">
+          <p className="font-mono text-[9px] uppercase tracking-[0.24em] text-ink/55 mb-1">
             {label} · {agent.name}
           </p>
           <p className="font-display italic text-lg leading-tight text-ink line-clamp-2">
@@ -203,7 +204,9 @@ export default function Showcase() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <p className="text-eyebrow text-brand mb-4">The playable showcase</p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-4">
+            The playable showcase
+          </p>
           <h1 className="marketing-hero-title text-4xl sm:text-5xl mb-6">
             Audition the agents before you deploy one.
           </h1>
@@ -218,8 +221,8 @@ export default function Showcase() {
       {/* Showcase cards */}
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 pb-16">
         <div className="flex items-center gap-2 mb-6">
-          <Volume2 className="w-4 h-4 text-brand" strokeWidth={2.2} />
-          <p className="text-eyebrow text-brand">Press play</p>
+          <Volume2 className="w-4 h-4 text-brand" strokeWidth={2.2} aria-hidden="true" />
+          <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-brand">Press play</p>
         </div>
         <div className="grid grid-cols-1 gap-5">
           {SHOWCASE_AGENTS.map((agent) => (
@@ -232,8 +235,10 @@ export default function Showcase() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-eyebrow text-brand">Wireline team</span>
-              <span className="h-px flex-1 bg-brand/20" />
+              <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-brand">
+                Wireline team
+              </span>
+              <span className="h-px flex-1 bg-ink/[0.12]" />
             </div>
             <div className="grid grid-cols-1 gap-3">
               {WIRELINE_CONTACT_AGENTS.map((agent) => (
@@ -243,8 +248,10 @@ export default function Showcase() {
           </div>
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <span className="app-section-title opacity-90 font-medium">Demo agents</span>
-              <span className="h-px flex-1 bg-black/10" />
+              <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/65">
+                Demo agents
+              </span>
+              <span className="h-px flex-1 bg-ink/[0.12]" />
             </div>
             <div className="grid grid-cols-1 gap-3">
               {WIRELINE_DEMO_AGENTS.map((agent) => (

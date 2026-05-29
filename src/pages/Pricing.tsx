@@ -236,24 +236,26 @@ export default function Pricing() {
       />
 
       {/* Hero */}
-      <section className="relative z-10 px-4 sm:px-6 lg:px-10 xl:px-14 pt-4 sm:pt-6 pb-10 max-w-6xl mx-auto text-center">
+      <section className="relative z-10 px-4 sm:px-6 lg:px-10 xl:px-14 pt-4 sm:pt-6 pb-9 max-w-6xl mx-auto text-center">
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 px-3 py-1.5 glass border border-white/8 mb-4"
+          className="inline-flex items-center gap-2 border border-ink/15 bg-ink/[0.03] px-4 py-1.5 mb-6"
         >
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          <span className="text-eyebrow">Pricing · Start free, upgrade when ready</span>
+          <span className="w-1.5 h-1.5 bg-brand" aria-hidden="true" />
+          <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/70">
+            Pricing · Start free, upgrade when ready
+          </span>
         </motion.div>
 
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="font-display italic text-4xl sm:text-5xl lg:text-6xl leading-[1.05] sm:leading-[0.95] tracking-tight mb-4 text-balance"
+          className="font-display italic text-[clamp(2.25rem,5vw,4rem)] leading-[1.05] tracking-tight mb-4 text-balance"
         >
-          <span className="text-aurora">Plans that scale</span>
+          <span className="text-brand">Plans that scale</span>
           <br />
           <span className="text-ink">with your fleet</span>
         </motion.h1>
@@ -262,7 +264,7 @@ export default function Pricing() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.15, duration: 0.6 }}
-          className="text-muted/80 text-base max-w-xl mx-auto"
+          className="text-ink/65 text-base leading-relaxed max-w-xl mx-auto"
         >
           Every plan includes the dashboard, real-time call logs, sentiment scoring, and the
           Wireline Demo Line for testing. Pick the agent + minute volume you need today; add more
@@ -272,7 +274,7 @@ export default function Pricing() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.22, duration: 0.6 }}
-          className="text-[11px] uppercase tracking-[0.3em] text-brand/85 mt-5 mb-1"
+          className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/65 mt-5 mb-1"
         >
           Built for every service business
         </motion.p>
@@ -285,7 +287,7 @@ export default function Pricing() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.28, duration: 0.6 }}
-          className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-eyebrow opacity-90"
+          className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 font-mono text-[11px] uppercase tracking-[0.18em] text-ink/65"
         >
           <Link to="/for/home-services" className="hover:text-brand transition-colors">
             Home Services
@@ -312,25 +314,22 @@ export default function Pricing() {
           one console, supervisor visibility into agent reasoning, and TCPA
           compliance as auditable code (not a black-box vendor). */}
       <section className="relative z-10 px-4 lg:px-10 max-w-6xl mx-auto pb-10">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08]">
           {[
             {
               title: "Voice + SMS + Email — one agent",
               blurb:
                 "One conversation, three channels. Most platforms make you stitch separate vendors together.",
-              accent: "#4F1E7B",
             },
             {
               title: "Supervisor cockpit with agent transparency",
               blurb:
                 "See what your agents are about to do BEFORE they do it — draft vs. auto autonomy per action.",
-              accent: "#4F1E7B",
             },
             {
               title: "TCPA compliance in code",
               blurb:
                 "Per-state opt-in rules, append-only consent ledger, automatic DNC. Your lawyers can read the rules.",
-              accent: "#4F1E7B",
             },
           ].map((c, i) => (
             <motion.div
@@ -338,22 +337,15 @@ export default function Pricing() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 + i * 0.06, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="glass border border-white/8 p-5 relative overflow-hidden"
+              className="bg-paper p-6 lg:p-7"
             >
-              <div
-                className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"
-                style={{ background: c.accent }}
-              />
-              <p
-                className="text-[9px] uppercase tracking-[0.36em] mb-2"
-                style={{ color: c.accent }}
-              >
+              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand mb-2.5">
                 Why Wireline
               </p>
               <h3 className="font-display italic text-lg text-ink leading-tight mb-1.5">
                 {c.title}
               </h3>
-              <p className="text-[12px] text-muted/85 leading-relaxed">{c.blurb}</p>
+              <p className="text-[12px] text-ink/65 leading-relaxed">{c.blurb}</p>
             </motion.div>
           ))}
         </div>
@@ -364,20 +356,20 @@ export default function Pricing() {
         <div className="flex items-center justify-center gap-3">
           <button
             onClick={() => setInterval("month")}
-            className={`px-4 py-2 text-[11px] uppercase tracking-[0.28em] font-medium transition-all ${
+            className={`px-4 py-2 font-mono text-[11px] uppercase tracking-[0.28em] font-medium transition-all ${
               interval === "month"
                 ? "bg-brand/15 border border-brand/40 text-brand"
-                : "border border-white/10 text-muted hover:text-ink hover:border-white/20"
+                : "border border-ink/15 text-ink/65 hover:text-ink hover:border-ink/30"
             }`}
           >
             Monthly
           </button>
           <button
             onClick={() => setInterval("year")}
-            className={`px-4 py-2 text-[11px] uppercase tracking-[0.28em] font-medium transition-all relative ${
+            className={`px-4 py-2 font-mono text-[11px] uppercase tracking-[0.28em] font-medium transition-all relative ${
               interval === "year"
                 ? "bg-brand/15 border border-brand/40 text-brand"
-                : "border border-white/10 text-muted hover:text-ink hover:border-white/20"
+                : "border border-ink/15 text-ink/65 hover:text-ink hover:border-ink/30"
             }`}
           >
             Annual
@@ -406,10 +398,10 @@ export default function Pricing() {
               }`}
             >
               <div
-                className={`relative ${
+                className={`relative transition-all duration-300 ${
                   tier.highlight
                     ? "glass-strong border-2 border-brand/40"
-                    : "glass border border-white/8"
+                    : "glass border border-ink/[0.08] hover:border-brand/30"
                 } p-5 flex flex-col flex-1 overflow-hidden`}
                 style={
                   tier.highlight
@@ -422,7 +414,7 @@ export default function Pricing() {
               >
                 <div className="mb-4">
                   <h2 className="font-display italic text-2xl text-ink mb-1">{tier.name}</h2>
-                  <p className="text-[11px] text-muted leading-snug">{tier.blurb}</p>
+                  <p className="text-[11px] text-ink/65 leading-snug">{tier.blurb}</p>
                 </div>
 
                 <div className="mb-5 flex items-baseline gap-1">
@@ -430,7 +422,7 @@ export default function Pricing() {
                     {interval === "year" ? tier.priceAnnual : tier.price}
                   </span>
                   {tier.cadence && (
-                    <span className="text-[10px] text-muted">
+                    <span className="text-[10px] text-ink/55">
                       {interval === "year" ? "/ year" : tier.cadence}
                     </span>
                   )}
@@ -447,19 +439,11 @@ export default function Pricing() {
                 )}
                 <a
                   href={tier.ctaHref}
-                  className={`group flex w-full min-h-[48px] items-center justify-center text-center py-3.5 text-[11px] uppercase tracking-[0.32em] font-medium transition-all mb-6 ${
+                  className={`group flex w-full min-h-[48px] items-center justify-center text-center py-3.5 text-[11px] uppercase tracking-[0.32em] font-medium transition-colors duration-300 mb-6 ${
                     tier.highlight
-                      ? "text-on-brand hover:opacity-90"
-                      : "border border-white/15 text-ink hover:border-white/30 hover:bg-white/5"
+                      ? "bg-brand text-white hover:bg-[#3d1660]"
+                      : "border border-ink/15 text-ink hover:border-brand/30 hover:bg-ink/[0.03]"
                   }`}
-                  style={
-                    tier.highlight
-                      ? {
-                          background: "#4F1E7B",
-                          boxShadow: "0 6px 20px -6px rgba(79, 30, 123 ,0.55)",
-                        }
-                      : undefined
-                  }
                 >
                   <span className="inline-flex items-center gap-2">
                     {tier.cta}
@@ -497,17 +481,14 @@ export default function Pricing() {
           className="mt-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto"
         >
           {VALUE_BULLETS.map(({ icon: Icon, text }) => (
-            <div key={text} className="glass border border-white/8 p-4 flex items-start gap-3">
-              <div
-                className="w-8 h-8 flex items-center justify-center shrink-0 border border-white/8"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgba(79, 30, 123 ,0.18), rgba(79, 30, 123 ,0.12))",
-                }}
-              >
+            <div
+              key={text}
+              className="glass border border-ink/[0.08] p-4 flex items-start gap-3 transition-all duration-300 hover:border-brand/30"
+            >
+              <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-brand/15 bg-brand/[0.06]">
                 <Icon className="w-4 h-4 text-brand" strokeWidth={2.2} />
               </div>
-              <p className="text-[12px] text-ink/80 leading-snug">{text}</p>
+              <p className="text-[12px] text-ink/75 leading-snug">{text}</p>
             </div>
           ))}
         </motion.div>
@@ -523,8 +504,10 @@ export default function Pricing() {
           className="mt-14 max-w-5xl mx-auto"
         >
           <div className="text-center mb-6">
-            <p className="text-eyebrow text-brand mb-2">ROI snapshot · vs traditional headcount</p>
-            <h3 className="font-display italic text-2xl text-ink leading-tight">
+            <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-2.5">
+              ROI snapshot · vs traditional headcount
+            </p>
+            <h3 className="font-display italic text-[clamp(1.5rem,3vw,2rem)] text-ink leading-[1.05]">
               How much you save replacing one human role
             </h3>
           </div>
@@ -563,16 +546,19 @@ export default function Pricing() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.95 + i * 0.06, duration: 0.5 }}
-                  className="glass border border-white/10 p-5 relative overflow-hidden"
+                  className="glass border border-ink/[0.08] p-5 relative overflow-hidden transition-all duration-300 hover:border-brand/30"
                 >
                   <div
                     className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-20 blur-3xl pointer-events-none"
                     style={{ background: "#10B981" }}
+                    aria-hidden="true"
                   />
-                  <p className="app-section-title opacity-90 mb-1">Replace</p>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ink/55 mb-1">
+                    Replace
+                  </p>
                   <p className="text-[14px] font-semibold text-ink mb-3">{row.role}</p>
                   <div className="space-y-1.5 mb-3 text-[11px]">
-                    <div className="flex justify-between text-muted/80">
+                    <div className="flex justify-between text-ink/60">
                       <span>Human ({row.humanCostLabel})</span>
                       <span className="tabular-nums line-through">
                         ${row.humanCost.toLocaleString()}/yr
@@ -585,8 +571,10 @@ export default function Pricing() {
                       <span className="tabular-nums">${row.tierCost.toLocaleString()}/yr</span>
                     </div>
                   </div>
-                  <div className="pt-3 border-t border-white/10 flex items-baseline justify-between">
-                    <span className="text-eyebrow text-emerald-600">You save</span>
+                  <div className="pt-3 border-t border-ink/10 flex items-baseline justify-between">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-emerald-600">
+                      You save
+                    </span>
                     <span className="font-display italic text-2xl text-emerald-600 tabular-nums">
                       ${savings.toLocaleString()}
                       <span className="text-[11px] text-emerald-600/70 ml-1">/yr ({pct}%)</span>
@@ -596,7 +584,7 @@ export default function Pricing() {
               );
             })}
           </div>
-          <p className="text-center text-[10px] text-muted/70 mt-4 leading-relaxed">
+          <p className="text-center text-[10px] text-ink/55 mt-4 leading-relaxed">
             Salary figures from US BLS 2025 medians. Wireline pricing excludes any voice-minute
             overage. Most teams stay inside plan.
           </p>
@@ -607,10 +595,12 @@ export default function Pricing() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.9, duration: 0.6 }}
-          className="mt-14 max-w-3xl mx-auto text-center space-y-3"
+          className="mt-12 max-w-3xl mx-auto text-center space-y-3"
         >
-          <p className="text-eyebrow">No long-term contracts · Cancel anytime · USD pricing</p>
-          <p className="text-[12px] text-muted">
+          <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/65">
+            No long-term contracts · Cancel anytime · USD pricing
+          </p>
+          <p className="text-[12px] text-ink/65 leading-relaxed">
             Voice minutes are pooled across all agents in your workspace. Overage is tier-based
             (Personal: $0.20/min · Starter: $0.18/min · Pro: $0.15/min · Business: $0.14/min) —
             priced near our cost, not a profit center. Most teams stay well inside plan. Email

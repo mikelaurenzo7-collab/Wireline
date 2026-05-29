@@ -8,7 +8,7 @@
  */
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { Mail, ArrowRight, Sparkles } from "lucide-react";
+import { Mail, ArrowRight, Sparkles, Phone } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import WirelineMark from "../components/WirelineMark";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
@@ -50,7 +50,9 @@ export default function About() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <p className="text-eyebrow text-brand mb-4">The mission</p>
+            <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-4">
+              The mission
+            </p>
             <h1 className="marketing-hero-title mb-6">
               Every business deserves a 24/7 front desk that actually answers.
             </h1>
@@ -70,7 +72,7 @@ export default function About() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="glass border border-brand/25 p-5 sm:p-8 flex flex-col sm:flex-row items-start gap-4 sm:gap-6"
+            className="glass border border-brand/20 p-5 sm:p-8 flex flex-col sm:flex-row items-start gap-4 sm:gap-6"
           >
             <div
               className="w-14 h-14 sm:w-20 sm:h-20 flex items-center justify-center shrink-0"
@@ -78,11 +80,12 @@ export default function About() {
                 background: "#4F1E7B",
                 boxShadow: "0 8px 24px -8px rgba(79,30,123,0.4)",
               }}
+              aria-hidden="true"
             >
-              <WirelineMark className="w-8 h-8 sm:w-10 sm:h-10 text-on-brand" strokeWidth={120} />
+              <WirelineMark className="w-8 h-8 sm:w-10 sm:h-10 text-white" strokeWidth={120} />
             </div>
             <div className="flex-1">
-              <p className="text-[10px] uppercase tracking-[0.4em] text-brand/80 mb-2 font-medium">
+              <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-brand mb-2">
                 Founder
               </p>
               <h2 className="font-display italic text-3xl text-ink mb-3">Michael Laurenzo</h2>
@@ -99,7 +102,7 @@ export default function About() {
               </p>
               <a
                 href="mailto:trywireline@yahoo.com"
-                className="inline-flex items-center gap-2 mt-4 text-[11px] uppercase tracking-[0.3em] text-brand hover:text-brand/80 transition-colors"
+                className="inline-flex items-center gap-2 mt-4 font-mono text-[11px] uppercase tracking-[0.2em] text-brand hover:text-[#3d1660] transition-colors"
               >
                 <Mail className="w-3.5 h-3.5" />
                 trywireline@yahoo.com
@@ -121,13 +124,14 @@ export default function About() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.08 }}
-                className="glass border border-white/10 p-5"
+                className="glass border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30"
               >
                 <div
                   className="w-8 h-8 flex items-center justify-center mb-3"
                   style={{ background: "#4F1E7B" }}
+                  aria-hidden="true"
                 >
-                  <Sparkles className="w-4 h-4 text-on-brand" strokeWidth={2} />
+                  <Sparkles className="w-4 h-4 text-white" strokeWidth={2} />
                 </div>
                 <h3 className="font-display italic text-xl text-ink mb-1.5 leading-tight">
                   {p.title}
@@ -141,35 +145,36 @@ export default function About() {
         {/* Infra moat / backed by */}
         <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16">
           <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-3">The infra moat</h2>
-          <p className="text-sm sm:text-base text-ink/75 leading-relaxed mb-6 max-w-2xl">
+          <p className="text-sm sm:text-base text-ink/65 leading-relaxed mb-6 max-w-2xl">
             Wireline is built on the strongest infra layer money can buy. Every paying customer
             inherits the reliability + capability of these platforms at no incremental cost.
           </p>
-          <div className="glass border border-white/10 p-5 sm:p-6">
+          <div className="glass border border-ink/[0.08] p-5 sm:p-6">
             <IntegrationLogos />
           </div>
         </section>
 
         {/* CTA */}
-        <section className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 pb-24 text-center">
+        <section className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 pb-16 text-center">
           <h2 className="font-display italic text-4xl sm:text-5xl text-ink mb-4 text-balance">
             Let's get your front desk back.
           </h2>
           <p className="text-sm sm:text-base text-ink/70 max-w-xl mx-auto mb-6 leading-relaxed">
             14-day free trial. Phone number included. No credit card. Cancel anytime.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
               to="/signup"
-              className="inline-flex items-center gap-2 px-5 py-3 bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
+              className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-[#3d1660] transition-colors duration-300"
             >
               Start free trial
               <ArrowRight className="w-4 h-4" />
             </Link>
             <a
               href="tel:+16305811834"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-full glass border border-black/12 text-ink text-[11px] uppercase tracking-[0.3em] font-medium hover:border-brand/40 transition-all"
+              className="inline-flex items-center gap-2 border border-ink/15 text-ink font-medium text-sm px-7 py-3.5 hover:border-brand/30 hover:text-brand transition-colors duration-300"
             >
+              <Phone className="w-4 h-4" />
               Call demo line
             </a>
           </div>
