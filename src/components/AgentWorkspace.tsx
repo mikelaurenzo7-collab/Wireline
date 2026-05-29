@@ -1,23 +1,26 @@
 /**
- * AgentWorkspace — per-agent operator chat surface.
+ * AgentWorkspace — the self-contained surface for one owned agent.
  *
- * Each agent has its own persistent thread. The operator coaches, asks
- * questions, gives context. The agent replies in-character with
- * awareness of recent calls and prior thread history.
+ * Each agent has its own workspace with four tabs, one verb each:
+ *   - Chat       — coach/direct the agent; persistent thread (the memory)
+ *   - Training   — teach it: knowledge, voice, pronunciation, flow, test calls
+ *   - Connectors — wire it to the world: capabilities + integrations
+ *   - Memory     — what it carries between calls (thread + recall + lessons)
  *
- * Distinct from /train (configuration / pre-deployment setup) — this
- * is ONGOING. The Slack-DM-with-each-employee pattern.
- *
- * Selected via the existing AgentTraining agent picker so operators
- * don't have to navigate twice. Lives behind the "Workspace" tab.
+ * This is the Slack-DM-with-each-employee pattern. The standalone /train page
+ * was retired — everything you do to an agent now happens here, scoped by
+ * agentId. The active tab (and Training's sub-tab) live in the URL so each
+ * view is deep-linkable: /chat/:id?tab=connectors, ?tab=training&sub=simulator.
  */
 import React, { useEffect, useRef, useState, useCallback, lazy, Suspense } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Send,
   Loader2,
   Trash2,
   MessageSquare,
+  MessagesSquare,
   Sparkles,
   Paperclip,
   Check,
@@ -29,13 +32,55 @@ import {
   MessageCircle,
   Plug,
   GraduationCap,
+  Brain,
+  ArrowUpRight,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
-import { AGENT_TOOL_CATALOG } from "../lib/agent-capabilities";
 
 const AgentTrainingInline = lazy(() => import("./AgentTraining"));
+const AgentConnectorsInline = lazy(() => import("./AgentActionEngine"));
+const AgentMemoryPanel = lazy(() => import("./AgentMemoryPanel"));
+
+/**
+ * Each owned agent's workspace is a self-contained surface with four tabs —
+ * one verb each: talk (Chat), teach (Training), wire to the world
+ * (Connectors), and recall (Memory). All four are scoped to this agentId, so
+ * everything the operator does to an agent happens in one place. The standalone
+ * /train page was retired in favour of this model.
+ */
+type WorkspaceTab = "chat" | "training" | "connectors" | "memory";
+
+const WORKSPACE_TABS: {
+  id: WorkspaceTab;
+  label: string;
+  icon: typeof MessageSquare;
+  help: string;
+}[] = [
+  { id: "chat", label: "Chat", icon: MessagesSquare, help: "Coach and direct this agent" },
+  {
+    id: "training",
+    label: "Training",
+    icon: GraduationCap,
+    help: "Knowledge, voice, flow & test calls",
+  },
+  { id: "connectors", label: "Connectors", icon: Plug, help: "Capabilities & integrations" },
+  { id: "memory", label: "Memory", icon: Brain, help: "What this agent remembers" },
+];
+
+function isWorkspaceTab(v: string | null): v is WorkspaceTab {
+  return v === "chat" || v === "training" || v === "connectors" || v === "memory";
+}
+
+// Touch phones have no Cmd/Ctrl+Enter, so the shortcut hint is noise there.
+// `navigator.platform` is deprecated; key off userAgent + pointer type instead.
+const IS_TOUCH =
+  typeof window !== "undefined" &&
+  typeof window.matchMedia === "function" &&
+  window.matchMedia("(pointer: coarse)").matches;
+const IS_APPLE =
+  typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
 
 /** Mirrors the planner's WorkspacePlan proposal shapes (server/lib/workspace-planner). */
 interface ProposedChange {
@@ -102,11 +147,46 @@ export default function AgentWorkspace({
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  // Connectors / capabilities panel — built from the agent's resolved tools.
+  // Resolved capabilities, mirrored up to the mission-control dock.
   const [enabledTools, setEnabledTools] = useState<string[]>([]);
-  const [showConnectors, setShowConnectors] = useState(false);
-  // View mode: "chat" is the conversation, "train" shows inline training tools.
-  const [viewMode, setViewMode] = useState<"chat" | "train">("chat");
+  // The active tab + (for Training) its sub-tab live in the URL so every view
+  // is deep-linkable as /chat/:id?tab=connectors or ?tab=training&sub=simulator
+  // — and survives a refresh or a shared link. Switching agents drops the query
+  // (the rail navigates to a bare /chat/:id), so each agent opens on Chat.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const activeTab: WorkspaceTab = isWorkspaceTab(tabParam) ? tabParam : "chat";
+  const trainingSub = searchParams.get("sub") || undefined;
+  const setActiveTab = useCallback(
+    (next: WorkspaceTab) => {
+      setSearchParams(
+        (prev) => {
+          const p = new URLSearchParams(prev);
+          if (next === "chat") p.delete("tab");
+          else p.set("tab", next);
+          if (next !== "training") p.delete("sub");
+          return p;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+  const setTrainingSub = useCallback(
+    (sub: string) => {
+      setSearchParams(
+        (prev) => {
+          const p = new URLSearchParams(prev);
+          p.set("tab", "training");
+          if (sub === "database") p.delete("sub");
+          else p.set("sub", sub);
+          return p;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
   // Tracks proposal cards the operator has acted on so they collapse to a
   // resolved state instead of re-firing. Keyed by `${messageId}:${kind}:${id}`.
   const [resolved, setResolved] = useState<Record<string, "done" | "dismissed">>({});
@@ -410,129 +490,81 @@ export default function AgentWorkspace({
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* Header */}
-      <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-black/8">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-brand/12 flex items-center justify-center shrink-0">
-            <MessageSquare className="w-4 h-4 text-brand" />
+      {/* Header + tab strip */}
+      <div className="shrink-0 border-b border-black/8">
+        <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-brand/12 flex items-center justify-center shrink-0">
+              <MessageSquare className="w-4 h-4 text-brand" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[12px] font-medium text-ink truncate">{agentName}</p>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-muted/70">
+                Private workspace · persistent memory
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-[12px] font-medium text-ink truncate">Chat with {agentName}</p>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-muted/70">
-              Private workspace · persistent memory
-            </p>
-          </div>
-        </div>
-        <div className="shrink-0 flex items-center gap-1">
-          {messages.length > 0 && (
+          {activeTab === "chat" && messages.length > 0 && (
             <button
               onClick={clearThread}
               className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.22em] text-muted hover:text-rose-600 hover:bg-rose-500/8 transition-colors"
               title="Clear thread"
             >
               <Trash2 className="w-3 h-3" />
-              Clear
+              <span className="hidden sm:inline">Clear</span>
             </button>
           )}
-          <button
-            onClick={() => setShowConnectors((v) => !v)}
-            className={cn(
-              "shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.22em] transition-colors",
-              showConnectors
-                ? "text-brand bg-brand/10"
-                : "text-muted hover:text-ink hover:bg-black/5",
-            )}
-            title="Capabilities & connectors"
-          >
-            <Plug className="w-3 h-3" />
-            {enabledTools.length} on
-          </button>
-          <button
-            onClick={() => setViewMode((v) => (v === "train" ? "chat" : "train"))}
-            className={cn(
-              "shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.22em] transition-colors",
-              viewMode === "train"
-                ? "text-brand bg-brand/10"
-                : "text-muted hover:text-ink hover:bg-black/5",
-            )}
-            title="Training & configuration tools"
-          >
-            <GraduationCap className="w-3 h-3" />
-            <span className="hidden sm:inline">{viewMode === "train" ? "Chat" : "Train"}</span>
-          </button>
+        </div>
+        {/* One verb per tab: talk · teach · wire · recall. Scrolls on narrow
+            phones; the active pill glides between tabs. */}
+        <div
+          role="tablist"
+          aria-label="Agent workspace sections"
+          className="flex items-center gap-1 px-2 pb-2 overflow-x-auto scrollbar-hide"
+        >
+          {WORKSPACE_TABS.map((tab) => {
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                role="tab"
+                aria-selected={active}
+                aria-controls={`workspace-panel-${tab.id}`}
+                onClick={() => setActiveTab(tab.id)}
+                title={tab.help}
+                className={cn(
+                  "relative shrink-0 inline-flex items-center gap-1.5 px-3 min-h-9 rounded-lg text-[10px] uppercase tracking-[0.18em] transition-colors",
+                  active ? "text-brand" : "text-muted hover:text-ink hover:bg-black/5",
+                )}
+              >
+                {active && (
+                  <motion.span
+                    layoutId="workspace-tab-pill"
+                    aria-hidden="true"
+                    className="absolute inset-0 rounded-lg bg-brand/10 border border-brand/30"
+                    transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                  />
+                )}
+                <tab.icon className="relative z-[1] w-3 h-3" />
+                <span className="relative z-[1]">{tab.label}</span>
+                {tab.id === "connectors" && enabledTools.length > 0 && (
+                  <span className="relative z-[1] text-[9px] text-muted/70 normal-case tracking-normal">
+                    {enabledTools.length}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Connectors / capabilities panel */}
-      <AnimatePresence initial={false}>
-        {showConnectors && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="shrink-0 overflow-hidden border-b border-black/8 bg-paper/40"
-          >
-            <div className="px-4 py-3">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] uppercase tracking-[0.22em] text-muted/70">
-                  {agentName}&apos;s connectors &amp; capabilities
-                </p>
-                <button
-                  onClick={() => setShowConnectors(false)}
-                  className="w-6 h-6 rounded-md flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors"
-                  aria-label="Close connectors panel"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {AGENT_TOOL_CATALOG.map((tool) => {
-                  const on = enabledTools.includes(tool.name);
-                  return (
-                    <button
-                      key={tool.name}
-                      title={
-                        on
-                          ? tool.description
-                          : `${tool.description}\n\nAsk in chat to turn this on.`
-                      }
-                      onClick={() =>
-                        on ? undefined : setInput(`Turn on ${tool.label.toLowerCase()} for me.`)
-                      }
-                      disabled={on}
-                      className={cn(
-                        "inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] border transition-colors",
-                        on
-                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 cursor-default"
-                          : "bg-black/3 border-black/8 text-muted/60 hover:border-brand/40 hover:text-ink cursor-pointer",
-                      )}
-                    >
-                      {on ? <Check className="w-2.5 h-2.5" /> : <Plug className="w-2.5 h-2.5" />}
-                      {tool.label}
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="mt-2.5 flex items-center justify-between">
-                <p className="text-[9px] text-muted/60 leading-relaxed">
-                  Tap a disabled connector to ask {agentName} to enable it
-                </p>
-                <button
-                  onClick={() => setViewMode("train")}
-                  className="text-[9px] text-brand hover:text-brand/80 transition-colors"
-                >
-                  Full settings →
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Main content: chat or training, toggled by viewMode */}
-      {viewMode === "train" ? (
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
+      {/* Tab panels */}
+      {activeTab === "training" ? (
+        <div
+          id="workspace-panel-training"
+          role="tabpanel"
+          className="flex-1 min-h-0 overflow-y-auto scrollbar-hide"
+        >
           <Suspense
             fallback={
               <div className="flex items-center justify-center py-16 text-muted">
@@ -540,255 +572,310 @@ export default function AgentWorkspace({
               </div>
             }
           >
-            <AgentTrainingInline embeddedAgentId={agentId} />
+            <AgentTrainingInline
+              embeddedAgentId={agentId}
+              initialSubTab={trainingSub}
+              onSubTabChange={setTrainingSub}
+            />
+          </Suspense>
+        </div>
+      ) : activeTab === "connectors" ? (
+        <div
+          id="workspace-panel-connectors"
+          role="tabpanel"
+          className="flex-1 min-h-0 overflow-y-auto"
+        >
+          <div className="px-4 pt-3">
+            <a
+              href="/integrations"
+              className="inline-flex items-center gap-1.5 text-[11px] text-brand hover:text-brand/80 transition-colors"
+            >
+              <ArrowUpRight className="w-3.5 h-3.5" />
+              Manage email &amp; calendar connections
+            </a>
+          </div>
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center py-16 text-muted">
+                <Loader2 className="w-5 h-5 animate-spin" />
+              </div>
+            }
+          >
+            <AgentConnectorsInline agentId={agentId} />
+          </Suspense>
+        </div>
+      ) : activeTab === "memory" ? (
+        <div id="workspace-panel-memory" role="tabpanel" className="flex-1 min-h-0 overflow-y-auto">
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center py-16 text-muted">
+                <Loader2 className="w-5 h-5 animate-spin" />
+              </div>
+            }
+          >
+            <AgentMemoryPanel
+              agentId={agentId}
+              agentName={agentName}
+              messageCount={messages.length}
+              onClearMemory={clearThread}
+              onOpenTraining={() => setActiveTab("training")}
+            />
           </Suspense>
         </div>
       ) : (
-      <>
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-4">
-        {isLoading && messages.length === 0 ? (
-          <div className="flex items-center justify-center py-10 text-muted">
-            <Loader2 className="w-4 h-4 animate-spin mr-2" /> Loading thread…
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center max-w-md mx-auto">
-            <div className="w-12 h-12 rounded-2xl bg-brand/10 flex items-center justify-center mb-4">
-              <Sparkles className="w-5 h-5 text-brand" />
-            </div>
-            <h3 className="font-display italic text-xl text-ink mb-2">
-              Start a chat with {agentName}
-            </h3>
-            <p className="text-[12px] text-muted leading-relaxed">
-              This is your ongoing private channel. Coach, give context, ask how recent calls went.
-              The agent remembers everything you discuss here and references your recent call
-              activity.
-            </p>
-            <div className="mt-5 flex flex-wrap justify-center gap-2">
-              {[
-                "Update your greeting to something warmer",
-                "Turn on text messaging",
-                "How did calls go this week?",
-                "Set your tone to authoritative",
-              ].map((suggestion) => (
-                <button
-                  key={suggestion}
-                  onClick={() => setInput(suggestion)}
-                  className="px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.18em] glass border border-black/8 hover:border-brand/40 text-ink/70 hover:text-ink transition-all"
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <AnimatePresence initial={false}>
-            {messages.map((m) => (
-              <motion.div
-                key={m.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                className={cn(
-                  "flex gap-3",
-                  m.role === "operator" ? "flex-row-reverse" : "flex-row",
-                )}
-              >
-                <div
-                  className={cn(
-                    "shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold",
-                    m.role === "operator"
-                      ? "bg-brand/15 text-brand border border-brand/30"
-                      : "bg-paper border border-black/12 text-ink",
-                  )}
-                  aria-hidden="true"
-                >
-                  {m.role === "operator" ? "You" : agentName.slice(0, 1).toUpperCase()}
+        <>
+          <div id="workspace-panel-chat" role="tabpanel" className="contents">
+            {/* Messages */}
+            <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-4">
+              {isLoading && messages.length === 0 ? (
+                <div className="flex items-center justify-center py-10 text-muted">
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" /> Loading thread…
                 </div>
-                <div
-                  className={cn(
-                    "max-w-[78%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed",
-                    m.role === "operator"
-                      ? "bg-brand text-on-brand rounded-tr-md"
-                      : "glass border border-black/8 text-ink rounded-tl-md",
-                  )}
-                >
-                  <p className="whitespace-pre-wrap break-words">{m.content}</p>
-                  {m.role === "agent" && m.proposals && (
-                    <div className="mt-3 space-y-2">
-                      {m.proposals.changes.map((c, i) => {
-                        const key = `${m.id}:change:${i}`;
-                        const state = resolved[key];
-                        return (
-                          <ProposalCard
-                            key={key}
-                            icon={<SlidersHorizontal className="w-3.5 h-3.5" />}
-                            tone="brand"
-                            title={c.label}
-                            detail={c.summary || c.value}
-                            state={state}
-                            busy={busyKey === key}
-                            busyLabel={busyKey === key ? busyLabel : undefined}
-                            approveLabel="Apply"
-                            onApprove={() => approveChange(key, c)}
-                            onDismiss={() => markResolved(key, "dismissed")}
-                          />
-                        );
-                      })}
-                      {m.proposals.toolToggles.map((t, i) => {
-                        const key = `${m.id}:toggle:${i}`;
-                        const state = resolved[key];
-                        return (
-                          <ProposalCard
-                            key={key}
-                            icon={<Power className="w-3.5 h-3.5" />}
-                            tone="emerald"
-                            title={`${t.enable ? "Turn on" : "Turn off"} ${t.label}`}
-                            detail={t.reason}
-                            state={state}
-                            busy={busyKey === key}
-                            busyLabel={busyKey === key ? busyLabel : undefined}
-                            approveLabel={t.enable ? "Enable" : "Disable"}
-                            onApprove={() => approveToggle(key, t)}
-                            onDismiss={() => markResolved(key, "dismissed")}
-                          />
-                        );
-                      })}
-                      {m.proposals.actions.map((a, i) => {
-                        const key = `${m.id}:action:${i}`;
-                        const state = resolved[key];
-                        const aIcon =
-                          a.kind === "make_call" ? (
-                            <Phone className="w-3.5 h-3.5" />
-                          ) : a.kind === "send_text_message" ? (
-                            <MessageCircle className="w-3.5 h-3.5" />
-                          ) : (
-                            <Mail className="w-3.5 h-3.5" />
-                          );
-                        const detail = [
-                          a.to ? `To: ${a.customerName ? `${a.customerName} · ` : ""}${a.to}` : "",
-                          a.subject ? `Subject: ${a.subject}` : "",
-                          a.body || a.context || "",
-                        ]
-                          .filter(Boolean)
-                          .join("\n");
-                        return (
-                          <ProposalCard
-                            key={key}
-                            icon={aIcon}
-                            tone="amber"
-                            title={a.label}
-                            detail={detail}
-                            state={state}
-                            busy={busyKey === key}
-                            busyLabel={busyKey === key ? busyLabel : undefined}
-                            approveLabel={a.kind === "make_call" ? "Call now" : "Send"}
-                            consent={
-                              a.kind === "make_call"
-                                ? {
-                                    checked: !!consentKeys[key],
-                                    onChange: (v) =>
-                                      setConsentKeys((prev) => ({ ...prev, [key]: v })),
-                                  }
-                                : undefined
-                            }
-                            onApprove={() => approveAction(key, a)}
-                            onDismiss={() => markResolved(key, "dismissed")}
-                          />
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            ))}
-            {isSending && (
-              <motion.div
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                className="flex gap-3"
-              >
-                <div className="shrink-0 w-7 h-7 rounded-full bg-paper border border-black/12 flex items-center justify-center text-[10px] font-semibold text-ink">
-                  {agentName.slice(0, 1).toUpperCase()}
-                </div>
-                <div className="glass border border-brand/20 rounded-2xl rounded-tl-md px-3.5 py-2.5 space-y-1.5">
-                  <div className="flex items-center gap-2 text-[12px] text-ink/80">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-brand" />
-                    </span>
-                    <span className="font-medium">{agentName} is thinking…</span>
+              ) : messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center max-w-md mx-auto">
+                  <div className="w-12 h-12 rounded-2xl bg-brand/10 flex items-center justify-center mb-4">
+                    <Sparkles className="w-5 h-5 text-brand" />
                   </div>
-                  <div className="flex items-center gap-1.5 text-[10px] text-muted/70">
-                    <motion.span
-                      animate={{ opacity: [0.4, 1, 0.4] }}
-                      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                      className="inline-flex items-center gap-1"
+                  <h3 className="font-display italic text-xl text-ink mb-2">
+                    Start a chat with {agentName}
+                  </h3>
+                  <p className="text-[12px] text-muted leading-relaxed">
+                    This is your ongoing private channel. Coach, give context, ask how recent calls
+                    went. The agent remembers everything you discuss here and references your recent
+                    call activity.
+                  </p>
+                  <div className="mt-5 flex flex-wrap justify-center gap-2">
+                    {[
+                      "Update your greeting to something warmer",
+                      "Turn on text messaging",
+                      "How did calls go this week?",
+                      "Set your tone to authoritative",
+                    ].map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        onClick={() => setInput(suggestion)}
+                        className="px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.18em] glass border border-black/8 hover:border-brand/40 text-ink/70 hover:text-ink transition-all"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <AnimatePresence initial={false}>
+                  {messages.map((m) => (
+                    <motion.div
+                      key={m.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                      className={cn(
+                        "flex gap-3",
+                        m.role === "operator" ? "flex-row-reverse" : "flex-row",
+                      )}
                     >
-                      <Sparkles className="w-3 h-3" />
-                      Analyzing context & drafting response
-                    </motion.span>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        )}
-      </div>
+                      <div
+                        className={cn(
+                          "shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold",
+                          m.role === "operator"
+                            ? "bg-brand/15 text-brand border border-brand/30"
+                            : "bg-paper border border-black/12 text-ink",
+                        )}
+                        aria-hidden="true"
+                      >
+                        {m.role === "operator" ? "You" : agentName.slice(0, 1).toUpperCase()}
+                      </div>
+                      <div
+                        className={cn(
+                          "max-w-[78%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed",
+                          m.role === "operator"
+                            ? "bg-brand text-on-brand rounded-tr-md"
+                            : "glass border border-black/8 text-ink rounded-tl-md",
+                        )}
+                      >
+                        <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                        {m.role === "agent" && m.proposals && (
+                          <div className="mt-3 space-y-2">
+                            {m.proposals.changes.map((c, i) => {
+                              const key = `${m.id}:change:${i}`;
+                              const state = resolved[key];
+                              return (
+                                <ProposalCard
+                                  key={key}
+                                  icon={<SlidersHorizontal className="w-3.5 h-3.5" />}
+                                  tone="brand"
+                                  title={c.label}
+                                  detail={c.summary || c.value}
+                                  state={state}
+                                  busy={busyKey === key}
+                                  busyLabel={busyKey === key ? busyLabel : undefined}
+                                  approveLabel="Apply"
+                                  onApprove={() => approveChange(key, c)}
+                                  onDismiss={() => markResolved(key, "dismissed")}
+                                />
+                              );
+                            })}
+                            {m.proposals.toolToggles.map((t, i) => {
+                              const key = `${m.id}:toggle:${i}`;
+                              const state = resolved[key];
+                              return (
+                                <ProposalCard
+                                  key={key}
+                                  icon={<Power className="w-3.5 h-3.5" />}
+                                  tone="emerald"
+                                  title={`${t.enable ? "Turn on" : "Turn off"} ${t.label}`}
+                                  detail={t.reason}
+                                  state={state}
+                                  busy={busyKey === key}
+                                  busyLabel={busyKey === key ? busyLabel : undefined}
+                                  approveLabel={t.enable ? "Enable" : "Disable"}
+                                  onApprove={() => approveToggle(key, t)}
+                                  onDismiss={() => markResolved(key, "dismissed")}
+                                />
+                              );
+                            })}
+                            {m.proposals.actions.map((a, i) => {
+                              const key = `${m.id}:action:${i}`;
+                              const state = resolved[key];
+                              const aIcon =
+                                a.kind === "make_call" ? (
+                                  <Phone className="w-3.5 h-3.5" />
+                                ) : a.kind === "send_text_message" ? (
+                                  <MessageCircle className="w-3.5 h-3.5" />
+                                ) : (
+                                  <Mail className="w-3.5 h-3.5" />
+                                );
+                              const detail = [
+                                a.to
+                                  ? `To: ${a.customerName ? `${a.customerName} · ` : ""}${a.to}`
+                                  : "",
+                                a.subject ? `Subject: ${a.subject}` : "",
+                                a.body || a.context || "",
+                              ]
+                                .filter(Boolean)
+                                .join("\n");
+                              return (
+                                <ProposalCard
+                                  key={key}
+                                  icon={aIcon}
+                                  tone="amber"
+                                  title={a.label}
+                                  detail={detail}
+                                  state={state}
+                                  busy={busyKey === key}
+                                  busyLabel={busyKey === key ? busyLabel : undefined}
+                                  approveLabel={a.kind === "make_call" ? "Call now" : "Send"}
+                                  consent={
+                                    a.kind === "make_call"
+                                      ? {
+                                          checked: !!consentKeys[key],
+                                          onChange: (v) =>
+                                            setConsentKeys((prev) => ({ ...prev, [key]: v })),
+                                        }
+                                      : undefined
+                                  }
+                                  onApprove={() => approveAction(key, a)}
+                                  onDismiss={() => markResolved(key, "dismissed")}
+                                />
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                  {isSending && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                      className="flex gap-3"
+                    >
+                      <div className="shrink-0 w-7 h-7 rounded-full bg-paper border border-black/12 flex items-center justify-center text-[10px] font-semibold text-ink">
+                        {agentName.slice(0, 1).toUpperCase()}
+                      </div>
+                      <div className="glass border border-brand/20 rounded-2xl rounded-tl-md px-3.5 py-2.5 space-y-1.5">
+                        <div className="flex items-center gap-2 text-[12px] text-ink/80">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-brand" />
+                          </span>
+                          <span className="font-medium">{agentName} is thinking…</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[10px] text-muted/70">
+                          <motion.span
+                            animate={{ opacity: [0.4, 1, 0.4] }}
+                            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                            className="inline-flex items-center gap-1"
+                          >
+                            <Sparkles className="w-3 h-3" />
+                            Analyzing context & drafting response
+                          </motion.span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              )}
+            </div>
 
-      {/* Composer */}
-      <div className="shrink-0 px-4 py-3 border-t border-black/8 bg-paper/50">
-        <div className="flex items-end gap-2 max-w-3xl mx-auto">
-          {/* Hidden file input — paperclip button triggers it */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/pdf,.pdf"
-            onChange={onFilePick}
-            className="hidden"
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading || isSending}
-            className="shrink-0 w-10 h-10 rounded-2xl glass border border-black/10 flex items-center justify-center text-muted hover:text-ink hover:border-brand/40 transition-all disabled:opacity-40"
-            aria-label="Attach PDF"
-            title="Attach a PDF — the agent will read it and add to its knowledge"
-          >
-            {isUploading ? (
-              <Loader2 className="w-4 h-4 animate-spin text-brand" />
-            ) : (
-              <Paperclip className="w-4 h-4" />
-            )}
-          </button>
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder={`Message ${agentName}…  (${navigator.platform?.includes("Mac") ? "⌘" : "Ctrl"}+Enter to send)`}
-            rows={2}
-            disabled={isSending || isUploading}
-            className="flex-1 resize-none rounded-2xl glass border border-black/10 px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors disabled:opacity-60 leading-relaxed"
-          />
-          <button
-            onClick={send}
-            disabled={!input.trim() || isSending || isUploading}
-            className="shrink-0 w-10 h-10 rounded-2xl bg-brand text-on-brand flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-30"
-            aria-label="Send message"
-          >
-            {isSending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-          </button>
-        </div>
-        <p className="text-[9px] uppercase tracking-[0.22em] text-muted/70 mt-2 text-center">
-          Messages persist · agent uses thread + last 5 calls + uploaded files as context
-        </p>
-      </div>
-      </>
+            {/* Composer */}
+            <div className="shrink-0 px-4 py-3 border-t border-black/8 bg-paper/50">
+              <div className="flex items-end gap-2 max-w-3xl mx-auto">
+                {/* Hidden file input — paperclip button triggers it */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  onChange={onFilePick}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading || isSending}
+                  className="shrink-0 w-10 h-10 rounded-2xl glass border border-black/10 flex items-center justify-center text-muted hover:text-ink hover:border-brand/40 transition-all disabled:opacity-40"
+                  aria-label="Attach PDF"
+                  title="Attach a PDF — the agent will read it and add to its knowledge"
+                >
+                  {isUploading ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-brand" />
+                  ) : (
+                    <Paperclip className="w-4 h-4" />
+                  )}
+                </button>
+                <textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={onKeyDown}
+                  placeholder={
+                    IS_TOUCH
+                      ? `Message ${agentName}…`
+                      : `Message ${agentName}…  (${IS_APPLE ? "⌘" : "Ctrl"}+Enter to send)`
+                  }
+                  rows={2}
+                  disabled={isSending || isUploading}
+                  className="flex-1 resize-none rounded-2xl glass border border-black/10 px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors disabled:opacity-60 leading-relaxed"
+                />
+                <button
+                  onClick={send}
+                  disabled={!input.trim() || isSending || isUploading}
+                  className="shrink-0 w-10 h-10 rounded-2xl bg-brand text-on-brand flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-30"
+                  aria-label="Send message"
+                >
+                  {isSending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+              <p className="text-[9px] uppercase tracking-[0.22em] text-muted/70 mt-2 text-center">
+                Messages persist · agent uses thread + last 5 calls + uploaded files as context
+              </p>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
@@ -831,7 +918,9 @@ function ProposalCard({
   return (
     <motion.div
       layout
-      animate={state ? { scale: 0.98, opacity: state === "dismissed" ? 0.5 : 1 } : { scale: 1, opacity: 1 }}
+      animate={
+        state ? { scale: 0.98, opacity: state === "dismissed" ? 0.5 : 1 } : { scale: 1, opacity: 1 }
+      }
       transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
         "rounded-xl border px-3 py-2.5 text-ink transition-colors",

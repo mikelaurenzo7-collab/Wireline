@@ -384,7 +384,7 @@ export default function FounderDashboard() {
           {[
             { label: "Call logs + analytics", href: "/logs", icon: Phone },
             { label: "Supervisor cockpit", href: "/cockpit", icon: Headphones },
-            { label: "Agent training", href: "/train", icon: Sparkles },
+            { label: "Agent chat + training", href: "/chat", icon: Sparkles },
           ].map((l) => (
             <a
               key={l.href}

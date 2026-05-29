@@ -91,7 +91,7 @@ import {
 } from "lucide-react";
 
 export const TRAINING_HUB: HubTabDef[] = [
-  { label: "Lessons", path: "/train", icon: MessageSquare },
+  { label: "Chat", path: "/chat", icon: MessageSquare },
   { label: "Knowledge", path: "/knowledge", icon: Database },
 ];
 

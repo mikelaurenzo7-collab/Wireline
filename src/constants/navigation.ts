@@ -1,5 +1,4 @@
 import {
-  MessageSquare,
   MessagesSquare,
   Radio,
   Inbox,
@@ -25,13 +24,19 @@ export type NavItem = {
   ownerOnly?: boolean;
 };
 
-// Three-group nav. Workspace = where you watch + decide. Fleet = where you
-// build + manage agents. Activity = where conversations live + close.
-// Settings sits as the trailing tab since it's daily-touch (Branding,
-// Carrier, Billing) — not buried in a profile dropdown.
+// Three-group nav. Workspace = where you watch, decide, and run the fleet.
+// Activity = where conversations live + close. Settings sits as the trailing
+// tab since it's daily-touch (Branding, Carrier, Billing) — not buried in a
+// profile dropdown.
+//
+// Training no longer earns its own surface: each agent is trained, wired, and
+// remembered inside ITS OWN chat (Chat · Training · Connectors · Memory tabs),
+// so the Director + per-agent threads under "Chat" are the single home for
+// building and coaching the fleet. Agents (roster + creation) live under
+// Settings — operators rarely add agents, so it doesn't earn a top-nav slot.
 //
 // Architecture note: /cockpit is its OWN page (SupervisorCockpit), distinct
-// from / (LiveOps). Live Ops is the owner's pulse — calls + actions + intel.
+// from /ops (LiveOps). Live Ops is the owner's pulse — calls + actions + intel.
 // Cockpit is the floor supervisor's view — agent availability + listen-in.
 export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
@@ -53,21 +58,6 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       },
       { label: "Triage", path: "/triage", icon: Inbox },
       { label: "Insights", path: "/insights", icon: BarChart3, dataTour: "insights" },
-    ],
-  },
-  {
-    label: "Fleet",
-    items: [
-      // Agents (roster + creation) now lives under Settings — operators rarely
-      // buy/add agents, so it doesn't earn a permanent top-nav slot. It surfaces
-      // in the Settings tab strip and via the Settings nav `matches` below.
-      {
-        label: "Training",
-        path: "/train",
-        icon: MessageSquare,
-        dataTour: "training",
-        matches: ["/knowledge"],
-      },
       { label: "Cockpit", path: "/cockpit", icon: Headphones },
     ],
   },
@@ -107,7 +97,6 @@ export const PAGE_TITLES: Record<string, string> = {
   "/outbound": "Outbound",
   "/insights": "Insights",
   "/cockpit": "Supervisor Cockpit",
-  "/train": "Training",
   "/knowledge": "Knowledge",
   "/agents": "Agents",
   "/chat": "Chat",
@@ -131,7 +120,6 @@ export const ROUTE_ACCENTS: Record<string, [string, string]> = {
   "/appointments": ["#10B981", "#4F1E7B"],
   "/agents": ["#4F1E7B", "#3B154C"],
   "/chat": ["#4F1E7B", "#10B981"],
-  "/train": ["#4F1E7B", "#FFC07D"],
   "/knowledge": ["#10B981", "#4F1E7B"],
   "/integrations": ["#4F1E7B", "#10B981"],
   "/admin": ["#4F1E7B", "#3B154C"],

@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
+import { useAgents } from "../contexts/AgentsContext";
 import { cn } from "../lib/utils";
 
 type SuggestionKind =
@@ -67,6 +68,7 @@ const STARTER_PROMPTS = [
 
 export default function DirectorWorkspace() {
   const navigate = useNavigate();
+  const { agents } = useAgents();
   const { error: toastError, success: toastSuccess } = useToast();
   const [messages, setMessages] = useState<DirectorMessage[]>([]);
   const [input, setInput] = useState("");
@@ -111,15 +113,20 @@ export default function DirectorWorkspace() {
         case "view_ops":
           navigate("/ops");
           break;
-        case "open_training":
-          navigate("/train");
+        case "open_training": {
+          // Training now lives inside each agent's chat. Open the suggested
+          // agent's Training tab (or the first owned agent's); if the operator
+          // has no agents yet, send them to create one.
+          const target = s.agentId || agents[0]?.id;
+          navigate(target ? `/chat/${target}?tab=training` : "/agents");
           break;
+        }
         case "open_insights":
           navigate("/insights");
           break;
       }
     },
-    [navigate],
+    [navigate, agents],
   );
 
   const send = useCallback(

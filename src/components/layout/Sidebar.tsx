@@ -11,9 +11,9 @@
  *   - Hover-peek (collapsed + cursor over rail): the rail temporarily
  *     widens to expanded form. Mouse out → snaps back.
  *
- * The mobile + tablet experience is unchanged: TopBar carries brand chrome
- * up to lg, BottomNavBar carries primary nav under md, slide-in drawer
- * carries the full IA on tablet (md → lg-1).
+ * The mobile + tablet experience: TopBar carries brand chrome up to lg and
+ * the hamburger-triggered slide-in drawer carries the full IA on phone and
+ * tablet (a left-edge swipe also opens it). There is no bottom nav bar.
  *
  * Why a rail beats a top-bar at our scale: tool-heavy products (Linear,
  * Notion, Slack, Stripe, Vercel) all converged on this for a reason —

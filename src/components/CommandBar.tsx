@@ -241,10 +241,10 @@ export default function CommandBar() {
     {
       id: "test-call",
       label: "Start Test Call",
-      description: "Talk to your agent right now",
+      description: "Pick an agent, then Training → Test call",
       icon: PhoneCall,
       category: "Actions",
-      action: () => navigate("/train?tab=simulator"),
+      action: () => navigate("/chat"),
     },
     {
       id: "review-agent",
@@ -252,7 +252,7 @@ export default function CommandBar() {
       description: "Deep audit of an agent's recent calls",
       icon: BarChart3,
       category: "Actions",
-      action: () => navigate("/train"),
+      action: () => navigate("/chat"),
     },
     {
       id: "ingest-url",
@@ -260,7 +260,7 @@ export default function CommandBar() {
       description: "Wireline AI reads a site and extracts facts",
       icon: Zap,
       category: "Actions",
-      action: () => navigate("/train"),
+      action: () => navigate("/chat"),
     },
   ];
 
