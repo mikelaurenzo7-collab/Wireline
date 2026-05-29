@@ -32,6 +32,42 @@ export const SHOWCASE_TOOL_NAMES = [
 
 type ShowcaseToolName = (typeof SHOWCASE_TOOL_NAMES)[number];
 
+/**
+ * Tool exposure differs by agent kind:
+ *
+ * - "cs" (the real Wireline employee lines — Sarah, Liam): these ARE
+ *   Wireline's front-line team, so they get the full toolset, including
+ *   the owner-routing tools (schedule_callback, escalate_to_human) that
+ *   land a task in the founder's (Mike's) triage inbox.
+ *
+ * - "demo" (the vertical role-play lines on the landing page): these are
+ *   pure showcase demos. They must NEVER route a human follow-up to the
+ *   founder — a curious prospect calling the "restaurant demo" is not a
+ *   real Wireline support case. They keep only the self-service
+ *   conversion tools (signup / account / payment link), which help a
+ *   prospect act on their own without ever paging Mike.
+ *
+ * The handler in routes/vapi/showcase-handlers.ts enforces the same
+ * boundary defensively, so even a model that hallucinates an
+ * owner-routing tool on a demo line cannot create an owner task.
+ */
+const OWNER_ROUTING_TOOL_NAMES: ReadonlySet<ShowcaseToolName> = new Set([
+  "schedule_callback",
+  "escalate_to_human",
+]);
+
+export function showcaseToolNamesForKind(kind: ShowcaseKind): ShowcaseToolName[] {
+  if (kind === "demo") {
+    return SHOWCASE_TOOL_NAMES.filter((name) => !OWNER_ROUTING_TOOL_NAMES.has(name));
+  }
+  return [...SHOWCASE_TOOL_NAMES];
+}
+
+/** True only for owner-routing tools that a demo agent must not be able to fire. */
+export function isOwnerRoutingShowcaseTool(toolName: string): boolean {
+  return OWNER_ROUTING_TOOL_NAMES.has(toolName as ShowcaseToolName);
+}
+
 type ShowcaseToolDef = {
   name: ShowcaseToolName;
   description: string;
@@ -295,9 +331,11 @@ function buildDemoShowcasePrompt(agent: ContactAgent): string {
     "- Use send_signup_link when they want the trial or product details by email.",
     "- Use create_account when they want to start now.",
     "- Use send_payment_link when they are ready to buy.",
-    "- Use schedule_callback only after the caller gives a specific callback time.",
-    "- Use escalate_to_human when they ask for a person, emotions are high, or the issue is risky.",
     "- For every email tool, ask for the email, read the full address back, and get an explicit yes before calling the tool.",
+    "DEMO BOUNDARIES (important):",
+    "- You are a demo line. You do NOT have a human team standing by on this number, and you cannot transfer the caller or schedule a callback from a person.",
+    "- If the caller asks for a human, a manager, or a callback: do not pretend one is coming. Warmly explain this is a live demo of Wireline, then offer a real next step — email them a signup link, or point them to talk to the Wireline team by starting a free trial.",
+    "- Never tell the caller you've 'flagged this for the team' or that 'someone will reach out' — on a demo line that is not true.",
     "TRUTH RULES:",
     "- If asked whether you are AI, say yes clearly and keep helping.",
     "- Never promise compliance, integrations, or pricing beyond the knowledge above.",
@@ -308,8 +346,8 @@ export function buildShowcaseSystemPrompt(agent: ContactAgent, kind: ShowcaseKin
   return kind === "cs" ? buildWirelineEmployeePrompt(agent) : buildDemoShowcasePrompt(agent);
 }
 
-export function buildShowcaseFunctionTools() {
-  return SHOWCASE_TOOL_NAMES.map((toolName) => {
+export function buildShowcaseFunctionTools(kind: ShowcaseKind) {
+  return showcaseToolNamesForKind(kind).map((toolName) => {
     const tool = SHOWCASE_TOOL_DEFS[toolName];
     return {
       type: "function",
@@ -343,7 +381,7 @@ export function buildShowcaseAssistantPayload(
       provider: voiceSelection.provider,
       model: voiceSelection.model,
       messages: [{ role: "system", content: buildShowcaseSystemPrompt(agent, kind) }],
-      tools: buildShowcaseFunctionTools(),
+      tools: buildShowcaseFunctionTools(kind),
       ...(voiceSelection.fallbackModels?.length
         ? { fallbackModels: voiceSelection.fallbackModels }
         : {}),
