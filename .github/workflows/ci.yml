@@ -91,6 +91,26 @@ jobs:
           SLUG=$(echo "$BRANCH" | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]' | sed 's/-\+/-/g' | sed 's/^-\|-$//g')
           echo "url=https://wireline-git-${SLUG}-revaluate.vercel.app" >> "$GITHUB_OUTPUT"
 
+      # Poll until the Vercel branch-alias URL responds 200. The e2e job runs
+      # in parallel with Vercel's deployment pipeline; without this gate the
+      # job can start before the preview is ready and hit a 404 or stale
+      # deployment. 30 × 10 s = up to 5 min — plenty for a typical cold build.
+      - name: Wait for Vercel preview to be ready
+        run: |
+          URL="${{ steps.preview.outputs.url }}"
+          echo "Polling $URL …"
+          for i in $(seq 1 30); do
+            CODE=$(curl -s -L --max-time 15 -o /dev/null -w "%{http_code}" "$URL")
+            if [ "$CODE" = "200" ]; then
+              echo "✓ Preview ready (attempt $i, HTTP $CODE)"
+              exit 0
+            fi
+            echo "  Not ready yet — HTTP $CODE (attempt $i/30); retrying in 10 s"
+            sleep 10
+          done
+          echo "✗ Preview did not become ready within 5 minutes"
+          exit 1
+
       - name: Run E2E + accessibility tests
         # Scope to chromium — we only install one browser to keep CI fast and
         # cheap. Firefox/WebKit coverage can be added when we have time to
