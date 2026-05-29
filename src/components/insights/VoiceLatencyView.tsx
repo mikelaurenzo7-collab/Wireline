@@ -74,8 +74,19 @@ export default function VoiceLatencyView({ days }: { days: number }) {
   if (latency.sample_count === 0 && !hasVoiceMetrics) {
     return (
       <div className="relative aurora-ring rounded-3xl">
-        <div className="relative rounded-3xl glass-strong p-10 md:p-14 text-center flex flex-col items-center gap-4">
-          <Gauge className="w-10 h-10 text-brand" />
+        <div className="relative rounded-3xl glass-strong border border-black/8 p-10 md:p-14 text-center flex flex-col items-center gap-5">
+          <div className="relative">
+            <span
+              aria-hidden
+              className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
+            />
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25">
+              <Gauge className="w-6 h-6" />
+            </div>
+          </div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
+            Voice Latency
+          </p>
           <h3 className="font-display italic text-2xl text-ink text-balance">
             No latency samples yet
           </h3>
@@ -102,7 +113,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
         <div className="rounded-2xl glass border border-black/8 p-5">
           <div className="flex items-center gap-2 mb-4">
             <Activity className="w-4 h-4 text-brand" />
-            <p className="text-[10px] uppercase tracking-[0.38em] text-brand">
+            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
               Voice Pipeline Telemetry
             </p>
           </div>
@@ -151,7 +162,9 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                   <tile.icon
                     className={cn("w-3 h-3", tile.healthy ? "text-emerald-600" : "text-amber-600")}
                   />
-                  <p className="text-[9px] uppercase tracking-[0.28em] text-muted">{tile.label}</p>
+                  <p className="font-mono text-[9px] uppercase tracking-[0.28em] text-muted">
+                    {tile.label}
+                  </p>
                 </div>
                 <p
                   className={cn(
@@ -169,7 +182,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
           {/* Trend mini-chart */}
           {voiceTrends.length > 1 && (
             <div className="mt-4">
-              <p className="text-[10px] uppercase tracking-[0.32em] text-muted mb-3">
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted mb-3">
                 {days}-day TTFT trend
               </p>
               <div className="flex items-end gap-1 h-20">
@@ -224,7 +237,9 @@ export default function VoiceLatencyView({ days }: { days: number }) {
             key={tile.label}
             className="stat-tile-mobile rounded-2xl glass border border-black/8 p-5"
           >
-            <p className="text-[9px] uppercase tracking-[0.32em] text-muted mb-2">{tile.label}</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted mb-2">
+              {tile.label}
+            </p>
             <p className="metric-value font-display italic text-3xl text-ink">{tile.value}</p>
             <p className="text-[10px] text-muted/70 mt-2">{tile.sub}</p>
           </div>
@@ -233,7 +248,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-2xl glass border border-black/8 p-5">
-          <p className="text-[10px] uppercase tracking-[0.38em] text-brand mb-4">
+          <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70 mb-4">
             Live-call guards (Wireline defaults)
           </p>
           <ul className="space-y-3">
@@ -258,7 +273,9 @@ export default function VoiceLatencyView({ days }: { days: number }) {
         </div>
 
         <div className="rounded-2xl glass border border-black/8 p-5">
-          <p className="text-[10px] uppercase tracking-[0.38em] text-brand mb-4">Slowest actions</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70 mb-4">
+            Slowest actions
+          </p>
           <div className="space-y-2">
             {slowest.length === 0 ? (
               <p className="text-sm text-muted">No slow actions recorded.</p>

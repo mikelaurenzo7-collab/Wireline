@@ -46,7 +46,7 @@ export function Spinner() {
           />
         </div>
       </div>
-      <p className="text-[9px] uppercase tracking-[0.5em] text-muted/70 animate-pulse">
+      <p className="font-mono text-[9px] uppercase tracking-[0.5em] text-muted/70 animate-pulse">
         Computing…
       </p>
     </div>
@@ -56,37 +56,43 @@ export function Spinner() {
 /* ── Empty state ────────────────────────────────────────────────── */
 
 export function Empty({ label, green }: { label: string; green?: boolean }) {
+  const Icon = green ? CheckCircle2Icon : BarChart3;
   return (
     <div className="relative aurora-ring rounded-3xl">
-      <div className="relative rounded-3xl glass border border-white/10 p-12 text-center overflow-hidden">
-        <div
-          className="absolute -top-20 left-1/2 -translate-x-1/2 w-64 h-32 rounded-full opacity-20 blur-3xl pointer-events-none"
-          style={{
-            background: green
-              ? "radial-gradient(circle, #10B981, transparent)"
-              : "radial-gradient(circle, #4F1E7B, transparent)",
-          }}
-        />
-        <div
-          className={cn(
-            "inline-flex items-center justify-center w-12 h-12 rounded-2xl glass border mb-4",
-            green ? "border-emerald-500/30 text-emerald-500" : "border-brand/30 text-brand",
-          )}
-        >
-          {green ? (
-            <CheckCircle2Icon className="w-5 h-5" />
-          ) : (
-            <BarChart3 className="w-5 h-5 opacity-60" />
-          )}
+      <div className="relative rounded-3xl glass-strong border border-black/8 p-12 md:p-14 text-center overflow-hidden flex flex-col items-center gap-5">
+        {/* Centered medallion with soft halo */}
+        <div className="relative">
+          <span
+            aria-hidden
+            className={cn(
+              "absolute inset-0 -z-10 rounded-full blur-2xl scale-150",
+              green ? "bg-emerald-500/25" : "bg-brand/30",
+            )}
+          />
+          <div
+            className={cn(
+              "inline-flex items-center justify-center w-14 h-14 rounded-2xl text-on-brand shadow-sm",
+              green
+                ? "bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-emerald-500/25"
+                : "bg-gradient-to-br from-brand to-brand-deep shadow-brand/25",
+            )}
+          >
+            <Icon className="w-6 h-6" />
+          </div>
         </div>
-        <p
-          className={cn(
-            "text-[11px] uppercase tracking-[0.4em]",
-            green ? "text-emerald-500/80" : "text-muted",
-          )}
-        >
-          {label}
-        </p>
+        <div className="space-y-2">
+          <p
+            className={cn(
+              "font-mono text-[10px] uppercase tracking-[0.32em]",
+              green ? "text-emerald-600/80" : "text-brand/70",
+            )}
+          >
+            {green ? "All clear" : "No data yet"}
+          </p>
+          <p className="font-display italic text-2xl text-ink leading-tight text-balance max-w-sm mx-auto">
+            {label}
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -111,9 +117,9 @@ export function ErrCard({ error }: { error: string }) {
 export function Stat({ label, value, accent }: { label: string; value: any; accent?: string }) {
   return (
     <div>
-      <div className="app-section-title">{label}</div>
+      <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">{label}</div>
       <div
-        className="font-display italic text-xl text-ink mt-0.5"
+        className="font-display italic text-xl text-ink mt-1"
         style={accent ? { color: accent } : {}}
       >
         {value}
@@ -137,14 +143,14 @@ export function SpendStat({
 }) {
   return (
     <div className="relative aurora-ring rounded-2xl">
-      <div className="relative rounded-2xl glass border border-white/10 p-5 overflow-hidden">
+      <div className="relative rounded-2xl glass border border-black/8 p-5 overflow-hidden">
         <div
           className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"
           style={{ background: `radial-gradient(circle, ${accent}, transparent)` }}
         />
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-3">
-            <p className="app-section-title">{label}</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">{label}</p>
             <Icon className="w-4 h-4" style={{ color: accent }} />
           </div>
           <p className="font-display italic text-3xl text-ink leading-none">{value}</p>

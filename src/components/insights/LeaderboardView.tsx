@@ -63,10 +63,10 @@ export default function LeaderboardView({ days }: { days: number }) {
     iconBg: boolean;
   }> = [
     {
-      gradient: "#4F1E7B",
+      gradient: "linear-gradient(135deg, var(--color-brand), var(--color-brand-deep))",
       ring: "border-brand/40",
       glow: "rgba(79, 30, 123 ,0.25)",
-      textClass: "text-paper",
+      textClass: "text-on-brand",
       iconBg: true,
     },
     {

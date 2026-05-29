@@ -82,13 +82,19 @@ export default function QualityView({ days }: { days: number }) {
       <div className="space-y-4">
         <div className="relative aurora-ring rounded-3xl">
           <div className="relative rounded-3xl glass-strong overflow-hidden p-10 md:p-14 flex flex-col items-center gap-5 text-center">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg,#4F1E7B22,#4F1E7B22)" }}
-            >
-              <Star className="w-8 h-8 text-brand" />
+            <div className="relative">
+              <span
+                aria-hidden
+                className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
+              />
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25">
+                <Star className="w-8 h-8" />
+              </div>
             </div>
             <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70 mb-2">
+                Call Quality
+              </p>
               <h3 className="font-display italic text-3xl text-ink mb-2">No QA scores yet</h3>
               <p className="text-sm text-ink/65 max-w-sm leading-relaxed">
                 Score an individual call in Call Logs, or use{" "}
@@ -99,7 +105,7 @@ export default function QualityView({ days }: { days: number }) {
             <button
               onClick={handleScoreAll}
               disabled={scoring}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand/15 border border-brand/40 text-brand text-[11px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20 text-[11px] uppercase tracking-[0.25em] active:scale-95 transition-all duration-200 disabled:opacity-50"
             >
               {scoring ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -150,13 +156,15 @@ export default function QualityView({ days }: { days: number }) {
         ].map(({ label, value, accent }) => (
           <div
             key={label}
-            className="relative rounded-xl glass border border-white/10 p-4 overflow-hidden"
+            className="relative rounded-2xl glass border border-black/8 p-4 overflow-hidden"
           >
             <div
               className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-25 blur-3xl pointer-events-none"
               style={{ background: `radial-gradient(circle,${accent},transparent)` }}
             />
-            <p className="text-[9px] uppercase tracking-[0.32em] text-muted mb-2">{label}</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted mb-2">
+              {label}
+            </p>
             <p className="font-display italic text-2xl leading-none" style={{ color: accent }}>
               {value}
             </p>
@@ -166,8 +174,8 @@ export default function QualityView({ days }: { days: number }) {
 
       {/* Distribution + Radar */}
       <div className="grid md:grid-cols-2 gap-4">
-        <div className="rounded-2xl glass border border-white/10 p-5">
-          <h4 className="text-[9px] uppercase tracking-[0.32em] text-muted mb-4 flex items-center gap-1.5">
+        <div className="rounded-2xl glass border border-black/8 p-5">
+          <h4 className="font-mono text-[9px] uppercase tracking-[0.32em] text-muted mb-4 flex items-center gap-1.5">
             <BarChart3 className="w-3 h-3" /> Score Distribution
           </h4>
           <div className="space-y-2.5">
@@ -191,8 +199,8 @@ export default function QualityView({ days }: { days: number }) {
           </div>
         </div>
 
-        <div className="rounded-2xl glass border border-white/10 p-5">
-          <h4 className="text-[9px] uppercase tracking-[0.32em] text-muted mb-2 flex items-center gap-1.5">
+        <div className="rounded-2xl glass border border-black/8 p-5">
+          <h4 className="font-mono text-[9px] uppercase tracking-[0.32em] text-muted mb-2 flex items-center gap-1.5">
             <Star className="w-3 h-3" /> Dimension Averages (% of max)
           </h4>
           <div className="h-52">
@@ -219,8 +227,8 @@ export default function QualityView({ days }: { days: number }) {
 
       {/* 7-day trend */}
       {data.trend && data.trend.length > 1 && (
-        <div className="rounded-2xl glass border border-white/10 p-5">
-          <h4 className="text-[9px] uppercase tracking-[0.32em] text-muted mb-4 flex items-center gap-1.5">
+        <div className="rounded-2xl glass border border-black/8 p-5">
+          <h4 className="font-mono text-[9px] uppercase tracking-[0.32em] text-muted mb-4 flex items-center gap-1.5">
             <TrendingUp className="w-3 h-3" /> QA Score Trend
           </h4>
           <div className="h-40">
@@ -271,9 +279,9 @@ export default function QualityView({ days }: { days: number }) {
       )}
 
       {/* Dimension detail table */}
-      <div className="rounded-2xl glass border border-white/10 overflow-hidden">
-        <div className="px-5 py-3 border-b border-white/8">
-          <h4 className="text-[9px] uppercase tracking-[0.32em] text-muted flex items-center gap-1.5">
+      <div className="rounded-2xl glass border border-black/8 overflow-hidden">
+        <div className="px-5 py-3 border-b border-black/8">
+          <h4 className="font-mono text-[9px] uppercase tracking-[0.32em] text-muted flex items-center gap-1.5">
             <Star className="w-3 h-3" /> Rubric Dimensions
           </h4>
         </div>

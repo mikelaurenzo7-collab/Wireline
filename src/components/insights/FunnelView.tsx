@@ -39,13 +39,19 @@ export default function FunnelView({ days }: { days: number }) {
     return (
       <div className="relative aurora-ring rounded-3xl">
         <div className="relative rounded-3xl glass-strong overflow-hidden p-10 md:p-14 flex flex-col items-center gap-5 text-center">
-          <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #4F1E7B22, #4F1E7B22)" }}
-          >
-            <TrendingUp className="w-8 h-8 text-brand" />
+          <div className="relative">
+            <span
+              aria-hidden
+              className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
+            />
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25">
+              <TrendingUp className="w-8 h-8" />
+            </div>
           </div>
           <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70 mb-2">
+              Conversion Funnel
+            </p>
             <h3 className="font-display italic text-3xl text-ink mb-2">No calls yet</h3>
             <p className="text-sm text-ink/65 max-w-sm leading-relaxed">
               Your conversion funnel will populate once agents start handling calls. Run a test call
@@ -60,8 +66,11 @@ export default function FunnelView({ days }: { days: number }) {
   return (
     <div className="relative aurora-ring rounded-3xl">
       <div className="relative rounded-3xl glass-strong overflow-hidden p-8 md:p-10 space-y-4">
-        <div className="app-section-title text-brand mb-2">
-          Conversion Funnel · {data.window_days}d
+        <div className="mb-2">
+          <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
+            Conversion · {data.window_days}d
+          </p>
+          <h3 className="font-display italic text-2xl text-ink leading-tight">Funnel</h3>
         </div>
         {stages.map((s: any, i: number) => {
           const pct = (s.count / max) * 100;

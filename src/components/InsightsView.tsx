@@ -62,17 +62,11 @@ export default function InsightsView() {
                 onClick={() => setDays(d)}
                 data-testid={`insights-days-${d}`}
                 className={cn(
-                  "app-segment-btn h-9 sm:h-7 px-3 rounded-full text-xs sm:text-[11px] font-medium tracking-wide transition-all",
-                  days === d ? "text-paper" : "text-muted hover:text-ink",
-                )}
-                style={
+                  "app-segment-btn h-9 sm:h-7 px-3 rounded-full text-xs sm:text-[11px] font-medium tracking-wide transition-all duration-200 active:scale-95",
                   days === d
-                    ? {
-                        background: "#4F1E7B",
-                        boxShadow: "0 2px 8px -4px rgba(79, 30, 123 ,0.50)",
-                      }
-                    : undefined
-                }
+                    ? "bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25"
+                    : "text-muted hover:text-ink",
+                )}
               >
                 {d}d
               </button>

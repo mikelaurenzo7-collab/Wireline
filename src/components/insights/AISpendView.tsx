@@ -99,7 +99,7 @@ function SpendBudgetCard() {
 
   if (loading && !status) {
     return (
-      <div className="rounded-3xl glass border border-white/10 p-6 flex items-center gap-3 text-muted text-sm">
+      <div className="rounded-3xl glass border border-black/8 p-6 flex items-center gap-3 text-muted text-sm">
         <Loader2 className="w-4 h-4 animate-spin" /> Loading budget…
       </div>
     );
@@ -116,7 +116,7 @@ function SpendBudgetCard() {
 
   return (
     <div className="relative aurora-ring rounded-3xl">
-      <div className="relative rounded-3xl glass-strong border border-white/10 p-6 md:p-7 space-y-5 overflow-hidden">
+      <div className="relative rounded-3xl glass-strong border border-black/8 p-6 md:p-7 space-y-5 overflow-hidden">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <div
@@ -126,7 +126,10 @@ function SpendBudgetCard() {
               <Shield className="w-4 h-4" style={{ color: barColor }} />
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-[0.4em]" style={{ color: barColor }}>
+              <div
+                className="font-mono text-[10px] uppercase tracking-[0.32em]"
+                style={{ color: barColor }}
+              >
                 Monthly Budget
               </div>
               <div className="text-sm text-ink/70 mt-1">
@@ -194,7 +197,7 @@ function SpendBudgetCard() {
               value={draft.monthly_limit_usd}
               onChange={(e) => setDraft({ ...draft, monthly_limit_usd: e.target.value })}
               placeholder="e.g. 200"
-              className="w-full h-11 px-4 rounded-xl glass border border-white/10 outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
+              className="w-full h-11 px-4 rounded-xl glass border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
             />
           </label>
           <label className="space-y-1.5">
@@ -209,7 +212,7 @@ function SpendBudgetCard() {
               onChange={(e) =>
                 setDraft({ ...draft, warn_threshold_pct: parseInt(e.target.value || "80") })
               }
-              className="w-full h-11 px-4 rounded-xl glass border border-white/10 outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
+              className="w-full h-11 px-4 rounded-xl glass border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
             />
           </label>
           <div className="flex items-end gap-2">
@@ -219,7 +222,7 @@ function SpendBudgetCard() {
                 "h-11 px-4 rounded-xl border flex items-center gap-2 text-xs uppercase tracking-[0.25em] transition-all",
                 draft.hard_cap
                   ? "bg-rose-500/15 border-rose-500/40 text-rose-600"
-                  : "glass border-white/10 text-ink/70 hover:border-white/30",
+                  : "glass border-black/10 text-ink/70 hover:border-brand/25",
               )}
               title="When on, AI calls return HTTP 402 once you've reached the monthly limit."
             >
@@ -237,7 +240,7 @@ function SpendBudgetCard() {
           <button
             onClick={save}
             disabled={saving}
-            className="h-11 px-5 rounded-xl bg-brand text-on-brand text-xs uppercase tracking-[0.25em] font-medium flex items-center gap-2 disabled:opacity-50 hover:opacity-90 transition-all"
+            className="h-11 px-5 rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20 text-xs uppercase tracking-[0.25em] font-medium flex items-center gap-2 disabled:opacity-50 active:scale-95 transition-all duration-200"
           >
             {saving ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -335,8 +338,10 @@ export default function AISpendView({ days }: { days: number }) {
 
           <div className="relative aurora-ring rounded-3xl">
             <div className="relative rounded-3xl glass-strong overflow-hidden p-6 md:p-8">
-              <div className="app-section-title text-brand mb-5">
-                Spend per Day · {data.window_days}d
+              <div className="mb-5">
+                <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
+                  Spend per Day · {data.window_days}d
+                </p>
               </div>
               <div className="space-y-2">
                 {by_day.map((d: any, i: number) => {
@@ -377,8 +382,10 @@ export default function AISpendView({ days }: { days: number }) {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="relative aurora-ring rounded-2xl">
-              <div className="relative rounded-2xl glass border border-white/10 p-5 space-y-3">
-                <div className="app-section-title text-brand">Spend by Recipe</div>
+              <div className="relative rounded-2xl glass border border-black/8 p-5 space-y-3">
+                <div className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
+                  Spend by Recipe
+                </div>
                 <div className="space-y-2">
                   {by_action.slice(0, 12).map((a: any, i: number) => {
                     const pct = (Number(a.cost) / maxAction) * 100;
@@ -411,13 +418,15 @@ export default function AISpendView({ days }: { days: number }) {
             </div>
 
             <div className="relative aurora-ring rounded-2xl">
-              <div className="relative rounded-2xl glass border border-white/10 p-5 space-y-3">
-                <div className="app-section-title text-brand">Spend by Model</div>
+              <div className="relative rounded-2xl glass border border-black/8 p-5 space-y-3">
+                <div className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
+                  Spend by Model
+                </div>
                 <div className="space-y-3">
                   {by_model.map((m: any) => (
                     <div
                       key={m.model}
-                      className="flex items-baseline justify-between border-b border-white/5 pb-3 last:border-0 last:pb-0"
+                      className="flex items-baseline justify-between border-b border-black/5 pb-3 last:border-0 last:pb-0"
                     >
                       <div>
                         <div className="text-sm font-mono text-ink/90">{m.model}</div>
@@ -431,7 +440,7 @@ export default function AISpendView({ days }: { days: number }) {
                     </div>
                   ))}
                 </div>
-                <div className="pt-3 border-t border-white/5">
+                <div className="pt-3 border-t border-black/5">
                   <div className="app-section-title mb-1">Tokens (window)</div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                     <div>

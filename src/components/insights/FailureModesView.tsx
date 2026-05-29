@@ -31,12 +31,18 @@ export default function FailureModesView() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="app-section-title">
+        <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
+          {!data.cached && (
+            <span className="relative flex h-1.5 w-1.5" aria-hidden>
+              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500/60 animate-ping" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            </span>
+          )}
           {data.cached ? "Cached" : "Fresh"} · {modes.length} clusters
         </div>
         <button
           onClick={() => load(true)}
-          className="px-3 py-1.5 rounded-full glass border border-white/10 app-section-title hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5"
+          className="px-3 py-1.5 rounded-full glass border border-black/10 font-mono text-[10px] uppercase tracking-[0.2em] text-muted hover:text-ink hover:border-brand/25 transition-all flex items-center gap-1.5"
         >
           <RefreshCw className="w-3 h-3" /> Refresh
         </button>
@@ -47,7 +53,7 @@ export default function FailureModesView() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.05 }}
-          className="rounded-2xl glass border border-white/10 p-6 space-y-4"
+          className="rounded-2xl glass border border-black/8 p-6 space-y-4"
         >
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
@@ -81,7 +87,7 @@ export default function FailureModesView() {
           <div className="rounded-xl bg-brand/10 border border-brand/30 p-4 flex items-start gap-3">
             <Sparkles className="w-4 h-4 text-brand shrink-0 mt-0.5" />
             <div>
-              <div className="text-[10px] uppercase tracking-[0.3em] text-brand mb-1">
+              <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-brand mb-1">
                 Recommended fix
               </div>
               <p className="text-sm text-ink/90">{m.recommended_fix}</p>
