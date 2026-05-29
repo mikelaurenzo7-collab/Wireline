@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 import { Router, Request, Response } from "express";
-import { authService, AuthConfigurationError } from "../lib/auth-service";
+import { authService, AuthConfigurationError, generateToken } from "../lib/auth-service";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
@@ -277,6 +277,25 @@ router.post(
       log.error("resend-verification failed", { error: err?.message ?? String(err) });
       return res.status(500).json({ error: "Resend failed" });
     }
+  },
+);
+
+/**
+ * POST /api/auth/signout
+ */
+/**
+ * POST /api/auth/refresh
+ *
+ * Authenticated. Re-issues a fresh JWT for an already-valid session so
+ * the client can rotate an expiring bearer without re-entering credentials.
+ */
+router.post(
+  "/api/auth/refresh",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    return res.json({
+      token: generateToken({ id: req.user.id, email: req.user.email }),
+    });
   },
 );
 

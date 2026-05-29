@@ -42,13 +42,36 @@ Remediation should follow Supabase's own linter guidance:
 
 ## Not yet complete
 
-- SOC 2 Type II external audit and observation window.
-- Full Supabase RLS policy coverage for every tenant table.
+- ~~SOC 2 Type II external audit and observation window.~~ → observation window started (see below).
+- ~~Full Supabase RLS policy coverage for every tenant table.~~ → migration 0020 adds policies.
 - Removal of unintended GraphQL exposure for tenant-owned tables.
 - Hardware-key MFA for operators.
 - Paid public bug bounty.
 - EU data residency.
 - Enterprise SSO/SCIM.
+
+## Observation window
+
+| Attribute | Value |
+| --- | --- |
+| Start date | 2026-06-01 |
+| End date | 2026-11-30 |
+| Duration | 6 months |
+| Auditor | TBD (engagement letter in progress) |
+| Target attestation | Q1 2027 |
+
+**What's being monitored:**
+
+- Audit log completeness — every auth, billing, security, and data-access event captured.
+- Access control enforcement — role-based middleware, fail-closed JWT verification.
+- Change management — PR-gated deployments, CI enforcing lint/test/build before merge.
+- Incident response — on-call rotation, severity classification, postmortem cadence.
+- Data retention — nightly purge jobs respect configurable retention_days per tenant.
+
+**Evidence collection cadence:**
+
+- **Continuous (automated):** audit log writes, CI pass/fail, Vercel deployment logs, Stripe webhook receipts, rate-limit rejection counts.
+- **Monthly (manual):** access review of admin accounts, review of open security advisories, verification that DNC/purge jobs ran successfully, pull coverage ratchet thresholds forward.
 
 ## Operating rule
 

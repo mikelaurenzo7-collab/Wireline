@@ -26,6 +26,12 @@ export const PUBLIC_ROUTES = [
   { path: "/showcase", name: "showcase", title: /Wireline/i },
   { path: "/compare", name: "compare", title: /Wireline/i },
   { path: "/about", name: "about", title: /Wireline/i },
+  { path: "/blog", name: "blog", title: /Wireline/i },
+  {
+    path: "/blog/voice-ai-benchmarks-sub-400ms-response-times",
+    name: "blog-post",
+    title: /Wireline/i,
+  },
   { path: "/signin", name: "signin", title: /Wireline/i },
   { path: "/signup", name: "signup", title: /Wireline/i },
 ] as const;

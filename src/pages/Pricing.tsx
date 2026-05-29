@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { PageMeta } from "../lib/page-meta";
@@ -9,6 +9,7 @@ type Tier = {
   id: string;
   name: string;
   price: string;
+  priceAnnual: string;
   cadence: string;
   blurb: string;
   cta: string;
@@ -23,6 +24,7 @@ const TIERS: Tier[] = [
     id: "personal",
     name: "Personal",
     price: "$49",
+    priceAnnual: "$470",
     cadence: "/ month",
     blurb: "For solo operators. Sized so 95% of customers never see an overage.",
     cta: "Start free trial",
@@ -49,6 +51,7 @@ const TIERS: Tier[] = [
     id: "starter",
     name: "Starter",
     price: "$149",
+    priceAnnual: "$1,430",
     cadence: "/ month",
     blurb: "For small teams shipping calls today, with breathing room to grow.",
     cta: "Start free trial",
@@ -69,6 +72,7 @@ const TIERS: Tier[] = [
     id: "pro",
     name: "Pro",
     price: "$499",
+    priceAnnual: "$4,790",
     cadence: "/ month",
     blurb: "Growth-stage teams running real campaigns at scale.",
     cta: "Start free trial",
@@ -94,6 +98,7 @@ const TIERS: Tier[] = [
     id: "business",
     name: "Business",
     price: "$1,499",
+    priceAnnual: "$14,390",
     cadence: "/ month",
     blurb: "Multi-team operators who need SSO, audit, and serious volume.",
     cta: "Start free trial",
@@ -116,6 +121,7 @@ const TIERS: Tier[] = [
     id: "enterprise",
     name: "Enterprise & Call Center",
     price: "Custom",
+    priceAnnual: "Custom",
     cadence: "",
     blurb: "Multi-team operators, 100+ seats, SLA-backed. Built for the largest deployments.",
     cta: "Talk to sales",
@@ -144,6 +150,7 @@ const VALUE_BULLETS = [
 ];
 
 export default function Pricing() {
+  const [interval, setInterval] = useState<"month" | "year">("month");
   // FAQ schema is built from copy that already lives on this page (the
   // reassurance paragraph + tier blurbs). Keeping it as structured data
   // — not visible UI — lets Google render FAQ rich results without
@@ -352,6 +359,35 @@ export default function Pricing() {
         </div>
       </section>
 
+      {/* Billing interval toggle */}
+      <section className="relative z-10 px-4 sm:px-6 lg:px-10 max-w-7xl mx-auto pb-6">
+        <div className="flex items-center justify-center gap-3">
+          <button
+            onClick={() => setInterval("month")}
+            className={`px-4 py-2 text-[11px] uppercase tracking-[0.28em] font-medium transition-all ${
+              interval === "month"
+                ? "bg-brand/15 border border-brand/40 text-brand"
+                : "border border-white/10 text-muted hover:text-ink hover:border-white/20"
+            }`}
+          >
+            Monthly
+          </button>
+          <button
+            onClick={() => setInterval("year")}
+            className={`px-4 py-2 text-[11px] uppercase tracking-[0.28em] font-medium transition-all relative ${
+              interval === "year"
+                ? "bg-brand/15 border border-brand/40 text-brand"
+                : "border border-white/10 text-muted hover:text-ink hover:border-white/20"
+            }`}
+          >
+            Annual
+            <span className="ml-2 inline-flex items-center px-1.5 py-0.5 text-[9px] uppercase tracking-[0.2em] font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-500">
+              Save 20%
+            </span>
+          </button>
+        </div>
+      </section>
+
       {/* Tier grid */}
       <section className="relative z-10 px-4 sm:px-6 lg:px-10 max-w-7xl mx-auto pb-16">
         {/* Tier grid scales 1 → 2 → 3 → 5. Skipping the previous
@@ -390,8 +426,14 @@ export default function Pricing() {
                 </div>
 
                 <div className="mb-5 flex items-baseline gap-1">
-                  <span className="font-display italic text-4xl text-ink">{tier.price}</span>
-                  {tier.cadence && <span className="text-[10px] text-muted">{tier.cadence}</span>}
+                  <span className="font-display italic text-4xl text-ink">
+                    {interval === "year" ? tier.priceAnnual : tier.price}
+                  </span>
+                  {tier.cadence && (
+                    <span className="text-[10px] text-muted">
+                      {interval === "year" ? "/ year" : tier.cadence}
+                    </span>
+                  )}
                 </div>
 
                 {tier.cta === "Start free trial" && (

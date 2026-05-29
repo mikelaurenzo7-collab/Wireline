@@ -832,6 +832,21 @@ export async function handleJob(job: JobRow): Promise<void> {
       throw err;
     }
   }
+
+  if (job.type === "demo_line_canary") {
+    const { runDemoLineCanary } = await import("./demo-line-canary");
+    const result = await runDemoLineCanary();
+    log.info("demo_line_canary job completed", {
+      jobId: job.id,
+      allHealthy: result.allHealthy,
+      alertSent: result.alertSent,
+      unhealthy: result.lines.filter((l) => !l.numberOk || !l.assistantOk).length,
+    });
+    if (!result.allHealthy && !result.alertSent) {
+      // If alert failed to send, let the job retry
+      throw new Error("Canary detected failures but could not deliver alert");
+    }
+  }
 }
 
 /**

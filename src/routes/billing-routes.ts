@@ -573,6 +573,7 @@ router.post(
     try {
       if (!stripeAvailable()) return res.status(503).json({ error: "Stripe not configured." });
       const planId = String(req.body?.plan_id || "").trim();
+      const interval = req.body?.interval === "year" ? "year" : "month";
       const plan = planById(planId);
       if (!plan) return res.status(400).json({ error: "Unknown plan_id." });
       // Contact-sales tiers (price_usd_monthly === 0) must never go through
@@ -584,11 +585,14 @@ router.post(
           code: "CONTACT_SALES_PLAN",
         });
       }
-      const priceId = process.env[plan.priceIdEnv];
+      const priceEnvKey = interval === "year" ? plan.annualPriceIdEnv : plan.priceIdEnv;
+      const priceId = process.env[priceEnvKey];
       if (!priceId)
         return res
           .status(503)
-          .json({ error: `Price for plan '${plan.id}' not configured (${plan.priceIdEnv}).` });
+          .json({
+            error: `Price for plan '${plan.id}' (${interval}) not configured (${priceEnvKey}).`,
+          });
 
       const [existing] = await drizzle
         .select({

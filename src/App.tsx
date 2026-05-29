@@ -22,6 +22,9 @@ const VerticalLanding = lazy(() => import("./pages/VerticalLanding"));
 const Compare = lazy(() => import("./pages/Compare"));
 const About = lazy(() => import("./pages/About"));
 const Showcase = lazy(() => import("./pages/Showcase"));
+const Developers = lazy(() => import("./pages/Developers"));
+const Blog = lazy(() => import("./pages/Blog"));
+const BlogPost = lazy(() => import("./pages/BlogPost"));
 const Status = lazy(() => import("./components/Status"));
 const PublicChangelog = lazy(() => import("./components/PublicChangelog"));
 const Security = lazy(() => import("./components/Security"));
@@ -162,6 +165,33 @@ function AppContent() {
     return (
       <Suspense fallback={<div className="min-h-dvh bg-paper marketing-surface" />}>
         <About />
+      </Suspense>
+    );
+  }
+  if (location.pathname === "/developers") {
+    return (
+      <Suspense fallback={<div className="min-h-dvh bg-paper marketing-surface" />}>
+        <div className="marketing-surface min-h-dvh">
+          <Developers />
+        </div>
+      </Suspense>
+    );
+  }
+  if (location.pathname === "/blog") {
+    return (
+      <Suspense fallback={<div className="min-h-dvh bg-paper marketing-surface" />}>
+        <div className="marketing-surface min-h-dvh">
+          <Blog />
+        </div>
+      </Suspense>
+    );
+  }
+  if (location.pathname.startsWith("/blog/")) {
+    return (
+      <Suspense fallback={<div className="min-h-dvh bg-paper marketing-surface" />}>
+        <div className="marketing-surface min-h-dvh">
+          <BlogPost />
+        </div>
       </Suspense>
     );
   }
