@@ -59,7 +59,7 @@ export default function PhonePage() {
                 key={tab.id}
                 onClick={() => setTab(tab.id)}
                 className={cn(
-                  "shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] sm:text-[13px] font-medium transition-all whitespace-nowrap",
+                  "shrink-0 flex items-center gap-2 px-4 py-2.5 sm:py-2 rounded-xl text-[12px] sm:text-[13px] font-medium transition-all whitespace-nowrap min-h-[44px] sm:min-h-0",
                   active
                     ? "bg-brand/10 text-brand border border-brand/20 shadow-sm"
                     : "text-muted hover:text-foreground hover:bg-muted/8 border border-transparent",

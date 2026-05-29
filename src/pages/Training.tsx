@@ -200,13 +200,16 @@ export default function Training() {
                   key={tab.id}
                   onClick={() => setSubTab(tab.id)}
                   className={cn(
-                    "shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] sm:text-[12px] font-medium transition-all whitespace-nowrap",
+                    "shrink-0 flex items-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg text-[11px] sm:text-[12px] font-medium transition-all whitespace-nowrap min-h-[40px] sm:min-h-0",
                     active
                       ? "bg-brand/10 text-brand border border-brand/20"
                       : "text-muted hover:text-foreground hover:bg-muted/8 border border-transparent",
                   )}
                 >
-                  <TabIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5" strokeWidth={active ? 2.5 : 2} />
+                  <TabIcon
+                    className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5"
+                    strokeWidth={active ? 2.5 : 2}
+                  />
                   {tab.label}
                 </button>
               );
