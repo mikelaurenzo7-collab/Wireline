@@ -5,7 +5,7 @@ import { ArrowRight, Phone, ArrowUpRight, Plus } from "lucide-react";
 import PublicSiteHeader from "../components/marketing/PublicSiteHeader";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import { HeroDecorations } from "../components/marketing/HeroDecorations";
-import { RobotHead } from "../components/marketing/RobotHead";
+import { RobotHead, RobotWithPhone } from "../components/marketing/RobotHead";
 import { PageMeta } from "../lib/page-meta";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import { WIRELINE_CONTACT_AGENTS } from "../data/contact-agents";
@@ -264,6 +264,13 @@ export default function LandingPage() {
               <h2 className="font-display italic text-[clamp(1.8rem,4vw,3rem)] leading-[1.05] text-ink max-w-2xl mx-auto">
                 Talk to the Wireline team. <span className="text-ink/65">No signup required.</span>
               </h2>
+
+              {/* Phone-holding mascot, in-flow + centered so it can't overlap
+                  text. Kept small on mobile/tablet; desktop already gets a
+                  larger one in the hero corners (so hidden here at lg+). */}
+              <div className="mt-6 flex justify-center lg:hidden" aria-hidden="true">
+                <RobotWithPhone size={96} animated />
+              </div>
             </motion.div>
 
             {/* Wireline team lines — equal cards in a single horizontal row */}
