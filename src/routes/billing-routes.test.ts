@@ -150,7 +150,12 @@ const h = vi.hoisted(() => {
             : [];
         }
         case "spendAlerts":
-        case "users":
+          return [];
+        case "users": {
+          const userId = findEqValue(whereCondition, schema.users.id);
+          if (userId === "user-1") return [{ email: "owner@example.com" }];
+          return [];
+        }
         default:
           return [];
       }
@@ -533,5 +538,115 @@ describe("billing routes integration", () => {
     expect(response.body.code).toBe("VALIDATION_ERROR");
     expect(response.body.error).toMatch(/>=0|greater than or equal to 0/i);
     expect(h.clearBudgetCache).not.toHaveBeenCalled();
+  });
+
+  it("persists spend budget with hard cap and clears cache", async () => {
+    const response = await request(await buildApp())
+      .put("/api/spend/budget")
+      .set("Authorization", ["Bearer", "valid-token"].join(" "))
+      .send({ monthly_limit_usd: 250, warn_threshold_pct: 85, hard_cap: true, enabled: true });
+
+    expect(response.status).toBe(200);
+    expect(response.body.budget).toEqual(
+      expect.objectContaining({
+        userId: "user-1",
+        monthlyLimitUsd: "250",
+        hardCap: true,
+        warnThresholdPct: 85,
+        enabled: true,
+      }),
+    );
+    expect(h.clearBudgetCache).toHaveBeenCalledWith("user-1");
+    expect(h.state.spendBudgets["user-1"].monthlyLimitUsd).toBe("250");
+  });
+
+  it("returns voice usage snapshot from /billing/usage", async () => {
+    const { getVoiceUsageSnapshot } = await import("../lib/voice-usage");
+    vi.mocked(getVoiceUsageSnapshot).mockResolvedValueOnce({
+      plan_id: "starter",
+      voice_minutes_used: 1250,
+      voice_minutes_included: 1200,
+      voice_minutes_remaining: 0,
+      overage_minutes: 50,
+      overage_per_min_usd: 0.18,
+      overage_cost_usd: 9,
+      period_key: "2026-05",
+      reset_at: "2026-06-01T00:00:00.000Z",
+      stripe_metered: true,
+    });
+
+    const response = await request(await buildApp())
+      .get("/api/billing/usage")
+      .set("Authorization", ["Bearer", "valid-token"].join(" "));
+
+    expect(response.status).toBe(200);
+    expect(response.body.overage_minutes).toBe(50);
+    expect(response.body.overage_cost_usd).toBe(9);
+  });
+
+  it("invoice.payment_failed sends dunning email and audit log", async () => {
+    h.state.currentWebhookEvent = {
+      id: "evt_inv_fail_1",
+      type: "invoice.payment_failed",
+      data: {
+        object: {
+          id: "in_fail_1",
+          customer: "cus_existing",
+          amount_due: 14900,
+          attempt_count: 2,
+          hosted_invoice_url: "https://stripe.test/invoice/in_fail_1",
+        },
+      },
+    };
+
+    const response = await request(await buildApp())
+      .post("/api/stripe-webhook")
+      .set("stripe-signature", "good-sig")
+      .set("content-type", "application/json")
+      .send(JSON.stringify({}));
+
+    expect(response.status).toBe(200);
+    expect(h.auditLogger.logBilling).toHaveBeenCalledWith(
+      "payment_failed",
+      expect.objectContaining({
+        userId: "user-1",
+        customerId: "cus_existing",
+        amountCents: 14900,
+      }),
+    );
+    expect(h.sendPaymentFailedEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "owner@example.com",
+        amountDisplay: "$149.00",
+        invoiceUrl: "https://stripe.test/invoice/in_fail_1",
+        updateCardUrl: expect.stringMatching(/\/billing$/),
+      }),
+    );
+  });
+
+  it("customer.subscription.updated syncs plan change (upgrade path)", async () => {
+    h.state.currentWebhookEvent = {
+      id: "evt_sub_up_1",
+      type: "customer.subscription.updated",
+      data: {
+        object: {
+          id: "sub_live",
+          customer: "cus_existing",
+          status: "active",
+          items: { data: [{ price: { id: "price_pro_monthly" } }] },
+        },
+      },
+    };
+
+    const response = await request(await buildApp())
+      .post("/api/stripe-webhook")
+      .set("stripe-signature", "good-sig")
+      .set("content-type", "application/json")
+      .send(JSON.stringify({}));
+
+    expect(response.status).toBe(200);
+    expect(h.syncSubscriptionFromStripe).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "sub_live", status: "active" }),
+    );
   });
 });

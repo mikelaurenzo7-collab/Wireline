@@ -616,6 +616,16 @@ export const callLogs = pgTable(
     // showcase activity for real call traffic.
     demo: boolean("demo").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+
+    // Voice observability — per-call telemetry for TTFT, STT/TTS health, pipeline latency.
+    // Populated by voice webhook handlers when Vapi (or future providers) emit metrics.
+    ttftMs: integer("ttft_ms"), // Time-to-first-token (target: <900ms, alert: >1.2s)
+    ttfAudioMs: integer("ttf_audio_ms"), // Time-to-first-audio (full pipeline)
+    sttError: boolean("stt_error").default(false), // Speech-to-text failed/timeout
+    ttsError: boolean("tts_error").default(false), // Text-to-speech failed/interrupted
+    pipelineError: text("pipeline_error"), // High-level error classification: stt|tts|llm|connection|unknown
+    latencyP50Ms: integer("latency_p50_ms"), // Provider-reported p50 latency (if available)
+    latencyP95Ms: integer("latency_p95_ms"), // Provider-reported p95 latency (if available)
   },
   () => ({
     userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_user_id ON wireline_call_logs USING btree (user_id)`,
@@ -624,6 +634,10 @@ export const callLogs = pgTable(
     createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_created_at ON wireline_call_logs USING btree (created_at)`,
     userOutcomeIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_user_outcome ON wireline_call_logs USING btree (user_id, outcome_tag) WHERE outcome_tag IS NOT NULL`,
     userCampaignIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_user_campaign ON wireline_call_logs USING btree (user_id, campaign_source) WHERE campaign_source IS NOT NULL`,
+    // Voice observability indexes for alerting queries
+    ttftIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_ttft ON wireline_call_logs USING btree (ttft_ms) WHERE ttft_ms IS NOT NULL`,
+    demoCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_demo_created ON wireline_call_logs USING btree (demo, created_at) WHERE demo = true`,
+    pipelineErrorIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_pipeline_error ON wireline_call_logs USING btree (pipeline_error) WHERE pipeline_error IS NOT NULL`,
   }),
 );
 
