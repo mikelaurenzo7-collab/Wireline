@@ -21,6 +21,9 @@ import {
   Check,
   Sparkles,
   Wand2,
+  BookOpen,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
@@ -216,6 +219,9 @@ export default function DirectorTraining({ profile, loading, onSaved }: Props) {
         />
       </section>
 
+      {/* Company knowledge — flows down to every agent */}
+      <CompanyKnowledge />
+
       {/* Sticky save bar */}
       <div className="sticky bottom-0 -mx-4 px-4 py-3 bg-gradient-to-t from-paper via-paper/95 to-transparent">
         <button
@@ -306,5 +312,170 @@ function Toggle({
         <span className="block text-[11px] text-muted leading-relaxed mt-0.5">{hint}</span>
       </span>
     </button>
+  );
+}
+
+interface SharedFact {
+  id: string;
+  content: string;
+  createdAt: string;
+}
+
+/**
+ * CompanyKnowledge — shared facts the Director holds that flow to EVERY agent.
+ *
+ * Stored as agent-wide knowledge (agent_id NULL); the voice runtime unions
+ * these into each agent's knowledge so a fact added once (hours, pricing,
+ * policies, the pitch) reaches every call without per-agent duplication.
+ * Persists immediately on add/remove — independent of the brief's Save button.
+ */
+function CompanyKnowledge() {
+  const { error: toastError } = useToast();
+  const [facts, setFacts] = useState<SharedFact[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [draft, setDraft] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    authFetch("/api/director/knowledge")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (active) setFacts(Array.isArray(d?.knowledge) ? d.knowledge : []);
+      })
+      .catch(() => {})
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const add = async () => {
+    const content = draft.trim();
+    if (!content || adding) return;
+    setAdding(true);
+    try {
+      const r = await authFetch("/api/director/knowledge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data?.error || "Failed");
+      setFacts((prev) => [{ id: String(data.id), content, createdAt: data.createdAt }, ...prev]);
+      setDraft("");
+    } catch (e) {
+      toastError("Couldn't add", e instanceof Error ? e.message : undefined);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const remove = async (id: string) => {
+    setBusyId(id);
+    try {
+      const r = await authFetch(`/api/director/knowledge/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      if (!r.ok) throw new Error("Failed");
+      setFacts((prev) => prev.filter((f) => f.id !== id));
+    } catch {
+      toastError("Couldn't remove that fact");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  return (
+    <section className="rounded-2xl glass border border-white/10 p-4">
+      <div className="flex items-center gap-2.5 mb-1">
+        <div className="w-8 h-8 rounded-xl glass border border-emerald-500/30 text-emerald-600 flex items-center justify-center shrink-0">
+          <BookOpen className="w-4 h-4" />
+        </div>
+        <div>
+          <h4 className="font-display italic lowercase text-lg text-ink leading-none">
+            company knowledge
+          </h4>
+          <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mt-0.5">
+            Flows to every agent on calls
+          </p>
+        </div>
+      </div>
+      <p className="text-[11.5px] text-muted leading-relaxed mt-2 mb-3">
+        Facts true for your whole business — hours, pricing, policies, the pitch. Add once here and
+        every agent uses them; no need to repeat per agent.
+      </p>
+
+      {/* Add row */}
+      <div className="flex items-end gap-2">
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+              e.preventDefault();
+              add();
+            }
+          }}
+          rows={2}
+          maxLength={2000}
+          placeholder="e.g. We offer a 1-year warranty on all installs and a free annual tune-up."
+          className="flex-1 resize-none rounded-lg border border-black/12 bg-paper px-3 py-2 text-[13px] text-ink placeholder:text-muted/60 outline-none focus:border-brand/40 transition-colors leading-relaxed"
+        />
+        <button
+          onClick={add}
+          disabled={!draft.trim() || adding}
+          className="shrink-0 h-10 px-3 rounded-lg bg-brand text-on-brand text-[12px] font-medium inline-flex items-center gap-1.5 hover:opacity-90 transition-opacity disabled:opacity-40"
+          aria-label="Add company knowledge"
+        >
+          {adding ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Plus className="w-3.5 h-3.5" />
+          )}
+          Add
+        </button>
+      </div>
+
+      {/* List */}
+      <div className="mt-3">
+        {loading ? (
+          <div className="flex items-center justify-center py-4 text-muted">
+            <Loader2 className="w-4 h-4 animate-spin" />
+          </div>
+        ) : facts.length === 0 ? (
+          <p className="text-[11px] text-muted/70 italic py-2">
+            No company-wide facts yet. The first one you add reaches every agent immediately.
+          </p>
+        ) : (
+          <ul className="space-y-1.5">
+            {facts.map((f) => (
+              <li
+                key={f.id}
+                className="flex items-start gap-2 rounded-lg border border-black/8 bg-paper/50 px-3 py-2"
+              >
+                <BookOpen className="w-3.5 h-3.5 text-emerald-600/80 mt-0.5 shrink-0" />
+                <span className="flex-1 min-w-0 text-[12.5px] text-ink/90 leading-relaxed break-words">
+                  {f.content}
+                </span>
+                <button
+                  onClick={() => remove(f.id)}
+                  disabled={busyId === f.id}
+                  className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-muted/70 hover:text-rose-500 hover:bg-rose-500/8 transition-colors disabled:opacity-40"
+                  aria-label="Remove this fact"
+                >
+                  {busyId === f.id ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
   );
 }

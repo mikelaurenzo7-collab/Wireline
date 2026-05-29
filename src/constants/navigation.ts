@@ -1,13 +1,4 @@
-import {
-  MessagesSquare,
-  Radio,
-  Inbox,
-  BarChart3,
-  LayoutGrid,
-  Kanban,
-  Headphones,
-  SlidersHorizontal,
-} from "lucide-react";
+import { MessagesSquare, Radio, Plug, SlidersHorizontal } from "lucide-react";
 
 export type NavItem = {
   label: string;
@@ -24,20 +15,22 @@ export type NavItem = {
   ownerOnly?: boolean;
 };
 
-// Three-group nav. Workspace = where you watch, decide, and run the fleet.
-// Activity = where conversations live + close. Settings sits as the trailing
-// tab since it's daily-touch (Branding, Carrier, Billing) — not buried in a
-// profile dropdown.
+// Radically simplified, chat-centric nav. Before the chat pivot the rail
+// carried a dozen destinations and was hard to scan; now Chat IS the product —
+// the Director + each agent live there, and the Director's mission-control dock
+// pulls up everything operational (live ops, analytics, appointments, triage,
+// pipeline, SMS, cockpit) on demand. So the rail keeps only the handful of
+// surfaces operators reach for directly and that don't belong inside a chat:
 //
-// Training no longer earns its own surface: each agent is trained, wired, and
-// remembered inside ITS OWN chat (Chat · Training · Connectors · Memory tabs),
-// so the Director + per-agent threads under "Chat" are the single home for
-// building and coaching the fleet. Agents (roster + creation) live under
-// Settings — operators rarely add agents, so it doesn't earn a top-nav slot.
+//   Workspace · Chat        — the hub (Director + every agent, all their tabs)
+//             · Call Logs    — transcripts + recordings of what the fleet did
+//   Account   · Integrations — connect email / calendar / CRM / messaging
+//             · Settings     — billing, branding, carrier, agents roster, DNC, audit
 //
-// Architecture note: /cockpit is its OWN page (SupervisorCockpit), distinct
-// from /ops (LiveOps). Live Ops is the owner's pulse — calls + actions + intel.
-// Cockpit is the floor supervisor's view — agent availability + listen-in.
+// Everything else still has a route (and is reachable from the Director dock
+// and direct links) — it just no longer clutters the primary rail. Training,
+// Connectors and Memory are folded into each chat (Chat · Training ·
+// Connectors · Memory tabs), so they never earn a standalone nav slot.
 export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: "Workspace",
@@ -50,38 +43,25 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         matches: ["/chat"],
       },
       {
-        label: "Live Ops",
-        path: "/ops",
-        icon: LayoutGrid,
-        dataTour: "dashboard",
-        matches: ["/dashboard", "/command", "/live"],
-      },
-      { label: "Triage", path: "/triage", icon: Inbox },
-      { label: "Insights", path: "/insights", icon: BarChart3, dataTour: "insights" },
-      { label: "Cockpit", path: "/cockpit", icon: Headphones },
-    ],
-  },
-  {
-    label: "Activity",
-    items: [
-      {
-        label: "Activity",
+        label: "Call Logs",
         path: "/logs",
         icon: Radio,
+        // Recordings + the other activity surfaces live under / reachable from
+        // Call Logs and the Director dock; highlight Call Logs when on any.
         matches: ["/outbound", "/inbox", "/appointments", "/sms"],
       },
-      { label: "Pipeline", path: "/pipeline", icon: Kanban },
     ],
   },
   {
     label: "Admin",
     items: [
+      { label: "Integrations", path: "/integrations", icon: Plug },
       {
         label: "Settings",
         path: "/admin",
         icon: SlidersHorizontal,
         dataTour: "settings",
-        matches: ["/integrations", "/dnc", "/audit", "/agents"],
+        matches: ["/dnc", "/audit", "/agents"],
       },
     ],
   },

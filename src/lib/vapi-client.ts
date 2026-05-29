@@ -8,7 +8,7 @@
 
 import { drizzle, fetchWithTimeout, log } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, desc, ilike } from "drizzle-orm";
+import { eq, and, or, isNull, desc, ilike, sql } from "drizzle-orm";
 import { isDncBlocked } from "./compliance";
 import {
   sanitizePhone,
@@ -213,7 +213,24 @@ export async function placeOutboundCall(opts: {
       .where(eq(schema.directives.agentId, agentId))
       .orderBy(desc(schema.directives.priority))
       .limit(500),
-    drizzle.select().from(schema.knowledge).where(eq(schema.knowledge.agentId, agentId)).limit(500),
+    // Agent-specific + company-wide shared knowledge (agent_id IS NULL) for
+    // this agent's owner, so Director-added facts reach every outbound call too.
+    drizzle
+      .select()
+      .from(schema.knowledge)
+      .where(
+        or(
+          eq(schema.knowledge.agentId, agentId),
+          and(
+            isNull(schema.knowledge.agentId),
+            eq(
+              schema.knowledge.userId,
+              sql`(SELECT user_id FROM wireline_agents WHERE id = ${agentId})`,
+            ),
+          ),
+        ),
+      )
+      .limit(500),
     drizzle
       .select()
       .from(schema.personality)

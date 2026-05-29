@@ -15,7 +15,7 @@
  * claudeRateLimiter) bounds cost on the POST path.
  */
 import express, { type Response } from "express";
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser } from "../middleware/auth";
 import { claudeRateLimiter } from "../middleware/api-rate-limits";
@@ -346,6 +346,105 @@ router.put(
     } catch (e) {
       log.error("director profile save failed", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to save Director profile" });
+    }
+  },
+);
+
+// ── Company-wide knowledge ───────────────────────────────────────────────
+// The Director can hold "company knowledge" — facts that aren't tied to one
+// agent but should reach EVERY agent (hours, policies, pricing, the elevator
+// pitch). Stored in wireline_knowledge with agent_id = NULL; the voice runtime
+// (vapi-assistant-factory / vapi-client) unions these into each agent's
+// knowledge so they flow down to live calls automatically.
+
+// GET /api/director/knowledge — list the operator's shared (agent-wide) facts.
+router.get(
+  "/api/director/knowledge",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const rows = await drizzle
+        .select({
+          id: schema.knowledge.id,
+          content: schema.knowledge.content,
+          createdAt: schema.knowledge.createdAt,
+        })
+        .from(schema.knowledge)
+        .where(and(eq(schema.knowledge.userId, req.user.id), isNull(schema.knowledge.agentId)))
+        .orderBy(desc(schema.knowledge.createdAt))
+        .limit(200);
+      res.json({
+        knowledge: rows.map((r) => ({
+          id: String(r.id),
+          content: r.content,
+          createdAt: r.createdAt,
+        })),
+      });
+    } catch (e) {
+      log.error("director knowledge fetch failed", { error: getErrorMessage(e) });
+      res.status(500).json({ error: "Failed to load company knowledge" });
+    }
+  },
+);
+
+// POST /api/director/knowledge — add a shared fact (flows to every agent).
+router.post(
+  "/api/director/knowledge",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const content = String(req.body?.content || "").trim();
+      if (!content) return res.status(400).json({ error: "content required" });
+      if (content.length > 2000) {
+        return res.status(400).json({ error: "Keep each fact under 2000 chars" });
+      }
+      // Bound the shared set so it can't crowd the runtime knowledge budget.
+      const [countRow] = await drizzle
+        .select({ n: sql<number>`count(*)::int` })
+        .from(schema.knowledge)
+        .where(and(eq(schema.knowledge.userId, req.user.id), isNull(schema.knowledge.agentId)));
+      if ((countRow?.n ?? 0) >= 200) {
+        return res
+          .status(400)
+          .json({ error: "Company knowledge is full (200). Remove some first." });
+      }
+      const [row] = await drizzle
+        .insert(schema.knowledge)
+        .values({ userId: req.user.id, agentId: null, content })
+        .returning({ id: schema.knowledge.id, createdAt: schema.knowledge.createdAt });
+      res.json({ id: String(row.id), content, createdAt: row.createdAt });
+    } catch (e) {
+      log.error("director knowledge add failed", { error: getErrorMessage(e) });
+      res.status(500).json({ error: "Failed to add company knowledge" });
+    }
+  },
+);
+
+// DELETE /api/director/knowledge/:id — remove a shared fact.
+router.delete(
+  "/api/director/knowledge/:id",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      let id: bigint;
+      try {
+        id = BigInt(req.params.id);
+      } catch {
+        return res.status(400).json({ error: "Invalid id" });
+      }
+      await drizzle
+        .delete(schema.knowledge)
+        .where(
+          and(
+            eq(schema.knowledge.id, id),
+            eq(schema.knowledge.userId, req.user.id),
+            isNull(schema.knowledge.agentId),
+          ),
+        );
+      res.json({ deleted: true });
+    } catch (e) {
+      log.error("director knowledge delete failed", { error: getErrorMessage(e) });
+      res.status(500).json({ error: "Failed to delete company knowledge" });
     }
   },
 );

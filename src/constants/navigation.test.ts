@@ -1,40 +1,46 @@
 /**
  * navigation.test.ts
  * ----------------------------------------------------------------------
- * Lock the navigation IA after the 2026 design pass. Three things go
- * wrong here historically:
+ * Lock the radically-simplified, chat-centric navigation IA. After the
+ * chat pivot the rail carries only the handful of surfaces operators reach
+ * for directly; everything else is reachable from the Director's
+ * mission-control dock + direct links. These tests pin the invariants that
+ * historically regressed:
  *
- *   1. Settings drifts back out of the top nav (it's the 1-click home
- *      of Billing / Branding / Carrier — burying it kills velocity).
- *   2. Cockpit and Live Ops get reconfused (they're DIFFERENT views;
- *      Cockpit was redirect-stubbed to / for a while and the nav still
- *      advertised it — that's the bug the audit caught).
- *   3. A nav item gets added but its route handler doesn't render its
- *      own component — phantom tabs that 404 or redirect.
- *
- * These tests pin all three.
+ *   1. Chat stays the first/primary item (it's the product).
+ *   2. Settings stays in the rail (1-click home of Billing / Branding /
+ *      Carrier / Agents) — never buried in a dropdown.
+ *   3. Integrations is its own first-class item (connecting channels is a
+ *      core, frequent task).
+ *   4. Training never gets a standalone nav item — it's folded into chat.
+ *   5. Every nav item has a real PAGE_TITLES entry + a unique path.
  */
 import { describe, expect, it } from "vitest";
 import { NAV_GROUPS, PAGE_TITLES } from "./navigation";
 
-describe("Top-bar navigation IA", () => {
-  it("ships exactly three groups in the documented order", () => {
-    expect(NAV_GROUPS.map((g) => g.label)).toEqual(["Workspace", "Activity", "Admin"]);
+describe("Navigation IA (chat-centric, simplified)", () => {
+  it("ships exactly two groups in the documented order", () => {
+    expect(NAV_GROUPS.map((g) => g.label)).toEqual(["Workspace", "Admin"]);
   });
 
-  it("Workspace group leads with Chat, then Live Ops, Triage, Insights, Cockpit", () => {
+  it("Workspace group is Chat then Call Logs", () => {
     const ws = NAV_GROUPS.find((g) => g.label === "Workspace")!;
-    expect(ws.items.map((i) => i.path)).toEqual([
-      "/chat",
-      "/ops",
-      "/triage",
-      "/insights",
-      "/cockpit",
-    ]);
+    expect(ws.items.map((i) => i.path)).toEqual(["/chat", "/logs"]);
   });
 
   it("Chat is the first/primary nav item (chat is the main control surface)", () => {
     expect(NAV_GROUPS[0].items[0].path).toBe("/chat");
+  });
+
+  it("Admin group is Integrations then Settings", () => {
+    const admin = NAV_GROUPS.find((g) => g.label === "Admin")!;
+    expect(admin.items.map((i) => i.path)).toEqual(["/integrations", "/admin"]);
+    expect(admin.items.map((i) => i.label)).toEqual(["Integrations", "Settings"]);
+  });
+
+  it("the rail stays lean — at most 4 primary destinations", () => {
+    const count = NAV_GROUPS.flatMap((g) => g.items).length;
+    expect(count).toBeLessThanOrEqual(4);
   });
 
   it("Training is folded into chat — no standalone /train or /knowledge nav item", () => {
@@ -43,37 +49,17 @@ describe("Top-bar navigation IA", () => {
     expect(paths).not.toContain("/knowledge");
   });
 
-  it("Cockpit lives in the Workspace group (Fleet group retired)", () => {
-    expect(NAV_GROUPS.map((g) => g.label)).not.toContain("Fleet");
-    const ws = NAV_GROUPS.find((g) => g.label === "Workspace")!;
-    expect(ws.items.map((i) => i.path)).toContain("/cockpit");
-  });
-
-  it("Activity group has Activity and Pipeline", () => {
-    const act = NAV_GROUPS.find((g) => g.label === "Activity")!;
-    expect(act.items.map((i) => i.path)).toEqual(["/logs", "/pipeline"]);
-  });
-
-  it("Settings is in the top-bar nav (Admin group), not buried in the avatar menu", () => {
-    const admin = NAV_GROUPS.find((g) => g.label === "Admin")!;
-    expect(admin.items.map((i) => i.path)).toEqual(["/admin"]);
-    expect(admin.items[0].label).toBe("Settings");
-  });
-
-  it("Live Ops does NOT claim /cockpit as a match (Cockpit is its own page)", () => {
-    const liveOps = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.path === "/ops")!;
-    expect(liveOps.matches ?? []).not.toContain("/cockpit");
-  });
-
-  it("Cockpit is a top-level path, not a redirect alias", () => {
-    const cockpit = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.path === "/cockpit");
-    expect(cockpit).toBeDefined();
-    expect(cockpit!.label).toBe("Cockpit");
-  });
-
-  it("Settings matches Integrations / DNC / Audit so deep-link badges land correctly", () => {
+  it("Settings owns its sub-pages (DNC / Audit / Agents) for deep-link active state", () => {
     const settings = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.path === "/admin")!;
-    expect(settings.matches).toEqual(expect.arrayContaining(["/integrations", "/dnc", "/audit"]));
+    expect(settings.matches).toEqual(expect.arrayContaining(["/dnc", "/audit", "/agents"]));
+  });
+
+  it("Integrations is its own item, not just a Settings sub-match", () => {
+    const integrations = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.path === "/integrations");
+    expect(integrations).toBeDefined();
+    // ...and Settings no longer claims /integrations (would collide active state).
+    const settings = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.path === "/admin")!;
+    expect(settings.matches ?? []).not.toContain("/integrations");
   });
 
   it("every nav item has a PAGE_TITLES entry (so the tab title isn't generic 'Wireline')", () => {
