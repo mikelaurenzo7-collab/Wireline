@@ -18,22 +18,35 @@ import { describe, expect, it } from "vitest";
 import { NAV_GROUPS, PAGE_TITLES } from "./navigation";
 
 describe("Top-bar navigation IA", () => {
-  it("ships exactly four groups in the documented order", () => {
-    expect(NAV_GROUPS.map((g) => g.label)).toEqual(["Workspace", "Fleet", "Activity", "Admin"]);
+  it("ships exactly three groups in the documented order", () => {
+    expect(NAV_GROUPS.map((g) => g.label)).toEqual(["Workspace", "Activity", "Admin"]);
   });
 
-  it("Workspace group leads with Chat, then Live Ops, Triage, Insights", () => {
+  it("Workspace group leads with Chat, then Live Ops, Triage, Insights, Cockpit", () => {
     const ws = NAV_GROUPS.find((g) => g.label === "Workspace")!;
-    expect(ws.items.map((i) => i.path)).toEqual(["/chat", "/ops", "/triage", "/insights"]);
+    expect(ws.items.map((i) => i.path)).toEqual([
+      "/chat",
+      "/ops",
+      "/triage",
+      "/insights",
+      "/cockpit",
+    ]);
   });
 
   it("Chat is the first/primary nav item (chat is the main control surface)", () => {
     expect(NAV_GROUPS[0].items[0].path).toBe("/chat");
   });
 
-  it("Fleet group has Training, Cockpit (Agents moved to Settings)", () => {
-    const fl = NAV_GROUPS.find((g) => g.label === "Fleet")!;
-    expect(fl.items.map((i) => i.path)).toEqual(["/train", "/cockpit"]);
+  it("Training is folded into chat — no standalone /train or /knowledge nav item", () => {
+    const paths = NAV_GROUPS.flatMap((g) => g.items).map((i) => i.path);
+    expect(paths).not.toContain("/train");
+    expect(paths).not.toContain("/knowledge");
+  });
+
+  it("Cockpit lives in the Workspace group (Fleet group retired)", () => {
+    expect(NAV_GROUPS.map((g) => g.label)).not.toContain("Fleet");
+    const ws = NAV_GROUPS.find((g) => g.label === "Workspace")!;
+    expect(ws.items.map((i) => i.path)).toContain("/cockpit");
   });
 
   it("Activity group has Activity and Pipeline", () => {

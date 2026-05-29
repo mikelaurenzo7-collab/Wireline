@@ -104,19 +104,19 @@ export default function AdminSettings() {
   // Honor ?tab=<name> in the URL so deep links (e.g. the TrialBanner
   // "Upgrade now" CTA pointing at /admin?tab=subscription) land on
   // the correct tab instead of bouncing to the default. Legacy links
-  // pointing at ?tab=voices / ?tab=pronunciation redirect to /train,
-  // where those panels now live (handled below in the routing layer).
+  // pointing at ?tab=voices / ?tab=pronunciation now live per-agent inside
+  // each agent's chat (Training tab), so they redirect to Chat.
   const location = useLocation();
   const navigate = useNavigate();
   const activeTab: AdminTab = (() => {
     const qsRaw = new URLSearchParams(location.search).get("tab");
-    // Legacy redirect: voices + pronunciation moved out of Settings into
-    // Training where they belong (they're agent identity, not tenant config).
+    // Legacy redirect: voices + pronunciation moved out of Settings into each
+    // agent's chat Training tab (they're agent identity, not tenant config).
     if (qsRaw === "voices" || qsRaw === "pronunciation") {
       // useNavigate inside a render branch is fine because navigate is
       // a stable callback and we run it once per matching render. The
       // redirect happens synchronously on the next tick.
-      queueMicrotask(() => navigate(`/train?tab=${qsRaw}`, { replace: true }));
+      queueMicrotask(() => navigate("/chat", { replace: true }));
       return "branding";
     }
     const qs = qsRaw as AdminTab;

@@ -20,6 +20,7 @@ import AgentWorkspace from "../components/AgentWorkspace";
 import AgentDock from "../components/AgentDock";
 import DirectorWorkspace from "../components/DirectorWorkspace";
 import { useAgents } from "../contexts/AgentsContext";
+import { useVisualViewportVar } from "../lib/use-visual-viewport";
 import { cn } from "../lib/utils";
 
 const DIRECTOR_ID = "director";
@@ -42,6 +43,9 @@ export default function AgentChat() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { agents, loading } = useAgents();
+  // Keep the chat (now the primary surface) keyboard-aware on mobile: the
+  // composer must stay above the software keyboard, which doesn't shrink dvh.
+  useVisualViewportVar();
 
   // Live capability mirror + composer seed shared between the workspace and
   // the mission-control dock.
@@ -82,7 +86,7 @@ export default function AgentChat() {
   const showDirector = isDirector || !activeAgent;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 h-[calc(100dvh-9rem)] min-h-[480px]">
+    <div className="flex flex-col lg:flex-row gap-4 h-[calc(var(--app-vvh,100dvh)-9rem)] min-h-[480px]">
       {/* Rail — Director pinned on top, fleet below. Vertical on desktop,
           horizontal switcher on mobile. */}
       <aside className="shrink-0 lg:w-56">
@@ -214,7 +218,7 @@ export default function AgentChat() {
           {/* Mobile / tablet dock trigger */}
           <button
             onClick={() => setDockOpen(true)}
-            className="xl:hidden fixed bottom-20 right-4 z-30 inline-flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-brand text-on-brand shadow-lg text-[12px] font-medium"
+            className="xl:hidden fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] right-4 z-30 inline-flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-brand text-on-brand shadow-lg text-[12px] font-medium"
             aria-label="Open mission control"
           >
             <LayoutDashboard className="w-4 h-4" />

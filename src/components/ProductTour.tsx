@@ -37,9 +37,9 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     id: "training",
-    title: "Train Agents with Wireline AI",
-    body: "Type instructions, paste your website URL, or upload a PDF. Wireline AI reads it and extracts facts your agent will use in every call.",
-    anchor: '[data-tour="training"]',
+    title: "Coach & train inside Chat",
+    body: "Open any agent under Chat. Each one has its own tabs — Chat, Training, Connectors, and Memory — so you direct it in plain English, teach it (paste a URL or upload a PDF), wire up its tools, and see what it remembers, all in one place.",
+    anchor: '[data-tour="chat"]',
     cta: "Next",
   },
   {

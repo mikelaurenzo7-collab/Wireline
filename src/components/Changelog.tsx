@@ -62,7 +62,7 @@ const ENTRIES: Entry[] = [
     date: "May 19, 2026",
     tag: "feature",
     title: "Per-agent Workspace — private DM with each AI employee",
-    body: 'Every agent now has its own persistent chat thread. Coach the agent in plain English ("be warmer on price objections"), ask how this week\'s calls went, give context. Memory model: the thread itself + the last 5 call summaries injected as context on every reply. Available on every paid tier — find it under /train as the new default tab.',
+    body: 'Every agent now has its own persistent chat thread. Coach the agent in plain English ("be warmer on price objections"), ask how this week\'s calls went, give context. Memory model: the thread itself + the last 5 call summaries injected as context on every reply. Available on every paid tier — open any agent under Chat.',
   },
   {
     date: "May 19, 2026",

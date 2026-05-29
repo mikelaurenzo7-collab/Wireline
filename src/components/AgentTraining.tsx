@@ -1,12 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useState, useEffect, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
 import {
   Loader2,
-  Users,
   Database,
   PlayCircle,
-  MessageSquare,
   Trash2,
   Phone,
   Activity,
@@ -18,7 +15,6 @@ import {
   Target,
   Clock,
   Workflow,
-  Blocks,
   PhoneCall,
   PhoneOff,
   Mic,
@@ -33,12 +29,10 @@ import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { HelpTooltip } from "./HelpTooltip";
 import { useToast } from "../contexts/ToastContext";
 import AgentFlowComposer from "./AgentFlowComposer";
-import AgentActionEngine from "./AgentActionEngine";
 import VoiceLibraryPanel from "./admin/VoiceLibraryPanel";
 import PronunciationDictionaryPanel from "./PronunciationDictionaryPanel";
-import HubTabs, { TRAINING_HUB } from "./HubTabs";
 
-type TrainingTab = "database" | "voices" | "pronunciation" | "simulator" | "flow" | "actions";
+type TrainingTab = "database" | "voices" | "pronunciation" | "simulator" | "flow";
 
 const VALID_TRAINING_TABS: TrainingTab[] = [
   "database",
@@ -46,7 +40,6 @@ const VALID_TRAINING_TABS: TrainingTab[] = [
   "pronunciation",
   "simulator",
   "flow",
-  "actions",
 ];
 
 type VapiInstance = {
@@ -57,47 +50,49 @@ type VapiInstance = {
 };
 
 interface AgentTrainingProps {
-  /** When rendered inside the chat drawer, receive the agent ID directly —
-   *  skip the agent picker and page-level chrome. */
-  embeddedAgentId?: string;
+  /** Always rendered inside an agent's chat workspace — receives the agent ID
+   *  directly and skips the page-level chrome (there is no standalone /train). */
+  embeddedAgentId: string;
+  /** The Training sub-tab to open on mount (driven by the ?sub= URL param the
+   *  parent workspace owns). */
+  initialSubTab?: string;
+  /** Notifies the parent workspace when the sub-tab changes so it can mirror it
+   *  into the URL as /chat/:id?tab=training&sub=<name>. */
+  onSubTabChange?: (sub: string) => void;
 }
 
-export default function AgentTraining({ embeddedAgentId }: AgentTrainingProps = {}) {
+export default function AgentTraining({
+  embeddedAgentId,
+  initialSubTab,
+  onSubTabChange,
+}: AgentTrainingProps) {
   const { error: toastError } = useToast();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const isEmbedded = Boolean(embeddedAgentId);
-  // Honour ?tab=<name> deep-links. Legacy /admin?tab=voices and
-  // /admin?tab=pronunciation now redirect here, so this is the canonical
-  // landing for those panels.
-  const initialTab: TrainingTab = (() => {
-    const qs = new URLSearchParams(location.search).get("tab") as TrainingTab;
-    return VALID_TRAINING_TABS.includes(qs) ? qs : "database";
-  })();
+  // The active sub-tab is seeded from the URL-driven prop and reported back up
+  // to the parent workspace, which owns the canonical URL. The training surface
+  // never navigates on its own (the old /train?tab= sync broke embedded mode).
+  const initialTab: TrainingTab = VALID_TRAINING_TABS.includes(initialSubTab as TrainingTab)
+    ? (initialSubTab as TrainingTab)
+    : "database";
   const [activeTab, setActiveTabState] = useState<TrainingTab>(initialTab);
 
-  // Keep URL in sync when the operator switches tabs — gives every tab a
-  // deep-linkable URL for sharing + browser back/forward.
   const setActiveTab = (next: TrainingTab) => {
     setActiveTabState(next);
-    const params = new URLSearchParams(location.search);
-    if (next === "database") params.delete("tab");
-    else params.set("tab", next);
-    // Preserve the agent param for per-agent deep-links from chat.
-    if (selectedAgentId && selectedAgentId !== "default-agent") {
-      params.set("agent", selectedAgentId);
-    }
-    const qs = params.toString();
-    navigate(qs ? `/train?${qs}` : "/train", { replace: true });
+    onSubTabChange?.(next);
   };
+
+  // Keep the local tab in sync if the parent changes the ?sub= param (e.g. a
+  // deep-link arrives while the panel is already mounted).
+  useEffect(() => {
+    if (VALID_TRAINING_TABS.includes(initialSubTab as TrainingTab)) {
+      setActiveTabState(initialSubTab as TrainingTab);
+    }
+  }, [initialSubTab]);
   const [simConnecting, setSimConnecting] = useState(false);
   const [simConnected, setSimConnected] = useState(false);
   const simVapiRef = useRef<VapiInstance | null>(null);
   const simMountedRef = useRef(true);
-  const [agents, setAgents] = useState<any[]>([]);
-  // Honour ?agent=<id> deep-links from the chat workspace train button.
-  const initialAgent = embeddedAgentId || new URLSearchParams(location.search).get("agent") || "default-agent";
-  const [selectedAgentId, setSelectedAgentId] = useState(initialAgent);
+  // Scoped to the agent whose chat workspace hosts this panel.
+  const selectedAgentId = embeddedAgentId;
 
   const [knowledge, setKnowledge] = useState<any[]>([]);
   const [directives, setDirectives] = useState<any[]>([]);
@@ -120,11 +115,6 @@ export default function AgentTraining({ embeddedAgentId }: AgentTrainingProps = 
 
   useEffect(() => {
     simMountedRef.current = true;
-    authFetch("/api/agents")
-      .then((res) => res.json())
-      .then((data) => {
-        setAgents(data.agents || []);
-      });
     fetchKnowledge();
     return () => {
       simMountedRef.current = false;
@@ -278,59 +268,10 @@ export default function AgentTraining({ embeddedAgentId }: AgentTrainingProps = 
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <header className={cn(
-        "shrink-0 px-3 md:px-4 py-2 sticky top-0 z-30 backdrop-blur-xl bg-paper/70 border-b border-white/8",
-        isEmbedded && "border-b-0"
-      )}>
-        {/* Page-level chrome: hub tabs + agent picker — hidden in embedded mode */}
-        {!isEmbedded && (
-          <>
-            <div className="max-w-[1400px] mx-auto w-full">
-              <HubTabs tabs={TRAINING_HUB} label="Training sub-navigation" className="mb-2 md:mb-2" />
-            </div>
-        {/* Page title removed per design direction — the left nav
-            already says "Training". The agent picker stays. */}
-        <div className="flex flex-col lg:flex-row justify-end items-start lg:items-center gap-2 max-w-[1400px] mx-auto w-full">
-          <div className="flex items-center gap-2 w-full lg:w-auto">
-            <Users className="w-3.5 h-3.5 text-brand shrink-0" />
-            <span className="text-[10px] uppercase tracking-[0.14em] text-muted/70 hidden sm:inline">
-              Agent
-            </span>
-            <div className="relative flex-1 lg:flex-none lg:min-w-[260px]">
-              <select
-                aria-label="Select agent"
-                value={selectedAgentId}
-                onChange={(e) => setSelectedAgentId(e.target.value)}
-                className="w-full text-sm bg-black/5 border border-black/10 rounded-lg pl-3 pr-8 py-2 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
-              >
-                <option value="default-agent">Training for: all agents (shared)</option>
-                {agents.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none" />
-            </div>
-            {/* Coaching moved to the main Chat surface — Training is now pure
-                configuration. Deep-link to the selected agent's chat so the
-                operator can converse without losing their place. */}
-            <button
-              type="button"
-              onClick={() =>
-                navigate(selectedAgentId !== "default-agent" ? `/chat/${selectedAgentId}` : "/chat")
-              }
-              className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg glass border border-white/10 text-[11px] text-ink hover:border-brand/40 hover:text-brand transition-colors"
-              title="Coaching lives in Chat now — direct this agent in plain language"
-            >
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Coach in Chat</span>
-            </button>
-          </div>
-        </div>
-
-        {/* AI assists — collapsed by default to declutter; expand to see recipe shortcuts */}
-        <details className="max-w-[1400px] mx-auto w-full mt-2 group">
+      <header className="shrink-0 px-3 md:px-4 py-2 sticky top-0 z-30 backdrop-blur-xl bg-paper/70 border-b-0">
+        {/* AI assists — collapsed by default to declutter; expand to see recipe
+            shortcuts. Each is scoped to this agent. */}
+        <details className="max-w-[1400px] mx-auto w-full group">
           <summary className="cursor-pointer list-none flex items-center gap-2 px-3 py-1.5 rounded-xl glass border border-white/10 hover:border-brand/30 transition-colors">
             <div
               className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
@@ -346,49 +287,47 @@ export default function AgentTraining({ embeddedAgentId }: AgentTrainingProps = 
             <ClaudeRecipeButton
               variant="ghost"
               recipe="agent-review"
-              agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
+              agentId={selectedAgentId}
               label="Performance Review"
             />
             <ClaudeRecipeButton
               variant="ghost"
               recipe="persona-clone"
-              agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
+              agentId={selectedAgentId}
               label="Clone Persona"
             />
             <ClaudeRecipeButton
               variant="ghost"
               recipe="knowledge-from-url"
-              agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
+              agentId={selectedAgentId}
               label="Ingest URL"
             />
             <ClaudeRecipeButton
               variant="ghost"
               recipe="knowledge-from-document"
-              agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
+              agentId={selectedAgentId}
               label="Ingest PDF"
             />
             <ClaudeRecipeButton
               variant="ghost"
               recipe="objection-drill"
-              agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
+              agentId={selectedAgentId}
               label="Objection Drills"
             />
             <ClaudeRecipeButton
               variant="ghost"
               recipe="call-playbook"
-              agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
+              agentId={selectedAgentId}
               label="Call Playbook"
             />
             <ClaudeRecipeButton
               variant="ghost"
               recipe="brief"
-              agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
+              agentId={selectedAgentId}
               label="Pre-Call Brief"
             />
           </div>
         </details>
-          </>
-        )}
 
         <nav
           role="tablist"
@@ -426,12 +365,6 @@ export default function AgentTraining({ embeddedAgentId }: AgentTrainingProps = 
               icon: Workflow,
               help: "Define linear conversation stages and transitions (advanced — most agents work great without this).",
             },
-            {
-              id: "actions",
-              label: "Capabilities",
-              icon: Blocks,
-              help: "Control the actions and connected integrations this agent is allowed to use during live calls.",
-            },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -460,21 +393,6 @@ export default function AgentTraining({ embeddedAgentId }: AgentTrainingProps = 
 
       <main className="flex-1 min-h-0 relative">
         <AnimatePresence mode="wait">
-          {activeTab === "actions" && (
-            <motion.div
-              key="actions"
-              role="tabpanel"
-              id="training-panel-actions"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute inset-0 overflow-y-auto"
-            >
-              <AgentActionEngine agentId={selectedAgentId} />
-            </motion.div>
-          )}
-
           {activeTab === "database" && (
             <motion.div
               key="database"

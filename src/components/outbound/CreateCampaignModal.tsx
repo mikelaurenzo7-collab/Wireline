@@ -95,7 +95,7 @@ export default function CreateCampaignModal({
           </button>
         </header>
 
-        <div className="p-5 space-y-4 overflow-y-auto max-h-[70vh] scrollbar-hide">
+        <div className="p-5 space-y-4 overflow-y-auto max-h-[70dvh] scrollbar-hide">
           <div className="space-y-1.5">
             <label className="app-section-title">Campaign Name</label>
             <input

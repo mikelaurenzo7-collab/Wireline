@@ -140,7 +140,7 @@ export function SupportPage() {
             </p>
           </a>
           <Link
-            to="/train"
+            to="/chat"
             className="marketing-panel p-4 min-h-[88px] hover:border-brand/30 hover:shadow-[0_8px_24px_-16px_rgba(79,30,123,0.25)] transition-all group"
           >
             <div className="w-9 h-9 rounded-lg bg-brand/10 flex items-center justify-center mb-3">

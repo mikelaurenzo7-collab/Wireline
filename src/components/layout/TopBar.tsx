@@ -22,7 +22,7 @@ import { useBranding } from "../../contexts/BrandingContext";
 
 interface Props {
   onShowShortcuts: () => void;
-  /** Controlled by AppShell so BottomNavBar's "More" can also open it. */
+  /** Controlled by AppShell so the left-edge swipe gesture can also open it. */
   drawerOpen: boolean;
   onDrawerChange: (open: boolean) => void;
   /** Badge counts shared from AppShell (single polling source). */
@@ -258,9 +258,9 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
             </AnimatePresence>
           </div>
 
-          {/* Tablet (md → lg-1): keep the legacy horizontal nav strip so
-              users with hamburger viewports still see groups inline. Hidden
-              on mobile (BottomNavBar takes over) and on lg+ (Sidebar does). */}
+          {/* Tablet (md → lg-1): horizontal nav strip so users with hamburger
+              viewports still see groups inline. Hidden on phone (drawer carries
+              nav) and on lg+ (Sidebar does). */}
           <nav className="hidden md:flex lg:hidden items-center gap-0.5 ml-3 min-w-0 flex-1 overflow-x-auto scrollbar-hide">
             {NAV_GROUPS.map((group, gIdx) => {
               const visibleItems = group.items.filter(

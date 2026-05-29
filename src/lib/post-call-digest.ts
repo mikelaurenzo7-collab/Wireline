@@ -275,7 +275,7 @@ function nextActionFromOutcome(tag: string): string {
     case "unreachable":
       return "Retry queued. Voicemail dropped if enabled.";
     case "info":
-      return "Knowledge gap captured — review and add to your agent's playbook at /train.";
+      return "Knowledge gap captured — review and add it from your agent's Training tab in Chat.";
     default:
       return "Review the full transcript at /logs and label the outcome if you want this in funnel reporting.";
   }
