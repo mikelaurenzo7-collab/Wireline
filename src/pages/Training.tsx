@@ -76,8 +76,14 @@ export default function Training() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center max-w-sm space-y-4 px-4">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-brand/8 flex items-center justify-center">
-            <GraduationCap className="w-8 h-8 text-brand/60" />
+          <div className="relative w-16 h-16 mx-auto">
+            <span
+              aria-hidden="true"
+              className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
+            />
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-lg shadow-brand/25 flex items-center justify-center">
+              <GraduationCap className="w-8 h-8" />
+            </div>
           </div>
           <h2 className="text-lg font-semibold text-foreground">No agents to train</h2>
           <p className="text-sm text-muted leading-relaxed">
