@@ -6,6 +6,7 @@
  * any[] until those contracts land. */
 import { useState, useEffect, useRef } from "react";
 import { Shield, LayoutGrid } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { cn } from "../lib/utils";
 import { authFetch, safeJson } from "../lib/api";
 import { AGENTS_CHANGED_EVENT } from "../contexts/AgentsContext";
@@ -40,9 +41,10 @@ export { PREMIUM_VOICES, DEFAULT_VOICE_BY_GENDER, AGENT_ROLES };
 
 export default function FleetSettings() {
   const { success: toastSuccess, error: toastError, warning: toastWarning } = useToast();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"templates" | "fleet">("templates");
   const [agents, setAgents] = useState<any[]>([]);
-  const [subscription, setSubscription] = useState<{ status: string; max_agents: number }>({
+  const [subscription, setSubscription] = useState<{ status: string; max_agents: number | null }>({
     status: "active",
     max_agents: 3,
   });
@@ -119,9 +121,10 @@ export default function FleetSettings() {
 
       setAgents(agentsRes.agents || []);
       if (settingsRes) {
+        const settings = settingsRes.settings || settingsRes;
         setSubscription({
-          status: settingsRes.subscription_status || "active",
-          max_agents: settingsRes.max_agents || 3,
+          status: settings.subscription_status || "active",
+          max_agents: settings.max_agents ?? null,
         });
       }
 
@@ -188,7 +191,7 @@ export default function FleetSettings() {
       return;
     }
 
-    if (agents.length >= subscription.max_agents) {
+    if (subscription.max_agents !== null && agents.length >= subscription.max_agents) {
       toastWarning(
         "Fleet capacity reached",
         `${subscription.max_agents} agents maximum on current plan.`,
@@ -229,6 +232,7 @@ export default function FleetSettings() {
       setNewAgentId("");
       toastSuccess("Agent deployed", agentName);
       await fetchAgents();
+      navigate(`/chat/${encodeURIComponent(agentId)}`);
     } catch {
       toastError("Deployment failed", "Could not reach the server. Please try again.");
     }

@@ -28,6 +28,8 @@ import { enforceTrialAgentCap } from "../lib/trial-gate";
 import { SentryEvents } from "../lib/sentry-events";
 import { normalizeEnabledTools } from "../lib/agent-capabilities";
 import { claudeErr } from "../lib/claude-response-helpers";
+import { isOwnerEmail } from "../lib/auth-service";
+import { agentCapHit, resolveAgentEntitlement } from "../lib/agent-entitlements";
 
 const router = Router();
 
@@ -743,16 +745,21 @@ router.post(
         .limit(1);
 
       // Gating mechanism: Prevent agent creation if the account is unpaid
-      const subscriptionStatus = userSettings?.subscriptionStatus || "active";
+      const entitlement = resolveAgentEntitlement({
+        isOwner: isOwnerEmail(req.user.email),
+        subscriptionStatus: userSettings?.subscriptionStatus,
+        maxAgents: userSettings?.maxAgents,
+        extraAgents: userSettings?.extraAgents,
+      });
+      const subscriptionStatus = entitlement.subscriptionStatus;
       if (subscriptionStatus !== "active") {
         return res.status(403).json({ error: "Access Denied: Please upgrade your billing plan." });
       }
 
       // Agent Limit Check — includes purchased extras.
       // Effective cap = plan.max_agents + extra_agents (paid line items).
-      const planAgents = userSettings?.maxAgents || 3;
-      const purchasedExtras = userSettings?.extraAgents || 0;
-      const effectiveCap = planAgents + purchasedExtras;
+      const planAgents = entitlement.planAgents ?? 0;
+      const purchasedExtras = entitlement.purchasedExtras;
       const [{ count }] = await drizzle
         .select({ count: sql`count(*)` })
         .from(schema.agents)
@@ -760,7 +767,7 @@ router.post(
 
       const agentCount = Number(count);
 
-      if (agentCount >= effectiveCap) {
+      if (agentCapHit(agentCount, entitlement)) {
         return res.status(403).json({
           error: `Quota Exceeded: Your plan covers ${planAgents} agents${
             purchasedExtras > 0 ? ` + ${purchasedExtras} purchased extras` : ""

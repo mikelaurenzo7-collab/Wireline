@@ -13,7 +13,7 @@ import { ClaudeRecipeButton } from "../ClaudeRecipes";
 interface Props {
   isCreating: boolean;
   agents: any[];
-  subscription: { status: string; max_agents: number };
+  subscription: { status: string; max_agents: number | null };
   onCreate: (data: { id: string; name: string; channel: string; role: RoleValue }) => void;
   onSeedFleet: () => void;
 }

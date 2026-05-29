@@ -602,7 +602,11 @@ export default function AgentTemplates() {
       setDeploying(null);
       await refetchAgents();
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
-      navigate("/agents");
+      const createdId =
+        typeof data === "object" && data && "id" in data && typeof data.id === "string"
+          ? data.id
+          : uniqueId;
+      navigate(`/chat/${encodeURIComponent(createdId)}`);
     } catch {
       toastError("Deployment failed", "Could not reach the server. Please try again.");
       setDeploying(null);

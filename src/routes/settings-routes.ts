@@ -6,7 +6,8 @@ import { settings, userPreferences, agents, callLogs, deletionQueue } from "../d
 import * as schema from "../db/schema";
 import { eq, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
-import { getErrorMessage, mapObjectToCamel } from "../lib/server-utils";
+import { getErrorMessage, mapObjectToCamel, mapObjectToSnake } from "../lib/server-utils";
+import { isOwnerEmail } from "../lib/auth-service";
 import { enqueue } from "../lib/job-queue";
 import { jobsRateLimit, userPreferencesRateLimit } from "../middleware/api-rate-limits";
 import { ACCOUNT_DELETION_GRACE_DAYS, computeScheduledPurgeAt } from "../lib/account-deletion";
@@ -27,12 +28,19 @@ router.get("/api/settings", authenticateUser, async (req: AuthenticatedRequest, 
     // The raw key is never needed by the browser; only server-side code
     // uses it (and reads from process.env.VAPI_PRIVATE_KEY, not this column).
     const safe = data ? { ...data } : ({} as any);
+    if (isOwnerEmail(req.user.email)) {
+      safe.subscriptionStatus = "active";
+      safe.maxAgents = null;
+      safe.extraAgents = 0;
+      safe.founderUnlimitedAgents = true;
+    }
     if ("vapiPrivateKey" in safe) {
       safe.has_vapi_key = !!safe.vapiPrivateKey;
       delete safe.vapiPrivateKey;
     }
 
-    res.json({ settings: safe });
+    const snakeSafe = mapObjectToSnake(safe);
+    res.json({ ...snakeSafe, settings: snakeSafe });
   } catch (error) {
     log.error("Failed to fetch settings", { error: getErrorMessage(error) });
     res.json({ settings: {} });
