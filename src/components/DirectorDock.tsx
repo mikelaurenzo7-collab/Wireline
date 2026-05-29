@@ -32,8 +32,8 @@ import {
   RefreshCw,
   ArrowUpRight,
 } from "lucide-react";
-import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
+import { relativeTime, sentimentTone } from "../lib/call-format";
 import type { DirectorOverview } from "./DirectorWorkspace";
 
 // Quick-pull launchers — every operational surface the operator might want to
@@ -53,62 +53,38 @@ const QUICK_PULLS: ReadonlyArray<{
   { icon: Headphones, label: "Cockpit", to: "/cockpit" },
 ];
 
-function sentimentTone(sentiment: string | null): string {
-  const s = (sentiment || "").toLowerCase();
-  if (s.includes("pos")) return "bg-emerald-500";
-  if (s.includes("neg")) return "bg-rose-500";
-  return "bg-amber-400";
+interface DirectorDockProps {
+  /** Account overview, owned by the parent (AgentChat) and shared with the
+   *  Director workspace so the dock never fetches it a second time. */
+  overview: DirectorOverview | null;
+  loading: boolean;
+  /** Re-fetch the shared overview (refresh button + focus/interval). */
+  onRefresh: () => void | Promise<void>;
 }
 
-function relativeTime(iso: string | null): string {
-  if (!iso) return "";
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return "";
-  const diff = Date.now() - then;
-  const mins = Math.round(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.round(hrs / 24);
-  return `${days}d ago`;
-}
-
-export default function DirectorDock() {
+export default function DirectorDock({ overview, loading, onRefresh }: DirectorDockProps) {
   const navigate = useNavigate();
-  const [overview, setOverview] = useState<DirectorOverview | null>(null);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const load = useCallback(async (mode: "initial" | "refresh") => {
-    if (mode === "refresh") setRefreshing(true);
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
     try {
-      const r = await authFetch("/api/director/overview");
-      if (!r.ok) throw new Error("overview failed");
-      const data = (await r.json()) as DirectorOverview;
-      setOverview(data);
-    } catch {
-      // Non-critical — keep the last good snapshot.
+      await onRefresh();
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
-  }, []);
-
-  useEffect(() => {
-    load("initial");
-  }, [load]);
+  }, [onRefresh]);
 
   // Light refresh: on tab focus + a slow interval, like AgentDock.
   useEffect(() => {
-    const onFocus = () => load("refresh");
+    const onFocus = () => void refresh();
     window.addEventListener("focus", onFocus);
-    const t = window.setInterval(() => load("refresh"), 90_000);
+    const t = window.setInterval(() => void refresh(), 90_000);
     return () => {
       window.removeEventListener("focus", onFocus);
       window.clearInterval(t);
     };
-  }, [load]);
+  }, [refresh]);
 
   const stats = overview?.stats;
   const fleetCount = overview?.fleet.length ?? 0;
@@ -133,7 +109,7 @@ export default function DirectorDock() {
           </div>
         </div>
         <button
-          onClick={() => load("refresh")}
+          onClick={() => void refresh()}
           className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors"
           title="Refresh"
           aria-label="Refresh dock"

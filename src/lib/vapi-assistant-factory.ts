@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, or, isNull, desc, ilike, sql, notInArray } from "drizzle-orm";
+import { agentOrSharedKnowledge } from "./knowledge-scope";
+import { eq, and, desc, ilike, sql, notInArray } from "drizzle-orm";
 import {
   sanitizePhone,
   KNOWLEDGE_GAP_PREFIX,
@@ -84,22 +85,8 @@ export async function buildVapiAssistant({
     drizzle
       .select()
       .from(schema.knowledge)
-      // Agent-specific knowledge PLUS the operator's company-wide shared
-      // knowledge (agent_id IS NULL), so facts the Director adds once flow to
-      // every agent on live calls. Correlated subquery keeps this one query
-      // (the agent row loads concurrently, so its user_id isn't in scope yet).
-      .where(
-        or(
-          eq(schema.knowledge.agentId, webhookAgentId),
-          and(
-            isNull(schema.knowledge.agentId),
-            eq(
-              schema.knowledge.userId,
-              sql`(SELECT user_id FROM wireline_agents WHERE id = ${webhookAgentId})`,
-            ),
-          ),
-        ),
-      )
+      // Agent-specific + the operator's company-wide shared knowledge.
+      .where(agentOrSharedKnowledge(webhookAgentId))
       .orderBy(desc(schema.knowledge.createdAt))
       .limit(MAX_RUNTIME_KNOWLEDGE),
     drizzle

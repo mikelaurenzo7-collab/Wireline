@@ -15,6 +15,18 @@ export function getErrorMessage(error: unknown): string {
 }
 
 /**
+ * Normalize an untrusted value into a trimmed, length-capped string — or null
+ * if it isn't a non-empty string. Shared by the LLM planners (director +
+ * workspace) to sanitize model-produced tool output before it's used.
+ */
+export function clampString(value: unknown, maxLen: number): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return trimmed.slice(0, maxLen);
+}
+
+/**
  * Recursively redact sensitive fields from an arbitrary object before
  * persisting to the audit log. The audit trail is queryable by
  * non-engineers, so credentials must never reach it.

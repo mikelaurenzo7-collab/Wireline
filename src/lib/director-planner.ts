@@ -19,6 +19,7 @@
  */
 import { runStructured, type ToolSchema } from "./claude-structured";
 import { CLAUDE_MODELS } from "./claude-models";
+import { clampString } from "./server-utils";
 
 /** Lightweight navigation suggestions the Director can surface as chips. */
 export const DIRECTOR_SUGGESTION_KINDS = [
@@ -252,13 +253,6 @@ interface RawDirectorReply {
   reply?: unknown;
   suggestions?: unknown;
   delegations?: unknown;
-}
-
-function clampString(value: unknown, maxLen: number): string | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  return trimmed.slice(0, maxLen);
 }
 
 /**

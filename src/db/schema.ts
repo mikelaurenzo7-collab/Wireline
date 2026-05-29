@@ -552,6 +552,9 @@ export const directorConversationMessages = pgTable(
 );
 
 // Director profile — the account-level "business brief" the Director carries.
+// Also lazily ensured (CREATE TABLE IF NOT EXISTS) in routes/director-routes.ts
+// so the Director works on a fresh deploy before this migration runs — keep the
+// columns here, the lazy DDL there, and the Supabase migration in lockstep.
 //
 // This is the Director's equivalent of an agent's Training inputs: instead of
 // per-agent knowledge/voice/flow, it stores the operator's business context so

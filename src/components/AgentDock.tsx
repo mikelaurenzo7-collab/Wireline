@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
+import { relativeTime, sentimentTone } from "../lib/call-format";
 import { AGENT_TOOL_CATALOG, type AgentToolCatalogEntry } from "../lib/agent-capabilities";
 
 interface Pulse {
@@ -123,27 +124,6 @@ const GROUP_ORDER: ReadonlyArray<AgentToolCatalogEntry["group"]> = [
   "team",
   "ecommerce",
 ];
-
-function sentimentTone(sentiment: string | null): string {
-  const s = (sentiment || "").toLowerCase();
-  if (s.includes("pos")) return "bg-emerald-500";
-  if (s.includes("neg")) return "bg-rose-500";
-  return "bg-amber-400";
-}
-
-function relativeTime(iso: string | null): string {
-  if (!iso) return "";
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return "";
-  const diff = Date.now() - then;
-  const mins = Math.round(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.round(hrs / 24);
-  return `${days}d ago`;
-}
 
 export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }: AgentDockProps) {
   const [overview, setOverview] = useState<OverviewResponse | null>(null);

@@ -168,7 +168,21 @@ function isDirectorTab(v: string | null): v is DirectorTab {
   return v === "chat" || v === "training" || v === "connectors" || v === "memory";
 }
 
-export default function DirectorWorkspace() {
+interface DirectorWorkspaceProps {
+  /** Account overview, fetched once by the parent and shared with the dock so
+   *  the Director never double-fetches /api/director/overview. */
+  overview: DirectorOverview | null;
+  overviewLoading: boolean;
+  /** Lets the workspace reflect local mutations (brief save, thread clear)
+   *  back into the shared overview without a refetch. */
+  onOverviewChange: React.Dispatch<React.SetStateAction<DirectorOverview | null>>;
+}
+
+export default function DirectorWorkspace({
+  overview,
+  overviewLoading,
+  onOverviewChange: setOverview,
+}: DirectorWorkspaceProps) {
   const navigate = useNavigate();
   const { agents } = useAgents();
   const { error: toastError, success: toastSuccess } = useToast();
@@ -199,10 +213,6 @@ export default function DirectorWorkspace() {
     [setSearchParams],
   );
 
-  // Overview (fleet + stats + connectors + brief) hydrates the non-chat tabs.
-  const [overview, setOverview] = useState<DirectorOverview | null>(null);
-  const [overviewLoading, setOverviewLoading] = useState(false);
-
   const loadMessages = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -217,24 +227,9 @@ export default function DirectorWorkspace() {
     }
   }, [toastError]);
 
-  const loadOverview = useCallback(async () => {
-    setOverviewLoading(true);
-    try {
-      const r = await authFetch("/api/director/overview");
-      if (!r.ok) throw new Error("Failed to load overview");
-      const data = (await r.json()) as DirectorOverview;
-      setOverview(data);
-    } catch {
-      // Non-fatal — the tabs render an inline retry instead of a toast storm.
-    } finally {
-      setOverviewLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
     loadMessages();
-    loadOverview();
-  }, [loadMessages, loadOverview]);
+  }, [loadMessages]);
 
   useEffect(() => {
     if (activeTab === "chat" && scrollRef.current) {
@@ -349,7 +344,7 @@ export default function DirectorWorkspace() {
     } catch {
       toastError("Couldn't clear thread");
     }
-  }, [toastError, toastSuccess]);
+  }, [toastError, toastSuccess, setOverview]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {

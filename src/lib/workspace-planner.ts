@@ -20,6 +20,7 @@
  */
 import { runStructured, type ToolSchema } from "./claude-structured";
 import { CLAUDE_MODELS } from "./claude-models";
+import { clampString } from "./server-utils";
 import {
   AGENT_TOOL_CATALOG,
   AGENT_TOOL_NAME_VALUES,
@@ -316,13 +317,6 @@ interface RawDirectAgent {
   config_changes?: unknown;
   tool_toggles?: unknown;
   actions?: unknown;
-}
-
-function clampString(value: unknown, maxLen: number): string | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  return trimmed.slice(0, maxLen);
 }
 
 function validateFieldValue(field: WorkspaceFieldKey, raw: unknown): string | null {

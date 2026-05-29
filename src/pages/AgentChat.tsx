@@ -12,16 +12,17 @@
  * mission-control dock (agents only). On smaller screens the rail collapses to
  * a horizontal switcher and the dock opens as a slide-over.
  */
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { Plus, LayoutDashboard, X, Compass } from "lucide-react";
 import AgentWorkspace from "../components/AgentWorkspace";
 import AgentDock from "../components/AgentDock";
 import DirectorDock from "../components/DirectorDock";
-import DirectorWorkspace from "../components/DirectorWorkspace";
+import DirectorWorkspace, { type DirectorOverview } from "../components/DirectorWorkspace";
 import { useAgents } from "../contexts/AgentsContext";
 import { useVisualViewportVar } from "../lib/use-visual-viewport";
+import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 
 const DIRECTOR_ID = "director";
@@ -63,6 +64,28 @@ export default function AgentChat() {
   const isDirector = !id || id === DIRECTOR_ID;
   const selected = isDirector ? undefined : agents.find((a) => a.id === id);
 
+  // The Director's account overview is fetched ONCE here and shared with both
+  // the DirectorWorkspace (tabs) and the DirectorDock (desktop + mobile) — they
+  // used to each fetch /api/director/overview, tripling the round-trips.
+  const showDirectorSurface = isDirector || !selected;
+  const [directorOverview, setDirectorOverview] = useState<DirectorOverview | null>(null);
+  const [directorOverviewLoading, setDirectorOverviewLoading] = useState(false);
+  const loadDirectorOverview = useCallback(async () => {
+    setDirectorOverviewLoading(true);
+    try {
+      const r = await authFetch("/api/director/overview");
+      if (!r.ok) throw new Error("overview failed");
+      setDirectorOverview((await r.json()) as DirectorOverview);
+    } catch {
+      // Non-fatal — surfaces fall back to their inline empty/loading states.
+    } finally {
+      setDirectorOverviewLoading(false);
+    }
+  }, []);
+  useEffect(() => {
+    if (!loading && showDirectorSurface) loadDirectorOverview();
+  }, [loading, showDirectorSurface, loadDirectorOverview]);
+
   useEffect(() => {
     if (loading || isDirector) return;
     // Unknown / no-longer-owned agent id → fall back to the Director rather
@@ -102,7 +125,11 @@ export default function AgentChat() {
   // gets its own agent-scoped dock. Rendered into both the desktop aside and
   // the mobile slide-over below.
   const dock = showDirector ? (
-    <DirectorDock />
+    <DirectorDock
+      overview={directorOverview}
+      loading={directorOverviewLoading}
+      onRefresh={loadDirectorOverview}
+    />
   ) : activeAgent ? (
     <AgentDock
       key={activeAgent.id}
@@ -219,7 +246,11 @@ export default function AgentChat() {
         className="flex-1 min-w-0 min-h-0 rounded-2xl border border-black/8 glass overflow-hidden"
       >
         {showDirector ? (
-          <DirectorWorkspace />
+          <DirectorWorkspace
+            overview={directorOverview}
+            overviewLoading={directorOverviewLoading}
+            onOverviewChange={setDirectorOverview}
+          />
         ) : (
           <AgentWorkspace
             agentId={activeAgent!.id}
