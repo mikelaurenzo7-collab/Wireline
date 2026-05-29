@@ -69,9 +69,11 @@ export const ONBOARDING_ERROR_MESSAGES: Record<string, string> = {
     "We had trouble reading your website. Check that the URL is correct and starts with https://, then try again. If it still doesn't work, you can skip this and add details later.",
   PHONE_PROVISION_FAILED:
     "We're temporarily out of phone numbers in your area. Try a different area code, or skip this step and add a number later — your agent will work with a browser test call.",
-  INVALID_URL: "That doesn't look like a valid website URL. It should start with https:// like https://yourbusiness.com",
+  INVALID_URL:
+    "That doesn't look like a valid website URL. It should start with https:// like https://yourbusiness.com",
   NETWORK_ERROR: "Connection trouble — check your internet and try again.",
-  UNKNOWN_ERROR: "Something unexpected happened. Our team has been notified. Try refreshing the page.",
+  UNKNOWN_ERROR:
+    "Something unexpected happened. Our team has been notified. Try refreshing the page.",
 };
 
 function getHumanReadableError(error: unknown, context: string): string {
@@ -87,7 +89,11 @@ function getHumanReadableError(error: unknown, context: string): string {
   if (message.includes("agent") || message.includes("create")) {
     return ONBOARDING_ERROR_MESSAGES.AGENT_CREATE_FAILED;
   }
-  if (message.includes("network") || message.includes("fetch") || message.includes("ECONNREFUSED")) {
+  if (
+    message.includes("network") ||
+    message.includes("fetch") ||
+    message.includes("ECONNREFUSED")
+  ) {
     return ONBOARDING_ERROR_MESSAGES.NETWORK_ERROR;
   }
 
@@ -154,8 +160,8 @@ export default function FastStartWizard({
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [selectedVoiceId, setSelectedVoiceId] = useState<string>(DEFAULT_VOICE_BY_GENDER.neutral);
   const [areaCode, setAreaCode] = useState("");
-  const [generatedAgent, setGeneratedAgent] = useState<{ id: string; name: string } | null>(null);
-  const [provisionedNumber, setProvisionedNumber] = useState<string | null>(null);
+  const [_generatedAgent, setGeneratedAgent] = useState<{ id: string; name: string } | null>(null);
+  const [_provisionedNumber, setProvisionedNumber] = useState<string | null>(null);
 
   const { success: toastSuccess, error: toastError } = useToast();
   const modalRef = useRef<HTMLDivElement>(null);
@@ -286,7 +292,7 @@ export default function FastStartWizard({
           }
         } catch (knowledgeError) {
           // Knowledge failure is non-blocking
-          console.warn("Knowledge fetch failed:", knowledgeError);
+          console.error("Knowledge fetch failed:", knowledgeError);
         }
       }
 
@@ -310,7 +316,7 @@ export default function FastStartWizard({
           }
         } catch (phoneError) {
           // Phone failure is non-blocking
-          console.warn("Phone provision failed:", phoneError);
+          console.error("Phone provision failed:", phoneError);
         }
       }
 
@@ -322,7 +328,10 @@ export default function FastStartWizard({
         timeToCompleteMs: Date.now() - startTime,
       };
 
-      toastSuccess("Agent live! 🎉", `Your AI receptionist is ready in ${Math.round(result.timeToCompleteMs / 1000)} seconds.`);
+      toastSuccess(
+        "Agent live! 🎉",
+        `Your AI receptionist is ready in ${Math.round(result.timeToCompleteMs / 1000)} seconds.`,
+      );
 
       onComplete(result);
       onClose();
@@ -499,7 +508,9 @@ export default function FastStartWizard({
 
                 {currentStep.id === "voice" && (
                   <div className="space-y-3">
-                    <p className="text-xs text-muted mb-3">Choose the voice your callers will hear:</p>
+                    <p className="text-xs text-muted mb-3">
+                      Choose the voice your callers will hear:
+                    </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {PREMIUM_VOICES.slice(0, 4).map((voice) => (
                         <button
@@ -542,9 +553,9 @@ export default function FastStartWizard({
                     </label>
                     <div className="p-4 rounded-xl bg-brand/5 border border-brand/20">
                       <p className="text-xs text-ink/80">
-                        <strong>Don't worry if we can't get this exact area code.</strong> You'll get a
-                        working number regardless, and you can always port in your existing business
-                        line later.
+                        <strong>Don't worry if we can't get this exact area code.</strong> You'll
+                        get a working number regardless, and you can always port in your existing
+                        business line later.
                       </p>
                     </div>
                   </div>
@@ -581,7 +592,9 @@ export default function FastStartWizard({
                         <div>
                           <p className="text-xs text-muted">Phone</p>
                           <p className="text-sm text-ink">
-                            {areaCode ? `Area code ${areaCode}` : "Browser test only — add number later"}
+                            {areaCode
+                              ? `Area code ${areaCode}`
+                              : "Browser test only — add number later"}
                           </p>
                         </div>
                       </div>

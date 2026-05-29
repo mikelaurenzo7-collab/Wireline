@@ -12,7 +12,7 @@
  */
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, gte, sql, desc } from "drizzle-orm";
+import { eq, and, gte, desc } from "drizzle-orm";
 import { dispatchWebhook } from "./webhook-helpers";
 
 export interface VoiceMetricsPayload {
@@ -114,7 +114,10 @@ export async function computeVoiceHealthWindow(opts: {
     };
   }
 
-  const ttfts = rows.map((r) => r.ttftMs).filter((v): v is number => v != null).sort((a, b) => a - b);
+  const ttfts = rows
+    .map((r) => r.ttftMs)
+    .filter((v): v is number => v != null)
+    .sort((a, b) => a - b);
   const ttftP50 = percentile(ttfts, 0.5);
   const ttftP95 = percentile(ttfts, 0.95);
 
@@ -206,10 +209,7 @@ export async function getLatencyTrends(opts: {
     .orderBy(desc(schema.callLogs.createdAt));
 
   // Bucket by date (YYYY-MM-DD)
-  const byDate = new Map<
-    string,
-    { ttfts: number[]; errors: number; total: number }
-  >();
+  const byDate = new Map<string, { ttfts: number[]; errors: number; total: number }>();
 
   for (const r of rows) {
     const dateKey = r.createdAt.toISOString().slice(0, 10);
@@ -226,7 +226,9 @@ export async function getLatencyTrends(opts: {
     const sorted = b.ttfts.sort((a, b) => a - b);
     return {
       date: d,
-      avgTtftMs: sorted.length ? Math.round(sorted.reduce((a, b) => a + b, 0) / sorted.length) : null,
+      avgTtftMs: sorted.length
+        ? Math.round(sorted.reduce((a, b) => a + b, 0) / sorted.length)
+        : null,
       p95TtftMs: percentile(sorted, 0.95),
       errorRate: b.total ? Math.round((b.errors / b.total) * 10000) / 100 : 0,
     };

@@ -38,7 +38,8 @@ export const ONBOARDING_ERRORS = {
 
   AGENT_NAME_TAKEN: {
     title: "That name is already in use",
-    message: "You have another agent with a similar name. Try something more specific to this agent's job.",
+    message:
+      "You have another agent with a similar name. Try something more specific to this agent's job.",
     action: "Change the name",
     severity: "info" as const,
     canRetry: true,
@@ -59,7 +60,8 @@ export const ONBOARDING_ERRORS = {
 
   WEBSITE_UNREACHABLE: {
     title: "That website isn't responding",
-    message: "We couldn't reach the URL you provided. Check for typos and make sure it starts with https://",
+    message:
+      "We couldn't reach the URL you provided. Check for typos and make sure it starts with https://",
     action: "Check URL and retry",
     secondaryAction: "Skip for now",
     severity: "warning" as const,
@@ -113,7 +115,8 @@ export const ONBOARDING_ERRORS = {
   // Voice/test call errors
   VOICE_PREVIEW_FAILED: {
     title: "Couldn't play voice preview",
-    message: "There was a problem loading the voice sample. This is usually temporary — try another voice or continue with your selection.",
+    message:
+      "There was a problem loading the voice sample. This is usually temporary — try another voice or continue with your selection.",
     action: "Try another voice",
     severity: "info" as const,
     canRetry: true,
@@ -152,7 +155,8 @@ export const ONBOARDING_ERRORS = {
 
   REQUIRED_FIELD_MISSING: {
     title: "Please fill this out",
-    message: "This information is needed to set up your agent. If you're not sure, just give us your best guess — you can always change it later.",
+    message:
+      "This information is needed to set up your agent. If you're not sure, just give us your best guess — you can always change it later.",
     action: "Add the missing info",
     severity: "info" as const,
     canRetry: true,
@@ -192,7 +196,8 @@ export const ONBOARDING_ERRORS = {
   // Subscription/billing errors
   TRIAL_EXPIRED: {
     title: "Your trial has ended",
-    message: "To keep your agent running, you'll need to upgrade to a paid plan. It takes about a minute.",
+    message:
+      "To keep your agent running, you'll need to upgrade to a paid plan. It takes about a minute.",
     action: "Upgrade now",
     severity: "info" as const,
     canRetry: false,
@@ -201,7 +206,8 @@ export const ONBOARDING_ERRORS = {
 
   PAYMENT_REQUIRED: {
     title: "Payment needed to continue",
-    message: "We need a payment method on file before you can provision a phone number. This is just how phone carriers work.",
+    message:
+      "We need a payment method on file before you can provision a phone number. This is just how phone carriers work.",
     action: "Add payment method",
     severity: "info" as const,
     canRetry: false,
@@ -222,7 +228,8 @@ export function mapErrorToFriendly(
   context: keyof typeof ONBOARDING_ERRORS = "UNKNOWN_ERROR",
 ): FriendlyError {
   const message = error instanceof Error ? error.message : String(error);
-  const statusCode = (error as any)?.statusCode || (error as any)?.status;
+  const err = error as Record<string, unknown>;
+  const statusCode = (err?.statusCode as number | undefined) ?? (err?.status as number | undefined);
 
   // HTTP status code mapping
   if (statusCode === 401 || statusCode === 403) {
@@ -320,12 +327,15 @@ export function logOnboardingError(
 
   // Log to console in development
   if (process.env.NODE_ENV === "development") {
-    console.log("[Onboarding Error]", payload);
+    console.error("[Onboarding Error]", payload);
   }
 
   // Send to analytics if available
-  if (typeof window !== "undefined" && (window as any).plausible) {
-    (window as any).plausible("OnboardingError", {
+  type PlausibleFn = (event: string, opts?: { props?: Record<string, string> }) => void;
+  type PlausibleWindow = Window & { plausible?: PlausibleFn };
+  const win = typeof window !== "undefined" ? (window as PlausibleWindow) : null;
+  if (win?.plausible) {
+    win.plausible("OnboardingError", {
       props: {
         step,
         error_type: friendlyError.title,

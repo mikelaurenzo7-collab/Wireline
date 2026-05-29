@@ -40,10 +40,10 @@ const h = vi.hoisted(() => {
   };
 
   const drizzle = {
-    select: vi.fn((shape?: Record<string, string>) => ({
+    select: vi.fn((_shape?: Record<string, string>) => ({
       from: vi.fn(() => ({
         where: vi.fn((cond: any) => ({
-          limit: vi.fn(async (n: number) => {
+          limit: vi.fn(async (_n: number) => {
             // Simulate lookup by vapiCallId
             if (cond?.left === schema.callLogs.vapiCallId) {
               const found = state.calls.find((c) => c.vapiCallId === cond.right);
@@ -118,8 +118,22 @@ async function buildApp() {
 describe("voice observability routes", () => {
   beforeEach(() => {
     h.state.calls = [
-      { id: 1n, vapiCallId: "call-abc", userId: "user-1", ttftMs: null, sttError: false, ttsError: false },
-      { id: 2n, vapiCallId: "call-def", userId: "user-1", ttftMs: null, sttError: false, ttsError: false },
+      {
+        id: 1n,
+        vapiCallId: "call-abc",
+        userId: "user-1",
+        ttftMs: null,
+        sttError: false,
+        ttsError: false,
+      },
+      {
+        id: 2n,
+        vapiCallId: "call-def",
+        userId: "user-1",
+        ttftMs: null,
+        sttError: false,
+        ttsError: false,
+      },
     ];
     vi.clearAllMocks();
   });
