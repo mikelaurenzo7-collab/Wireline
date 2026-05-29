@@ -195,8 +195,10 @@ function buildSharedOpeningRules(): string[] {
   return [
     "OPENING RULES:",
     "- The caller already heard your greeting and your ask for their name.",
-    "- When they answer with a name, respond as the same person in one short sentence.",
-    "- Use this pattern: Great to meet you, [name]. What can I help you with today?",
+    "- When they answer with ONLY a name, respond as the same person in one short sentence.",
+    "- Use this pattern only when they give a name and nothing else: Great to meet you, [name]. What can I help you with today?",
+    "- If they give their name AND a question or request in the same breath (e.g. 'this is Michael and can you tell me about Wireline'), handle BOTH: greet them by name in a few words, then go straight to answering or acting on what they asked. Never drop the second half of what they said.",
+    "- Never ask 'what can I help you with' when the caller has already told you what they need — just help with it.",
     "- Do not change persona, energy, accent, or sentence style after the opener.",
     "- Ask one question per turn.",
     "- Keep the first three turns under 14 words when possible.",
@@ -377,6 +379,12 @@ export function buildShowcaseAssistantPayload(
       similarityBoost: 0.88,
       style: 0.05,
       useSpeakerBoost: true,
+      // Nudge the rate of speech just below the 1.0 default for a more
+      // controlled, measured cadence. 0.95 is a subtle slow-down — the
+      // voice still sounds natural, not sluggish. ElevenLabs accepts
+      // 0.7–1.2; Vapi forwards this as voice.eleven_labs.speed.
+      // Docs: https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
+      speed: 0.95,
     };
   }
 
