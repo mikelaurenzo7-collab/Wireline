@@ -284,7 +284,8 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
   google_sheets: {
     integration: "google_sheets",
     label: "Google Sheets",
-    headline: "Every call becomes a row in your Google Sheets call log workbook — no manual export.",
+    headline:
+      "Every call becomes a row in your Google Sheets call log workbook — no manual export.",
     orbitHint: "Append call log row",
     connectPath: "/integrations",
     tasks: [

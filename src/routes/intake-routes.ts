@@ -490,93 +490,103 @@ router.get("/keys", authenticateUser, async (req: AuthenticatedRequest, res: Res
 });
 
 // POST /keys — create a new intake key
-router.post("/keys", authenticateUser, validateBody(createIntakeKeySchema), async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const name = (req.body?.name || "").toString().trim();
-    const default_agent_id = req.body?.default_agent_id || null;
-    const auto_dial = !!req.body?.auto_dial;
+router.post(
+  "/keys",
+  authenticateUser,
+  validateBody(createIntakeKeySchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const name = (req.body?.name || "").toString().trim();
+      const default_agent_id = req.body?.default_agent_id || null;
+      const auto_dial = !!req.body?.auto_dial;
 
-    const { plaintext, prefix, hash } = await generateIntakeKey();
-    const [data] = await drizzle
-      .insert(schema.intakeKeys)
-      .values({
-        userId: req.user.id,
-        name: name.slice(0, 80),
-        keyPrefix: prefix,
-        keyHash: hash,
-        defaultAgentId: default_agent_id,
-        autoDial: auto_dial,
-        active: true,
-      })
-      .returning({
-        id: schema.intakeKeys.id,
-        name: schema.intakeKeys.name,
-        key_prefix: schema.intakeKeys.keyPrefix,
-        default_agent_id: schema.intakeKeys.defaultAgentId,
-        auto_dial: schema.intakeKeys.autoDial,
-        active: schema.intakeKeys.active,
-        created_at: schema.intakeKeys.createdAt,
-      });
+      const { plaintext, prefix, hash } = await generateIntakeKey();
+      const [data] = await drizzle
+        .insert(schema.intakeKeys)
+        .values({
+          userId: req.user.id,
+          name: name.slice(0, 80),
+          keyPrefix: prefix,
+          keyHash: hash,
+          defaultAgentId: default_agent_id,
+          autoDial: auto_dial,
+          active: true,
+        })
+        .returning({
+          id: schema.intakeKeys.id,
+          name: schema.intakeKeys.name,
+          key_prefix: schema.intakeKeys.keyPrefix,
+          default_agent_id: schema.intakeKeys.defaultAgentId,
+          auto_dial: schema.intakeKeys.autoDial,
+          active: schema.intakeKeys.active,
+          created_at: schema.intakeKeys.createdAt,
+        });
 
-    void auditLogger
-      .logIntakeKey("created", {
-        userId: req.user.id,
-        keyId: data.id,
-        keyPrefix: data.key_prefix,
-        keyName: data.name,
-        ip: req.ip,
-      })
-      .catch(() => {});
-    res.json({ key: data, plaintext });
-  } catch (e: any) {
-    log.error("Failed to create key", { error: getErrorMessage(e) });
-    res.status(500).json({ error: "Failed to create key" });
-  }
-});
+      void auditLogger
+        .logIntakeKey("created", {
+          userId: req.user.id,
+          keyId: data.id,
+          keyPrefix: data.key_prefix,
+          keyName: data.name,
+          ip: req.ip,
+        })
+        .catch(() => {});
+      res.json({ key: data, plaintext });
+    } catch (e: any) {
+      log.error("Failed to create key", { error: getErrorMessage(e) });
+      res.status(500).json({ error: "Failed to create key" });
+    }
+  },
+);
 
 // PATCH /keys/:id — update an intake key
-router.patch("/keys/:id", authenticateUser, validateBody(updateIntakeKeySchema), async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const patch: any = {};
-    if (req.body?.name !== undefined) patch.name = String(req.body.name).slice(0, 80);
-    if (req.body?.active !== undefined) patch.active = !!req.body.active;
-    if (req.body?.default_agent_id !== undefined)
-      patch.defaultAgentId = req.body.default_agent_id || null;
-    if (req.body?.auto_dial !== undefined) patch.autoDial = !!req.body.auto_dial;
+router.patch(
+  "/keys/:id",
+  authenticateUser,
+  validateBody(updateIntakeKeySchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const patch: any = {};
+      if (req.body?.name !== undefined) patch.name = String(req.body.name).slice(0, 80);
+      if (req.body?.active !== undefined) patch.active = !!req.body.active;
+      if (req.body?.default_agent_id !== undefined)
+        patch.defaultAgentId = req.body.default_agent_id || null;
+      if (req.body?.auto_dial !== undefined) patch.autoDial = !!req.body.auto_dial;
 
-    const [data] = await drizzle
-      .update(schema.intakeKeys)
-      .set(patch)
-      .where(
-        and(eq(schema.intakeKeys.id, req.params.id), eq(schema.intakeKeys.userId, req.user.id)),
-      )
-      .returning({
-        id: schema.intakeKeys.id,
-        name: schema.intakeKeys.name,
-        key_prefix: schema.intakeKeys.keyPrefix,
-        default_agent_id: schema.intakeKeys.defaultAgentId,
-        auto_dial: schema.intakeKeys.autoDial,
-        active: schema.intakeKeys.active,
-        last_used_at: schema.intakeKeys.lastUsedAt,
-        use_count: schema.intakeKeys.useCount,
-        created_at: schema.intakeKeys.createdAt,
-      });
+      const [data] = await drizzle
+        .update(schema.intakeKeys)
+        .set(patch)
+        .where(
+          and(eq(schema.intakeKeys.id, req.params.id), eq(schema.intakeKeys.userId, req.user.id)),
+        )
+        .returning({
+          id: schema.intakeKeys.id,
+          name: schema.intakeKeys.name,
+          key_prefix: schema.intakeKeys.keyPrefix,
+          default_agent_id: schema.intakeKeys.defaultAgentId,
+          auto_dial: schema.intakeKeys.autoDial,
+          active: schema.intakeKeys.active,
+          last_used_at: schema.intakeKeys.lastUsedAt,
+          use_count: schema.intakeKeys.useCount,
+          created_at: schema.intakeKeys.createdAt,
+        });
 
-    void auditLogger
-      .logIntakeKey("updated", {
-        userId: req.user.id,
-        keyId: data.id,
-        keyPrefix: data.key_prefix,
-        keyName: data.name,
-        ip: req.ip,
-      })
-      .catch(() => {});
-    res.json({ key: data });
-  } catch (e: any) {
-    log.error("Failed to update key", { error: getErrorMessage(e) });
-    res.status(500).json({ error: "Failed to update key" });
-  }
-});
+      void auditLogger
+        .logIntakeKey("updated", {
+          userId: req.user.id,
+          keyId: data.id,
+          keyPrefix: data.key_prefix,
+          keyName: data.name,
+          ip: req.ip,
+        })
+        .catch(() => {});
+      res.json({ key: data });
+    } catch (e: any) {
+      log.error("Failed to update key", { error: getErrorMessage(e) });
+      res.status(500).json({ error: "Failed to update key" });
+    }
+  },
+);
 
 // DELETE /keys/:id — delete an intake key
 router.delete("/keys/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {

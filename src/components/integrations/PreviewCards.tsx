@@ -386,7 +386,10 @@ export function ShopifyPreviewCard() {
           style={{ borderColor: "rgba(255,255,255,0.06)" }}
         >
           <span style={{ color: "rgba(255,255,255,0.45)" }}>
-            Tracking: <span className="font-mono" style={{ color: "rgba(255,255,255,0.7)" }}>1Z999AA10</span>
+            Tracking:{" "}
+            <span className="font-mono" style={{ color: "rgba(255,255,255,0.7)" }}>
+              1Z999AA10
+            </span>
           </span>
           <span className="font-medium text-white">$178.00</span>
         </div>
@@ -1059,65 +1062,66 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
 
 // ── Recent activity feed (demo content) ──────────────────────────────────────
 
-export const ACTIVITY_LOG: Partial<Record<ToolIntegration, Array<{ text: string; time: string }>>> = {
-  crm: [
-    { text: "Created contact: Jennifer Park, Acme Corp", time: "3 calls ago" },
-    { text: "Deal updated → Qualified ($4,800)", time: "7 calls ago" },
-    { text: "Call outcome logged to HubSpot", time: "12 calls ago" },
-  ],
-  slack: [
-    { text: '#hot-leads: "Qualified lead: Jennifer Park"', time: "3 calls ago" },
-    { text: '#compliance: "DNC request flagged"', time: "Yesterday" },
-  ],
-  twilio: [
-    { text: "SMS confirmation sent to (555) 234-5678", time: "3 calls ago" },
-    { text: "Phone validated: (555) 876-4321 → Mobile", time: "4 calls ago" },
-  ],
-  zoom: [
-    { text: "Meeting created: Product Demo — Acme Corp", time: "8 calls ago" },
-    { text: "Meeting link sent via SMS + email", time: "8 calls ago" },
-  ],
-  calendar: [
-    { text: "Appointment booked: Jun 17 · 10:00 AM", time: "3 calls ago" },
-    { text: "Conflict check: 2 slots available Jun 18", time: "4 calls ago" },
-  ],
-  shopify: [
-    { text: "Order #4821 status: Fulfilled", time: "5 calls ago" },
-    { text: "Discount code SUMMER15 applied", time: "11 calls ago" },
-  ],
-  square: [
-    { text: "Invoice #INV-0047 sent: $650.00", time: "2 calls ago" },
-    { text: "Payment link generated for landscaping", time: "6 calls ago" },
-  ],
-  docusign: [
-    { text: "Contract dispatched to john@acmecorp.com", time: "9 calls ago" },
-    { text: "Service Agreement 2025 signed ✓", time: "2 days ago" },
-  ],
-  meta: [
-    { text: "Lead event fired: Jennifer Park → CAPI", time: "3 calls ago" },
-    { text: "Purchase event deduplicated (web + call)", time: "Yesterday" },
-  ],
-  apollo: [
-    { text: "Enriched: Jennifer Park — VP Ops, $40M+", time: "3 calls ago" },
-    { text: "Enriched: Mike Torres — Director, 500–1K", time: "5 calls ago" },
-  ],
-  gemini: [
-    { text: 'Web search: "Acme Corp pricing 2025"', time: "3 calls ago" },
-    { text: 'Web search: "OSHA regulations Illinois"', time: "6 calls ago" },
-  ],
-  microsoft_teams: [
-    { text: "#sales-alerts: Compliance flag raised", time: "3 calls ago" },
-    { text: "#hot-leads: Enterprise lead — $12K ARR", time: "Yesterday" },
-  ],
-  microsoft_excel: [
-    { text: "Row appended: (555) 234-5678 → Qualified", time: "3 calls ago" },
-    { text: "Row appended: (555) 876-4321 → Booked", time: "4 calls ago" },
-  ],
-  google_sheets: [
-    { text: "Row appended: (555) 234-5678 → Qualified", time: "3 calls ago" },
-    { text: "Row appended: (555) 876-4321 → Booked", time: "4 calls ago" },
-  ],
-};
+export const ACTIVITY_LOG: Partial<Record<ToolIntegration, Array<{ text: string; time: string }>>> =
+  {
+    crm: [
+      { text: "Created contact: Jennifer Park, Acme Corp", time: "3 calls ago" },
+      { text: "Deal updated → Qualified ($4,800)", time: "7 calls ago" },
+      { text: "Call outcome logged to HubSpot", time: "12 calls ago" },
+    ],
+    slack: [
+      { text: '#hot-leads: "Qualified lead: Jennifer Park"', time: "3 calls ago" },
+      { text: '#compliance: "DNC request flagged"', time: "Yesterday" },
+    ],
+    twilio: [
+      { text: "SMS confirmation sent to (555) 234-5678", time: "3 calls ago" },
+      { text: "Phone validated: (555) 876-4321 → Mobile", time: "4 calls ago" },
+    ],
+    zoom: [
+      { text: "Meeting created: Product Demo — Acme Corp", time: "8 calls ago" },
+      { text: "Meeting link sent via SMS + email", time: "8 calls ago" },
+    ],
+    calendar: [
+      { text: "Appointment booked: Jun 17 · 10:00 AM", time: "3 calls ago" },
+      { text: "Conflict check: 2 slots available Jun 18", time: "4 calls ago" },
+    ],
+    shopify: [
+      { text: "Order #4821 status: Fulfilled", time: "5 calls ago" },
+      { text: "Discount code SUMMER15 applied", time: "11 calls ago" },
+    ],
+    square: [
+      { text: "Invoice #INV-0047 sent: $650.00", time: "2 calls ago" },
+      { text: "Payment link generated for landscaping", time: "6 calls ago" },
+    ],
+    docusign: [
+      { text: "Contract dispatched to john@acmecorp.com", time: "9 calls ago" },
+      { text: "Service Agreement 2025 signed ✓", time: "2 days ago" },
+    ],
+    meta: [
+      { text: "Lead event fired: Jennifer Park → CAPI", time: "3 calls ago" },
+      { text: "Purchase event deduplicated (web + call)", time: "Yesterday" },
+    ],
+    apollo: [
+      { text: "Enriched: Jennifer Park — VP Ops, $40M+", time: "3 calls ago" },
+      { text: "Enriched: Mike Torres — Director, 500–1K", time: "5 calls ago" },
+    ],
+    gemini: [
+      { text: 'Web search: "Acme Corp pricing 2025"', time: "3 calls ago" },
+      { text: 'Web search: "OSHA regulations Illinois"', time: "6 calls ago" },
+    ],
+    microsoft_teams: [
+      { text: "#sales-alerts: Compliance flag raised", time: "3 calls ago" },
+      { text: "#hot-leads: Enterprise lead — $12K ARR", time: "Yesterday" },
+    ],
+    microsoft_excel: [
+      { text: "Row appended: (555) 234-5678 → Qualified", time: "3 calls ago" },
+      { text: "Row appended: (555) 876-4321 → Booked", time: "4 calls ago" },
+    ],
+    google_sheets: [
+      { text: "Row appended: (555) 234-5678 → Qualified", time: "3 calls ago" },
+      { text: "Row appended: (555) 876-4321 → Booked", time: "4 calls ago" },
+    ],
+  };
 
 // ── Helper ────────────────────────────────────────────────────────────────────
 

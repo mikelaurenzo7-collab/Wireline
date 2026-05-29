@@ -46,11 +46,11 @@ export interface EmailThreadRow {
   createdAt: Date | string;
 }
 
-export type ActivityImportance = 'critical' | 'high' | 'medium' | 'low';
+export type ActivityImportance = "critical" | "high" | "medium" | "low";
 
 export interface ActivityEntry {
   id: string;
-  type: 'SIGNAL_ANALYZED' | 'MISSION_INJECTED' | 'NEURAL_OPTIMIZATION' | 'DIGITAL_RELAY';
+  type: "SIGNAL_ANALYZED" | "MISSION_INJECTED" | "NEURAL_OPTIMIZATION" | "DIGITAL_RELAY";
   trigger: string;
   action: string;
   meta: string;
@@ -64,55 +64,55 @@ const PREVIEW_LEN = 50;
 // Truncate user-supplied text for the activity row preview. Returns a
 // safe placeholder when input is null/empty so render never crashes.
 export function truncatePreview(text: string | null | undefined, max = PREVIEW_LEN): string {
-  if (!text) return '(no detail)';
+  if (!text) return "(no detail)";
   return text.length > max ? `${text.slice(0, max)}...` : text;
 }
 
 export function callLogToActivity(l: CallLogRow): ActivityEntry {
   return {
     id: String(l.id),
-    type: 'SIGNAL_ANALYZED',
-    trigger: 'Voice Ingestion',
-    action: `Intent extracted: ${l.intentLabel || 'Analysis Pending'}`,
-    meta: l.customerNumber || '',
+    type: "SIGNAL_ANALYZED",
+    trigger: "Voice Ingestion",
+    action: `Intent extracted: ${l.intentLabel || "Analysis Pending"}`,
+    meta: l.customerNumber || "",
     timestamp: String(l.createdAt),
-    importance: (l.leadScore ?? 0) > 70 ? 'high' : 'medium',
+    importance: (l.leadScore ?? 0) > 70 ? "high" : "medium",
   };
 }
 
 export function fleetTaskToActivity(t: FleetTaskRow): ActivityEntry {
   return {
     id: t.id,
-    type: 'MISSION_INJECTED',
-    trigger: 'Functional Requirement Detected',
+    type: "MISSION_INJECTED",
+    trigger: "Functional Requirement Detected",
     action: `New Task: ${truncatePreview(t.description)}`,
-    meta: t.status || '',
+    meta: t.status || "",
     timestamp: String(t.createdAt),
-    importance: t.priority === 'high' ? 'critical' : 'medium',
+    importance: t.priority === "high" ? "critical" : "medium",
   };
 }
 
 export function agentLessonToActivity(l: AgentLessonRow): ActivityEntry {
   return {
     id: String(l.id),
-    type: 'NEURAL_OPTIMIZATION',
-    trigger: 'Behavioral Deviation',
+    type: "NEURAL_OPTIMIZATION",
+    trigger: "Behavioral Deviation",
     action: `Lesson Learned: ${truncatePreview(l.lesson)}`,
-    meta: 'Agent Refinement',
+    meta: "Agent Refinement",
     timestamp: String(l.createdAt),
-    importance: 'low',
+    importance: "low",
   };
 }
 
 export function emailThreadToActivity(e: EmailThreadRow): ActivityEntry {
   return {
     id: e.id,
-    type: 'DIGITAL_RELAY',
-    trigger: 'OMNI_CHANNEL_SYNC',
-    action: `Email Thread Synced: ${e.intentLabel || 'Scanning'}`,
-    meta: e.customerEmail || '',
+    type: "DIGITAL_RELAY",
+    trigger: "OMNI_CHANNEL_SYNC",
+    action: `Email Thread Synced: ${e.intentLabel || "Scanning"}`,
+    meta: e.customerEmail || "",
     timestamp: String(e.createdAt),
-    importance: 'medium',
+    importance: "medium",
   };
 }
 

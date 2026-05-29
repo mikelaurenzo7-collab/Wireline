@@ -24,7 +24,7 @@ export async function getIncludedPhoneLineSlots(userId: string): Promise<number>
     .from(schema.subscriptions)
     .where(eq(schema.subscriptions.userId, userId))
     .limit(1);
-    
+
   const tier = planById(sub?.plan || undefined);
   if (tier) return tier.max_agents;
 

@@ -39,16 +39,17 @@ export default function ActivityPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(var(--app-vvh,100dvh)-7rem)] sm:h-[calc(var(--app-vvh,100dvh)-9rem)] min-h-[400px]">
+    <div className="flex flex-col h-[calc(var(--app-vvh,100dvh)-7rem)] sm:h-[calc(var(--app-vvh,100dvh)-9rem)] lg:h-[calc(100dvh-8.5rem)] min-h-[400px]">
       {/* ─── Header + Tabs ─────────────────────────────────────────── */}
       <header className="shrink-0 mb-3 sm:mb-4">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-brand/8 flex items-center justify-center shrink-0">
-            <Radio className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-brand" />
+        {/* Page identity — hidden on lg+ where DesktopContextBar shows it */}
+        <div className="flex items-center gap-3 mb-3 lg:hidden">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-brand/8 flex items-center justify-center shrink-0">
+            <Radio className="w-4 h-4 sm:w-5 sm:h-5 text-brand" />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="text-base sm:text-lg font-semibold text-foreground">Activity</h1>
-            <p className="text-[11px] sm:text-xs text-muted">
+            <h1 className="text-sm sm:text-lg font-semibold text-foreground">Activity</h1>
+            <p className="text-[10px] sm:text-xs text-muted">
               Cross-channel history & scheduled events
             </p>
           </div>
@@ -62,13 +63,13 @@ export default function ActivityPage() {
                 key={tab.id}
                 onClick={() => setTab(tab.id)}
                 className={cn(
-                  "shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] sm:text-[13px] font-medium transition-all whitespace-nowrap",
+                  "shrink-0 flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-[13px] font-medium transition-all whitespace-nowrap min-h-[36px] sm:min-h-0",
                   active
                     ? "bg-brand/10 text-brand border border-brand/20 shadow-sm"
                     : "text-muted hover:text-foreground hover:bg-muted/8 border border-transparent",
                 )}
               >
-                <TabIcon className="w-4 h-4" />
+                <TabIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 {tab.label}
               </button>
             );

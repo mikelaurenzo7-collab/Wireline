@@ -39,9 +39,9 @@ const DEFAULT_WINDOW_DAYS = 7;
 // recognise (including null/undefined) counts as neutral so the buckets
 // always sum to callCount.
 function bucketSentiment(raw: string | null | undefined): keyof SentimentBreakdown {
-  const k = (raw || 'neutral').toLowerCase();
-  if (k === 'positive' || k === 'negative' || k === 'neutral') return k;
-  return 'neutral';
+  const k = (raw || "neutral").toLowerCase();
+  if (k === "positive" || k === "negative" || k === "neutral") return k;
+  return "neutral";
 }
 
 // YYYY-MM-DD key in UTC. Returning null for non-finite timestamps lets
@@ -49,7 +49,7 @@ function bucketSentiment(raw: string | null | undefined): keyof SentimentBreakdo
 function utcDayKey(iso: string): string | null {
   const t = new Date(iso).getTime();
   if (!Number.isFinite(t)) return null;
-  return new Date(t).toISOString().split('T')[0];
+  return new Date(t).toISOString().split("T")[0];
 }
 
 export function computeAgentPerformance(input: {
@@ -70,9 +70,11 @@ export function computeAgentPerformance(input: {
 
   // Average lead score is taken over rows that actually got scored —
   // a zero or null score should not drag the average down.
-  const scored = rows.filter(r => (r.lead_score ?? r.leadScore ?? 0) > 0);
+  const scored = rows.filter((r) => (r.lead_score ?? r.leadScore ?? 0) > 0);
   const avgScore = scored.length
-    ? Math.round(scored.reduce((s, r) => s + ((r.lead_score ?? r.leadScore) as number), 0) / scored.length)
+    ? Math.round(
+        scored.reduce((s, r) => s + ((r.lead_score ?? r.leadScore) as number), 0) / scored.length,
+      )
     : 0;
 
   const sentiment: SentimentBreakdown = { positive: 0, neutral: 0, negative: 0 };
@@ -85,15 +87,22 @@ export function computeAgentPerformance(input: {
     const d = new Date(now);
     d.setUTCHours(0, 0, 0, 0);
     d.setUTCDate(d.getUTCDate() - (windowDays - 1 - i));
-    return d.toISOString().split('T')[0];
+    return d.toISOString().split("T")[0];
   });
   const byDay: Record<string, number> = {};
   for (const d of last) byDay[d] = 0;
   for (const r of rows) {
-    const k = utcDayKey(r.created_at ?? (typeof r.createdAt === 'string' ? r.createdAt : r.createdAt instanceof Date ? r.createdAt.toISOString() : ''));
+    const k = utcDayKey(
+      r.created_at ??
+        (typeof r.createdAt === "string"
+          ? r.createdAt
+          : r.createdAt instanceof Date
+            ? r.createdAt.toISOString()
+            : ""),
+    );
     if (k && k in byDay) byDay[k]++;
   }
-  const sparkline = last.map(d => byDay[d]);
+  const sparkline = last.map((d) => byDay[d]);
 
   return { callCount, totalMinutes, avgScore, sentiment, sparkline };
 }

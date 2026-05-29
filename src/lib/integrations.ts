@@ -351,7 +351,7 @@ export class IntegrationService {
   private async createGoogleEvent(account: any, params: any): Promise<boolean> {
     const auth = await this.getGoogleClient(account);
     const calendar = google.calendar({ version: "v3", auth });
-    
+
     const requestBody: any = {
       summary: params.title,
       description: params.description,

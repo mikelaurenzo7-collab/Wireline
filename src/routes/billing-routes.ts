@@ -588,11 +588,9 @@ router.post(
       const priceEnvKey = interval === "year" ? plan.annualPriceIdEnv : plan.priceIdEnv;
       const priceId = process.env[priceEnvKey];
       if (!priceId)
-        return res
-          .status(503)
-          .json({
-            error: `Price for plan '${plan.id}' (${interval}) not configured (${priceEnvKey}).`,
-          });
+        return res.status(503).json({
+          error: `Price for plan '${plan.id}' (${interval}) not configured (${priceEnvKey}).`,
+        });
 
       const [existing] = await drizzle
         .select({

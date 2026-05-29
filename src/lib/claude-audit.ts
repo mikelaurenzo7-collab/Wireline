@@ -9,11 +9,7 @@
  */
 
 import { AsyncLocalStorage } from "node:async_hooks";
-import {
-  CLAUDE_MODELS,
-  DEFAULT_MODEL,
-  MODEL_PRICING,
-} from "./claude-models";
+import { CLAUDE_MODELS, DEFAULT_MODEL, MODEL_PRICING } from "./claude-models";
 
 export interface ClaudeCallMeta {
   model: string;

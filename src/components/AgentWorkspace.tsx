@@ -155,7 +155,7 @@ export default function AgentWorkspace({
   // (the rail navigates to a bare /chat/:id), so each agent opens on Chat.
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
-  const activeTab: WorkspaceTab = isWorkspaceTab(tabParam) ? tabParam : "chat";
+  const activeTab = isWorkspaceTab(tabParam) ? tabParam : "chat";
   const trainingSub = searchParams.get("sub") || undefined;
   const setActiveTab = useCallback(
     (next: WorkspaceTab) => {
@@ -197,7 +197,10 @@ export default function AgentWorkspace({
   const [consentKeys, setConsentKeys] = useState<Record<string, boolean>>({});
   // Panel overlay state — on mobile these open as bottom-sheet overlays
   // over the always-visible chat. On desktop (md+) they still use full tabs.
-  const [panelOpen, setPanelOpen] = useState<WorkspaceTab | null>(null);
+  // Initialized from URL so deep-links like ?tab=training open the panel on load.
+  const [panelOpen, setPanelOpen] = useState<WorkspaceTab | null>(
+    activeTab === "chat" ? null : activeTab,
+  );
 
   const loadMessages = useCallback(async () => {
     if (!agentId || isSharedView) return;
@@ -537,9 +540,7 @@ export default function AgentWorkspace({
               <div className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center mb-3">
                 <Sparkles className="w-4.5 h-4.5 text-brand" />
               </div>
-              <h3 className="font-display italic text-lg text-ink mb-1.5">
-                Chat with {agentName}
-              </h3>
+              <h3 className="font-display italic text-lg text-ink mb-1.5">Chat with {agentName}</h3>
               <p className="text-[11px] text-muted leading-relaxed">
                 Coach, give context, ask how calls went. The agent remembers everything here.
               </p>
