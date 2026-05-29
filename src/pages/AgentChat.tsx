@@ -95,7 +95,7 @@ export default function AgentChat() {
           <button
             onClick={() => navigate("/chat")}
             className={cn(
-              "shrink-0 lg:w-full text-left rounded-xl px-2.5 lg:px-3 py-2.5 lg:py-2.5 border transition-all flex items-center gap-2 min-h-[44px] lg:min-h-0",
+              "shrink-0 lg:w-full text-left rounded-xl px-2 lg:px-3 py-1.5 lg:py-2.5 border transition-all flex items-center gap-1.5 min-h-[36px] lg:min-h-0",
               showDirector
                 ? "border-brand/40 bg-brand/[0.06]"
                 : "border-black/8 glass hover:border-brand/25",
@@ -103,17 +103,17 @@ export default function AgentChat() {
           >
             <span
               className={cn(
-                "shrink-0 w-8 h-8 lg:w-8 lg:h-8 rounded-full flex items-center justify-center relative",
+                "shrink-0 w-7 h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center relative",
                 showDirector
                   ? "bg-gradient-to-br from-brand to-brand/70 text-on-brand"
                   : "bg-paper border border-black/12 text-ink",
               )}
               aria-hidden="true"
             >
-              <Compass className="w-4 h-4" />
+              <Compass className="w-3.5 h-3.5" />
             </span>
             <span className="min-w-0 hidden sm:block">
-              <span className="block text-[11px] lg:text-[12px] font-medium text-ink truncate max-w-[7rem] lg:max-w-none">
+              <span className="block text-[10px] lg:text-[12px] font-medium text-ink truncate max-w-[7rem] lg:max-w-none">
                 Director
               </span>
             </span>
@@ -126,7 +126,7 @@ export default function AgentChat() {
                 key={a.id}
                 onClick={() => navigate(`/chat/${a.id}`)}
                 className={cn(
-                  "shrink-0 lg:w-full text-left rounded-xl px-2.5 lg:px-3 py-2.5 lg:py-2.5 border transition-all flex items-center gap-2 min-h-[44px] lg:min-h-0",
+                  "shrink-0 lg:w-full text-left rounded-xl px-2 lg:px-3 py-1.5 lg:py-2.5 border transition-all flex items-center gap-1.5 min-h-[36px] lg:min-h-0",
                   isActive
                     ? "border-brand/40 bg-brand/[0.06]"
                     : "border-black/8 glass hover:border-brand/25",
@@ -134,7 +134,7 @@ export default function AgentChat() {
               >
                 <span
                   className={cn(
-                    "shrink-0 w-8 h-8 lg:w-8 lg:h-8 rounded-full flex items-center justify-center text-[12px] font-semibold relative",
+                    "shrink-0 w-7 h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center text-[11px] font-semibold relative",
                     isActive
                       ? "bg-brand text-on-brand"
                       : "bg-paper border border-black/12 text-ink",
@@ -147,7 +147,7 @@ export default function AgentChat() {
                   )}
                 </span>
                 <span className="min-w-0 hidden sm:block">
-                  <span className="block text-[11px] lg:text-[12px] font-medium text-ink truncate max-w-[7rem] lg:max-w-none">
+                  <span className="block text-[10px] lg:text-[12px] font-medium text-ink truncate max-w-[7rem] lg:max-w-none">
                     {a.name}
                   </span>
                   <span className="block text-[9px] lg:text-[10px] uppercase tracking-[0.18em] text-muted/70 truncate">
@@ -161,12 +161,12 @@ export default function AgentChat() {
           {/* Add-agent affordance */}
           <button
             onClick={() => navigate("/agents")}
-            className="shrink-0 lg:w-full text-left rounded-xl px-2.5 lg:px-3 py-2.5 lg:py-2.5 border border-dashed border-black/15 text-muted hover:border-brand/30 hover:text-ink transition-all flex items-center gap-2 lg:mt-1 min-h-[44px] lg:min-h-0"
+            className="shrink-0 lg:w-full text-left rounded-xl px-2 lg:px-3 py-1.5 lg:py-2.5 border border-dashed border-black/15 text-muted hover:border-brand/30 hover:text-ink transition-all flex items-center gap-1.5 lg:mt-1 min-h-[36px] lg:min-h-0"
           >
-            <span className="shrink-0 w-8 h-8 lg:w-8 lg:h-8 rounded-full bg-black/[0.03] border border-black/10 flex items-center justify-center">
+            <span className="shrink-0 w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-black/[0.03] border border-black/10 flex items-center justify-center">
               <Plus className="w-4 h-4" />
             </span>
-            <span className="hidden sm:block text-[11px] lg:text-[12px] font-medium truncate">
+            <span className="hidden sm:block text-[10px] lg:text-[12px] font-medium truncate">
               {agents.length === 0 ? "Create first" : "Add"}
             </span>
           </button>

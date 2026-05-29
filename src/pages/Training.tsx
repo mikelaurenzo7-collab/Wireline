@@ -109,7 +109,7 @@ export default function Training() {
                 key={agent.id}
                 onClick={() => selectAgent(agent.id)}
                 className={cn(
-                  "shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-xl border transition-all text-sm min-h-[44px]",
+                  "shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all text-[12px] sm:text-sm min-h-[36px]",
                   agent.id === selectedAgentId
                     ? "border-brand/40 bg-brand/[0.06] text-foreground font-medium"
                     : "border-border/50 bg-surface/50 text-muted hover:border-brand/20 hover:bg-brand/[0.03]",
@@ -178,8 +178,8 @@ export default function Training() {
         {/* Header with sub-tab navigation */}
         <header className="shrink-0 border-b border-border/50 bg-surface/40 backdrop-blur-sm">
           <div className="flex items-center gap-3 px-4 py-2.5 sm:px-5 lg:py-2">
-            <div className="w-8 h-8 lg:w-7 lg:h-7 rounded-lg bg-brand/10 flex items-center justify-center shrink-0">
-              <GraduationCap className="w-4 h-4 lg:w-3.5 lg:h-3.5 text-brand" />
+            <div className="w-7 h-7 lg:w-7 lg:h-7 rounded-lg bg-brand/10 flex items-center justify-center shrink-0">
+              <GraduationCap className="w-3.5 h-3.5 lg:w-3.5 lg:h-3.5 text-brand" />
             </div>
             <div className="min-w-0 flex-1">
               <h1 className="text-sm font-semibold text-foreground truncate">
@@ -200,14 +200,14 @@ export default function Training() {
                   key={tab.id}
                   onClick={() => setSubTab(tab.id)}
                   className={cn(
-                    "shrink-0 flex items-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg text-[11px] sm:text-[12px] font-medium transition-all whitespace-nowrap min-h-[40px] sm:min-h-0",
+                    "shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 sm:py-1.5 rounded-lg text-[10px] sm:text-[12px] font-medium transition-all whitespace-nowrap min-h-[34px] sm:min-h-0",
                     active
                       ? "bg-brand/10 text-brand border border-brand/20"
                       : "text-muted hover:text-foreground hover:bg-muted/8 border border-transparent",
                   )}
                 >
                   <TabIcon
-                    className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5"
+                    className="w-3 h-3 sm:w-3.5 sm:h-3.5"
                     strokeWidth={active ? 2.5 : 2}
                   />
                   {tab.label}

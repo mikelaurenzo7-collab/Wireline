@@ -17,12 +17,12 @@ export default function SmsPage() {
       {/* ─── Header ────────────────────────────────────────────────── */}
       <header className="shrink-0 mb-3 sm:mb-4 lg:hidden">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-brand/8 flex items-center justify-center shrink-0">
-            <MessageCircle className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-brand" />
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-brand/8 flex items-center justify-center shrink-0">
+            <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-brand" />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="text-base sm:text-lg font-semibold text-foreground">SMS</h1>
-            <p className="text-[11px] sm:text-xs text-muted">
+            <h1 className="text-sm sm:text-lg font-semibold text-foreground">SMS</h1>
+            <p className="text-[10px] sm:text-xs text-muted">
               Two-way text conversations & automated follow-ups
             </p>
           </div>
