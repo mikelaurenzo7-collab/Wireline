@@ -22,14 +22,18 @@ describe("Top-bar navigation IA", () => {
     expect(NAV_GROUPS.map((g) => g.label)).toEqual(["Workspace", "Fleet", "Activity", "Admin"]);
   });
 
-  it("Workspace group has Live Ops, Triage, Insights", () => {
+  it("Workspace group leads with Chat, then Live Ops, Triage, Insights", () => {
     const ws = NAV_GROUPS.find((g) => g.label === "Workspace")!;
-    expect(ws.items.map((i) => i.path)).toEqual(["/", "/triage", "/insights"]);
+    expect(ws.items.map((i) => i.path)).toEqual(["/chat", "/", "/triage", "/insights"]);
   });
 
-  it("Fleet group has Agents, Chat, Training, Cockpit", () => {
+  it("Chat is the first/primary nav item (chat is the main control surface)", () => {
+    expect(NAV_GROUPS[0].items[0].path).toBe("/chat");
+  });
+
+  it("Fleet group has Agents, Training, Cockpit", () => {
     const fl = NAV_GROUPS.find((g) => g.label === "Fleet")!;
-    expect(fl.items.map((i) => i.path)).toEqual(["/agents", "/chat", "/train", "/cockpit"]);
+    expect(fl.items.map((i) => i.path)).toEqual(["/agents", "/train", "/cockpit"]);
   });
 
   it("Activity group has Activity and Pipeline", () => {

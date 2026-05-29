@@ -19,7 +19,7 @@
  *     lessons via a follow-up button).
  */
 import express, { type Response } from "express";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser } from "../middleware/auth";
 import { claudeRateLimiter } from "../middleware/api-rate-limits";
@@ -149,7 +149,7 @@ router.post(
       const recentCalls = await drizzle
         .select({
           summary: schema.callLogs.summary,
-          sentiment: schema.callLogs.sentimentLabel,
+          sentiment: schema.callLogs.sentiment,
           intent: schema.callLogs.intentLabel,
         })
         .from(schema.callLogs)
@@ -496,6 +496,115 @@ router.post(
     } catch (e) {
       log.error("workspace run-action failed", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to run action" });
+    }
+  },
+);
+
+// GET /api/agents/:id/workspace/overview — live operational pulse for the
+// agent's "mission control" dock: rolling 24h activity counts across every
+// channel the agent works (calls, email, text, bookings, queued tasks) plus
+// the latest call outcomes. Powers the right-hand dock without blocking the
+// chat thread load — the client fetches it in parallel and refreshes it on a
+// light interval. All counts are owner-scoped + agent-scoped.
+router.get(
+  "/api/agents/:id/workspace/overview",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const agentId = req.params.id;
+      const agent = await findOwnedAgent(agentId, req.user.id);
+      if (!agent) return res.status(404).json({ error: "Agent not found" });
+
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+      const [callRows, emailRows, textRows, bookingRows, openTaskRows, recentCalls] =
+        await Promise.all([
+          drizzle
+            .select({ n: sql<number>`count(*)::int` })
+            .from(schema.callLogs)
+            .where(
+              and(
+                eq(schema.callLogs.agentId, agentId),
+                eq(schema.callLogs.userId, req.user.id),
+                gte(schema.callLogs.createdAt, since),
+              ),
+            ),
+          drizzle
+            .select({ n: sql<number>`count(*)::int` })
+            .from(schema.emailThreads)
+            .where(
+              and(
+                eq(schema.emailThreads.agentId, agentId),
+                eq(schema.emailThreads.userId, req.user.id),
+                gte(schema.emailThreads.createdAt, since),
+              ),
+            ),
+          drizzle
+            .select({ n: sql<number>`count(*)::int` })
+            .from(schema.smsThreads)
+            .where(
+              and(
+                eq(schema.smsThreads.agentId, agentId),
+                eq(schema.smsThreads.userId, req.user.id),
+                gte(schema.smsThreads.createdAt, since),
+              ),
+            ),
+          drizzle
+            .select({ n: sql<number>`count(*)::int` })
+            .from(schema.appointments)
+            .where(
+              and(
+                eq(schema.appointments.agentId, agentId),
+                eq(schema.appointments.userId, req.user.id),
+                gte(schema.appointments.createdAt, since),
+              ),
+            ),
+          drizzle
+            .select({ n: sql<number>`count(*)::int` })
+            .from(schema.fleetTasks)
+            .where(
+              and(
+                eq(schema.fleetTasks.agentId, agentId),
+                eq(schema.fleetTasks.userId, req.user.id),
+                eq(schema.fleetTasks.status, "pending"),
+              ),
+            ),
+          drizzle
+            .select({
+              summary: schema.callLogs.summary,
+              sentiment: schema.callLogs.sentiment,
+              intent: schema.callLogs.intentLabel,
+              outcome: schema.callLogs.outcomeTag,
+              createdAt: schema.callLogs.createdAt,
+            })
+            .from(schema.callLogs)
+            .where(
+              and(eq(schema.callLogs.agentId, agentId), eq(schema.callLogs.userId, req.user.id)),
+            )
+            .orderBy(desc(schema.callLogs.createdAt))
+            .limit(4),
+        ]);
+
+      res.json({
+        pulse: {
+          calls: callRows[0]?.n ?? 0,
+          emails: emailRows[0]?.n ?? 0,
+          texts: textRows[0]?.n ?? 0,
+          bookings: bookingRows[0]?.n ?? 0,
+          openTasks: openTaskRows[0]?.n ?? 0,
+          windowHours: 24,
+        },
+        recentCalls: recentCalls.map((c) => ({
+          summary: c.summary ?? null,
+          sentiment: c.sentiment ?? null,
+          intent: c.intent ?? null,
+          outcome: c.outcome ?? null,
+          createdAt: c.createdAt,
+        })),
+      });
+    } catch (e) {
+      log.error("workspace overview failed", { error: getErrorMessage(e) });
+      res.status(500).json({ error: "Failed to load overview" });
     }
   },
 );

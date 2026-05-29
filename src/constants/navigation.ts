@@ -39,6 +39,13 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: "Workspace",
     items: [
       {
+        label: "Chat",
+        path: "/chat",
+        icon: MessagesSquare,
+        dataTour: "chat",
+        matches: ["/chat"],
+      },
+      {
         label: "Live Ops",
         path: "/",
         icon: LayoutGrid,
@@ -53,12 +60,6 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: "Fleet",
     items: [
       { label: "Agents", path: "/agents", icon: Users, dataTour: "agents" },
-      {
-        label: "Chat",
-        path: "/chat",
-        icon: MessagesSquare,
-        matches: ["/chat"],
-      },
       {
         label: "Training",
         path: "/train",

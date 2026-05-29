@@ -74,9 +74,21 @@ interface WorkspaceMessage {
 interface AgentWorkspaceProps {
   agentId: string;
   agentName?: string;
+  /** Notifies the parent when the agent's resolved capabilities change, so a
+   *  surrounding dock can mirror live on/off state without a second fetch. */
+  onToolsChange?: (tools: string[]) => void;
+  /** When `nonce` changes, the composer is seeded with `text` and focused.
+   *  Lets the mission-control dock launch a structured prompt (call, email,
+   *  text, booking, capability request) the operator reviews before sending. */
+  composerSeed?: { text: string; nonce: number };
 }
 
-export default function AgentWorkspace({ agentId, agentName = "agent" }: AgentWorkspaceProps) {
+export default function AgentWorkspace({
+  agentId,
+  agentName = "agent",
+  onToolsChange,
+  composerSeed,
+}: AgentWorkspaceProps) {
   const { error: toastError, success: toastSuccess } = useToast();
   const isSharedView = !agentId || agentId === "default-agent";
   const [messages, setMessages] = useState<WorkspaceMessage[]>([]);
@@ -124,6 +136,33 @@ export default function AgentWorkspace({ agentId, agentName = "agent" }: AgentWo
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Mirror the agent's live capabilities up to the mission-control dock.
+  useEffect(() => {
+    onToolsChange?.(enabledTools);
+  }, [enabledTools, onToolsChange]);
+
+  // The dock launches structured prompts into the composer. We seed (not
+  // send) so the operator can edit/confirm before the planner drafts the
+  // approval cards — nothing fires automatically.
+  const seedNonce = composerSeed?.nonce;
+  useEffect(() => {
+    if (seedNonce === undefined) return;
+    const text = composerSeed?.text ?? "";
+    setInput(text);
+    const el = inputRef.current;
+    if (el) {
+      el.focus();
+      // Place the caret at the first bracketed placeholder so the operator
+      // can immediately fill in specifics (e.g. [name], [+1...]).
+      const ph = text.indexOf("[");
+      requestAnimationFrame(() => {
+        if (ph >= 0) el.setSelectionRange(ph, text.indexOf("]", ph) + 1 || ph);
+        else el.setSelectionRange(text.length, text.length);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- seedNonce is the trigger; text is read at fire time.
+  }, [seedNonce]);
 
   const send = useCallback(async () => {
     const text = input.trim();
