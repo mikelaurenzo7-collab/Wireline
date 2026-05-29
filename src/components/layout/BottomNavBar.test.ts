@@ -54,7 +54,7 @@ describe("Mobile primary nav (BottomNavBar)", () => {
   });
 
   it("Live Ops does NOT claim /cockpit as a match (it's its own destination now)", () => {
-    const liveOps = tabs.find((t) => t.path === "/")!;
+    const liveOps = tabs.find((t) => t.path === "/ops")!;
     expect(liveOps.matches).not.toContain("/cockpit");
   });
 

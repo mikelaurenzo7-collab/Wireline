@@ -160,7 +160,7 @@ export default function DispatchTab({
                     >
                       {agents.length === 0 ? (
                         <option value="" disabled>
-                          No agents — create one in Fleet &gt; Agents
+                          No agents — create one in Settings &gt; Agents
                         </option>
                       ) : (
                         <>

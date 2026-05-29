@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "../../lib/utils";
 
 type AdminTab =
+  | "agents"
   | "branding"
   | "carrier"
   | "subscription"
@@ -22,6 +23,7 @@ interface TabDef {
 // Settings is now strictly admin/config concerns. Voice library + pronunciation
 // moved to /train (they're agent training inputs, not tenant admin).
 const TAB_GROUPS: { tabs: TabDef[] }[] = [
+  { tabs: [{ id: "agents", label: "Agents", path: "/agents" }] },
   {
     tabs: [
       { id: "subscription", label: "Billing", path: "/admin?tab=subscription" },
@@ -50,6 +52,7 @@ export default function SettingsTabSwitcher() {
 
   const getActiveTab = (): AdminTab => {
     const pathname = location.pathname;
+    if (pathname === "/agents") return "agents";
     if (pathname === "/dnc") return "dnc";
     if (pathname === "/audit") return "audit";
     const searchParams = new URLSearchParams(location.search);

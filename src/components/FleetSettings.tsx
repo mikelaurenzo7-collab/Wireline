@@ -12,6 +12,7 @@ import { AGENTS_CHANGED_EVENT } from "../contexts/AgentsContext";
 import ConfirmModal from "./ConfirmModal";
 import { useToast } from "../contexts/ToastContext";
 import AgentTemplates from "./AgentTemplates";
+import SettingsTabSwitcher from "./admin/SettingsTabSwitcher";
 import {
   AGENT_TOOL_CATALOG,
   resolveAgentTools,
@@ -354,7 +355,10 @@ export default function FleetSettings() {
 
   return (
     <>
-      <div className="h-full flex flex-col">
+      <div className="h-full flex flex-col gap-3 min-h-0">
+        {/* Agents lives under Settings now — surface the Settings tab strip so
+            operators can hop to Billing/Team/etc. and the context is clear. */}
+        <SettingsTabSwitcher />
         {/* Tab strip */}
         <div
           className="px-4 py-2 border-b border-white/8 flex items-center gap-1.5 shrink-0"

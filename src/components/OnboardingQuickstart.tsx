@@ -538,7 +538,11 @@ function StepCTA({
   if (stepId === "number") return <CTAButton to="/admin?tab=carrier" label="Provision a Number" />;
   if (stepId === "call")
     return (
-      <CTAButton to="/" label="Start Test Call" icon={<PlayCircle className="w-3.5 h-3.5" />} />
+      <CTAButton
+        to="/train?tab=simulator"
+        label="Start Test Call"
+        icon={<PlayCircle className="w-3.5 h-3.5" />}
+      />
     );
   return null;
 }

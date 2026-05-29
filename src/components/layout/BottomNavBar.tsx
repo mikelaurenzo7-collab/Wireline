@@ -37,7 +37,7 @@ interface NavTab {
 const PRIMARY_TABS: readonly NavTab[] = [
   {
     label: "Live Ops",
-    path: "/",
+    path: "/ops",
     icon: LayoutGrid,
     // /cockpit removed — it's its own destination now (see TopBar / Sidebar IA).
     matches: ["/dashboard", "/command", "/live"],

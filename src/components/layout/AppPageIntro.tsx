@@ -52,11 +52,18 @@ export default function AppPageIntro({
         className={cn("flex flex-wrap items-start justify-between gap-3 pb-2 md:pb-3", className)}
       >
         <div className="min-w-0 flex-1 sm:max-w-2xl">
-          {eyebrow && <p className="text-eyebrow text-brand mb-1">{eyebrow}</p>}
-          <h1 className="page-title-aurora font-display italic text-xl sm:text-2xl md:text-[1.65rem] leading-tight tracking-tight text-balance">
-            {title}
-          </h1>
-          {subtitle && <div className="mt-1.5 text-caption max-w-2xl text-pretty">{subtitle}</div>}
+          {/* Hidden on lg+ — the TopBar breadcrumb already shows group + title
+              there, so the in-page eyebrow + title would duplicate it. Below lg
+              there's no breadcrumb, so this stays as the page's wayfinding. */}
+          <div className="lg:hidden">
+            {eyebrow && <p className="text-eyebrow text-brand mb-1">{eyebrow}</p>}
+            <h1 className="page-title-aurora font-display italic text-xl sm:text-2xl md:text-[1.65rem] leading-tight tracking-tight text-balance">
+              {title}
+            </h1>
+          </div>
+          {subtitle && (
+            <div className="mt-1.5 lg:mt-0 text-caption max-w-2xl text-pretty">{subtitle}</div>
+          )}
         </div>
         {actions && (
           <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 w-full sm:w-auto">

@@ -36,8 +36,11 @@ export default function AppRoutes() {
     <AnimatePresence>
       <Suspense fallback={<RouteFallback />}>
         <Routes>
+          {/* Chat is the home surface — it runs the show. Landing on / (deploy
+              root, OAuth return, bookmarks) sends operators straight to Chat. */}
+          <Route path="/" element={<Navigate to="/chat" replace />} />
           <Route
-            path="/"
+            path="/ops"
             element={
               <PageTransition>
                 <ErrorBoundary>
@@ -46,12 +49,12 @@ export default function AppRoutes() {
               </PageTransition>
             }
           />
-          {/* /dashboard, /command and /live all redirect to / — the live call
-              grid lives on Live Ops (/) and supervisory tooling on /cockpit, so
+          {/* /dashboard, /command and /live all redirect to /ops — the live call
+              grid lives on Live Ops (/ops) and supervisory tooling on /cockpit, so
               a separate standalone monitor was redundant. */}
-          <Route path="/dashboard" element={<Navigate to="/" replace />} />
-          <Route path="/command" element={<Navigate to="/" replace />} />
-          <Route path="/live" element={<Navigate to="/" replace />} />
+          <Route path="/dashboard" element={<Navigate to="/ops" replace />} />
+          <Route path="/command" element={<Navigate to="/ops" replace />} />
+          <Route path="/live" element={<Navigate to="/ops" replace />} />
           <Route
             path="/triage"
             element={

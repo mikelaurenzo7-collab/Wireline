@@ -135,13 +135,24 @@ export default function PageShell({
       {showPageHeader && (
         <header className="shrink-0 mb-2 md:mb-3 flex flex-row items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            {eyebrow && <p className="text-eyebrow text-brand mb-1">{eyebrow}</p>}
-            {title && (
-              <h1 className="page-title-aurora font-display italic text-xl sm:text-2xl md:text-[1.65rem] leading-tight tracking-tight text-balance">
-                {title}
-              </h1>
+            {/* On lg+ the TopBar breadcrumb already shows the group + page
+                title, so we hide the in-page eyebrow + title there to avoid a
+                duplicate header. Below lg the TopBar has no breadcrumb, so this
+                is the only wayfinding — keep it. Subtitle + actions stay at all
+                breakpoints (the breadcrumb never carries them). */}
+            {(eyebrow || title) && (
+              <div className="lg:hidden">
+                {eyebrow && <p className="text-eyebrow text-brand mb-1">{eyebrow}</p>}
+                {title && (
+                  <h1 className="page-title-aurora font-display italic text-xl sm:text-2xl md:text-[1.65rem] leading-tight tracking-tight text-balance">
+                    {title}
+                  </h1>
+                )}
+              </div>
             )}
-            {subtitle && <p className="mt-0.5 text-caption max-w-2xl text-pretty">{subtitle}</p>}
+            {subtitle && (
+              <p className="mt-0.5 lg:mt-0 text-caption max-w-2xl text-pretty">{subtitle}</p>
+            )}
           </div>
           {actions && (
             <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">

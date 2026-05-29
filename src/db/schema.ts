@@ -528,6 +528,29 @@ export const agentConversationMessages = pgTable(
   }),
 );
 
+// Director chat — the account-level strategist thread.
+//
+// Unlike agentConversationMessages (one thread per agent), the Director is a
+// single per-USER thread. It's always available — even before the operator
+// owns any agents — and acts as the manager that helps plan, set up, and
+// coach the fleet. role is "operator" | "director". No agent FK: the Director
+// exists at the account level, so its history survives agent deletions.
+export const directorConversationMessages = pgTable(
+  "wireline_director_conversation_messages",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
+    userId: uuid("user_id").notNull(),
+    // role is one of "operator" | "director" — DB-level CHECK constraint
+    // lives in the migration (this Drizzle version doesn't expose .$type()).
+    role: text("role").notNull(),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  () => ({
+    userIdx: sql`CREATE INDEX IF NOT EXISTS idx_director_conv_user ON wireline_director_conversation_messages USING btree (user_id, created_at DESC)`,
+  }),
+);
+
 // 2.2 COMMITMENTS & LOGISTICS
 export const appointments = pgTable(
   "wireline_appointments",

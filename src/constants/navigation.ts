@@ -1,5 +1,4 @@
 import {
-  Users,
   MessageSquare,
   MessagesSquare,
   Radio,
@@ -47,7 +46,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       },
       {
         label: "Live Ops",
-        path: "/",
+        path: "/ops",
         icon: LayoutGrid,
         dataTour: "dashboard",
         matches: ["/dashboard", "/command", "/live"],
@@ -59,7 +58,9 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: "Fleet",
     items: [
-      { label: "Agents", path: "/agents", icon: Users, dataTour: "agents" },
+      // Agents (roster + creation) now lives under Settings — operators rarely
+      // buy/add agents, so it doesn't earn a permanent top-nav slot. It surfaces
+      // in the Settings tab strip and via the Settings nav `matches` below.
       {
         label: "Training",
         path: "/train",
@@ -90,14 +91,14 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         path: "/admin",
         icon: SlidersHorizontal,
         dataTour: "settings",
-        matches: ["/integrations", "/dnc", "/audit"],
+        matches: ["/integrations", "/dnc", "/audit", "/agents"],
       },
     ],
   },
 ];
 
 export const PAGE_TITLES: Record<string, string> = {
-  "/": "Live Ops",
+  "/ops": "Live Ops",
   "/triage": "Triage",
   "/appointments": "Appointments",
   "/logs": "Call Logs",
@@ -120,7 +121,7 @@ export const PAGE_TITLES: Record<string, string> = {
 };
 
 export const ROUTE_ACCENTS: Record<string, [string, string]> = {
-  "/": ["#4F1E7B", "#10B981"],
+  "/ops": ["#4F1E7B", "#10B981"],
   "/triage": ["#FFC07D", "#4F1E7B"],
   "/insights": ["#4F1E7B", "#FFC07D"],
   "/logs": ["#4F1E7B", "#3B154C"],

@@ -31,8 +31,8 @@ const TOUR_STEPS: TourStep[] = [
   {
     id: "agents",
     title: "Your Agent Fleet",
-    body: "Each agent has a role (Sales, Support, Scheduler...), a voice, a personality, and its own knowledge base. Your 14-day trial starts with 1 agent and 25 outbound calls.",
-    anchor: '[data-tour="agents"]',
+    body: "Each agent has a role (Sales, Support, Scheduler...), a voice, a personality, and its own knowledge base. Manage your roster anytime under Settings → Agents. Your 14-day trial starts with 1 agent and 25 outbound calls.",
+    anchor: '[data-tour="settings"]',
     cta: "Next",
   },
   {

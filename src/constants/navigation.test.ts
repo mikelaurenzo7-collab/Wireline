@@ -24,16 +24,16 @@ describe("Top-bar navigation IA", () => {
 
   it("Workspace group leads with Chat, then Live Ops, Triage, Insights", () => {
     const ws = NAV_GROUPS.find((g) => g.label === "Workspace")!;
-    expect(ws.items.map((i) => i.path)).toEqual(["/chat", "/", "/triage", "/insights"]);
+    expect(ws.items.map((i) => i.path)).toEqual(["/chat", "/ops", "/triage", "/insights"]);
   });
 
   it("Chat is the first/primary nav item (chat is the main control surface)", () => {
     expect(NAV_GROUPS[0].items[0].path).toBe("/chat");
   });
 
-  it("Fleet group has Agents, Training, Cockpit", () => {
+  it("Fleet group has Training, Cockpit (Agents moved to Settings)", () => {
     const fl = NAV_GROUPS.find((g) => g.label === "Fleet")!;
-    expect(fl.items.map((i) => i.path)).toEqual(["/agents", "/train", "/cockpit"]);
+    expect(fl.items.map((i) => i.path)).toEqual(["/train", "/cockpit"]);
   });
 
   it("Activity group has Activity and Pipeline", () => {
@@ -48,7 +48,7 @@ describe("Top-bar navigation IA", () => {
   });
 
   it("Live Ops does NOT claim /cockpit as a match (Cockpit is its own page)", () => {
-    const liveOps = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.path === "/")!;
+    const liveOps = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.path === "/ops")!;
     expect(liveOps.matches ?? []).not.toContain("/cockpit");
   });
 

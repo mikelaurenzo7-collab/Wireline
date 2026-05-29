@@ -74,7 +74,7 @@ export default function CommandBar() {
       icon: Activity,
       category: "Navigation",
       shortcut: "D",
-      action: () => navigate("/"),
+      action: () => navigate("/ops"),
     },
     {
       id: "triage",
@@ -244,7 +244,7 @@ export default function CommandBar() {
       description: "Talk to your agent right now",
       icon: PhoneCall,
       category: "Actions",
-      action: () => navigate("/"),
+      action: () => navigate("/train?tab=simulator"),
     },
     {
       id: "review-agent",

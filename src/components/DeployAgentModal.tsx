@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Loader2, ArrowRight, User2, Users2, Play, Pause } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -214,15 +215,21 @@ export default function DeployAgentModal({
     await onConfirm({ name: trimmedName, voiceId, gender });
   };
 
-  return (
+  const modal = (
     <AnimatePresence>
       {open && (
-        <>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[80] flex items-end justify-center sm:items-center sm:p-4"
+          style={{ paddingBottom: "env(safe-area-inset-bottom, 0)" }}
+        >
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[80] bg-black/70 backdrop-blur-md"
+            className="absolute inset-0 bg-black/70 backdrop-blur-md"
             onClick={() => !deploying && onClose()}
             aria-hidden="true"
           />
@@ -234,13 +241,13 @@ export default function DeployAgentModal({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 24 }}
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-            // Bottom-sheet on mobile (anchored to bottom edge,
-            // full-width, rounded top), centered card on desktop.
-            // Matches ConfirmModal + TrialGateModal patterns so
-            // every dialog in the app feels like one family.
-            className="fixed z-[81]
-              left-0 right-0 bottom-0 w-full
-              sm:left-1/2 sm:bottom-auto sm:top-[50%] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:right-auto sm:w-[min(540px,calc(100vw-32px))]"
+            // Bottom-sheet on mobile (anchored to bottom edge, full-width,
+            // rounded top), centered card on desktop. The panel caps at the
+            // viewport height and scrolls internally so tall content (voice
+            // picker expanded, etc.) never overflows off-screen. Rendered via a
+            // portal to document.body so `position: fixed` resolves against the
+            // viewport — not the route's transformed PageTransition box.
+            className="relative z-10 w-full sm:w-[min(540px,calc(100vw-32px))] max-h-[calc(100dvh-1rem)] overflow-y-auto overscroll-contain rounded-t-3xl sm:rounded-3xl"
           >
             <div className="relative rounded-t-3xl sm:rounded-3xl overflow-hidden glass-strong border border-white/12 shadow-2xl">
               {/* Aurora glow */}
@@ -447,10 +454,12 @@ export default function DeployAgentModal({
               </div>
             </div>
           </motion.div>
-        </>
+        </motion.div>
       )}
     </AnimatePresence>
   );
+
+  return createPortal(modal, document.body);
 }
 
 function GenderTile({

@@ -47,7 +47,7 @@ export default function OAuthComplete() {
           is_owner: params.get("is_owner") === "1",
         },
       });
-      navigate("/", { replace: true });
+      navigate("/chat", { replace: true });
     };
     void complete();
   }, [location.search, signIn, navigate]);
