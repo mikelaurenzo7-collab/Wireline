@@ -17,7 +17,13 @@ import WirelineMark from "../WirelineMark";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../../contexts/AuthContext";
 import { cn } from "../../lib/utils";
-import { NAV_GROUPS, PAGE_TITLES, type NavItem } from "../../constants/navigation";
+import {
+  NAV_GROUPS,
+  getRouteContext,
+  isNavItemActive,
+  resolveNavBadge,
+  type NavItem,
+} from "../../constants/navigation";
 import { useBranding } from "../../contexts/BrandingContext";
 
 interface Props {
@@ -35,6 +41,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
   const { branding } = useBranding();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
+  const breadcrumb = getRouteContext(location.pathname);
 
   // Close avatar dropdown on outside click or Escape.
   useEffect(() => {
@@ -54,53 +61,12 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
     };
   }, [userMenuOpen]);
 
-  const isActive = (item: NavItem) => {
-    if (location.pathname === item.path) return true;
-    if (!item.matches) return false;
-    return item.matches.some(
-      (m) => location.pathname === m || location.pathname.startsWith(`${m}/`),
-    );
-  };
-
-  // Derive a contextual breadcrumb from the current path. PAGE_TITLES is
-  // the single source of truth — every nav destination is keyed there.
-  // Falls back gracefully for routes we haven't titled yet.
-  const breadcrumb: { eyebrow?: string; title: string } | null = (() => {
-    // Exact match wins.
-    if (PAGE_TITLES[location.pathname]) {
-      // Find the group this path belongs to so the eyebrow reads
-      // "Workspace · Triage" / "Fleet · Training" / etc.
-      for (const group of NAV_GROUPS) {
-        const match = group.items.find(
-          (i) =>
-            i.path === location.pathname ||
-            i.matches?.some(
-              (m) => m === location.pathname || location.pathname.startsWith(`${m}/`),
-            ),
-        );
-        if (match) return { eyebrow: group.label, title: PAGE_TITLES[location.pathname]! };
-      }
-      return { title: PAGE_TITLES[location.pathname]! };
-    }
-    // Walk back the path one segment at a time for parameterised routes
-    // like /contacts/abc-123 → match /contacts.
-    const segments = location.pathname.split("/").filter(Boolean);
-    while (segments.length > 0) {
-      segments.pop();
-      const candidate = "/" + segments.join("/");
-      if (PAGE_TITLES[candidate]) return { title: PAGE_TITLES[candidate]! };
-    }
-    return null;
-  })();
-
   const renderNavItem = (
     item: NavItem,
     opts: { withLabel?: boolean; variant?: "topbar" | "drawer" } = {},
   ) => {
-    const active = isActive(item);
-    const badge =
-      (navBadges[item.path] ?? 0) +
-      (item.matches?.reduce((sum, m) => sum + (navBadges[m] ?? 0), 0) ?? 0);
+    const active = isNavItemActive(item, location.pathname);
+    const badge = resolveNavBadge(item, navBadges);
     const withLabel = opts.withLabel ?? true;
     const variant = opts.variant ?? "topbar";
     const isDrawer = variant === "drawer";
@@ -278,7 +244,20 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
             })}
           </nav>
 
-          <div className="flex-1 md:hidden" />
+          <div className="min-w-0 flex-1 md:hidden">
+            {breadcrumb && (
+              <div className="min-w-0">
+                {breadcrumb.eyebrow && (
+                  <p className="chrome-eyebrow !text-[0.55rem] !tracking-[0.18em] !text-[#EFE9DC]/55 truncate">
+                    {breadcrumb.eyebrow}
+                  </p>
+                )}
+                <h1 className="font-display italic text-[15px] leading-[1.05] text-[#EFE9DC] truncate">
+                  {breadcrumb.title}
+                </h1>
+              </div>
+            )}
+          </div>
 
           {/* Right cluster */}
           <div className="flex items-center gap-2 shrink-0">
@@ -288,7 +267,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 // CommandBar is lazy-loaded in AppShell; we dispatch a custom event it listens to
                 window.dispatchEvent(new CustomEvent("wireline:open-command-bar"));
               }}
-              className="flex items-center justify-center w-9 h-9 md:w-auto md:h-7 md:px-2 rounded-lg chrome-muted hover:text-[#EFE9DC] hover:bg-white/10 transition-colors"
+              className="flex shrink-0 items-center justify-center w-11 h-11 md:w-auto md:h-7 md:px-2 rounded-lg chrome-muted hover:text-[#EFE9DC] hover:bg-white/10 transition-colors"
               aria-label="Open command bar"
               title="Search ( / )"
             >
@@ -430,7 +409,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 rail carries the nav instead. */}
             <button
               onClick={() => onDrawerChange(true)}
-              className="flex lg:hidden w-10 h-10 rounded-lg items-center justify-center hover:bg-white/5 active:scale-95 transition-all"
+              className="flex lg:hidden w-11 h-11 md:w-10 md:h-10 rounded-lg items-center justify-center hover:bg-white/5 active:scale-95 transition-all shrink-0"
               aria-label="Open navigation"
             >
               <Menu className="w-5 h-5 text-[#EFE9DC]" />

@@ -11,7 +11,7 @@ import RouteAccentStrip from "./RouteAccentStrip";
 import TrialBanner from "./TrialBanner";
 import EmailVerifyBanner from "./EmailVerifyBanner";
 import AppRoutes from "../../routes/AppRoutes";
-import { NAV_GROUPS, PAGE_TITLES, getRouteAccent } from "../../constants/navigation";
+import { getRouteAccent, getRouteContext } from "../../constants/navigation";
 import { useBranding } from "../../contexts/BrandingContext";
 import { useViewTransitionRoute } from "../../hooks/useViewTransitionRoute";
 
@@ -109,10 +109,10 @@ export default function AppShell() {
   }, [user, navigate]);
 
   useEffect(() => {
-    const label =
-      PAGE_TITLES[location.pathname] ??
-      (location.pathname.startsWith("/contact/") ? "Contact Profile" : null);
-    document.title = label ? `${label} — ${branding.brand_name}` : branding.brand_name;
+    const routeContext = getRouteContext(location.pathname);
+    document.title = routeContext
+      ? `${routeContext.title} — ${branding.brand_name}`
+      : branding.brand_name;
   }, [location.pathname, branding.brand_name]);
 
   if (loading) {
@@ -261,24 +261,6 @@ export default function AppShell() {
   );
 }
 
-function getDesktopBreadcrumb(pathname: string): { eyebrow?: string; title: string } {
-  const exactTitle = PAGE_TITLES[pathname];
-  if (exactTitle) {
-    for (const group of NAV_GROUPS) {
-      const match = group.items.find(
-        (item) =>
-          item.path === pathname ||
-          item.matches?.some((m) => pathname === m || pathname.startsWith(`${m}/`)),
-      );
-      if (match) return { eyebrow: group.label, title: exactTitle };
-    }
-    return { title: exactTitle };
-  }
-  if (pathname.startsWith("/contact/")) return { eyebrow: "Activity", title: "Contact Profile" };
-  const prefix = `/${pathname.split("/").filter(Boolean)[0] || ""}`;
-  return { title: PAGE_TITLES[prefix] || "Workspace" };
-}
-
 function DesktopContextBar({
   pathname,
   onShowShortcuts,
@@ -286,7 +268,7 @@ function DesktopContextBar({
   pathname: string;
   onShowShortcuts: () => void;
 }) {
-  const breadcrumb = getDesktopBreadcrumb(pathname);
+  const breadcrumb = getRouteContext(pathname) ?? { title: "Workspace" };
   const [from, to] = getRouteAccent(pathname);
   return (
     <div className="hidden lg:flex shrink-0 items-center justify-between gap-4 border-b border-ink/[0.06] bg-paper/72 px-5 py-3 backdrop-blur-xl">

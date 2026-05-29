@@ -24,6 +24,11 @@ export type NavItem = {
   ownerOnly?: boolean;
 };
 
+export type RouteContext = {
+  eyebrow?: string;
+  title: string;
+};
+
 // Three-group nav. Workspace = where you watch, decide, and run the fleet.
 // Activity = where conversations live + close. Settings sits as the trailing
 // tab since it's daily-touch (Branding, Carrier, Billing) — not buried in a
@@ -108,6 +113,48 @@ export const PAGE_TITLES: Record<string, string> = {
   "/help": "Help",
   "/pipeline": "Pipeline",
 };
+
+export function isNavItemActive(item: NavItem, pathname: string): boolean {
+  if (pathname === item.path) return true;
+  if (!item.matches) return false;
+  return item.matches.some((m) => pathname === m || pathname.startsWith(`${m}/`));
+}
+
+export function resolveNavBadge(item: NavItem, navBadges: Record<string, number>): number {
+  return (
+    (navBadges[item.path] ?? 0) +
+    (item.matches?.reduce((sum, m) => sum + (navBadges[m] ?? 0), 0) ?? 0)
+  );
+}
+
+function routeContextForKnownPath(pathname: string): RouteContext | null {
+  const title = PAGE_TITLES[pathname];
+  if (!title) return null;
+  const eyebrow = NAV_GROUPS.find((group) =>
+    group.items.some((item) => isNavItemActive(item, pathname)),
+  )?.label;
+  return eyebrow ? { eyebrow, title } : { title };
+}
+
+export function getRouteContext(pathname: string): RouteContext | null {
+  const exact = routeContextForKnownPath(pathname);
+  if (exact) return exact;
+
+  if (pathname.startsWith("/contact/")) {
+    return { eyebrow: "Activity", title: "Contact Profile" };
+  }
+
+  const segments = pathname.split("/").filter(Boolean);
+  while (segments.length > 1) {
+    segments.pop();
+    const candidate = `/${segments.join("/")}`;
+    const context = routeContextForKnownPath(candidate);
+    if (context) return context;
+  }
+
+  const prefix = `/${pathname.split("/").filter(Boolean)[0] || ""}`;
+  return prefix === "/" ? null : routeContextForKnownPath(prefix);
+}
 
 export const ROUTE_ACCENTS: Record<string, [string, string]> = {
   "/ops": ["#4F1E7B", "#10B981"],

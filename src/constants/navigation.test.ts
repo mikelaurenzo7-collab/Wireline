@@ -15,7 +15,7 @@
  * These tests pin all three.
  */
 import { describe, expect, it } from "vitest";
-import { NAV_GROUPS, PAGE_TITLES } from "./navigation";
+import { NAV_GROUPS, PAGE_TITLES, getRouteContext, resolveNavBadge } from "./navigation";
 
 describe("Top-bar navigation IA", () => {
   it("ships exactly three groups in the documented order", () => {
@@ -87,5 +87,28 @@ describe("Top-bar navigation IA", () => {
   it("no two nav items share the same path (or active-state would collide)", () => {
     const paths = NAV_GROUPS.flatMap((g) => g.items).map((i) => i.path);
     expect(new Set(paths).size).toBe(paths.length);
+  });
+
+  it("derives route context for nested and parameterized app routes", () => {
+    expect(getRouteContext("/integrations/hubspot")).toEqual({
+      eyebrow: "Admin",
+      title: "Integrations",
+    });
+    expect(getRouteContext("/contact/abc-123")).toEqual({
+      eyebrow: "Activity",
+      title: "Contact Profile",
+    });
+  });
+
+  it("rolls badge counts up from matched child routes into their parent nav item", () => {
+    const settings = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.path === "/admin")!;
+    expect(
+      resolveNavBadge(settings, {
+        "/admin": 1,
+        "/integrations": 2,
+        "/dnc": 3,
+        "/audit": 4,
+      }),
+    ).toBe(10);
   });
 });

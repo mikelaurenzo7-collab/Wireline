@@ -28,7 +28,12 @@ import { motion, AnimatePresence } from "motion/react";
 import WirelineMark from "../WirelineMark";
 import { useAuth } from "../../contexts/AuthContext";
 import { useBranding } from "../../contexts/BrandingContext";
-import { NAV_GROUPS, type NavItem } from "../../constants/navigation";
+import {
+  NAV_GROUPS,
+  isNavItemActive,
+  resolveNavBadge,
+  type NavItem,
+} from "../../constants/navigation";
 import { authFetch } from "../../lib/api";
 import { cn } from "../../lib/utils";
 
@@ -113,15 +118,6 @@ export default function Sidebar({ navBadges }: SidebarProps) {
       document.documentElement.style.removeProperty("--wireline-rail-w");
     };
   }, [expanded]);
-
-  // Active-state matcher mirrors TopBar logic for consistency.
-  const isActive = (item: NavItem) => {
-    if (location.pathname === item.path) return true;
-    if (!item.matches) return false;
-    return item.matches.some(
-      (m) => location.pathname === m || location.pathname.startsWith(`${m}/`),
-    );
-  };
 
   // Live phone pulse — polls /api/fleet/presence every 10 s. Counts active
   // calls in the workspace right now. Pulse animates when count > 0.
@@ -276,8 +272,8 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                   <RailItem
                     key={item.path}
                     item={item}
-                    active={isActive(item)}
-                    badge={resolveBadge(item, navBadges)}
+                    active={isNavItemActive(item, location.pathname)}
+                    badge={resolveNavBadge(item, navBadges)}
                     expanded={effective}
                     accent={accent}
                     shortcut={SHORTCUTS[item.path]}
@@ -498,13 +494,6 @@ function RailItem({ item, active, badge, expanded, accent, shortcut }: RailItemP
         </span>
       )}
     </Link>
-  );
-}
-
-function resolveBadge(item: NavItem, navBadges: Record<string, number>): number {
-  return (
-    (navBadges[item.path] ?? 0) +
-    (item.matches?.reduce((sum, m) => sum + (navBadges[m] ?? 0), 0) ?? 0)
   );
 }
 
