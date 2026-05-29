@@ -37,6 +37,9 @@ jobs:
       - name: Guard — user_id in service-role inserts
         run: node scripts/check-user-id-inserts.mjs
 
+      - name: Guard — AuthZ default-deny contract (every route protected or allowlisted)
+        run: npm run authz:check
+
       - name: Lint
         run: npm run lint:eslint
 

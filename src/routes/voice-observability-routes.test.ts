@@ -4,7 +4,7 @@
  */
 import express from "express";
 import request from "supertest";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const h = vi.hoisted(() => {
   const state = {
@@ -182,6 +182,41 @@ describe("voice observability routes", () => {
         });
 
       expect(response.status).toBe(400);
+    });
+
+    describe("Vapi secret enforcement", () => {
+      const ORIGINAL = process.env.VAPI_WEBHOOK_SECRET;
+      afterEach(() => {
+        if (ORIGINAL === undefined) delete process.env.VAPI_WEBHOOK_SECRET;
+        else process.env.VAPI_WEBHOOK_SECRET = ORIGINAL;
+      });
+
+      it("rejects when secret configured and header missing", async () => {
+        process.env.VAPI_WEBHOOK_SECRET = "s3cret-token-value";
+        const response = await request(await buildApp())
+          .post("/api/voice/metrics")
+          .send({ vapiCallId: "call-abc", ttftMs: 450 });
+        expect(response.status).toBe(401);
+      });
+
+      it("rejects when secret configured and header wrong", async () => {
+        process.env.VAPI_WEBHOOK_SECRET = "s3cret-token-value";
+        const response = await request(await buildApp())
+          .post("/api/voice/metrics")
+          .set("X-Vapi-Secret", "wrong-token-value")
+          .send({ vapiCallId: "call-abc", ttftMs: 450 });
+        expect(response.status).toBe(401);
+      });
+
+      it("accepts when secret configured and header correct", async () => {
+        process.env.VAPI_WEBHOOK_SECRET = "s3cret-token-value";
+        const response = await request(await buildApp())
+          .post("/api/voice/metrics")
+          .set("X-Vapi-Secret", "s3cret-token-value")
+          .send({ vapiCallId: "call-abc", ttftMs: 450 });
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual({ recorded: true });
+      });
     });
   });
 

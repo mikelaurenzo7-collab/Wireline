@@ -84,12 +84,9 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
     pattern: /^\/api\/voices\/:id\/preview$/,
     reason: "Premade voice previews only; cloned/tenant voices are on the authed route",
   },
-  // ── ⚠️ FLAGGED: documented but NOT signature-protected. See review. ──
   {
     pattern: /^\/api\/voice\/metrics$/,
-    reason:
-      "⚠️ Voice latency telemetry; tenant resolved via vapiCallId. NO signature — low-sensitivity " +
-      "write, but spoofable. Recommend adding X-Vapi-Secret before scaling. Tracked in review.",
+    reason: "Vapi X-Vapi-Secret (timing-safe) verified in handler; telemetry write",
   },
 ];
 
