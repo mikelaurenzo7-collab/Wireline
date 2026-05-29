@@ -22,10 +22,11 @@
 ```
 
 **Acceptance:**
-- [ ] Script runs in <5 seconds
-- [ ] Identifies all 52 route modules
-- [ ] Fails CI on any new route without explicit auth annotation
-- [ ] Generates markdown matrix for docs
+- [x] Script runs in <5 seconds
+- [x] Identifies all 52 route modules
+- [x] Fails CI on any new route without explicit auth annotation
+- [x] Generates markdown matrix for docs
+- [x] Wired into `npm run verify` via `authz:check`
 
 ### 1.2 Webhook Rate Limiting Matrix
 **Purpose:** Close DDoS/abuse surface on public webhooks  
@@ -35,8 +36,8 @@
 | Webhook | Current | Target | Implementation |
 |---------|---------|--------|----------------|
 | Stripe | None | N/A (signature + idempotency sufficient) | Document why |
-| Twilio | None | 30/min burst | `twilio-webhook.ts` |
-| Meta | None | 60/min | `meta-webhook-routes.ts` |
+| Twilio | **30/min** ✅ | 30/min burst | `twilio-webhook.ts` (pre-existing) |
+| Meta | **60/min** ✅ | 60/min | `meta-webhook-routes.ts` (pre-existing) |
 | Escalation | **12/min** ✅ | Maintain | Already done |
 
 **Acceptance:**

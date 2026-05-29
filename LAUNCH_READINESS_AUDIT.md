@@ -10,7 +10,20 @@
 
 Wireline is at **90% launch readiness**. The foundation is exceptionally strong for a product at this stage—architecturally sound, security-conscious, and design-forward. The remaining 10% represents the gap between "strong technical foundation" and "owner-grade confidence for real paying customers."
 
-**Verdict:** Deployable for early adopters with eyes open. Not yet at the standard where I would bet my own capital without the Phase 1 hardening complete.
+**Verdict:** Deployable for early adopters with eyes open. **Phase 1 critical items now complete** (collections compliance + AuthZ default-deny contract). One step closer to "bet my capital" readiness.
+
+---
+
+## Current Changes (This Worktree) — 2026-05-29 Session
+
+| File | Change | Risk Impact |
+|------|--------|-------------|
+| `src/lib/template-overlays.ts` | Removed fabricated "50-80%" settlement language; added mandatory FDCPA/UDAAP disclaimer on all collections paths | **CRITICAL** — Compliance |
+| `src/lib/agent-constants.ts` | Hardened collections personality to require explicit operator authorization only | **CRITICAL** — Compliance |
+| `scripts/generate-authz-matrix.ts` | New default-deny AuthZ scanner + CI gate | **HIGH** — Security |
+| `package.json` | Wired `authz:check` into `verify` | **HIGH** — CI |
+| `HeroDecorations.tsx` + `LandingPage.tsx` | Fixed robot decoration spacing (no overlap with fixed header/CTA) | UX Polish |
+| `LAUNCH_*` docs | Updated to reflect Phase 1 progress | Documentation |
 
 ---
 
