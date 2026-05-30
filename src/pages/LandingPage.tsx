@@ -7,7 +7,7 @@ import IntegrationLogos from "../components/layout/IntegrationLogos";
 import { HeroDecorations } from "../components/marketing/HeroDecorations";
 import { PageMeta } from "../lib/page-meta";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
-import { WIRELINE_CONTACT_AGENTS } from "../data/contact-agents";
+import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
 import type { ContactAgent } from "../data/contact-agents";
 
 const STATS = [
@@ -95,10 +95,12 @@ function AgentCard({
   agent,
   featured = false,
   delay = 0,
+  badge = "Live demo",
 }: {
   agent: ContactAgent;
   featured?: boolean;
   delay?: number;
+  badge?: string;
 }) {
   return (
     <motion.a
@@ -126,13 +128,17 @@ function AgentCard({
               {agent.name}
             </span>
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] px-2 py-0.5 leading-none text-brand bg-brand/8 border border-brand/20">
-              Team
+              {badge}
             </span>
           </div>
           <p
             className={`text-ink/70 leading-relaxed ${featured ? "text-sm max-w-sm" : "text-[13px]"}`}
           >
             {agent.role}
+          </p>
+          <p className="mt-2 text-[12px] text-ink/55 leading-relaxed">
+            Tell {agent.name} your company name and any scenario details — services, hours, or what
+            you want to hear.
           </p>
         </div>
         <div className="flex items-end justify-between gap-4 mt-4">
@@ -156,15 +162,15 @@ export default function LandingPage() {
     captureSignupIntentFromLocation();
   }, []);
 
-  // Landing page shows only the Wireline team lines — the real people a
-  // prospect talks to. Vertical demo agents live on the Demos tab
-  // (/showcase) and in the signed-in /help console, so they stay one
-  // click away without crowding the hero.
-  const teamAgents = WIRELINE_CONTACT_AGENTS;
-  const teamColsClass =
-    teamAgents.length <= 1
+  // Landing shows skill demos only — not the real employee lines (Sarah/Liam),
+  // so curious visitors never escalate to the founder's inbox.
+  const demoAgents = LANDING_PUBLIC_DEMO_AGENTS;
+  const csDemo = demoAgents.find((a) => a.name === "Jordan") ?? demoAgents[0];
+  const salesDemo = demoAgents.find((a) => a.name === "Jake") ?? demoAgents[1];
+  const demoColsClass =
+    demoAgents.length <= 1
       ? ""
-      : teamAgents.length === 2
+      : demoAgents.length === 2
         ? "sm:grid-cols-2"
         : "sm:grid-cols-2 lg:grid-cols-3";
 
@@ -208,7 +214,7 @@ export default function LandingPage() {
                 and email follow-ups. Trained on your playbook, improving with every call.
               </p>
 
-              <div className="mt-8 lg:mt-10 flex flex-wrap items-center justify-center gap-4">
+              <div className="mt-8 lg:mt-10 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4">
                 <Link
                   to="/signup"
                   data-testid="hero-cta-primary"
@@ -217,19 +223,32 @@ export default function LandingPage() {
                   Start free trial
                   <ArrowRight className="w-4 h-4" />
                 </Link>
-                <a
-                  href={`tel:${WIRELINE_CONTACT_AGENTS[0]?.tel || "+16305811834"}`}
-                  data-testid="hero-cta-call"
-                  className="inline-flex items-center gap-2 text-ink/70 hover:text-brand transition-colors text-sm font-medium"
-                >
-                  <Phone className="w-4 h-4" />
-                  <span>
-                    Call {WIRELINE_CONTACT_AGENTS[0]?.name || "us"}:{" "}
-                    <span className="font-mono tabular-nums text-brand">
-                      {WIRELINE_CONTACT_AGENTS[0]?.display || "(630) 581-1834"}
+                {csDemo && (
+                  <a
+                    href={`tel:${csDemo.tel}`}
+                    data-testid="hero-cta-call-cs"
+                    className="inline-flex items-center gap-2 text-ink/70 hover:text-brand transition-colors text-sm font-medium"
+                  >
+                    <Phone className="w-4 h-4" />
+                    <span>
+                      CS demo — {csDemo.name}:{" "}
+                      <span className="font-mono tabular-nums text-brand">{csDemo.display}</span>
                     </span>
-                  </span>
-                </a>
+                  </a>
+                )}
+                {salesDemo && (
+                  <a
+                    href={`tel:${salesDemo.tel}`}
+                    data-testid="hero-cta-call-sales"
+                    className="inline-flex items-center gap-2 text-ink/70 hover:text-brand transition-colors text-sm font-medium"
+                  >
+                    <Phone className="w-4 h-4" />
+                    <span>
+                      Sales demo — {salesDemo.name}:{" "}
+                      <span className="font-mono tabular-nums text-brand">{salesDemo.display}</span>
+                    </span>
+                  </a>
+                )}
               </div>
             </motion.div>
 
@@ -263,21 +282,25 @@ export default function LandingPage() {
                 Live right now
               </p>
               <h2 className="font-display italic text-[clamp(1.8rem,4vw,3rem)] leading-[1.05] text-ink max-w-2xl mx-auto">
-                Talk to the Wireline team. <span className="text-ink/65">No signup required.</span>
+                Call inbound CS or outbound sales.{" "}
+                <span className="text-ink/65">Use your company name in the demo.</span>
               </h2>
             </motion.div>
 
-            {/* Wireline team lines — equal cards in a single horizontal row */}
             <div
-              className={`grid grid-cols-1 ${teamColsClass} gap-px bg-ink/[0.08] border border-ink/[0.08] max-w-5xl mx-auto`}
+              className={`grid grid-cols-1 ${demoColsClass} gap-px bg-ink/[0.08] border border-ink/[0.08] max-w-5xl mx-auto`}
             >
-              {teamAgents.map((agent, i) => (
-                <AgentCard key={agent.tel} agent={agent} delay={i * 0.05} />
+              {demoAgents.map((agent, i) => (
+                <AgentCard
+                  key={agent.tel}
+                  agent={agent}
+                  delay={i * 0.05}
+                  badge={agent.name === "Jake" ? "Sales demo" : "CS demo"}
+                />
               ))}
             </div>
 
-            {/* Vertical demo agents now live on the Demos tab — keep them
-                one click away for prospects who want their own industry. */}
+            {/* Full vertical demo catalog lives on /showcase */}
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}

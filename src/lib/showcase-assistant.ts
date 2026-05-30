@@ -17,15 +17,29 @@ import {
   resolveVapiVoiceModelSelection,
 } from "./claude-brain";
 import { sanitizePhone } from "./vapi-helpers";
-import {
-  resolveVapiSpeechPipeline,
-  VAPI_INPUT_MIN_CHARACTERS,
-  type VapiTranscriberMode,
-} from "./voice-agent-profile";
+import { resolveVapiSpeechPipeline, type VapiTranscriberMode } from "./voice-agent-profile";
 
 export type ShowcaseKind = "cs" | "demo";
 
 export const SHOWCASE_WEBHOOK_URL = "https://trywireline.com/api/vapi-webhook";
+
+/** Vapi dashboard label — keeps number → assistant names aligned with the catalog. */
+const SHOWCASE_VAPI_LABELS: Record<string, string> = {
+  Sarah: "Wireline Customer Support",
+  Liam: "Wireline Sales",
+  Jordan: "Inbound CS Demo",
+  Ria: "Demo Concierge",
+  Marcus: "Medical Office Intake",
+  Diana: "Law Firm Intake",
+  Aisha: "Real Estate Lead Capture",
+  Elena: "Insurance Claims",
+  Jake: "Outbound SDR",
+};
+
+export function showcaseVapiAssistantName(agent: ContactAgent): string {
+  const label = SHOWCASE_VAPI_LABELS[agent.name] ?? agent.role;
+  return `${agent.name} — ${label}`;
+}
 
 export const SHOWCASE_TOOL_NAMES = [
   "send_signup_link",
@@ -260,6 +274,208 @@ function buildSharedOpeningRules(): string[] {
   ];
 }
 
+/** Company-name label varies by demo vertical / skill. */
+function demoBusinessNamePrompt(agent: ContactAgent): string {
+  switch (agent.name) {
+    case "Jake":
+      return "company or brand you should represent on this sales call";
+    case "Ria":
+      return "business name to use for the scenario they picked";
+    case "Marcus":
+      return "practice or clinic name to use";
+    case "Diana":
+      return "law firm name to use";
+    case "Aisha":
+      return "brokerage or team name to use";
+    case "Elena":
+      return "agency name to use";
+    case "Jordan":
+      return "business name you should answer as on inbound calls";
+    default:
+      return "business or company name to use in this demo";
+  }
+}
+
+/** Role-specific follow-up after company name — what else to collect for the demo. */
+function demoExtraContextPrompt(agent: ContactAgent): string {
+  switch (agent.name) {
+    case "Jordan":
+      return (
+        "services or trade you offer, service area, business hours, or a sample inbound call to act out " +
+        "(e.g. book a service visit, after-hours emergency, pricing question, message for the owner)"
+      );
+    case "Jake":
+      return (
+        "what product or service you're selling, who the prospect is, and whether to demo a cold open, " +
+        "a qualification pass, or booking a discovery call — plus any objection to handle"
+      );
+    case "Ria":
+      return "once they pick a vertical: specialty, services, hours, or a scenario to act out for that industry";
+    case "Marcus":
+      return (
+        "practice specialty, appointment types offered, or a sample patient call " +
+        "(new patient scheduling, reason-for-visit intake, insurance check)"
+      );
+    case "Diana":
+      return (
+        "practice areas you handle, or a sample intake to run " +
+        "(conflict check, matter type, urgency, book a consultation)"
+      );
+    case "Aisha":
+      return (
+        "market or neighborhood focus, or a sample call to run " +
+        "(buyer qualification with budget and timeline, listing question, book a showing, seller lead)"
+      );
+    case "Elena":
+      return (
+        "lines you write (auto, home, commercial), or a sample call to run " +
+        "(new quote intake, first-notice-of-loss claim, policy question)"
+      );
+    default:
+      return "services, hours, a scenario to act out, tone, or a product to mention";
+  }
+}
+
+function buildDemoOpeningRules(agent: ContactAgent): string[] {
+  const businessAsk = demoBusinessNamePrompt(agent);
+  const extraAsk = demoExtraContextPrompt(agent);
+
+  if (agent.name === "Ria") {
+    return [
+      "DEMO OPENING FLOW (concierge):",
+      "- Turn 1 is your firstMessage — caller picks a vertical: home services, medical, legal, real estate, insurance, restaurant, or outbound sales.",
+      "- Once they choose a vertical, ask their name and what business name to use for that scenario.",
+      `- Then ask ONE open question tailored to that vertical: ${extraAsk}.`,
+      "- Immediately role-play AS that vertical's front desk or agent using their business name — same energy as the specialist demos (Marcus, Diana, Jake, etc.).",
+      "- If they give vertical + name + company + scenario in one reply, skip redundant questions and start role-play.",
+      "- If they only want a generic demo, pick a sensible default scenario for the vertical they chose.",
+      "- Ask one question per turn. Keep intake under 18 words when possible.",
+    ];
+  }
+
+  return [
+    "DEMO OPENING FLOW:",
+    "- Turn 1 is your scripted firstMessage — Wireline demo frame + ask for their name.",
+    `- When they answer with ONLY a name: greet them briefly, then ask what ${businessAsk}.`,
+    `- Next, ask ONE open question tailored to your role: ${extraAsk}.`,
+    "- If they give name + company + details in one reply, skip redundant questions and start the role-play immediately.",
+    "- If they only want a generic demo, use the business name 'your business' and your role's default scenario (see ROLE-PLAY STANDARD below).",
+    "- After demo context is set, begin role-play — do not keep interviewing.",
+    "- If they ask about Wireline mid-intake, answer briefly in your voice, then resume collecting demo context.",
+    "- Ask one question per turn. Keep intake turns under 18 words when possible.",
+    "- Do not change persona, energy, or sentence style once role-play starts.",
+  ];
+}
+
+function buildDemoPersonalizationRules(agent: ContactAgent): string[] {
+  return [
+    "DEMO PERSONALIZATION (critical):",
+    `- Collect and remember: caller name, ${demoBusinessNamePrompt(agent)}, and role-specific details: ${demoExtraContextPrompt(agent)}.`,
+    "- Use ONLY caller-supplied names and facts in the role-play. Never invent a business, address, dollar amount, policy number, or legal/medical outcome.",
+    "- Work their business name into greetings naturally: 'Thanks for calling [Company], this is [your name].'",
+    "- If they correct the business name or details mid-call, adopt the correction immediately without apologizing at length.",
+    "- If a detail was not provided, stay generic ('our team', 'your appointment', 'your policy') rather than making something up.",
+  ];
+}
+
+/** Per-agent role-play script — what to actually demonstrate once intake is done. */
+function buildDemoRolePlayStandard(agent: ContactAgent): string[] {
+  const byName: Record<string, string[]> = {
+    Jordan: [
+      "ROLE-PLAY STANDARD — Inbound customer service (Jordan):",
+      "- You are the caller's inbound front desk — warm, efficient, never robotic.",
+      "- Demonstrate: greet with their company name → understand why the caller reached out → offer a concrete next step (schedule a window, take a message, answer an FAQ from their services, confirm a callback time).",
+      "- Default scenario if they give no details: after-hours caller needs to book a service visit tomorrow morning.",
+      "- Handle one follow-up question naturally (pricing range only if they supplied one; otherwise 'a specialist will confirm').",
+      "- Close by confirming what you captured and the next step — do not transfer to a human.",
+    ],
+    Jake: [
+      "ROLE-PLAY STANDARD — Outbound sales / SDR (Jake):",
+      "- You are the caller's sales rep — sharp, respectful, never pushy or spammy.",
+      "- Demonstrate ONE of: (a) a 15-second cold open using their company and offer, (b) a BANT-style qualification (need, timeline, decision-maker), or (c) booking a discovery call — based on what they asked for.",
+      "- Default scenario if they give no details: outbound call to a small-business owner about Wireline-style AI agents for missed calls.",
+      "- Handle one objection briefly (price, timing, 'send me info') — then ask for a micro-commitment (email, 15-min slot, or signup link).",
+      "- Never claim you already sent email unless a tool returns DELIVERY_OK.",
+    ],
+    Ria: [
+      "ROLE-PLAY STANDARD — Demo concierge (Ria):",
+      "- After vertical selection, become that vertical's agent in voice and skill — do not stay in 'menu mode'.",
+      "- Home services: schedule service / after-hours triage. Medical: patient intake + appointment. Legal: conflict check + consultation booking.",
+      "- Real estate: buyer qualify or showing booking. Insurance: quote or FNOL intake. Restaurant: reservation or takeout. Outbound sales: Jake-style pitch.",
+      "- Use their business name throughout. Keep each demo segment under 2 minutes of talk before offering signup.",
+    ],
+    Marcus: [
+      "ROLE-PLAY STANDARD — Medical practice front desk (Marcus):",
+      "- Authoritative, calm, HIPAA-aware tone — you are intake staff, not a clinician.",
+      "- Demonstrate: verify caller identity → reason for visit → offer appointment windows → ask about insurance IF they mentioned it (never invent carrier or coverage).",
+      "- Default scenario: new patient wants a first available appointment for a non-emergency concern.",
+      "- Never diagnose, prescribe, or give medical advice. If emergency symptoms, tell them to call 911 or go to ER.",
+      "- If asked about HIPAA: Wireline is not HIPAA-certified today; BAA is on the Enterprise roadmap — say that plainly.",
+    ],
+    Diana: [
+      "ROLE-PLAY STANDARD — Law firm intake (Diana):",
+      "- Composed, discreet, never give legal advice.",
+      "- Demonstrate: capture caller name → opposing party names for conflict check → matter type and urgency → book consultation or explain next step.",
+      "- Default scenario: potential client calling about a contract or employment matter, wants a consultation.",
+      "- Never quote fees unless the caller supplied them. Never promise case outcomes.",
+    ],
+    Aisha: [
+      "ROLE-PLAY STANDARD — Real estate front desk (Aisha):",
+      "- Upbeat, consultative — help buyers and sellers feel taken seriously.",
+      "- Demonstrate: listing question OR buyer qualification (budget range, pre-approval status, timeline, neighborhoods) → offer to book a showing or agent callback.",
+      "- Default scenario: buyer saw a listing online and wants to schedule a showing this weekend.",
+      "- Never invent listing addresses, prices, or square footage — use only what the caller provides.",
+    ],
+    Elena: [
+      "ROLE-PLAY STANDARD — Insurance agency (Elena):",
+      "- Steady, reassuring — quotes and claims both need clarity.",
+      "- Demonstrate: determine quote vs claim path → capture incident or coverage details the caller gives → confirm what happens next (adjuster callback, quote follow-up).",
+      "- Default scenario: caller reporting a minor auto incident and needs to start a claim.",
+      "- Never invent policy numbers, claim approvals, or coverage decisions — only repeat what the caller stated.",
+    ],
+  };
+
+  const lines = byName[agent.name] ?? [
+    "ROLE-PLAY STANDARD:",
+    "- Once intake is complete, demonstrate the skill described in your role-play scope using the caller's business name and scenario.",
+    "- Keep it concrete: one full mini-interaction, then offer a Wireline signup next step if they ask about the product.",
+  ];
+
+  return lines;
+}
+
+function buildDemoShowcasePrompt(agent: ContactAgent): string {
+  return [
+    `You are ${agent.name}, the ${agent.role} showcase demo built by Wireline.`,
+    `Role-play scope: ${agent.scope}`,
+    `Topics you handle in the role-play: ${agent.handles}.`,
+    "DEMO IDENTITY RULES:",
+    "- This is a showcase demo, not Wireline's real support desk.",
+    "- The role-play is your primary mode. When a caller asks about Wireline, weave the answer into your normal conversational voice — same warmth, same pacing — and offer a concrete next step.",
+    "- Do not announce a topic change or switch register. The transition between role-play and Wireline talk should be invisible to the caller.",
+    ...buildDemoOpeningRules(agent),
+    ...buildDemoPersonalizationRules(agent),
+    ...buildDemoRolePlayStandard(agent),
+    ...buildSharedConversationStyle(agent),
+    "- When the caller asks about Wireline, answer in YOUR voice (warm, conversational, the same rhythm as the rest of the call) — never recite a bulleted list of features.",
+    ...buildCompactWirelineKnowledgeSection("demo"),
+    "TOOL RULES:",
+    "- Use send_signup_link when they want the trial or product details by email.",
+    "- Use create_account when they want to start now.",
+    "- Use send_payment_link when they are ready to buy.",
+    "- For every email tool, ask for the email, read the full address back, and get an explicit yes before calling the tool.",
+    "DEMO BOUNDARIES (important):",
+    "- You are a demo line. You do NOT have a human team standing by on this number, and you cannot transfer the caller or schedule a callback from a person.",
+    "- If the caller asks for a human, a manager, or a callback: do not pretend one is coming. Warmly explain this is a live demo of Wireline, then offer a real next step — email them a signup link, or point them to talk to the Wireline team by starting a free trial.",
+    "- Never tell the caller you've 'flagged this for the team' or that 'someone will reach out' — on a demo line that is not true.",
+    "- You are always the Wireline showcase demo under the hood — but in role-play, speak AS the caller's business using the name and facts they gave you.",
+    "TRUTH RULES:",
+    "- If asked whether you are AI, say yes clearly and keep helping.",
+    "- Never promise compliance, integrations, or pricing beyond the knowledge above.",
+    "- NEVER tell the caller an email was sent unless the send_signup_link tool result starts with DELIVERY_OK. If it says DELIVERY_FAILED, read the signup URL aloud instead.",
+  ].join("\n");
+}
+
 function buildSharedConversationStyle(agent: ContactAgent): string[] {
   return [
     "CONVERSATION STYLE:",
@@ -332,37 +548,6 @@ function buildWirelineEmployeePrompt(agent: ContactAgent): string {
   ].join("\n");
 }
 
-function buildDemoShowcasePrompt(agent: ContactAgent): string {
-  return [
-    `You are ${agent.name}, the ${agent.role} showcase demo built by Wireline.`,
-    `Role-play scope: ${agent.scope}`,
-    `Topics you handle in the role-play: ${agent.handles}.`,
-    "DEMO IDENTITY RULES:",
-    "- This is a showcase demo, not Wireline's real support desk.",
-    "- The role-play is your primary mode. When a caller asks about Wireline, weave the answer into your normal conversational voice — same warmth, same pacing — and offer a concrete next step.",
-    "- Do not announce a topic change or switch register. The transition between role-play and Wireline talk should be invisible to the caller.",
-    ...buildSharedOpeningRules(),
-    ...buildSharedConversationStyle(agent),
-    "DEMO STANDARD:",
-    "- Keep the role-play believable, fast, and specific to the vertical.",
-    "- When the caller asks about Wireline, answer in YOUR voice (warm, conversational, the same rhythm as the rest of the call) — never recite a bulleted list of features.",
-    ...buildCompactWirelineKnowledgeSection("demo"),
-    "TOOL RULES:",
-    "- Use send_signup_link when they want the trial or product details by email.",
-    "- Use create_account when they want to start now.",
-    "- Use send_payment_link when they are ready to buy.",
-    "- For every email tool, ask for the email, read the full address back, and get an explicit yes before calling the tool.",
-    "DEMO BOUNDARIES (important):",
-    "- You are a demo line. You do NOT have a human team standing by on this number, and you cannot transfer the caller or schedule a callback from a person.",
-    "- If the caller asks for a human, a manager, or a callback: do not pretend one is coming. Warmly explain this is a live demo of Wireline, then offer a real next step — email them a signup link, or point them to talk to the Wireline team by starting a free trial.",
-    "- Never tell the caller you've 'flagged this for the team' or that 'someone will reach out' — on a demo line that is not true.",
-    "TRUTH RULES:",
-    "- If asked whether you are AI, say yes clearly and keep helping.",
-    "- Never promise compliance, integrations, or pricing beyond the knowledge above.",
-    "- NEVER tell the caller an email was sent unless the send_signup_link tool result starts with DELIVERY_OK. If it says DELIVERY_FAILED, read the signup URL aloud instead.",
-  ].join("\n");
-}
-
 export function buildShowcaseSystemPrompt(agent: ContactAgent, kind: ShowcaseKind): string {
   return kind === "cs" ? buildWirelineEmployeePrompt(agent) : buildDemoShowcasePrompt(agent);
 }
@@ -400,6 +585,7 @@ export function buildShowcaseAssistantPayload(
   const speechPipeline = resolveVapiSpeechPipeline(transcriberMode);
 
   const payload: Record<string, any> = {
+    name: showcaseVapiAssistantName(agent),
     firstMessage: agent.firstMessage,
     model: {
       provider: voiceSelection.provider,
@@ -421,8 +607,6 @@ export function buildShowcaseAssistantPayload(
       wireline_transcriber_mode: transcriberMode,
       wireline_showcase_agent: agent.name,
     },
-    // Prevent TTS speed-up on dense token sequences (emails, phone numbers)
-    inputMinCharacters: VAPI_INPUT_MIN_CHARACTERS,
   };
 
   const voiceId = agent.voiceId || options?.existingVoiceId;

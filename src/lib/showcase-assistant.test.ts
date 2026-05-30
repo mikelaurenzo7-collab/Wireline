@@ -22,10 +22,11 @@ import { describe, expect, it } from "vitest";
 import {
   buildShowcaseAssistantPayload,
   buildShowcaseFunctionTools,
+  buildShowcaseSystemPrompt,
   isOwnerRoutingShowcaseTool,
   showcaseToolNamesForKind,
 } from "./showcase-assistant";
-import { WIRELINE_CONTACT_AGENTS } from "../data/contact-agents";
+import { WIRELINE_CONTACT_AGENTS, WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
 
 describe("showcaseToolNamesForKind", () => {
   it("gives cs (employee) lines the full toolset including owner-routing tools", () => {
@@ -87,6 +88,8 @@ describe("isOwnerRoutingShowcaseTool", () => {
 describe("buildShowcaseAssistantPayload — Flux transcriber", () => {
   const sarah = WIRELINE_CONTACT_AGENTS.find((a) => a.name === "Sarah")!;
   const liam = WIRELINE_CONTACT_AGENTS.find((a) => a.name === "Liam")!;
+  const jordan = WIRELINE_DEMO_AGENTS.find((a) => a.name === "Jordan")!;
+  const jake = WIRELINE_DEMO_AGENTS.find((a) => a.name === "Jake")!;
 
   it("Sarah uses Deepgram Flux EOT by default", () => {
     const payload = buildShowcaseAssistantPayload(sarah, "cs");
@@ -103,11 +106,66 @@ describe("buildShowcaseAssistantPayload — Flux transcriber", () => {
     expect(payload.metadata.wireline_transcriber_mode).toBe("flux-eot");
   });
 
+  it("Jake (sales demo) uses Deepgram Flux EOT by default", () => {
+    const payload = buildShowcaseAssistantPayload(jake, "demo");
+    expect(payload.transcriber.model).toBe("flux-general-en");
+    expect(payload.metadata.wireline_transcriber_mode).toBe("flux-eot");
+    expect(buildShowcaseFunctionTools("demo").map((t) => t.function.name)).not.toContain(
+      "escalate_to_human",
+    );
+  });
+
+  it("Jordan (CS demo) uses Deepgram Flux EOT and demo-only tools", () => {
+    const payload = buildShowcaseAssistantPayload(jordan, "demo");
+    expect(payload.name).toBe("Jordan — Inbound CS Demo");
+    expect(payload.transcriber.model).toBe("flux-general-en");
+    expect(payload.metadata.wireline_transcriber_mode).toBe("flux-eot");
+    expect(payload.firstMessage).toMatch(/Wireline customer-service demo/i);
+    expect(payload.voice?.voiceId).toBe("EXAVITQu4vr4xnSDxMaL");
+  });
+
   it("Sarah uses Rachel voice with warmer ElevenLabs tuning", () => {
     const payload = buildShowcaseAssistantPayload(sarah, "cs");
+    expect(payload.name).toBe("Sarah — Wireline Customer Support");
     expect(payload.voice?.voiceId).toBe("21m00Tcm4TlvDq8ikWAM");
     expect(payload.voice?.stability).toBe(0.58);
     expect(payload.voice?.style).toBe(0.2);
     expect(payload.voice?.similarityBoost).toBe(0.9);
+  });
+});
+
+describe("buildShowcaseSystemPrompt — demo personalization", () => {
+  const jordan = WIRELINE_DEMO_AGENTS.find((a) => a.name === "Jordan")!;
+  const jake = WIRELINE_DEMO_AGENTS.find((a) => a.name === "Jake")!;
+  const marcus = WIRELINE_DEMO_AGENTS.find((a) => a.name === "Marcus")!;
+  const diana = WIRELINE_DEMO_AGENTS.find((a) => a.name === "Diana")!;
+
+  it("Jordan prompt collects business name and extra demo context", () => {
+    const prompt = buildShowcaseSystemPrompt(jordan, "demo");
+    expect(prompt).toMatch(/DEMO PERSONALIZATION/i);
+    expect(prompt).toMatch(/business name you should answer as on inbound calls/i);
+    expect(prompt).toMatch(/ROLE-PLAY STANDARD — Inbound customer service/i);
+    expect(prompt).not.toMatch(/escalate_to_human/);
+  });
+
+  it("Jake prompt asks for company to represent on sales calls", () => {
+    const prompt = buildShowcaseSystemPrompt(jake, "demo");
+    expect(prompt).toMatch(/company or brand you should represent/i);
+    expect(prompt).toMatch(/ROLE-PLAY STANDARD — Outbound sales/i);
+    expect(prompt).toMatch(/BANT-style qualification/i);
+  });
+
+  it("Marcus prompt includes medical intake role-play and HIPAA guardrails", () => {
+    const prompt = buildShowcaseSystemPrompt(marcus, "demo");
+    expect(prompt).toMatch(/practice or clinic name/i);
+    expect(prompt).toMatch(/ROLE-PLAY STANDARD — Medical practice front desk/i);
+    expect(prompt).toMatch(/Never diagnose, prescribe/i);
+  });
+
+  it("Diana prompt includes legal intake and conflict-check flow", () => {
+    const prompt = buildShowcaseSystemPrompt(diana, "demo");
+    expect(prompt).toMatch(/law firm name to use/i);
+    expect(prompt).toMatch(/ROLE-PLAY STANDARD — Law firm intake/i);
+    expect(prompt).toMatch(/conflict check/i);
   });
 });

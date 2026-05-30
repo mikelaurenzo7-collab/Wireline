@@ -283,19 +283,23 @@ function SidePhonePose({
   uid,
   strokeWidth,
   phoneOffset,
-  isLeft,
+  phoneY,
+  phoneSide,
   pose,
   animated,
 }: {
   uid: string;
   strokeWidth: number;
   phoneOffset: number;
-  isLeft: boolean;
+  phoneY: number;
+  /** Which side of the head the phone sits on (toward page center for gutter stickers). */
+  phoneSide: "left" | "right";
   pose: "phone" | "on-call";
   animated: boolean;
 }) {
   const scale = pose === "on-call" ? 1.18 : 1;
   const screenMode = pose === "on-call" ? "call" : "wave";
+  const phoneOnRight = phoneSide === "right";
 
   return (
     <>
@@ -304,9 +308,9 @@ function SidePhonePose({
           <path
             key={i}
             d={
-              isLeft
-                ? `M${phoneOffset + 14 - i * 2} 20 Q${phoneOffset + 4 - i * 3} 26 ${phoneOffset + 2 - i} 32`
-                : `M${phoneOffset - 4 + i * 2} 20 Q${phoneOffset + 6 + i * 3} 26 ${phoneOffset + 10 + i} 32`
+              phoneOnRight
+                ? `M${phoneOffset - 4 + i * 2} 20 Q${phoneOffset + 6 + i * 3} 26 ${phoneOffset + 10 + i} 32`
+                : `M${phoneOffset + 14 - i * 2} 20 Q${phoneOffset + 4 - i * 3} 26 ${phoneOffset + 2 - i} 32`
             }
             stroke={COLORS.emerald}
             strokeWidth={1.4 - i * 0.25}
@@ -324,7 +328,7 @@ function SidePhonePose({
         uid={uid}
         strokeWidth={strokeWidth}
         x={phoneOffset}
-        y={21}
+        y={phoneY}
         scale={scale}
         screenMode={screenMode}
         animated={animated}
@@ -572,8 +576,12 @@ export function RobotHead({
 }: RobotHeadProps & { "aria-hidden"?: boolean }) {
   const uid = useId().replace(/:/g, "");
   const strokeWidth = size / 32;
-  const isLeft = variant === 1 || variant === 3 || variant === 5;
-  const phoneOffset = isLeft ? -17.5 : 7.5;
+  // Left-gutter variants (1, 3, 5) hold the phone on the right side of the
+  // head (toward page center). Right-gutter variants hold it on the left.
+  const isLeftGutterVariant = variant === 1 || variant === 3 || variant === 5;
+  const phoneSide: "left" | "right" = isLeftGutterVariant ? "right" : "left";
+  const phoneOffset = phoneSide === "right" ? 47 : 7.5;
+  const phoneY = pose === "on-call" ? 20 : 21;
   const layout = POSE_LAYOUT[pose];
 
   const transforms = {
@@ -655,7 +663,8 @@ export function RobotHead({
             uid={uid}
             strokeWidth={strokeWidth}
             phoneOffset={phoneOffset}
-            isLeft={isLeft}
+            phoneY={phoneY}
+            phoneSide={phoneSide}
             pose={pose}
             animated={animated}
           />
