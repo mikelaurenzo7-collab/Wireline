@@ -18,12 +18,14 @@ export default defineConfig({
       // Ratchet thresholds: set just below the current measured floor so the
       // build fails on a coverage *regression* rather than enforcing an
       // aspirational target the legacy UI tree can't yet meet. Raised after
-      // the 2026-Q2 test expansion (406 tests).
+      // the 2026-Q2 test expansion (406 tests), then again after the
+      // webhook-signature + auth/RBAC suite landed (794 tests; measured
+      // ~11.9% stmts / 65.5% branches / 33.7% funcs).
       thresholds: {
-        statements: 6,
-        branches: 50,
-        functions: 20,
-        lines: 6,
+        statements: 11,
+        branches: 64,
+        functions: 33,
+        lines: 11,
       },
     },
   },
