@@ -38,6 +38,10 @@ import {
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
+import IntegrationActivityCard, {
+  type IntegrationActivityCardProps,
+} from "./IntegrationActivityCard";
+import { Skeleton } from "./ui/shadcn/Skeleton";
 
 const AgentTrainingInline = lazy(() => import("./AgentTraining"));
 const AgentConnectorsInline = lazy(() => import("./AgentActionEngine"));
@@ -154,6 +158,9 @@ export default function AgentWorkspace({
   const [isUploading, setIsUploading] = useState(false);
   const [enabledTools, setEnabledTools] = useState<string[]>([]);
   const [liveSteps, setLiveSteps] = useState<LiveStep[]>([]);
+  const [integrationActivities, setIntegrationActivities] = useState<
+    IntegrationActivityCardProps[]
+  >([]);
   // The active tab + (for Training) its sub-tab live in the URL so every view
   // is deep-linkable as /chat/:id?tab=connectors or ?tab=training&sub=simulator
   // — and survives a refresh or a shared link. Switching agents drops the query
@@ -271,6 +278,7 @@ export default function AgentWorkspace({
   useEffect(() => {
     if (!isSending) {
       setLiveSteps([]);
+      setIntegrationActivities([]);
       return;
     }
 
@@ -279,33 +287,103 @@ export default function AgentWorkspace({
         id: "1",
         icon: <Brain className="w-3.5 h-3.5" />,
         title: "Recalling workspace memory",
-        subtitle: "Thread + 3 prior lessons from this agent",
+        subtitle: "Thread history: 12 messages • Relevant lessons: 3 • Context: 4.2k tokens",
         status: "pending",
       },
       {
         id: "2",
         icon: <Plug className="w-3.5 h-3.5" />,
-        title: "Querying connected integrations",
-        subtitle: "Shopify active • Checking order #4821",
+        title: "Checking connected integrations",
+        subtitle: "2 active: Shopify, HubSpot • Preparing queries",
         status: "pending",
       },
       {
         id: "3",
         icon: <Sparkles className="w-3.5 h-3.5" />,
-        title: "Executing tool call",
-        subtitle: "shopify.getOrder(4821) → resolved in 187ms",
+        title: "Executing tool calls",
+        subtitle: "shopify.getOrder() • hubspot.updateContact()",
         status: "pending",
       },
       {
         id: "4",
         icon: <GraduationCap className="w-3.5 h-3.5" />,
         title: "Applying persona & instructions",
-        subtitle: "Authoritative collections tone engaged",
+        subtitle: 'Voice: "Authoritative" • Tone rules: 4 active • Flow: collections',
         status: "pending",
       },
     ];
 
     setLiveSteps(steps.map((s) => ({ ...s, status: "pending" })));
+
+    // Simulate integration activities appearing after step 2
+    setTimeout(
+      () => {
+        setIntegrationActivities([
+          {
+            integration: "Shopify",
+            icon: <span className="text-sm font-bold">S</span>,
+            action: "Fetching order #4821",
+            status: "active",
+            brandColor: "#95BF47",
+          },
+        ]);
+      },
+      420 * 2 + 200,
+    );
+
+    // Update integration to success
+    setTimeout(
+      () => {
+        setIntegrationActivities((prev) =>
+          prev.map((a) =>
+            a.integration === "Shopify"
+              ? {
+                  ...a,
+                  status: "success" as const,
+                  result: "Order found: $342.50 • Status: Shipped • Customer: satisfied",
+                }
+              : a,
+          ),
+        );
+      },
+      420 * 2 + 1200,
+    );
+
+    // Add second integration
+    setTimeout(
+      () => {
+        setIntegrationActivities((prev) => [
+          ...prev,
+          {
+            integration: "HubSpot",
+            icon: <span className="text-sm font-bold">H</span>,
+            action: "Updating contact record",
+            status: "active",
+            brandColor: "#FF7A59",
+          },
+        ]);
+      },
+      420 * 3 + 300,
+    );
+
+    // Update HubSpot to success
+    setTimeout(
+      () => {
+        setIntegrationActivities((prev) =>
+          prev.map((a) =>
+            a.integration === "HubSpot"
+              ? {
+                  ...a,
+                  status: "success" as const,
+                  result: "Contact updated • Last interaction logged • Deal stage advanced",
+                  link: "https://app.hubspot.com/contacts/",
+                }
+              : a,
+          ),
+        );
+      },
+      420 * 3 + 1400,
+    );
 
     // Animate steps sequentially for genius-level transparency
     steps.forEach((step, index) => {
@@ -326,7 +404,10 @@ export default function AgentWorkspace({
     });
 
     // Clear after full cycle (in real app, tied to stream completion)
-    setTimeout(() => setLiveSteps([]), 2800);
+    setTimeout(() => {
+      setLiveSteps([]);
+      setIntegrationActivities([]);
+    }, 4200);
   }, [isSending]);
 
   const send = useCallback(async () => {
@@ -635,8 +716,24 @@ export default function AgentWorkspace({
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-3">
           {isLoading && messages.length === 0 ? (
-            <div className="flex items-center justify-center py-10 text-muted">
-              <Loader2 className="w-4 h-4 animate-spin mr-2" /> Loading thread…
+            <div className="space-y-3 py-4">
+              {/* Skeleton loading states — premium feel */}
+              <div className="flex justify-end">
+                <div className="max-w-[80%] space-y-2">
+                  <Skeleton className="h-10 w-48 rounded-2xl bg-brand/10" />
+                </div>
+              </div>
+              <div className="flex justify-start">
+                <div className="max-w-[85%] space-y-2">
+                  <Skeleton className="h-14 w-full rounded-2xl" />
+                  <Skeleton className="h-8 w-3/4 rounded-2xl" />
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <div className="max-w-[75%] space-y-2">
+                  <Skeleton className="h-12 w-64 rounded-2xl bg-brand/10" />
+                </div>
+              </div>
             </div>
           ) : messages.length === 0 ? (
             <motion.div
@@ -708,13 +805,20 @@ export default function AgentWorkspace({
                   </div>
                   <div
                     className={cn(
-                      "max-w-[82%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed",
+                      "max-w-[82%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed transition-all duration-200",
                       m.role === "operator"
                         ? "bg-gradient-to-br from-brand to-brand-deep text-on-brand rounded-tr-md shadow-sm shadow-brand/20"
-                        : "glass border border-black/8 text-ink rounded-tl-md",
+                        : "glass border border-black/8 text-ink rounded-tl-md hover:border-brand/20 hover:shadow-sm relative overflow-hidden",
                     )}
                   >
-                    <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                    {/* Subtle gradient overlay for assistant messages — premium polish */}
+                    {m.role === "agent" && (
+                      <div
+                        className="absolute inset-0 bg-gradient-to-br from-brand/[0.02] to-transparent pointer-events-none rounded-2xl"
+                        aria-hidden="true"
+                      />
+                    )}
+                    <p className="whitespace-pre-wrap break-words relative z-10">{m.content}</p>
                     {m.role === "agent" && m.proposals && (
                       <div className="mt-2.5 space-y-2">
                         {m.proposals.changes.map((c, i) => {
@@ -891,6 +995,30 @@ export default function AgentWorkspace({
                           </div>
                         </motion.div>
                       ))}
+
+                      {/* Integration activity cards — Claude-style drop-in visualization of live integration actions */}
+                      {integrationActivities.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -8 }}
+                          className="mt-2.5 grid gap-2 sm:grid-cols-2"
+                        >
+                          {integrationActivities.map((activity, idx) => (
+                            <motion.div
+                              key={activity.integration}
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{
+                                opacity: 1,
+                                scale: 1,
+                                transition: { delay: idx * 0.1, duration: 0.3 },
+                              }}
+                            >
+                              <IntegrationActivityCard {...activity} />
+                            </motion.div>
+                          ))}
+                        </motion.div>
+                      )}
                     </AnimatePresence>
                   </div>
                 </motion.div>
@@ -1140,13 +1268,16 @@ function ProposalCard({
   return (
     <motion.div
       layout
+      whileHover={!state ? { scale: 1.01 } : {}}
+      whileTap={!state ? { scale: 0.99 } : {}}
       animate={
         state ? { scale: 0.98, opacity: state === "dismissed" ? 0.5 : 1 } : { scale: 1, opacity: 1 }
       }
-      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
       className={cn(
-        "rounded-xl border px-3 py-2.5 text-ink transition-colors",
+        "rounded-xl border px-3 py-2.5 text-ink transition-all duration-200",
         state === "dismissed" ? "border-black/8 bg-black/3" : TONE_CLASSES[tone],
+        !state && "hover:shadow-md cursor-default",
       )}
     >
       <div className="flex items-start gap-2.5">
