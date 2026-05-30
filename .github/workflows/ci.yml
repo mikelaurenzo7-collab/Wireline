@@ -32,7 +32,13 @@ jobs:
         run: npm audit --audit-level=high --omit=dev
 
       - name: Typecheck
-        run: npx tsc --noEmit
+        # Use the project's lint script (node --max-old-space-size=4096 tsc
+        # --noEmit) rather than a bare `npx tsc`. The codebase exceeds the
+        # default ~2GB V8 heap, so plain tsc OOMs ("Ineffective mark-compacts
+        # near heap limit", exit 134) before any later step runs. The Strict
+        # Typecheck step below already uses lint:strict, which carries the
+        # same flag.
+        run: npm run lint
 
       - name: Guard — user_id in service-role inserts
         run: node scripts/check-user-id-inserts.mjs
