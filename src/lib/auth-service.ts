@@ -69,7 +69,7 @@ export function generateToken(user: { id: string; email: string }): string {
     sub: user.id,
     email: user.email,
     iat: now,
-    exp: now + 60 * 60 * 4, // 4 hours
+    exp: now + 60 * 60 * 2, // 2 hours
     aud: "authenticated",
     role: "authenticated",
     iss: "wireline-internal",
