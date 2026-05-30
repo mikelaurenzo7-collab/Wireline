@@ -82,7 +82,7 @@
   --popover-foreground: #fafafa;
 
   /* Brand primary */
-  --primary: #9d4edd;
+  --primary: #6B2B99;
   --primary-foreground: #ffffff;
 
   /* Secondary */
@@ -94,8 +94,8 @@
   --muted-foreground: #a1a1aa;
 
   /* Accent */
-  --accent: rgba(157, 78, 221, 0.15);
-  --accent-foreground: #c77dff;
+  --accent: rgba(107, 43, 153, 0.15);
+  --accent-foreground: #6B2B99;
 
   /* Destructive */
   --destructive: #ef4444;
@@ -104,24 +104,24 @@
   /* Borders & inputs */
   --border: rgba(255, 255, 255, 0.08);
   --input: rgba(255, 255, 255, 0.1);
-  --ring: rgba(157, 78, 221, 0.5);
+  --ring: rgba(107, 43, 153, 0.5);
 
   /* Sidebar */
   --sidebar-background: rgba(9, 9, 11, 0.95);
   --sidebar-foreground: #fafafa;
-  --sidebar-primary: #9d4edd;
+  --sidebar-primary: #6B2B99;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: rgba(255, 255, 255, 0.05);
   --sidebar-accent-foreground: #fafafa;
   --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: rgba(157, 78, 221, 0.5);
+  --sidebar-ring: rgba(107, 43, 153, 0.5);
 
   /* Charts */
-  --chart-1: #9d4edd;
-  --chart-2: #c77dff;
-  --chart-3: #e0aaff;
-  --chart-4: #5a189a;
-  --chart-5: #3c096c;
+  --chart-1: #6B2B99;
+  --chart-2: #8B3FD6;
+  --chart-3: #8B6FA8;
+  --chart-4: #6B2B99;
+  --chart-5: #3B154C;
 
   /* Dark mode theme re-mappings */
   --ink: #fafafa;
@@ -151,8 +151,8 @@
 
   /* Core palette */
   --color-brand: var(--primary);
-  --color-brand-2: #c77dff;
-  --color-brand-3: #e0aaff;
+  --color-brand-2: #8B3FD6;
+  --color-brand-3: #8B6FA8;
   --color-brand-deep: #6B2B99;
   --color-ink: var(--ink);
   --color-paper: var(--paper);
@@ -310,7 +310,7 @@
 
   :root {
     --wl-purple: #6B2B99;
-    --wl-purple-light: #8B3FD6;
+    --wl-purple-light: #6B2B99;
     --wl-purple-deep: #6B2B99;
     --wl-purple-muted: #8B6FA8;
     --wl-cream: #EFE9DC;
@@ -571,11 +571,11 @@
 @utility brutal-btn {
   @apply relative inline-flex items-center justify-center gap-2 px-5 py-2.5 font-semibold tracking-[0.10em] uppercase text-[11px] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:grayscale disabled:pointer-events-none overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-paper rounded-full;
   color: #FFFFFF;
-  background: linear-gradient(135deg, #9d4edd, #5a189a);
+  background: linear-gradient(135deg, #6B2B99, #6B2B99);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.15) inset,
-    0 6px 20px -6px rgba(157, 78, 221, 0.45),
-    0 14px 36px -10px rgba(157, 78, 221, 0.28);
+    0 6px 20px -6px rgba(107, 43, 153, 0.45),
+    0 14px 36px -10px rgba(107, 43, 153, 0.28);
 }
 
 /* Button size variants — use alongside brutal-btn to avoid !py- overrides. */

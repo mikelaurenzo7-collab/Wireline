@@ -100,7 +100,7 @@ export default function IntegrationActivityCard({
           style={{
             background: brandColor
               ? `linear-gradient(135deg, ${brandColor}, ${brandColor}dd)`
-              : "linear-gradient(135deg, #6B2B99, #8B3FD6)",
+              : "linear-gradient(135deg, #6B2B99, #6B2B99)",
           }}
         >
           {icon}
