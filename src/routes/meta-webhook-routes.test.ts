@@ -57,10 +57,21 @@ const APP_SECRET = "meta-app-secret";
 const VERIFY_TOKEN = "meta-verify-token";
 
 function app() {
-  // No global body parser: the leadgen + deletion routes mount their own
-  // express.raw() so they can HMAC-verify the *raw* bytes. A global
-  // express.json() would consume the stream and break signature checks.
+  // Mirror server.ts middleware ordering: the global express.json() (with a
+  // verify hook that stashes the raw buffer) is registered BEFORE the meta
+  // router (server.ts:62 then :284). The leadgen/deletion routes then mount
+  // their own express.raw({ type: "*/*" }) so HMAC verification runs over the
+  // raw bytes. Mounting json() first here keeps the test faithful to the
+  // deployed request path (Codex review).
   const a = express();
+  a.use(
+    express.json({
+      limit: "1mb",
+      verify: (req: express.Request & { rawBody?: Buffer }, _res, buf) => {
+        req.rawBody = buf;
+      },
+    }),
+  );
   a.use(metaRouter);
   return a;
 }
