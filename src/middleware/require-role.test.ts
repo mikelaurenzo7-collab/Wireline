@@ -1,24 +1,32 @@
 import type { Request, Response } from "express";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 // server-context builds a pg Pool at import; require-role only needs `log`.
 vi.mock("../lib/server-context", () => ({
   log: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
 }));
 
-import {
-  createRbacMiddleware,
-  getCallerRole,
-  invalidateRoleCache,
-  type RbacDeps,
-} from "./require-role";
+import { createRbacMiddleware, getCallerRole, type RbacDeps } from "./require-role";
 
 // AuthZ is implemented (and CI guards that every route is wired to a guard
 // via authz:check). These tests pin the *runtime behaviour* of the guard so
 // a refactor of require-role.ts can't silently weaken 401/403/fail-closed
 // semantics while still passing the wiring check.
+//
+// IMPORTANT: getCallerRole caches roles in a module-level Map keyed by userId
+// for 30s. To keep every test hermetic regardless of execution order or
+// parallelism, each test mints a FRESH unique userId (uniqueUid) so no test
+// can ever read another's cached entry. This avoids the shared-cache flakiness
+// that a single shared UID + invalidate-in-beforeEach is prone to in CI.
 
 type RoleRow = { role: string };
+
+let uidCounter = 0;
+/** A fresh, never-before-cached UUID-shaped id for each test. */
+function uniqueUid(): string {
+  const n = (uidCounter++).toString(16).padStart(12, "0");
+  return `11111111-1111-4111-8111-${n}`;
+}
 
 /**
  * Minimal Drizzle stand-in: select().from().where().orderBy().limit()
@@ -26,6 +34,8 @@ type RoleRow = { role: string };
  */
 function fakeDrizzle(rows: RoleRow[] | Error) {
   const result = rows instanceof Error ? Promise.reject(rows) : Promise.resolve(rows);
+  // Swallow the rejection's "unhandled" warning; the code under test awaits it.
+  if (rows instanceof Error) void result.catch(() => {});
   const chain: any = {
     select: () => chain,
     from: () => chain,
@@ -57,26 +67,17 @@ function mockReqRes(userId?: string) {
   return { req, res };
 }
 
-const UID = "11111111-1111-4111-8111-111111111111";
-
-afterEach(() => {
-  invalidateRoleCache(UID);
-  vi.clearAllMocks();
-});
-
 describe("getCallerRole", () => {
-  beforeEach(() => invalidateRoleCache(UID));
-
   it("returns the team member's role when a row exists", async () => {
-    expect(await getCallerRole(fakeDrizzle([{ role: "operator" }]), UID)).toBe("operator");
+    expect(await getCallerRole(fakeDrizzle([{ role: "operator" }]), uniqueUid())).toBe("operator");
   });
 
   it("defaults to owner for single-tenant users with no membership row", async () => {
-    expect(await getCallerRole(fakeDrizzle([]), UID)).toBe("owner");
+    expect(await getCallerRole(fakeDrizzle([]), uniqueUid())).toBe("owner");
   });
 
   it("ignores unknown role values and falls back to owner", async () => {
-    expect(await getCallerRole(fakeDrizzle([{ role: "superduper" }]), UID)).toBe("owner");
+    expect(await getCallerRole(fakeDrizzle([{ role: "superduper" }]), uniqueUid())).toBe("owner");
   });
 
   it("caches within the TTL (second call does not re-query)", async () => {
@@ -86,24 +87,23 @@ describe("getCallerRole", () => {
       from: () => chain,
       where: () => chain,
       orderBy: () => chain,
-      limit: limit,
+      limit,
     };
-    await getCallerRole(chain, UID);
-    await getCallerRole(chain, UID);
+    const uid = uniqueUid();
+    await getCallerRole(chain, uid);
+    await getCallerRole(chain, uid);
     expect(limit).toHaveBeenCalledTimes(1);
   });
 });
 
 describe("requirePermission", () => {
-  const audit = { logSecurity: vi.fn().mockResolvedValue(undefined) };
-
   it("calls next() when the role holds the permission", async () => {
-    invalidateRoleCache(UID);
+    const audit = { logSecurity: vi.fn().mockResolvedValue(undefined) };
     const { requirePermission } = createRbacMiddleware({
       drizzle: fakeDrizzle([{ role: "owner" }]),
       auditLogger: audit,
     });
-    const { req, res } = mockReqRes(UID);
+    const { req, res } = mockReqRes(uniqueUid());
     const next = vi.fn();
     await requirePermission("quotas.override")(req, res, next);
     expect(next).toHaveBeenCalledOnce();
@@ -121,12 +121,13 @@ describe("requirePermission", () => {
   });
 
   it("returns 403 FORBIDDEN and audits when the permission is missing", async () => {
-    invalidateRoleCache(UID);
+    const audit = { logSecurity: vi.fn().mockResolvedValue(undefined) };
+    const uid = uniqueUid();
     const { requirePermission } = createRbacMiddleware({
       drizzle: fakeDrizzle([{ role: "viewer" }]),
       auditLogger: audit,
     });
-    const { req, res } = mockReqRes(UID);
+    const { req, res } = mockReqRes(uid);
     const next = vi.fn();
     await requirePermission("billing.manage")(req, res, next);
     expect(next).not.toHaveBeenCalled();
@@ -134,16 +135,15 @@ describe("requirePermission", () => {
     expect(res.body.code).toBe("FORBIDDEN");
     expect(audit.logSecurity).toHaveBeenCalledWith(
       "unauthorized_access",
-      expect.objectContaining({ userId: UID, resource: "billing.manage" }),
+      expect.objectContaining({ userId: uid, resource: "billing.manage" }),
     );
   });
 
   it("fails CLOSED (403) when the role lookup throws", async () => {
-    invalidateRoleCache(UID);
     const { requirePermission } = createRbacMiddleware({
       drizzle: fakeDrizzle(new Error("db down")),
     });
-    const { req, res } = mockReqRes(UID);
+    const { req, res } = mockReqRes(uniqueUid());
     const next = vi.fn();
     await requirePermission("calls.read")(req, res, next);
     expect(next).not.toHaveBeenCalled();
@@ -153,18 +153,16 @@ describe("requirePermission", () => {
 
 describe("requireRole", () => {
   it("allows a role at or above the threshold", async () => {
-    invalidateRoleCache(UID);
     const { requireRole } = createRbacMiddleware({ drizzle: fakeDrizzle([{ role: "admin" }]) });
-    const { req, res } = mockReqRes(UID);
+    const { req, res } = mockReqRes(uniqueUid());
     const next = vi.fn();
     await requireRole("operator")(req, res, next);
     expect(next).toHaveBeenCalledOnce();
   });
 
   it("denies a role below the threshold with 403", async () => {
-    invalidateRoleCache(UID);
     const { requireRole } = createRbacMiddleware({ drizzle: fakeDrizzle([{ role: "viewer" }]) });
-    const { req, res } = mockReqRes(UID);
+    const { req, res } = mockReqRes(uniqueUid());
     const next = vi.fn();
     await requireRole("admin")(req, res, next);
     expect(next).not.toHaveBeenCalled();
