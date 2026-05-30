@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 /**
- * Apply Flux EOT transcriber to Liam's Vapi assistant; keep Sarah on Nova+LiveKit.
- * Run after deploy so static assistant config matches webhook assistant-request payloads.
+ * Apply Deepgram Flux EOT transcriber to all Vapi assistants.
  *
  * Usage:
  *   $env:VAPI_PRIVATE_KEY = "..."
@@ -19,22 +18,6 @@ const FLUX_TRANSCRIBER = {
 };
 
 const FLUX_START_SPEAKING = { waitSeconds: 0.05 };
-
-const NOVA_TRANSCRIBER = {
-  provider: "deepgram",
-  model: "nova-3",
-  language: "en",
-  smartFormat: true,
-  endpointing: 40,
-};
-
-const NOVA_START_SPEAKING = {
-  waitSeconds: 0.05,
-  smartEndpointingPlan: {
-    provider: "livekit",
-    waitFunction: "2000 / (1 + exp(-10 * (x - 0.5)))",
-  },
-};
 
 const SHARED = {
   responseDelaySeconds: 0,
@@ -62,40 +45,27 @@ async function vapiFetch(path, opts = {}) {
   return text ? JSON.parse(text) : {};
 }
 
-function patchForAgent(name) {
-  if (/^Liam/i.test(name)) {
-    return {
-      ...SHARED,
-      transcriber: FLUX_TRANSCRIBER,
-      startSpeakingPlan: FLUX_START_SPEAKING,
-      metadata: { wireline_transcriber_mode: "flux-eot", wireline_showcase_agent: "Liam" },
-    };
-  }
-  if (/^Sarah/i.test(name)) {
-    return {
-      ...SHARED,
-      transcriber: NOVA_TRANSCRIBER,
-      startSpeakingPlan: NOVA_START_SPEAKING,
-      metadata: { wireline_transcriber_mode: "nova-livekit", wireline_showcase_agent: "Sarah" },
-    };
-  }
-  return null;
-}
-
 async function main() {
   const assistants = await vapiFetch("/assistant?limit=100");
-  console.log("Wireline employee A/B — Flux on Liam, Nova+LiveKit on Sarah\n");
+  console.log(`Applying Flux EOT to ${assistants.length} Vapi assistants\n`);
 
   for (const a of assistants) {
-    const patch = patchForAgent(a.name || "");
-    if (!patch) continue;
-    await vapiFetch(`/assistant/${a.id}`, { method: "PATCH", body: JSON.stringify(patch) });
-    const mode = patch.metadata.wireline_transcriber_mode;
-    console.log(`  ✓ ${a.name} → ${mode} (${patch.transcriber.model})`);
+    await vapiFetch(`/assistant/${a.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        ...SHARED,
+        transcriber: FLUX_TRANSCRIBER,
+        startSpeakingPlan: FLUX_START_SPEAKING,
+        metadata: {
+          ...(a.metadata || {}),
+          wireline_transcriber_mode: "flux-eot",
+        },
+      }),
+    });
+    console.log(`  ✓ ${a.name || a.id}`);
   }
 
-  console.log("\nSarah (630) 642-5661 — control (Nova-3 + LiveKit)");
-  console.log("Liam  (630) 581-1834 — experiment (Flux EOT)");
+  console.log("\nDone — all assistants on flux-general-en (eotThreshold 0.62, eotTimeoutMs 3200).");
 }
 
 main().catch((e) => {

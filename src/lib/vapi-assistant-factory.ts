@@ -25,9 +25,8 @@ import {
 import { buildCustomerIntelBlock } from "./customer-intel";
 import {
   getVoiceLatencyProfile,
+  resolveVapiSpeechPipeline,
   VAPI_INPUT_MIN_CHARACTERS,
-  VAPI_START_SPEAKING_PLAN,
-  VAPI_TRANSCRIBER_CONFIG,
 } from "./voice-agent-profile";
 import {
   VAPI_TENANT_DEFAULT_MODEL,
@@ -594,6 +593,7 @@ Today is ${currentDateTime}.
   // hears the brand greeting; the caller hears the assistant's transfer
   // sentence before being bridged.
   const transferMessage = "Connecting you now. One moment.";
+  const speechPipeline = resolveVapiSpeechPipeline();
 
   return {
     name: agentConfigRow?.name || "Wireline Agent",
@@ -642,7 +642,7 @@ Today is ${currentDateTime}.
     // based on the audio + transcript context. Matches the showcase
     // assistant; the previous fixed-timeout behaviour was prone to
     // either interrupting (too short) or feeling sluggish (too long).
-    startSpeakingPlan: VAPI_START_SPEAKING_PLAN,
+    startSpeakingPlan: speechPipeline.startSpeakingPlan,
     // Input normalization — prevent TTS speed-up on dense token sequences
     // like email addresses, phone numbers, URLs. ElevenLabs treats these
     // as rapid-fire tokens and compresses their duration. The
@@ -728,7 +728,7 @@ Today is ${currentDateTime}.
     // language swap (vapi-voice-swap.ts). Pinning the model explicitly
     // (vs relying on Vapi defaults) protects us from silent upstream
     // model swaps that could regress accuracy.
-    transcriber: VAPI_TRANSCRIBER_CONFIG,
+    transcriber: speechPipeline.transcriber,
     // Voicemail detection — Vapi's ML-based answering-machine detector.
     // When triggered, the assistant skips its first message + can
     // optionally leave a custom voicemail. Huge cost saver on outbound:

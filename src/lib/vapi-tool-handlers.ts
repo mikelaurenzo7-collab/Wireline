@@ -18,6 +18,11 @@
 
 const APP_URL_DEFAULT = "https://trywireline.com";
 
+/** Vapi/LLMs may send boolean true as string "true". */
+function isEmailConfirmed(value: unknown): boolean {
+  return value === true || value === "true" || value === 1 || value === "1";
+}
+
 /** RFC-5322-shape check — the same regex used inline in the route. */
 function looksLikeEmail(value: unknown): value is string {
   return typeof value === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -31,6 +36,7 @@ function resolveAppUrl(appUrl?: string): string {
 /** Minimal logger shape — matches `server-context` `log`. */
 export interface ToolHandlerLogger {
   error: (msg: string, meta?: Record<string, unknown>) => void;
+  info?: (msg: string, meta?: Record<string, unknown>) => void;
 }
 
 /**
@@ -40,6 +46,8 @@ export interface ToolHandlerLogger {
  */
 export interface SendResultLike {
   ok: boolean;
+  error?: string;
+  id?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -98,7 +106,7 @@ export async function handleCreateAccount(
       };
     }
 
-    if (email_confirmed !== true) {
+    if (!isEmailConfirmed(email_confirmed)) {
       return {
         result: `Before I create the account, read "${to_email}" back to the caller slowly, spelling anything ambiguous, and ask "is that correct?". Once they confirm, call create_account again with email_confirmed set to true.`,
       };
@@ -193,7 +201,7 @@ export async function handleSendPaymentLink(
       };
     }
 
-    if (email_confirmed !== true) {
+    if (!isEmailConfirmed(email_confirmed)) {
       return {
         result: `Read "${to_email}" back to the caller to confirm, then call send_payment_link again with email_confirmed set to true.`,
       };
@@ -276,7 +284,7 @@ export async function handleSendSignupLink(
       };
     }
 
-    if (email_confirmed !== true) {
+    if (!isEmailConfirmed(email_confirmed)) {
       // Server-side guardrail: never send to an address the agent
       // didn't explicitly confirm with the caller.
       return {
@@ -289,14 +297,25 @@ export async function handleSendSignupLink(
       callerName: caller_name,
       agentName: deps.agentName,
     });
-    // On failure, give the agent a SCRIPT it can read by mouth rather
-    // than "an error happened" — the caller still gets value (the URL),
-    // the agent stays honest about the delivery failure.
     const signupUrl = `${resolveAppUrl(deps.appUrl)}/signup`;
+    if (result.ok) {
+      deps.log.info?.("send_signup_link delivered", {
+        to: to_email,
+        resendId: result.id,
+        agentName: deps.agentName,
+      });
+      return {
+        result: `DELIVERY_OK: Sign-up link sent to ${to_email}. Tell the caller it should arrive within a minute. Do not claim delivery unless you see DELIVERY_OK.`,
+      };
+    }
+
+    deps.log.error("send_signup_link delivery failed", {
+      to: to_email,
+      error: result.error,
+      agentName: deps.agentName,
+    });
     return {
-      result: result.ok
-        ? `Sign-up link sent to ${to_email}. Should arrive in under a minute.`
-        : `I wasn't able to deliver the email just yet. Read the URL to the caller: ${signupUrl} and confirm they wrote it down before ending the call.`,
+      result: `DELIVERY_FAILED: Email could not be sent (${result.error || "transport error"}). Do NOT tell the caller it was sent. Read this URL aloud and confirm they wrote it down: ${signupUrl}`,
     };
   } catch (err: unknown) {
     deps.log.error("send_signup_link tool failed", {

@@ -81,27 +81,30 @@ export const VAPI_START_SPEAKING_PLAN_FLUX = {
   waitSeconds: 0.05,
 };
 
-/** Showcase employee on Flux for latency A/B — see contact-agents.ts (Liam). */
-export const WIRELINE_FLUX_EOT_SHOWCASE_AGENT = "Liam";
+/** Production default — Deepgram Flux EOT (English showcase + tenant voice). */
+export const VAPI_DEFAULT_TRANSCRIBER_MODE: VapiTranscriberMode = "flux-eot";
 
-export function resolveVapiSpeechPipeline(mode: VapiTranscriberMode = "nova-livekit"): {
+export function resolveVapiSpeechPipeline(
+  mode: VapiTranscriberMode = VAPI_DEFAULT_TRANSCRIBER_MODE,
+): {
   transcriber: typeof VAPI_TRANSCRIBER_CONFIG | typeof VAPI_TRANSCRIBER_FLUX_CONFIG;
   startSpeakingPlan: typeof VAPI_START_SPEAKING_PLAN | typeof VAPI_START_SPEAKING_PLAN_FLUX;
 } {
-  if (mode === "flux-eot") {
+  if (mode === "nova-livekit") {
     return {
-      transcriber: VAPI_TRANSCRIBER_FLUX_CONFIG,
-      startSpeakingPlan: VAPI_START_SPEAKING_PLAN_FLUX,
+      transcriber: VAPI_TRANSCRIBER_CONFIG,
+      startSpeakingPlan: VAPI_START_SPEAKING_PLAN,
     };
   }
   return {
-    transcriber: VAPI_TRANSCRIBER_CONFIG,
-    startSpeakingPlan: VAPI_START_SPEAKING_PLAN,
+    transcriber: VAPI_TRANSCRIBER_FLUX_CONFIG,
+    startSpeakingPlan: VAPI_START_SPEAKING_PLAN_FLUX,
   };
 }
 
-export function showcaseTranscriberModeForAgent(agentName: string): VapiTranscriberMode {
-  return agentName === WIRELINE_FLUX_EOT_SHOWCASE_AGENT ? "flux-eot" : "nova-livekit";
+/** @deprecated Use VAPI_DEFAULT_TRANSCRIBER_MODE — all showcase agents on Flux. */
+export function showcaseTranscriberModeForAgent(_agentName: string): VapiTranscriberMode {
+  return "flux-eot";
 }
 
 export function getVoiceLatencyProfile(input: {

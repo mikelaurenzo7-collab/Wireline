@@ -84,18 +84,18 @@ describe("isOwnerRoutingShowcaseTool", () => {
   });
 });
 
-describe("buildShowcaseAssistantPayload — Flux A/B on employee lines", () => {
+describe("buildShowcaseAssistantPayload — Flux transcriber", () => {
   const sarah = WIRELINE_CONTACT_AGENTS.find((a) => a.name === "Sarah")!;
   const liam = WIRELINE_CONTACT_AGENTS.find((a) => a.name === "Liam")!;
 
-  it("Sarah (control) uses Nova-3 + LiveKit", () => {
+  it("Sarah uses Deepgram Flux EOT by default", () => {
     const payload = buildShowcaseAssistantPayload(sarah, "cs");
-    expect(payload.transcriber.model).toBe("nova-3");
-    expect(payload.startSpeakingPlan).toHaveProperty("smartEndpointingPlan");
-    expect(payload.metadata.wireline_transcriber_mode).toBe("nova-livekit");
+    expect(payload.transcriber.model).toBe("flux-general-en");
+    expect(payload.startSpeakingPlan).not.toHaveProperty("smartEndpointingPlan");
+    expect(payload.metadata.wireline_transcriber_mode).toBe("flux-eot");
   });
 
-  it("Liam (experiment) uses Deepgram Flux EOT", () => {
+  it("Liam uses Deepgram Flux EOT by default", () => {
     const payload = buildShowcaseAssistantPayload(liam, "cs");
     expect(payload.transcriber.model).toBe("flux-general-en");
     expect(payload.transcriber.eotThreshold).toBe(0.62);

@@ -37,6 +37,14 @@ vi.mock("../../lib/server-context", () => {
   };
 });
 
+vi.mock("../../lib/email-service", () => ({
+  sendSignupLinkEmail: vi.fn().mockResolvedValue({
+    ok: true,
+    provider: "resend",
+    id: "re_test",
+  }),
+}));
+
 import { handleShowcaseToolCalls } from "./showcase-handlers";
 
 function toolCallMessage(name: string, args: Record<string, any> = {}) {
@@ -127,5 +135,31 @@ describe("handleShowcaseToolCalls — demo escalation boundary", () => {
     expect(insertCalls).toHaveLength(1);
     expect(insertCalls[0].taskType).toBe("showcase_follow_up");
     expect(results[0].result).toMatch(/team|along/i);
+  });
+
+  it("routes send_signup_link from toolCallList (Vapi current payload shape)", async () => {
+    const results = await handleShowcaseToolCalls({
+      payload: {},
+      message: {
+        type: "tool-calls",
+        toolCallList: [
+          {
+            id: "tc-signup",
+            name: "send_signup_link",
+            arguments: {
+              to_email: "mike@example.com",
+              email_confirmed: "true",
+              caller_name: "Mike",
+            },
+          },
+        ],
+      },
+      showcaseAgentName: "Liam",
+      showcaseKind: "cs",
+    });
+
+    expect(results).toHaveLength(1);
+    expect(results[0].toolCallId).toBe("tc-signup");
+    expect(results[0].result).toMatch(/^DELIVERY_OK:/);
   });
 });

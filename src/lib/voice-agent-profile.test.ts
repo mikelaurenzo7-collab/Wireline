@@ -7,6 +7,12 @@ import {
 } from "./voice-agent-profile";
 
 describe("resolveVapiSpeechPipeline", () => {
+  it("defaults to Flux EOT (production)", () => {
+    const pipeline = resolveVapiSpeechPipeline();
+    expect(pipeline.transcriber.model).toBe("flux-general-en");
+    expect(pipeline.startSpeakingPlan).not.toHaveProperty("smartEndpointingPlan");
+  });
+
   it("nova-livekit keeps Nova-3 transcriber and LiveKit smart endpointing", () => {
     const pipeline = resolveVapiSpeechPipeline("nova-livekit");
     expect(pipeline.transcriber).toEqual(VAPI_TRANSCRIBER_CONFIG);
@@ -23,8 +29,8 @@ describe("resolveVapiSpeechPipeline", () => {
 });
 
 describe("showcaseTranscriberModeForAgent", () => {
-  it("assigns Flux only to Liam for employee-line A/B", () => {
+  it("returns flux-eot for all showcase agents", () => {
     expect(showcaseTranscriberModeForAgent("Liam")).toBe("flux-eot");
-    expect(showcaseTranscriberModeForAgent("Sarah")).toBe("nova-livekit");
+    expect(showcaseTranscriberModeForAgent("Sarah")).toBe("flux-eot");
   });
 });

@@ -19,7 +19,6 @@ import {
 import { sanitizePhone } from "./vapi-helpers";
 import {
   resolveVapiSpeechPipeline,
-  showcaseTranscriberModeForAgent,
   VAPI_INPUT_MIN_CHARACTERS,
   type VapiTranscriberMode,
 } from "./voice-agent-profile";
@@ -329,6 +328,7 @@ function buildWirelineEmployeePrompt(agent: ContactAgent): string {
     "TRUTH RULES:",
     "- If asked whether you are AI, say yes clearly and keep helping.",
     "- Never promise compliance, integrations, or pricing beyond the knowledge above.",
+    "- NEVER tell the caller an email was sent unless the send_signup_link tool result starts with DELIVERY_OK. If it says DELIVERY_FAILED, read the signup URL aloud instead.",
   ].join("\n");
 }
 
@@ -359,6 +359,7 @@ function buildDemoShowcasePrompt(agent: ContactAgent): string {
     "TRUTH RULES:",
     "- If asked whether you are AI, say yes clearly and keep helping.",
     "- Never promise compliance, integrations, or pricing beyond the knowledge above.",
+    "- NEVER tell the caller an email was sent unless the send_signup_link tool result starts with DELIVERY_OK. If it says DELIVERY_FAILED, read the signup URL aloud instead.",
   ].join("\n");
 }
 
@@ -395,8 +396,7 @@ export function buildShowcaseAssistantPayload(
     model: options?.model ?? VAPI_SHOWCASE_MODEL,
   });
 
-  const transcriberMode: VapiTranscriberMode =
-    agent.transcriberMode ?? showcaseTranscriberModeForAgent(agent.name);
+  const transcriberMode: VapiTranscriberMode = agent.transcriberMode ?? "flux-eot";
   const speechPipeline = resolveVapiSpeechPipeline(transcriberMode);
 
   const payload: Record<string, any> = {

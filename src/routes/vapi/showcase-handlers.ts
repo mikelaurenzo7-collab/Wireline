@@ -10,6 +10,7 @@ import {
   handleSendPaymentLink,
   handleSendSignupLink,
 } from "../../lib/vapi-tool-handlers";
+import { normalizeVapiToolCalls } from "../../lib/vapi-tool-call-utils";
 
 export type ShowcaseCallContext = {
   callId: string;
@@ -104,14 +105,14 @@ export async function handleShowcaseToolCalls(args: {
   showcaseAgentName: string;
   showcaseKind: "cs" | "demo";
 }) {
-  const toolCalls = Array.isArray(args.message.toolCalls) ? args.message.toolCalls : [];
+  const toolCalls = normalizeVapiToolCalls(args.message);
   const callContext = extractShowcaseCallContext(args.payload, args.message);
   const ownerUserId = await resolveShowcaseOwnerUserId();
   const results: Array<{ toolCallId: string; result: string }> = [];
 
   for (const toolCall of toolCalls) {
-    const toolName = toolCall?.function?.name;
-    const toolArgs = (toolCall?.function?.arguments || {}) as Record<string, any>;
+    const toolName = toolCall.name;
+    const toolArgs = toolCall.arguments;
 
     // Demo lines are pure showcases on the public landing page. They must
     // never page the founder (Mike) — no escalations, no callbacks, no
@@ -136,6 +137,17 @@ export async function handleShowcaseToolCalls(args: {
         agentName: args.showcaseAgentName,
         log,
       });
+      if (result.startsWith("DELIVERY_FAILED:")) {
+        await queueShowcaseTask({
+          ownerUserId,
+          taskType: "showcase_signup_email_failed",
+          description: `[Signup email failed] ${args.showcaseAgentName} → ${String(toolArgs.to_email || "unknown")}`,
+          priority: "high",
+          callContext,
+          showcaseAgentName: args.showcaseAgentName,
+          extraCustomerInfo: { to_email: toolArgs.to_email, tool_result: result.slice(0, 500) },
+        }).catch(() => false);
+      }
       results.push({ toolCallId: toolCall.id, result });
       continue;
     }

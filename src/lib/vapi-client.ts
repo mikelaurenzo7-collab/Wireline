@@ -23,11 +23,7 @@ import {
 import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./agent-runtime";
 import { buildCustomerIntelBlock } from "./customer-intel";
 import { DEFAULT_AGENT_ROLE } from "./agent-constants";
-import {
-  VAPI_INPUT_MIN_CHARACTERS,
-  VAPI_START_SPEAKING_PLAN,
-  VAPI_TRANSCRIBER_CONFIG,
-} from "./voice-agent-profile";
+import { resolveVapiSpeechPipeline, VAPI_INPUT_MIN_CHARACTERS } from "./voice-agent-profile";
 import {
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
@@ -425,6 +421,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
   const outboundServerUrl = process.env.APP_URL
     ? `${process.env.APP_URL}/api/vapi-webhook?agentId=${agentId}`
     : undefined;
+  const speechPipeline = resolveVapiSpeechPipeline();
 
   const vapiPayload = {
     phoneNumberId: settings.vapiPhoneNumberId,
@@ -442,8 +439,8 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
       responseDelaySeconds: 0,
       numWordsToInterruptAssistant: 2,
       backgroundDenoisingEnabled: false,
-      startSpeakingPlan: VAPI_START_SPEAKING_PLAN,
-      transcriber: VAPI_TRANSCRIBER_CONFIG,
+      startSpeakingPlan: speechPipeline.startSpeakingPlan,
+      transcriber: speechPipeline.transcriber,
       ...(outboundServerUrl && { serverUrl: outboundServerUrl }),
       serverUrlSecret: process.env.VAPI_WEBHOOK_SECRET,
       serverMessages: ["tool-calls", "status-update", "conversation-update", "end-of-call-report"],

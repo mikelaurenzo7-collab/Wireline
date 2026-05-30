@@ -14,6 +14,7 @@ import {
   findShowcaseAgentByPayload,
 } from "../../lib/showcase-assistant";
 import { buildVapiAssistant } from "../../lib/vapi-assistant-factory";
+import { normalizeVapiToolCalls } from "../../lib/vapi-tool-call-utils";
 import {
   SENTIMENT_ANGRY_SIGNALS,
   SENTIMENT_POSITIVE_SIGNALS,
@@ -198,10 +199,10 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
   if (message && message.type === "tool-calls") {
     const { finalizeVapiToolBatch, runVapiToolCallsWithConcurrency, withVapiToolTimeout } =
       await import("../../lib/vapi-tool-results");
-    const toolCalls = (message.toolCalls || []) as Array<{
-      id: string;
-      function: { name: string; arguments?: Record<string, any> };
-    }>;
+    const toolCalls = normalizeVapiToolCalls(message).map((tc) => ({
+      id: tc.id,
+      function: { name: tc.name, arguments: tc.arguments },
+    }));
     const toolCallRows = await runVapiToolCallsWithConcurrency(toolCalls, (toolCall) =>
       withVapiToolTimeout(
         (async () => {

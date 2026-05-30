@@ -195,7 +195,21 @@ export async function sendSignupLinkEmail(opts: {
   `;
 
   if (process.env.RESEND_API_KEY) {
-    return await sendViaResend({ to: opts.to, subject, html, text });
+    const sent = await sendViaResend({ to: opts.to, subject, html, text });
+    if (sent.ok) {
+      log.info("send_signup_link email accepted by Resend", {
+        to: opts.to,
+        resendId: sent.id,
+        agentName: opts.agentName,
+      });
+    } else {
+      log.error("send_signup_link Resend rejected send", {
+        to: opts.to,
+        error: sent.error,
+        agentName: opts.agentName,
+      });
+    }
+    return sent;
   }
 
   // The showcase Vapi agents use this path on every demo call where
