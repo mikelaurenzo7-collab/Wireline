@@ -34,6 +34,8 @@ import {
   GraduationCap,
   Brain,
   ArrowUpRight,
+  Copy,
+  Terminal,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
@@ -42,6 +44,15 @@ import IntegrationActivityCard, {
   type IntegrationActivityCardProps,
 } from "./IntegrationActivityCard";
 import { Skeleton } from "./ui/shadcn/Skeleton";
+import { Switch } from "./ui/shadcn/Switch";
+
+function fmtTime(iso: string): string {
+  try {
+    return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return "";
+  }
+}
 
 const AgentTrainingInline = lazy(() => import("./AgentTraining"));
 const AgentConnectorsInline = lazy(() => import("./AgentActionEngine"));
@@ -788,13 +799,13 @@ export default function AgentWorkspace({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
                   className={cn(
-                    "flex gap-2",
+                    "group flex gap-2",
                     m.role === "operator" ? "flex-row-reverse" : "flex-row",
                   )}
                 >
                   <div
                     className={cn(
-                      "shrink-0 w-6 h-6 rounded-lg flex items-center justify-center text-[9px] font-semibold",
+                      "shrink-0 w-6 h-6 rounded-lg flex items-center justify-center text-[9px] font-semibold self-end mb-5",
                       m.role === "operator"
                         ? "bg-brand/15 text-brand border border-brand/30"
                         : "bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20",
@@ -803,109 +814,127 @@ export default function AgentWorkspace({
                   >
                     {m.role === "operator" ? "You" : agentName.slice(0, 1).toUpperCase()}
                   </div>
-                  <div
-                    className={cn(
-                      "max-w-[82%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed transition-all duration-200",
-                      m.role === "operator"
-                        ? "bg-gradient-to-br from-brand to-brand-deep text-on-brand rounded-tr-md shadow-sm shadow-brand/20"
-                        : "glass border border-black/8 text-ink rounded-tl-md hover:border-brand/20 hover:shadow-sm relative overflow-hidden",
-                    )}
-                  >
-                    {/* Subtle gradient overlay for assistant messages — premium polish */}
-                    {m.role === "agent" && (
-                      <div
-                        className="absolute inset-0 bg-gradient-to-br from-brand/[0.02] to-transparent pointer-events-none rounded-2xl"
-                        aria-hidden="true"
-                      />
-                    )}
-                    <p className="whitespace-pre-wrap break-words relative z-10">{m.content}</p>
-                    {m.role === "agent" && m.proposals && (
-                      <div className="mt-2.5 space-y-2">
-                        {m.proposals.changes.map((c, i) => {
-                          const key = `${m.id}:change:${i}`;
-                          const state = resolved[key];
-                          return (
-                            <ProposalCard
-                              key={key}
-                              icon={<SlidersHorizontal className="w-3.5 h-3.5" />}
-                              tone="brand"
-                              title={c.label}
-                              detail={c.summary || c.value}
-                              state={state}
-                              busy={busyKey === key}
-                              busyLabel={busyKey === key ? busyLabel : undefined}
-                              approveLabel="Apply"
-                              onApprove={() => approveChange(key, c)}
-                              onDismiss={() => markResolved(key, "dismissed")}
-                            />
-                          );
-                        })}
-                        {m.proposals.toolToggles.map((t, i) => {
-                          const key = `${m.id}:toggle:${i}`;
-                          const state = resolved[key];
-                          return (
-                            <ProposalCard
-                              key={key}
-                              icon={<Power className="w-3.5 h-3.5" />}
-                              tone="emerald"
-                              title={`${t.enable ? "Turn on" : "Turn off"} ${t.label}`}
-                              detail={t.reason}
-                              state={state}
-                              busy={busyKey === key}
-                              busyLabel={busyKey === key ? busyLabel : undefined}
-                              approveLabel={t.enable ? "Enable" : "Disable"}
-                              onApprove={() => approveToggle(key, t)}
-                              onDismiss={() => markResolved(key, "dismissed")}
-                            />
-                          );
-                        })}
-                        {m.proposals.actions.map((a, i) => {
-                          const key = `${m.id}:action:${i}`;
-                          const state = resolved[key];
-                          const aIcon =
-                            a.kind === "make_call" ? (
-                              <Phone className="w-3.5 h-3.5" />
-                            ) : a.kind === "send_text_message" ? (
-                              <MessageCircle className="w-3.5 h-3.5" />
-                            ) : (
-                              <Mail className="w-3.5 h-3.5" />
+                  <div className={cn("flex flex-col max-w-[82%]", m.role === "operator" ? "items-end" : "items-start")}>
+                    <div
+                      className={cn(
+                        "rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed transition-all duration-200",
+                        m.role === "operator"
+                          ? "bg-gradient-to-br from-brand to-brand-deep text-on-brand rounded-tr-md shadow-sm shadow-brand/20"
+                          : "glass border border-black/8 text-ink rounded-tl-md hover:border-brand/20 hover:shadow-sm relative overflow-hidden",
+                      )}
+                    >
+                      {m.role === "agent" && (
+                        <div
+                          className="absolute inset-0 bg-gradient-to-br from-brand/[0.02] to-transparent pointer-events-none rounded-2xl"
+                          aria-hidden="true"
+                        />
+                      )}
+                      <p className="whitespace-pre-wrap break-words relative z-10">{m.content}</p>
+                      {m.role === "agent" && m.proposals && (
+                        <div className="mt-2.5 space-y-2">
+                          {m.proposals.changes.map((c, i) => {
+                            const key = `${m.id}:change:${i}`;
+                            const state = resolved[key];
+                            return (
+                              <ProposalCard
+                                key={key}
+                                icon={<SlidersHorizontal className="w-3.5 h-3.5" />}
+                                tone="brand"
+                                title={c.label}
+                                detail={c.summary || c.value}
+                                state={state}
+                                busy={busyKey === key}
+                                busyLabel={busyKey === key ? busyLabel : undefined}
+                                approveLabel="Apply"
+                                onApprove={() => approveChange(key, c)}
+                                onDismiss={() => markResolved(key, "dismissed")}
+                              />
                             );
-                          const detail = [
-                            a.to
-                              ? `To: ${a.customerName ? `${a.customerName} · ` : ""}${a.to}`
-                              : "",
-                            a.subject ? `Subject: ${a.subject}` : "",
-                            a.body || a.context || "",
-                          ]
-                            .filter(Boolean)
-                            .join("\n");
-                          return (
-                            <ProposalCard
-                              key={key}
-                              icon={aIcon}
-                              tone="amber"
-                              title={a.label}
-                              detail={detail}
-                              state={state}
-                              busy={busyKey === key}
-                              busyLabel={busyKey === key ? busyLabel : undefined}
-                              approveLabel={a.kind === "make_call" ? "Call now" : "Send"}
-                              consent={
-                                a.kind === "make_call"
-                                  ? {
-                                      checked: !!consentKeys[key],
-                                      onChange: (v) =>
-                                        setConsentKeys((prev) => ({ ...prev, [key]: v })),
-                                    }
-                                  : undefined
-                              }
-                              onApprove={() => approveAction(key, a)}
-                              onDismiss={() => markResolved(key, "dismissed")}
-                            />
-                          );
-                        })}
-                      </div>
-                    )}
+                          })}
+                          {m.proposals.toolToggles.map((t, i) => {
+                            const key = `${m.id}:toggle:${i}`;
+                            const state = resolved[key];
+                            return (
+                              <ProposalCard
+                                key={key}
+                                icon={<Power className="w-3.5 h-3.5" />}
+                                tone="emerald"
+                                title={`${t.enable ? "Turn on" : "Turn off"} ${t.label}`}
+                                detail={t.reason}
+                                state={state}
+                                busy={busyKey === key}
+                                busyLabel={busyKey === key ? busyLabel : undefined}
+                                approveLabel={t.enable ? "Enable" : "Disable"}
+                                onApprove={() => approveToggle(key, t)}
+                                onDismiss={() => markResolved(key, "dismissed")}
+                              />
+                            );
+                          })}
+                          {m.proposals.actions.map((a, i) => {
+                            const key = `${m.id}:action:${i}`;
+                            const state = resolved[key];
+                            const aIcon =
+                              a.kind === "make_call" ? (
+                                <Phone className="w-3.5 h-3.5" />
+                              ) : a.kind === "send_text_message" ? (
+                                <MessageCircle className="w-3.5 h-3.5" />
+                              ) : (
+                                <Mail className="w-3.5 h-3.5" />
+                              );
+                            const detail = [
+                              a.to
+                                ? `To: ${a.customerName ? `${a.customerName} · ` : ""}${a.to}`
+                                : "",
+                              a.subject ? `Subject: ${a.subject}` : "",
+                              a.body || a.context || "",
+                            ]
+                              .filter(Boolean)
+                              .join("\n");
+                            return (
+                              <ProposalCard
+                                key={key}
+                                icon={aIcon}
+                                tone="amber"
+                                title={a.label}
+                                detail={detail}
+                                state={state}
+                                busy={busyKey === key}
+                                busyLabel={busyKey === key ? busyLabel : undefined}
+                                approveLabel={a.kind === "make_call" ? "Call now" : "Send"}
+                                consent={
+                                  a.kind === "make_call"
+                                    ? {
+                                        checked: !!consentKeys[key],
+                                        onChange: (v) =>
+                                          setConsentKeys((prev) => ({ ...prev, [key]: v })),
+                                      }
+                                    : undefined
+                                }
+                                onApprove={() => approveAction(key, a)}
+                                onDismiss={() => markResolved(key, "dismissed")}
+                              />
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    {/* Hover actions: timestamp + copy */}
+                    <div className={cn(
+                      "flex items-center gap-2 mt-1 px-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200",
+                      m.role === "operator" ? "flex-row-reverse" : "flex-row",
+                    )}>
+                      <time className="text-[10px] text-muted/50 font-mono tabular-nums">
+                        {fmtTime(m.createdAt)}
+                      </time>
+                      <button
+                        onClick={() => navigator.clipboard?.writeText(m.content)}
+                        className="inline-flex items-center gap-1 text-[10px] text-muted/50 hover:text-muted transition-colors"
+                        title="Copy message"
+                      >
+                        <Copy className="w-2.5 h-2.5" />
+                        Copy
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
               ))}
@@ -913,113 +942,167 @@ export default function AgentWorkspace({
                 <motion.div
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
                   className="flex gap-2"
                 >
-                  <div className="shrink-0 w-6 h-6 rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20 flex items-center justify-center text-[9px] font-semibold">
-                    {agentName.slice(0, 1).toUpperCase()}
+                  {/* Agent avatar with thinking glow ring */}
+                  <div className="shrink-0 relative mt-0.5">
+                    <motion.div
+                      className="absolute -inset-1 rounded-xl"
+                      animate={{
+                        boxShadow: [
+                          "0 0 0 0px rgba(139,63,214,0)",
+                          "0 0 0 3px rgba(139,63,214,0.22)",
+                          "0 0 0 0px rgba(139,63,214,0)",
+                        ],
+                      }}
+                      transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    <div className="relative w-6 h-6 rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20 flex items-center justify-center text-[9px] font-semibold z-10">
+                      {agentName.slice(0, 1).toUpperCase()}
+                    </div>
                   </div>
-                  <div className="glass border border-brand/20 rounded-2xl rounded-tl-md px-4 py-3 space-y-2">
-                    <div className="flex items-center gap-2 text-[12px] text-ink/80">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
+
+                  {/* Live Execution Console */}
+                  <div className="glass border border-brand/25 rounded-2xl rounded-tl-md overflow-hidden min-w-[200px] max-w-[88%]">
+
+                    {/* Console header bar */}
+                    <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-brand/10 bg-brand/[0.03]">
+                      <span className="relative flex h-2 w-2 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/55" />
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-brand" />
                       </span>
-                      <span className="font-medium">{agentName} is thinking…</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-[10px] text-muted/70">
+                      <span className="text-[12px] font-medium text-ink flex-1">{agentName} is thinking</span>
                       <motion.span
-                        animate={{ opacity: [0.4, 1, 0.4] }}
-                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                        className="inline-flex items-center gap-1"
+                        animate={{ opacity: [0.35, 0.9, 0.35] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        className="inline-flex items-center gap-1 text-[9px] uppercase tracking-[0.18em] text-brand/60 font-mono"
                       >
-                        <Sparkles className="w-3 h-3" />
-                        Analyzing context & drafting response
+                        <Sparkles className="w-2.5 h-2.5" />
+                        live
                       </motion.span>
                     </div>
 
-                    {/* Genius live reasoning stream — Claude-style continuous rendered boxes with purposeful transitions + breathing room. 
-                         Each step reveals agent's internal process for connected integrations, memory, persona. Highly functional transparency. */}
-                    <AnimatePresence>
-                      {liveSteps.map((step, index) => (
-                        <motion.div
-                          key={step.id}
-                          initial={{ opacity: 0, y: 12, scale: 0.96 }}
-                          animate={{
-                            opacity: 1,
-                            y: 0,
-                            scale: 1,
-                            transition: {
-                              delay: index * 0.05,
-                              duration: 0.4,
-                              ease: [0.23, 1.0, 0.32, 1.0],
-                            },
-                          }}
-                          exit={{ opacity: 0, y: -8 }}
-                          className={cn(
-                            "mt-2.5 rounded-2xl border px-4 py-3 text-xs transition-all",
-                            step.status === "active"
-                              ? "border-brand/40 bg-brand/5 shadow-sm"
-                              : step.status === "done"
-                                ? "border-emerald-400/30 bg-emerald-50/70"
-                                : "border-black/5 bg-white/60",
-                          )}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div
+                    {/* Execution timeline — compact rows */}
+                    {liveSteps.length > 0 && (
+                      <div className="px-3.5 py-2.5 space-y-0">
+                        <AnimatePresence>
+                          {liveSteps.map((step, index) => (
+                            <motion.div
+                              key={step.id}
+                              initial={{ opacity: 0, x: -6 }}
+                              animate={{
+                                opacity: step.status === "pending" ? 0.28 : 1,
+                                x: 0,
+                                transition: { delay: index * 0.04, duration: 0.3 },
+                              }}
+                              exit={{ opacity: 0 }}
                               className={cn(
-                                "mt-0.5 flex h-5 w-5 items-center justify-center rounded-md flex-shrink-0",
-                                step.status === "active"
-                                  ? "text-brand"
-                                  : step.status === "done"
-                                    ? "text-emerald-500"
-                                    : "text-muted",
+                                "flex items-start gap-2.5 py-1.5",
+                                index < liveSteps.length - 1 && "border-b border-black/[0.05]",
                               )}
                             >
-                              {step.icon}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between">
-                                <div className="font-medium text-ink">{step.title}</div>
+                              {/* Step status dot */}
+                              <div className="shrink-0 mt-[3px] w-3.5 h-3.5 flex items-center justify-center">
                                 {step.status === "active" && (
-                                  <div className="h-1 w-1 rounded-full bg-brand animate-ping" />
+                                  <motion.span
+                                    className="block w-2 h-2 rounded-full bg-brand"
+                                    animate={{ scale: [1, 1.5, 1], opacity: [1, 0.6, 1] }}
+                                    transition={{ duration: 1.2, repeat: Infinity }}
+                                  />
                                 )}
                                 {step.status === "done" && (
-                                  <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                  <Check className="w-3 h-3" style={{ color: "#10b981" }} />
+                                )}
+                                {step.status === "pending" && (
+                                  <span className="block w-1.5 h-1.5 rounded-full bg-black/20" />
                                 )}
                               </div>
-                              <div className="text-[10px] text-muted leading-tight mt-0.5">
-                                {step.subtitle}
-                              </div>
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))}
 
-                      {/* Integration activity cards — Claude-style drop-in visualization of live integration actions */}
-                      {integrationActivities.length > 0 && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -8 }}
-                          className="mt-2.5 grid gap-2 sm:grid-cols-2"
-                        >
-                          {integrationActivities.map((activity, idx) => (
-                            <motion.div
-                              key={activity.integration}
-                              initial={{ opacity: 0, scale: 0.95 }}
-                              animate={{
-                                opacity: 1,
-                                scale: 1,
-                                transition: { delay: idx * 0.1, duration: 0.3 },
-                              }}
-                            >
-                              <IntegrationActivityCard {...activity} />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-1">
+                                  <span
+                                    className={cn(
+                                      "text-[11px] font-medium leading-tight",
+                                      step.status === "pending" ? "text-muted/60" : "text-ink",
+                                    )}
+                                  >
+                                    {step.title}
+                                  </span>
+                                  {step.status === "active" && (
+                                    <span
+                                      className="shrink-0 text-[9px] font-mono tracking-widest"
+                                      style={{ color: "#8B3FD6" }}
+                                    >
+                                      ···
+                                    </span>
+                                  )}
+                                </div>
+                                <p
+                                  className="text-[10px] leading-tight mt-0.5 truncate"
+                                  style={{
+                                    fontFamily: "var(--font-mono, monospace)",
+                                    color: "rgba(26,22,20,0.42)",
+                                  }}
+                                >
+                                  {step.subtitle}
+                                </p>
+                              </div>
                             </motion.div>
                           ))}
+                        </AnimatePresence>
+                      </div>
+                    )}
+
+                    {/* Integration activity drop-in grid — the Claude.ai moment */}
+                    <AnimatePresence>
+                      {integrationActivities.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div
+                            className="px-3 pb-3 pt-2 grid gap-2"
+                            style={{
+                              gridTemplateColumns:
+                                integrationActivities.length > 1 ? "1fr 1fr" : "1fr",
+                              borderTop: "1px solid rgba(139,63,214,0.10)",
+                            }}
+                          >
+                            {integrationActivities.map((activity, idx) => (
+                              <motion.div
+                                key={activity.integration}
+                                initial={{ opacity: 0, y: 10, scale: 0.94 }}
+                                animate={{
+                                  opacity: 1,
+                                  y: 0,
+                                  scale: 1,
+                                  transition: { delay: idx * 0.14, duration: 0.38, ease: [0.23, 1, 0.32, 1] },
+                                }}
+                              >
+                                <IntegrationActivityCard {...activity} />
+                              </motion.div>
+                            ))}
+                          </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
+
+                    {/* No live steps yet — show typing dots */}
+                    {liveSteps.length === 0 && integrationActivities.length === 0 && (
+                      <div className="px-3.5 pb-3 pt-1 flex items-center gap-1">
+                        {[0, 1, 2].map((i) => (
+                          <motion.span
+                            key={i}
+                            className="w-1.5 h-1.5 rounded-full bg-brand/50"
+                            animate={{ y: [0, -3, 0], opacity: [0.4, 1, 0.4] }}
+                            transition={{ duration: 1, repeat: Infinity, delay: i * 0.18, ease: "easeInOut" }}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -1132,16 +1215,23 @@ export default function AgentWorkspace({
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 30, stiffness: 320 }}
-              className="absolute inset-x-0 bottom-0 z-30 max-h-[70%] flex flex-col rounded-t-2xl border-t border-black/10 bg-paper shadow-2xl"
+              transition={{ type: "spring", damping: 32, stiffness: 340, mass: 0.8 }}
+              className="absolute inset-x-0 bottom-0 z-30 max-h-[75%] flex flex-col bg-background border-t border-border shadow-[0_-8px_40px_-8px_rgba(0,0,0,0.18)]"
             >
+              {/* Drag handle */}
+              <div className="shrink-0 flex justify-center pt-2 pb-1">
+                <div className="w-8 h-1 rounded-full bg-muted/50" />
+              </div>
+
               {/* Panel header */}
-              <div className="shrink-0 flex items-center justify-between px-3 py-2.5 border-b border-black/8">
-                <div className="flex items-center gap-2">
-                  {panelOpen === "training" && <GraduationCap className="w-4 h-4 text-brand" />}
-                  {panelOpen === "connectors" && <Plug className="w-4 h-4 text-brand" />}
-                  {panelOpen === "memory" && <Brain className="w-4 h-4 text-brand" />}
-                  <span className="text-[12px] font-medium text-ink">
+              <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-border/60">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex w-6 h-6 items-center justify-center rounded-md bg-primary/10 text-primary">
+                    {panelOpen === "training" && <GraduationCap className="w-3.5 h-3.5" />}
+                    {panelOpen === "connectors" && <Plug className="w-3.5 h-3.5" />}
+                    {panelOpen === "memory" && <Brain className="w-3.5 h-3.5" />}
+                  </span>
+                  <span className="text-[13px] font-semibold text-foreground">
                     {panelOpen === "training"
                       ? "Training"
                       : panelOpen === "connectors"
@@ -1151,7 +1241,7 @@ export default function AgentWorkspace({
                 </div>
                 <button
                   onClick={closePanel}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors"
+                  className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                   aria-label="Close panel"
                 >
                   <X className="w-4 h-4" />
@@ -1237,18 +1327,33 @@ interface ProposalCardProps {
   onDismiss: () => void;
 }
 
-const TONE_CLASSES: Record<ProposalCardProps["tone"], string> = {
-  brand: "border-brand/25 bg-brand/[0.04]",
-  emerald: "border-emerald-500/25 bg-emerald-500/[0.04]",
-  amber: "border-amber-500/30 bg-amber-500/[0.05]",
-};
-
-// Tone-matched icon chips give each proposal a clear visual category at a
-// glance (config change vs. tool toggle vs. live action).
-const TONE_ICON_CLASSES: Record<ProposalCardProps["tone"], string> = {
-  brand: "bg-brand/10 text-brand",
-  emerald: "bg-emerald-500/12 text-emerald-600",
-  amber: "bg-amber-500/12 text-amber-600",
+// Semantic tone styles using inline values — bypasses the design system's
+// color remapping so each proposal type has a visually distinct identity:
+//   brand  → purple  (configuration changes)
+//   emerald → green  (capability toggles — "go" actions)
+//   amber  → amber   (external actions — calls/emails requiring caution)
+const TONE_STYLES: Record<
+  ProposalCardProps["tone"],
+  { border: string; bg: string; iconBg: string; iconColor: string }
+> = {
+  brand: {
+    border: "rgba(139,63,214,0.25)",
+    bg: "rgba(139,63,214,0.04)",
+    iconBg: "rgba(139,63,214,0.10)",
+    iconColor: "#8B3FD6",
+  },
+  emerald: {
+    border: "rgba(16,185,129,0.25)",
+    bg: "rgba(16,185,129,0.04)",
+    iconBg: "rgba(16,185,129,0.10)",
+    iconColor: "#059669",
+  },
+  amber: {
+    border: "rgba(245,158,11,0.28)",
+    bg: "rgba(245,158,11,0.04)",
+    iconBg: "rgba(245,158,11,0.10)",
+    iconColor: "#d97706",
+  },
 };
 
 function ProposalCard({
@@ -1265,6 +1370,7 @@ function ProposalCard({
   onDismiss,
 }: ProposalCardProps) {
   const approveDisabled = busy || (!!consent && !consent.checked);
+  const ts = TONE_STYLES[tone];
   return (
     <motion.div
       layout
@@ -1274,18 +1380,24 @@ function ProposalCard({
         state ? { scale: 0.98, opacity: state === "dismissed" ? 0.5 : 1 } : { scale: 1, opacity: 1 }
       }
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
+      style={
+        !state
+          ? { borderColor: ts.border, backgroundColor: ts.bg }
+          : { borderColor: "rgba(0,0,0,0.08)", backgroundColor: "rgba(0,0,0,0.03)" }
+      }
       className={cn(
         "rounded-xl border px-3 py-2.5 text-ink transition-all duration-200",
-        state === "dismissed" ? "border-black/8 bg-black/3" : TONE_CLASSES[tone],
         !state && "hover:shadow-md cursor-default",
       )}
     >
       <div className="flex items-start gap-2.5">
         <span
-          className={cn(
-            "mt-0.5 shrink-0 flex w-6 h-6 items-center justify-center rounded-lg",
-            state === "dismissed" ? "bg-black/5 text-muted/60" : TONE_ICON_CLASSES[tone],
-          )}
+          className="mt-0.5 shrink-0 flex w-6 h-6 items-center justify-center rounded-lg"
+          style={
+            state === "dismissed"
+              ? { background: "rgba(0,0,0,0.05)", color: "rgba(0,0,0,0.30)" }
+              : { background: ts.iconBg, color: ts.iconColor }
+          }
         >
           {icon}
         </span>
@@ -1334,14 +1446,13 @@ function ProposalCard({
       ) : (
         <>
           {consent && (
-            <label className="mt-2.5 flex items-start gap-2 text-[11px] text-muted leading-snug cursor-pointer">
-              <input
-                type="checkbox"
+            <label className="mt-2.5 flex items-start gap-2.5 cursor-pointer">
+              <Switch
                 checked={consent.checked}
-                onChange={(e) => consent.onChange(e.target.checked)}
-                className="mt-0.5 accent-brand"
+                onCheckedChange={consent.onChange}
+                className="mt-0.5 shrink-0 scale-75 origin-left"
               />
-              <span>
+              <span className="text-[11px] text-muted leading-snug">
                 I confirm we have prior express written consent to call this number (TCPA).
               </span>
             </label>

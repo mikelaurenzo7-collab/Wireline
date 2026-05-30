@@ -8,11 +8,38 @@
  */
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { Mail, ArrowRight, Sparkles, Phone } from "lucide-react";
+import { Mail, ArrowRight, Sparkles, Phone, Plus } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import WirelineMark from "../components/WirelineMark";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
+
+const FAQS = [
+  {
+    q: "What exactly is Wireline?",
+    a: "Wireline is a horizontal AI agent platform. One fleet of agents answers your inbound calls, works your outbound list, replies to email, and handles SMS — trained on your playbook, live on real phone numbers, and watched from a single supervisor cockpit. You deploy your first agent in under 10 minutes, no developers required.",
+  },
+  {
+    q: "Will it sound like a robot?",
+    a: 'No. Each agent has one set personality, voice, and cadence — you pick its vibe (warm, playful, or authoritative) once, and it holds that same character for the entire call instead of lurching between tones. End-to-end response latency lands around 700–900 ms, well under the "did they hang up?" threshold, so conversations feel like talking to your sharpest rep.',
+  },
+  {
+    q: "What happens when the agent can't do something?",
+    a: "It tells the truth. Wireline agents run a hard rule: never claim an action they don't have a tool for. Instead of fabricating a booking or a transfer and hanging up, the agent takes a message, escalates to a human, or books a callback — and every one of those moments is visible in the live cockpit.",
+  },
+  {
+    q: "Does it work for my industry?",
+    a: "Yes. The platform is horizontal, but the onboarding is vertical: home services, medical, legal, real estate, insurance, restaurants, and outbound sales all have purpose-built starting points. Paste your website URL and Wireline drafts the business profile, FAQs, and escalation rules for you to approve.",
+  },
+  {
+    q: "Can I try it before I buy?",
+    a: "Two ways. Call any live demo agent from your phone right now — no signup. Or start a 14-day free trial with no credit card, deploy a real agent on a real number, run live calls, and cancel before the trial ends with no charge.",
+  },
+  {
+    q: "Is my data secure?",
+    a: "Wireline ships SOC 2-ready architecture with TLS 1.3 in transit, encrypted secrets at rest, per-tenant data isolation, full audit logs, configurable data retention, and a documented Do-Not-Call list. Business and Enterprise plans add SSO and audit-log export.",
+  },
+] as const;
 
 const PRINCIPLES = [
   {
@@ -151,6 +178,39 @@ export default function About() {
           </p>
           <div className="glass border border-ink/[0.08] p-5 sm:p-6">
             <IntegrationLogos />
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16">
+          <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-2">
+            Questions, answered
+          </h2>
+          <p className="text-sm text-ink/65 mb-8">Everything you&rsquo;d ask before signing up.</p>
+          <div className="border-t border-ink/[0.12]">
+            {FAQS.map((faq, i) => (
+              <motion.details
+                key={faq.q}
+                initial={{ opacity: 0, y: 8 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: Math.min(i * 0.04, 0.2) }}
+                className="group border-b border-ink/[0.12]"
+              >
+                <summary className="flex items-start justify-between gap-4 py-4 lg:py-5 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
+                  <span className="font-display italic text-lg lg:text-xl text-ink leading-snug">
+                    {faq.q}
+                  </span>
+                  <Plus
+                    aria-hidden="true"
+                    className="w-5 h-5 shrink-0 mt-1 text-ink/45 transition-transform duration-300 group-open:rotate-45 group-hover:text-brand"
+                  />
+                </summary>
+                <p className="text-ink/70 leading-relaxed text-[15px] pb-5 pr-8 max-w-prose">
+                  {faq.a}
+                </p>
+              </motion.details>
+            ))}
           </div>
         </section>
 
