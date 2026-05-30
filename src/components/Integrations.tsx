@@ -21,6 +21,7 @@ import ConfirmModal from "./ConfirmModal";
 import CrmConnectionCard from "./CrmConnectionCard";
 import { EMAIL_INBOUND_TASKS } from "../lib/integration-playbooks";
 import { getIntegrationLogo } from "./layout/IntegrationLogos";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 type ConfirmState = { open: boolean; onConfirm: () => void };
 const CLOSED_CONFIRM: ConfirmState = { open: false, onConfirm: () => {} };
@@ -224,14 +225,15 @@ export default function Integrations() {
   };
 
   const syncAction = (
-    <button
+    <ShadButton
       onClick={syncAll}
       disabled={syncing}
-      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full glass border border-black/10 text-ink text-[11px] uppercase tracking-[0.22em] hover:border-brand/40 transition-colors disabled:opacity-50"
+      variant="outline"
+      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full glass border border-input text-ink text-[11px] uppercase tracking-[0.22em] hover:border-brand/40 transition-colors disabled:opacity-50"
     >
       <RotateCw className={`w-3 h-3 text-brand ${syncing ? "animate-spin" : ""}`} />
       {syncing ? "Syncing…" : "Sync all"}
-    </button>
+    </ShadButton>
   );
 
   return (
@@ -251,27 +253,30 @@ export default function Integrations() {
               className="shrink-0 !h-auto max-h-[55vh]"
               actions={
                 <div className="flex items-center gap-2">
-                  <button
+                  <ShadButton
                     onClick={handleConnectGmail}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors"
+                    variant="outline"
+                    className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors"
                   >
                     <Plus className="w-3 h-3" />
                     Gmail
-                  </button>
-                  <button
+                  </ShadButton>
+                  <ShadButton
                     onClick={handleConnectOutlook}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] uppercase tracking-[0.25em] hover:bg-blue-500/20 transition-colors"
+                    variant="outline"
+                    className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] uppercase tracking-[0.25em] hover:bg-blue-500/20 transition-colors"
                   >
                     <Plus className="w-3 h-3" />
                     Outlook
-                  </button>
-                  <button
+                  </ShadButton>
+                  <ShadButton
                     onClick={handleConnectYahoo}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-500 text-[10px] uppercase tracking-[0.25em] hover:bg-purple-500/20 transition-colors"
+                    variant="outline"
+                    className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-500 text-[10px] uppercase tracking-[0.25em] hover:bg-purple-500/20 transition-colors"
                   >
                     <Plus className="w-3 h-3" />
                     Yahoo
-                  </button>
+                  </ShadButton>
                 </div>
               }
             >
@@ -310,25 +315,28 @@ export default function Integrations() {
                     ))}
                   </div>
                   <div className="flex items-center gap-3 flex-wrap justify-center">
-                    <button
+                    <ShadButton
                       onClick={handleConnectGmail}
+                      variant="outline"
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors"
                     >
                       <span className="w-4 h-4">{getIntegrationLogo("Google")}</span> Connect Gmail
-                    </button>
-                    <button
+                    </ShadButton>
+                    <ShadButton
                       onClick={handleConnectOutlook}
+                      variant="outline"
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] uppercase tracking-[0.25em] hover:bg-blue-500/20 transition-colors"
                     >
                       <span className="w-4 h-4">{getIntegrationLogo("Microsoft")}</span> Connect
                       Outlook
-                    </button>
-                    <button
+                    </ShadButton>
+                    <ShadButton
                       onClick={handleConnectYahoo}
+                      variant="outline"
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-500 text-[10px] uppercase tracking-[0.25em] hover:bg-purple-500/20 transition-colors"
                     >
                       <span className="w-4 h-4">{getIntegrationLogo("Yahoo")}</span> Connect Yahoo
-                    </button>
+                    </ShadButton>
                   </div>
                 </div>
               ) : (
@@ -341,7 +349,7 @@ export default function Integrations() {
                       {EMAIL_INBOUND_TASKS.map((task) => (
                         <div
                           key={task.id}
-                          className="rounded-lg border border-black/8 bg-paper/80 px-3 py-2.5"
+                          className="rounded-lg border border-input bg-paper/80 px-3 py-2.5"
                         >
                           <div className="flex items-start gap-2 mb-1.5">
                             <Phone className="w-3 h-3 text-brand shrink-0 mt-0.5" />
@@ -361,8 +369,8 @@ export default function Integrations() {
                   </div>
                   <div className="divide-y divide-white/6">
                     {accounts.map((acc) => {
-                      const meta = PROVIDER_META[acc.provider] || PROVIDER_META.google;
-                      return (
+                       const meta = PROVIDER_META[acc.provider] || PROVIDER_META.google;
+                       return (
                         <motion.div
                           layout
                           initial={{ opacity: 0, y: 4 }}
@@ -372,7 +380,7 @@ export default function Integrations() {
                         >
                           <div className="flex items-center gap-3 min-w-0 flex-1">
                             <div
-                              className={`w-10 h-10 rounded-xl glass border border-black/10 flex items-center justify-center shrink-0 overflow-hidden ${meta.color}`}
+                              className={`w-10 h-10 rounded-xl glass border border-input flex items-center justify-center shrink-0 overflow-hidden ${meta.color}`}
                             >
                               {getIntegrationLogo(meta.logoName) ?? <Mail className="w-4 h-4" />}
                             </div>
@@ -411,7 +419,7 @@ export default function Integrations() {
                                 aria-label="Route to agent"
                                 value={acc.agent_id || "none"}
                                 onChange={(e) => updateAccountAgent(acc.id, e.target.value)}
-                                className="text-xs bg-black/5 border border-black/10 rounded-lg pl-3 pr-8 py-1.5 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
+                                className="text-xs bg-black/5 border border-input rounded-lg pl-3 pr-8 py-1.5 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
                               >
                                 <option value="none">Unassigned</option>
                                 {agents.map((agent) => (
@@ -423,13 +431,14 @@ export default function Integrations() {
                               <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none" />
                             </div>
 
-                            <button
+                            <ShadButton
                               onClick={() => handleDisconnect(acc.id)}
-                              className="w-8 h-8 rounded-lg glass border border-black/10 text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all flex items-center justify-center"
+                              variant="outline"
+                              className="w-8 h-8 rounded-lg glass border border-input text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all flex items-center justify-center p-0"
                               title="Disconnect"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            </ShadButton>
                           </div>
                         </motion.div>
                       );

@@ -23,6 +23,15 @@ import { formatDate } from "../lib/safe-date";
 import PageShell, { Panel } from "./PageShell";
 import { useToast } from "../contexts/ToastContext";
 import AdminHubViewport from "./layout/AdminHubViewport";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "./ui/shadcn/Dialog";
+import { Input } from "./ui/shadcn/Input";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface DncEntry {
   id: string;
@@ -410,116 +419,94 @@ export default function DncManager() {
         </div>
 
         {/* Add number modal */}
-        <AnimatePresence>
-          {showAdd && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-              style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(12px)" }}
-            >
-              <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                className="w-full max-w-md glass-strong rounded-2xl border border-black/12 shadow-2xl p-6"
+        <Dialog open={showAdd} onOpenChange={setShowAdd}>
+          <DialogContent className="sm:max-w-md border border-white/10 shadow-2xl p-6 bg-black/85 backdrop-blur-xl rounded-2xl">
+            <DialogHeader className="flex flex-row items-center gap-3 space-y-0 pb-4 border-b border-white/5">
+              <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center">
+                <Shield className="w-4.5 h-4.5 text-rose-500" />
+              </div>
+              <div className="text-left">
+                <DialogTitle className="font-display italic text-xl text-ink leading-none">
+                  Add to DNC
+                </DialogTitle>
+                <DialogDescription className="text-[9px] uppercase tracking-[0.32em] text-muted mt-1">
+                  Do Not Call List
+                </DialogDescription>
+              </div>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div>
+                <label className="block text-[9px] uppercase tracking-[0.32em] text-muted mb-2">
+                  Phone Number
+                </label>
+                <div className="relative">
+                  <Phone className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+                  <Input
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="+1 (555) 123-4567"
+                    value={addPhone}
+                    onChange={(e) => setAddPhone(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                    className="pl-9 bg-black/10 border-white/10 text-sm text-ink placeholder:text-muted/70 focus-visible:ring-rose-500/50"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[9px] uppercase tracking-[0.32em] text-muted mb-2">
+                  Reason
+                </label>
+                <div className="relative">
+                  <select
+                    aria-label="Reason"
+                    value={addReason}
+                    onChange={(e) => setAddReason(e.target.value)}
+                    className="w-full h-9 pl-3 pr-10 rounded-md border border-input bg-transparent text-sm text-ink focus:border-rose-400/50 focus:outline-none transition-all appearance-none cursor-pointer"
+                  >
+                    {REASON_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value} className="bg-black text-ink">
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-500/5 border border-amber-500/15">
+                <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                <p className="text-[10px] text-amber-500/80 leading-snug">
+                  This number will immediately be blocked from all outbound calls and campaigns.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <ShadButton
+                variant="outline"
+                onClick={() => setShowAdd(false)}
+                className="flex-1 rounded-xl h-10 border-white/10 hover:bg-white/5 uppercase tracking-[0.2em] text-[10px] font-bold text-muted hover:text-ink"
               >
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl glass border border-rose-500/30 flex items-center justify-center">
-                      <Shield className="w-4.5 h-4.5 text-rose-500" />
-                    </div>
-                    <div>
-                      <h2 className="font-display italic text-xl text-ink leading-none">
-                        Add to DNC
-                      </h2>
-                      <p className="text-[9px] uppercase tracking-[0.32em] text-muted mt-1">
-                        Do Not Call List
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setShowAdd(false)}
-                    className="w-8 h-8 rounded-full glass border border-black/10 flex items-center justify-center text-muted hover:text-ink transition-all"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-[9px] uppercase tracking-[0.32em] text-muted mb-2">
-                      Phone Number
-                    </label>
-                    <div className="relative">
-                      <Phone className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-                      <input
-                        type="tel"
-                        inputMode="tel"
-                        autoComplete="tel"
-                        placeholder="+1 (555) 123-4567"
-                        value={addPhone}
-                        onChange={(e) => setAddPhone(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                        className="w-full h-10 pl-9 pr-4 rounded-xl glass border border-black/10 text-sm text-ink placeholder:text-muted/70 focus:border-rose-400/50 focus:outline-none transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[9px] uppercase tracking-[0.32em] text-muted mb-2">
-                      Reason
-                    </label>
-                    <div className="relative">
-                      <select
-                        aria-label="Reason"
-                        value={addReason}
-                        onChange={(e) => setAddReason(e.target.value)}
-                        className="w-full h-10 pl-3 pr-10 rounded-xl glass border border-black/10 text-sm text-ink focus:border-rose-400/50 focus:outline-none transition-all appearance-none cursor-pointer"
-                      >
-                        {REASON_OPTIONS.map((o) => (
-                          <option key={o.value} value={o.value}>
-                            {o.label}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/8 border border-amber-500/20">
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                    <p className="text-[10px] text-amber-600/80 leading-snug">
-                      This number will immediately be blocked from all outbound calls and campaigns.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 mt-6">
-                  <button
-                    onClick={() => setShowAdd(false)}
-                    className="flex-1 h-10 rounded-xl glass border border-black/10 text-[11px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleAdd}
-                    disabled={adding || !addPhone.trim()}
-                    className="flex-1 h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] uppercase tracking-[0.28em] bg-rose-500/20 border border-rose-500/40 text-rose-500 hover:bg-rose-500/30 transition-all disabled:opacity-50"
-                  >
-                    {adding ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Shield className="w-3.5 h-3.5" />
-                    )}
-                    Block Number
-                  </button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                Cancel
+              </ShadButton>
+              <ShadButton
+                onClick={handleAdd}
+                disabled={adding || !addPhone.trim()}
+                className="flex-1 rounded-xl h-10 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-500 uppercase tracking-[0.2em] text-[10px] font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {adding ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Shield className="w-3.5 h-3.5" />
+                )}
+                Block Number
+              </ShadButton>
+            </div>
+          </DialogContent>
+        </Dialog>
       </PageShell>
     </AdminHubViewport>
   );

@@ -4,10 +4,18 @@
  * Extracted from the monolithic OutboundDialer.tsx.
  */
 import { useState, useEffect } from "react";
-import { motion } from "motion/react";
 import { Plus, Bot, Loader2, AlertTriangle, ChevronDown, Clock, X } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { authFetch } from "../../lib/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "../ui/shadcn/Dialog";
+import { Input } from "../ui/shadcn/Input";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 export default function CreateCampaignModal({
   agents,
@@ -64,54 +72,34 @@ export default function CreateCampaignModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <motion.div
-        initial={{ scale: 0.96, opacity: 0, y: 16 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.96, opacity: 0, y: 16 }}
-        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-md max-h-[calc(100dvh-2rem)] rounded-2xl glass-strong border border-white/15 shadow-2xl overflow-hidden"
-      >
-        <header className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-          <div>
-            <p className="text-[9px] uppercase tracking-[0.4em] text-brand mb-0.5">
-              Signal · Campaigns
-            </p>
-            <h2 className="font-display italic lowercase text-2xl text-ink">new campaign</h2>
-          </div>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="w-8 h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </header>
+    <Dialog open={true} onOpenChange={(open: boolean) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md border border-white/10 shadow-2xl p-0 bg-black/85 backdrop-blur-xl rounded-2xl overflow-hidden">
+        <DialogHeader className="px-5 py-4 border-b border-white/10 flex flex-col space-y-0 text-left">
+          <DialogDescription className="text-[9px] uppercase tracking-[0.4em] text-brand mb-0.5 font-bold">
+            Signal · Campaigns
+          </DialogDescription>
+          <DialogTitle className="font-display italic lowercase text-2xl text-ink leading-none">
+            new campaign
+          </DialogTitle>
+        </DialogHeader>
 
-        <div className="p-5 space-y-4 overflow-y-auto max-h-[70dvh] scrollbar-hide">
+        <div className="p-5 space-y-4 overflow-y-auto max-h-[60dvh] scrollbar-hide">
           <div className="space-y-1.5">
             <label className="app-section-title">Campaign Name</label>
-            <input
-              className={inputCls}
+            <Input
               placeholder="Q4 Win-Back Drive"
               value={form.name}
               onChange={(e) => set("name", e.target.value)}
+              className="bg-black/10 border-white/10 text-sm text-ink focus-visible:ring-brand/40"
             />
           </div>
           <div className="space-y-1.5">
             <label className="app-section-title">Goal (optional)</label>
-            <input
-              className={inputCls}
+            <Input
               placeholder="Re-engage churned users from past 90 days"
               value={form.goal}
               onChange={(e) => set("goal", e.target.value)}
+              className="bg-black/10 border-white/10 text-sm text-ink focus-visible:ring-brand/40"
             />
           </div>
           {agents.length > 0 && (
@@ -122,18 +110,18 @@ export default function CreateCampaignModal({
               <div className="relative">
                 <select
                   aria-label="Default agent"
-                  className={cn(inputCls, "appearance-none cursor-pointer pr-8")}
+                  className={cn("w-full h-9 pl-3 pr-10 rounded-md border border-input bg-transparent text-sm text-ink focus:border-brand/50 focus:outline-none transition-all appearance-none cursor-pointer")}
                   value={form.agent_id}
                   onChange={(e) => set("agent_id", e.target.value)}
                 >
-                  <option value="">Unassigned</option>
+                  <option value="" className="bg-black text-ink">Unassigned</option>
                   {agents.map((a) => (
-                    <option key={a.id} value={a.id}>
+                    <option key={a.id} value={a.id} className="bg-black text-ink">
                       {a.name}
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted pointer-events-none" />
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
               </div>
             </div>
           )}
@@ -142,33 +130,33 @@ export default function CreateCampaignModal({
               <label className="app-section-title flex items-center gap-1.5">
                 <Clock className="w-2.5 h-2.5 text-brand" /> Window start
               </label>
-              <input
+              <Input
                 type="time"
-                className={inputCls}
                 value={form.call_window_start}
                 onChange={(e) => set("call_window_start", e.target.value)}
+                className="bg-black/10 border-white/10 text-sm text-ink focus-visible:ring-brand/40"
               />
             </div>
             <div className="space-y-1.5">
               <label className="app-section-title">Window end</label>
-              <input
+              <Input
                 type="time"
-                className={inputCls}
                 value={form.call_window_end}
                 onChange={(e) => set("call_window_end", e.target.value)}
+                className="bg-black/10 border-white/10 text-sm text-ink focus-visible:ring-brand/40"
               />
             </div>
           </div>
           <div className="space-y-1.5">
             <label className="app-section-title">Max retry attempts</label>
-            <input
+            <Input
               type="number"
               inputMode="numeric"
               min="1"
               max="10"
-              className={inputCls}
               value={form.max_attempts}
               onChange={(e) => set("max_attempts", e.target.value)}
+              className="bg-black/10 border-white/10 text-sm text-ink focus-visible:ring-brand/40"
             />
           </div>
 
@@ -183,17 +171,18 @@ export default function CreateCampaignModal({
           )}
         </div>
 
-        <footer className="px-5 py-4 border-t border-white/10 flex items-center justify-end gap-2">
-          <button
+        <div className="px-5 py-4 border-t border-white/10 flex items-center justify-end gap-2 bg-black/20">
+          <ShadButton
+            variant="outline"
             onClick={onClose}
-            className="h-9 px-4 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
+            className="rounded-xl h-9 border-white/10 hover:bg-white/5 uppercase tracking-[0.2em] text-[10px] font-bold text-muted hover:text-ink"
           >
             Cancel
-          </button>
-          <button
+          </ShadButton>
+          <ShadButton
             onClick={save}
             disabled={saving}
-            className="h-9 px-5 rounded-full bg-brand/15 border border-brand/50 text-brand text-[10px] uppercase tracking-[0.28em] hover:bg-brand/25 transition-all flex items-center gap-1.5 disabled:opacity-50"
+            className="rounded-xl h-9 bg-brand/15 hover:bg-brand/25 border border-brand/50 text-brand uppercase tracking-[0.2em] text-[10px] font-bold flex items-center justify-center gap-1.5 disabled:opacity-50"
           >
             {saving ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -201,9 +190,9 @@ export default function CreateCampaignModal({
               <Plus className="w-3.5 h-3.5" />
             )}
             Create
-          </button>
-        </footer>
-      </motion.div>
-    </div>
+          </ShadButton>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

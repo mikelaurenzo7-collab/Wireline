@@ -73,4 +73,32 @@ router.get("/api/public/stats", async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/public/assistant/:agentName — public WebRTC dynamic payload generator for landing-page calling widgets
+import { buildShowcaseAssistantPayload } from "../lib/showcase-assistant";
+import { WIRELINE_DEMO_AGENTS, WIRELINE_CONTACT_AGENTS } from "../data/contact-agents";
+
+router.get("/api/public/assistant/:agentName", async (req: Request, res: Response) => {
+  try {
+    const { agentName } = req.params;
+    
+    // Find showcase agent by name
+    const agent = 
+      WIRELINE_DEMO_AGENTS.find((a) => a.name.toLowerCase() === agentName.toLowerCase()) ||
+      WIRELINE_CONTACT_AGENTS.find((a) => a.name.toLowerCase() === agentName.toLowerCase());
+
+    if (!agent) {
+      return res.status(404).json({ error: `Showcase agent '${agentName}' not found` });
+    }
+
+    const kind = WIRELINE_DEMO_AGENTS.some((a) => a.name === agent.name) ? "demo" : "cs";
+    const payload = buildShowcaseAssistantPayload(agent, kind);
+
+    res.setHeader("Cache-Control", "public, max-age=300");
+    res.json(payload);
+  } catch (err: any) {
+    log.warn("/api/public/assistant failed", { error: err?.message });
+    res.status(500).json({ error: "Failed to generate assistant payload" });
+  }
+});
+
 export default router;

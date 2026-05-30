@@ -9,6 +9,7 @@ import { PageMeta } from "../lib/page-meta";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
 import type { ContactAgent } from "../data/contact-agents";
+import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
 
 const STATS = [
   { value: "24/7", label: "Availability" },
@@ -103,21 +104,19 @@ function AgentCard({
   badge?: string;
 }) {
   return (
-    <motion.a
-      href={`tel:${agent.tel}`}
+    <motion.div
       initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.5, delay, ease: [0.16, 1, 0.3, 1] }}
       data-testid={`agent-card-${agent.name.toLowerCase()}`}
-      className="group block border border-ink/[0.12] hover:border-ink/30 hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(26,22,20,0.07)] transition-all duration-300"
-      style={{ background: "#EFE9DC" }}
+      className="group block border border-white/5 hover:border-white/15 bg-white/[0.03] backdrop-blur-md transition-all duration-300 rounded-2xl overflow-hidden hover:shadow-[0_8px_32px_rgba(157,78,221,0.05)]"
     >
       <div
         className={
           featured
-            ? "p-6 md:p-8 flex flex-col justify-between h-full min-h-[220px]"
-            : "p-5 md:p-6 flex flex-col justify-between h-full min-h-[180px]"
+            ? "p-6 md:p-8 flex flex-col justify-between h-full min-h-[260px]"
+            : "p-5 md:p-6 flex flex-col justify-between h-full min-h-[220px]"
         }
       >
         <div>
@@ -141,19 +140,22 @@ function AgentCard({
             you want to hear.
           </p>
         </div>
-        <div className="flex items-end justify-between gap-4 mt-4">
-          <span
-            className={`font-mono tabular-nums text-brand ${featured ? "text-lg" : "text-sm"} font-medium`}
-          >
-            {agent.display}
-          </span>
-          <span className="flex items-center gap-1.5 text-ink/65 group-hover:text-brand transition-colors text-[11px] font-mono uppercase tracking-[0.15em]">
-            Call
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </span>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mt-6 border-t border-ink/5 pt-4">
+          <div className="flex flex-col">
+            <span className="text-[9px] uppercase tracking-wider text-ink/40 font-mono">Dial via phone</span>
+            <a
+              href={`tel:${agent.tel}`}
+              className={`font-mono tabular-nums text-brand ${featured ? "text-base" : "text-xs"} font-semibold hover:underline`}
+            >
+              {agent.display}
+            </a>
+          </div>
+          <div className="shrink-0 flex items-center justify-end">
+            <BrowserCallWidget agentName={agent.name} buttonLabel={`Talk to ${agent.name}`} />
+          </div>
         </div>
       </div>
-    </motion.a>
+    </motion.div>
   );
 }
 
@@ -224,30 +226,20 @@ export default function LandingPage() {
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 {csDemo && (
-                  <a
-                    href={`tel:${csDemo.tel}`}
-                    data-testid="hero-cta-call-cs"
-                    className="inline-flex items-center gap-2 text-ink/70 hover:text-brand transition-colors text-sm font-medium"
-                  >
-                    <Phone className="w-4 h-4" />
-                    <span>
-                      CS demo — {csDemo.name}:{" "}
-                      <span className="font-mono tabular-nums text-brand">{csDemo.display}</span>
+                  <div className="flex flex-col items-center gap-1.5 border border-ink/10 rounded-2xl p-3 bg-white/20 backdrop-blur-md shadow-sm">
+                    <BrowserCallWidget agentName={csDemo.name} buttonLabel={`Talk to ${csDemo.name} (CS)`} />
+                    <span className="text-[10px] text-ink/50 font-mono tracking-wider">
+                      Or dial: <a href={`tel:${csDemo.tel}`} className="text-brand hover:underline font-semibold">{csDemo.display}</a>
                     </span>
-                  </a>
+                  </div>
                 )}
                 {salesDemo && (
-                  <a
-                    href={`tel:${salesDemo.tel}`}
-                    data-testid="hero-cta-call-sales"
-                    className="inline-flex items-center gap-2 text-ink/70 hover:text-brand transition-colors text-sm font-medium"
-                  >
-                    <Phone className="w-4 h-4" />
-                    <span>
-                      Sales demo — {salesDemo.name}:{" "}
-                      <span className="font-mono tabular-nums text-brand">{salesDemo.display}</span>
+                  <div className="flex flex-col items-center gap-1.5 border border-ink/10 rounded-2xl p-3 bg-white/20 backdrop-blur-md shadow-sm">
+                    <BrowserCallWidget agentName={salesDemo.name} buttonLabel={`Talk to ${salesDemo.name} (Sales)`} />
+                    <span className="text-[10px] text-ink/50 font-mono tracking-wider">
+                      Or dial: <a href={`tel:${salesDemo.tel}`} className="text-brand hover:underline font-semibold">{salesDemo.display}</a>
                     </span>
-                  </a>
+                  </div>
                 )}
               </div>
             </motion.div>
@@ -288,7 +280,7 @@ export default function LandingPage() {
             </motion.div>
 
             <div
-              className={`grid grid-cols-1 ${demoColsClass} gap-px bg-ink/[0.08] border border-ink/[0.08] max-w-5xl mx-auto`}
+              className={`grid grid-cols-1 ${demoColsClass} gap-4 max-w-5xl mx-auto`}
             >
               {demoAgents.map((agent, i) => (
                 <AgentCard

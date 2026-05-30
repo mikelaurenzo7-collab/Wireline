@@ -26,6 +26,10 @@ import PageShell, { Panel } from "./PageShell";
 import WidgetBoundary from "./WidgetBoundary";
 import ClientRouteViewport from "./layout/ClientRouteViewport";
 import ClientToolbar from "./layout/ClientToolbar";
+import { Card, CardHeader, CardTitle, CardContent } from "./ui/shadcn/Card";
+import { Badge } from "./ui/shadcn/Badge";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "./ui/shadcn/Tooltip";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface HotLead {
   id: string;
@@ -186,10 +190,11 @@ export default function TriageInbox() {
         actions={
           <>
             <CsvExportButton type="tasks" label="CSV" />
-            <button
+            <ShadButton
               onClick={fetchData}
               disabled={loading}
-              className="h-9 px-3 rounded-full glass border border-black/10 text-eyebrow hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
+              variant="outline"
+              className="h-9 px-3 rounded-full glass border border-input text-eyebrow hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
             >
               {loading ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -197,7 +202,7 @@ export default function TriageInbox() {
                 <RefreshCw className="w-3 h-3" />
               )}
               Refresh
-            </button>
+            </ShadButton>
           </>
         }
       />
@@ -304,99 +309,121 @@ export default function TriageInbox() {
   );
 }
 
-/* ─────────────────────────  Hot leads  ─────────────────────────── */
+/* ────────────────────────  Hot leads  ─────────────────────────── */
 
 function HotLeads({ items }: { items: HotLead[] }) {
   if (items.length === 0)
     return <Empty icon={Flame} label="No hot leads right now — keep dialing." />;
   return (
-    <ul className="divide-y divide-black/8">
+    <ul className="p-2 space-y-2 list-none">
       {items.map((c) => (
         <li
           key={c.id}
-          className="group px-4 py-3.5 flex items-center gap-3 hover:bg-white/3 transition-all relative active:bg-white/5 active:scale-[0.99] duration-100"
+          className="relative list-none group"
         >
-          {/* Absolute overlay link covering the entire row target */}
-          <Link
-            to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
-            className="absolute inset-0 z-0"
-            aria-label={`View contact profile for ${c.customer_number || "unknown caller"}`}
-          />
+          <Card className="bg-black/10 border-white/5 hover:border-brand/20 transition-all p-3 flex items-center gap-3 rounded-xl relative">
+            {/* Absolute overlay link covering the entire row target */}
+            <Link
+              to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
+              className="absolute inset-0 z-0"
+              aria-label={`View contact profile for ${c.customer_number || "unknown caller"}`}
+            />
 
-          <div className="shrink-0 w-11 h-11 flex items-center justify-center text-ink relative z-10 pointer-events-none">
-            <svg width="44" height="44" viewBox="0 0 44 44">
-              <circle
-                r="16"
-                cx="22"
-                cy="22"
-                fill="none"
-                stroke="rgba(0,0,0,0.08)"
-                strokeWidth="4"
-              />
-              <circle
-                r="16"
-                cx="22"
-                cy="22"
-                fill="none"
-                stroke={c.lead_score >= 80 ? "#6B2B99" : c.lead_score >= 60 ? "#8B6FA8" : "#E8466A"}
-                strokeWidth="4"
-                strokeDasharray={`${(c.lead_score / 100) * 100.53} 100.53`}
-                strokeLinecap="round"
-                transform="rotate(-90 22 22)"
-              />
-              <text
-                x="22"
-                y="26"
-                textAnchor="middle"
-                fontSize="11"
-                fontWeight="700"
-                fill="currentColor"
-              >
-                {c.lead_score}
-              </text>
-            </svg>
-          </div>
+            <div className="shrink-0 w-11 h-11 flex items-center justify-center text-ink relative z-10 pointer-events-none">
+              <svg width="44" height="44" viewBox="0 0 44 44">
+                <circle
+                  r="16"
+                  cx="22"
+                  cy="22"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.06)"
+                  strokeWidth="4"
+                />
+                <circle
+                  r="16"
+                  cx="22"
+                  cy="22"
+                  fill="none"
+                  stroke={c.lead_score >= 80 ? "#6B2B99" : c.lead_score >= 60 ? "#8B6FA8" : "#E8466A"}
+                  strokeWidth="4"
+                  strokeDasharray={`${(c.lead_score / 100) * 100.53} 100.53`}
+                  strokeLinecap="round"
+                  transform="rotate(-90 22 22)"
+                />
+                <text
+                  x="22"
+                  y="26"
+                  textAnchor="middle"
+                  fontSize="11"
+                  fontWeight="700"
+                  fill="currentColor"
+                >
+                  {c.lead_score}
+                </text>
+              </svg>
+            </div>
 
-          <div className="min-w-0 flex-1 relative z-10 pointer-events-none">
-            <span className="font-display italic text-base text-ink leading-tight block truncate group-hover:text-brand transition-colors">
-              {c.customer_number || "Unknown caller"}
-            </span>
-            <p className="text-[11px] text-muted/70 truncate">{c.summary}</p>
-            <div className="flex items-center gap-2 mt-1 text-[8px] uppercase tracking-[0.26em] text-muted/70">
-              <span>{formatDate(c.created_at)}</span>
-              <span className="w-1 h-1 rounded-full bg-white/15" />
-              <span
-                className="text-brand/80"
-                style={{ textShadow: "0 0 10px rgba(79, 30, 123 ,0.5)" }}
-              >
-                {c.intent_label} intent
+            <div className="min-w-0 flex-1 relative z-10 pointer-events-none text-left">
+              <span className="font-display italic text-base text-ink leading-tight block truncate group-hover:text-brand transition-colors font-normal">
+                {c.customer_number || "Unknown caller"}
               </span>
-              {c.sentiment && (
-                <span className="px-1 py-px rounded bg-white/10 text-[7px] tracking-normal">
-                  {c.sentiment}
-                </span>
+              {c.summary && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <p className="text-[11px] text-muted/70 truncate cursor-help text-left max-w-full">
+                        {c.summary}
+                      </p>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-popover border border-input p-2.5 max-w-xs text-xs text-ink rounded-lg shadow-xl">
+                      {c.summary}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              <div className="flex items-center gap-2 mt-1.5 text-[8px] uppercase tracking-[0.26em] text-muted/70">
+                <span>{formatDate(c.created_at)}</span>
+                <span className="w-1 h-1 rounded-full bg-white/15" />
+                <Badge
+                  variant="secondary"
+                  className="text-[8px] uppercase tracking-[0.26em] text-brand border-brand/20 bg-brand/10 hover:bg-brand/15 leading-none px-1.5 py-0.5 rounded"
+                >
+                  {c.intent_label} intent
+                </Badge>
+                {c.sentiment && (
+                  <Badge
+                    variant="outline"
+                    className="px-1.5 py-0.5 text-[7px] tracking-normal border-input rounded text-muted-foreground"
+                  >
+                    {c.sentiment}
+                  </Badge>
+                )}
+              </div>
+              {c.coaching_note && (
+                <p className="text-[10px] text-muted/70 mt-1.5 line-clamp-1 pr-2">
+                  {c.coaching_note}
+                </p>
               )}
             </div>
-            {c.coaching_note && (
-              <p className="text-[10px] text-muted/70 mt-0.5 line-clamp-1 pr-2">
-                {c.coaching_note}
-              </p>
-            )}
-          </div>
 
-          <div className="flex items-center gap-1 shrink-0 relative z-20">
-            <ClaudeRecipeButton
-              recipe="enrich-lead"
-              initial={{
-                customerNumber: c.customer_number,
-                context: `High-intent (${c.lead_score}) lead from prior call. Summary: ${c.summary}`,
-              }}
-              label="Enrich"
-            />
-            <div className="w-8 h-8 rounded-xl glass border border-black/8 flex items-center justify-center text-ink/70 transition-all group-hover:border-brand/25 group-hover:text-brand">
-              <ChevronRight className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1.5 shrink-0 relative z-20">
+              <ClaudeRecipeButton
+                recipe="enrich-lead"
+                initial={{
+                  customerNumber: c.customer_number,
+                  context: `High-intent (${c.lead_score}) lead from prior call. Summary: ${c.summary}`,
+                }}
+                label="Enrich"
+              />
+              <ShadButton
+                variant="outline"
+                size="icon"
+                className="w-8 h-8 rounded-xl bg-background/50 border border-input flex items-center justify-center text-ink/70 transition-all hover:border-brand/25 hover:text-brand p-0"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </ShadButton>
             </div>
-          </div>
+          </Card>
         </li>
       ))}
     </ul>
@@ -409,52 +436,56 @@ function ComplianceList({ items }: { items: FleetTask[] }) {
   if (items.length === 0)
     return <Empty icon={ShieldAlert} label="All clear — no compliance flags." green />;
   return (
-    <ul className="divide-y divide-black/8">
+    <ul className="p-2 space-y-2 list-none">
       {items.map((t) => (
         <li
           key={t.id}
-          className={cn(
-            "relative px-4 py-3 flex items-start gap-3",
-            t.priority === "high"
-              ? "bg-rose-500/8 border-l-2 border-rose-500/50"
-              : t.priority === "medium"
-                ? "bg-amber-500/6 border-l-2 border-amber-500/30"
-                : "bg-rose-500/3",
-          )}
+          className="relative list-none"
         >
-          <ShieldAlert
+          <Card
             className={cn(
-              "w-4 h-4 shrink-0 mt-0.5",
+              "p-3 flex items-start gap-3 rounded-xl transition-all",
               t.priority === "high"
-                ? "text-rose-500"
+                ? "bg-rose-950/15 border-rose-500/20 hover:border-rose-500/40"
                 : t.priority === "medium"
-                  ? "text-amber-500"
-                  : "text-rose-400",
+                  ? "bg-amber-950/10 border-amber-500/20 hover:border-amber-500/40"
+                  : "bg-black/10 border-white/5 hover:border-white/10"
             )}
-          />
-          <div className="flex-1 min-w-0">
-            <div
+          >
+            <ShieldAlert
               className={cn(
-                "text-[8px] uppercase tracking-[0.28em] mb-0.5 flex items-center justify-between",
+                "w-4 h-4 shrink-0 mt-0.5",
                 t.priority === "high"
                   ? "text-rose-500"
                   : t.priority === "medium"
                     ? "text-amber-500"
                     : "text-rose-400",
               )}
-            >
-              <span>Compliance · {t.priority}</span>
-              {t.priority === "high" && (
-                <span className="text-[8px] font-bold text-rose-400 uppercase tracking-widest animate-pulse">
-                  URGENT
-                </span>
-              )}
+            />
+            <div className="flex-1 min-w-0 text-left">
+              <div
+                className={cn(
+                  "text-[8px] uppercase tracking-[0.28em] flex items-center justify-between mb-1.5",
+                  t.priority === "high"
+                    ? "text-rose-500"
+                    : t.priority === "medium"
+                      ? "text-amber-500"
+                      : "text-rose-400",
+                )}
+              >
+                <span>Compliance · {t.priority}</span>
+                {t.priority === "high" && (
+                  <Badge variant="destructive" className="text-[8px] font-bold uppercase tracking-widest animate-pulse leading-none py-0.5 px-1.5 rounded">
+                    URGENT
+                  </Badge>
+                )}
+              </div>
+              <p className="text-[12px] text-ink/90 leading-snug">{t.description}</p>
+              <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1.5 flex items-center gap-2">
+                <span>{formatDateTime(t.created_at)}</span>
+              </div>
             </div>
-            <p className="text-[12px] text-ink/90 leading-snug">{t.description}</p>
-            <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1">
-              {formatDateTime(t.created_at)}
-            </div>
-          </div>
+          </Card>
         </li>
       ))}
     </ul>
@@ -481,7 +512,7 @@ function KnowledgeGaps({
       />
     );
   return (
-    <ul className="divide-y divide-black/8">
+    <ul className="p-2 space-y-2 list-none">
       <AnimatePresence initial={false}>
         {items.map((g) => (
           <KnowledgeGapRow key={g.id} gap={g} onPromoted={onPromoted} onDiscard={onDiscard} />
@@ -537,64 +568,72 @@ const KnowledgeGapRow: React.FC<{
       layout
       exit={{ opacity: 0, height: 0, overflow: "hidden" }}
       transition={{ duration: 0.18 }}
-      className="px-4 py-3"
+      className="mb-2 list-none"
     >
-      <div className="flex items-start gap-3">
-        <BookOpen className="w-4 h-4 text-brand shrink-0 mt-0.5" />
-        <div className="flex-1 min-w-0">
-          <div className="text-[8px] uppercase tracking-[0.28em] text-brand mb-0.5">
-            Captured gap
-          </div>
-          {editing ? (
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={2}
-              className="w-full px-2 py-1.5 rounded-lg bg-black/5 border border-brand/20 outline-none text-ink text-[12px] focus:border-brand/50 transition-all resize-none"
-            />
-          ) : (
-            <p className="text-[12px] text-ink/90 leading-snug">{cleaned}</p>
-          )}
-          <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1">
-            Agent · <span className="font-mono">{gap.agent_id?.substring(0, 12)}</span> ·{" "}
-            {formatDate(gap.created_at)}
-          </div>
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <button
-            onClick={() => {
-              setEditing(!editing);
-              setContent(cleaned);
-            }}
-            className="w-7 h-7 rounded-full text-muted hover:text-ink transition-colors flex items-center justify-center"
-            title={editing ? "Cancel" : "Edit before promoting"}
-            aria-label={editing ? "Cancel edit" : "Edit gap content"}
-          >
-            {editing ? <X className="w-3 h-3" /> : <Pencil className="w-3 h-3" />}
-          </button>
-          <button
-            onClick={discard}
-            disabled={discarding || busy}
-            className="w-7 h-7 rounded-full text-muted hover:text-rose-400 hover:bg-rose-500/8 transition-colors flex items-center justify-center disabled:opacity-40"
-            title="Discard this gap"
-            aria-label="Discard knowledge gap"
-          >
-            {discarding ? (
-              <Loader2 className="w-3 h-3 animate-spin" />
+      <Card className="bg-black/10 border-white/5 hover:border-brand/20 transition-all p-3 flex items-start gap-3 rounded-xl">
+        <div className="flex items-start gap-3 w-full">
+          <BookOpen className="w-4 h-4 text-brand shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0 text-left">
+            <div className="text-[8px] uppercase tracking-[0.28em] text-brand mb-0.5">
+              Captured gap
+            </div>
+            {editing ? (
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                rows={2}
+                className="w-full px-3 py-2 rounded-lg bg-black/25 border border-input outline-none text-ink text-[12px] focus:ring-1 focus:ring-brand/40 focus:border-brand/40 transition-all resize-none"
+              />
             ) : (
-              <Trash2 className="w-3 h-3" />
+              <p className="text-[12px] text-ink/90 leading-snug">{cleaned}</p>
             )}
-          </button>
-          <button
-            onClick={promote}
-            disabled={busy || discarding}
-            className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn !py-1.5 !px-3 !text-[9px] !tracking-[0.28em]"
-          >
-            {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-            Promote
-          </button>
+            <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1.5">
+              Agent · <span className="font-mono">{gap.agent_id?.substring(0, 12)}</span> ·{" "}
+              {formatDate(gap.created_at)}
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <ShadButton
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setEditing(!editing);
+                setContent(cleaned);
+              }}
+              className="w-7 h-7 rounded-full text-muted hover:text-ink hover:bg-white/5 transition-all flex items-center justify-center p-0"
+              title={editing ? "Cancel" : "Edit before promoting"}
+              aria-label={editing ? "Cancel edit" : "Edit gap content"}
+            >
+              {editing ? <X className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
+            </ShadButton>
+            <ShadButton
+              variant="ghost"
+              size="icon"
+              onClick={discard}
+              disabled={discarding || busy}
+              className="w-7 h-7 rounded-full text-muted hover:text-rose-400 hover:bg-rose-500/8 transition-all flex items-center justify-center disabled:opacity-40 p-0"
+              title="Discard this gap"
+              aria-label="Discard knowledge gap"
+            >
+              {discarding ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="w-3.5 h-3.5" />
+              )}
+            </ShadButton>
+            <ShadButton
+              variant="default"
+              size="sm"
+              onClick={promote}
+              disabled={busy || discarding}
+              className="h-7 rounded-xl bg-brand/20 hover:bg-brand/35 border border-brand/40 text-brand px-3 text-[9px] uppercase tracking-[0.28em] font-normal transition-all flex items-center gap-1"
+            >
+              {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+              Promote
+            </ShadButton>
+          </div>
         </div>
-      </div>
+      </Card>
     </motion.li>
   );
 };
@@ -613,7 +652,7 @@ function OpenTasks({
   if (items.length === 0)
     return <Empty icon={ListTodo} label="Inbox zero. You're caught up." green />;
   return (
-    <ul className="divide-y divide-black/8">
+    <ul className="p-2 space-y-2 list-none">
       <AnimatePresence initial={false}>
         {items.map((t) => (
           <OpenTaskRow
@@ -659,49 +698,52 @@ const OpenTaskRow: React.FC<{
       layout
       exit={{ opacity: 0, height: 0, overflow: "hidden" }}
       transition={{ duration: 0.18 }}
-      className="px-4 py-3 flex items-start gap-3 group"
+      className="mb-2 list-none"
     >
-      {/* Mark complete button — replaces the static priority badge */}
-      <button
-        onClick={complete}
-        disabled={completing}
-        className={cn(
-          "disabled:opacity-50 disabled:cursor-not-allowed",
-          "shrink-0 w-5 h-5 rounded-full border transition-all mt-0.5 flex items-center justify-center",
-          completing
-            ? "border-emerald-500/60 bg-emerald-500/20"
-            : "border-white/20 hover:border-emerald-500/60 hover:bg-emerald-500/10 group-hover:border-white/35",
-        )}
-        aria-label="Mark task complete"
-        title="Mark complete"
-      >
-        {completing ? (
-          <Loader2 className="w-2.5 h-2.5 animate-spin text-emerald-400" />
-        ) : (
-          <Check className="w-2.5 h-2.5 text-muted/70 group-hover:text-emerald-400 group-active:text-emerald-400 transition-colors" />
-        )}
-      </button>
+      <Card className="bg-black/10 border-white/5 hover:border-brand/20 transition-all p-3 flex items-start gap-3 rounded-xl">
+        <ShadButton
+          variant="outline"
+          size="icon"
+          onClick={complete}
+          disabled={completing}
+          className={cn(
+            "shrink-0 w-6 h-6 rounded-full border transition-all mt-0.5 flex items-center justify-center p-0",
+            completing
+              ? "border-emerald-500/60 bg-emerald-500/20"
+              : "border-input bg-background/50 hover:border-emerald-500/60 hover:bg-emerald-500/10 hover:text-emerald-400"
+          )}
+          aria-label="Mark task complete"
+          title="Mark complete"
+        >
+          {completing ? (
+            <Loader2 className="w-3 h-3 animate-spin text-emerald-400" />
+          ) : (
+            <Check className="w-3 h-3 text-muted/70 hover:text-emerald-400 transition-colors" />
+          )}
+        </ShadButton>
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
-          <span
-            className={cn(
-              "shrink-0 px-1.5 py-0.5 rounded-full text-[8px] uppercase tracking-[0.28em] border leading-none",
-              task.priority === "high" && "bg-rose-500/15 text-rose-500 border-rose-500/30",
-              task.priority === "medium" && "bg-brand/15 text-brand border-brand/30",
-              task.priority === "low" && "bg-zinc-500/15 text-zinc-300 border-zinc-500/30",
-            )}
-          >
-            {task.priority}
-          </span>
+        <div className="flex-1 min-w-0 text-left">
+          <div className="flex items-center gap-2 mb-1.5">
+            <Badge
+              variant={task.priority === "high" ? "destructive" : task.priority === "medium" ? "secondary" : "outline"}
+              className={cn(
+                "text-[8px] uppercase tracking-[0.28em] font-normal px-2 py-0.5 rounded leading-none",
+                task.priority === "high" && "bg-rose-500/15 text-rose-500 border-rose-500/30 hover:bg-rose-500/20",
+                task.priority === "medium" && "bg-brand/15 text-brand border-brand/30 hover:bg-brand/20",
+                task.priority === "low" && "bg-zinc-500/15 text-zinc-300 border-zinc-500/30 hover:bg-zinc-500/20"
+              )}
+            >
+              {task.priority}
+            </Badge>
+          </div>
+          <p className="text-[12px] text-ink/90 leading-snug">{task.description}</p>
+          <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1.5 flex items-center gap-2">
+            <span>{task.target_channel || "manual"}</span>
+            <span className="w-1 h-1 rounded-full bg-white/10" />
+            <span>{formatDateTime(task.created_at)}</span>
+          </div>
         </div>
-        <p className="text-[12px] text-ink/90 leading-snug">{task.description}</p>
-        <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1 flex items-center gap-2">
-          <span>{task.target_channel || "manual"}</span>
-          <span>·</span>
-          <span>{formatDateTime(task.created_at)}</span>
-        </div>
-      </div>
+      </Card>
     </motion.li>
   );
 };
@@ -712,37 +754,47 @@ function Escalations({ items }: { items: EscalationCall[] }) {
   if (items.length === 0)
     return <Empty icon={AlertOctagon} label="No escalations on file." green />;
   return (
-    <ul className="divide-y divide-black/8">
+    <ul className="p-2 space-y-2 list-none">
       {items.map((c) => (
         <li
           key={c.id}
-          className="group px-4 py-3 flex items-start gap-3 bg-rose-500/3 relative hover:bg-rose-500/6 active:bg-rose-500/8 transition-all duration-100"
+          className="relative list-none group"
         >
-          {/* Absolute overlay link covering the entire row target */}
-          <Link
-            to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
-            className="absolute inset-0 z-0"
-            aria-label={`View contact profile for ${c.customer_number || "unknown caller"}`}
-          />
+          <Card className="bg-rose-950/10 border-rose-500/10 hover:border-rose-500/30 transition-all p-3 flex items-start gap-3 rounded-xl relative">
+            {/* Absolute overlay link covering the entire row target */}
+            <Link
+              to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
+              className="absolute inset-0 z-0"
+              aria-label={`View contact profile for ${c.customer_number || "unknown caller"}`}
+            />
 
-          <AlertOctagon className="w-4 h-4 text-rose-500 shrink-0 mt-0.5 relative z-10 pointer-events-none" />
-          <div className="flex-1 min-w-0 relative z-10 pointer-events-none">
-            <span className="font-display italic text-base text-ink block truncate group-hover:text-brand transition-colors">
-              {c.customer_number || "Unknown caller"}
-            </span>
-            <p className="text-[11px] text-ink/70 truncate">{c.summary}</p>
-            <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-0.5">
-              {formatDateTime(c.created_at)}
+            <AlertOctagon className="w-4 h-4 text-rose-500 shrink-0 mt-0.5 relative z-10 pointer-events-none" />
+            <div className="flex-1 min-w-0 relative z-10 pointer-events-none text-left">
+              <span className="font-display italic text-base text-ink block truncate group-hover:text-brand transition-colors">
+                {c.customer_number || "Unknown caller"}
+              </span>
+              <p className="text-[11px] text-ink/70 truncate">{c.summary}</p>
+              <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1.5 flex items-center gap-2">
+                <span>{formatDateTime(c.created_at)}</span>
+                {c.lead_score !== null && c.lead_score !== undefined && (
+                  <>
+                    <span className="w-1 h-1 rounded-full bg-white/10" />
+                    <Badge variant="outline" className="text-[7px] tracking-normal border-rose-500/20 text-rose-400 bg-rose-500/5 px-1 py-0 rounded">
+                      Score: {c.lead_score}
+                    </Badge>
+                  </>
+                )}
+              </div>
+              {c.coaching_note && (
+                <p className="text-[10px] text-rose-400/80 mt-1.5 line-clamp-1 pr-2">
+                  {c.coaching_note}
+                </p>
+              )}
             </div>
-            {c.coaching_note && (
-              <p className="text-[10px] text-rose-500/80 mt-0.5 line-clamp-1 pr-2">
-                {c.coaching_note}
-              </p>
-            )}
-          </div>
-          <div className="relative z-20">
-            <ClaudeRecipeButton recipe="coach" callId={c.id} label="Coach" variant="compact" />
-          </div>
+            <div className="relative z-20 shrink-0">
+              <ClaudeRecipeButton recipe="coach" callId={c.id} label="Coach" variant="compact" />
+            </div>
+          </Card>
         </li>
       ))}
     </ul>
@@ -772,3 +824,4 @@ function Empty({
     </div>
   );
 }
+

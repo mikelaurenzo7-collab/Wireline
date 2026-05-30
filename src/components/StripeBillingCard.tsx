@@ -140,6 +140,30 @@ export default function StripeBillingCard() {
         return openPortal();
       }
       if (!r.ok || !d.url) throw new Error(d.error || "Checkout failed");
+      
+      // Dispatch analytics checkout initiation events
+      if (typeof window !== "undefined") {
+        try {
+          const prices: Record<string, number> = { personal: 49, starter: 149, pro: 499, business: 1499 };
+          if (typeof (window as any).fbq === "function") {
+            (window as any).fbq("track", "InitiateCheckout", {
+              content_category: "Subscription",
+              content_ids: [planId],
+              value: prices[planId] || 0,
+              currency: "USD"
+            });
+          }
+          if (typeof (window as any).plausible === "function") {
+            (window as any).plausible("CheckoutInitiated", { props: { plan: planId } });
+          }
+          if (typeof (window as any).dataLayer !== "undefined" && typeof (window as any).dataLayer.push === "function") {
+            (window as any).dataLayer.push({ event: "checkout_initiated", planId: planId });
+          }
+        } catch (err) {
+          console.warn("[wireline:analytics] Failed to log checkout initiation:", err);
+        }
+      }
+
       window.location.href = d.url;
     } catch (e: any) {
       setError(e?.message || "Checkout failed");

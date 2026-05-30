@@ -62,6 +62,8 @@ interface DispatchTabProps {
   isLoadingMore: boolean;
   quotaUsed?: number | null;
   quotaLimit?: number | null;
+  dncEntries?: any[];
+  isNumberOnDncList?: (num: string, entries: any[]) => boolean;
 }
 
 export default function DispatchTab({
@@ -97,6 +99,8 @@ export default function DispatchTab({
   isLoadingMore,
   quotaUsed,
   quotaLimit,
+  dncEntries = [],
+  isNumberOnDncList,
 }: DispatchTabProps) {
   const [mode, setMode] = useState<"single" | "bulk">("single");
 
@@ -108,6 +112,10 @@ export default function DispatchTab({
     quotaLimit != null &&
     quotaLimit > 0 &&
     quotaUsed / quotaLimit >= 0.9;
+
+  const isDncBlocked =
+    customerNumber.length > 0 &&
+    !!isNumberOnDncList?.(customerNumber, dncEntries);
 
   return (
     <>
@@ -259,6 +267,15 @@ export default function DispatchTab({
                         </span>
                       </label>
 
+                      {isDncBlocked && (
+                        <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 flex items-start gap-2 text-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]">
+                          <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                          <div className="text-[10px] leading-snug">
+                            <strong className="font-bold">Blocked by DNC Policy:</strong> This number is registered on your active Do-Not-Call list and cannot be dialed.
+                          </div>
+                        </div>
+                      )}
+
                       {quotaExhausted && (
                         <div className="rounded-lg border border-rose-500/30 bg-rose-500/5 px-3 py-2 flex items-start gap-2">
                           <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
@@ -278,7 +295,7 @@ export default function DispatchTab({
                       <button
                         onClick={dispatchCall}
                         disabled={
-                          isDialing || !customerNumber || !hasOutboundConsent || !!quotaExhausted
+                          isDialing || !customerNumber || !hasOutboundConsent || !!quotaExhausted || isDncBlocked
                         }
                         className="brutal-btn w-full !py-3 !text-[11px] !tracking-[0.3em] disabled:opacity-50"
                       >

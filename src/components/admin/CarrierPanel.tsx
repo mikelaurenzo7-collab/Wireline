@@ -16,6 +16,8 @@ import WebhooksManager from "../WebhooksManager";
 import IntakeKeysManager from "../IntakeKeysManager";
 import PhoneNumberPicker from "../PhoneNumberPicker";
 import { cn } from "../../lib/utils";
+import { Input } from "../ui/shadcn/Input";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 interface CarrierPanelProps {
   settings: CarrierSettings;
@@ -151,14 +153,14 @@ export function CarrierPanel({
             >
               Default Wireline phone number ID
             </label>
-            <input
+            <Input
               id="vapi-phone-number-id"
               type="text"
               value={settings.vapi_phone_number_id}
               onChange={(e) =>
                 onUpdateSettings({ ...settings, vapi_phone_number_id: e.target.value })
               }
-              className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 font-mono"
+              className="w-full text-sm bg-black/5 border border-input rounded-lg px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink placeholder:text-muted/70 font-mono"
               placeholder="e.g. 3c7a9f…"
             />
           </div>
@@ -177,7 +179,7 @@ export function CarrierPanel({
                 onChange={(e) =>
                   onUpdateSettings({ ...settings, vapi_phone_inbound_agent_id: e.target.value })
                 }
-                className="w-full text-sm bg-black/5 border border-black/10 rounded-lg pl-3 pr-8 py-2 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
+                className="w-full text-sm bg-black/5 border border-input rounded-lg pl-3 pr-8 py-2 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
               >
                 <option value="">Oldest voice agent (fallback)</option>
                 {agents
@@ -211,7 +213,7 @@ export function CarrierPanel({
                   model overrides.
                 </p>
 
-                <div className="rounded-2xl glass border border-white/10 p-4 space-y-3 bg-black/10">
+                <div className="rounded-2xl glass border border-input p-4 space-y-3 bg-black/10">
                   <div className="text-[10px] uppercase tracking-[0.4em] text-brand">
                     Custom Model Selection
                   </div>
@@ -245,7 +247,7 @@ export function CarrierPanel({
                           "text-left rounded-xl p-3 transition-all border",
                           settings.voice_llm_provider === p.v
                             ? "bg-brand/10 border-brand/40"
-                            : "bg-black/20 border-white/8 hover:border-white/30",
+                            : "bg-black/20 border-input hover:border-white/30",
                         )}
                       >
                         <div className="flex items-baseline justify-between mb-0.5">
@@ -265,14 +267,14 @@ export function CarrierPanel({
                     >
                       Model Revision Override
                     </label>
-                    <input
+                    <Input
                       id="voice-llm-model"
                       type="text"
                       value={settings.voice_llm_model}
                       onChange={(e) =>
                         onUpdateSettings({ ...settings, voice_llm_model: e.target.value })
                       }
-                      className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink font-mono"
+                      className="w-full text-sm bg-black/5 border border-input rounded-lg px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink font-mono"
                     />
                   </div>
                 </div>
@@ -284,10 +286,11 @@ export function CarrierPanel({
           <IntakeKeysManager />
 
           <div className="pt-3 border-t border-white/8">
-            <button
+            <ShadButton
               onClick={onSaveSettings}
               disabled={isSaving}
-              className="brutal-btn !py-2.5 !px-5 !text-[11px] !tracking-[0.3em] disabled:opacity-50"
+              variant="outline"
+              className="brutal-btn !py-2.5 !px-5 !text-[11px] !tracking-[0.3em] disabled:opacity-50 border-input"
             >
               {isSaving ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -295,7 +298,7 @@ export function CarrierPanel({
                 <KeyRound className="w-3.5 h-3.5" />
               )}
               Save settings
-            </button>
+            </ShadButton>
           </div>
         </div>
       </Panel>
@@ -326,7 +329,7 @@ export function CarrierPanel({
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   key={pt.id}
-                  className="rounded-xl glass border border-white/8 p-3 flex flex-col xl:flex-row xl:items-center gap-2"
+                  className="rounded-xl glass border border-input p-3 flex flex-col xl:flex-row xl:items-center gap-2"
                 >
                   <div className="flex-1 min-w-0">
                     <div className="font-display italic text-lg text-ink leading-none tabular-nums truncate">
@@ -336,7 +339,7 @@ export function CarrierPanel({
                       {pt.vapi_number_id?.substring(0, 16)}…
                     </div>
                   </div>
-                  <input
+                  <Input
                     type="text"
                     defaultValue={pt.campaign_label || ""}
                     placeholder="Campaign tag (e.g. Google Ads · Spring '26)"
@@ -356,7 +359,7 @@ export function CarrierPanel({
                         /* silent — operator will see no save indicator */
                       }
                     }}
-                    className="text-[11px] bg-black/5 border border-black/10 rounded-lg px-2.5 py-1.5 outline-none focus:border-brand/50 text-ink min-w-[200px] placeholder:text-muted/70"
+                    className="text-[11px] bg-black/5 border border-input rounded-lg px-2.5 py-1.5 outline-none focus-visible:ring-brand/40 text-ink min-w-[200px] placeholder:text-muted/70 h-auto"
                   />
                   <div className="flex items-center gap-2 shrink-0">
                     <LinkIcon className="w-3 h-3 text-brand" />
@@ -365,7 +368,7 @@ export function CarrierPanel({
                         aria-label={`Assign agent to ${pt.phone_number}`}
                         value={pt.agent_id || ""}
                         onChange={(e) => onUpdateNumberAgent(pt.id, e.target.value)}
-                        className="text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink min-w-[150px]"
+                        className="text-xs bg-black/5 border border-input rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink min-w-[150px]"
                       >
                         <option value="">Unassigned</option>
                         {agents
@@ -381,29 +384,31 @@ export function CarrierPanel({
                       </select>
                       <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none rotate-90" />
                     </div>
-                    <button
+                    <ShadButton
                       type="button"
                       aria-label={`Delete ${pt.phone_number}`}
                       onClick={() => onDeleteNumber(pt.id)}
-                      className="w-7 h-7 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all"
+                      variant="outline"
+                      className="w-7 h-7 rounded-full glass border border-input flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all p-0"
                     >
                       <Trash2 className="w-3 h-3" />
-                    </button>
+                    </ShadButton>
                   </div>
                 </motion.div>
               ))}
             </div>
           )}
 
-          <div className="rounded-xl glass border border-white/8 p-3 space-y-3">
+          <div className="rounded-xl glass border border-input p-3 space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-[10px] uppercase tracking-[0.3em] text-ink inline-flex items-center gap-1.5">
                 <Plus className="w-3 h-3 text-brand" /> Add Wireline number
               </h4>
-              <button
+              <ShadButton
                 onClick={handleSync}
                 disabled={isSyncing}
-                className="disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.3em] text-muted/70 hover:text-brand transition-colors"
+                variant="outline"
+                className="disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.3em] text-muted/70 hover:text-brand transition-colors h-auto py-1 px-2 border-input"
               >
                 {isSyncing ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
@@ -411,37 +416,38 @@ export function CarrierPanel({
                   <RotateCw className="w-3 h-3" />
                 )}
                 Sync numbers
-              </button>
+              </ShadButton>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              <input
+              <Input
                 type="tel"
                 inputMode="tel"
                 autoComplete="tel"
                 value={newNumber}
                 onChange={(e) => setNewNumber(e.target.value)}
                 placeholder="+1 800 555 0100"
-                className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink tabular-nums"
+                className="w-full text-sm bg-black/5 border border-input rounded-lg px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink tabular-nums h-auto"
               />
-              <input
+              <Input
                 type="text"
                 value={newNumberVapiId}
                 onChange={(e) => setNewNumberVapiId(e.target.value)}
                 placeholder="Wireline voice number ID"
-                className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink font-mono"
+                className="w-full text-sm bg-black/5 border border-input rounded-lg px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink font-mono h-auto"
               />
             </div>
-            <button
+            <ShadButton
               onClick={() => {
                 onAddNumber(newNumber, newNumberVapiId);
                 setNewNumber("");
                 setNewNumberVapiId("");
               }}
               disabled={!newNumber || !newNumberVapiId}
-              className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.3em] hover:bg-brand/25 transition-colors disabled:opacity-30"
+              variant="outline"
+              className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.3em] hover:bg-brand/25 transition-colors disabled:opacity-30 border-input"
             >
               <Plus className="w-3 h-3" /> Register number
-            </button>
+            </ShadButton>
           </div>
         </div>
       </Panel>
@@ -467,17 +473,18 @@ export function CarrierPanel({
                     each of your carrier numbers.
                   </p>
                 </div>
-                <button
+                <ShadButton
                   type="button"
                   onClick={() => {
                     navigator.clipboard?.writeText(
                       "https://trywireline.com/api/twilio-webhook/sms",
                     );
                   }}
-                  className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.3em] hover:bg-brand/25 transition-colors"
+                  variant="outline"
+                  className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.3em] hover:bg-brand/25 transition-colors border-input h-auto"
                 >
                   Copy URL
-                </button>
+                </ShadButton>
               </div>
               <code className="block text-[11px] font-mono text-ink/90 bg-black/15 px-2.5 py-1.5 rounded select-all break-all">
                 https://trywireline.com/api/twilio-webhook/sms
@@ -485,7 +492,7 @@ export function CarrierPanel({
             </div>
           )}
 
-          <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] p-3">
+          <div className="flex items-center justify-between rounded-xl border border-input bg-white/[0.02] p-3">
             <div>
               <p className="text-sm text-ink leading-none">Enable outbound SMS</p>
               <p className="text-[10px] text-muted/70 mt-1 leading-relaxed">
@@ -522,7 +529,7 @@ export function CarrierPanel({
             >
               SMS sender number
             </label>
-            <input
+            <Input
               id="twilio-sms-from"
               type="tel"
               inputMode="tel"
@@ -532,7 +539,7 @@ export function CarrierPanel({
                 onUpdateSettings({ ...settings, twilio_sms_from_number: e.target.value })
               }
               placeholder="+1 800 555 0100"
-              className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 font-mono"
+              className="w-full text-sm bg-black/5 border border-input rounded-lg px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink placeholder:text-muted/70 font-mono h-auto"
             />
             <p className="text-[10px] text-muted/70 leading-relaxed">
               A Twilio-verified number you own. Outbound texts go from this number.
@@ -546,7 +553,7 @@ export function CarrierPanel({
             >
               OR Messaging Service SID (recommended for scale)
             </label>
-            <input
+            <Input
               id="twilio-messaging-sid"
               type="text"
               value={settings.twilio_messaging_service_sid || ""}
@@ -554,17 +561,18 @@ export function CarrierPanel({
                 onUpdateSettings({ ...settings, twilio_messaging_service_sid: e.target.value })
               }
               placeholder="MG••••••••••••••••••••••••••••••••"
-              className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 font-mono"
+              className="w-full text-sm bg-black/5 border border-input rounded-lg px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink placeholder:text-muted/70 font-mono h-auto"
             />
             <p className="text-[10px] text-muted/70 leading-relaxed">
               Twilio's pool of numbers with auto-failover. Overrides the single sender above.
             </p>
           </div>
 
-          <button
+          <ShadButton
             onClick={onSaveSettings}
             disabled={isSaving}
-            className="w-full mt-2 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.3em] hover:bg-brand/25 transition-colors disabled:opacity-30"
+            variant="outline"
+            className="w-full mt-2 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.3em] hover:bg-brand/25 transition-colors disabled:opacity-30 border-input h-auto"
           >
             {isSaving ? (
               <Loader2 className="w-3 h-3 animate-spin" />
@@ -572,7 +580,7 @@ export function CarrierPanel({
               <KeyRound className="w-3 h-3" />
             )}
             Save messaging config
-          </button>
+          </ShadButton>
 
           {/* ─── Operator alert routing ─────────────────────────────
               Surfaces the existing settings columns that have been in
@@ -587,7 +595,7 @@ export function CarrierPanel({
               The wireline_settings table has had `twilio_manager_alerts_enabled`
               + `twilio_manager_alert_number` columns since the schema
               was set up — this just exposes them to operators. */}
-          <div className="mt-6 pt-5 border-t border-black/10 space-y-3">
+          <div className="mt-6 pt-5 border-t border-input space-y-3">
             <div>
               <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mb-1">
                 Alerts to you
@@ -598,7 +606,7 @@ export function CarrierPanel({
               </p>
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] p-3">
+            <div className="flex items-center justify-between rounded-xl border border-input bg-white/[0.02] p-3">
               <div className="min-w-0">
                 <p className="text-sm text-ink leading-none">Operator alerts</p>
                 <p className="text-[10px] text-muted/70 mt-1 leading-relaxed">
@@ -636,7 +644,7 @@ export function CarrierPanel({
                 >
                   Your phone number
                 </label>
-                <input
+                <Input
                   id="manager-alert-number"
                   type="tel"
                   inputMode="tel"
@@ -649,7 +657,7 @@ export function CarrierPanel({
                     })
                   }
                   placeholder="+1 555 555 0100"
-                  className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 font-mono"
+                  className="w-full text-sm bg-black/5 border border-input rounded-lg px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink placeholder:text-muted/70 font-mono h-auto"
                 />
                 <p className="text-[10px] text-muted/70 leading-relaxed">
                   Standard messaging rates apply. We send no more than ~5 alerts per day per agent

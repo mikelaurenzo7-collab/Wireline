@@ -40,3 +40,21 @@ createRoot(document.getElementById("root")!).render(
     <App />
   </StrictMode>,
 );
+
+// Register Service Worker for Progressive Web App (PWA) support on production builds
+if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    // Only register in production to prevent caching issues during dev HMR
+    if (import.meta.env.PROD) {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((reg) => {
+          console.log("[wireline:sw] Registered successfully with scope:", reg.scope);
+        })
+        .catch((err) => {
+          console.error("[wireline:sw] Registration failed:", err);
+        });
+    }
+  });
+}
+

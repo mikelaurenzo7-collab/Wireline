@@ -14,57 +14,57 @@
    original glass/aurora design system intact.
    ══════════════════════════════════════════════════════════════════ */
 :root {
-  --radius: 0.5rem;
+  --radius: 0.75rem;
 
   /* Surface colors */
-  --background: #EFE9DC;
-  --foreground: #1A1614;
-  --card: rgba(239, 233, 220, 0.80);
-  --card-foreground: #1A1614;
-  --popover: rgba(239, 233, 220, 0.92);
-  --popover-foreground: #1A1614;
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: rgba(9, 9, 11, 0.60);
+  --card-foreground: #fafafa;
+  --popover: rgba(9, 9, 11, 0.85);
+  --popover-foreground: #fafafa;
 
   /* Brand primary */
-  --primary: #4F1E7B;
-  --primary-foreground: #FFFFFF;
+  --primary: #9d4edd;
+  --primary-foreground: #ffffff;
 
-  /* Secondary (deep purple surfaces) */
-  --secondary: #3B154C;
-  --secondary-foreground: #FFFFFF;
+  /* Secondary */
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
 
-  /* Muted (subtle backgrounds) */
-  --muted: rgba(26, 22, 20, 0.05);
-  --muted-foreground: #5A534A;
+  /* Muted */
+  --muted: rgba(39, 39, 42, 0.5);
+  --muted-foreground: #a1a1aa;
 
-  /* Accent (warm cream tint) */
-  --accent: rgba(79, 30, 123, 0.06);
-  --accent-foreground: #4F1E7B;
+  /* Accent */
+  --accent: rgba(157, 78, 221, 0.15);
+  --accent-foreground: #c77dff;
 
   /* Destructive */
-  --destructive: #E8466A;
-  --destructive-foreground: #FFFFFF;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
 
   /* Borders & inputs */
-  --border: rgba(26, 22, 20, 0.10);
-  --input: rgba(26, 22, 20, 0.12);
-  --ring: rgba(79, 30, 123, 0.35);
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: rgba(157, 78, 221, 0.5);
 
-  /* Sidebar (shadcn sidebar) */
-  --sidebar-background: rgba(59, 21, 76, 0.96);
-  --sidebar-foreground: rgba(245, 240, 230, 0.90);
-  --sidebar-primary: #4F1E7B;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: rgba(245, 240, 230, 0.06);
-  --sidebar-accent-foreground: rgba(245, 240, 230, 0.85);
-  --sidebar-border: rgba(245, 240, 230, 0.08);
-  --sidebar-ring: rgba(79, 30, 123, 0.40);
+  /* Sidebar */
+  --sidebar-background: rgba(9, 9, 11, 0.95);
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #9d4edd;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(255, 255, 255, 0.05);
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: rgba(157, 78, 221, 0.5);
 
   /* Charts */
-  --chart-1: #4F1E7B;
-  --chart-2: #6B2B99;
-  --chart-3: #8B6FA8;
-  --chart-4: #3B154C;
-  --chart-5: #D4C9B8;
+  --chart-1: #9d4edd;
+  --chart-2: #c77dff;
+  --chart-3: #e0aaff;
+  --chart-4: #5a189a;
+  --chart-5: #3c096c;
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -81,40 +81,25 @@
   --font-display: "Fraunces", "Georgia", "Times New Roman", serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  /* Readable muted copy on cream — WCAG AAA against #EFE9DC */
-  --color-muted: #3D372F;
-  --color-muted-soft: #5A534A;
+  /* Readable muted copy on dark */
+  --color-muted: #a1a1aa;
+  --color-muted-soft: #71717a;
 
-  /* High-contrast purple for text ON translucent brand surfaces.
-   * #4F1E7B (the brand hue) is only 4.8:1 against cream — fine for
-   * large display text but fails AA for 11px uppercase button labels.
-   * --brand-ink deepens to 7.2:1 so tinted ghost buttons pass AAA. */
-  --color-brand-ink: #2E0F4A;
+  /* Brand ink */
+  --color-brand-ink: #f3e8ff;
 
-  /* Core palette â€” single brand teal. The legacy --color-brand-2/3
-   * tokens were the purple/magenta points of the aurora gradient;
-   * they're now aliased to the brand teal so any stray references
-   * resolve to the canonical hue instead of breaking the build. */
-  --color-brand: #4F1E7B;          /* Silky Purple â€” matches new aesthetic */
-  --color-brand-2: #4F1E7B;        /* deprecated â€” alias of --color-brand */
-  --color-brand-3: #4F1E7B;        /* deprecated â€” alias of --color-brand */
-  --color-brand-deep: #3B154C;     /* Deeper purple — TopBar & chrome surfaces */
-  --color-ink: #1A1614;            /* Warm near-black text */
-  --color-paper: #EFE9DC;          /* warm tan / mocha off-white — consistent base */
-  /* Pure white for text/icons rendered ON solid brand-color surfaces
-   * (purple buttons, gradient pills, etc.). We can't use text-white
-   * for these because --color-white is intentionally remapped to a
-   * dark warm value so border-white/* and bg-white/* utilities
-   * produce subtle dark tints on the cream background. Anything that
-   * sits ON the brand-color surface uses --color-on-brand instead. */
-  --color-on-brand: #FFFFFF;
+  /* Core palette */
+  --color-brand: #9d4edd;
+  --color-brand-2: #c77dff;
+  --color-brand-3: #e0aaff;
+  --color-brand-deep: #5a189a;
+  --color-ink: #fafafa;
+  --color-paper: #09090b;
+  --color-on-brand: #ffffff;
 
-  /* Tailwind base palette overrides
-     --color-white drives border-white/*, bg-white/* etc.
-     Set to a dark warm value so those utilities produce
-     subtle dark borders / tints on the cream background.     */
-  --color-white: #2A2520;          /* border-white/8 â†’ rgba(42,37,32,0.08) */
-  --color-black: #0D0B09;          /* bg-black/* stays dark for code blocks */
+  /* Tailwind base overrides */
+  --color-white: #ffffff;
+  --color-black: #000000;
 
   /* Zinc warm-cream scale (50 = lightest, 950 = darkest) */
   --color-zinc-50:  #F2EDE4;
@@ -263,17 +248,16 @@
   }
 
   :root {
-    --wl-purple: #4F1E7B;
-    --wl-purple-light: #6B2B99;
-    --wl-purple-deep: #3B154C;
-    --wl-purple-muted: #8B6FA8;
-    --wl-cream: #F5F0E6;
-    --wl-paper: #EFE9DC;
-    --wl-cream-warm: #D4C9B8;
-    --wl-ink: #1A1614;
-    /* Legacy robot/marketing aliases — map to brand purple, not teal. */
-    --wl-emerald: #6B2B99;
-    --wl-emerald-soft: #8B6FA8;
+    --wl-purple: #9d4edd;
+    --wl-purple-light: #c77dff;
+    --wl-purple-deep: #5a189a;
+    --wl-purple-muted: #e0aaff;
+    --wl-cream: #18181b;
+    --wl-paper: #09090b;
+    --wl-cream-warm: #27272a;
+    --wl-ink: #fafafa;
+    --wl-emerald: #10b981;
+    --wl-emerald-soft: #34d399;
   }
 
   /* iOS Safari zooms the viewport when a form field has font-size < 16px.
@@ -524,13 +508,13 @@
 }
 
 @utility brutal-btn {
-  @apply relative inline-flex items-center justify-center gap-2 px-5 py-2.5 font-semibold tracking-[0.10em] uppercase text-[11px] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:grayscale disabled:pointer-events-none overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-paper;
+  @apply relative inline-flex items-center justify-center gap-2 px-5 py-2.5 font-semibold tracking-[0.10em] uppercase text-[11px] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:grayscale disabled:pointer-events-none overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-paper rounded-full;
   color: #FFFFFF;
-  background: #4F1E7B;
+  background: linear-gradient(135deg, #9d4edd, #5a189a);
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.18) inset,
-    0 6px 20px -6px rgba(79, 30, 123, 0.45),
-    0 14px 36px -10px rgba(79, 30, 123, 0.28);
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset,
+    0 6px 20px -6px rgba(157, 78, 221, 0.45),
+    0 14px 36px -10px rgba(157, 78, 221, 0.28);
 }
 
 /* Button size variants — use alongside brutal-btn to avoid !py- overrides. */
@@ -575,17 +559,17 @@
 }
 
 @utility brutal-card {
-  @apply relative overflow-hidden p-6 md:p-8 border border-black/8;
+  @apply relative overflow-hidden p-6 md:p-8 rounded-2xl border border-white/5;
   background:
-    linear-gradient(180deg, rgba(247, 242, 234, 0.80), rgba(245, 239, 229, 0.55)),
-    rgba(239, 233, 220, 0.75);
-  backdrop-filter: blur(32px) saturate(140%);
-  -webkit-backdrop-filter: blur(32px) saturate(140%);
+    linear-gradient(180deg, rgba(24, 24, 27, 0.80), rgba(9, 9, 11, 0.60)),
+    rgba(9, 9, 11, 0.75);
+  backdrop-filter: blur(40px) saturate(160%);
+  -webkit-backdrop-filter: blur(40px) saturate(160%);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.90) inset,
-    0 0 0 1px rgba(79, 30, 123, 0.04),
-    0 12px 40px -12px rgba(0, 0, 0, 0.10),
-    0 4px 16px -6px rgba(79, 30, 123, 0.08);
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 12px 40px -12px rgba(0, 0, 0, 0.8),
+    0 4px 16px -6px rgba(0, 0, 0, 0.6);
   transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 400ms ease, border-color 300ms ease;
 }
 
@@ -699,20 +683,20 @@
  * consistent warm tone — no white-vs-purple drift. */
 .glass {
   background:
-    linear-gradient(180deg, rgba(246, 241, 232, 0.82), rgba(244, 238, 228, 0.64)),
-    rgba(239, 233, 220, 0.62);
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  border: 1px solid rgba(0, 0, 0, 0.09);
+    linear-gradient(180deg, rgba(39, 39, 42, 0.40), rgba(24, 24, 27, 0.30)),
+    rgba(9, 9, 11, 0.60);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .glass-strong {
   background:
-    linear-gradient(180deg, rgba(247, 242, 234, 0.94), rgba(245, 240, 230, 0.84)),
-    rgba(239, 233, 220, 0.92);
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  border: 1px solid rgba(0, 0, 0, 0.10);
+    linear-gradient(180deg, rgba(39, 39, 42, 0.60), rgba(24, 24, 27, 0.50)),
+    rgba(9, 9, 11, 0.80);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
 }
 
 /* Reduced motion: kill the GPU-expensive backdrop blur entirely. The

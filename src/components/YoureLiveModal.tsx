@@ -25,6 +25,14 @@ import {
   Copy,
   Users,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "./ui/shadcn/Dialog";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -208,14 +216,40 @@ export default function YoureLiveModal({
   const [showConfetti, setShowConfetti] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Trigger confetti when modal opens
+  // Trigger confetti and conversion analytics when modal opens
   useEffect(() => {
     if (isOpen) {
       setShowConfetti(true);
+      
+      // Dispatch conversion tracking to Meta Pixel, Google Tag Manager, and Plausible
+      if (typeof window !== "undefined") {
+        try {
+          if (typeof (window as any).fbq === "function") {
+            (window as any).fbq("track", "CompleteRegistration", { 
+              content_name: "AI Agent Live",
+              agent_name: agentName 
+            });
+          }
+          if (typeof (window as any).plausible === "function") {
+            (window as any).plausible("OnboardingWizardComplete", { 
+              props: { agent: agentName } 
+            });
+          }
+          if (typeof (window as any).dataLayer !== "undefined" && typeof (window as any).dataLayer.push === "function") {
+            (window as any).dataLayer.push({ 
+              event: "onboarding_complete", 
+              agentName: agentName 
+            });
+          }
+        } catch (err) {
+          console.warn("[wireline:analytics] Failed to dispatch conversion events:", err);
+        }
+      }
+
       const timer = setTimeout(() => setShowConfetti(false), 3000);
       return () => clearTimeout(timer);
     }
-  }, [isOpen]);
+  }, [isOpen, agentName]);
 
   const formatTime = useCallback((ms: number): string => {
     const minutes = Math.floor(ms / 60000);
@@ -248,33 +282,9 @@ export default function YoureLiveModal({
   const isQuickSetup = timeToFirstCallMs < 300000; // Under 5 minutes
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <ConfettiExplosion active={showConfetti} />
-
-      {/* Backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black/70 backdrop-blur-md"
-        onClick={onClose}
-      />
-
-      {/* Modal */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 30 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.9, y: 30 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl glass-strong border border-white/20 shadow-2xl"
-      >
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-2 rounded-full hover:bg-black/5 text-muted hover:text-ink transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
+    <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
+      <DialogContent className="sm:max-w-lg border border-white/10 shadow-2xl p-0 bg-black/85 backdrop-blur-xl rounded-3xl overflow-hidden max-h-[90vh] overflow-y-auto">
+        <ConfettiExplosion active={showConfetti} />
 
         {/* Hero Section */}
         <div className="relative px-8 pt-10 pb-6 text-center">
@@ -301,31 +311,28 @@ export default function YoureLiveModal({
             </motion.div>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <p className="text-[10px] uppercase tracking-[0.45em] text-brand font-medium mb-2">
+          <DialogHeader className="flex flex-col space-y-0 text-center items-center pb-2">
+            <DialogDescription className="text-[10px] uppercase tracking-[0.45em] text-brand font-bold mb-2">
               Setup Complete
-            </p>
-            <h2 className="font-display italic text-3xl md:text-4xl text-ink leading-tight">
+            </DialogDescription>
+            <DialogTitle className="font-display italic text-3xl md:text-4xl text-ink leading-tight">
               You're Live!
-            </h2>
-            <p className="text-sm text-muted mt-2 max-w-xs mx-auto">
-              <strong className="text-ink">{agentName}</strong> is ready to answer calls
-            </p>
-          </motion.div>
+            </DialogTitle>
+          </DialogHeader>
+
+          <p className="text-sm text-muted mt-2 max-w-xs mx-auto">
+            <strong className="text-ink">{agentName}</strong> is ready to answer calls
+          </p>
 
           {/* Time badge */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4 }}
-            className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200"
+            className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-emerald-950/20 border border-emerald-500/30"
           >
-            <Sparkles className="w-4 h-4 text-emerald-600" />
-            <span className="text-xs font-medium text-emerald-700">
+            <Sparkles className="w-4 h-4 text-emerald-400" />
+            <span className="text-xs font-medium text-emerald-400">
               {isQuickSetup ? "Lightning fast" : "Setup complete"} — {formatTime(timeToFirstCallMs)}
             </span>
           </motion.div>
@@ -337,18 +344,18 @@ export default function YoureLiveModal({
             transition={{ delay: 0.5 }}
             className="flex items-center justify-center gap-6 mt-6 text-xs"
           >
-            <div className="flex items-center gap-1.5 text-muted">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
               <span>1 AI agent</span>
             </div>
             {knowledgeItems > 0 && (
-              <div className="flex items-center gap-1.5 text-muted">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                 <span>{knowledgeItems} knowledge items</span>
               </div>
             )}
             {phoneNumber && (
-              <div className="flex items-center gap-1.5 text-muted">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                 <span>Phone number ready</span>
               </div>
@@ -358,12 +365,12 @@ export default function YoureLiveModal({
 
         {/* Divider */}
         <div className="px-8">
-          <div className="h-px bg-gradient-to-r from-transparent via-black/10 to-transparent" />
+          <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         </div>
 
         {/* Next Steps */}
         <div className="px-8 py-6 space-y-3">
-          <p className="text-[10px] uppercase tracking-[0.32em] text-muted mb-4">What to do next</p>
+          <p className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground mb-4 font-bold">What to do next</p>
 
           <NextStepCard
             icon={Mic}
@@ -397,9 +404,10 @@ export default function YoureLiveModal({
         {/* Footer actions */}
         <div className="px-8 pb-8 pt-2">
           <div className="flex items-center justify-center gap-3">
-            <button
+            <ShadButton
+              variant="outline"
               onClick={handleShare}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full glass border border-black/10 text-[11px] uppercase tracking-[0.24em] text-ink hover:bg-black/5 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-white/10 text-[11px] uppercase tracking-[0.24em] text-ink hover:bg-white/5 transition-colors h-10"
             >
               {copied ? (
                 <>
@@ -412,16 +420,17 @@ export default function YoureLiveModal({
                   Share
                 </>
               )}
-            </button>
+            </ShadButton>
 
             {phoneNumber && (
-              <button
+              <ShadButton
+                variant="outline"
                 onClick={() => {
                   navigator.clipboard.writeText(phoneNumber);
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full glass border border-black/10 text-[11px] uppercase tracking-[0.24em] text-ink hover:bg-black/5 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-white/10 text-[11px] uppercase tracking-[0.24em] text-ink hover:bg-white/5 transition-colors h-10"
               >
                 {copied ? (
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
@@ -429,16 +438,16 @@ export default function YoureLiveModal({
                   <Copy className="w-4 h-4" />
                 )}
                 {phoneNumber}
-              </button>
+              </ShadButton>
             )}
           </div>
 
-          <p className="text-center text-[10px] text-muted/70 mt-4">
+          <p className="text-center text-[10px] text-muted-foreground mt-4 italic">
             Your agent is live and ready to take calls 24/7
           </p>
         </div>
-      </motion.div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

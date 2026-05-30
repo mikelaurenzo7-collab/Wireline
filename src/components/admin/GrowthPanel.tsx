@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Panel } from "../PageShell";
+import { Input } from "../ui/shadcn/Input";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 interface GrowthPanelProps {
   settings: any;
@@ -120,7 +122,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     </span>
                   </div>
                   <div className="flex gap-2">
-                    <input
+                    <Input
                       type="text"
                       value={newTitle}
                       onChange={(e) => setNewTitle(e.target.value)}
@@ -128,14 +130,15 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                         e.key === "Enter" && addTag("target_titles", newTitle, setNewTitle)
                       }
                       placeholder="e.g. CEO, Sales VP"
-                      className="flex-1 text-sm bg-black/5 border border-black/10 rounded-xl px-4 py-2.5 outline-none focus:border-brand/50 transition-all placeholder:text-muted/70"
+                      className="flex-1 text-sm bg-black/5 border border-input rounded-xl px-4 py-2.5 outline-none focus-visible:ring-brand/40 transition-all placeholder:text-muted/70 h-auto"
                     />
-                    <button
+                    <ShadButton
                       onClick={() => addTag("target_titles", newTitle, setNewTitle)}
-                      className="p-2.5 bg-brand/10 text-brand rounded-xl hover:bg-brand/20 transition-all"
+                      variant="outline"
+                      className="p-2.5 bg-brand/10 text-brand rounded-xl hover:bg-brand/20 transition-all border-input w-10 h-10 shrink-0 p-0"
                     >
                       <Plus className="w-4 h-4" />
-                    </button>
+                    </ShadButton>
                   </div>
                   <div className="flex flex-wrap gap-1.5 min-h-[32px]">
                     {(settings.target_titles || []).map((t: string) => (
@@ -169,7 +172,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     </span>
                   </div>
                   <div className="flex gap-2">
-                    <input
+                    <Input
                       type="text"
                       value={newIndustry}
                       onChange={(e) => setNewIndustry(e.target.value)}
@@ -178,14 +181,15 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                         addTag("target_industries", newIndustry, setNewIndustry)
                       }
                       placeholder="e.g. Fintech, SaaS"
-                      className="flex-1 text-sm bg-black/5 border border-black/10 rounded-xl px-4 py-2.5 outline-none focus:border-brand/50 transition-all placeholder:text-muted/70"
+                      className="flex-1 text-sm bg-black/5 border border-input rounded-xl px-4 py-2.5 outline-none focus-visible:ring-brand/40 transition-all placeholder:text-muted/70 h-auto"
                     />
-                    <button
+                    <ShadButton
                       onClick={() => addTag("target_industries", newIndustry, setNewIndustry)}
-                      className="p-2.5 bg-brand-3/10 text-brand-3 rounded-xl hover:bg-brand-3/20 transition-all"
+                      variant="outline"
+                      className="p-2.5 bg-brand-3/10 text-brand-3 rounded-xl hover:bg-brand-3/20 transition-all border-input w-10 h-10 shrink-0 p-0"
                     >
                       <Plus className="w-4 h-4" />
-                    </button>
+                    </ShadButton>
                   </div>
                   <div className="flex flex-wrap gap-1.5 min-h-[32px]">
                     {(settings.target_industries || []).map((t: string) => (
@@ -219,7 +223,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     </span>
                   </div>
                   <div className="flex gap-2">
-                    <input
+                    <Input
                       type="text"
                       value={newState}
                       onChange={(e) => setNewState(e.target.value)}
@@ -227,14 +231,15 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                         e.key === "Enter" && addTag("target_states", newState, setNewState)
                       }
                       placeholder="e.g. CA, NY, Texas"
-                      className="flex-1 text-sm bg-black/5 border border-black/10 rounded-xl px-4 py-2.5 outline-none focus:border-brand/50 transition-all placeholder:text-muted/70"
+                      className="flex-1 text-sm bg-black/5 border border-input rounded-xl px-4 py-2.5 outline-none focus-visible:ring-brand/40 transition-all placeholder:text-muted/70 h-auto"
                     />
-                    <button
+                    <ShadButton
                       onClick={() => addTag("target_states", newState, setNewState)}
-                      className="p-2.5 bg-brand/10 text-brand rounded-xl hover:bg-brand/20 transition-all"
+                      variant="outline"
+                      className="p-2.5 bg-brand/10 text-brand rounded-xl hover:bg-brand/20 transition-all border-input w-10 h-10 shrink-0 p-0"
                     >
                       <Plus className="w-4 h-4" />
-                    </button>
+                    </ShadButton>
                   </div>
                   <div className="flex flex-wrap gap-1.5 min-h-[32px]">
                     {(settings.target_states || []).map((t: string) => (
@@ -298,7 +303,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                           "px-2 py-2 rounded-xl border text-[10px] font-bold transition-all",
                           (settings.target_employee_ranges || []).includes(range.value)
                             ? "bg-brand/10 border-brand/40 text-brand shadow-[0_0_10px_rgba(79, 30, 123 ,0.1)]"
-                            : "bg-black/5 border-black/10 text-muted/70 hover:border-black/20",
+                            : "bg-black/5 border-input text-muted/70 hover:border-black/20",
                         )}
                       >
                         {range.label}
@@ -309,11 +314,12 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
               </div>
             </div>
 
-            <div className="pt-8 border-t border-white/8 flex justify-end">
-              <button
+            <div className="pt-8 border-t border-input flex justify-end">
+              <ShadButton
                 onClick={onSave}
                 disabled={isSaving}
-                className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn !px-12 !py-3.5 !text-[11px] !tracking-[0.45em] flex items-center justify-center gap-3 shadow-xl"
+                variant="outline"
+                className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn !px-12 !py-3.5 !text-[11px] !tracking-[0.45em] flex items-center justify-center gap-3 shadow-xl border-input h-auto"
               >
                 {isSaving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -321,7 +327,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                   <Save className="w-4 h-4" />
                 )}
                 <span>Sync Growth Protocol</span>
-              </button>
+              </ShadButton>
             </div>
           </div>
         </Panel>
@@ -330,7 +336,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
       <div className="space-y-3">
         <Panel title="Growth Intelligence" hint="COGNITIVE FEEDBACK" icon={Sparkles} scroll>
           <div className="space-y-4">
-            <div className="p-5 rounded-2xl glass border border-brand/20 bg-brand/5 space-y-4">
+            <div className="p-5 rounded-2xl glass border border-input bg-brand/5 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] uppercase tracking-[0.3em] font-black text-brand">
                   ICP Efficiency
@@ -366,7 +372,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
               ].map((stat) => (
                 <div
                   key={stat.label}
-                  className="p-3 rounded-xl glass border border-white/8 flex items-center justify-between"
+                  className="p-3 rounded-xl glass border border-input flex items-center justify-between"
                 >
                   <span className="text-[10px] uppercase tracking-[0.2em] text-muted">
                     {stat.label}

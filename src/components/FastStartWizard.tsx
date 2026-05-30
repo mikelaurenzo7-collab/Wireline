@@ -506,7 +506,7 @@ export default function FastStartWizard({
                       Choose the voice your callers will hear:
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {PREMIUM_VOICES.slice(0, 4).map((voice) => (
+                      {PREMIUM_VOICES.slice(0, 4).map((voice: any) => (
                         <button
                           key={voice.id}
                           onClick={() => setSelectedVoiceId(voice.id)}
@@ -577,7 +577,7 @@ export default function FastStartWizard({
                         <div>
                           <p className="text-xs text-muted">Voice</p>
                           <p className="text-sm text-ink">
-                            {PREMIUM_VOICES.find((v) => v.id === selectedVoiceId)?.name}
+                            {PREMIUM_VOICES.find((v: any) => v.id === selectedVoiceId)?.name}
                           </p>
                         </div>
                       </div>

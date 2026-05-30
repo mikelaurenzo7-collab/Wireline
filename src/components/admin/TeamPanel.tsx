@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { KeyRound, Trash2, Mail, Shield, User, Plus, Loader2 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Panel } from "../PageShell";
+import { Input } from "../ui/shadcn/Input";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 interface TeamMember {
   id: string;
@@ -42,7 +44,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
       <div className="xl:col-span-2 space-y-3">
         <Panel title="Team Management" hint="ACCESS CONTROL" icon={KeyRound} scroll>
           <div className="space-y-6">
-            <div className="flex flex-col md:flex-row gap-3 p-4 rounded-2xl glass border border-white/10 bg-brand/5">
+            <div className="flex flex-col md:flex-row gap-3 p-4 rounded-2xl glass border border-input bg-brand/5">
               <div className="flex-1 space-y-1.5">
                 <label className="text-[10px] uppercase tracking-[0.3em] text-muted font-bold ml-1">
                   Invite New Member
@@ -50,21 +52,21 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted" />
-                    <input
+                    <Input
                       type="email"
                       autoComplete="email"
                       autoCapitalize="none"
                       spellCheck={false}
                       inputMode="email"
                       placeholder="colleague@business.com"
-                      className="w-full pl-9 pr-4 py-2.5 bg-white/50 border border-black/10 rounded-xl outline-none focus:border-brand/50 text-sm transition-all"
+                      className="w-full pl-9 pr-4 py-2.5 bg-white/50 border border-input rounded-xl outline-none focus-visible:ring-brand/40 text-sm transition-all h-auto"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
                     />
                   </div>
                   <select
                     aria-label="Role"
-                    className="w-32 px-3 py-2.5 bg-white/50 border border-black/10 rounded-xl outline-none focus:border-brand/50 text-xs appearance-none cursor-pointer"
+                    className="w-32 px-3 py-2.5 bg-white/50 border border-input rounded-xl outline-none focus:border-brand/50 text-xs appearance-none cursor-pointer"
                     value={inviteRole}
                     onChange={(e) => setInviteRole(e.target.value)}
                   >
@@ -73,9 +75,10 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                     <option value="owner">Owner</option>
                     <option value="auditor">Auditor</option>
                   </select>
-                  <button
+                  <ShadButton
                     disabled={isInviting || !inviteEmail}
-                    className="brutal-btn !py-2 !px-6 flex items-center gap-2 disabled:opacity-50"
+                    variant="outline"
+                    className="brutal-btn !py-2 !px-6 flex items-center gap-2 disabled:opacity-50 border-input h-auto"
                     onClick={handleInvite}
                   >
                     {isInviting ? (
@@ -84,7 +87,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                       <Plus className="w-3.5 h-3.5" />
                     )}
                     <span>Invite</span>
-                  </button>
+                  </ShadButton>
                 </div>
               </div>
             </div>
@@ -97,7 +100,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
 
               <div className="grid grid-cols-1 gap-2">
                 {members.length === 0 ? (
-                  <div className="py-20 text-center glass border border-dashed border-black/10 rounded-2xl">
+                  <div className="py-20 text-center glass border border-dashed border-input rounded-2xl">
                     <User className="w-8 h-8 text-muted/70 mx-auto mb-3" />
                     <p className="text-xs text-muted uppercase tracking-widest font-medium">
                       No team members found
@@ -112,7 +115,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                     return (
                       <div
                         key={m.id}
-                        className="group flex items-center gap-4 p-4 rounded-2xl glass border border-white/5 hover:border-brand/20 transition-all hover:bg-white/5"
+                        className="group flex items-center gap-4 p-4 rounded-2xl glass border border-input hover:border-brand/20 transition-all hover:bg-white/5"
                       >
                         <div
                           className={cn(
@@ -159,13 +162,14 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                               Joined {new Date(m.created_at).toLocaleDateString()}
                             </p>
                           </div>
-                          <button
+                          <ShadButton
                             onClick={() => onRemove(m.id)}
-                            className="w-9 h-9 rounded-xl glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all"
+                            variant="outline"
+                            className="w-9 h-9 rounded-xl glass border border-input flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all p-0"
                             title="Revoke Access"
                           >
                             <Trash2 className="w-4 h-4" />
-                          </button>
+                          </ShadButton>
                         </div>
                       </div>
                     );

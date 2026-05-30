@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const SRC = readFileSync(join(import.meta.dirname, "FleetSettings.tsx"), "utf8");
+const SRC = readFileSync(join(import.meta.dirname, "fleet-settings", "FleetSettings.tsx"), "utf8");
 
 describe("FleetSettings shell", () => {
   it("uses ClientRouteViewport (not AdminHubViewport / Settings tabs)", () => {

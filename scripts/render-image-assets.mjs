@@ -20,6 +20,7 @@ if (!existsSync(publicDir)) mkdirSync(publicDir, { recursive: true });
 const targets = [
   { src: "scripts/og-image.svg",         out: "public/og-image.png",         width: 1200 },
   { src: "scripts/apple-touch-icon.svg", out: "public/apple-touch-icon.png", width: 180  },
+  { src: "scripts/apple-touch-icon.svg", out: "public/wireline-icon-192.png", width: 192  },
 ];
 
 for (const t of targets) {

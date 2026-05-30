@@ -14,6 +14,8 @@ import { Panel } from "../PageShell";
 import StripeBillingCard from "../StripeBillingCard";
 import { cn } from "../../lib/utils";
 import { Link } from "react-router-dom";
+import { Input } from "../ui/shadcn/Input";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 interface SubscriptionPanelProps {
   settings: any;
@@ -115,10 +117,11 @@ export function SubscriptionPanel({
               </div>
             </div>
 
-            <button
+            <ShadButton
               onClick={onSaveSettings}
               disabled={isSaving}
-              className="brutal-btn w-full !py-2.5 !text-[11px] !tracking-[0.3em] disabled:opacity-50"
+              variant="outline"
+              className="brutal-btn w-full !py-2.5 !text-[11px] !tracking-[0.3em] disabled:opacity-50 border-input h-auto"
             >
               {isSaving ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -126,10 +129,10 @@ export function SubscriptionPanel({
                 <Save className="w-3.5 h-3.5" />
               )}
               Save billing
-            </button>
+            </ShadButton>
           </div>
 
-          <div className="rounded-2xl glass border border-brand/20 p-4 space-y-3">
+          <div className="rounded-2xl glass border border-input p-4 space-y-3">
             <div className="flex items-center gap-2 pb-2 border-b border-white/8">
               <ServerCog className="w-3.5 h-3.5 text-brand" />
               <h4 className="font-display italic lowercase text-base text-ink">
@@ -184,16 +187,17 @@ export function SubscriptionPanel({
               </div>
             </div>
             <div className="space-y-2">
-              <input
+              <Input
                 type="text"
                 value={deleteConfirmText}
                 onChange={(e) => setDeleteConfirmText(e.target.value)}
                 placeholder="DELETE MY ACCOUNT"
-                className="w-full h-9 px-3 rounded-lg bg-black/5 border border-rose-500/20 text-xs font-mono text-ink outline-none focus:border-rose-500/50 transition-all"
+                className="w-full h-9 px-3 rounded-lg bg-black/5 border border-rose-500/20 text-xs font-mono text-ink outline-none focus-visible:ring-rose-500/50 transition-all"
               />
-              <button
+              <ShadButton
                 onClick={handleDelete}
                 disabled={deletingAccount || deleteConfirmText !== "DELETE MY ACCOUNT"}
+                variant="outline"
                 className="w-full h-9 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-500 text-[11px] uppercase tracking-[0.2em] hover:bg-rose-500/20 disabled:opacity-40 flex items-center justify-center gap-2"
               >
                 {deletingAccount ? (
@@ -202,7 +206,7 @@ export function SubscriptionPanel({
                   <Trash2 className="w-3.5 h-3.5" />
                 )}
                 {deletingAccount ? "Deleting…" : "Delete my account"}
-              </button>
+              </ShadButton>
             </div>
           </div>
           <div className="flex items-center gap-3 text-[10px] text-muted/70 border-t border-white/5 pt-3">

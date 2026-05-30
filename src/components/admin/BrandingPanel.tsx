@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React from "react";
 import { Bot, Zap, Save, Loader2 } from "lucide-react";
+import { Input } from "../ui/shadcn/Input";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 interface BrandingPanelProps {
   settings: any;
@@ -12,7 +14,7 @@ interface BrandingPanelProps {
 export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: BrandingPanelProps) {
   return (
     <div className="flex flex-col gap-6">
-      <div className="p-6 rounded-2xl glass border border-white/10">
+      <div className="p-6 rounded-2xl glass border border-input">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25 flex items-center justify-center shrink-0">
             <Bot className="w-4 h-4" />
@@ -31,10 +33,10 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
               <label className="block text-[9px] uppercase tracking-[0.2em] text-muted mb-1.5 ml-1">
                 Platform Name
               </label>
-              <input
+              <Input
                 type="text"
                 placeholder="Wireline OS"
-                className="input-field"
+                className="bg-black/5 border-input focus-visible:ring-brand/40 rounded-xl py-3 h-auto"
                 value={settings.brand_name || ""}
                 onChange={(e) => onUpdate({ ...settings, brand_name: e.target.value })}
               />
@@ -43,10 +45,10 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
               <label className="block text-[9px] uppercase tracking-[0.2em] text-muted mb-1.5 ml-1">
                 Brand Logo URL
               </label>
-              <input
+              <Input
                 type="text"
                 placeholder="https://assets.yoursite.com/logo.png"
-                className="input-field"
+                className="bg-black/5 border-input focus-visible:ring-brand/40 rounded-xl py-3 h-auto"
                 value={settings.brand_logo_url || ""}
                 onChange={(e) => onUpdate({ ...settings, brand_logo_url: e.target.value })}
               />
@@ -56,15 +58,15 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
                 Primary Color
               </label>
               <div className="flex gap-3">
-                <input
+                <Input
                   type="color"
-                  className="w-12 h-12 rounded-xl bg-transparent border-none cursor-pointer"
+                  className="w-12 h-12 rounded-xl bg-transparent border-input cursor-pointer p-0"
                   value={settings.primary_color || "#4F1E7B"}
                   onChange={(e) => onUpdate({ ...settings, primary_color: e.target.value })}
                 />
-                <input
+                <Input
                   type="text"
-                  className="flex-1 input-field font-mono"
+                  className="flex-1 bg-black/5 border-input focus-visible:ring-brand/40 rounded-xl py-3 h-auto font-mono"
                   value={settings.primary_color || "#4F1E7B"}
                   onChange={(e) => onUpdate({ ...settings, primary_color: e.target.value })}
                 />
@@ -72,7 +74,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center p-6 border border-white/5 bg-white/5 rounded-2xl">
+          <div className="flex flex-col items-center justify-center p-6 border border-input bg-white/5 rounded-2xl">
             <p className="text-[9px] uppercase tracking-[0.32em] text-muted/70 mb-6">Preview</p>
             <div className="w-full p-6 rounded-3xl brutal-border bg-paper relative overflow-hidden group">
               <div
@@ -119,11 +121,12 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
         </div>
 
         {onSave && (
-          <div className="mt-8 pt-6 border-t border-white/5">
-            <button
+          <div className="mt-8 pt-6 border-t border-input">
+            <ShadButton
               onClick={onSave}
               disabled={isSaving}
-              className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn w-full md:w-auto !px-8 !py-3 !text-[10px] !tracking-[0.4em] flex items-center justify-center gap-2"
+              variant="outline"
+              className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn w-full md:w-auto !px-8 !py-3 !text-[10px] !tracking-[0.4em] flex items-center justify-center gap-2 border-input"
             >
               {isSaving ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -131,7 +134,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
                 <Save className="w-4 h-4" />
               )}
               Save Branding Settings
-            </button>
+            </ShadButton>
           </div>
         )}
       </div>

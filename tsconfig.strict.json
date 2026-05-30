@@ -89,6 +89,9 @@
     "src/lib/safe-number.test.ts",
     "src/lib/agent-scorecard.test.ts",
     "src/lib/wireline-agent-escalation.test.ts",
-    "src/lib/wireline-agent-objections.test.ts"
+    "src/lib/wireline-agent-objections.test.ts",
+    "src/lib/secret-vault.test.ts",
+    "src/lib/tenant-quotas.test.ts",
+    "src/lib/soc2-controls.test.ts"
   ]
 }
