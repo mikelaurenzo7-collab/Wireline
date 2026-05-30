@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import type { User } from "../types/auth";
-import { log, auditLogger } from "../lib/server-context";
+import { log, auditLogger, tenantStore } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { verifySupabaseJwt as verifyInternalJwt } from "../lib/auth-utils";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
@@ -21,7 +21,9 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
     const authedReq = req as AuthedReq;
 
     // Idempotent check
-    if (authedReq.user?.id) return next();
+    if (authedReq.user?.id) {
+      return tenantStore.getStore() ? next() : tenantStore.run(authedReq.user.id, () => next());
+    }
 
     // Bearer-in-Authorization-header only — Wireline intentionally has no
     // cookie sessions (see README). Accepting a cookie-borne token would add
@@ -85,7 +87,7 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
     // *verified*). Real sign-in events are emitted by Wireline's auth
     // system; the audit log captures failed attempts above.
 
-    return next();
+    return tenantStore.run(authedReq.user!.id, () => next());
   } catch (e) {
     log.error("Auth middleware failed", { error: getErrorMessage(e), path: req.path });
     return res.status(500).json({

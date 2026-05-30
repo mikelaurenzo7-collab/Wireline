@@ -20,12 +20,18 @@ vi.mock("./server-context", () => ({
       })),
     })),
     select: vi.fn(() => ({
-      from: vi.fn(() => ({
-        where: vi.fn(() => ({
-          orderBy: vi.fn().mockReturnThis(),
-          limit: vi.fn().mockResolvedValue(mockCallLogs),
-        })),
-      })),
+      from: vi.fn(() => {
+        const makeThenable = () => {
+          const obj: any = {
+            orderBy: vi.fn(() => obj),
+            limit: vi.fn().mockResolvedValue(mockCallLogs),
+            then: (resolve: any, reject?: any) =>
+              Promise.resolve(mockCallLogs).then(resolve, reject),
+          };
+          return obj;
+        };
+        return { where: vi.fn(() => makeThenable()) };
+      }),
     })),
     insert: vi.fn(),
   },

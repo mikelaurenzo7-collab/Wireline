@@ -28,26 +28,41 @@ export default function OAuthComplete() {
       setError(errorParam);
       return;
     }
-    const token = params.get("token");
-    const userId = params.get("user_id");
-    const email = params.get("email");
-    const name = params.get("name");
-    if (!token || !userId || !email) {
+    const code = params.get("code");
+    if (!code) {
       setError("Sign-in response was incomplete. Please try again.");
       return;
     }
     const complete = async () => {
-      await syncSignupIntent(getStoredSignupIntent(), token).catch(() => {});
-      signIn({
-        access_token: token,
-        user: {
-          id: userId,
-          email,
-          full_name: name || undefined,
-          is_owner: params.get("is_owner") === "1",
-        },
-      });
-      navigate("/chat", { replace: true });
+      try {
+        const res = await fetch("/api/auth/oauth/exchange", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code }),
+        });
+        if (!res.ok) {
+          setError("Sign-in link expired. Please try again.");
+          return;
+        }
+        const data = await res.json();
+        if (!data.token || !data.user_id || !data.email) {
+          setError("Sign-in response was incomplete. Please try again.");
+          return;
+        }
+        await syncSignupIntent(getStoredSignupIntent(), data.token).catch(() => {});
+        signIn({
+          access_token: data.token,
+          user: {
+            id: data.user_id,
+            email: data.email,
+            full_name: data.name || undefined,
+            is_owner: data.is_owner === "1",
+          },
+        });
+        navigate("/chat", { replace: true });
+      } catch {
+        setError("Sign-in failed. Please try again.");
+      }
     };
     void complete();
   }, [location.search, signIn, navigate]);

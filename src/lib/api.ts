@@ -207,8 +207,65 @@ async function maybeDispatchTrialGateEvent(response: Response): Promise<void> {
   }
 }
 
+function parseJwtExp(token: string): number | null {
+  try {
+    const [, payloadB64] = token.split(".");
+    if (!payloadB64) return null;
+    const payload = JSON.parse(atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof payload.exp === "number" ? payload.exp : null;
+  } catch {
+    return null;
+  }
+}
+
+let refreshInFlight: Promise<string | null> | null = null;
+
+async function maybeRefreshToken(token: string): Promise<string> {
+  const exp = parseJwtExp(token);
+  if (!exp) return token;
+  const remainingSec = exp - Math.floor(Date.now() / 1000);
+  if (remainingSec > 15 * 60) return token;
+
+  if (refreshInFlight) {
+    const result = await refreshInFlight;
+    return result ?? token;
+  }
+
+  refreshInFlight = (async () => {
+    try {
+      const res = await fetch("/api/auth/refresh", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) return null;
+      const body = await res.json();
+      if (!body?.token) return null;
+      const sessionJson = localStorage.getItem("wireline_session");
+      if (sessionJson) {
+        try {
+          const session = JSON.parse(sessionJson);
+          session.access_token = body.token;
+          localStorage.setItem("wireline_session", JSON.stringify(session));
+        } catch {
+          /* keep existing session */
+        }
+      }
+      return body.token as string;
+    } catch {
+      return null;
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+
+  const result = await refreshInFlight;
+  return result ?? token;
+}
+
 export async function authFetch(url: string, options: RequestInit = {}) {
-  // AuthContext stores session as "wireline_session" with { access_token, user }
   const sessionJson = localStorage.getItem("wireline_session");
   let token: string | null = null;
   if (sessionJson) {
@@ -218,6 +275,10 @@ export async function authFetch(url: string, options: RequestInit = {}) {
     } catch {
       token = null;
     }
+  }
+
+  if (token && !url.includes("/api/auth/refresh")) {
+    token = await maybeRefreshToken(token);
   }
 
   const headers: Record<string, string> = {

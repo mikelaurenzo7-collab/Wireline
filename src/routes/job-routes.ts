@@ -143,6 +143,7 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
       completeJob: complete,
       failJob: fail,
       enqueue,
+      recoverStaleJobs,
     } = await import("../lib/job-queue");
 
     const now = new Date();
@@ -273,6 +274,14 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
         }
       }
     }
+    let recovered = 0;
+    if (req._sweepMode === "cron" || !req._sweepMode) {
+      recovered = await recoverStaleJobs(drizzle);
+      if (recovered > 0) {
+        log.warn("Recovered stuck jobs", { recovered });
+      }
+    }
+
     let processed = 0;
     for (let i = 0; i < 10; i++) {
       const job = await claim(drizzle);
@@ -342,7 +351,7 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
     }
 
     const mode = req._sweepMode || "cron";
-    res.json({ processed, mode, trials_expired: trialsExpired });
+    res.json({ processed, recovered, mode, trials_expired: trialsExpired });
     if (processed > 0) {
       void auditLogger
         .logJobSweep("completed", {

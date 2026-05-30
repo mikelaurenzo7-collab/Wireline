@@ -1,37 +1,35 @@
-// No-op Sentry events shim. The SDK was removed pre-launch (see ./sentry.ts).
-// Route handlers and middleware still call SentryEvents.x(...) — those now
-// log to console. Restore the original implementation from git history to
-// re-enable structured event tracking once paid telemetry is justified.
+// Lightweight event tracker. Business events are logged as structured JSON
+// so they appear in Vercel runtime logs (searchable, filterable, alertable).
+// No external SDK required — Vercel captures all stdout/stderr.
+
+import { log as serverLog } from "./server-context";
 
 type EventLogger = (params: Record<string, unknown>) => void;
 
-const log =
+const logEvent =
   (event: string): EventLogger =>
   (params) => {
-    if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console -- intentional dev-only shim for the removed Sentry SDK
-      console.info(`[event:${event}]`, params);
-    }
+    serverLog.info(`[event:${event}]`, { event, ...params });
   };
 
 export const SentryEvents = {
-  callCompleted: log("call_completed"),
-  callFailed: log("call_failed"),
-  emailSent: log("email_sent"),
-  emailFailed: log("email_failed"),
-  outboundDialStarted: log("outbound_dial_started"),
-  leadConnected: log("lead_connected"),
-  apiError: log("api_error"),
-  aiApiFailure: log("ai_api_failure"),
-  databaseError: log("database_error"),
-  externalServiceError: log("external_service_error"),
-  rateLimited: log("rate_limited"),
-  webhookDeliveryFailed: log("webhook_delivery_failed"),
-  slowOperation: log("slow_operation"),
-  cacheOperation: log("cache_operation"),
-  budgetWarning: log("budget_warning"),
-  budgetExceeded: log("budget_exceeded"),
-  agentOptimized: log("agent_optimized"),
+  callCompleted: logEvent("call_completed"),
+  callFailed: logEvent("call_failed"),
+  emailSent: logEvent("email_sent"),
+  emailFailed: logEvent("email_failed"),
+  outboundDialStarted: logEvent("outbound_dial_started"),
+  leadConnected: logEvent("lead_connected"),
+  apiError: logEvent("api_error"),
+  aiApiFailure: logEvent("ai_api_failure"),
+  databaseError: logEvent("database_error"),
+  externalServiceError: logEvent("external_service_error"),
+  rateLimited: logEvent("rate_limited"),
+  webhookDeliveryFailed: logEvent("webhook_delivery_failed"),
+  slowOperation: logEvent("slow_operation"),
+  cacheOperation: logEvent("cache_operation"),
+  budgetWarning: logEvent("budget_warning"),
+  budgetExceeded: logEvent("budget_exceeded"),
+  agentOptimized: logEvent("agent_optimized"),
 };
 
 export function reportBatchEvent(_event: string, _params: Record<string, unknown>): void {
