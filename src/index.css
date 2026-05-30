@@ -6,6 +6,67 @@
 @import "@fontsource/jetbrains-mono/600.css";
 @import "tailwindcss";
 
+
+/* ══════════════════════════════════════════════════════════════════
+   SHADCN/UI THEME — Wireline Aurora Cream
+   CSS custom properties for shadcn components, layered alongside
+   the existing @theme block. Public-facing pages retain their
+   original glass/aurora design system intact.
+   ══════════════════════════════════════════════════════════════════ */
+:root {
+  --radius: 0.5rem;
+
+  /* Surface colors */
+  --background: #EFE9DC;
+  --foreground: #1A1614;
+  --card: rgba(239, 233, 220, 0.80);
+  --card-foreground: #1A1614;
+  --popover: rgba(239, 233, 220, 0.92);
+  --popover-foreground: #1A1614;
+
+  /* Brand primary */
+  --primary: #4F1E7B;
+  --primary-foreground: #FFFFFF;
+
+  /* Secondary (deep purple surfaces) */
+  --secondary: #3B154C;
+  --secondary-foreground: #FFFFFF;
+
+  /* Muted (subtle backgrounds) */
+  --muted: rgba(26, 22, 20, 0.05);
+  --muted-foreground: #5A534A;
+
+  /* Accent (warm cream tint) */
+  --accent: rgba(79, 30, 123, 0.06);
+  --accent-foreground: #4F1E7B;
+
+  /* Destructive */
+  --destructive: #E8466A;
+  --destructive-foreground: #FFFFFF;
+
+  /* Borders & inputs */
+  --border: rgba(26, 22, 20, 0.10);
+  --input: rgba(26, 22, 20, 0.12);
+  --ring: rgba(79, 30, 123, 0.35);
+
+  /* Sidebar (shadcn sidebar) */
+  --sidebar-background: rgba(59, 21, 76, 0.96);
+  --sidebar-foreground: rgba(245, 240, 230, 0.90);
+  --sidebar-primary: #4F1E7B;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: rgba(245, 240, 230, 0.06);
+  --sidebar-accent-foreground: rgba(245, 240, 230, 0.85);
+  --sidebar-border: rgba(245, 240, 230, 0.08);
+  --sidebar-ring: rgba(79, 30, 123, 0.40);
+
+  /* Charts */
+  --chart-1: #4F1E7B;
+  --chart-2: #6B2B99;
+  --chart-3: #8B6FA8;
+  --chart-4: #3B154C;
+  --chart-5: #D4C9B8;
+}
+
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    AURORA CREAM â€” a warm, editorial light system.
    Inspired by the parchment warmth of Claude/Anthropic's palette.

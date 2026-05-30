@@ -11,7 +11,12 @@ import {
   MessageCircle,
   Users,
 } from "lucide-react";
-import { ROUTE_ACCENT_DEFAULT, ROUTE_ACCENT_VARIANTS, ROUTE_ACCENTS } from "./brand-colors";
+import {
+  ROUTE_ACCENT_DEFAULT,
+  ROUTE_ACCENT_VARIANTS,
+  ROUTE_ACCENTS,
+  type BrandAccentPair,
+} from "./brand-colors";
 
 export { ROUTE_ACCENTS };
 
@@ -178,14 +183,14 @@ export const NAV_SHORTCUT_HINTS: Record<string, string> = {
   "/admin": "g s",
 };
 
-export function getRouteAccent(pathname: string): [string, string] {
+export function getRouteAccent(pathname: string): BrandAccentPair {
   if (ROUTE_ACCENTS[pathname]) return ROUTE_ACCENTS[pathname];
   const prefix = "/" + pathname.split("/")[1];
   return ROUTE_ACCENTS[prefix] ?? ROUTE_ACCENT_DEFAULT;
 }
 
 /** Route accent with tab/query awareness for ambience strip + context bar. */
-export function getRouteAccentFromLocation(pathname: string, search = ""): [string, string] {
+export function getRouteAccentFromLocation(pathname: string, search = ""): BrandAccentPair {
   const params = new URLSearchParams(search);
   if (pathname === "/ops") {
     const tab = params.get("tab");
