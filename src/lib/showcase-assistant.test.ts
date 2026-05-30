@@ -102,4 +102,12 @@ describe("buildShowcaseAssistantPayload — Flux transcriber", () => {
     expect(payload.startSpeakingPlan).not.toHaveProperty("smartEndpointingPlan");
     expect(payload.metadata.wireline_transcriber_mode).toBe("flux-eot");
   });
+
+  it("Sarah uses Rachel voice with warmer ElevenLabs tuning", () => {
+    const payload = buildShowcaseAssistantPayload(sarah, "cs");
+    expect(payload.voice?.voiceId).toBe("21m00Tcm4TlvDq8ikWAM");
+    expect(payload.voice?.stability).toBe(0.58);
+    expect(payload.voice?.style).toBe(0.2);
+    expect(payload.voice?.similarityBoost).toBe(0.9);
+  });
 });

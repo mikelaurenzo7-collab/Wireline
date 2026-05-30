@@ -59,6 +59,9 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.98.0",
+    "@fontsource-variable/fraunces": "^5.2.9",
+    "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
+    "@fontsource/jetbrains-mono": "^5.2.8",
     "@google/genai": "^1.29.0",
     "@google/generative-ai": "^0.24.1",
     "@tailwindcss/vite": "^4.3.0",

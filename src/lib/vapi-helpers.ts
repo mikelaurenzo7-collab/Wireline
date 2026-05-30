@@ -959,6 +959,11 @@ export async function buildRoleToolDefsForTenant(
   aiTier?: string | null,
   tenantFlags?: { twilioMessaging?: boolean; twilioLookup?: boolean },
 ): Promise<object[]> {
+  const { getCachedTenantToolDefs, setCachedTenantToolDefs } = await import("./tenant-tools-cache");
+
+  const cached = await getCachedTenantToolDefs(userId, role, enabledTools, aiTier, tenantFlags);
+  if (cached) return cached;
+
   let resolved = applyPlanToolUnlocks(resolveAgentTools(role, enabledTools), aiTier);
   if (!tenantFlags?.twilioMessaging) {
     resolved = resolved.filter((n) => n !== "send_text_message");
@@ -968,5 +973,8 @@ export async function buildRoleToolDefsForTenant(
   }
   const conn = await loadTenantIntegrationConnections(userId);
   const toolNames = filterToolsByTenantConnections(resolved, conn) as VapiToolName[];
-  return toolNames.map((name) => VAPI_TOOL_DEFS[name]).filter(Boolean);
+  const tools = toolNames.map((name) => VAPI_TOOL_DEFS[name]).filter(Boolean);
+
+  await setCachedTenantToolDefs(userId, role, enabledTools, aiTier, tenantFlags, tools);
+  return tools;
 }

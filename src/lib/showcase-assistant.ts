@@ -427,21 +427,22 @@ export function buildShowcaseAssistantPayload(
 
   const voiceId = agent.voiceId || options?.existingVoiceId;
   if (voiceId) {
+    const tuning = agent.voiceSettings ?? {};
     payload.voice = {
       provider: "11labs",
       voiceId,
       model: "eleven_flash_v2_5",
       optimizeStreamingLatency: 2,
-      stability: 0.65,
-      similarityBoost: 0.88,
-      style: 0.05,
+      stability: tuning.stability ?? 0.65,
+      similarityBoost: tuning.similarityBoost ?? 0.88,
+      style: tuning.style ?? 0.05,
       useSpeakerBoost: true,
       // Nudge the rate of speech just below the 1.0 default for a more
       // controlled, measured cadence. 0.95 is a subtle slow-down — the
       // voice still sounds natural, not sluggish. ElevenLabs accepts
       // 0.7–1.2; Vapi forwards this as voice.eleven_labs.speed.
       // Docs: https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
-      speed: 0.95,
+      speed: tuning.speed ?? 0.95,
     };
   }
 

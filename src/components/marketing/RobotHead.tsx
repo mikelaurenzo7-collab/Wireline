@@ -7,7 +7,7 @@
 import React from "react";
 
 interface RobotHeadProps {
-  variant?: 1 | 2 | 3 | 4;
+  variant?: 1 | 2 | 3 | 4 | 5 | 6;
   size?: number;
   className?: string;
   animated?: boolean;
@@ -31,7 +31,7 @@ export function RobotHead({
   "aria-hidden": ariaHidden,
 }: RobotHeadProps & { "aria-hidden"?: boolean }) {
   const strokeWidth = size / 32;
-  const isLeft = variant === 1 || variant === 3;
+  const isLeft = variant === 1 || variant === 3 || variant === 5;
 
   // Subtle rotation/position offsets per variant for visual interest
   const transforms = {
@@ -39,6 +39,8 @@ export function RobotHead({
     2: "rotate(6deg)",
     3: "rotate(4deg)",
     4: "rotate(-5deg)",
+    5: "rotate(-2deg)",
+    6: "rotate(2deg)",
   }[variant];
 
   const phoneOffset = isLeft ? -size * 0.28 : size * 0.28;
@@ -205,4 +207,10 @@ export const RobotHeadBottomLeft = (props: Omit<RobotHeadProps, "variant">) => (
 );
 export const RobotHeadBottomRight = (props: Omit<RobotHeadProps, "variant">) => (
   <RobotHead variant={4} {...props} />
+);
+export const RobotHeadMiddleLeft = (props: Omit<RobotHeadProps, "variant">) => (
+  <RobotHead variant={5} {...props} />
+);
+export const RobotHeadMiddleRight = (props: Omit<RobotHeadProps, "variant">) => (
+  <RobotHead variant={6} {...props} />
 );

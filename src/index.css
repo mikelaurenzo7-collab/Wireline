@@ -1,6 +1,9 @@
-/* Google Fonts are loaded via <link rel="stylesheet"> in index.html (not a
- * CSS @import here) to avoid a request waterfall — the preload scanner fetches
- * them at HTML parse time. See the font <link> + preconnects in index.html. */
+/* Self-hosted fonts — bundled at build time (no render-blocking Google Fonts CSS). */
+@import "@fontsource-variable/plus-jakarta-sans/wght.css";
+@import "@fontsource-variable/fraunces/wght.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/jetbrains-mono/600.css";
 @import "tailwindcss";
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

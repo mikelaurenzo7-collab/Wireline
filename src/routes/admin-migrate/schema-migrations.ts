@@ -734,4 +734,40 @@ router.post(
   },
 );
 
+// Webhook hot-path indexes (migration 0025) — vapi_number_id routing + caller history.
+router.post(
+  "/api/admin/migrate-webhook-indexes",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+    try {
+      await drizzle.execute(sql`
+        CREATE INDEX IF NOT EXISTS idx_phone_numbers_vapi_number_id
+          ON wireline_phone_numbers (vapi_number_id)
+          WHERE vapi_number_id IS NOT NULL;
+      `);
+      await drizzle.execute(sql`
+        CREATE INDEX IF NOT EXISTS idx_settings_vapi_phone_number_id
+          ON wireline_settings (vapi_phone_number_id)
+          WHERE vapi_phone_number_id IS NOT NULL;
+      `);
+      await drizzle.execute(sql`
+        CREATE INDEX IF NOT EXISTS idx_call_logs_agent_customer_created
+          ON wireline_call_logs (agent_id, customer_number, created_at DESC);
+      `);
+      log.info("migrate-webhook-indexes completed", {
+        userId: req.user?.id || "migration-token",
+      });
+      res.json({
+        ok: true,
+        message:
+          "Webhook routing indexes ensured (phone_numbers.vapi_number_id, settings.vapi_phone_number_id, call_logs agent+customer+created_at).",
+      });
+    } catch (err: any) {
+      log.error("migrate-webhook-indexes failed", { error: err?.message });
+      res.status(500).json({ error: err?.message || "Migration failed" });
+    }
+  },
+);
+
 export default router;

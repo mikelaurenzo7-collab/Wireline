@@ -30,6 +30,13 @@ export type ContactAgent = {
   firstMessage: string;
   /** Public showcase lines are pinned to a specific ElevenLabs voice so syncs cannot drift. */
   voiceId?: string;
+  /** Optional ElevenLabs fine-tuning overrides (defaults in showcase-assistant.ts). */
+  voiceSettings?: {
+    stability?: number;
+    similarityBoost?: number;
+    style?: number;
+    speed?: number;
+  };
   /** Comma-joined list of bucket labels this agent should handle. Used by routing logic in the CS playbook. */
   handles: string;
   tel: string;
@@ -83,7 +90,15 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     scope: ALL_ENCOMPASSING_SCOPE,
     firstMessage:
       "Hi, thanks for calling Wireline — this is Sarah. Who do I have the pleasure of speaking with?",
-    voiceId: "EXAVITQu4vr4xnSDxMaL",
+    // Rachel · Warm — richer timbre than the old Sarah Gentle default; paired with
+    // slightly lower stability + higher style for a warmer, more expressive CS read.
+    voiceId: "21m00Tcm4TlvDq8ikWAM",
+    voiceSettings: {
+      stability: 0.58,
+      style: 0.2,
+      similarityBoost: 0.9,
+      speed: 0.95,
+    },
     handles: ALL_ENCOMPASSING_HANDLES,
     tel: "+16306425661",
     display: "(630) 642-5661",

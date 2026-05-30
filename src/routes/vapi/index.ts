@@ -4,9 +4,8 @@ import { and, eq } from "drizzle-orm";
 
 import * as claudeBrain from "../../lib/claude-brain";
 import * as schema from "../../db/schema";
-import { analyzeLiveSentiment } from "../../lib/gemini-brain";
 import { enqueue } from "../../lib/job-queue";
-import { NotificationService } from "../../lib/notifications";
+import { claimLeadEnrichmentSlot } from "../../lib/enrichment-debounce";
 import { drizzle, IS_PROD, log } from "../../lib/server-context";
 import { getErrorMessage } from "../../lib/server-utils";
 import {
@@ -22,6 +21,7 @@ import {
   VAPI_WEBHOOK_SECRET,
 } from "../../lib/vapi-helpers";
 import { handleEndOfCallReport } from "../../lib/vapi-handlers";
+import { shouldQueueWebhook } from "../../lib/vapi-webhook-queue";
 import { resolveVapiWebhookAgent } from "../../lib/vapi-webhook-agent";
 
 import { handleCalendarToolCall } from "./tool-handlers-calendar";
@@ -275,11 +275,14 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
         }
 
         if (customerNumber && agent?.user_id) {
-          await enqueue(drizzle, {
-            userId: agent.user_id,
-            type: "proactive_lead_enrichment",
-            payload: { userId: agent.user_id, customerNumber },
-          }).catch((e) => log.warn("Enrichment queue failed", { error: getErrorMessage(e) }));
+          const shouldEnrich = await claimLeadEnrichmentSlot(agent.user_id, customerNumber);
+          if (shouldEnrich) {
+            await enqueue(drizzle, {
+              userId: agent.user_id,
+              type: "proactive_lead_enrichment",
+              payload: { userId: agent.user_id, customerNumber },
+            }).catch((e) => log.warn("Enrichment queue failed", { error: getErrorMessage(e) }));
+          }
         }
       } else if (status === "ended" || status === "completed") {
         await drizzle.delete(schema.signalPresence).where(eq(schema.signalPresence.id, callId));
@@ -309,42 +312,31 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
       if (negativeHits >= 2) liveSentimentLabel = "⚠ Frustrated";
       else if (positiveHits >= 2) liveSentimentLabel = "✓ Positive";
 
-      // Circuit Breaker: Deep analysis if frustration is detected.
-      if (negativeHits >= 1) {
-        analyzeLiveSentiment(combined)
-          .then(async (result) => {
-            if (result.escalate) {
-              await drizzle
-                .update(schema.signalPresence)
-                .set({
-                  label: `🚨 Escalation Risk: ${result.reason}`,
-                })
-                .where(eq(schema.signalPresence.id, callId));
-
-              // Circuit Breaker Notification
-              const notifier = new NotificationService(agent.user_id);
-              await notifier.sendUrgentAlert({
-                title: "High Escalation Risk Detected",
-                message: `Live monitoring detected a high-stress situation: ${result.reason}`,
-                callId: callId,
-                metadata: { urgency: result.urgency },
-              });
-
-              log.warn("Circuit Breaker Tripped", {
-                callId,
-                reason: result.reason,
-                urgency: result.urgency,
-              });
-            }
-          })
-          .catch((e) => log.error("Circuit breaker analysis failed", { error: e.message }));
-      }
-
       await drizzle
         .update(schema.signalPresence)
         .set({ label: liveSentimentLabel })
         .where(eq(schema.signalPresence.id, callId));
+
+      // Deep Gemini analysis runs async — never block the webhook thread.
+      if (negativeHits >= 1 && shouldQueueWebhook("conversation-update")) {
+        try {
+          await enqueue(drizzle, {
+            userId: agent.user_id,
+            type: "vapi_webhook",
+            payload: {
+              webhookType: "conversation-update",
+              payload: req.body,
+              agentId: webhookAgentId,
+              userId: agent.user_id,
+              webhookAgentId,
+            } as Record<string, unknown>,
+          });
+        } catch (e) {
+          log.warn("Failed to queue conversation-update", { error: getErrorMessage(e) });
+        }
+      }
     }
+    return res.json({ received: true });
   }
 
   if (message && message.type === "end-of-call-report") {

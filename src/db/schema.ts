@@ -631,6 +631,7 @@ export const callLogs = pgTable(
     userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_user_id ON wireline_call_logs USING btree (user_id)`,
     userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_user_created ON wireline_call_logs USING btree (user_id, created_at)`,
     agentIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_agent_id ON wireline_call_logs USING btree (agent_id)`,
+    agentCustomerCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_agent_customer_created ON wireline_call_logs (agent_id, customer_number, created_at DESC)`,
     createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_created_at ON wireline_call_logs USING btree (created_at)`,
     userOutcomeIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_user_outcome ON wireline_call_logs USING btree (user_id, outcome_tag) WHERE outcome_tag IS NOT NULL`,
     userCampaignIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_user_campaign ON wireline_call_logs USING btree (user_id, campaign_source) WHERE campaign_source IS NOT NULL`,
@@ -994,6 +995,7 @@ export const phoneNumbers = pgTable(
   () => ({
     userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_phone_numbers_user_id ON wireline_phone_numbers USING btree (user_id)`,
     agentIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_phone_numbers_agent_id ON wireline_phone_numbers USING btree (agent_id)`,
+    vapiNumberIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_phone_numbers_vapi_number_id ON wireline_phone_numbers (vapi_number_id) WHERE vapi_number_id IS NOT NULL`,
   }),
 );
 

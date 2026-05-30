@@ -28,6 +28,7 @@ import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import { handleEndOfCallReport } from "./vapi-handlers";
 import { getErrorMessage } from "./server-utils";
+import { SENTIMENT_ANGRY_SIGNALS } from "./vapi-helpers";
 
 export interface VapiWebhookPayload {
   message?: {
@@ -134,7 +135,6 @@ async function processConversationUpdateAsync(
   const callId = payload.call?.id || (message.call as { id?: string } | undefined)?.id;
   if (!callId) return;
 
-  // Extract conversation turns
   const turns: any[] = message.conversation || message.messages || [];
   const userTurns = turns.filter((t: { role: string }) => t.role === "user").slice(-2);
 
@@ -144,51 +144,33 @@ async function processConversationUpdateAsync(
     )
     .join(" ");
 
-  // Sentiment signals
-  const SENTIMENT_ANGRY_SIGNALS = [
-    "angry",
-    "frustrated",
-    "upset",
-    "mad",
-    "terrible",
-    "awful",
-    "worst",
-    "hate",
-    "useless",
-    "incompetent",
-  ];
   const negativeHits = SENTIMENT_ANGRY_SIGNALS.filter((w) => combined.includes(w)).length;
+  if (negativeHits < 1) return;
 
-  // Circuit breaker: Deep analysis if frustration detected
-  if (negativeHits >= 1) {
-    const { analyzeLiveSentiment } = await import("./gemini-brain");
-    const result = await analyzeLiveSentiment(combined);
+  const { analyzeLiveSentiment } = await import("./gemini-brain");
+  const result = await analyzeLiveSentiment(combined);
 
-    if (result.escalate) {
-      // Update signal presence with escalation risk
-      await drizzle
-        .update(schema.signalPresence)
-        .set({
-          label: `🚨 Escalation Risk: ${result.reason}`,
-        })
-        .where(eq(schema.signalPresence.id, callId));
+  if (result.escalate) {
+    await drizzle
+      .update(schema.signalPresence)
+      .set({
+        label: `🚨 Escalation Risk: ${result.reason}`,
+      })
+      .where(eq(schema.signalPresence.id, callId));
 
-      // Send notification — pass agentId so per-agent escalation
-      // overrides (escalation_phone / escalation_email) are honored.
-      const { NotificationService } = await import("./notifications");
-      const notifier = new NotificationService(userId, agentId);
-      await notifier.sendUrgentAlert({
-        title: "High Escalation Risk Detected",
-        message: `Live monitoring detected a high-stress situation: ${result.reason}`,
-        callId: callId,
-        metadata: { urgency: result.urgency },
-      });
+    const { NotificationService } = await import("./notifications");
+    const notifier = new NotificationService(userId, agentId);
+    await notifier.sendUrgentAlert({
+      title: "High Escalation Risk Detected",
+      message: `Live monitoring detected a high-stress situation: ${result.reason}`,
+      callId: callId,
+      metadata: { urgency: result.urgency },
+    });
 
-      log.warn("Circuit Breaker Tripped (async)", {
-        callId,
-        reason: result.reason,
-        urgency: result.urgency,
-      });
-    }
+    log.warn("Circuit Breaker Tripped (async)", {
+      callId,
+      reason: result.reason,
+      urgency: result.urgency,
+    });
   }
 }
