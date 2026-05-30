@@ -150,7 +150,10 @@ export default function AgentChat() {
                       >
                         {a.name.slice(0, 1).toUpperCase()}
                         {isActive && (
-                          <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-background" />
+                          <span
+                            className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background"
+                            style={{ background: "#10b981" }}
+                          />
                         )}
                       </span>
                       <span className="min-w-0 hidden sm:block">

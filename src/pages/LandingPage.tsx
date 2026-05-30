@@ -64,6 +64,15 @@ export default function LandingPage() {
         title="Wireline — AI Voice & Email Agents for Every Business"
         description="Deploy AI voice + email agents on real phone numbers in under 10 minutes. Inbound, outbound, and inbox — one fleet, your playbook, 24/7."
         path="/"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "Wireline",
+          url: "https://trywireline.com",
+          description:
+            "AI voice and email agents for every business. Deploy on real phone numbers in under 10 minutes.",
+          sameAs: ["https://twitter.com/trywireline"],
+        }}
       />
       <div className="marketing-surface min-h-dvh bg-paper relative">
         {/* ─── Header ─────────────────────────────────────────────── */}

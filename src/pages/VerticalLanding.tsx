@@ -817,13 +817,13 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         </div>
         <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] uppercase tracking-[0.3em] text-muted/70">
           <li className="flex items-center gap-1.5">
-            <Check className="w-3 h-3 text-emerald-500" /> 14-day free trial
+            <Check className="w-3 h-3" style={{ color: "#10b981" }} /> 14-day free trial
           </li>
           <li className="flex items-center gap-1.5">
-            <Check className="w-3 h-3 text-emerald-500" /> No credit card
+            <Check className="w-3 h-3" style={{ color: "#10b981" }} /> No credit card
           </li>
           <li className="flex items-center gap-1.5">
-            <Check className="w-3 h-3 text-emerald-500" /> Cancel anytime
+            <Check className="w-3 h-3" style={{ color: "#10b981" }} /> Cancel anytime
           </li>
         </ul>
       </section>

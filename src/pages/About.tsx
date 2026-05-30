@@ -193,7 +193,7 @@ export default function About() {
         </section>
 
         {/* FAQ */}
-        <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16">
+        <section data-testid="faq-section" className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16">
           <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-2">
             Questions, answered
           </h2>
@@ -202,6 +202,7 @@ export default function About() {
             {FAQS.map((faq, i) => (
               <motion.details
                 key={faq.q}
+                data-testid={`faq-item-${i}`}
                 initial={{ opacity: 0, y: 8 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
