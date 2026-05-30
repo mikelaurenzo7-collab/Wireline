@@ -72,13 +72,21 @@ describe("isOwnerEmail", () => {
 
 describe("generateToken", () => {
   const SECRET = "token-signing-secret-at-least-32-chars-long";
-  const ORIG = process.env.INTERNAL_JWT_SECRET;
+  const ORIG_INTERNAL = process.env.INTERNAL_JWT_SECRET;
+  const ORIG_LEGACY = process.env.SUPABASE_JWT_SECRET;
   beforeEach(() => {
     process.env.INTERNAL_JWT_SECRET = SECRET;
+    // requireInternalJwtSecret() throws JWT_SECRET_CONFLICT when both the
+    // canonical and legacy secrets are set but differ. CI sets
+    // SUPABASE_JWT_SECRET, so clear it here to isolate the secret under test
+    // (otherwise generateToken throws and the suite is environment-dependent).
+    delete process.env.SUPABASE_JWT_SECRET;
   });
   afterEach(() => {
-    if (ORIG === undefined) delete process.env.INTERNAL_JWT_SECRET;
-    else process.env.INTERNAL_JWT_SECRET = ORIG;
+    if (ORIG_INTERNAL === undefined) delete process.env.INTERNAL_JWT_SECRET;
+    else process.env.INTERNAL_JWT_SECRET = ORIG_INTERNAL;
+    if (ORIG_LEGACY === undefined) delete process.env.SUPABASE_JWT_SECRET;
+    else process.env.SUPABASE_JWT_SECRET = ORIG_LEGACY;
   });
 
   it("mints a token that verifies under the same secret", async () => {
