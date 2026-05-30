@@ -35,7 +35,6 @@ import {
   Brain,
   ArrowUpRight,
   Copy,
-  Terminal,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
@@ -45,6 +44,14 @@ import IntegrationActivityCard, {
 } from "./IntegrationActivityCard";
 import { Skeleton } from "./ui/shadcn/Skeleton";
 import { Switch } from "./ui/shadcn/Switch";
+import { Avatar, AvatarFallback } from "./ui/shadcn/Avatar";
+import { Badge } from "./ui/shadcn/Badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/shadcn/Tooltip";
 
 function fmtTime(iso: string): string {
   try {
@@ -284,8 +291,9 @@ export default function AgentWorkspace({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- seedNonce is the trigger; text is read at fire time.
   }, [seedNonce]);
 
-  // Clever live reasoning visualization (Claude-inspired). Sequenced tool/memory/integration steps appear with smooth transitions.
-  // Demonstrates agent's internal process to user with breathing room + visual delight. Real impl would stream from backend SSE.
+  // Live reasoning visualization — steps are generic and driven by the agent's
+  // actual enabledTools list. No fabricated integration results; integration
+  // activity cards are populated by real streamed tool-call data in production.
   useEffect(() => {
     if (!isSending) {
       setLiveSteps([]);
@@ -293,133 +301,72 @@ export default function AgentWorkspace({
       return;
     }
 
+    const hasTools = enabledTools.length > 0;
+
     const steps: LiveStep[] = [
       {
         id: "1",
         icon: <Brain className="w-3.5 h-3.5" />,
         title: "Recalling workspace memory",
-        subtitle: "Thread history: 12 messages • Relevant lessons: 3 • Context: 4.2k tokens",
+        subtitle: "Thread history • Relevant lessons • Instructions loaded",
         status: "pending",
       },
+      ...(hasTools
+        ? [
+            {
+              id: "2",
+              icon: <Plug className="w-3.5 h-3.5" />,
+              title: "Running tool calls",
+              subtitle: `${enabledTools.length} tool${enabledTools.length !== 1 ? "s" : ""} available`,
+              status: "pending" as const,
+            },
+          ]
+        : []),
       {
-        id: "2",
-        icon: <Plug className="w-3.5 h-3.5" />,
-        title: "Checking connected integrations",
-        subtitle: "2 active: Shopify, HubSpot • Preparing queries",
-        status: "pending",
-      },
-      {
-        id: "3",
+        id: hasTools ? "3" : "2",
         icon: <Sparkles className="w-3.5 h-3.5" />,
-        title: "Executing tool calls",
-        subtitle: "shopify.getOrder() • hubspot.updateContact()",
-        status: "pending",
-      },
-      {
-        id: "4",
-        icon: <GraduationCap className="w-3.5 h-3.5" />,
         title: "Applying persona & instructions",
-        subtitle: 'Voice: "Authoritative" • Tone rules: 4 active • Flow: collections',
+        subtitle: "Voice, tone rules, and flow applied",
         status: "pending",
       },
     ];
 
     setLiveSteps(steps.map((s) => ({ ...s, status: "pending" })));
 
-    // Simulate integration activities appearing after step 2
-    setTimeout(
-      () => {
-        setIntegrationActivities([
-          {
-            integration: "Shopify",
-            icon: <span className="text-sm font-bold">S</span>,
-            action: "Fetching order #4821",
-            status: "active",
-            brandColor: "#95BF47",
+    // Collect all timer IDs so cleanup can cancel them if isSending flips
+    // before the full cycle completes (prevents stale callbacks interleaving
+    // with a subsequent send's console state).
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    steps.forEach((_, index) => {
+      timers.push(
+        setTimeout(
+          () => {
+            setLiveSteps((prev) =>
+              prev.map((s, i) =>
+                i === index
+                  ? { ...s, status: "active" as const }
+                  : i < index
+                    ? { ...s, status: "done" as const }
+                    : s,
+              ),
+            );
           },
-        ]);
-      },
-      420 * 2 + 200,
-    );
-
-    // Update integration to success
-    setTimeout(
-      () => {
-        setIntegrationActivities((prev) =>
-          prev.map((a) =>
-            a.integration === "Shopify"
-              ? {
-                  ...a,
-                  status: "success" as const,
-                  result: "Order found: $342.50 • Status: Shipped • Customer: satisfied",
-                }
-              : a,
-          ),
-        );
-      },
-      420 * 2 + 1200,
-    );
-
-    // Add second integration
-    setTimeout(
-      () => {
-        setIntegrationActivities((prev) => [
-          ...prev,
-          {
-            integration: "HubSpot",
-            icon: <span className="text-sm font-bold">H</span>,
-            action: "Updating contact record",
-            status: "active",
-            brandColor: "#FF7A59",
-          },
-        ]);
-      },
-      420 * 3 + 300,
-    );
-
-    // Update HubSpot to success
-    setTimeout(
-      () => {
-        setIntegrationActivities((prev) =>
-          prev.map((a) =>
-            a.integration === "HubSpot"
-              ? {
-                  ...a,
-                  status: "success" as const,
-                  result: "Contact updated • Last interaction logged • Deal stage advanced",
-                  link: "https://app.hubspot.com/contacts/",
-                }
-              : a,
-          ),
-        );
-      },
-      420 * 3 + 1400,
-    );
-
-    // Animate steps sequentially for genius-level transparency
-    steps.forEach((step, index) => {
-      setTimeout(
-        () => {
-          setLiveSteps((prev) =>
-            prev.map((s, i) =>
-              i === index
-                ? { ...s, status: "active" as const }
-                : i < index
-                  ? { ...s, status: "done" as const }
-                  : s,
-            ),
-          );
-        },
-        420 * (index + 1),
+          420 * (index + 1),
+        ),
       );
     });
 
-    // Clear after full cycle (in real app, tied to stream completion)
-    setTimeout(() => {
-      setLiveSteps([]);
-      setIntegrationActivities([]);
-    }, 4200);
-  }, [isSending]);
+    // Clear after full cycle; real impl drives this from stream completion.
+    timers.push(
+      setTimeout(() => {
+        setLiveSteps([]);
+        setIntegrationActivities([]);
+      }, 4200),
+    );
+
+    return () => timers.forEach(clearTimeout);
+  }, [isSending, enabledTools]);
 
   const send = useCallback(async () => {
     const text = input.trim();
@@ -688,6 +635,7 @@ export default function AgentWorkspace({
   };
 
   return (
+    <TooltipProvider delayDuration={400}>
     <div className="flex flex-col h-full min-h-0 relative">
       {/* Identity header — agent presence (medallion + name + live status) */}
       <div className="shrink-0 border-b border-black/8">
@@ -710,14 +658,19 @@ export default function AgentWorkspace({
             </div>
           </div>
           {messages.length > 0 && (
-            <button
-              onClick={clearThread}
-              className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] uppercase tracking-[0.22em] text-muted hover:text-rose-600 hover:bg-rose-500/8 transition-colors"
-              title="Clear thread"
-            >
-              <Trash2 className="w-3 h-3" />
-              <span className="hidden sm:inline">Clear</span>
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={clearThread}
+                  className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] uppercase tracking-[0.22em] text-muted hover:text-rose-600 hover:bg-rose-500/8 transition-colors"
+                  aria-label="Clear conversation thread"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span className="hidden sm:inline">Clear</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="left">Clear conversation thread</TooltipContent>
+            </Tooltip>
           )}
         </div>
       </div>
@@ -1119,26 +1072,33 @@ export default function AgentWorkspace({
           {WORKSPACE_TABS.filter((t) => t.id !== "chat").map((tab) => {
             const isOpen = panelOpen === tab.id;
             return (
-              <button
-                key={tab.id}
-                onClick={() => (isOpen ? closePanel() : openPanel(tab.id))}
-                className={cn(
-                  // Mobile: 36px+ min target (flawless thumb reach). Desktop: more generous py and refined text.
-                  "shrink-0 inline-flex items-center gap-1.5 px-3 sm:px-2.5 py-2 sm:py-1.5 rounded-full text-[11px] sm:text-[10px] font-medium transition-all min-h-[36px] sm:min-h-[32px]",
-                  isOpen
-                    ? "bg-brand/10 text-brand border border-brand/30"
-                    : "glass border border-black/10 text-muted hover:text-ink hover:border-brand/25",
-                )}
-                aria-expanded={isOpen}
-                aria-controls={`workspace-panel-${tab.id}`}
-                title={tab.help}
-              >
-                <tab.icon className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
-                <span>{tab.label}</span>
-                {tab.id === "connectors" && enabledTools.length > 0 && (
-                  <span className="text-[9px] text-muted/70">{enabledTools.length}</span>
-                )}
-              </button>
+              <Tooltip key={tab.id}>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => (isOpen ? closePanel() : openPanel(tab.id))}
+                    className={cn(
+                      "shrink-0 inline-flex items-center gap-1.5 px-3 sm:px-2.5 py-2 sm:py-1.5 rounded-full text-[11px] sm:text-[10px] font-medium transition-all min-h-[36px] sm:min-h-[32px]",
+                      isOpen
+                        ? "bg-brand/10 text-brand border border-brand/30"
+                        : "glass border border-black/10 text-muted hover:text-ink hover:border-brand/25",
+                    )}
+                    aria-expanded={isOpen}
+                    aria-controls={`workspace-panel-${tab.id}`}
+                  >
+                    <tab.icon className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
+                    <span>{tab.label}</span>
+                    {tab.id === "connectors" && enabledTools.length > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className="h-4 min-w-4 px-1 text-[9px] font-mono leading-none"
+                      >
+                        {enabledTools.length}
+                      </Badge>
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">{tab.help}</TooltipContent>
+              </Tooltip>
             );
           })}
         </div>
@@ -1310,6 +1270,7 @@ export default function AgentWorkspace({
         )}
       </AnimatePresence>
     </div>
+    </TooltipProvider>
   );
 }
 
