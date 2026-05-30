@@ -13,7 +13,7 @@
 import React from "react";
 import { motion } from "motion/react";
 import { Check, Loader2, Clock, ExternalLink } from "lucide-react";
-import { cn } from "../../lib/utils";
+import { cn } from "../lib/utils";
 
 export type IntegrationStatus = "pending" | "active" | "success" | "waiting";
 

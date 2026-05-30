@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { Activity, AlertTriangle, Loader2, TrendingUp } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
+import { Progress } from "./ui/shadcn/Progress";
 
 interface UsageSnapshot {
   plan_id: string | null;
@@ -130,15 +131,17 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
         </div>
       </div>
 
-      <div className="relative h-2.5 rounded-full overflow-hidden bg-white/5 shadow-inner">
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-          className="absolute inset-y-0 left-0 rounded-full"
+      {/* Premium SHADCN Progress bar with custom styling */}
+      <div className="relative">
+        <Progress
+          value={pct}
+          className="h-2.5 bg-white/5 shadow-inner"
+          indicatorClassName={cn(
+            "transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]",
+            isOver ? "bg-rose-500" : isWarn ? "bg-amber-500" : "bg-brand",
+          )}
           style={{
-            background: `linear-gradient(90deg, ${barAccent}, #6B2B99)`,
-            boxShadow: `0 0 14px ${barAccent}88, inset 0 1px 0 rgba(255,255,255,0.25)`,
+            boxShadow: `0 0 14px ${barAccent}88`,
           }}
         />
       </div>
