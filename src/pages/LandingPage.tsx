@@ -186,7 +186,7 @@ export default function LandingPage() {
           className="relative min-h-[85svh] flex flex-col justify-center px-6 lg:px-12 pt-24 pb-16 lg:pt-28 lg:pb-24 overflow-hidden"
         >
           <HeroDecorations />
-          <div className="max-w-7xl mx-auto w-full">
+          <div className="relative z-10 max-w-7xl mx-auto w-full">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
