@@ -128,10 +128,16 @@ export default function AgentChat() {
               >
                 <Compass className="w-3.5 h-3.5" />
               </span>
-              <span className="min-w-0 hidden sm:block">
-                {/* Mobile-first: 10px body on <sm (user preference for dense mobile), 12px on lg+. 36px+ tap targets enforced on rail items. */}
-                <span className="block text-[10px] lg:text-[12px] font-medium text-ink truncate max-w-[7rem] lg:max-w-none">
-                  Director
+              <span className="min-w-0 hidden sm:block flex-1">
+                <span className="flex items-center justify-between gap-1">
+                  <span className="block text-[10px] lg:text-[12px] font-medium text-ink truncate max-w-[7rem] lg:max-w-none">
+                    Director
+                  </span>
+                  {agents.length > 0 && (
+                    <span className="shrink-0 inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-black/[0.04] text-[9px] font-mono font-semibold text-muted px-1">
+                      {agents.length}
+                    </span>
+                  )}
                 </span>
               </span>
             </button>

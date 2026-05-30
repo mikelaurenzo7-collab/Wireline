@@ -259,12 +259,42 @@ export default function DirectorWorkspace() {
               Your Director
             </p>
             <h2 className="font-display italic text-2xl lg:text-[1.75rem] leading-[1.1] text-ink mb-3">
-              Let&apos;s build your fleet.
+              {agents.length > 0 ? `${agents.length} agent${agents.length === 1 ? "" : "s"} on deck.` : "Let’s build your fleet."}
             </h2>
             <p className="text-[13px] text-muted leading-relaxed mb-6 max-w-sm">
-              I&apos;m your always-on manager — tell me about your business and I&apos;ll help you
-              hire the right agents, coach them, and read the room across every call.
+              {agents.length > 0
+                ? `I’m your always-on manager. Tell me what to improve, audit, or teach across your fleet — I’ll route it to the right place.`
+                : `I’m your always-on manager — tell me about your business and I’ll help you hire the right agents, coach them, and read the room across every call.`}
             </p>
+
+            {/* Fleet-at-a-glance — visible only when agents exist so the operator
+                instantly sees what’s running before they type a word. */}
+            {agents.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.12 }}
+                className="w-full mb-5 grid grid-cols-2 gap-1.5"
+              >
+                {agents.slice(0, 4).map((a) => (
+                  <button
+                    key={a.id}
+                    onClick={() => navigate(`/chat/${a.id}`)}
+                    className="flex items-center gap-2 rounded-xl border border-black/8 glass px-3 py-2.5 text-left hover:border-brand/25 hover:shadow-sm hover:-translate-y-px transition-all duration-300"
+                  >
+                    <span className="shrink-0 w-6 h-6 rounded-full bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[9px] font-semibold flex items-center justify-center">
+                      {a.name.slice(0, 1).toUpperCase()}
+                    </span>
+                    <span className="min-w-0 text-[11px] font-medium text-ink truncate">{a.name}</span>
+                  </button>
+                ))}
+                {agents.length > 4 && (
+                  <span className="flex items-center justify-center text-[10px] text-muted font-mono px-3 py-2.5">
+                    +{agents.length - 4} more
+                  </span>
+                )}
+              </motion.div>
+            )}
 
             {/* Capability strip — instantly communicates the Director's remit */}
             <div className="flex items-center justify-center gap-1.5 mb-7">
@@ -319,13 +349,27 @@ export default function DirectorWorkspace() {
               <div className={cn("max-w-[84%] min-w-0", m.role === "operator" && "items-end")}>
                 <div
                   className={cn(
-                    "rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap break-words",
+                    "group rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap break-words",
                     m.role === "operator"
                       ? "bg-gradient-to-br from-brand to-brand-deep text-on-brand rounded-br-md shadow-sm shadow-brand/20"
                       : "glass border border-black/8 text-ink rounded-bl-md",
                   )}
                 >
                   {m.content}
+                  {/* Subtle hover-reveal timestamp — consistent with AgentWorkspace */}
+                  {m.createdAt && (
+                    <div className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <time
+                        dateTime={m.createdAt}
+                        className="text-[9px] text-muted/40 font-mono tabular-nums"
+                      >
+                        {new Date(m.createdAt).toLocaleTimeString([], {
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </time>
+                    </div>
+                  )}
                 </div>
                 {m.suggestions && m.suggestions.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
