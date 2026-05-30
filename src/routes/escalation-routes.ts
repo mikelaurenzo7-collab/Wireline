@@ -81,12 +81,9 @@ async function dispatchOwnerSms(
   }
 }
 
-router.post(
-  "/api/escalate",
-  escalationRateLimiter,
-  async (req: Request, res: Response) => {
-    // Auth — same secret as the main Vapi webhook (Vapi sends it as
-    // X-Vapi-Secret or X-Vapi-Signature). Reject mismatches.
+router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Response) => {
+  // Auth — same secret as the main Vapi webhook (Vapi sends it as
+  // X-Vapi-Secret or X-Vapi-Signature). Reject mismatches.
   const provided =
     (req.headers["x-vapi-secret"] as string | undefined) ||
     (req.headers["x-vapi-signature"] as string | undefined) ||

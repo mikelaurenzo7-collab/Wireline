@@ -21,7 +21,8 @@ const COLLECTIONS_TEMPLATE_IDS = ["collections-soft", "collections-hard"] as con
 // Matches a settlement figure stated as a concrete percentage or range, e.g.
 // "50%", "50-80%", "50 to 80 percent". Word-level "100%" inside unrelated copy
 // would be a false positive, so we anchor on settlement/balance proximity.
-const FABRICATED_SETTLEMENT_PERCENT = /\d{1,3}\s*(?:-|to|–)\s*\d{1,3}\s*%|\d{1,3}\s*%\s*of\s*(?:the\s*)?balance/i;
+const FABRICATED_SETTLEMENT_PERCENT =
+  /\d{1,3}\s*(?:-|to|–)\s*\d{1,3}\s*%|\d{1,3}\s*%\s*of\s*(?:the\s*)?balance/i;
 
 const DISCLAIMER_MARKERS = [/not guaranteed/i, /not legal or financial advice/i];
 
@@ -36,9 +37,10 @@ describe("collections compliance guardrails", () => {
     it(`${id}: includes a settlement-outcome disclaimer`, () => {
       const overlay = TEMPLATE_OVERLAYS[id];
       const hasDisclaimer = DISCLAIMER_MARKERS.some((re) => re.test(overlay));
-      expect(hasDisclaimer, `${id} must carry a "not guaranteed / not legal advice" disclaimer`).toBe(
-        true,
-      );
+      expect(
+        hasDisclaimer,
+        `${id} must carry a "not guaranteed / not legal advice" disclaimer`,
+      ).toBe(true);
     });
   }
 

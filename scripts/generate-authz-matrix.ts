@@ -32,6 +32,7 @@ const OUTPUT_FILE = path.resolve(REPO_ROOT, "docs/AUTHZ_MATRIX.md");
 
 const AUTH_MIDDLEWARE = [
   "authenticateUser",
+  "authenticateEventStream",
   "requirePermission",
   "requireRole",
   "requireInternalJwtSecret",
@@ -165,7 +166,9 @@ function scanFile(filePath: string, mountBase: string): RouteEntry[] {
   const entries: RouteEntry[] = [];
 
   // Router-level auth: router.use(authenticateUser) applied to all routes below.
-  const routerAuth = new RegExp(`router\\.use\\(\\s*(?:${AUTH_MIDDLEWARE.join("|")})`).test(content);
+  const routerAuth = new RegExp(`router\\.use\\(\\s*(?:${AUTH_MIDDLEWARE.join("|")})`).test(
+    content,
+  );
 
   // router.METHOD("/path", <middleware chain up to the handler arrow/paren>)
   const routeRe =
@@ -256,10 +259,14 @@ function main() {
   fs.writeFileSync(OUTPUT_FILE, md, "utf8");
 
   console.log(`AuthZ matrix written to ${path.relative(REPO_ROOT, OUTPUT_FILE)}`);
-  console.log(`  scanned=${entries.length} protected=${entries.filter(isProtected).length} public=${entries.filter((e) => !isProtected(e) && e.allowReason).length} violations=${violations.length}`);
+  console.log(
+    `  scanned=${entries.length} protected=${entries.filter(isProtected).length} public=${entries.filter((e) => !isProtected(e) && e.allowReason).length} violations=${violations.length}`,
+  );
 
   if (violations.length > 0) {
-    console.error(`\n❌ Default-deny violation(s) — route(s) with neither auth nor allowlist entry:`);
+    console.error(
+      `\n❌ Default-deny violation(s) — route(s) with neither auth nor allowlist entry:`,
+    );
     for (const v of violations) {
       console.error(`   ${v.file}:${v.line}  ${v.method} ${v.fullPath}`);
     }

@@ -584,7 +584,9 @@ export default function AgentWorkspace({
               <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70 mb-3">
                 Direct line
               </p>
-              <h3 className="font-display italic text-2xl text-ink mb-2.5">Chat with {agentName}</h3>
+              <h3 className="font-display italic text-2xl text-ink mb-2.5">
+                Chat with {agentName}
+              </h3>
               <p className="text-[12px] text-muted leading-relaxed max-w-xs">
                 Coach it, give context, ask how calls went, or direct changes in plain language —
                 {agentName} remembers everything in this thread.

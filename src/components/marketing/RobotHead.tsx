@@ -66,126 +66,128 @@ export function RobotHead({
           transition: animated ? "transform 0.4s cubic-bezier(0.23, 1, 0.32, 1)" : undefined,
         }}
       >
-      {/* Subtle glow */}
-      <defs>
-        <linearGradient id={`headGrad-${variant}`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor={COLORS.purple} stopOpacity="0.95" />
-          <stop offset="100%" stopColor={COLORS.purpleLight} stopOpacity="0.85" />
-        </linearGradient>
-        <linearGradient id={`phoneGrad-${variant}`} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor={COLORS.emerald} />
-          <stop offset="100%" stopColor="#059669" />
-        </linearGradient>
-      </defs>
+        {/* Subtle glow */}
+        <defs>
+          <linearGradient id={`headGrad-${variant}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={COLORS.purple} stopOpacity="0.95" />
+            <stop offset="100%" stopColor={COLORS.purpleLight} stopOpacity="0.85" />
+          </linearGradient>
+          <linearGradient id={`phoneGrad-${variant}`} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={COLORS.emerald} />
+            <stop offset="100%" stopColor="#059669" />
+          </linearGradient>
+        </defs>
 
-      {/* Robot Head — rounded square with antenna */}
-      <rect
-        x="12"
-        y="14"
-        width="40"
-        height="36"
-        rx="8"
-        ry="8"
-        fill={`url(#headGrad-${variant})`}
-        stroke={COLORS.ink}
-        strokeWidth={strokeWidth}
-        strokeLinejoin="round"
-      />
-
-      {/* Head highlight */}
-      <rect
-        x="15"
-        y="17"
-        width="34"
-        height="12"
-        rx="4"
-        fill={COLORS.cream}
-        fillOpacity="0.15"
-      />
-
-      {/* Eyes — expressive per variant */}
-      {variant === 1 && (
-        <>
-          <circle cx="24" cy="30" r="4.5" fill={COLORS.cream} />
-          <circle cx="40" cy="30" r="4.5" fill={COLORS.cream} />
-          <circle cx="25" cy="29" r="1.8" fill={COLORS.purple} />
-          <circle cx="41" cy="29" r="1.8" fill={COLORS.purple} />
-        </>
-      )}
-      {variant === 2 && (
-        <>
-          <rect x="20" y="26" width="8" height="8" rx="2" fill={COLORS.cream} />
-          <rect x="36" y="26" width="8" height="8" rx="2" fill={COLORS.cream} />
-          <circle cx="24" cy="30" r="2" fill={COLORS.emerald} />
-          <circle cx="40" cy="30" r="2" fill={COLORS.emerald} />
-        </>
-      )}
-      {variant === 3 && (
-        <>
-          <circle cx="24" cy="30" r="3.5" fill={COLORS.cream} />
-          <circle cx="40" cy="30" r="3.5" fill={COLORS.cream} />
-          <circle cx="24" cy="30" r="1.5" fill={COLORS.purple} />
-          <circle cx="40" cy="30" r="1.5" fill={COLORS.purple} />
-        </>
-      )}
-      {variant === 4 && (
-        <>
-          <path d="M20 27 Q24 34 28 27" stroke={COLORS.cream} strokeWidth="3" strokeLinecap="round" />
-          <path d="M36 27 Q40 34 44 27" stroke={COLORS.cream} strokeWidth="3" strokeLinecap="round" />
-        </>
-      )}
-
-      {/* Antenna */}
-      <line
-        x1="32"
-        y1="14"
-        x2="32"
-        y2="6"
-        stroke={COLORS.ink}
-        strokeWidth={strokeWidth * 1.2}
-        strokeLinecap="round"
-      />
-      <circle
-        cx="32"
-        cy="4"
-        r="3"
-        fill={COLORS.emerald}
-        stroke={COLORS.ink}
-        strokeWidth={strokeWidth}
-        style={{
-          animation: animated ? "wl-robot-breath 3.2s ease-in-out infinite" : undefined,
-        }}
-      />
-
-      {/* Phone next to ear — creative touch */}
-      <g transform={`translate(${phoneOffset}, 22)`}>
-        {/* Phone body */}
+        {/* Robot Head — rounded square with antenna */}
         <rect
-          x="0"
-          y="0"
-          width="9"
-          height="16"
-          rx="1.5"
-          ry="1.5"
-          fill={`url(#phoneGrad-${variant})`}
+          x="12"
+          y="14"
+          width="40"
+          height="36"
+          rx="8"
+          ry="8"
+          fill={`url(#headGrad-${variant})`}
           stroke={COLORS.ink}
-          strokeWidth={strokeWidth * 0.8}
+          strokeWidth={strokeWidth}
+          strokeLinejoin="round"
         />
-        {/* Phone screen */}
-        <rect x="1.5" y="2" width="6" height="9" rx="0.5" fill={COLORS.cream} fillOpacity="0.9" />
-        {/* Speaker dots */}
-        <circle cx="4.5" cy="13" r="0.6" fill={COLORS.ink} />
-        <circle cx="6" cy="13" r="0.4" fill={COLORS.ink} />
-      </g>
 
-      {/* Subtle mouth / expression line */}
-      <path
-        d={variant % 2 === 0 ? "M26 40 Q32 44 38 40" : "M27 41 Q32 43 37 41"}
-        stroke={COLORS.cream}
-        strokeWidth={strokeWidth * 0.9}
-        strokeLinecap="round"
-        fill="none"
-      />
+        {/* Head highlight */}
+        <rect x="15" y="17" width="34" height="12" rx="4" fill={COLORS.cream} fillOpacity="0.15" />
+
+        {/* Eyes — expressive per variant */}
+        {variant === 1 && (
+          <>
+            <circle cx="24" cy="30" r="4.5" fill={COLORS.cream} />
+            <circle cx="40" cy="30" r="4.5" fill={COLORS.cream} />
+            <circle cx="25" cy="29" r="1.8" fill={COLORS.purple} />
+            <circle cx="41" cy="29" r="1.8" fill={COLORS.purple} />
+          </>
+        )}
+        {variant === 2 && (
+          <>
+            <rect x="20" y="26" width="8" height="8" rx="2" fill={COLORS.cream} />
+            <rect x="36" y="26" width="8" height="8" rx="2" fill={COLORS.cream} />
+            <circle cx="24" cy="30" r="2" fill={COLORS.emerald} />
+            <circle cx="40" cy="30" r="2" fill={COLORS.emerald} />
+          </>
+        )}
+        {variant === 3 && (
+          <>
+            <circle cx="24" cy="30" r="3.5" fill={COLORS.cream} />
+            <circle cx="40" cy="30" r="3.5" fill={COLORS.cream} />
+            <circle cx="24" cy="30" r="1.5" fill={COLORS.purple} />
+            <circle cx="40" cy="30" r="1.5" fill={COLORS.purple} />
+          </>
+        )}
+        {variant === 4 && (
+          <>
+            <path
+              d="M20 27 Q24 34 28 27"
+              stroke={COLORS.cream}
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
+            <path
+              d="M36 27 Q40 34 44 27"
+              stroke={COLORS.cream}
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
+          </>
+        )}
+
+        {/* Antenna */}
+        <line
+          x1="32"
+          y1="14"
+          x2="32"
+          y2="6"
+          stroke={COLORS.ink}
+          strokeWidth={strokeWidth * 1.2}
+          strokeLinecap="round"
+        />
+        <circle
+          cx="32"
+          cy="4"
+          r="3"
+          fill={COLORS.emerald}
+          stroke={COLORS.ink}
+          strokeWidth={strokeWidth}
+          style={{
+            animation: animated ? "wl-robot-breath 3.2s ease-in-out infinite" : undefined,
+          }}
+        />
+
+        {/* Phone next to ear — creative touch */}
+        <g transform={`translate(${phoneOffset}, 22)`}>
+          {/* Phone body */}
+          <rect
+            x="0"
+            y="0"
+            width="9"
+            height="16"
+            rx="1.5"
+            ry="1.5"
+            fill={`url(#phoneGrad-${variant})`}
+            stroke={COLORS.ink}
+            strokeWidth={strokeWidth * 0.8}
+          />
+          {/* Phone screen */}
+          <rect x="1.5" y="2" width="6" height="9" rx="0.5" fill={COLORS.cream} fillOpacity="0.9" />
+          {/* Speaker dots */}
+          <circle cx="4.5" cy="13" r="0.6" fill={COLORS.ink} />
+          <circle cx="6" cy="13" r="0.4" fill={COLORS.ink} />
+        </g>
+
+        {/* Subtle mouth / expression line */}
+        <path
+          d={variant % 2 === 0 ? "M26 40 Q32 44 38 40" : "M27 41 Q32 43 37 41"}
+          stroke={COLORS.cream}
+          strokeWidth={strokeWidth * 0.9}
+          strokeLinecap="round"
+          fill="none"
+        />
       </svg>
     </>
   );

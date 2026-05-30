@@ -35,10 +35,7 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div
-      className={cn(
-        "flex flex-col items-center justify-center py-12 text-center px-6",
-        className,
-      )}
+      className={cn("flex flex-col items-center justify-center py-12 text-center px-6", className)}
     >
       <Medallion withHalo={withHalo} size="md" className="mb-5">
         <Icon className="w-6 h-6" />

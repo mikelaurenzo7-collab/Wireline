@@ -16,7 +16,9 @@ if (typeof window !== "undefined") {
     // Plausible already loaded via index.html — tag the event so we see
     // production error volume without adding another analytics vendor.
     if (typeof window.plausible === "function") {
-      window.plausible("Error", { props: { kind, message: err instanceof Error ? err.message : String(err) } });
+      window.plausible("Error", {
+        props: { kind, message: err instanceof Error ? err.message : String(err) },
+      });
     }
   };
 

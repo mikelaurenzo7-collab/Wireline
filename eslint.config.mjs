@@ -99,6 +99,14 @@ export default [
     },
   },
 
+  // ── Maintenance scripts — console is the intended output channel ─────
+  {
+    files: ["scripts/**/*.ts"],
+    rules: {
+      "no-console": "off",
+    },
+  },
+
   // ── Prettier — must come last to disable conflicting format rules ─────
   prettierConfig,
 ];
