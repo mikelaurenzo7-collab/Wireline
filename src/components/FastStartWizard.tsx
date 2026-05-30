@@ -366,7 +366,7 @@ export default function FastStartWizard({
         <div className="relative px-6 py-4 border-b border-white/8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6B2B99] to-[#6B2B99] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#8B3FD6] to-[#8B3FD6] flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -386,7 +386,7 @@ export default function FastStartWizard({
           {/* Progress bar */}
           <div className="mt-4 h-1 bg-black/10 rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-[#6B2B99] to-[#6B2B99] rounded-full"
+              className="h-full bg-gradient-to-r from-[#8B3FD6] to-[#8B3FD6] rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
@@ -406,8 +406,8 @@ export default function FastStartWizard({
             >
               {/* Step icon and title */}
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#6B2B99]/20 to-[#6B2B99]/5 border border-[#6B2B99]/20 flex items-center justify-center">
-                  <currentStep.icon className="w-6 h-6 text-[#6B2B99]" />
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#8B3FD6]/20 to-[#8B3FD6]/5 border border-[#8B3FD6]/20 flex items-center justify-center">
+                  <currentStep.icon className="w-6 h-6 text-[#8B3FD6]" />
                 </div>
                 <div>
                   <p className="text-[9px] uppercase tracking-[0.4em] text-brand">

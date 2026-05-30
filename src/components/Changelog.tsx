@@ -27,8 +27,8 @@ interface Entry {
 }
 
 const TAG_META: Record<Tag, { label: string; color: string; bg: string }> = {
-  feature: { label: "FEATURE", color: "#6B2B99", bg: "rgba(107, 43, 153, 0.10)" },
-  fix: { label: "FIX", color: "#6B2B99", bg: "rgba(107, 43, 153, 0.10)" },
+  feature: { label: "FEATURE", color: "#8B3FD6", bg: "rgba(107, 43, 153, 0.10)" },
+  fix: { label: "FIX", color: "#8B3FD6", bg: "rgba(107, 43, 153, 0.10)" },
   polish: { label: "POLISH", color: "#7B3FAE", bg: "rgba(123, 63, 174, 0.10)" },
   infra: { label: "INFRA", color: "#7C7469", bg: "rgba(124, 116, 105, 0.10)" },
 };
@@ -163,7 +163,7 @@ export function ChangelogPage() {
         <div className="flex items-center gap-3 mb-2">
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: "#6B2B99" }}
+            style={{ background: "#8B3FD6" }}
           >
             <Sparkles className="w-5 h-5 text-on-brand" />
           </div>

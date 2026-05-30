@@ -307,7 +307,7 @@ export default function CampaignsTab({
                       }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
                       className="h-full rounded-full"
-                      style={{ background: "linear-gradient(90deg,#6B2B99,#6B2B99)" }}
+                      style={{ background: "linear-gradient(90deg,#8B3FD6,#8B3FD6)" }}
                     />
                   </div>
                   <div className="flex items-center gap-1 mt-1.5">
@@ -347,19 +347,19 @@ export default function CampaignsTab({
                               label: "Answered",
                               value: campaignAnalytics.call_stats?.answered ?? 0,
                               icon: Phone,
-                              accent: "#6B2B99",
+                              accent: "#8B3FD6",
                             },
                             {
                               label: "Avg Duration",
                               value: `${campaignAnalytics.call_stats?.avg_duration_sec ?? 0}s`,
                               icon: Clock,
-                              accent: "#6B2B99",
+                              accent: "#8B3FD6",
                             },
                             {
                               label: "Total Cost",
                               value: `$${(campaignAnalytics.call_stats?.total_cost_usd ?? 0).toFixed(3)}`,
                               icon: DollarSign,
-                              accent: "#6B2B99",
+                              accent: "#8B3FD6",
                             },
                             {
                               label: "Avg Score",
@@ -368,7 +368,7 @@ export default function CampaignsTab({
                                   ? campaignAnalytics.call_stats.avg_lead_score
                                   : "—",
                               icon: Award,
-                              accent: "#6B2B99",
+                              accent: "#8B3FD6",
                             },
                           ].map(({ label, value, icon: Icon, accent }) => (
                             <div key={label} className="rounded-xl glass border border-white/8 p-3">
@@ -397,11 +397,11 @@ export default function CampaignsTab({
                               {campaignAnalytics.outcomes.map((o: any) => {
                                 const color =
                                   o.status === "Completed"
-                                    ? "#6B2B99"
+                                    ? "#8B3FD6"
                                     : o.status === "Failed" || o.status?.includes("Fail")
-                                      ? "#6B2B99"
+                                      ? "#8B3FD6"
                                       : o.status === "Queued"
-                                        ? "#6B2B99"
+                                        ? "#8B3FD6"
                                         : o.status?.includes("Blocked")
                                           ? "#FF9A5C"
                                           : "#7C7469";
@@ -441,13 +441,13 @@ export default function CampaignsTab({
             {/* Stats row */}
             <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-2 border-b border-white/8">
               {[
-                { label: "Leads", value: selectedCampaign.leads_count, accent: "#6B2B99" },
-                { label: "Dialed", value: selectedCampaign.dialed_count, accent: "#6B2B99" },
-                { label: "Connected", value: selectedCampaign.connected_count, accent: "#6B2B99" },
+                { label: "Leads", value: selectedCampaign.leads_count, accent: "#8B3FD6" },
+                { label: "Dialed", value: selectedCampaign.dialed_count, accent: "#8B3FD6" },
+                { label: "Connected", value: selectedCampaign.connected_count, accent: "#8B3FD6" },
                 {
                   label: "Window",
                   value: `${selectedCampaign.call_window_start}–${selectedCampaign.call_window_end}`,
-                  accent: "#6B2B99",
+                  accent: "#8B3FD6",
                 },
               ].map((s) => (
                 <div key={s.label} className="rounded-lg glass border border-white/8 p-2.5">
@@ -472,7 +472,7 @@ export default function CampaignsTab({
                 icon={Megaphone}
                 title="No leads in campaign"
                 description="Upload a CSV from the Bulk tab and pick this campaign in the dropdown — assigned leads land here."
-                accent="#6B2B99"
+                accent="#8B3FD6"
                 actions={[
                   {
                     label: "Upload CSV",

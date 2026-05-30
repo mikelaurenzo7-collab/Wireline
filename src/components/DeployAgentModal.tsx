@@ -437,7 +437,7 @@ export default function DeployAgentModal({
                       ? "text-paper shadow-lg shadow-brand/30 hover:shadow-brand/40 active:scale-[0.98]"
                       : "text-muted/70 bg-black/8 cursor-not-allowed",
                   )}
-                  style={canSubmit ? { background: "#6B2B99" } : undefined}
+                  style={canSubmit ? { background: "#8B3FD6" } : undefined}
                 >
                   {deploying ? (
                     <>

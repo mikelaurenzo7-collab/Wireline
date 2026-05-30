@@ -95,7 +95,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     handles: ALL_ENCOMPASSING_HANDLES,
     tel: "+16306425661",
     display: "(630) 642-5661",
-    tint: "#6B2B99",
+    tint: "#8B3FD6",
     defaultVibe: "warm",
   },
   {
@@ -106,7 +106,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     handles: ALL_ENCOMPASSING_HANDLES,
     tel: "+16305811834",
     display: "(630) 581-1834",
-    tint: "#6B2B99",
+    tint: "#8B3FD6",
     defaultVibe: "playful",
     // Liam · Confident & Energetic — matches the agent name.
     voiceId: "TX3LPaxmHKxFdv7VOQHJ",
@@ -140,7 +140,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
       "customer service, inbound, front desk, scheduling, FAQ, message taking, home services, after hours",
     tel: "+16306425927",
     display: "(630) 642-5927",
-    tint: "#6B2B99",
+    tint: "#8B3FD6",
     defaultVibe: "warm",
   },
   {
@@ -173,7 +173,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     handles: "medical, healthcare, clinic, patient intake, appointment",
     tel: "+16173134469",
     display: "(617) 313-4469",
-    tint: "#6B2B99",
+    tint: "#8B3FD6",
     defaultVibe: "authoritative",
   },
   {

@@ -256,10 +256,10 @@ export default function DncManager() {
           {/* Stat bar */}
           <div className="col-span-12 grid grid-cols-2 sm:grid-cols-4 gap-3 h-fit">
             {[
-              { label: "Total Blocked", value: stats.total, accent: "#6B2B99", icon: Shield },
-              { label: "Manual Entries", value: stats.manual, accent: "#6B2B99", icon: Plus },
-              { label: "CSV Imported", value: stats.csv, accent: "#6B2B99", icon: FileText },
-              { label: "Opt-Out", value: stats.optOut, accent: "#6B2B99", icon: CheckCircle2 },
+              { label: "Total Blocked", value: stats.total, accent: "#8B3FD6", icon: Shield },
+              { label: "Manual Entries", value: stats.manual, accent: "#8B3FD6", icon: Plus },
+              { label: "CSV Imported", value: stats.csv, accent: "#8B3FD6", icon: FileText },
+              { label: "Opt-Out", value: stats.optOut, accent: "#8B3FD6", icon: CheckCircle2 },
             ].map(({ label, value, accent, icon: Icon }) => (
               <div
                 key={label}

@@ -55,7 +55,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
             <div className="relative group overflow-hidden rounded-2xl glass border border-brand/30 bg-brand/5 p-6 transition-all hover:bg-brand/10">
               <div
                 className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-20 blur-3xl group-hover:opacity-40 transition-opacity"
-                style={{ background: "radial-gradient(circle, #6B2B99, transparent)" }}
+                style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
               />
               <div className="relative z-10 flex items-center justify-between">
                 <div className="flex gap-4">

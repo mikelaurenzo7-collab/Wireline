@@ -107,7 +107,7 @@ export default function Developers() {
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-2 px-5 py-3 text-[11px] uppercase tracking-[0.30em] font-medium text-on-brand transition-all"
-            style={{ background: "#6B2B99", boxShadow: "0 6px 20px -6px rgba(107, 43, 153, 0.55)" }}
+            style={{ background: "#8B3FD6", boxShadow: "0 6px 20px -6px rgba(107, 43, 153, 0.55)" }}
           >
             Try in Swagger UI
             <ArrowRight className="w-4 h-4" />
@@ -195,7 +195,7 @@ export default function Developers() {
             <Link
               to="/login"
               className="inline-flex items-center gap-2 px-5 py-3 text-[11px] uppercase tracking-[0.30em] font-medium text-on-brand"
-              style={{ background: "#6B2B99" }}
+              style={{ background: "#8B3FD6" }}
             >
               Sign in <ArrowRight className="w-4 h-4" />
             </Link>

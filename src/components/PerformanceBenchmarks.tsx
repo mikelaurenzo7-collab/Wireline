@@ -110,7 +110,7 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
                 animate={{ width: `${userPct}%` }}
                 transition={{ duration: 1, ease: "easeOut" }}
                 className="absolute top-0 left-0 h-full rounded-full"
-                style={{ background: "#6B2B99" }}
+                style={{ background: "#8B3FD6" }}
               />
               {/* Benchmark marker */}
               <div

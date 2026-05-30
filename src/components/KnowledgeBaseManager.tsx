@@ -562,7 +562,7 @@ export default function KnowledgeBaseManager() {
                 icon={Database}
                 title="Knowledge base is empty"
                 description="Add facts, policies, FAQs, and product details so your agents can answer customer questions accurately."
-                accent="#6B2B99"
+                accent="#8B3FD6"
                 actions={[
                   { label: "Add Knowledge", onClick: () => setShowAdd(true), primary: true },
                   { label: "Ingest from URL", onClick: () => setShowIngestUrl(true) },
@@ -782,7 +782,7 @@ function DedupePanel({
   }, 0);
 
   const kindAccent = (k: DedupeCluster["kind"]) =>
-    k === "duplicate" ? "#6B2B99" : k === "contradiction" ? "#C4B5A0" : "#6B2B99";
+    k === "duplicate" ? "#8B3FD6" : k === "contradiction" ? "#C4B5A0" : "#8B3FD6";
   const kindIcon = (k: DedupeCluster["kind"]) =>
     k === "contradiction" ? AlertTriangle : k === "duplicate" ? Copy : GitMerge;
 
@@ -793,7 +793,7 @@ function DedupePanel({
           <div className="flex items-center gap-3">
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: "#6B2B99" }}
+              style={{ background: "#8B3FD6" }}
             >
               <Brain className="w-5 h-5 text-on-brand" />
             </div>

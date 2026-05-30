@@ -21,10 +21,10 @@ interface RobotHeadProps {
 }
 
 const COLORS = {
-  purple: "var(--wl-purple, #6B2B99)",
-  purpleLight: "var(--wl-purple-light, #6B2B99)",
+  purple: "var(--wl-purple, #8B3FD6)",
+  purpleLight: "var(--wl-purple-light, #8B3FD6)",
   purpleDeep: "var(--wl-purple-deep, #3B154C)",
-  emerald: "var(--wl-emerald, #6B2B99)",
+  emerald: "var(--wl-emerald, #8B3FD6)",
   emeraldSoft: "var(--wl-emerald-soft, #8B6FA8)",
   cream: "var(--wl-cream, #F5F0E6)",
   paper: "var(--wl-paper, #EFE9DC)",

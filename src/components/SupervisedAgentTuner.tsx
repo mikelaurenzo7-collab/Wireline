@@ -91,7 +91,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
           <div
             className="absolute inset-0 rounded-full opacity-40"
             style={{
-              background: "conic-gradient(from 0deg, #6B2B99, #6B2B99, #6B2B99)",
+              background: "conic-gradient(from 0deg, #8B3FD6, #8B3FD6, #8B3FD6)",
               filter: "blur(1px)",
               animation: "spin 2s linear infinite",
             }}

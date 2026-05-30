@@ -205,11 +205,11 @@ export function renderDailyBriefEmail(
     body { margin:0; padding:0; background-color:#0a0a0a; color:#f4f4f5; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
     .wrap { max-width:600px; margin:0 auto; padding:40px 20px; }
     .brand-header { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
-    .brand-logo { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #4F1E7B, #7e3eb8); display: inline-block; vertical-align: middle; }
+    .brand-logo { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #8B3FD6, #7e3eb8); display: inline-block; vertical-align: middle; }
     .brand-name { font-size: 20px; font-weight: 700; font-style: italic; letter-spacing: -0.02em; color: #fff; vertical-align: middle; display: inline-block; margin-left: 12px; }
     .card { background:#121214; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:32px; margin-bottom:24px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
     .card-hero { background: linear-gradient(180deg, #18181b 0%, #121214 100%); position: relative; overflow: hidden; }
-    .card-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #4F1E7B, #10b981); }
+    .card-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #8B3FD6, #10b981); }
     .label { font-size:10px; font-weight: 600; letter-spacing:0.3em; text-transform:uppercase; color:#a1a1aa; margin:0 0 16px; }
     h1 { font-size:28px; line-height:1.2; margin:0 0 12px; color:#fff; font-weight:600; letter-spacing:-0.02em; font-style: italic; }
     h2 { font-size:12px; font-weight: 700; letter-spacing:0.2em; text-transform:uppercase; color:${moodColor}; margin:0 0 20px; display: inline-block; padding: 4px 10px; background: ${moodColor}15; border-radius: 99px; border: 1px solid ${moodColor}30; }
@@ -225,7 +225,7 @@ export function renderDailyBriefEmail(
     li.warn { border-left-color:#fbbf24; }
     li.action { border-left-color:#38bdf8; }
     .footer { text-align:center; color:#71717a; font-size:12px; padding:32px 0; line-height: 1.6; }
-    .btn { display:inline-block; padding:12px 24px; border-radius:99px; background:#4F1E7B; color:#ffffff !important; text-decoration:none; font-weight:600; font-size:13px; letter-spacing:0.1em; text-transform: uppercase; border: 1px solid #7e3eb8; }
+    .btn { display:inline-block; padding:12px 24px; border-radius:99px; background:#8B3FD6; color:#ffffff !important; text-decoration:none; font-weight:600; font-size:13px; letter-spacing:0.1em; text-transform: uppercase; border: 1px solid #7e3eb8; }
   `;
 
   const stat = (label: string, value: string, delta?: number | null) => `

@@ -222,7 +222,7 @@ export default function LandingPage() {
                 <Link
                   to="/signup"
                   data-testid="hero-cta-primary"
-                  className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-[#6B2B99] transition-colors duration-300"
+                  className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-[#8B3FD6] transition-colors duration-300"
                 >
                   Start free trial
                   <ArrowRight className="w-4 h-4" />
@@ -348,7 +348,7 @@ export default function LandingPage() {
               <Link
                 to="/signup"
                 data-testid="final-cta-button"
-                className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-[#6B2B99] transition-colors duration-300"
+                className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-[#8B3FD6] transition-colors duration-300"
               >
                 Start free trial
                 <ArrowRight className="w-4 h-4" />

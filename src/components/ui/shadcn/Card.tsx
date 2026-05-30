@@ -1,14 +1,43 @@
 import * as React from "react";
+import { motion, HTMLMotionProps } from "motion/react";
 import { cn } from "@/src/lib/utils";
 
-const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn("rounded-lg border bg-card text-card-foreground shadow-sm", className)}
-      {...props}
-    />
-  ),
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Enable hover lift effect (default: false) */
+  interactive?: boolean;
+}
+
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, interactive = false, ...props }, ref) => {
+    if (interactive) {
+      // Cast to any to avoid motion/react type complexity with HTMLAttributes
+      const MotionDiv = motion.div as React.ComponentType<
+        HTMLMotionProps<"div"> & React.RefAttributes<HTMLDivElement>
+      >;
+      return (
+        <MotionDiv
+          ref={ref}
+          whileHover={{
+            y: -2,
+            transition: { type: "spring", stiffness: 400, damping: 25 },
+          }}
+          className={cn(
+            "rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer hover:shadow-lg transition-shadow duration-200",
+            className,
+          )}
+          {...(props as HTMLMotionProps<"div">)}
+        />
+      );
+    }
+
+    return (
+      <div
+        ref={ref}
+        className={cn("rounded-lg border bg-card text-card-foreground shadow-sm", className)}
+        {...props}
+      />
+    );
+  },
 );
 Card.displayName = "Card";
 

@@ -9,7 +9,7 @@ import { cn } from "../lib/utils";
 const META = {
   success: {
     icon: CheckCircle2,
-    color: "#6B2B99",
+    color: "#8B3FD6",
     border: "border-emerald-500/30",
     bg: "bg-emerald-500/10",
   },
@@ -20,7 +20,7 @@ const META = {
     border: "border-amber-500/30",
     bg: "bg-amber-500/10",
   },
-  info: { icon: Info, color: "#6B2B99", border: "border-brand/30", bg: "bg-brand/10" },
+  info: { icon: Info, color: "#8B3FD6", border: "border-brand/30", bg: "bg-brand/10" },
 };
 
 function ToastItem({ toast }: { toast: Toast }) {

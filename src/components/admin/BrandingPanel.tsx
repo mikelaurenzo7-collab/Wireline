@@ -61,13 +61,13 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
                 <Input
                   type="color"
                   className="w-12 h-12 rounded-xl bg-transparent border-input cursor-pointer p-0"
-                  value={settings.primary_color || "#6B2B99"}
+                  value={settings.primary_color || "#8B3FD6"}
                   onChange={(e) => onUpdate({ ...settings, primary_color: e.target.value })}
                 />
                 <Input
                   type="text"
                   className="flex-1 bg-black/5 border-input focus-visible:ring-brand/40 rounded-xl py-3 h-auto font-mono"
-                  value={settings.primary_color || "#6B2B99"}
+                  value={settings.primary_color || "#8B3FD6"}
                   onChange={(e) => onUpdate({ ...settings, primary_color: e.target.value })}
                 />
               </div>

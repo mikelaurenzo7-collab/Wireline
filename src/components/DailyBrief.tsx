@@ -98,7 +98,7 @@ export default function DailyBrief() {
         <div className="relative p-7 rounded-3xl glass overflow-hidden flex items-center gap-5">
           <div
             className="w-14 h-14 rounded-2xl flex items-center justify-center"
-            style={{ background: "#6B2B99" }}
+            style={{ background: "#8B3FD6" }}
           >
             <Brain className="w-7 h-7 text-on-brand" />
           </div>
@@ -163,7 +163,7 @@ export default function DailyBrief() {
   };
 
   const moodAccent =
-    brief.mood === "green" ? "#6B2B99" : brief.mood === "yellow" ? "#C4B5A0" : "#6B2B99";
+    brief.mood === "green" ? "#8B3FD6" : brief.mood === "yellow" ? "#C4B5A0" : "#8B3FD6";
   const moodLabel =
     brief.mood === "green"
       ? "All systems go"
@@ -184,7 +184,7 @@ export default function DailyBrief() {
         />
         <div
           className="absolute -bottom-32 -left-32 w-72 h-72 rounded-full opacity-25 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, #6B2B99, transparent)" }}
+          style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
         />
 
         <div className="relative z-10 px-7 py-5 border-b border-white/8 flex items-center justify-between flex-wrap gap-3">
@@ -283,14 +283,14 @@ export default function DailyBrief() {
           {/* Highlights & Concerns */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {brief.highlights.length > 0 && (
-              <Section title="Highlights" icon={Sparkles} accent="#6B2B99">
+              <Section title="Highlights" icon={Sparkles} accent="#8B3FD6">
                 {brief.highlights.map((h, i) => (
                   <li key={i}>{h}</li>
                 ))}
               </Section>
             )}
             {brief.concerns.length > 0 && (
-              <Section title="Concerns" icon={AlertTriangle} accent="#6B2B99">
+              <Section title="Concerns" icon={AlertTriangle} accent="#8B3FD6">
                 {brief.concerns.map((c, i) => (
                   <li key={i}>{c}</li>
                 ))}

@@ -99,9 +99,9 @@ function stepIcon(t: StepType) {
   return <Mail className="w-3 h-3" />;
 }
 function stepTint(t: StepType) {
-  if (t === "call") return "#6B2B99";
-  if (t === "sms") return "#6B2B99";
-  return "#6B2B99";
+  if (t === "call") return "#8B3FD6";
+  if (t === "sms") return "#8B3FD6";
+  return "#8B3FD6";
 }
 
 export default function Cadences() {
