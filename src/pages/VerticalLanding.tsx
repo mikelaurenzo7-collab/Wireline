@@ -723,7 +723,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
               >
                 <div
                   className="w-10 h-10 flex items-center justify-center mb-3"
-                  style={{ background: "#6B2B99" }}
+                  style={{ background: "#8B3FD6" }}
                 >
                   <Icon className="w-5 h-5 text-on-brand" strokeWidth={2} />
                 </div>

@@ -223,7 +223,7 @@ function getPasswordStrength(pw: string): PasswordStrength {
     1: { label: "Weak", color: "#FF9A5C" },
     2: { label: "Fair", color: "#FFD166" },
     3: { label: "Good", color: "#4DFFC4" },
-    4: { label: "Strong", color: "#6B2B99" },
+    4: { label: "Strong", color: "#8B3FD6" },
   };
   return { score: clamped, ...meta[clamped] };
 }
@@ -619,7 +619,7 @@ export default function AuthPortal() {
                   <button
                     type="submit"
                     disabled={loading || (isSignUp && !agreedToTerms)}
-                    className="w-full flex items-center justify-center gap-2 min-h-[48px] py-3.5 text-sm font-semibold text-white bg-brand hover:bg-[#6B2B99] transition-all disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2 min-h-[48px] py-3.5 text-sm font-semibold text-white bg-brand hover:bg-[#8B3FD6] transition-all disabled:opacity-50"
                   >
                     {loading ? (
                       <>

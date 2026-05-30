@@ -68,7 +68,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
   const isOver = snap.overage_minutes > 0;
   const isWarn = !isOver && pct >= 80;
 
-  const barAccent = isOver ? "#f43f5e" : isWarn ? "#f59e0b" : "#6B2B99";
+  const barAccent = isOver ? "#f43f5e" : isWarn ? "#f59e0b" : "#8B3FD6";
   const resetDate = new Date(snap.reset_at);
   const resetLabel = resetDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 

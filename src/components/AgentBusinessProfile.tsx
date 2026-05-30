@@ -285,7 +285,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
       <Section
         icon={Clock}
         title="Business hours"
-        accent="#6B2B99"
+        accent="#8B3FD6"
         hint="When this agent should engage. Outbound dials outside these hours are refused; inbound calls hear the out-of-hours message."
       >
         <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -372,7 +372,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
       <Section
         icon={ShieldCheck}
         title="Compliance preset"
-        accent="#6B2B99"
+        accent="#8B3FD6"
         hint="Auto-injects required disclosures into the agent's system prompt. Pick the regime your business is regulated under."
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -409,7 +409,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
       <Section
         icon={Target}
         title="Optimization target"
-        accent="#6B2B99"
+        accent="#8B3FD6"
         hint="Subtle nudge to bias the agent toward the outcome that matters for this surface."
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -486,7 +486,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
           <p className="text-eyebrow/65 font-semibold mb-1">Route alerts to (this agent only)</p>
           <p className="text-[10px] text-muted/70 mb-3 leading-relaxed">
             Both optional. Leave blank to use the tenant-wide Manager Alert Number from{" "}
-            <a href="/admin?tab=carrier" className="text-[#6B2B99] hover:underline">
+            <a href="/admin?tab=carrier" className="text-[#8B3FD6] hover:underline">
               Settings → Carrier
             </a>
             .
@@ -506,7 +506,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 }
                 placeholder="+1 555 123 4567"
                 aria-label="Per-agent escalation phone number"
-                className="w-full h-9 px-3 rounded-lg border border-black/12 bg-paper text-[12px] focus:outline-none focus:border-[#6B2B99]/40 focus:ring-2 focus:ring-[#6B2B99]/12 transition-all"
+                className="w-full h-9 px-3 rounded-lg border border-black/12 bg-paper text-[12px] focus:outline-none focus:border-[#8B3FD6]/40 focus:ring-2 focus:ring-[#8B3FD6]/12 transition-all"
                 data-testid="escalation-phone-input"
               />
             </label>
@@ -524,7 +524,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 }
                 placeholder="lead@yourcompany.com"
                 aria-label="Per-agent escalation email"
-                className="w-full h-9 px-3 rounded-lg border border-black/12 bg-paper text-[12px] focus:outline-none focus:border-[#6B2B99]/40 focus:ring-2 focus:ring-[#6B2B99]/12 transition-all"
+                className="w-full h-9 px-3 rounded-lg border border-black/12 bg-paper text-[12px] focus:outline-none focus:border-[#8B3FD6]/40 focus:ring-2 focus:ring-[#8B3FD6]/12 transition-all"
                 data-testid="escalation-email-input"
               />
             </label>
@@ -579,7 +579,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
       <Section
         icon={Type}
         title="Business variables"
-        accent="#6B2B99"
+        accent="#8B3FD6"
         hint="Reusable {placeholders} for personality / directives / knowledge / messages. Set once, reference anywhere."
       >
         <div className="space-y-1.5">

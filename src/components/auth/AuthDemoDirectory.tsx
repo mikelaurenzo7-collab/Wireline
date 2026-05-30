@@ -111,7 +111,7 @@ function AgentContactCard({
                 "shrink-0 whitespace-nowrap text-[8px] uppercase tracking-[0.16em] font-semibold px-1.5 py-0.5 rounded leading-none",
                 isDemo
                   ? "bg-white/8 text-muted/80 border border-white/10"
-                  : "bg-[#6B2B99]/15 text-[#6B2B99] border border-[#6B2B99]/30",
+                  : "bg-[#8B3FD6]/15 text-[#8B3FD6] border border-[#8B3FD6]/30",
               )}
             >
               {isDemo ? "Demo" : "Wireline Team"}
@@ -123,7 +123,7 @@ function AgentContactCard({
           </p>
           <a
             href={`tel:${agent.tel}`}
-            className="mt-1 inline-flex min-h-[44px] items-center font-mono text-[13px] tabular-nums text-ink underline-offset-2 hover:text-[#6B2B99] hover:underline"
+            className="mt-1 inline-flex min-h-[44px] items-center font-mono text-[13px] tabular-nums text-ink underline-offset-2 hover:text-[#8B3FD6] hover:underline"
             aria-label={`Call ${agent.name} at ${agent.display}`}
           >
             <span className="select-all">{agent.display}</span>
@@ -182,7 +182,7 @@ export function AuthDemoDirectory({
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center justify-between gap-3 rounded-xl border border-[#6B2B99]/20 bg-[#6B2B99]/5 px-3.5 py-3 min-h-[48px] text-left transition-colors hover:bg-[#6B2B99]/10 active:bg-[#6B2B99]/14"
+        className="w-full flex items-center justify-between gap-3 rounded-xl border border-[#8B3FD6]/20 bg-[#8B3FD6]/5 px-3.5 py-3 min-h-[48px] text-left transition-colors hover:bg-[#8B3FD6]/10 active:bg-[#8B3FD6]/14"
         aria-expanded={expanded}
       >
         <div>
@@ -197,7 +197,7 @@ export function AuthDemoDirectory({
         </div>
         <ChevronDown
           className={cn(
-            "w-4 h-4 shrink-0 text-[#6B2B99] transition-transform",
+            "w-4 h-4 shrink-0 text-[#8B3FD6] transition-transform",
             expanded && "rotate-180",
           )}
         />

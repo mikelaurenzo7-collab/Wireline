@@ -118,7 +118,7 @@ export function SlackPreviewCard() {
         >
           <div
             className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center text-[9px] font-bold text-white mt-0.5"
-            style={{ background: "#6B2B99" }}
+            style={{ background: "#8B3FD6" }}
           >
             W
           </div>
@@ -496,7 +496,7 @@ export function DocuSignPreviewCard() {
                   className="w-2 h-2 rounded-full shrink-0 transition-all duration-500"
                   style={{
                     background: isThisSigned
-                      ? "#6B2B99"
+                      ? "#8B3FD6"
                       : i === 0
                         ? "#FFC720"
                         : "rgba(255,199,32,0.3)",
@@ -511,7 +511,7 @@ export function DocuSignPreviewCard() {
                   {field} field
                 </span>
                 {isThisSigned ? (
-                  <CheckCircle2 size={9} style={{ color: "#6B2B99", marginLeft: "auto" }} />
+                  <CheckCircle2 size={9} style={{ color: "#8B3FD6", marginLeft: "auto" }} />
                 ) : i === 0 ? (
                   <span className="ml-auto text-[8px]" style={{ color: "#FFC720" }}>
                     Awaiting
@@ -754,7 +754,7 @@ export function TeamsPreviewCard() {
         >
           <div
             className="w-7 h-7 rounded shrink-0 flex items-center justify-center text-[9px] font-bold text-white mt-0.5"
-            style={{ background: "#6B2B99" }}
+            style={{ background: "#8B3FD6" }}
           >
             W
           </div>

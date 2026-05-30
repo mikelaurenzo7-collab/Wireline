@@ -401,7 +401,7 @@ function CallDetail({
 
   const qaDimColor = (val: number) => {
     const pct = val / 20;
-    if (pct >= 0.8) return "linear-gradient(90deg, #6B2B99, #8B6FA8)";
+    if (pct >= 0.8) return "linear-gradient(90deg, #8B3FD6, #8B6FA8)";
     if (pct >= 0.6) return "linear-gradient(90deg, #8B6FA8, #FCD34D)";
     return "linear-gradient(90deg, #E8466A, #F87171)";
   };
@@ -411,7 +411,7 @@ function CallDetail({
     return score >= 90
       ? brand
       : score >= 75
-        ? "#6B2B99"
+        ? "#8B3FD6"
         : score >= 60
           ? "#FFD166"
           : score >= 40
@@ -556,7 +556,7 @@ function CallDetail({
                         {call.sentiment || "neutral"}
                       </span>
                     }
-                    accent="#6B2B99"
+                    accent="#8B3FD6"
                   />
                 </div>
                 {call.coaching_note && (

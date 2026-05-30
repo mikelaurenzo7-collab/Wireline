@@ -46,7 +46,7 @@ const AGENT_TEMPLATES = [
     role: "sales",
     channel: "voice" as const,
     icon: Target,
-    accent: "#6B2B99",
+    accent: "#8B3FD6",
     badge: "Most popular",
     firstMessage:
       "Hi, this is Alex from [Company]. I saw you were interested in [Product] — got 2 minutes to see if we'd be a fit?",
@@ -60,7 +60,7 @@ const AGENT_TEMPLATES = [
     role: "sales",
     channel: "voice" as const,
     icon: Zap,
-    accent: "#6B2B99",
+    accent: "#8B3FD6",
     badge: null,
     firstMessage:
       "Hey [Name], following up on our conversation — happy to answer any final questions and get you started today.",
@@ -74,7 +74,7 @@ const AGENT_TEMPLATES = [
     role: "lead_qualifier",
     channel: "voice" as const,
     icon: Filter,
-    accent: "#6B2B99",
+    accent: "#8B3FD6",
     badge: "Inbound",
     firstMessage:
       "Thanks for calling! Before I connect you with our team, let me gather a bit of information to make sure we're the right fit for you.",
@@ -89,7 +89,7 @@ const AGENT_TEMPLATES = [
     role: "customer_service",
     channel: "voice" as const,
     icon: Headphones,
-    accent: "#6B2B99",
+    accent: "#8B3FD6",
     badge: null,
     firstMessage:
       "Thank you for calling support. I'm your AI assistant — how can I help you today?",
@@ -103,7 +103,7 @@ const AGENT_TEMPLATES = [
     role: "customer_service",
     channel: "email" as const,
     icon: Mail,
-    accent: "#6B2B99",
+    accent: "#8B3FD6",
     badge: "Email",
     firstMessage:
       "Thank you for reaching out. I've received your message and I'm here to help resolve this for you today.",
@@ -118,7 +118,7 @@ const AGENT_TEMPLATES = [
     role: "scheduler",
     channel: "voice" as const,
     icon: Calendar,
-    accent: "#6B2B99",
+    accent: "#8B3FD6",
     badge: "Healthcare",
     firstMessage:
       "Hello, thank you for calling. I can help schedule or reschedule your appointment — what works best for you?",
@@ -132,7 +132,7 @@ const AGENT_TEMPLATES = [
     role: "receptionist",
     channel: "voice" as const,
     icon: Sparkles,
-    accent: "#6B2B99",
+    accent: "#8B3FD6",
     badge: null,
     firstMessage:
       "Welcome to [Salon Name]! I'm your virtual receptionist. Would you like to book an appointment or ask about our services?",
@@ -146,7 +146,7 @@ const AGENT_TEMPLATES = [
     role: "lead_qualifier",
     channel: "voice" as const,
     icon: Building2,
-    accent: "#6B2B99",
+    accent: "#8B3FD6",
     badge: "Real Estate",
     firstMessage:
       "Hi! I'm calling about [Property Address] — are you still interested in scheduling a showing?",
@@ -190,7 +190,7 @@ const AGENT_TEMPLATES = [
     role: "marketing",
     channel: "voice" as const,
     icon: RefreshCw,
-    accent: "#6B2B99",
+    accent: "#8B3FD6",
     badge: null,
     firstMessage:
       "Hi [Name], it's been a while! I'm reaching out with something special for our loyal customers — do you have 60 seconds?",
@@ -204,7 +204,7 @@ const AGENT_TEMPLATES = [
     role: "marketing",
     channel: "voice" as const,
     icon: BarChart3,
-    accent: "#6B2B99",
+    accent: "#8B3FD6",
     badge: null,
     firstMessage:
       "Hi! I'm calling on behalf of [Company] — we'd love your feedback on your recent experience. This takes under 2 minutes.",

@@ -19,7 +19,7 @@ interface ChangelogEntry {
 const TAG_META: Record<EntryTag, { label: string; tone: string; icon: typeof Sparkles }> = {
   launch: {
     label: "Launch",
-    tone: "bg-[#6B2B99]/10 text-[#6B2B99] border-[#6B2B99]/25",
+    tone: "bg-[#8B3FD6]/10 text-[#8B3FD6] border-[#8B3FD6]/25",
     icon: Rocket,
   },
   feature: {
@@ -119,7 +119,7 @@ export default function PublicChangelog() {
             className="mb-10"
           >
             <div className="flex items-center gap-2 mb-3">
-              <span className="hero-accent-line" style={{ background: "#6B2B99" }} />
+              <span className="hero-accent-line" style={{ background: "#8B3FD6" }} />
               <span className="text-eyebrow">Shipping log</span>
             </div>
             <h1 className="marketing-hero-title mb-3">Every change we've shipped.</h1>
@@ -146,7 +146,7 @@ export default function PublicChangelog() {
                   <span
                     aria-hidden="true"
                     className="absolute left-0 top-6 w-1.5 h-1.5 rounded-full"
-                    style={{ background: "#6B2B99" }}
+                    style={{ background: "#8B3FD6" }}
                   />
                   <div className="flex flex-wrap items-center gap-2 mb-1.5">
                     <span className="text-eyebrow !text-[0.625rem]">{entry.date}</span>

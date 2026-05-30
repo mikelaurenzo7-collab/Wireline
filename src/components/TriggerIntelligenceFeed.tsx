@@ -14,10 +14,10 @@ type ActivityItem = {
 };
 
 const TYPE_META: Record<string, { icon: typeof Signal; color: string }> = {
-  SIGNAL_ANALYZED: { icon: Signal, color: "#6B2B99" },
-  MISSION_INJECTED: { icon: Zap, color: "#6B2B99" },
-  NEURAL_OPTIMIZATION: { icon: Cpu, color: "#6B2B99" },
-  DIGITAL_RELAY: { icon: Radio, color: "#6B2B99" },
+  SIGNAL_ANALYZED: { icon: Signal, color: "#8B3FD6" },
+  MISSION_INJECTED: { icon: Zap, color: "#8B3FD6" },
+  NEURAL_OPTIMIZATION: { icon: Cpu, color: "#8B3FD6" },
+  DIGITAL_RELAY: { icon: Radio, color: "#8B3FD6" },
 };
 
 const IMPORTANCE_RING: Record<string, string> = {

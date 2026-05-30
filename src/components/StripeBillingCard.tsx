@@ -52,10 +52,10 @@ const PLAN_ICONS: Record<string, any> = {
 };
 
 const PLAN_ACCENTS: Record<string, string> = {
-  personal: "#6B2B99",
-  starter: "#6B2B99",
-  pro: "#6B2B99",
-  business: "#6B2B99",
+  personal: "#8B3FD6",
+  starter: "#8B3FD6",
+  pro: "#8B3FD6",
+  business: "#8B3FD6",
   enterprise: "#C4B5A0",
 };
 
@@ -278,7 +278,7 @@ export default function StripeBillingCard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {plans.map((plan) => {
             const Icon = PLAN_ICONS[plan.id] || Building2;
-            const accent = PLAN_ACCENTS[plan.id] || "#6B2B99";
+            const accent = PLAN_ACCENTS[plan.id] || "#8B3FD6";
             const isCurrent = sub?.plan === plan.id && hasActive;
             const isBusy = busy === plan.id;
             const isSignupMatch = !hasActive && signupPlanInterest === plan.id;
@@ -307,7 +307,7 @@ export default function StripeBillingCard() {
                   <div
                     className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em]"
                     style={{
-                      background: "#6B2B99",
+                      background: "#8B3FD6",
                       color: "#fff",
                     }}
                   >
@@ -318,7 +318,7 @@ export default function StripeBillingCard() {
                   <div
                     className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em]"
                     style={{
-                      background: "#6B2B99",
+                      background: "#8B3FD6",
                       color: "#fff",
                     }}
                   >
@@ -428,7 +428,7 @@ function ActiveSubCard({
   busy: boolean;
   onPortal: () => void;
 }) {
-  const accent = PLAN_ACCENTS[sub.plan || ""] || "#6B2B99";
+  const accent = PLAN_ACCENTS[sub.plan || ""] || "#8B3FD6";
   const Icon = PLAN_ICONS[sub.plan || ""] || CreditCard;
   const renews = safeDate(sub.current_period_end);
   const daysLeft = renews

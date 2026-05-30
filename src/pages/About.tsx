@@ -77,7 +77,7 @@ export default function About() {
             <div
               className="w-14 h-14 sm:w-20 sm:h-20 flex items-center justify-center shrink-0"
               style={{
-                background: "#6B2B99",
+                background: "#8B3FD6",
                 boxShadow: "0 8px 24px -8px rgba(107,43,153,0.4)",
               }}
               aria-hidden="true"
@@ -102,7 +102,7 @@ export default function About() {
               </p>
               <a
                 href="mailto:trywireline@yahoo.com"
-                className="inline-flex items-center gap-2 mt-4 font-mono text-[11px] uppercase tracking-[0.2em] text-brand hover:text-[#6B2B99] transition-colors"
+                className="inline-flex items-center gap-2 mt-4 font-mono text-[11px] uppercase tracking-[0.2em] text-brand hover:text-[#8B3FD6] transition-colors"
               >
                 <Mail className="w-3.5 h-3.5" />
                 trywireline@yahoo.com
@@ -128,7 +128,7 @@ export default function About() {
               >
                 <div
                   className="w-8 h-8 flex items-center justify-center mb-3"
-                  style={{ background: "#6B2B99" }}
+                  style={{ background: "#8B3FD6" }}
                   aria-hidden="true"
                 >
                   <Sparkles className="w-4 h-4 text-white" strokeWidth={2} />
@@ -165,7 +165,7 @@ export default function About() {
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
               to="/signup"
-              className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-[#6B2B99] transition-colors duration-300"
+              className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-[#8B3FD6] transition-colors duration-300"
             >
               Start free trial
               <ArrowRight className="w-4 h-4" />

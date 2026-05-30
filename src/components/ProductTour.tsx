@@ -243,7 +243,7 @@ export default function ProductTour() {
                     style={{
                       width: i === stepIndex ? 16 : 6,
                       height: 6,
-                      background: i === stepIndex ? "#6B2B99" : "rgba(0,0,0,0.15)",
+                      background: i === stepIndex ? "#8B3FD6" : "rgba(0,0,0,0.15)",
                       transition: "width 0.3s ease",
                     }}
                   />

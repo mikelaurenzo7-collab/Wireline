@@ -67,7 +67,7 @@ export default function TopicsView() {
                   animate={{ width: `${pct}%` }}
                   transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: i * 0.05 }}
                   className="absolute inset-x-0 bottom-0 h-1"
-                  style={{ background: "#6B2B99" }}
+                  style={{ background: "#8B3FD6" }}
                 />
                 <div className="space-y-2">
                   <div className="flex items-baseline justify-between gap-3">

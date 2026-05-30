@@ -21,7 +21,7 @@ type AnalyticsWindow = Window & {
 
 export default function BrowserCallWidget({
   agentName,
-  tintColor: _tintColor = "#6B2B99",
+  tintColor: _tintColor = "#8B3FD6",
   buttonLabel = "Talk in browser",
 }: BrowserCallWidgetProps) {
   const [vapi, setVapi] = useState<Vapi | null>(null);
@@ -31,7 +31,7 @@ export default function BrowserCallWidget({
   const [error, setError] = useState<string | null>(null);
   const [speakerActive, setSpeakerActive] = useState(false);
 
-  const activeColor = agentName === "Jake" ? "#f59e0b" : "#6B2B99"; // Orange for Jake, Purple for others
+  const activeColor = agentName === "Jake" ? "#f59e0b" : "#8B3FD6"; // Orange for Jake, Purple for others
 
   // Initialize Vapi SDK on mount
   useEffect(() => {
