@@ -10,7 +10,8 @@ import IntegrationHealthBanner, { type IntegrationHealthPayload } from "./Integr
 import PageShell from "./PageShell";
 import { useToast } from "../contexts/ToastContext";
 import { useBranding } from "../contexts/BrandingContext";
-import SettingsTabSwitcher from "./admin/SettingsTabSwitcher";
+import AdminHubViewport from "./layout/AdminHubViewport";
+import ClientRouteLoading from "./layout/ClientRouteLoading";
 
 // Modularized Panels
 import { BrandingPanel } from "./admin/BrandingPanel";
@@ -372,171 +373,164 @@ export default function AdminSettings() {
   };
 
   return (
-    <div className="h-full flex flex-col gap-3 min-h-0">
-      <SettingsTabSwitcher />
-      <PageShell
-        title="Settings"
-        eyebrow="Admin · Configuration"
-        subtitle="API credentials, phone numbers, and platform configuration."
-      >
-        <div className="h-full flex flex-col">
-          <IntegrationHealthBanner
-            health={integrationHealth}
-            onOpenIntegrations={() => navigate("/admin?tab=system")}
-          />
-          <div className="flex-1 min-h-0">
-            {isLoading ? (
-              <div
-                role="status"
-                aria-live="polite"
-                className="h-full flex flex-col items-center justify-center gap-3"
-              >
-                <Loader2 className="w-5 h-5 animate-spin text-brand" aria-hidden="true" />
-                <span className="app-section-title/70">Loading settings</span>
-              </div>
-            ) : (
-              <AnimatePresence mode="wait">
-                {activeTab === "branding" && (
-                  <motion.div
-                    key="branding"
-                    role="tabpanel"
-                    id="admin-panel-branding"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="h-full"
-                  >
-                    <BrandingPanel
-                      settings={settings}
-                      onUpdate={setSettings}
-                      onSave={saveSettings}
-                      isSaving={isSaving}
-                    />
-                  </motion.div>
-                )}
+    <>
+      <AdminHubViewport>
+        <PageShell title="" eyebrow="" subtitle="">
+          <div className="h-full flex flex-col">
+            <IntegrationHealthBanner
+              health={integrationHealth}
+              onOpenIntegrations={() => navigate("/admin?tab=system")}
+            />
+            <div className="flex-1 min-h-0">
+              {isLoading ? (
+                <ClientRouteLoading
+                  icon={<Loader2 className="w-8 h-8 text-brand animate-spin" aria-hidden />}
+                  label="Loading settings"
+                />
+              ) : (
+                <AnimatePresence mode="wait">
+                  {activeTab === "branding" && (
+                    <motion.div
+                      key="branding"
+                      role="tabpanel"
+                      id="admin-panel-branding"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="h-full"
+                    >
+                      <BrandingPanel
+                        settings={settings}
+                        onUpdate={setSettings}
+                        onSave={saveSettings}
+                        isSaving={isSaving}
+                      />
+                    </motion.div>
+                  )}
 
-                {activeTab === "carrier" && (
-                  <motion.div
-                    key="carrier"
-                    role="tabpanel"
-                    id="admin-panel-carrier"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="h-full"
-                  >
-                    <CarrierPanel
-                      settings={settings}
-                      agents={agents}
-                      phoneNumbers={phoneNumbers}
-                      carrierNumbers={carrierNumbers}
-                      isSaving={isSaving}
-                      isSyncing={isSyncing}
-                      onUpdateSettings={setSettings}
-                      onSaveSettings={saveSettings}
-                      onSyncNumbers={syncCarrierNumbers}
-                      onAddNumber={addPhoneNumber}
-                      onDeleteNumber={deletePhoneNumber}
-                      onUpdateNumberAgent={updateNumberAgent}
-                    />
-                  </motion.div>
-                )}
+                  {activeTab === "carrier" && (
+                    <motion.div
+                      key="carrier"
+                      role="tabpanel"
+                      id="admin-panel-carrier"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="h-full"
+                    >
+                      <CarrierPanel
+                        settings={settings}
+                        agents={agents}
+                        phoneNumbers={phoneNumbers}
+                        carrierNumbers={carrierNumbers}
+                        isSaving={isSaving}
+                        isSyncing={isSyncing}
+                        onUpdateSettings={setSettings}
+                        onSaveSettings={saveSettings}
+                        onSyncNumbers={syncCarrierNumbers}
+                        onAddNumber={addPhoneNumber}
+                        onDeleteNumber={deletePhoneNumber}
+                        onUpdateNumberAgent={updateNumberAgent}
+                      />
+                    </motion.div>
+                  )}
 
-                {activeTab === "subscription" && (
-                  <motion.div
-                    key="subscription"
-                    role="tabpanel"
-                    id="admin-panel-subscription"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="h-full"
-                  >
-                    <SubscriptionPanel
-                      settings={settings}
-                      agents={agents}
-                      isSaving={isSaving}
-                      onUpdateSettings={setSettings}
-                      onSaveSettings={saveSettings}
-                      onDeleteAccount={deleteAccount}
-                    />
-                  </motion.div>
-                )}
+                  {activeTab === "subscription" && (
+                    <motion.div
+                      key="subscription"
+                      role="tabpanel"
+                      id="admin-panel-subscription"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="h-full"
+                    >
+                      <SubscriptionPanel
+                        settings={settings}
+                        agents={agents}
+                        isSaving={isSaving}
+                        onUpdateSettings={setSettings}
+                        onSaveSettings={saveSettings}
+                        onDeleteAccount={deleteAccount}
+                      />
+                    </motion.div>
+                  )}
 
-                {activeTab === "team" && (
-                  <motion.div
-                    key="team"
-                    role="tabpanel"
-                    id="admin-panel-team"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="h-full"
-                  >
-                    <TeamPanel
-                      members={teamMembers}
-                      onInvite={inviteTeamMember}
-                      onRemove={removeTeamMember}
-                    />
-                  </motion.div>
-                )}
+                  {activeTab === "team" && (
+                    <motion.div
+                      key="team"
+                      role="tabpanel"
+                      id="admin-panel-team"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="h-full"
+                    >
+                      <TeamPanel
+                        members={teamMembers}
+                        onInvite={inviteTeamMember}
+                        onRemove={removeTeamMember}
+                      />
+                    </motion.div>
+                  )}
 
-                {activeTab === "flywheel" && (
-                  <motion.div
-                    key="flywheel"
-                    role="tabpanel"
-                    id="admin-panel-flywheel"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="h-full"
-                  >
-                    <GrowthPanel
-                      settings={settings}
-                      setSettings={setSettings}
-                      onSave={saveSettings}
-                      isSaving={isSaving}
-                    />
-                  </motion.div>
-                )}
+                  {activeTab === "flywheel" && (
+                    <motion.div
+                      key="flywheel"
+                      role="tabpanel"
+                      id="admin-panel-flywheel"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="h-full"
+                    >
+                      <GrowthPanel
+                        settings={settings}
+                        setSettings={setSettings}
+                        onSave={saveSettings}
+                        isSaving={isSaving}
+                      />
+                    </motion.div>
+                  )}
 
-                {activeTab === "system" && (
-                  <motion.div
-                    key="system"
-                    role="tabpanel"
-                    id="admin-panel-system"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="h-full"
-                  >
-                    <SystemPanel
-                      claudeStatus={claudeStatus}
-                      integrations={integrations}
-                      operationalSlos={operationalSlos}
-                      onOpenIntegrations={() => navigate("/admin?tab=system")}
-                    />
-                  </motion.div>
-                )}
+                  {activeTab === "system" && (
+                    <motion.div
+                      key="system"
+                      role="tabpanel"
+                      id="admin-panel-system"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="h-full"
+                    >
+                      <SystemPanel
+                        claudeStatus={claudeStatus}
+                        integrations={integrations}
+                        operationalSlos={operationalSlos}
+                        onOpenIntegrations={() => navigate("/admin?tab=system")}
+                      />
+                    </motion.div>
+                  )}
 
-                {activeTab === "activity" && (
-                  <motion.div
-                    key="activity"
-                    role="tabpanel"
-                    id="admin-panel-activity"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="h-full"
-                  >
-                    <AuditActivityPanel />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            )}
+                  {activeTab === "activity" && (
+                    <motion.div
+                      key="activity"
+                      role="tabpanel"
+                      id="admin-panel-activity"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="h-full"
+                    >
+                      <AuditActivityPanel />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              )}
+            </div>
           </div>
-        </div>
-      </PageShell>
+        </PageShell>
+      </AdminHubViewport>
       <ConfirmModal
         open={confirmState.open}
         title={confirmState.title}
@@ -545,6 +539,6 @@ export default function AdminSettings() {
         onConfirm={confirmState.onConfirm}
         onCancel={() => setConfirmState(CLOSED_CONFIRM)}
       />
-    </div>
+    </>
   );
 }

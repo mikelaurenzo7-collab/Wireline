@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
 import { motion } from "motion/react";
-import { getRouteAccent } from "../../constants/navigation";
+import { getRouteAccentFromLocation } from "../../constants/navigation";
 
 /**
  * Route-aware hairline at the top of the main content column. The base
@@ -13,11 +13,12 @@ import { getRouteAccent } from "../../constants/navigation";
  */
 export default function RouteAccentStrip() {
   const location = useLocation();
-  const [from, to] = getRouteAccent(location.pathname);
+  const accentKey = `${location.pathname}${location.search}`;
+  const [from, to] = getRouteAccentFromLocation(location.pathname, location.search);
   return (
     <div className="relative h-px max-md:h-[2px] shrink-0 overflow-hidden">
       <motion.div
-        key={`base-${location.pathname}`}
+        key={`base-${accentKey}`}
         initial={{ opacity: 0, scaleX: 0 }}
         animate={{ opacity: 1, scaleX: 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
@@ -28,7 +29,7 @@ export default function RouteAccentStrip() {
         aria-hidden="true"
       />
       <motion.div
-        key={`sheen-${location.pathname}`}
+        key={`sheen-${accentKey}`}
         initial={{ x: "-40%", opacity: 0 }}
         animate={{ x: "120%", opacity: [0, 0.7, 0] }}
         transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}

@@ -43,7 +43,7 @@ import EmptyState from "./EmptyState";
 import { useToast } from "../contexts/ToastContext";
 import type { CallLog } from "../types/api";
 
-export default function CallLogs() {
+export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
   const { error: toastError } = useToast();
   const [calls, setCalls] = useState<CallLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -141,195 +141,199 @@ export default function CallLogs() {
     </div>
   );
 
-  return (
-    <div className="h-full flex flex-col min-h-0">
-      <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />
-      <div className="flex-1 min-h-0">
-        <PageShell
-          eyebrow="Communications · Voice"
-          title="Call Logs"
-          subtitle="Recorded calls and agent responses"
-          actions={actions}
-        >
-          <div className="h-full grid grid-cols-12 gap-3">
-            {/* List pane — hidden on mobile when a call is selected so the
+  const body = (
+    <PageShell
+      eyebrow={embedded ? undefined : "Communications · Voice"}
+      title={embedded ? "" : "Call Logs"}
+      subtitle={embedded ? undefined : "Recorded calls and agent responses"}
+      actions={actions}
+    >
+      <div className="h-full grid grid-cols-12 gap-3">
+        {/* List pane — hidden on mobile when a call is selected so the
             detail pane gets the full viewport. The detail's "Back" affordance
             (rendered below in the empty-detail branch + inside CallDetail)
             clears selectedCall to bring the list back. */}
-            <div
-              className={cn(
-                "col-span-12 md:col-span-6 lg:col-span-5 xl:col-span-4 h-full",
-                selectedCall && "hidden md:block",
-              )}
-            >
-              <Panel
-                title={`${filteredCalls.length} calls`}
-                hint={loading ? "Loading…" : "All calls"}
-                icon={Database}
-                scroll
-                flush
-                actions={
-                  hasMore && (
+        <div
+          className={cn(
+            "col-span-12 md:col-span-6 lg:col-span-5 xl:col-span-4 h-full",
+            selectedCall && "hidden md:block",
+          )}
+        >
+          <Panel
+            title={`${filteredCalls.length} calls`}
+            hint={loading ? "Loading…" : "All calls"}
+            icon={Database}
+            scroll
+            flush
+            actions={
+              hasMore && (
+                <button
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  aria-label="Load more calls"
+                  className="disabled:opacity-50 disabled:cursor-not-allowed text-[9px] uppercase tracking-[0.3em] text-muted hover:text-ink transition-colors flex items-center gap-1"
+                >
+                  {loadingMore ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Signal className="w-3 h-3" />
+                  )}
+                  More
+                </button>
+              )
+            }
+          >
+            {loading ? (
+              <PanelSkeleton rows={8} />
+            ) : filteredCalls.length === 0 ? (
+              <EmptyState
+                icon={Phone}
+                title="No calls yet"
+                description="When your agents handle calls, transcripts and analytics will appear here. Wire a phone number in Settings to go live."
+                actions={[
+                  { label: "Go to Settings", to: "/admin", primary: true },
+                  { label: "Start Outbound", to: "/outbound" },
+                ]}
+                className="h-full py-10"
+              />
+            ) : (
+              <ul className="divide-y divide-white/5">
+                {filteredCalls.map((call) => (
+                  <li key={call.id}>
                     <button
-                      onClick={loadMore}
-                      disabled={loadingMore}
-                      aria-label="Load more calls"
-                      className="disabled:opacity-50 disabled:cursor-not-allowed text-[9px] uppercase tracking-[0.3em] text-muted hover:text-ink transition-colors flex items-center gap-1"
-                    >
-                      {loadingMore ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                      ) : (
-                        <Signal className="w-3 h-3" />
+                      onClick={() => setSelectedCall(call)}
+                      aria-label={`Open signal from ${call.customer_number || "Sim Test"}: ${call.summary || "no summary"}`}
+                      className={cn(
+                        "group w-full text-left flex items-center gap-3 px-3 py-3 transition-all relative active:scale-[0.99] active:bg-white/5 duration-100",
+                        selectedCall?.id === call.id ? "bg-brand/8" : "hover:bg-white/3",
                       )}
-                      More
-                    </button>
-                  )
-                }
-              >
-                {loading ? (
-                  <PanelSkeleton rows={8} />
-                ) : filteredCalls.length === 0 ? (
-                  <EmptyState
-                    icon={Phone}
-                    title="No calls yet"
-                    description="When your agents handle calls, transcripts and analytics will appear here. Wire a phone number in Settings to go live."
-                    actions={[
-                      { label: "Go to Settings", to: "/admin", primary: true },
-                      { label: "Start Outbound", to: "/outbound" },
-                    ]}
-                    className="h-full py-10"
-                  />
-                ) : (
-                  <ul className="divide-y divide-white/5">
-                    {filteredCalls.map((call) => (
-                      <li key={call.id}>
-                        <button
-                          onClick={() => setSelectedCall(call)}
-                          aria-label={`Open signal from ${call.customer_number || "Sim Test"}: ${call.summary || "no summary"}`}
-                          className={cn(
-                            "group w-full text-left flex items-center gap-3 px-3 py-3 transition-all relative active:scale-[0.99] active:bg-white/5 duration-100",
-                            selectedCall?.id === call.id ? "bg-brand/8" : "hover:bg-white/3",
-                          )}
-                        >
-                          {/* Active indicator bar */}
-                          {selectedCall?.id === call.id && (
-                            <div
-                              className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full bg-brand"
-                              aria-hidden="true"
-                            />
-                          )}
+                    >
+                      {/* Active indicator bar */}
+                      {selectedCall?.id === call.id && (
+                        <div
+                          className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full bg-brand"
+                          aria-hidden="true"
+                        />
+                      )}
 
-                          {/* Direction icon */}
-                          <div
+                      {/* Direction icon */}
+                      <div
+                        className={cn(
+                          "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border transition-all",
+                          call.direction === "inbound"
+                            ? "bg-brand/8 border-brand/25 text-brand"
+                            : "bg-brand-2/8 border-brand-2/25 text-brand-2",
+                          selectedCall?.id === call.id && "scale-105",
+                        )}
+                      >
+                        {call.direction === "inbound" ? (
+                          <PhoneIncoming className="w-4 h-4" />
+                        ) : (
+                          <PhoneOutgoing className="w-4 h-4" />
+                        )}
+                      </div>
+
+                      {/* Content */}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className="font-display italic text-sm text-ink truncate">
+                            {call.customer_number || "Sim Test"}
+                          </span>
+                          {/* Lead score badge */}
+                          <span
                             className={cn(
-                              "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border transition-all",
-                              call.direction === "inbound"
-                                ? "bg-brand/8 border-brand/25 text-brand"
-                                : "bg-brand-2/8 border-brand-2/25 text-brand-2",
-                              selectedCall?.id === call.id && "scale-105",
+                              "shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight border",
+                              (call.lead_score || 0) >= 80
+                                ? "bg-emerald-500/12 text-emerald-600 border-emerald-500/20"
+                                : (call.lead_score || 0) >= 50
+                                  ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                                  : "bg-black/[0.06] text-muted/70 border-transparent",
                             )}
                           >
-                            {call.direction === "inbound" ? (
-                              <PhoneIncoming className="w-4 h-4" />
-                            ) : (
-                              <PhoneOutgoing className="w-4 h-4" />
-                            )}
-                          </div>
-
-                          {/* Content */}
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5 mb-0.5">
-                              <span className="font-display italic text-sm text-ink truncate">
-                                {call.customer_number || "Sim Test"}
-                              </span>
-                              {/* Lead score badge */}
-                              <span
-                                className={cn(
-                                  "shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight border",
-                                  (call.lead_score || 0) >= 80
-                                    ? "bg-emerald-500/12 text-emerald-600 border-emerald-500/20"
-                                    : (call.lead_score || 0) >= 50
-                                      ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                                      : "bg-black/[0.06] text-muted/70 border-transparent",
-                                )}
-                              >
-                                {call.lead_score || 0}
-                              </span>
-                              {/* QA score badge */}
-                              {call.qa_score != null && (
-                                <span
-                                  className={cn(
-                                    "shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight border",
-                                    call.qa_score >= 75
-                                      ? "bg-emerald-500/8 text-emerald-600 border-emerald-500/20"
-                                      : call.qa_score >= 50
-                                        ? "bg-amber-500/8 text-amber-600 border-amber-500/20"
-                                        : "bg-rose-500/8 text-rose-500 border-rose-500/20",
-                                  )}
-                                >
-                                  ★{call.qa_score}
-                                </span>
+                            {call.lead_score || 0}
+                          </span>
+                          {/* QA score badge */}
+                          {call.qa_score != null && (
+                            <span
+                              className={cn(
+                                "shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight border",
+                                call.qa_score >= 75
+                                  ? "bg-emerald-500/8 text-emerald-600 border-emerald-500/20"
+                                  : call.qa_score >= 50
+                                    ? "bg-amber-500/8 text-amber-600 border-amber-500/20"
+                                    : "bg-rose-500/8 text-rose-500 border-rose-500/20",
                               )}
-                              <SentimentDot sentiment={call.sentiment} />
-                            </div>
-                            <p className="text-[10px] text-muted/70 truncate leading-tight">
-                              {call.summary || "Decoding…"}
-                            </p>
-                          </div>
+                            >
+                              ★{call.qa_score}
+                            </span>
+                          )}
+                          <SentimentDot sentiment={call.sentiment} />
+                        </div>
+                        <p className="text-[10px] text-muted/70 truncate leading-tight">
+                          {call.summary || "Decoding…"}
+                        </p>
+                      </div>
 
-                          {/* Date/time */}
-                          <div className="text-right shrink-0">
-                            <div className="text-[9px] text-muted/80">
-                              {formatDate(call.created_at)}
-                            </div>
-                            <div className="text-[8px] text-muted/70 uppercase tracking-[0.2em]">
-                              {formatTime(call.created_at, { hour: "2-digit", minute: "2-digit" })}
-                            </div>
-                          </div>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </Panel>
-            </div>
+                      {/* Date/time */}
+                      <div className="text-right shrink-0">
+                        <div className="text-[9px] text-muted/80">
+                          {formatDate(call.created_at)}
+                        </div>
+                        <div className="text-[8px] text-muted/70 uppercase tracking-[0.2em]">
+                          {formatTime(call.created_at, { hour: "2-digit", minute: "2-digit" })}
+                        </div>
+                      </div>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+        </div>
 
-            {/* Detail pane — hidden on mobile when nothing is selected so the
+        {/* Detail pane — hidden on mobile when nothing is selected so the
             list takes the full viewport. */}
-            <div
-              className={cn(
-                "col-span-12 md:col-span-6 lg:col-span-7 xl:col-span-8 h-full",
-                !selectedCall && "hidden md:block",
-              )}
-            >
-              {selectedCall ? (
-                <CallDetail
-                  call={selectedCall}
-                  formatDuration={formatDuration}
-                  onBack={() => setSelectedCall(null)}
-                />
-              ) : (
-                <Panel title="Call Detail" hint="Select a call" icon={FileText}>
-                  <div className="h-full flex flex-col items-center justify-center gap-4 text-center">
-                    <div className="w-16 h-16 rounded-2xl glass border border-black/8 flex items-center justify-center">
-                      <FileText className="w-8 h-8 text-muted/70" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-display italic text-ink/70 mb-1">
-                        No call selected
-                      </p>
-                      <p className="text-[10px] text-muted/70 leading-relaxed max-w-[200px]">
-                        Click any call on the left to view the full transcript, summary, and QA
-                        analysis.
-                      </p>
-                    </div>
-                  </div>
-                </Panel>
-              )}
-            </div>
-          </div>
-        </PageShell>
+        <div
+          className={cn(
+            "col-span-12 md:col-span-6 lg:col-span-7 xl:col-span-8 h-full",
+            !selectedCall && "hidden md:block",
+          )}
+        >
+          {selectedCall ? (
+            <CallDetail
+              call={selectedCall}
+              formatDuration={formatDuration}
+              onBack={() => setSelectedCall(null)}
+            />
+          ) : (
+            <Panel title="Call Detail" hint="Select a call" icon={FileText}>
+              <div className="h-full flex flex-col items-center justify-center gap-4 text-center">
+                <div className="w-16 h-16 rounded-2xl glass border border-black/8 flex items-center justify-center">
+                  <FileText className="w-8 h-8 text-muted/70" />
+                </div>
+                <div>
+                  <p className="text-sm font-display italic text-ink/70 mb-1">No call selected</p>
+                  <p className="text-[10px] text-muted/70 leading-relaxed max-w-[200px]">
+                    Click any call on the left to view the full transcript, summary, and QA
+                    analysis.
+                  </p>
+                </div>
+              </div>
+            </Panel>
+          )}
+        </div>
       </div>
+    </PageShell>
+  );
+
+  if (embedded) {
+    return <div className="h-full flex flex-col min-h-0">{body}</div>;
+  }
+
+  return (
+    <div className="h-full flex flex-col min-h-0">
+      <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />
+      <div className="flex-1 min-h-0">{body}</div>
     </div>
   );
 }

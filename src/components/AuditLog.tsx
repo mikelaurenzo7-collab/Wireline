@@ -23,7 +23,7 @@ import {
 import PageShell, { Panel } from "./PageShell";
 import EmptyState from "./EmptyState";
 import { authFetch } from "../lib/api";
-import SettingsTabSwitcher from "./admin/SettingsTabSwitcher";
+import AdminHubViewport from "./layout/AdminHubViewport";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
 import { formatDateTime } from "../lib/safe-date";
@@ -89,7 +89,7 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="relative glass rounded-xl p-4 border border-white/10 overflow-hidden">
+    <div className="relative glass rounded-xl p-4 border border-black/10 overflow-hidden">
       <div
         className={cn("absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20 blur-3xl", color)}
       />
@@ -128,7 +128,7 @@ const EventRow = React.memo(
         tabIndex={0}
         aria-expanded={expanded}
         aria-label={`${event.event_type || event.action} event details`}
-        className="relative glass border border-white/8 rounded-xl overflow-hidden hover:border-white/20 transition-all cursor-pointer outline-none focus:ring-2 focus:ring-brand/50"
+        className="relative glass border border-black/8 rounded-xl overflow-hidden hover:border-brand/25 transition-all cursor-pointer outline-none focus:ring-2 focus:ring-brand/50"
         onClick={onToggle}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -172,7 +172,7 @@ const EventRow = React.memo(
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               className="overflow-hidden"
             >
-              <div className="px-4 pb-4 pt-2 border-t border-white/8 space-y-3">
+              <div className="px-4 pb-4 pt-2 border-t border-black/8 space-y-3">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                   {event.ip_address && (
                     <div>
@@ -378,18 +378,17 @@ export default function AuditLog() {
   }, []);
 
   return (
-    <div className="h-full flex flex-col gap-3 min-h-0">
-      <SettingsTabSwitcher />
+    <AdminHubViewport>
       <PageShell
-        title="Audit Log"
-        subtitle="System activity monitoring & compliance"
-        eyebrow="Security · Activity"
+        title=""
+        eyebrow=""
+        subtitle=""
         actions={
           <button
             onClick={handleExport}
             disabled={exporting || events.length === 0}
             aria-label={`Export ${events.length} events as CSV`}
-            className="px-4 py-2.5 rounded-full glass border border-white/10 text-[11px] uppercase tracking-[0.3em] text-ink/80 hover:text-brand hover:border-brand/40 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2.5 rounded-full glass border border-black/10 text-[11px] uppercase tracking-[0.3em] text-ink/80 hover:text-brand hover:border-brand/40 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {exporting ? (
               <>
@@ -454,7 +453,7 @@ export default function AuditLog() {
                     // Trigger search (already handled by useMemo)
                   }
                 }}
-                className="w-full pl-11 pr-4 py-3 rounded-xl glass border border-white/10 text-sm text-ink placeholder:text-muted/70 focus:outline-none focus:border-brand/40 transition-all"
+                className="w-full pl-11 pr-4 py-3 rounded-xl glass border border-black/10 text-sm text-ink placeholder:text-muted/70 focus:outline-none focus:border-brand/40 transition-all"
               />
             </div>
             <div className="relative">
@@ -462,7 +461,7 @@ export default function AuditLog() {
                 aria-label="Time range"
                 value={timeRange}
                 onChange={(e) => setTimeRange(Number(e.target.value) as TimeRange)}
-                className="pl-4 pr-10 py-3 rounded-xl glass border border-white/10 text-sm text-ink appearance-none bg-transparent focus:outline-none focus:border-brand/40 transition-all cursor-pointer"
+                className="pl-4 pr-10 py-3 rounded-xl glass border border-black/10 text-sm text-ink appearance-none bg-transparent focus:outline-none focus:border-brand/40 transition-all cursor-pointer"
               >
                 <option value={1}>Last 24 hours</option>
                 <option value={7}>Last 7 days</option>
@@ -479,7 +478,7 @@ export default function AuditLog() {
                 "px-4 py-3 rounded-xl glass border transition-all flex items-center gap-2 text-sm",
                 filtersExpanded
                   ? "border-brand/40 text-brand"
-                  : "border-white/10 text-ink/80 hover:border-white/20",
+                  : "border-black/10 text-ink/80 hover:border-brand/25",
               )}
             >
               <Filter className="w-4 h-4" />
@@ -503,7 +502,7 @@ export default function AuditLog() {
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                 className="overflow-hidden"
               >
-                <div className="glass rounded-xl border border-white/10 p-4 space-y-4">
+                <div className="glass rounded-xl border border-black/10 p-4 space-y-4">
                   <div>
                     <h4 className="text-xs uppercase tracking-[0.3em] text-muted mb-3">Severity</h4>
                     <div className="flex flex-wrap gap-2">
@@ -515,7 +514,7 @@ export default function AuditLog() {
                             "px-3 py-1.5 rounded-full text-xs uppercase tracking-wider transition-all border",
                             selectedSeverities.includes(severity)
                               ? "border-brand/40 bg-brand/10 text-brand"
-                              : "border-white/10 bg-white/5 text-muted hover:text-ink hover:border-white/20",
+                              : "border-black/10 bg-black/[0.03] text-muted hover:text-ink hover:border-brand/20",
                           )}
                         >
                           {severity}
@@ -536,7 +535,7 @@ export default function AuditLog() {
                             "px-3 py-1.5 rounded-full text-xs uppercase tracking-wider transition-all border",
                             selectedCategories.includes(key)
                               ? "border-brand/40 bg-brand/10 text-brand"
-                              : "border-white/10 bg-white/5 text-muted hover:text-ink hover:border-white/20",
+                              : "border-black/10 bg-black/[0.03] text-muted hover:text-ink hover:border-brand/20",
                           )}
                         >
                           {label}
@@ -595,6 +594,6 @@ export default function AuditLog() {
           </Panel>
         </div>
       </PageShell>
-    </div>
+    </AdminHubViewport>
   );
 }

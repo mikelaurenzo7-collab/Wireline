@@ -37,7 +37,7 @@ interface SmsMessage {
  * inbox — see AppRoutes.tsx + EmailInbox.tsx for the surrounding
  * tab layout.
  */
-export default function SmsThreads() {
+export default function SmsThreads({ embedded = false }: { embedded?: boolean }) {
   const { success, error: toastError } = useToast();
   const [threads, setThreads] = useState<SmsThread[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -120,12 +120,16 @@ export default function SmsThreads() {
 
   return (
     <div className="h-full flex flex-col min-h-0">
-      <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />
+      {!embedded && <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />}
       <div className="flex-1 min-h-0">
         <PageShell
-          eyebrow="Channels · Messaging"
-          title="SMS Inbox"
-          subtitle="Two-way text conversations with customers — outbound from your agents, inbound replies routed here."
+          eyebrow={embedded ? undefined : "Channels · Messaging"}
+          title={embedded ? "" : "SMS Inbox"}
+          subtitle={
+            embedded
+              ? undefined
+              : "Two-way text conversations with customers — outbound from your agents, inbound replies routed here."
+          }
           actions={
             <button
               onClick={fetchThreads}

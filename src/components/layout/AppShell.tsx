@@ -13,7 +13,12 @@ import RouteAccentStrip from "./RouteAccentStrip";
 import TrialBanner from "./TrialBanner";
 import EmailVerifyBanner from "./EmailVerifyBanner";
 import AppRoutes from "../../routes/AppRoutes";
-import { NAV_GROUPS, PAGE_TITLES, getRouteAccent } from "../../constants/navigation";
+import {
+  getRouteAccentFromLocation,
+  NAV_GROUPS,
+  PAGE_TITLES,
+  APP_KEYBOARD_SHORTCUTS,
+} from "../../constants/navigation";
 import { useBranding } from "../../contexts/BrandingContext";
 import { useViewTransitionRoute } from "../../hooks/useViewTransitionRoute";
 import { useLivePresence } from "../../hooks/useLivePresence";
@@ -86,19 +91,8 @@ export default function AppShell() {
 
       if (lastKey === "G" && now - lastKeyTime < 1500) {
         e.preventDefault();
-        const routes: Record<string, string> = {
-          D: "/",
-          L: "/logs",
-          T: "/triage",
-          I: "/insights",
-          A: "/agents",
-          R: "/chat",
-          O: "/outbound",
-          S: "/admin",
-        };
-        if (routes[key]) {
-          navigate(routes[key]);
-        }
+        const dest = APP_KEYBOARD_SHORTCUTS[key];
+        if (dest) navigate(dest);
         lastKey = "";
         return;
       }
@@ -247,6 +241,7 @@ export default function AppShell() {
         <TrialBanner />
         <DesktopContextBar
           pathname={location.pathname}
+          search={location.search}
           navBadges={navBadges}
           userEmail={user?.email}
           onShowShortcuts={() => setShowShortcuts(true)}
@@ -266,11 +261,17 @@ export default function AppShell() {
   );
 }
 
-function getDesktopBreadcrumb(pathname: string): {
+function getDesktopBreadcrumb(
+  pathname: string,
+  search = "",
+): {
   eyebrow?: string;
   title: string;
   subtitle?: string;
 } {
+  const params = new URLSearchParams(search);
+  const phoneTab = params.get("tab");
+
   const exactTitle = PAGE_TITLES[pathname];
   if (exactTitle) {
     for (const group of NAV_GROUPS) {
@@ -279,28 +280,99 @@ function getDesktopBreadcrumb(pathname: string): {
           item.path === pathname ||
           item.matches?.some((m) => pathname === m || pathname.startsWith(`${m}/`)),
       );
-      if (match)
+      if (match) {
+        if (pathname === "/phone") {
+          if (phoneTab === "outbound") {
+            return {
+              eyebrow: group.label,
+              title: "Outbound",
+              subtitle: "Campaigns, dispatch & lead queue",
+            };
+          }
+          if (phoneTab === "appointments") {
+            return {
+              eyebrow: group.label,
+              title: "Appointments",
+              subtitle: "Scheduled by your agents",
+            };
+          }
+          return { eyebrow: group.label, title: "Phone", subtitle: ROUTE_SUBTITLES["/phone"] };
+        }
+        if (pathname === "/ops") {
+          const opsTab = params.get("tab");
+          if (opsTab === "intel") {
+            return {
+              eyebrow: group.label,
+              title: "Live Ops",
+              subtitle: "Pending actions & follow-ups",
+            };
+          }
+          if (opsTab === "analytics") {
+            return {
+              eyebrow: group.label,
+              title: "Live Ops",
+              subtitle: "Sentiment & unit economics",
+            };
+          }
+          return { eyebrow: group.label, title: "Live Ops", subtitle: ROUTE_SUBTITLES["/ops"] };
+        }
+        if (pathname === "/admin") {
+          const adminTab = params.get("tab");
+          const tabMeta: Record<string, { title: string; subtitle: string }> = {
+            subscription: { title: "Billing", subtitle: "Plan, usage & payment" },
+            team: { title: "Team", subtitle: "Members & invitations" },
+            branding: { title: "Branding", subtitle: "Logo, colors & white-label" },
+            carrier: { title: "Carrier", subtitle: "Numbers, routing & voice network" },
+            flywheel: { title: "Growth", subtitle: "Prospecting & autonomous outreach" },
+            system: { title: "System", subtitle: "Platform health & dependencies" },
+            activity: { title: "Activity", subtitle: "Recent configuration changes" },
+          };
+          if (adminTab && tabMeta[adminTab]) {
+            return { eyebrow: group.label, ...tabMeta[adminTab] };
+          }
+          return { eyebrow: group.label, title: "Settings", subtitle: ROUTE_SUBTITLES["/admin"] };
+        }
+        if (pathname === "/agents") {
+          return { eyebrow: group.label, title: "Agents", subtitle: ROUTE_SUBTITLES["/agents"] };
+        }
         return { eyebrow: group.label, title: exactTitle, subtitle: ROUTE_SUBTITLES[pathname] };
+      }
+    }
+    if (pathname === "/phone") {
+      if (phoneTab === "outbound") {
+        return { title: "Outbound", subtitle: "Campaigns, dispatch & lead queue" };
+      }
+      if (phoneTab === "appointments") {
+        return { title: "Appointments", subtitle: "Scheduled by your agents" };
+      }
     }
     return { title: exactTitle, subtitle: ROUTE_SUBTITLES[pathname] };
   }
-  if (pathname.startsWith("/contact/")) return { eyebrow: "Activity", title: "Contact Profile" };
+  if (pathname.startsWith("/contact/")) {
+    return {
+      eyebrow: "Activity",
+      title: "Contact Profile",
+      subtitle: "Timeline, calls & appointments",
+    };
+  }
   const prefix = `/${pathname.split("/").filter(Boolean)[0] || ""}`;
   return { title: PAGE_TITLES[prefix] || "Workspace" };
 }
 
 const ROUTE_SUBTITLES: Record<string, string> = {
-  "/phone": "Call history, outbound campaigns & live monitoring",
+  "/phone": "Call history, outbound campaigns & appointments",
   "/email": "Manage threads, drafts & automated responses",
   "/sms": "Two-way conversations & automated follow-ups",
   "/training": "Teach, tune & refine your agents",
-  "/activity": "Cross-channel history & scheduled events",
-  "/ops": "Active calls, queue depth & real-time metrics",
+  "/ops": "Live callers, supervisor tools & fleet pulse",
   "/triage": "Flagged conversations needing review",
   "/insights": "Performance analytics & trend discovery",
-  "/cockpit": "Agent availability & live call supervision",
   "/pipeline": "Leads across the funnel",
   "/admin": "Account configuration & integrations",
+  "/agents": "Deploy, configure & manage your fleet",
+  "/integrations": "Email, CRM & third-party connections",
+  "/dnc": "Do-not-call list & TCPA compliance",
+  "/audit": "Security events & compliance ledger",
 };
 
 function timeGreeting(): string {
@@ -321,17 +393,19 @@ function firstName(email?: string): string | null {
 
 function DesktopContextBar({
   pathname,
+  search,
   navBadges,
   userEmail,
   onShowShortcuts,
 }: {
   pathname: string;
+  search: string;
   navBadges: Record<string, number>;
   userEmail?: string;
   onShowShortcuts: () => void;
 }) {
-  const breadcrumb = getDesktopBreadcrumb(pathname);
-  const [from, to] = getRouteAccent(pathname);
+  const breadcrumb = getDesktopBreadcrumb(pathname, search);
+  const [from, to] = getRouteAccentFromLocation(pathname, search);
   const liveCalls = useLivePresence();
   // Cross-cutting "needs a human" signal — flagged conversations awaiting
   // review. Surfaced globally so it follows the operator across every page,

@@ -1,25 +1,16 @@
 /**
  * navigation.test.ts
- * ----------------------------------------------------------------------
- * Lock the navigation IA after the 2026 design pass. Four groups:
- * Workspace, Channels, Activity, Admin.
- *
- * Key invariants:
- *   1. Chat remains the primary control surface (first item).
- *   2. Training has its own dedicated sidebar slot.
- *   3. Phone, Email, SMS each get their own Channels slot.
- *   4. Cockpit and Live Ops remain distinct pages.
- *   5. Settings stays visible in the top nav (not buried).
+ * Lock navigation IA after Live Ops merge + Activity consolidation.
  */
 import { describe, expect, it } from "vitest";
-import { NAV_GROUPS, PAGE_TITLES } from "./navigation";
+import { NAV_GROUPS, PAGE_TITLES, APP_KEYBOARD_SHORTCUTS } from "./navigation";
 
 describe("Top-bar navigation IA", () => {
   it("ships exactly four groups in the documented order", () => {
-    expect(NAV_GROUPS.map((g) => g.label)).toEqual(["Workspace", "Channels", "Activity", "Admin"]);
+    expect(NAV_GROUPS.map((g) => g.label)).toEqual(["Workspace", "Channels", "Sales", "Admin"]);
   });
 
-  it("Workspace group leads with Chat, Training, then Live Ops, Triage, Insights, Cockpit", () => {
+  it("Workspace group: Chat, Training, Live Ops, Triage, Insights", () => {
     const ws = NAV_GROUPS.find((g) => g.label === "Workspace")!;
     expect(ws.items.map((i) => i.path)).toEqual([
       "/chat",
@@ -27,59 +18,55 @@ describe("Top-bar navigation IA", () => {
       "/ops",
       "/triage",
       "/insights",
-      "/cockpit",
     ]);
   });
 
-  it("Chat is the first/primary nav item (chat is the main control surface)", () => {
-    expect(NAV_GROUPS[0].items[0].path).toBe("/chat");
-  });
-
-  it("Training is its own dedicated sidebar page", () => {
-    const paths = NAV_GROUPS.flatMap((g) => g.items).map((i) => i.path);
-    expect(paths).toContain("/training");
-    expect(paths).not.toContain("/train");
-  });
-
-  it("Channels group has Phone, Email, SMS as dedicated pages", () => {
+  it("Channels group has Phone, Email, SMS", () => {
     const ch = NAV_GROUPS.find((g) => g.label === "Channels")!;
     expect(ch.items.map((i) => i.path)).toEqual(["/phone", "/email", "/sms"]);
   });
 
-  it("Cockpit lives in the Workspace group (Fleet group retired)", () => {
-    expect(NAV_GROUPS.map((g) => g.label)).not.toContain("Fleet");
-    const ws = NAV_GROUPS.find((g) => g.label === "Workspace")!;
-    expect(ws.items.map((i) => i.path)).toContain("/cockpit");
+  it("Phone matches legacy activity and appointments routes", () => {
+    const phone = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.path === "/phone")!;
+    expect(phone.matches).toEqual(
+      expect.arrayContaining(["/activity", "/appointments", "/logs", "/outbound"]),
+    );
   });
 
-  it("Activity group has Activity and Pipeline", () => {
-    const act = NAV_GROUPS.find((g) => g.label === "Activity")!;
-    expect(act.items.map((i) => i.path)).toEqual(["/activity", "/pipeline"]);
+  it("Activity is not a separate sidebar item (history lives under Phone)", () => {
+    const paths = NAV_GROUPS.flatMap((g) => g.items).map((i) => i.path);
+    expect(paths).not.toContain("/activity");
   });
 
-  it("Settings is in the top-bar nav (Admin group), not buried in the avatar menu", () => {
-    const admin = NAV_GROUPS.find((g) => g.label === "Admin")!;
-    expect(admin.items.map((i) => i.path)).toEqual(["/admin"]);
-    expect(admin.items[0].label).toBe("Settings");
+  it("Live Ops matches legacy dashboard and cockpit routes", () => {
+    const ops = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.path === "/ops")!;
+    expect(ops.matches).toEqual(
+      expect.arrayContaining(["/dashboard", "/command", "/live", "/cockpit"]),
+    );
   });
 
-  it("Live Ops does NOT claim /cockpit as a match (Cockpit is its own page)", () => {
-    const liveOps = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.path === "/ops")!;
-    expect(liveOps.matches ?? []).not.toContain("/cockpit");
+  it("Training matches legacy /knowledge route", () => {
+    const training = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.path === "/training")!;
+    expect(training.matches).toContain("/knowledge");
   });
 
-  it("Cockpit is a top-level path, not a redirect alias", () => {
-    const cockpit = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.path === "/cockpit");
-    expect(cockpit).toBeDefined();
-    expect(cockpit!.label).toBe("Cockpit");
+  it("Cockpit is not a separate sidebar item (merged into Live Ops)", () => {
+    const paths = NAV_GROUPS.flatMap((g) => g.items).map((i) => i.path);
+    expect(paths).not.toContain("/cockpit");
   });
 
-  it("Settings matches Integrations / DNC / Audit so deep-link badges land correctly", () => {
-    const settings = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.path === "/admin")!;
-    expect(settings.matches).toEqual(expect.arrayContaining(["/integrations", "/dnc", "/audit"]));
+  it("keyboard shortcuts align with primary nav paths", () => {
+    expect(APP_KEYBOARD_SHORTCUTS.D).toBe("/ops");
+    expect(APP_KEYBOARD_SHORTCUTS.N).toBe("/training");
+    expect(APP_KEYBOARD_SHORTCUTS.P).toBe("/phone");
   });
 
-  it("every nav item has a PAGE_TITLES entry (so the tab title isn't generic 'Wireline')", () => {
+  it("Sales group has Pipeline only", () => {
+    const sales = NAV_GROUPS.find((g) => g.label === "Sales")!;
+    expect(sales.items.map((i) => i.path)).toEqual(["/pipeline"]);
+  });
+
+  it("every nav item has a PAGE_TITLES entry", () => {
     for (const group of NAV_GROUPS) {
       for (const item of group.items) {
         expect(PAGE_TITLES[item.path], `missing title for ${item.path}`).toBeDefined();
@@ -87,7 +74,7 @@ describe("Top-bar navigation IA", () => {
     }
   });
 
-  it("no two nav items share the same path (or active-state would collide)", () => {
+  it("no two nav items share the same path", () => {
     const paths = NAV_GROUPS.flatMap((g) => g.items).map((i) => i.path);
     expect(new Set(paths).size).toBe(paths.length);
   });

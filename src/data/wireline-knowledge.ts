@@ -69,14 +69,9 @@ export const WIRELINE_FEATURES = [
       "Agents text customers and reply in-thread when customers text back. TCPA-clean with STOP/UNSUBSCRIBE handling.",
   },
   {
-    title: "Live Monitor & Insights",
+    title: "Live Ops",
     blurb:
-      "Watch every conversation in real time. Sentiment, funnels, topic clusters, leaderboards — one dashboard.",
-  },
-  {
-    title: "Supervisor Cockpit",
-    blurb:
-      "Business+ tier — see all live calls across your team, queue depth, average wait, and SLA flags at a glance.",
+      "Unified command center — live callers on the floor, supervisor listen-in & whisper-coach, action queue, and fleet analytics in one place.",
   },
 ] as const;
 

@@ -1,11 +1,9 @@
 import {
   MessagesSquare,
-  Radio,
   Inbox,
   BarChart3,
   LayoutGrid,
   Kanban,
-  Headphones,
   SlidersHorizontal,
   GraduationCap,
   Phone,
@@ -29,7 +27,7 @@ export type NavItem = {
 };
 
 // Four-group nav: Workspace (command), Channels (communication surfaces),
-// Activity (history + pipeline), Admin (settings).
+// Sales (pipeline), Admin (settings).
 //
 // Chat remains the primary control surface — the Director + per-agent threads
 // are mission control. Training has been elevated to its own sidebar page
@@ -40,9 +38,9 @@ export type NavItem = {
 // are the communication arteries of the platform and operators need instant
 // access without hunting through sub-routes.
 //
-// Architecture note: /cockpit is its OWN page (SupervisorCockpit), distinct
-// from /ops (LiveOps). Live Ops is the owner's pulse — calls + actions + intel.
-// Cockpit is the floor supervisor's view — agent availability + listen-in.
+// Live Ops (/ops) is the unified command center: live callers, supervisor
+// floor tools (listen-in / whisper), action feed, and fleet analytics.
+// /cockpit redirects here — one surface, no duplicate nav slot.
 export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: "Workspace",
@@ -59,17 +57,17 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         path: "/training",
         icon: GraduationCap,
         dataTour: "training",
+        matches: ["/knowledge"],
       },
       {
         label: "Live Ops",
         path: "/ops",
         icon: LayoutGrid,
         dataTour: "dashboard",
-        matches: ["/dashboard", "/command", "/live"],
+        matches: ["/dashboard", "/command", "/live", "/cockpit"],
       },
       { label: "Triage", path: "/triage", icon: Inbox },
       { label: "Insights", path: "/insights", icon: BarChart3, dataTour: "insights" },
-      { label: "Cockpit", path: "/cockpit", icon: Headphones },
     ],
   },
   {
@@ -80,7 +78,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         path: "/phone",
         icon: Phone,
         dataTour: "phone",
-        matches: ["/logs", "/outbound"],
+        matches: ["/logs", "/outbound", "/appointments", "/activity"],
       },
       {
         label: "Email",
@@ -98,16 +96,8 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     ],
   },
   {
-    label: "Activity",
-    items: [
-      {
-        label: "Activity",
-        path: "/activity",
-        icon: Radio,
-        matches: ["/appointments"],
-      },
-      { label: "Pipeline", path: "/pipeline", icon: Kanban },
-    ],
+    label: "Sales",
+    items: [{ label: "Pipeline", path: "/pipeline", icon: Kanban }],
   },
   {
     label: "Admin",
@@ -134,7 +124,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "/sms": "SMS",
   "/outbound": "Outbound",
   "/insights": "Insights",
-  "/cockpit": "Supervisor Cockpit",
+  "/cockpit": "Live Ops",
   "/knowledge": "Knowledge",
   "/agents": "Agents",
   "/chat": "Chat",
@@ -147,6 +137,34 @@ export const PAGE_TITLES: Record<string, string> = {
   "/help": "Help",
   "/pipeline": "Pipeline",
   "/activity": "Activity",
+  "/contact": "Contact Profile",
+};
+
+/** g+key shortcuts — keep in sync with AppShell and Sidebar hints. */
+export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = {
+  D: "/ops",
+  T: "/triage",
+  I: "/insights",
+  A: "/agents",
+  R: "/chat",
+  N: "/training",
+  P: "/phone",
+  E: "/email",
+  M: "/sms",
+  S: "/admin",
+};
+
+export const NAV_SHORTCUT_HINTS: Record<string, string> = {
+  "/ops": "g d",
+  "/triage": "g t",
+  "/insights": "g i",
+  "/agents": "g a",
+  "/chat": "g r",
+  "/training": "g n",
+  "/phone": "g p",
+  "/email": "g e",
+  "/sms": "g m",
+  "/admin": "g s",
 };
 
 export const ROUTE_ACCENTS: Record<string, [string, string]> = {
@@ -179,4 +197,24 @@ export function getRouteAccent(pathname: string): [string, string] {
   if (ROUTE_ACCENTS[pathname]) return ROUTE_ACCENTS[pathname];
   const prefix = "/" + pathname.split("/")[1];
   return ROUTE_ACCENTS[prefix] ?? ["#4F1E7B", "#4F1E7B"];
+}
+
+/** Route accent with tab/query awareness for ambience strip + context bar. */
+export function getRouteAccentFromLocation(pathname: string, search = ""): [string, string] {
+  const params = new URLSearchParams(search);
+  if (pathname === "/ops") {
+    const tab = params.get("tab");
+    if (tab === "intel") return ["#FFC07D", "#4F1E7B"];
+    if (tab === "analytics") return ["#10B981", "#4F1E7B"];
+    return ROUTE_ACCENTS["/ops"];
+  }
+  if (pathname === "/phone") {
+    const tab = params.get("tab");
+    if (tab === "outbound") return ROUTE_ACCENTS["/outbound"];
+    if (tab === "appointments") return ROUTE_ACCENTS["/appointments"];
+    return ROUTE_ACCENTS["/phone"];
+  }
+  if (pathname === "/training") return ROUTE_ACCENTS["/training"];
+  if (pathname.startsWith("/contact/")) return ["#4F1E7B", "#10B981"];
+  return getRouteAccent(pathname);
 }

@@ -24,6 +24,8 @@ import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
 import WidgetBoundary from "./WidgetBoundary";
+import ClientRouteViewport from "./layout/ClientRouteViewport";
+import ClientToolbar from "./layout/ClientToolbar";
 
 interface HotLead {
   id: string;
@@ -173,29 +175,34 @@ export default function TriageInbox() {
     );
 
   return (
-    <PageShell
-      eyebrow={`Today's Inbox · ${totalAttention} items`}
-      title="Triage"
-      subtitle="Every signal that needs your attention, side-by-side. Hot leads, compliance flags, knowledge gaps, open tasks, escalations — one glance, no tabs."
-      actions={
-        <>
-          <CsvExportButton type="tasks" label="CSV" />
-          <button
-            onClick={fetchData}
-            disabled={loading}
-            className="h-9 px-3 rounded-full glass border border-white/10 text-eyebrow hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
-          >
-            {loading ? (
-              <Loader2 className="w-3 h-3 animate-spin" />
-            ) : (
-              <RefreshCw className="w-3 h-3" />
-            )}
-            Refresh
-          </button>
-        </>
-      }
-    >
-      {/* ────────────────────────────────────────────────────────────
+    <ClientRouteViewport>
+      <ClientToolbar
+        left={
+          <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted">
+            <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
+            {totalAttention} need attention
+          </span>
+        }
+        actions={
+          <>
+            <CsvExportButton type="tasks" label="CSV" />
+            <button
+              onClick={fetchData}
+              disabled={loading}
+              className="h-9 px-3 rounded-full glass border border-black/10 text-eyebrow hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
+            >
+              {loading ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <RefreshCw className="w-3 h-3" />
+              )}
+              Refresh
+            </button>
+          </>
+        }
+      />
+      <PageShell title="" eyebrow="" subtitle="">
+        {/* ────────────────────────────────────────────────────────────
           Dense triage grid — five buckets visible simultaneously.
           Replaces the tabbed layout (which buried 4 of 5 buckets and
           left an empty Panel below the active list when items were
@@ -210,89 +217,90 @@ export default function TriageInbox() {
           
           Each card scrolls internally → the page itself never scrolls.
           ──────────────────────────────────────────────────────────── */}
-      <div
-        className={cn(
-          "h-full min-h-0 overflow-y-auto lg:overflow-hidden",
-          "grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
-          "lg:[grid-template-rows:minmax(0,1.15fr)_minmax(0,1fr)]",
-          "auto-rows-fr",
-        )}
-        data-testid="triage-grid"
-      >
-        {/* Column 1, Row 1: Hot Leads */}
-        <div className="lg:col-span-1">
-          {bucketPanel(
-            "Hot Leads",
-            Flame,
-            counts.hot_leads ? `${counts.hot_leads} ready to close` : "Cold floor",
-            <WidgetBoundary label="Hot Leads">
-              <HotLeads items={data?.hot_leads || []} />
-            </WidgetBoundary>,
-            "#F59E0B",
+        <div
+          className={cn(
+            "h-full min-h-0 overflow-y-auto lg:overflow-hidden",
+            "grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
+            "lg:[grid-template-rows:minmax(0,1.15fr)_minmax(0,1fr)]",
+            "auto-rows-fr",
           )}
-        </div>
+          data-testid="triage-grid"
+        >
+          {/* Column 1, Row 1: Hot Leads */}
+          <div className="lg:col-span-1">
+            {bucketPanel(
+              "Hot Leads",
+              Flame,
+              counts.hot_leads ? `${counts.hot_leads} ready to close` : "Cold floor",
+              <WidgetBoundary label="Hot Leads">
+                <HotLeads items={data?.hot_leads || []} />
+              </WidgetBoundary>,
+              "#F59E0B",
+            )}
+          </div>
 
-        {/* Column 2, Row 1: Open Tasks */}
-        <div>
-          {bucketPanel(
-            "Open Tasks",
-            ListTodo,
-            counts.pending_tasks ? `${counts.pending_tasks} open` : "Queue clear",
-            <WidgetBoundary label="Open Tasks">
-              <OpenTasks
-                items={data?.pending_tasks || []}
-                onCompleted={removeTask}
-                onFetchFailed={fetchData}
-              />
-            </WidgetBoundary>,
-            "#4F1E7B",
-          )}
-        </div>
+          {/* Column 2, Row 1: Open Tasks */}
+          <div>
+            {bucketPanel(
+              "Open Tasks",
+              ListTodo,
+              counts.pending_tasks ? `${counts.pending_tasks} open` : "Queue clear",
+              <WidgetBoundary label="Open Tasks">
+                <OpenTasks
+                  items={data?.pending_tasks || []}
+                  onCompleted={removeTask}
+                  onFetchFailed={fetchData}
+                />
+              </WidgetBoundary>,
+              "#4F1E7B",
+            )}
+          </div>
 
-        {/* Column 3, Row 1 & 2: Escalations */}
-        <div className="lg:row-span-2">
-          {bucketPanel(
-            "Escalations",
-            AlertOctagon,
-            counts.escalations ? `${counts.escalations} pending` : "All clear",
-            <WidgetBoundary label="Escalations">
-              <Escalations items={data?.escalations || []} />
-            </WidgetBoundary>,
-            "#E8466A",
-          )}
-        </div>
+          {/* Column 3, Row 1 & 2: Escalations */}
+          <div className="lg:row-span-2">
+            {bucketPanel(
+              "Escalations",
+              AlertOctagon,
+              counts.escalations ? `${counts.escalations} pending` : "All clear",
+              <WidgetBoundary label="Escalations">
+                <Escalations items={data?.escalations || []} />
+              </WidgetBoundary>,
+              "#E8466A",
+            )}
+          </div>
 
-        {/* Column 1, Row 2: Compliance */}
-        <div>
-          {bucketPanel(
-            "Compliance",
-            ShieldAlert,
-            counts.compliance ? `${counts.compliance} flags` : "Clean",
-            <WidgetBoundary label="Compliance">
-              <ComplianceList items={data?.compliance || []} />
-            </WidgetBoundary>,
-            "#E8466A",
-          )}
-        </div>
+          {/* Column 1, Row 2: Compliance */}
+          <div>
+            {bucketPanel(
+              "Compliance",
+              ShieldAlert,
+              counts.compliance ? `${counts.compliance} flags` : "Clean",
+              <WidgetBoundary label="Compliance">
+                <ComplianceList items={data?.compliance || []} />
+              </WidgetBoundary>,
+              "#E8466A",
+            )}
+          </div>
 
-        {/* Column 2, Row 2: Knowledge Gaps */}
-        <div className="md:col-span-2 lg:col-span-1">
-          {bucketPanel(
-            "Knowledge Gaps",
-            BookOpen,
-            counts.knowledge_gaps ? `${counts.knowledge_gaps} to capture` : "Up to date",
-            <WidgetBoundary label="Knowledge Gaps">
-              <KnowledgeGaps
-                items={data?.knowledge_gaps || []}
-                onPromoted={fetchData}
-                onDiscard={removeGap}
-              />
-            </WidgetBoundary>,
-            "#10B981",
-          )}
+          {/* Column 2, Row 2: Knowledge Gaps */}
+          <div className="md:col-span-2 lg:col-span-1">
+            {bucketPanel(
+              "Knowledge Gaps",
+              BookOpen,
+              counts.knowledge_gaps ? `${counts.knowledge_gaps} to capture` : "Up to date",
+              <WidgetBoundary label="Knowledge Gaps">
+                <KnowledgeGaps
+                  items={data?.knowledge_gaps || []}
+                  onPromoted={fetchData}
+                  onDiscard={removeGap}
+                />
+              </WidgetBoundary>,
+              "#10B981",
+            )}
+          </div>
         </div>
-      </div>
-    </PageShell>
+      </PageShell>
+    </ClientRouteViewport>
   );
 }
 
@@ -385,7 +393,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
               }}
               label="Enrich"
             />
-            <div className="w-8 h-8 rounded-xl glass border border-white/8 flex items-center justify-center text-ink/70 transition-all group-hover:border-white/15 group-hover:text-brand">
+            <div className="w-8 h-8 rounded-xl glass border border-black/8 flex items-center justify-center text-ink/70 transition-all group-hover:border-brand/25 group-hover:text-brand">
               <ChevronRight className="w-3.5 h-3.5" />
             </div>
           </div>

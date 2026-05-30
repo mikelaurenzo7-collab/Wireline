@@ -63,7 +63,7 @@ export default class WidgetBoundary extends Component<Props, State> {
         <button
           type="button"
           onClick={this.reset}
-          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.28em] text-ink/70 hover:text-ink hover:border-white/30 transition-colors"
+          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full glass border border-black/10 text-[10px] uppercase tracking-[0.28em] text-ink/70 hover:text-ink hover:border-brand/25 transition-colors"
         >
           <RefreshCw className="w-3 h-3" /> Retry
         </button>

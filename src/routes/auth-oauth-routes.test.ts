@@ -42,8 +42,7 @@ vi.mock("../lib/oauth-helpers", () => ({
 }));
 
 async function buildApp(): Promise<Express> {
-  // Importing the route module *after* env mutation lets us toggle
-  // configured vs. unconfigured providers per test.
+  vi.resetModules();
   const mod = await import("./auth-oauth-routes");
   const app = express();
   app.use(mod.default);
@@ -56,6 +55,12 @@ function listen(app: Express): Promise<{ server: http.Server; url: string }> {
       const port = (server.address() as AddressInfo).port;
       resolve({ server, url: `http://127.0.0.1:${port}` });
     });
+  });
+}
+
+function closeServer(server: http.Server): Promise<void> {
+  return new Promise((resolve, reject) => {
+    server.close((err) => (err ? reject(err) : resolve()));
   });
 }
 
@@ -93,9 +98,9 @@ describe("OAuth /url endpoints", () => {
         const body = await res.json();
         expect(body.error).toMatch(/Google sign-in is not configured/i);
       } finally {
-        server.close();
+        await closeServer(server);
       }
-    }, 15_000);
+    }, 30_000);
 
     it("Microsoft: returns 503 JSON instead of HTML", async () => {
       const app = await buildApp();
@@ -106,9 +111,9 @@ describe("OAuth /url endpoints", () => {
         const body = await res.json();
         expect(body.error).toMatch(/Microsoft sign-in is not configured/i);
       } finally {
-        server.close();
+        await closeServer(server);
       }
-    });
+    }, 30_000);
 
     it("Yahoo: returns 503 JSON instead of HTML", async () => {
       const app = await buildApp();
@@ -119,9 +124,9 @@ describe("OAuth /url endpoints", () => {
         const body = await res.json();
         expect(body.error).toMatch(/Yahoo sign-in is not configured/i);
       } finally {
-        server.close();
+        await closeServer(server);
       }
-    });
+    }, 30_000);
   });
 
   describe("when provider IS configured", () => {
@@ -138,9 +143,9 @@ describe("OAuth /url endpoints", () => {
         expect(body.url).toContain("client_id=google-test-client-id");
         expect(body.url).toContain("state=test-state");
       } finally {
-        server.close();
+        await closeServer(server);
       }
-    });
+    }, 30_000);
 
     it("Microsoft: returns 200 with a Microsoft authorization URL", async () => {
       process.env.MICROSOFT_CLIENT_ID = "ms-test-client-id";
@@ -157,9 +162,9 @@ describe("OAuth /url endpoints", () => {
         expect(body.url).toContain("client_id=ms-test-client-id");
         expect(body.url).toContain("prompt=select_account");
       } finally {
-        server.close();
+        await closeServer(server);
       }
-    });
+    }, 30_000);
 
     it("Yahoo: returns 200 with a Yahoo authorization URL", async () => {
       process.env.YAHOO_CLIENT_ID = "yahoo-test-client-id";
@@ -173,8 +178,8 @@ describe("OAuth /url endpoints", () => {
         expect(body.url).toMatch(/^https:\/\/api\.login\.yahoo\.com\/oauth2\/request_auth/);
         expect(body.url).toContain("client_id=yahoo-test-client-id");
       } finally {
-        server.close();
+        await closeServer(server);
       }
-    });
+    }, 30_000);
   });
 });

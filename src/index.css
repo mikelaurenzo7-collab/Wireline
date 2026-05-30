@@ -678,6 +678,14 @@
   animation: skeleton-sweep 1.8s ease-in-out infinite;
 }
 
+.client-shimmer-card {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-brand) 4%, var(--color-paper)),
+    color-mix(in srgb, var(--color-paper) 96%, white)
+  );
+}
+
 /* Route-load progress sweep â€” used by the lazy-route fallback strip. The
    sweep hits 100% well before the typical chunk parse/eval finishes so
    the user sees motion immediately on navigate, even on fast networks. */

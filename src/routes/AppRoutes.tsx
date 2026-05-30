@@ -6,14 +6,14 @@ import PageTransition from "../components/layout/PageTransition";
 import RouteFallback from "../components/layout/RouteFallback";
 import NotFound from "../components/layout/NotFound";
 
+import { ActivityRedirect } from "./LegacyRedirects";
+
 const TriageInbox = lazy(() => import("../components/TriageInbox"));
 const ContactProfile = lazy(() => import("../components/ContactProfile"));
 const InsightsView = lazy(() => import("../components/InsightsView"));
-const AppointmentsView = lazy(() => import("../components/Appointments"));
 const FleetSettings = lazy(() => import("../components/FleetSettings"));
 const AdminSettings = lazy(() => import("../components/AdminSettings"));
 const Integrations = lazy(() => import("../components/Integrations"));
-const KnowledgeBaseManager = lazy(() => import("../components/KnowledgeBaseManager"));
 const DncManager = lazy(() => import("../components/DncManager"));
 const AuditLog = lazy(() => import("../components/AuditLog"));
 const LiveOps = lazy(() => import("../pages/CommandCenter"));
@@ -23,13 +23,11 @@ const PublicChangelog = lazy(() => import("../components/PublicChangelog"));
 const Security = lazy(() => import("../components/Security"));
 const Pipeline = lazy(() => import("../components/Pipeline"));
 const FounderDashboard = lazy(() => import("../components/FounderDashboard"));
-const SupervisorCockpit = lazy(() => import("../components/SupervisorCockpit"));
 const AgentChat = lazy(() => import("../pages/AgentChat"));
 const Training = lazy(() => import("../pages/Training"));
 const PhonePage = lazy(() => import("../pages/PhonePage"));
 const EmailPage = lazy(() => import("../pages/EmailPage"));
 const SmsPage = lazy(() => import("../pages/SmsPage"));
-const ActivityPage = lazy(() => import("../pages/ActivityPage"));
 
 export default function AppRoutes() {
   return (
@@ -49,9 +47,7 @@ export default function AppRoutes() {
               </PageTransition>
             }
           />
-          {/* /dashboard, /command and /live all redirect to /ops — the live call
-              grid lives on Live Ops (/ops) and supervisory tooling on /cockpit, so
-              a separate standalone monitor was redundant. */}
+          {/* /dashboard, /command and /live all redirect to /ops — unified live ops surface. */}
           <Route path="/dashboard" element={<Navigate to="/ops" replace />} />
           <Route path="/command" element={<Navigate to="/ops" replace />} />
           <Route path="/live" element={<Navigate to="/ops" replace />} />
@@ -130,58 +126,17 @@ export default function AppRoutes() {
           <Route path="/logs" element={<Navigate to="/phone" replace />} />
           <Route path="/inbox" element={<Navigate to="/email" replace />} />
           <Route path="/outbound" element={<Navigate to="/phone?tab=outbound" replace />} />
-          {/* /cockpit — Floor supervisor view (distinct from / Live Ops).
-              / is owner pulse + action feed; /cockpit is per-agent availability + listen/whisper. */}
-          <Route
-            path="/cockpit"
-            element={
-              <PageTransition>
-                <ErrorBoundary>
-                  <SupervisorCockpit />
-                </ErrorBoundary>
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/appointments"
-            element={
-              <PageTransition>
-                <ErrorBoundary>
-                  <AppointmentsView />
-                </ErrorBoundary>
-              </PageTransition>
-            }
-          />
-          {/* Training — elevated from chat tab to its own dedicated page. */}
+          <Route path="/cockpit" element={<Navigate to="/ops?tab=floor" replace />} />
+          <Route path="/appointments" element={<Navigate to="/phone?tab=appointments" replace />} />
+          <Route path="/activity" element={<ActivityRedirect />} />
+          <Route path="/knowledge" element={<Navigate to="/training?tab=database" replace />} />
+          <Route path="/train" element={<Navigate to="/training" replace />} />
           <Route
             path="/training"
             element={
               <PageTransition>
                 <ErrorBoundary>
                   <Training />
-                </ErrorBoundary>
-              </PageTransition>
-            }
-          />
-          {/* /train legacy bookmarks → new dedicated training page. */}
-          <Route path="/train" element={<Navigate to="/training" replace />} />
-          {/* Activity — cross-channel history hub */}
-          <Route
-            path="/activity"
-            element={
-              <PageTransition>
-                <ErrorBoundary>
-                  <ActivityPage />
-                </ErrorBoundary>
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/knowledge"
-            element={
-              <PageTransition>
-                <ErrorBoundary>
-                  <KnowledgeBaseManager />
                 </ErrorBoundary>
               </PageTransition>
             }

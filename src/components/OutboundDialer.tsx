@@ -25,7 +25,7 @@ import CreateCampaignModalExtracted from "./outbound/CreateCampaignModal";
 import DispatchTab from "./outbound/DispatchTab";
 import CampaignsTab from "./outbound/CampaignsTab";
 
-export default function OutboundDialer() {
+export default function OutboundDialer({ embedded = false }: { embedded?: boolean }) {
   const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
   const [confirmState, setConfirmState] = useState<ConfirmState>(CLOSED_CONFIRM);
   const [isLoading, setIsLoading] = useState(true);
@@ -486,12 +486,16 @@ export default function OutboundDialer() {
         onChange={handleFileUpload}
       />
       <div className="h-full flex flex-col min-h-0">
-        <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />
+        {!embedded && <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />}
         <div className="flex-1 min-h-0">
           <PageShell
-            title="Outbound"
-            eyebrow="Communications · Outbound"
-            subtitle="Run outbound calling campaigns for lead qualification and follow-up."
+            title={embedded ? "" : "Outbound"}
+            eyebrow={embedded ? undefined : "Communications · Outbound"}
+            subtitle={
+              embedded
+                ? undefined
+                : "Run outbound calling campaigns for lead qualification and follow-up."
+            }
             actions={<CsvExportButton type="leads" label="Export" />}
             tabs={[
               {

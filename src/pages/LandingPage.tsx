@@ -5,6 +5,13 @@ import { ArrowRight, Phone, ArrowUpRight, Plus } from "lucide-react";
 import PublicSiteHeader from "../components/marketing/PublicSiteHeader";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import { HeroDecorations } from "../components/marketing/HeroDecorations";
+import { SectionStickers } from "../components/marketing/SectionStickers";
+import {
+  AGENT_DIRECTORY_STICKERS,
+  FINAL_CTA_STICKERS,
+  PROOF_SECTION_STICKERS,
+  FAQ_SECTION_STICKERS,
+} from "../components/marketing/landing-sticker-slots";
 import { PageMeta } from "../lib/page-meta";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import { WIRELINE_CONTACT_AGENTS } from "../data/contact-agents";
@@ -250,8 +257,12 @@ export default function LandingPage() {
         </section>
 
         {/* ─── Agent Directory — Bento Grid ───────────────────────── */}
-        <section data-testid="agent-directory" className="px-6 lg:px-12 pt-4 pb-20 lg:pb-28">
-          <div className="max-w-7xl mx-auto">
+        <section
+          data-testid="agent-directory"
+          className="relative overflow-hidden px-6 lg:px-12 pt-4 pb-20 lg:pb-28"
+        >
+          <SectionStickers slots={AGENT_DIRECTORY_STICKERS} testId="agent-directory-stickers" />
+          <div className="relative z-10 max-w-7xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -298,8 +309,12 @@ export default function LandingPage() {
         </section>
 
         {/* ─── Final CTA ──────────────────────────────────────────── */}
-        <section data-testid="final-cta" className="px-6 lg:px-12 pb-16 lg:pb-20">
-          <div className="max-w-7xl mx-auto text-center">
+        <section
+          data-testid="final-cta"
+          className="relative overflow-hidden px-6 lg:px-12 pb-16 lg:pb-20"
+        >
+          <SectionStickers slots={FINAL_CTA_STICKERS} testId="final-cta-stickers" />
+          <div className="relative z-10 max-w-7xl mx-auto text-center">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -331,8 +346,12 @@ export default function LandingPage() {
         </section>
 
         {/* ─── Proof Tiles ────────────────────────────────────────── */}
-        <section data-testid="proof-section" className="px-6 lg:px-12 py-20 lg:py-28">
-          <div className="max-w-7xl mx-auto">
+        <section
+          data-testid="proof-section"
+          className="relative overflow-hidden px-6 lg:px-12 py-20 lg:py-28"
+        >
+          <SectionStickers slots={PROOF_SECTION_STICKERS} testId="proof-section-stickers" />
+          <div className="relative z-10 max-w-7xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08]">
               {STATS.map((stat, i) => (
                 <motion.div
@@ -358,9 +377,10 @@ export default function LandingPage() {
         {/* ─── FAQ — top-of-funnel objection handling ──────────────── */}
         <section
           data-testid="faq-section"
-          className="px-6 lg:px-12 py-20 lg:py-28 border-t border-ink/[0.08]"
+          className="relative overflow-hidden px-6 lg:px-12 py-20 lg:py-28 border-t border-ink/[0.08]"
         >
-          <div className="max-w-3xl mx-auto">
+          <SectionStickers slots={FAQ_SECTION_STICKERS} testId="faq-section-stickers" />
+          <div className="relative z-10 max-w-3xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}

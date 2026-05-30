@@ -183,7 +183,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.96, opacity: 0, y: 16 }}
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-lg rounded-2xl glass-strong border border-white/15 shadow-2xl overflow-hidden"
+        className="relative w-full max-w-lg rounded-2xl glass-strong border border-black/15 shadow-2xl overflow-hidden"
       >
         <header className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
           <div>
@@ -195,7 +195,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
           <button
             onClick={onClose}
             aria-label="Close"
-            className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
+            className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg glass border border-black/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -309,7 +309,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
         <footer className="px-5 py-4 border-t border-white/10 flex items-center justify-end gap-2">
           <button
             onClick={onClose}
-            className="h-9 px-4 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
+            className="h-9 px-4 rounded-full glass border border-black/10 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
           >
             Cancel
           </button>
@@ -405,7 +405,7 @@ function CalendarGrid({
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-white/8">
+      <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-black/8">
         <button
           onClick={() =>
             setMonth((m) => {
@@ -414,7 +414,7 @@ function CalendarGrid({
             })
           }
           aria-label="Previous month"
-          className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
+          className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg glass border border-black/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
         >
           <ChevronLeft className="w-4 h-4" aria-hidden="true" />
         </button>
@@ -429,13 +429,13 @@ function CalendarGrid({
             })
           }
           aria-label="Next month"
-          className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
+          className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg glass border border-black/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
         >
           <ChevronRight className="w-4 h-4" aria-hidden="true" />
         </button>
       </div>
 
-      <div className="shrink-0 grid grid-cols-7 border-b border-white/8">
+      <div className="shrink-0 grid grid-cols-7 border-b border-black/8">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div
             key={d}
@@ -512,7 +512,7 @@ function CalendarGrid({
 type ConfirmState = { open: boolean; onConfirm: () => void };
 const CLOSED_CONFIRM: ConfirmState = { open: false, onConfirm: () => {} };
 
-export default function AppointmentsView() {
+export default function AppointmentsView({ embedded = false }: { embedded?: boolean }) {
   const { error: toastError } = useToast();
   const [confirmState, setConfirmState] = useState<ConfirmState & { id?: string }>(CLOSED_CONFIRM);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -599,7 +599,7 @@ export default function AppointmentsView() {
 
   const actions = (
     <div className="flex items-center gap-2">
-      <div className="flex p-1 rounded-full glass border border-white/10">
+      <div className="flex p-1 rounded-full glass border border-black/10">
         <button
           aria-label="List view"
           onClick={() => setViewMode("list")}
@@ -636,12 +636,12 @@ export default function AppointmentsView() {
   return (
     <>
       <div className="h-full flex flex-col min-h-0">
-        <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />
+        {!embedded && <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />}
         <div className="flex-1 min-h-0">
           <PageShell
-            title="Appointments"
-            eyebrow="Operations · Schedule"
-            subtitle="Appointments scheduled and managed by your agents."
+            title={embedded ? "" : "Appointments"}
+            eyebrow={embedded ? undefined : "Operations · Schedule"}
+            subtitle={embedded ? undefined : "Appointments scheduled and managed by your agents."}
             actions={actions}
           >
             {isLoading ? (
@@ -677,7 +677,7 @@ export default function AppointmentsView() {
                         animate={{ opacity: 1 }}
                         className="h-full min-h-[200px] flex flex-col items-center justify-center px-6 py-12 text-center gap-4"
                       >
-                        <div className="w-14 h-14 rounded-2xl glass border border-white/10 flex items-center justify-center text-muted">
+                        <div className="w-14 h-14 rounded-2xl glass border border-black/10 flex items-center justify-center text-muted">
                           <CalendarIcon className="w-6 h-6" />
                         </div>
                         <div className="space-y-1.5">
@@ -820,7 +820,7 @@ function AppointmentRow({
       className="px-4 py-3.5 hover:bg-white/3 transition-colors group"
     >
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-xl glass border border-white/10 flex items-center justify-center text-brand shrink-0 mt-0.5">
+        <div className="w-9 h-9 rounded-xl glass border border-black/10 flex items-center justify-center text-brand shrink-0 mt-0.5">
           <User className="w-4 h-4" />
         </div>
 
@@ -873,7 +873,7 @@ function AppointmentRow({
             <button
               onClick={() => setShowStatusMenu((v) => !v)}
               title="Change status"
-              className="w-7 h-7 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-brand hover:border-brand/30 transition-all text-[9px]"
+              className="w-7 h-7 rounded-lg glass border border-black/10 flex items-center justify-center text-muted hover:text-brand hover:border-brand/30 transition-all text-[9px]"
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
             </button>
@@ -890,7 +890,7 @@ function AppointmentRow({
                   // menu on the bottom row gets cut off mid-list. Open
                   // up and the menu always renders inside the scroll
                   // viewport regardless of row position.
-                  className="absolute right-0 bottom-full mb-1 z-20 w-36 rounded-xl glass-strong border border-white/15 shadow-2xl overflow-hidden"
+                  className="absolute right-0 bottom-full mb-1 z-20 w-36 rounded-xl glass-strong border border-black/15 shadow-2xl overflow-hidden"
                 >
                   {Object.keys(STATUS_META).map((s) => (
                     <button
@@ -913,7 +913,7 @@ function AppointmentRow({
             onClick={onEdit}
             title="Edit"
             aria-label="Edit appointment"
-            className="w-7 h-7 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink hover:border-white/25 transition-all"
+            className="w-7 h-7 rounded-lg glass border border-black/10 flex items-center justify-center text-muted hover:text-ink hover:border-white/25 transition-all"
           >
             <Pencil className="w-3.5 h-3.5" />
           </button>
@@ -922,7 +922,7 @@ function AppointmentRow({
             disabled={deleting}
             title="Remove"
             aria-label="Remove appointment"
-            className="w-7 h-7 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all disabled:opacity-50"
+            className="w-7 h-7 rounded-lg glass border border-black/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all disabled:opacity-50"
           >
             {deleting ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />

@@ -76,8 +76,13 @@ export const LEGACY_REDIRECTS = [
   { from: "/dashboard", to: "/ops" },
   { from: "/command", to: "/ops" },
   { from: "/live", to: "/ops" },
+  { from: "/cockpit", to: "/ops" },
   { from: "/logs", to: "/phone" },
   { from: "/inbox", to: "/email" },
+  { from: "/outbound", to: "/phone" },
+  { from: "/appointments", to: "/phone" },
+  { from: "/activity", to: "/phone" },
+  { from: "/knowledge", to: "/training" },
   { from: "/train", to: "/training" },
 ] as const;
 

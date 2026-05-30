@@ -1,39 +1,21 @@
 /**
- * EmailPage — Dedicated sidebar page for email communication.
- *
- * Wraps the existing EmailInbox component with page-level chrome:
- * header, description, and consistent page structure. The email surface
- * gets its own dedicated navigation slot so operators can jump to
- * email threads without navigating through Activity.
- *
- * Mobile-first: full-bleed inbox that maximizes vertical space.
+
+ * EmailPage — dedicated email inbox route.
+
  */
-import React from "react";
-import { Mail } from "lucide-react";
+
 import EmailInbox from "../components/EmailInbox";
+
+import ClientRouteViewport from "../components/layout/ClientRouteViewport";
+
+import HubTabs, { CHANNELS_HUB } from "../components/HubTabs";
 
 export default function EmailPage() {
   return (
-    <div className="flex flex-col h-[calc(var(--app-vvh,100dvh)-7rem)] sm:h-[calc(var(--app-vvh,100dvh)-9rem)] lg:h-[calc(100dvh-8.5rem)] min-h-[400px]">
-      {/* ─── Header ────────────────────────────────────────────────── */}
-      <header className="shrink-0 mb-3 sm:mb-4 lg:hidden">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25 flex items-center justify-center shrink-0">
-            <Mail className="w-4 h-4 sm:w-5 sm:h-5" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h1 className="text-sm sm:text-lg font-semibold text-foreground">Email</h1>
-            <p className="text-[10px] sm:text-xs text-muted">
-              Manage threads, drafts & automated responses
-            </p>
-          </div>
-        </div>
-      </header>
+    <ClientRouteViewport>
+      <HubTabs tabs={CHANNELS_HUB} label="Channels" className="mb-2 md:mb-3" />
 
-      {/* ─── Email Inbox ───────────────────────────────────────────── */}
-      <div className="flex-1 min-h-0 overflow-y-auto rounded-xl">
-        <EmailInbox />
-      </div>
-    </div>
+      <EmailInbox embedded />
+    </ClientRouteViewport>
   );
 }

@@ -17,6 +17,7 @@ import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { useAuth } from "../contexts/AuthContext";
 import AgentWorkspace from "./AgentWorkspace";
+import ClientRouteViewport from "./layout/ClientRouteViewport";
 
 /**
  * Founder's Dashboard — Mike's command surface for his staff of 6
@@ -114,7 +115,7 @@ const STAFF: StaffMember[] = [
 
 const STAT_CARD_CLASSES: Record<string, string> = {
   brand: "border-brand/20 hover:border-brand/50 hover:shadow-[0_0_15px_rgba(79,30,123,0.12)]",
-  ink: "border-white/10 hover:border-white/20 hover:shadow-[0_0_15px_rgba(255,255,255,0.04)]",
+  ink: "border-black/10 hover:border-black/20 hover:shadow-[0_0_15px_rgba(79,30,123,0.06)]",
   emerald:
     "border-emerald-500/20 hover:border-emerald-500/50 hover:shadow-[0_0_15px_rgba(16,185,129,0.12)]",
   rose: "border-rose-500/20 hover:border-rose-500/50 hover:shadow-[0_0_15px_rgba(244,63,94,0.12)]",
@@ -230,173 +231,177 @@ export default function FounderDashboard() {
 
   if (selected) {
     return (
-      <div className="flex flex-col h-full">
-        <div className="shrink-0 px-4 md:px-6 py-3 border-b border-white/8 flex items-center gap-3">
-          <button
-            onClick={() => setSelected(null)}
-            className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-ink transition-colors"
-          >
-            ← All staff
-          </button>
-          <span className="text-ink font-medium">
-            {selected.name} · {selected.title}
-          </span>
+      <ClientRouteViewport>
+        <div className="flex flex-col h-full">
+          <div className="shrink-0 px-4 md:px-6 py-3 border-b border-black/8 flex items-center gap-3 bg-paper/50 backdrop-blur-sm">
+            <button
+              onClick={() => setSelected(null)}
+              className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-ink transition-colors"
+            >
+              ← All staff
+            </button>
+            <span className="text-ink font-medium">
+              {selected.name} · {selected.title}
+            </span>
+          </div>
+          <div className="flex-1 min-h-0">
+            <AgentWorkspace agentId={selected.agentId} agentName={selected.name} />
+          </div>
         </div>
-        <div className="flex-1 min-h-0">
-          <AgentWorkspace agentId={selected.agentId} agentName={selected.name} />
-        </div>
-      </div>
+      </ClientRouteViewport>
     );
   }
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="max-w-[1100px] mx-auto w-full px-4 md:px-6 py-6">
-        {/* Header */}
-        <div className="mb-6">
-          <div className="text-[10px] uppercase tracking-[0.45em] text-brand/80 mb-1">
-            Founder · Command
-          </div>
-          <h1 className="font-display italic lowercase text-3xl md:text-4xl text-ink leading-none">
-            <span className="text-aurora">your wireline staff</span>
-          </h1>
-          <p className="text-[13px] text-muted/80 mt-2 max-w-xl leading-relaxed">
-            Six AI agents run Wireline's own phone lines. Chat with any of them — they remember
-            every conversation — or send the whole team a directive at once.
-          </p>
-        </div>
-
-        {/* Platform stats */}
-        {stats && (
+    <ClientRouteViewport scroll className="overflow-y-auto">
+      <div className="h-full overflow-y-auto">
+        <div className="max-w-[1100px] mx-auto w-full px-4 md:px-6 py-6">
+          {/* Header */}
           <div className="mb-6">
-            <div className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mb-2">
-              Platform · live
+            <div className="text-[10px] uppercase tracking-[0.45em] text-brand/80 mb-1">
+              Founder · Command
             </div>
-            <div className="flex flex-wrap gap-2.5">
-              <StatTile label="Paying" value={stats.users.paying} tone="brand" />
-              <StatTile label="Trialing" value={stats.users.trialing} tone="brand" />
-              <StatTile label="Total users" value={stats.users.total} tone="ink" />
-              <StatTile label="New (7d)" value={stats.users.new_last_7d} tone="emerald" />
-              <StatTile label="Calls today" value={stats.calls.today} tone="ink" />
-              <StatTile
-                label="Errors (24h)"
-                value={stats.health.errors_24h}
-                tone={stats.health.errors_24h > 0 ? "rose" : "emerald"}
+            <h1 className="font-display italic lowercase text-3xl md:text-4xl text-ink leading-none">
+              <span className="text-aurora">your wireline staff</span>
+            </h1>
+            <p className="text-[13px] text-muted/80 mt-2 max-w-xl leading-relaxed">
+              Six AI agents run Wireline's own phone lines. Chat with any of them — they remember
+              every conversation — or send the whole team a directive at once.
+            </p>
+          </div>
+
+          {/* Platform stats */}
+          {stats && (
+            <div className="mb-6">
+              <div className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mb-2">
+                Platform · live
+              </div>
+              <div className="flex flex-wrap gap-2.5">
+                <StatTile label="Paying" value={stats.users.paying} tone="brand" />
+                <StatTile label="Trialing" value={stats.users.trialing} tone="brand" />
+                <StatTile label="Total users" value={stats.users.total} tone="ink" />
+                <StatTile label="New (7d)" value={stats.users.new_last_7d} tone="emerald" />
+                <StatTile label="Calls today" value={stats.calls.today} tone="ink" />
+                <StatTile
+                  label="Errors (24h)"
+                  value={stats.health.errors_24h}
+                  tone={stats.health.errors_24h > 0 ? "rose" : "emerald"}
+                />
+                <StatTile
+                  label="Warnings (24h)"
+                  value={stats.health.warnings_24h}
+                  tone={stats.health.warnings_24h > 0 ? "amber" : "emerald"}
+                />
+              </div>
+              <div className="mt-2 text-[10px] text-muted/70">
+                {stats.calls.total.toLocaleString()} calls all-time ·{" "}
+                {stats.calls.last_7d.toLocaleString()} in the last 7 days ·{" "}
+                {stats.agents.total.toLocaleString()} agents across all tenants
+              </div>
+            </div>
+          )}
+
+          {/* Provisioning banner */}
+          {provisionedIds !== null && !allProvisioned && (
+            <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/8 p-3 text-[12px] text-ink/80">
+              Some staff agents aren't provisioned yet. Run
+              <code className="font-mono mx-1 text-[11px] bg-black/10 px-1.5 py-0.5 rounded">
+                POST /api/admin/provision-wireline-agents
+              </code>
+              (with your X-Migration-Token) to create all 6.
+            </div>
+          )}
+
+          {/* Team broadcast */}
+          <div className="mb-6 rounded-2xl glass border border-black/10 p-4 shadow-[0_12px_40px_-28px_rgba(79,30,123,0.35)]">
+            <div className="flex items-center gap-2 mb-2.5">
+              <Users2 className="w-4 h-4 text-brand" />
+              <span className="text-[11px] uppercase tracking-[0.25em] text-ink font-medium">
+                Team meeting — broadcast a directive
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={broadcast}
+                onChange={(e) => setBroadcast(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendBroadcast()}
+                placeholder="e.g. From today, always confirm the caller's email by spelling it back."
+                className="flex-1 bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 text-sm text-ink outline-none focus:border-brand/40 transition-colors placeholder:text-muted/70"
               />
-              <StatTile
-                label="Warnings (24h)"
-                value={stats.health.warnings_24h}
-                tone={stats.health.warnings_24h > 0 ? "amber" : "emerald"}
-              />
-            </div>
-            <div className="mt-2 text-[10px] text-muted/70">
-              {stats.calls.total.toLocaleString()} calls all-time ·{" "}
-              {stats.calls.last_7d.toLocaleString()} in the last 7 days ·{" "}
-              {stats.agents.total.toLocaleString()} agents across all tenants
-            </div>
-          </div>
-        )}
-
-        {/* Provisioning banner */}
-        {provisionedIds !== null && !allProvisioned && (
-          <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/8 p-3 text-[12px] text-ink/80">
-            Some staff agents aren't provisioned yet. Run
-            <code className="font-mono mx-1 text-[11px] bg-black/10 px-1.5 py-0.5 rounded">
-              POST /api/admin/provision-wireline-agents
-            </code>
-            (with your X-Migration-Token) to create all 6.
-          </div>
-        )}
-
-        {/* Team broadcast */}
-        <div className="mb-6 rounded-2xl glass border border-white/10 p-4">
-          <div className="flex items-center gap-2 mb-2.5">
-            <Users2 className="w-4 h-4 text-brand" />
-            <span className="text-[11px] uppercase tracking-[0.25em] text-ink font-medium">
-              Team meeting — broadcast a directive
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={broadcast}
-              onChange={(e) => setBroadcast(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendBroadcast()}
-              placeholder="e.g. From today, always confirm the caller's email by spelling it back."
-              className="flex-1 bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 text-sm text-ink outline-none focus:border-brand/40 transition-colors placeholder:text-muted/70"
-            />
-            <button
-              onClick={sendBroadcast}
-              disabled={!broadcast.trim() || broadcasting}
-              className="px-4 py-2.5 rounded-lg bg-brand text-on-brand text-[11px] uppercase tracking-[0.2em] font-medium hover:opacity-90 disabled:opacity-40 transition-all flex items-center gap-2 shrink-0"
-            >
-              {broadcasting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-              Send to all 6
-            </button>
-          </div>
-          <p className="text-[10px] text-muted/70 mt-2">
-            Lands in every staff member's chat memory — they'll factor it into future calls.
-          </p>
-        </div>
-
-        {/* Staff roster */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {STAFF.map((s) => {
-            const exists = provisionedIds === null || provisionedIds.has(s.agentId);
-            return (
               <button
-                key={s.role}
-                onClick={() => exists && setSelected(s)}
-                disabled={!exists}
-                className={cn(
-                  "disabled:opacity-50 disabled:cursor-not-allowed",
-                  "text-left rounded-2xl border p-4 transition-all bg-gradient-to-br",
-                  s.accent,
-                  exists
-                    ? "border-black/8 hover:border-brand/30 hover:shadow-md cursor-pointer"
-                    : "border-black/8 opacity-50 cursor-not-allowed",
-                )}
+                onClick={sendBroadcast}
+                disabled={!broadcast.trim() || broadcasting}
+                className="px-4 py-2.5 rounded-lg bg-brand text-on-brand text-[11px] uppercase tracking-[0.2em] font-medium hover:opacity-90 disabled:opacity-40 transition-all flex items-center gap-2 shrink-0"
               >
-                <div className="flex items-center gap-2.5 mb-2">
-                  <div className="w-9 h-9 rounded-xl bg-paper flex items-center justify-center text-brand shrink-0">
-                    <s.icon className="w-4.5 h-4.5" />
-                  </div>
-                  <div>
-                    <div className="text-[14px] font-medium text-ink leading-tight">{s.name}</div>
-                    <div className="text-[10px] uppercase tracking-[0.2em] text-muted/70">
-                      {s.title}
+                {broadcasting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                Send to all 6
+              </button>
+            </div>
+            <p className="text-[10px] text-muted/70 mt-2">
+              Lands in every staff member's chat memory — they'll factor it into future calls.
+            </p>
+          </div>
+
+          {/* Staff roster */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {STAFF.map((s) => {
+              const exists = provisionedIds === null || provisionedIds.has(s.agentId);
+              return (
+                <button
+                  key={s.role}
+                  onClick={() => exists && setSelected(s)}
+                  disabled={!exists}
+                  className={cn(
+                    "disabled:opacity-50 disabled:cursor-not-allowed",
+                    "text-left rounded-2xl border p-4 transition-all bg-gradient-to-br",
+                    s.accent,
+                    exists
+                      ? "border-black/8 hover:border-brand/30 hover:shadow-md cursor-pointer"
+                      : "border-black/8 opacity-50 cursor-not-allowed",
+                  )}
+                >
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <div className="w-9 h-9 rounded-xl bg-paper flex items-center justify-center text-brand shrink-0">
+                      <s.icon className="w-4.5 h-4.5" />
+                    </div>
+                    <div>
+                      <div className="text-[14px] font-medium text-ink leading-tight">{s.name}</div>
+                      <div className="text-[10px] uppercase tracking-[0.2em] text-muted/70">
+                        {s.title}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <p className="text-[11px] text-ink/65 leading-relaxed mb-3">{s.blurb}</p>
-                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-brand">
-                  <MessageSquare className="w-3 h-3" />
-                  {exists ? "Open chat" : "Not provisioned"}
-                  {exists && <ArrowUpRight className="w-3 h-3" />}
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                  <p className="text-[11px] text-ink/65 leading-relaxed mb-3">{s.blurb}</p>
+                  <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-brand">
+                    <MessageSquare className="w-3 h-3" />
+                    {exists ? "Open chat" : "Not provisioned"}
+                    {exists && <ArrowUpRight className="w-3 h-3" />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
 
-        {/* Quick links */}
-        <div className="mt-6 flex flex-wrap gap-2">
-          {[
-            { label: "Call logs + analytics", href: "/logs", icon: Phone },
-            { label: "Supervisor cockpit", href: "/cockpit", icon: Headphones },
-            { label: "Agent chat + training", href: "/chat", icon: Sparkles },
-          ].map((l) => (
-            <a
-              key={l.href}
-              href={l.href}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg glass border border-white/10 text-[11px] text-ink hover:border-brand/30 transition-colors"
-            >
-              <l.icon className="w-3.5 h-3.5 text-brand" />
-              {l.label}
-            </a>
-          ))}
+          {/* Quick links */}
+          <div className="mt-6 flex flex-wrap gap-2">
+            {[
+              { label: "Call logs + analytics", href: "/phone", icon: Phone },
+              { label: "Live Ops floor", href: "/ops?tab=floor", icon: Headphones },
+              { label: "Agent chat + training", href: "/chat", icon: Sparkles },
+            ].map((l) => (
+              <a
+                key={l.href}
+                href={l.href}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl glass border border-black/10 text-[11px] text-ink hover:border-brand/30 transition-colors"
+              >
+                <l.icon className="w-3.5 h-3.5 text-brand" />
+                {l.label}
+              </a>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </ClientRouteViewport>
   );
 }

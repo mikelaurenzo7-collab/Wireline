@@ -1,94 +1,85 @@
 /**
- * PhonePage — Dedicated sidebar page for voice/phone communication.
- *
- * Unifies call logs and outbound dialer into a single page with tab
- * navigation. Operators can view call history, launch outbound campaigns,
- * and monitor active calls from one surface.
- *
- * Mobile-first: tabs scroll horizontally, content fills available height.
+
+ * PhonePage — voice channel: call history, outbound dialer, and appointments.
+
  */
-import React from "react";
+
 import { useSearchParams } from "react-router-dom";
-import { Phone, PhoneOutgoing, History } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+
+import { PhoneOutgoing, History, Calendar } from "lucide-react";
+
+import { AnimatePresence, motion } from "motion/react";
+
 import CallLogs from "../components/CallLogs";
+
 import OutboundDialer from "../components/OutboundDialer";
-import { cn } from "../lib/utils";
 
-type PhoneTab = "logs" | "outbound";
+import Appointments from "../components/Appointments";
 
-const TABS: { id: PhoneTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: "logs", label: "Call History", icon: History },
-  { id: "outbound", label: "Outbound", icon: PhoneOutgoing },
+import ClientRouteViewport from "../components/layout/ClientRouteViewport";
+
+import ClientSubTabs from "../components/layout/ClientSubTabs";
+
+import HubTabs, { CHANNELS_HUB } from "../components/HubTabs";
+
+type PhoneTab = "logs" | "outbound" | "appointments";
+
+const TABS = [
+  { id: "logs" as const, label: "Call History", icon: History },
+
+  { id: "outbound" as const, label: "Outbound", icon: PhoneOutgoing },
+
+  { id: "appointments" as const, label: "Appointments", icon: Calendar },
 ];
 
 export default function PhonePage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = (searchParams.get("tab") as PhoneTab) || "logs";
+
+  const tabParam = searchParams.get("tab");
+
+  const activeTab: PhoneTab =
+    tabParam === "outbound" || tabParam === "appointments" || tabParam === "logs"
+      ? tabParam
+      : "logs";
 
   const setTab = (tab: PhoneTab) => {
     setSearchParams((prev) => {
-      prev.set("tab", tab);
+      if (tab === "logs") prev.delete("tab");
+      else prev.set("tab", tab);
+
       return prev;
     });
   };
 
   return (
-    <div className="flex flex-col h-[calc(var(--app-vvh,100dvh)-7rem)] sm:h-[calc(var(--app-vvh,100dvh)-9rem)] lg:h-[calc(100dvh-8.5rem)] min-h-[400px]">
-      {/* ─── Header + Tab Navigation ───────────────────────────────── */}
-      <header className="shrink-0 mb-3 sm:mb-4">
-        {/* Page identity — hidden on lg+ where DesktopContextBar shows it */}
-        <div className="flex items-center gap-3 mb-3 lg:hidden">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25 flex items-center justify-center shrink-0">
-            <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h1 className="text-sm sm:text-lg font-semibold text-foreground">Phone</h1>
-            <p className="text-[10px] sm:text-xs text-muted">
-              Call history, outbound campaigns & live monitoring
-            </p>
-          </div>
-        </div>
-        {/* Tab pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
-          {TABS.map((tab) => {
-            const active = activeTab === tab.id;
-            const TabIcon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setTab(tab.id)}
-                className={cn(
-                  "shrink-0 flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-[13px] font-medium transition-all whitespace-nowrap min-h-[36px] sm:min-h-0",
-                  active
-                    ? "bg-brand/15 border-brand/40 text-brand"
-                    : "glass border-black/10 text-muted hover:border-brand/25 hover:text-ink",
-                )}
-              >
-                <TabIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-      </header>
+    <ClientRouteViewport>
+      <HubTabs tabs={CHANNELS_HUB} label="Channels" className="mb-2 md:mb-3" />
 
-      {/* ─── Content ───────────────────────────────────────────────── */}
-      <div className="flex-1 min-h-0 overflow-y-auto rounded-xl">
+      <ClientSubTabs
+        tabs={TABS}
+        activeId={activeTab}
+        onChange={(id) => setTab(id as PhoneTab)}
+        aria-label="Phone sections"
+      />
+
+      <div className="flex-1 min-h-0 overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
-            initial={{ opacity: 0, y: 6 }}
+            initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.18 }}
-            className="h-full"
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.16 }}
+            className="h-full min-h-0"
           >
-            {activeTab === "logs" && <CallLogs />}
-            {activeTab === "outbound" && <OutboundDialer />}
+            {activeTab === "logs" && <CallLogs embedded />}
+
+            {activeTab === "outbound" && <OutboundDialer embedded />}
+
+            {activeTab === "appointments" && <Appointments embedded />}
           </motion.div>
         </AnimatePresence>
       </div>
-    </div>
+    </ClientRouteViewport>
   );
 }

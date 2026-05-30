@@ -25,6 +25,7 @@ import CsvExportButton from "./CsvExportButton";
 import GoalsView from "./GoalsView";
 import PageShell from "./PageShell";
 import WidgetBoundary from "./WidgetBoundary";
+import ClientRouteViewport from "./layout/ClientRouteViewport";
 
 // Domain sub-views — one file per tab.
 import FunnelView from "./insights/FunnelView";
@@ -49,89 +50,91 @@ export default function InsightsView() {
   const DAY_OPTIONS = [7, 14, 30, 60, 90];
 
   return (
-    <PageShell
-      eyebrow="Analytics · Business Intelligence"
-      title="Insights"
-      subtitle="Funnel analysis, topic clusters, heatmaps, leaderboards, and failure modes."
-      actions={
-        <>
-          <div className="flex items-center gap-px p-1 rounded-full glass border border-black/8">
-            {DAY_OPTIONS.map((d) => (
-              <button
-                key={d}
-                onClick={() => setDays(d)}
-                data-testid={`insights-days-${d}`}
-                className={cn(
-                  "app-segment-btn h-9 sm:h-7 px-3 rounded-full text-xs sm:text-[11px] font-medium tracking-wide transition-all duration-200 active:scale-95",
-                  days === d
-                    ? "bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25"
-                    : "text-muted hover:text-ink",
-                )}
-              >
-                {d}d
-              </button>
-            ))}
-          </div>
-          <CsvExportButton type="calls" label="CSV" />
-        </>
-      }
-      tabs={[
-        {
-          id: "funnel",
-          label: "Funnel",
-          icon: TrendingUp,
-          content: wrap("Funnel", <FunnelView days={days} />),
-        },
-        {
-          id: "goals",
-          label: "Goals",
-          icon: Target,
-          content: wrap("Goals", <GoalsView />),
-        },
-        {
-          id: "attribution",
-          label: "Attribution",
-          icon: Megaphone,
-          content: wrap("Attribution", <AttributionView days={days} />),
-        },
-        { id: "topics", label: "Topics", icon: Layers, content: wrap("Topics", <TopicsView />) },
-        {
-          id: "heatmap",
-          label: "Heatmap",
-          icon: Calendar,
-          content: wrap("Heatmap", <HeatmapView days={days} />),
-        },
-        {
-          id: "leaderboard",
-          label: "Leaderboard",
-          icon: Trophy,
-          content: wrap("Leaderboard", <LeaderboardView days={days} />),
-        },
-        {
-          id: "failures",
-          label: "Failures",
-          icon: AlertOctagon,
-          content: wrap("Failures", <FailureModesView />),
-        },
-        {
-          id: "latency",
-          label: "Latency",
-          icon: Gauge,
-          content: wrap("Latency", <VoiceLatencyView days={days} />),
-        },
-        {
-          id: "spend",
-          label: "AI Spend",
-          icon: Receipt,
-          content: wrap("AI Spend", <AISpendView days={days} />),
-        },
-        {
-          id: "quality",
-          label: "Quality",
-          icon: Star,
-          content: wrap("Quality", <QualityView days={days} />),
-        },
-      ]}
-    />
+    <ClientRouteViewport>
+      <PageShell
+        title=""
+        eyebrow=""
+        subtitle=""
+        actions={
+          <>
+            <div className="flex items-center gap-px p-1 rounded-full glass border border-black/8">
+              {DAY_OPTIONS.map((d) => (
+                <button
+                  key={d}
+                  onClick={() => setDays(d)}
+                  data-testid={`insights-days-${d}`}
+                  className={cn(
+                    "app-segment-btn h-9 sm:h-7 px-3 rounded-full text-xs sm:text-[11px] font-medium tracking-wide transition-all duration-200 active:scale-95",
+                    days === d
+                      ? "bg-brand text-on-brand shadow-sm shadow-brand/25"
+                      : "text-muted hover:text-ink",
+                  )}
+                >
+                  {d}d
+                </button>
+              ))}
+            </div>
+            <CsvExportButton type="calls" label="CSV" />
+          </>
+        }
+        tabs={[
+          {
+            id: "funnel",
+            label: "Funnel",
+            icon: TrendingUp,
+            content: wrap("Funnel", <FunnelView days={days} />),
+          },
+          {
+            id: "goals",
+            label: "Goals",
+            icon: Target,
+            content: wrap("Goals", <GoalsView />),
+          },
+          {
+            id: "attribution",
+            label: "Attribution",
+            icon: Megaphone,
+            content: wrap("Attribution", <AttributionView days={days} />),
+          },
+          { id: "topics", label: "Topics", icon: Layers, content: wrap("Topics", <TopicsView />) },
+          {
+            id: "heatmap",
+            label: "Heatmap",
+            icon: Calendar,
+            content: wrap("Heatmap", <HeatmapView days={days} />),
+          },
+          {
+            id: "leaderboard",
+            label: "Leaderboard",
+            icon: Trophy,
+            content: wrap("Leaderboard", <LeaderboardView days={days} />),
+          },
+          {
+            id: "failures",
+            label: "Failures",
+            icon: AlertOctagon,
+            content: wrap("Failures", <FailureModesView />),
+          },
+          {
+            id: "latency",
+            label: "Latency",
+            icon: Gauge,
+            content: wrap("Latency", <VoiceLatencyView days={days} />),
+          },
+          {
+            id: "spend",
+            label: "AI Spend",
+            icon: Receipt,
+            content: wrap("AI Spend", <AISpendView days={days} />),
+          },
+          {
+            id: "quality",
+            label: "Quality",
+            icon: Star,
+            content: wrap("Quality", <QualityView days={days} />),
+          },
+        ]}
+      />
+    </ClientRouteViewport>
   );
 }

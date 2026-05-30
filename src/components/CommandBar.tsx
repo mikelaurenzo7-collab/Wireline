@@ -21,7 +21,6 @@ import {
   Sparkles,
   Activity,
   Database,
-  Headphones,
   Crown,
   Kanban,
   ScrollText,
@@ -70,7 +69,7 @@ export default function CommandBar() {
     {
       id: "dash",
       label: "Live Ops",
-      description: "Live overview of agents and activity",
+      description: "Live callers, listen-in, actions & fleet analytics",
       icon: Activity,
       category: "Navigation",
       shortcut: "D",
@@ -100,7 +99,7 @@ export default function CommandBar() {
       description: "Booked appointments",
       icon: Calendar,
       category: "Navigation",
-      action: () => navigate("/appointments"),
+      action: () => navigate("/phone?tab=appointments"),
     },
     {
       id: "logs",
@@ -144,15 +143,6 @@ export default function CommandBar() {
       icon: Kanban,
       category: "Navigation",
       action: () => navigate("/pipeline"),
-    },
-    {
-      id: "cockpit",
-      label: "Supervisor Cockpit",
-      description: "Floor-level monitoring with SLA flags",
-      icon: Headphones,
-      category: "Navigation",
-      ownerOnly: true,
-      action: () => navigate("/cockpit"),
     },
     {
       id: "founder",

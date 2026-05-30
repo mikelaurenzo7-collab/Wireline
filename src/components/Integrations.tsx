@@ -15,6 +15,7 @@ import {
 import { motion } from "motion/react";
 import { authFetch, readApiJson } from "../lib/api";
 import PageShell, { Panel } from "./PageShell";
+import AdminHubViewport from "./layout/AdminHubViewport";
 import { useToast } from "../contexts/ToastContext";
 import ConfirmModal from "./ConfirmModal";
 import CrmConnectionCard from "./CrmConnectionCard";
@@ -226,7 +227,7 @@ export default function Integrations() {
     <button
       onClick={syncAll}
       disabled={syncing}
-      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full glass border border-white/10 text-ink text-[11px] uppercase tracking-[0.22em] hover:border-brand/40 transition-colors disabled:opacity-50"
+      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full glass border border-black/10 text-ink text-[11px] uppercase tracking-[0.22em] hover:border-brand/40 transition-colors disabled:opacity-50"
     >
       <RotateCw className={`w-3 h-3 text-brand ${syncing ? "animate-spin" : ""}`} />
       {syncing ? "Syncing…" : "Sync all"}
@@ -235,222 +236,219 @@ export default function Integrations() {
 
   return (
     <>
-      <PageShell
-        title="Integration Hub"
-        eyebrow="Connections"
-        subtitle="Each connection maps to caller moments — what your agents do when customers ask, email, or call."
-        actions={syncAction}
-      >
-        {/* Scroll container — the page (email panel + CRM/Shopify
+      <AdminHubViewport scroll>
+        <PageShell title="" eyebrow="" subtitle="" actions={syncAction}>
+          {/* Scroll container — the page (email panel + CRM/Shopify
             connectors) is taller than the viewport; PageShell's body
             doesn't scroll, so this wrapper owns the scroll. */}
-        <div className="h-full overflow-y-auto panel-scroll flex flex-col gap-3 pb-4 max-md:pb-6">
-          <Panel
-            title="Email carriers"
-            hint="GMAIL · OUTLOOK"
-            icon={Mail}
-            scroll
-            flush
-            className="shrink-0 !h-auto max-h-[55vh]"
-            actions={
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleConnectGmail}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors"
-                >
-                  <Plus className="w-3 h-3" />
-                  Gmail
-                </button>
-                <button
-                  onClick={handleConnectOutlook}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] uppercase tracking-[0.25em] hover:bg-blue-500/20 transition-colors"
-                >
-                  <Plus className="w-3 h-3" />
-                  Outlook
-                </button>
-                <button
-                  onClick={handleConnectYahoo}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-500 text-[10px] uppercase tracking-[0.25em] hover:bg-purple-500/20 transition-colors"
-                >
-                  <Plus className="w-3 h-3" />
-                  Yahoo
-                </button>
-              </div>
-            }
-          >
-            {loading ? (
-              <div className="h-full flex flex-col items-center justify-center gap-2 py-8">
-                <Loader2 className="w-5 h-5 animate-spin text-brand" />
-                <span className="app-section-title/70">Loading integrations</span>
-              </div>
-            ) : accounts.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center gap-4 py-8 text-center px-6">
-                <div className="w-14 h-14 rounded-2xl glass border border-white/10 flex items-center justify-center text-muted">
-                  <Mail className="w-6 h-6" />
-                </div>
-                <div className="space-y-1.5">
-                  <h3 className="font-display italic lowercase text-2xl text-ink">
-                    no carriers linked
-                  </h3>
-                  <p className="app-section-title/70 max-w-sm">
-                    Connect Gmail, Outlook, or Yahoo — agents triage and reply from caller moments
-                    below.
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg text-left">
-                  {EMAIL_INBOUND_TASKS.map((task) => (
-                    <div
-                      key={task.id}
-                      className="rounded-lg border border-black/8 bg-paper/60 px-3 py-2"
-                    >
-                      <p className="text-[10px] text-ink font-medium leading-snug">
-                        {task.callerMoment}
-                      </p>
-                      <p className="text-[10px] text-muted/70 mt-1 leading-snug">
-                        {task.agentAction}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center gap-3 flex-wrap justify-center">
+          <div className="h-full overflow-y-auto panel-scroll flex flex-col gap-3 pb-4 max-md:pb-6">
+            <Panel
+              title="Email carriers"
+              hint="GMAIL · OUTLOOK"
+              icon={Mail}
+              scroll
+              flush
+              className="shrink-0 !h-auto max-h-[55vh]"
+              actions={
+                <div className="flex items-center gap-2">
                   <button
                     onClick={handleConnectGmail}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors"
                   >
-                    <span className="w-4 h-4">{getIntegrationLogo("Google")}</span> Connect Gmail
+                    <Plus className="w-3 h-3" />
+                    Gmail
                   </button>
                   <button
                     onClick={handleConnectOutlook}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] uppercase tracking-[0.25em] hover:bg-blue-500/20 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] uppercase tracking-[0.25em] hover:bg-blue-500/20 transition-colors"
                   >
-                    <span className="w-4 h-4">{getIntegrationLogo("Microsoft")}</span> Connect
+                    <Plus className="w-3 h-3" />
                     Outlook
                   </button>
                   <button
                     onClick={handleConnectYahoo}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-500 text-[10px] uppercase tracking-[0.25em] hover:bg-purple-500/20 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-500 text-[10px] uppercase tracking-[0.25em] hover:bg-purple-500/20 transition-colors"
                   >
-                    <span className="w-4 h-4">{getIntegrationLogo("Yahoo")}</span> Connect Yahoo
+                    <Plus className="w-3 h-3" />
+                    Yahoo
                   </button>
                 </div>
-              </div>
-            ) : (
-              <>
-                <div className="px-4 py-3 border-b border-black/6 bg-brand/5">
-                  <p className="text-[9px] uppercase tracking-[0.32em] text-brand font-medium mb-2">
-                    When email arrives
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              }
+            >
+              {loading ? (
+                <div className="h-full flex flex-col items-center justify-center gap-2 py-8">
+                  <Loader2 className="w-5 h-5 animate-spin text-brand" />
+                  <span className="app-section-title/70">Loading integrations</span>
+                </div>
+              ) : accounts.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center gap-4 py-8 text-center px-6">
+                  <div className="w-14 h-14 rounded-2xl glass border border-black/10 flex items-center justify-center text-muted">
+                    <Mail className="w-6 h-6" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <h3 className="font-display italic lowercase text-2xl text-ink">
+                      no carriers linked
+                    </h3>
+                    <p className="app-section-title/70 max-w-sm">
+                      Connect Gmail, Outlook, or Yahoo — agents triage and reply from caller moments
+                      below.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg text-left">
                     {EMAIL_INBOUND_TASKS.map((task) => (
                       <div
                         key={task.id}
-                        className="rounded-lg border border-black/8 bg-paper/80 px-3 py-2.5"
+                        className="rounded-lg border border-black/8 bg-paper/60 px-3 py-2"
                       >
-                        <div className="flex items-start gap-2 mb-1.5">
-                          <Phone className="w-3 h-3 text-brand shrink-0 mt-0.5" />
-                          <p className="text-[10px] text-ink font-medium leading-snug text-pretty">
-                            {task.callerMoment}
-                          </p>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <Zap className="w-3 h-3 text-brand/80 shrink-0 mt-0.5" />
-                          <p className="text-[10px] text-muted/80 leading-relaxed text-pretty">
-                            {task.agentAction}
-                          </p>
-                        </div>
+                        <p className="text-[10px] text-ink font-medium leading-snug">
+                          {task.callerMoment}
+                        </p>
+                        <p className="text-[10px] text-muted/70 mt-1 leading-snug">
+                          {task.agentAction}
+                        </p>
                       </div>
                     ))}
                   </div>
+                  <div className="flex items-center gap-3 flex-wrap justify-center">
+                    <button
+                      onClick={handleConnectGmail}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors"
+                    >
+                      <span className="w-4 h-4">{getIntegrationLogo("Google")}</span> Connect Gmail
+                    </button>
+                    <button
+                      onClick={handleConnectOutlook}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] uppercase tracking-[0.25em] hover:bg-blue-500/20 transition-colors"
+                    >
+                      <span className="w-4 h-4">{getIntegrationLogo("Microsoft")}</span> Connect
+                      Outlook
+                    </button>
+                    <button
+                      onClick={handleConnectYahoo}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-500 text-[10px] uppercase tracking-[0.25em] hover:bg-purple-500/20 transition-colors"
+                    >
+                      <span className="w-4 h-4">{getIntegrationLogo("Yahoo")}</span> Connect Yahoo
+                    </button>
+                  </div>
                 </div>
-                <div className="divide-y divide-white/6">
-                  {accounts.map((acc) => {
-                    const meta = PROVIDER_META[acc.provider] || PROVIDER_META.google;
-                    return (
-                      <motion.div
-                        layout
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        key={acc.id}
-                        className="px-3 py-2 flex flex-col xl:flex-row xl:items-center gap-3 hover:bg-white/3 transition-colors"
-                      >
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div
-                            className={`w-10 h-10 rounded-xl glass border border-white/10 flex items-center justify-center shrink-0 overflow-hidden ${meta.color}`}
-                          >
-                            {getIntegrationLogo(meta.logoName) ?? <Mail className="w-4 h-4" />}
+              ) : (
+                <>
+                  <div className="px-4 py-3 border-b border-black/6 bg-brand/5">
+                    <p className="text-[9px] uppercase tracking-[0.32em] text-brand font-medium mb-2">
+                      When email arrives
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {EMAIL_INBOUND_TASKS.map((task) => (
+                        <div
+                          key={task.id}
+                          className="rounded-lg border border-black/8 bg-paper/80 px-3 py-2.5"
+                        >
+                          <div className="flex items-start gap-2 mb-1.5">
+                            <Phone className="w-3 h-3 text-brand shrink-0 mt-0.5" />
+                            <p className="text-[10px] text-ink font-medium leading-snug text-pretty">
+                              {task.callerMoment}
+                            </p>
                           </div>
-                          <div className="min-w-0 space-y-1">
-                            <div className="font-display italic text-lg text-ink leading-none truncate">
-                              {acc.email_address}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {acc.provider === "yahoo" ? (
-                                <span
-                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-500 text-[9px] uppercase tracking-[0.3em]"
-                                  title="Yahoo inbox sync is coming soon — OAuth connection is stored"
-                                >
-                                  Connected · Inbox soon
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-[9px] uppercase tracking-[0.3em]">
-                                  <CheckCircle2 className="w-2.5 h-2.5" /> Synced
-                                </span>
-                              )}
-                              <span
-                                className={`text-[9px] uppercase tracking-[0.3em] font-mono ${meta.color}`}
-                              >
-                                {meta.label}
-                              </span>
-                            </div>
+                          <div className="flex items-start gap-2">
+                            <Zap className="w-3 h-3 text-brand/80 shrink-0 mt-0.5" />
+                            <p className="text-[10px] text-muted/80 leading-relaxed text-pretty">
+                              {task.agentAction}
+                            </p>
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 inline-flex items-center gap-1.5">
-                            <Bot className="w-3 h-3 text-brand" /> Route to
-                          </label>
-                          <div className="relative">
-                            <select
-                              aria-label="Route to agent"
-                              value={acc.agent_id || "none"}
-                              onChange={(e) => updateAccountAgent(acc.id, e.target.value)}
-                              className="text-xs bg-black/5 border border-black/10 rounded-lg pl-3 pr-8 py-1.5 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
+                      ))}
+                    </div>
+                  </div>
+                  <div className="divide-y divide-white/6">
+                    {accounts.map((acc) => {
+                      const meta = PROVIDER_META[acc.provider] || PROVIDER_META.google;
+                      return (
+                        <motion.div
+                          layout
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          key={acc.id}
+                          className="px-3 py-2 flex flex-col xl:flex-row xl:items-center gap-3 hover:bg-white/3 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <div
+                              className={`w-10 h-10 rounded-xl glass border border-black/10 flex items-center justify-center shrink-0 overflow-hidden ${meta.color}`}
                             >
-                              <option value="none">Unassigned</option>
-                              {agents.map((agent) => (
-                                <option key={agent.id} value={agent.id}>
-                                  {agent.name}
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none" />
+                              {getIntegrationLogo(meta.logoName) ?? <Mail className="w-4 h-4" />}
+                            </div>
+                            <div className="min-w-0 space-y-1">
+                              <div className="font-display italic text-lg text-ink leading-none truncate">
+                                {acc.email_address}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {acc.provider === "yahoo" ? (
+                                  <span
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-500 text-[9px] uppercase tracking-[0.3em]"
+                                    title="Yahoo inbox sync is coming soon — OAuth connection is stored"
+                                  >
+                                    Connected · Inbox soon
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-[9px] uppercase tracking-[0.3em]">
+                                    <CheckCircle2 className="w-2.5 h-2.5" /> Synced
+                                  </span>
+                                )}
+                                <span
+                                  className={`text-[9px] uppercase tracking-[0.3em] font-mono ${meta.color}`}
+                                >
+                                  {meta.label}
+                                </span>
+                              </div>
+                            </div>
                           </div>
 
-                          <button
-                            onClick={() => handleDisconnect(acc.id)}
-                            className="w-8 h-8 rounded-lg glass border border-white/10 text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all flex items-center justify-center"
-                            title="Disconnect"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </Panel>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 inline-flex items-center gap-1.5">
+                              <Bot className="w-3 h-3 text-brand" /> Route to
+                            </label>
+                            <div className="relative">
+                              <select
+                                aria-label="Route to agent"
+                                value={acc.agent_id || "none"}
+                                onChange={(e) => updateAccountAgent(acc.id, e.target.value)}
+                                className="text-xs bg-black/5 border border-black/10 rounded-lg pl-3 pr-8 py-1.5 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
+                              >
+                                <option value="none">Unassigned</option>
+                                {agents.map((agent) => (
+                                  <option key={agent.id} value={agent.id}>
+                                    {agent.name}
+                                  </option>
+                                ))}
+                              </select>
+                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none" />
+                            </div>
 
-          {/* CRM & messaging — HubSpot, Salesforce, Slack, Shopify.
+                            <button
+                              onClick={() => handleDisconnect(acc.id)}
+                              className="w-8 h-8 rounded-lg glass border border-black/10 text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all flex items-center justify-center"
+                              title="Disconnect"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </Panel>
+
+            {/* CRM & messaging — HubSpot, Salesforce, Slack, Shopify.
               Available on every plan: integrations make the agent more
               capable for everyone, and they don't cannibalize the real
               paid levers (agents / minutes / numbers). */}
-          <div className="mt-3">
-            <CrmConnectionCard />
+            <div className="mt-3">
+              <CrmConnectionCard />
+            </div>
           </div>
-        </div>
-      </PageShell>
+        </PageShell>
+      </AdminHubViewport>
 
       <ConfirmModal
         open={confirmState.open}

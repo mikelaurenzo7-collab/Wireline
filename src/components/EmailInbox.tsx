@@ -24,7 +24,7 @@ import { PanelSkeleton } from "./Skeleton";
 import EmptyState from "./EmptyState";
 import { useToast } from "../contexts/ToastContext";
 
-export default function EmailInbox() {
+export default function EmailInbox({ embedded = false }: { embedded?: boolean }) {
   const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
   const [threads, setThreads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -267,12 +267,16 @@ export default function EmailInbox() {
 
   return (
     <div className="h-full flex flex-col min-h-0">
-      <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />
+      {!embedded && <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />}
       <div className="flex-1 min-h-0">
         <PageShell
-          title="Email"
-          eyebrow="Communications · Email"
-          subtitle={`${threads.length} thread${threads.length === 1 ? "" : "s"} in your inbox.`}
+          title={embedded ? "" : "Email"}
+          eyebrow={embedded ? undefined : "Communications · Email"}
+          subtitle={
+            embedded
+              ? undefined
+              : `${threads.length} thread${threads.length === 1 ? "" : "s"} in your inbox.`
+          }
           actions={syncAction}
         >
           <div className="h-full flex flex-col md:flex-row lg:flex-row gap-3 min-h-0">

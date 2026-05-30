@@ -22,7 +22,7 @@ import { cn } from "../lib/utils";
 import { formatDate } from "../lib/safe-date";
 import PageShell, { Panel } from "./PageShell";
 import { useToast } from "../contexts/ToastContext";
-import SettingsTabSwitcher from "./admin/SettingsTabSwitcher";
+import AdminHubViewport from "./layout/AdminHubViewport";
 
 interface DncEntry {
   id: string;
@@ -195,18 +195,17 @@ export default function DncManager() {
   };
 
   return (
-    <div className="h-full flex flex-col gap-3 min-h-0">
-      <SettingsTabSwitcher />
+    <AdminHubViewport>
       <PageShell
-        eyebrow="Compliance · Outbound Protection"
-        title="DNC List"
-        subtitle="Numbers on this list will never be dialed — by any agent or campaign. TCPA-safe outbound operations."
+        title=""
+        eyebrow=""
+        subtitle=""
         actions={
           <div className="flex items-center gap-2">
             <button
               onClick={refresh}
               disabled={loading}
-              className="h-9 px-3 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
+              className="h-9 px-3 rounded-full glass border border-black/10 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
             >
               {loading ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -225,7 +224,7 @@ export default function DncManager() {
             <button
               onClick={() => fileRef.current?.click()}
               disabled={importing}
-              className="h-9 px-4 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
+              className="h-9 px-4 rounded-full glass border border-black/10 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
             >
               {importing ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -255,7 +254,7 @@ export default function DncManager() {
             ].map(({ label, value, accent, icon: Icon }) => (
               <div
                 key={label}
-                className="relative rounded-xl glass border border-white/10 p-4 overflow-hidden"
+                className="relative rounded-xl glass border border-black/10 p-4 overflow-hidden"
               >
                 <div
                   className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-25 blur-3xl pointer-events-none"
@@ -286,7 +285,7 @@ export default function DncManager() {
                     placeholder="Search numbers…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="h-8 w-44 pl-8 pr-3 rounded-full glass border border-white/10 text-[11px] text-ink placeholder:text-muted/70 focus:border-brand/40 focus:outline-none transition-all"
+                    className="h-8 w-44 pl-8 pr-3 rounded-full glass border border-black/10 text-[11px] text-ink placeholder:text-muted/70 focus:border-brand/40 focus:outline-none transition-all"
                   />
                 </div>
               }
@@ -387,7 +386,7 @@ export default function DncManager() {
                             <button
                               onClick={() => setConfirmId(null)}
                               aria-label="Cancel delete"
-                              className="h-7 w-7 rounded-full glass border border-white/10 text-muted hover:text-ink transition-all flex items-center justify-center"
+                              className="h-7 w-7 rounded-full glass border border-black/10 text-muted hover:text-ink transition-all flex items-center justify-center"
                             >
                               <X className="w-3 h-3" />
                             </button>
@@ -396,7 +395,7 @@ export default function DncManager() {
                           <button
                             onClick={() => setConfirmId(entry.id)}
                             aria-label={`Remove ${entry.phone_raw || entry.phone} from DNC list`}
-                            className="h-7 w-7 rounded-full glass border border-white/10 text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100"
+                            className="h-7 w-7 rounded-full glass border border-black/10 text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100"
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
@@ -424,7 +423,7 @@ export default function DncManager() {
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
-                className="w-full max-w-md glass-strong rounded-2xl border border-white/12 shadow-2xl p-6"
+                className="w-full max-w-md glass-strong rounded-2xl border border-black/12 shadow-2xl p-6"
               >
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
@@ -442,7 +441,7 @@ export default function DncManager() {
                   </div>
                   <button
                     onClick={() => setShowAdd(false)}
-                    className="w-8 h-8 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-ink transition-all"
+                    className="w-8 h-8 rounded-full glass border border-black/10 flex items-center justify-center text-muted hover:text-ink transition-all"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -463,7 +462,7 @@ export default function DncManager() {
                         value={addPhone}
                         onChange={(e) => setAddPhone(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                        className="w-full h-10 pl-9 pr-4 rounded-xl glass border border-white/10 text-sm text-ink placeholder:text-muted/70 focus:border-rose-400/50 focus:outline-none transition-all"
+                        className="w-full h-10 pl-9 pr-4 rounded-xl glass border border-black/10 text-sm text-ink placeholder:text-muted/70 focus:border-rose-400/50 focus:outline-none transition-all"
                       />
                     </div>
                   </div>
@@ -477,7 +476,7 @@ export default function DncManager() {
                         aria-label="Reason"
                         value={addReason}
                         onChange={(e) => setAddReason(e.target.value)}
-                        className="w-full h-10 pl-3 pr-10 rounded-xl glass border border-white/10 text-sm text-ink focus:border-rose-400/50 focus:outline-none transition-all appearance-none cursor-pointer"
+                        className="w-full h-10 pl-3 pr-10 rounded-xl glass border border-black/10 text-sm text-ink focus:border-rose-400/50 focus:outline-none transition-all appearance-none cursor-pointer"
                       >
                         {REASON_OPTIONS.map((o) => (
                           <option key={o.value} value={o.value}>
@@ -500,7 +499,7 @@ export default function DncManager() {
                 <div className="flex items-center gap-2 mt-6">
                   <button
                     onClick={() => setShowAdd(false)}
-                    className="flex-1 h-10 rounded-xl glass border border-white/10 text-[11px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-all"
+                    className="flex-1 h-10 rounded-xl glass border border-black/10 text-[11px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-all"
                   >
                     Cancel
                   </button>
@@ -522,6 +521,6 @@ export default function DncManager() {
           )}
         </AnimatePresence>
       </PageShell>
-    </div>
+    </AdminHubViewport>
   );
 }

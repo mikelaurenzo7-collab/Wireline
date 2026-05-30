@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
-import { ChevronRight, Home, Phone, MessageSquare, Compass, Mail } from "lucide-react";
+import { ChevronRight, Home, Phone, MessageSquare, Compass, LayoutGrid } from "lucide-react";
 
 /**
  * NotFound — context-aware 404. Detects whether the visitor is signed-in
@@ -80,14 +80,14 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.55 }}
-        className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full max-w-2xl"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full max-w-3xl"
       >
         {isPublic ? (
           <>
             <NotFoundCard to="/" icon={Home} label="Home" hint="Back to landing" accent="#4F1E7B" />
             <a
               href="tel:+16305811834"
-              className="group relative flex items-center gap-3 p-4 rounded-2xl glass border border-white/12 hover:border-white/24 transition-colors"
+              className="group relative flex items-center gap-3 p-4 rounded-2xl glass border border-black/10 hover:border-black/20 transition-colors"
               style={{ boxShadow: "0 8px 24px -12px rgba(79, 30, 123 ,0.35)" }}
             >
               <div
@@ -115,24 +115,31 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
         ) : (
           <>
             <NotFoundCard
-              to="/"
+              to="/chat"
               icon={Home}
-              label="Home"
-              hint="Operations overview"
+              label="Chat"
+              hint="Mission control"
               accent="#4F1E7B"
+            />
+            <NotFoundCard
+              to="/ops"
+              icon={LayoutGrid}
+              label="Live Ops"
+              hint="Live callers"
+              accent="#10B981"
             />
             <NotFoundCard
               to="/agents"
               icon={MessageSquare}
               label="Agents"
-              hint="Manage your fleet"
+              hint="Manage fleet"
               accent="#4F1E7B"
             />
             <NotFoundCard
-              to="/inbox"
-              icon={Mail}
-              label="Email"
-              hint="Inbox + threads"
+              to="/phone"
+              icon={Phone}
+              label="Phone"
+              hint="History & outbound"
               accent="#4F1E7B"
             />
           </>
@@ -172,10 +179,10 @@ function NotFoundCard({
   return (
     <Link
       to={to}
-      className="group relative flex items-center gap-3 p-4 rounded-2xl glass border border-white/12 hover:border-white/24 transition-colors"
+      className="group relative flex items-center gap-3 p-4 rounded-2xl glass border border-black/10 hover:border-black/20 transition-colors"
     >
       <div
-        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border border-white/8"
+        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border border-black/8"
         style={{
           background: `linear-gradient(135deg, ${accent}25, ${accent}10)`,
           color: accent,

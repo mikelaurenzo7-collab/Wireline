@@ -36,7 +36,7 @@ import { motion, AnimatePresence } from "motion/react";
 import WirelineMark from "../WirelineMark";
 import { useAuth } from "../../contexts/AuthContext";
 import { useBranding } from "../../contexts/BrandingContext";
-import { NAV_GROUPS, type NavItem } from "../../constants/navigation";
+import { NAV_GROUPS, type NavItem, NAV_SHORTCUT_HINTS } from "../../constants/navigation";
 import { authFetch } from "../../lib/api";
 import { useLivePresence } from "../../hooks/useLivePresence";
 import { cn } from "../../lib/utils";
@@ -68,21 +68,8 @@ const NAV_ITEMS: (NavItem & { accent: string })[] = NAV_GROUPS.filter(
   group.items.map((item) => ({ ...item, accent: GROUP_ACCENTS[group.label] || "#4F1E7B" })),
 );
 
-// Optional keyboard-shortcut hints. Matches the existing g+key shortcut
-// mapping in AppShell. Shown right-aligned when the rail is expanded.
-const SHORTCUTS: Record<string, string> = {
-  "/": "g d",
-  "/triage": "g t",
-  "/insights": "g i",
-  "/agents": "g a",
-  "/chat": "g r",
-  "/training": "g n",
-  "/phone": "g p",
-  "/email": "g e",
-  "/sms": "g m",
-  "/logs": "g l",
-  "/admin": "g s",
-};
+// Keyboard-shortcut hints — sourced from navigation.ts.
+const SHORTCUTS = NAV_SHORTCUT_HINTS;
 
 interface SidebarProps {
   /** Bag of badge counts keyed by path, already populated by AppShell's poll. */

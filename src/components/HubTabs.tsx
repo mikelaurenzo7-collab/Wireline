@@ -37,7 +37,7 @@ export default function HubTabs({ tabs, label, className }: HubTabsProps) {
         className,
       )}
     >
-      <div className="flex items-center gap-0.5 p-0.5 glass border border-ink/[0.06] shadow-[0_1px_0_rgba(255,255,255,0.6)_inset]">
+      <div className="flex items-center gap-0.5 p-0.5 glass border border-black/8 shadow-[0_1px_0_rgba(255,255,255,0.5)_inset]">
         {tabs.map((t) => {
           const Icon = t.icon;
           const active = pathname === t.path || pathname.startsWith(`${t.path}/`);
@@ -55,13 +55,7 @@ export default function HubTabs({ tabs, label, className }: HubTabsProps) {
                 <motion.span
                   layoutId="hub-tabs-active-pill"
                   aria-hidden="true"
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    background:
-                      "linear-gradient(180deg, var(--color-brand) 0%, var(--color-brand-deep) 100%)",
-                    boxShadow:
-                      "0 3px 12px -6px color-mix(in srgb, var(--color-brand) 60%, transparent), 0 0 0 1px rgba(255,255,255,0.18) inset, 0 1px 0 rgba(255,255,255,0.32) inset",
-                  }}
+                  className="absolute inset-0 pointer-events-none bg-brand shadow-[0_2px_8px_-4px_rgba(79,30,123,0.55)]"
                   transition={{ type: "spring", stiffness: 380, damping: 32 }}
                 />
               )}
@@ -80,16 +74,15 @@ export default function HubTabs({ tabs, label, className }: HubTabsProps) {
 // the same strip without drifting.
 // ──────────────────────────────────────────────────────────────────────────
 
-import { MessageSquare, MessageCircle, Database, History, Mail, Calendar } from "lucide-react";
+import { MessageSquare, MessageCircle, GraduationCap, History, Mail } from "lucide-react";
 
 export const TRAINING_HUB: HubTabDef[] = [
   { label: "Chat", path: "/chat", icon: MessageSquare },
-  { label: "Knowledge", path: "/knowledge", icon: Database },
+  { label: "Training", path: "/training", icon: GraduationCap },
 ];
 
 export const CHANNELS_HUB: HubTabDef[] = [
   { label: "Phone", path: "/phone", icon: History },
   { label: "Email", path: "/email", icon: Mail },
   { label: "SMS", path: "/sms", icon: MessageCircle },
-  { label: "Appointments", path: "/appointments", icon: Calendar },
 ];

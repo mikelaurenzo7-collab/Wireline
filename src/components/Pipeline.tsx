@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { Phone, Mail, ChevronRight, Loader2, RefreshCw, Kanban } from "lucide-react";
 import PageShell, { Panel } from "./PageShell";
 import EmptyState from "./EmptyState";
+import ClientRouteViewport from "./layout/ClientRouteViewport";
 import { authFetch } from "../lib/api";
 import { logFetchError } from "../lib/utils";
 import { useToast } from "../contexts/ToastContext";
@@ -86,185 +87,197 @@ export default function Pipeline() {
   const conversionRate = totalLeads > 0 ? ((wonCount / totalLeads) * 100).toFixed(1) : "0.0";
 
   return (
-    <PageShell
-      eyebrow="Sales · Pipeline"
-      title="Pipeline"
-      subtitle={`${totalLeads} leads across the funnel · ${conversionRate}% closed-won`}
-      actions={
-        <button
-          onClick={load}
-          disabled={loading}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg glass border border-white/10 text-[11px] uppercase tracking-[0.28em] text-ink/80 hover:text-ink hover:border-white/25 transition-colors disabled:opacity-60"
-        >
-          {loading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <RefreshCw className="w-3.5 h-3.5" />
-          )}
-          Refresh
-        </button>
-      }
-    >
-      {totalLeads === 0 && !loading && (
-        <EmptyState
-          icon={Kanban}
-          title="No leads in the pipeline"
-          description="Pipeline tracks every outbound lead through Cold → Contacted → Qualified → Demo → Won/Lost. Add leads via the Outbound tab — upload a CSV or capture them from an inbound call."
-          accent="#4F1E7B"
-          actions={[
-            { label: "Start outbound", to: "/outbound", primary: true },
-            { label: "Connect a webhook", to: "/integrations" },
-          ]}
-          className="h-full py-10"
-        />
-      )}
-      {/* Mobile: vertical stack of columns (no horizontal scroll trap).
-       *  Tablet+: horizontal kanban with scroll-snap so dragging a card
-       *  between columns is still natural.
-       *  Each column collapses height on mobile (max-h-72 with internal
-       *  scroll) so the operator can scan every stage without scrolling
-       *  through the entire app shell. */}
-      {totalLeads > 0 && (
-        <div className="h-full overflow-y-auto md:overflow-x-auto md:overflow-y-hidden pb-1">
-          <div className="flex flex-col md:flex-row gap-3 h-auto md:h-full pr-0 md:pr-3 md:snap-x md:snap-mandatory">
-            {STAGES.map((stage) => {
-              const leads = board[stage.id] || [];
-              return (
-                <div
-                  key={stage.id}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = "move";
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const id = e.dataTransfer.getData("text/plain");
-                    if (id) moveLead(id, stage.id);
-                  }}
-                  // min-w-[180px] (was 200) so 6 columns + gaps fit
-                  // comfortably at 1280px ThinkPad widths without the
-                  // rightmost stage getting clipped at the page edge.
-                  // Still scrolls horizontally on narrower laptops via
-                  // the parent overflow-x-auto, just with much less
-                  // chance of triggering it on the operator's main viewport.
-                  className="w-full md:min-w-[180px] md:flex-1 md:snap-start flex flex-col md:h-full max-h-[70vh] md:max-h-none"
-                >
-                  <Panel
-                    title={stage.label}
-                    hint={`${leads.length} · ${stage.help}`}
-                    accent={stage.tint}
-                    scroll
-                    icon={Phone}
+    <ClientRouteViewport>
+      <PageShell
+        title=""
+        eyebrow=""
+        subtitle=""
+        actions={
+          <>
+            {totalLeads > 0 && (
+              <span className="hidden sm:inline-flex items-center px-3 py-2 rounded-xl glass border border-black/10 text-[11px] uppercase tracking-[0.18em] text-muted">
+                Win rate{" "}
+                <span className="ml-1.5 text-brand font-semibold tabular-nums">
+                  {conversionRate}%
+                </span>
+              </span>
+            )}
+            <button
+              onClick={load}
+              disabled={loading}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl glass border border-black/10 text-[11px] uppercase tracking-[0.22em] text-ink/80 hover:text-ink hover:border-brand/25 transition-colors disabled:opacity-60"
+            >
+              {loading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="w-3.5 h-3.5" />
+              )}
+              Refresh
+            </button>
+          </>
+        }
+      >
+        {totalLeads === 0 && !loading && (
+          <EmptyState
+            icon={Kanban}
+            title="No leads in the pipeline"
+            description="Pipeline tracks every outbound lead through Cold → Contacted → Qualified → Demo → Won/Lost. Add leads via the Outbound tab — upload a CSV or capture them from an inbound call."
+            accent="#4F1E7B"
+            actions={[
+              { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
+              { label: "Connect a webhook", to: "/integrations" },
+            ]}
+            className="h-full py-10"
+          />
+        )}
+        {/* Mobile: vertical stack of columns (no horizontal scroll trap).
+         *  Tablet+: horizontal kanban with scroll-snap so dragging a card
+         *  between columns is still natural.
+         *  Each column collapses height on mobile (max-h-72 with internal
+         *  scroll) so the operator can scan every stage without scrolling
+         *  through the entire app shell. */}
+        {totalLeads > 0 && (
+          <div className="h-full overflow-y-auto md:overflow-x-auto md:overflow-y-hidden pb-1">
+            <div className="flex flex-col md:flex-row gap-3 h-auto md:h-full pr-0 md:pr-3 md:snap-x md:snap-mandatory">
+              {STAGES.map((stage) => {
+                const leads = board[stage.id] || [];
+                return (
+                  <div
+                    key={stage.id}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const id = e.dataTransfer.getData("text/plain");
+                      if (id) moveLead(id, stage.id);
+                    }}
+                    // min-w-[180px] (was 200) so 6 columns + gaps fit
+                    // comfortably at 1280px ThinkPad widths without the
+                    // rightmost stage getting clipped at the page edge.
+                    // Still scrolls horizontally on narrower laptops via
+                    // the parent overflow-x-auto, just with much less
+                    // chance of triggering it on the operator's main viewport.
+                    className="w-full md:min-w-[180px] md:flex-1 md:snap-start flex flex-col md:h-full max-h-[70vh] md:max-h-none"
                   >
-                    <div className="space-y-2">
-                      {leads.length === 0 && !loading && (
-                        <p className="text-[11px] text-muted/70 italic px-2 py-4 text-center">
-                          No leads in this stage yet.
-                        </p>
-                      )}
-                      {leads.map((lead) => (
-                        <motion.div
-                          key={String(lead.id)}
-                          layout
-                          initial={{ opacity: 0, y: 4 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          whileHover={{ y: -3, scale: 1.01 }}
-                          whileTap={{ scale: 0.98 }}
-                          draggable
-                          onDragStart={(e: any) => {
-                            setDraggingId(String(lead.id));
-                            e.dataTransfer.effectAllowed = "move";
-                            e.dataTransfer.setData("text/plain", String(lead.id));
-                          }}
-                          onDragEnd={() => setDraggingId(null)}
-                          className={`group relative rounded-xl p-3 cursor-grab active:cursor-grabbing border card-interactive-premium transition-all duration-300 overflow-hidden ${
-                            draggingId === String(lead.id)
-                              ? "border-brand/60 opacity-40 shadow-xl shadow-brand/10 scale-95"
-                              : "border-black/5 hover:border-brand/20 hover:shadow-lg hover:shadow-brand/5"
-                          }`}
-                          style={{
-                            background: `linear-gradient(135deg, ${stage.tint}0f, transparent 75%)`,
-                          }}
-                        >
-                          {/* Attempts-based left urgency strip */}
-                          <div
-                            className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-xl"
-                            style={{
-                              background:
-                                !lead.attempts || lead.attempts === 0
-                                  ? "rgba(255,255,255,0.06)"
-                                  : lead.attempts <= 2
-                                    ? "#4F1E7B"
-                                    : lead.attempts <= 4
-                                      ? "#F59E0B"
-                                      : "#E8466A",
-                            }}
-                          />
-                          <p className="text-[12px] font-semibold text-ink truncate flex items-center gap-1.5">
-                            {lead.customerName || "(no name)"}
-                            {lead.demo && (
-                              <span
-                                className="text-[8px] uppercase tracking-[0.32em] px-1.5 py-0.5 rounded-md bg-amber-500/15 border border-dashed border-amber-500/50 text-amber-700 leading-none shrink-0"
-                                title="Seeded showcase record — not a real lead"
-                              >
-                                Demo
-                              </span>
-                            )}
+                    <Panel
+                      title={stage.label}
+                      hint={`${leads.length} · ${stage.help}`}
+                      accent={stage.tint}
+                      scroll
+                      icon={Phone}
+                    >
+                      <div className="space-y-2">
+                        {leads.length === 0 && !loading && (
+                          <p className="text-[11px] text-muted/70 italic px-2 py-4 text-center">
+                            No leads in this stage yet.
                           </p>
-                          <div className="flex items-center gap-2 mt-1 text-[10px] text-muted/80">
-                            {lead.customerNumber && (
-                              <span className="inline-flex items-center gap-1 truncate">
-                                <Phone className="w-3 h-3" />
-                                {lead.customerNumber}
-                              </span>
-                            )}
-                            {lead.email && (
-                              <span className="inline-flex items-center gap-1 truncate">
-                                <Mail className="w-3 h-3" />
-                                <span className="truncate max-w-[120px]">{lead.email}</span>
-                              </span>
-                            )}
-                          </div>
-                          {lead.campaignSource && (
-                            <p className="text-[9px] uppercase tracking-[0.24em] text-brand/80 mt-1.5 truncate">
-                              {lead.campaignSource}
+                        )}
+                        {leads.map((lead) => (
+                          <motion.div
+                            key={String(lead.id)}
+                            layout
+                            initial={{ opacity: 0, y: 4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            whileHover={{ y: -3, scale: 1.01 }}
+                            whileTap={{ scale: 0.98 }}
+                            draggable
+                            onDragStart={(e: any) => {
+                              setDraggingId(String(lead.id));
+                              e.dataTransfer.effectAllowed = "move";
+                              e.dataTransfer.setData("text/plain", String(lead.id));
+                            }}
+                            onDragEnd={() => setDraggingId(null)}
+                            className={`group relative rounded-xl p-3 cursor-grab active:cursor-grabbing border card-interactive-premium transition-all duration-300 overflow-hidden ${
+                              draggingId === String(lead.id)
+                                ? "border-brand/60 opacity-40 shadow-xl shadow-brand/10 scale-95"
+                                : "border-black/5 hover:border-brand/20 hover:shadow-lg hover:shadow-brand/5"
+                            }`}
+                            style={{
+                              background: `linear-gradient(135deg, ${stage.tint}0f, transparent 75%)`,
+                            }}
+                          >
+                            {/* Attempts-based left urgency strip */}
+                            <div
+                              className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-xl"
+                              style={{
+                                background:
+                                  !lead.attempts || lead.attempts === 0
+                                    ? "rgba(255,255,255,0.06)"
+                                    : lead.attempts <= 2
+                                      ? "#4F1E7B"
+                                      : lead.attempts <= 4
+                                        ? "#F59E0B"
+                                        : "#E8466A",
+                              }}
+                            />
+                            <p className="text-[12px] font-semibold text-ink truncate flex items-center gap-1.5">
+                              {lead.customerName || "(no name)"}
+                              {lead.demo && (
+                                <span
+                                  className="text-[8px] uppercase tracking-[0.32em] px-1.5 py-0.5 rounded-md bg-amber-500/15 border border-dashed border-amber-500/50 text-amber-700 leading-none shrink-0"
+                                  title="Seeded showcase record — not a real lead"
+                                >
+                                  Demo
+                                </span>
+                              )}
                             </p>
-                          )}
-                          {lead.lastContactSummary && (
-                            <p className="text-[10px] text-muted/70 mt-2 line-clamp-2 leading-snug">
-                              {lead.lastContactSummary}
-                            </p>
-                          )}
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="text-[9px] text-muted/70">
-                              {lead.attempts ?? 0} attempt{(lead.attempts ?? 0) === 1 ? "" : "s"}
-                            </span>
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              {STAGES.filter((s) => s.id !== stage.id)
-                                .slice(0, 3)
-                                .map((s) => (
-                                  <button
-                                    key={s.id}
-                                    onClick={() => moveLead(lead.id, s.id)}
-                                    title={`Move to ${s.label}`}
-                                    className="text-[8px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded border border-white/10 text-muted hover:text-ink hover:border-white/30 transition-colors"
-                                  >
-                                    → {s.label}
-                                  </button>
-                                ))}
-                              <ChevronRight className="w-3 h-3 text-muted/70" />
+                            <div className="flex items-center gap-2 mt-1 text-[10px] text-muted/80">
+                              {lead.customerNumber && (
+                                <span className="inline-flex items-center gap-1 truncate">
+                                  <Phone className="w-3 h-3" />
+                                  {lead.customerNumber}
+                                </span>
+                              )}
+                              {lead.email && (
+                                <span className="inline-flex items-center gap-1 truncate">
+                                  <Mail className="w-3 h-3" />
+                                  <span className="truncate max-w-[120px]">{lead.email}</span>
+                                </span>
+                              )}
                             </div>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </Panel>
-                </div>
-              );
-            })}
+                            {lead.campaignSource && (
+                              <p className="text-[9px] uppercase tracking-[0.24em] text-brand/80 mt-1.5 truncate">
+                                {lead.campaignSource}
+                              </p>
+                            )}
+                            {lead.lastContactSummary && (
+                              <p className="text-[10px] text-muted/70 mt-2 line-clamp-2 leading-snug">
+                                {lead.lastContactSummary}
+                              </p>
+                            )}
+                            <div className="flex items-center justify-between mt-2">
+                              <span className="text-[9px] text-muted/70">
+                                {lead.attempts ?? 0} attempt{(lead.attempts ?? 0) === 1 ? "" : "s"}
+                              </span>
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {STAGES.filter((s) => s.id !== stage.id)
+                                  .slice(0, 3)
+                                  .map((s) => (
+                                    <button
+                                      key={s.id}
+                                      onClick={() => moveLead(lead.id, s.id)}
+                                      title={`Move to ${s.label}`}
+                                      className="text-[8px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded border border-white/10 text-muted hover:text-ink hover:border-white/30 transition-colors"
+                                    >
+                                      → {s.label}
+                                    </button>
+                                  ))}
+                                <ChevronRight className="w-3 h-3 text-muted/70" />
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </Panel>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
-    </PageShell>
+        )}
+      </PageShell>
+    </ClientRouteViewport>
   );
 }

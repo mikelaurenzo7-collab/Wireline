@@ -166,6 +166,22 @@ export default function PageShell({
         </header>
       )}
 
+      {/* Actions-only toolbar when TopBar / DesktopContextBar owns the title */}
+      {!showPageHeader && actions && (
+        <div className="shrink-0 mb-2 md:mb-3 flex flex-wrap items-center justify-end gap-2">
+          <div className="hidden md:flex items-center gap-2">{actions}</div>
+          {!tabs?.length && (
+            <button
+              onClick={() => setMobileActionsOpen(true)}
+              aria-label="Page actions"
+              className="md:hidden w-11 h-11 flex items-center justify-center text-muted border border-black/8 bg-black/4 active:bg-black/8 transition-colors"
+            >
+              <MoreHorizontal className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      )}
+
       {/* ── Desktop tab strip (hidden on mobile) ───────────────────────── */}
       {tabs && tabs.length > 0 && (
         <div className="shrink-0 md:mb-2 hidden md:flex items-center justify-center gap-1 overflow-x-auto scrollbar-hide relative">

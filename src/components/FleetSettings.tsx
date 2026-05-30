@@ -7,13 +7,13 @@
 import { useState, useEffect, useRef } from "react";
 import { Shield, LayoutGrid } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { cn } from "../lib/utils";
 import { authFetch, safeJson } from "../lib/api";
 import { AGENTS_CHANGED_EVENT } from "../contexts/AgentsContext";
 import ConfirmModal from "./ConfirmModal";
 import { useToast } from "../contexts/ToastContext";
 import AgentTemplates from "./AgentTemplates";
-import SettingsTabSwitcher from "./admin/SettingsTabSwitcher";
+import AdminHubViewport from "./layout/AdminHubViewport";
+import ClientSubTabs from "./layout/ClientSubTabs";
 import {
   AGENT_TOOL_CATALOG,
   resolveAgentTools,
@@ -359,46 +359,17 @@ export default function FleetSettings() {
 
   return (
     <>
-      <div className="h-full flex flex-col gap-3 min-h-0">
-        {/* Agents lives under Settings now — surface the Settings tab strip so
-            operators can hop to Billing/Team/etc. and the context is clear. */}
-        <SettingsTabSwitcher />
-        {/* Tab strip */}
-        <div
-          className="px-4 py-2 border-b border-white/8 flex items-center gap-1.5 shrink-0"
-          role="tablist"
-        >
-          <button
-            role="tab"
-            aria-selected={activeTab === "templates"}
-            aria-controls="fleet-panel-templates"
-            onClick={() => setActiveTab("templates")}
-            className={cn(
-              "px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] transition-all border flex items-center gap-1.5",
-              activeTab === "templates"
-                ? "bg-brand/15 border-brand/40 text-brand"
-                : "glass border-white/10 text-muted hover:text-ink hover:border-white/25",
-            )}
-          >
-            <LayoutGrid className="w-3 h-3" />
-            Templates
-          </button>
-          <button
-            role="tab"
-            aria-selected={activeTab === "fleet"}
-            aria-controls="fleet-panel-fleet"
-            onClick={() => setActiveTab("fleet")}
-            className={cn(
-              "px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] transition-all border flex items-center gap-1.5",
-              activeTab === "fleet"
-                ? "bg-brand/15 border-brand/40 text-brand"
-                : "glass border-white/10 text-muted hover:text-ink hover:border-white/25",
-            )}
-          >
-            <Shield className="w-3 h-3" />
-            My Fleet
-          </button>
-        </div>
+      <AdminHubViewport>
+        <ClientSubTabs
+          tabs={[
+            { id: "templates", label: "Templates", icon: LayoutGrid },
+            { id: "fleet", label: "My Fleet", icon: Shield },
+          ]}
+          activeId={activeTab}
+          onChange={(id) => setActiveTab(id as "templates" | "fleet")}
+          aria-label="Agent sections"
+          className="justify-start"
+        />
 
         {/* Tab content — render BOTH panels and toggle visibility with
             `hidden`. Switching the ternary previously unmounted the
@@ -461,38 +432,38 @@ export default function FleetSettings() {
             />
           </div>
         </div>
-        <ConfirmModal
-          open={seedConfirmOpen}
-          title="Seed specialized agents?"
-          message="This will deploy a set of pre-configured role-based agents into your fleet. Existing agents will not be affected."
-          confirmLabel="Seed fleet"
-          onConfirm={async () => {
-            setSeedConfirmOpen(false);
-            setIsCreating(true);
-            try {
-              const resp = await authFetch("/api/fleet/seed", { method: "POST" });
-              if (resp.ok) await fetchAgents();
-            } finally {
-              setIsCreating(false);
-            }
-          }}
-          onCancel={() => setSeedConfirmOpen(false)}
-        />
-        <ConfirmModal
-          open={!!deleteConfirm}
-          title="Delete agent?"
-          message={`"${deleteConfirm?.name}" will be permanently removed along with all its training data. This cannot be undone.`}
-          confirmLabel="Delete"
-          danger
-          loading={!!isDeletingAgent}
-          onConfirm={async () => {
-            if (!deleteConfirm) return;
-            await handleDeleteAgent(deleteConfirm.id);
-            setDeleteConfirm(null);
-          }}
-          onCancel={() => setDeleteConfirm(null)}
-        />
-      </div>
+      </AdminHubViewport>
+      <ConfirmModal
+        open={seedConfirmOpen}
+        title="Seed specialized agents?"
+        message="This will deploy a set of pre-configured role-based agents into your fleet. Existing agents will not be affected."
+        confirmLabel="Seed fleet"
+        onConfirm={async () => {
+          setSeedConfirmOpen(false);
+          setIsCreating(true);
+          try {
+            const resp = await authFetch("/api/fleet/seed", { method: "POST" });
+            if (resp.ok) await fetchAgents();
+          } finally {
+            setIsCreating(false);
+          }
+        }}
+        onCancel={() => setSeedConfirmOpen(false)}
+      />
+      <ConfirmModal
+        open={!!deleteConfirm}
+        title="Delete agent?"
+        message={`"${deleteConfirm?.name}" will be permanently removed along with all its training data. This cannot be undone.`}
+        confirmLabel="Delete"
+        danger
+        loading={!!isDeletingAgent}
+        onConfirm={async () => {
+          if (!deleteConfirm) return;
+          await handleDeleteAgent(deleteConfirm.id);
+          setDeleteConfirm(null);
+        }}
+        onCancel={() => setDeleteConfirm(null)}
+      />
     </>
   );
 }

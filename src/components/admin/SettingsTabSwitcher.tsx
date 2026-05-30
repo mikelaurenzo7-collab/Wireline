@@ -1,9 +1,11 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
+import { motion } from "motion/react";
 import { cn } from "../../lib/utils";
 
 type AdminTab =
   | "agents"
+  | "integrations"
   | "branding"
   | "carrier"
   | "subscription"
@@ -20,8 +22,6 @@ interface TabDef {
   path: string;
 }
 
-// Settings is now strictly admin/config concerns. Voice library + pronunciation
-// moved to /train (they're agent training inputs, not tenant admin).
 const TAB_GROUPS: { tabs: TabDef[] }[] = [
   { tabs: [{ id: "agents", label: "Agents", path: "/agents" }] },
   {
@@ -33,6 +33,7 @@ const TAB_GROUPS: { tabs: TabDef[] }[] = [
   { tabs: [{ id: "branding", label: "Branding", path: "/admin?tab=branding" }] },
   { tabs: [{ id: "carrier", label: "Carrier", path: "/admin?tab=carrier" }] },
   { tabs: [{ id: "flywheel", label: "Growth", path: "/admin?tab=flywheel" }] },
+  { tabs: [{ id: "integrations", label: "Integrations", path: "/integrations" }] },
   {
     tabs: [
       { id: "system", label: "System", path: "/admin?tab=system" },
@@ -53,6 +54,7 @@ export default function SettingsTabSwitcher() {
   const getActiveTab = (): AdminTab => {
     const pathname = location.pathname;
     if (pathname === "/agents") return "agents";
+    if (pathname === "/integrations") return "integrations";
     if (pathname === "/dnc") return "dnc";
     if (pathname === "/audit") return "audit";
     const searchParams = new URLSearchParams(location.search);
@@ -72,41 +74,45 @@ export default function SettingsTabSwitcher() {
   const activeTab = getActiveTab();
 
   return (
-    <div className="shrink-0 mb-0 md:mb-3 flex items-center gap-1 overflow-x-auto scrollbar-hide">
-      <div
-        className="flex gap-0.5 p-0.5 rounded-xl glass border border-black/8 overflow-x-auto snap-x snap-mandatory scrollbar-hide max-w-full"
-        role="tablist"
-        aria-label="Settings sub-navigation"
-      >
+    <div
+      className="shrink-0 flex items-center justify-start gap-1 overflow-x-auto scrollbar-hide mb-2 md:mb-3"
+      role="tablist"
+      aria-label="Settings sub-navigation"
+    >
+      <div className="flex items-center gap-0.5 p-0.5 glass border border-black/8 max-w-full overflow-x-auto scrollbar-hide">
         {TAB_GROUPS.map((group, gi) => (
           <React.Fragment key={gi}>
             {gi > 0 && (
-              <span aria-hidden="true" className="shrink-0 self-center w-px h-4 bg-black/12 mx-1" />
+              <span
+                aria-hidden="true"
+                className="shrink-0 self-center w-px h-4 bg-black/10 mx-0.5"
+              />
             )}
-            {group.tabs.map((t) => (
-              <Link
-                key={t.id}
-                to={t.path}
-                role="tab"
-                aria-selected={activeTab === t.id}
-                className={cn(
-                  "shrink-0 snap-start min-h-10 px-3 py-1.5 rounded-lg text-[11px] uppercase tracking-[0.1em] transition-colors whitespace-nowrap font-medium",
-                  activeTab === t.id
-                    ? "bg-brand/20 text-brand font-semibold"
-                    : "text-muted hover:text-ink hover:bg-black/5",
-                )}
-                style={
-                  activeTab === t.id
-                    ? {
-                        background: "rgba(79, 30, 123, 0.15)",
-                        boxShadow: "0 0 0 1px rgba(79, 30, 123, 0.1) inset",
-                      }
-                    : undefined
-                }
-              >
-                {t.label}
-              </Link>
-            ))}
+            {group.tabs.map((t) => {
+              const active = activeTab === t.id;
+              return (
+                <Link
+                  key={t.id}
+                  to={t.path}
+                  role="tab"
+                  aria-selected={active}
+                  className={cn(
+                    "relative shrink-0 inline-flex min-h-10 items-center gap-1.5 px-3 py-1.5 transition-colors text-[11px] uppercase tracking-[0.1em] font-medium whitespace-nowrap",
+                    active ? "text-on-brand" : "text-muted hover:text-ink hover:bg-black/5",
+                  )}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="settings-hub-active-pill"
+                      aria-hidden="true"
+                      className="absolute inset-0 pointer-events-none bg-brand shadow-[0_2px_8px_-4px_rgba(79,30,123,0.5)]"
+                      transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                    />
+                  )}
+                  <span className="relative z-[1]">{t.label}</span>
+                </Link>
+              );
+            })}
           </React.Fragment>
         ))}
       </div>
