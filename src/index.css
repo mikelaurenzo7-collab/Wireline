@@ -571,11 +571,11 @@
 @utility brutal-btn {
   @apply relative inline-flex items-center justify-center gap-2 px-5 py-2.5 font-semibold tracking-[0.10em] uppercase text-[11px] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:grayscale disabled:pointer-events-none overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-paper rounded-full;
   color: #FFFFFF;
-  background: linear-gradient(135deg, #6B2B99, #6B2B99);
+  background: linear-gradient(135deg, #8B3FD6, #8B3FD6);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.15) inset,
-    0 6px 20px -6px rgba(107, 43, 153, 0.45),
-    0 14px 36px -10px rgba(107, 43, 153, 0.28);
+    0 6px 20px -6px rgba(139, 63, 214, 0.45),
+    0 14px 36px -10px rgba(139, 63, 214, 0.28);
 }
 
 /* Button size variants — use alongside brutal-btn to avoid !py- overrides. */
