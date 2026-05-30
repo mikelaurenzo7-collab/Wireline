@@ -46,6 +46,12 @@ export type ContactAgent = {
    * intake (gravity when it matters).
    */
   defaultVibe: "warm" | "playful" | "authoritative";
+  /**
+   * STT + turn-taking experiment knob. Default (unset) = Deepgram Nova-3 +
+   * LiveKit smart endpointing. "flux-eot" = Deepgram Flux integrated EOT
+   * (English only). Used for employee-line A/B — see Liam vs Sarah.
+   */
+  transcriberMode?: "nova-livekit" | "flux-eot";
 };
 
 /**
@@ -96,6 +102,8 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     tint: "#4F1E7B",
     defaultVibe: "playful",
     voiceId: "TX3LPaxmHKxFdv7VOQHJ",
+    /** Flux EOT A/B — Sarah stays on Nova-3 + LiveKit. */
+    transcriberMode: "flux-eot",
   },
 ];
 

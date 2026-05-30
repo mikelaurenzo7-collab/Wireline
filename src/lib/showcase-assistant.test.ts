@@ -20,10 +20,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildShowcaseAssistantPayload,
   buildShowcaseFunctionTools,
   isOwnerRoutingShowcaseTool,
   showcaseToolNamesForKind,
 } from "./showcase-assistant";
+import { WIRELINE_CONTACT_AGENTS } from "../data/contact-agents";
 
 describe("showcaseToolNamesForKind", () => {
   it("gives cs (employee) lines the full toolset including owner-routing tools", () => {
@@ -79,5 +81,25 @@ describe("isOwnerRoutingShowcaseTool", () => {
     expect(isOwnerRoutingShowcaseTool("send_payment_link")).toBe(false);
     expect(isOwnerRoutingShowcaseTool("view_recent_interactions")).toBe(false);
     expect(isOwnerRoutingShowcaseTool("not_a_tool")).toBe(false);
+  });
+});
+
+describe("buildShowcaseAssistantPayload — Flux A/B on employee lines", () => {
+  const sarah = WIRELINE_CONTACT_AGENTS.find((a) => a.name === "Sarah")!;
+  const liam = WIRELINE_CONTACT_AGENTS.find((a) => a.name === "Liam")!;
+
+  it("Sarah (control) uses Nova-3 + LiveKit", () => {
+    const payload = buildShowcaseAssistantPayload(sarah, "cs");
+    expect(payload.transcriber.model).toBe("nova-3");
+    expect(payload.startSpeakingPlan).toHaveProperty("smartEndpointingPlan");
+    expect(payload.metadata.wireline_transcriber_mode).toBe("nova-livekit");
+  });
+
+  it("Liam (experiment) uses Deepgram Flux EOT", () => {
+    const payload = buildShowcaseAssistantPayload(liam, "cs");
+    expect(payload.transcriber.model).toBe("flux-general-en");
+    expect(payload.transcriber.eotThreshold).toBe(0.62);
+    expect(payload.startSpeakingPlan).not.toHaveProperty("smartEndpointingPlan");
+    expect(payload.metadata.wireline_transcriber_mode).toBe("flux-eot");
   });
 });

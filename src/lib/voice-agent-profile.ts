@@ -55,6 +55,55 @@ export const VAPI_TRANSCRIBER_CONFIG = {
 /** Buffer before shipping LLM tokens to TTS (prevents micro speed-ups on dense strings). */
 export const VAPI_INPUT_MIN_CHARACTERS = 30;
 
+/** STT + turn-taking strategy. Flux integrates EOT; Nova uses LiveKit on top. */
+export type VapiTranscriberMode = "nova-livekit" | "flux-eot";
+
+/**
+ * Deepgram Flux — conversational STT with built-in end-of-turn detection.
+ * Do NOT pair with smartEndpointingPlan (Vapi uses Flux EOT events directly).
+ *
+ * Tuning rationale for Wireline employee A/B (Liam):
+ *   eotThreshold 0.62 — balanced-slightly-snappy; avoids 0.55 interrupting
+ *     mid-thought pauses ("let me check…") while beating Nova+LiveKit latency.
+ *   eotTimeoutMs 3200 — hard cap below the 5s default; room for calendar/email
+ *     dictation without the old linear 5s dead air.
+ */
+export const VAPI_TRANSCRIBER_FLUX_CONFIG = {
+  provider: "deepgram" as const,
+  model: "flux-general-en",
+  language: "en",
+  eotThreshold: 0.62,
+  eotTimeoutMs: 3200,
+};
+
+/** Flux path: minimal startSpeakingPlan — Flux owns turn boundaries. */
+export const VAPI_START_SPEAKING_PLAN_FLUX = {
+  waitSeconds: 0.05,
+};
+
+/** Showcase employee on Flux for latency A/B — see contact-agents.ts (Liam). */
+export const WIRELINE_FLUX_EOT_SHOWCASE_AGENT = "Liam";
+
+export function resolveVapiSpeechPipeline(mode: VapiTranscriberMode = "nova-livekit"): {
+  transcriber: typeof VAPI_TRANSCRIBER_CONFIG | typeof VAPI_TRANSCRIBER_FLUX_CONFIG;
+  startSpeakingPlan: typeof VAPI_START_SPEAKING_PLAN | typeof VAPI_START_SPEAKING_PLAN_FLUX;
+} {
+  if (mode === "flux-eot") {
+    return {
+      transcriber: VAPI_TRANSCRIBER_FLUX_CONFIG,
+      startSpeakingPlan: VAPI_START_SPEAKING_PLAN_FLUX,
+    };
+  }
+  return {
+    transcriber: VAPI_TRANSCRIBER_CONFIG,
+    startSpeakingPlan: VAPI_START_SPEAKING_PLAN,
+  };
+}
+
+export function showcaseTranscriberModeForAgent(agentName: string): VapiTranscriberMode {
+  return agentName === WIRELINE_FLUX_EOT_SHOWCASE_AGENT ? "flux-eot" : "nova-livekit";
+}
+
 export function getVoiceLatencyProfile(input: {
   archetype?: string;
   role?: string;

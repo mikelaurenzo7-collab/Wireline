@@ -18,9 +18,10 @@ import {
 } from "./claude-brain";
 import { sanitizePhone } from "./vapi-helpers";
 import {
+  resolveVapiSpeechPipeline,
+  showcaseTranscriberModeForAgent,
   VAPI_INPUT_MIN_CHARACTERS,
-  VAPI_START_SPEAKING_PLAN,
-  VAPI_TRANSCRIBER_CONFIG,
+  type VapiTranscriberMode,
 } from "./voice-agent-profile";
 
 export type ShowcaseKind = "cs" | "demo";
@@ -394,6 +395,10 @@ export function buildShowcaseAssistantPayload(
     model: options?.model ?? VAPI_SHOWCASE_MODEL,
   });
 
+  const transcriberMode: VapiTranscriberMode =
+    agent.transcriberMode ?? showcaseTranscriberModeForAgent(agent.name);
+  const speechPipeline = resolveVapiSpeechPipeline(transcriberMode);
+
   const payload: Record<string, any> = {
     firstMessage: agent.firstMessage,
     model: {
@@ -410,8 +415,12 @@ export function buildShowcaseAssistantPayload(
     numWordsToInterruptAssistant: 2,
     backgroundDenoisingEnabled: false,
     backgroundSound: "off",
-    startSpeakingPlan: VAPI_START_SPEAKING_PLAN,
-    transcriber: VAPI_TRANSCRIBER_CONFIG,
+    startSpeakingPlan: speechPipeline.startSpeakingPlan,
+    transcriber: speechPipeline.transcriber,
+    metadata: {
+      wireline_transcriber_mode: transcriberMode,
+      wireline_showcase_agent: agent.name,
+    },
     // Prevent TTS speed-up on dense token sequences (emails, phone numbers)
     inputMinCharacters: VAPI_INPUT_MIN_CHARACTERS,
   };
