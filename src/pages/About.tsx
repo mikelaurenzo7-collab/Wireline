@@ -60,6 +60,16 @@ const PRINCIPLES = [
   },
 ];
 
+const FAQ_STRUCTURED_DATA = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQS.map((faq) => ({
+    "@type": "Question",
+    name: faq.q,
+    acceptedAnswer: { "@type": "Answer", text: faq.a },
+  })),
+};
+
 export default function About() {
   return (
     <>
@@ -67,6 +77,7 @@ export default function About() {
         title="About Wireline — Built by an Operator, for Operators"
         description="Wireline is a solo-founder AI voice + email agent platform built by Michael Laurenzo. Mission, principles, and the infra stack behind every customer conversation."
         path="/about"
+        structuredData={FAQ_STRUCTURED_DATA}
       />
 
       <MarketingPageFrame mainClassName="!px-0 pt-20 sm:pt-24">

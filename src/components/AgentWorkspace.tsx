@@ -44,7 +44,6 @@ import IntegrationActivityCard, {
 } from "./IntegrationActivityCard";
 import { Skeleton } from "./ui/shadcn/Skeleton";
 import { Switch } from "./ui/shadcn/Switch";
-import { Avatar, AvatarFallback } from "./ui/shadcn/Avatar";
 import { Badge } from "./ui/shadcn/Badge";
 import {
   Tooltip,
