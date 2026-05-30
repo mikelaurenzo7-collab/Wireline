@@ -137,15 +137,14 @@ export default function ConfirmModal({
 
               <div className="relative z-10 flex items-start gap-4 mb-5">
                 <div
-                  className={cn(
-                    "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-                    danger
-                      ? "bg-rose-500/15 border border-rose-500/30"
-                      : "bg-amber-500/15 border border-amber-500/30",
-                  )}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={danger
+                    ? { background: "rgba(232,70,106,0.15)", border: "1px solid rgba(232,70,106,0.30)" }
+                    : { background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.30)" }}
                 >
                   <AlertTriangle
-                    className={cn("w-5 h-5", danger ? "text-rose-500" : "text-amber-500")}
+                    className="w-5 h-5"
+                    style={{ color: danger ? "#E8466A" : "#f59e0b" }}
                     aria-hidden="true"
                   />
                 </div>
@@ -184,10 +183,11 @@ export default function ConfirmModal({
                   className={cn(
                     "disabled:opacity-50 disabled:cursor-not-allowed",
                     "flex-1 h-11 rounded-xl text-[11px] uppercase tracking-[0.25em] flex items-center justify-center gap-1.5 transition-all active:scale-95",
-                    danger
-                      ? "bg-rose-500/20 border border-rose-500/40 text-rose-500 hover:bg-rose-500/30"
-                      : "brutal-btn !py-0 !h-11",
+                    !danger && "brutal-btn !py-0 !h-11",
                   )}
+                  style={danger
+                    ? { background: "rgba(232,70,106,0.20)", border: "1px solid rgba(232,70,106,0.40)", color: "#E8466A" }
+                    : undefined}
                 >
                   {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />}
                   {confirmLabel}

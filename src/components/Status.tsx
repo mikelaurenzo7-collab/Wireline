@@ -66,34 +66,40 @@ const COMPONENT_META: Record<
 
 const STATE_META: Record<
   ComponentState | OverallState,
-  { label: string; tone: string; pill: string; bgGradient: string; icon: typeof CheckCircle2 }
+  {
+    label: string;
+    toneColor: string;
+    pillStyle: React.CSSProperties;
+    gradientStyle: React.CSSProperties;
+    icon: typeof CheckCircle2;
+  }
 > = {
   operational: {
     label: "Operational",
-    tone: "text-emerald-700",
-    pill: "bg-emerald-500/10 text-emerald-700 border-emerald-500/25",
-    bgGradient: "from-emerald-500/8 via-emerald-500/4 to-transparent",
+    toneColor: "#047857",
+    pillStyle: { background: "rgba(16,185,129,0.10)", color: "#047857", border: "1px solid rgba(16,185,129,0.25)" },
+    gradientStyle: { background: "linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(16,185,129,0.04) 50%, transparent 100%)" },
     icon: CheckCircle2,
   },
   degraded: {
     label: "Degraded",
-    tone: "text-amber-700",
-    pill: "bg-amber-500/10 text-amber-700 border-amber-500/25",
-    bgGradient: "from-amber-500/8 via-amber-500/4 to-transparent",
+    toneColor: "#b45309",
+    pillStyle: { background: "rgba(245,158,11,0.10)", color: "#b45309", border: "1px solid rgba(245,158,11,0.25)" },
+    gradientStyle: { background: "linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(245,158,11,0.04) 50%, transparent 100%)" },
     icon: AlertTriangle,
   },
   outage: {
     label: "Outage",
-    tone: "text-rose-700",
-    pill: "bg-rose-500/10 text-rose-700 border-rose-500/25",
-    bgGradient: "from-rose-500/8 via-rose-500/4 to-transparent",
+    toneColor: "#be123c",
+    pillStyle: { background: "rgba(232,70,106,0.10)", color: "#be123c", border: "1px solid rgba(232,70,106,0.25)" },
+    gradientStyle: { background: "linear-gradient(135deg, rgba(232,70,106,0.08) 0%, rgba(232,70,106,0.04) 50%, transparent 100%)" },
     icon: XCircle,
   },
   unknown: {
     label: "Unknown",
-    tone: "text-muted",
-    pill: "bg-muted/10 text-muted border-muted/25",
-    bgGradient: "from-muted/8 via-muted/4 to-transparent",
+    toneColor: "var(--color-muted)",
+    pillStyle: {},
+    gradientStyle: {},
     icon: AlertTriangle,
   },
 };
@@ -159,7 +165,8 @@ export default function Status() {
           >
             <div
               aria-hidden="true"
-              className={`absolute inset-0 bg-gradient-to-br ${STATE_META[overall].bgGradient} pointer-events-none`}
+              className="absolute inset-0 pointer-events-none"
+              style={STATE_META[overall].gradientStyle}
             />
             <div className="relative">
               <div className="flex items-center gap-2 mb-3">
@@ -168,7 +175,8 @@ export default function Status() {
               </div>
               <div className="flex items-start gap-4">
                 <div
-                  className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${STATE_META[overall].pill}`}
+                  className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
+                  style={STATE_META[overall].pillStyle}
                 >
                   {loading ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -235,13 +243,15 @@ export default function Status() {
                   >
                     <div
                       aria-hidden="true"
-                      className={`absolute inset-0 bg-gradient-to-br ${stateMeta.bgGradient} pointer-events-none`}
+                      className="absolute inset-0 pointer-events-none"
+                      style={stateMeta.gradientStyle}
                     />
                     <div className="relative">
                       <div className="flex items-center justify-between mb-2.5">
                         <Icon className="w-4 h-4 text-ink/75" strokeWidth={1.75} />
                         <span
-                          className={`inline-flex items-center gap-1 text-[8.5px] uppercase tracking-[0.22em] font-semibold px-2 py-0.5 rounded-full border leading-none ${stateMeta.pill}`}
+                          className="inline-flex items-center gap-1 text-[8.5px] uppercase tracking-[0.22em] font-semibold px-2 py-0.5 rounded-full leading-none"
+                          style={stateMeta.pillStyle}
                         >
                           <StateIcon className="w-2.5 h-2.5" />
                           {stateMeta.label}

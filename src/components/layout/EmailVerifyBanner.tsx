@@ -89,11 +89,10 @@ export default function EmailVerifyBanner() {
 
   // Color always amber here — verification is informational, not
   // urgent. Trial-expiry gets the rose treatment in TrialBanner.
-  const containerCls = "bg-amber-500/10 border-b border-amber-500/30";
-  const textCls = "text-amber-700";
-  const iconCls = "text-amber-500";
-  const buttonCls =
-    "bg-amber-500/20 border border-amber-500/40 text-amber-700 hover:bg-amber-500/30";
+  const containerStyle = { background: "rgba(245,158,11,0.10)", borderBottom: "1px solid rgba(245,158,11,0.30)" };
+  const textColor = "#b45309";
+  const iconColor = "#f59e0b";
+  const buttonStyle = { background: "rgba(245,158,11,0.20)", border: "1px solid rgba(245,158,11,0.40)", color: "#b45309" };
 
   let buttonLabel: React.ReactNode = "Resend email";
   let buttonDisabled = false;
@@ -119,10 +118,11 @@ export default function EmailVerifyBanner() {
     <motion.div
       initial={{ height: 0, opacity: 0 }}
       animate={{ height: "auto", opacity: 1 }}
-      className={`${containerCls} px-6 py-2.5 flex items-center justify-between gap-4 flex-wrap`}
+      className="px-6 py-2.5 flex items-center justify-between gap-4 flex-wrap"
+      style={containerStyle}
     >
-      <div className={`flex items-center gap-2.5 text-xs ${textCls}`}>
-        <Mail className={`w-3.5 h-3.5 shrink-0 ${iconCls}`} />
+      <div className="flex items-center gap-2.5 text-xs" style={{ color: textColor }}>
+        <Mail className="w-3.5 h-3.5 shrink-0" style={{ color: iconColor }} />
         <span>
           {outcome === "sent" ? (
             <>Verification email resent — check your inbox + spam folder.</>
@@ -146,7 +146,8 @@ export default function EmailVerifyBanner() {
         type="button"
         onClick={resend}
         disabled={buttonDisabled}
-        className={`shrink-0 px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] transition-all ${buttonCls} disabled:opacity-60 disabled:cursor-not-allowed`}
+        className="shrink-0 px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+        style={buttonStyle}
       >
         {buttonLabel}
       </button>

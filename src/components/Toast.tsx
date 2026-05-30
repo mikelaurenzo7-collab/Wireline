@@ -4,23 +4,32 @@ import { useLocation } from "react-router-dom";
 import { useToast, type Toast } from "../contexts/ToastContext";
 import { useAuth } from "../contexts/AuthContext";
 import { isMarketingStickyCtaRoute, MARKETING_STICKY_CTA_BOTTOM } from "../lib/marketing-mobile";
-import { cn } from "../lib/utils";
 
 const META = {
   success: {
     icon: CheckCircle2,
-    color: "#8B3FD6",
-    border: "border-emerald-500/30",
-    bg: "bg-emerald-500/10",
+    color: "#10b981",
+    borderColor: "rgba(16,185,129,0.30)",
+    bgColor: "rgba(16,185,129,0.10)",
   },
-  error: { icon: XCircle, color: "#f43f5e", border: "border-rose-500/30", bg: "bg-rose-500/10" },
+  error: {
+    icon: XCircle,
+    color: "#E8466A",
+    borderColor: "rgba(232,70,106,0.30)",
+    bgColor: "rgba(232,70,106,0.10)",
+  },
   warning: {
     icon: AlertTriangle,
-    color: "#C4B5A0",
-    border: "border-amber-500/30",
-    bg: "bg-amber-500/10",
+    color: "#f59e0b",
+    borderColor: "rgba(245,158,11,0.30)",
+    bgColor: "rgba(245,158,11,0.10)",
   },
-  info: { icon: Info, color: "#8B3FD6", border: "border-brand/30", bg: "bg-brand/10" },
+  info: {
+    icon: Info,
+    color: "#8B3FD6",
+    borderColor: "rgba(139,63,214,0.30)",
+    bgColor: "rgba(139,63,214,0.10)",
+  },
 };
 
 function ToastItem({ toast }: { toast: Toast }) {
@@ -37,12 +46,8 @@ function ToastItem({ toast }: { toast: Toast }) {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -8, scale: 0.94, transition: { duration: 0.18 } }}
       transition={{ type: "spring", stiffness: 380, damping: 32 }}
-      className={cn(
-        // Full-width on mobile (parent strip already handles padding);
-        // fixed-width on sm+ to keep the desktop stack tidy.
-        "relative w-full sm:w-80 max-w-full sm:max-w-[92vw] rounded-2xl glass border shadow-2xl overflow-hidden",
-        m.border,
-      )}
+      className="relative w-full sm:w-80 max-w-full sm:max-w-[92vw] rounded-2xl glass border shadow-2xl overflow-hidden"
+      style={{ borderColor: m.borderColor }}
     >
       {/* Accent strip */}
       <div
@@ -52,9 +57,8 @@ function ToastItem({ toast }: { toast: Toast }) {
 
       <div className="flex items-start gap-3 px-4 py-3.5 pl-5">
         <div
-          className={cn(
-            "shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5",
-            m.bg,
+          className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5"
+          style={{ background: m.bgColor }}
           )}
         >
           <Icon className="w-3.5 h-3.5" style={{ color: m.color }} strokeWidth={2} />
