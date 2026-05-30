@@ -77,7 +77,7 @@ export default function AttributionView({ days }: { days: number }) {
           accent="#4F1E7B"
         />
         <Stat label="Total calls" value={totalCalls} accent="#4F1E7B" />
-        <Stat label="Booked" value={totalBooked} accent="#10B981" />
+        <Stat label="Booked" value={totalBooked} accent="#6B2B99" />
         <Stat
           label="Conv. rate"
           value={`${totalCalls > 0 ? ((totalBooked / totalCalls) * 100).toFixed(1) : "0.0"}%`}

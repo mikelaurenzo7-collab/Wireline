@@ -82,7 +82,7 @@ const STAFF: StaffMember[] = [
     title: "Support",
     blurb: "Account help, billing, troubleshooting. Auto-issues refunds up to $50.",
     icon: MessageSquare,
-    accent: "from-sky-500/15 to-brand/10",
+    accent: "from-brand/15 to-brand-deep/10",
   },
   {
     role: "technical",
@@ -117,7 +117,7 @@ const STAT_CARD_CLASSES: Record<string, string> = {
   brand: "border-brand/20 hover:border-brand/50 hover:shadow-[0_0_15px_rgba(79,30,123,0.12)]",
   ink: "border-black/10 hover:border-black/20 hover:shadow-[0_0_15px_rgba(79,30,123,0.06)]",
   emerald:
-    "border-emerald-500/20 hover:border-emerald-500/50 hover:shadow-[0_0_15px_rgba(16,185,129,0.12)]",
+    "border-emerald-500/20 hover:border-emerald-500/50 hover:shadow-[0_0_15px_rgba(79,30,123,0.12)]",
   rose: "border-rose-500/20 hover:border-rose-500/50 hover:shadow-[0_0_15px_rgba(244,63,94,0.12)]",
   amber:
     "border-amber-500/20 hover:border-amber-500/50 hover:shadow-[0_0_15px_rgba(245,158,11,0.12)]",

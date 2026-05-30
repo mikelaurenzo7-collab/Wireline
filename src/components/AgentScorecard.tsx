@@ -227,7 +227,7 @@ function Sparkline({ values }: { values: number[] }) {
           </linearGradient>
           <linearGradient id="sparkstroke" x1="0" x2="1" y1="0" y2="0">
             <stop offset="0%" stopColor="#4F1E7B" />
-            <stop offset="100%" stopColor="#10B981" />
+            <stop offset="100%" stopColor="#6B2B99" />
           </linearGradient>
         </defs>
         <polyline

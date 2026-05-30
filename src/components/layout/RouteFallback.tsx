@@ -1,5 +1,6 @@
 import React from "react";
 import { Compass } from "lucide-react";
+import { BRAND } from "../../constants/brand-colors";
 
 export default function RouteFallback() {
   return (
@@ -8,8 +9,7 @@ export default function RouteFallback() {
         <div
           className="absolute inset-y-0 -left-1/3 w-1/3 rounded-full"
           style={{
-            background:
-              "linear-gradient(90deg, transparent, rgba(79, 30, 123 ,0.95) 40%, rgba(16, 185, 129, 0.75) 60%, transparent)",
+            background: `linear-gradient(90deg, transparent, ${BRAND.purple}f2 40%, ${BRAND.purpleDeep}bf 60%, transparent)`,
             animation: "route-progress-sweep 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite",
           }}
         />

@@ -233,7 +233,7 @@ export default function ContactProfile() {
             label="Spend"
             value={formatMoney(data.stats?.total_cost, 2)}
             icon={DollarSign}
-            accent="#10B981"
+            accent="#6B2B99"
             gradientId={`${sparkUid}-spend`}
           />
         </div>

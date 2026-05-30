@@ -55,7 +55,7 @@ interface ConfettiPiece {
   delay: number;
 }
 
-const CONFETTI_COLORS = ["#4F1E7B", "#10B981", "#F59E0B", "#EF4444", "#3B82F6", "#EC4899"];
+const CONFETTI_COLORS = ["#4F1E7B", "#6B2B99", "#8B6FA8", "#3B154C", "#C4B5A0", "#D4C9B8"];
 
 function ConfettiExplosion({ active }: { active: boolean }) {
   const [pieces, setPieces] = useState<ConfettiPiece[]>([]);

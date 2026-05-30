@@ -64,21 +64,21 @@ export const GOAL_METRICS: readonly GoalMetricDef[] = [
     label: "Appointments booked",
     unit: "appointments",
     description: "Appointments your agents schedule this month.",
-    accent: "#10B981",
+    accent: "#6B2B99",
   },
   {
     id: "qualified_leads",
     label: "Qualified leads",
     unit: "leads",
     description: `Calls that scored ${QUALIFIED_LEAD_SCORE} or higher on lead intent this month.`,
-    accent: "#0EA5E9",
+    accent: "#6B2B99",
   },
   {
     id: "voice_minutes",
     label: "Voice minutes",
     unit: "minutes",
     description: "Total connected talk time across the fleet this month.",
-    accent: "#F59E0B",
+    accent: "#8B6FA8",
   },
 ];
 

@@ -68,11 +68,67 @@
   --color-zinc-900: #EDE6DA;
   --color-zinc-950: #E8E1D4;
 
-  /* Refined accents */
+  /* Refined accents — remapped to purple/cream so legacy utility classes
+   * (bg-emerald-500, text-amber-600, border-sky-500, etc.) never bleed
+   * off-brand blues, oranges, or teals on client-facing surfaces. */
   --color-rose-500: #E8466A;
-  --color-emerald-500: #10B981;
-  --color-cyan-50: #ECFEFF;
   --color-rose-600: #C53050;
+
+  --color-emerald-50: #F5F0F8;
+  --color-emerald-100: #EDE4F2;
+  --color-emerald-200: #D9CCE8;
+  --color-emerald-300: #B399D1;
+  --color-emerald-400: #8B6FA8;
+  --color-emerald-500: #6B2B99;
+  --color-emerald-600: #4F1E7B;
+  --color-emerald-700: #3B154C;
+  --color-emerald-800: #2E0F4A;
+
+  --color-amber-50: #F7F3EC;
+  --color-amber-100: #EDE6DA;
+  --color-amber-200: #D4C9B8;
+  --color-amber-300: #C4B5A0;
+  --color-amber-400: #A988C4;
+  --color-amber-500: #8B6FA8;
+  --color-amber-600: #6B2B99;
+  --color-amber-700: #4F1E7B;
+  --color-amber-800: #3B154C;
+
+  --color-blue-50: #F5F0F8;
+  --color-blue-100: #EDE4F2;
+  --color-blue-200: #D9CCE8;
+  --color-blue-300: #B399D1;
+  --color-blue-400: #8B6FA8;
+  --color-blue-500: #6B2B99;
+  --color-blue-600: #4F1E7B;
+  --color-blue-700: #3B154C;
+
+  --color-sky-50: #F5F0F8;
+  --color-sky-100: #EDE4F2;
+  --color-sky-200: #D9CCE8;
+  --color-sky-300: #B399D1;
+  --color-sky-400: #8B6FA8;
+  --color-sky-500: #6B2B99;
+  --color-sky-600: #4F1E7B;
+  --color-sky-700: #3B154C;
+
+  --color-cyan-50: #F5F0EC;
+  --color-cyan-100: #EDE6DA;
+  --color-cyan-200: #D4C9B8;
+  --color-cyan-300: #C4B5A0;
+  --color-cyan-400: #A988C4;
+  --color-cyan-500: #8B6FA8;
+  --color-cyan-600: #6B2B99;
+  --color-cyan-700: #4F1E7B;
+
+  --color-orange-50: #F7F3EC;
+  --color-orange-100: #EDE6DA;
+  --color-orange-200: #D4C9B8;
+  --color-orange-300: #C4B5A0;
+  --color-orange-400: #A988C4;
+  --color-orange-500: #8B6FA8;
+  --color-orange-600: #6B2B99;
+  --color-orange-700: #4F1E7B;
 
   --radius-sm: 0;
   --radius-md: 0;
@@ -143,6 +199,20 @@
   #root {
     min-height: 100dvh;
     isolation: isolate;
+  }
+
+  :root {
+    --wl-purple: #4F1E7B;
+    --wl-purple-light: #6B2B99;
+    --wl-purple-deep: #3B154C;
+    --wl-purple-muted: #8B6FA8;
+    --wl-cream: #F5F0E6;
+    --wl-paper: #EFE9DC;
+    --wl-cream-warm: #D4C9B8;
+    --wl-ink: #1A1614;
+    /* Legacy robot/marketing aliases — map to brand purple, not teal. */
+    --wl-emerald: #6B2B99;
+    --wl-emerald-soft: #8B6FA8;
   }
 
   /* iOS Safari zooms the viewport when a form field has font-size < 16px.
@@ -1125,11 +1195,11 @@ select:focus {
   @apply font-display italic text-ink leading-none tracking-tight;
 }
 
-/* Status dot colors */
-.dot-online  { @apply w-2 h-2 rounded-full bg-emerald-500; box-shadow: 0 0 6px rgba(16, 185, 129, 0.7); }
+/* Status dot colors — brand purple family, not teal/orange */
+.dot-online  { @apply w-2 h-2 rounded-full bg-brand; box-shadow: 0 0 6px rgba(79, 30, 123, 0.55); }
 .dot-busy    { @apply w-2 h-2 rounded-full bg-rose-500;    box-shadow: 0 0 6px rgba(232, 70, 106, 0.7); }
 .dot-idle    { @apply w-2 h-2 rounded-full bg-muted/40; }
-.dot-pending { @apply w-2 h-2 rounded-full bg-amber-500; box-shadow: 0 0 6px rgba(245, 158, 11, 0.6); }
+.dot-pending { @apply w-2 h-2 rounded-full bg-amber-500; box-shadow: 0 0 6px rgba(139, 111, 168, 0.55); }
 
 /* Animated "live" pulse ring */
 @keyframes live-pulse {
@@ -1436,7 +1506,7 @@ select:focus {
   @apply relative flex items-center justify-center w-5 h-5 rounded-md border border-black/12 transition-all cursor-pointer;
 }
 .neon-checkbox.active {
-  background: linear-gradient(135deg, #4F1E7B, #10B981);
+  background: linear-gradient(135deg, #4F1E7B, #3B154C);
   border-color: #4F1E7B;
   box-shadow: 0 0 10px rgba(79, 30, 123, 0.45);
 }

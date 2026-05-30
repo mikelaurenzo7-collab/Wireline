@@ -782,7 +782,7 @@ function DedupePanel({
   }, 0);
 
   const kindAccent = (k: DedupeCluster["kind"]) =>
-    k === "duplicate" ? "#4F1E7B" : k === "contradiction" ? "#FFC07D" : "#4F1E7B";
+    k === "duplicate" ? "#4F1E7B" : k === "contradiction" ? "#C4B5A0" : "#4F1E7B";
   const kindIcon = (k: DedupeCluster["kind"]) =>
     k === "contradiction" ? AlertTriangle : k === "duplicate" ? Copy : GitMerge;
 

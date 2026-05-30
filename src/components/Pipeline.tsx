@@ -16,7 +16,7 @@ const STAGES: { id: Stage; label: string; tint: string; help: string }[] = [
   { id: "contacted", label: "Contacted", tint: "#4F1E7B", help: "Reached at least once" },
   { id: "qualified", label: "Qualified", tint: "#4F1E7B", help: "Fit confirmed" },
   { id: "demo", label: "Demo Booked", tint: "#4F1E7B", help: "Meeting on the calendar" },
-  { id: "won", label: "Won", tint: "#10B981", help: "Closed-won" },
+  { id: "won", label: "Won", tint: "#6B2B99", help: "Closed-won" },
   { id: "lost", label: "Lost", tint: "#f43f5e", help: "Closed-lost" },
 ];
 
@@ -208,7 +208,7 @@ export default function Pipeline() {
                                     : lead.attempts <= 2
                                       ? "#4F1E7B"
                                       : lead.attempts <= 4
-                                        ? "#F59E0B"
+                                        ? "#8B6FA8"
                                         : "#E8466A",
                               }}
                             />

@@ -30,7 +30,7 @@ export function Spinner() {
         <div
           className="absolute inset-0 rounded-full opacity-40"
           style={{
-            background: "conic-gradient(from 0deg, #4F1E7B, #4F1E7B, #4F1E7B, #10B981, #4F1E7B)",
+            background: "conic-gradient(from 0deg, #4F1E7B, #4F1E7B, #4F1E7B, #6B2B99, #4F1E7B)",
             filter: "blur(1px)",
             animation: "spin 2s linear infinite",
           }}
@@ -164,7 +164,7 @@ export function SpendStat({
 
 export function qaColor(score: number) {
   if (score >= 90) return "#4F1E7B";
-  if (score >= 75) return "#10B981";
+  if (score >= 75) return "#6B2B99";
   if (score >= 60) return "#FFD166";
   if (score >= 40) return "#FF9A5C";
   return "#4F1E7B";

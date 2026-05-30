@@ -126,7 +126,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               icon={LayoutGrid}
               label="Live Ops"
               hint="Live callers"
-              accent="#10B981"
+              accent="#6B2B99"
             />
             <NotFoundCard
               to="/agents"

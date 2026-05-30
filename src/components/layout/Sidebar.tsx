@@ -37,6 +37,7 @@ import WirelineMark from "../WirelineMark";
 import { useAuth } from "../../contexts/AuthContext";
 import { useBranding } from "../../contexts/BrandingContext";
 import { NAV_GROUPS, type NavItem, NAV_SHORTCUT_HINTS } from "../../constants/navigation";
+import { BRAND, NAV_GROUP_ACCENTS } from "../../constants/brand-colors";
 import { authFetch } from "../../lib/api";
 import { useLivePresence } from "../../hooks/useLivePresence";
 import { cn } from "../../lib/utils";
@@ -45,18 +46,8 @@ const RAIL_COLLAPSED = 56; // px
 const RAIL_EXPANDED = 224; // px
 const AUTO_EXPAND_WIDTH = 1440; // viewport width that auto-expands the rail
 
-// Per-group accent colors — let operators scan the rail by category.
-// Matches the route-accent palette already in use elsewhere. The group
-// section titles were removed from the rail (they ate vertical space),
-// but each page keeps its category accent stripe so the eye can still
-// sort by group at a glance.
-const GROUP_ACCENTS: Record<string, string> = {
-  Workspace: "#4F1E7B", // brand purple
-  Channels: "#3B82F6", // vibrant blue — communication surfaces
-  Fleet: "#F59E0B", // warm amber
-  Activity: "#10B981", // emerald
-  Admin: "#7C7469", // muted warm gray
-};
+// Per-group accent colors — purple family only (no blue/amber/teal bleed).
+const GROUP_ACCENTS = NAV_GROUP_ACCENTS;
 
 // Flattened nav: every page from NAV_GROUPS (except the Admin group, whose
 // lone Settings page is relocated to the footer cluster below Help) laid
@@ -65,7 +56,7 @@ const GROUP_ACCENTS: Record<string, string> = {
 const NAV_ITEMS: (NavItem & { accent: string })[] = NAV_GROUPS.filter(
   (group) => group.label !== "Admin",
 ).flatMap((group) =>
-  group.items.map((item) => ({ ...item, accent: GROUP_ACCENTS[group.label] || "#4F1E7B" })),
+  group.items.map((item) => ({ ...item, accent: GROUP_ACCENTS[group.label] || BRAND.purple })),
 );
 
 // Keyboard-shortcut hints — sourced from navigation.ts.
@@ -495,7 +486,7 @@ function LivePulse({ count, expanded }: { count: number; expanded: boolean }) {
     <div
       className={cn(
         "flex items-center gap-2 h-8 px-2 rounded-lg",
-        live ? "bg-emerald-500/10" : "bg-white/[0.03]",
+        live ? "bg-brand/10" : "bg-white/[0.03]",
       )}
       title={live ? `${count} live call${count === 1 ? "" : "s"}` : "Floor is quiet"}
     >
@@ -503,14 +494,14 @@ function LivePulse({ count, expanded }: { count: number; expanded: boolean }) {
         {live && (
           <span
             className="absolute inset-0 rounded-full animate-ping"
-            style={{ background: "#10B981", opacity: 0.55 }}
+            style={{ background: BRAND.purpleLight, opacity: 0.55 }}
           />
         )}
         <span
           className="relative w-2 h-2 rounded-full"
           style={{
-            background: live ? "#10B981" : "rgba(239,233,220,0.32)",
-            boxShadow: live ? "0 0 10px rgba(16,185,129,0.7)" : "0 0 0 1px rgba(239,233,220,0.18)",
+            background: live ? BRAND.purpleLight : "rgba(239,233,220,0.32)",
+            boxShadow: live ? "0 0 10px rgba(79,30,123,0.55)" : "0 0 0 1px rgba(239,233,220,0.18)",
           }}
         />
       </span>
@@ -607,8 +598,8 @@ function TierInline() {
             style={{
               width: `${pct}%`,
               background: overage
-                ? "linear-gradient(90deg, #E8466A, #F59E0B)"
-                : "linear-gradient(90deg, #10B981, #EFE9DC)",
+                ? `linear-gradient(90deg, ${BRAND.rose}, ${BRAND.purpleMuted})`
+                : `linear-gradient(90deg, ${BRAND.purpleLight}, ${BRAND.paper})`,
             }}
           />
         </div>

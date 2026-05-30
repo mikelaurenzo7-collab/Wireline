@@ -463,7 +463,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
       <Section
         icon={AlertOctagon}
         title="Immediate-escalation triggers"
-        accent="#FFC07D"
+        accent="#C4B5A0"
         hint="Phrases that force a human handoff regardless of normal escalation logic. Up to 24."
       >
         <ChipList chips={value.escalation_keywords ?? []} onRemove={removeKeyword} tone="amber" />
@@ -579,7 +579,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
       <Section
         icon={Type}
         title="Business variables"
-        accent="#10B981"
+        accent="#6B2B99"
         hint="Reusable {placeholders} for personality / directives / knowledge / messages. Set once, reference anywhere."
       >
         <div className="space-y-1.5">

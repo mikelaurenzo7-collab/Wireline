@@ -50,10 +50,10 @@ interface GoalsData {
 }
 
 const STATUS_META: Record<GoalStatus, { label: string; color: string }> = {
-  achieved: { label: "Achieved", color: "#10B981" },
+  achieved: { label: "Achieved", color: "#6B2B99" },
   ahead: { label: "Ahead of pace", color: "#4F1E7B" },
-  on_track: { label: "On track", color: "#10B981" },
-  behind: { label: "Behind pace", color: "#F59E0B" },
+  on_track: { label: "On track", color: "#6B2B99" },
+  behind: { label: "Behind pace", color: "#8B6FA8" },
 };
 
 const num = (n: number) => n.toLocaleString();

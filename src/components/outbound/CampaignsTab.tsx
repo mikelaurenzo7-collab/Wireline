@@ -347,7 +347,7 @@ export default function CampaignsTab({
                               label: "Answered",
                               value: campaignAnalytics.call_stats?.answered ?? 0,
                               icon: Phone,
-                              accent: "#10B981",
+                              accent: "#6B2B99",
                             },
                             {
                               label: "Avg Duration",
@@ -397,7 +397,7 @@ export default function CampaignsTab({
                               {campaignAnalytics.outcomes.map((o: any) => {
                                 const color =
                                   o.status === "Completed"
-                                    ? "#10B981"
+                                    ? "#6B2B99"
                                     : o.status === "Failed" || o.status?.includes("Fail")
                                       ? "#4F1E7B"
                                       : o.status === "Queued"
@@ -443,7 +443,7 @@ export default function CampaignsTab({
               {[
                 { label: "Leads", value: selectedCampaign.leads_count, accent: "#4F1E7B" },
                 { label: "Dialed", value: selectedCampaign.dialed_count, accent: "#4F1E7B" },
-                { label: "Connected", value: selectedCampaign.connected_count, accent: "#10B981" },
+                { label: "Connected", value: selectedCampaign.connected_count, accent: "#6B2B99" },
                 {
                   label: "Window",
                   value: `${selectedCampaign.call_window_start}–${selectedCampaign.call_window_end}`,

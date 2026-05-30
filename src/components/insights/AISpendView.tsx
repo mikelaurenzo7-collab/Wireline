@@ -111,7 +111,7 @@ function SpendBudgetCard() {
   const warnPct = Number(status?.warn_threshold_pct || 80);
   const isOver = limit > 0 && used >= limit;
   const isWarn = limit > 0 && pct >= warnPct && !isOver;
-  const barColor = isOver ? "#FF6B6B" : isWarn ? "#FFC07D" : "#10B981";
+  const barColor = isOver ? "#FF6B6B" : isWarn ? "#C4B5A0" : "#6B2B99";
   const period = status?.period || "—";
 
   return (
@@ -332,7 +332,7 @@ export default function AISpendView({ days }: { days: number }) {
               label="Saved by Cache"
               value={formatMoney(totals?.cache_savings_usd, 2)}
               icon={Database}
-              accent="#10B981"
+              accent="#6B2B99"
             />
           </div>
 

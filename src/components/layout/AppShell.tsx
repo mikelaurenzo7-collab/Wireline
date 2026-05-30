@@ -19,6 +19,7 @@ import {
   PAGE_TITLES,
   APP_KEYBOARD_SHORTCUTS,
 } from "../../constants/navigation";
+import { BRAND } from "../../constants/brand-colors";
 import { useBranding } from "../../contexts/BrandingContext";
 import { useViewTransitionRoute } from "../../hooks/useViewTransitionRoute";
 import { useLivePresence } from "../../hooks/useLivePresence";
@@ -122,7 +123,7 @@ export default function AppShell() {
           <div
             className="absolute inset-0 rounded-full"
             style={{
-              background: "conic-gradient(from 0deg, #4F1E7B, #4F1E7B, #4F1E7B, #10B981, #4F1E7B)",
+              background: `conic-gradient(from 0deg, ${BRAND.purple}, ${BRAND.purpleDeep}, ${BRAND.purpleLight}, ${BRAND.purpleDeep}, ${BRAND.purple})`,
               filter: "blur(2px)",
             }}
           />
@@ -479,7 +480,7 @@ function DesktopContextBar({
           live={liveCalls > 0}
           icon={Activity}
           label={liveCalls > 0 ? `${liveCalls} live` : "Floor quiet"}
-          tone="emerald"
+          tone="brand"
           title={
             liveCalls > 0
               ? `${liveCalls} active call${liveCalls === 1 ? "" : "s"} — open Live Ops`
@@ -502,7 +503,7 @@ function DesktopContextBar({
                 live
                 icon={ListChecks}
                 label={`${triageCount > 99 ? "99+" : triageCount} to review`}
-                tone="amber"
+                tone="muted"
                 title={`${triageCount} conversation${triageCount === 1 ? "" : "s"} flagged for review`}
               />
             </motion.div>
@@ -542,22 +543,22 @@ function PulsePill({
   live: boolean;
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   label: string;
-  tone: "emerald" | "amber";
+  tone: "brand" | "muted";
   title: string;
 }) {
   const palette =
-    tone === "emerald"
+    tone === "brand"
       ? {
-          dot: "#10B981",
-          text: "text-emerald-700",
-          ring: "ring-emerald-500/20",
-          bg: "bg-emerald-500/8",
+          dot: BRAND.purpleLight,
+          text: "text-brand",
+          ring: "ring-brand/20",
+          bg: "bg-brand/8",
         }
       : {
-          dot: "#F59E0B",
-          text: "text-amber-700",
-          ring: "ring-amber-500/25",
-          bg: "bg-amber-500/10",
+          dot: BRAND.purpleMuted,
+          text: "text-brand-ink",
+          ring: "ring-brand/15",
+          bg: "bg-brand/5",
         };
 
   const inner = (

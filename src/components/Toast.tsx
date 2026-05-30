@@ -9,14 +9,14 @@ import { cn } from "../lib/utils";
 const META = {
   success: {
     icon: CheckCircle2,
-    color: "#10B981",
+    color: "#6B2B99",
     border: "border-emerald-500/30",
     bg: "bg-emerald-500/10",
   },
   error: { icon: XCircle, color: "#f43f5e", border: "border-rose-500/30", bg: "bg-rose-500/10" },
   warning: {
     icon: AlertTriangle,
-    color: "#FFC07D",
+    color: "#C4B5A0",
     border: "border-amber-500/30",
     bg: "bg-amber-500/10",
   },

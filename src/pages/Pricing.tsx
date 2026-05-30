@@ -550,7 +550,7 @@ export default function Pricing() {
                 >
                   <div
                     className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-20 blur-3xl pointer-events-none"
-                    style={{ background: "#10B981" }}
+                    style={{ background: "#6B2B99" }}
                     aria-hidden="true"
                   />
                   <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ink/55 mb-1">

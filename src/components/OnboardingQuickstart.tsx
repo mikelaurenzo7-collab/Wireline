@@ -66,7 +66,7 @@ const STEPS = [
     title: "Run a live test call",
     body: "Talk to your agent live from your browser — no phone needed. Make sure it sounds the way you want.",
     icon: Mic,
-    accent: "#10B981",
+    accent: "#6B2B99",
     badge: "Try it now",
   },
 ] as const;
@@ -757,7 +757,7 @@ function AllSetCard({
         />
         <div
           className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-15 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, #10B981, transparent)" }}
+          style={{ background: "radial-gradient(circle, #6B2B99, transparent)" }}
         />
 
         {/* Hero row */}
@@ -767,7 +767,7 @@ function AllSetCard({
             <motion.div
               className="absolute inset-0 rounded-full"
               style={{
-                background: "conic-gradient(from 0deg, #4F1E7B, #4F1E7B, #10B981, #4F1E7B)",
+                background: "conic-gradient(from 0deg, #4F1E7B, #4F1E7B, #6B2B99, #4F1E7B)",
               }}
               animate={{ rotate: 360 }}
               transition={{ duration: 12, repeat: Infinity, ease: "linear" }}

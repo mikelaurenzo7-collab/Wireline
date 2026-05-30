@@ -235,7 +235,7 @@ export default function TriageInbox() {
               <WidgetBoundary label="Hot Leads">
                 <HotLeads items={data?.hot_leads || []} />
               </WidgetBoundary>,
-              "#F59E0B",
+              "#8B6FA8",
             )}
           </div>
 
@@ -295,7 +295,7 @@ export default function TriageInbox() {
                   onDiscard={removeGap}
                 />
               </WidgetBoundary>,
-              "#10B981",
+              "#6B2B99",
             )}
           </div>
         </div>
@@ -338,7 +338,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
                 cx="22"
                 cy="22"
                 fill="none"
-                stroke={c.lead_score >= 80 ? "#10B981" : c.lead_score >= 60 ? "#F59E0B" : "#E8466A"}
+                stroke={c.lead_score >= 80 ? "#6B2B99" : c.lead_score >= 60 ? "#8B6FA8" : "#E8466A"}
                 strokeWidth="4"
                 strokeDasharray={`${(c.lead_score / 100) * 100.53} 100.53`}
                 strokeLinecap="round"

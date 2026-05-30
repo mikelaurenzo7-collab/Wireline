@@ -140,7 +140,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
       "customer service, inbound, front desk, scheduling, FAQ, message taking, home services, after hours",
     tel: "+16306425927",
     display: "(630) 642-5927",
-    tint: "#10B981",
+    tint: "#6B2B99",
     defaultVibe: "warm",
   },
   {
@@ -173,7 +173,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     handles: "medical, healthcare, clinic, patient intake, appointment",
     tel: "+16173134469",
     display: "(617) 313-4469",
-    tint: "#10B981",
+    tint: "#6B2B99",
     defaultVibe: "authoritative",
   },
   {
@@ -205,7 +205,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     handles: "real estate, realtor, listing, showing, buyer, seller lead",
     tel: "+19733638874",
     display: "(973) 363-8874",
-    tint: "#FFC07D",
+    tint: "#C4B5A0",
     defaultVibe: "playful",
   },
   {

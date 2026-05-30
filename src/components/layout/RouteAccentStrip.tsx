@@ -5,8 +5,7 @@ import { getRouteAccentFromLocation } from "../../constants/navigation";
 
 /**
  * Route-aware hairline at the top of the main content column. The base
- * gradient establishes the route's color identity (purple → emerald for
- * /live, purple → amber for /outbound, etc.); a second narrower band
+ * gradient uses purple/cream accent pairs only — no cross-hue bleed.
  * sweeps across once on mount as a subtle wayfinding cue — same visual
  * vocabulary as the landing-page hero accent so authenticated routes
  * feel like a continuation, not a different product.

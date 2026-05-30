@@ -137,7 +137,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
           className="absolute inset-y-0 left-0 rounded-full"
           style={{
-            background: `linear-gradient(90deg, ${barAccent}, #10B981)`,
+            background: `linear-gradient(90deg, ${barAccent}, #6B2B99)`,
             boxShadow: `0 0 14px ${barAccent}88, inset 0 1px 0 rgba(255,255,255,0.25)`,
           }}
         />

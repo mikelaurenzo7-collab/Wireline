@@ -29,7 +29,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
       case "warn":
         return "text-amber-500 bg-amber-500/10 border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.15)]";
       default:
-        return "text-emerald-500 bg-emerald-500/10 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)]";
+        return "text-emerald-500 bg-emerald-500/10 border-emerald-500/20 shadow-[0_0_15px_rgba(79,30,123,0.15)]";
     }
   };
 
@@ -249,7 +249,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <div className="p-3 rounded-xl glass border border-white/5 flex items-center justify-between group hover:border-brand/30 transition-all">
                   <div className="flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(79,30,123,0.5)]" />
                     <div className="space-y-0.5">
                       <p className="text-[11px] font-bold text-ink">LLM Mesh</p>
                       <p className="text-[9px] text-muted truncate">Cognitive Routing Active</p>
@@ -258,7 +258,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                 </div>
                 <div className="p-3 rounded-xl glass border border-white/5 flex items-center justify-between group hover:border-brand/30 transition-all">
                   <div className="flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(79,30,123,0.5)]" />
                     <div className="space-y-0.5">
                       <p className="text-[11px] font-bold text-ink">Carrier Bridge</p>
                       <p className="text-[9px] text-muted truncate">Voice + SMS Synchronized</p>
@@ -267,7 +267,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                 </div>
                 <div className="p-3 rounded-xl glass border border-white/5 flex items-center justify-between group hover:border-brand/30 transition-all">
                   <div className="flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(79,30,123,0.5)]" />
                     <div className="space-y-0.5">
                       <p className="text-[11px] font-bold text-ink">Data Vault</p>
                       <p className="text-[9px] text-muted truncate">Postgres RLS Verified</p>

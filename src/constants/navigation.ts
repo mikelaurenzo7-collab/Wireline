@@ -11,6 +11,9 @@ import {
   MessageCircle,
   Users,
 } from "lucide-react";
+import { ROUTE_ACCENT_DEFAULT, ROUTE_ACCENT_VARIANTS, ROUTE_ACCENTS } from "./brand-colors";
+
+export { ROUTE_ACCENTS };
 
 export type NavItem = {
   label: string;
@@ -175,36 +178,10 @@ export const NAV_SHORTCUT_HINTS: Record<string, string> = {
   "/admin": "g s",
 };
 
-export const ROUTE_ACCENTS: Record<string, [string, string]> = {
-  "/ops": ["#4F1E7B", "#10B981"],
-  "/triage": ["#FFC07D", "#4F1E7B"],
-  "/insights": ["#4F1E7B", "#FFC07D"],
-  "/logs": ["#4F1E7B", "#3B154C"],
-  "/phone": ["#4F1E7B", "#10B981"],
-  "/inbox": ["#4F1E7B", "#10B981"],
-  "/email": ["#4F1E7B", "#10B981"],
-  "/sms": ["#4F1E7B", "#10B981"],
-  "/outbound": ["#4F1E7B", "#FFC07D"],
-  "/appointments": ["#10B981", "#4F1E7B"],
-  "/agents": ["#4F1E7B", "#3B154C"],
-  "/chat": ["#4F1E7B", "#10B981"],
-  "/training": ["#F59E0B", "#4F1E7B"],
-  "/knowledge": ["#10B981", "#4F1E7B"],
-  "/integrations": ["#4F1E7B", "#10B981"],
-  "/admin": ["#4F1E7B", "#3B154C"],
-  "/cockpit": ["#4F1E7B", "#10B981"],
-  "/dnc": ["#4F1E7B", "#E8466A"],
-  "/audit": ["#4F1E7B", "#FFC07D"],
-  "/help": ["#10B981", "#4F1E7B"],
-  "/pipeline": ["#4F1E7B", "#10B981"],
-  "/founder": ["#4F1E7B", "#FFC07D"],
-  "/activity": ["#4F1E7B", "#3B154C"],
-};
-
 export function getRouteAccent(pathname: string): [string, string] {
   if (ROUTE_ACCENTS[pathname]) return ROUTE_ACCENTS[pathname];
   const prefix = "/" + pathname.split("/")[1];
-  return ROUTE_ACCENTS[prefix] ?? ["#4F1E7B", "#4F1E7B"];
+  return ROUTE_ACCENTS[prefix] ?? ROUTE_ACCENT_DEFAULT;
 }
 
 /** Route accent with tab/query awareness for ambience strip + context bar. */
@@ -212,8 +189,8 @@ export function getRouteAccentFromLocation(pathname: string, search = ""): [stri
   const params = new URLSearchParams(search);
   if (pathname === "/ops") {
     const tab = params.get("tab");
-    if (tab === "intel") return ["#FFC07D", "#4F1E7B"];
-    if (tab === "analytics") return ["#10B981", "#4F1E7B"];
+    if (tab === "intel") return ROUTE_ACCENT_VARIANTS.cream;
+    if (tab === "analytics") return ROUTE_ACCENT_VARIANTS.light;
     return ROUTE_ACCENTS["/ops"];
   }
   if (pathname === "/phone") {
@@ -223,6 +200,6 @@ export function getRouteAccentFromLocation(pathname: string, search = ""): [stri
     return ROUTE_ACCENTS["/phone"];
   }
   if (pathname === "/training") return ROUTE_ACCENTS["/training"];
-  if (pathname.startsWith("/contact/")) return ["#4F1E7B", "#10B981"];
+  if (pathname.startsWith("/contact/")) return ROUTE_ACCENT_VARIANTS.soft;
   return getRouteAccent(pathname);
 }

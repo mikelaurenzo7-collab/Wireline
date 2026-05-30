@@ -152,7 +152,7 @@ export default function QualityView({ days }: { days: number }) {
           { label: "Scored Calls", value: data.count, accent: "#4F1E7B" },
           { label: "Average Score", value: `${data.avgScore}/100`, accent: qaColor(data.avgScore) },
           { label: "Opening", value: `${dims.greeting ?? 0}/20`, accent: "#4F1E7B" },
-          { label: "Closing", value: `${dims.closing ?? 0}/20`, accent: "#10B981" },
+          { label: "Closing", value: `${dims.closing ?? 0}/20`, accent: "#6B2B99" },
         ].map(({ label, value, accent }) => (
           <div
             key={label}

@@ -163,7 +163,7 @@ export default function DailyBrief() {
   };
 
   const moodAccent =
-    brief.mood === "green" ? "#10B981" : brief.mood === "yellow" ? "#FFC07D" : "#4F1E7B";
+    brief.mood === "green" ? "#6B2B99" : brief.mood === "yellow" ? "#C4B5A0" : "#4F1E7B";
   const moodLabel =
     brief.mood === "green"
       ? "All systems go"
@@ -283,7 +283,7 @@ export default function DailyBrief() {
           {/* Highlights & Concerns */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {brief.highlights.length > 0 && (
-              <Section title="Highlights" icon={Sparkles} accent="#10B981">
+              <Section title="Highlights" icon={Sparkles} accent="#6B2B99">
                 {brief.highlights.map((h, i) => (
                   <li key={i}>{h}</li>
                 ))}

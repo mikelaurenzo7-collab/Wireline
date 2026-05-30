@@ -49,9 +49,9 @@ export function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled:
 
   const confidenceAccent =
     enrichment?.research_confidence === "high"
-      ? "#10B981"
+      ? "#6B2B99"
       : enrichment?.research_confidence === "medium"
-        ? "#FFC07D"
+        ? "#C4B5A0"
         : "#4F1E7B";
 
   return (

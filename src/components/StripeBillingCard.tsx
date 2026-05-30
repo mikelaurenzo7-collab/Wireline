@@ -52,11 +52,11 @@ const PLAN_ICONS: Record<string, any> = {
 };
 
 const PLAN_ACCENTS: Record<string, string> = {
-  personal: "#10B981",
+  personal: "#6B2B99",
   starter: "#4F1E7B",
   pro: "#4F1E7B",
   business: "#4F1E7B",
-  enterprise: "#FFC07D",
+  enterprise: "#C4B5A0",
 };
 
 export default function StripeBillingCard() {

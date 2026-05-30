@@ -488,15 +488,15 @@ export function DocuSignPreviewCard() {
                 key={field}
                 className="flex items-center gap-2 px-2 py-1 rounded transition-all duration-600"
                 style={{
-                  background: isThisSigned ? "rgba(16,185,129,0.08)" : "rgba(255,199,32,0.06)",
-                  border: `1px solid ${isThisSigned ? "rgba(16,185,129,0.25)" : "rgba(255,199,32,0.15)"}`,
+                  background: isThisSigned ? "rgba(79,30,123,0.08)" : "rgba(255,199,32,0.06)",
+                  border: `1px solid ${isThisSigned ? "rgba(79,30,123,0.25)" : "rgba(255,199,32,0.15)"}`,
                 }}
               >
                 <div
                   className="w-2 h-2 rounded-full shrink-0 transition-all duration-500"
                   style={{
                     background: isThisSigned
-                      ? "#10B981"
+                      ? "#6B2B99"
                       : i === 0
                         ? "#FFC720"
                         : "rgba(255,199,32,0.3)",
@@ -505,13 +505,13 @@ export function DocuSignPreviewCard() {
                 <span
                   className="text-[9px] transition-colors duration-500"
                   style={{
-                    color: isThisSigned ? "rgba(16,185,129,0.85)" : "rgba(255,255,255,0.55)",
+                    color: isThisSigned ? "rgba(79,30,123,0.85)" : "rgba(255,255,255,0.55)",
                   }}
                 >
                   {field} field
                 </span>
                 {isThisSigned ? (
-                  <CheckCircle2 size={9} style={{ color: "#10B981", marginLeft: "auto" }} />
+                  <CheckCircle2 size={9} style={{ color: "#6B2B99", marginLeft: "auto" }} />
                 ) : i === 0 ? (
                   <span className="ml-auto text-[8px]" style={{ color: "#FFC720" }}>
                     Awaiting
@@ -813,7 +813,7 @@ export function ExcelPreviewCard() {
                 <th
                   key={h}
                   className="px-2 py-1 text-left font-semibold whitespace-nowrap"
-                  style={{ color: "#34D399", borderBottom: "1px solid rgba(33,115,70,0.3)" }}
+                  style={{ color: "#8B6FA8", borderBottom: "1px solid rgba(33,115,70,0.3)" }}
                 >
                   {h}
                 </th>
@@ -888,7 +888,7 @@ export function SheetsPreviewCard() {
                 <th
                   key={h}
                   className="px-2 py-1 text-left font-semibold whitespace-nowrap"
-                  style={{ color: "#34D399", borderBottom: "1px solid rgba(15,157,88,0.3)" }}
+                  style={{ color: "#8B6FA8", borderBottom: "1px solid rgba(15,157,88,0.3)" }}
                 >
                   {h}
                 </th>

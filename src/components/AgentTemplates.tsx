@@ -89,7 +89,7 @@ const AGENT_TEMPLATES = [
     role: "customer_service",
     channel: "voice" as const,
     icon: Headphones,
-    accent: "#10B981",
+    accent: "#6B2B99",
     badge: null,
     firstMessage:
       "Thank you for calling support. I'm your AI assistant — how can I help you today?",
@@ -103,7 +103,7 @@ const AGENT_TEMPLATES = [
     role: "customer_service",
     channel: "email" as const,
     icon: Mail,
-    accent: "#10B981",
+    accent: "#6B2B99",
     badge: "Email",
     firstMessage:
       "Thank you for reaching out. I've received your message and I'm here to help resolve this for you today.",
@@ -161,7 +161,7 @@ const AGENT_TEMPLATES = [
     role: "collections",
     channel: "voice" as const,
     icon: DollarSign,
-    accent: "#FFC07D",
+    accent: "#C4B5A0",
     badge: null,
     firstMessage:
       "Hi [Name], this is a friendly reminder about an outstanding balance on your account. I'd love to help you resolve this today.",
@@ -175,7 +175,7 @@ const AGENT_TEMPLATES = [
     role: "collections",
     channel: "voice" as const,
     icon: Shield,
-    accent: "#FFC07D",
+    accent: "#C4B5A0",
     badge: "FDCPA compliant",
     firstMessage:
       "This is an important call regarding your account. To protect your credit, I need to speak with you or an authorized representative today.",

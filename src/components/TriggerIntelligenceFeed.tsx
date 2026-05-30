@@ -16,7 +16,7 @@ type ActivityItem = {
 const TYPE_META: Record<string, { icon: typeof Signal; color: string }> = {
   SIGNAL_ANALYZED: { icon: Signal, color: "#4F1E7B" },
   MISSION_INJECTED: { icon: Zap, color: "#4F1E7B" },
-  NEURAL_OPTIMIZATION: { icon: Cpu, color: "#10B981" },
+  NEURAL_OPTIMIZATION: { icon: Cpu, color: "#6B2B99" },
   DIGITAL_RELAY: { icon: Radio, color: "#4F1E7B" },
 };
 

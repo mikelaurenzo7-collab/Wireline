@@ -28,7 +28,7 @@ interface Entry {
 
 const TAG_META: Record<Tag, { label: string; color: string; bg: string }> = {
   feature: { label: "FEATURE", color: "#4F1E7B", bg: "rgba(79, 30, 123, 0.10)" },
-  fix: { label: "FIX", color: "#10B981", bg: "rgba(16, 185, 129, 0.10)" },
+  fix: { label: "FIX", color: "#6B2B99", bg: "rgba(79, 30, 123, 0.10)" },
   polish: { label: "POLISH", color: "#7B3FAE", bg: "rgba(123, 63, 174, 0.10)" },
   infra: { label: "INFRA", color: "#7C7469", bg: "rgba(124, 116, 105, 0.10)" },
 };

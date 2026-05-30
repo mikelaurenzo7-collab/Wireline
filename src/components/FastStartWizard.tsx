@@ -386,7 +386,7 @@ export default function FastStartWizard({
           {/* Progress bar */}
           <div className="mt-4 h-1 bg-black/10 rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-[#4F1E7B] to-[#10B981] rounded-full"
+              className="h-full bg-gradient-to-r from-[#4F1E7B] to-[#6B2B99] rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}

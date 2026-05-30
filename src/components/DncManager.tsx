@@ -250,7 +250,7 @@ export default function DncManager() {
               { label: "Total Blocked", value: stats.total, accent: "#4F1E7B", icon: Shield },
               { label: "Manual Entries", value: stats.manual, accent: "#4F1E7B", icon: Plus },
               { label: "CSV Imported", value: stats.csv, accent: "#4F1E7B", icon: FileText },
-              { label: "Opt-Out", value: stats.optOut, accent: "#10B981", icon: CheckCircle2 },
+              { label: "Opt-Out", value: stats.optOut, accent: "#6B2B99", icon: CheckCircle2 },
             ].map(({ label, value, accent, icon: Icon }) => (
               <div
                 key={label}
