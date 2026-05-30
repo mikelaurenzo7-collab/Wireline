@@ -114,8 +114,7 @@ export default function DispatchTab({
     quotaUsed / quotaLimit >= 0.9;
 
   const isDncBlocked =
-    customerNumber.length > 0 &&
-    !!isNumberOnDncList?.(customerNumber, dncEntries);
+    customerNumber.length > 0 && !!isNumberOnDncList?.(customerNumber, dncEntries);
 
   return (
     <>
@@ -271,7 +270,9 @@ export default function DispatchTab({
                         <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 flex items-start gap-2 text-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]">
                           <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                           <div className="text-[10px] leading-snug">
-                            <strong className="font-bold">Blocked by DNC Policy:</strong> This number is registered on your active Do-Not-Call list and cannot be dialed.
+                            <strong className="font-bold">Blocked by DNC Policy:</strong> This
+                            number is registered on your active Do-Not-Call list and cannot be
+                            dialed.
                           </div>
                         </div>
                       )}
@@ -295,7 +296,11 @@ export default function DispatchTab({
                       <button
                         onClick={dispatchCall}
                         disabled={
-                          isDialing || !customerNumber || !hasOutboundConsent || !!quotaExhausted || isDncBlocked
+                          isDialing ||
+                          !customerNumber ||
+                          !hasOutboundConsent ||
+                          !!quotaExhausted ||
+                          isDncBlocked
                         }
                         className="brutal-btn w-full !py-3 !text-[11px] !tracking-[0.3em] disabled:opacity-50"
                       >
@@ -464,7 +469,7 @@ export default function DispatchTab({
                     icon={UploadCloud}
                     title="Queue is idle"
                     description="Upload a CSV of contacts and your agent will dial through them with full call notes saved to the CRM."
-                    accent="#4F1E7B"
+                    accent="#6B2B99"
                     actions={[
                       {
                         label: "Upload CSV",

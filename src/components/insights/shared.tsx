@@ -30,7 +30,7 @@ export function Spinner() {
         <div
           className="absolute inset-0 rounded-full opacity-40"
           style={{
-            background: "conic-gradient(from 0deg, #4F1E7B, #4F1E7B, #4F1E7B, #6B2B99, #4F1E7B)",
+            background: "conic-gradient(from 0deg, #6B2B99, #6B2B99, #6B2B99, #6B2B99, #6B2B99)",
             filter: "blur(1px)",
             animation: "spin 2s linear infinite",
           }}
@@ -40,8 +40,8 @@ export function Spinner() {
           <div
             className="w-3 h-3 rounded-full"
             style={{
-              background: "#4F1E7B",
-              boxShadow: "0 0 10px #4F1E7B",
+              background: "#6B2B99",
+              boxShadow: "0 0 10px #6B2B99",
             }}
           />
         </div>
@@ -163,9 +163,9 @@ export function SpendStat({
 /* ── QA colour helper ───────────────────────────────────────────── */
 
 export function qaColor(score: number) {
-  if (score >= 90) return "#4F1E7B";
+  if (score >= 90) return "#6B2B99";
   if (score >= 75) return "#6B2B99";
   if (score >= 60) return "#FFD166";
   if (score >= 40) return "#FF9A5C";
-  return "#4F1E7B";
+  return "#6B2B99";
 }

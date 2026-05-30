@@ -99,7 +99,7 @@ export default function AgentMemoryPanel({
       <section className="rounded-2xl glass border border-white/10 p-4 relative overflow-hidden">
         <div
           className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
+          style={{ background: "radial-gradient(circle, #6B2B99, transparent)" }}
         />
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -217,7 +217,7 @@ export default function AgentMemoryPanel({
           <div className="flex items-center gap-2.5 mb-3">
             <div
               className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: "#4F1E7B" }}
+              style={{ background: "#6B2B99" }}
             >
               <Sparkles className="w-4 h-4 text-on-brand" strokeWidth={2.5} />
             </div>

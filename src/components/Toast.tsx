@@ -20,7 +20,7 @@ const META = {
     border: "border-amber-500/30",
     bg: "bg-amber-500/10",
   },
-  info: { icon: Info, color: "#4F1E7B", border: "border-brand/30", bg: "bg-brand/10" },
+  info: { icon: Info, color: "#6B2B99", border: "border-brand/30", bg: "bg-brand/10" },
 };
 
 function ToastItem({ toast }: { toast: Toast }) {

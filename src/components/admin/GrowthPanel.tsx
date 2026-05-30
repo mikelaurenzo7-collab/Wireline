@@ -55,7 +55,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
             <div className="relative group overflow-hidden rounded-2xl glass border border-brand/30 bg-brand/5 p-6 transition-all hover:bg-brand/10">
               <div
                 className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-20 blur-3xl group-hover:opacity-40 transition-opacity"
-                style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
+                style={{ background: "radial-gradient(circle, #6B2B99, transparent)" }}
               />
               <div className="relative z-10 flex items-center justify-between">
                 <div className="flex gap-4">
@@ -63,7 +63,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     className={cn(
                       "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all",
                       settings.prospecting_enabled
-                        ? "bg-brand/20 text-brand shadow-[0_0_15px_rgba(79, 30, 123 ,0.3)]"
+                        ? "bg-brand/20 text-brand shadow-[0_0_15px_rgba(107, 43, 153 ,0.3)]"
                         : "bg-black/10 text-muted",
                     )}
                   >
@@ -302,7 +302,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                         className={cn(
                           "px-2 py-2 rounded-xl border text-[10px] font-bold transition-all",
                           (settings.target_employee_ranges || []).includes(range.value)
-                            ? "bg-brand/10 border-brand/40 text-brand shadow-[0_0_10px_rgba(79, 30, 123 ,0.1)]"
+                            ? "bg-brand/10 border-brand/40 text-brand shadow-[0_0_10px_rgba(107, 43, 153 ,0.1)]"
                             : "bg-black/5 border-input text-muted/70 hover:border-black/20",
                         )}
                       >

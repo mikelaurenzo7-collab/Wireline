@@ -11,6 +11,7 @@ coverage/
 # Don't commit PNGs to avoid binary churn; the build pipeline produces them.
 public/og-image.png
 public/apple-touch-icon.png
+public/wireline-icon-192.png
 
 # Playwright
 playwright-report/

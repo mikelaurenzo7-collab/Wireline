@@ -549,7 +549,7 @@ export default function LiveOps() {
                             <Tooltip
                               contentStyle={{
                                 background: "rgba(28, 25, 23, 0.95)",
-                                border: "1px solid rgba(79, 30, 123 , 0.3)",
+                                border: "1px solid rgba(107, 43, 153 , 0.3)",
                                 borderRadius: 0,
                                 boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
                               }}

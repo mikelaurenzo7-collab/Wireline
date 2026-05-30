@@ -105,15 +105,16 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
       <div
         aria-hidden="true"
         className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-20 blur-3xl pointer-events-none"
-        style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
+        style={{ background: "radial-gradient(circle, #6B2B99, transparent)" }}
       />
 
       <header className="relative flex items-start gap-3 mb-4">
         <div
           className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border border-white/10 shadow-lg shadow-brand/10"
           style={{
-            background: "linear-gradient(135deg, rgba(79, 30, 123 ,0.20), rgba(79, 30, 123 ,0.05))",
-            color: "#4F1E7B",
+            background:
+              "linear-gradient(135deg, rgba(107, 43, 153 ,0.20), rgba(107, 43, 153 ,0.05))",
+            color: "#6B2B99",
           }}
         >
           <Target className="w-4.5 h-4.5" />
@@ -222,11 +223,11 @@ function Sparkline({ values }: { values: number[] }) {
       >
         <defs>
           <linearGradient id="sparkfill" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#4F1E7B" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#4F1E7B" stopOpacity="0" />
+            <stop offset="0%" stopColor="#6B2B99" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#6B2B99" stopOpacity="0" />
           </linearGradient>
           <linearGradient id="sparkstroke" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0%" stopColor="#4F1E7B" />
+            <stop offset="0%" stopColor="#6B2B99" />
             <stop offset="100%" stopColor="#6B2B99" />
           </linearGradient>
         </defs>
@@ -237,7 +238,7 @@ function Sparkline({ values }: { values: number[] }) {
           strokeLinecap="round"
           strokeLinejoin="round"
           points={points}
-          className="drop-shadow-[0_2px_8px_rgba(79, 30, 123 ,0.4)]"
+          className="drop-shadow-[0_2px_8px_rgba(107, 43, 153 ,0.4)]"
         />
         <polygon fill="url(#sparkfill)" points={`0,${h} ${points} ${w},${h}`} />
       </svg>

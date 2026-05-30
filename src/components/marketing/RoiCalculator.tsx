@@ -138,7 +138,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
         className="mt-0 shrink-0"
         aria-label="ROI snapshot"
       >
-        <div className="rounded-2xl border border-brand/15 bg-[#FAF8F5]/70 p-3 shadow-[0_8px_28px_-18px_rgba(79,30,123,0.22)]">
+        <div className="rounded-2xl border border-brand/15 bg-[#FAF8F5]/70 p-3 shadow-[0_8px_28px_-18px_rgba(107,43,153,0.22)]">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-eyebrow !text-brand">ROI snapshot</p>
@@ -173,12 +173,12 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
       aria-labelledby="roi-heading"
       data-testid="roi-calculator"
     >
-      <div className="rounded-2xl border border-[#4F1E7B]/12 bg-gradient-to-br from-[#FAF8F5] via-[#FAF8F5] to-[#FAF8F5] p-4 sm:p-5 shadow-[0_8px_32px_-12px_rgba(79,30,123,0.12)]">
+      <div className="rounded-2xl border border-[#6B2B99]/12 bg-gradient-to-br from-[#FAF8F5] via-[#FAF8F5] to-[#FAF8F5] p-4 sm:p-5 shadow-[0_8px_32px_-12px_rgba(107,43,153,0.12)]">
         <div className="flex items-center gap-2 mb-3">
-          <span className="hero-accent-line" style={{ background: "#4F1E7B" }} />
+          <span className="hero-accent-line" style={{ background: "#6B2B99" }} />
           <h2
             id="roi-heading"
-            className="text-[8px] uppercase tracking-[0.5em] text-[#4F1E7B] font-semibold"
+            className="text-[8px] uppercase tracking-[0.5em] text-[#6B2B99] font-semibold"
           >
             <Calculator className="inline w-3 h-3 mr-1 -mt-0.5" strokeWidth={2} />
             Your numbers, our math
@@ -203,8 +203,8 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
                 className={
                   "text-[10px] uppercase tracking-[0.22em] font-medium px-2.5 py-1 rounded-full border transition-all " +
                   (active
-                    ? "bg-[#4F1E7B] text-paper border-[#4F1E7B]"
-                    : "bg-[#FAF8F5] text-muted/75 border-black/10 hover:border-[#4F1E7B]/30 hover:text-ink")
+                    ? "bg-[#6B2B99] text-paper border-[#6B2B99]"
+                    : "bg-[#FAF8F5] text-muted/75 border-black/10 hover:border-[#6B2B99]/30 hover:text-ink")
                 }
               >
                 {p.label}
@@ -250,7 +250,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
           </div>
 
           {/* Output column */}
-          <div className="rounded-xl border border-[#4F1E7B]/15 bg-[#FAF8F5] p-4 flex flex-col">
+          <div className="rounded-xl border border-[#6B2B99]/15 bg-[#FAF8F5] p-4 flex flex-col">
             <div className="grid grid-cols-2 gap-3 mb-3">
               <Stat
                 label="Revenue recovered"
@@ -282,7 +282,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
                 <p className="text-[8.5px] uppercase tracking-[0.3em] text-muted/70 leading-none mb-1">
                   Payback in
                 </p>
-                <p className="font-display italic text-xl leading-none text-[#4F1E7B]">
+                <p className="font-display italic text-xl leading-none text-[#6B2B99]">
                   {Number.isFinite(results.paybackDays)
                     ? `${results.paybackDays} day${results.paybackDays === 1 ? "" : "s"}`
                     : "—"}
@@ -290,7 +290,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
               </div>
               <a
                 href="/signup"
-                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full bg-[#4F1E7B] text-paper text-[10px] uppercase tracking-[0.25em] font-semibold hover:bg-[#3B154C] hover:-translate-y-px transition-all shadow-[0_6px_18px_-8px_rgba(79,30,123,0.5)]"
+                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full bg-[#6B2B99] text-paper text-[10px] uppercase tracking-[0.25em] font-semibold hover:bg-[#3B154C] hover:-translate-y-px transition-all shadow-[0_6px_18px_-8px_rgba(107,43,153,0.5)]"
                 data-testid="roi-cta-start"
               >
                 Start free trial
@@ -333,7 +333,7 @@ function SliderRow({
     <div>
       <div className="flex items-center justify-between gap-3 mb-1.5">
         <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] text-muted/75 font-medium">
-          <span className="text-[#4F1E7B]">{icon}</span>
+          <span className="text-[#6B2B99]">{icon}</span>
           {label}
         </span>
         <span className="text-[12px] tabular-nums font-semibold text-ink">{suffix}</span>
@@ -346,14 +346,14 @@ function SliderRow({
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         aria-label={label}
-        className="w-full accent-[#4F1E7B]"
+        className="w-full accent-[#6B2B99]"
       />
     </div>
   );
 }
 
 function Stat({ label, value, tone }: { label: string; value: string; tone: "emerald" | "brand" }) {
-  const toneClass = tone === "emerald" ? "text-emerald-700" : "text-[#4F1E7B]";
+  const toneClass = tone === "emerald" ? "text-emerald-700" : "text-[#6B2B99]";
   return (
     <div>
       <p className="text-[8.5px] uppercase tracking-[0.3em] text-muted/70 leading-none mb-1">
