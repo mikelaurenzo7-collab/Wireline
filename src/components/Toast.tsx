@@ -59,7 +59,6 @@ function ToastItem({ toast }: { toast: Toast }) {
         <div
           className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5"
           style={{ background: m.bgColor }}
-          )}
         >
           <Icon className="w-3.5 h-3.5" style={{ color: m.color }} strokeWidth={2} />
         </div>
