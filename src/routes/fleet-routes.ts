@@ -5,7 +5,7 @@ import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, desc, like, ne, gte } from "drizzle-orm";
 import { presenceStreams } from "../services/presence-stream-service";
-import { authenticateUser } from "../middleware/auth";
+import { authenticateUser, authenticateEventStream } from "../middleware/auth";
 import { validateBody, updateFleetTaskSchema } from "../lib/api-validation";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { parseFormData, FleetTaskCreateSchema } from "../lib/form-validators";
@@ -163,7 +163,7 @@ router.get(
 
 router.get(
   "/api/fleet/presence/stream",
-  authenticateUser,
+  authenticateEventStream,
   async (req: AuthenticatedRequest, res: Response) => {
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");

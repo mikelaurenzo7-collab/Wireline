@@ -96,3 +96,70 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
     });
   }
 }
+
+/**
+ * Authentication middleware for Server-Sent Events (EventSource) endpoints.
+ *
+ * The browser `EventSource` API cannot attach an `Authorization` header, so SSE
+ * streams must carry the bearer token as a `?token=` query parameter instead
+ * (mirroring the supervisor WebSocket upgrade in supervisor-websocket-service).
+ * An `Authorization` header is still accepted as a fallback for non-browser
+ * clients. On success the request is run inside the tenant AsyncLocalStorage
+ * scope so downstream queries are RLS-scoped just like `authenticateUser`.
+ */
+export async function authenticateEventStream(req: Request, res: Response, next: NextFunction) {
+  try {
+    const authedReq = req as AuthedReq;
+
+    if (authedReq.user?.id) {
+      return tenantStore.getStore() ? next() : tenantStore.run(authedReq.user.id, () => next());
+    }
+
+    const headerToken = req.headers.authorization?.split(" ")[1];
+    const queryToken = typeof req.query.token === "string" ? req.query.token : undefined;
+    const token = headerToken || queryToken;
+
+    if (!token) {
+      return res.status(401).json({ error: "No authorization token provided" });
+    }
+
+    let secret: string;
+    try {
+      secret = requireInternalJwtSecret();
+    } catch (e) {
+      const msg = getErrorMessage(e);
+      if (msg.includes("JWT_SECRET_NOT_CONFIGURED") || msg.includes("JWT_SECRET_CONFLICT")) {
+        log.error("SSE auth middleware: JWT secret misconfigured", { error: msg });
+        return res.status(503).json({
+          error: "Authentication is temporarily unavailable. Platform configuration is incomplete.",
+          code: "AUTH_NOT_CONFIGURED",
+        });
+      }
+      throw e;
+    }
+
+    const payload = await verifyInternalJwt(token, secret);
+
+    if (!payload) {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+
+    authedReq.user = {
+      id: payload.sub,
+      email: payload.email,
+      role: payload.role || "authenticated",
+      aud: payload.aud,
+      app_metadata: {},
+      user_metadata: {},
+      created_at: new Date(payload.iat * 1000).toISOString(),
+    } as User;
+
+    return tenantStore.run(authedReq.user!.id, () => next());
+  } catch (e) {
+    log.error("SSE auth middleware failed", { error: getErrorMessage(e), path: req.path });
+    return res.status(500).json({
+      error: "Authentication check failed",
+      requestId: res.locals?.requestId,
+    });
+  }
+}

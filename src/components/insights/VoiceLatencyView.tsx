@@ -91,7 +91,8 @@ export default function VoiceLatencyView({ days }: { days: number }) {
             No latency samples yet
           </h3>
           <p className="text-sm text-muted/80 max-w-md text-pretty leading-relaxed">
-            Run live calls and AI actions — p50/p95 response times appear here from your audit log and voice provider telemetry.
+            Run live calls and AI actions — p50/p95 response times appear here from your audit log
+            and voice provider telemetry.
           </p>
         </div>
       </div>
@@ -137,14 +138,16 @@ export default function VoiceLatencyView({ days }: { days: number }) {
               {
                 icon: Mic,
                 label: "STT health",
-                value: latestTrend?.errorRate != null ? `${latestTrend.errorRate.toFixed(1)}%` : "—",
+                value:
+                  latestTrend?.errorRate != null ? `${latestTrend.errorRate.toFixed(1)}%` : "—",
                 sub: "error rate",
                 healthy: errorRateHealthy,
               },
               {
                 icon: Volume2,
                 label: "TTS health",
-                value: latestTrend?.errorRate != null ? `${latestTrend.errorRate.toFixed(1)}%` : "—",
+                value:
+                  latestTrend?.errorRate != null ? `${latestTrend.errorRate.toFixed(1)}%` : "—",
                 sub: "error rate",
                 healthy: errorRateHealthy,
               },
@@ -186,7 +189,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                 {days}-day TTFT trend
               </p>
               <div className="flex items-end gap-1 h-20">
-                {voiceTrends.map((t, i) => {
+                {voiceTrends.map((t) => {
                   const height = t.avgTtftMs
                     ? Math.min(100, Math.max(10, (t.avgTtftMs / 1500) * 100))
                     : 10;
@@ -194,10 +197,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                   return (
                     <div
                       key={t.date}
-                      className={cn(
-                        "flex-1 rounded-t",
-                        isAlert ? "bg-amber-400" : "bg-brand/60",
-                      )}
+                      className={cn("flex-1 rounded-t", isAlert ? "bg-amber-400" : "bg-brand/60")}
                       style={{ height: `${height}%` }}
                       title={`${t.date}: avg ${t.avgTtftMs ?? "—"}ms, p95 ${t.p95TtftMs ?? "—"}ms`}
                     />
@@ -211,7 +211,8 @@ export default function VoiceLatencyView({ days }: { days: number }) {
             <div className="flex items-center gap-2 mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
               <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
               <p className="text-xs text-amber-800">
-                TTFT p95 exceeds 1.2s alert threshold. Voice pipeline may be degraded — check provider status.
+                TTFT p95 exceeds 1.2s alert threshold. Voice pipeline may be degraded — check
+                provider status.
               </p>
             </div>
           )}

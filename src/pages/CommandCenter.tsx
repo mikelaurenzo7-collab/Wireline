@@ -6,7 +6,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { useNavigate } from "react-router-dom";
 import { log } from "../lib/server-logger";
-import { authFetch } from "../lib/api";
+import { authFetch, getAccessToken } from "../lib/api";
 import { LiveMonitor } from "../components/CommandCenter/LiveMonitor";
 import { ActionFeed } from "../components/CommandCenter/ActionFeed";
 import OnboardingQuickstart from "../components/OnboardingQuickstart";
@@ -184,7 +184,9 @@ export default function LiveOps() {
       if (!user) return;
 
       try {
-        const streamUrl = `${window.location.origin}/api/fleet/presence/stream`;
+        const token = getAccessToken();
+        if (!token) return;
+        const streamUrl = `${window.location.origin}/api/fleet/presence/stream?token=${encodeURIComponent(token)}`;
         eventSource = new EventSource(streamUrl, { withCredentials: true });
 
         eventSource.onmessage = (event) => {

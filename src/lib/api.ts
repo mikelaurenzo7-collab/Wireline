@@ -265,6 +265,22 @@ async function maybeRefreshToken(token: string): Promise<string> {
   return result ?? token;
 }
 
+/**
+ * Read the current access token from local storage without triggering a refresh.
+ * Used by EventSource consumers, which cannot send an Authorization header and
+ * must pass the bearer token as a `?token=` query parameter instead.
+ */
+export function getAccessToken(): string | null {
+  const sessionJson = localStorage.getItem("wireline_session");
+  if (!sessionJson) return null;
+  try {
+    const session = JSON.parse(sessionJson);
+    return session?.access_token || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function authFetch(url: string, options: RequestInit = {}) {
   const sessionJson = localStorage.getItem("wireline_session");
   let token: string | null = null;

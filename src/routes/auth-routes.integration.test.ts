@@ -265,6 +265,7 @@ vi.mock("../lib/server-context", () => ({
   drizzle: h.drizzle,
   log: h.log,
   auditLogger: h.auditLogger,
+  tenantStore: { run: (_id: string, fn: () => unknown) => fn(), getStore: () => undefined },
 }));
 vi.mock("../middleware/rate-limit-middleware", () => {
   const passThrough = (_req: any, _res: any, next: any) => next();

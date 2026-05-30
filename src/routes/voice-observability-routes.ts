@@ -10,7 +10,7 @@ import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, gte, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import {
   recordVoiceMetrics,
@@ -69,7 +69,9 @@ router.post("/voice/metrics", async (req: Request, res: Response) => {
 
     const parsed = MetricsBodySchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: "Invalid metrics payload", details: parsed.error.flatten() });
+      return res
+        .status(400)
+        .json({ error: "Invalid metrics payload", details: parsed.error.flatten() });
     }
 
     // Resolve userId from vapiCallId (required for multi-tenant isolation)
@@ -86,7 +88,9 @@ router.post("/voice/metrics", async (req: Request, res: Response) => {
     await recordVoiceMetrics(row.userId, parsed.data);
     res.json({ recorded: true });
   } catch (err) {
-    log.error("POST /voice/metrics failed", { error: err instanceof Error ? err.message : String(err) });
+    log.error("POST /voice/metrics failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
     res.status(500).json({ error: "Failed to record metrics" });
   }
 });
@@ -115,62 +119,72 @@ router.get("/health/voice-status", async (_req: Request, res: Response) => {
       checked_at: new Date().toISOString(),
     });
   } catch (err) {
-    log.error("GET /health/voice-status failed", { error: err instanceof Error ? err.message : String(err) });
+    log.error("GET /health/voice-status failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
     // Fail open — don't break deploys because of observability glitches
     res.status(200).json({ status: "unknown", error: "probe_failed" });
   }
 });
 
 // GET /api/insights/latency — tenant latency trends (auth)
-router.get("/insights/latency", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const days = Math.min(parseInt((req.query.days as string) || "30"), 90);
-    const trends = await getLatencyTrends({ userId: req.user.id, days });
-    res.json({
-      days,
-      trends,
-      generated_at: new Date().toISOString(),
-    });
-  } catch (err) {
-    log.error("GET /insights/latency failed", {
-      userId: req.user.id,
-      error: err instanceof Error ? err.message : String(err),
-    });
-    res.status(500).json({ error: "Failed to load latency trends" });
-  }
-});
+router.get(
+  "/insights/latency",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const days = Math.min(parseInt((req.query.days as string) || "30"), 90);
+      const trends = await getLatencyTrends({ userId: req.user.id, days });
+      res.json({
+        days,
+        trends,
+        generated_at: new Date().toISOString(),
+      });
+    } catch (err) {
+      log.error("GET /insights/latency failed", {
+        userId: req.user.id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      res.status(500).json({ error: "Failed to load latency trends" });
+    }
+  },
+);
 
 // GET /api/insights/latency/recent — last N calls with metrics (for detail drill-down)
-router.get("/insights/latency/recent", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const limit = Math.min(parseInt((req.query.limit as string) || "50"), 200);
-    const rows = await drizzle
-      .select({
-        id: schema.callLogs.id,
-        vapiCallId: schema.callLogs.vapiCallId,
-        createdAt: schema.callLogs.createdAt,
-        durationSeconds: schema.callLogs.durationSeconds,
-        ttftMs: schema.callLogs.ttftMs,
-        ttfAudioMs: schema.callLogs.ttfAudioMs,
-        sttError: schema.callLogs.sttError,
-        ttsError: schema.callLogs.ttsError,
-        pipelineError: schema.callLogs.pipelineError,
-        sentiment: schema.callLogs.sentiment,
-        outcomeTag: schema.callLogs.outcomeTag,
-      })
-      .from(schema.callLogs)
-      .where(eq(schema.callLogs.userId, req.user.id))
-      .orderBy(desc(schema.callLogs.createdAt))
-      .limit(limit);
+router.get(
+  "/insights/latency/recent",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const limit = Math.min(parseInt((req.query.limit as string) || "50"), 200);
+      const rows = await drizzle
+        .select({
+          id: schema.callLogs.id,
+          vapiCallId: schema.callLogs.vapiCallId,
+          createdAt: schema.callLogs.createdAt,
+          durationSeconds: schema.callLogs.durationSeconds,
+          ttftMs: schema.callLogs.ttftMs,
+          ttfAudioMs: schema.callLogs.ttfAudioMs,
+          sttError: schema.callLogs.sttError,
+          ttsError: schema.callLogs.ttsError,
+          pipelineError: schema.callLogs.pipelineError,
+          sentiment: schema.callLogs.sentiment,
+          outcomeTag: schema.callLogs.outcomeTag,
+        })
+        .from(schema.callLogs)
+        .where(eq(schema.callLogs.userId, req.user.id))
+        .orderBy(desc(schema.callLogs.createdAt))
+        .limit(limit);
 
-    res.json({ calls: rows });
-  } catch (err) {
-    log.error("GET /insights/latency/recent failed", {
-      userId: req.user.id,
-      error: err instanceof Error ? err.message : String(err),
-    });
-    res.status(500).json({ error: "Failed to load recent calls" });
-  }
-});
+      res.json({ calls: rows });
+    } catch (err) {
+      log.error("GET /insights/latency/recent failed", {
+        userId: req.user.id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      res.status(500).json({ error: "Failed to load recent calls" });
+    }
+  },
+);
 
 export default router;
