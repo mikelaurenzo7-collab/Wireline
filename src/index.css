@@ -338,6 +338,33 @@
     .text-\[10px\] {
       font-size: 12px !important;
     }
+
+    /* Mobile "zoom out" pass — only inside the signed-in console main
+     * content (`.app-surface`). Body type is 15px on desktop; phones get
+     * 14px so dense dashboards, tables, and chat threads don't feel
+     * inflated. Marketing/landing/auth surfaces (outside .app-surface)
+     * are untouched and keep their editorial type scale. The micro-text
+     * floor above (text-[9px]→11px, text-[10px]→12px) still applies, so
+     * UI labels never drop below legibility. */
+    .app-surface {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .app-surface h1 {
+      font-size: clamp(1.25rem, 5.2vw, 1.625rem);
+      line-height: 1.15;
+    }
+    .app-surface h2 {
+      font-size: clamp(1.0625rem, 4.4vw, 1.375rem);
+      line-height: 1.2;
+    }
+    .app-surface h3 {
+      font-size: clamp(0.9375rem, 3.8vw, 1.125rem);
+      line-height: 1.25;
+    }
+    /* The dashboard "headline" metric tiles (`.metric-value`,
+     * `.font-display` numbers inside `.stat-tile-mobile`) are already
+     * tuned below to 1.75rem on phones — keep that override authoritative. */
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -1679,6 +1706,33 @@ select:focus {
   .stat-tile-mobile .font-display {
     font-size: 1.75rem;
     line-height: 1;
+  }
+
+  /* Mobile "zoom out" — common card / panel paddings are tuned for
+   * desktop and read as too generous on a 360–414px viewport. Knock
+   * common Tailwind paddings down a notch so dashboards, lists, and
+   * tiles fit more content per fold without breaking the 12–16px
+   * gutter system. Scoped to the signed-in `.app-surface` so marketing
+   * pages keep their editorial breathing room. */
+  .app-surface .p-6 {
+    padding: 1rem;
+  }
+  .app-surface .p-5 {
+    padding: 0.875rem;
+  }
+  .app-surface .px-6 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .app-surface .py-6 {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+  .app-surface .gap-6 {
+    gap: 1rem;
+  }
+  .app-surface .gap-5 {
+    gap: 0.875rem;
   }
 }
 
