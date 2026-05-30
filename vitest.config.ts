@@ -18,12 +18,21 @@ export default defineConfig({
       // Ratchet thresholds: set just below the current measured floor so the
       // build fails on a coverage *regression* rather than enforcing an
       // aspirational target the legacy UI tree can't yet meet. Raised after
-      // the 2026-Q2 test expansion (406 tests).
+      // the 2026-Q2 test expansion (406 tests), then again after the
+      // webhook-signature + auth/RBAC suite landed (794 tests; measured
+      // ~11.9% stmts / 65.5% branches / 33.7% funcs).
+      //
+      // Keep a generous margin below the measured values (local: ~11.9%
+      // stmts / 65% branches / 33% funcs). v8's accounting can drift between
+      // environments, and importing large, mostly-uncovered route files
+      // (e.g. meta-webhook-routes.ts) shifts the denominator — so we stay well
+      // clear of the floor. These are still strictly above the prior baseline
+      // (6/50/20/6), so they remain a regression guard, not a flaky gate.
       thresholds: {
-        statements: 6,
-        branches: 50,
-        functions: 20,
-        lines: 6,
+        statements: 8,
+        branches: 55,
+        functions: 25,
+        lines: 8,
       },
     },
   },
