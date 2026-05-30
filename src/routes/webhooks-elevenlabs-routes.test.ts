@@ -6,7 +6,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // The handler updates wireline_cloned_voices via drizzle on a verified
 // event. We stub drizzle so a verified call doesn't hit a DB, and capture
 // whether the update path ran.
-const updateSpy = vi.fn();
+//
+// updateSpy is created via vi.hoisted so it is initialized BEFORE the hoisted
+// vi.mock factory runs. A plain top-level `const` would be in the temporal
+// dead zone when the factory executes (Vitest lifts vi.mock above all module
+// code), which can throw "Cannot access 'updateSpy' before initialization"
+// depending on transform ordering.
+const { updateSpy } = vi.hoisted(() => ({ updateSpy: vi.fn() }));
 
 vi.mock("../lib/server-context", () => {
   const chain: any = {
