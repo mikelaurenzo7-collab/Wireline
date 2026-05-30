@@ -18,7 +18,7 @@ export const BRAND = {
   rose: "#E8466A",
 } as const;
 
-export type BrandAccentPair = readonly [string, string];
+export type BrandAccentPair = [string, string];
 
 export const ROUTE_ACCENT_DEFAULT: BrandAccentPair = [BRAND.purple, BRAND.purpleDeep];
 
