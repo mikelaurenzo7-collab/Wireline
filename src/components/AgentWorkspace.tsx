@@ -197,6 +197,11 @@ export default function AgentWorkspace({
   const [resolved, setResolved] = useState<Record<string, "done" | "dismissed">>({});
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [busyLabel, setBusyLabel] = useState<string>("");
+  // Scroll viewport (chat transcript), composer textarea, and the hidden PDF
+  // file input. Declared here so the auto-scroll/seed/upload effects can reach them.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   // Per-card TCPA consent ticks. A call card can only dial once the operator
   // explicitly attests prior express written consent for that number.
   const [consentKeys, setConsentKeys] = useState<Record<string, boolean>>({});
@@ -300,21 +305,24 @@ export default function AgentWorkspace({
       },
     ];
 
-    setLiveSteps(steps.map(s => ({ ...s, status: "pending" })));
+    setLiveSteps(steps.map((s) => ({ ...s, status: "pending" })));
 
     // Animate steps sequentially for genius-level transparency
     steps.forEach((step, index) => {
-      setTimeout(() => {
-        setLiveSteps(prev =>
-          prev.map((s, i) =>
-            i === index
-              ? { ...s, status: "active" as const }
-              : i < index
-              ? { ...s, status: "done" as const }
-              : s
-          )
-        );
-      }, 420 * (index + 1));
+      setTimeout(
+        () => {
+          setLiveSteps((prev) =>
+            prev.map((s, i) =>
+              i === index
+                ? { ...s, status: "active" as const }
+                : i < index
+                  ? { ...s, status: "done" as const }
+                  : s,
+            ),
+          );
+        },
+        420 * (index + 1),
+      );
     });
 
     // Clear after full cycle (in real app, tied to stream completion)
@@ -815,62 +823,76 @@ export default function AgentWorkspace({
                       </span>
                       <span className="font-medium">{agentName} is thinking…</span>
                     </div>
-<div className="flex items-center gap-1.5 text-[10px] text-muted/70">
-                       <motion.span
-                         animate={{ opacity: [0.4, 1, 0.4] }}
-                         transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                         className="inline-flex items-center gap-1"
-                       >
-                         <Sparkles className="w-3 h-3" />
-                         Analyzing context & drafting response
-                       </motion.span>
-                   </div>
+                    <div className="flex items-center gap-1.5 text-[10px] text-muted/70">
+                      <motion.span
+                        animate={{ opacity: [0.4, 1, 0.4] }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                        className="inline-flex items-center gap-1"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        Analyzing context & drafting response
+                      </motion.span>
+                    </div>
 
-                     {/* Genius live reasoning stream — Claude-style continuous rendered boxes with purposeful transitions + breathing room. 
+                    {/* Genius live reasoning stream — Claude-style continuous rendered boxes with purposeful transitions + breathing room. 
                          Each step reveals agent's internal process for connected integrations, memory, persona. Highly functional transparency. */}
-                     <AnimatePresence>
-                       {liveSteps.map((step, index) => (
-                         <motion.div
-                           key={step.id}
-                           initial={{ opacity: 0, y: 12, scale: 0.96 }}
-                           animate={{ 
-                             opacity: 1, 
-                             y: 0, 
-                             scale: 1,
-                             transition: { delay: index * 0.05, duration: 0.4, ease: [0.23, 1.0, 0.32, 1.0] }
-                           }}
-                           exit={{ opacity: 0, y: -8 }}
-                           className={cn(
-                             "mt-2.5 rounded-2xl border px-4 py-3 text-xs transition-all",
-                             step.status === "active" 
-                               ? "border-brand/40 bg-brand/5 shadow-sm" 
-                               : step.status === "done"
-                               ? "border-emerald-400/30 bg-emerald-50/70"
-                               : "border-black/5 bg-white/60"
-                           )}
-                         >
-                           <div className="flex items-start gap-3">
-                             <div className={cn(
-                               "mt-0.5 flex h-5 w-5 items-center justify-center rounded-md flex-shrink-0",
-                               step.status === "active" ? "text-brand" : step.status === "done" ? "text-emerald-500" : "text-muted"
-                             )}>
-                               {step.icon}
-                             </div>
-                             <div className="flex-1 min-w-0">
-                               <div className="flex items-center justify-between">
-                                 <div className="font-medium text-ink">{step.title}</div>
-                                 {step.status === "active" && (
-                                   <div className="h-1 w-1 rounded-full bg-brand animate-ping" />
-                                 )}
-                                 {step.status === "done" && <Check className="w-3.5 h-3.5 text-emerald-500" />}
-                               </div>
-                               <div className="text-[10px] text-muted leading-tight mt-0.5">{step.subtitle}</div>
-                             </div>
-                           </div>
-                         </motion.div>
-                       ))}
-                     </AnimatePresence>
-                   </div>
+                    <AnimatePresence>
+                      {liveSteps.map((step, index) => (
+                        <motion.div
+                          key={step.id}
+                          initial={{ opacity: 0, y: 12, scale: 0.96 }}
+                          animate={{
+                            opacity: 1,
+                            y: 0,
+                            scale: 1,
+                            transition: {
+                              delay: index * 0.05,
+                              duration: 0.4,
+                              ease: [0.23, 1.0, 0.32, 1.0],
+                            },
+                          }}
+                          exit={{ opacity: 0, y: -8 }}
+                          className={cn(
+                            "mt-2.5 rounded-2xl border px-4 py-3 text-xs transition-all",
+                            step.status === "active"
+                              ? "border-brand/40 bg-brand/5 shadow-sm"
+                              : step.status === "done"
+                                ? "border-emerald-400/30 bg-emerald-50/70"
+                                : "border-black/5 bg-white/60",
+                          )}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div
+                              className={cn(
+                                "mt-0.5 flex h-5 w-5 items-center justify-center rounded-md flex-shrink-0",
+                                step.status === "active"
+                                  ? "text-brand"
+                                  : step.status === "done"
+                                    ? "text-emerald-500"
+                                    : "text-muted",
+                              )}
+                            >
+                              {step.icon}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <div className="font-medium text-ink">{step.title}</div>
+                                {step.status === "active" && (
+                                  <div className="h-1 w-1 rounded-full bg-brand animate-ping" />
+                                )}
+                                {step.status === "done" && (
+                                  <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                )}
+                              </div>
+                              <div className="text-[10px] text-muted leading-tight mt-0.5">
+                                {step.subtitle}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
