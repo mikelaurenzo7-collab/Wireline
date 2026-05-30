@@ -9,6 +9,8 @@ import { WebSocketServer, WebSocket } from "ws";
 import { parse as parseUrl } from "node:url";
 import { IncomingMessage } from "node:http";
 import { log, drizzle } from "../lib/server-context";
+import { verifySupabaseJwt } from "../lib/auth-utils";
+import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 
@@ -29,10 +31,24 @@ export function initSupervisorWebSocketServer(server: any) {
     const urlObj = parseUrl(request.url || "", true);
     const callId = urlObj.query.callId as string;
     const mode = urlObj.query.mode as string;
-    const userId = urlObj.query.userId as string;
+    const token = urlObj.query.token as string;
 
-    if (!callId || !mode || !userId) {
-      ws.close(4000, "Missing required query parameters");
+    if (!callId || !mode || !token) {
+      ws.close(4000, "Missing required query parameters (callId, mode, token)");
+      return;
+    }
+
+    let userId: string;
+    try {
+      const secret = requireInternalJwtSecret();
+      const payload = await verifySupabaseJwt(token, secret);
+      if (!payload?.sub) {
+        ws.close(4001, "Invalid or expired token");
+        return;
+      }
+      userId = payload.sub;
+    } catch {
+      ws.close(4001, "Authentication failed");
       return;
     }
 

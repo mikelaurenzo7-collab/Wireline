@@ -36,7 +36,7 @@ interface Agent {
  */
 export default function SupervisorCockpit() {
   const { info } = useToast();
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [calls, setCalls] = useState<LiveCall[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,7 +85,7 @@ export default function SupervisorCockpit() {
 
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const ws = new WebSocket(
-        `${protocol}//${window.location.host}/api/supervisor/stream?callId=${callId}&mode=listen&userId=${user.id}`,
+        `${protocol}//${window.location.host}/api/supervisor/stream?callId=${callId}&mode=listen&token=${session?.access_token}`,
       );
       ws.binaryType = "arraybuffer";
       audioWsRef.current = ws;
@@ -152,7 +152,7 @@ export default function SupervisorCockpit() {
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const ws = new WebSocket(
-      `${protocol}//${window.location.host}/api/supervisor/stream?callId=${callId}&mode=whisper&userId=${user.id}`,
+      `${protocol}//${window.location.host}/api/supervisor/stream?callId=${callId}&mode=whisper&token=${session?.access_token}`,
     );
     whisperWsRef.current = ws;
 

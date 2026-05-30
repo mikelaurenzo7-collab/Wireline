@@ -9,14 +9,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const h = vi.hoisted(() => {
   const state = {
     calls: [] as Array<{
-      id: bigint;
+      id: number;
       vapiCallId: string;
       userId: string;
       ttftMs: number | null;
       sttError: boolean;
       ttsError: boolean;
     }>,
-    nextId: 1n,
+    nextId: 1,
   };
 
   const schema = {
@@ -40,16 +40,14 @@ const h = vi.hoisted(() => {
   };
 
   const drizzle = {
-    select: vi.fn((shape?: Record<string, string>) => ({
+    select: vi.fn((_shape?: Record<string, string>) => ({
       from: vi.fn(() => ({
-        where: vi.fn((cond: any) => ({
-          limit: vi.fn(async (n: number) => {
-            // Simulate lookup by vapiCallId
+        where: vi.fn((cond: any) => {
+          const resolveData = (): any[] => {
             if (cond?.left === schema.callLogs.vapiCallId) {
               const found = state.calls.find((c) => c.vapiCallId === cond.right);
               return found ? [{ userId: found.userId }] : [];
             }
-            // Return all calls for this user
             if (cond?.left === schema.callLogs.userId) {
               return state.calls
                 .filter((c) => c.userId === cond.right)
@@ -61,10 +59,22 @@ const h = vi.hoisted(() => {
                   outcomeTag: null,
                 }));
             }
-            return [];
-          }),
-          orderBy: vi.fn().mockReturnThis(),
-        })),
+            return state.calls.map((c) => ({
+              ...c,
+              createdAt: new Date(),
+              durationSeconds: 60,
+              sentiment: "neutral",
+              outcomeTag: null,
+            }));
+          };
+          const data = resolveData();
+          const result: any = {
+            limit: vi.fn(async () => data),
+            orderBy: vi.fn(() => result),
+            then: (resolve: any, reject?: any) => Promise.resolve(data).then(resolve, reject),
+          };
+          return result;
+        }),
       })),
     })),
     update: vi.fn(() => ({
@@ -118,8 +128,22 @@ async function buildApp() {
 describe("voice observability routes", () => {
   beforeEach(() => {
     h.state.calls = [
-      { id: 1n, vapiCallId: "call-abc", userId: "user-1", ttftMs: null, sttError: false, ttsError: false },
-      { id: 2n, vapiCallId: "call-def", userId: "user-1", ttftMs: null, sttError: false, ttsError: false },
+      {
+        id: 1,
+        vapiCallId: "call-abc",
+        userId: "user-1",
+        ttftMs: null,
+        sttError: false,
+        ttsError: false,
+      },
+      {
+        id: 2,
+        vapiCallId: "call-def",
+        userId: "user-1",
+        ttftMs: null,
+        sttError: false,
+        ttsError: false,
+      },
     ];
     vi.clearAllMocks();
   });
