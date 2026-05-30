@@ -3,11 +3,13 @@ import express from "express";
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Thenable drizzle stub: every builder method returns a chainable proxy and
-// awaiting any terminal call resolves to [] (no matching tenant / no
-// connections). That keeps the focus on signature verification + handshake
-// control flow rather than DB behaviour. The factory is self-contained
-// because vi.mock is hoisted above all top-level declarations.
+// Drizzle stub: query-builder methods return a chainable thenable that
+// resolves to [] (no matching tenant / no connections), keeping the focus
+// on signature verification + handshake control flow rather than DB
+// behaviour. `select`/`insert`/`update` are vi.fn()s so tests can assert
+// whether the handler reached the DB — i.e. whether it processed a payload
+// or short-circuited on signature verification. The factory is
+// self-contained because vi.mock is hoisted above all top-level decls.
 vi.mock("../lib/server-context", () => {
   function builder(): any {
     const terminal = Promise.resolve([] as unknown[]);
@@ -19,9 +21,12 @@ vi.mock("../lib/server-context", () => {
       },
     });
   }
-  const drizzleStub: any = new Proxy({}, { get: () => () => builder() });
   return {
-    drizzle: drizzleStub,
+    drizzle: {
+      select: vi.fn(() => builder()),
+      insert: vi.fn(() => builder()),
+      update: vi.fn(() => builder()),
+    },
     log: { warn: () => {}, error: () => {}, info: () => {} },
   };
 });
@@ -41,6 +46,12 @@ vi.mock("../db/schema", () => ({
 vi.mock("../lib/secret-vault", () => ({ decryptSecret: (s: string) => s }));
 
 import metaRouter from "./meta-webhook-routes";
+import { drizzle } from "../lib/server-context";
+
+const selectSpy = vi.mocked(drizzle.select as unknown as ReturnType<typeof vi.fn>);
+
+/** Let the handler's post-ack async processing run before asserting. */
+const flush = () => new Promise((r) => setTimeout(r, 0));
 
 const APP_SECRET = "meta-app-secret";
 const VERIFY_TOKEN = "meta-verify-token";
@@ -98,6 +109,7 @@ describe("POST /api/webhooks/meta/leads — signature verification", () => {
   const ORIG = process.env.META_APP_SECRET;
   beforeEach(() => {
     process.env.META_APP_SECRET = APP_SECRET;
+    selectSpy.mockClear();
   });
   afterEach(() => {
     if (ORIG === undefined) delete process.env.META_APP_SECRET;
@@ -108,33 +120,67 @@ describe("POST /api/webhooks/meta/leads — signature verification", () => {
     return "sha256=" + createHmac("sha256", APP_SECRET).update(raw).digest("hex");
   }
 
+  // A real, *handled* change (leadgen) — so reaching the processing path is
+  // observable as a tenant-resolution DB read (drizzle.select). With entry:[]
+  // the handler never touches the DB even on a valid signature, which is why
+  // an empty body can't distinguish "verified-but-empty" from "verification
+  // was skipped entirely" (Codex P2). A populated leadgen change can.
+  const LEADGEN_BODY = JSON.stringify({
+    object: "page",
+    entry: [
+      {
+        id: "page-123",
+        changes: [{ field: "leadgen", value: { leadgen_id: "lead-1", form_id: "form-1" } }],
+      },
+    ],
+  });
+
   // Meta requires a 200 ack even for bad signatures (so it stops retrying an
   // unverifiable delivery), but an unsigned/forged body must NOT be processed.
-  it("acks (200) but does not process when the signature is missing", async () => {
+  it("acks (200) but does NOT reach the DB when the signature is missing", async () => {
     const res = await request(app())
       .post("/api/webhooks/meta/leads")
       .set("content-type", "application/json")
-      .send(JSON.stringify({ object: "page", entry: [] }));
+      .send(LEADGEN_BODY);
     expect(res.status).toBe(200);
+    await flush();
+    expect(selectSpy).not.toHaveBeenCalled();
   });
 
-  it("acks (200) but does not process when the signature is wrong", async () => {
+  it("acks (200) but does NOT reach the DB when the signature is forged", async () => {
     const res = await request(app())
       .post("/api/webhooks/meta/leads")
       .set("content-type", "application/json")
       .set("x-hub-signature-256", "sha256=deadbeef")
-      .send(JSON.stringify({ object: "page", entry: [] }));
+      .send(LEADGEN_BODY);
     expect(res.status).toBe(200);
+    await flush();
+    expect(selectSpy).not.toHaveBeenCalled();
   });
 
-  it("accepts a correctly-signed payload (200)", async () => {
-    const raw = JSON.stringify({ object: "page", entry: [] });
+  it("acks (200) but does NOT reach the DB when the signature is valid for a DIFFERENT body", async () => {
+    // Signature is computed over an empty-entry body, then a populated
+    // leadgen body is sent — the HMAC must not validate.
     const res = await request(app())
       .post("/api/webhooks/meta/leads")
       .set("content-type", "application/json")
-      .set("x-hub-signature-256", sign(raw))
-      .send(raw);
+      .set("x-hub-signature-256", sign(JSON.stringify({ object: "page", entry: [] })))
+      .send(LEADGEN_BODY);
     expect(res.status).toBe(200);
+    await flush();
+    expect(selectSpy).not.toHaveBeenCalled();
+  });
+
+  it("processes a correctly-signed leadgen change (reaches tenant lookup)", async () => {
+    const res = await request(app())
+      .post("/api/webhooks/meta/leads")
+      .set("content-type", "application/json")
+      .set("x-hub-signature-256", sign(LEADGEN_BODY))
+      .send(LEADGEN_BODY);
+    expect(res.status).toBe(200);
+    await flush();
+    // Verified payload → handler resolves the owning tenant via drizzle.select.
+    expect(selectSpy).toHaveBeenCalled();
   });
 });
 

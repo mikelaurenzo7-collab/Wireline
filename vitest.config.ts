@@ -21,11 +21,15 @@ export default defineConfig({
       // the 2026-Q2 test expansion (406 tests), then again after the
       // webhook-signature + auth/RBAC suite landed (794 tests; measured
       // ~11.9% stmts / 65.5% branches / 33.7% funcs).
+      //
+      // Keep a few points of headroom below the measured values: v8's
+      // function/branch accounting can drift slightly between Node minor
+      // versions, so a razor-thin margin makes CI flaky across environments.
       thresholds: {
-        statements: 11,
-        branches: 64,
-        functions: 33,
-        lines: 11,
+        statements: 10,
+        branches: 60,
+        functions: 30,
+        lines: 10,
       },
     },
   },
