@@ -27,6 +27,7 @@
     "stripe:sync-vercel": "node scripts/sync-stripe-env-to-vercel.mjs",
     "stripe:sync-secrets": "node scripts/sync-stripe-secrets-to-vercel.mjs",
     "vapi:sync-vercel": "node scripts/sync-vapi-env-to-vercel.mjs",
+    "resend:sync-vercel": "node scripts/sync-resend-env-to-vercel.mjs",
     "vapi:patch-webhooks": "node scripts/patch-vapi-prod-webhooks.mjs",
     "vapi:patch-flux-ab": "node scripts/patch-vapi-showcase-flux-ab.mjs",
     "docs:check": "node scripts/check-readme-pricing.mjs",
