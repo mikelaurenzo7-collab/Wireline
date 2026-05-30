@@ -116,7 +116,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
         aria-current={active ? "page" : undefined}
         className={cn(
           "group relative flex items-center gap-1.5 px-2.5 lg:px-3 rounded-lg transition-all text-[11px] sm:text-[12px] font-medium shrink-0",
-          isDrawer ? "min-h-11" : "h-8",
+          isDrawer ? "min-h-12" : "h-8",
           isDrawer
             ? active
               ? "shadow-md shadow-brand/20"
@@ -199,7 +199,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
           paddingRight: "env(safe-area-inset-right)",
         }}
       >
-        <div className="h-11 flex items-center gap-2 px-3 lg:pl-3 lg:pr-4">
+        <div className="h-12 flex items-center gap-2 px-3 lg:pl-3 lg:pr-4">
           {/* Logo / Brand — VISIBLE under lg only. On lg+ the Sidebar (Aurora
               rail) carries brand chrome, so we hide this to avoid double-brand
               and reclaim the top-bar real-estate for the breadcrumb. */}
@@ -480,7 +480,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 {/* 44pt close button */}
                 <button
                   onClick={() => onDrawerChange(false)}
-                  className="w-11 h-11 rounded-lg flex items-center justify-center text-ink/70 hover:text-ink hover:bg-black/5 transition-colors"
+                  className="w-11 h-12 rounded-lg flex items-center justify-center text-ink/70 hover:text-ink hover:bg-black/5 transition-colors"
                   aria-label="Close navigation"
                 >
                   <X className="w-4 h-4" />
@@ -520,7 +520,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                   <button
                     onClick={() => signOut()}
                     aria-label="Sign out"
-                    className="w-11 h-11 rounded-md flex items-center justify-center text-ink/65 hover:text-rose-600 hover:bg-rose-500/8 border border-black/7 hover:border-rose-500/35 transition-colors"
+                    className="w-11 h-12 rounded-md flex items-center justify-center text-ink/65 hover:text-rose-600 hover:bg-rose-500/8 border border-black/7 hover:border-rose-500/35 transition-colors"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                   </button>

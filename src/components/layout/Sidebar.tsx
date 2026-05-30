@@ -42,9 +42,9 @@ import { authFetch } from "../../lib/api";
 import { useLivePresence } from "../../hooks/useLivePresence";
 import { cn } from "../../lib/utils";
 
-const RAIL_COLLAPSED = 56; // px
-const RAIL_EXPANDED = 224; // px
-const AUTO_EXPAND_WIDTH = 1440; // viewport width that auto-expands the rail
+const RAIL_COLLAPSED = 64; // px — slightly wider for better touch targets
+const RAIL_EXPANDED = 260; // px — more generous space for labels and badges
+const AUTO_EXPAND_WIDTH = 1600; // viewport width that auto-expands the rail (higher threshold)
 
 // Per-group accent colors — purple family only (no blue/amber/teal bleed).
 const GROUP_ACCENTS = NAV_GROUP_ACCENTS;
@@ -141,32 +141,32 @@ export default function Sidebar({ navBadges }: SidebarProps) {
       className="hidden lg:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] overflow-hidden"
       style={{
         width: railWidth,
-        background: "rgba(59, 21, 76, 0.96)",
-        borderRight: "1px solid rgba(239, 233, 220, 0.08)",
-        backdropFilter: "blur(20px) saturate(160%)",
-        WebkitBackdropFilter: "blur(20px) saturate(160%)",
-        boxShadow: "1px 0 0 rgba(255,255,255,0.04) inset, 12px 0 32px -18px rgba(20, 0, 32, 0.45)",
-        transition: "width 240ms cubic-bezier(0.16, 1, 0.3, 1)",
+        background: "rgba(59, 21, 76, 0.97)",
+        borderRight: "1px solid rgba(239, 233, 220, 0.10)",
+        backdropFilter: "blur(24px) saturate(180%)",
+        WebkitBackdropFilter: "blur(24px) saturate(180%)",
+        boxShadow: "1px 0 0 rgba(255,255,255,0.06) inset, 16px 0 48px -20px rgba(20, 0, 32, 0.50)",
+        transition: "width 280ms cubic-bezier(0.16, 1, 0.3, 1)",
         willChange: "width",
       }}
     >
-      {/* ── Header: logo + brand wordmark ───────────────────────────── */}
+      {/* Header: logo + brand wordmark */}
       <Link
         to="/"
-        className="shrink-0 flex items-center gap-3 h-12 px-3 group"
+        className="shrink-0 flex items-center gap-3 h-14 px-4 group"
         aria-label={`${branding.brand_name} home`}
       >
         <motion.div
           whileHover={{ rotate: 8, scale: 1.06 }}
           whileTap={{ scale: 0.96 }}
           transition={{ type: "spring", stiffness: 380, damping: 28 }}
-          className="relative w-8 h-8 shrink-0 rounded-lg flex items-center justify-center overflow-hidden"
+          className="relative w-9 h-9 shrink-0 rounded-xl flex items-center justify-center overflow-hidden"
           style={{
             background: "#EFE9DC",
-            boxShadow: "0 4px 14px -4px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.22) inset",
+            boxShadow: "0 4px 16px -4px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.25) inset",
           }}
         >
-          <WirelineMark className="w-4 h-4 text-[#3B154C] relative z-10" strokeWidth={130} />
+          <WirelineMark className="w-5 h-5 text-[#3B154C] relative z-10" strokeWidth={130} />
           <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent" />
         </motion.div>
         <AnimatePresence>
@@ -176,7 +176,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -6 }}
               transition={{ duration: 0.18 }}
-              className="brand-wordmark text-[15px] leading-none truncate !text-[#EFE9DC] !filter-none"
+              className="brand-wordmark text-[16px] leading-none truncate !text-[#EFE9DC] !filter-none"
             >
               {branding.brand_name.toUpperCase()}
             </motion.span>
@@ -229,7 +229,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           laptop, 800+ px desktop) all rows fit without overflow. On
           ultra-short windows or zoomed-in browsers the content scrolls
           silently — no visible scrollbar, no clipped items. */}
-      <nav className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-2 px-2 space-y-0.5 scrollbar-hide">
+      <nav className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-3 px-2 space-y-1 scrollbar-hide">
         {NAV_ITEMS.filter((item) => !item.ownerOnly || user?.is_owner === true).map((item) => (
           <RailItem
             key={item.path}
@@ -381,18 +381,18 @@ function RailItem({ item, active, badge, expanded, accent, shortcut }: RailItemP
       aria-current={active ? "page" : undefined}
       title={expanded ? undefined : item.label}
       className={cn(
-        "group relative flex items-center gap-2.5 h-9 px-2 rounded-lg transition-all duration-150",
+        "group relative flex items-center gap-2.5 min-h-10 px-2.5 rounded-xl transition-all duration-150",
         active ? "text-[#3B154C]" : "chrome-muted hover:text-[#EFE9DC] hover:bg-white/8",
       )}
     >
       {active && (
         <motion.div
           layoutId="rail-active-pill"
-          className="absolute inset-0 rounded-lg"
+          className="absolute inset-0 rounded-xl"
           transition={{ type: "spring", stiffness: 420, damping: 36 }}
           style={{
             background:
-              "linear-gradient(90deg, #F2EDE4 0%, #EFE9DC 70%, rgba(239,233,220,0.92) 100%)",
+              "linear-gradient(90deg, #F2EDE4 0%, #EFE9DC 70%, rgba(239,233,220,0.94) 100%)",
             boxShadow: "0 6px 20px -8px rgba(20,0,32,0.45), 0 0 0 1px rgba(255,255,255,0.25) inset",
           }}
         />

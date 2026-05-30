@@ -250,7 +250,7 @@ export default function AppShell() {
 
         <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
           <div className="flex-1 overflow-hidden relative z-10 min-h-0">
-            <div className="app-surface max-w-[1600px] mx-auto px-3 md:px-4 lg:px-5 pt-2 md:pt-4 pb-0 md:pb-4 flex flex-col h-full min-h-0 mobile-page-canvas">
+            <div className="app-surface max-w-[1600px] mx-auto px-4 md:px-6 lg:px-8 pt-3 md:pt-5 pb-0 md:pb-6 flex flex-col h-full min-h-0 mobile-page-canvas">
               <ErrorBoundary key={location.pathname}>
                 <AppRoutes />
               </ErrorBoundary>
@@ -441,7 +441,7 @@ function DesktopContextBar({
       <div className="min-w-0 relative z-10">
         {breadcrumb.eyebrow && (
           <p
-            className="text-eyebrow mb-0.5 inline-block pb-0.5"
+            className="text-eyebrow mb-1 inline-block pb-1"
             style={{
               borderBottom: "1px solid transparent",
               borderImage: `linear-gradient(90deg, ${from}, ${to}) 1`,
@@ -451,11 +451,11 @@ function DesktopContextBar({
           </p>
         )}
         <div className="flex items-baseline gap-3">
-          <h1 className="font-display italic text-[1.35rem] sm:text-[22px] leading-tight text-ink truncate">
+          <h1 className="font-display italic text-[1.45rem] sm:text-[24px] leading-tight text-ink truncate">
             {breadcrumb.title}
           </h1>
           {breadcrumb.subtitle && (
-            <p className="hidden xl:block text-[12px] text-muted truncate max-w-sm">
+            <p className="hidden xl:block text-[13px] text-muted truncate max-w-md">
               {breadcrumb.subtitle}
             </p>
           )}
