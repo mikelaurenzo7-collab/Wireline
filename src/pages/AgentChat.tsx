@@ -89,95 +89,99 @@ export default function AgentChat() {
       <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 flex-1 min-h-0">
         {/* ── Rail ─────────────────────────────────────────────── */}
         <aside className="shrink-0 lg:w-52">
-          <ScrollArea className="h-full">
-            <div className="flex lg:flex-col gap-1 lg:gap-1 overflow-x-auto lg:overflow-visible pb-1 lg:pb-0">
-              {/* Director button */}
-              <button
-                onClick={() => navigate("/chat")}
-                className={cn(
-                  "shrink-0 lg:w-full text-left rounded-lg px-2.5 py-2 border transition-all flex items-center gap-2 min-h-[36px] lg:min-h-0",
-                  showDirector
-                    ? "border-primary/30 bg-primary/[0.06]"
-                    : "border-transparent hover:bg-accent hover:border-primary/15",
-                )}
-              >
-                <span
+          <div className="relative">
+            <ScrollArea className="h-full">
+              <div className="flex lg:flex-col gap-1 lg:gap-1 overflow-x-auto lg:overflow-visible pb-1 lg:pb-0 pr-1 sm:pr-0">
+                {/* Director button */}
+                <button
+                  onClick={() => navigate("/chat")}
                   className={cn(
-                    "shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-colors",
+                    "shrink-0 lg:w-full text-left rounded-lg px-2.5 py-2 border transition-all flex items-center gap-2 min-h-11 lg:min-h-0",
                     showDirector
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground",
+                      ? "border-primary/30 bg-primary/[0.06]"
+                      : "border-transparent hover:bg-accent hover:border-primary/15",
                   )}
                 >
-                  <Compass className="w-3.5 h-3.5" />
-                </span>
-                <span className="min-w-0 hidden sm:block flex-1">
-                  <span className="flex items-center justify-between gap-1">
-                    <span className="block text-xs font-medium text-foreground truncate max-w-[7rem] lg:max-w-none">
-                      Director
-                    </span>
-                    {agents.length > 0 && (
-                      <span className="shrink-0 inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-muted text-[9px] font-mono font-semibold text-muted-foreground px-1">
-                        {agents.length}
-                      </span>
-                    )}
-                  </span>
-                </span>
-              </button>
-
-              {/* Agent items */}
-              {agents.map((a) => {
-                const isActive = !showDirector && a.id === activeAgent?.id;
-                return (
-                  <button
-                    key={a.id}
-                    onClick={() => navigate(`/chat/${a.id}`)}
+                  <span
                     className={cn(
-                      "shrink-0 lg:w-full text-left rounded-lg px-2.5 py-2 border transition-all flex items-center gap-2 min-h-[36px] lg:min-h-0",
-                      isActive
-                        ? "border-primary/30 bg-primary/[0.06]"
-                        : "border-transparent hover:bg-accent hover:border-primary/15",
+                      "shrink-0 w-9 h-9 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-colors",
+                      showDirector
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground",
                     )}
                   >
-                    <span
+                    <Compass className="w-3.5 h-3.5" />
+                  </span>
+                  <span className="min-w-0 hidden sm:block flex-1">
+                    <span className="flex items-center justify-between gap-1">
+                      <span className="block text-xs font-medium text-foreground truncate max-w-[7rem] lg:max-w-none">
+                        Director
+                      </span>
+                      {agents.length > 0 && (
+                        <span className="shrink-0 inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-muted text-[9px] font-mono font-semibold text-muted-foreground px-1">
+                          {agents.length}
+                        </span>
+                      )}
+                    </span>
+                  </span>
+                </button>
+
+                {/* Agent items */}
+                {agents.map((a) => {
+                  const isActive = !showDirector && a.id === activeAgent?.id;
+                  return (
+                    <button
+                      key={a.id}
+                      onClick={() => navigate(`/chat/${a.id}`)}
                       className={cn(
-                        "shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-semibold relative transition-colors",
+                        "shrink-0 lg:w-full text-left rounded-lg px-2.5 py-2 border transition-all flex items-center gap-2 min-h-11 lg:min-h-0",
                         isActive
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground",
+                          ? "border-primary/30 bg-primary/[0.06]"
+                          : "border-transparent hover:bg-accent hover:border-primary/15",
                       )}
                     >
-                      {a.name.slice(0, 1).toUpperCase()}
-                      {isActive && (
-                        <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-background" />
-                      )}
-                    </span>
-                    <span className="min-w-0 hidden sm:block">
-                      <span className="block text-xs font-medium text-foreground truncate">
-                        {a.name}
+                      <span
+                        className={cn(
+                          "shrink-0 w-9 h-9 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-[10px] font-semibold relative transition-colors",
+                          isActive
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground",
+                        )}
+                      >
+                        {a.name.slice(0, 1).toUpperCase()}
+                        {isActive && (
+                          <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-background" />
+                        )}
                       </span>
-                      <span className="block text-[10px] uppercase tracking-[0.12em] text-muted-foreground/70 truncate">
-                        {roleLabel(a.role)}
+                      <span className="min-w-0 hidden sm:block">
+                        <span className="block text-xs font-medium text-foreground truncate">
+                          {a.name}
+                        </span>
+                        <span className="block text-[10px] uppercase tracking-[0.12em] text-muted-foreground/70 truncate">
+                          {roleLabel(a.role)}
+                        </span>
                       </span>
-                    </span>
-                  </button>
-                );
-              })}
+                    </button>
+                  );
+                })}
 
-              {/* Add agent */}
-              <button
-                onClick={() => navigate("/agents")}
-                className="shrink-0 lg:w-full text-left rounded-lg px-2.5 py-2 border border-dashed border-border text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all flex items-center gap-2 lg:mt-1 min-h-[36px] lg:min-h-0"
-              >
-                <span className="shrink-0 w-7 h-7 rounded-lg bg-muted border flex items-center justify-center">
-                  <Plus className="w-3.5 h-3.5" />
-                </span>
-                <span className="hidden sm:block text-xs font-medium truncate">
-                  {agents.length === 0 ? "Create first" : "Add"}
-                </span>
-              </button>
-            </div>
-          </ScrollArea>
+                {/* Add agent */}
+                <button
+                  onClick={() => navigate("/agents")}
+                  className="shrink-0 lg:w-full text-left rounded-lg px-2.5 py-2 border border-dashed border-border text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all flex items-center gap-2 lg:mt-1 min-h-11 lg:min-h-0"
+                >
+                  <span className="shrink-0 w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-muted border flex items-center justify-center">
+                    <Plus className="w-3.5 h-3.5" />
+                  </span>
+                  <span className="hidden sm:block text-xs font-medium truncate">
+                    {agents.length === 0 ? "Create first" : "Add"}
+                  </span>
+                </button>
+              </div>
+            </ScrollArea>
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-background to-transparent lg:hidden" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-4 bg-gradient-to-l from-background to-transparent lg:hidden" />
+          </div>
         </aside>
 
         {/* ── Conversation ─────────────────────────────────────── */}
@@ -216,7 +220,7 @@ export default function AgentChat() {
             {/* Mobile dock trigger */}
             <button
               onClick={() => setDockOpen(true)}
-              className="xl:hidden fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] right-4 z-30 inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 text-sm font-medium active:scale-95 transition-transform"
+              className="xl:hidden fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] right-4 z-30 inline-flex items-center gap-2 px-4 min-h-11 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 text-sm font-medium active:scale-95 transition-transform"
               aria-label="Open mission control"
             >
               <LayoutDashboard className="w-4 h-4" />
@@ -238,12 +242,12 @@ export default function AgentChat() {
                     animate={{ x: 0 }}
                     exit={{ x: "100%" }}
                     transition={{ type: "spring", damping: 30, stiffness: 320 }}
-                    className="xl:hidden fixed top-0 right-0 bottom-0 z-50 w-[88vw] max-w-sm p-4 bg-background border-l"
+                    className="xl:hidden fixed top-0 right-0 bottom-0 z-50 w-[92vw] max-w-sm px-4 pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))] bg-background border-l"
                   >
                     <div className="flex items-center justify-end mb-2">
                       <button
                         onClick={() => setDockOpen(false)}
-                        className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                        className="w-11 h-11 sm:w-8 sm:h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                         aria-label="Close mission control"
                       >
                         <X className="w-4 h-4" />
