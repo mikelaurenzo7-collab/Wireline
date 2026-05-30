@@ -706,9 +706,11 @@ export default function AgentTraining({
                           <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70 mb-1">
                             Knowledge base
                           </p>
-                          <p className="font-display italic text-lg text-ink mb-1">No entries yet</p>
+                          <p className="font-display italic text-lg text-ink mb-1">
+                            No entries yet
+                          </p>
                           <p className="text-[12px] text-muted max-w-[260px]">
-                            Upload a PDF, paste a policy, or add a FAQ below so {agentName} answers
+                            Upload a PDF, paste a policy, or add a FAQ below so this agent answers
                             consistently.
                           </p>
                         </div>

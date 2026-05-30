@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from "react";
 import { motion } from "motion/react";
 import { Radio, Users, PhoneCall, ShieldAlert, Loader2, Activity, Headphones } from "lucide-react";
-import { authFetch } from "../lib/api";
+import { authFetch, getAccessToken } from "../lib/api";
 import { cn } from "../lib/utils";
 import PageShell, { Panel } from "./PageShell";
 import { useToast } from "../contexts/ToastContext";
@@ -239,7 +239,9 @@ export default function SupervisorCockpit() {
 
     const setupPresenceStream = () => {
       try {
-        const streamUrl = `${window.location.origin}/api/fleet/presence/stream`;
+        const token = getAccessToken();
+        if (!token) return;
+        const streamUrl = `${window.location.origin}/api/fleet/presence/stream?token=${encodeURIComponent(token)}`;
         eventSource = new EventSource(streamUrl, { withCredentials: true });
 
         eventSource.onmessage = (event) => {

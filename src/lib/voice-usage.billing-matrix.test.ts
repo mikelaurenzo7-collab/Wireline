@@ -23,7 +23,11 @@ function usageOverageFields(used: number, planId: StripePlanId | null) {
 }
 
 /** Mirrors trackVoiceMinutes incremental Stripe meter delta (voice-usage.ts). */
-function incrementalOverageMinutes(newUsed: number, previousUsed: number, included: number): number {
+function incrementalOverageMinutes(
+  newUsed: number,
+  previousUsed: number,
+  included: number,
+): number {
   return Math.max(0, newUsed - Math.max(included, previousUsed));
 }
 

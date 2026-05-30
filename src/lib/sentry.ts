@@ -38,7 +38,6 @@ export function captureException(error: unknown, context?: Record<string, unknow
     }
   }
 
-   
   console.error("[wireline]", error, context);
 }
 

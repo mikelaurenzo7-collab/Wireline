@@ -130,14 +130,11 @@ async function lookupTenant(toNumber: string): Promise<string | null> {
   return null;
 }
 
-router.post(
-  "/api/twilio-webhook/sms",
-  twilioRateLimiter,
-  async (req: Request, res: Response) => {
-    if (!verifyTwilioSignature(req)) {
-      log.warn("Twilio webhook signature verification failed", { path: req.path });
-      return res.status(403).send(twimlEmpty());
-    }
+router.post("/api/twilio-webhook/sms", twilioRateLimiter, async (req: Request, res: Response) => {
+  if (!verifyTwilioSignature(req)) {
+    log.warn("Twilio webhook signature verification failed", { path: req.path });
+    return res.status(403).send(twimlEmpty());
+  }
 
   // Twilio posts as form-urlencoded; Express needs body-parser registered
   // upstream. The server-context entry point already mounts urlencoded.

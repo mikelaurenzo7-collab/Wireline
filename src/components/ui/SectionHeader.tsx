@@ -23,9 +23,7 @@ export function SectionHeader({
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       {eyebrow && (
-        <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
-          {eyebrow}
-        </p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">{eyebrow}</p>
       )}
       <div className="flex items-start justify-between gap-4">
         <div>

@@ -14,12 +14,7 @@ interface MedallionProps {
  * Medallion — the signature gradient icon container used throughout the Aurora Cream system.
  * Use for empty states, section headers, identity markers, and status indicators.
  */
-export function Medallion({
-  children,
-  className,
-  withHalo = false,
-  size = "md",
-}: MedallionProps) {
+export function Medallion({ children, className, withHalo = false, size = "md" }: MedallionProps) {
   const sizeClasses = {
     sm: "w-9 h-9",
     md: "w-14 h-14",

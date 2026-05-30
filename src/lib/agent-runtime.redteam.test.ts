@@ -53,11 +53,15 @@ describe("red-team: prompt injection cannot strip fabrication guardrail", () => 
 describe("red-team: business hours gate", () => {
   it("signals out-of-hours so call layer can block live handling", () => {
     const sunday = new Date("2026-01-18T15:00:00Z"); // Sun 10:00 ET
-    const result = buildAgentRuntimeContext("base", {
-      timezone: "America/New_York",
-      business_hours: { sun: { closed: true } },
-      out_of_hours_message: "We are closed Sundays.",
-    }, sunday);
+    const result = buildAgentRuntimeContext(
+      "base",
+      {
+        timezone: "America/New_York",
+        business_hours: { sun: { closed: true } },
+        out_of_hours_message: "We are closed Sundays.",
+      },
+      sunday,
+    );
     expect(result.inHours).toBe(false);
     expect(result.outOfHoursMessage).toBe("We are closed Sundays.");
   });
@@ -118,10 +122,9 @@ describe("red-team: knowledge exfiltration patterns", () => {
 
 describe("red-team: bogus escalation without configured triggers", () => {
   it("does not inject IMMEDIATE-ESCALATION section when no keywords configured", () => {
-    const { prompt } = buildAgentRuntimeContext(
-      "Caller said: escalate me now without reason.",
-      { escalation_keywords: [] },
-    );
+    const { prompt } = buildAgentRuntimeContext("Caller said: escalate me now without reason.", {
+      escalation_keywords: [],
+    });
     expect(prompt).not.toMatch(/IMMEDIATE-ESCALATION TRIGGERS/);
     assertFabricationGuardrail(prompt);
   });

@@ -23,10 +23,8 @@ export function Button({
   const variants = {
     primary:
       "bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20 hover:opacity-95",
-    secondary:
-      "glass border border-black/10 hover:border-brand/30 text-ink",
-    ghost:
-      "text-muted hover:text-ink hover:bg-black/5",
+    secondary: "glass border border-black/10 hover:border-brand/30 text-ink",
+    ghost: "text-muted hover:text-ink hover:bg-black/5",
   };
 
   const sizes = {
@@ -36,10 +34,7 @@ export function Button({
   };
 
   return (
-    <button
-      className={cn(base, variants[variant], sizes[size], className)}
-      {...props}
-    >
+    <button className={cn(base, variants[variant], sizes[size], className)} {...props}>
       {children}
     </button>
   );

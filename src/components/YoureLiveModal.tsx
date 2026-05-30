@@ -16,19 +16,15 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   PartyPopper,
   Sparkles,
-  Phone,
   Mic,
   ArrowRight,
   BarChart3,
-  Settings,
   Share2,
   X,
   CheckCircle2,
   Copy,
   Users,
-  Zap,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -174,7 +170,9 @@ function NextStepCard({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <h4 className={`text-sm font-medium ${primary ? "text-brand" : "text-ink"}`}>{title}</h4>
+            <h4 className={`text-sm font-medium ${primary ? "text-brand" : "text-ink"}`}>
+              {title}
+            </h4>
             <ArrowRight
               className={`w-4 h-4 transition-transform group-hover:translate-x-1 ${
                 primary ? "text-brand" : "text-muted"
@@ -182,7 +180,9 @@ function NextStepCard({
             />
           </div>
           <p className="text-xs text-muted mt-1 leading-relaxed">{description}</p>
-          <p className={`text-[10px] uppercase tracking-[0.24em] mt-2 ${primary ? "text-brand/70" : "text-muted/70"}`}>
+          <p
+            className={`text-[10px] uppercase tracking-[0.24em] mt-2 ${primary ? "text-brand/70" : "text-muted/70"}`}
+          >
             {action}
           </p>
         </div>
@@ -241,7 +241,7 @@ export default function YoureLiveModal({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
-  }, [timeToFirstCallMs]);
+  }, [timeToFirstCallMs, formatTime]);
 
   if (!isOpen) return null;
 
@@ -301,7 +301,11 @@ export default function YoureLiveModal({
             </motion.div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
             <p className="text-[10px] uppercase tracking-[0.45em] text-brand font-medium mb-2">
               Setup Complete
             </p>

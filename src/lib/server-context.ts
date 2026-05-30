@@ -37,19 +37,78 @@ export const tenantStore = new AsyncLocalStorage<string>();
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const _origConnect = pool.connect.bind(pool);
 
+// Savepoint used to remap drizzle's own top-level BEGIN/COMMIT/ROLLBACK so that
+// `drizzle.transaction()` keeps working while we hold the outer real transaction.
+const OUTER_SAVEPOINT = "__wireline_tenant_sp__";
+
+/**
+ * Acquire a pooled client already scoped to `userId`'s tenant for RLS.
+ *
+ * The scoping MUST survive transaction-mode poolers (e.g. Supabase/pgbouncer on
+ * :6543), which reset session state (`DISCARD ALL`) between transactions. Setting
+ * the role / `app.current_user_id` GUC as standalone autocommit statements is
+ * therefore wiped before the next query runs, leaving RLS policies to cast an
+ * empty GUC to uuid → `invalid input syntax for type uuid: ""` → HTTP 500.
+ *
+ * To make the context stick on both session- and transaction-mode connections we
+ * open a single real transaction at checkout, set the role + GUC `LOCAL` to it,
+ * and COMMIT on release. Because pgbouncer pins one backend for the lifetime of an
+ * open transaction, the GUC is visible to every query drizzle runs on this client.
+ *
+ * drizzle borrows a fresh connection per query/transaction, so each checkout has
+ * exactly one outer level. When a route uses `drizzle.transaction()`, drizzle emits
+ * its own `begin`/`commit`/`rollback`; we remap those to a savepoint on the outer
+ * transaction so nothing tries to open a (illegal) nested top-level transaction.
+ */
 async function scopeClientToTenant(userId: string) {
   const client = await _origConnect();
   try {
-    await client.query(`SET ROLE authenticated; SET app.current_user_id = '${userId}'`);
+    await client.query("BEGIN");
+    await client.query("SET LOCAL ROLE authenticated");
+    await client.query("SELECT set_config('app.current_user_id', $1, true)", [userId]);
   } catch (e) {
+    // Roll back any partial transaction and discard the (now poisoned) connection.
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* connection unusable; release with destroy below */
+    }
     client.release(true);
     throw e;
   }
+
+  // Remap drizzle's top-level transaction control to savepoints so the outer
+  // transaction (and thus the tenant GUC) stays open for the whole checkout.
+  const _origQuery = client.query.bind(client);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- pg query has many overloads
+  (client as any).query = (config: any, values?: any, cb?: any) => {
+    const text = typeof config === "string" ? config : config?.text;
+    if (typeof text === "string") {
+      const normalized = text.trim().toLowerCase();
+      let remapped: string | null = null;
+      if (/^begin(\s|$)/.test(normalized)) remapped = `SAVEPOINT ${OUTER_SAVEPOINT}`;
+      else if (normalized === "commit") remapped = `RELEASE SAVEPOINT ${OUTER_SAVEPOINT}`;
+      else if (normalized === "rollback") remapped = `ROLLBACK TO SAVEPOINT ${OUTER_SAVEPOINT}`;
+      if (remapped) {
+        if (typeof config === "string") return _origQuery(remapped, values, cb);
+        return _origQuery({ ...config, text: remapped }, values, cb);
+      }
+    }
+    return _origQuery(config, values, cb);
+  };
+
   const _origRelease = client.release.bind(client);
+  let released = false;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- pg release signature uses overloads
   client.release = (err?: any) => {
-    client
-      .query("RESET ROLE; RESET app.current_user_id")
+    if (released) return;
+    released = true;
+    // Restore the raw query fn before finalizing so our control statements run as-is.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- restoring pg client.query
+    (client as any).query = _origQuery;
+    // COMMIT closes the outer transaction. If it was aborted by an earlier error,
+    // Postgres turns COMMIT into a ROLLBACK, so this is safe in both cases.
+    _origQuery(err ? "ROLLBACK" : "COMMIT")
       .then(() => _origRelease(err))
       .catch(() => _origRelease(err || true));
   };

@@ -251,3 +251,25 @@ export const userPreferencesRateLimit = createRateLimiter({
   windowMs: 60 * 1000,
   max: 240,
 });
+
+/**
+ * Voice-observability insights rate limiter.
+ * 120 reads/min per user — dashboards poll latency trends interactively, so
+ * the bucket is sized for UI navigation while still throttling scraping.
+ */
+export const insightsRateLimit = createRateLimiter({
+  bucket: "api:insights",
+  windowMs: 60 * 1000,
+  max: 120,
+});
+
+/**
+ * Fleet endpoints rate limiter.
+ * 120 requests/min per user. The presence SSE stream opens one long-lived
+ * connection per page mount; the limit primarily throttles reconnect storms.
+ */
+export const fleetRateLimit = createRateLimiter({
+  bucket: "api:fleet",
+  windowMs: 60 * 1000,
+  max: 120,
+});
