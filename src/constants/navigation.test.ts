@@ -66,6 +66,13 @@ describe("Top-bar navigation IA", () => {
     expect(sales.items.map((i) => i.path)).toEqual(["/pipeline"]);
   });
 
+  it("Admin group has Agents and Settings as separate items", () => {
+    const admin = NAV_GROUPS.find((g) => g.label === "Admin")!;
+    expect(admin.items.map((i) => i.path)).toEqual(["/agents", "/admin"]);
+    const settings = admin.items.find((i) => i.path === "/admin")!;
+    expect(settings.matches).not.toContain("/agents");
+  });
+
   it("every nav item has a PAGE_TITLES entry", () => {
     for (const group of NAV_GROUPS) {
       for (const item of group.items) {

@@ -17,10 +17,7 @@ import OutboundDialer from "../components/OutboundDialer";
 import Appointments from "../components/Appointments";
 
 import ClientRouteViewport from "../components/layout/ClientRouteViewport";
-
 import ClientSubTabs from "../components/layout/ClientSubTabs";
-
-import HubTabs, { CHANNELS_HUB } from "../components/HubTabs";
 
 type PhoneTab = "logs" | "outbound" | "appointments";
 
@@ -53,13 +50,12 @@ export default function PhonePage() {
 
   return (
     <ClientRouteViewport>
-      <HubTabs tabs={CHANNELS_HUB} label="Channels" className="mb-2 md:mb-3" />
-
       <ClientSubTabs
         tabs={TABS}
         activeId={activeTab}
         onChange={(id) => setTab(id as PhoneTab)}
         aria-label="Phone sections"
+        layoutIdPrefix="phone-section"
       />
 
       <div className="flex-1 min-h-0 overflow-hidden">

@@ -12,7 +12,7 @@ import { AGENTS_CHANGED_EVENT } from "../contexts/AgentsContext";
 import ConfirmModal from "./ConfirmModal";
 import { useToast } from "../contexts/ToastContext";
 import AgentTemplates from "./AgentTemplates";
-import AdminHubViewport from "./layout/AdminHubViewport";
+import ClientRouteViewport from "./layout/ClientRouteViewport";
 import ClientSubTabs from "./layout/ClientSubTabs";
 import {
   AGENT_TOOL_CATALOG,
@@ -359,7 +359,7 @@ export default function FleetSettings() {
 
   return (
     <>
-      <AdminHubViewport>
+      <ClientRouteViewport>
         <ClientSubTabs
           tabs={[
             { id: "templates", label: "Templates", icon: LayoutGrid },
@@ -432,7 +432,7 @@ export default function FleetSettings() {
             />
           </div>
         </div>
-      </AdminHubViewport>
+      </ClientRouteViewport>
       <ConfirmModal
         open={seedConfirmOpen}
         title="Seed specialized agents?"

@@ -14,6 +14,7 @@ type ClientSubTabsProps = {
   onChange: (id: string) => void;
   className?: string;
   "aria-label"?: string;
+  layoutIdPrefix?: string;
 };
 
 /**
@@ -26,6 +27,7 @@ export default function ClientSubTabs({
   onChange,
   className,
   "aria-label": ariaLabel = "Page sections",
+  layoutIdPrefix = "client-subtab",
 }: ClientSubTabsProps) {
   return (
     <div
@@ -54,7 +56,7 @@ export default function ClientSubTabs({
             >
               {active && (
                 <motion.span
-                  layoutId="client-subtab-pill"
+                  layoutId={`${layoutIdPrefix}-pill`}
                   aria-hidden="true"
                   className="absolute inset-0 pointer-events-none bg-brand shadow-[0_2px_8px_-4px_rgba(79,30,123,0.55)]"
                   transition={{ type: "spring", stiffness: 380, damping: 32 }}

@@ -12,7 +12,7 @@ type AdminHubViewportProps = {
 
 /**
  * Unified admin shell: settings tab strip + full-height body region.
- * Used by Settings, Agents, DNC, Audit, and Integrations.
+ * Used by Settings, DNC, Audit, and Integrations — not the Agents fleet page.
  */
 export default function AdminHubViewport({ children, scroll, className }: AdminHubViewportProps) {
   return (

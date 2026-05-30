@@ -315,7 +315,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           expanded={effective}
           active={
             location.pathname === "/admin" ||
-            ["/integrations", "/dnc", "/audit", "/agents"].some(
+            ["/integrations", "/dnc", "/audit", "/admin"].some(
               (m) => location.pathname === m || location.pathname.startsWith(`${m}/`),
             )
           }

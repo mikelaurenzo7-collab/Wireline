@@ -14,6 +14,8 @@ interface HubTabsProps {
   /** Optional aria-label for the tab strip. */
   label?: string;
   className?: string;
+  /** Unique prefix so motion layoutIds never collide across route transitions. */
+  layoutIdPrefix?: string;
 }
 
 /**
@@ -27,8 +29,9 @@ interface HubTabsProps {
  * same way the landing page's Pricing tier toggle does. Tokens drive the
  * brand surface (no inline hex) so future palette tweaks propagate.
  */
-export default function HubTabs({ tabs, label, className }: HubTabsProps) {
+export default function HubTabs({ tabs, label, className, layoutIdPrefix }: HubTabsProps) {
   const { pathname } = useLocation();
+  const pillLayoutId = layoutIdPrefix ?? `hub-tabs-${tabs.map((t) => t.path).join("-")}-pill`;
   return (
     <nav
       aria-label={label || "Section navigation"}
@@ -53,7 +56,7 @@ export default function HubTabs({ tabs, label, className }: HubTabsProps) {
             >
               {active && (
                 <motion.span
-                  layoutId="hub-tabs-active-pill"
+                  layoutId={pillLayoutId}
                   aria-hidden="true"
                   className="absolute inset-0 pointer-events-none bg-brand shadow-[0_2px_8px_-4px_rgba(79,30,123,0.55)]"
                   transition={{ type: "spring", stiffness: 380, damping: 32 }}

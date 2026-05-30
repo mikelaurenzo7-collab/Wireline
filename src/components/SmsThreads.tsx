@@ -6,7 +6,6 @@ import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatDate } from "../lib/safe-date";
 import PageShell, { Panel } from "./PageShell";
-import HubTabs, { CHANNELS_HUB } from "./HubTabs";
 import { useToast } from "../contexts/ToastContext";
 import EmptyState from "./EmptyState";
 
@@ -47,16 +46,24 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const fetchThreads = async () => {
     try {
       const r = await authFetch("/api/sms/threads");
       const d = await r.json();
-      setThreads(d.threads || []);
+      if (mountedRef.current) setThreads(d.threads || []);
     } catch (e: any) {
-      toastError("Failed to load SMS inbox", e?.message);
+      if (mountedRef.current) toastError("Failed to load SMS inbox", e?.message);
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   };
 
@@ -89,8 +96,11 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
 
   // Auto-scroll to newest message on open + after send.
   useEffect(() => {
-    if (messagesEndRef.current && messages.length > 0) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (!messagesEndRef.current || messages.length === 0) return;
+    try {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } catch {
+      /* ignore — element may be detached during route change */
     }
   }, [messages]);
 
@@ -120,7 +130,6 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
 
   return (
     <div className="h-full flex flex-col min-h-0">
-      {!embedded && <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />}
       <div className="flex-1 min-h-0">
         <PageShell
           eyebrow={embedded ? undefined : "Channels · Messaging"}
@@ -134,7 +143,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
             <button
               onClick={fetchThreads}
               disabled={loading}
-              className="h-9 px-3 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
+              className="h-11 px-3.5 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
             >
               {loading ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -145,86 +154,101 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
             </button>
           }
         >
-          <div className="h-full grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-3 min-h-0">
-            <div className={cn("min-h-0 h-full", activeId && "hidden lg:block")}>
-              <Panel title="Threads" hint={`${threads.length} total`} icon={Inbox} scroll>
-                {loading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="w-5 h-5 animate-spin text-muted" />
-                  </div>
-                ) : threads.length === 0 ? (
-                  <EmptyState
-                    icon={MessageSquare}
-                    title="No SMS yet"
-                    description="Conversations land here when an agent sends a text or a customer replies to your number. Configure your Twilio sender in Settings, then trigger SMS from outbound campaigns."
-                    actions={[
-                      { label: "Configure SMS sender", to: "/admin?tab=carrier", primary: true },
-                      { label: "Set up outbound", to: "/outbound" },
-                    ]}
-                  />
-                ) : (
-                  <div className="space-y-1.5">
-                    <AnimatePresence>
-                      {threads.map((t) => (
-                        <motion.button
-                          key={t.id}
-                          initial={{ opacity: 0, y: 4 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          onClick={() => setActiveId(t.id)}
-                          className={cn(
-                            "w-full text-left rounded-xl p-3 border transition-all",
-                            activeId === t.id
-                              ? "bg-brand/8 border-brand/30"
-                              : "bg-white/[0.02] border-white/10 hover:border-white/20",
-                          )}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0 flex-1">
-                              <p className="font-mono text-sm text-ink truncate">
-                                {t.customer_number}
-                              </p>
-                              <p className="text-[10px] text-muted/70 mt-0.5">
-                                {formatDate(
-                                  t.last_message_at,
-                                  {
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "numeric",
-                                    minute: "2-digit",
-                                  },
-                                  "—",
-                                  "en-US",
-                                )}
-                              </p>
-                            </div>
-                            {t.unread_count > 0 && (
-                              <span className="shrink-0 inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-brand text-on-brand text-[10px] font-bold">
-                                {t.unread_count}
-                              </span>
-                            )}
-                          </div>
-                        </motion.button>
-                      ))}
-                    </AnimatePresence>
-                  </div>
+          <Panel title="Inbox" hint="SMS · THREADS & REPLIES" icon={Inbox} flush className="h-full">
+            <div className="h-full min-h-[360px] grid grid-cols-1 lg:grid-cols-[minmax(280px,320px)_1fr] min-h-0">
+              <div
+                className={cn(
+                  "min-h-0 flex flex-col border-b lg:border-b-0 lg:border-r border-black/8",
+                  activeId && "hidden lg:flex",
                 )}
-              </Panel>
-            </div>
-
-            <div className={cn("min-h-0 h-full", !activeId && "hidden lg:block")}>
-              <Panel
-                title={activeThread ? activeThread.customer_number : "Select a thread"}
-                hint={activeThread ? "SMS · TWO-WAY" : ""}
-                icon={Phone}
               >
+                <div className="shrink-0 px-3 py-2 border-b border-black/6 flex items-center justify-between">
+                  <span className="text-eyebrow opacity-80">All conversations</span>
+                  <span className="text-[9px] uppercase tracking-[0.28em] text-muted tabular-nums">
+                    {threads.length}
+                  </span>
+                </div>
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain panel-scroll p-2">
+                  {loading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="w-5 h-5 animate-spin text-muted" />
+                    </div>
+                  ) : threads.length === 0 ? (
+                    <EmptyState
+                      icon={MessageSquare}
+                      title="No SMS yet"
+                      description="Conversations land here when an agent sends a text or a customer replies to your number. Configure your Twilio sender in Settings, then trigger SMS from outbound campaigns."
+                      actions={[
+                        { label: "Configure SMS sender", to: "/admin?tab=carrier", primary: true },
+                        { label: "Set up outbound", to: "/outbound" },
+                      ]}
+                    />
+                  ) : (
+                    <div className="space-y-1.5">
+                      <AnimatePresence>
+                        {threads.map((t) => (
+                          <motion.button
+                            key={t.id}
+                            initial={{ opacity: 0, y: 4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            onClick={() => setActiveId(t.id)}
+                            className={cn(
+                              "w-full text-left rounded-xl p-3 border transition-all",
+                              activeId === t.id
+                                ? "bg-brand/8 border-brand/30"
+                                : "bg-white/[0.02] border-white/10 hover:border-white/20",
+                            )}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-mono text-sm text-ink truncate">
+                                  {t.customer_number}
+                                </p>
+                                <p className="text-[10px] text-muted/70 mt-0.5">
+                                  {formatDate(
+                                    t.last_message_at,
+                                    {
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "numeric",
+                                      minute: "2-digit",
+                                    },
+                                    "—",
+                                    "en-US",
+                                  )}
+                                </p>
+                              </div>
+                              {t.unread_count > 0 && (
+                                <span className="shrink-0 inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-brand text-on-brand text-[10px] font-bold">
+                                  {t.unread_count}
+                                </span>
+                              )}
+                            </div>
+                          </motion.button>
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className={cn("min-h-0 flex flex-col", !activeId && "hidden lg:flex")}>
                 {!activeThread ? (
                   <EmptyState
                     icon={MessageSquare}
                     title="Pick a conversation"
                     description="Select a thread on the left to see the full SMS history and reply."
+                    className="h-full py-12"
                   />
                 ) : (
-                  <div className="h-full flex flex-col">
+                  <div className="h-full flex flex-col min-h-0 p-3">
+                    <div className="shrink-0 pb-2 border-b border-black/6 flex items-center gap-2">
+                      <Phone className="w-3.5 h-3.5 text-brand shrink-0" />
+                      <span className="font-mono text-sm text-ink truncate">
+                        {activeThread.customer_number}
+                      </span>
+                      <span className="text-eyebrow opacity-70 ml-auto">Two-way</span>
+                    </div>
                     <button
                       onClick={() => setActiveId(null)}
                       aria-label="Back to threads"
@@ -302,9 +326,9 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                     </div>
                   </div>
                 )}
-              </Panel>
+              </div>
             </div>
-          </div>
+          </Panel>
         </PageShell>
       </div>
     </div>

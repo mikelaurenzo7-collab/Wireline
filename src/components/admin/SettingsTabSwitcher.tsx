@@ -4,7 +4,6 @@ import { motion } from "motion/react";
 import { cn } from "../../lib/utils";
 
 type AdminTab =
-  | "agents"
   | "integrations"
   | "branding"
   | "carrier"
@@ -23,7 +22,6 @@ interface TabDef {
 }
 
 const TAB_GROUPS: { tabs: TabDef[] }[] = [
-  { tabs: [{ id: "agents", label: "Agents", path: "/agents" }] },
   {
     tabs: [
       { id: "subscription", label: "Billing", path: "/admin?tab=subscription" },
@@ -53,7 +51,6 @@ export default function SettingsTabSwitcher() {
 
   const getActiveTab = (): AdminTab => {
     const pathname = location.pathname;
-    if (pathname === "/agents") return "agents";
     if (pathname === "/integrations") return "integrations";
     if (pathname === "/dnc") return "dnc";
     if (pathname === "/audit") return "audit";

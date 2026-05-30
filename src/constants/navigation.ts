@@ -9,6 +9,7 @@ import {
   Phone,
   Mail,
   MessageCircle,
+  Users,
 } from "lucide-react";
 
 export type NavItem = {
@@ -103,11 +104,18 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: "Admin",
     items: [
       {
+        label: "Agents",
+        path: "/agents",
+        icon: Users,
+        dataTour: "agents",
+        matches: ["/agents"],
+      },
+      {
         label: "Settings",
         path: "/admin",
         icon: SlidersHorizontal,
         dataTour: "settings",
-        matches: ["/integrations", "/dnc", "/audit", "/agents"],
+        matches: ["/integrations", "/dnc", "/audit", "/admin"],
       },
     ],
   },

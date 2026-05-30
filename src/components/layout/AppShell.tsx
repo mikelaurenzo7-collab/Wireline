@@ -250,7 +250,7 @@ export default function AppShell() {
         <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
           <div className="flex-1 overflow-hidden relative z-10 min-h-0">
             <div className="app-surface max-w-[1600px] mx-auto px-3 md:px-4 lg:px-5 pt-2 md:pt-4 pb-0 md:pb-4 flex flex-col h-full min-h-0 mobile-page-canvas">
-              <ErrorBoundary>
+              <ErrorBoundary key={location.pathname}>
                 <AppRoutes />
               </ErrorBoundary>
             </div>
@@ -514,7 +514,7 @@ function DesktopContextBar({
         <button
           type="button"
           onClick={onShowShortcuts}
-          className="inline-flex min-h-11 items-center gap-2 border border-ink/[0.08] bg-white/40 px-4 text-eyebrow transition-colors hover:border-brand/25 hover:text-brand"
+          className="inline-flex min-h-11 h-11 items-center gap-2 rounded-full border border-ink/[0.08] bg-white/40 px-3.5 text-eyebrow transition-colors hover:border-brand/25 hover:text-brand"
           aria-label="Open keyboard shortcuts"
         >
           <kbd className="font-mono text-[10px]">?</kbd>
@@ -596,7 +596,7 @@ function PulsePill({
 
 function cnPill(live: boolean, palette: { text: string; ring: string; bg: string }): string {
   const base =
-    "inline-flex items-center gap-2 h-8 px-3 rounded-full ring-1 transition-all select-none";
+    "inline-flex items-center gap-2 min-h-11 h-11 px-3.5 rounded-full ring-1 transition-all select-none";
   if (live) return `${base} ${palette.bg} ${palette.ring} ${palette.text} hover:brightness-95`;
   return `${base} bg-white/40 ring-ink/[0.08] text-muted hover:text-ink hover:ring-ink/15`;
 }
