@@ -7,7 +7,7 @@ describe("Hub tab definitions", () => {
     expect(TRAINING_HUB.map((t) => t.label)).toEqual(["Chat", "Training"]);
   });
 
-  it("CHANNELS_HUB covers Phone, Email, SMS", () => {
+  it("CHANNELS_HUB covers Phone, Email, SMS (sidebar targets; not mounted on channel pages)", () => {
     expect(CHANNELS_HUB.map((t) => t.path)).toEqual(["/phone", "/email", "/sms"]);
   });
 

@@ -25,8 +25,15 @@ import {
   buildShowcaseSystemPrompt,
   isOwnerRoutingShowcaseTool,
   showcaseToolNamesForKind,
+  showcaseVapiAssistantName,
 } from "./showcase-assistant";
 import { WIRELINE_CONTACT_AGENTS, WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
+
+const ALL_SHOWCASE = [...WIRELINE_CONTACT_AGENTS, ...WIRELINE_DEMO_AGENTS];
+
+function showcaseKind(name: string): "cs" | "demo" {
+  return WIRELINE_CONTACT_AGENTS.some((a) => a.name === name) ? "cs" : "demo";
+}
 
 describe("showcaseToolNamesForKind", () => {
   it("gives cs (employee) lines the full toolset including owner-routing tools", () => {
@@ -167,5 +174,48 @@ describe("buildShowcaseSystemPrompt — demo personalization", () => {
     expect(prompt).toMatch(/law firm name to use/i);
     expect(prompt).toMatch(/ROLE-PLAY STANDARD — Law firm intake/i);
     expect(prompt).toMatch(/conflict check/i);
+  });
+});
+
+describe("showcase catalog — Vapi payload invariants", () => {
+  it.each(ALL_SHOWCASE.map((a) => [a.name, a] as const))(
+    "%s payload uses Flux EOT and omits deprecated inputMinCharacters",
+    (name, agent) => {
+      const payload = buildShowcaseAssistantPayload(agent, showcaseKind(name));
+      expect(payload.transcriber.model).toBe("flux-general-en");
+      expect(payload.metadata.wireline_transcriber_mode).toBe("flux-eot");
+      expect(payload).not.toHaveProperty("inputMinCharacters");
+    },
+  );
+
+  it.each(ALL_SHOWCASE.map((a) => [a.name, a] as const))(
+    "%s has a stable Vapi assistant display name",
+    (name, agent) => {
+      const display = showcaseVapiAssistantName(agent);
+      expect(display.startsWith(`${name} —`)).toBe(true);
+      expect(display.length).toBeLessThan(80);
+    },
+  );
+
+  it("demo agents never include owner-routing tools in payload", () => {
+    for (const agent of WIRELINE_DEMO_AGENTS) {
+      const tools = buildShowcaseAssistantPayload(agent, "demo").model.tools as Array<{
+        function: { name: string };
+      }>;
+      const names = tools.map((t) => t.function.name);
+      expect(names).not.toContain("escalate_to_human");
+      expect(names).not.toContain("schedule_callback");
+    }
+  });
+
+  it("employee lines include owner-routing tools in payload", () => {
+    for (const agent of WIRELINE_CONTACT_AGENTS) {
+      const tools = buildShowcaseAssistantPayload(agent, "cs").model.tools as Array<{
+        function: { name: string };
+      }>;
+      const names = tools.map((t) => t.function.name);
+      expect(names).toContain("escalate_to_human");
+      expect(names).toContain("schedule_callback");
+    }
   });
 });

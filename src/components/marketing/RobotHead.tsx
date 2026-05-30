@@ -4,6 +4,7 @@
  * texting, typing). Each instance uses unique gradient IDs via useId().
  */
 import React, { useId } from "react";
+import { phoneLayoutForGutter, ROBOT_PHONE_W } from "./robot-phone-layout";
 
 export type RobotPose = "phone" | "on-call" | "typing" | "texting";
 
@@ -36,22 +37,6 @@ const POSE_LAYOUT: Record<RobotPose, { viewBox: string; heightRatio: number }> =
   texting: { viewBox: "0 0 64 70", heightRatio: 1.09 },
   typing: { viewBox: "0 0 64 76", heightRatio: 1.19 },
 };
-
-/** Head shell rect in the 64×64 phone pose viewBox (see HeadShell). */
-const HEAD_LEFT = 12;
-const HEAD_RIGHT = 52;
-const PHONE_W = 10;
-/** How far the phone overlaps the head edge so it reads “at the ear”. */
-const PHONE_EAR_OVERLAP = 7;
-
-function phoneLayoutForGutter(gutterSide: "left" | "right", pose: "phone" | "on-call") {
-  // Left-gutter robots face inward — phone on the right cheek toward the headline.
-  const phoneSide: "left" | "right" = gutterSide === "left" ? "right" : "left";
-  const phoneOffset =
-    phoneSide === "left" ? HEAD_LEFT - PHONE_W + PHONE_EAR_OVERLAP : HEAD_RIGHT - PHONE_EAR_OVERLAP;
-  const phoneY = pose === "on-call" ? 19 : 20;
-  return { phoneSide, phoneOffset, phoneY };
-}
 
 function gazeForPose(pose: RobotPose, variant: number): { dx: number; dy: number } {
   if (pose === "texting") return { dx: 0.5, dy: 2.8 };
@@ -230,7 +215,7 @@ function PhoneBody({
   scaleAnchor?: "left" | "right";
 }) {
   const phoneH = 17;
-  const anchorX = scaleAnchor === "right" ? PHONE_W : 0;
+  const anchorX = scaleAnchor === "right" ? ROBOT_PHONE_W : 0;
   const anchorY = phoneH / 2;
 
   return (
