@@ -223,7 +223,12 @@ export default function LandingPage() {
                   className="inline-flex items-center gap-2 text-ink/70 hover:text-brand transition-colors text-sm font-medium"
                 >
                   <Phone className="w-4 h-4" />
-                  <span>Talk to {WIRELINE_CONTACT_AGENTS[0]?.name || "us"} now</span>
+                  <span>
+                    Call {WIRELINE_CONTACT_AGENTS[0]?.name || "us"}:{" "}
+                    <span className="font-mono tabular-nums text-brand">
+                      {WIRELINE_CONTACT_AGENTS[0]?.display || "(630) 581-1834"}
+                    </span>
+                  </span>
                 </a>
               </div>
             </motion.div>

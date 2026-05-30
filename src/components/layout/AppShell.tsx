@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
+import { motion, AnimatePresence } from "motion/react";
+import { Activity, ListChecks } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { authFetch, readApiJson } from "../../lib/api";
 import WirelineMark from "../WirelineMark";
@@ -14,6 +16,7 @@ import AppRoutes from "../../routes/AppRoutes";
 import { NAV_GROUPS, PAGE_TITLES, getRouteAccent } from "../../constants/navigation";
 import { useBranding } from "../../contexts/BrandingContext";
 import { useViewTransitionRoute } from "../../hooks/useViewTransitionRoute";
+import { useLivePresence } from "../../hooks/useLivePresence";
 
 const CommandBar = lazy(() => import("../CommandBar"));
 const ProductTour = lazy(() => import("../ProductTour"));
@@ -244,6 +247,8 @@ export default function AppShell() {
         <TrialBanner />
         <DesktopContextBar
           pathname={location.pathname}
+          navBadges={navBadges}
+          userEmail={user?.email}
           onShowShortcuts={() => setShowShortcuts(true)}
         />
 
@@ -298,18 +303,67 @@ const ROUTE_SUBTITLES: Record<string, string> = {
   "/admin": "Account configuration & integrations",
 };
 
+function timeGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 5) return "Burning the midnight oil";
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  if (h < 22) return "Good evening";
+  return "Working late";
+}
+
+function firstName(email?: string): string | null {
+  if (!email) return null;
+  const handle = email.split("@")[0]?.split(/[._-]/)[0];
+  if (!handle) return null;
+  return handle.charAt(0).toUpperCase() + handle.slice(1);
+}
+
 function DesktopContextBar({
   pathname,
+  navBadges,
+  userEmail,
   onShowShortcuts,
 }: {
   pathname: string;
+  navBadges: Record<string, number>;
+  userEmail?: string;
   onShowShortcuts: () => void;
 }) {
   const breadcrumb = getDesktopBreadcrumb(pathname);
   const [from, to] = getRouteAccent(pathname);
+  const liveCalls = useLivePresence();
+  // Cross-cutting "needs a human" signal — flagged conversations awaiting
+  // review. Surfaced globally so it follows the operator across every page,
+  // not just when they happen to be on /triage. Hidden when the queue is clean.
+  const triageCount = navBadges["/triage"] ?? 0;
+  const onOps = pathname === "/ops";
+  const onTriage = pathname === "/triage";
+  const name = firstName(userEmail);
+
   return (
-    <div className="hidden lg:flex shrink-0 items-center justify-between gap-4 border-b border-ink/[0.06] bg-paper/72 px-5 py-3 backdrop-blur-xl">
-      <div className="min-w-0">
+    <div className="hidden lg:flex shrink-0 items-center justify-between gap-4 border-b border-ink/[0.06] bg-paper/72 px-5 py-3 backdrop-blur-xl relative overflow-hidden">
+      {/* Ambient route-accent wash — a faint right-anchored gradient in the
+          current page's identity colors. Ties the context bar into the same
+          accent vocabulary as RouteAccentStrip + the rail's per-group hues,
+          so the whole chrome shifts mood per destination. Re-keys on route
+          change to gently cross-fade. */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={pathname}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.5 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.5 }}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 right-0 w-1/2"
+          style={{
+            background: `linear-gradient(90deg, transparent 0%, ${from}0c 55%, ${to}1f 100%)`,
+          }}
+        />
+      </AnimatePresence>
+
+      <div className="min-w-0 relative z-10">
         {breadcrumb.eyebrow && (
           <p
             className="text-eyebrow mb-0.5 inline-block pb-0.5"
@@ -332,15 +386,143 @@ function DesktopContextBar({
           )}
         </div>
       </div>
-      <button
-        type="button"
-        onClick={onShowShortcuts}
-        className="inline-flex min-h-11 items-center gap-2 border border-ink/[0.08] bg-white/40 px-4 text-eyebrow transition-colors hover:border-brand/25 hover:text-brand"
-        aria-label="Open keyboard shortcuts"
-      >
-        <kbd className="font-mono text-[10px]">?</kbd>
-        <span className="hidden xl:inline">Shortcuts</span>
-      </button>
+
+      {/* ── Right cluster: live operational pulse + greeting + shortcuts ── */}
+      <div className="relative z-10 flex items-center gap-2.5 shrink-0">
+        {/* Time-aware greeting — quiet, personal, only on very wide viewports
+            where there's room to spare. */}
+        {name && (
+          <span className="hidden 2xl:inline text-[12px] text-muted whitespace-nowrap pr-1">
+            {timeGreeting()}, <span className="text-ink/70 font-medium">{name}</span>
+          </span>
+        )}
+
+        {/* Live calls pulse — the floor's heartbeat. Animates when calls are
+            in flight; links straight to Live Ops. Suppressed (as a link) when
+            already on /ops so it reads as a status, not a redundant jump. */}
+        <PulsePill
+          to={onOps ? undefined : "/ops"}
+          live={liveCalls > 0}
+          icon={Activity}
+          label={liveCalls > 0 ? `${liveCalls} live` : "Floor quiet"}
+          tone="emerald"
+          title={
+            liveCalls > 0
+              ? `${liveCalls} active call${liveCalls === 1 ? "" : "s"} — open Live Ops`
+              : "No active calls right now"
+          }
+        />
+
+        {/* Needs-review pulse — only appears when the triage queue is non-empty
+            and you're not already looking at it. */}
+        <AnimatePresence>
+          {triageCount > 0 && !onTriage && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, width: 0 }}
+              animate={{ opacity: 1, scale: 1, width: "auto" }}
+              exit={{ opacity: 0, scale: 0.9, width: 0 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <PulsePill
+                to="/triage"
+                live
+                icon={ListChecks}
+                label={`${triageCount > 99 ? "99+" : triageCount} to review`}
+                tone="amber"
+                title={`${triageCount} conversation${triageCount === 1 ? "" : "s"} flagged for review`}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <span className="hidden xl:block w-px h-5 bg-ink/[0.08]" aria-hidden="true" />
+
+        <button
+          type="button"
+          onClick={onShowShortcuts}
+          className="inline-flex min-h-11 items-center gap-2 border border-ink/[0.08] bg-white/40 px-4 text-eyebrow transition-colors hover:border-brand/25 hover:text-brand"
+          aria-label="Open keyboard shortcuts"
+        >
+          <kbd className="font-mono text-[10px]">?</kbd>
+          <span className="hidden xl:inline">Shortcuts</span>
+        </button>
+      </div>
     </div>
   );
+}
+
+/**
+ * PulsePill — a compact live-status chip used in the desktop context bar.
+ * Renders as a Link when `to` is supplied (navigable status) or a static
+ * pill otherwise. A breathing dot animates while `live` is true.
+ */
+function PulsePill({
+  to,
+  live,
+  icon: Icon,
+  label,
+  tone,
+  title,
+}: {
+  to?: string;
+  live: boolean;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  label: string;
+  tone: "emerald" | "amber";
+  title: string;
+}) {
+  const palette =
+    tone === "emerald"
+      ? {
+          dot: "#10B981",
+          text: "text-emerald-700",
+          ring: "ring-emerald-500/20",
+          bg: "bg-emerald-500/8",
+        }
+      : {
+          dot: "#F59E0B",
+          text: "text-amber-700",
+          ring: "ring-amber-500/25",
+          bg: "bg-amber-500/10",
+        };
+
+  const inner = (
+    <>
+      <span className="relative inline-flex w-2 h-2 items-center justify-center shrink-0">
+        {live && (
+          <span
+            className="absolute inset-0 rounded-full animate-ping"
+            style={{ background: palette.dot, opacity: 0.5 }}
+          />
+        )}
+        <span
+          className="relative w-1.5 h-1.5 rounded-full"
+          style={{
+            background: live ? palette.dot : "rgba(20,0,32,0.22)",
+            boxShadow: live ? `0 0 8px ${palette.dot}aa` : undefined,
+          }}
+        />
+      </span>
+      <Icon className="w-3.5 h-3.5 shrink-0 opacity-70" strokeWidth={2} />
+      <span className="text-[11px] font-medium whitespace-nowrap leading-none">{label}</span>
+    </>
+  );
+
+  const cls = cnPill(live, palette);
+  return to ? (
+    <Link to={to} title={title} aria-label={title} className={cls}>
+      {inner}
+    </Link>
+  ) : (
+    <span title={title} className={cls}>
+      {inner}
+    </span>
+  );
+}
+
+function cnPill(live: boolean, palette: { text: string; ring: string; bg: string }): string {
+  const base =
+    "inline-flex items-center gap-2 h-8 px-3 rounded-full ring-1 transition-all select-none";
+  if (live) return `${base} ${palette.bg} ${palette.ring} ${palette.text} hover:brightness-95`;
+  return `${base} bg-white/40 ring-ink/[0.08] text-muted hover:text-ink hover:ring-ink/15`;
 }

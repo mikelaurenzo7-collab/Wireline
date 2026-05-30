@@ -23,13 +23,22 @@
  */
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronsLeft, ChevronsRight, Crown, LifeBuoy, LogOut, Search } from "lucide-react";
+import {
+  ChevronsLeft,
+  ChevronsRight,
+  Crown,
+  LifeBuoy,
+  LogOut,
+  Search,
+  Settings,
+} from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import WirelineMark from "../WirelineMark";
 import { useAuth } from "../../contexts/AuthContext";
 import { useBranding } from "../../contexts/BrandingContext";
 import { NAV_GROUPS, type NavItem } from "../../constants/navigation";
 import { authFetch } from "../../lib/api";
+import { useLivePresence } from "../../hooks/useLivePresence";
 import { cn } from "../../lib/utils";
 
 const RAIL_COLLAPSED = 56; // px
@@ -37,7 +46,10 @@ const RAIL_EXPANDED = 224; // px
 const AUTO_EXPAND_WIDTH = 1440; // viewport width that auto-expands the rail
 
 // Per-group accent colors — let operators scan the rail by category.
-// Matches the route-accent palette already in use elsewhere.
+// Matches the route-accent palette already in use elsewhere. The group
+// section titles were removed from the rail (they ate vertical space),
+// but each page keeps its category accent stripe so the eye can still
+// sort by group at a glance.
 const GROUP_ACCENTS: Record<string, string> = {
   Workspace: "#4F1E7B", // brand purple
   Channels: "#3B82F6", // vibrant blue — communication surfaces
@@ -45,6 +57,16 @@ const GROUP_ACCENTS: Record<string, string> = {
   Activity: "#10B981", // emerald
   Admin: "#7C7469", // muted warm gray
 };
+
+// Flattened nav: every page from NAV_GROUPS (except the Admin group, whose
+// lone Settings page is relocated to the footer cluster below Help) laid
+// out in one continuous, title-less column. Each item carries the accent
+// of its original group for the active-stripe.
+const NAV_ITEMS: (NavItem & { accent: string })[] = NAV_GROUPS.filter(
+  (group) => group.label !== "Admin",
+).flatMap((group) =>
+  group.items.map((item) => ({ ...item, accent: GROUP_ACCENTS[group.label] || "#4F1E7B" })),
+);
 
 // Optional keyboard-shortcut hints. Matches the existing g+key shortcut
 // mapping in AppShell. Shown right-aligned when the rail is expanded.
@@ -128,29 +150,9 @@ export default function Sidebar({ navBadges }: SidebarProps) {
     );
   };
 
-  // Live phone pulse — polls /api/fleet/presence every 10 s. Counts active
+  // Live phone pulse — shared hook polls /api/fleet/presence. Counts active
   // calls in the workspace right now. Pulse animates when count > 0.
-  const [liveCalls, setLiveCalls] = useState<number>(0);
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    const fetchLive = async () => {
-      try {
-        const r = await authFetch("/api/fleet/presence");
-        if (!r.ok || cancelled) return;
-        const d = (await r.json()) as { signals?: unknown[] };
-        if (!cancelled) setLiveCalls(Array.isArray(d.signals) ? d.signals.length : 0);
-      } catch {
-        /* non-critical — stale count is fine */
-      }
-    };
-    fetchLive();
-    const id = setInterval(fetchLive, 10_000);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, [user]);
+  const liveCalls = useLivePresence();
 
   return (
     <aside
@@ -238,60 +240,29 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         )}
       </button>
 
-      {/* ── Group sections ─────────────────────────────────────────── */}
-      {/* overflow-y-auto + scrollbar-hide: at the design heights (720+ px
-          laptop, 800+ px desktop) all groups fit without overflow. On
+      {/* ── Nav rows ───────────────────────────────────────────────── */}
+      {/* Flat list — group section titles were removed because they ate
+          vertical real-estate and forced scrolling. Every page now sits
+          in one continuous, scannable column. Per-item accent stripes
+          (derived from the page's original group) still let the eye sort
+          by category. Settings lives in the footer cluster below Help.
+
+          overflow-y-auto + scrollbar-hide: at the design heights (720+ px
+          laptop, 800+ px desktop) all rows fit without overflow. On
           ultra-short windows or zoomed-in browsers the content scrolls
           silently — no visible scrollbar, no clipped items. */}
-      <nav className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-2 px-2 space-y-3 scrollbar-hide">
-        {NAV_GROUPS.map((group) => {
-          const items = group.items.filter((item) => !item.ownerOnly || user?.is_owner === true);
-          if (items.length === 0) return null;
-          const accent = GROUP_ACCENTS[group.label] || "#4F1E7B";
-          return (
-            <div key={group.label}>
-              <AnimatePresence>
-                {effective && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15 }}
-                    className="px-2 mb-1.5 flex items-center gap-2 select-none"
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="w-1 h-1 rounded-full shrink-0"
-                      style={{ background: accent }}
-                    />
-                    <span className="chrome-eyebrow">{group.label}</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              {/* Collapsed: subtle hairline divider between groups */}
-              {!effective && (
-                <div
-                  aria-hidden="true"
-                  className="mx-3 mb-1.5 h-px"
-                  style={{ background: `${accent}28` }}
-                />
-              )}
-              <div className="space-y-0.5">
-                {items.map((item) => (
-                  <RailItem
-                    key={item.path}
-                    item={item}
-                    active={isActive(item)}
-                    badge={resolveBadge(item, navBadges)}
-                    expanded={effective}
-                    accent={accent}
-                    shortcut={SHORTCUTS[item.path]}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })}
+      <nav className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-2 px-2 space-y-0.5 scrollbar-hide">
+        {NAV_ITEMS.filter((item) => !item.ownerOnly || user?.is_owner === true).map((item) => (
+          <RailItem
+            key={item.path}
+            item={item}
+            active={isActive(item)}
+            badge={resolveBadge(item, navBadges)}
+            expanded={effective}
+            accent={item.accent}
+            shortcut={SHORTCUTS[item.path]}
+          />
+        ))}
       </nav>
 
       {/* ── Footer: live pulse + account/help/founder/signout ─────── */}
@@ -348,6 +319,19 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           label="Help"
           expanded={effective}
           active={location.pathname === "/help"}
+        />
+        <FooterItem
+          to="/admin"
+          icon={Settings}
+          label="Settings"
+          dataTour="settings"
+          expanded={effective}
+          active={
+            location.pathname === "/admin" ||
+            ["/integrations", "/dnc", "/audit", "/agents"].some(
+              (m) => location.pathname === m || location.pathname.startsWith(`${m}/`),
+            )
+          }
         />
         {user?.email === "mikelaurenzo7@gmail.com" && (
           <FooterItem
@@ -652,11 +636,13 @@ interface FooterItemProps {
   label: string;
   expanded: boolean;
   active: boolean;
+  dataTour?: string;
 }
-function FooterItem({ to, icon: Icon, label, expanded, active }: FooterItemProps) {
+function FooterItem({ to, icon: Icon, label, expanded, active, dataTour }: FooterItemProps) {
   return (
     <Link
       to={to}
+      {...(dataTour ? { "data-tour": dataTour } : {})}
       aria-current={active ? "page" : undefined}
       title={expanded ? undefined : label}
       className={cn(

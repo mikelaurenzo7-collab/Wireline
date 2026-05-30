@@ -1,19 +1,17 @@
 import type { ContactAgent } from "./contact-agents";
 
 /**
- * Browser-playable showcase template — extends ContactAgent with
- * the audio + display extras the /showcase page needs. A "showcase"
- * is auditioned in-browser (pre-roll MP3 + first-message script)
- * before the prospect ever picks up the phone.
+ * Showcase template — extends ContactAgent with the display extras
+ * the /showcase page needs. A "showcase" is a marquee demo persona
+ * a prospect can call live to hear (tagline + first-message script)
+ * before deploying their own.
  *
  * Lives in its own file (not contact-agents.ts) so parallel agents
  * editing the contact-agents catalog can't accidentally drop the
  * showcase exports during a rebase.
  */
 export type ShowcaseAgent = ContactAgent & {
-  /** Public path of a pre-recorded audio sample (jingle, intro). */
-  preRollAudio?: string;
-  /** Short hook sentence shown above the play button. */
+  /** Short hook sentence shown above the call button. */
   tagline: string;
   /** Voice display name shown on the card, e.g. "Bella — playful, melodic". */
   voiceLabel: string;
@@ -22,9 +20,8 @@ export type ShowcaseAgent = ContactAgent & {
 /**
  * SHOWCASE_AGENTS — playable templates surfaced on /showcase and
  * the landing-page hero. The marquee entry is the Singing
- * Receptionist: a pre-baked ElevenLabs Music jingle plays the
- * moment the prospect clicks "Hear her sing", then the agent's
- * first-message catches itself with a normal greeting.
+ * Receptionist: call her live and she answers with a sung jingle,
+ * then catches herself with a normal greeting.
  */
 export const SHOWCASE_AGENTS: ReadonlyArray<ShowcaseAgent> = [
   {
@@ -40,8 +37,7 @@ export const SHOWCASE_AGENTS: ReadonlyArray<ShowcaseAgent> = [
     tint: "#FF7A59",
     defaultVibe: "playful",
     tagline:
-      "She answers the phone singing. Then catches herself with a normal greeting. A taste of how playful Wireline agents can be.",
+      "She answers the phone singing — then catches herself with a normal greeting. Give her a call to hear how playful a Wireline agent can be.",
     voiceLabel: "Bella — playful, melodic",
-    preRollAudio: "/sounds/wireline-jingle.mp3",
   },
 ];
