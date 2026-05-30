@@ -53,11 +53,11 @@ export default class ErrorBoundary extends Component<Props, State> {
               style={{ background: "radial-gradient(circle, #E8466A, transparent)" }}
             />
             <div className="relative z-10 flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-rose-500/15 border border-rose-500/30">
-                <AlertOctagon className="w-7 h-7 text-rose-500" />
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "rgba(232,70,106,0.15)", border: "1px solid rgba(232,70,106,0.30)" }}>
+                <AlertOctagon className="w-7 h-7" style={{ color: "#E8466A" }} />
               </div>
               <div>
-                <div className="text-[10px] uppercase tracking-[0.4em] text-rose-500">
+                <div className="text-[10px] uppercase tracking-[0.4em]" style={{ color: "#E8466A" }}>
                   Something broke
                 </div>
                 <h2 className="font-display italic text-3xl text-ink leading-tight mt-1">

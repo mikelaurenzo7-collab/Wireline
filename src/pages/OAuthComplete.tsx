@@ -85,9 +85,9 @@ export default function OAuthComplete() {
         >
           {error ? (
             <>
-              <div role="alert" className="flex items-center justify-center gap-2 text-rose-600">
+              <div role="alert" className="flex items-center justify-center gap-2" style={{ color: "#E8466A" }}>
                 <AlertTriangle className="w-5 h-5" />
-                <span className="text-eyebrow text-rose-600">Sign-in failed</span>
+                <span className="text-eyebrow">Sign-in failed</span>
               </div>
               <p className="text-caption leading-relaxed">{error}</p>
               <Link to="/signin" className="marketing-btn-secondary w-full min-h-[48px]">

@@ -739,7 +739,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                           {step.name || "Unnamed Stage"}
                         </div>
                         {step.isEndNode && (
-                          <div className="text-[9px] uppercase tracking-[0.2em] text-rose-400 mt-0.5">
+                          <div className="text-[9px] uppercase tracking-[0.2em] mt-0.5" style={{ color: "#fb7185" }}>
                             Terminal Node
                           </div>
                         )}
@@ -811,12 +811,10 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       className="sr-only"
                     />
                     <div
-                      className={cn(
-                        "w-4 h-4 rounded border flex items-center justify-center transition-colors",
-                        activeStep.isEndNode
-                          ? "bg-rose-500 border-rose-500"
-                          : "glass border-white/20 group-hover:border-rose-500/50",
-                      )}
+                      className="w-4 h-4 rounded border flex items-center justify-center transition-colors glass"
+                      style={activeStep.isEndNode
+                        ? { background: "#E8466A", borderColor: "#E8466A" }
+                        : { borderColor: "rgba(255,255,255,0.20)" }}
                     >
                       {activeStep.isEndNode && <CheckCircle2 className="w-3 h-3 text-white" />}
                     </div>
@@ -1022,9 +1020,9 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     )}
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-6 text-center">
-                    <div className="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center mx-auto mb-3">
-                      <CheckCircle2 className="w-6 h-6 text-rose-500" />
+                  <div className="rounded-xl p-6 text-center" style={{ border: "1px solid rgba(232,70,106,0.20)", background: "rgba(232,70,106,0.05)" }}>
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: "rgba(232,70,106,0.10)" }}>
+                      <CheckCircle2 className="w-6 h-6" style={{ color: "#E8466A" }} />
                     </div>
                     <h4 className="text-sm font-medium text-ink mb-1">Terminal Stage</h4>
                     <p className="text-[11px] text-muted/70 max-w-md mx-auto">

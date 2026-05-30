@@ -1406,16 +1406,20 @@ function ProposalCard({
       ) : (
         <>
           {consent && (
-            <label className="mt-2.5 flex items-start gap-2.5 cursor-pointer">
+            <div className="mt-2.5 flex items-start gap-2.5">
               <Switch
                 checked={consent.checked}
                 onCheckedChange={consent.onChange}
                 className="mt-0.5 shrink-0 scale-75 origin-left"
+                aria-label="I confirm we have prior express written consent to call this number (TCPA)."
               />
-              <span className="text-[11px] text-muted leading-snug">
+              <span
+                className="text-[11px] text-muted leading-snug cursor-pointer"
+                onClick={() => consent.onChange(!consent.checked)}
+              >
                 I confirm we have prior express written consent to call this number (TCPA).
               </span>
-            </label>
+            </div>
           )}
           <div className="mt-2.5 flex items-center gap-2">
             <button

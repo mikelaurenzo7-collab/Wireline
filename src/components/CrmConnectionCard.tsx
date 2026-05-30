@@ -43,58 +43,58 @@ interface IntegrationState {
 
 type ProviderKey = keyof IntegrationState;
 
-/** Tailwind cannot compile dynamic `border-${color}-500` — explicit maps only. */
-const PROVIDER_STYLES: Record<
-  string,
-  { card: string; icon: string; check: string; connect: string }
-> = {
+/** Inline style tokens per integration brand — Tailwind color utilities are
+ *  remapped to brand purple in the @theme block, so semantic hex values must
+ *  be applied via style props, not className. */
+type ProviderStyle = {
+  cardBorder: string;
+  cardBg: string;
+  iconBg: string;
+  iconBorder: string;
+  iconColor: string;
+  checkColor: string;
+};
+
+const PROVIDER_STYLES: Record<string, ProviderStyle> = {
   sky: {
-    card: "border-sky-500/30 bg-sky-500/5",
-    icon: "bg-sky-500/15 border-sky-500/30 text-sky-700",
-    check: "text-sky-600",
-    connect: "bg-sky-500/15 border-sky-500/30 text-sky-700 hover:bg-sky-500/20",
+    cardBorder: "rgba(14,165,233,0.30)", cardBg: "rgba(14,165,233,0.05)",
+    iconBg: "rgba(14,165,233,0.15)", iconBorder: "rgba(14,165,233,0.30)", iconColor: "#0369a1",
+    checkColor: "#0284c7",
   },
   orange: {
-    card: "border-orange-500/30 bg-orange-500/5",
-    icon: "bg-orange-500/15 border-orange-500/30 text-orange-700",
-    check: "text-orange-600",
-    connect: "bg-orange-500/15 border-orange-500/30 text-orange-700 hover:bg-orange-500/20",
+    cardBorder: "rgba(249,115,22,0.30)", cardBg: "rgba(249,115,22,0.05)",
+    iconBg: "rgba(249,115,22,0.15)", iconBorder: "rgba(249,115,22,0.30)", iconColor: "#c2410c",
+    checkColor: "#ea580c",
   },
   purple: {
-    card: "border-violet-500/30 bg-violet-500/5",
-    icon: "bg-violet-500/15 border-violet-500/30 text-violet-700",
-    check: "text-violet-600",
-    connect: "bg-violet-500/15 border-violet-500/30 text-violet-700 hover:bg-violet-500/20",
+    cardBorder: "rgba(139,63,214,0.30)", cardBg: "rgba(139,63,214,0.05)",
+    iconBg: "rgba(139,63,214,0.15)", iconBorder: "rgba(139,63,214,0.30)", iconColor: "#6d28d9",
+    checkColor: "#7c3aed",
   },
   blue: {
-    card: "border-blue-500/30 bg-blue-500/5",
-    icon: "bg-blue-500/15 border-blue-500/30 text-blue-700",
-    check: "text-blue-600",
-    connect: "bg-blue-500/15 border-blue-500/30 text-blue-700 hover:bg-blue-500/20",
+    cardBorder: "rgba(59,130,246,0.30)", cardBg: "rgba(59,130,246,0.05)",
+    iconBg: "rgba(59,130,246,0.15)", iconBorder: "rgba(59,130,246,0.30)", iconColor: "#1d4ed8",
+    checkColor: "#2563eb",
   },
   indigo: {
-    card: "border-indigo-500/30 bg-indigo-500/5",
-    icon: "bg-indigo-500/15 border-indigo-500/30 text-indigo-700",
-    check: "text-indigo-600",
-    connect: "bg-indigo-500/15 border-indigo-500/30 text-indigo-700 hover:bg-indigo-500/20",
+    cardBorder: "rgba(99,102,241,0.30)", cardBg: "rgba(99,102,241,0.05)",
+    iconBg: "rgba(99,102,241,0.15)", iconBorder: "rgba(99,102,241,0.30)", iconColor: "#4338ca",
+    checkColor: "#4f46e5",
   },
   fuchsia: {
-    card: "border-fuchsia-500/30 bg-fuchsia-500/5",
-    icon: "bg-fuchsia-500/15 border-fuchsia-500/30 text-fuchsia-700",
-    check: "text-fuchsia-600",
-    connect: "bg-fuchsia-500/15 border-fuchsia-500/30 text-fuchsia-700 hover:bg-fuchsia-500/20",
+    cardBorder: "rgba(217,70,239,0.30)", cardBg: "rgba(217,70,239,0.05)",
+    iconBg: "rgba(217,70,239,0.15)", iconBorder: "rgba(217,70,239,0.30)", iconColor: "#a21caf",
+    checkColor: "#c026d3",
   },
   emerald: {
-    card: "border-emerald-500/30 bg-emerald-500/5",
-    icon: "bg-emerald-500/15 border-emerald-500/30 text-emerald-700",
-    check: "text-emerald-600",
-    connect: "bg-emerald-500/15 border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/20",
+    cardBorder: "rgba(16,185,129,0.30)", cardBg: "rgba(16,185,129,0.05)",
+    iconBg: "rgba(16,185,129,0.15)", iconBorder: "rgba(16,185,129,0.30)", iconColor: "#047857",
+    checkColor: "#059669",
   },
   amber: {
-    card: "border-amber-500/30 bg-amber-500/5",
-    icon: "bg-amber-500/15 border-amber-500/30 text-amber-700",
-    check: "text-amber-600",
-    connect: "bg-amber-500/15 border-amber-500/30 text-amber-700 hover:bg-amber-500/20",
+    cardBorder: "rgba(245,158,11,0.30)", cardBg: "rgba(245,158,11,0.05)",
+    iconBg: "rgba(245,158,11,0.15)", iconBorder: "rgba(245,158,11,0.30)", iconColor: "#b45309",
+    checkColor: "#d97706",
   },
 };
 
@@ -387,7 +387,8 @@ export default function CrmConnectionCard() {
                   const detail = s.email || s.team || "";
                   const betaPill = beta ? (
                     <span
-                      className="ml-1 text-[8px] uppercase tracking-[0.22em] px-1.5 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/40 text-amber-600 leading-none"
+                      className="ml-1 text-[8px] uppercase tracking-[0.22em] px-1.5 py-0.5 rounded-md leading-none"
+                      style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.40)", color: "#d97706" }}
                       title="OAuth is live; agent actions (auto-log calls, push deals) are in active development."
                     >
                       Beta
@@ -406,17 +407,15 @@ export default function CrmConnectionCard() {
                       layout
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={cn(
-                        "rounded-xl glass border p-4 h-full flex flex-col",
-                        s.connected ? styles.card : "border-black/8",
-                      )}
+                      className="rounded-xl glass border p-4 h-full flex flex-col"
+                      style={s.connected ? { borderColor: styles.cardBorder, background: styles.cardBg } : undefined}
                     >
                       <div className="flex items-start gap-3 flex-1">
                         <div
-                          className={cn(
-                            "w-9 h-9 rounded-lg flex items-center justify-center p-1.5 border shrink-0",
-                            s.connected ? styles.icon : "bg-black/4 border-black/10 text-muted/50",
-                          )}
+                          className="w-9 h-9 rounded-lg flex items-center justify-center p-1.5 border shrink-0"
+                          style={s.connected
+                            ? { background: styles.iconBg, borderColor: styles.iconBorder, color: styles.iconColor }
+                            : undefined}
                         >
                           {getIntegrationLogo(key) ?? (
                             <span className="text-[10px] font-bold">{logo}</span>
@@ -426,7 +425,7 @@ export default function CrmConnectionCard() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <div className="text-[11px] font-semibold text-ink">{label}</div>
                             {s.connected && (
-                              <CheckCircle2 className={cn("w-3 h-3", styles.check)} />
+                              <CheckCircle2 className="w-3 h-3" style={{ color: styles.checkColor }} />
                             )}
                             {betaPill}
                           </div>
@@ -525,10 +524,10 @@ export default function CrmConnectionCard() {
                             placeholder="your-store.myshopify.com"
                             spellCheck={false}
                             autoCapitalize="off"
-                            className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink placeholder:text-muted/70 outline-none focus:border-emerald-500/40"
+                            className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink placeholder:text-muted/70 outline-none transition-colors"
                           />
                           {shopError ? (
-                            <p className="text-[9px] text-rose-500 leading-snug">{shopError}</p>
+                            <p className="text-[9px] leading-snug" style={{ color: "#E8466A" }}>{shopError}</p>
                           ) : (
                             <p className="text-[9px] text-muted/70 leading-snug">
                               Enter your myshopify.com domain, then click Connect to authorize.
