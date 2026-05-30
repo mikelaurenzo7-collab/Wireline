@@ -2,7 +2,7 @@
  * RobotHead — Creative brand mascot for Wireline landing page hero corners.
  * Minimalist line-art robot head with phone icon integrated at the "ear".
  * Matches brand palette: Deep purple (#4F1E7B), Emerald (#10B981), Cream accents.
- * Four variants for the four corners with subtle personality differences.
+ * Four corner variants + two middle flank variants with distinct eye styles.
  */
 import React from "react";
 
@@ -136,6 +136,22 @@ export function RobotHead({
               strokeWidth="3"
               strokeLinecap="round"
             />
+          </>
+        )}
+        {variant === 5 && (
+          <>
+            <circle cx="24" cy="30" r="4" fill={COLORS.cream} />
+            <circle cx="40" cy="30" r="4" fill={COLORS.cream} />
+            <circle cx="24" cy="30" r="1.6" fill={COLORS.emerald} />
+            <circle cx="40" cy="30" r="1.6" fill={COLORS.emerald} />
+          </>
+        )}
+        {variant === 6 && (
+          <>
+            <circle cx="24" cy="30" r="4.5" fill={COLORS.cream} />
+            <circle cx="40" cy="30" r="4.5" fill={COLORS.cream} />
+            <circle cx="25" cy="29" r="1.8" fill={COLORS.purple} />
+            <circle cx="41" cy="29" r="1.8" fill={COLORS.purple} />
           </>
         )}
 
