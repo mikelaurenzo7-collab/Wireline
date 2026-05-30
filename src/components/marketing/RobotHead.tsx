@@ -15,6 +15,8 @@ interface RobotHeadProps {
   animated?: boolean;
   /** Hero gutter: richer fills and no extra SVG shadow (parent applies halo). */
   vivid?: boolean;
+  /** Which page gutter this sticker sits in — drives phone-to-ear side. */
+  gutterSide?: "left" | "right";
 }
 
 const COLORS = {
@@ -34,6 +36,22 @@ const POSE_LAYOUT: Record<RobotPose, { viewBox: string; heightRatio: number }> =
   texting: { viewBox: "0 0 64 70", heightRatio: 1.09 },
   typing: { viewBox: "0 0 64 76", heightRatio: 1.19 },
 };
+
+/** Head shell rect in the 64×64 phone pose viewBox (see HeadShell). */
+const HEAD_LEFT = 12;
+const HEAD_RIGHT = 52;
+const PHONE_W = 10;
+/** How far the phone overlaps the head edge so it reads “at the ear”. */
+const PHONE_EAR_OVERLAP = 7;
+
+function phoneLayoutForGutter(gutterSide: "left" | "right", pose: "phone" | "on-call") {
+  // Left-gutter robots face inward — phone on the right cheek toward the headline.
+  const phoneSide: "left" | "right" = gutterSide === "left" ? "right" : "left";
+  const phoneOffset =
+    phoneSide === "left" ? HEAD_LEFT - PHONE_W + PHONE_EAR_OVERLAP : HEAD_RIGHT - PHONE_EAR_OVERLAP;
+  const phoneY = pose === "on-call" ? 19 : 20;
+  return { phoneSide, phoneOffset, phoneY };
+}
 
 function gazeForPose(pose: RobotPose, variant: number): { dx: number; dy: number } {
   if (pose === "texting") return { dx: 0.5, dy: 2.8 };
@@ -199,6 +217,7 @@ function PhoneBody({
   scale = 1,
   screenMode,
   animated,
+  scaleAnchor = "left",
 }: {
   uid: string;
   strokeWidth: number;
@@ -207,74 +226,84 @@ function PhoneBody({
   scale?: number;
   screenMode: "idle" | "call" | "sms" | "wave";
   animated: boolean;
+  /** Edge of the phone that touches the head — scale expands away from the head. */
+  scaleAnchor?: "left" | "right";
 }) {
+  const phoneH = 17;
+  const anchorX = scaleAnchor === "right" ? PHONE_W : 0;
+  const anchorY = phoneH / 2;
+
   return (
-    <g transform={`translate(${x}, ${y}) scale(${scale})`}>
-      <rect
-        x="0"
-        y="0"
-        width="10"
-        height="17"
-        rx="2"
-        fill={`url(#phoneGrad-${uid})`}
-        stroke={COLORS.ink}
-        strokeWidth={strokeWidth * 0.75}
-      />
-      <rect x="3" y="1.2" width="4" height="1.2" rx="0.6" fill={COLORS.ink} fillOpacity="0.35" />
-      <rect
-        x="1.5"
-        y="3.5"
-        width="7"
-        height="9.5"
-        rx="0.6"
-        fill={COLORS.cream}
-        fillOpacity="0.94"
-      />
-      {screenMode === "call" && (
-        <path d="M3.5 7.5 Q5 6 6.5 7.5 Q5 9 3.5 7.5" fill={COLORS.emerald} fillOpacity="0.85" />
-      )}
-      {screenMode === "sms" && (
-        <>
-          <rect
-            x="2.5"
-            y="5.5"
-            width="5"
-            height="2"
-            rx="0.5"
-            fill={COLORS.purple}
-            fillOpacity="0.35"
-          />
-          <rect
-            x="2.5"
-            y="8.5"
-            width="3.5"
-            height="2"
-            rx="0.5"
-            fill={COLORS.emerald}
-            fillOpacity="0.5"
-          />
-        </>
-      )}
-      {screenMode === "wave" &&
-        [0, 1, 2].map((i) => (
-          <rect
-            key={i}
-            x={2.8 + i * 2.2}
-            y="7"
-            width="1.4"
-            height="4"
-            rx="0.4"
-            fill={COLORS.purple}
-            fillOpacity="0.55"
-            style={{
-              animation: animated
-                ? `wl-wave-bar-${uid} 1.2s ease-in-out ${i * 0.15}s infinite`
-                : undefined,
-              transformOrigin: `${3.5 + i * 2.2}px 11px`,
-            }}
-          />
-        ))}
-      <circle cx="5" cy="14.5" r="0.65" fill={COLORS.ink} fillOpacity="0.5" />
+    <g transform={`translate(${x}, ${y})`}>
+      <g
+        transform={`translate(${anchorX} ${anchorY}) scale(${scale}) translate(${-anchorX} ${-anchorY})`}
+      >
+        <rect
+          x="0"
+          y="0"
+          width="10"
+          height="17"
+          rx="2"
+          fill={`url(#phoneGrad-${uid})`}
+          stroke={COLORS.ink}
+          strokeWidth={strokeWidth * 0.75}
+        />
+        <rect x="3" y="1.2" width="4" height="1.2" rx="0.6" fill={COLORS.ink} fillOpacity="0.35" />
+        <rect
+          x="1.5"
+          y="3.5"
+          width="7"
+          height="9.5"
+          rx="0.6"
+          fill={COLORS.cream}
+          fillOpacity="0.94"
+        />
+        {screenMode === "call" && (
+          <path d="M3.5 7.5 Q5 6 6.5 7.5 Q5 9 3.5 7.5" fill={COLORS.emerald} fillOpacity="0.85" />
+        )}
+        {screenMode === "sms" && (
+          <>
+            <rect
+              x="2.5"
+              y="5.5"
+              width="5"
+              height="2"
+              rx="0.5"
+              fill={COLORS.purple}
+              fillOpacity="0.35"
+            />
+            <rect
+              x="2.5"
+              y="8.5"
+              width="3.5"
+              height="2"
+              rx="0.5"
+              fill={COLORS.emerald}
+              fillOpacity="0.5"
+            />
+          </>
+        )}
+        {screenMode === "wave" &&
+          [0, 1, 2].map((i) => (
+            <rect
+              key={i}
+              x={2.8 + i * 2.2}
+              y="7"
+              width="1.4"
+              height="4"
+              rx="0.4"
+              fill={COLORS.purple}
+              fillOpacity="0.55"
+              style={{
+                animation: animated
+                  ? `wl-wave-bar-${uid} 1.2s ease-in-out ${i * 0.15}s infinite`
+                  : undefined,
+                transformOrigin: `${3.5 + i * 2.2}px 11px`,
+              }}
+            />
+          ))}
+        <circle cx="5" cy="14.5" r="0.65" fill={COLORS.ink} fillOpacity="0.5" />
+      </g>
     </g>
   );
 }
@@ -332,6 +361,7 @@ function SidePhonePose({
         scale={scale}
         screenMode={screenMode}
         animated={animated}
+        scaleAnchor={phoneOnRight ? "left" : "right"}
       />
       {pose === "on-call" && (
         <circle
@@ -572,16 +602,15 @@ export function RobotHead({
   className = "",
   animated = true,
   vivid = false,
+  gutterSide,
   "aria-hidden": ariaHidden,
 }: RobotHeadProps & { "aria-hidden"?: boolean }) {
   const uid = useId().replace(/:/g, "");
   const strokeWidth = size / 32;
-  // Left-gutter variants (1, 3, 5) hold the phone on the right side of the
-  // head (toward page center). Right-gutter variants hold it on the left.
-  const isLeftGutterVariant = variant === 1 || variant === 3 || variant === 5;
-  const phoneSide: "left" | "right" = isLeftGutterVariant ? "right" : "left";
-  const phoneOffset = phoneSide === "right" ? 47 : 7.5;
-  const phoneY = pose === "on-call" ? 20 : 21;
+  const resolvedGutterSide: "left" | "right" =
+    gutterSide ?? (variant === 1 || variant === 3 || variant === 5 ? "left" : "right");
+  const phoneLayout =
+    pose === "phone" || pose === "on-call" ? phoneLayoutForGutter(resolvedGutterSide, pose) : null;
   const layout = POSE_LAYOUT[pose];
 
   const transforms = {
@@ -658,13 +687,13 @@ export function RobotHead({
         <Eyes variant={variant} pose={pose} strokeWidth={strokeWidth} />
         <Antenna uid={uid} strokeWidth={strokeWidth} animated={animated} />
 
-        {(pose === "phone" || pose === "on-call") && (
+        {(pose === "phone" || pose === "on-call") && phoneLayout && (
           <SidePhonePose
             uid={uid}
             strokeWidth={strokeWidth}
-            phoneOffset={phoneOffset}
-            phoneY={phoneY}
-            phoneSide={phoneSide}
+            phoneOffset={phoneLayout.phoneOffset}
+            phoneY={phoneLayout.phoneY}
+            phoneSide={phoneLayout.phoneSide}
             pose={pose}
             animated={animated}
           />

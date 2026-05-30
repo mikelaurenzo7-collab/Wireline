@@ -145,6 +145,7 @@ export function SectionStickers({
                     size={slot.size}
                     animated
                     vivid={vivid}
+                    gutterSide={slot.side}
                   />
                 </div>
               </div>
