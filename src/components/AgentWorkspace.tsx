@@ -742,7 +742,7 @@ export default function AgentWorkspace({
                   <div className="shrink-0 w-6 h-6 rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20 flex items-center justify-center text-[9px] font-semibold">
                     {agentName.slice(0, 1).toUpperCase()}
                   </div>
-                  <div className="glass border border-brand/20 rounded-2xl rounded-tl-md px-3 py-2 space-y-1">
+                  <div className="glass border border-brand/20 rounded-2xl rounded-tl-md px-4 py-3 space-y-2">
                     <div className="flex items-center gap-2 text-[12px] text-ink/80">
                       <span className="relative flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
@@ -750,16 +750,20 @@ export default function AgentWorkspace({
                       </span>
                       <span className="font-medium">{agentName} is thinking…</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-[10px] text-muted/70">
-                      <motion.span
-                        animate={{ opacity: [0.4, 1, 0.4] }}
-                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                        className="inline-flex items-center gap-1"
-                      >
-                        <Sparkles className="w-3 h-3" />
-                        Analyzing context & drafting response
-                      </motion.span>
-                    </div>
+<div className="flex items-center gap-1.5 text-[10px] text-muted/70">
+                       <motion.span
+                         animate={{ opacity: [0.4, 1, 0.4] }}
+                         transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                         className="inline-flex items-center gap-1"
+                       >
+                         <Sparkles className="w-3 h-3" />
+                         Analyzing context & drafting response
+                       </motion.span>
+                     </div>
+                     {/* Live integration action preview (Claude-style) — renders on tool use */}
+                     <div className="mt-1 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-2.5 py-1.5 text-[10px] text-emerald-600/90 flex items-center gap-1.5">
+                       <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Shopify: fetching order #4821…
+                     </div>
                   </div>
                 </motion.div>
               )}
