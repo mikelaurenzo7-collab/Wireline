@@ -12,6 +12,7 @@ import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
+import { insightsRateLimit } from "../middleware/api-rate-limits";
 import {
   recordVoiceMetrics,
   computeVoiceHealthWindow,
@@ -131,6 +132,7 @@ router.get("/health/voice-status", async (_req: Request, res: Response) => {
 router.get(
   "/insights/latency",
   authenticateUser,
+  insightsRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const days = Math.min(parseInt((req.query.days as string) || "30"), 90);
@@ -154,6 +156,7 @@ router.get(
 router.get(
   "/insights/latency/recent",
   authenticateUser,
+  insightsRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const limit = Math.min(parseInt((req.query.limit as string) || "50"), 200);
