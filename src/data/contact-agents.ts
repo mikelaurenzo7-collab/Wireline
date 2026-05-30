@@ -95,7 +95,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     handles: ALL_ENCOMPASSING_HANDLES,
     tel: "+16306425661",
     display: "(630) 642-5661",
-    tint: "#4F1E7B",
+    tint: "#6B2B99",
     defaultVibe: "warm",
   },
   {
@@ -106,7 +106,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     handles: ALL_ENCOMPASSING_HANDLES,
     tel: "+16305811834",
     display: "(630) 581-1834",
-    tint: "#4F1E7B",
+    tint: "#6B2B99",
     defaultVibe: "playful",
     // Liam · Confident & Energetic — matches the agent name.
     voiceId: "TX3LPaxmHKxFdv7VOQHJ",

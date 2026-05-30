@@ -4,7 +4,7 @@
  * into off-brand blues, oranges, or teals.
  */
 export const BRAND = {
-  purple: "#4F1E7B",
+  purple: "#6B2B99",
   purpleDeep: "#3B154C",
   purpleLight: "#6B2B99",
   purpleMuted: "#8B6FA8",

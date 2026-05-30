@@ -65,7 +65,7 @@ export function SectionStickers({
           animation-play-state: paused;
         }
         .wl-sticker-slot:hover svg {
-          filter: drop-shadow(0 6px 16px rgba(79, 30, 123, 0.2));
+          filter: drop-shadow(0 6px 16px rgba(107, 43, 153, 0.2));
         }
 
         .wl-sticker-vivid .wl-sticker-halo {
@@ -81,11 +81,11 @@ export function SectionStickers({
           z-index: -1;
         }
         .wl-sticker-vivid svg {
-          filter: drop-shadow(0 5px 14px rgba(79, 30, 123, 0.28))
+          filter: drop-shadow(0 5px 14px rgba(107, 43, 153, 0.28))
             drop-shadow(0 1px 0 rgba(255, 255, 255, 0.65));
         }
         .wl-sticker-vivid:hover svg {
-          filter: drop-shadow(0 8px 22px rgba(79, 30, 123, 0.38))
+          filter: drop-shadow(0 8px 22px rgba(107, 43, 153, 0.38))
             drop-shadow(0 1px 0 rgba(255, 255, 255, 0.75)) !important;
         }
 

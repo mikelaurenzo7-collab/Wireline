@@ -17,9 +17,9 @@ type Stage = "cold" | "contacted" | "qualified" | "demo" | "won" | "lost";
 
 const STAGES: { id: Stage; label: string; tint: string; help: string }[] = [
   { id: "cold", label: "Cold", tint: "#94a3b8", help: "Not contacted yet" },
-  { id: "contacted", label: "Contacted", tint: "#4F1E7B", help: "Reached at least once" },
-  { id: "qualified", label: "Qualified", tint: "#4F1E7B", help: "Fit confirmed" },
-  { id: "demo", label: "Demo Booked", tint: "#4F1E7B", help: "Meeting on the calendar" },
+  { id: "contacted", label: "Contacted", tint: "#6B2B99", help: "Reached at least once" },
+  { id: "qualified", label: "Qualified", tint: "#6B2B99", help: "Fit confirmed" },
+  { id: "demo", label: "Demo Booked", tint: "#6B2B99", help: "Meeting on the calendar" },
   { id: "won", label: "Won", tint: "#6B2B99", help: "Closed-won" },
   { id: "lost", label: "Lost", tint: "#f43f5e", help: "Closed-lost" },
 ];
@@ -127,7 +127,7 @@ export default function Pipeline() {
             icon={Kanban}
             title="No leads in the pipeline"
             description="Pipeline tracks every outbound lead through Cold → Contacted → Qualified → Demo → Won/Lost. Add leads via the Outbound tab — upload a CSV or capture them from an inbound call."
-            accent="#4F1E7B"
+            accent="#6B2B99"
             actions={[
               { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
               { label: "Connect a webhook", to: "/integrations" },
@@ -211,7 +211,7 @@ export default function Pipeline() {
                                   !lead.attempts || lead.attempts === 0
                                     ? "rgba(255,255,255,0.06)"
                                     : lead.attempts <= 2
-                                      ? "#4F1E7B"
+                                      ? "#6B2B99"
                                       : lead.attempts <= 4
                                         ? "#8B6FA8"
                                         : "#E8466A",
@@ -271,7 +271,8 @@ export default function Pipeline() {
                                 )}
                                 <div className="flex items-center justify-between mt-2">
                                   <span className="text-[9px] text-muted/70">
-                                    {lead.attempts ?? 0} attempt{(lead.attempts ?? 0) === 1 ? "" : "s"}
+                                    {lead.attempts ?? 0} attempt
+                                    {(lead.attempts ?? 0) === 1 ? "" : "s"}
                                   </span>
                                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     {STAGES.filter((s) => s.id !== stage.id)

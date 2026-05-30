@@ -415,7 +415,7 @@ export default function Compare() {
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
               to="/signup"
-              className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-[#3d1660] transition-colors duration-300"
+              className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-[#6B2B99] transition-colors duration-300"
             >
               Start free trial
               <ArrowRight className="w-4 h-4" />

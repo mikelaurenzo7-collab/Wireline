@@ -191,7 +191,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
         className="shell-sticky-glass shrink-0 sticky top-0 z-50 bg-brand-deep/92 border-b border-[#EFE9DC]/10 text-on-brand lg:hidden"
         style={{
           boxShadow:
-            "0 0 0 1px rgba(239, 233, 220, 0.06), 0 8px 24px -16px rgba(79, 30, 123, 0.15)",
+            "0 0 0 1px rgba(239, 233, 220, 0.06), 0 8px 24px -16px rgba(107, 43, 153, 0.15)",
           /* Top safe area: notch / Dynamic Island on iPhone.
              Left/right safe areas: landscape iPhone notch coverage. */
           paddingTop: "max(0px, env(safe-area-inset-top, 0))",

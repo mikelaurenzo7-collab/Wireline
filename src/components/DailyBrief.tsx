@@ -98,7 +98,7 @@ export default function DailyBrief() {
         <div className="relative p-7 rounded-3xl glass overflow-hidden flex items-center gap-5">
           <div
             className="w-14 h-14 rounded-2xl flex items-center justify-center"
-            style={{ background: "#4F1E7B" }}
+            style={{ background: "#6B2B99" }}
           >
             <Brain className="w-7 h-7 text-on-brand" />
           </div>
@@ -163,7 +163,7 @@ export default function DailyBrief() {
   };
 
   const moodAccent =
-    brief.mood === "green" ? "#6B2B99" : brief.mood === "yellow" ? "#C4B5A0" : "#4F1E7B";
+    brief.mood === "green" ? "#6B2B99" : brief.mood === "yellow" ? "#C4B5A0" : "#6B2B99";
   const moodLabel =
     brief.mood === "green"
       ? "All systems go"
@@ -184,7 +184,7 @@ export default function DailyBrief() {
         />
         <div
           className="absolute -bottom-32 -left-32 w-72 h-72 rounded-full opacity-25 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
+          style={{ background: "radial-gradient(circle, #6B2B99, transparent)" }}
         />
 
         <div className="relative z-10 px-7 py-5 border-b border-white/8 flex items-center justify-between flex-wrap gap-3">
@@ -290,7 +290,7 @@ export default function DailyBrief() {
               </Section>
             )}
             {brief.concerns.length > 0 && (
-              <Section title="Concerns" icon={AlertTriangle} accent="#4F1E7B">
+              <Section title="Concerns" icon={AlertTriangle} accent="#6B2B99">
                 {brief.concerns.map((c, i) => (
                   <li key={i}>{c}</li>
                 ))}

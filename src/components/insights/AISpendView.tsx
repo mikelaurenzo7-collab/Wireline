@@ -314,19 +314,19 @@ export default function AISpendView({ days }: { days: number }) {
               label="Total Spend"
               value={formatMoney(totals?.cost, 2)}
               icon={DollarSign}
-              accent="#4F1E7B"
+              accent="#6B2B99"
             />
             <SpendStat
               label="AI Calls"
               value={String(totals.calls)}
               icon={Brain}
-              accent="#4F1E7B"
+              accent="#6B2B99"
             />
             <SpendStat
               label="Avg / Call"
               value={formatMoney(totals?.avg_cost_per_call, 4)}
               icon={Receipt}
-              accent="#4F1E7B"
+              accent="#6B2B99"
             />
             <SpendStat
               label="Saved by Cache"
@@ -363,7 +363,7 @@ export default function AISpendView({ days }: { days: number }) {
                           animate={{ width: `${pct}%` }}
                           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: i * 0.02 }}
                           className="absolute inset-y-0 left-0 rounded-lg flex items-center px-3"
-                          style={{ background: "#4F1E7B" }}
+                          style={{ background: "#6B2B99" }}
                         >
                           <span className="text-[10px] font-mono text-on-brand font-medium">
                             ${safeFixed(d.cost, 2)}
@@ -403,7 +403,7 @@ export default function AISpendView({ days }: { days: number }) {
                             animate={{ width: `${pct}%` }}
                             transition={{ duration: 0.6, delay: i * 0.03 }}
                             className="absolute inset-y-0 left-0 rounded-full"
-                            style={{ background: "#4F1E7B" }}
+                            style={{ background: "#6B2B99" }}
                           />
                         </div>
                         <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.25em] text-muted">

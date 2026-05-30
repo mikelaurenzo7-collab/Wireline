@@ -149,9 +149,9 @@ export default function QualityView({ days }: { days: number }) {
       {/* Hero stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Scored Calls", value: data.count, accent: "#4F1E7B" },
+          { label: "Scored Calls", value: data.count, accent: "#6B2B99" },
           { label: "Average Score", value: `${data.avgScore}/100`, accent: qaColor(data.avgScore) },
-          { label: "Opening", value: `${dims.greeting ?? 0}/20`, accent: "#4F1E7B" },
+          { label: "Opening", value: `${dims.greeting ?? 0}/20`, accent: "#6B2B99" },
           { label: "Closing", value: `${dims.closing ?? 0}/20`, accent: "#6B2B99" },
         ].map(({ label, value, accent }) => (
           <div
@@ -188,7 +188,7 @@ export default function QualityView({ days }: { days: number }) {
                     animate={{ width: `${(bucket.count / maxDist) * 100}%` }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
                     className="h-full rounded-full"
-                    style={{ background: bucket.color || "#4F1E7B" }}
+                    style={{ background: bucket.color || "#6B2B99" }}
                   />
                 </div>
                 <span className="text-[9px] font-mono text-ink w-6 text-right shrink-0">
@@ -214,8 +214,8 @@ export default function QualityView({ days }: { days: number }) {
                 <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
                 <Radar
                   dataKey="score"
-                  stroke="#4F1E7B"
-                  fill="#4F1E7B"
+                  stroke="#6B2B99"
+                  fill="#6B2B99"
                   fillOpacity={0.15}
                   strokeWidth={1.5}
                 />
@@ -236,8 +236,8 @@ export default function QualityView({ days }: { days: number }) {
               <AreaChart data={data.trend} margin={{ top: 4, right: 0, left: -28, bottom: 0 }}>
                 <defs>
                   <linearGradient id="qaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4F1E7B" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#4F1E7B" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#6B2B99" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#6B2B99" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
@@ -256,18 +256,18 @@ export default function QualityView({ days }: { days: number }) {
                 <Tooltip
                   contentStyle={{
                     background: "rgba(28, 25, 23, 0.95)",
-                    border: "1px solid rgba(79, 30, 123 , 0.3)",
+                    border: "1px solid rgba(107, 43, 153 , 0.3)",
                     borderRadius: 0,
                     boxShadow: "0 10px 30px rgba(0, 0, 0, 0.25)",
                     fontSize: "11px",
                   }}
                   labelStyle={{ color: "#7C7469", fontWeight: "bold" }}
-                  itemStyle={{ color: "#4F1E7B" }}
+                  itemStyle={{ color: "#6B2B99" }}
                 />
                 <Area
                   type="monotone"
                   dataKey="avg"
-                  stroke="#4F1E7B"
+                  stroke="#6B2B99"
                   strokeWidth={1.5}
                   fill="url(#qaGrad)"
                   name="Avg QA Score"

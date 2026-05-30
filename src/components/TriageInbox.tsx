@@ -26,7 +26,7 @@ import PageShell, { Panel } from "./PageShell";
 import WidgetBoundary from "./WidgetBoundary";
 import ClientRouteViewport from "./layout/ClientRouteViewport";
 import ClientToolbar from "./layout/ClientToolbar";
-import { Card, CardHeader, CardTitle, CardContent } from "./ui/shadcn/Card";
+import { Card } from "./ui/shadcn/Card";
 import { Badge } from "./ui/shadcn/Badge";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "./ui/shadcn/Tooltip";
 import { ShadButton } from "./ui/shadcn/ShadButton";
@@ -257,7 +257,7 @@ export default function TriageInbox() {
                   onFetchFailed={fetchData}
                 />
               </WidgetBoundary>,
-              "#4F1E7B",
+              "#6B2B99",
             )}
           </div>
 
@@ -317,10 +317,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
   return (
     <ul className="p-2 space-y-2 list-none">
       {items.map((c) => (
-        <li
-          key={c.id}
-          className="relative list-none group"
-        >
+        <li key={c.id} className="relative list-none group">
           <Card className="bg-black/10 border-white/5 hover:border-brand/20 transition-all p-3 flex items-center gap-3 rounded-xl relative">
             {/* Absolute overlay link covering the entire row target */}
             <Link
@@ -344,7 +341,9 @@ function HotLeads({ items }: { items: HotLead[] }) {
                   cx="22"
                   cy="22"
                   fill="none"
-                  stroke={c.lead_score >= 80 ? "#6B2B99" : c.lead_score >= 60 ? "#8B6FA8" : "#E8466A"}
+                  stroke={
+                    c.lead_score >= 80 ? "#6B2B99" : c.lead_score >= 60 ? "#8B6FA8" : "#E8466A"
+                  }
                   strokeWidth="4"
                   strokeDasharray={`${(c.lead_score / 100) * 100.53} 100.53`}
                   strokeLinecap="round"
@@ -438,10 +437,7 @@ function ComplianceList({ items }: { items: FleetTask[] }) {
   return (
     <ul className="p-2 space-y-2 list-none">
       {items.map((t) => (
-        <li
-          key={t.id}
-          className="relative list-none"
-        >
+        <li key={t.id} className="relative list-none">
           <Card
             className={cn(
               "p-3 flex items-start gap-3 rounded-xl transition-all",
@@ -449,7 +445,7 @@ function ComplianceList({ items }: { items: FleetTask[] }) {
                 ? "bg-rose-950/15 border-rose-500/20 hover:border-rose-500/40"
                 : t.priority === "medium"
                   ? "bg-amber-950/10 border-amber-500/20 hover:border-amber-500/40"
-                  : "bg-black/10 border-white/5 hover:border-white/10"
+                  : "bg-black/10 border-white/5 hover:border-white/10",
             )}
           >
             <ShieldAlert
@@ -475,7 +471,10 @@ function ComplianceList({ items }: { items: FleetTask[] }) {
               >
                 <span>Compliance · {t.priority}</span>
                 {t.priority === "high" && (
-                  <Badge variant="destructive" className="text-[8px] font-bold uppercase tracking-widest animate-pulse leading-none py-0.5 px-1.5 rounded">
+                  <Badge
+                    variant="destructive"
+                    className="text-[8px] font-bold uppercase tracking-widest animate-pulse leading-none py-0.5 px-1.5 rounded"
+                  >
                     URGENT
                   </Badge>
                 )}
@@ -710,7 +709,7 @@ const OpenTaskRow: React.FC<{
             "shrink-0 w-6 h-6 rounded-full border transition-all mt-0.5 flex items-center justify-center p-0",
             completing
               ? "border-emerald-500/60 bg-emerald-500/20"
-              : "border-input bg-background/50 hover:border-emerald-500/60 hover:bg-emerald-500/10 hover:text-emerald-400"
+              : "border-input bg-background/50 hover:border-emerald-500/60 hover:bg-emerald-500/10 hover:text-emerald-400",
           )}
           aria-label="Mark task complete"
           title="Mark complete"
@@ -725,12 +724,21 @@ const OpenTaskRow: React.FC<{
         <div className="flex-1 min-w-0 text-left">
           <div className="flex items-center gap-2 mb-1.5">
             <Badge
-              variant={task.priority === "high" ? "destructive" : task.priority === "medium" ? "secondary" : "outline"}
+              variant={
+                task.priority === "high"
+                  ? "destructive"
+                  : task.priority === "medium"
+                    ? "secondary"
+                    : "outline"
+              }
               className={cn(
                 "text-[8px] uppercase tracking-[0.28em] font-normal px-2 py-0.5 rounded leading-none",
-                task.priority === "high" && "bg-rose-500/15 text-rose-500 border-rose-500/30 hover:bg-rose-500/20",
-                task.priority === "medium" && "bg-brand/15 text-brand border-brand/30 hover:bg-brand/20",
-                task.priority === "low" && "bg-zinc-500/15 text-zinc-300 border-zinc-500/30 hover:bg-zinc-500/20"
+                task.priority === "high" &&
+                  "bg-rose-500/15 text-rose-500 border-rose-500/30 hover:bg-rose-500/20",
+                task.priority === "medium" &&
+                  "bg-brand/15 text-brand border-brand/30 hover:bg-brand/20",
+                task.priority === "low" &&
+                  "bg-zinc-500/15 text-zinc-300 border-zinc-500/30 hover:bg-zinc-500/20",
               )}
             >
               {task.priority}
@@ -756,10 +764,7 @@ function Escalations({ items }: { items: EscalationCall[] }) {
   return (
     <ul className="p-2 space-y-2 list-none">
       {items.map((c) => (
-        <li
-          key={c.id}
-          className="relative list-none group"
-        >
+        <li key={c.id} className="relative list-none group">
           <Card className="bg-rose-950/10 border-rose-500/10 hover:border-rose-500/30 transition-all p-3 flex items-start gap-3 rounded-xl relative">
             {/* Absolute overlay link covering the entire row target */}
             <Link
@@ -779,7 +784,10 @@ function Escalations({ items }: { items: EscalationCall[] }) {
                 {c.lead_score !== null && c.lead_score !== undefined && (
                   <>
                     <span className="w-1 h-1 rounded-full bg-white/10" />
-                    <Badge variant="outline" className="text-[7px] tracking-normal border-rose-500/20 text-rose-400 bg-rose-500/5 px-1 py-0 rounded">
+                    <Badge
+                      variant="outline"
+                      className="text-[7px] tracking-normal border-rose-500/20 text-rose-400 bg-rose-500/5 px-1 py-0 rounded"
+                    >
                       Score: {c.lead_score}
                     </Badge>
                   </>
@@ -824,4 +832,3 @@ function Empty({
     </div>
   );
 }
-

@@ -177,8 +177,8 @@ export function AuditActivityPanel() {
                   <AreaChart data={byDay}>
                     <defs>
                       <linearGradient id="costGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#4F1E7B" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#4F1E7B" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#6B2B99" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#6B2B99" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid
@@ -212,7 +212,7 @@ export function AuditActivityPanel() {
                     <Area
                       type="monotone"
                       dataKey="cost"
-                      stroke="#4F1E7B"
+                      stroke="#6B2B99"
                       strokeWidth={2}
                       fillOpacity={1}
                       fill="url(#costGrad)"

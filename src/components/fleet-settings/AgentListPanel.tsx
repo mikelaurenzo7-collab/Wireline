@@ -100,7 +100,7 @@ export default function AgentListPanel({
                   selectedAgent?.id === agent.id
                     ? {
                         background:
-                          "linear-gradient(135deg, rgba(79, 30, 123 ,0.08), rgba(79, 30, 123 ,0.05))",
+                          "linear-gradient(135deg, rgba(107, 43, 153 ,0.08), rgba(107, 43, 153 ,0.05))",
                       }
                     : undefined
                 }
@@ -108,7 +108,7 @@ export default function AgentListPanel({
                 {selectedAgent?.id === agent.id && (
                   <div
                     className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full"
-                    style={{ background: "linear-gradient(to bottom, #4F1E7B, #4F1E7B)" }}
+                    style={{ background: "linear-gradient(to bottom, #6B2B99, #6B2B99)" }}
                   />
                 )}
 

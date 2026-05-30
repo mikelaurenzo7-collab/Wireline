@@ -93,7 +93,7 @@ export default function WebhooksManager() {
           <div className="flex items-center gap-3">
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #6B2B99, #4F1E7B)" }}
+              style={{ background: "linear-gradient(135deg, #6B2B99, #6B2B99)" }}
             >
               <Webhook className="w-5 h-5 text-paper" />
             </div>

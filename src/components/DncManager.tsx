@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import {
   Shield,
   Plus,
@@ -256,9 +256,9 @@ export default function DncManager() {
           {/* Stat bar */}
           <div className="col-span-12 grid grid-cols-2 sm:grid-cols-4 gap-3 h-fit">
             {[
-              { label: "Total Blocked", value: stats.total, accent: "#4F1E7B", icon: Shield },
-              { label: "Manual Entries", value: stats.manual, accent: "#4F1E7B", icon: Plus },
-              { label: "CSV Imported", value: stats.csv, accent: "#4F1E7B", icon: FileText },
+              { label: "Total Blocked", value: stats.total, accent: "#6B2B99", icon: Shield },
+              { label: "Manual Entries", value: stats.manual, accent: "#6B2B99", icon: Plus },
+              { label: "CSV Imported", value: stats.csv, accent: "#6B2B99", icon: FileText },
               { label: "Opt-Out", value: stats.optOut, accent: "#6B2B99", icon: CheckCircle2 },
             ].map(({ label, value, accent, icon: Icon }) => (
               <div
@@ -310,7 +310,7 @@ export default function DncManager() {
                     className="w-14 h-14 rounded-2xl flex items-center justify-center"
                     style={{
                       background:
-                        "linear-gradient(135deg,rgba(79, 30, 123 ,0.15),rgba(79, 30, 123 ,0.15))",
+                        "linear-gradient(135deg,rgba(107, 43, 153 ,0.15),rgba(107, 43, 153 ,0.15))",
                     }}
                   >
                     <Shield className="w-7 h-7 text-rose-500" />
@@ -347,8 +347,8 @@ export default function DncManager() {
                         <div
                           className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                           style={{
-                            background: "rgba(79, 30, 123 ,0.10)",
-                            border: "1px solid rgba(79, 30, 123 ,0.20)",
+                            background: "rgba(107, 43, 153 ,0.10)",
+                            border: "1px solid rgba(107, 43, 153 ,0.20)",
                           }}
                         >
                           <Phone className="w-3.5 h-3.5 text-rose-500" />

@@ -118,7 +118,7 @@ export function SlackPreviewCard() {
         >
           <div
             className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center text-[9px] font-bold text-white mt-0.5"
-            style={{ background: "#4F1E7B" }}
+            style={{ background: "#6B2B99" }}
           >
             W
           </div>
@@ -488,8 +488,8 @@ export function DocuSignPreviewCard() {
                 key={field}
                 className="flex items-center gap-2 px-2 py-1 rounded transition-all duration-600"
                 style={{
-                  background: isThisSigned ? "rgba(79,30,123,0.08)" : "rgba(255,199,32,0.06)",
-                  border: `1px solid ${isThisSigned ? "rgba(79,30,123,0.25)" : "rgba(255,199,32,0.15)"}`,
+                  background: isThisSigned ? "rgba(107,43,153,0.08)" : "rgba(255,199,32,0.06)",
+                  border: `1px solid ${isThisSigned ? "rgba(107,43,153,0.25)" : "rgba(255,199,32,0.15)"}`,
                 }}
               >
                 <div
@@ -505,7 +505,7 @@ export function DocuSignPreviewCard() {
                 <span
                   className="text-[9px] transition-colors duration-500"
                   style={{
-                    color: isThisSigned ? "rgba(79,30,123,0.85)" : "rgba(255,255,255,0.55)",
+                    color: isThisSigned ? "rgba(107,43,153,0.85)" : "rgba(255,255,255,0.55)",
                   }}
                 >
                   {field} field
@@ -754,7 +754,7 @@ export function TeamsPreviewCard() {
         >
           <div
             className="w-7 h-7 rounded shrink-0 flex items-center justify-center text-[9px] font-bold text-white mt-0.5"
-            style={{ background: "#4F1E7B" }}
+            style={{ background: "#6B2B99" }}
           >
             W
           </div>

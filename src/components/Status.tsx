@@ -163,7 +163,7 @@ export default function Status() {
             />
             <div className="relative">
               <div className="flex items-center gap-2 mb-3">
-                <span className="hero-accent-line" style={{ background: "#4F1E7B" }} />
+                <span className="hero-accent-line" style={{ background: "#6B2B99" }} />
                 <span className="text-eyebrow">Live system status</span>
               </div>
               <div className="flex items-start gap-4">

@@ -169,7 +169,7 @@ export function LiveMonitor({ calls }: { calls: LiveCall[] }) {
                         boxShadow:
                           call.urgency > 7
                             ? "0 0 10px rgba(244,63,94,0.4)"
-                            : "0 0 10px rgba(79, 30, 123 ,0.3)",
+                            : "0 0 10px rgba(107, 43, 153 ,0.3)",
                       }}
                     />
                   </div>

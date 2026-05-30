@@ -77,10 +77,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
             className="flex items-center gap-2.5 group shrink-0"
             data-testid="header-logo"
           >
-            <div
-              className="w-8 h-8 flex items-center justify-center shrink-0"
-              style={{ background: "#4F1E7B" }}
-            >
+            <div className="w-8 h-8 flex items-center justify-center shrink-0 bg-brand">
               <WirelineMark className="w-4 h-4 text-white" strokeWidth={130} />
             </div>
             <span className="font-display italic text-xl text-ink leading-none hidden sm:block">
@@ -127,7 +124,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
               <Link
                 to="/signup"
                 data-testid="header-cta"
-                className="hidden sm:inline-flex items-center gap-2 bg-brand text-white text-[13px] font-medium px-5 py-2 hover:bg-[#3d1660] transition-colors duration-300"
+                className="hidden sm:inline-flex items-center gap-2 bg-brand text-white text-[13px] font-medium px-5 py-2 hover:bg-[#6B2B99] transition-colors duration-300"
               >
                 Start trial
               </Link>
@@ -203,7 +200,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
               </Link>
               <Link
                 to="/signup"
-                className="flex items-center justify-center gap-2 min-h-[48px] text-[14px] font-medium bg-brand text-white hover:bg-[#3d1660] transition-colors"
+                className="flex items-center justify-center gap-2 min-h-[48px] text-[14px] font-medium bg-brand text-white hover:bg-[#6B2B99] transition-colors"
                 onClick={() => setMenuOpen(false)}
               >
                 Start free trial

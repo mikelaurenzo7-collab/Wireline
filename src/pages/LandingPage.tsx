@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { ArrowRight, Phone, ArrowUpRight, Plus } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Plus } from "lucide-react";
 import PublicSiteHeader from "../components/marketing/PublicSiteHeader";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import { HeroDecorations } from "../components/marketing/HeroDecorations";
@@ -142,7 +142,9 @@ function AgentCard({
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mt-6 border-t border-ink/5 pt-4">
           <div className="flex flex-col">
-            <span className="text-[9px] uppercase tracking-wider text-ink/40 font-mono">Dial via phone</span>
+            <span className="text-[9px] uppercase tracking-wider text-ink/40 font-mono">
+              Dial via phone
+            </span>
             <a
               href={`tel:${agent.tel}`}
               className={`font-mono tabular-nums text-brand ${featured ? "text-base" : "text-xs"} font-semibold hover:underline`}
@@ -220,24 +222,42 @@ export default function LandingPage() {
                 <Link
                   to="/signup"
                   data-testid="hero-cta-primary"
-                  className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-[#3d1660] transition-colors duration-300"
+                  className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-[#6B2B99] transition-colors duration-300"
                 >
                   Start free trial
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 {csDemo && (
                   <div className="flex flex-col items-center gap-1.5 border border-ink/10 rounded-2xl p-3 bg-white/20 backdrop-blur-md shadow-sm">
-                    <BrowserCallWidget agentName={csDemo.name} buttonLabel={`Talk to ${csDemo.name} (CS)`} />
+                    <BrowserCallWidget
+                      agentName={csDemo.name}
+                      buttonLabel={`Talk to ${csDemo.name} (CS)`}
+                    />
                     <span className="text-[10px] text-ink/50 font-mono tracking-wider">
-                      Or dial: <a href={`tel:${csDemo.tel}`} className="text-brand hover:underline font-semibold">{csDemo.display}</a>
+                      Or dial:{" "}
+                      <a
+                        href={`tel:${csDemo.tel}`}
+                        className="text-brand hover:underline font-semibold"
+                      >
+                        {csDemo.display}
+                      </a>
                     </span>
                   </div>
                 )}
                 {salesDemo && (
                   <div className="flex flex-col items-center gap-1.5 border border-ink/10 rounded-2xl p-3 bg-white/20 backdrop-blur-md shadow-sm">
-                    <BrowserCallWidget agentName={salesDemo.name} buttonLabel={`Talk to ${salesDemo.name} (Sales)`} />
+                    <BrowserCallWidget
+                      agentName={salesDemo.name}
+                      buttonLabel={`Talk to ${salesDemo.name} (Sales)`}
+                    />
                     <span className="text-[10px] text-ink/50 font-mono tracking-wider">
-                      Or dial: <a href={`tel:${salesDemo.tel}`} className="text-brand hover:underline font-semibold">{salesDemo.display}</a>
+                      Or dial:{" "}
+                      <a
+                        href={`tel:${salesDemo.tel}`}
+                        className="text-brand hover:underline font-semibold"
+                      >
+                        {salesDemo.display}
+                      </a>
                     </span>
                   </div>
                 )}
@@ -279,9 +299,7 @@ export default function LandingPage() {
               </h2>
             </motion.div>
 
-            <div
-              className={`grid grid-cols-1 ${demoColsClass} gap-4 max-w-5xl mx-auto`}
-            >
+            <div className={`grid grid-cols-1 ${demoColsClass} gap-4 max-w-5xl mx-auto`}>
               {demoAgents.map((agent, i) => (
                 <AgentCard
                   key={agent.tel}
@@ -330,7 +348,7 @@ export default function LandingPage() {
               <Link
                 to="/signup"
                 data-testid="final-cta-button"
-                className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-[#3d1660] transition-colors duration-300"
+                className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-[#6B2B99] transition-colors duration-300"
               >
                 Start free trial
                 <ArrowRight className="w-4 h-4" />

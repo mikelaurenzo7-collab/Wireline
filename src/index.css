@@ -24,8 +24,9 @@
   --popover: rgba(239, 233, 220, 0.92);
   --popover-foreground: #1A1614;
 
-  /* Brand primary */
-  --primary: #4F1E7B;
+  /* Brand primary — lighter editorial violet that matches the hero accent.
+   * The previous deeper #6B2B99 now lives on as --color-brand-deep (hover). */
+  --primary: #6B2B99;
   --primary-foreground: #FFFFFF;
 
   /* Secondary */
@@ -37,8 +38,8 @@
   --muted-foreground: #5A534A;
 
   /* Accent */
-  --accent: rgba(79, 30, 123, 0.06);
-  --accent-foreground: #4F1E7B;
+  --accent: rgba(107, 43, 153, 0.06);
+  --accent-foreground: #6B2B99;
 
   /* Destructive */
   --destructive: #E8466A;
@@ -47,21 +48,21 @@
   /* Borders & inputs */
   --border: rgba(26, 22, 20, 0.10);
   --input: rgba(26, 22, 20, 0.12);
-  --ring: rgba(79, 30, 123, 0.35);
+  --ring: rgba(107, 43, 153, 0.35);
 
   /* Sidebar */
   --sidebar-background: rgba(59, 21, 76, 0.96);
   --sidebar-foreground: rgba(245, 240, 230, 0.90);
-  --sidebar-primary: #4F1E7B;
+  --sidebar-primary: #6B2B99;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: rgba(245, 240, 230, 0.06);
   --sidebar-accent-foreground: rgba(245, 240, 230, 0.85);
   --sidebar-border: rgba(245, 240, 230, 0.08);
-  --sidebar-ring: rgba(79, 30, 123, 0.40);
+  --sidebar-ring: rgba(107, 43, 153, 0.40);
 
   /* Charts */
-  --chart-1: #4F1E7B;
-  --chart-2: #6B2B99;
+  --chart-1: #6B2B99;
+  --chart-2: #8B3FD6;
   --chart-3: #8B6FA8;
   --chart-4: #3B154C;
   --chart-5: #D4C9B8;
@@ -152,7 +153,7 @@
   --color-brand: var(--primary);
   --color-brand-2: #c77dff;
   --color-brand-3: #e0aaff;
-  --color-brand-deep: #5a189a;
+  --color-brand-deep: #6B2B99;
   --color-ink: var(--ink);
   --color-paper: var(--paper);
   --color-on-brand: #ffffff;
@@ -186,7 +187,7 @@
   --color-emerald-300: #B399D1;
   --color-emerald-400: #8B6FA8;
   --color-emerald-500: #6B2B99;
-  --color-emerald-600: #4F1E7B;
+  --color-emerald-600: #6B2B99;
   --color-emerald-700: #3B154C;
   --color-emerald-800: #2E0F4A;
 
@@ -197,7 +198,7 @@
   --color-amber-400: #A988C4;
   --color-amber-500: #8B6FA8;
   --color-amber-600: #6B2B99;
-  --color-amber-700: #4F1E7B;
+  --color-amber-700: #6B2B99;
   --color-amber-800: #3B154C;
 
   --color-blue-50: #F5F0F8;
@@ -206,7 +207,7 @@
   --color-blue-300: #B399D1;
   --color-blue-400: #8B6FA8;
   --color-blue-500: #6B2B99;
-  --color-blue-600: #4F1E7B;
+  --color-blue-600: #6B2B99;
   --color-blue-700: #3B154C;
 
   --color-sky-50: #F5F0F8;
@@ -215,7 +216,7 @@
   --color-sky-300: #B399D1;
   --color-sky-400: #8B6FA8;
   --color-sky-500: #6B2B99;
-  --color-sky-600: #4F1E7B;
+  --color-sky-600: #6B2B99;
   --color-sky-700: #3B154C;
 
   --color-cyan-50: #F5F0EC;
@@ -225,7 +226,7 @@
   --color-cyan-400: #A988C4;
   --color-cyan-500: #8B6FA8;
   --color-cyan-600: #6B2B99;
-  --color-cyan-700: #4F1E7B;
+  --color-cyan-700: #6B2B99;
 
   --color-orange-50: #F7F3EC;
   --color-orange-100: #EDE6DA;
@@ -234,7 +235,7 @@
   --color-orange-400: #A988C4;
   --color-orange-500: #8B6FA8;
   --color-orange-600: #6B2B99;
-  --color-orange-700: #4F1E7B;
+  --color-orange-700: #6B2B99;
 
   --radius-sm: 0;
   --radius-md: 0;
@@ -308,14 +309,14 @@
   }
 
   :root {
-    --wl-purple: #9d4edd;
-    --wl-purple-light: #c77dff;
-    --wl-purple-deep: #5a189a;
-    --wl-purple-muted: #e0aaff;
-    --wl-cream: #18181b;
-    --wl-paper: #09090b;
-    --wl-cream-warm: #27272a;
-    --wl-ink: #fafafa;
+    --wl-purple: #6B2B99;
+    --wl-purple-light: #8B3FD6;
+    --wl-purple-deep: #6B2B99;
+    --wl-purple-muted: #8B6FA8;
+    --wl-cream: #EFE9DC;
+    --wl-paper: #EFE9DC;
+    --wl-cream-warm: #F5EFE5;
+    --wl-ink: #1A1614;
     --wl-emerald: #10b981;
     --wl-emerald-soft: #34d399;
   }
@@ -438,15 +439,15 @@
     background: transparent;
   }
   .scrollbar-hide::-webkit-scrollbar-thumb {
-    background: rgba(79, 30, 123, 0.18);
+    background: rgba(107, 43, 153, 0.18);
     border-radius: 999px;
   }
   .scrollbar-hide::-webkit-scrollbar-thumb:hover {
-    background: rgba(79, 30, 123, 0.42);
+    background: rgba(107, 43, 153, 0.42);
   }
   .scrollbar-hide {
     scrollbar-width: thin;
-    scrollbar-color: rgba(79, 30, 123, 0.18) transparent;
+    scrollbar-color: rgba(107, 43, 153, 0.18) transparent;
   }
 
   ::-webkit-scrollbar {
@@ -459,14 +460,14 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: rgba(79, 30, 123, 0.35);
+    background: rgba(107, 43, 153, 0.35);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: padding-box;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(79, 30, 123, 0.60);
+    background: rgba(107, 43, 153, 0.60);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: padding-box;
@@ -481,11 +482,11 @@
      kind of detail that makes the whole product feel hand-finished on
      every device that can select text (desktop drag, mobile long-press). */
   ::selection {
-    background: rgba(79, 30, 123, 0.18);
+    background: rgba(107, 43, 153, 0.18);
     color: #1A1614;
   }
   ::-moz-selection {
-    background: rgba(79, 30, 123, 0.18);
+    background: rgba(107, 43, 153, 0.18);
     color: #1A1614;
   }
 
@@ -499,7 +500,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid rgba(79, 30, 123, 0.60);
+    outline: 2px solid rgba(107, 43, 153, 0.60);
     outline-offset: 2px;
   }
 
@@ -553,18 +554,18 @@
   @apply border border-black/8;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.70) inset,
-    0 0 0 1px rgba(79, 30, 123, 0.05),
+    0 0 0 1px rgba(107, 43, 153, 0.05),
     0 8px 24px -8px rgba(0, 0, 0, 0.10),
-    0 4px 12px -4px rgba(79, 30, 123, 0.08);
+    0 4px 12px -4px rgba(107, 43, 153, 0.08);
 }
 
 @utility brutal-border-lg {
   @apply border border-black/9;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.70) inset,
-    0 0 0 1px rgba(79, 30, 123, 0.06),
+    0 0 0 1px rgba(107, 43, 153, 0.06),
     0 20px 60px -20px rgba(0, 0, 0, 0.12),
-    0 8px 28px -8px rgba(79, 30, 123, 0.10);
+    0 8px 28px -8px rgba(107, 43, 153, 0.10);
 }
 
 @utility brutal-btn {
@@ -598,12 +599,12 @@
 }
 
 .brutal-btn:hover {
-  background: #3d1660;
+  background: var(--color-brand-deep);
   transform: translateY(-1px);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.30) inset,
-    0 12px 28px -8px rgba(79, 30, 123, 0.50),
-    0 20px 48px -12px rgba(79, 30, 123, 0.30);
+    0 12px 28px -8px rgba(107, 43, 153, 0.50),
+    0 20px 48px -12px rgba(107, 43, 153, 0.30);
 }
 
 .brutal-btn:active {
@@ -627,16 +628,16 @@
   -webkit-backdrop-filter: blur(32px) saturate(140%);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.90) inset,
-    0 0 0 1px rgba(79, 30, 123, 0.04),
+    0 0 0 1px rgba(107, 43, 153, 0.04),
     0 12px 40px -12px rgba(0, 0, 0, 0.10),
-    0 4px 16px -6px rgba(79, 30, 123, 0.08);
+    0 4px 16px -6px rgba(107, 43, 153, 0.08);
   transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 400ms ease, border-color 300ms ease;
 }
 
 @utility indicator-glow {
   box-shadow:
-    0 0 16px rgba(79, 30, 123, 0.40),
-    0 0 32px rgba(79, 30, 123, 0.18);
+    0 0 16px rgba(107, 43, 153, 0.40),
+    0 0 32px rgba(107, 43, 153, 0.18);
 }
 
 @utility scanline {
@@ -646,8 +647,8 @@
       to bottom,
       transparent 0,
       transparent 3px,
-      rgba(79, 30, 123, 0.008) 3px,
-      rgba(79, 30, 123, 0.008) 4px
+      rgba(107, 43, 153, 0.008) 3px,
+      rgba(107, 43, 153, 0.008) 4px
     );
   mix-blend-mode: screen;
 }
@@ -657,14 +658,14 @@
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.80) inset,
     0 8px 32px -8px rgba(0, 0, 0, 0.12),
-    0 4px 16px -4px rgba(79, 30, 123, 0.14);
+    0 4px 16px -4px rgba(107, 43, 153, 0.14);
 }
 
 .brutal-shadow-brand {
   box-shadow:
-    0 0 0 1px rgba(79, 30, 123, 0.25) inset,
-    0 8px 24px -6px rgba(79, 30, 123, 0.30),
-    0 14px 40px -10px rgba(79, 30, 123, 0.18);
+    0 0 0 1px rgba(107, 43, 153, 0.25) inset,
+    0 8px 24px -6px rgba(107, 43, 153, 0.30),
+    0 14px 40px -10px rgba(107, 43, 153, 0.18);
 }
 
 /* Display headline accent â€” solid brand teal on the editorial italic
@@ -672,21 +673,21 @@
  * operator console no longer looks like every other "AI startup". */
 .text-aurora {
   @apply font-display italic;
-  color: #4F1E7B;
+  color: var(--color-brand);
 }
 
-/* Legacy alias â€” same treatment. */
+/* Legacy alias — same treatment. */
 .text-stroke {
-  color: #4F1E7B;
-  filter: drop-shadow(0 0 16px rgba(79, 30, 123, 0.20));
+  color: var(--color-brand);
+  filter: drop-shadow(0 0 16px rgba(107, 43, 153, 0.20));
 }
 
 .brand-wordmark {
   @apply font-display uppercase font-normal;
   letter-spacing: 0;
   text-rendering: geometricPrecision;
-  color: #4F1E7B;
-  filter: drop-shadow(0 0 10px rgba(79, 30, 123, 0.18));
+  color: var(--color-brand);
+  filter: drop-shadow(0 0 10px rgba(107, 43, 153, 0.18));
 }
 
 /* Subtle brand-tinted ring for emphasized surfaces. Previously a 3-stop
@@ -701,7 +702,7 @@
   inset: 0;
   padding: 1px;
   border-radius: inherit;
-  background: rgba(79, 30, 123, 0.45);
+  background: rgba(107, 43, 153, 0.45);
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
@@ -719,7 +720,7 @@
  * every card. Drop opacity drastically below the md breakpoint. */
 @media (max-width: 767px) {
   .aurora-ring::before {
-    background: rgba(79, 30, 123, 0.18);
+    background: rgba(107, 43, 153, 0.18);
   }
 }
 
@@ -830,7 +831,7 @@
 }
 
 .shimmer-line {
-  background: linear-gradient(90deg, transparent 0%, rgba(79, 30, 123 , 0.45) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(107, 43, 153 , 0.45) 50%, transparent 100%);
   background-size: 200% 100%;
   animation: shimmer 2.4s linear infinite;
 }
@@ -848,11 +849,11 @@
 }
 .card-interactive:hover {
   transform: translateY(-2px);
-  border-color: rgba(79, 30, 123, 0.24);
+  border-color: rgba(107, 43, 153, 0.24);
   box-shadow:
-    0 12px 32px -10px rgba(79, 30, 123, 0.14),
+    0 12px 32px -10px rgba(107, 43, 153, 0.14),
     0 20px 56px -16px rgba(26, 22, 20, 0.08),
-    0 0 0 1px rgba(79, 30, 123, 0.08) inset;
+    0 0 0 1px rgba(107, 43, 153, 0.08) inset;
 }
 .card-interactive:active {
   transform: translateY(0) scale(0.985);
@@ -865,7 +866,7 @@
   position: absolute;
   inset: -1px;
   border-radius: inherit;
-  background: linear-gradient(135deg, rgba(79, 30, 123, 0.15), rgba(79, 30, 123, 0.05));
+  background: linear-gradient(135deg, rgba(107, 43, 153, 0.15), rgba(107, 43, 153, 0.05));
   pointer-events: none;
   z-index: 0;
 }
@@ -914,9 +915,9 @@
 /* Soft glow ring for focused / selected items */
 .ring-aurora {
   box-shadow:
-    0 0 0 1px rgba(79, 30, 123 , 0.50),
-    0 0 20px rgba(79, 30, 123 , 0.25),
-    0 0 40px rgba(79, 30, 123 , 0.10);
+    0 0 0 1px rgba(107, 43, 153 , 0.50),
+    0 0 20px rgba(107, 43, 153 , 0.25),
+    0 0 40px rgba(107, 43, 153 , 0.10);
 }
 
 .font-display {
@@ -990,7 +991,7 @@
 
 /* Deepen text-brand inside small uppercase UI chrome (ghost buttons,
  * badges, chips, tab pills) for WCAG AA+ at 10–11px sizes. Display-size
- * headings keep the brighter #4F1E7B since large text only needs 3:1.
+ * headings keep the brighter --color-brand since large text only needs 3:1.
  * The selector targets any .text-brand element that also has uppercase
  * tracking or sits inside a button-like context. */
 .app-surface button[class*="text-brand"],
@@ -1039,13 +1040,13 @@
   letter-spacing: 0.01em;
   color: var(--color-on-brand);
   background: var(--color-brand);
-  box-shadow: 0 6px 20px -6px rgba(79, 30, 123, 0.55);
+  box-shadow: 0 6px 20px -6px rgba(107, 43, 153, 0.55);
   transition: background 0.15s ease, transform 0.15s ease;
   border-radius: 0;
 }
 
 .marketing-btn-primary:hover {
-  background: #3d1660;
+  background: var(--color-brand-deep);
 }
 
 .marketing-btn-secondary {
@@ -1233,9 +1234,9 @@ textarea:focus,
 select:focus {
   outline: none;
   box-shadow:
-    0 0 0 2px rgba(79, 30, 123 , 0.28),
-    0 0 14px rgba(79, 30, 123 , 0.12);
-  border-color: rgba(79, 30, 123 , 0.45);
+    0 0 0 2px rgba(107, 43, 153 , 0.28),
+    0 0 14px rgba(107, 43, 153 , 0.12);
+  border-color: rgba(107, 43, 153 , 0.45);
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  EXTENDED DESIGN SYSTEM  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -1319,7 +1320,7 @@ select:focus {
 /* Section separator â€” soft brand line */
 .section-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(79, 30, 123, 0.30) 50%, transparent);
+  background: linear-gradient(90deg, transparent, rgba(107, 43, 153, 0.30) 50%, transparent);
 }
 
 /* Compact metric display */
@@ -1328,7 +1329,7 @@ select:focus {
 }
 
 /* Status dot colors — brand purple family, not teal/orange */
-.dot-online  { @apply w-2 h-2 rounded-full bg-brand; box-shadow: 0 0 6px rgba(79, 30, 123, 0.55); }
+.dot-online  { @apply w-2 h-2 rounded-full bg-brand; box-shadow: 0 0 6px rgba(107, 43, 153, 0.55); }
 .dot-busy    { @apply w-2 h-2 rounded-full bg-rose-500;    box-shadow: 0 0 6px rgba(232, 70, 106, 0.7); }
 .dot-idle    { @apply w-2 h-2 rounded-full bg-muted/40; }
 .dot-pending { @apply w-2 h-2 rounded-full bg-amber-500; box-shadow: 0 0 6px rgba(139, 111, 168, 0.55); }
@@ -1358,16 +1359,16 @@ select:focus {
   transform: translateY(-2px);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.90) inset,
-    0 0 0 1px rgba(79, 30, 123, 0.10),
+    0 0 0 1px rgba(107, 43, 153, 0.10),
     0 12px 36px -10px rgba(0, 0, 0, 0.12),
-    0 6px 20px -6px rgba(79, 30, 123, 0.14);
-  border-color: rgba(79, 30, 123, 0.20);
+    0 6px 20px -6px rgba(107, 43, 153, 0.14);
+  border-color: rgba(107, 43, 153, 0.20);
 }
 
 /* Brand badge — soft purple pill with AAA-readable text */
 .badge-aurora {
-  background: rgba(79, 30, 123, 0.10);
-  border: 1px solid rgba(79, 30, 123, 0.30);
+  background: rgba(107, 43, 153, 0.10);
+  border: 1px solid rgba(107, 43, 153, 0.30);
   color: var(--color-brand-ink);
   @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-[0.20em] leading-none;
 }
@@ -1384,13 +1385,13 @@ select:focus {
   letter-spacing: 0.20em;
   text-transform: uppercase;
   color: var(--color-brand-ink);
-  background: rgba(79, 30, 123, 0.08);
-  border: 1px solid rgba(79, 30, 123, 0.25);
+  background: rgba(107, 43, 153, 0.08);
+  border: 1px solid rgba(107, 43, 153, 0.25);
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 .btn-ghost-brand:hover {
-  background: rgba(79, 30, 123, 0.15);
-  border-color: rgba(79, 30, 123, 0.40);
+  background: rgba(107, 43, 153, 0.15);
+  border-color: rgba(107, 43, 153, 0.40);
   color: var(--color-brand);
 }
 
@@ -1401,9 +1402,9 @@ select:focus {
 
 /* Sidebar nav item â€” active solid pill */
 .nav-active-bg {
-  background: #4F1E7B;
+  background: var(--color-brand);
   box-shadow:
-    0 4px 14px -6px rgba(79,30,123,0.45),
+    0 4px 14px -6px rgba(107,43,153,0.45),
     0 0 0 1px rgba(255,255,255,0.18) inset;
 }
 
@@ -1412,8 +1413,8 @@ select:focus {
   height: 3px;
   width: 48px;
   border-radius: 999px;
-  background: #4F1E7B;
-  box-shadow: 0 0 10px rgba(79, 30, 123, 0.40);
+  background: var(--color-brand);
+  box-shadow: 0 0 10px rgba(107, 43, 153, 0.40);
 }
 
 /* Glow on hover for icon buttons */
@@ -1431,7 +1432,7 @@ select:focus {
   outline: none;
   box-shadow:
     0 0 0 2px var(--color-paper),
-    0 0 0 4px rgba(79, 30, 123, 0.45);
+    0 0 0 4px rgba(107, 43, 153, 0.45);
   border-radius: inherit;
 }
 
@@ -1452,7 +1453,7 @@ select:focus {
 .native-scroll {
   @apply overflow-y-auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(79, 30, 123, 0.20) transparent;
+  scrollbar-color: rgba(107, 43, 153, 0.20) transparent;
   /* Contain overscroll — rubber-bands within the panel only, not the page.
      Also prevents the URL bar from reappearing mid-scroll on Safari.
      NOTE: touch-action intentionally omitted — pan-y would block horizontal
@@ -1546,7 +1547,7 @@ select:focus {
 /* Panel header decoration bar â€” soft brand fade */
 .panel-header-rule {
   height: 1px;
-  background: linear-gradient(90deg, rgba(79,30,123,0.45) 0%, transparent 100%);
+  background: linear-gradient(90deg, rgba(107,43,153,0.45) 0%, transparent 100%);
 }
 
 /* Auth form input â€” tall, light, branded */
@@ -1574,9 +1575,9 @@ select:focus {
 
 /* Brand accent chip / tag */
 .chip-brand {
-  background: rgba(79, 30, 123, 0.10);
-  border: 1px solid rgba(79, 30, 123, 0.30);
-  color: #4F1E7B;
+  background: rgba(107, 43, 153, 0.10);
+  border: 1px solid rgba(107, 43, 153, 0.30);
+  color: var(--color-brand);
   @apply inline-flex items-center gap-1.5 px-3 py-1 text-[10px] uppercase tracking-[0.35em] leading-none font-medium;
 }
 
@@ -1586,7 +1587,7 @@ select:focus {
   background: rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(79, 30, 123, 0.08);
+  border: 1px solid rgba(107, 43, 153, 0.08);
 }
 
 .card-interactive-premium {
@@ -1599,7 +1600,7 @@ select:focus {
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, rgba(79, 30, 123, 0.25) 0%, transparent 60%);
+  background: linear-gradient(135deg, rgba(107, 43, 153, 0.25) 0%, transparent 60%);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
@@ -1611,15 +1612,15 @@ select:focus {
 .card-interactive-premium:hover {
   transform: translateY(-3px) scale(1.01);
   box-shadow: 
-    0 20px 40px -15px rgba(79, 30, 123, 0.08),
-    0 0 0 1px rgba(79, 30, 123, 0.18);
+    0 20px 40px -15px rgba(107, 43, 153, 0.08),
+    0 0 0 1px rgba(107, 43, 153, 0.18);
 }
 .card-interactive-premium:hover::before {
   opacity: 1;
 }
 
 .neon-glow-teal {
-  text-shadow: 0 0 8px rgba(79, 30, 123, 0.35);
+  text-shadow: 0 0 8px rgba(107, 43, 153, 0.35);
 }
 
 /* Futuristic Recharts Custom Tooltip Glassmorphic component */
@@ -1627,7 +1628,7 @@ select:focus {
   background: rgba(28, 25, 23, 0.92) !important;
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
-  border: 1px solid rgba(79, 30, 123, 0.3) !important;
+  border: 1px solid rgba(107, 43, 153, 0.3) !important;
   border-radius: 0 !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
   padding: 12px !important;
@@ -1638,9 +1639,9 @@ select:focus {
   @apply relative flex items-center justify-center w-5 h-5 rounded-md border border-black/12 transition-all cursor-pointer;
 }
 .neon-checkbox.active {
-  background: linear-gradient(135deg, #4F1E7B, #3B154C);
-  border-color: #4F1E7B;
-  box-shadow: 0 0 10px rgba(79, 30, 123, 0.45);
+  background: linear-gradient(135deg, var(--color-brand), var(--secondary));
+  border-color: var(--color-brand);
+  box-shadow: 0 0 10px rgba(107, 43, 153, 0.45);
 }
 
 /* AgentIntegrationCanvas — flowing data-line effect on active SVG lines */
@@ -1738,7 +1739,7 @@ select:focus {
       0 1px 0 rgba(255, 255, 255, 0.85) inset,
       0 -1px 0 rgba(0, 0, 0, 0.04),
       0 12px 40px -16px rgba(0, 0, 0, 0.12),
-      0 4px 16px -6px rgba(79, 30, 123, 0.08);
+      0 4px 16px -6px rgba(107, 43, 153, 0.08);
   }
 
   .panel-scroll {
@@ -1802,7 +1803,7 @@ select:focus {
 /* Animated Neural Synapse connection pulses */
 @keyframes synapse-glow {
   0%, 100% { opacity: 0.2; transform: scale(0.95); filter: drop-shadow(0 0 0 transparent); }
-  50% { opacity: 1; transform: scale(1.05); filter: drop-shadow(0 0 6px rgba(79, 30, 123, 0.8)); }
+  50% { opacity: 1; transform: scale(1.05); filter: drop-shadow(0 0 6px rgba(107, 43, 153, 0.8)); }
 }
 .synapse-pulse {
   animation: synapse-glow 2.5s infinite ease-in-out;
@@ -1840,8 +1841,8 @@ select:focus {
 [role="tab"]:not([aria-selected="true"]):hover {
   transform: translateY(-0.5px);
   color: var(--color-ink) !important;
-  background-color: rgba(79, 30, 123, 0.05) !important;
-  box-shadow: 0 1px 0 rgba(79, 30, 123, 0.08);
+  background-color: rgba(107, 43, 153, 0.05) !important;
+  box-shadow: 0 1px 0 rgba(107, 43, 153, 0.08);
 }
 [role="tab"]:active {
   transform: scale(0.98);
@@ -1852,13 +1853,13 @@ select:focus {
   background:
     linear-gradient(180deg, rgba(248, 243, 235, 0.92), rgba(245, 239, 229, 0.72)),
     rgba(239, 233, 220, 0.75);
-  border-color: rgba(79, 30, 123, 0.22);
+  border-color: rgba(107, 43, 153, 0.22);
 }
 .glass-strong.card-interactive:hover {
   background:
     linear-gradient(180deg, rgba(249, 244, 236, 0.98), rgba(246, 241, 231, 0.90)),
     rgba(239, 233, 220, 0.96);
-  border-color: rgba(79, 30, 123, 0.26);
+  border-color: rgba(107, 43, 153, 0.26);
 }
 
 /* Premium text link transitions inside app content */
@@ -1874,7 +1875,7 @@ select:focus {
   transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 .input-field:focus, .input-base:focus, .textarea-base:focus, select:focus {
-  box-shadow: 0 0 0 1px rgba(79, 30, 123, 0.25), 0 0 8px rgba(79, 30, 123, 0.08);
+  box-shadow: 0 0 0 1px rgba(107, 43, 153, 0.25), 0 0 8px rgba(107, 43, 153, 0.08);
 }
 
 /* ══════════════════════════════════════════════════════════════════

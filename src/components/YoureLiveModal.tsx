@@ -20,7 +20,6 @@ import {
   ArrowRight,
   BarChart3,
   Share2,
-  X,
   CheckCircle2,
   Copy,
   Users,
@@ -63,7 +62,7 @@ interface ConfettiPiece {
   delay: number;
 }
 
-const CONFETTI_COLORS = ["#4F1E7B", "#6B2B99", "#8B6FA8", "#3B154C", "#C4B5A0", "#D4C9B8"];
+const CONFETTI_COLORS = ["#6B2B99", "#6B2B99", "#8B6FA8", "#3B154C", "#C4B5A0", "#D4C9B8"];
 
 function ConfettiExplosion({ active }: { active: boolean }) {
   const [pieces, setPieces] = useState<ConfettiPiece[]>([]);
@@ -220,29 +219,35 @@ export default function YoureLiveModal({
   useEffect(() => {
     if (isOpen) {
       setShowConfetti(true);
-      
+
       // Dispatch conversion tracking to Meta Pixel, Google Tag Manager, and Plausible
       if (typeof window !== "undefined") {
         try {
-          if (typeof (window as any).fbq === "function") {
-            (window as any).fbq("track", "CompleteRegistration", { 
+          type AnalyticsWindow = Window & {
+            fbq?: (event: string, action: string, data?: Record<string, unknown>) => void;
+            plausible?: (event: string, data?: Record<string, unknown>) => void;
+            dataLayer?: { push: (data: Record<string, unknown>) => void };
+          };
+          const w = window as AnalyticsWindow;
+          if (typeof w.fbq === "function") {
+            w.fbq("track", "CompleteRegistration", {
               content_name: "AI Agent Live",
-              agent_name: agentName 
+              agent_name: agentName,
             });
           }
-          if (typeof (window as any).plausible === "function") {
-            (window as any).plausible("OnboardingWizardComplete", { 
-              props: { agent: agentName } 
+          if (typeof w.plausible === "function") {
+            w.plausible("OnboardingWizardComplete", {
+              props: { agent: agentName },
             });
           }
-          if (typeof (window as any).dataLayer !== "undefined" && typeof (window as any).dataLayer.push === "function") {
-            (window as any).dataLayer.push({ 
-              event: "onboarding_complete", 
-              agentName: agentName 
+          if (w.dataLayer && typeof w.dataLayer.push === "function") {
+            w.dataLayer.push({
+              event: "onboarding_complete",
+              agentName: agentName,
             });
           }
         } catch (err) {
-          console.warn("[wireline:analytics] Failed to dispatch conversion events:", err);
+          console.error("[wireline:analytics] Failed to dispatch conversion events:", err);
         }
       }
 
@@ -370,7 +375,9 @@ export default function YoureLiveModal({
 
         {/* Next Steps */}
         <div className="px-8 py-6 space-y-3">
-          <p className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground mb-4 font-bold">What to do next</p>
+          <p className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground mb-4 font-bold">
+            What to do next
+          </p>
 
           <NextStepCard
             icon={Mic}

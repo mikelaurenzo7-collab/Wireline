@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Vapi from "@vapi-ai/web";
-import { Phone, PhoneOff, Mic, Loader2, AlertCircle, Volume2 } from "lucide-react";
+import { PhoneOff, Mic, Loader2, AlertCircle, Volume2 } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 // Retrieve Vapi public key safely from Vite environment
@@ -8,13 +8,20 @@ const VAPI_PUBLIC_KEY = import.meta.env.VITE_VAPI_PUBLIC_KEY || "";
 
 interface BrowserCallWidgetProps {
   agentName: string;
+  /** Optional tint override. Reserved for future per-agent theming; reads
+   *  from the agent's `tint` field when wired through callers. */
   tintColor?: string;
   buttonLabel?: string;
 }
 
+type AnalyticsWindow = Window & {
+  fbq?: (event: string, action: string, data?: Record<string, unknown>) => void;
+  plausible?: (event: string, data?: Record<string, unknown>) => void;
+};
+
 export default function BrowserCallWidget({
   agentName,
-  tintColor = "#4F1E7B",
+  tintColor: _tintColor = "#6B2B99",
   buttonLabel = "Talk in browser",
 }: BrowserCallWidgetProps) {
   const [vapi, setVapi] = useState<Vapi | null>(null);
@@ -40,13 +47,16 @@ export default function BrowserCallWidget({
       setConnecting(false);
       setCallActive(true);
       setError(null);
-      
+
       // Dispatch browser call start conversion event
-      if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
-        (window as any).fbq("trackCustom", "BrowserCallStart", { agent: agentName });
-      }
-      if (typeof window !== "undefined" && typeof (window as any).plausible === "function") {
-        (window as any).plausible("BrowserCallStart", { props: { agent: agentName } });
+      if (typeof window !== "undefined") {
+        const w = window as AnalyticsWindow;
+        if (typeof w.fbq === "function") {
+          w.fbq("trackCustom", "BrowserCallStart", { agent: agentName });
+        }
+        if (typeof w.plausible === "function") {
+          w.plausible("BrowserCallStart", { props: { agent: agentName } });
+        }
       }
     });
 
@@ -62,9 +72,10 @@ export default function BrowserCallWidget({
       setSpeakerActive(vol > 0.02);
     });
 
-    inst.on("error", (err: any) => {
+    inst.on("error", (err: unknown) => {
       console.error("[wireline:webrtc] Vapi error:", err);
-      setError(err?.message || "Voice connection failed.");
+      const message = err instanceof Error ? err.message : "Voice connection failed.";
+      setError(message);
       setConnecting(false);
       setCallActive(false);
       setVolume(0);
@@ -107,9 +118,10 @@ export default function BrowserCallWidget({
 
       // Start the voice session passing the full production-grade payload
       vapi.start(assistantPayload);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[wireline:webrtc] Call start failed:", err);
-      setError(err?.message || "Could not access microphone or server.");
+      const message = err instanceof Error ? err.message : "Could not access microphone or server.";
+      setError(message);
       setConnecting(false);
     }
   };
@@ -124,7 +136,7 @@ export default function BrowserCallWidget({
           "relative h-12 px-6 rounded-full font-mono text-[11px] uppercase tracking-[0.2em] font-semibold transition-all duration-300 active:scale-95 flex items-center justify-center gap-2.5 z-10 select-none shadow-md",
           callActive
             ? "bg-rose-500 text-white hover:bg-rose-600 shadow-rose-500/20"
-            : "bg-[#1A1614] text-[#EFE9DC] hover:text-white border border-[#EFE9DC]/10 hover:border-[#EFE9DC]/30 hover:shadow-lg"
+            : "bg-[#1A1614] text-[#EFE9DC] hover:text-white border border-[#EFE9DC]/10 hover:border-[#EFE9DC]/30 hover:shadow-lg",
         )}
       >
         {connecting ? (
@@ -156,7 +168,9 @@ export default function BrowserCallWidget({
       {/* Real-time speaking/volume animation bars */}
       {callActive && (
         <div className="flex items-center gap-1.5 h-6 px-4 py-1.5 rounded-full bg-white/5 border border-white/5 animate-fade-in">
-          <Volume2 className={cn("w-3 h-3 text-muted", speakerActive && "text-brand animate-pulse")} />
+          <Volume2
+            className={cn("w-3 h-3 text-muted", speakerActive && "text-brand animate-pulse")}
+          />
           <div className="flex items-end gap-0.5 h-3">
             {[1, 2, 3, 4, 5].map((bar) => {
               // volume scales height dynamically

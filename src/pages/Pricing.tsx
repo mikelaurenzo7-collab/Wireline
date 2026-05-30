@@ -407,7 +407,7 @@ export default function Pricing() {
                   tier.highlight
                     ? {
                         boxShadow:
-                          "0 0 60px -15px rgba(79, 30, 123 ,0.55), 0 24px 48px -16px rgba(79, 30, 123 ,0.35), 0 0 0 1px rgba(255,255,255,0.08) inset",
+                          "0 0 60px -15px rgba(107, 43, 153 ,0.55), 0 24px 48px -16px rgba(107, 43, 153 ,0.35), 0 0 0 1px rgba(255,255,255,0.08) inset",
                       }
                     : undefined
                 }
@@ -441,7 +441,7 @@ export default function Pricing() {
                   href={tier.ctaHref}
                   className={`group flex w-full min-h-[48px] items-center justify-center text-center py-3.5 text-[11px] uppercase tracking-[0.32em] font-medium transition-colors duration-300 mb-6 ${
                     tier.highlight
-                      ? "bg-brand text-white hover:bg-[#3d1660]"
+                      ? "bg-brand text-white hover:bg-[#6B2B99]"
                       : "border border-ink/15 text-ink hover:border-brand/30 hover:bg-ink/[0.03]"
                   }`}
                 >

@@ -5,12 +5,12 @@
       <stop offset="100%" stop-color="#EFEAE0"/>
     </linearGradient>
     <radialGradient id="glow1" cx="180" cy="120" r="380" gradientUnits="userSpaceOnUse">
-      <stop offset="0%"   stop-color="#4F1E7B" stop-opacity="0.16"/>
-      <stop offset="100%" stop-color="#4F1E7B" stop-opacity="0"/>
+      <stop offset="0%"   stop-color="#6B2B99" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#6B2B99" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="glow2" cx="1050" cy="540" r="420" gradientUnits="userSpaceOnUse">
-      <stop offset="0%"   stop-color="#4F1E7B" stop-opacity="0.12"/>
-      <stop offset="100%" stop-color="#4F1E7B" stop-opacity="0"/>
+      <stop offset="0%"   stop-color="#6B2B99" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#6B2B99" stop-opacity="0"/>
     </radialGradient>
   </defs>
 
@@ -21,7 +21,7 @@
 
   <!-- Brand mark — same canonical W as favicon, in silky purple -->
   <g transform="translate(80,80)">
-    <rect width="128" height="128" rx="28" fill="#4F1E7B"/>
+    <rect width="128" height="128" rx="28" fill="#6B2B99"/>
     <path d="M 27.5 37.5 L 49 89 L 64 58.8 L 79 89 L 100.5 37.5"
           fill="none" stroke="#FFFFFF" stroke-width="13.75"
           stroke-linecap="round" stroke-linejoin="round"/>
@@ -36,7 +36,7 @@
         font-size="14" letter-spacing="8">AI VOICE + EMAIL AGENTS</text>
 
   <!-- Editorial hero -->
-  <text x="80" y="330" fill="#4F1E7B"
+  <text x="80" y="330" fill="#6B2B99"
         font-family="Georgia, 'Times New Roman', serif"
         font-style="italic" font-size="76" font-weight="400">AI agents for every</text>
   <text x="80" y="420" fill="#1C1917"
@@ -49,14 +49,14 @@
         font-size="22">14-day free trial · dedicated phone number included · cancel anytime</text>
 
   <!-- Footer hairline -->
-  <rect x="80" y="540" width="1040" height="1.5" fill="#4F1E7B" opacity="0.35"/>
+  <rect x="80" y="540" width="1040" height="1.5" fill="#6B2B99" opacity="0.35"/>
 
   <!-- Partner logo strip — replaces the prior VOICE/EMAIL/INSIGHTS/TRIAGE chips
        AND the "Powered by Claude Opus 4.7" verbiage. Same marks the AuthPortal
        trust row carries: Anthropic · Vapi · ElevenLabs · Supabase · Vercel.
        Spaced evenly across the bottom, all in muted silky-purple so they
        read as a credibility strip not an ad. -->
-  <g fill="#4F1E7B" opacity="0.55">
+  <g fill="#6B2B99" opacity="0.55">
     <!-- Anthropic mark — A glyph -->
     <g transform="translate(120, 570) scale(0.16)">
       <path d="M147.42 0h44.34l63.5 176h-44.34l-12.99-37.07h-65.5L119.43 176H75.09Zm-2.49 105.07h36.81l-18.4-52.45ZM0 176 63.5 0h44.34l-63.5 176Z"/>
