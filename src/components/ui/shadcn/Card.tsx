@@ -1,5 +1,5 @@
 import * as React from "react";
-import { motion } from "motion/react";
+import { motion, HTMLMotionProps } from "motion/react";
 import { cn } from "@/src/lib/utils";
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -9,25 +9,31 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ({ className, interactive = false, ...props }, ref) => {
-    const Component = interactive ? motion.div : "div";
-    const animations = interactive
-      ? {
-          whileHover: {
+    if (interactive) {
+      // Cast to any to avoid motion/react type complexity with HTMLAttributes
+      const MotionDiv = motion.div as React.ComponentType<
+        HTMLMotionProps<"div"> & React.RefAttributes<HTMLDivElement>
+      >;
+      return (
+        <MotionDiv
+          ref={ref}
+          whileHover={{
             y: -2,
             transition: { type: "spring", stiffness: 400, damping: 25 },
-          },
-        }
-      : {};
+          }}
+          className={cn(
+            "rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer hover:shadow-lg transition-shadow duration-200",
+            className,
+          )}
+          {...(props as HTMLMotionProps<"div">)}
+        />
+      );
+    }
 
     return (
-      <Component
+      <div
         ref={ref}
-        className={cn(
-          "rounded-lg border bg-card text-card-foreground shadow-sm",
-          interactive && "cursor-pointer hover:shadow-lg transition-shadow duration-200",
-          className,
-        )}
-        {...animations}
+        className={cn("rounded-lg border bg-card text-card-foreground shadow-sm", className)}
         {...props}
       />
     );

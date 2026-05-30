@@ -38,26 +38,39 @@ export interface ShadButtonProps
 
 const ShadButton = React.forwardRef<HTMLButtonElement, ShadButtonProps>(
   ({ className, variant, size, asChild = false, disableAnimations = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : motion.button;
+    const Comp = asChild ? Slot : "button";
+
+    // If animations are disabled or we're using Slot, use a regular button
+    if (disableAnimations || asChild) {
+      return (
+        <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
+      );
+    }
+
+    // Cast to avoid motion/react type complexity with ButtonHTMLAttributes
+    const MotionButton = motion.button as React.ComponentType<
+      Omit<
+        React.ButtonHTMLAttributes<HTMLButtonElement>,
+        "onAnimationStart" | "onDrag" | "onDragEnd" | "onDragStart"
+      > & {
+        whileHover?: object;
+        whileTap?: object;
+        transition?: object;
+      } & React.RefAttributes<HTMLButtonElement>
+    >;
 
     // Premium micro-interactions — spring physics for buttery smoothness
-    const animations = !disableAnimations
-      ? {
-          whileHover: { scale: 1.02 },
-          whileTap: { scale: 0.98 },
-          transition: {
-            type: "spring",
-            stiffness: 400,
-            damping: 25,
-          },
-        }
-      : {};
-
     return (
-      <Comp
+      <MotionButton
         className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref as React.Ref<HTMLButtonElement>}
-        {...animations}
+        ref={ref}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        transition={{
+          type: "spring",
+          stiffness: 400,
+          damping: 25,
+        }}
         {...props}
       />
     );

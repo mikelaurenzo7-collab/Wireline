@@ -1981,3 +1981,23 @@ select:focus {
   animation: accordion-up 0.2s ease-out;
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   ACCESSIBILITY — Reduced Motion Support (WCAG 2.1 Level AAA)
+   Respects user's motion preferences for vestibular disorders
+   ══════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Disable Motion.div spring physics when reduced motion is preferred */
+  [data-motion-reduce="true"] {
+    transform: none !important;
+  }
+}
+
