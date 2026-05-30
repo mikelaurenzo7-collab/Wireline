@@ -399,51 +399,74 @@ router.get(
  *
  * The nightly run catches Vapi number/ assistant drift before prospects do.
  */
-router.get("/canary", healthRateLimiter, async (req: Request, res: Response, next: NextFunction) => {
-  const expected = process.env.CRON_SECRET || "";
-  const authz = String(req.headers.authorization || "");
-  const token = authz.startsWith("Bearer ") ? authz.slice(7) : "";
-  const isCron =
-    expected.length >= 16 &&
-    token.length === expected.length &&
-    cryptoTimingSafeEqual(Buffer.from(token, "utf8"), Buffer.from(expected, "utf8"));
-
-  if (isCron) {
-    // Cron path — bypass user auth, run the probe, log outcome.
-    try {
-      const { runDemoLineCanary } = await import("../lib/demo-line-canary");
-      const result = await runDemoLineCanary();
-      if (!result.allHealthy) {
-        log.warn("Demo-line canary nightly run detected unhealthy lines", {
-          timestamp: result.timestamp,
-          failedLines: result.lines.filter((l) => !l.numberOk || !l.assistantOk).map((l) => l.tel),
-        });
-      }
-      return res.status(result.allHealthy ? 200 : 503).json(result);
-    } catch (err: any) {
-      log.error("Demo-line canary cron failed", { error: getErrorMessage(err) });
-      return res.status(500).json({ error: getErrorMessage(err) });
-    }
-  }
-
-  // Not a cron — require normal user auth for on-demand use.
-  return authenticateUser(req as AuthenticatedRequest, res, next);
-});
-
-// The actual user-authenticated handler (chained after the gate above when not cron)
 router.get(
   "/canary",
   healthRateLimiter,
-  authenticateUser,
-  async (_req: Request, res: Response) => {
-    try {
-      const { runDemoLineCanary } = await import("../lib/demo-line-canary");
-      const result = await runDemoLineCanary();
-      res.status(result.allHealthy ? 200 : 503).json(result);
-    } catch (err: any) {
-      res.status(500).json({ error: getErrorMessage(err) });
+  async (req: Request, res: Response, next: NextFunction) => {
+    const expected = process.env.CRON_SECRET || "";
+    const authz = String(req.headers.authorization || "");
+    const token = authz.startsWith("Bearer ") ? authz.slice(7) : "";
+    const isCron =
+      expected.length >= 16 &&
+      token.length === expected.length &&
+      cryptoTimingSafeEqual(Buffer.from(token, "utf8"), Buffer.from(expected, "utf8"));
+
+    if (isCron) {
+      // Cron path — bypass user auth, run the probe, log outcome.
+      try {
+        const { runDemoLineCanary } = await import("../lib/demo-line-canary");
+        const result = await runDemoLineCanary();
+        if (!result.allHealthy) {
+          log.warn("Demo-line canary nightly run detected unhealthy lines", {
+            timestamp: result.timestamp,
+            failedLines: result.lines
+              .filter((l) => !l.numberOk || !l.assistantOk)
+              .map((l) => l.tel),
+          });
+        }
+        return res.status(result.allHealthy ? 200 : 503).json(result);
+      } catch (err: any) {
+        log.error("Demo-line canary cron failed", { error: getErrorMessage(err) });
+        return res.status(500).json({ error: getErrorMessage(err) });
+      }
     }
+
+    // Not a cron — require normal user auth for on-demand use.
+    return authenticateUser(req as AuthenticatedRequest, res, next);
   },
 );
+
+// The actual user-authenticated handler (chained after the gate above when not cron)
+router.get("/canary", healthRateLimiter, authenticateUser, async (_req: Request, res: Response) => {
+  try {
+    const { runDemoLineCanary } = await import("../lib/demo-line-canary");
+    const result = await runDemoLineCanary();
+    res.status(result.allHealthy ? 200 : 503).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: getErrorMessage(err) });
+  }
+});
+
+/**
+ * POST /api/health/report — Client-side error ingestion.
+ * Browser code POSTs uncaught errors here; they land in Vercel runtime
+ * logs as structured JSON, searchable by source:"browser".
+ * No auth required (errors happen before/during auth). Rate-limited.
+ */
+router.post("/report", healthRateLimiter, (req: Request, res: Response) => {
+  const { message, stack, url, context } = req.body || {};
+  if (!message || typeof message !== "string") {
+    return res.status(400).json({ ok: false });
+  }
+  log.error("[client-error]", {
+    source: "browser",
+    message: message.slice(0, 2000),
+    stack: typeof stack === "string" ? stack.slice(0, 4000) : undefined,
+    pageUrl: typeof url === "string" ? url.slice(0, 500) : undefined,
+    context: context && typeof context === "object" ? context : undefined,
+    ua: req.get("user-agent")?.slice(0, 200),
+  });
+  return res.status(204).end();
+});
 
 export default router;
