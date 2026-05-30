@@ -26,7 +26,7 @@
 
   /* Brand primary — lighter editorial violet that matches the hero accent.
    * The previous deeper #6B2B99 now lives on as --color-brand-deep (hover). */
-  --primary: #6B2B99;
+  --primary: #8B3FD6;
   --primary-foreground: #FFFFFF;
 
   /* Secondary */
@@ -38,8 +38,8 @@
   --muted-foreground: #5A534A;
 
   /* Accent */
-  --accent: rgba(107, 43, 153, 0.06);
-  --accent-foreground: #6B2B99;
+  --accent: rgba(139, 63, 214, 0.06);
+  --accent-foreground: #8B3FD6;
 
   /* Destructive */
   --destructive: #E8466A;
@@ -48,20 +48,20 @@
   /* Borders & inputs */
   --border: rgba(26, 22, 20, 0.10);
   --input: rgba(26, 22, 20, 0.12);
-  --ring: rgba(107, 43, 153, 0.35);
+  --ring: rgba(139, 63, 214, 0.35);
 
   /* Sidebar */
   --sidebar-background: rgba(59, 21, 76, 0.96);
   --sidebar-foreground: rgba(245, 240, 230, 0.90);
-  --sidebar-primary: #6B2B99;
+  --sidebar-primary: #8B3FD6;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: rgba(245, 240, 230, 0.06);
   --sidebar-accent-foreground: rgba(245, 240, 230, 0.85);
   --sidebar-border: rgba(245, 240, 230, 0.08);
-  --sidebar-ring: rgba(107, 43, 153, 0.40);
+  --sidebar-ring: rgba(139, 63, 214, 0.40);
 
   /* Charts */
-  --chart-1: #6B2B99;
+  --chart-1: #8B3FD6;
   --chart-2: #8B3FD6;
   --chart-3: #8B6FA8;
   --chart-4: #3B154C;
@@ -82,7 +82,7 @@
   --popover-foreground: #fafafa;
 
   /* Brand primary */
-  --primary: #6B2B99;
+  --primary: #8B3FD6;
   --primary-foreground: #ffffff;
 
   /* Secondary */
@@ -94,8 +94,8 @@
   --muted-foreground: #a1a1aa;
 
   /* Accent */
-  --accent: rgba(107, 43, 153, 0.15);
-  --accent-foreground: #6B2B99;
+  --accent: rgba(139, 63, 214, 0.15);
+  --accent-foreground: #8B3FD6;
 
   /* Destructive */
   --destructive: #ef4444;
@@ -104,23 +104,23 @@
   /* Borders & inputs */
   --border: rgba(255, 255, 255, 0.08);
   --input: rgba(255, 255, 255, 0.1);
-  --ring: rgba(107, 43, 153, 0.5);
+  --ring: rgba(139, 63, 214, 0.5);
 
   /* Sidebar */
   --sidebar-background: rgba(9, 9, 11, 0.95);
   --sidebar-foreground: #fafafa;
-  --sidebar-primary: #6B2B99;
+  --sidebar-primary: #8B3FD6;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: rgba(255, 255, 255, 0.05);
   --sidebar-accent-foreground: #fafafa;
   --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: rgba(107, 43, 153, 0.5);
+  --sidebar-ring: rgba(139, 63, 214, 0.5);
 
   /* Charts */
-  --chart-1: #6B2B99;
+  --chart-1: #8B3FD6;
   --chart-2: #8B3FD6;
   --chart-3: #8B6FA8;
-  --chart-4: #6B2B99;
+  --chart-4: #8B3FD6;
   --chart-5: #3B154C;
 
   /* Dark mode theme re-mappings */
@@ -186,8 +186,8 @@
   --color-emerald-200: #D9CCE8;
   --color-emerald-300: #B399D1;
   --color-emerald-400: #8B6FA8;
-  --color-emerald-500: #6B2B99;
-  --color-emerald-600: #6B2B99;
+  --color-emerald-500: #8B3FD6;
+  --color-emerald-600: #8B3FD6;
   --color-emerald-700: #3B154C;
   --color-emerald-800: #2E0F4A;
 
@@ -197,8 +197,8 @@
   --color-amber-300: #C4B5A0;
   --color-amber-400: #A988C4;
   --color-amber-500: #8B6FA8;
-  --color-amber-600: #6B2B99;
-  --color-amber-700: #6B2B99;
+  --color-amber-600: #8B3FD6;
+  --color-amber-700: #8B3FD6;
   --color-amber-800: #3B154C;
 
   --color-blue-50: #F5F0F8;
@@ -206,8 +206,8 @@
   --color-blue-200: #D9CCE8;
   --color-blue-300: #B399D1;
   --color-blue-400: #8B6FA8;
-  --color-blue-500: #6B2B99;
-  --color-blue-600: #6B2B99;
+  --color-blue-500: #8B3FD6;
+  --color-blue-600: #8B3FD6;
   --color-blue-700: #3B154C;
 
   --color-sky-50: #F5F0F8;
@@ -215,8 +215,8 @@
   --color-sky-200: #D9CCE8;
   --color-sky-300: #B399D1;
   --color-sky-400: #8B6FA8;
-  --color-sky-500: #6B2B99;
-  --color-sky-600: #6B2B99;
+  --color-sky-500: #8B3FD6;
+  --color-sky-600: #8B3FD6;
   --color-sky-700: #3B154C;
 
   --color-cyan-50: #F5F0EC;
@@ -225,8 +225,8 @@
   --color-cyan-300: #C4B5A0;
   --color-cyan-400: #A988C4;
   --color-cyan-500: #8B6FA8;
-  --color-cyan-600: #6B2B99;
-  --color-cyan-700: #6B2B99;
+  --color-cyan-600: #8B3FD6;
+  --color-cyan-700: #8B3FD6;
 
   --color-orange-50: #F7F3EC;
   --color-orange-100: #EDE6DA;
@@ -234,8 +234,8 @@
   --color-orange-300: #C4B5A0;
   --color-orange-400: #A988C4;
   --color-orange-500: #8B6FA8;
-  --color-orange-600: #6B2B99;
-  --color-orange-700: #6B2B99;
+  --color-orange-600: #8B3FD6;
+  --color-orange-700: #8B3FD6;
 
   --radius-sm: 0;
   --radius-md: 0;
@@ -309,8 +309,8 @@
   }
 
   :root {
-    --wl-purple: #6B2B99;
-    --wl-purple-light: #6B2B99;
+    --wl-purple: #8B3FD6;
+    --wl-purple-light: #8B3FD6;
     --wl-purple-deep: #6B2B99;
     --wl-purple-muted: #8B6FA8;
     --wl-cream: #EFE9DC;
