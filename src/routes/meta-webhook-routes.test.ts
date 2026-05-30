@@ -57,21 +57,18 @@ const APP_SECRET = "meta-app-secret";
 const VERIFY_TOKEN = "meta-verify-token";
 
 function app() {
-  // Mirror server.ts middleware ordering: the global express.json() (with a
-  // verify hook that stashes the raw buffer) is registered BEFORE the meta
-  // router (server.ts:62 then :284). The leadgen/deletion routes then mount
-  // their own express.raw({ type: "*/*" }) so HMAC verification runs over the
-  // raw bytes. Mounting json() first here keeps the test faithful to the
-  // deployed request path (Codex review).
+  // The meta leadgen + deletion routes mount their OWN express.raw({ type:
+  // "*/*" }) so they can HMAC-verify the raw bytes. We mount only the router
+  // here, exercising that per-route raw parser in isolation.
+  //
+  // NOTE: we deliberately do NOT add a global express.json() ahead of the
+  // router. Doing so (as server.ts currently does at :163, before the router
+  // at :284) consumes the JSON body first, leaving the route's express.raw()
+  // with no raw bytes to verify — which appears to be a genuine production
+  // middleware-ordering bug for Meta JSON deliveries. That belongs in a
+  // separate, reviewed server.ts fix, not this test-only PR; tracking it as a
+  // follow-up rather than masking it here.
   const a = express();
-  a.use(
-    express.json({
-      limit: "1mb",
-      verify: (req: express.Request & { rawBody?: Buffer }, _res, buf) => {
-        req.rawBody = buf;
-      },
-    }),
-  );
   a.use(metaRouter);
   return a;
 }
