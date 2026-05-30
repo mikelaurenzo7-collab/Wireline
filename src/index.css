@@ -65,6 +65,66 @@
   --chart-3: #8B6FA8;
   --chart-4: #3B154C;
   --chart-5: #D4C9B8;
+
+  /* Core theme variables */
+  --ink: #1A1614;
+  --paper: #EFE9DC;
+}
+
+.dark {
+  /* Dark mode surface colors */
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: rgba(9, 9, 11, 0.60);
+  --card-foreground: #fafafa;
+  --popover: rgba(9, 9, 11, 0.85);
+  --popover-foreground: #fafafa;
+
+  /* Brand primary */
+  --primary: #9d4edd;
+  --primary-foreground: #ffffff;
+
+  /* Secondary */
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
+
+  /* Muted */
+  --muted: rgba(39, 39, 42, 0.5);
+  --muted-foreground: #a1a1aa;
+
+  /* Accent */
+  --accent: rgba(157, 78, 221, 0.15);
+  --accent-foreground: #c77dff;
+
+  /* Destructive */
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  /* Borders & inputs */
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: rgba(157, 78, 221, 0.5);
+
+  /* Sidebar */
+  --sidebar-background: rgba(9, 9, 11, 0.95);
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #9d4edd;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(255, 255, 255, 0.05);
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: rgba(157, 78, 221, 0.5);
+
+  /* Charts */
+  --chart-1: #9d4edd;
+  --chart-2: #c77dff;
+  --chart-3: #e0aaff;
+  --chart-4: #5a189a;
+  --chart-5: #3c096c;
+
+  /* Dark mode theme re-mappings */
+  --ink: #fafafa;
+  --paper: #09090b;
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -89,12 +149,12 @@
   --color-brand-ink: #f3e8ff;
 
   /* Core palette */
-  --color-brand: #9d4edd;
+  --color-brand: var(--primary);
   --color-brand-2: #c77dff;
   --color-brand-3: #e0aaff;
   --color-brand-deep: #5a189a;
-  --color-ink: #1A1614;
-  --color-paper: #EFE9DC;
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
   --color-on-brand: #ffffff;
 
   /* Tailwind base overrides */
@@ -1816,3 +1876,80 @@ select:focus {
 .input-field:focus, .input-base:focus, .textarea-base:focus, select:focus {
   box-shadow: 0 0 0 1px rgba(79, 30, 123, 0.25), 0 0 8px rgba(79, 30, 123, 0.08);
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   DARK THEME UTILITY OVERRIDES — Glass surfaces & Interactive Cards
+   ══════════════════════════════════════════════════════════════════ */
+.dark .glass {
+  background:
+    linear-gradient(180deg, rgba(20, 20, 25, 0.70), rgba(15, 15, 20, 0.50)),
+    rgba(9, 9, 11, 0.60);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+}
+
+.dark .glass-strong {
+  background:
+    linear-gradient(180deg, rgba(28, 28, 35, 0.85), rgba(20, 20, 25, 0.70)),
+    rgba(9, 9, 11, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.dark .brutal-card {
+  background:
+    linear-gradient(180deg, rgba(28, 28, 35, 0.80), rgba(20, 20, 25, 0.55)),
+    rgba(9, 9, 11, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 0 0 1px rgba(157, 78, 221, 0.1),
+    0 12px 40px -12px rgba(0, 0, 0, 0.5),
+    0 4px 16px -6px rgba(157, 78, 221, 0.15);
+}
+
+.dark .glass.card-interactive:hover {
+  background:
+    linear-gradient(180deg, rgba(28, 28, 35, 0.80), rgba(20, 20, 25, 0.60)),
+    rgba(9, 9, 11, 0.70);
+  border-color: rgba(157, 78, 221, 0.35);
+}
+
+.dark .glass-strong.card-interactive:hover {
+  background:
+    linear-gradient(180deg, rgba(32, 32, 40, 0.92), rgba(24, 24, 30, 0.78)),
+    rgba(9, 9, 11, 0.90);
+  border-color: rgba(157, 78, 221, 0.45);
+}
+
+.dark ::selection {
+  background: rgba(157, 78, 221, 0.30);
+  color: #fafafa;
+}
+
+.dark ::-moz-selection {
+  background: rgba(157, 78, 221, 0.30);
+  color: #fafafa;
+}
+
+.dark .text-aurora,
+.dark .text-stroke,
+.dark .brand-wordmark {
+  color: #c77dff;
+  filter: drop-shadow(0 0 16px rgba(157, 78, 221, 0.30));
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(157, 78, 221, 0.45);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(157, 78, 221, 0.65);
+}
+
+.dark input,
+.dark textarea,
+.dark select {
+  color-scheme: dark;
+}
+

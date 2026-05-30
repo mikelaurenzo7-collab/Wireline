@@ -20,6 +20,8 @@ import {
   LogOut,
   Search,
   Settings,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import WirelineMark from "../WirelineMark";
@@ -60,6 +62,27 @@ export default function Sidebar({ navBadges }: SidebarProps) {
   );
   const [userOverride, setUserOverride] = useState<boolean | null>(null);
   const [peek, setPeek] = useState(false);
+
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("wireline_theme") as "light" | "dark") || "light";
+    }
+    return "light";
+  });
+
+  useEffect(() => {
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "light" ? "dark" : "light";
+    setTheme(nextTheme);
+    localStorage.setItem("wireline_theme", nextTheme);
+  };
 
   useEffect(() => {
     const onResize = () => setAutoExpanded(window.innerWidth >= AUTO_EXPAND_WIDTH);
@@ -266,6 +289,41 @@ export default function Sidebar({ navBadges }: SidebarProps) {
               active={location.pathname === "/founder"}
             />
           )}
+
+          {(() => {
+            const themeToggleBtn = (
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="w-full group h-9 flex items-center gap-2.5 px-2 rounded-md text-white/50 hover:text-white/90 hover:bg-white/8 transition-all cursor-pointer"
+                aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+              >
+                {theme === "light" ? (
+                  <Moon className="w-4.5 h-4.5 shrink-0 transition-transform duration-300 group-hover:rotate-12 text-white/60" strokeWidth={1.75} />
+                ) : (
+                  <Sun className="w-4.5 h-4.5 shrink-0 transition-transform duration-300 group-hover:rotate-45 text-white/60" strokeWidth={1.75} />
+                )}
+                {effective && (
+                  <span className="text-[12px] font-medium truncate">
+                    {theme === "light" ? "Dark Mode" : "Light Mode"}
+                  </span>
+                )}
+              </button>
+            );
+
+            if (!effective) {
+              return (
+                <Tooltip>
+                  <TooltipTrigger asChild>{themeToggleBtn}</TooltipTrigger>
+                  <TooltipContent side="right" className="ml-1">
+                    {theme === "light" ? "Dark Mode" : "Light Mode"}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            }
+            return themeToggleBtn;
+          })()}
+
           <button
             onClick={() => signOut()}
             className="w-full group h-9 flex items-center gap-2.5 px-2 rounded-md text-white/50 hover:text-white/90 hover:bg-white/8 transition-all"
