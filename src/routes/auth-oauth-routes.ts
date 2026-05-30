@@ -26,6 +26,7 @@
  * Outlook can keep using email/password.
  */
 
+import { randomBytes } from "node:crypto";
 import { Router, Request, Response } from "express";
 import { google } from "googleapis";
 import { drizzle, log } from "../lib/server-context";
@@ -93,6 +94,23 @@ function findOrCreateUserByEmail(
   })();
 }
 
+const pendingCodes = new Map<
+  string,
+  {
+    token: string;
+    user: { id: string; email: string; fullName: string | null };
+    isOwner: boolean;
+    expiresAt: number;
+  }
+>();
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [code, data] of pendingCodes) {
+    if (data.expiresAt < now) pendingCodes.delete(code);
+  }
+}, 5 * 60_000).unref();
+
 function bridgeRedirect(
   baseUrl: string,
   user: { id: string; email: string; fullName: string | null },
@@ -102,17 +120,14 @@ function bridgeRedirect(
   if (errorMessage) {
     return `${baseUrl}/auth/oauth-complete?error=${encodeURIComponent(errorMessage)}`;
   }
-  const params = new URLSearchParams({
+  const code = randomBytes(32).toString("base64url");
+  pendingCodes.set(code, {
     token,
-    user_id: user.id,
-    email: user.email,
-    name: user.fullName ?? "",
-    // Carry the owner flag through the OAuth bridge — without this an
-    // owner who signs in via Google never gets is_owner set, and the
-    // Founder's Dashboard stays hidden from them.
-    is_owner: isOwnerEmail(user.email) ? "1" : "0",
+    user,
+    isOwner: isOwnerEmail(user.email),
+    expiresAt: Date.now() + 60_000,
   });
-  return `${baseUrl}/auth/oauth-complete?${params.toString()}`;
+  return `${baseUrl}/auth/oauth-complete?code=${code}`;
 }
 
 /* ─────────────────────────  Google  ─────────────────────── */
@@ -365,6 +380,27 @@ router.get("/api/auth/yahoo/callback", async (req: Request, res: Response) => {
     log.error("auth oauth yahoo: callback failed", { error: message });
     return res.redirect(bridgeRedirect(baseUrl, {} as any, "", message));
   }
+});
+
+/* ──────────────────  One-time code exchange  ────────────────── */
+
+router.post("/api/auth/oauth/exchange", oauthRateLimiter, (req: Request, res: Response) => {
+  const { code } = req.body;
+  if (!code || typeof code !== "string") {
+    return res.status(400).json({ error: "Missing code" });
+  }
+  const entry = pendingCodes.get(code);
+  pendingCodes.delete(code);
+  if (!entry || entry.expiresAt < Date.now()) {
+    return res.status(400).json({ error: "Invalid or expired code" });
+  }
+  return res.json({
+    token: entry.token,
+    user_id: entry.user.id,
+    email: entry.user.email,
+    name: entry.user.fullName ?? "",
+    is_owner: entry.isOwner ? "1" : "0",
+  });
 });
 
 export default router;
