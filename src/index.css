@@ -17,54 +17,54 @@
   --radius: 0.75rem;
 
   /* Surface colors */
-  --background: #09090b;
-  --foreground: #fafafa;
-  --card: rgba(9, 9, 11, 0.60);
-  --card-foreground: #fafafa;
-  --popover: rgba(9, 9, 11, 0.85);
-  --popover-foreground: #fafafa;
+  --background: #EFE9DC;
+  --foreground: #1A1614;
+  --card: rgba(239, 233, 220, 0.80);
+  --card-foreground: #1A1614;
+  --popover: rgba(239, 233, 220, 0.92);
+  --popover-foreground: #1A1614;
 
   /* Brand primary */
-  --primary: #9d4edd;
-  --primary-foreground: #ffffff;
+  --primary: #4F1E7B;
+  --primary-foreground: #FFFFFF;
 
   /* Secondary */
-  --secondary: #27272a;
-  --secondary-foreground: #fafafa;
+  --secondary: #3B154C;
+  --secondary-foreground: #FFFFFF;
 
   /* Muted */
-  --muted: rgba(39, 39, 42, 0.5);
-  --muted-foreground: #a1a1aa;
+  --muted: rgba(26, 22, 20, 0.05);
+  --muted-foreground: #5A534A;
 
   /* Accent */
-  --accent: rgba(157, 78, 221, 0.15);
-  --accent-foreground: #c77dff;
+  --accent: rgba(79, 30, 123, 0.06);
+  --accent-foreground: #4F1E7B;
 
   /* Destructive */
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
+  --destructive: #E8466A;
+  --destructive-foreground: #FFFFFF;
 
   /* Borders & inputs */
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.1);
-  --ring: rgba(157, 78, 221, 0.5);
+  --border: rgba(26, 22, 20, 0.10);
+  --input: rgba(26, 22, 20, 0.12);
+  --ring: rgba(79, 30, 123, 0.35);
 
   /* Sidebar */
-  --sidebar-background: rgba(9, 9, 11, 0.95);
-  --sidebar-foreground: #fafafa;
-  --sidebar-primary: #9d4edd;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(255, 255, 255, 0.05);
-  --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: rgba(157, 78, 221, 0.5);
+  --sidebar-background: rgba(59, 21, 76, 0.96);
+  --sidebar-foreground: rgba(245, 240, 230, 0.90);
+  --sidebar-primary: #4F1E7B;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: rgba(245, 240, 230, 0.06);
+  --sidebar-accent-foreground: rgba(245, 240, 230, 0.85);
+  --sidebar-border: rgba(245, 240, 230, 0.08);
+  --sidebar-ring: rgba(79, 30, 123, 0.40);
 
   /* Charts */
-  --chart-1: #9d4edd;
-  --chart-2: #c77dff;
-  --chart-3: #e0aaff;
-  --chart-4: #5a189a;
-  --chart-5: #3c096c;
+  --chart-1: #4F1E7B;
+  --chart-2: #6B2B99;
+  --chart-3: #8B6FA8;
+  --chart-4: #3B154C;
+  --chart-5: #D4C9B8;
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -93,8 +93,8 @@
   --color-brand-2: #c77dff;
   --color-brand-3: #e0aaff;
   --color-brand-deep: #5a189a;
-  --color-ink: #fafafa;
-  --color-paper: #09090b;
+  --color-ink: #1A1614;
+  --color-paper: #EFE9DC;
   --color-on-brand: #ffffff;
 
   /* Tailwind base overrides */
@@ -559,17 +559,17 @@
 }
 
 @utility brutal-card {
-  @apply relative overflow-hidden p-6 md:p-8 rounded-2xl border border-white/5;
+  @apply relative overflow-hidden p-6 md:p-8 border border-black/8;
   background:
-    linear-gradient(180deg, rgba(24, 24, 27, 0.80), rgba(9, 9, 11, 0.60)),
-    rgba(9, 9, 11, 0.75);
-  backdrop-filter: blur(40px) saturate(160%);
-  -webkit-backdrop-filter: blur(40px) saturate(160%);
+    linear-gradient(180deg, rgba(247, 242, 234, 0.80), rgba(245, 239, 229, 0.55)),
+    rgba(239, 233, 220, 0.75);
+  backdrop-filter: blur(32px) saturate(140%);
+  -webkit-backdrop-filter: blur(32px) saturate(140%);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.05) inset,
-    0 0 0 1px rgba(255, 255, 255, 0.02),
-    0 12px 40px -12px rgba(0, 0, 0, 0.8),
-    0 4px 16px -6px rgba(0, 0, 0, 0.6);
+    0 1px 0 rgba(255, 255, 255, 0.90) inset,
+    0 0 0 1px rgba(79, 30, 123, 0.04),
+    0 12px 40px -12px rgba(0, 0, 0, 0.10),
+    0 4px 16px -6px rgba(79, 30, 123, 0.08);
   transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 400ms ease, border-color 300ms ease;
 }
 
@@ -683,20 +683,20 @@
  * consistent warm tone — no white-vs-purple drift. */
 .glass {
   background:
-    linear-gradient(180deg, rgba(39, 39, 42, 0.40), rgba(24, 24, 27, 0.30)),
-    rgba(9, 9, 11, 0.60);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+    linear-gradient(180deg, rgba(246, 241, 232, 0.82), rgba(244, 238, 228, 0.64)),
+    rgba(239, 233, 220, 0.62);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(0, 0, 0, 0.09);
 }
 
 .glass-strong {
   background:
-    linear-gradient(180deg, rgba(39, 39, 42, 0.60), rgba(24, 24, 27, 0.50)),
-    rgba(9, 9, 11, 0.80);
-  backdrop-filter: blur(32px) saturate(200%);
-  -webkit-backdrop-filter: blur(32px) saturate(200%);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+    linear-gradient(180deg, rgba(247, 242, 234, 0.94), rgba(245, 240, 230, 0.84)),
+    rgba(239, 233, 220, 0.92);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(0, 0, 0, 0.10);
 }
 
 /* Reduced motion: kill the GPU-expensive backdrop blur entirely. The

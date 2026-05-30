@@ -266,16 +266,16 @@
     <div id="root">
       <!-- Zero-Latency App Shell (Overwritten by React on mount) -->
       <style>
-        body { margin: 0; background-color: #0b090a; font-family: system-ui, sans-serif; overflow: hidden; }
-        .app-shell-skeleton { display: flex; height: 100vh; width: 100vw; background: #0b090a; }
-        .shell-sidebar { width: 260px; background: #161219; border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; padding: 24px; box-sizing: border-box; }
-        .shell-logo { width: 120px; height: 24px; background: rgba(255,255,255,0.05); border-radius: 4px; margin-bottom: 40px; }
-        .shell-nav-item { width: 100%; height: 32px; background: rgba(255,255,255,0.03); border-radius: 6px; margin-bottom: 12px; }
+        body { margin: 0; background-color: #EFE9DC; font-family: system-ui, sans-serif; overflow: hidden; }
+        .app-shell-skeleton { display: flex; height: 100vh; width: 100vw; background: #EFE9DC; }
+        .shell-sidebar { width: 260px; background: #3b154c; border-right: 1px solid rgba(0,0,0,0.08); display: flex; flex-direction: column; padding: 24px; box-sizing: border-box; }
+        .shell-logo { width: 120px; height: 24px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-bottom: 40px; }
+        .shell-nav-item { width: 100%; height: 32px; background: rgba(255,255,255,0.06); border-radius: 6px; margin-bottom: 12px; }
         .shell-main { flex: 1; display: flex; flex-direction: column; }
-        .shell-header { height: 64px; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 0 32px; display: flex; align-items: center; justify-content: space-between; }
-        .shell-title { width: 150px; height: 24px; background: rgba(255,255,255,0.03); border-radius: 4px; }
+        .shell-header { height: 64px; border-bottom: 1px solid rgba(0,0,0,0.08); padding: 0 32px; display: flex; align-items: center; justify-content: space-between; }
+        .shell-title { width: 150px; height: 24px; background: rgba(0,0,0,0.05); border-radius: 4px; }
         .shell-content { flex: 1; padding: 32px; }
-        .shell-card { width: 100%; height: 200px; background: #120f14; border: 1px solid rgba(255,255,255,0.03); border-radius: 12px; margin-bottom: 24px; }
+        .shell-card { width: 100%; height: 200px; background: rgba(239, 233, 220, 0.80); border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; margin-bottom: 24px; }
         
         /* Pulse Animation */
         @keyframes shell-pulse { 0% { opacity: 0.6; } 50% { opacity: 0.3; } 100% { opacity: 0.6; } }
