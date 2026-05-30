@@ -1,5 +1,6 @@
 /**
- * HeroDecorations — six hero gutter robots, each a distinct channel pose.
+ * HeroDecorations — six gutter robots (3 left, 3 right). Hero-only; no other
+ * sections use sticker decorations.
  */
 import { SectionStickers, type SectionStickerSlot } from "./SectionStickers";
 
@@ -9,12 +10,13 @@ interface HeroDecorationsProps {
 
 const MIN_TOP_REM = 7.5;
 
+/** All slots use high opacity + phone/on-call/texting poses with strong props. */
 export const HERO_STICKER_SLOTS: SectionStickerSlot[] = [
   {
     variant: 1,
     pose: "on-call",
-    size: 68,
-    opacity: 0.58,
+    size: 72,
+    opacity: 0.92,
     side: "left",
     top: `max(${MIN_TOP_REM}rem, 16%)`,
     delayMs: 0,
@@ -22,9 +24,9 @@ export const HERO_STICKER_SLOTS: SectionStickerSlot[] = [
   },
   {
     variant: 5,
-    pose: "typing",
-    size: 56,
-    opacity: 0.38,
+    pose: "phone",
+    size: 64,
+    opacity: 0.88,
     side: "left",
     top: "50%",
     delayMs: 140,
@@ -33,8 +35,8 @@ export const HERO_STICKER_SLOTS: SectionStickerSlot[] = [
   {
     variant: 3,
     pose: "texting",
-    size: 60,
-    opacity: 0.48,
+    size: 66,
+    opacity: 0.9,
     side: "left",
     bottom: "10%",
     delayMs: 220,
@@ -43,8 +45,8 @@ export const HERO_STICKER_SLOTS: SectionStickerSlot[] = [
   {
     variant: 2,
     pose: "phone",
-    size: 64,
-    opacity: 0.54,
+    size: 70,
+    opacity: 0.92,
     side: "right",
     top: `max(${MIN_TOP_REM}rem, 18%)`,
     delayMs: 70,
@@ -53,8 +55,8 @@ export const HERO_STICKER_SLOTS: SectionStickerSlot[] = [
   {
     variant: 6,
     pose: "on-call",
-    size: 52,
-    opacity: 0.34,
+    size: 62,
+    opacity: 0.88,
     side: "right",
     top: "50%",
     delayMs: 180,
@@ -62,9 +64,9 @@ export const HERO_STICKER_SLOTS: SectionStickerSlot[] = [
   },
   {
     variant: 4,
-    pose: "typing",
-    size: 66,
-    opacity: 0.5,
+    pose: "phone",
+    size: 68,
+    opacity: 0.9,
     side: "right",
     bottom: "8%",
     delayMs: 260,
@@ -78,6 +80,7 @@ export function HeroDecorations({ className = "" }: HeroDecorationsProps) {
       slots={HERO_STICKER_SLOTS}
       className={className}
       testId="hero-robot-decorations"
+      vivid
     />
   );
 }

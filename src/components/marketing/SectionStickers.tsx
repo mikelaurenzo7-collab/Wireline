@@ -24,9 +24,16 @@ type SectionStickersProps = {
   slots: SectionStickerSlot[];
   className?: string;
   testId?: string;
+  /** Hero treatment: paper halo + full saturation (no ghost-tier opacity). */
+  vivid?: boolean;
 };
 
-export function SectionStickers({ slots, className = "", testId }: SectionStickersProps) {
+export function SectionStickers({
+  slots,
+  className = "",
+  testId,
+  vivid = false,
+}: SectionStickersProps) {
   return (
     <>
       <style>{`
@@ -61,6 +68,27 @@ export function SectionStickers({ slots, className = "", testId }: SectionSticke
           filter: drop-shadow(0 6px 16px rgba(79, 30, 123, 0.2));
         }
 
+        .wl-sticker-vivid .wl-sticker-halo {
+          position: absolute;
+          inset: -10px;
+          border-radius: 9999px;
+          background: radial-gradient(
+            circle at 50% 45%,
+            rgba(239, 233, 220, 0.92) 0%,
+            rgba(239, 233, 220, 0.55) 45%,
+            transparent 72%
+          );
+          z-index: -1;
+        }
+        .wl-sticker-vivid svg {
+          filter: drop-shadow(0 5px 14px rgba(79, 30, 123, 0.28))
+            drop-shadow(0 1px 0 rgba(255, 255, 255, 0.65));
+        }
+        .wl-sticker-vivid:hover svg {
+          filter: drop-shadow(0 8px 22px rgba(79, 30, 123, 0.38))
+            drop-shadow(0 1px 0 rgba(255, 255, 255, 0.75)) !important;
+        }
+
         @media (prefers-reduced-motion: reduce) {
           .wl-sticker-enter,
           .wl-sticker-float {
@@ -88,7 +116,7 @@ export function SectionStickers({ slots, className = "", testId }: SectionSticke
           return (
             <div
               key={index}
-              className={`wl-sticker-slot absolute${isCenter ? " -translate-y-1/2" : ""}`}
+              className={`wl-sticker-slot absolute${isCenter ? " -translate-y-1/2" : ""}${vivid ? " wl-sticker-vivid" : ""}`}
               style={{
                 ...gutter,
                 ...(slot.top != null ? { top: slot.top } : {}),
@@ -96,8 +124,9 @@ export function SectionStickers({ slots, className = "", testId }: SectionSticke
                 ["--sticker-opacity" as string]: slot.opacity,
               }}
             >
+              {vivid && <span className="wl-sticker-halo" aria-hidden="true" />}
               <div
-                className="wl-sticker-enter"
+                className="wl-sticker-enter relative"
                 style={{
                   ["--sticker-opacity" as string]: slot.opacity,
                   animationDelay: `${enterDelay}ms`,
@@ -115,6 +144,7 @@ export function SectionStickers({ slots, className = "", testId }: SectionSticke
                     pose={slot.pose ?? "phone"}
                     size={slot.size}
                     animated
+                    vivid={vivid}
                   />
                 </div>
               </div>

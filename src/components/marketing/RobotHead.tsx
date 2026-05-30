@@ -13,6 +13,8 @@ interface RobotHeadProps {
   size?: number;
   className?: string;
   animated?: boolean;
+  /** Hero gutter: richer fills and no extra SVG shadow (parent applies halo). */
+  vivid?: boolean;
 }
 
 const COLORS = {
@@ -70,19 +72,25 @@ function Eyes({
   if (variant === 4) {
     return (
       <>
+        <ellipse cx="24" cy="30" rx="5.5" ry="5" fill={COLORS.cream} />
+        <ellipse cx="40" cy="30" rx="5.5" ry="5" fill={COLORS.cream} />
+        <circle cx="24" cy="30" r="1.75" fill={COLORS.emerald} />
+        <circle cx="40" cy="30" r="1.75" fill={COLORS.emerald} />
         <path
           d={squint ? "M20 28 Q24 32 28 28" : "M20 27 Q24 34 28 27"}
-          stroke={COLORS.cream}
-          strokeWidth="3"
+          stroke={COLORS.purpleDeep}
+          strokeWidth="2.2"
           strokeLinecap="round"
           fill="none"
+          opacity="0.85"
         />
         <path
           d={squint ? "M36 28 Q40 32 44 28" : "M36 27 Q40 34 44 27"}
-          stroke={COLORS.cream}
-          strokeWidth="3"
+          stroke={COLORS.purpleDeep}
+          strokeWidth="2.2"
           strokeLinecap="round"
           fill="none"
+          opacity="0.85"
         />
       </>
     );
@@ -341,10 +349,12 @@ function TextingPose({
   uid,
   strokeWidth,
   animated,
+  vivid = false,
 }: {
   uid: string;
   strokeWidth: number;
   animated: boolean;
+  vivid?: boolean;
 }) {
   return (
     <g transform="translate(18, 34)">
@@ -406,7 +416,7 @@ function TextingPose({
           height="9"
           rx="3"
           fill={COLORS.emerald}
-          fillOpacity="0.22"
+          fillOpacity={vivid ? 0.5 : 0.22}
           stroke={COLORS.emerald}
           strokeWidth={strokeWidth * 0.45}
         />
@@ -557,6 +567,7 @@ export function RobotHead({
   size = 64,
   className = "",
   animated = true,
+  vivid = false,
   "aria-hidden": ariaHidden,
 }: RobotHeadProps & { "aria-hidden"?: boolean }) {
   const uid = useId().replace(/:/g, "");
@@ -583,11 +594,11 @@ export function RobotHead({
             50% { transform: scale(0.86); opacity: 0.78; }
           }
           @keyframes wl-text-dot-${uid} {
-            0%, 70%, 100% { opacity: 0.2; transform: translateY(0); }
+            0%, 70%, 100% { opacity: ${vivid ? 0.45 : 0.2}; transform: translateY(0); }
             35% { opacity: 1; transform: translateY(-1px); }
           }
           @keyframes wl-key-${uid} {
-            0%, 100% { fill-opacity: 0.55; transform: translateY(0); }
+            0%, 100% { fill-opacity: ${vivid ? 0.72 : 0.55}; transform: translateY(0); }
             12%, 24% { fill-opacity: 1; transform: translateY(0.5px); }
           }
           @keyframes wl-cursor-${uid} {
@@ -595,15 +606,15 @@ export function RobotHead({
             50%, 100% { opacity: 0; }
           }
           @keyframes wl-call-wave-${uid} {
-            0%, 100% { opacity: 0.2; }
+            0%, 100% { opacity: ${vivid ? 0.45 : 0.2}; }
             50% { opacity: 0.95; }
           }
           @keyframes wl-call-glow-${uid} {
-            0%, 100% { opacity: 0.04; transform: scale(0.95); }
-            50% { opacity: 0.12; transform: scale(1.05); }
+            0%, 100% { opacity: ${vivid ? 0.08 : 0.04}; transform: scale(0.95); }
+            50% { opacity: ${vivid ? 0.2 : 0.12}; transform: scale(1.05); }
           }
           @keyframes wl-wave-bar-${uid} {
-            0%, 100% { transform: scaleY(0.55); opacity: 0.45; }
+            0%, 100% { transform: scaleY(0.55); opacity: ${vivid ? 0.65 : 0.45}; }
             50% { transform: scaleY(1); opacity: 0.95; }
           }
         `}</style>
@@ -620,14 +631,14 @@ export function RobotHead({
           transform: transforms,
           transition: animated ? "transform 0.45s cubic-bezier(0.23, 1, 0.32, 1)" : undefined,
           overflow: "visible",
-          filter: "drop-shadow(0 3px 10px rgba(79, 30, 123, 0.12))",
+          filter: vivid ? undefined : "drop-shadow(0 3px 10px rgba(79, 30, 123, 0.12))",
         }}
       >
         <defs>
           <linearGradient id={`headGrad-${uid}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={COLORS.purple} stopOpacity="0.98" />
-            <stop offset="55%" stopColor={COLORS.purpleLight} stopOpacity="0.9" />
-            <stop offset="100%" stopColor={COLORS.purpleDeep} stopOpacity="0.88" />
+            <stop offset="0%" stopColor={COLORS.purple} stopOpacity={vivid ? 1 : 0.98} />
+            <stop offset="55%" stopColor={COLORS.purpleLight} stopOpacity={vivid ? 0.98 : 0.9} />
+            <stop offset="100%" stopColor={COLORS.purpleDeep} stopOpacity={vivid ? 0.96 : 0.88} />
           </linearGradient>
           <linearGradient id={`phoneGrad-${uid}`} x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor={COLORS.emeraldSoft} />
@@ -651,7 +662,7 @@ export function RobotHead({
         )}
 
         {pose === "texting" && (
-          <TextingPose uid={uid} strokeWidth={strokeWidth} animated={animated} />
+          <TextingPose uid={uid} strokeWidth={strokeWidth} animated={animated} vivid={vivid} />
         )}
 
         {pose === "typing" && (
