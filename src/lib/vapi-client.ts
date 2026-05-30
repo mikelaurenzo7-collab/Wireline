@@ -24,6 +24,11 @@ import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./agent-runt
 import { buildCustomerIntelBlock } from "./customer-intel";
 import { DEFAULT_AGENT_ROLE } from "./agent-constants";
 import {
+  VAPI_INPUT_MIN_CHARACTERS,
+  VAPI_START_SPEAKING_PLAN,
+  VAPI_TRANSCRIBER_CONFIG,
+} from "./voice-agent-profile";
+import {
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
   VAPI_VOICE_FALLBACK_MODEL,
@@ -437,23 +442,14 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
       responseDelaySeconds: 0,
       numWordsToInterruptAssistant: 2,
       backgroundDenoisingEnabled: false,
-      startSpeakingPlan: {
-        waitSeconds: 0.05,
-        smartEndpointingPlan: { provider: "livekit", waitFunction: "10 + 5000 * x" },
-      },
-      transcriber: {
-        provider: "deepgram",
-        model: "nova-3",
-        language: "en",
-        smartFormat: true,
-        endpointing: 40,
-      },
+      startSpeakingPlan: VAPI_START_SPEAKING_PLAN,
+      transcriber: VAPI_TRANSCRIBER_CONFIG,
       ...(outboundServerUrl && { serverUrl: outboundServerUrl }),
       serverUrlSecret: process.env.VAPI_WEBHOOK_SECRET,
       serverMessages: ["tool-calls", "status-update", "conversation-update", "end-of-call-report"],
       // Buffer text before shipping to TTS — prevents cadence speed-ups
       // on short dense token bursts (emails, phone numbers, URLs).
-      inputMinCharacters: 30,
+      inputMinCharacters: VAPI_INPUT_MIN_CHARACTERS,
       model: {
         provider: voiceLlmProvider,
         model: voiceLlmModel,

@@ -3,17 +3,50 @@ import { drizzle, log, auditLogger } from "./server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
-import { planByPriceId } from "./plan-catalog";
+import { planByPriceId, type StripePlan } from "./plan-catalog";
 import { dispatchWebhook } from "./webhook-helpers";
 import { invalidateDashboard } from "./dashboard-cache";
 
+export const STRIPE_API_VERSION = "2026-04-22.dahlia" as Stripe.LatestApiVersion;
+
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_placeholder", {
-  apiVersion: "2026-01-28.clover" as Stripe.LatestApiVersion,
+  apiVersion: STRIPE_API_VERSION,
   typescript: true,
 });
 
 export function stripeAvailable(): boolean {
   return !!process.env.STRIPE_SECRET_KEY;
+}
+
+/** True when meter event name + tier overage price are configured for invoicing. */
+export function voiceOverageBillingConfigured(plan: StripePlan): boolean {
+  if (!process.env.STRIPE_VOICE_OVERAGE_METER_EVENT_NAME) return false;
+  if (!plan.overagePriceIdEnv) return false;
+  return !!process.env[plan.overagePriceIdEnv];
+}
+
+/**
+ * Checkout line items: flat subscription price + optional metered voice-overage price.
+ * Overage price is monthly metered even when the base plan is annual.
+ */
+export function subscriptionCheckoutLineItems(
+  plan: StripePlan,
+  interval: "month" | "year",
+): Stripe.Checkout.SessionCreateParams.LineItem[] {
+  const priceEnvKey = interval === "year" ? plan.annualPriceIdEnv : plan.priceIdEnv;
+  const priceId = process.env[priceEnvKey];
+  if (!priceId) return [];
+
+  const items: Stripe.Checkout.SessionCreateParams.LineItem[] = [{ price: priceId, quantity: 1 }];
+
+  if (voiceOverageBillingConfigured(plan)) {
+    const overagePriceId = process.env[plan.overagePriceIdEnv!];
+    if (overagePriceId) {
+      items.push({ price: overagePriceId });
+    }
+  }
+
+  return items;
 }
 
 /**
@@ -22,15 +55,11 @@ export function stripeAvailable(): boolean {
  * lets us ship usage tracking + visible UI before configuring the Stripe
  * Meter + metered Price in the dashboard.
  *
- * Stripe setup steps (one-time, in Stripe Dashboard):
- *   1. Billing → Meters → Create meter. Event name: voice_minutes_overage
- *      (must match STRIPE_VOICE_OVERAGE_METER_EVENT_NAME). Aggregation: SUM.
- *   2. For each plan price (Starter/Pro/Business), add a metered price
- *      tied to the meter at the tier's overage rate ($0.20/$0.18/$0.16).
- *   3. When you create checkout sessions, attach BOTH the flat price and
- *      the metered overage price as line items.
- *   4. Set STRIPE_VOICE_OVERAGE_METER_EVENT_NAME=voice_minutes_overage
- *      in Vercel. Overage events will start flowing from production calls.
+ * Stripe setup (automated via scripts/setup-stripe-billing.mjs):
+ *   1. Billing → Meters → voice_minutes_overage (SUM aggregation)
+ *   2. Per-tier metered prices at each plan's overage_per_min_usd
+ *   3. Checkout attaches flat + overage prices on new subscriptions
+ *   4. STRIPE_VOICE_OVERAGE_METER_EVENT_NAME=voice_minutes_overage
  */
 export async function emitVoiceMinuteOverageEvent(opts: {
   customerId: string;
@@ -47,9 +76,6 @@ export async function emitVoiceMinuteOverageEvent(opts: {
       stripe_customer_id: opts.customerId,
       value: String(opts.minutes),
     },
-    // Stable identifier — Stripe collapses duplicates on this key. Vapi
-    // retries that somehow bypass the call_logs unique constraint will
-    // still collapse here, so we never double-bill the same call.
     identifier: `voice_overage_${opts.vapiCallId}`,
   });
 }
@@ -70,8 +96,10 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
   }
 
   const userId = existing.userId;
-  const priceId = sub.items?.data?.[0]?.price?.id || null;
-  const plan = planByPriceId(priceId);
+  const plan =
+    sub.items?.data
+      ?.map((item) => planByPriceId(item.price?.id))
+      .find((p): p is StripePlan => !!p) ?? null;
   const stripeStatus = sub.status;
 
   const localStatus =
@@ -127,13 +155,10 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
       },
     });
 
-  // Plan / max_agents changes mutate dashboard stats — clear the cache so the
-  // operator sees the new tier immediately instead of waiting up to 60s.
   invalidateDashboard(userId);
 
   dispatchWebhook(userId, "subscription.changed", {
     plan: plan?.id ?? null,
-    /** Same as tier max_agents: one provisioned voice number per purchased agent seat. */
     voice_number_slots_cap: plan?.max_agents ?? null,
     status: stripeStatus,
     legacy_status: localStatus,

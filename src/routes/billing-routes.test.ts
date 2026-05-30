@@ -337,6 +337,9 @@ vi.mock("../lib/stripe-helpers", () => ({
   stripe: h.stripe,
   stripeAvailable: h.stripeAvailable,
   syncSubscriptionFromStripe: h.syncSubscriptionFromStripe,
+  subscriptionCheckoutLineItems: vi.fn((_plan: unknown, interval: string) => [
+    { price: interval === "year" ? "price_annual" : "price_monthly", quantity: 1 },
+  ]),
 }));
 vi.mock("../lib/auth-utils", () => ({ verifySupabaseJwt: h.verifySupabaseJwt }));
 vi.mock("../lib/internal-jwt-secret", () => ({

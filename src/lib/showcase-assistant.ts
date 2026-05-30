@@ -17,6 +17,11 @@ import {
   resolveVapiVoiceModelSelection,
 } from "./claude-brain";
 import { sanitizePhone } from "./vapi-helpers";
+import {
+  VAPI_INPUT_MIN_CHARACTERS,
+  VAPI_START_SPEAKING_PLAN,
+  VAPI_TRANSCRIBER_CONFIG,
+} from "./voice-agent-profile";
 
 export type ShowcaseKind = "cs" | "demo";
 
@@ -405,19 +410,10 @@ export function buildShowcaseAssistantPayload(
     numWordsToInterruptAssistant: 2,
     backgroundDenoisingEnabled: false,
     backgroundSound: "off",
-    startSpeakingPlan: {
-      waitSeconds: 0.05,
-      smartEndpointingPlan: { provider: "livekit", waitFunction: "10 + 5000 * x" },
-    },
-    transcriber: {
-      provider: "deepgram",
-      model: "nova-3",
-      language: "en",
-      smartFormat: true,
-      endpointing: 40,
-    },
+    startSpeakingPlan: VAPI_START_SPEAKING_PLAN,
+    transcriber: VAPI_TRANSCRIBER_CONFIG,
     // Prevent TTS speed-up on dense token sequences (emails, phone numbers)
-    inputMinCharacters: 30,
+    inputMinCharacters: VAPI_INPUT_MIN_CHARACTERS,
   };
 
   const voiceId = agent.voiceId || options?.existingVoiceId;

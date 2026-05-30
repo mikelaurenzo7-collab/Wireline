@@ -76,6 +76,12 @@ export type StripePlan = {
   price_usd_annual: number;
   /** Env var holding the Stripe price_… id for the annual billing interval. */
   annualPriceIdEnv: string;
+  /**
+   * Metered price for voice-minute overage (monthly interval, tied to
+   * STRIPE_VOICE_OVERAGE_METER_EVENT_NAME). Attached as a second checkout
+   * line item so Stripe invoices overage automatically.
+   */
+  overagePriceIdEnv?: string;
 };
 
 export const STRIPE_PLANS: StripePlan[] = [
@@ -92,6 +98,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     extraAgentPriceIdEnv: "STRIPE_PERSONAL_EXTRA_AGENT_PRICE_ID",
     price_usd_annual: 470,
     annualPriceIdEnv: "STRIPE_PERSONAL_ANNUAL_PRICE_ID",
+    overagePriceIdEnv: "STRIPE_PERSONAL_OVERAGE_PRICE_ID",
     features: [
       "1 AI voice agent (voice + email)",
       "Dedicated voice number INCLUDED — no Twilio bill",
@@ -116,6 +123,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     extraAgentPriceIdEnv: "STRIPE_STARTER_EXTRA_AGENT_PRICE_ID",
     price_usd_annual: 1_430,
     annualPriceIdEnv: "STRIPE_STARTER_ANNUAL_PRICE_ID",
+    overagePriceIdEnv: "STRIPE_STARTER_OVERAGE_PRICE_ID",
     features: [
       "3 AI agents (voice + email)",
       "2 dedicated voice numbers INCLUDED — no Twilio bill",
@@ -141,6 +149,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     extraAgentPriceIdEnv: "STRIPE_PRO_EXTRA_AGENT_PRICE_ID",
     price_usd_annual: 4_790,
     annualPriceIdEnv: "STRIPE_PRO_ANNUAL_PRICE_ID",
+    overagePriceIdEnv: "STRIPE_PRO_OVERAGE_PRICE_ID",
     features: [
       "10 AI agents (voice + email)",
       "5 dedicated voice numbers INCLUDED — no Twilio bill",
@@ -169,6 +178,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     extraAgentPriceIdEnv: "STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID",
     price_usd_annual: 14_390,
     annualPriceIdEnv: "STRIPE_BUSINESS_ANNUAL_PRICE_ID",
+    overagePriceIdEnv: "STRIPE_BUSINESS_OVERAGE_PRICE_ID",
     features: [
       "25 AI agents (voice + email)",
       "10 dedicated voice numbers INCLUDED — no Twilio bill",
@@ -208,7 +218,11 @@ export const STRIPE_PLANS: StripePlan[] = [
 
 export function planByPriceId(priceId: string | null | undefined): StripePlan | null {
   if (!priceId) return null;
-  return STRIPE_PLANS.find((p) => process.env[p.priceIdEnv] === priceId) || null;
+  return (
+    STRIPE_PLANS.find(
+      (p) => process.env[p.priceIdEnv] === priceId || process.env[p.annualPriceIdEnv] === priceId,
+    ) || null
+  );
 }
 
 export function planById(id: string | null | undefined): StripePlan | null {

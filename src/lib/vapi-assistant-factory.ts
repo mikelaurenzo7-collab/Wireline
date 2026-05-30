@@ -23,7 +23,12 @@ import {
   type AgentRuntimeProfile,
 } from "./agent-runtime";
 import { buildCustomerIntelBlock } from "./customer-intel";
-import { getVoiceLatencyProfile } from "./voice-agent-profile";
+import {
+  getVoiceLatencyProfile,
+  VAPI_INPUT_MIN_CHARACTERS,
+  VAPI_START_SPEAKING_PLAN,
+  VAPI_TRANSCRIBER_CONFIG,
+} from "./voice-agent-profile";
 import {
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
@@ -637,10 +642,7 @@ Today is ${currentDateTime}.
     // based on the audio + transcript context. Matches the showcase
     // assistant; the previous fixed-timeout behaviour was prone to
     // either interrupting (too short) or feeling sluggish (too long).
-    startSpeakingPlan: {
-      waitSeconds: 0.05,
-      smartEndpointingPlan: { provider: "livekit", waitFunction: "10 + 5000 * x" },
-    },
+    startSpeakingPlan: VAPI_START_SPEAKING_PLAN,
     // Input normalization — prevent TTS speed-up on dense token sequences
     // like email addresses, phone numbers, URLs. ElevenLabs treats these
     // as rapid-fire tokens and compresses their duration. The
@@ -650,7 +652,7 @@ Today is ${currentDateTime}.
     // producing more measured, complete sentences, we buffer longer
     // before shipping to TTS, resulting in more natural phrasing
     // boundaries and eliminating micro-speed-ups on partial sentences.
-    inputMinCharacters: 30,
+    inputMinCharacters: VAPI_INPUT_MIN_CHARACTERS,
     model: {
       provider: voiceLlmProvider,
       model: voiceLlmModel,
@@ -726,15 +728,7 @@ Today is ${currentDateTime}.
     // language swap (vapi-voice-swap.ts). Pinning the model explicitly
     // (vs relying on Vapi defaults) protects us from silent upstream
     // model swaps that could regress accuracy.
-    transcriber: {
-      provider: "deepgram",
-      model: "nova-3",
-      language: "en",
-      // smartFormat handles "two five five five" → "2555" automatically
-      // — critical for confirming phone numbers + appointment times.
-      smartFormat: true,
-      endpointing: 40,
-    },
+    transcriber: VAPI_TRANSCRIBER_CONFIG,
     // Voicemail detection — Vapi's ML-based answering-machine detector.
     // When triggered, the assistant skips its first message + can
     // optionally leave a custom voicemail. Huge cost saver on outbound:

@@ -132,6 +132,7 @@ describe("plansForClient — public-facing payload safety", () => {
     for (const p of out) {
       expect(p).not.toHaveProperty("priceIdEnv");
       expect(p).not.toHaveProperty("extraAgentPriceIdEnv");
+      expect(p).not.toHaveProperty("overagePriceIdEnv");
     }
   });
 });

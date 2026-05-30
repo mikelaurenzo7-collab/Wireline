@@ -21,6 +21,40 @@ export interface VoiceLatencyProfile {
   optimizeStreamingLatency: number;
 }
 
+/**
+ * LiveKit smart-endpointing wait curve (milliseconds).
+ *
+ * x ∈ [0,1] = probability the caller is still speaking (0 = done, 1 = still talking).
+ * Our old linear `10 + 5000 * x` waited up to ~5s on mid-range scores — callers
+ * perceived dead air between turns. Vapi's "aggressive" sigmoid keeps sub-200ms
+ * response when the model is confident the caller finished, while still backing
+ * off when they are mid-thought.
+ *
+ * @see https://docs.vapi.ai/customization/speech-configuration
+ */
+export const VAPI_SMART_ENDPOINTING_WAIT_FUNCTION = "2000 / (1 + exp(-10 * (x - 0.5)))";
+
+/** Shared turn-taking plan — single source for factory, outbound, showcase. */
+export const VAPI_START_SPEAKING_PLAN = {
+  waitSeconds: 0.05,
+  smartEndpointingPlan: {
+    provider: "livekit" as const,
+    waitFunction: VAPI_SMART_ENDPOINTING_WAIT_FUNCTION,
+  },
+};
+
+/** Deepgram Nova-3 STT — pinned so Vapi cannot silently swap models. */
+export const VAPI_TRANSCRIBER_CONFIG = {
+  provider: "deepgram" as const,
+  model: "nova-3",
+  language: "en",
+  smartFormat: true,
+  endpointing: 40,
+};
+
+/** Buffer before shipping LLM tokens to TTS (prevents micro speed-ups on dense strings). */
+export const VAPI_INPUT_MIN_CHARACTERS = 30;
+
 export function getVoiceLatencyProfile(input: {
   archetype?: string;
   role?: string;

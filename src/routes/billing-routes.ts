@@ -6,7 +6,12 @@ import { eq, and, count } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { validateBody, spendBudgetSchema } from "../lib/api-validation";
 import { getErrorMessage } from "../lib/server-utils";
-import { stripe, stripeAvailable, syncSubscriptionFromStripe } from "../lib/stripe-helpers";
+import {
+  stripe,
+  stripeAvailable,
+  syncSubscriptionFromStripe,
+  subscriptionCheckoutLineItems,
+} from "../lib/stripe-helpers";
 import { sendPaymentFailedEmail } from "../lib/email-service";
 import { clearBudgetCache, getBudgetSnapshot } from "../lib/spend-guards";
 import { planById, plansForClient } from "../lib/plan-catalog";
@@ -664,10 +669,17 @@ router.post(
       }
 
       const base = billingBaseUrl(req);
+      const lineItems = subscriptionCheckoutLineItems(plan, interval);
+      if (!lineItems.length) {
+        return res.status(503).json({
+          error: `Price for plan '${plan.id}' (${interval}) not configured (${priceEnvKey}).`,
+        });
+      }
+
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         customer: customerId,
-        line_items: [{ price: priceId, quantity: 1 }],
+        line_items: lineItems,
         success_url: `${base}/admin?billing=success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${base}/admin?billing=canceled`,
         allow_promotion_codes: true,
