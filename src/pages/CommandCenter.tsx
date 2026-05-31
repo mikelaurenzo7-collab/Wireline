@@ -581,7 +581,7 @@ export default function LiveOps() {
             {/* Right Pane (Ops Intelligence Sidebar) */}
             <div className="lg:col-span-4 xl:col-span-3 space-y-3">
               {/* Telemetry Heartbeat Card */}
-              <div className="google-m3-card p-3.5 google-m3-elevation-2 relative overflow-hidden">
+              <div className="glass-brand-surface relative overflow-hidden">
                 <div className="flex items-center justify-between mb-2.5">
                   <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-brand font-bold flex items-center gap-2">
                     <span className="relative flex h-1.5 w-1.5">
@@ -610,7 +610,7 @@ export default function LiveOps() {
               </div>
 
               {/* Growth Action Card */}
-              <div className="google-m3-card p-3.5 google-m3-elevation-2 space-y-2.5">
+              <div className="glass-brand-surface space-y-2.5">
                 <div>
                   <h4 className="font-display italic text-[15px] leading-tight text-foreground">
                     Lead Generation
@@ -656,7 +656,7 @@ export default function LiveOps() {
                       }
                     }}
                     disabled={activatingGrowth}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-br from-brand to-brand-deep text-on-brand rounded-lg shadow-sm shadow-brand/20 transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-wait cursor-pointer google-m3-ripple"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-br from-brand to-brand-deep text-on-brand rounded-lg shadow-sm shadow-brand/20 transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-wait cursor-pointer"
                   >
                     <Zap
                       className={clsx(
