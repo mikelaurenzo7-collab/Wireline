@@ -3,15 +3,56 @@
  *
  * Drop-in execution cards that appear during agent tool calls, showing
  * real-time API activity with proper semantic color coding:
- *   active  → brand purple (pulsing scan line)
- *   success → real emerald green (result expands in)
+ *   active  → brand purple (pulsing scan line + elapsed timer)
+ *   success → real emerald green (result expands in with typewriter effect)
  *   waiting → muted amber
  *   pending → ghosted gray
+ *
+ * v2 additions:
+ *   - Elapsed seconds counter while active
+ *   - Typewriter character-by-character reveal for result text
+ *   - Brand-accent header strip at card top for visual identity
  */
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Check, Loader2, Clock, ExternalLink, AlertCircle } from "lucide-react";
-import { cn } from "../lib/utils";
+import { Check, Clock, ExternalLink, AlertCircle } from "lucide-react";
+
+/** Reveals `text` one character at a time at `speed` ms/char. */
+function TypewriterText({ text, speed = 20 }: { text: string; speed?: number }) {
+  const [shown, setShown] = useState("");
+  useEffect(() => {
+    setShown("");
+    let i = 0;
+    const t = setInterval(() => {
+      i++;
+      setShown(text.slice(0, i));
+      if (i >= text.length) clearInterval(t);
+    }, speed);
+    return () => clearInterval(t);
+  }, [text, speed]);
+  return <span>{shown}</span>;
+}
+
+/** Counts elapsed seconds from `startedAt` while the component is mounted. */
+function ElapsedCounter({ startedAt }: { startedAt: number }) {
+  const [secs, setSecs] = useState(0);
+  const rafRef = useRef<number | null>(null);
+  useEffect(() => {
+    const tick = () => {
+      setSecs(Math.round((Date.now() - startedAt) / 1000));
+      rafRef.current = window.setTimeout(tick, 500);
+    };
+    tick();
+    return () => {
+      if (rafRef.current !== null) window.clearTimeout(rafRef.current);
+    };
+  }, [startedAt]);
+  return (
+    <span className="tabular-nums font-mono text-[8px]" style={{ color: "rgba(0,0,0,0.30)" }}>
+      {secs}s
+    </span>
+  );
+}
 
 export type IntegrationStatus = "pending" | "active" | "success" | "waiting" | "error";
 
@@ -79,6 +120,14 @@ export default function IntegrationActivityCard({
 }: IntegrationActivityCardProps) {
   const s = STATUS_STYLES[status];
   const accent = brandColor || "#8B3FD6";
+  const activeStartRef = useRef<number>(Date.now());
+
+  // Track when "active" started so the elapsed counter is accurate.
+  useEffect(() => {
+    if (status === "active") {
+      activeStartRef.current = Date.now();
+    }
+  }, [status]);
 
   return (
     <motion.div
@@ -89,10 +138,23 @@ export default function IntegrationActivityCard({
       style={{ borderColor: s.border, backgroundColor: s.bg }}
       className="relative overflow-hidden border rounded-xl"
     >
-      {/* Active state: animated scan line at top */}
+      {/* Brand accent strip at the very top — thin colored line per integration */}
+      <div
+        className="absolute inset-x-0 top-0 h-[2px]"
+        style={{
+          background:
+            status === "success"
+              ? "rgba(16,185,129,0.65)"
+              : status === "error"
+                ? "rgba(232,70,106,0.55)"
+                : accent + "80",
+        }}
+      />
+
+      {/* Active state: animated scan line sweeps over the accent strip */}
       {status === "active" && (
         <motion.div
-          className="absolute inset-x-0 top-0 h-[1.5px] z-10"
+          className="absolute inset-x-0 top-0 h-[2px] z-10"
           style={{
             background: `linear-gradient(90deg, transparent 0%, ${accent} 45%, transparent 100%)`,
           }}
@@ -114,7 +176,7 @@ export default function IntegrationActivityCard({
         )}
       </AnimatePresence>
 
-      <div className="px-3 py-2.5 relative z-0">
+      <div className="px-3 py-2.5 pt-3 relative z-0">
         {/* Header: integration branding + status + action */}
         <div className="flex items-start gap-2.5">
           {/* Integration icon — brand-colored pill */}
@@ -131,20 +193,33 @@ export default function IntegrationActivityCard({
             {/* Top row: name + status badge */}
             <div className="flex items-center justify-between gap-1.5 mb-0.5">
               <span className="text-[12px] font-semibold text-ink leading-none">{integration}</span>
-              <span
-                className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wider leading-none"
-                style={{
-                  background: s.labelBg,
-                  border: `1px solid ${s.labelBorder}`,
-                  color: s.labelColor,
-                }}
-              >
-                {status === "active" && <Loader2 className="w-2.5 h-2.5 animate-spin" />}
-                {status === "success" && <Check className="w-2.5 h-2.5" />}
-                {status === "error" && <AlertCircle className="w-2.5 h-2.5" />}
-                {(status === "waiting" || status === "pending") && <Clock className="w-2.5 h-2.5" />}
-                {s.label}
-              </span>
+              <div className="flex items-center gap-1">
+                {/* Elapsed counter while active */}
+                {status === "active" && <ElapsedCounter startedAt={activeStartRef.current} />}
+                <span
+                  className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wider leading-none"
+                  style={{
+                    background: s.labelBg,
+                    border: `1px solid ${s.labelBorder}`,
+                    color: s.labelColor,
+                  }}
+                >
+                  {status === "active" && (
+                    <motion.span
+                      className="block w-1.5 h-1.5 rounded-full"
+                      style={{ background: accent }}
+                      animate={{ opacity: [1, 0.3, 1] }}
+                      transition={{ duration: 0.9, repeat: Infinity }}
+                    />
+                  )}
+                  {status === "success" && <Check className="w-2.5 h-2.5" />}
+                  {status === "error" && <AlertCircle className="w-2.5 h-2.5" />}
+                  {(status === "waiting" || status === "pending") && (
+                    <Clock className="w-2.5 h-2.5" />
+                  )}
+                  {s.label}
+                </span>
+              </div>
             </div>
 
             {/* Action — monospace function-call style */}
@@ -156,6 +231,14 @@ export default function IntegrationActivityCard({
               }}
             >
               {action}
+              {status === "active" && (
+                <motion.span
+                  animate={{ opacity: [0, 1, 0] }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                >
+                  _
+                </motion.span>
+              )}
             </p>
           </div>
         </div>
@@ -175,7 +258,7 @@ export default function IntegrationActivityCard({
           </div>
         )}
 
-        {/* Result — animated expand when success */}
+        {/* Result — animated expand with typewriter reveal when success */}
         <AnimatePresence>
           {result && status === "success" && (
             <motion.div
@@ -193,7 +276,7 @@ export default function IntegrationActivityCard({
                   className="flex-1 text-[11px] leading-relaxed"
                   style={{ color: "rgba(26,22,20,0.72)" }}
                 >
-                  {result}
+                  <TypewriterText text={result} speed={18} />
                 </p>
                 {link && (
                   <a
