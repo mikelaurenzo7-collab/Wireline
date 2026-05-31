@@ -70,6 +70,14 @@
   /* Core theme variables */
   --ink: #1A1614;
   --paper: #EFE9DC;
+
+  /* Muted typography — resolves to the warm cream-ink fades on light
+   * and the cool zinc fades on dark. Referenced by --color-muted /
+   * --color-muted-soft in the @theme block below so `text-muted` and
+   * `text-muted-soft` flip automatically when the .dark class lands on
+   * <html>. */
+  --muted-resolved: #5A534A;
+  --muted-soft-resolved: #71717a;
 }
 
 .dark {
@@ -126,6 +134,10 @@
   /* Dark mode theme re-mappings */
   --ink: #fafafa;
   --paper: #09090b;
+
+  /* Muted resolves to the cool zinc fades that read on dark cards. */
+  --muted-resolved: #a1a1aa;
+  --muted-soft-resolved: #71717a;
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -142,9 +154,11 @@
   --font-display: "Fraunces", "Georgia", "Times New Roman", serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  /* Readable muted copy on dark */
-  --color-muted: #a1a1aa;
-  --color-muted-soft: #71717a;
+  /* Readable muted copy — wired to CSS vars defined in :root / .dark
+   * so the legacy `text-muted` / `text-muted-soft` utility classes flip
+   * with theme. */
+  --color-muted: var(--muted-resolved);
+  --color-muted-soft: var(--muted-soft-resolved);
 
   /* Brand ink */
   --color-brand-ink: #f3e8ff;

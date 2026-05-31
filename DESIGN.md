@@ -3,6 +3,14 @@
 **Status:** Internal reference (2026)
 **Goal:** One cohesive, premium, editorial visual language across every client-facing surface.
 
+> **Canonical UI layer:** [`src/components/ui/shadcn/*`](src/components/ui/shadcn/).
+> Every button, input, modal, sheet, tab, dropdown, switch, tooltip,
+> badge, alert, progress, skeleton, avatar, accordion, separator, and
+> command palette ships from there. The Aurora Cream primitives
+> (`Medallion`, `SectionHeader`, `EmptyState`, `Button` alias) compose
+> shadcn primitives; they never reimplement them. Dark mode flips via
+> `ThemeContext` toggling the `.dark` class on `<html>`.
+
 ---
 
 ## 1. Core Tokens (Never invent new ones)
@@ -101,12 +109,56 @@
 
 ## 4. File Locations
 
-- Reusable primitives → `src/components/ui/`
-  - `Medallion.tsx`
-  - `SectionHeader.tsx`
-  - `EmptyState.tsx`
-  - `Button.tsx`
-- Page-specific components stay in their feature folders but should compose the `ui/` primitives.
+The UI layer is **tiered**. Always reach for the lowest tier that fits.
+
+### Tier 1 — shadcn primitives (`src/components/ui/shadcn/`) — **canonical**
+
+These wrap Radix primitives and consume the design tokens defined in
+`src/index.css` (`--background`, `--card`, `--primary`, `--ring`, …).
+They are the only sanctioned source of buttons, inputs, tabs, modals,
+sheets, popovers, switches, tooltips, etc. Importing from anywhere else
+when an equivalent shadcn primitive exists is a regression.
+
+Available primitives (import from `@/src/components/ui/shadcn` or its
+barrel `index.ts`):
+
+- `ShadButton` (+ `buttonVariants`) — the canonical button. Variants:
+  `default` (gradient brand), `outline` (cream glass border), `ghost`,
+  `secondary`, `destructive`, `link`. Sizes: `default | sm | lg | icon`.
+- `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`
+- `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`
+- `Dialog`, `DialogTrigger`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription`, `DialogFooter`
+- `Sheet`, `SheetTrigger`, `SheetContent`, `SheetHeader`, …
+- `DropdownMenu`, `DropdownMenuTrigger`, …
+- `Command`, `CommandInput`, `CommandList`, `CommandItem`, …
+- `Input`, `Switch`, `Badge`, `Alert`, `Progress`, `Skeleton`, `Avatar`,
+  `Separator`, `Tooltip`, `ScrollArea`, `Accordion`
+
+Never render a raw `<button>` / `<input>` / `<dialog>` / `<select>` in
+`src/components/**` or `src/pages/**`. The DOM-anti-pattern ratchet
+(`src/components/ui/__tests__/shadcn-pivot-ratchet.test.ts`) fails CI
+if these counts grow.
+
+### Tier 2 — Aurora Cream compositions (`src/components/ui/`)
+
+Higher-level patterns composed **out of** the shadcn primitives:
+
+- `Medallion.tsx` — signature halo motif for empty/idle states.
+- `SectionHeader.tsx` — mono eyebrow + italic display title + muted
+  description, used at the top of every major content block.
+- `EmptyState.tsx` — canonical "no data yet" surface; wraps `Medallion`
+  + `ShadButton`.
+
+Feature components live in their own folders (`src/components/<feature>/…`)
+and must compose out of Tier 1 / Tier 2 — they never reintroduce raw
+HTML controls.
+
+### Tier 3 — theme + branding
+
+- `src/contexts/ThemeContext.tsx` — light / dark / system preference.
+  Toggles the `.dark` class on `<html>`; the shadcn token system in
+  `src/index.css` flips automatically.
+- `src/contexts/BrandingContext.tsx` — per-tenant logo + accent.
 
 ---
 
