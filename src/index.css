@@ -812,7 +812,39 @@
 .marketing-panel-muted { border: 1px solid color-mix(in srgb, black 8%, transparent); background: color-mix(in srgb, white 70%, transparent); }
 .marketing-body { font-size: 0.8125rem; line-height: 1.55; color: color-mix(in srgb, var(--color-ink) 85%, transparent); }
 
-/* ───── COMPONENT SURFACES ───────────────────────────────────── */
+/* ───── PREMIUM MICRO-INTERACTIONS ────────────────────────────── */
+@keyframes fade-scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes slide-up-fade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer-violet {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.entrance-fade { animation: fade-scale-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.entrance-slide { animation: slide-up-fade 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.entrance-stagger-1 { animation: slide-up-fade 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both; }
+.entrance-stagger-2 { animation: slide-up-fade 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both; }
+.entrance-stagger-3 { animation: slide-up-fade 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both; }
+.entrance-stagger-4 { animation: slide-up-fade 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both; }
+.entrance-stagger-5 { animation: slide-up-fade 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both; }
+.entrance-stagger-6 { animation: slide-up-fade 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both; }
+
+.hover-lift-subtle { transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.hover-lift-subtle:hover { transform: translateY(-1px); }
+
+.hover-glow-brand { transition: box-shadow 0.25s ease, transform 0.25s ease; }
+.hover-glow-brand:hover {
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.15), 0 0 40px rgba(124, 58, 237, 0.06);
+  transform: translateY(-1px);
+}
+
+.interactive-press:active { transform: scale(0.97); transition-duration: 0.08s; }
 .app-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
 .app-table-scroll table { min-width: 36rem; }
 

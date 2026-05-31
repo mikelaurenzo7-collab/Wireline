@@ -110,7 +110,7 @@ function AgentCard({
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.5, delay, ease: [0.16, 1, 0.3, 1] }}
       data-testid={`agent-card-${agent.name.toLowerCase()}`}
-      className="group block border border-white/5 hover:border-white/15 bg-white/[0.03] backdrop-blur-md transition-all duration-300 rounded-2xl overflow-hidden hover:shadow-[0_8px_32px_rgba(157,78,221,0.05)]"
+      className="group block border border-white/5 hover:border-brand/20 bg-white/[0.03] backdrop-blur-md transition-all duration-500 overflow-hidden hover:shadow-[0_8px_32px_rgba(124,58,237,0.08)] hover:-translate-y-0.5"
     >
       <div
         className={
@@ -197,38 +197,68 @@ export default function LandingPage() {
         >
           <HeroDecorations />
           <div className="relative z-10 max-w-7xl mx-auto w-full">
+            {/* Brand glow behind hero text */}
+            <div
+              aria-hidden="true"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[40vh] pointer-events-none opacity-[0.08] dark:opacity-[0.12]"
+              style={{
+                background:
+                  "radial-gradient(ellipse at center, rgba(124,58,237,0.6) 0%, rgba(124,58,237,0) 70%)",
+              }}
+            />
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
               className="text-center"
             >
-              <span className="inline-flex items-center border border-ink/15 bg-ink/[0.03] px-5 py-2.5 mb-7 lg:mb-9">
-                <span className="font-mono text-[13px] uppercase tracking-[0.22em] text-ink/85">
+              <motion.span
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                className="inline-flex items-center border border-brand/20 bg-brand/[0.04] px-5 py-2.5 mb-7 lg:mb-9"
+              >
+                <span className="font-mono text-[13px] uppercase tracking-[0.22em] text-brand font-medium">
                   Phone + Email + SMS
                 </span>
-              </span>
+                <span className="ml-3 w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
+              </motion.span>
 
-              <h1 className="font-display italic text-[clamp(2.5rem,7vw,5.5rem)] leading-[0.95] tracking-tight text-ink max-w-4xl mx-auto">
+              <motion.h1
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                className="font-display italic text-[clamp(2.5rem,7vw,5.5rem)] leading-[0.95] tracking-tight text-ink max-w-4xl mx-auto"
+              >
                 Every conversation, <span className="text-brand">answered like your best rep.</span>
-              </h1>
+              </motion.h1>
 
-              <p className="mt-6 lg:mt-8 text-[clamp(1rem,1.5vw,1.2rem)] leading-relaxed text-ink/65 max-w-xl mx-auto">
+              <motion.p
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                className="mt-6 lg:mt-8 text-[clamp(1rem,1.5vw,1.2rem)] leading-relaxed text-ink/65 max-w-xl mx-auto"
+              >
                 Wireline deploys AI agents on real phone numbers — inbound support, outbound sales,
                 and email follow-ups. Trained on your playbook, improving with every call.
-              </p>
+              </motion.p>
 
-              <div className="mt-8 lg:mt-10 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4">
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                className="mt-8 lg:mt-10 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4"
+              >
                 <Link
                   to="/signup"
                   data-testid="hero-cta-primary"
-                  className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-[#8B3FD6] transition-colors duration-300"
+                  className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-brand-deep transition-all duration-300 shadow-[0_6px_20px_rgba(124,58,237,0.35)] hover:shadow-[0_8px_28px_rgba(124,58,237,0.50)] hover:-translate-y-0.5 active:translate-y-0"
                 >
                   Start free trial
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
                 </Link>
                 {csDemo && (
-                  <div className="flex flex-col items-center gap-1.5 border border-ink/10 rounded-2xl p-3 bg-white/20 backdrop-blur-md shadow-sm">
+                  <div className="flex flex-col items-center gap-1.5 border border-ink/10 bg-white/30 backdrop-blur-md p-3">
                     <BrowserCallWidget
                       agentName={csDemo.name}
                       buttonLabel={`Talk to ${csDemo.name} (CS)`}
@@ -245,7 +275,7 @@ export default function LandingPage() {
                   </div>
                 )}
                 {salesDemo && (
-                  <div className="flex flex-col items-center gap-1.5 border border-ink/10 rounded-2xl p-3 bg-white/20 backdrop-blur-md shadow-sm">
+                  <div className="flex flex-col items-center gap-1.5 border border-ink/10 bg-white/30 backdrop-blur-md p-3">
                     <BrowserCallWidget
                       agentName={salesDemo.name}
                       buttonLabel={`Talk to ${salesDemo.name} (Sales)`}
@@ -261,20 +291,26 @@ export default function LandingPage() {
                     </span>
                   </div>
                 )}
-              </div>
+              </motion.div>
             </motion.div>
 
             {/* Trust signals */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-              className="mt-12 lg:mt-16 flex flex-wrap items-center justify-center gap-x-5 gap-y-2"
+              transition={{ delay: 0.5, duration: 0.6 }}
+              className="mt-12 lg:mt-16 flex flex-wrap items-center justify-center gap-x-6 gap-y-2"
             >
-              {TRUST_BADGES.map((badge) => (
-                <span key={badge} className="font-mono text-[11px] tracking-[0.12em] text-ink/65">
+              {TRUST_BADGES.map((badge, i) => (
+                <motion.span
+                  key={badge}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.55 + i * 0.08, duration: 0.4 }}
+                  className="font-mono text-[11px] tracking-[0.12em] text-ink/65"
+                >
                   {badge}
-                </span>
+                </motion.span>
               ))}
             </motion.div>
           </div>
@@ -290,13 +326,25 @@ export default function LandingPage() {
               transition={{ duration: 0.5 }}
               className="mb-10 lg:mb-14 text-center"
             >
-              <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-3">
+              <motion.p
+                initial={{ opacity: 0, y: 8 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: 0.05 }}
+                className="font-mono text-[11px] uppercase tracking-[0.25em] text-brand/70 mb-3"
+              >
                 Live right now
-              </p>
-              <h2 className="font-display italic text-[clamp(1.8rem,4vw,3rem)] leading-[1.05] text-ink max-w-2xl mx-auto">
+              </motion.p>
+              <motion.h2
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="font-display italic text-[clamp(1.8rem,4vw,3rem)] leading-[1.05] text-ink max-w-2xl mx-auto"
+              >
                 Call inbound CS or outbound sales.{" "}
                 <span className="text-ink/65">Use your company name in the demo.</span>
-              </h2>
+              </motion.h2>
             </motion.div>
 
             <div className={`grid grid-cols-1 ${demoColsClass} gap-4 max-w-5xl mx-auto`}>
@@ -331,13 +379,23 @@ export default function LandingPage() {
         </section>
 
         {/* ─── Final CTA ──────────────────────────────────────────── */}
-        <section data-testid="final-cta" className="px-6 lg:px-12 pb-16 lg:pb-20">
-          <div className="max-w-7xl mx-auto text-center">
+        <section data-testid="final-cta" className="px-6 lg:px-12 pb-16 lg:pb-20 relative">
+          <div className="max-w-7xl mx-auto text-center relative">
+            {/* Brand glow */}
+            <div
+              aria-hidden="true"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40vw] h-[30vh] pointer-events-none opacity-[0.06] dark:opacity-[0.10]"
+              style={{
+                background:
+                  "radial-gradient(ellipse at center, rgba(124,58,237,0.5) 0%, rgba(124,58,237,0) 70%)",
+              }}
+            />
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
+              className="relative z-10"
             >
               <h2 className="font-display italic text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.05] text-ink mb-6">
                 Ready to run your fleet?
@@ -348,7 +406,7 @@ export default function LandingPage() {
               <Link
                 to="/signup"
                 data-testid="final-cta-button"
-                className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-[#8B3FD6] transition-colors duration-300"
+                className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-brand-deep transition-all duration-300 shadow-[0_6px_20px_rgba(124,58,237,0.35)] hover:shadow-[0_8px_28px_rgba(124,58,237,0.50)] hover:-translate-y-0.5 active:translate-y-0"
               >
                 Start free trial
                 <ArrowRight className="w-4 h-4" />
@@ -366,7 +424,7 @@ export default function LandingPage() {
         {/* ─── Proof Tiles ────────────────────────────────────────── */}
         <section data-testid="proof-section" className="px-6 lg:px-12 py-20 lg:py-28">
           <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08]">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-gradient-to-r from-ink/[0.06] via-brand/10 to-ink/[0.06] border border-ink/[0.08]">
               {STATS.map((stat, i) => (
                 <motion.div
                   key={stat.label}
@@ -374,12 +432,12 @@ export default function LandingPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1, duration: 0.5 }}
-                  className="bg-paper p-8 md:p-10 lg:p-12"
+                  className="bg-paper p-8 md:p-10 lg:p-12 hover:bg-ink/[0.01] transition-colors duration-300"
                 >
                   <p className="font-display italic text-[clamp(2.5rem,5vw,4rem)] leading-none text-ink tracking-tight">
                     {stat.value}
                   </p>
-                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/65 mt-3">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-brand/60 mt-3">
                     {stat.label}
                   </p>
                 </motion.div>

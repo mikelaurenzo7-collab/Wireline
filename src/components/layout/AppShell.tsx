@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { motion } from "motion/react";
 import { useAuth } from "../../contexts/AuthContext";
 import { authFetch, readApiJson } from "../../lib/api";
 import WirelineMark from "../WirelineMark";
@@ -195,32 +196,43 @@ export default function AppShell() {
           <div
             className="absolute inset-0 rounded-full"
             style={{
-              background: `conic-gradient(from 0deg, ${BRAND.purple}, ${BRAND.purpleDeep}, ${BRAND.purpleLight}, ${BRAND.purpleDeep}, ${BRAND.purple})`,
-              filter: "blur(2px)",
+              background: `conic-gradient(from 0deg, ${BRAND.purple}, ${BRAND.purpleLight}, ${BRAND.purpleDeep}, ${BRAND.purpleMuted}, ${BRAND.purple})`,
+              filter: "blur(3px)",
             }}
           />
           <div className="absolute inset-2 rounded-full bg-paper" />
           <div className="absolute inset-4 rounded-full glass flex items-center justify-center">
-            <div className="animate-pulse">
+            <motion.div
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+            >
               <WirelineMark className="w-16 h-16 text-brand" strokeWidth={90} />
-            </div>
+            </motion.div>
           </div>
         </div>
-        <div className="space-y-4 relative z-10">
+        <motion.div
+          className="space-y-4 relative z-10"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        >
           <h1 className="brand-wordmark text-5xl md:text-7xl leading-[0.85]">
             {branding.brand_name.toUpperCase()}
           </h1>
-          <p className="text-eyebrow tracking-[0.4em]">Growth Engine Initializing</p>
-          <div className="flex items-center justify-center gap-1.5 pt-4">
+          <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-brand/60">
+            Growth Engine Initializing
+          </p>
+          <div className="flex items-center justify-center gap-2 pt-6">
             {[0, 1, 2].map((i) => (
-              <span
+              <motion.span
                 key={i}
-                className="w-1.5 h-1.5 rounded-full bg-brand animate-bounce"
-                style={{ animationDelay: `${i * 0.2}s` }}
+                className="w-2 h-2 rounded-full bg-brand/60"
+                animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1, 0.8] }}
+                transition={{ repeat: Infinity, duration: 1.5, delay: i * 0.25, ease: "easeInOut" }}
               />
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
     );
   }
@@ -292,8 +304,13 @@ export default function AppShell() {
         <EmailVerifyBanner />
         <TrialBanner />
 
-        {/* Clean page header — replaces DesktopContextBar */}
-        <div className="hidden lg:block shrink-0 bg-background/35 backdrop-blur-md px-6 py-2.5 relative overflow-hidden">
+        {/* Clean page header — with subtle entrance animation */}
+        <motion.div
+          className="hidden lg:block shrink-0 bg-background/35 backdrop-blur-md px-6 py-2.5 relative overflow-hidden"
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        >
           {/* Subtle glowing radial aura behind title */}
           <div
             aria-hidden="true"
@@ -334,7 +351,7 @@ export default function AppShell() {
                 "linear-gradient(90deg, rgba(139,63,214,0.18) 0%, rgba(139,63,214,0.04) 50%, transparent 100%)",
             }}
           />
-        </div>
+        </motion.div>
 
         <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
           <div className="workspace-stage flex-1 overflow-hidden relative z-10 min-h-0 px-2 pb-2 md:px-3 md:pb-3 lg:px-4 lg:pb-4">
