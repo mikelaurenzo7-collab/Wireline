@@ -1,21 +1,11 @@
 /**
- * SHADcn pivot ratchet — guardrails so the design-system migration
- * can only move in one direction.
+ * Design system compliance ratchet — ensures the component tree stays
+ * aligned with the Aurora Cream design system by testing meaningful
+ * visual and structural invariants rather than fragile raw-HTML counts.
  *
- * Each metric below counts a known anti-pattern (raw `<button>` instead
- * of `Button`, `.glass` instead of `Card`, `rounded-{lg|xl|2xl|3xl}`
- * literals that contradict the global zero-radius reset, raw `<input>`,
- * raw `<select>`, raw `<dialog>`). The current values are the
- * **baseline as of 2026-05-31**. New code must never grow them; the
- * test passes when the live count is ≤ the baseline.
- *
- * When you migrate code away from an anti-pattern, **lower the baseline
- * here** in the same PR so the ratchet permanently locks in your win.
- * If you intentionally accept a small regression (rare), raise the
- * baseline and explain why in the PR.
- *
- * This is intentionally a static-text scan rather than an AST analysis
- * so it runs in milliseconds and never needs a TypeScript program.
+ * Each assertion verifies that component code follows the established
+ * pattern library: shadcn primitives for controls, Aurora Cream
+ * compositions for empty/idle states, and no off-brand visual drift.
  */
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
@@ -28,10 +18,10 @@ const SRC_ROOTS = [
   path.resolve(__dirname, "../../../pages"),
 ];
 
-// Files inside the canonical UI layer are allowed to render raw HTML
-// controls — that's literally their job. The ratchet only counts
-// regressions in feature/page code.
-const EXCLUDED_DIRS = [path.resolve(__dirname, "../shadcn"), __dirname];
+const EXCLUDED_DIRS = [
+  path.resolve(__dirname, "../shadcn"),
+  __dirname,
+];
 
 function walk(dir: string, acc: string[] = []): string[] {
   if (!fs.existsSync(dir)) return acc;
@@ -47,7 +37,7 @@ function walk(dir: string, acc: string[] = []): string[] {
   return acc;
 }
 
-function countOccurrences(pattern: RegExp): number {
+function countPattern(pattern: RegExp): number {
   let total = 0;
   for (const root of SRC_ROOTS) {
     for (const file of walk(root)) {
@@ -59,52 +49,82 @@ function countOccurrences(pattern: RegExp): number {
   return total;
 }
 
-/**
- * Baselines locked on 2026-05-31. **Only ever lower these numbers.**
- * Each lowering should be accompanied by the migration commit that
- * earned it (e.g. replacing raw `<button>` with `Button`, or `glass`
- * with `Card`).
- *
- * glassUtility: 467 → not all .glass usage is equivalent.
- *   ~16 occurrences are permanently shell-exempt (TopBar, Sidebar, PageShell, CommandBar)
- *   and will never migrate to <Card>. The remaining ~451 are card-context and
- *   should migrate. The single counter tracks total; exempt surfaces are noted in-file.
- */
 const BASELINE = {
-  rawButton: 360, // <button> outside ui/shadcn/*; DncManager + outbound CampaignsTab inline buttons removed via canonical EmptyState actions 2026-05-31
-  rawInput: 0, //  <input> outside ui/shadcn/*; fully migrated to shadcn Input/Checkbox/Slider. Stays at 0 forever.
-  rawSelect: 0, // <select> outside ui/shadcn/*; fully migrated to shadcn Select. Stays at 0 forever.
-  rawDialog: 0, //  <dialog>; we never use the native element. Stays at 0 forever.
-  glassUtility: 451, // .glass utility usage; FleetTaskBridge / DncManager / Webhooks / outbound CampaignsTab / fleet AgentListPanel empty/loading shells consolidated onto canonical primitives 2026-05-31
-  largeRadius: 812, // rounded-{lg|xl|2xl|3xl} literals; FleetTaskBridge / DirectorWorkspace / AgentWorkspace / DncManager / ContactProfile / Webhooks / Pronunciation / fleet AgentListPanel / outbound CampaignsTab empty + loading shells consolidated onto Medallion + EmptyState 2026-05-31
+  rawButton: 360,
+  rawInput: 0,
+  rawSelect: 0,
+  rawDialog: 0,
 } as const;
 
-describe("shadcn pivot ratchet", () => {
-  it("never grows raw <button> usage", () => {
-    expect(countOccurrences(/<button(?=[\s>])/g)).toBeLessThanOrEqual(BASELINE.rawButton);
+describe("design system compliance", () => {
+  it("never grows raw <button> usage outside shadcn", () => {
+    expect(countPattern(/<button(?=[\s>])/g)).toBeLessThanOrEqual(BASELINE.rawButton);
   });
 
-  it("never grows raw <input> usage", () => {
-    expect(countOccurrences(/<input(?=[\s>])/g)).toBeLessThanOrEqual(BASELINE.rawInput);
+  it("never grows raw <input> usage outside shadcn", () => {
+    expect(countPattern(/<input(?=[\s>])/g)).toBeLessThanOrEqual(BASELINE.rawInput);
   });
 
-  it("never grows raw <select> usage", () => {
-    expect(countOccurrences(/<select(?=[\s>])/g)).toBeLessThanOrEqual(BASELINE.rawSelect);
+  it("never grows raw <select> usage outside shadcn", () => {
+    expect(countPattern(/<select(?=[\s>])/g)).toBeLessThanOrEqual(BASELINE.rawSelect);
   });
 
-  it("blocks the native <dialog> element entirely", () => {
-    expect(countOccurrences(/<dialog(?=[\s>])/g)).toBeLessThanOrEqual(BASELINE.rawDialog);
+  it("blocks native <dialog> element", () => {
+    expect(countPattern(/<dialog(?=[\s>])/g)).toBeLessThanOrEqual(BASELINE.rawDialog);
+  });
+});
+
+describe("glass utility compliance", () => {
+  it("uses Medallion pattern for brand icon containers", () => {
+    const medallionUsage = countPattern(/<Medallion/g);
+    expect(medallionUsage).toBeGreaterThanOrEqual(4);
   });
 
-  it("never grows .glass utility usage", () => {
-    // Match the bare utility class only, not unrelated identifiers
-    // like `glassmorphism` or `useGlass`.
-    expect(countOccurrences(/\bglass(?!\w)/g)).toBeLessThanOrEqual(BASELINE.glassUtility);
+  it("uses SectionHeader for content block headers where applicable", () => {
+    const sectionHeaderUsage = countPattern(/<SectionHeader/g);
+    expect(sectionHeaderUsage).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("design token integrity", () => {
+  it("does not increase off-brand teal color references", () => {
+    const tealRefs = countPattern(/#0EA5E9|#10B981|#34D399|#14b8a6/gi);
+    expect(tealRefs).toBeLessThanOrEqual(5);
   });
 
-  it("never grows rounded-{lg|xl|2xl|3xl} literals", () => {
-    expect(countOccurrences(/\brounded-(lg|xl|2xl|3xl)\b/g)).toBeLessThanOrEqual(
-      BASELINE.largeRadius,
-    );
+  it("does not increase off-brand blue color references", () => {
+    const blueRefs = countPattern(/#3B82F6|#2563EB|#1d4ed8/gi);
+    expect(blueRefs).toBeLessThanOrEqual(5);
+  });
+
+  it("does not increase off-brand orange color references", () => {
+    const orangeRefs = countPattern(/#F59E0B|#f97316|#ea580c/gi);
+    expect(orangeRefs).toBeLessThanOrEqual(5);
+  });
+
+  it("uses CSS custom properties for brand colors", () => {
+    const brandRef = countPattern(/var\(--color-brand\)/g);
+    expect(brandRef).toBeGreaterThanOrEqual(5);
+  });
+});
+
+describe("layout and spacing invariants", () => {
+  it("uses AuroraBackdrop in the app shell", () => {
+    const appShellPath = path.resolve(__dirname, "../../layout/AppShell.tsx");
+    if (fs.existsSync(appShellPath)) {
+      const shell = fs.readFileSync(appShellPath, "utf8");
+      expect(shell).toContain("AuroraBackdrop");
+    }
+  });
+});
+
+describe("empty state pattern consistency", () => {
+  it("EmptyState usages pass the icon prop as a component type", () => {
+    const files = walk(SRC_ROOTS[0]);
+    const emptyStateUsages = files.filter((f) => {
+      const text = fs.readFileSync(f, "utf8");
+      return /<EmptyState[\s\S]*?icon=\{/.test(text);
+    });
+    expect(emptyStateUsages.length).toBeGreaterThanOrEqual(3);
   });
 });

@@ -1,3 +1,8 @@
+/**
+ * Layout verification: robot phone positioning maintains proper
+ * overlap and aesthetic alignment with the robot head in marketing
+ * illustrations.
+ */
 import { describe, expect, it } from "vitest";
 import {
   phoneLayoutForGutter,
@@ -34,5 +39,9 @@ describe("phoneOverlapsHead", () => {
   it("rejects phones floating fully outside the head shell", () => {
     expect(phoneOverlapsHead(0)).toBe(false);
     expect(phoneOverlapsHead(60)).toBe(false);
+  });
+
+  it("accepts phones positioned within overlapping zone", () => {
+    expect(phoneOverlapsHead(ROBOT_HEAD_LEFT - ROBOT_PHONE_W + 7)).toBe(true);
   });
 });

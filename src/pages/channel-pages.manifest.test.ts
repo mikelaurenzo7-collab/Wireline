@@ -1,5 +1,6 @@
 /**
  * Channel pages use sidebar navigation only — no redundant Phone|Email|SMS strip.
+ * Also verifies embedded inbox patterns are structurally correct.
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
@@ -23,7 +24,7 @@ describe("channel page manifests", () => {
     expect(sms).toContain("<SmsThreads embedded");
   });
 
-  it("PhonePage keeps internal Call History / Outbound / Appointments sub-tabs", () => {
+  it("PhonePage keeps internal sub-tabs (Call History, Outbound, Appointments)", () => {
     const phone = readFileSync(join(import.meta.dirname, "PhonePage.tsx"), "utf8");
     expect(phone).toContain("ClientSubTabs");
     expect(phone).toContain("Call History");

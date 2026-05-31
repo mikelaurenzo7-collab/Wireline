@@ -2,7 +2,7 @@ import React from "react";
 
 export default function AuroraBackdrop() {
   return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-paper transition-colors duration-500">
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-paper transition-colors duration-700">
       <div
         className="absolute inset-0 dark:hidden"
         style={{
@@ -26,15 +26,11 @@ export default function AuroraBackdrop() {
           maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0.08))",
         }}
       />
-
-      {/* Subtle brand grid lines for visual structure and alignment */}
       <div
         className="absolute inset-0 opacity-[0.04] dark:opacity-[0.06]"
         style={{
-          backgroundImage: `
-            linear-gradient(to right, var(--color-brand) 1px, transparent 1px),
-            linear-gradient(to bottom, var(--color-brand) 1px, transparent 1px)
-          `,
+          backgroundImage:
+            "linear-gradient(to right, var(--color-brand) 1px, transparent 1px), linear-gradient(to bottom, var(--color-brand) 1px, transparent 1px)",
           backgroundSize: "24px 24px",
           maskImage: "linear-gradient(to right, transparent, black 18%, black 82%, transparent)",
         }}

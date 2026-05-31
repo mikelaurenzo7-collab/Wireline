@@ -2,19 +2,33 @@
  * Wireline brand palette — rich purple + warm cream only.
  * Use for inline styles, route accents, and chrome that must not drift
  * into off-brand blues, oranges, or teals.
+ *
+ * Each color in the palette is visually distinct:
+ *   purple, purpleLight, purpleMuted, purpleDeep, purpleInk
+ * represent a deliberate tonal gradient from brightest to darkest.
  */
 export const BRAND = {
+  /** Primary brand purple — vibrant, authoritative */
   purple: "#8B3FD6",
+  /** Deepest purple — used for contrast and hover states */
   purpleDeep: "#3B154C",
-  purpleLight: "#8B3FD6",
+  /** Lighter lavender tone — distinct from primary purple */
+  purpleLight: "#A87BD4",
+  /** Muted dusty purple — for secondary text and subtle accents */
   purpleMuted: "#8B6FA8",
+  /** Near-black purple ink — maximum contrast for text on brand */
   purpleInk: "#2E0F4A",
+  /** Warm cream surface — the paper background */
   cream: "#F5F0E6",
+  /** The canonical paper/background color */
   paper: "#EFE9DC",
+  /** Deeper warm cream for borders and secondary surfaces */
   creamWarm: "#D4C9B8",
+  /** Deepest cream for hover states on cream surfaces */
   creamDeep: "#C4B5A0",
+  /** Near-black ink for body text on cream */
   ink: "#1A1614",
-  /** Errors, overage, and critical compliance only — not decorative. */
+  /** Errors, overage, and critical compliance only — not decorative */
   rose: "#E8466A",
 } as const;
 
@@ -22,12 +36,12 @@ export type BrandAccentPair = readonly [string, string];
 
 export const ROUTE_ACCENT_DEFAULT: BrandAccentPair = [BRAND.purple, BRAND.purpleDeep];
 
-/** Subtle variation within purple/cream — never cross-hue. */
+/** Subtle variation within purple/cream — each pair uses two distinct colors. */
 export const ROUTE_ACCENT_VARIANTS = {
   primary: [BRAND.purple, BRAND.purpleDeep] as BrandAccentPair,
   soft: [BRAND.purple, BRAND.purpleMuted] as BrandAccentPair,
   warm: [BRAND.purpleDeep, BRAND.creamWarm] as BrandAccentPair,
-  light: [BRAND.purpleLight, BRAND.purple] as BrandAccentPair,
+  light: [BRAND.purpleLight, BRAND.purpleDeep] as BrandAccentPair,
   cream: [BRAND.purple, BRAND.creamDeep] as BrandAccentPair,
   critical: [BRAND.purple, BRAND.rose] as BrandAccentPair,
 } as const;

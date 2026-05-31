@@ -1,5 +1,7 @@
 /**
- * navigation-accent.test.ts — route accent pairs stay on-brand.
+ * Route accent alignment — ensures every route accent pair stays
+ * within the purple/cream brand palette, falls back correctly,
+ * and tab-specific overrides resolve to valid accent variants.
  */
 import { describe, expect, it } from "vitest";
 import { getRouteAccent, getRouteAccentFromLocation, ROUTE_ACCENTS } from "./navigation";
@@ -15,71 +17,94 @@ const ALLOWED_ROUTE_HEX = new Set([
   BRAND.rose,
 ]);
 
-/** Legacy hues that must never appear in route accent pairs. */
 const LEGACY_OFF_BRAND = new Set([
-  "#10B981",
-  "#34D399",
-  "#F59E0B",
-  "#FFC07D",
-  "#3B82F6",
-  "#0EA5E9",
-  "#2563EB",
+  "#10B981", "#34D399",
+  "#F59E0B", "#FFC07D",
+  "#3B82F6", "#0EA5E9", "#2563EB",
 ]);
 
 function assertOnBrand(pair: readonly [string, string]) {
   for (const hex of pair) {
-    expect(LEGACY_OFF_BRAND.has(hex.toUpperCase()), `${hex} is off-brand`).toBe(false);
-    expect(ALLOWED_ROUTE_HEX.has(hex), `${hex} is not in brand palette`).toBe(true);
+    expect(LEGACY_OFF_BRAND.has(hex.toUpperCase())).toBe(false);
+    expect(ALLOWED_ROUTE_HEX.has(hex)).toBe(true);
   }
 }
 
-describe("getRouteAccent", () => {
-  it("returns exact pathname accents", () => {
+describe("route accent resolution", () => {
+  it("getRouteAccent returns exact pathname accents for known routes", () => {
     expect(getRouteAccent("/ops")).toEqual(ROUTE_ACCENTS["/ops"]);
     expect(getRouteAccent("/phone")).toEqual(ROUTE_ACCENTS["/phone"]);
+    expect(getRouteAccent("/chat")).toEqual(ROUTE_ACCENTS["/chat"]);
+    expect(getRouteAccent("/training")).toEqual(ROUTE_ACCENTS["/training"]);
+    expect(getRouteAccent("/admin")).toEqual(ROUTE_ACCENTS["/admin"]);
   });
 
-  it("falls back to first path segment", () => {
+  it("getRouteAccent falls back to first path segment for sub-routes", () => {
     expect(getRouteAccent("/chat/agent-123")).toEqual(ROUTE_ACCENTS["/chat"]);
+    expect(getRouteAccent("/phone/call/456")).toEqual(ROUTE_ACCENTS["/phone"]);
+    expect(getRouteAccent("/admin/team")).toEqual(ROUTE_ACCENTS["/admin"]);
   });
 
-  it("defaults to brand purple when unknown", () => {
+  it("getRouteAccent defaults to brand purple when route is unknown", () => {
     expect(getRouteAccent("/unknown-surface")).toEqual(ROUTE_ACCENT_DEFAULT);
+  });
+
+  it("all route accent pairs are on-brand", () => {
+    for (const pair of Object.values(ROUTE_ACCENTS)) {
+      assertOnBrand(pair);
+    }
+  });
+
+  it("ROUTE_ACCENT_DEFAULT is a valid on-brand pair", () => {
+    assertOnBrand(ROUTE_ACCENT_DEFAULT);
   });
 });
 
-describe("getRouteAccentFromLocation", () => {
-  it("tints Live Ops intel tab within purple/cream", () => {
-    assertOnBrand(getRouteAccentFromLocation("/ops", "?tab=intel"));
+describe("getRouteAccentFromLocation tab overrides", () => {
+  it("tints Live Ops intel tab to cream variant", () => {
+    const accent = getRouteAccentFromLocation("/ops", "?tab=intel");
+    assertOnBrand(accent);
+    expect(accent).not.toEqual(ROUTE_ACCENTS["/ops"]);
   });
 
-  it("tints Live Ops analytics tab within purple/cream", () => {
-    assertOnBrand(getRouteAccentFromLocation("/ops", "?tab=analytics"));
+  it("tints Live Ops analytics tab to light variant", () => {
+    const accent = getRouteAccentFromLocation("/ops", "?tab=analytics");
+    assertOnBrand(accent);
+    expect(accent).not.toEqual(ROUTE_ACCENTS["/ops"]);
   });
 
-  it("tints Phone outbound tab", () => {
+  it("returns default ops accent for unknown Live Ops tab", () => {
+    expect(getRouteAccentFromLocation("/ops", "?tab=unknown")).toEqual(ROUTE_ACCENTS["/ops"]);
+  });
+
+  it("tints Phone outbound tab to outbound accent", () => {
     expect(getRouteAccentFromLocation("/phone", "?tab=outbound")).toEqual(
       ROUTE_ACCENTS["/outbound"],
     );
   });
 
-  it("tints Phone appointments tab", () => {
+  it("tints Phone appointments tab to appointments accent", () => {
     expect(getRouteAccentFromLocation("/phone", "?tab=appointments")).toEqual(
       ROUTE_ACCENTS["/appointments"],
     );
   });
 
-  it("uses training accent on /training", () => {
+  it("uses training accent for /training regardless of query", () => {
     expect(getRouteAccentFromLocation("/training", "")).toEqual(ROUTE_ACCENTS["/training"]);
+    expect(getRouteAccentFromLocation("/training", "?tab=xyz")).toEqual(ROUTE_ACCENTS["/training"]);
   });
 
-  it("uses contact profile accent for /contact/:number", () => {
+  it("uses valid on-brand accent for /contact/:number", () => {
     assertOnBrand(getRouteAccentFromLocation("/contact/+15551234567", ""));
+  });
+
+  it("returns default accent for unknown phone tab", () => {
+    expect(getRouteAccentFromLocation("/phone", "?tab=unknown")).toEqual(ROUTE_ACCENTS["/phone"]);
   });
 });
 
-describe("ROUTE_ACCENTS palette", () => {
-  it("never uses legacy blues, oranges, or teals", () => {
+describe("route accent data integrity", () => {
+  it("all route accent pairs are on-brand", () => {
     for (const pair of Object.values(ROUTE_ACCENTS)) {
       assertOnBrand(pair);
     }

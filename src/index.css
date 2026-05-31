@@ -1,4 +1,3 @@
-/* Self-hosted fonts — bundled at build time (no render-blocking Google Fonts CSS). */
 @import "@fontsource-variable/plus-jakarta-sans/wght.css";
 @import "@fontsource-variable/fraunces/wght.css";
 @import "@fontsource/jetbrains-mono/400.css";
@@ -6,51 +5,27 @@
 @import "@fontsource/jetbrains-mono/600.css";
 @import "tailwindcss";
 
-
-/* ══════════════════════════════════════════════════════════════════
-   SHADCN/UI THEME — Wireline Aurora Cream
-   CSS custom properties for shadcn components, layered alongside
-   the existing @theme block. Public-facing pages retain their
-   original glass/aurora design system intact.
-   ══════════════════════════════════════════════════════════════════ */
 :root {
   --radius: 0.75rem;
-
-  /* Surface colors */
   --background: #EFE9DC;
   --foreground: #1A1614;
   --card: rgba(239, 233, 220, 0.80);
   --card-foreground: #1A1614;
   --popover: rgba(239, 233, 220, 0.92);
   --popover-foreground: #1A1614;
-
-  /* Brand primary — lighter editorial violet that matches the hero accent.
-   * The previous deeper #6B2B99 now lives on as --color-brand-deep (hover). */
   --primary: #8B3FD6;
   --primary-foreground: #FFFFFF;
-
-  /* Secondary */
   --secondary: #3B154C;
   --secondary-foreground: #FFFFFF;
-
-  /* Muted */
   --muted: rgba(26, 22, 20, 0.05);
   --muted-foreground: #5A534A;
-
-  /* Accent */
   --accent: rgba(139, 63, 214, 0.06);
   --accent-foreground: #8B3FD6;
-
-  /* Destructive */
   --destructive: #E8466A;
   --destructive-foreground: #FFFFFF;
-
-  /* Borders & inputs */
   --border: rgba(26, 22, 20, 0.10);
   --input: rgba(26, 22, 20, 0.12);
   --ring: rgba(139, 63, 214, 0.35);
-
-  /* Sidebar */
   --sidebar-background: rgba(59, 21, 76, 0.96);
   --sidebar-foreground: rgba(245, 240, 230, 0.90);
   --sidebar-primary: #8B3FD6;
@@ -59,62 +34,37 @@
   --sidebar-accent-foreground: rgba(245, 240, 230, 0.85);
   --sidebar-border: rgba(245, 240, 230, 0.08);
   --sidebar-ring: rgba(139, 63, 214, 0.40);
-
-  /* Charts */
   --chart-1: #8B3FD6;
   --chart-2: #8B3FD6;
   --chart-3: #8B6FA8;
   --chart-4: #3B154C;
   --chart-5: #D4C9B8;
-
-  /* Core theme variables */
   --ink: #1A1614;
   --paper: #EFE9DC;
-
-  /* Muted typography — resolves to the warm cream-ink fades on light
-   * and the cool zinc fades on dark. Referenced by --color-muted /
-   * --color-muted-soft in the @theme block below so `text-muted` and
-   * `text-muted-soft` flip automatically when the .dark class lands on
-   * <html>. */
   --muted-resolved: #5A534A;
   --muted-soft-resolved: #71717a;
 }
 
 .dark {
-  /* Dark mode surface colors — deep purple aesthetic */
   --background: #120f1a;
   --foreground: #f3e8ff;
   --card: rgba(30, 20, 45, 0.85);
   --card-foreground: #f3e8ff;
   --popover: rgba(25, 16, 38, 0.95);
   --popover-foreground: #f3e8ff;
-
-  /* Brand primary */
   --primary: #8B3FD6;
   --primary-foreground: #ffffff;
-
-  /* Secondary */
   --secondary: #2d1f42;
   --secondary-foreground: #f3e8ff;
-
-  /* Muted */
   --muted: rgba(139, 63, 214, 0.15);
   --muted-foreground: #b89ad9;
-
-  /* Accent */
   --accent: rgba(139, 63, 214, 0.20);
   --accent-foreground: #c77dff;
-
-  /* Destructive */
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-
-  /* Borders & inputs */
   --border: rgba(139, 63, 214, 0.20);
   --input: rgba(139, 63, 214, 0.15);
   --ring: rgba(139, 63, 214, 0.50);
-
-  /* Sidebar */
   --sidebar-background: rgba(30, 15, 50, 0.98);
   --sidebar-foreground: #f3e8ff;
   --sidebar-primary: #8B3FD6;
@@ -123,47 +73,24 @@
   --sidebar-accent-foreground: #c77dff;
   --sidebar-border: rgba(139, 63, 214, 0.25);
   --sidebar-ring: rgba(139, 63, 214, 0.50);
-
-  /* Charts */
   --chart-1: #8B3FD6;
   --chart-2: #8B3FD6;
   --chart-3: #8B6FA8;
   --chart-4: #8B3FD6;
   --chart-5: #3B154C;
-
-  /* Dark mode theme re-mappings */
   --ink: #f3e8ff;
   --paper: #120f1a;
-
-  /* Muted resolves to soft purple-tinted text */
   --muted-resolved: #b89ad9;
   --muted-soft-resolved: #9370b5;
 }
-
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   AURORA CREAM â€” a warm, editorial light system.
-   Inspired by the parchment warmth of Claude/Anthropic's palette.
-   Soft cream backgrounds with luminous aurora gradients as accents,
-   frosted cream glass surfaces, and dark warm-ink typography on an
-   editorial Instrument Serif italic display face.
-   Existing utility class names continue to work automatically.
-   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 @theme {
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Fraunces", "Georgia", "Times New Roman", serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-
-  /* Readable muted copy — wired to CSS vars defined in :root / .dark
-   * so the legacy `text-muted` / `text-muted-soft` utility classes flip
-   * with theme. */
   --color-muted: var(--muted-resolved);
   --color-muted-soft: var(--muted-soft-resolved);
-
-  /* Brand ink */
   --color-brand-ink: #f3e8ff;
-
-  /* Core palette */
   --color-brand: var(--primary);
   --color-brand-2: #8B3FD6;
   --color-brand-3: #8B6FA8;
@@ -171,13 +98,9 @@
   --color-ink: var(--ink);
   --color-paper: var(--paper);
   --color-on-brand: #ffffff;
-
-  /* Tailwind base overrides */
   --color-white: #ffffff;
   --color-black: #000000;
-
-  /* Zinc warm-cream scale (50 = lightest, 950 = darkest) */
-  --color-zinc-50:  #F2EDE4;
+  --color-zinc-50: #F2EDE4;
   --color-zinc-100: #EBE5DA;
   --color-zinc-200: #E0D8CC;
   --color-zinc-300: #8A8078;
@@ -188,13 +111,8 @@
   --color-zinc-800: #EFE9DE;
   --color-zinc-900: #EDE6DA;
   --color-zinc-950: #E8E1D4;
-
-  /* Refined accents — remapped to purple/cream so legacy utility classes
-   * (bg-emerald-500, text-amber-600, border-sky-500, etc.) never bleed
-   * off-brand blues, oranges, or teals on client-facing surfaces. */
   --color-rose-500: #E8466A;
   --color-rose-600: #C53050;
-
   --color-emerald-50: #F5F0F8;
   --color-emerald-100: #EDE4F2;
   --color-emerald-200: #D9CCE8;
@@ -204,7 +122,6 @@
   --color-emerald-600: #8B3FD6;
   --color-emerald-700: #3B154C;
   --color-emerald-800: #2E0F4A;
-
   --color-amber-50: #F7F3EC;
   --color-amber-100: #EDE6DA;
   --color-amber-200: #D4C9B8;
@@ -214,7 +131,6 @@
   --color-amber-600: #8B3FD6;
   --color-amber-700: #8B3FD6;
   --color-amber-800: #3B154C;
-
   --color-blue-50: #F5F0F8;
   --color-blue-100: #EDE4F2;
   --color-blue-200: #D9CCE8;
@@ -223,7 +139,6 @@
   --color-blue-500: #8B3FD6;
   --color-blue-600: #8B3FD6;
   --color-blue-700: #3B154C;
-
   --color-sky-50: #F5F0F8;
   --color-sky-100: #EDE4F2;
   --color-sky-200: #D9CCE8;
@@ -232,7 +147,6 @@
   --color-sky-500: #8B3FD6;
   --color-sky-600: #8B3FD6;
   --color-sky-700: #3B154C;
-
   --color-cyan-50: #F5F0EC;
   --color-cyan-100: #EDE6DA;
   --color-cyan-200: #D4C9B8;
@@ -241,7 +155,6 @@
   --color-cyan-500: #8B6FA8;
   --color-cyan-600: #8B3FD6;
   --color-cyan-700: #8B3FD6;
-
   --color-orange-50: #F7F3EC;
   --color-orange-100: #EDE6DA;
   --color-orange-200: #D4C9B8;
@@ -250,7 +163,6 @@
   --color-orange-500: #8B6FA8;
   --color-orange-600: #8B3FD6;
   --color-orange-700: #8B3FD6;
-
   --radius-sm: 0;
   --radius-md: 0;
   --radius-lg: 0;
@@ -260,31 +172,21 @@
 }
 
 @layer base {
-  /* ── SHARP CORNERS — global reset. Every element is razor-edged. ──── */
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     -webkit-tap-highlight-color: transparent;
     border-radius: 0 !important;
   }
-  /* Exceptions — elements that are inherently circular (data indicators,
-     avatar initials, scrollbar thumbs, live-pulse rings). */
   .dot-online, .dot-busy, .dot-idle, .dot-pending,
   .live-ring, .live-ring::after,
-  [data-circular] {
+  [data-circular],
+  .medallion-glint,
+  [class*="medallion"] {
     border-radius: 9999px !important;
   }
   ::-webkit-scrollbar-thumb {
     border-radius: 999px !important;
   }
 
-  /* ── TEXT-WHITE RESCUE ─────────────────────────────────────────────
-   * --color-white is remapped to #2A2520 (warm dark) so border-white/*
-   * and bg-white/* produce subtle dark tints on cream. But text-white
-   * also resolves through --color-white, rendering dark brown text
-   * instead of the expected white. This single rule restores text-white
-   * to actual #FFFFFF everywhere. Background/border utilities are
-   * unaffected since they use different CSS properties. */
   [class*="text-white"] {
     --tw-text-opacity: 1;
     color: rgba(255, 255, 255, var(--tw-text-opacity)) !important;
@@ -292,8 +194,6 @@
 
   html {
     color-scheme: light;
-    /* iOS auto-resizes text in landscape rotation by default — pin to 100%
-     * so our type scale stays consistent across orientations. */
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
     min-height: 100%;
@@ -335,20 +235,56 @@
     --wl-emerald-soft: #34d399;
   }
 
-  /* iOS Safari zooms the viewport when a form field has font-size < 16px.
-   * Forcing 16px on every input/textarea/select prevents that zoom
-   * disruption — the rendered visual size stays whatever the component
-   * sets via Tailwind, but the underlying font-size satisfies iOS. */
-  input,
-  textarea,
-  select {
+  input, textarea, select {
     font-size: max(16px, 1em);
   }
   @media (min-width: 768px) {
-    input,
-    textarea,
-    select {
+    input, textarea, select {
       font-size: inherit;
+    }
+  }
+
+  ::selection {
+    background: rgba(107, 43, 153, 0.18);
+    color: #1A1614;
+  }
+  ::-moz-selection {
+    background: rgba(107, 43, 153, 0.18);
+    color: #1A1614;
+  }
+
+  .auth-input {
+    @apply w-full border border-ink/[0.08] bg-white/60 px-5 py-3 text-sm text-ink placeholder:text-ink/40 focus:border-brand/60 focus:bg-white/80 transition-all outline-none;
+    height: 52px;
+  }
+  .auth-input::placeholder {
+    color: rgba(26, 22, 20, 0.55);
+  }
+
+  :focus-visible {
+    outline: 2px solid rgba(107, 43, 153, 0.60);
+    outline-offset: 2px;
+  }
+
+  a, button, [role="button"], input, textarea, select {
+    touch-action: manipulation;
+  }
+
+  @media (hover: none) and (pointer: coarse) {
+    nav a:not([data-no-min-touch]),
+    nav button:not([data-no-min-touch]),
+    [role="navigation"] a:not([data-no-min-touch]),
+    [role="navigation"] button:not([data-no-min-touch]),
+    [role="tablist"] button:not([data-no-min-touch]) {
+      min-height: 44px;
+    }
+    input, textarea, select {
+      scroll-margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
+    }
+    .marketing-has-sticky-cta input,
+    .marketing-has-sticky-cta textarea,
+    .marketing-has-sticky-cta select {
+      scroll-margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 6.5rem);
     }
   }
 
@@ -363,7 +299,6 @@
     mix-blend-mode: multiply;
   }
 
-  /* Readability floor — micro-type was 8–10px in dense panels. */
   .app-surface .text-\[8px\],
   .app-surface .text-\[8\.5px\],
   .app-surface .text-\[9px\] {
@@ -375,13 +310,6 @@
     line-height: 1.4;
   }
 
-  /* Marketing readability floor — public first-impression surfaces were
-     never covered by the .app-surface rule above, so 7–9px overlines,
-     badge pills, and stat labels rendered sub-legible on desktop (the
-     global mobile bump below only catches 9–10px). 11px stays a notch
-     under the design system's own 12px (text-xs) overline spec, so the
-     editorial micro-type language is preserved while clearing the
-     accessibility / polish floor. */
   .marketing-surface .text-\[7px\],
   .marketing-surface .text-\[8px\],
   .marketing-surface .text-\[8\.5px\],
@@ -391,44 +319,21 @@
   }
 
   @media (max-width: 640px) {
-    .text-\[9px\] {
-      font-size: 11px !important;
-    }
-    .text-\[10px\] {
-      font-size: 12px !important;
-    }
+    .text-\[9px\] { font-size: 11px !important; }
+    .text-\[10px\] { font-size: 12px !important; }
+  }
 
-  } /* End of max-width: 640px media query */
-
-  /* ── GLOBAL CONSOLE LAYOUT & TYPOGRAPHY OPEN SPACE (.app-surface) ───
-   * Adjusts all client-facing pages to feel open, spacious, and extremely 
-   * comfortable. Spacing, paddings, gaps, and text sizes are proportioned
-   * to be elegant, editorial, and easy on the eyes while remaining structured.
-   * Public marketing/auth pages are untouched. */
   .app-surface {
     font-size: 13.25px !important;
     line-height: 1.45 !important;
     --client-panel-bg: rgba(248, 244, 236, 0.74);
     --client-panel-border: rgba(26, 22, 20, 0.085);
   }
-  .app-surface h1 {
-    font-size: 1.45rem !important;
-    line-height: 1.12 !important;
-  }
-  .app-surface h2 {
-    font-size: 1.28rem !important;
-    line-height: 1.18 !important;
-  }
-  .app-surface h3 {
-    font-size: 1.08rem !important;
-    line-height: 1.22 !important;
-  }
-  .app-surface h4 {
-    font-size: 0.95rem !important;
-    line-height: 1.28 !important;
-  }
+  .app-surface h1 { font-size: 1.45rem !important; line-height: 1.12 !important; }
+  .app-surface h2 { font-size: 1.28rem !important; line-height: 1.18 !important; }
+  .app-surface h3 { font-size: 1.08rem !important; line-height: 1.22 !important; }
+  .app-surface h4 { font-size: 0.95rem !important; line-height: 1.28 !important; }
 
-  /* Scale font utility sizes for a comfortable and professional look */
   .app-surface .text-xs { font-size: 11px !important; }
   .app-surface .text-sm { font-size: 12px !important; }
   .app-surface .text-base { font-size: 13.25px !important; }
@@ -438,7 +343,6 @@
   .app-surface .text-3xl { font-size: 23px !important; }
   .app-surface .text-4xl { font-size: 28px !important; }
 
-  /* Spacing Scale - Open, spacious, and comfortable (both mobile and desktop) */
   .app-surface .p-10, .app-surface .p-8 { padding: 1.35rem !important; }
   .app-surface .p-6 { padding: 1rem !important; }
   .app-surface .p-5 { padding: 0.9rem !important; }
@@ -450,53 +354,42 @@
   .app-surface .px-5 { padding-left: 0.9rem !important; padding-right: 0.9rem !important; }
   .app-surface .px-4 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
   .app-surface .px-3 { padding-left: 0.6rem !important; padding-right: 0.6rem !important; }
-
   .app-surface .py-10, .app-surface .py-8 { padding-top: 1.35rem !important; padding-bottom: 1.35rem !important; }
   .app-surface .py-6 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
   .app-surface .py-5 { padding-top: 0.9rem !important; padding-bottom: 0.9rem !important; }
   .app-surface .py-4 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
   .app-surface .py-3 { padding-top: 0.6rem !important; padding-bottom: 0.6rem !important; }
-
   .app-surface .pt-10, .app-surface .pt-8 { padding-top: 1.35rem !important; }
   .app-surface .pt-6 { padding-top: 1rem !important; }
   .app-surface .pt-5 { padding-top: 0.9rem !important; }
   .app-surface .pt-4 { padding-top: 0.75rem !important; }
-
   .app-surface .pb-10, .app-surface .pb-8 { padding-bottom: 1.35rem !important; }
   .app-surface .pb-6 { padding-bottom: 1rem !important; }
   .app-surface .pb-5 { padding-bottom: 0.9rem !important; }
   .app-surface .pb-4 { padding-bottom: 0.75rem !important; }
 
-  /* Gaps */
   .app-surface .gap-10, .app-surface .gap-8 { gap: 1.2rem !important; }
   .app-surface .gap-6 { gap: 0.95rem !important; }
   .app-surface .gap-5 { gap: 0.8rem !important; }
   .app-surface .gap-4 { gap: 0.7rem !important; }
   .app-surface .gap-3 { gap: 0.55rem !important; }
-
-  /* Vertical List Spacing (space-y) */
   .app-surface .space-y-8 > * + * { margin-top: 1.2rem !important; }
   .app-surface .space-y-6 > * + * { margin-top: 0.95rem !important; }
   .app-surface .space-y-5 > * + * { margin-top: 0.8rem !important; }
   .app-surface .space-y-4 > * + * { margin-top: 0.7rem !important; }
   .app-surface .space-y-3 > * + * { margin-top: 0.55rem !important; }
-
   .app-surface .space-x-4 > * + * { margin-left: 0.7rem !important; }
   .app-surface .space-x-3 > * + * { margin-left: 0.55rem !important; }
-
-  /* Margins */
   .app-surface .mt-8 { margin-top: 1.2rem !important; }
   .app-surface .mt-6 { margin-top: 0.95rem !important; }
   .app-surface .mt-5 { margin-top: 0.8rem !important; }
   .app-surface .mt-4 { margin-top: 0.7rem !important; }
   .app-surface .mt-3 { margin-top: 0.55rem !important; }
-
   .app-surface .mb-8 { margin-bottom: 1.2rem !important; }
   .app-surface .mb-6 { margin-bottom: 0.95rem !important; }
   .app-surface .mb-5 { margin-bottom: 0.8rem !important; }
   .app-surface .mb-4 { margin-bottom: 0.7rem !important; }
   .app-surface .mb-3 { margin-bottom: 0.55rem !important; }
-
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-display font-normal;
@@ -504,19 +397,10 @@
     text-wrap: balance;
   }
 
-  p,
-  li {
+  p, li {
     text-wrap: pretty;
   }
 
-  /* `.scrollbar-hide` used to fully hide scrollbars across the app.
-     That looked clean but stripped the affordance — users on shorter
-     viewports had no cue that content extended past the fold.
-     Mike on a ThinkPad couldn't tell Train page had more below.
-     New behavior: render a SLIM (5px), brand-tinted scrollbar that
-     only takes visual weight when overflow exists. Aesthetic stays
-     minimal; cue returns. The class name stays so we don't have to
-     touch 20+ component files. */
   .scrollbar-hide::-webkit-scrollbar {
     width: 5px;
     height: 5px;
@@ -537,23 +421,20 @@
   }
 
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
-
   ::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.03);
+    background: transparent;
   }
-
   ::-webkit-scrollbar-thumb {
-    background: rgba(107, 43, 153, 0.35);
+    background: rgba(139, 63, 214, 0.16);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: padding-box;
   }
-
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(107, 43, 153, 0.60);
+    background: rgba(139, 63, 214, 0.32);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: padding-box;
@@ -562,84 +443,11 @@
   input, textarea, select {
     color-scheme: light;
   }
-
-  /* Branded text selection — a warm purple wash with ink-dark glyphs
-     instead of the browser's stock blue. A small thing, but it's the
-     kind of detail that makes the whole product feel hand-finished on
-     every device that can select text (desktop drag, mobile long-press). */
-  ::selection {
-    background: rgba(107, 43, 153, 0.18);
-    color: #1A1614;
-  }
-  ::-moz-selection {
-    background: rgba(107, 43, 153, 0.18);
-    color: #1A1614;
-  }
-
-  /* Immersive auth inputs — branded focus ring */
-  .auth-input {
-    @apply w-full border border-ink/[0.08] bg-white/60 px-4 py-3 text-[13px] text-ink placeholder:text-ink/65 focus:border-brand/60 focus:bg-white/80 transition-all;
-    /* WCAG 4.5:1+ placeholder on cream */
-  }
-  .auth-input::placeholder {
-    color: rgba(26, 22, 20, 0.55);
-  }
-
-  :focus-visible {
-    outline: 2px solid rgba(107, 43, 153, 0.60);
-    outline-offset: 2px;
-  }
-
-  a,
-  button,
-  [role="button"],
-  input,
-  textarea,
-  select {
-    touch-action: manipulation;
-  }
-
-  @media (hover: none) and (pointer: coarse) {
-    /* 44pt targets on primary chrome only — never inflate dense table/icon rows. */
-    nav a:not([data-no-min-touch]),
-    nav button:not([data-no-min-touch]),
-    [role="navigation"] a:not([data-no-min-touch]),
-    [role="navigation"] button:not([data-no-min-touch]),
-    [role="tablist"] button:not([data-no-min-touch]) {
-      min-height: 44px;
-    }
-
-    input,
-    textarea,
-    select {
-      scroll-margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
-    }
-
-    .marketing-has-sticky-cta input,
-    .marketing-has-sticky-cta textarea,
-    .marketing-has-sticky-cta select {
-      scroll-margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 6.5rem);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      scroll-behavior: auto !important;
-      transition-duration: 0.01ms !important;
-    }
-  }
 }
-
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  AURORA UTILITIES  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 @utility brutal-border {
   @apply border border-black/8;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.70) inset,
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.70) inset,
     0 0 0 1px rgba(107, 43, 153, 0.05),
     0 8px 24px -8px rgba(0, 0, 0, 0.10),
     0 4px 12px -4px rgba(107, 43, 153, 0.08);
@@ -647,24 +455,21 @@
 
 @utility brutal-border-lg {
   @apply border border-black/9;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.70) inset,
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.70) inset,
     0 0 0 1px rgba(107, 43, 153, 0.06),
     0 20px 60px -20px rgba(0, 0, 0, 0.12),
     0 8px 28px -8px rgba(107, 43, 153, 0.10);
 }
 
 @utility brutal-btn {
-  @apply relative inline-flex items-center justify-center gap-2 px-5 py-2.5 font-semibold tracking-[0.10em] uppercase text-[11px] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:grayscale disabled:pointer-events-none overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-paper rounded-full;
+  @apply relative inline-flex items-center justify-center gap-2 px-5 py-2.5 font-semibold tracking-[0.10em] uppercase text-[11px] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:grayscale disabled:pointer-events-none overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-paper;
   color: #FFFFFF;
   background: linear-gradient(135deg, #8B3FD6, #8B3FD6);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.15) inset,
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15) inset,
     0 6px 20px -6px rgba(139, 63, 214, 0.45),
     0 14px 36px -10px rgba(139, 63, 214, 0.28);
 }
 
-/* Button size variants — use alongside brutal-btn to avoid !py- overrides. */
 .brutal-btn-xs {
   padding: 0.25rem 0.625rem;
   font-size: 9px;
@@ -687,8 +492,7 @@
 .brutal-btn:hover {
   background: var(--color-brand-deep);
   transform: translateY(-1px);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.30) inset,
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.30) inset,
     0 12px 28px -8px rgba(107, 43, 153, 0.50),
     0 20px 48px -12px rgba(107, 43, 153, 0.30);
 }
@@ -707,22 +511,21 @@
 
 @utility brutal-card {
   @apply relative overflow-hidden p-6 md:p-8 border border-black/8;
-  background:
-    linear-gradient(180deg, rgba(247, 242, 234, 0.80), rgba(245, 239, 229, 0.55)),
+  background: linear-gradient(180deg, rgba(247, 242, 234, 0.80), rgba(245, 239, 229, 0.55)),
     rgba(239, 233, 220, 0.75);
   backdrop-filter: blur(32px) saturate(140%);
   -webkit-backdrop-filter: blur(32px) saturate(140%);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.90) inset,
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.90) inset,
     0 0 0 1px rgba(107, 43, 153, 0.04),
     0 12px 40px -12px rgba(0, 0, 0, 0.10),
     0 4px 16px -6px rgba(107, 43, 153, 0.08);
-  transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 400ms ease, border-color 300ms ease;
+  transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 400ms ease,
+    border-color 300ms ease;
 }
 
 @utility indicator-glow {
-  box-shadow:
-    0 0 16px rgba(107, 43, 153, 0.40),
+  box-shadow: 0 0 16px rgba(107, 43, 153, 0.40),
     0 0 32px rgba(107, 43, 153, 0.18);
 }
 
@@ -732,41 +535,30 @@
 
 @utility scanline {
   @apply pointer-events-none fixed inset-0 z-[100] overflow-hidden;
-  background:
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent 3px,
+  background: repeating-linear-gradient(to bottom,
+      transparent 0, transparent 3px,
       rgba(107, 43, 153, 0.008) 3px,
-      rgba(107, 43, 153, 0.008) 4px
-    );
+      rgba(107, 43, 153, 0.008) 4px);
   mix-blend-mode: screen;
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Brutal-shadow legacy aliases  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .brutal-shadow {
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.80) inset,
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.80) inset,
     0 8px 32px -8px rgba(0, 0, 0, 0.12),
     0 4px 16px -4px rgba(107, 43, 153, 0.14);
 }
 
 .brutal-shadow-brand {
-  box-shadow:
-    0 0 0 1px rgba(107, 43, 153, 0.25) inset,
+  box-shadow: 0 0 0 1px rgba(107, 43, 153, 0.25) inset,
     0 8px 24px -6px rgba(107, 43, 153, 0.30),
     0 14px 40px -10px rgba(107, 43, 153, 0.18);
 }
 
-/* Display headline accent â€” solid brand teal on the editorial italic
- * face. Used to live as a rainbow gradient; flattened pre-launch so the
- * operator console no longer looks like every other "AI startup". */
 .text-aurora {
   @apply font-display italic;
   color: var(--color-brand);
 }
 
-/* Legacy alias — same treatment. */
 .text-stroke {
   color: var(--color-brand);
   filter: drop-shadow(0 0 16px rgba(107, 43, 153, 0.20));
@@ -780,8 +572,6 @@
   filter: drop-shadow(0 0 10px rgba(107, 43, 153, 0.18));
 }
 
-/* Subtle brand-tinted ring for emphasized surfaces. Previously a 3-stop
- * cyanâ†’violetâ†’magenta gradient; now a single soft teal hairline. */
 .aurora-ring {
   position: relative;
   isolation: isolate;
@@ -793,111 +583,78 @@
   padding: 1px;
   border-radius: inherit;
   background: rgba(107, 43, 153, 0.45);
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
   z-index: 1;
 }
-/* Mobile: the aurora ring becomes near-invisible. The point of the
- * ring is a subtle premium accent on desktop hover states — on a
- * 390px phone screen it just adds a vibrating purple seam around
- * every card. Drop opacity drastically below the md breakpoint. */
 @media (max-width: 767px) {
   .aurora-ring::before {
     background: rgba(107, 43, 153, 0.18);
   }
 }
 
-/* Glass surface helper â€” cream translucent.
- * Performance note: hundreds of elements get .glass applied, each with
- * a backdrop-filter blur. blur(28px) was the GPU bottleneck on lower-end
- * laptops â€” paint cost was driving 60â†’30fps on /home and /agents. Cut to
- * 16px (still visually rich, just less expensive) and respect reduced
- * motion by dropping the blur entirely when requested.
- *
- * Color note (Mike feedback): the top gradient used to be near-pure
- * white rgba(255,255,255,X). On signed-in pages dominated by glass
- * cards, that pushed the WHOLE viewport toward white and broke the
- * warm-terracotta brand feel that AuthPortal nails. Switched the
- * gradient stops to derive from --color-paper (#EFE9DC) so every
- * glass surface inherits the same warm cream — auth'd console and
- * AuthPortal now read as the same brand canvas. */
-/* Glass panels derive from the warm-tan paper base (#EFE9DC → rgb
- * 239,233,220) but sit a touch lighter so cards read as raised. Keep
- * these in lockstep with --color-paper so the whole app stays one
- * consistent warm tone — no white-vs-purple drift. */
 .glass {
-  background:
-    linear-gradient(180deg, rgba(250, 247, 240, 0.78), rgba(238, 231, 218, 0.62)),
+  background: linear-gradient(180deg, rgba(250, 247, 240, 0.78), rgba(238, 231, 218, 0.62)),
     rgba(245, 239, 229, 0.58);
   backdrop-filter: blur(14px) saturate(135%);
   -webkit-backdrop-filter: blur(14px) saturate(135%);
   border: 1px solid rgba(26, 22, 20, 0.085);
-  box-shadow: 
-    0 1px 0 rgba(255, 255, 255, 0.90) inset,
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.90) inset,
     0 4px 18px -6px rgba(34, 30, 25, 0.08);
 }
 
 .glass-strong {
-  background:
-    linear-gradient(180deg, rgba(250, 247, 241, 0.94), rgba(239, 232, 219, 0.86)),
+  background: linear-gradient(180deg, rgba(250, 247, 241, 0.94), rgba(239, 232, 219, 0.86)),
     rgba(245, 239, 229, 0.88);
   backdrop-filter: blur(20px) saturate(150%);
   -webkit-backdrop-filter: blur(20px) saturate(150%);
   border: 1px solid rgba(26, 22, 20, 0.10);
-  box-shadow: 
-    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.95) inset,
     0 10px 30px -12px rgba(34, 30, 25, 0.11);
 }
 
-/* Reduced motion: kill the GPU-expensive backdrop blur entirely. The
- * panels still have a tinted background gradient so they stay legible. */
+.glass-elevated {
+  background: linear-gradient(180deg, rgba(248, 243, 235, 0.97), rgba(246, 241, 231, 0.86)),
+    rgba(239, 233, 220, 0.98);
+  backdrop-filter: blur(56px) saturate(180%);
+  -webkit-backdrop-filter: blur(56px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.10);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .glass,
-  .glass-strong {
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+  .glass, .glass-strong, .glass-elevated {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 }
 
-/* Backdrop-filter fallback for iOS < 15 and very old Android Chrome.
- * These browsers don't support backdrop-filter — raise the background
- * opacity so glass panels remain opaque and legible without the blur. */
 @supports not (-webkit-backdrop-filter: blur(1px)) {
-  .glass {
-    background: rgba(244, 238, 228, 0.97);
-  }
-  .glass-strong {
-    background: rgba(246, 241, 233, 0.99);
-  }
+  .glass { background: rgba(244, 238, 228, 0.97); }
+  .glass-strong { background: rgba(246, 241, 233, 0.99); }
+  .glass-elevated { background: rgba(239, 233, 220, 1); }
+}
+
+.shell-sticky-glass {
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
 }
 
 @keyframes pulse-intense {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.7; transform: scale(0.98); }
 }
-
 .animate-pulse-intense {
   animation: pulse-intense 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-@keyframes aurora-pan {
-  0%, 100% { background-position: 0% 50%; }
-  50%      { background-position: 100% 50%; }
-}
-
 @keyframes aurora-drift {
-  0%   { transform: translate3d(0, 0, 0) scale(1); }
-  50%  { transform: translate3d(2%, -2%, 0) scale(1.05); }
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(2%, -2%, 0) scale(1.05); }
   100% { transform: translate3d(0, 0, 0) scale(1); }
 }
-
 .animate-aurora-drift {
   animation: aurora-drift 18s ease-in-out infinite;
 }
@@ -907,89 +664,54 @@
   33% { transform: translate3d(6%, -4%, 0) scale(1.08); }
   66% { transform: translate3d(-4%, 6%, 0) scale(0.96); }
 }
-
 @keyframes aurora-blob-2 {
   0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
   33% { transform: translate3d(-5%, 6%, 0) scale(0.94); }
   66% { transform: translate3d(4%, -4%, 0) scale(1.06); }
 }
-
 @keyframes aurora-blob-3 {
   0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
   50% { transform: translate3d(3%, 3%, 0) scale(1.10); }
 }
+.animate-aurora-blob-1 { animation: aurora-blob-1 25s ease-in-out infinite; }
+.animate-aurora-blob-2 { animation: aurora-blob-2 30s ease-in-out infinite; }
+.animate-aurora-blob-3 { animation: aurora-blob-3 20s ease-in-out infinite; }
 
-.animate-aurora-blob-1 {
-  animation: aurora-blob-1 25s ease-in-out infinite;
-}
-
-.animate-aurora-blob-2 {
-  animation: aurora-blob-2 30s ease-in-out infinite;
-}
-
-.animate-aurora-blob-3 {
-  animation: aurora-blob-3 20s ease-in-out infinite;
-}
-
-/* Auth-portal aurora — slow breathing radial blobs behind the form
-   column. Two layers run on offset durations (14s vs 19s) so the motion
-   never feels synchronized or mechanical. translate3d nudges the GPU
-   compositor; scale lets the blob "breathe" rather than slide. */
 @keyframes wireline-aurora-a {
-  0%   { transform: translate3d(0, 0, 0)    scale(1);    opacity: 0.55; }
+  0% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.55; }
   100% { transform: translate3d(-6%, 5%, 0) scale(1.08); opacity: 0.42; }
 }
 @keyframes wireline-aurora-b {
-  0%   { transform: translate3d(0, 0, 0)   scale(1);    opacity: 0.50; }
+  0% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.50; }
   100% { transform: translate3d(7%, -4%, 0) scale(1.12); opacity: 0.38; }
 }
 
-/* Respect prefers-reduced-motion — kills the breathing for visitors
-   who've asked browsers to minimise animation. */
-@media (prefers-reduced-motion: reduce) {
-  [class*="wireline-aurora-"] { animation: none !important; }
-}
-
 @keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position:  200% 0; }
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
-
 .shimmer-line {
-  background: linear-gradient(90deg, transparent 0%, rgba(107, 43, 153 , 0.45) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(107, 43, 153, 0.45) 50%, transparent 100%);
   background-size: 200% 100%;
   animation: shimmer 2.4s linear infinite;
 }
 
-/* ── CRYSTALLINE MEDALLION GLINT ─────────────────────────────────────
-   A slow diagonal light-sweep that travels across the signature gradient
-   medallion, plus a fixed specular highlight in the top-left corner. The
-   combination makes the medallion read like a cut gemstone catching the
-   light — the "watching crystal crystallize" aura, applied consistently
-   wherever the Medallion primitive appears (empty states, headers). */
 @keyframes medallion-glint {
-  0%   { transform: translateX(-160%) rotate(8deg); opacity: 0; }
-  18%  { opacity: 0.9; }
-  45%  { transform: translateX(160%) rotate(8deg); opacity: 0; }
+  0% { transform: translateX(-160%) rotate(8deg); opacity: 0; }
+  18% { opacity: 0.9; }
+  45% { transform: translateX(160%) rotate(8deg); opacity: 0; }
   100% { transform: translateX(160%) rotate(8deg); opacity: 0; }
 }
-
 .medallion-glint::before {
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: inherit;
-  /* Fixed top-left specular highlight — the "facet" catching ambient light. */
-  background:
-    radial-gradient(
-      120% 90% at 22% 14%,
+  background: radial-gradient(120% 90% at 22% 14%,
       rgba(255, 255, 255, 0.55) 0%,
       rgba(255, 255, 255, 0.12) 28%,
-      transparent 56%
-    );
+      transparent 56%);
   pointer-events: none;
 }
-
 .medallion-glint::after {
   content: "";
   position: absolute;
@@ -997,36 +719,25 @@
   left: 0;
   width: 42%;
   height: 180%;
-  border-radius: inherit;
-  /* Travelling glint stripe — the crystal sweep. */
-  background: linear-gradient(
-    100deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.0) 35%,
-    rgba(255, 255, 255, 0.65) 50%,
-    rgba(255, 255, 255, 0.0) 65%,
-    transparent 100%
-  );
+  background: linear-gradient(100deg,
+      transparent 0%, rgba(255, 255, 255, 0.0) 35%,
+      rgba(255, 255, 255, 0.65) 50%,
+      rgba(255, 255, 255, 0.0) 65%,
+      transparent 100%);
   animation: medallion-glint 4.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   pointer-events: none;
 }
 
-/* ── PREMIUM INTERACTION UTILITIES ──────────────────────────────────── */
-
-/* Card hover lift — consistent micro-interaction across all interactive cards.
- * Translates up 2px with a soft brand-tinted shadow bloom. Use on any
- * clickable card or tile. */
 .card-interactive {
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-              border-color 0.22s ease,
-              background-color 0.22s ease;
+    box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.22s ease,
+    background-color 0.22s ease;
 }
 .card-interactive:hover {
   transform: translateY(-2px);
   border-color: rgba(107, 43, 153, 0.24);
-  box-shadow:
-    0 12px 32px -10px rgba(107, 43, 153, 0.14),
+  box-shadow: 0 12px 32px -10px rgba(107, 43, 153, 0.14),
     0 20px 56px -16px rgba(26, 22, 20, 0.08),
     0 0 0 1px rgba(107, 43, 153, 0.08) inset;
 }
@@ -1035,7 +746,33 @@
   transition-duration: 0.1s;
 }
 
-/* Neon edge glow for the active/focused step card in onboarding */
+.card-interactive-premium {
+  transition: all 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+.card-interactive-premium::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(107, 43, 153, 0.25) 0%, transparent 60%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.3;
+  transition: opacity 400ms ease;
+}
+.card-interactive-premium:hover {
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: 0 20px 40px -15px rgba(107, 43, 153, 0.08),
+    0 0 0 1px rgba(107, 43, 153, 0.18);
+}
+.card-interactive-premium:hover::before {
+  opacity: 1;
+}
+
 .active-neon-card::after {
   content: "";
   position: absolute;
@@ -1046,64 +783,122 @@
   z-index: 0;
 }
 
-/* Skeleton sweep â€” translates a bright stripe across the element */
 @keyframes skeleton-sweep {
-  0%   { transform: translateX(-100%); }
-  100% { transform: translateX(250%);  }
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
 }
-
 .skeleton-shimmer {
   animation: skeleton-sweep 1.8s ease-in-out infinite;
 }
 
 .client-shimmer-card {
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--color-brand) 4%, var(--color-paper)),
-    color-mix(in srgb, var(--color-paper) 96%, white)
-  );
+  background: linear-gradient(135deg,
+      color-mix(in srgb, var(--color-brand) 4%, var(--color-paper)),
+      color-mix(in srgb, var(--color-paper) 96%, white));
 }
 
-/* Route-load progress sweep â€” used by the lazy-route fallback strip. The
-   sweep hits 100% well before the typical chunk parse/eval finishes so
-   the user sees motion immediately on navigate, even on fast networks. */
 @keyframes route-progress-sweep {
-  0%   { transform: translateX(0%);   }
+  0% { transform: translateX(0%); }
   100% { transform: translateX(420%); }
 }
 
-/* Honor the OS reduced-motion preference for continuous decorative
-   animations. Keeps the rest of the design (gradients, structure) but
-   stops the constant pan/drift/shimmer motion that some users find
-   distracting or that wastes battery on laptops. */
-@media (prefers-reduced-motion: reduce) {
-  .text-aurora,
-  .brand-wordmark,
-  .animate-aurora-drift,
-  .animate-pulse-intense,
-  .skeleton-shimmer,
-  .shimmer-line {
-    animation: none !important;
-  }
-  .medallion-glint::after {
-    animation: none !important;
-    opacity: 0 !important;
-  }
+.neon-glow-teal {
+  text-shadow: 0 0 8px rgba(107, 43, 153, 0.35);
 }
 
-/* Soft glow ring for focused / selected items */
 .ring-aurora {
-  box-shadow:
-    0 0 0 1px rgba(107, 43, 153 , 0.50),
-    0 0 20px rgba(107, 43, 153 , 0.25),
-    0 0 40px rgba(107, 43, 153 , 0.10);
+  box-shadow: 0 0 0 1px rgba(107, 43, 153, 0.50),
+    0 0 20px rgba(107, 43, 153, 0.25),
+    0 0 40px rgba(107, 43, 153, 0.10);
 }
 
 .font-display {
   font-family: var(--font-display);
 }
 
-/* ─── Typography scale (client + marketing surfaces) ─────────────────── */
+.neon-checkbox {
+  @apply relative flex items-center justify-center w-5 h-5 border border-black/12 transition-all cursor-pointer;
+}
+.neon-checkbox.active {
+  background: linear-gradient(135deg, var(--color-brand), var(--secondary));
+  border-color: var(--color-brand);
+  box-shadow: 0 0 10px rgba(107, 43, 153, 0.45);
+}
+
+@keyframes live-pulse {
+  0% { transform: scale(1); opacity: 0.9; }
+  70% { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+.live-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  animation: live-pulse 1.8s ease-out infinite;
+}
+
+@keyframes float-up {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0); }
+}
+.animate-float { animation: float-up 4s ease-in-out infinite; }
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.animate-blink { animation: blink 1.2s step-start infinite; }
+
+@keyframes slide-in-right {
+  from { transform: translateX(24px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.animate-slide-in-right { animation: slide-in-right 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-count-up { animation: count-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
+.animate-accordion-down { animation: accordion-down 0.2s ease-out; }
+.animate-accordion-up { animation: accordion-up 0.2s ease-out; }
+
+@keyframes integration-flow {
+  to { stroke-dashoffset: -7; }
+}
+@keyframes agent-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0; transform: scale(1.6); }
+}
+@keyframes typing-dot-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
+  30% { transform: translateY(-3px); opacity: 1; }
+}
+@keyframes appear-up {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes node-shimmer {
+  0% { background-position: -100% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes synapse-glow {
+  0%, 100% { opacity: 0.2; transform: scale(0.95); filter: drop-shadow(0 0 0 transparent); }
+  50% { opacity: 1; transform: scale(1.05); filter: drop-shadow(0 0 6px rgba(107, 43, 153, 0.8)); }
+}
+.synapse-pulse { animation: synapse-glow 2.5s infinite ease-in-out; }
+
 .text-eyebrow {
   font-size: 0.6875rem;
   font-weight: 600;
@@ -1125,8 +920,6 @@
   color: var(--color-muted);
 }
 
-/* High-emphasis secondary text — darker than caption, lighter than ink.
- * Use for body text that needs more weight than muted but isn't a title. */
 .text-strong {
   font-size: 0.8125rem;
   line-height: 1.5;
@@ -1134,18 +927,14 @@
   font-weight: 500;
 }
 
-/* Text on translucent brand surfaces (ghost buttons, tinted badges).
- * Uses --brand-ink for WCAG AAA compliance at small uppercase sizes. */
 .text-brand-ink {
   color: var(--color-brand-ink);
 }
 
-/* Replace ultra-faint muted utilities on marketing pages */
 .marketing-surface .text-muted {
   color: var(--color-muted);
 }
 
-/* Purple chrome (TopBar, Sidebar) — cream text on brand-deep */
 .chrome-eyebrow {
   font-size: 0.625rem;
   font-weight: 600;
@@ -1172,23 +961,16 @@
   color: color-mix(in srgb, #efe9dc 58%, transparent);
 }
 
-/* In-app content area — slightly stronger muted than marketing default */
 .app-surface .text-muted {
   color: var(--color-muted);
 }
 
-/* Deepen text-brand inside small uppercase UI chrome (ghost buttons,
- * badges, chips, tab pills) for WCAG AA+ at 10–11px sizes. Display-size
- * headings keep the brighter --color-brand since large text only needs 3:1.
- * The selector targets any .text-brand element that also has uppercase
- * tracking or sits inside a button-like context. */
 .app-surface button[class*="text-brand"],
 .app-surface [role="button"][class*="text-brand"],
 .app-surface [role="tab"][class*="text-brand"] {
   color: var(--color-brand-ink);
 }
 
-/* Section labels inside authenticated pages (replaces 10px uppercase muted) */
 .app-section-title {
   font-size: 0.6875rem;
   font-weight: 600;
@@ -1198,7 +980,6 @@
   line-height: 1.35;
 }
 
-/* Marketing long-form pages */
 .marketing-surface .marketing-hero-title {
   font-family: var(--font-display);
   font-style: italic;
@@ -1216,7 +997,6 @@
   max-width: 42rem;
 }
 
-/* Mobile conversion rail + shared marketing CTAs */
 .marketing-btn-primary {
   display: inline-flex;
   align-items: center;
@@ -1230,9 +1010,7 @@
   background: var(--color-brand);
   box-shadow: 0 6px 20px -6px rgba(107, 43, 153, 0.55);
   transition: background 0.15s ease, transform 0.15s ease;
-  border-radius: 0;
 }
-
 .marketing-btn-primary:hover {
   background: var(--color-brand-deep);
 }
@@ -1249,9 +1027,7 @@
   background: transparent;
   border: 1px solid color-mix(in srgb, var(--color-ink) 12%, transparent);
   transition: background 0.15s ease, border-color 0.15s ease;
-  border-radius: 0;
 }
-
 .marketing-btn-secondary:hover {
   background: color-mix(in srgb, white 60%, transparent);
   border-color: color-mix(in srgb, var(--color-ink) 20%, transparent);
@@ -1260,35 +1036,24 @@
 .marketing-has-sticky-cta {
   padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
 }
-
 @media (min-width: 1024px) {
-  .marketing-has-sticky-cta {
-    padding-bottom: 0;
-  }
+  .marketing-has-sticky-cta { padding-bottom: 0; }
 }
 
-/* Footer sits above the fixed mobile CTA so links stay tappable */
 @media (max-width: 1023px) {
   .marketing-footer-above-sticky {
     padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
   }
-
-  .marketing-surface {
-    overflow-x: clip;
-  }
+  .marketing-surface { overflow-x: clip; }
 }
 
-/* Trust / status cards on public pages */
 .marketing-panel {
   border: 1px solid color-mix(in srgb, black 8%, transparent);
   background: white;
-  border-radius: 0;
 }
-
 .marketing-panel-muted {
   border: 1px solid color-mix(in srgb, black 8%, transparent);
   background: color-mix(in srgb, white 70%, transparent);
-  border-radius: 0;
 }
 
 .marketing-body {
@@ -1297,16 +1062,12 @@
   color: color-mix(in srgb, var(--color-ink) 85%, transparent);
 }
 
-/* Horizontally scrollable data tables on phone */
 .app-table-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
 }
-
-.app-table-scroll table {
-  min-width: 36rem;
-}
+.app-table-scroll table { min-width: 36rem; }
 
 @media (max-width: 1023px) {
   .app-surface .app-segment-btn {
@@ -1315,13 +1076,9 @@
     padding-left: 0.75rem;
     padding-right: 0.75rem;
   }
-
-  .app-surface .app-primary-btn {
-    min-height: 48px;
-  }
+  .app-surface .app-primary-btn { min-height: 48px; }
 }
 
-/* Dense tables / lists in app panels */
 .app-meta {
   font-size: 0.75rem;
   line-height: 1.4;
@@ -1353,52 +1110,42 @@
 .app-surface input:not([type="color"]),
 .app-surface textarea,
 .app-surface select {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.46), rgba(255,255,255,0.28)),
+  background: linear-gradient(180deg, rgba(255,255,255,0.46), rgba(255,255,255,0.28)),
     rgba(239, 233, 220, 0.38) !important;
   border-color: rgba(26, 22, 20, 0.13) !important;
   color: var(--color-ink);
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.72) inset,
+  box-shadow: 0 1px 0 rgba(255,255,255,0.72) inset,
     0 8px 20px -18px rgba(26,22,20,0.35) !important;
 }
-
 .app-input-soft:focus,
 .app-surface input:not([type="color"]):focus,
 .app-surface textarea:focus,
 .app-surface select:focus {
   background: rgba(255,255,255,0.58) !important;
   border-color: color-mix(in srgb, var(--color-brand) 38%, rgba(26,22,20,0.12)) !important;
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--color-brand) 18%, transparent),
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-brand) 18%, transparent),
     0 10px 24px -18px color-mix(in srgb, var(--color-brand) 45%, transparent) !important;
 }
 
-.client-panel,
-.preview-panel {
+.client-panel, .preview-panel {
   border-color: rgba(26,22,20,0.075) !important;
-  background:
-    linear-gradient(180deg, rgba(250,247,241,0.80), rgba(241,235,224,0.58)),
+  background: linear-gradient(180deg, rgba(250,247,241,0.80), rgba(241,235,224,0.58)),
     rgba(245,239,229,0.64) !important;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.78) inset,
+  box-shadow: 0 1px 0 rgba(255,255,255,0.78) inset,
     0 20px 50px -34px rgba(26,22,20,0.32);
 }
 
 .brand-color-swatch {
   border-color: rgba(26,22,20,0.12) !important;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.72) inset,
+  box-shadow: 0 1px 0 rgba(255,255,255,0.72) inset,
     0 8px 18px -14px rgba(26,22,20,0.42) !important;
 }
 
 .brand-preview-card {
   border: 1px solid rgba(26,22,20,0.085);
-  background:
-    linear-gradient(135deg, rgba(255,255,255,0.36), rgba(239,233,220,0.68)),
+  background: linear-gradient(135deg, rgba(255,255,255,0.36), rgba(239,233,220,0.68)),
     var(--color-paper);
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.76) inset,
+  box-shadow: 0 1px 0 rgba(255,255,255,0.76) inset,
     0 14px 34px -26px rgba(26,22,20,0.38);
 }
 
@@ -1408,8 +1155,7 @@
 
 .settings-tab-strip {
   border-color: rgba(26,22,20,0.075) !important;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.72) inset,
+  box-shadow: 0 1px 0 rgba(255,255,255,0.72) inset,
     0 14px 34px -28px rgba(26,22,20,0.36);
 }
 
@@ -1418,10 +1164,10 @@
 }
 
 .settings-tab-active-pill {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--color-brand) 13%, white), color-mix(in srgb, var(--color-brand) 9%, var(--color-paper)));
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.64) inset,
+  background: linear-gradient(180deg,
+      color-mix(in srgb, var(--color-brand) 13%, white),
+      color-mix(in srgb, var(--color-brand) 9%, var(--color-paper)));
+  box-shadow: 0 1px 0 rgba(255,255,255,0.64) inset,
     0 8px 20px -18px color-mix(in srgb, var(--color-brand) 56%, transparent),
     0 0 0 1px color-mix(in srgb, var(--color-brand) 14%, transparent) inset;
 }
@@ -1435,10 +1181,10 @@
 }
 
 .app-tab-active-bg {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--color-brand) 13%, white), color-mix(in srgb, var(--color-brand) 9%, var(--color-paper)));
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.64) inset,
+  background: linear-gradient(180deg,
+      color-mix(in srgb, var(--color-brand) 13%, white),
+      color-mix(in srgb, var(--color-brand) 9%, var(--color-paper)));
+  box-shadow: 0 1px 0 rgba(255,255,255,0.64) inset,
     0 8px 20px -18px color-mix(in srgb, var(--color-brand) 54%, transparent),
     0 0 0 1px color-mix(in srgb, var(--color-brand) 13%, transparent) inset;
   will-change: transform, background-color;
@@ -1459,123 +1205,53 @@
   color: #fff !important;
   background: linear-gradient(180deg, var(--color-brand), var(--color-brand-deep)) !important;
   border-color: rgba(255,255,255,0.22) !important;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.24) inset,
+  box-shadow: 0 1px 0 rgba(255,255,255,0.24) inset,
     0 14px 28px -16px color-mix(in srgb, var(--color-brand) 70%, transparent) !important;
 }
 
-/* Force light color scheme for native form controls */
-input[type="email"],
-input[type="password"],
-input[type="text"],
-input[type="search"],
-input[type="number"],
-input[type="tel"],
-textarea,
-select {
+input[type="email"], input[type="password"], input[type="text"],
+input[type="search"], input[type="number"], input[type="tel"],
+textarea, select {
   background-color: rgba(0, 0, 0, 0.04);
 }
 
-/* Auth inputs override — higher specificity than the global input rule above */
-.auth-input,
-.auth-input[type="email"],
-.auth-input[type="password"],
+.auth-input, .auth-input[type="email"], .auth-input[type="password"],
 .auth-input[type="text"] {
   background-color: rgba(255, 255, 255, 0.60);
 }
-.auth-input:focus,
-.auth-input[type="email"]:focus,
-.auth-input[type="password"]:focus,
-.auth-input[type="text"]:focus {
+.auth-input:focus, .auth-input[type="email"]:focus,
+.auth-input[type="password"]:focus, .auth-input[type="text"]:focus {
   background-color: rgba(255, 255, 255, 0.80);
 }
 
-/* iOS Safari auto-zooms on focus when input font-size < 16px. Force a
-   minimum 16px on touch devices so the page doesn't suddenly scale up
-   the moment a user taps an input. Desktop / pointer:fine devices keep
-   our compact text-sm sizing. */
 @media (pointer: coarse) {
-  input[type="email"],
-  input[type="password"],
-  input[type="text"],
-  input[type="search"],
-  input[type="number"],
-  input[type="tel"],
-  input[type="url"],
-  input[type="date"],
-  input[type="datetime-local"],
-  input[type="time"],
-  input:not([type]),
-  textarea,
-  select {
+  input[type="email"], input[type="password"], input[type="text"],
+  input[type="search"], input[type="number"], input[type="tel"],
+  input[type="url"], input[type="date"], input[type="datetime-local"],
+  input[type="time"], input:not([type]), textarea, select {
     font-size: 16px;
   }
-
-  /* iOS App Store 44pt tap target — enforce only on primary navigation and
-     standalone action surfaces, NOT on dense in-panel icon buttons (those
-     get data-no-min-touch). This avoids inflating glass card action rows. */
-  nav a,
-  nav button,
-  [role="navigation"] a,
-  [role="navigation"] button {
+  nav a, nav button, [role="navigation"] a, [role="navigation"] button {
     min-height: 44px;
   }
-
-  /* Eliminate 300ms click-delay on all interactive elements. Modern iOS
-     Safari no longer adds this delay with viewport-fit=cover, but belt-and-
-     suspenders for older devices still in the field. */
-  button,
-  [role="button"],
-  a,
-  select {
-    touch-action: manipulation;
-  }
-
-  /* Prevent iOS text-selection "loupe" from firing on taps inside buttons
-     and nav links, which looks wrong and feels non-native. */
-  button,
-  [role="button"],
-  nav a {
+  button, [role="button"], a, select { touch-action: manipulation; }
+  button, [role="button"], nav a {
     -webkit-user-select: none;
     user-select: none;
   }
 }
 
-/* Suppress iOS long-press callout on UI chrome only — NOT on data text like
-   phone numbers in call logs where the copy/call popover is intentional. */
-button,
-[role="button"],
-[role="tab"],
-nav a,
-[role="navigation"] a,
-label {
+button, [role="button"], [role="tab"], nav a, [role="navigation"] a, label {
   -webkit-touch-callout: none;
 }
 
-input:focus,
-textarea:focus,
-select:focus {
+input:focus, textarea:focus, select:focus {
   outline: none;
-  box-shadow:
-    0 0 0 2px rgba(107, 43, 153 , 0.28),
-    0 0 14px rgba(107, 43, 153 , 0.12);
-  border-color: rgba(107, 43, 153 , 0.45);
+  box-shadow: 0 0 0 2px rgba(107, 43, 153, 0.28),
+    0 0 14px rgba(107, 43, 153, 0.12);
+  border-color: rgba(107, 43, 153, 0.45);
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  EXTENDED DESIGN SYSTEM  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-
-/* Elevated glass â€” one step above glass-strong, for modals / popovers */
-.glass-elevated {
-  /* Same warm-tan paper base as .glass + .glass-strong. */
-  background:
-    linear-gradient(180deg, rgba(248, 243, 235, 0.97), rgba(246, 241, 231, 0.86)),
-    rgba(239, 233, 220, 0.98);
-  backdrop-filter: blur(56px) saturate(180%);
-  -webkit-backdrop-filter: blur(56px) saturate(180%);
-  border: 1px solid rgba(0, 0, 0, 0.10);
-}
-
-/* Subtle surface for list rows / table cells */
 .surface-row {
   background: rgba(0, 0, 0, 0.022);
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
@@ -1585,118 +1261,30 @@ select:focus {
   background: rgba(0, 0, 0, 0.048);
 }
 
-/* Ghost button â€” no background, subtle border */
 .btn-ghost {
-  @apply relative inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl
-         border border-black/10 text-ink/65 text-[11px] font-medium transition-all
-         hover:border-black/20 hover:text-ink hover:bg-black/5
-         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50
-         disabled:opacity-50 disabled:pointer-events-none;
+  @apply relative inline-flex items-center justify-center gap-2 px-4 py-2
+    border border-black/10 text-ink/65 text-[11px] font-medium transition-all
+    hover:border-black/20 hover:text-ink hover:bg-black/5
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50
+    disabled:opacity-50 disabled:pointer-events-none;
 }
 
-/* Danger button */
 .btn-danger {
-  @apply relative inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl
-         border border-rose-500/35 bg-rose-500/8 text-rose-600 text-[11px] font-medium
-         transition-all hover:bg-rose-500/15 hover:border-rose-500/55 hover:text-rose-700
-         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40
-         disabled:opacity-50 disabled:pointer-events-none;
+  @apply relative inline-flex items-center justify-center gap-2 px-4 py-2
+    border border-rose-500/35 bg-rose-500/8 text-rose-600 text-[11px] font-medium
+    transition-all hover:bg-rose-500/15 hover:border-rose-500/55 hover:text-rose-700
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40
+    disabled:opacity-50 disabled:pointer-events-none;
 }
 
-/* Brand outline button */
 .btn-brand-outline {
-  @apply relative inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl
-         border border-brand/35 bg-brand/5 text-brand text-[11px] font-medium
-         transition-all hover:bg-brand/12 hover:border-brand/55
-         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40
-         disabled:opacity-50 disabled:pointer-events-none;
+  @apply relative inline-flex items-center justify-center gap-2 px-4 py-2
+    border border-brand/35 bg-brand/5 text-brand text-[11px] font-medium
+    transition-all hover:bg-brand/12 hover:border-brand/55
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40
+    disabled:opacity-50 disabled:pointer-events-none;
 }
 
-/* Standard form input field */
-.input-field {
-  @apply w-full px-4 py-3 rounded-xl bg-black/5 border border-black/10 text-ink
-         text-sm placeholder:text-muted/60 outline-none transition-all
-         focus:border-brand/50 focus:bg-white/60;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) inset;
-}
-
-/* Compact input variants used by the AgentBusinessProfile editor.
-   Slimmer than .input-field â€” designed to live alongside chips,
-   time pickers, and key/value rows in dense settings panels. */
-.input-base {
-  @apply h-9 px-2.5 rounded-lg bg-black/5 border border-black/10 text-ink
-         text-sm placeholder:text-muted/55 outline-none transition-colors
-         focus:border-brand/45 focus:bg-white/55 disabled:opacity-50;
-}
-.input-time {
-  @apply h-9 px-2.5 rounded-lg bg-black/5 border border-black/10 text-ink
-         text-sm tabular-nums outline-none transition-colors
-         focus:border-brand/45 focus:bg-white/55
-         disabled:opacity-40 disabled:cursor-not-allowed;
-}
-.textarea-base {
-  @apply w-full px-3 py-2 rounded-lg bg-black/5 border border-black/10 text-ink
-         text-sm placeholder:text-muted/55 outline-none transition-colors
-         focus:border-brand/45 focus:bg-white/55 resize-none leading-relaxed;
-}
-
-/* Section separator â€” soft brand line */
-.section-divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(107, 43, 153, 0.30) 50%, transparent);
-}
-
-/* Compact metric display */
-.metric-value {
-  @apply font-display italic text-ink leading-none tracking-tight;
-}
-
-/* Status dot colors — brand purple family, not teal/orange */
-.dot-online  { @apply w-2 h-2 rounded-full bg-brand; box-shadow: 0 0 6px rgba(107, 43, 153, 0.55); }
-.dot-busy    { @apply w-2 h-2 rounded-full bg-rose-500;    box-shadow: 0 0 6px rgba(232, 70, 106, 0.7); }
-.dot-idle    { @apply w-2 h-2 rounded-full bg-muted/40; }
-.dot-pending { @apply w-2 h-2 rounded-full bg-amber-500; box-shadow: 0 0 6px rgba(139, 111, 168, 0.55); }
-
-/* Animated "live" pulse ring */
-@keyframes live-pulse {
-  0% { transform: scale(1);    opacity: 0.9; }
-  70% { transform: scale(2.2); opacity: 0; }
-  100% { transform: scale(2.2); opacity: 0; }
-}
-.live-ring::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: currentColor;
-  animation: live-pulse 1.8s ease-out infinite;
-}
-
-/* Iridescent card hover effect */
-.card-interactive {
-  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow 300ms ease,
-              border-color 200ms ease;
-}
-.card-interactive:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.90) inset,
-    0 0 0 1px rgba(107, 43, 153, 0.10),
-    0 12px 36px -10px rgba(0, 0, 0, 0.12),
-    0 6px 20px -6px rgba(107, 43, 153, 0.14);
-  border-color: rgba(107, 43, 153, 0.20);
-}
-
-/* Brand badge — soft purple pill with AAA-readable text */
-.badge-aurora {
-  background: rgba(107, 43, 153, 0.10);
-  border: 1px solid rgba(107, 43, 153, 0.30);
-  color: var(--color-brand-ink);
-  @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-[0.20em] leading-none;
-}
-
-/* ── Ghost brand button — translucent purple with AAA text contrast ──── */
 .btn-ghost-brand {
   display: inline-flex;
   align-items: center;
@@ -1718,118 +1306,131 @@ select:focus {
   color: var(--color-brand);
 }
 
-/* Priority badge variants */
-.badge-high   { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.2em] leading-none bg-rose-500/10 border border-rose-500/30 text-rose-600; }
-.badge-medium { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.2em] leading-none bg-amber-500/10 border border-amber-500/30 text-amber-700; }
-.badge-low    { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.2em] leading-none bg-black/5 border border-black/10 text-muted; }
+.input-field {
+  @apply w-full px-4 py-3 bg-black/5 border border-black/10 text-ink
+    text-sm placeholder:text-muted/60 outline-none transition-all
+    focus:border-brand/50 focus:bg-white/60;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) inset;
+}
 
-/* Sidebar nav item â€” active solid pill */
+.input-base {
+  @apply h-9 px-2.5 bg-black/5 border border-black/10 text-ink
+    text-sm placeholder:text-muted/55 outline-none transition-colors
+    focus:border-brand/45 focus:bg-white/55 disabled:opacity-50;
+}
+.input-time {
+  @apply h-9 px-2.5 bg-black/5 border border-black/10 text-ink
+    text-sm tabular-nums outline-none transition-colors
+    focus:border-brand/45 focus:bg-white/55
+    disabled:opacity-40 disabled:cursor-not-allowed;
+}
+.textarea-base {
+  @apply w-full px-3 py-2 bg-black/5 border border-black/10 text-ink
+    text-sm placeholder:text-muted/55 outline-none transition-colors
+    focus:border-brand/45 focus:bg-white/55 resize-none leading-relaxed;
+}
+
+.input-field, .input-base, .textarea-base, select {
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.input-field:focus, .input-base:focus, .textarea-base:focus, select:focus {
+  box-shadow: 0 0 0 1px rgba(107, 43, 153, 0.25), 0 0 8px rgba(107, 43, 153, 0.08);
+}
+
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(107, 43, 153, 0.30) 50%, transparent);
+}
+
+.metric-value {
+  @apply font-display italic text-ink leading-none tracking-tight;
+}
+
+.dot-online { @apply w-2 h-2 rounded-full bg-brand; box-shadow: 0 0 6px rgba(107, 43, 153, 0.55); }
+.dot-busy { @apply w-2 h-2 rounded-full bg-rose-500; box-shadow: 0 0 6px rgba(232, 70, 106, 0.7); }
+.dot-idle { @apply w-2 h-2 rounded-full bg-muted/40; }
+.dot-pending { @apply w-2 h-2 rounded-full bg-amber-500; box-shadow: 0 0 6px rgba(139, 111, 168, 0.55); }
+
+.badge-aurora {
+  background: rgba(107, 43, 153, 0.10);
+  border: 1px solid rgba(107, 43, 153, 0.30);
+  color: var(--color-brand-ink);
+  @apply inline-flex items-center gap-1 px-2.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.20em] leading-none;
+}
+
+.badge-high { @apply inline-flex items-center gap-1 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] leading-none bg-rose-500/10 border border-rose-500/30 text-rose-600; }
+.badge-medium { @apply inline-flex items-center gap-1 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] leading-none bg-amber-500/10 border border-amber-500/30 text-amber-700; }
+.badge-low { @apply inline-flex items-center gap-1 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] leading-none bg-black/5 border border-black/10 text-muted; }
+
 .nav-active-bg {
   background: var(--color-brand);
-  box-shadow:
-    0 4px 14px -6px rgba(107,43,153,0.45),
+  box-shadow: 0 4px 14px -6px rgba(107,43,153,0.45),
     0 0 0 1px rgba(255,255,255,0.18) inset;
 }
 
-/* Page hero accent line */
 .hero-accent-line {
   height: 3px;
   width: 48px;
-  border-radius: 999px;
   background: var(--color-brand);
   box-shadow: 0 0 10px rgba(107, 43, 153, 0.40);
 }
 
-/* Glow on hover for icon buttons */
 .icon-btn {
-  @apply relative w-9 h-9 rounded-xl flex items-center justify-center border border-black/8
-         text-ink/55 hover:text-ink hover:border-black/18 hover:bg-black/5 transition-all
-         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50;
+  @apply relative w-9 h-9 flex items-center justify-center border border-black/8
+    text-ink/55 hover:text-ink hover:border-black/18 hover:bg-black/5 transition-all
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50;
 }
 
-/* ─── Universal interactive focus ring ─────────────────────────────────────
- * Ensures every interactive element (even those without explicit focus
- * styles) gets a visible focus indicator for keyboard navigation.
- * Only fires on :focus-visible (not click) to maintain clean aesthetics. */
 :where(button, [role="button"], [role="tab"], a[href], summary):focus-visible {
   outline: none;
-  box-shadow:
-    0 0 0 2px var(--color-paper),
+  box-shadow: 0 0 0 2px var(--color-paper),
     0 0 0 4px rgba(107, 43, 153, 0.45);
   border-radius: inherit;
 }
 
-/* ─── Letter-spacing semantic scale ────────────────────────────────────────
- * Three intentional tiers to replace 7+ arbitrary tracking values:
- *   --tracking-tight:  0.10em — buttons, primary actions
- *   --tracking-normal: 0.20em — badges, secondary labels
- *   --tracking-wide:   0.35em — table headers, eyebrows, chips
- * Components should prefer these over arbitrary tracking-[X] values. */
-
-/* Table / list header */
 .table-header {
   @apply text-[9px] uppercase tracking-[0.35em] text-muted font-medium;
 }
 
-/* Scrollable panel content — overscroll containment */
-.panel-scroll,
-.native-scroll {
+.panel-scroll, .native-scroll {
   @apply overflow-y-auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(107, 43, 153, 0.20) transparent;
-  /* Contain overscroll — rubber-bands within the panel only, not the page.
-     Also prevents the URL bar from reappearing mid-scroll on Safari.
-     NOTE: touch-action intentionally omitted — pan-y would block horizontal
-     scroll inside data tables; iOS 13+ has momentum scrolling by default. */
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
-}
-
-/* Sticky chrome — saturated frosted glass (Vercel / Supabase pattern). */
-.shell-sticky-glass {
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
 }
 
 .workspace-stage {
   position: relative;
 }
-
 .workspace-stage::before {
   content: "";
   position: absolute;
   inset: 0.25rem 0.35rem 0.35rem;
   pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(252, 249, 243, 0.76), rgba(244, 237, 226, 0.46)),
+  background: linear-gradient(180deg, rgba(252, 249, 243, 0.76), rgba(244, 237, 226, 0.46)),
     rgba(247, 242, 233, 0.36);
   border: 1px solid rgba(26, 22, 20, 0.07);
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.78) inset,
+  box-shadow: 0 1px 0 rgba(255,255,255,0.78) inset,
     0 30px 90px -42px rgba(26, 22, 20, 0.24);
   z-index: 0;
 }
-
 .workspace-stage::after {
   content: "";
   position: absolute;
   inset: 0.25rem 0.35rem 0.35rem;
   pointer-events: none;
-  background:
-    linear-gradient(90deg, rgba(139,63,214,0.08), rgba(139,63,214,0) 18%, rgba(37,84,74,0) 78%, rgba(37,84,74,0.06)),
+  background: linear-gradient(90deg, rgba(139,63,214,0.08), rgba(139,63,214,0) 18%, rgba(37,84,74,0) 78%, rgba(37,84,74,0.06)),
     linear-gradient(180deg, rgba(255,255,255,0.32), transparent 18%);
   mix-blend-mode: normal;
   z-index: 0;
 }
-
 .workspace-stage > .app-surface {
   position: relative;
   z-index: 1;
 }
-
 @media (max-width: 767px) {
-  .workspace-stage::before,
-  .workspace-stage::after {
+  .workspace-stage::before, .workspace-stage::after {
     inset: 0;
     border: none;
     box-shadow: none;
@@ -1837,23 +1438,19 @@ select:focus {
   }
 }
 
-/* Fluid type — zero-breakpoint scaling for marketing + console heroes. */
 .type-fluid-hero {
   font-size: clamp(1.5rem, 1.1rem + 2.2vw, 2.75rem);
   line-height: 1.1;
 }
-
 .type-fluid-title {
   font-size: clamp(1.125rem, 0.95rem + 0.9vw, 1.65rem);
   line-height: 1.2;
 }
-
 .type-fluid-body {
   font-size: clamp(0.8125rem, 0.78rem + 0.35vw, 0.9375rem);
   line-height: 1.55;
 }
 
-/* Physical press on touch — haptic substitute. */
 @media (hover: none) and (pointer: coarse) {
   .native-tap-squish:active,
   button.native-tap-squish:active,
@@ -1861,96 +1458,44 @@ select:focus {
     transform: scale(0.96);
     transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
   }
-
-  .btn-ghost:active,
-  .btn-brand-outline:active,
-  .btn-danger:active {
+  .btn-ghost:active, .btn-brand-outline:active, .btn-danger:active {
     transform: scale(0.97);
     transition-duration: 0.1s;
   }
 }
 
-/* View Transitions API — cross-fade route changes where supported. */
 @supports (view-transition-name: none) {
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
+  ::view-transition-old(root), ::view-transition-new(root) {
     animation-duration: 0.22s;
     animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
   }
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  ADDITIONAL ANIMATIONS  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.page-title-aurora { color: #1C1917; }
 
-@keyframes float-up {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-  100% { transform: translateY(0); }
-}
-.animate-float { animation: float-up 4s ease-in-out infinite; }
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-.animate-blink { animation: blink 1.2s step-start infinite; }
-
-@keyframes slide-in-right {
-  from { transform: translateX(24px); opacity: 0; }
-  to   { transform: translateX(0);    opacity: 1; }
-}
-.animate-slide-in-right { animation: slide-in-right 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-@keyframes count-up {
-  from { opacity: 0; transform: translateY(8px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0)   scale(1); }
-}
-.animate-count-up { animation: count-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  PAGE TITLE GLOW  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-
-/* Large display headings â€” solid warm ink, editorial weight. */
-.page-title-aurora {
-  color: #1C1917;
-}
-
-/* Panel header decoration bar â€” soft brand fade */
 .panel-header-rule {
   height: 1px;
   background: linear-gradient(90deg, rgba(107,43,153,0.45) 0%, transparent 100%);
 }
 
-/* Auth form input â€” tall, light, branded */
-/* Auth form input — unified: light, tall, branded */
-.auth-input {
-  @apply w-full px-5 bg-white/60 border border-ink/[0.08] outline-none
-         text-ink text-sm placeholder:text-ink/40 focus:border-brand/50
-         focus:bg-white/80 transition-all;
-  height: 52px;
-}
-
-/* Empty state helper */
 .empty-state-icon {
   @apply w-16 h-16 flex items-center justify-center mx-auto;
   background: linear-gradient(135deg, rgba(0,0,0,0.05), rgba(0,0,0,0.02));
   border: 1px solid rgba(0,0,0,0.08);
 }
 
-/* Segmented control / tab-toggle surface */
 .tab-toggle-surface {
   @apply relative flex p-1;
   background: rgba(0, 0, 0, 0.06);
   border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-/* Brand accent chip / tag */
 .chip-brand {
   background: rgba(107, 43, 153, 0.10);
   border: 1px solid rgba(107, 43, 153, 0.30);
   color: var(--color-brand);
   @apply inline-flex items-center gap-1.5 px-3 py-1 text-[10px] uppercase tracking-[0.35em] leading-none font-medium;
 }
-
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  PREMIUM ENTERPRISE GLOWS  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .premium-glass {
   background: rgba(255, 255, 255, 0.55);
@@ -1959,159 +1504,62 @@ select:focus {
   border: 1px solid rgba(107, 43, 153, 0.08);
 }
 
-.card-interactive-premium {
-  transition: all 400ms cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-}
-.card-interactive-premium::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(107, 43, 153, 0.25) 0%, transparent 60%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-  opacity: 0.3;
-  transition: opacity 400ms ease;
-}
-.card-interactive-premium:hover {
-  transform: translateY(-3px) scale(1.01);
-  box-shadow: 
-    0 20px 40px -15px rgba(107, 43, 153, 0.08),
-    0 0 0 1px rgba(107, 43, 153, 0.18);
-}
-.card-interactive-premium:hover::before {
-  opacity: 1;
-}
-
-.neon-glow-teal {
-  text-shadow: 0 0 8px rgba(107, 43, 153, 0.35);
-}
-
-/* Futuristic Recharts Custom Tooltip Glassmorphic component */
 .recharts-tooltip-custom-glass {
   background: rgba(28, 25, 23, 0.92) !important;
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
   border: 1px solid rgba(107, 43, 153, 0.3) !important;
-  border-radius: 0 !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
   padding: 12px !important;
 }
 
-/* Neon animated checkbox styling */
-.neon-checkbox {
-  @apply relative flex items-center justify-center w-5 h-5 rounded-md border border-black/12 transition-all cursor-pointer;
+.shadow-premium-button {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.20) inset,
+    0 4px 12px -2px rgba(139, 63, 214, 0.16);
 }
-.neon-checkbox.active {
-  background: linear-gradient(135deg, var(--color-brand), var(--secondary));
-  border-color: var(--color-brand);
-  box-shadow: 0 0 10px rgba(107, 43, 153, 0.45);
+.hover-premium-glow {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
-/* AgentIntegrationCanvas — flowing data-line effect on active SVG lines */
-@keyframes integration-flow {
-  to { stroke-dashoffset: -7; }
+.hover-premium-glow:hover {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset,
+    0 8px 20px -4px rgba(139, 63, 214, 0.28);
+  transform: translateY(-1px);
 }
-
-/* AgentIntegrationCanvas — pulsing outer ring on the center agent node */
-@keyframes agent-pulse {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50% { opacity: 0; transform: scale(1.6); }
-}
-
-/* AgentIntegrationCanvas — SMS preview typing dots */
-@keyframes typing-dot-bounce {
-  0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
-  30% { transform: translateY(-3px); opacity: 1; }
-}
-
-/* ─── Mobile-first polish (signed-in shell + auth) ───────────────────────
- * Purposeful touch refinements: readable type, native-feeling tabs, panels
- * that read as one surface with the tab bar, and no hover-lift on phones. */
 
 @media (min-width: 1024px) {
-  .mobile-page-canvas {
-    padding-top: 0.125rem;
-  }
+  .mobile-page-canvas { padding-top: 0.125rem; }
 }
 
-/* Fallback when dvh is unavailable (older WebViews). */
 @supports not (height: 100dvh) {
-  html,
-  body,
-  #root,
-  .min-h-dvh {
-    min-height: 100svh;
-  }
+  html, body, #root, .min-h-dvh { min-height: 100svh; }
 }
 
 @media (max-width: 767px) {
-  /* Lighter glass on phones — skip expensive blur, keep warm cream opacity. */
   .glass {
     background: rgba(246, 241, 232, 0.94);
     backdrop-filter: blur(10px) saturate(130%);
     -webkit-backdrop-filter: blur(10px) saturate(130%);
     border-color: rgba(0, 0, 0, 0.06);
   }
-
-  .glass-strong,
-  .glass-elevated {
+  .glass-strong, .glass-elevated {
     background: rgba(248, 243, 235, 0.98);
     backdrop-filter: blur(14px) saturate(150%);
     -webkit-backdrop-filter: blur(14px) saturate(150%);
   }
-
-  /* Hover lift reads as jitter on touch — keep shadow, drop translate. */
-  .card-interactive:hover,
-  .card-interactive-premium:hover {
-    transform: none;
-  }
-
-  .brutal-btn:hover {
-    transform: none;
-  }
-
-  /* Page canvas gutter — pairs with AppShell px-3 */
+  .card-interactive:hover, .card-interactive-premium:hover { transform: none; }
+  .brutal-btn:hover { transform: none; }
   .mobile-page-canvas {
     padding-left: 0;
     padding-right: 0;
-    /* Fill the viewport beneath the top bar. The bottom tab bar was
-       removed, so reserve home-indicator / browser-chrome clearance here
-       instead of via a spacer — at least 0.5rem of breathing room. */
     padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
     min-height: 0;
     flex: 1 1 auto;
   }
-
-  .workspace-stage {
-    padding-left: 0;
-    padding-right: 0;
-    padding-bottom: 0;
-  }
-
-  .app-surface {
-    font-size: 13px !important;
-    line-height: 1.42 !important;
-  }
-
-  .app-surface h1 {
-    font-size: 1.26rem !important;
-  }
-
-  .app-surface h2 {
-    font-size: 1.12rem !important;
-  }
-
-  .mobile-page-canvas > * {
-    min-height: 0;
-  }
-
-  /* Unified tab + panel stack on mobile routes */
+  .workspace-stage { padding-left: 0; padding-right: 0; padding-bottom: 0; }
+  .app-surface { font-size: 13px !important; line-height: 1.42 !important; }
+  .app-surface h1 { font-size: 1.26rem !important; }
+  .app-surface h2 { font-size: 1.12rem !important; }
+  .mobile-page-canvas > * { min-height: 0; }
   .mobile-route-stack {
     display: flex;
     flex-direction: column;
@@ -2119,54 +1567,28 @@ select:focus {
     min-height: 0;
     gap: 0.5rem;
   }
-
   .mobile-route-stack .panel-mobile-surface {
-    border-radius: 0;
     border-bottom: none;
-    box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset,
       0 -1px 0 rgba(0, 0, 0, 0.04),
       0 12px 40px -16px rgba(0, 0, 0, 0.12),
       0 4px 16px -6px rgba(107, 43, 153, 0.08);
   }
-
   .panel-scroll {
     -webkit-overflow-scrolling: touch;
     padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
   }
-
   .stat-tile-mobile .metric-value,
   .stat-tile-mobile .font-display {
     font-size: 1.75rem;
     line-height: 1;
   }
-
-  /* Mobile "zoom out" — common card / panel paddings are tuned for
-   * desktop and read as too generous on a 360–414px viewport. Knock
-   * common Tailwind paddings down a notch so dashboards, lists, and
-   * tiles fit more content per fold without breaking the 12–16px
-   * gutter system. Scoped to the signed-in `.app-surface` so marketing
-   * pages keep their editorial breathing room. */
-  .app-surface .p-6 {
-    padding: 1rem;
-  }
-  .app-surface .p-5 {
-    padding: 0.875rem;
-  }
-  .app-surface .px-6 {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-  .app-surface .py-6 {
-    padding-top: 1rem;
-    padding-bottom: 1rem;
-  }
-  .app-surface .gap-6 {
-    gap: 1rem;
-  }
-  .app-surface .gap-5 {
-    gap: 0.875rem;
-  }
+  .app-surface .p-6 { padding: 1rem; }
+  .app-surface .p-5 { padding: 0.875rem; }
+  .app-surface .px-6 { padding-left: 1rem; padding-right: 1rem; }
+  .app-surface .py-6 { padding-top: 1rem; padding-bottom: 1rem; }
+  .app-surface .gap-6 { gap: 1rem; }
+  .app-surface .gap-5 { gap: 0.875rem; }
 }
 
 @media (hover: none) and (pointer: coarse) {
@@ -2176,55 +1598,11 @@ select:focus {
   }
 }
 
-/* AgentIntegrationCanvas — fade-up reveal for animated preview card elements */
-@keyframes appear-up {
-  from { opacity: 0; transform: translateY(5px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* AgentIntegrationCanvas — shimmer sweep for active integration nodes */
-@keyframes node-shimmer {
-  0%   { background-position: -100% 0; }
-  100% { background-position: 200% 0; }
-}
-
-/* Animated Neural Synapse connection pulses */
-@keyframes synapse-glow {
-  0%, 100% { opacity: 0.2; transform: scale(0.95); filter: drop-shadow(0 0 0 transparent); }
-  50% { opacity: 1; transform: scale(1.05); filter: drop-shadow(0 0 6px rgba(107, 43, 153, 0.8)); }
-}
-.synapse-pulse {
-  animation: synapse-glow 2.5s infinite ease-in-out;
-}
-
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
- * Reduced motion â€” respect operator OS-level preference.
- * Wireline leans on aurora gradients, scanlines, and motion/react
- * animations everywhere. For users with prefers-reduced-motion set,
- * collapse animations to a near-zero duration so they don't induce
- * vestibular distress, but keep static styling intact.
- * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€*/
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-  /* Aurora orbs and scanlines are decorative-only — hide entirely. */
-  .scanline { display: none !important; }
-}
-
-/* ──────────────────────────────────────────────────────────────────────────
-   E2E PREMIUM DESIGN POLISH — LUXURY & EDITORIAL TECH DETAILS
-   ────────────────────────────────────────────────────────────────────────── */
-
-/* Premium page tabs styling and interaction */
 [role="tab"] {
   transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-              color 0.22s ease,
-              background-color 0.22s ease,
-              box-shadow 0.22s ease;
+    color 0.22s ease,
+    background-color 0.22s ease,
+    box-shadow 0.22s ease;
 }
 [role="tab"]:not([aria-selected="true"]):hover {
   transform: translateY(-0.5px);
@@ -2232,33 +1610,25 @@ select:focus {
   background-color: rgba(107, 43, 153, 0.05) !important;
   box-shadow: 0 1px 0 rgba(107, 43, 153, 0.08);
 }
-[role="tab"]:active {
-  transform: scale(0.98);
-}
+[role="tab"]:active { transform: scale(0.98); }
 
-/* Enhanced glass card reflections and colors on hover */
 .glass.card-interactive:hover {
-  background:
-    linear-gradient(180deg, rgba(248, 243, 235, 0.92), rgba(245, 239, 229, 0.72)),
+  background: linear-gradient(180deg, rgba(248, 243, 235, 0.92), rgba(245, 239, 229, 0.72)),
     rgba(239, 233, 220, 0.75);
   border-color: rgba(139, 63, 214, 0.32);
-  box-shadow: 
-    0 1px 0 rgba(255, 255, 255, 0.90) inset,
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.90) inset,
     0 8px 24px -6px rgba(139, 63, 214, 0.12);
   transform: translateY(-2px);
 }
 .glass-strong.card-interactive:hover {
-  background:
-    linear-gradient(180deg, rgba(249, 244, 236, 0.98), rgba(246, 241, 231, 0.90)),
+  background: linear-gradient(180deg, rgba(249, 244, 236, 0.98), rgba(246, 241, 231, 0.90)),
     rgba(239, 233, 220, 0.96);
   border-color: rgba(139, 63, 214, 0.38);
-  box-shadow: 
-    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.95) inset,
     0 12px 32px -8px rgba(139, 63, 214, 0.16);
   transform: translateY(-2px);
 }
 
-/* Premium text link transitions inside app content */
 .app-surface a:not([class*="btn"]):not([class*="brutal"]):not([class*="group"]) {
   transition: color 0.18s ease;
 }
@@ -2266,94 +1636,69 @@ select:focus {
   color: var(--color-brand) !important;
 }
 
-/* Smooth brand highlight outlines for form elements on focus */
-.input-field, .input-base, .textarea-base, select {
-  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
-}
-.input-field:focus, .input-base:focus, .textarea-base:focus, select:focus {
-  box-shadow: 0 0 0 1px rgba(107, 43, 153, 0.25), 0 0 8px rgba(107, 43, 153, 0.08);
-}
-
-/* ══════════════════════════════════════════════════════════════════
-   DARK THEME UTILITY OVERRIDES — Glass surfaces & Interactive Cards
-   Deep purple aesthetic for dark mode
-   ══════════════════════════════════════════════════════════════════ */
 .dark .glass {
-  background:
-    linear-gradient(180deg, rgba(35, 22, 55, 0.85), rgba(25, 15, 45, 0.70)),
+  background: linear-gradient(180deg, rgba(35, 22, 55, 0.85), rgba(25, 15, 45, 0.70)),
     rgba(18, 10, 35, 0.75);
   border: 1px solid rgba(139, 63, 214, 0.25);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset,
     0 4px 30px rgba(59, 21, 76, 0.4);
 }
-
 .dark .glass-strong {
-  background:
-    linear-gradient(180deg, rgba(40, 25, 65, 0.90), rgba(30, 18, 55, 0.80)),
+  background: linear-gradient(180deg, rgba(40, 25, 65, 0.90), rgba(30, 18, 55, 0.80)),
     rgba(22, 12, 42, 0.88);
   border: 1px solid rgba(139, 63, 214, 0.30);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset,
     0 8px 32px rgba(59, 21, 76, 0.5);
 }
-
 .dark .brutal-card {
-  background:
-    linear-gradient(180deg, rgba(40, 28, 65, 0.85), rgba(30, 20, 50, 0.70)),
+  background: linear-gradient(180deg, rgba(40, 28, 65, 0.85), rgba(30, 20, 50, 0.70)),
     rgba(22, 12, 42, 0.80);
   border: 1px solid rgba(139, 63, 214, 0.25);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset,
     0 0 0 1px rgba(139, 63, 214, 0.15),
     0 12px 40px -12px rgba(59, 21, 76, 0.5),
     0 4px 16px -6px rgba(139, 63, 214, 0.20);
 }
-
 .dark .glass.card-interactive:hover {
-  background:
-    linear-gradient(180deg, rgba(45, 30, 75, 0.90), rgba(35, 22, 60, 0.75)),
+  background: linear-gradient(180deg, rgba(45, 30, 75, 0.90), rgba(35, 22, 60, 0.75)),
     rgba(25, 15, 48, 0.80);
   border-color: rgba(139, 63, 214, 0.45);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.10) inset,
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.10) inset,
     0 8px 24px rgba(59, 21, 76, 0.35);
   transform: translateY(-2px);
 }
-
 .dark .glass-strong.card-interactive:hover {
-  background:
-    linear-gradient(180deg, rgba(50, 35, 85, 0.95), rgba(40, 25, 70, 0.85)),
+  background: linear-gradient(180deg, rgba(50, 35, 85, 0.95), rgba(40, 25, 70, 0.85)),
     rgba(30, 18, 55, 0.90);
   border-color: rgba(139, 63, 214, 0.55);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset,
     0 12px 32px rgba(59, 21, 76, 0.45);
   transform: translateY(-2px);
 }
-
 .dark ::selection {
   background: rgba(139, 63, 214, 0.40);
   color: #f3e8ff;
 }
-
 .dark ::-moz-selection {
   background: rgba(139, 63, 214, 0.40);
   color: #f3e8ff;
 }
-
 .dark .text-aurora,
 .dark .text-stroke,
 .dark .brand-wordmark {
   color: #c77dff;
   filter: drop-shadow(0 0 16px rgba(139, 63, 214, 0.40));
 }
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(157, 78, 221, 0.45);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(157, 78, 221, 0.65);
+}
+.dark input, .dark textarea, .dark select {
+  color-scheme: dark;
+}
 
-/* ── DYNAMIC THEME BORDER RESCUE ─────────────────────────────────────
-   * Remap hardcoded white borders (border-white/* utilities) in light
-   * mode to a premium, subtle brand-purple tint.
-   * Remap hardcoded black borders (border-black/* utilities) in dark
-   * mode to a translucent purple border. */
 :not(.dark) .border-white\/5 { border-color: rgba(139, 63, 214, 0.05); }
 :not(.dark) .border-white\/8 { border-color: rgba(139, 63, 214, 0.09); }
 :not(.dark) .border-white\/10 { border-color: rgba(139, 63, 214, 0.12); }
@@ -2361,7 +1706,6 @@ select:focus {
 :not(.dark) .border-white\/15 { border-color: rgba(139, 63, 214, 0.18); }
 :not(.dark) .border-white\/20 { border-color: rgba(139, 63, 214, 0.22); }
 :not(.dark) .border-white\/30 { border-color: rgba(139, 63, 214, 0.32); }
-
 .dark .border-black\/5 { border-color: rgba(139, 63, 214, 0.12); }
 .dark .border-black\/8 { border-color: rgba(139, 63, 214, 0.16); }
 .dark .border-black\/10 { border-color: rgba(139, 63, 214, 0.20); }
@@ -2369,197 +1713,27 @@ select:focus {
 .dark .border-black\/15 { border-color: rgba(139, 63, 214, 0.28); }
 .dark .border-black\/20 { border-color: rgba(139, 63, 214, 0.35); }
 
-/* ── PREMIUM SCROLLBARS ────────────────────────────────────────────── */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(139, 63, 214, 0.16);
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 63, 214, 0.32);
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(157, 78, 221, 0.45);
-}
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(157, 78, 221, 0.65);
-}
-
-/* ── PREMIUM INTERACTIVE SHADOWS ───────────────────────────────────── */
-.shadow-premium-button {
-  box-shadow: 
-    0 1px 0 rgba(255, 255, 255, 0.20) inset,
-    0 4px 12px -2px rgba(139, 63, 214, 0.16);
-}
-.hover-premium-glow {
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.hover-premium-glow:hover {
-  box-shadow: 
-    0 1px 0 rgba(255, 255, 255, 0.25) inset,
-    0 8px 20px -4px rgba(139, 63, 214, 0.28);
-  transform: translateY(-1px);
-}
-
-.dark input,
-.dark textarea,
-.dark select {
-  color-scheme: dark;
-}
-
-/* Accordion animations for shadcn */
-@keyframes accordion-down {
-  from {
-    height: 0;
-  }
-  to {
-    height: var(--radix-accordion-content-height);
-  }
-}
-
-@keyframes accordion-up {
-  from {
-    height: var(--radix-accordion-content-height);
-  }
-  to {
-    height: 0;
-  }
-}
-
-.animate-accordion-down {
-  animation: accordion-down 0.2s ease-out;
-}
-
-.animate-accordion-up {
-  animation: accordion-up 0.2s ease-out;
-}
-
-/* ══════════════════════════════════════════════════════════════════
-   ACCESSIBILITY — Reduced Motion Support (WCAG 2.1 Level AAA)
-   Respects user's motion preferences for vestibular disorders
-   ══════════════════════════════════════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-
-  /* Disable Motion.div spring physics when reduced motion is preferred */
-  [data-motion-reduce="true"] {
-    transform: none !important;
+  .text-aurora, .brand-wordmark,
+  .animate-aurora-drift, .animate-pulse-intense,
+  .skeleton-shimmer, .shimmer-line {
+    animation: none !important;
+  }
+  .medallion-glint::after {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+  .scanline { display: none !important; }
+  [data-motion-reduce="true"] { transform: none !important; }
+  [class*="wireline-aurora-"] { animation: none !important; }
+  .glass, .glass-strong, .glass-elevated {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 }
-
-/* ══════════════════════════════════════════════════════════════════
-   GOOGLE DESIGN SYSTEM BOOST (MATERIAL DESIGN 3 & DYNAMIC COLOR)
-   Translucent Material You elevations, tactile CSS ripple effects,
-   and dynamic icon scaling integrations.
-   ══════════════════════════════════════════════════════════════════ */
-
-/* Google Material symbols helper */
-.material-symbol {
-  font-family: 'Material Symbols Outlined';
-  font-weight: normal;
-  font-style: normal;
-  font-size: 24px;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: none;
-  display: inline-block;
-  white-space: nowrap;
-  word-wrap: normal;
-  direction: ltr;
-  -webkit-font-feature-settings: 'liga';
-  -webkit-font-smoothing: antialiased;
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-  transition: font-variation-settings 0.2s cubic-bezier(0.2, 0, 0, 1);
-}
-
-/* Hover-fill animation for Material Symbols */
-.material-symbol-interactive:hover .material-symbol,
-.material-symbol.material-symbol-interactive:hover {
-  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
-}
-
-/* Google M3 Soft Multi-Layer Shadows */
-.google-m3-elevation-1 {
-  box-shadow: 
-    0 1px 3px 0 rgba(139, 63, 214, 0.06), 
-    0 1px 2px -1px rgba(139, 63, 214, 0.04);
-}
-
-.google-m3-elevation-2 {
-  box-shadow: 
-    0 4px 6px -1px rgba(139, 63, 214, 0.08), 
-    0 2px 4px -2px rgba(139, 63, 214, 0.06);
-}
-
-.google-m3-elevation-3 {
-  box-shadow: 
-    0 10px 15px -3px rgba(139, 63, 214, 0.10), 
-    0 4px 6px -4px rgba(139, 63, 214, 0.08);
-}
-
-/* Google-style Material You Card with cream glass hybrid */
-.google-m3-card {
-  background: rgba(246, 241, 232, 0.70);
-  border: 1px solid rgba(139, 63, 214, 0.08);
-  border-radius: 20px; /* Elegant, highly curved M3 border radius */
-  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.google-m3-card:hover {
-  background: rgba(246, 241, 232, 0.85);
-  border-color: rgba(139, 63, 214, 0.24);
-  transform: translateY(-2px);
-  box-shadow: 
-    0 12px 20px -8px rgba(139, 63, 214, 0.12),
-    0 4px 8px -4px rgba(139, 63, 214, 0.08);
-}
-
-/* CSS-only Ripple simulation for button touch feedback */
-.google-m3-ripple {
-  position: relative;
-  overflow: hidden;
-  transition: background-color 0.25s cubic-bezier(0.2, 0, 0, 1), transform 0.15s ease;
-}
-
-.google-m3-ripple::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle, rgba(139, 63, 214, 0.15) 0%, transparent 60%);
-  opacity: 0;
-  transform: scale(0.6);
-  transition: transform 0.4s cubic-bezier(0.1, 0.8, 0.3, 1), opacity 0.3s ease;
-  pointer-events: none;
-}
-
-.google-m3-ripple:active::after {
-  opacity: 1;
-  transform: scale(2.2);
-  transition: 0s;
-}
-
-.google-m3-ripple:active {
-  transform: scale(0.97);
-}
-
-/* High-class material badge */
-.google-m3-badge {
-  @apply px-3 py-1 text-[11px] font-semibold tracking-wider uppercase rounded-full border;
-  border-color: rgba(139, 63, 214, 0.20);
-  background: rgba(139, 63, 214, 0.06);
-  color: var(--color-brand);
-}
-
