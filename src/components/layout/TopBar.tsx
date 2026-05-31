@@ -19,6 +19,16 @@ import { useAuth } from "../../contexts/AuthContext";
 import { cn } from "../../lib/utils";
 import { NAV_GROUPS, PAGE_TITLES, type NavItem } from "../../constants/navigation";
 import { useBranding } from "../../contexts/BrandingContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/shadcn/DropdownMenu";
+import { Avatar, AvatarFallback } from "../ui/shadcn/Avatar";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 interface Props {
   onShowShortcuts: () => void;
@@ -33,26 +43,6 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { branding } = useBranding();
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const userMenuRef = useRef<HTMLDivElement | null>(null);
-
-  // Close avatar dropdown on outside click or Escape.
-  useEffect(() => {
-    if (!userMenuOpen) return;
-    const onDown = (e: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node))
-        setUserMenuOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setUserMenuOpen(false);
-    };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [userMenuOpen]);
 
   const isActive = (item: NavItem) => {
     if (location.pathname === item.path) return true;
@@ -310,119 +300,97 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
               </kbd>
             </button>
 
-            {/* Avatar / account dropdown — visible on ALL viewports now.
-                On mobile this replaces the sign-out that was buried in the
-                drawer; tap the avatar to access Billing, Settings, Sign out.
-                Taller py-2 (mobile) / py-1 (desktop) for iOS 44pt target. */}
-            <div ref={userMenuRef} className="relative">
-              <button
-                onClick={() => setUserMenuOpen((v) => !v)}
-                className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-colors px-1.5 py-2.5 md:py-1 min-h-[44px]"
-                aria-label="Account menu"
-                aria-expanded={userMenuOpen}
-                aria-haspopup="menu"
-                title={user?.email || "Account"}
-              >
-                <div
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-[#3B154C] font-medium text-[10px] shrink-0"
-                  style={{ background: "#EFE9DC" }}
-                  aria-hidden="true"
+            {/* Avatar / account dropdown — shadcn DropdownMenu for consistent behavior */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-colors px-1.5 py-2.5 md:py-1 min-h-[44px]"
+                  aria-label="Account menu"
+                  title={user?.email || "Account"}
                 >
-                  {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
-                </div>
-                <ChevronDown
-                  className={cn(
-                    "w-3 h-3 text-[#EFE9DC]/60 transition-transform",
-                    userMenuOpen && "rotate-180",
-                  )}
-                />
-              </button>
-              <AnimatePresence>
-                {userMenuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -4, scale: 0.97 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -4, scale: 0.97 }}
-                    transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
-                    role="menu"
-                    aria-label="Account menu"
-                    className="absolute right-0 top-full mt-2 min-w-[240px] w-64 md:w-72 max-w-[90vw] rounded-xl glass-strong border border-black/8 shadow-xl overflow-hidden z-50"
+                  <Avatar className="w-6 h-6">
+                    <AvatarFallback
+                      className="text-[#3B154C] font-medium text-[10px]"
+                      style={{ background: "#EFE9DC" }}
+                    >
+                      {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <ChevronDown className="w-3 h-3 text-[#EFE9DC]/60" />
+                </motion.button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-64 md:w-72 glass-strong border-black/8 shadow-xl"
+              >
+                <DropdownMenuLabel className="px-4 py-3">
+                  <p className="text-[10px] uppercase tracking-[0.12em] text-muted mb-1">
+                    Signed in as
+                  </p>
+                  <p className="text-[12px] font-medium text-ink truncate">
+                    {user?.email || "—"}
+                  </p>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-black/8" />
+                <DropdownMenuItem asChild>
+                  <Link
+                    to="/admin?tab=subscription"
+                    className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] cursor-pointer"
                   >
-                    <div className="px-4 py-3 border-b border-black/8">
-                      <p className="text-[10px] uppercase tracking-[0.12em] text-muted mb-1">
-                        Signed in as
-                      </p>
-                      <p className="text-[12px] font-medium text-ink truncate">
-                        {user?.email || "—"}
-                      </p>
-                    </div>
-                    <div className="py-1">
-                      <Link
-                        to="/admin?tab=subscription"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
-                        role="menuitem"
-                      >
-                        <CreditCard className="w-3.5 h-3.5 text-muted" />
-                        Billing &amp; subscription
-                      </Link>
-                      <Link
-                        to="/admin"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
-                        role="menuitem"
-                      >
-                        <Settings className="w-3.5 h-3.5 text-muted" />
-                        Settings
-                      </Link>
-                      <Link
-                        to="/integrations"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
-                        role="menuitem"
-                      >
-                        <PlugZap className="w-3.5 h-3.5 text-muted" />
-                        Integrations
-                      </Link>
-                      <Link
-                        to="/help"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
-                        role="menuitem"
-                      >
-                        <LifeBuoy className="w-3.5 h-3.5 text-muted" />
-                        Help &amp; support
-                      </Link>
-                      {/* Founder Dashboard — only visible to the platform founder (internal platform meta) */}
-                      {user?.email === "mikelaurenzo7@gmail.com" && (
-                        <Link
-                          to="/founder"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
-                          role="menuitem"
-                        >
-                          <Crown className="w-3.5 h-3.5 text-muted" />
-                          Founder Dashboard
-                        </Link>
-                      )}
-                    </div>
-                    <div className="border-t border-black/8 py-1">
-                      <button
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          signOut();
-                        }}
-                        className="w-full flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-rose-600 hover:bg-rose-500/8 transition-colors"
-                        role="menuitem"
-                      >
-                        <LogOut className="w-3.5 h-3.5" />
-                        Sign out
-                      </button>
-                    </div>
-                  </motion.div>
+                    <CreditCard className="w-3.5 h-3.5 text-muted" />
+                    Billing &amp; subscription
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    to="/admin"
+                    className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] cursor-pointer"
+                  >
+                    <Settings className="w-3.5 h-3.5 text-muted" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    to="/integrations"
+                    className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] cursor-pointer"
+                  >
+                    <PlugZap className="w-3.5 h-3.5 text-muted" />
+                    Integrations
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    to="/help"
+                    className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] cursor-pointer"
+                  >
+                    <LifeBuoy className="w-3.5 h-3.5 text-muted" />
+                    Help &amp; support
+                  </Link>
+                </DropdownMenuItem>
+                {user?.email === "mikelaurenzo7@gmail.com" && (
+                  <DropdownMenuItem asChild>
+                    <Link
+                      to="/founder"
+                      className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] cursor-pointer"
+                    >
+                      <Crown className="w-3.5 h-3.5 text-muted" />
+                      Founder Dashboard
+                    </Link>
+                  </DropdownMenuItem>
                 )}
-              </AnimatePresence>
-            </div>
+                <DropdownMenuSeparator className="bg-black/8" />
+                <DropdownMenuItem
+                  onClick={signOut}
+                  className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-rose-600 hover:bg-rose-500/8 cursor-pointer"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Hamburger — phone + tablet (< lg). Opens the slide-in nav
                 drawer. On mobile this is now the primary way to reach every
