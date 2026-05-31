@@ -26,6 +26,7 @@ export * from "./DropdownMenu";
 export * from "./Input";
 export * from "./Progress";
 export * from "./ScrollArea";
+export * from "./Select";
 export * from "./Separator";
 export * from "./Sheet";
 export * from "./Skeleton";

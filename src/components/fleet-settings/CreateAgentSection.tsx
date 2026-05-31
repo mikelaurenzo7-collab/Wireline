@@ -4,11 +4,12 @@
  * Extracted from the monolithic FleetSettings.tsx during the 2026 audit.
  */
 import { useState } from "react";
-import { Plus, Loader2, Sparkles, ChevronRight, Briefcase } from "lucide-react";
+import { Plus, Loader2, Sparkles, Briefcase } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "../../lib/utils";
 import { AGENT_ROLES, type RoleValue } from "../fleet/helpers";
 import { ClaudeRecipeButton } from "../ClaudeRecipes";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
 
 interface Props {
   isCreating: boolean;
@@ -81,19 +82,21 @@ export default function CreateAgentSection({
             <Briefcase className="w-2.5 h-2.5 text-brand" /> Business role
           </label>
           <div className="relative">
-            <select
-              aria-label="Business role"
-              value={newAgentRole}
-              onChange={(e) => setNewAgentRole(e.target.value as RoleValue)}
-              className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-3 pr-7 py-2 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
-            >
-              {AGENT_ROLES.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-            <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none rotate-90" />
+            <Select value={newAgentRole} onValueChange={(v) => setNewAgentRole(v as RoleValue)}>
+              <SelectTrigger
+                aria-label="Business role"
+                className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-3 pr-7 py-2 text-ink h-auto"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {AGENT_ROLES.map((r) => (
+                  <SelectItem key={r.value} value={r.value}>
+                    {r.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <p className="text-[10px] text-muted/70 leading-relaxed">
             {AGENT_ROLES.find((r) => r.value === newAgentRole)?.description}
