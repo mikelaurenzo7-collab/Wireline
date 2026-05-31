@@ -10,39 +10,35 @@ interface ThemeContextValue {
 
 const STORAGE_KEY = "wireline.theme";
 
-function readStoredTheme(): Theme {
-  if (typeof window === "undefined") return "light";
+function readStoredTheme(): Theme | null {
+  if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw === "light" || raw === "dark") return raw;
   } catch {}
-  return "light";
+  return null;
 }
 
-function getSystemPreference(): Theme | null {
-  if (typeof window === "undefined") return null;
+function getSystemPreference(): Theme {
+  if (typeof window === "undefined") return "light";
   try {
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   } catch {
-    return null;
+    return "light";
   }
 }
 
 function applyTheme(theme: Theme): void {
   if (typeof document !== "undefined") {
     const root = document.documentElement;
-    const isDark = theme === "dark";
-    root.classList.toggle("dark", isDark);
+    root.classList.toggle("dark", theme === "dark");
     root.style.colorScheme = theme;
-    root.style.transition = "background-color 0.3s ease, color 0.3s ease";
   }
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    const stored = readStoredTheme();
-    if (stored) return stored;
-    return getSystemPreference() ?? "light";
+    return readStoredTheme() ?? getSystemPreference();
   });
 
   useEffect(() => {
@@ -62,10 +58,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setTheme = useCallback((next: Theme) => {
-    setThemeState(next);
-    try {
-      if (typeof window !== "undefined") window.localStorage.setItem(STORAGE_KEY, next);
-    } catch {}
+    if (typeof window !== "undefined" && document.startViewTransition) {
+      document.startViewTransition(() => {
+        setThemeState(next);
+        try { window.localStorage.setItem(STORAGE_KEY, next); } catch {}
+      });
+    } else {
+      setThemeState(next);
+      try { window.localStorage.setItem(STORAGE_KEY, next); } catch {}
+    }
   }, []);
 
   const toggleTheme = useCallback(() => {
@@ -85,11 +86,7 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 export function useTheme(): ThemeContextValue {
   const ctx = useContext(ThemeContext);
   if (!ctx) {
-    return {
-      theme: "light",
-      setTheme: () => {},
-      toggleTheme: () => {},
-    };
+    return { theme: "light", setTheme: () => {}, toggleTheme: () => {} };
   }
   return ctx;
 }

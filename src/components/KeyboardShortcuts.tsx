@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Keyboard } from "lucide-react";
+import { X, Keyboard, ArrowRight } from "lucide-react";
 
 interface KeyboardShortcutsProps {
   open: boolean;
@@ -11,38 +11,38 @@ const SHORTCUTS = [
   {
     category: "Navigation",
     items: [
-      { keys: ["G", "D"], description: "Go to Live Ops" },
-      { keys: ["G", "R"], description: "Go to Chat" },
-      { keys: ["G", "N"], description: "Go to Training" },
-      { keys: ["G", "P"], description: "Go to Phone" },
-      { keys: ["G", "E"], description: "Go to Email" },
-      { keys: ["G", "M"], description: "Go to SMS" },
-      { keys: ["G", "T"], description: "Go to Triage" },
-      { keys: ["G", "I"], description: "Go to Insights" },
-      { keys: ["G", "A"], description: "Go to Agents" },
-      { keys: ["G", "S"], description: "Go to Settings" },
+      { keys: ["G", "D"], description: "Live Ops" },
+      { keys: ["G", "R"], description: "Chat" },
+      { keys: ["G", "N"], description: "Training" },
+      { keys: ["G", "P"], description: "Phone" },
+      { keys: ["G", "E"], description: "Email" },
+      { keys: ["G", "M"], description: "SMS" },
+      { keys: ["G", "T"], description: "Triage" },
+      { keys: ["G", "I"], description: "Insights" },
+      { keys: ["G", "A"], description: "Agents" },
+      { keys: ["G", "S"], description: "Settings" },
     ],
   },
   {
-    category: "Actions",
+    category: "Commands",
     items: [
-      { keys: ["⌘", "K"], description: "Open command bar" },
-      { keys: ["?"], description: "Show keyboard shortcuts" },
-      { keys: ["Esc"], description: "Close modal / panel" },
+      { keys: ["\u2318", "K"], description: "Command palette" },
+      { keys: ["?"], description: "Keyboard shortcuts" },
+      { keys: ["Esc"], description: "Close panel" },
     ],
   },
   {
     category: "Call Logs",
     items: [
-      { keys: ["⌘", "F"], description: "Focus search" },
-      { keys: ["⌘", "E"], description: "Export to CSV" },
+      { keys: ["\u2318", "F"], description: "Search calls" },
+      { keys: ["\u2318", "E"], description: "Export CSV" },
     ],
   },
 ];
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="px-2 py-0.5 rounded-md border border-white/20 bg-white/5 text-[11px] font-mono text-ink/80 inline-flex items-center justify-center min-w-[1.5rem]">
+    <kbd className="px-2 py-0.5 border border-ink/[0.10] dark:border-brand/20 bg-ink/[0.02] dark:bg-brand/[0.04] text-[11px] font-mono text-ink/70 inline-flex items-center justify-center min-w-[1.5rem]">
       {children}
     </kbd>
   );
@@ -54,7 +54,6 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
 
   useEffect(() => {
     if (!open) return;
-    // Move focus to close button when modal opens
     closeRef.current?.focus();
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -71,15 +70,9 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
         const first = focusables[0];
         const last = focusables[focusables.length - 1];
         if (e.shiftKey) {
-          if (document.activeElement === first) {
-            e.preventDefault();
-            last.focus();
-          }
+          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
         } else {
-          if (document.activeElement === last) {
-            e.preventDefault();
-            first.focus();
-          }
+          if (document.activeElement === last) { e.preventDefault(); first.focus(); }
         }
       }
     };
@@ -91,90 +84,87 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
     <AnimatePresence>
       {open && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-md"
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-[90] bg-black/50 backdrop-blur-sm"
             onClick={onClose}
           />
 
-          {/* Panel */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 12 }}
+            initial={{ opacity: 0, scale: 0.97, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 12 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-x-3 sm:inset-x-4 bottom-0 sm:bottom-auto sm:top-[10%] z-[91] mx-auto max-w-2xl"
-            style={{
-              paddingBottom: "env(safe-area-inset-bottom, 0)",
-            }}
+            exit={{ opacity: 0, scale: 0.97, y: 8 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed inset-x-4 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 bottom-0 sm:bottom-auto sm:top-[8%] z-[91] sm:w-full max-w-xl"
+            style={{ paddingBottom: "env(safe-area-inset-bottom, 0)" }}
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label="Keyboard shortcuts"
           >
-            <div className="glass-strong rounded-t-2xl sm:rounded-2xl border border-white/12 overflow-hidden max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-1rem)] overflow-y-auto overscroll-contain">
-              {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
+            <div className="bg-white dark:bg-[var(--wl-surface-dark)] border border-black/[0.06] dark:border-brand/20 shadow-2xl overflow-hidden max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-2rem)] overflow-y-auto overscroll-contain">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-black/[0.06] dark:border-brand/[0.12]">
                 <div className="flex items-center gap-3">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center"
-                    style={{ background: "linear-gradient(135deg, #7C3AED22, #7C3AED22)" }}
-                  >
+                  <div className="w-8 h-8 bg-brand/10 flex items-center justify-center">
                     <Keyboard className="w-4 h-4 text-brand" />
                   </div>
                   <div>
-                    <h2 className="text-sm font-medium text-ink">Keyboard shortcuts</h2>
+                    <h2 className="text-sm font-semibold text-ink">Keyboard shortcuts</h2>
                     <p className="text-[10px] uppercase tracking-[0.3em] text-muted">
-                      Quick navigation & actions
+                      Navigate without the mouse
                     </p>
                   </div>
                 </div>
                 <button
                   ref={closeRef}
                   onClick={onClose}
-                  aria-label="Close keyboard shortcuts"
-                  className="w-11 h-11 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-ink/70 hover:text-ink hover:bg-white/8 border border-white/8 hover:border-white/20 transition-all"
+                  aria-label="Close"
+                  className="w-9 h-9 flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Shortcut grid */}
-              <div className="p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {SHORTCUTS.map((section) => (
-                    <div key={section.category}>
-                      <h3 className="text-[9px] font-semibold uppercase tracking-[0.42em] text-muted/80 mb-3 flex items-center gap-2">
-                        <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/20 to-white/0" />
-                        {section.category}
-                        <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/20 to-white/0" />
-                      </h3>
-                      <div className="space-y-2">
-                        {section.items.map((item, i) => (
-                          <div key={i} className="flex items-center justify-between gap-4 py-1">
-                            <span className="text-[12px] text-ink/70">{item.description}</span>
-                            <div className="flex items-center gap-1 shrink-0">
-                              {item.keys.map((key, ki) => (
-                                <Kbd key={ki}>{key}</Kbd>
-                              ))}
-                            </div>
+              <div className="p-5 space-y-5">
+                {SHORTCUTS.map((section) => (
+                  <div key={section.category}>
+                    <h3 className="text-[9px] font-semibold uppercase tracking-[0.35em] text-brand/70 mb-3">
+                      {section.category}
+                    </h3>
+                    <div className="space-y-1">
+                      {section.items.map((item, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between gap-4 py-2 px-2 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors group"
+                        >
+                          <span className="text-[12px] text-ink/80 group-hover:text-ink transition-colors">
+                            {item.description}
+                          </span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {item.keys.map((key, ki) => (
+                              <Kbd key={ki}>{key}</Kbd>
+                            ))}
+                            {item.keys.length > 1 && (
+                              <span className="text-muted/40 mx-0.5 text-[10px] font-mono" aria-hidden="true">
+                                +
+                              </span>
+                            )}
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
 
-              {/* Footer */}
-              <div className="px-6 py-3 border-t border-white/8 flex items-center justify-center gap-2 text-[10px] text-muted">
+              <div className="px-5 py-3 border-t border-black/[0.06] dark:border-brand/[0.12] flex items-center justify-center gap-2 text-[10px] text-muted">
                 <Kbd>?</Kbd>
+                <ArrowRight className="w-3 h-3 text-muted/40" />
                 <span>
-                  Press <strong className="text-ink/70">?</strong> anytime to show this panel
+                  Press <span className="font-semibold text-ink/60">?</span> any time
                 </span>
               </div>
             </div>
