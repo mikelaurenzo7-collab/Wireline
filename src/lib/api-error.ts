@@ -9,7 +9,7 @@
  * and leaked stack traces across the 50 route files.
  */
 
-import type { NextFunction, Request, RequestHandler, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 
 export class AppError extends Error {
   status: number;
@@ -131,8 +131,8 @@ export function formatErrorResponse(
  */
 export function asyncHandler<Req extends Request = Request, Res extends Response = Response>(
   handler: (req: Req, res: Res, next: NextFunction) => unknown | Promise<unknown>,
-): RequestHandler {
-  return (req, res, next) => {
+): (req: Request, res: Response, next: NextFunction) => void {
+  return (req: Request, res: Response, next: NextFunction) => {
     void Promise.resolve(handler(req as Req, res as Res, next)).catch(next);
   };
 }

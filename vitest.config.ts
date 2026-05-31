@@ -19,20 +19,20 @@ export default defineConfig({
       // build fails on a coverage *regression* rather than enforcing an
       // aspirational target the legacy UI tree can't yet meet. Raised after
       // the 2026-Q2 test expansion (406 tests), then again after the
-      // webhook-signature + auth/RBAC suite landed (794 tests; measured
-      // ~11.9% stmts / 65.5% branches / 33.7% funcs).
+      // webhook-signature + auth/RBAC suite landed (794 tests), and again
+      // after the route/authz expansion (850+ tests; measured ~12.5% stmts /
+      // 65% branches / 33.5% funcs) added platform-admin + agent-routes tests.
       //
-      // Keep a generous margin below the measured values (local: ~11.9%
-      // stmts / 65% branches / 33% funcs). v8's accounting can drift between
-      // environments, and importing large, mostly-uncovered route files
-      // (e.g. meta-webhook-routes.ts) shifts the denominator — so we stay well
-      // clear of the floor. These are still strictly above the prior baseline
-      // (6/50/20/6), so they remain a regression guard, not a flaky gate.
+      // Keep a generous margin below the measured values. v8's accounting can
+      // drift between environments, and importing large, mostly-uncovered
+      // route files (e.g. meta-webhook-routes.ts) shifts the denominator — so
+      // we stay well clear of the floor. These remain strictly above the prior
+      // baseline (8/55/25/8), so they are a regression guard, not a flaky gate.
       thresholds: {
-        statements: 8,
-        branches: 55,
-        functions: 25,
-        lines: 8,
+        statements: 10,
+        branches: 60,
+        functions: 30,
+        lines: 10,
       },
     },
   },
