@@ -8,6 +8,18 @@ Built by [Michael Laurenzo](https://trywireline.com/about). Powered by Claude.
 
 ---
 
+## Plans & pricing
+
+| Plan | Price/mo | Included operators | Included minutes/mo | Overage rate | Included voice agents |
+| --- | --- | --- | --- | --- | --- |
+| **Personal** | $49 | 1 | 400 | $0.20 | 1 |
+| **Starter** | $149 | 3 | 1,200 | $0.18 | 2 |
+| **Pro** | $499 | 10 | 5,000 | $0.15 | 5 |
+| **Business** | $1,499 | 25 | 12,000 | $0.14 | 10 |
+| **Enterprise** | Custom | Custom | Custom | Custom | Custom |
+
+Plan metadata is defined in `src/lib/plan-catalog.ts`. Keep this README table in sync with the catalog; `npm run docs:check` fails when pricing drifts.
+
 ## 🚀 Production-Ready & Feature Complete
 
 Wireline has been rigorously audited and hardened for production deployment. From serverless infrastructure to aesthetic UI consistency, the platform is ready for prime-time.
