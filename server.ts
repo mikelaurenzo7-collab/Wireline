@@ -345,7 +345,7 @@ async function startServer() {
     process.exit(1);
   }
 
-  if (dbHealthy) {
+  if (dbHealthy && process.env.VERCEL !== "1") {
     const { initPresenceDbListener, startPresenceListener } =
       await import("./src/services/presence-stream-service");
     await initPresenceDbListener();
@@ -410,7 +410,12 @@ async function startServer() {
 }
 
 // Background Worker
-stopWorker = initJobWorker() || undefined;
+// In Vercel serverless, the job worker polling loop is inappropriate — each
+// invocation is a fresh process that will freeze mid-poll. The Vercel cron
+// /api/jobs/sweep is the proper trigger for job processing in serverless.
+if (process.env.VERCEL !== "1") {
+  stopWorker = initJobWorker() || undefined;
+}
 
 // Safety nets
 process.on("unhandledRejection", (reason: unknown) => {

@@ -36,6 +36,7 @@ import { sql } from "drizzle-orm";
 import { generateToken, isOwnerEmail } from "../lib/auth-service";
 import { generateOAuthState, verifyOAuthState } from "../lib/oauth-helpers";
 import { oauthRateLimiter } from "../middleware/rate-limit-middleware";
+import { encryptSecret, decryptSecret } from "../lib/secret-vault";
 
 const router = Router();
 
@@ -162,7 +163,7 @@ async function insertPendingCode(
 ): Promise<void> {
   await drizzle.insert(schema.oauthPendingCodes).values({
     code,
-    token: entry.token,
+    token: encryptSecret(entry.token),
     userId: entry.user.id,
     email: entry.user.email,
     fullName: entry.user.fullName,
@@ -237,7 +238,7 @@ async function consumePendingCode(code: string): Promise<{
     row.expires_at instanceof Date ? row.expires_at.getTime() : new Date(row.expires_at).getTime();
   if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) return null;
   return {
-    token: row.token,
+    token: decryptSecret(row.token),
     isOwner: row.is_owner,
     user: { id: row.user_id, email: row.email, fullName: row.full_name },
   };

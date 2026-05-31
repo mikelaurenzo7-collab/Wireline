@@ -200,16 +200,18 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
   {
     name: "WIRELINE_DATA_KEY",
     group: "security",
-    required: false,
-    description: "Encryption key for secret vault (AES-256-GCM)",
+    required: true,
+    description:
+      "Encryption key for secret vault (AES-256-GCM) — protects OAuth tokens and webhook secrets at rest",
     validate: (v) => !v || isBase64Key(v),
     formatHint: "Base64-encoded 32-byte key",
   },
   {
     name: "CRON_SECRET",
     group: "security",
-    required: false,
-    description: "Bearer token for cron job authentication",
+    required: true,
+    description:
+      "Bearer token for cron job authentication — protects /api/jobs/sweep and /api/daily-brief/schedule",
     validate: (v) => !v || v.length >= 16,
     formatHint: "Min 16 characters",
   },

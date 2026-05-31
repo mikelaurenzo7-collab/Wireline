@@ -55,6 +55,17 @@ export async function verifySupabaseJwt(token: string, secret: string): Promise<
       return null;
     }
 
+    // 4. Verify audience and issuer claims to prevent cross-use of tokens
+    //    minted for a different purpose or service.
+    if (payload.aud !== "authenticated") {
+      log.warn("JWT audience mismatch", { sub: payload.sub, aud: payload.aud });
+      return null;
+    }
+    if (payload.iss && payload.iss !== "wireline-internal") {
+      log.warn("JWT issuer mismatch", { sub: payload.sub, iss: payload.iss });
+      return null;
+    }
+
     return payload;
   } catch (err: any) {
     log.error("JWT verification failed", { error: err.message });

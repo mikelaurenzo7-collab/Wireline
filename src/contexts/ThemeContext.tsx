@@ -12,6 +12,7 @@ export type Theme = "light" | "dark";
 
 interface ThemeContextValue {
   theme: Theme;
+  resolvedTheme: Theme;
   setTheme: (next: Theme) => void;
   toggleTheme: () => void;
 }
@@ -60,8 +61,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [theme, setTheme]);
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ theme, setTheme, toggleTheme }),
-    [theme, setTheme],
+    () => ({ theme, resolvedTheme: theme, setTheme, toggleTheme }),
+    [theme, setTheme, toggleTheme],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
@@ -72,6 +73,7 @@ export function useTheme(): ThemeContextValue {
   if (!ctx) {
     return {
       theme: "light",
+      resolvedTheme: "light" as Theme,
       setTheme: () => {},
       toggleTheme: () => {},
     };

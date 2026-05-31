@@ -51,7 +51,7 @@ router.post(
       try {
         const { IntegrationService } = await import("../lib/integrations");
         const service = new IntegrationService(req.user.id);
-        const appUrl = process.env.APP_URL || "https://wireline.ai";
+        const appUrl = process.env.APP_URL || "https://trywireline.com";
         const invitedBy = req.user.email || "A colleague";
 
         const sent = await service.sendEmail({

@@ -39,6 +39,30 @@ async function probeDatabase(
   }
 }
 
+async function probeRedis(
+  timeoutMs = 1500,
+): Promise<{ ok: boolean; latency_ms: number; error?: string }> {
+  const t0 = Date.now();
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) {
+    return { ok: false, latency_ms: 0, error: "UPSTASH_REDIS_REST_URL not configured" };
+  }
+  try {
+    const { Redis } = await import("@upstash/redis");
+    const redis = new Redis({ url, token });
+    const result = await Promise.race([
+      redis.ping(),
+      new Promise((_resolve, reject) =>
+        setTimeout(() => reject(new Error("redis probe timed out")), timeoutMs),
+      ),
+    ]);
+    return { ok: result === "PONG", latency_ms: Date.now() - t0 };
+  } catch (err: any) {
+    return { ok: false, latency_ms: Date.now() - t0, error: getErrorMessage(err) };
+  }
+}
+
 const healthRateLimit = new Map<string, number[]>();
 const HEALTH_RATE_WINDOW_MS = 60_000;
 const HEALTH_RATE_MAX = 30;
@@ -106,11 +130,13 @@ router.get(
   authenticateUser,
   async (_req: Request, res: Response) => {
     const dbStatus = await probeDatabase();
+    const redisStatus = await probeRedis();
     const status = dbStatus.ok ? "ok" : "degraded";
     res.status(200).json({
       status,
       uptime_s: Math.round((process as any).uptime?.() || 0),
       db: dbStatus,
+      redis: redisStatus,
       capabilities: getHealthCapabilities(),
       // Distinct identifiers per runtime so operators + monitoring can
       // see exactly which model each layer is on. The in-app reasoning

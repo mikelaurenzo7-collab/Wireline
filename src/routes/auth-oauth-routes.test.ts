@@ -95,6 +95,12 @@ vi.mock("../lib/oauth-helpers", () => ({
   verifyOAuthState: () => ({ ok: true }),
 }));
 
+// Mock secret-vault so encryptSecret/decryptSecret work without WIRELINE_DATA_KEY.
+vi.mock("../lib/secret-vault", () => ({
+  encryptSecret: (v: string) => `enc:${v}`,
+  decryptSecret: (v: string) => v.replace(/^enc:/, ""),
+}));
+
 async function buildApp(): Promise<Express> {
   vi.resetModules();
   const mod = await import("./auth-oauth-routes");

@@ -27,7 +27,6 @@ import {
   ArrowUpRight,
   Compass,
   ChevronDown,
-  X,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
@@ -248,10 +247,7 @@ export default function DirectorWorkspace() {
       )}
 
       {/* Messages - expansive chat area */}
-      <div
-        ref={scrollRef}
-        className="flex-1 min-h-0 overflow-y-auto px-4 py-8 space-y-6"
-      >
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-8 space-y-6">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-brand/20 to-brand/10 flex items-center justify-center">
@@ -277,7 +273,8 @@ export default function DirectorWorkspace() {
 
             {agents.length > 0 ? (
               <p className="text-[12px] text-muted mb-4">
-                {agents.length} agent{agents.length === 1 ? "" : "s"} active — ask me anything about your fleet.
+                {agents.length} agent{agents.length === 1 ? "" : "s"} active — ask me anything about
+                your fleet.
               </p>
             ) : (
               <div className="flex items-center justify-center gap-2 mb-4 flex-wrap">
@@ -316,10 +313,7 @@ export default function DirectorWorkspace() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className={cn(
-                "flex flex-col",
-                m.role === "operator" ? "items-end" : "items-start",
-              )}
+              className={cn("flex flex-col", m.role === "operator" ? "items-end" : "items-start")}
             >
               {/* Director avatar for assistant */}
               {m.role === "director" && (
@@ -327,7 +321,9 @@ export default function DirectorWorkspace() {
                   <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15">
                     <Sparkles className="w-3.5 h-3.5" />
                   </span>
-                  <span className="text-[10px] text-muted uppercase tracking-[0.14em] font-medium">Director</span>
+                  <span className="text-[10px] text-muted uppercase tracking-[0.14em] font-medium">
+                    Director
+                  </span>
                 </div>
               )}
 
@@ -345,7 +341,9 @@ export default function DirectorWorkspace() {
                   <div className="mb-3 pb-3 border-b border-brand/10">
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <Sparkles className="w-3 h-3 text-brand/60" />
-                      <span className="text-[9px] uppercase tracking-[0.16em] text-brand/60 font-medium">Reasoning</span>
+                      <span className="text-[9px] uppercase tracking-[0.16em] text-brand/60 font-medium">
+                        Reasoning
+                      </span>
                     </div>
                     <p className="text-[11px] text-muted leading-relaxed italic">{m.reasoning}</p>
                   </div>
@@ -406,7 +404,9 @@ export default function DirectorWorkspace() {
               <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15">
                 <Sparkles className="w-3.5 h-3.5" />
               </span>
-              <span className="text-[10px] text-muted uppercase tracking-[0.14em] font-medium">Director</span>
+              <span className="text-[10px] text-muted uppercase tracking-[0.14em] font-medium">
+                Director
+              </span>
             </div>
             <div className="bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm border border-brand/12 rounded-2xl rounded-bl-md px-5 py-4 shadow-sm">
               <div className="flex items-center gap-2.5">
@@ -485,12 +485,14 @@ export default function DirectorWorkspace() {
                   "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer",
                   capabilityOpen
                     ? "bg-brand/10 text-brand border border-brand/30"
-                    : "text-muted hover:text-brand hover:bg-brand/5 border border-transparent"
+                    : "text-muted hover:text-brand hover:bg-brand/5 border border-transparent",
                 )}
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Quick Actions</span>
-                <ChevronDown className={cn("w-3 h-3 transition-transform", capabilityOpen && "rotate-180")} />
+                <ChevronDown
+                  className={cn("w-3 h-3 transition-transform", capabilityOpen && "rotate-180")}
+                />
               </button>
 
               {/* Right side - send */}

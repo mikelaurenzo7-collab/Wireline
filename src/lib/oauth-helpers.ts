@@ -32,8 +32,10 @@ function getAppOrigin(req: express.Request): string {
 
 function getOAuthStateSecret(): string {
   if (process.env.OAUTH_STATE_SECRET) return process.env.OAUTH_STATE_SECRET;
-  if (IS_PROD) throw new Error("OAUTH_STATE_SECRET is required in production");
-  return "wireline-dev-oauth-state-secret-at-least-32-bytes";
+  throw new Error(
+    "OAUTH_STATE_SECRET is required. Set it in .env for local dev or Vercel env for production. " +
+      "Generate with: node -e \"console.log(require('crypto').randomBytes(32).toString('base64'))\"",
+  );
 }
 
 export function getGoogleOAuthClient(req: express.Request) {

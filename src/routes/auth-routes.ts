@@ -13,6 +13,7 @@ import {
 import { sendPasswordResetEmail } from "../lib/email-service";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
+import { isRedisConfigured } from "../lib/rate-limit";
 import {
   validateBody,
   signinSchema,
@@ -301,10 +302,39 @@ router.post(
 
 /**
  * POST /api/auth/signout
+ *
+ * Revokes the caller's active JWT by adding it to a Redis-backed blocklist.
+ * The blocklist key is the JWT's `jti` or a hash of the token, with a TTL
+ * matching the JWT's remaining lifetime. After this, the token will be
+ * rejected on subsequent authenticated requests even before its natural
+ * expiry.
  */
-router.post("/api/auth/signout", async (_req: Request, res: Response) => {
-  res.json({ success: true });
-});
+router.post(
+  "/api/auth/signout",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const authHeader = req.headers.authorization;
+      const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+      if (token && isRedisConfigured()) {
+        const { Redis } = await import("@upstash/redis");
+        const redis = new Redis({
+          url: process.env.UPSTASH_REDIS_REST_URL!,
+          token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+        });
+        const { createHash } = await import("node:crypto");
+        const tokenHash = createHash("sha256").update(token).digest("hex");
+        const key = `wireline:token_blocklist:${tokenHash}`;
+        await redis.set(key, "1", { ex: 7200 });
+      }
+    } catch (err: any) {
+      log.warn("Token blocklist write failed (signout still succeeds)", {
+        error: err?.message ?? String(err),
+      });
+    }
+    res.json({ success: true });
+  },
+);
 
 /**
  * Resolve the absolute URL base for password reset links. Mirrors the

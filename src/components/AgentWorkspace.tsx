@@ -37,7 +37,6 @@ import {
   Brain,
   ArrowUpRight,
   ChevronDown,
-  ChevronLeft,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
@@ -404,7 +403,7 @@ export default function AgentWorkspace({
         else el.setSelectionRange(text.length, text.length);
       });
     }
-  }, [seedNonce]);
+  }, [seedNonce, composerSeed?.text]);
 
   useEffect(() => {
     if (!isSending) {
@@ -871,7 +870,10 @@ export default function AgentWorkspace({
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                    className={cn("flex flex-col", m.role === "operator" ? "items-end" : "items-start")}
+                    className={cn(
+                      "flex flex-col",
+                      m.role === "operator" ? "items-end" : "items-start",
+                    )}
                   >
                     {/* Agent avatar */}
                     {m.role === "agent" && (
@@ -903,7 +905,9 @@ export default function AgentWorkspace({
                               Reasoning
                             </span>
                           </div>
-                          <p className="text-[11px] text-muted leading-relaxed italic">{m.reasoning}</p>
+                          <p className="text-[11px] text-muted leading-relaxed italic">
+                            {m.reasoning}
+                          </p>
                         </div>
                       )}
 
@@ -1022,7 +1026,9 @@ export default function AgentWorkspace({
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
                           <span className="relative inline-flex rounded-full h-2 w-2 bg-brand" />
                         </span>
-                        <span className="text-[12px] text-muted font-medium">{agentName} is thinking…</span>
+                        <span className="text-[12px] text-muted font-medium">
+                          {agentName} is thinking…
+                        </span>
                       </div>
                       <div className="flex items-center gap-1.5 text-[10px] text-muted/70">
                         <motion.span
@@ -1045,7 +1051,11 @@ export default function AgentWorkspace({
                               opacity: 1,
                               y: 0,
                               scale: 1,
-                              transition: { delay: index * 0.05, duration: 0.4, ease: [0.23, 1.0, 0.32, 1.0] },
+                              transition: {
+                                delay: index * 0.05,
+                                duration: 0.4,
+                                ease: [0.23, 1.0, 0.32, 1.0],
+                              },
                             }}
                             exit={{ opacity: 0, y: -8 }}
                             className={cn(
@@ -1076,9 +1086,13 @@ export default function AgentWorkspace({
                                   {step.status === "active" && (
                                     <div className="h-1 w-1 rounded-full bg-brand animate-ping" />
                                   )}
-                                  {step.status === "done" && <Check className="w-3.5 h-3.5 text-emerald-500" />}
+                                  {step.status === "done" && (
+                                    <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                  )}
                                 </div>
-                                <div className="text-[10px] text-muted leading-tight mt-0.5">{step.subtitle}</div>
+                                <div className="text-[10px] text-muted leading-tight mt-0.5">
+                                  {step.subtitle}
+                                </div>
                               </div>
                             </div>
                           </motion.div>
@@ -1128,7 +1142,9 @@ export default function AgentWorkspace({
                   <div className="flex items-center gap-2 px-2 py-2 border-b border-brand/8 mb-2">
                     <Plug className="w-3.5 h-3.5 text-brand/60" />
                     <span className="text-[10px] uppercase tracking-[0.16em] text-muted font-medium">
-                      {enabledTools.length > 0 ? `${enabledTools.length} Active Tools` : "No Tools Active"}
+                      {enabledTools.length > 0
+                        ? `${enabledTools.length} Active Tools`
+                        : "No Tools Active"}
                     </span>
                   </div>
                   <div className="space-y-1">
@@ -1173,7 +1189,11 @@ export default function AgentWorkspace({
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={onKeyDown}
                 rows={3}
-                placeholder={IS_TOUCH ? `Message ${agentName}…` : `Message ${agentName}…  (${IS_APPLE ? "⌘" : "Ctrl"}+Enter to send)`}
+                placeholder={
+                  IS_TOUCH
+                    ? `Message ${agentName}…`
+                    : `Message ${agentName}…  (${IS_APPLE ? "⌘" : "Ctrl"}+Enter to send)`
+                }
                 disabled={isSending || isUploading}
                 className="w-full resize-none bg-transparent text-[14px] text-ink dark:text-foreground placeholder:text-muted/50 outline-none px-5 py-4 leading-relaxed"
               />
@@ -1197,7 +1217,9 @@ export default function AgentWorkspace({
                     {enabledTools.length > 0 && (
                       <span className="text-[9px] text-muted/70">({enabledTools.length})</span>
                     )}
-                    <ChevronDown className={cn("w-3 h-3 transition-transform", toolsOpen && "rotate-180")} />
+                    <ChevronDown
+                      className={cn("w-3 h-3 transition-transform", toolsOpen && "rotate-180")}
+                    />
                   </button>
 
                   {/* Hidden file input */}

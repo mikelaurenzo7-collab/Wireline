@@ -4,6 +4,7 @@ import { log, auditLogger, tenantStore } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { verifySupabaseJwt as verifyInternalJwt } from "../lib/auth-utils";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
+import { isRedisConfigured } from "../lib/rate-limit";
 
 /**
  * Express Request with an attached sovereign User.
@@ -66,6 +67,29 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
         .catch((err: unknown) => log.warn("audit log failed", { error: getErrorMessage(err) }));
 
       return res.status(401).json({ error: "Invalid or expired session" });
+    }
+
+    // Check token blocklist (populated by /api/auth/signout).
+    // If Redis is configured and the token hash is found, the session
+    // was explicitly revoked even if the JWT hasn't expired yet.
+    if (isRedisConfigured()) {
+      try {
+        const { Redis } = await import("@upstash/redis");
+        const { createHash } = await import("node:crypto");
+        const redis = new Redis({
+          url: process.env.UPSTASH_REDIS_REST_URL!,
+          token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+        });
+        const tokenHash = createHash("sha256").update(token).digest("hex");
+        const blocked = await redis.get(`wireline:token_blocklist:${tokenHash}`);
+        if (blocked) {
+          return res.status(401).json({ error: "Session has been revoked" });
+        }
+      } catch (err) {
+        log.warn("Token blocklist check failed — allowing request through", {
+          error: getErrorMessage(err),
+        });
+      }
     }
 
     // Map JWT payload to a compatible User object

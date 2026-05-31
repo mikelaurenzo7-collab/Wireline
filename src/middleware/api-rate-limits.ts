@@ -94,8 +94,21 @@ function createRateLimiter(opts: RateLimiterOptions): RateLimitMiddleware {
 
       next();
     } catch (err) {
-      // Fail-OPEN on unexpected error — better to serve traffic than to
-      // lock out everyone on rate limiter bugs.
+      // Spend-sensitive and abuse-sensitive endpoints fail CLOSED on rate
+      // limiter errors. Other endpoints fail open to avoid blocking all
+      // traffic on transient Redis issues. The failClosedOnError flag
+      // determines which behavior applies.
+      if (opts.failClosedOnError) {
+        log.error("rate limiter error, fail-closed", {
+          bucket: opts.bucket,
+          error: getErrorMessage(err),
+        });
+        res.status(503).json({
+          error: "Rate limiter temporarily unavailable.",
+          code: "RATE_LIMITER_ERROR",
+        });
+        return;
+      }
 
       log.error("rate limiter error, fail-open", {
         bucket: opts.bucket,
@@ -200,6 +213,7 @@ export const webhooksRateLimit = createRateLimiter({
   bucket: "api:webhooks",
   windowMs: 15 * 60 * 1000,
   max: 60,
+  failClosedOnError: true,
 });
 
 /**
@@ -211,6 +225,7 @@ export const phoneNumberRateLimiter = createRateLimiter({
   bucket: "api:phone-numbers",
   windowMs: 15 * 60 * 1000,
   max: 30,
+  failClosedOnError: true,
 });
 
 /**
@@ -231,6 +246,7 @@ export const dialRateLimiter = createRateLimiter({
   bucket: "api:dial",
   windowMs: 60 * 1000,
   max: 60,
+  failClosedOnError: true,
 });
 
 /**
