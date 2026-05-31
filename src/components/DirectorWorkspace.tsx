@@ -213,8 +213,8 @@ export default function DirectorWorkspace() {
               <p className="text-[13px] font-semibold text-ink leading-tight truncate">Director</p>
               <p className="flex items-center gap-1.5 text-[10px] text-muted leading-tight">
                 <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500/60" />
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full" style={{ background: "rgba(16,185,129,0.60)" }} />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: "#10b981" }} />
                 </span>
                 Always-on manager
               </p>

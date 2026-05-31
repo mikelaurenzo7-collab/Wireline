@@ -184,8 +184,8 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
         <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2 min-w-0">
             <span className="relative flex h-2 w-2 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500/60" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full" style={{ background: "rgba(16,185,129,0.60)" }} />
+              <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "#10b981" }} />
             </span>
             <h2 className="font-display italic text-lg sm:text-xl text-ink truncate">
               {calls.length === 0
@@ -430,10 +430,8 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                       )}
                     >
                       <span
-                        className={cn(
-                          "w-1.5 h-1.5 rounded-full",
-                          busy ? "bg-brand" : "bg-emerald-500",
-                        )}
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ background: busy ? "var(--color-brand)" : "#10b981" }}
                       />
                       {a.name}
                     </span>

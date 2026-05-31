@@ -241,28 +241,28 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                           </span>
                           {/* Lead score badge */}
                           <span
-                            className={cn(
-                              "shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight border",
+                            className="shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight border"
+                            style={
                               (call.lead_score || 0) >= 80
-                                ? "bg-emerald-500/12 text-emerald-600 border-emerald-500/20"
+                                ? { background: "rgba(16,185,129,0.12)", color: "#059669", borderColor: "rgba(16,185,129,0.20)" }
                                 : (call.lead_score || 0) >= 50
-                                  ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                                  : "bg-black/[0.06] text-muted/70 border-transparent",
-                            )}
+                                  ? { background: "rgba(245,158,11,0.10)", color: "#d97706", borderColor: "rgba(245,158,11,0.20)" }
+                                  : { background: "rgba(0,0,0,0.06)", borderColor: "transparent" }
+                            }
                           >
                             {call.lead_score || 0}
                           </span>
                           {/* QA score badge */}
                           {call.qa_score != null && (
                             <span
-                              className={cn(
-                                "shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight border",
+                              className="shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight border"
+                              style={
                                 call.qa_score >= 75
-                                  ? "bg-emerald-500/8 text-emerald-600 border-emerald-500/20"
+                                  ? { background: "rgba(16,185,129,0.08)", color: "#059669", borderColor: "rgba(16,185,129,0.20)" }
                                   : call.qa_score >= 50
-                                    ? "bg-amber-500/8 text-amber-600 border-amber-500/20"
-                                    : "bg-rose-500/8 text-rose-500 border-rose-500/20",
-                              )}
+                                    ? { background: "rgba(245,158,11,0.08)", color: "#d97706", borderColor: "rgba(245,158,11,0.20)" }
+                                    : { background: "rgba(232,70,106,0.08)", color: "#E8466A", borderColor: "rgba(232,70,106,0.20)" }
+                              }
                             >
                               ★{call.qa_score}
                             </span>
@@ -342,10 +342,10 @@ function SentimentDot({ sentiment }: { sentiment?: string | null }) {
   const s = (sentiment || "neutral").toLowerCase();
   if (s === "positive")
     return (
-      <SmilePlus className="w-3 h-3 text-emerald-400 shrink-0" aria-label="Positive sentiment" />
+      <SmilePlus className="w-3 h-3 shrink-0" style={{ color: "#34d399" }} aria-label="Positive sentiment" />
     );
   if (s === "negative")
-    return <Frown className="w-3 h-3 text-rose-400 shrink-0" aria-label="Negative sentiment" />;
+    return <Frown className="w-3 h-3 shrink-0" style={{ color: "#fb7185" }} aria-label="Negative sentiment" />;
   return <Meh className="w-3 h-3 text-muted/70 shrink-0" aria-label="Neutral sentiment" />;
 }
 
@@ -544,14 +544,14 @@ function CallDetail({
                     label="Sentiment"
                     value={
                       <span
-                        className={cn(
-                          "capitalize text-base",
+                        className={cn("capitalize text-base", (call.sentiment || "neutral") === "neutral" && "text-muted/70")}
+                        style={
                           (call.sentiment || "neutral") === "positive"
-                            ? "text-emerald-600"
+                            ? { color: "#059669" }
                             : (call.sentiment || "neutral") === "negative"
-                              ? "text-rose-500"
-                              : "text-muted/70",
-                        )}
+                              ? { color: "#E8466A" }
+                              : undefined
+                        }
                       >
                         {call.sentiment || "neutral"}
                       </span>
@@ -831,9 +831,9 @@ function RecordingPlayer({ url }: { url: string }) {
 
   if (loadError) {
     return (
-      <div className="rounded-xl glass border border-rose-500/20 p-4 text-center space-y-2">
-        <Activity className="w-5 h-5 text-rose-400 mx-auto" />
-        <p className="text-[10px] text-rose-400">
+      <div className="rounded-xl glass border p-4 text-center space-y-2" style={{ borderColor: "rgba(232,70,106,0.20)" }}>
+        <Activity className="w-5 h-5 mx-auto" style={{ color: "#fb7185" }} />
+        <p className="text-[10px]" style={{ color: "#fb7185" }}>
           Recording could not be loaded. It may have expired.
         </p>
         <a

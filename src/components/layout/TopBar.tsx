@@ -174,8 +174,9 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
               "relative z-10 shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full text-[9px] font-mono leading-none flex items-center justify-center transition-transform duration-200 group-hover:scale-105",
               active
                 ? "bg-white/25 text-paper"
-                : "bg-rose-500/20 text-rose-400 border border-rose-500/30",
+                : "bg-rose-500/20 border border-rose-500/30",
             )}
+            style={!active ? { color: "#fb7185" } : undefined}
           >
             {badge}
           </span>

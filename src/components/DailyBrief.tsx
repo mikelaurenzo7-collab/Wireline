@@ -363,10 +363,8 @@ function Quick({
         <span className="font-display italic text-3xl text-ink">{value}</span>
         {showDelta && (
           <span
-            className={cn(
-              "text-[10px] uppercase tracking-[0.2em] flex items-center gap-1",
-              isGood ? "text-emerald-500" : "text-rose-500",
-            )}
+            className="text-[10px] uppercase tracking-[0.2em] flex items-center gap-1"
+            style={{ color: isGood ? "#10b981" : "#E8466A" }}
           >
             {isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
             {Math.abs(Math.round(delta!))}%
@@ -501,7 +499,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
       ) : (
         <>
           {!gmailConnected && (
-            <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-amber-600 text-xs flex items-center gap-2">
+            <div className="rounded-lg px-3 py-2 text-xs flex items-center gap-2" style={{ background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.30)", color: "#d97706" }}>
               <AlertTriangle className="w-3.5 h-3.5" />
               Connect a Gmail account in{" "}
               <Link to="/integrations" className="underline">
@@ -584,7 +582,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
           </div>
 
           {lastSentAt && (
-            <div className="text-[10px] uppercase tracking-[0.3em] text-emerald-500/70">
+            <div className="text-[10px] uppercase tracking-[0.3em]" style={{ color: "rgba(16,185,129,0.70)" }}>
               Last sent {formatDateTime(lastSentAt, undefined, "—")}
             </div>
           )}
@@ -611,10 +609,8 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
             <div className="flex items-center gap-3">
               {feedback && (
                 <span
-                  className={cn(
-                    "text-[11px]",
-                    feedback.kind === "ok" ? "text-emerald-500" : "text-rose-500",
-                  )}
+                  className="text-[11px]"
+                  style={{ color: feedback.kind === "ok" ? "#10b981" : "#E8466A" }}
                 >
                   {feedback.text}
                 </span>

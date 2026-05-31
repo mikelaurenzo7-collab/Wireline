@@ -257,7 +257,7 @@ function GoalCard({
           <span className="text-[9px] uppercase tracking-[0.18em] text-muted">{goal.unit}</span>
           <div className="mt-1 text-[11px] text-ink/70 leading-relaxed">
             {goal.status === "achieved" ? (
-              <span className="text-emerald-600 font-medium">Target reached — nice work.</span>
+              <span className="font-medium" style={{ color: "#059669" }}>Target reached — nice work.</span>
             ) : (
               <>
                 <span className="tabular-nums">{num(goal.remaining)}</span> to go ·{" "}
