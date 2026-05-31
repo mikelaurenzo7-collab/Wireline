@@ -71,12 +71,12 @@ function countOccurrences(pattern: RegExp): number {
  *   should migrate. The single counter tracks total; exempt surfaces are noted in-file.
  */
 const BASELINE = {
-  rawButton: 361, // <button> outside ui/shadcn/*; insights QualityView empty CTA now goes through ShadButton via canonical EmptyState 2026-05-31
+  rawButton: 360, // <button> outside ui/shadcn/*; DncManager + outbound CampaignsTab inline buttons removed via canonical EmptyState actions 2026-05-31
   rawInput: 0, //  <input> outside ui/shadcn/*; fully migrated to shadcn Input/Checkbox/Slider. Stays at 0 forever.
   rawSelect: 0, // <select> outside ui/shadcn/*; fully migrated to shadcn Select. Stays at 0 forever.
   rawDialog: 0, //  <dialog>; we never use the native element. Stays at 0 forever.
-  glassUtility: 455, // .glass utility usage; insights views' bespoke `glass-strong` empty-state frames now route through canonical EmptyState `framed` 2026-05-31
-  largeRadius: 822, // rounded-{lg|xl|2xl|3xl} literals; insights empty-state and loading shells consolidated onto Medallion + framed EmptyState 2026-05-31
+  glassUtility: 451, // .glass utility usage; FleetTaskBridge / DncManager / Webhooks / outbound CampaignsTab / fleet AgentListPanel empty/loading shells consolidated onto canonical primitives 2026-05-31
+  largeRadius: 812, // rounded-{lg|xl|2xl|3xl} literals; FleetTaskBridge / DirectorWorkspace / AgentWorkspace / DncManager / ContactProfile / Webhooks / Pronunciation / fleet AgentListPanel / outbound CampaignsTab empty + loading shells consolidated onto Medallion + EmptyState 2026-05-31
 } as const;
 
 describe("shadcn pivot ratchet", () => {

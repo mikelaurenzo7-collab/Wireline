@@ -15,6 +15,8 @@ interface Props {
   actions?: Action[];
   accent?: string;
   className?: string;
+  /** Eyebrow label above the title. Defaults to the canonical "No data yet". */
+  eyebrow?: string;
 }
 
 /**
@@ -30,6 +32,7 @@ export default function EmptyState({
   actions = [],
   accent,
   className,
+  eyebrow,
 }: Props) {
   return (
     <UiEmptyState
@@ -39,6 +42,7 @@ export default function EmptyState({
       actions={actions}
       accent={accent}
       className={className}
+      eyebrow={eyebrow}
     />
   );
 }

@@ -8,6 +8,7 @@ import {
   ListTodo,
   AlertOctagon,
   ChevronRight,
+  Compass,
   Loader2,
   Plus,
   RefreshCw,
@@ -30,6 +31,8 @@ import { Card } from "./ui/shadcn/Card";
 import { Badge } from "./ui/shadcn/Badge";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "./ui/shadcn/Tooltip";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { EmptyState } from "./ui/EmptyState";
+import ClientRouteLoading from "./layout/ClientRouteLoading";
 
 interface HotLead {
   id: string;
@@ -128,10 +131,11 @@ export default function TriageInbox() {
       className="h-full min-h-[260px]"
     >
       {loading && !data ? (
-        <div className="h-full flex flex-col items-center justify-center gap-2 py-6">
-          <Loader2 className="w-5 h-5 animate-spin text-brand" />
-          <p className="text-eyebrow">Scanning…</p>
-        </div>
+        <ClientRouteLoading
+          icon={<Compass className="w-6 h-6 animate-spin-slow" />}
+          label="Scanning…"
+          className="py-6"
+        />
       ) : fetchErr ? (
         <div className="h-full flex flex-col items-center justify-center gap-3 px-6 text-center py-6">
           <p className="text-[10px] uppercase tracking-[0.35em] text-rose-500">{fetchErr}</p>
@@ -820,16 +824,13 @@ function Empty({
   green?: boolean;
 }) {
   return (
-    <div className="h-full flex flex-col items-center justify-center gap-3 px-6 text-center">
-      <Icon className={cn("w-10 h-10", green ? "text-emerald-500/60" : "text-muted/70")} />
-      <p
-        className={cn(
-          "text-[10px] uppercase tracking-[0.4em]",
-          green ? "text-emerald-500/80" : "text-muted",
-        )}
-      >
-        {label}
-      </p>
+    <div className="h-full">
+      <EmptyState
+        icon={Icon as React.ComponentProps<typeof EmptyState>["icon"]}
+        eyebrow={green ? "All clear" : "Triage"}
+        title={label}
+        accent={green ? "#10b981" : undefined}
+      />
     </div>
   );
 }
