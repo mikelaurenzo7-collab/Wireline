@@ -5,6 +5,7 @@ declare module "express" {
     (): any;
     json: (options?: any) => any;
     raw: (options?: any) => any;
+    urlencoded: (options?: any) => any;
     static: (path: string, options?: any) => any;
     Router: () => any;
   }
@@ -36,6 +37,7 @@ declare module "express" {
   export const Router: () => Router;
   export const json: (options?: any) => any;
   export const raw: (options?: any) => any;
+  export const urlencoded: (options?: any) => any;
   export const static: (path: string, options?: any) => any;
   export default express;
 }

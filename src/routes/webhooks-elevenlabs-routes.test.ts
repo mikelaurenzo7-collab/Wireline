@@ -34,11 +34,17 @@ vi.mock("../lib/elevenlabs-client", () => ({
 }));
 
 import elevenlabsRouter from "./webhooks-elevenlabs-routes";
+import { installWebhookBodyParsers } from "../lib/body-parsers";
 
 const SECRET = "elevenlabs-webhook-secret";
 
 function appWith() {
   const app = express();
+  // Mirror the production middleware ordering: raw parsers for vendor
+  // webhooks BEFORE the global JSON parser. Without this, supertest's
+  // request body would be consumed by express.json() and the route's
+  // HMAC verifier would never see the raw Buffer it needs.
+  installWebhookBodyParsers(app);
   app.use(express.json());
   app.use(elevenlabsRouter);
   return app;

@@ -75,9 +75,26 @@ router.get("/api/webhooks/meta/leads", (req: Request, res: Response) => {
 function verifyMetaSignature(rawBody: Buffer, signature: string | undefined): boolean {
   const secret = process.env.META_APP_SECRET;
   if (!secret || !signature) return false;
+  if (!Buffer.isBuffer(rawBody)) {
+    // Defense in depth — if global express.json() ever runs first the
+    // body is a parsed object and createHmac().update() would throw.
+    // The body parser is centralized in src/lib/body-parsers.ts so
+    // this should be unreachable in production, but we'd rather
+    // fail-closed than crash the request.
+    log.error("Meta signature: rawBody is not a Buffer", {
+      bodyType: typeof rawBody,
+    });
+    return false;
+  }
   // Header format: "sha256=<hex>"
-  const expectedHex = createHmac("sha256", secret).update(rawBody).digest("hex");
-  const expected = `sha256=${expectedHex}`;
+  let expected: string;
+  try {
+    const expectedHex = createHmac("sha256", secret).update(rawBody).digest("hex");
+    expected = `sha256=${expectedHex}`;
+  } catch (err) {
+    log.error("Meta signature: HMAC compute failed", { error: getErrorMessage(err) });
+    return false;
+  }
   if (signature.length !== expected.length) return false;
   try {
     return timingSafeEqual(Buffer.from(signature, "utf8"), Buffer.from(expected, "utf8"));
@@ -156,204 +173,199 @@ function pickField(fields: MetaLeadField[], names: string[]): string | null {
   return null;
 }
 
-router.post(
-  "/api/webhooks/meta/leads",
-  metaRateLimiter,
-  express.raw({ type: "*/*" }),
-  async (req: Request, res: Response) => {
-    const sig = req.header("x-hub-signature-256");
-    const rawBody = req.body as Buffer;
+router.post("/api/webhooks/meta/leads", metaRateLimiter, async (req: Request, res: Response) => {
+  const sig = req.header("x-hub-signature-256");
+  const rawBody = req.body as Buffer;
 
-    if (!verifyMetaSignature(rawBody, sig)) {
-      log.warn("Meta webhook signature mismatch");
-      // Acknowledge with 200 so Meta doesn't retry an unverifiable
-      // delivery, but log it as a security event.
-      return res.status(200).send("OK");
-    }
+  if (!verifyMetaSignature(rawBody, sig)) {
+    log.warn("Meta webhook signature mismatch");
+    // Acknowledge with 200 so Meta doesn't retry an unverifiable
+    // delivery, but log it as a security event.
+    return res.status(200).send("OK");
+  }
 
-    let payload: any;
-    try {
-      payload = JSON.parse(rawBody.toString("utf8"));
-    } catch {
-      return res.status(400).send("Bad JSON");
-    }
+  let payload: any;
+  try {
+    payload = JSON.parse(rawBody.toString("utf8"));
+  } catch {
+    return res.status(400).send("Bad JSON");
+  }
 
-    // Always ack within 200ms — Meta retries on 5xx + timeout.
-    res.status(200).send("OK");
+  // Always ack within 200ms — Meta retries on 5xx + timeout.
+  res.status(200).send("OK");
 
-    if (payload?.object !== "page" || !Array.isArray(payload.entry)) return;
+  if (payload?.object !== "page" || !Array.isArray(payload.entry)) return;
 
-    // Field router: each Page webhook field gets a dedicated processor.
-    // We strategically handle the highest-value events (leadgen, messages,
-    // ratings, feed, mention) and turn them into actionable AI agent tasks.
-    // The rest get logged at debug level so we have a trail but don't
-    // spam every Page profile update through to fleet_tasks.
-    const HANDLED_FIELDS = new Set([
-      "leadgen",
-      "leadgen_update",
-      "messages",
-      "ratings",
-      "feed",
-      "mention",
-    ]);
+  // Field router: each Page webhook field gets a dedicated processor.
+  // We strategically handle the highest-value events (leadgen, messages,
+  // ratings, feed, mention) and turn them into actionable AI agent tasks.
+  // The rest get logged at debug level so we have a trail but don't
+  // spam every Page profile update through to fleet_tasks.
+  const HANDLED_FIELDS = new Set([
+    "leadgen",
+    "leadgen_update",
+    "messages",
+    "ratings",
+    "feed",
+    "mention",
+  ]);
 
-    for (const entry of payload.entry) {
-      const pageId = entry.id;
-      if (!Array.isArray(entry.changes)) continue;
-      for (const change of entry.changes) {
-        const field: string = change.field || "";
-        const v = change.value || {};
+  for (const entry of payload.entry) {
+    const pageId = entry.id;
+    if (!Array.isArray(entry.changes)) continue;
+    for (const change of entry.changes) {
+      const field: string = change.field || "";
+      const v = change.value || {};
 
-        if (!HANDLED_FIELDS.has(field)) {
-          // Logged but not processed — covers profile attribute updates,
-          // Messenger-internal events, marketing message echoes etc.
-          // We subscribe to everything to keep options open; the
-          // processor stays surgical.
-          continue;
-        }
+      if (!HANDLED_FIELDS.has(field)) {
+        // Logged but not processed — covers profile attribute updates,
+        // Messenger-internal events, marketing message echoes etc.
+        // We subscribe to everything to keep options open; the
+        // processor stays surgical.
+        continue;
+      }
 
-        // Resolve the tenant once per change — all handled fields need it.
-        const tenant = await resolveTenantForPage(pageId);
-        if (!tenant) {
-          log.info("Meta event for unsubscribed page", { pageId, field });
-          continue;
-        }
+      // Resolve the tenant once per change — all handled fields need it.
+      const tenant = await resolveTenantForPage(pageId);
+      if (!tenant) {
+        log.info("Meta event for unsubscribed page", { pageId, field });
+        continue;
+      }
 
-        try {
-          if (field === "leadgen" || field === "leadgen_update") {
-            const leadgenId: string | undefined = v.leadgen_id;
-            if (!leadgenId) continue;
+      try {
+        if (field === "leadgen" || field === "leadgen_update") {
+          const leadgenId: string | undefined = v.leadgen_id;
+          if (!leadgenId) continue;
 
-            const detail = await fetchMetaLead(leadgenId, tenant.accessToken);
-            if (!detail) continue;
+          const detail = await fetchMetaLead(leadgenId, tenant.accessToken);
+          if (!detail) continue;
 
-            const fields = detail.field_data || [];
-            const phone = pickField(fields, ["phone_number", "phone"]);
-            const email = pickField(fields, ["email"]);
-            const fullName =
-              pickField(fields, ["full_name"]) ||
-              [pickField(fields, ["first_name"]), pickField(fields, ["last_name"])]
-                .filter(Boolean)
-                .join(" ");
+          const fields = detail.field_data || [];
+          const phone = pickField(fields, ["phone_number", "phone"]);
+          const email = pickField(fields, ["email"]);
+          const fullName =
+            pickField(fields, ["full_name"]) ||
+            [pickField(fields, ["first_name"]), pickField(fields, ["last_name"])]
+              .filter(Boolean)
+              .join(" ");
 
-            if (!phone && !email) {
-              log.info("Meta leadgen had no phone or email", { leadgenId });
-              continue;
-            }
-
-            await drizzle
-              .insert(schema.outboundLeads)
-              .values({
-                userId: tenant.userId,
-                phoneNumber: null,
-                customerNumber: phone,
-                customerName: fullName || null,
-                email: email || null,
-                context: `Meta Lead Ad submission${v.form_id ? ` (form ${v.form_id})` : ""}`,
-                status: "Queued",
-                source: "meta",
-                campaignSource: v.ad_id ? `ad:${v.ad_id}` : "meta_lead_ad",
-                idempotencyKey: leadgenId,
-                metadata: {
-                  meta_leadgen_id: leadgenId,
-                  page_id: pageId,
-                  form_id: v.form_id,
-                  ad_id: v.ad_id,
-                  created_time: detail.created_time,
-                  event_type: field,
-                },
-                receivedAt: new Date(),
-              })
-              .onConflictDoNothing();
-
-            log.info("Meta lead ingested", {
-              userId: tenant.userId,
-              leadgenId,
-              field,
-              hasPhone: !!phone,
-              hasEmail: !!email,
-            });
+          if (!phone && !email) {
+            log.info("Meta leadgen had no phone or email", { leadgenId });
             continue;
           }
 
-          // Customer messaged the Page → route to fleet tasks so the
-          // CS agent can draft a response. We don't have a Messenger
-          // OAuth flow yet (would need pages_messaging permission) but
-          // logging the inbound is the right call so operators see
-          // something landed and we can wire reply later.
-          if (field === "messages") {
-            const msg = v.message || {};
-            const senderId = v.sender?.id || "unknown";
-            const text = msg.text || "(non-text message)";
+          await drizzle
+            .insert(schema.outboundLeads)
+            .values({
+              userId: tenant.userId,
+              phoneNumber: null,
+              customerNumber: phone,
+              customerName: fullName || null,
+              email: email || null,
+              context: `Meta Lead Ad submission${v.form_id ? ` (form ${v.form_id})` : ""}`,
+              status: "Queued",
+              source: "meta",
+              campaignSource: v.ad_id ? `ad:${v.ad_id}` : "meta_lead_ad",
+              idempotencyKey: leadgenId,
+              metadata: {
+                meta_leadgen_id: leadgenId,
+                page_id: pageId,
+                form_id: v.form_id,
+                ad_id: v.ad_id,
+                created_time: detail.created_time,
+                event_type: field,
+              },
+              receivedAt: new Date(),
+            })
+            .onConflictDoNothing();
+
+          log.info("Meta lead ingested", {
+            userId: tenant.userId,
+            leadgenId,
+            field,
+            hasPhone: !!phone,
+            hasEmail: !!email,
+          });
+          continue;
+        }
+
+        // Customer messaged the Page → route to fleet tasks so the
+        // CS agent can draft a response. We don't have a Messenger
+        // OAuth flow yet (would need pages_messaging permission) but
+        // logging the inbound is the right call so operators see
+        // something landed and we can wire reply later.
+        if (field === "messages") {
+          const msg = v.message || {};
+          const senderId = v.sender?.id || "unknown";
+          const text = msg.text || "(non-text message)";
+          await drizzle.insert(schema.fleetTasks).values({
+            userId: tenant.userId,
+            taskType: "messenger_inbound",
+            description: `Facebook message from ${senderId}: ${text.slice(0, 240)}`,
+            priority: "medium",
+            status: "pending",
+            sourceType: "meta_webhook",
+            sourceId: `${pageId}:${msg.mid || senderId}`,
+            payload: { sender_id: senderId, message: msg, page_id: pageId },
+            targetChannel: "manual",
+          });
+          log.info("Meta inbound message routed to fleet tasks", {
+            userId: tenant.userId,
+            senderId,
+          });
+          continue;
+        }
+
+        // 1-3 star Page review → escalate. 4-5 star → just log.
+        if (field === "ratings") {
+          const rating = Number(v.rating || 0);
+          const reviewerId = v.reviewer_id || "unknown";
+          const reviewText = v.review_text || "";
+          if (rating > 0 && rating <= 3) {
             await drizzle.insert(schema.fleetTasks).values({
               userId: tenant.userId,
-              taskType: "messenger_inbound",
-              description: `Facebook message from ${senderId}: ${text.slice(0, 240)}`,
-              priority: "medium",
+              taskType: "review_escalation",
+              description: `${rating}-star Facebook review from ${reviewerId}: ${reviewText.slice(0, 240)}`,
+              priority: rating <= 2 ? "high" : "medium",
               status: "pending",
               sourceType: "meta_webhook",
-              sourceId: `${pageId}:${msg.mid || senderId}`,
-              payload: { sender_id: senderId, message: msg, page_id: pageId },
+              sourceId: `${pageId}:${reviewerId}`,
+              payload: { rating, review_text: reviewText, page_id: pageId },
               targetChannel: "manual",
             });
-            log.info("Meta inbound message routed to fleet tasks", {
-              userId: tenant.userId,
-              senderId,
-            });
-            continue;
           }
-
-          // 1-3 star Page review → escalate. 4-5 star → just log.
-          if (field === "ratings") {
-            const rating = Number(v.rating || 0);
-            const reviewerId = v.reviewer_id || "unknown";
-            const reviewText = v.review_text || "";
-            if (rating > 0 && rating <= 3) {
-              await drizzle.insert(schema.fleetTasks).values({
-                userId: tenant.userId,
-                taskType: "review_escalation",
-                description: `${rating}-star Facebook review from ${reviewerId}: ${reviewText.slice(0, 240)}`,
-                priority: rating <= 2 ? "high" : "medium",
-                status: "pending",
-                sourceType: "meta_webhook",
-                sourceId: `${pageId}:${reviewerId}`,
-                payload: { rating, review_text: reviewText, page_id: pageId },
-                targetChannel: "manual",
-              });
-            }
-            log.info("Meta rating processed", {
-              userId: tenant.userId,
-              rating,
-              escalated: rating > 0 && rating <= 3,
-            });
-            continue;
-          }
-
-          // Comment on a Page post or @mention. Quick log for the
-          // operator's awareness — full triage is a future feature.
-          if (field === "feed" || field === "mention") {
-            const item = v.item || field;
-            const verb = v.verb || "update";
-            log.info("Meta feed/mention event", {
-              userId: tenant.userId,
-              field,
-              item,
-              verb,
-              from: v.from?.id,
-            });
-            continue;
-          }
-        } catch (err) {
-          log.error("Meta webhook processing failed", {
-            field,
-            pageId,
-            error: getErrorMessage(err),
+          log.info("Meta rating processed", {
+            userId: tenant.userId,
+            rating,
+            escalated: rating > 0 && rating <= 3,
           });
+          continue;
         }
+
+        // Comment on a Page post or @mention. Quick log for the
+        // operator's awareness — full triage is a future feature.
+        if (field === "feed" || field === "mention") {
+          const item = v.item || field;
+          const verb = v.verb || "update";
+          log.info("Meta feed/mention event", {
+            userId: tenant.userId,
+            field,
+            item,
+            verb,
+            from: v.from?.id,
+          });
+          continue;
+        }
+      } catch (err) {
+        log.error("Meta webhook processing failed", {
+          field,
+          pageId,
+          error: getErrorMessage(err),
+        });
       }
     }
-  },
-);
+  }
+});
 
 // ────────────────────────────────────────────────────────────────────
 //  POST — Data Deletion Callback
@@ -404,109 +416,105 @@ function parseSignedRequest(
   }
 }
 
-router.post(
-  "/api/webhooks/meta/deletion",
-  express.raw({ type: "*/*" }),
-  async (req: Request, res: Response) => {
-    const appSecret = process.env.META_APP_SECRET;
-    if (!appSecret) {
-      log.warn("Meta deletion callback: META_APP_SECRET not set");
-      return res.status(503).json({ error: "deletion service unavailable" });
-    }
+router.post("/api/webhooks/meta/deletion", async (req: Request, res: Response) => {
+  const appSecret = process.env.META_APP_SECRET;
+  if (!appSecret) {
+    log.warn("Meta deletion callback: META_APP_SECRET not set");
+    return res.status(503).json({ error: "deletion service unavailable" });
+  }
 
-    // Body is either application/x-www-form-urlencoded (signed_request=...)
-    // or raw JSON if Facebook ever changes the format. Parse either —
-    // both end up surfacing `signed_request` as the single field we need.
-    const rawBody = (req.body as Buffer | undefined)?.toString("utf8") || "";
-    let signedRequest = "";
-    if (rawBody.startsWith("signed_request=")) {
-      signedRequest = decodeURIComponent(rawBody.slice("signed_request=".length));
-    } else {
-      try {
-        const parsed = JSON.parse(rawBody) as { signed_request?: string };
-        signedRequest = parsed.signed_request || "";
-      } catch {
-        // Form-urlencoded with signed_request not at start — fall back
-        // to manual split. URLSearchParams handles + → space, %xx decoding.
-        const params = new URLSearchParams(rawBody);
-        signedRequest = params.get("signed_request") || "";
-      }
-    }
-    if (!signedRequest) {
-      return res.status(400).json({ error: "missing signed_request" });
-    }
-
-    const payload = parseSignedRequest(signedRequest, appSecret);
-    if (!payload || !payload.user_id) {
-      log.warn("Meta deletion callback: invalid signed_request");
-      return res.status(400).json({ error: "invalid signed_request" });
-    }
-
-    const facebookUserId = String(payload.user_id);
-    // Short code shown to the end user. URL-safe alphabet, 10 chars
-    // — collision risk is negligible at our scale and the code is
-    // only meaningful when paired with the user's facebook_user_id
-    // anyway.
-    const confirmationCode =
-      "WLN-" +
-      Array.from({ length: 8 })
-        .map(() => "ABCDEFGHJKMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 31)])
-        .join("");
-
-    // Mark every Meta connection with this Facebook user_id as
-    // inactive. We store the FB user_id in metadata.facebook_user_id
-    // at OAuth time so this lookup is exact-match.
+  // Body is either application/x-www-form-urlencoded (signed_request=...)
+  // or raw JSON if Facebook ever changes the format. Parse either —
+  // both end up surfacing `signed_request` as the single field we need.
+  const rawBody = (req.body as Buffer | undefined)?.toString("utf8") || "";
+  let signedRequest = "";
+  if (rawBody.startsWith("signed_request=")) {
+    signedRequest = decodeURIComponent(rawBody.slice("signed_request=".length));
+  } else {
     try {
-      const matching = await drizzle
-        .select({
-          id: schema.crmConnections.id,
-          userId: schema.crmConnections.userId,
-          metadata: schema.crmConnections.metadata,
-        })
-        .from(schema.crmConnections)
-        .where(
-          and(
-            eq(schema.crmConnections.provider, "meta"),
-            sql`(${schema.crmConnections.metadata}->>'facebook_user_id') = ${facebookUserId}`,
-          ),
-        );
-
-      for (const row of matching || []) {
-        await drizzle
-          .update(schema.crmConnections)
-          .set({
-            active: false,
-            metadata: {
-              ...((row.metadata as Record<string, unknown>) || {}),
-              deletion_requested_at: new Date().toISOString(),
-              deletion_confirmation_code: confirmationCode,
-            },
-            updatedAt: new Date(),
-          })
-          .where(eq(schema.crmConnections.id, row.id));
-
-        log.info("Meta deletion callback honored — connection deactivated", {
-          userId: row.userId,
-          facebookUserId,
-          confirmationCode,
-        });
-      }
-    } catch (err) {
-      log.error("Meta deletion callback DB write failed", {
-        facebookUserId,
-        error: getErrorMessage(err),
-      });
-      // Still return 200 with the code — Facebook will retry on 5xx
-      // and we don't want to fail their UX over a transient DB blip.
+      const parsed = JSON.parse(rawBody) as { signed_request?: string };
+      signedRequest = parsed.signed_request || "";
+    } catch {
+      // Form-urlencoded with signed_request not at start — fall back
+      // to manual split. URLSearchParams handles + → space, %xx decoding.
+      const params = new URLSearchParams(rawBody);
+      signedRequest = params.get("signed_request") || "";
     }
+  }
+  if (!signedRequest) {
+    return res.status(400).json({ error: "missing signed_request" });
+  }
 
-    const baseUrl =
-      (process.env.APP_URL && new URL(process.env.APP_URL).origin) || "https://trywireline.com";
-    return res.status(200).json({
-      url: `${baseUrl}/legal/data-deletion?fbid=${encodeURIComponent(facebookUserId)}&code=${confirmationCode}`,
-      confirmation_code: confirmationCode,
+  const payload = parseSignedRequest(signedRequest, appSecret);
+  if (!payload || !payload.user_id) {
+    log.warn("Meta deletion callback: invalid signed_request");
+    return res.status(400).json({ error: "invalid signed_request" });
+  }
+
+  const facebookUserId = String(payload.user_id);
+  // Short code shown to the end user. URL-safe alphabet, 10 chars
+  // — collision risk is negligible at our scale and the code is
+  // only meaningful when paired with the user's facebook_user_id
+  // anyway.
+  const confirmationCode =
+    "WLN-" +
+    Array.from({ length: 8 })
+      .map(() => "ABCDEFGHJKMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 31)])
+      .join("");
+
+  // Mark every Meta connection with this Facebook user_id as
+  // inactive. We store the FB user_id in metadata.facebook_user_id
+  // at OAuth time so this lookup is exact-match.
+  try {
+    const matching = await drizzle
+      .select({
+        id: schema.crmConnections.id,
+        userId: schema.crmConnections.userId,
+        metadata: schema.crmConnections.metadata,
+      })
+      .from(schema.crmConnections)
+      .where(
+        and(
+          eq(schema.crmConnections.provider, "meta"),
+          sql`(${schema.crmConnections.metadata}->>'facebook_user_id') = ${facebookUserId}`,
+        ),
+      );
+
+    for (const row of matching || []) {
+      await drizzle
+        .update(schema.crmConnections)
+        .set({
+          active: false,
+          metadata: {
+            ...((row.metadata as Record<string, unknown>) || {}),
+            deletion_requested_at: new Date().toISOString(),
+            deletion_confirmation_code: confirmationCode,
+          },
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.crmConnections.id, row.id));
+
+      log.info("Meta deletion callback honored — connection deactivated", {
+        userId: row.userId,
+        facebookUserId,
+        confirmationCode,
+      });
+    }
+  } catch (err) {
+    log.error("Meta deletion callback DB write failed", {
+      facebookUserId,
+      error: getErrorMessage(err),
     });
-  },
-);
+    // Still return 200 with the code — Facebook will retry on 5xx
+    // and we don't want to fail their UX over a transient DB blip.
+  }
+
+  const baseUrl =
+    (process.env.APP_URL && new URL(process.env.APP_URL).origin) || "https://trywireline.com";
+  return res.status(200).json({
+    url: `${baseUrl}/legal/data-deletion?fbid=${encodeURIComponent(facebookUserId)}&code=${confirmationCode}`,
+    confirmation_code: confirmationCode,
+  });
+});
 
 export default router;

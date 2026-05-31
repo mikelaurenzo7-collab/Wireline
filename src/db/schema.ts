@@ -831,6 +831,13 @@ export const agentTeamMembers = pgTable(
   "wireline_agent_team_members",
   {
     id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
+    // Tenant scoping. agent_team_members was historically scoped only via the
+    // team_id FK, but as soon as a route queries it directly (without joining
+    // through wireline_agent_teams) RLS has nothing to enforce. Carry the
+    // owning user_id on the row so the standard
+    //   user_id = NULLIF(current_setting('app.current_user_id', true), '')::uuid
+    // policy applies (see migration 0026).
+    userId: uuid("user_id").notNull(),
     teamId: uuid("team_id").references(() => agentTeams.id, { onDelete: "cascade" }),
     agentId: text("agent_id").references(() => agents.id, { onDelete: "cascade" }),
     /** "member" or "lead" — leads get first routing preference. */
@@ -839,6 +846,7 @@ export const agentTeamMembers = pgTable(
   },
   () => ({
     teamAgentUnique: sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_agent_team_members_team_agent ON wireline_agent_team_members (team_id, agent_id)`,
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_agent_team_members_user_id ON wireline_agent_team_members (user_id)`,
   }),
 );
 
@@ -1469,6 +1477,25 @@ export const goals = pgTable(
 );
 
 export type Goal = typeof goals.$inferSelect;
+
+/**
+ * Short-lived OAuth bridge codes for the sign-in flow.
+ *
+ * Persisted (instead of held in an in-process Map) so the redirect
+ * from /api/auth/google/callback can land on a different Vercel
+ * function instance than /api/auth/oauth/exchange and still find
+ * the row. Rows live ~60s and are deleted on read.
+ */
+export const oauthPendingCodes = pgTable("wireline_oauth_pending_codes", {
+  code: text("code").primaryKey(),
+  token: text("token").notNull(),
+  userId: uuid("user_id").notNull(),
+  email: text("email").notNull(),
+  fullName: text("full_name"),
+  isOwner: boolean("is_owner").notNull().default(false),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 // Relations
 export const agentRelations = relations(agents, ({ many }: any) => ({

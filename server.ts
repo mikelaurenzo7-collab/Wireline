@@ -36,6 +36,7 @@ import { AppError, formatErrorResponse } from "./src/lib/api-error";
 import { validateStartupEnv } from "./src/lib/startup";
 import { buildCSP, buildConnectSrcs } from "./src/lib/csp";
 import { isRedisConfigured, startMemoryCleanup } from "./src/lib/rate-limit";
+import { installWebhookBodyParsers } from "./src/lib/body-parsers";
 import { claudeRateLimiter } from "./src/middleware/api-rate-limits";
 import { initJobWorker } from "./src/lib/job-worker";
 import { performanceMonitoring } from "./src/middleware/performance";
@@ -154,8 +155,11 @@ app.use(
   }),
 );
 
-// Stripe webhook needs raw body
-app.use("/api/stripe-webhook", express.raw({ type: "application/json" }));
+// Vendor-webhook body parsers (Stripe / Meta / ElevenLabs / Twilio).
+// MUST be installed before the global express.json() below — the JSON
+// parser consumes the request stream, after which HMAC verification on
+// the raw bytes fails silently. See src/lib/body-parsers.ts.
+installWebhookBodyParsers(app);
 
 // Scoped JSON body parsers
 app.use("/api/claude/knowledge-from-document", express.json({ limit: "50mb" }));

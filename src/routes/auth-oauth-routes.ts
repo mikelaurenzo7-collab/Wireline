@@ -31,7 +31,8 @@ import { Router, Request, Response } from "express";
 import { google } from "googleapis";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq } from "drizzle-orm";
+import { eq, lt } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { generateToken, isOwnerEmail } from "../lib/auth-service";
 import { generateOAuthState, verifyOAuthState } from "../lib/oauth-helpers";
 import { oauthRateLimiter } from "../middleware/rate-limit-middleware";
@@ -94,39 +95,109 @@ function findOrCreateUserByEmail(
   })();
 }
 
-const pendingCodes = new Map<
-  string,
-  {
+/**
+ * Bridge-code store for the OAuth sign-in callback → /oauth-complete
+ * SPA redirect. Persisted to Postgres (was an in-process Map) so the
+ * redirect can land on any Vercel function instance and still find
+ * the row. Codes live ~60s and are deleted on read.
+ */
+const PENDING_CODE_TTL_MS = 60_000;
+
+async function storePendingCode(
+  code: string,
+  entry: {
     token: string;
     user: { id: string; email: string; fullName: string | null };
     isOwner: boolean;
-    expiresAt: number;
+  },
+): Promise<void> {
+  try {
+    await drizzle.insert(schema.oauthPendingCodes).values({
+      code,
+      token: entry.token,
+      userId: entry.user.id,
+      email: entry.user.email,
+      fullName: entry.user.fullName,
+      isOwner: entry.isOwner,
+      expiresAt: new Date(Date.now() + PENDING_CODE_TTL_MS),
+    });
+  } catch (err) {
+    log.error("auth oauth: failed to persist pending code", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    throw err;
   }
->();
+}
 
-setInterval(() => {
-  const now = Date.now();
-  for (const [code, data] of pendingCodes) {
-    if (data.expiresAt < now) pendingCodes.delete(code);
+async function consumePendingCode(code: string): Promise<{
+  token: string;
+  user: { id: string; email: string; fullName: string | null };
+  isOwner: boolean;
+} | null> {
+  // Single-shot read-and-delete. We rely on a DELETE … RETURNING so
+  // a concurrent exchange request can only succeed for one caller.
+  const rows = (await drizzle.execute(sql`
+    DELETE FROM wireline_oauth_pending_codes
+    WHERE code = ${code}
+    RETURNING code, token, user_id, email, full_name, is_owner, expires_at
+  `)) as unknown as {
+    rows?: Array<{
+      code: string;
+      token: string;
+      user_id: string;
+      email: string;
+      full_name: string | null;
+      is_owner: boolean;
+      expires_at: Date | string;
+    }>;
+  };
+  const row = rows.rows?.[0];
+  if (!row) return null;
+  const expiresAt =
+    row.expires_at instanceof Date ? row.expires_at.getTime() : new Date(row.expires_at).getTime();
+  if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) return null;
+  return {
+    token: row.token,
+    isOwner: row.is_owner,
+    user: { id: row.user_id, email: row.email, fullName: row.full_name },
+  };
+}
+
+// Opportunistic GC of expired rows. Cheap; runs alongside every callback.
+async function gcExpiredPendingCodes(): Promise<void> {
+  try {
+    await drizzle
+      .delete(schema.oauthPendingCodes)
+      .where(lt(schema.oauthPendingCodes.expiresAt, new Date()));
+  } catch (err) {
+    // Non-fatal — surface only at warn level.
+    log.warn("auth oauth: pending-code GC failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
-}, 5 * 60_000).unref();
+}
 
-function bridgeRedirect(
+async function bridgeRedirect(
   baseUrl: string,
   user: { id: string; email: string; fullName: string | null },
   token: string,
   errorMessage?: string,
-): string {
+): Promise<string> {
   if (errorMessage) {
     return `${baseUrl}/auth/oauth-complete?error=${encodeURIComponent(errorMessage)}`;
   }
   const code = randomBytes(32).toString("base64url");
-  pendingCodes.set(code, {
-    token,
-    user,
-    isOwner: isOwnerEmail(user.email),
-    expiresAt: Date.now() + 60_000,
-  });
+  try {
+    await storePendingCode(code, {
+      token,
+      user,
+      isOwner: isOwnerEmail(user.email),
+    });
+  } catch {
+    return `${baseUrl}/auth/oauth-complete?error=${encodeURIComponent("Failed to start session. Please try again.")}`;
+  }
+  // Fire-and-forget GC.
+  void gcExpiredPendingCodes();
   return `${baseUrl}/auth/oauth-complete?code=${code}`;
 }
 
@@ -164,11 +235,13 @@ router.get("/api/auth/google/callback", async (req: Request, res: Response) => {
   const vs = verifyOAuthState(state as string | undefined);
   if (!vs.ok) {
     return res.redirect(
-      bridgeRedirect(baseUrl, {} as any, "", "Invalid or expired sign-in state."),
+      await bridgeRedirect(baseUrl, {} as any, "", "Invalid or expired sign-in state."),
     );
   }
   if (!code || typeof code !== "string") {
-    return res.redirect(bridgeRedirect(baseUrl, {} as any, "", "Google did not return a code."));
+    return res.redirect(
+      await bridgeRedirect(baseUrl, {} as any, "", "Google did not return a code."),
+    );
   }
   try {
     const redirectUri = `${baseUrl}/api/auth/google/callback`;
@@ -185,16 +258,16 @@ router.get("/api/auth/google/callback", async (req: Request, res: Response) => {
     const name = userInfo.data.name || userInfo.data.given_name || null;
     if (!email) {
       return res.redirect(
-        bridgeRedirect(baseUrl, {} as any, "", "Google did not return an email address."),
+        await bridgeRedirect(baseUrl, {} as any, "", "Google did not return an email address."),
       );
     }
     const user = await findOrCreateUserByEmail(email, name);
     const token = generateToken({ id: user.id, email: user.email });
-    return res.redirect(bridgeRedirect(baseUrl, user, token));
+    return res.redirect(await bridgeRedirect(baseUrl, user, token));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Google sign-in failed.";
     log.error("auth oauth google: callback failed", { error: message });
-    return res.redirect(bridgeRedirect(baseUrl, {} as any, "", message));
+    return res.redirect(await bridgeRedirect(baseUrl, {} as any, "", message));
   }
 });
 
@@ -231,14 +304,14 @@ router.get("/api/auth/microsoft/callback", async (req: Request, res: Response) =
   const vs = verifyOAuthState(state as string | undefined);
   if (!vs.ok) {
     return res.redirect(
-      bridgeRedirect(baseUrl, {} as any, "", "Invalid or expired sign-in state."),
+      await bridgeRedirect(baseUrl, {} as any, "", "Invalid or expired sign-in state."),
     );
   }
   if (!code || typeof code !== "string") {
     const msg =
       (typeof error_description === "string" && error_description) ||
       "Microsoft did not return a code.";
-    return res.redirect(bridgeRedirect(baseUrl, {} as any, "", msg));
+    return res.redirect(await bridgeRedirect(baseUrl, {} as any, "", msg));
   }
   try {
     const redirectUri = `${baseUrl}/api/auth/microsoft/callback`;
@@ -274,16 +347,16 @@ router.get("/api/auth/microsoft/callback", async (req: Request, res: Response) =
     const name = me.displayName || null;
     if (!email) {
       return res.redirect(
-        bridgeRedirect(baseUrl, {} as any, "", "Microsoft did not return an email address."),
+        await bridgeRedirect(baseUrl, {} as any, "", "Microsoft did not return an email address."),
       );
     }
     const user = await findOrCreateUserByEmail(email, name);
     const token = generateToken({ id: user.id, email: user.email });
-    return res.redirect(bridgeRedirect(baseUrl, user, token));
+    return res.redirect(await bridgeRedirect(baseUrl, user, token));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Microsoft sign-in failed.";
     log.error("auth oauth microsoft: callback failed", { error: message });
-    return res.redirect(bridgeRedirect(baseUrl, {} as any, "", message));
+    return res.redirect(await bridgeRedirect(baseUrl, {} as any, "", message));
   }
 });
 
@@ -327,14 +400,14 @@ router.get("/api/auth/yahoo/callback", async (req: Request, res: Response) => {
   const vs = verifyOAuthState(state as string | undefined);
   if (!vs.ok) {
     return res.redirect(
-      bridgeRedirect(baseUrl, {} as any, "", "Invalid or expired sign-in state."),
+      await bridgeRedirect(baseUrl, {} as any, "", "Invalid or expired sign-in state."),
     );
   }
   if (!code || typeof code !== "string") {
     const msg =
       (typeof error_description === "string" && error_description) ||
       "Yahoo did not return a code.";
-    return res.redirect(bridgeRedirect(baseUrl, {} as any, "", msg));
+    return res.redirect(await bridgeRedirect(baseUrl, {} as any, "", msg));
   }
   try {
     const redirectUri = `${baseUrl}/api/auth/yahoo/callback`;
@@ -369,29 +442,28 @@ router.get("/api/auth/yahoo/callback", async (req: Request, res: Response) => {
     const name = me.name || me.given_name || null;
     if (!email) {
       return res.redirect(
-        bridgeRedirect(baseUrl, {} as any, "", "Yahoo did not return an email address."),
+        await bridgeRedirect(baseUrl, {} as any, "", "Yahoo did not return an email address."),
       );
     }
     const user = await findOrCreateUserByEmail(email, name);
     const token = generateToken({ id: user.id, email: user.email });
-    return res.redirect(bridgeRedirect(baseUrl, user, token));
+    return res.redirect(await bridgeRedirect(baseUrl, user, token));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Yahoo sign-in failed.";
     log.error("auth oauth yahoo: callback failed", { error: message });
-    return res.redirect(bridgeRedirect(baseUrl, {} as any, "", message));
+    return res.redirect(await bridgeRedirect(baseUrl, {} as any, "", message));
   }
 });
 
 /* ──────────────────  One-time code exchange  ────────────────── */
 
-router.post("/api/auth/oauth/exchange", oauthRateLimiter, (req: Request, res: Response) => {
+router.post("/api/auth/oauth/exchange", oauthRateLimiter, async (req: Request, res: Response) => {
   const { code } = req.body;
   if (!code || typeof code !== "string") {
     return res.status(400).json({ error: "Missing code" });
   }
-  const entry = pendingCodes.get(code);
-  pendingCodes.delete(code);
-  if (!entry || entry.expiresAt < Date.now()) {
+  const entry = await consumePendingCode(code);
+  if (!entry) {
     return res.status(400).json({ error: "Invalid or expired code" });
   }
   return res.json({

@@ -31,10 +31,45 @@ export function initSupervisorWebSocketServer(server: any) {
     const urlObj = parseUrl(request.url || "", true);
     const callId = urlObj.query.callId as string;
     const mode = urlObj.query.mode as string;
-    const token = urlObj.query.token as string;
+
+    // Prefer header-borne credentials over the ?token= query param. Tokens in
+    // URLs leak into proxy access logs, browser history, referer headers,
+    // crash reports and the like. We accept (in order):
+    //   1. `Authorization: ****** — what server-to-server clients use.
+    //   2. `Sec-WebSocket-Protocol: bearer, <jwt>` — what browsers use,
+    //      since the WebSocket constructor cannot set arbitrary headers but
+    //      it CAN advertise subprotocols.
+    //   3. `?token=<jwt>` — legacy fallback retained so existing supervisor
+    //      consoles keep working through this PR; remove once clients are
+    //      migrated. Deprecation is logged once per connection.
+    const authHeader =
+      typeof request.headers.authorization === "string" ? request.headers.authorization : "";
+    const headerToken = authHeader.toLowerCase().startsWith("bearer ")
+      ? authHeader.slice(7).trim()
+      : "";
+
+    const rawProto = request.headers["sec-websocket-protocol"];
+    const protoParts = Array.isArray(rawProto)
+      ? rawProto.flatMap((p) => p.split(","))
+      : typeof rawProto === "string"
+        ? rawProto.split(",")
+        : [];
+    const protoTokens = protoParts.map((p) => p.trim()).filter(Boolean);
+    const bearerIdx = protoTokens.findIndex((p) => p.toLowerCase() === "bearer");
+    const subprotocolToken =
+      bearerIdx >= 0 && bearerIdx + 1 < protoTokens.length ? protoTokens[bearerIdx + 1] : "";
+
+    const queryToken = typeof urlObj.query.token === "string" ? urlObj.query.token : "";
+    const token = headerToken || subprotocolToken || queryToken;
+    if (token && token === queryToken && !headerToken && !subprotocolToken) {
+      log.warn("Supervisor WebSocket: deprecated ?token= auth (migrate to header)", {
+        callId,
+        mode,
+      });
+    }
 
     if (!callId || !mode || !token) {
-      ws.close(4000, "Missing required query parameters (callId, mode, token)");
+      ws.close(4000, "Missing required parameters (callId, mode, auth)");
       return;
     }
 
