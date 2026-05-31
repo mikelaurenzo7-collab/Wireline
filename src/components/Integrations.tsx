@@ -1,17 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useState, useEffect } from "react";
-import {
-  Mail,
-  CheckCircle2,
-  Plus,
-  Trash2,
-  Loader2,
-  Bot,
-  ChevronDown,
-  RotateCw,
-  Phone,
-  Zap,
-} from "lucide-react";
+import { Mail, CheckCircle2, Plus, Trash2, Loader2, Bot, RotateCw, Phone, Zap } from "lucide-react";
 import { motion } from "motion/react";
 import { authFetch, readApiJson } from "../lib/api";
 import PageShell, { Panel } from "./PageShell";
@@ -22,6 +11,7 @@ import CrmConnectionCard from "./CrmConnectionCard";
 import { EMAIL_INBOUND_TASKS } from "../lib/integration-playbooks";
 import { getIntegrationLogo } from "./layout/IntegrationLogos";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 
 type ConfirmState = { open: boolean; onConfirm: () => void };
 const CLOSED_CONFIRM: ConfirmState = { open: false, onConfirm: () => {} };
@@ -369,8 +359,8 @@ export default function Integrations() {
                   </div>
                   <div className="divide-y divide-white/6">
                     {accounts.map((acc) => {
-                       const meta = PROVIDER_META[acc.provider] || PROVIDER_META.google;
-                       return (
+                      const meta = PROVIDER_META[acc.provider] || PROVIDER_META.google;
+                      return (
                         <motion.div
                           layout
                           initial={{ opacity: 0, y: 4 }}
@@ -415,20 +405,25 @@ export default function Integrations() {
                               <Bot className="w-3 h-3 text-brand" /> Route to
                             </label>
                             <div className="relative">
-                              <select
-                                aria-label="Route to agent"
+                              <Select
                                 value={acc.agent_id || "none"}
-                                onChange={(e) => updateAccountAgent(acc.id, e.target.value)}
-                                className="text-xs bg-black/5 border border-input rounded-lg pl-3 pr-8 py-1.5 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
+                                onValueChange={(v) => updateAccountAgent(acc.id, v)}
                               >
-                                <option value="none">Unassigned</option>
-                                {agents.map((agent) => (
-                                  <option key={agent.id} value={agent.id}>
-                                    {agent.name}
-                                  </option>
-                                ))}
-                              </select>
-                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none" />
+                                <SelectTrigger
+                                  aria-label="Route to agent"
+                                  className="text-xs bg-black/5 border border-input rounded-lg pl-3 py-1.5 text-ink h-auto"
+                                >
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">Unassigned</SelectItem>
+                                  {agents.map((agent) => (
+                                    <SelectItem key={agent.id} value={agent.id}>
+                                      {agent.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
 
                             <ShadButton

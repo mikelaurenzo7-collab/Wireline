@@ -23,6 +23,7 @@ import { Loader2, Plus, Trash2, BookOpen, AlertTriangle, Save } from "lucide-rea
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 
 interface DictEntry {
   from: string;
@@ -421,27 +422,31 @@ function EntryEditor({ entries, onChange, onAddRow, onRemoveRow }: EntryEditorPr
               placeholder={entry.kind === "phoneme" ? "ˈeɪ siː ɛl" : "H-V-A-C"}
               className="rounded-lg border border-black/10 bg-paper px-2.5 py-2 text-[12px] text-ink outline-none focus:border-brand/40"
             />
-            <select
-              aria-label="Entry kind"
+            <Select
               value={entry.kind}
-              onChange={(e) => {
+              onValueChange={(v) => {
                 const next = entries.map((e2, i) =>
                   i === idx
                     ? {
                         ...e2,
-                        kind: (e.target.value === "phoneme" ? "phoneme" : "alias") as
-                          | "alias"
-                          | "phoneme",
+                        kind: (v === "phoneme" ? "phoneme" : "alias") as "alias" | "phoneme",
                       }
                     : e2,
                 );
                 onChange(next);
               }}
-              className="rounded-lg border border-black/10 bg-paper px-2 py-2 text-[11px] text-ink outline-none focus:border-brand/40"
             >
-              <option value="alias">Alias</option>
-              <option value="phoneme">IPA</option>
-            </select>
+              <SelectTrigger
+                aria-label="Entry kind"
+                className="rounded-lg border border-black/10 bg-paper px-2 py-2 text-[11px] text-ink h-auto"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="alias">Alias</SelectItem>
+                <SelectItem value="phoneme">IPA</SelectItem>
+              </SelectContent>
+            </Select>
             <button
               type="button"
               onClick={() => onRemoveRow(idx)}

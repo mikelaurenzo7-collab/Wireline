@@ -6,6 +6,9 @@ import { authFetch } from "../lib/api";
 import { toolIntegrationForProvider, PROVIDER_ACCENT } from "../lib/integration-playbooks";
 import IntegrationCapabilityPanel from "./IntegrationCapabilityPanel";
 import { getIntegrationLogo } from "./layout/IntegrationLogos";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
+
+const CRM_SELECT_UNSET = "__unset__";
 
 interface IntegrationStatus {
   connected: boolean;
@@ -546,29 +549,34 @@ export default function CrmConnectionCard() {
                               <Loader2 className="w-3 h-3 animate-spin" /> Loading channels…
                             </div>
                           ) : (
-                            <select
-                              aria-label="Default Slack channel"
-                              className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink"
-                              value={s.default_channel_id || ""}
-                              onChange={async (e) => {
-                                const channel_id = e.target.value;
-                                if (!channel_id) return;
+                            <Select
+                              value={s.default_channel_id || CRM_SELECT_UNSET}
+                              onValueChange={async (v) => {
+                                if (!v || v === CRM_SELECT_UNSET) return;
                                 await authFetch("/api/oauth/slack/default-channel", {
                                   method: "POST",
                                   headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ channel_id }),
+                                  body: JSON.stringify({ channel_id: v }),
                                 });
                                 fetchStatus();
                               }}
                             >
-                              <option value="">Select channel…</option>
-                              {slackChannels.map((ch) => (
-                                <option key={ch.id} value={ch.id}>
-                                  {ch.is_private ? "Private: " : "# "}
-                                  {ch.name}
-                                </option>
-                              ))}
-                            </select>
+                              <SelectTrigger
+                                aria-label="Default Slack channel"
+                                className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink h-auto"
+                              >
+                                <SelectValue placeholder="Select channel…" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value={CRM_SELECT_UNSET}>Select channel…</SelectItem>
+                                {slackChannels.map((ch) => (
+                                  <SelectItem key={ch.id} value={ch.id}>
+                                    {ch.is_private ? "Private: " : "# "}
+                                    {ch.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           )}
                           <p className="text-[9px] text-muted/70 leading-snug">
                             After OAuth we auto-pick #general when possible. Agents post bookings
@@ -586,15 +594,14 @@ export default function CrmConnectionCard() {
                               <Loader2 className="w-3 h-3 animate-spin" /> Loading teams…
                             </div>
                           ) : (
-                            <select
-                              aria-label="Default Teams team and channel"
-                              className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink"
+                            <Select
                               value={
-                                s.team_id && s.channel_id ? `${s.team_id}:${s.channel_id}` : ""
+                                s.team_id && s.channel_id
+                                  ? `${s.team_id}:${s.channel_id}`
+                                  : CRM_SELECT_UNSET
                               }
-                              onChange={async (e) => {
-                                const raw = e.target.value;
-                                if (!raw) return;
+                              onValueChange={async (raw) => {
+                                if (!raw || raw === CRM_SELECT_UNSET) return;
                                 const [team_id, channel_id] = raw.split(":");
                                 const pick = teamsTargets.find(
                                   (t) => t.team_id === team_id && t.channel_id === channel_id,
@@ -612,16 +619,26 @@ export default function CrmConnectionCard() {
                                 fetchStatus();
                               }}
                             >
-                              <option value="">Select team channel…</option>
-                              {teamsTargets.map((t) => (
-                                <option
-                                  key={`${t.team_id}:${t.channel_id}`}
-                                  value={`${t.team_id}:${t.channel_id}`}
-                                >
-                                  {t.team_name} / {t.channel_name}
-                                </option>
-                              ))}
-                            </select>
+                              <SelectTrigger
+                                aria-label="Default Teams team and channel"
+                                className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink h-auto"
+                              >
+                                <SelectValue placeholder="Select team channel…" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value={CRM_SELECT_UNSET}>
+                                  Select team channel…
+                                </SelectItem>
+                                {teamsTargets.map((t) => (
+                                  <SelectItem
+                                    key={`${t.team_id}:${t.channel_id}`}
+                                    value={`${t.team_id}:${t.channel_id}`}
+                                  >
+                                    {t.team_name} / {t.channel_name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           )}
                           {s.team_name && s.channel_name ? (
                             <p className="text-[9px] text-muted/70 leading-snug">

@@ -12,12 +12,12 @@ import {
   X,
   Loader2,
   Zap,
-  ChevronDown,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { logFetchError } from "../lib/utils";
 import { useToast } from "../contexts/ToastContext";
 import { useApiError } from "../hooks/useApiError";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 
 type StepType = "call" | "sms" | "email";
 type Step = { type: StepType; delayHours: number; template?: string };
@@ -408,17 +408,22 @@ export default function Cadences() {
                   </span>
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
                     <div className="relative">
-                      <select
-                        aria-label="Step type"
+                      <Select
                         value={s.type}
-                        onChange={(e) => updateStep(i, { type: e.target.value as StepType })}
-                        className="w-full pl-2 pr-7 py-1.5 rounded-md bg-white/5 border border-white/10 text-ink text-[11px] appearance-none cursor-pointer"
+                        onValueChange={(v) => updateStep(i, { type: v as StepType })}
                       >
-                        <option value="call">Call</option>
-                        <option value="sms">SMS</option>
-                        <option value="email">Email</option>
-                      </select>
-                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none" />
+                        <SelectTrigger
+                          aria-label="Step type"
+                          className="w-full pl-2 py-1.5 rounded-md bg-white/5 border border-white/10 text-ink text-[11px] h-auto"
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="call">Call</SelectItem>
+                          <SelectItem value="sms">SMS</SelectItem>
+                          <SelectItem value="email">Email</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Clock className="w-3 h-3 text-muted/70" />

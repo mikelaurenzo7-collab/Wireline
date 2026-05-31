@@ -66,12 +66,12 @@ function countOccurrences(pattern: RegExp): number {
  * with `Card`).
  */
 const BASELINE = {
-  rawButton: 395, // <button> outside ui/shadcn/*
-  rawInput: 92, //  <input> outside ui/shadcn/*
-  rawSelect: 23, // <select> outside ui/shadcn/*
+  rawButton: 394, // <button> outside ui/shadcn/*
+  rawInput: 90, //  <input> outside ui/shadcn/*
+  rawSelect: 0, // <select> outside ui/shadcn/*; fully migrated to shadcn Select. Stays at 0 forever.
   rawDialog: 0, //  <dialog>; we never use the native element. Stays at 0 forever.
   glassUtility: 467, // .glass utility usage; migrate to <Card>
-  largeRadius: 859, // rounded-{lg|xl|2xl|3xl} literals (global reset makes them no-ops)
+  largeRadius: 854, // rounded-{lg|xl|2xl|3xl} literals (global reset makes them no-ops)
 } as const;
 
 describe("shadcn pivot ratchet", () => {

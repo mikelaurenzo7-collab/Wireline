@@ -18,10 +18,10 @@ import {
   Target,
   Plus,
   X,
-  ChevronDown,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "../lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 
 // ── Types (kept in lockstep with src/lib/agent-runtime.ts) ─────────────
 
@@ -862,19 +862,18 @@ function TzSelect({ value, onChange }: { value: string; onChange: (v: string) =>
   return (
     <div className="flex items-stretch gap-2">
       <div className="relative flex-1">
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="input-base w-full appearance-none pr-9 font-mono"
-          aria-label="Timezone"
-        >
-          {COMMON_TZS.map((tz) => (
-            <option key={tz} value={tz}>
-              {tz}
-            </option>
-          ))}
-        </select>
-        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none" />
+        <Select value={value} onValueChange={onChange}>
+          <SelectTrigger aria-label="Timezone" className="input-base w-full font-mono">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {COMMON_TZS.map((tz) => (
+              <SelectItem key={tz} value={tz}>
+                {tz}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <button
         type="button"

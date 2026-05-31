@@ -14,7 +14,6 @@ import {
   FileText,
   X,
   Phone,
-  ChevronDown,
 } from "lucide-react";
 import Papa from "papaparse";
 import { authFetch } from "../lib/api";
@@ -32,6 +31,7 @@ import {
 } from "./ui/shadcn/Dialog";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 
 interface DncEntry {
   id: string;
@@ -460,19 +460,21 @@ export default function DncManager() {
                   Reason
                 </label>
                 <div className="relative">
-                  <select
-                    aria-label="Reason"
-                    value={addReason}
-                    onChange={(e) => setAddReason(e.target.value)}
-                    className="w-full h-9 pl-3 pr-10 rounded-md border border-input bg-transparent text-sm text-ink focus:border-rose-400/50 focus:outline-none transition-all appearance-none cursor-pointer"
-                  >
-                    {REASON_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value} className="bg-black text-ink">
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
+                  <Select value={addReason} onValueChange={setAddReason}>
+                    <SelectTrigger
+                      aria-label="Reason"
+                      className="w-full h-9 pl-3 rounded-md border border-input bg-transparent text-sm text-ink"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REASON_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

@@ -28,6 +28,9 @@ import { Link } from "react-router-dom";
 import { ClaudeRecipeButton } from "../ClaudeRecipes";
 import { Panel } from "../PageShell";
 import EmptyState from "../EmptyState";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
+
+const DISPATCH_UNSET = "__unset__";
 
 interface DispatchTabProps {
   isLoading: boolean;
@@ -159,32 +162,41 @@ export default function DispatchTab({
                     <Bot className="w-2.5 h-2.5 text-brand" /> Agent
                   </label>
                   <div className="relative">
-                    <select
-                      value={selectedAgentId}
-                      onChange={(e) => setSelectedAgentId(e.target.value)}
-                      className="w-full text-sm bg-black/5 border border-black/10 rounded-lg pl-3 pr-8 py-2 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
-                      aria-label="Select agent to dial with"
+                    <Select
+                      value={selectedAgentId || DISPATCH_UNSET}
+                      onValueChange={(v) => setSelectedAgentId(v === DISPATCH_UNSET ? "" : v)}
                     >
-                      {agents.length === 0 ? (
-                        <option value="" disabled>
-                          No agents — create one in Settings &gt; Agents
-                        </option>
-                      ) : (
-                        <>
-                          {!selectedAgentId && (
-                            <option value="" disabled>
+                      <SelectTrigger
+                        aria-label="Select agent to dial with"
+                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg pl-3 py-2 text-ink h-auto"
+                      >
+                        <SelectValue
+                          placeholder={
+                            agents.length === 0
+                              ? "No agents — create one in Settings > Agents"
+                              : "Select an agent…"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {agents.length === 0 ? (
+                          <SelectItem value={DISPATCH_UNSET} disabled>
+                            No agents — create one in Settings &gt; Agents
+                          </SelectItem>
+                        ) : (
+                          <>
+                            <SelectItem value={DISPATCH_UNSET} disabled>
                               Select an agent…
-                            </option>
-                          )}
-                          {agents.map((a) => (
-                            <option key={a.id} value={a.id}>
-                              {a.name}
-                            </option>
-                          ))}
-                        </>
-                      )}
-                    </select>
-                    <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none rotate-90" />
+                            </SelectItem>
+                            {agents.map((a) => (
+                              <SelectItem key={a.id} value={a.id}>
+                                {a.name}
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
@@ -348,20 +360,27 @@ export default function DispatchTab({
                             (optional)
                           </label>
                           <div className="relative">
-                            <select
-                              aria-label="Assign to campaign"
-                              value={bulkCampaignId}
-                              onChange={(e) => setBulkCampaignId(e.target.value)}
-                              className="w-full text-sm bg-black/5 border border-black/10 rounded-lg pl-3 pr-8 py-2 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
+                            <Select
+                              value={bulkCampaignId || DISPATCH_UNSET}
+                              onValueChange={(v) =>
+                                setBulkCampaignId(v === DISPATCH_UNSET ? "" : v)
+                              }
                             >
-                              <option value="">No campaign</option>
-                              {campaigns.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                  {c.name}
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none rotate-90" />
+                              <SelectTrigger
+                                aria-label="Assign to campaign"
+                                className="w-full text-sm bg-black/5 border border-black/10 rounded-lg pl-3 py-2 text-ink h-auto"
+                              >
+                                <SelectValue placeholder="No campaign" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value={DISPATCH_UNSET}>No campaign</SelectItem>
+                                {campaigns.map((c) => (
+                                  <SelectItem key={c.id} value={c.id}>
+                                    {c.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
                       )}

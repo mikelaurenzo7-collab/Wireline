@@ -10,7 +10,6 @@ import {
   Bot,
   ChevronRight,
   Calendar,
-  ChevronDown,
   AlertTriangle,
   RotateCw,
 } from "lucide-react";
@@ -18,6 +17,9 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { formatTime } from "../lib/safe-date";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
+
+const FLEET_AGENT_UNSET = "__unset__";
 
 export default function FleetTaskBridge() {
   const [tasks, setTasks] = useState<any[]>([]);
@@ -274,24 +276,29 @@ export default function FleetTaskBridge() {
                       {task.task_type}
                     </span>
                     <div className="relative">
-                      <select
-                        aria-label="Task priority"
+                      <Select
                         value={task.priority || "medium"}
-                        onChange={(e) => updatePriority(task.id, e.target.value)}
-                        className={cn(
-                          "text-[9px] uppercase tracking-[0.25em] py-0.5 pl-2 pr-6 rounded-full border outline-none cursor-pointer appearance-none leading-none",
-                          task.priority === "high"
-                            ? "bg-rose-500/15 border-rose-500/30 text-rose-500"
-                            : task.priority === "low"
-                              ? "bg-white/5 border-white/10 text-muted"
-                              : "bg-brand/10 border-brand/30 text-brand",
-                        )}
+                        onValueChange={(v) => updatePriority(task.id, v)}
                       >
-                        <option value="high">High</option>
-                        <option value="medium">Medium</option>
-                        <option value="low">Low</option>
-                      </select>
-                      <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-2.5 h-2.5 pointer-events-none" />
+                        <SelectTrigger
+                          aria-label="Task priority"
+                          className={cn(
+                            "text-[9px] uppercase tracking-[0.25em] py-0.5 pl-2 pr-6 rounded-full border leading-none h-auto",
+                            task.priority === "high"
+                              ? "bg-rose-500/15 border-rose-500/30 text-rose-500"
+                              : task.priority === "low"
+                                ? "bg-white/5 border-white/10 text-muted"
+                                : "bg-brand/10 border-brand/30 text-brand",
+                          )}
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="high">High</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="low">Low</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     {isOverdue && (
                       <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-500 leading-none">
@@ -316,20 +323,27 @@ export default function FleetTaskBridge() {
                         <Bot className="w-2.5 h-2.5 text-brand" /> Assigned agent
                       </label>
                       <div className="relative">
-                        <select
-                          aria-label="Assigned agent"
-                          value={task.agent_id || ""}
-                          onChange={(e) => updateAssignment(task.id, e.target.value)}
-                          className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
+                        <Select
+                          value={task.agent_id || FLEET_AGENT_UNSET}
+                          onValueChange={(v) =>
+                            updateAssignment(task.id, v === FLEET_AGENT_UNSET ? "" : v)
+                          }
                         >
-                          <option value="">Select agent</option>
-                          {agents.map((a: any) => (
-                            <option key={a.id} value={a.id}>
-                              {a.name}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none" />
+                          <SelectTrigger
+                            aria-label="Assigned agent"
+                            className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 py-1.5 text-ink h-auto"
+                          >
+                            <SelectValue placeholder="Select agent" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={FLEET_AGENT_UNSET}>Select agent</SelectItem>
+                            {agents.map((a: any) => (
+                              <SelectItem key={a.id} value={a.id}>
+                                {a.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
 

@@ -18,10 +18,10 @@ import {
   DollarSign,
   Activity,
   Filter,
-  Calendar,
 } from "lucide-react";
 import PageShell, { Panel } from "./PageShell";
 import EmptyState from "./EmptyState";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { authFetch } from "../lib/api";
 import AdminHubViewport from "./layout/AdminHubViewport";
 import { useToast } from "../contexts/ToastContext";
@@ -457,18 +457,23 @@ export default function AuditLog() {
               />
             </div>
             <div className="relative">
-              <select
-                aria-label="Time range"
-                value={timeRange}
-                onChange={(e) => setTimeRange(Number(e.target.value) as TimeRange)}
-                className="pl-4 pr-10 py-3 rounded-xl glass border border-black/10 text-sm text-ink appearance-none bg-transparent focus:outline-none focus:border-brand/40 transition-all cursor-pointer"
+              <Select
+                value={String(timeRange)}
+                onValueChange={(v) => setTimeRange(Number(v) as TimeRange)}
               >
-                <option value={1}>Last 24 hours</option>
-                <option value={7}>Last 7 days</option>
-                <option value={30}>Last 30 days</option>
-                <option value={90}>Last 90 days</option>
-              </select>
-              <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
+                <SelectTrigger
+                  aria-label="Time range"
+                  className="pl-4 pr-3 py-3 rounded-xl glass border border-black/10 text-sm text-ink bg-transparent h-auto"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Last 24 hours</SelectItem>
+                  <SelectItem value="7">Last 7 days</SelectItem>
+                  <SelectItem value="30">Last 30 days</SelectItem>
+                  <SelectItem value="90">Last 90 days</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <button
               onClick={() => setFiltersExpanded(!filtersExpanded)}
