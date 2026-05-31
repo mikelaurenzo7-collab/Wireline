@@ -1,5 +1,4 @@
 import { AlertTriangle } from "lucide-react";
-import { cn } from "../lib/utils";
 
 export type IntegrationHealthPayload = {
   reconnect_google_calendar?: boolean;
@@ -29,18 +28,22 @@ export default function IntegrationHealthBanner({ health, onOpenIntegrations }: 
 
   return (
     <div
-      className={cn(
-        "mb-4 rounded-2xl border px-4 py-3.5 flex items-start gap-3",
-        "border-amber-500/35 bg-amber-500/10",
-      )}
+      className="mb-4 border px-4 py-3.5 flex items-start gap-3"
+      style={{ borderColor: "rgba(245,158,11,0.35)", background: "rgba(245,158,11,0.08)" }}
       role="status"
     >
-      <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border border-amber-500/30 bg-amber-500/15">
-        <AlertTriangle className="w-4 h-4 text-amber-600" aria-hidden />
+      <div
+        className="w-8 h-8 flex items-center justify-center shrink-0 border"
+        style={{ borderColor: "rgba(245,158,11,0.30)", background: "rgba(245,158,11,0.14)" }}
+      >
+        <AlertTriangle className="w-4 h-4" style={{ color: "#d97706" }} aria-hidden />
       </div>
       <div className="min-w-0 flex-1 space-y-2">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-800 dark:text-amber-200/90">
+          <p
+            className="text-[11px] font-semibold uppercase tracking-[0.2em]"
+            style={{ color: "#92400e" }}
+          >
             Reconnect mail or calendar
           </p>
           {onOpenIntegrations && (

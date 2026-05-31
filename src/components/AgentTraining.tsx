@@ -826,7 +826,10 @@ export default function AgentTraining({
                       <h3 className="font-display italic lowercase text-lg text-ink leading-none">
                         ai auto-calibration
                       </h3>
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-emerald-500">
+                      <p
+                        className="text-[10px] uppercase tracking-[0.3em]"
+                        style={{ color: "#10b981" }}
+                      >
                         Synthetic learning engine active
                       </p>
                     </div>
@@ -835,9 +838,16 @@ export default function AgentTraining({
                     {lessons.map((lesson) => (
                       <div
                         key={lesson.id}
-                        className="rounded-xl bg-emerald-500/8 border border-emerald-500/20 p-3"
+                        className="rounded-xl p-3"
+                        style={{
+                          background: "rgba(16,185,129,0.08)",
+                          border: "1px solid rgba(16,185,129,0.20)",
+                        }}
                       >
-                        <div className="text-[9px] uppercase tracking-[0.3em] text-emerald-500 mb-2 flex items-center gap-1.5">
+                        <div
+                          className="text-[9px] uppercase tracking-[0.3em] mb-2 flex items-center gap-1.5"
+                          style={{ color: "#10b981" }}
+                        >
                           <Sparkles className="w-3 h-3" /> Pattern learned from calls
                         </div>
                         <p className="text-sm text-ink/90 leading-relaxed">{lesson.lesson}</p>
@@ -965,8 +975,14 @@ export default function AgentTraining({
                           : "Start voice test"}
                     </button>
                     {simConnected && (
-                      <div className="flex items-center justify-center gap-1.5 text-[9px] uppercase tracking-[0.3em] text-emerald-500">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <div
+                        className="flex items-center justify-center gap-1.5 text-[9px] uppercase tracking-[0.3em]"
+                        style={{ color: "#10b981" }}
+                      >
+                        <span
+                          className="w-1.5 h-1.5 rounded-full animate-pulse"
+                          style={{ background: "#10b981" }}
+                        />
                         Live — speak now
                       </div>
                     )}

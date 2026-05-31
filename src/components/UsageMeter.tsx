@@ -136,10 +136,10 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
         <Progress
           value={pct}
           className="h-2.5 bg-white/5 shadow-inner"
-          indicatorClassName={cn(
-            "transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]",
-            isOver ? "bg-rose-500" : isWarn ? "bg-amber-500" : "bg-brand",
-          )}
+          indicatorClassName="transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]"
+          indicatorStyle={{
+            background: isOver ? "#E8466A" : isWarn ? "#f59e0b" : "var(--color-brand)",
+          }}
           style={{
             boxShadow: `0 0 14px ${barAccent}88`,
           }}
@@ -155,12 +155,19 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
             boxShadow: "0 4px 12px rgba(244,63,94,0.05)",
           }}
         >
-          <AlertTriangle className="w-4 h-4 mt-0.5 text-rose-500 shrink-0" />
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: "#E8466A" }} />
           <div className="text-[11px] leading-relaxed">
-            <span className="text-rose-400 font-semibold uppercase tracking-wider text-[9px] mr-1.5 bg-rose-500/15 border border-rose-500/25 px-1.5 py-0.5 rounded-md">
+            <span
+              className="font-semibold uppercase tracking-wider text-[9px] mr-1.5 px-1.5 py-0.5 rounded-md"
+              style={{
+                color: "#fb7185",
+                background: "rgba(232,70,106,0.15)",
+                border: "1px solid rgba(232,70,106,0.25)",
+              }}
+            >
               Overage
             </span>
-            <span className="text-rose-400 font-bold">
+            <span className="font-bold" style={{ color: "#fb7185" }}>
               {snap.overage_minutes.toLocaleString()} min over plan
             </span>
             <span className="text-muted/80 ml-1">
@@ -177,7 +184,14 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
       )}
 
       {isWarn && !isOver && (
-        <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-500/8 border border-amber-500/20 text-[11px] text-amber-500 font-medium">
+        <div
+          className="flex items-center gap-2 p-2.5 rounded-xl text-[11px] font-medium"
+          style={{
+            background: "rgba(245,158,11,0.08)",
+            border: "1px solid rgba(245,158,11,0.20)",
+            color: "#d97706",
+          }}
+        >
           <TrendingUp className="w-3.5 h-3.5" />
           <span>
             Approaching plan limit — overage rate kicks in at {included.toLocaleString()} min.

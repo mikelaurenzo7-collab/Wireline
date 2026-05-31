@@ -124,11 +124,11 @@ const GROUP_ORDER: ReadonlyArray<AgentToolCatalogEntry["group"]> = [
   "ecommerce",
 ];
 
-function sentimentTone(sentiment: string | null): string {
+function sentimentColor(sentiment: string | null): string {
   const s = (sentiment || "").toLowerCase();
-  if (s.includes("pos")) return "bg-emerald-500";
-  if (s.includes("neg")) return "bg-rose-500";
-  return "bg-amber-400";
+  if (s.includes("pos")) return "#10b981";
+  if (s.includes("neg")) return "#E8466A";
+  return "#f59e0b";
 }
 
 function relativeTime(iso: string | null): string {
@@ -212,8 +212,14 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
             </p>
             <p className="flex items-center gap-1.5 text-[10px] text-muted leading-tight">
               <span className="relative flex h-1.5 w-1.5 shrink-0" aria-hidden="true">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500/60" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                <span
+                  className="animate-ping absolute inline-flex h-full w-full rounded-full"
+                  style={{ background: "rgba(16,185,129,0.55)" }}
+                />
+                <span
+                  className="relative inline-flex rounded-full h-1.5 w-1.5"
+                  style={{ background: "#10b981" }}
+                />
               </span>
               <span className="truncate">{agentName} · live</span>
             </p>
@@ -321,10 +327,19 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
                           disabled={on}
                           className={cn(
                             "inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] border transition-colors",
-                            on
-                              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 cursor-default"
-                              : "bg-black/3 border-black/8 text-muted/70 hover:border-brand/40 hover:text-ink",
+                            !on &&
+                              "bg-black/3 border-black/8 text-muted/70 hover:border-brand/40 hover:text-ink",
                           )}
+                          style={
+                            on
+                              ? {
+                                  background: "rgba(16,185,129,0.09)",
+                                  borderColor: "rgba(16,185,129,0.28)",
+                                  color: "#047857",
+                                  cursor: "default",
+                                }
+                              : undefined
+                          }
                         >
                           {on ? <Check className="w-2.5 h-2.5" /> : <Zap className="w-2.5 h-2.5" />}
                           {t.label}
@@ -359,10 +374,8 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
                 >
                   <div className="flex items-center gap-1.5 mb-0.5">
                     <span
-                      className={cn(
-                        "w-1.5 h-1.5 rounded-full shrink-0",
-                        sentimentTone(c.sentiment),
-                      )}
+                      className="w-1.5 h-1.5 rounded-full shrink-0"
+                      style={{ background: sentimentColor(c.sentiment) }}
                       aria-hidden="true"
                     />
                     <span className="text-[10px] font-medium text-ink/80 truncate flex-1">

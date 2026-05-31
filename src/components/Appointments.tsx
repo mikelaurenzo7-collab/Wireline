@@ -44,42 +44,42 @@ type Appointment = {
 
 const STATUS_META: Record<
   string,
-  { label: string; color: string; bg: string; border: string; dot: string }
+  { label: string; textColor: string; bgColor: string; borderColor: string; dotColor: string }
 > = {
   Scheduled: {
     label: "Scheduled",
-    color: "text-brand",
-    bg: "bg-brand/10",
-    border: "border-brand/30",
-    dot: "bg-brand",
+    textColor: "var(--color-brand)",
+    bgColor: "rgba(139,63,214,0.10)",
+    borderColor: "rgba(139,63,214,0.30)",
+    dotColor: "var(--color-brand)",
   },
   Confirmed: {
     label: "Confirmed",
-    color: "text-emerald-600",
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/30",
-    dot: "bg-emerald-500",
+    textColor: "#059669",
+    bgColor: "rgba(16,185,129,0.10)",
+    borderColor: "rgba(16,185,129,0.30)",
+    dotColor: "#10b981",
   },
   Completed: {
     label: "Completed",
-    color: "text-violet-600",
-    bg: "bg-violet-500/10",
-    border: "border-violet-500/30",
-    dot: "bg-violet-500",
+    textColor: "#7c3aed",
+    bgColor: "rgba(139,92,246,0.10)",
+    borderColor: "rgba(139,92,246,0.30)",
+    dotColor: "#8b5cf6",
   },
   Cancelled: {
     label: "Cancelled",
-    color: "text-rose-500",
-    bg: "bg-rose-500/10",
-    border: "border-rose-500/30",
-    dot: "bg-rose-500",
+    textColor: "#E8466A",
+    bgColor: "rgba(232,70,106,0.10)",
+    borderColor: "rgba(232,70,106,0.30)",
+    dotColor: "#E8466A",
   },
   Rescheduled: {
     label: "Rescheduled",
-    color: "text-amber-600",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/30",
-    dot: "bg-amber-500",
+    textColor: "#d97706",
+    bgColor: "rgba(245,158,11,0.10)",
+    borderColor: "rgba(245,158,11,0.30)",
+    dotColor: "#f59e0b",
   },
 };
 
@@ -87,14 +87,10 @@ function StatusBadge({ status }: { status: string }) {
   const m = STATUS_META[status] ?? STATUS_META["Scheduled"];
   return (
     <span
-      className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[9px] uppercase tracking-[0.3em]",
-        m.color,
-        m.bg,
-        m.border,
-      )}
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[9px] uppercase tracking-[0.3em]"
+      style={{ color: m.textColor, background: m.bgColor, borderColor: m.borderColor }}
     >
-      <span className={cn("w-1.5 h-1.5 rounded-full", m.dot)} />
+      <span className="w-1.5 h-1.5 rounded-full" style={{ background: m.dotColor }} />
       {m.label}
     </span>
   );
@@ -481,11 +477,8 @@ function CalendarGrid({
                           <button
                             key={a.id}
                             onClick={() => onSelect(a)}
-                            className={cn(
-                              "w-full text-left px-1.5 py-0.5 rounded text-[9px] truncate transition-colors hover:opacity-80",
-                              m.bg,
-                              m.color,
-                            )}
+                            className="w-full text-left px-1.5 py-0.5 rounded text-[9px] truncate transition-colors hover:opacity-80"
+                            style={{ background: m.bgColor, color: m.textColor }}
                           >
                             {a.time} {a.customer_name}
                           </button>
@@ -901,7 +894,10 @@ function AppointmentRow({
                       }}
                       className="w-full text-left px-3 py-2 text-[10px] text-ink hover:bg-white/5 transition-colors flex items-center gap-2"
                     >
-                      <span className={cn("w-1.5 h-1.5 rounded-full", STATUS_META[s].dot)} />
+                      <span
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ background: STATUS_META[s].dotColor }}
+                      />
                       {s}
                     </button>
                   ))}

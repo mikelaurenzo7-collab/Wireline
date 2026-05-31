@@ -574,7 +574,12 @@ export default function AuthPortal() {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="flex gap-2 p-3 bg-rose-500/10 border border-rose-500/25 text-rose-700 text-sm"
+                        className="flex gap-2 p-3 text-sm"
+                        style={{
+                          background: "rgba(232,70,106,0.10)",
+                          border: "1px solid rgba(232,70,106,0.25)",
+                          color: "#be123c",
+                        }}
                       >
                         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                         <span>{error}</span>
@@ -585,7 +590,12 @@ export default function AuthPortal() {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="flex gap-2 p-3 bg-emerald-500/10 border border-emerald-500/25 text-emerald-800 text-sm"
+                        className="flex gap-2 p-3 text-sm"
+                        style={{
+                          background: "rgba(16,185,129,0.10)",
+                          border: "1px solid rgba(16,185,129,0.25)",
+                          color: "#065f46",
+                        }}
                       >
                         <Check className="w-4 h-4 shrink-0 mt-0.5" />
                         <span>{message}</span>

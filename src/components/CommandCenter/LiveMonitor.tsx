@@ -23,10 +23,19 @@ export function LiveMonitor({ calls }: { calls: LiveCall[] }) {
         {calls.length > 0 && (
           <div className="flex items-center gap-2">
             <span className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500/60"></span>
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+              <span
+                className="animate-ping absolute inline-flex h-full w-full rounded-full"
+                style={{ background: "rgba(16,185,129,0.60)" }}
+              ></span>
+              <span
+                className="relative inline-flex rounded-full h-1.5 w-1.5"
+                style={{ background: "#10b981" }}
+              ></span>
             </span>
-            <span className="text-[9px] font-mono text-emerald-600/80 uppercase tracking-wider">
+            <span
+              className="text-[9px] font-mono uppercase tracking-wider"
+              style={{ color: "rgba(16,185,129,0.80)" }}
+            >
               Operational
             </span>
           </div>

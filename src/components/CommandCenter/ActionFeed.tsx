@@ -161,11 +161,18 @@ export function ActionFeed({
                           action.type === "send_email" && "bg-brand/10 border-brand/20 text-brand",
                           action.type === "schedule_calendar" &&
                             "bg-brand-2/10 border-brand-2/20 text-brand-2",
-                          action.type === "update_crm_lead" &&
-                            "bg-emerald-500/10 border-emerald-500/20 text-emerald-600",
                           action.type === "create_internal_task" &&
                             "bg-muted/10 border-muted/20 text-muted",
                         )}
+                        style={
+                          action.type === "update_crm_lead"
+                            ? {
+                                background: "rgba(16,185,129,0.10)",
+                                borderColor: "rgba(16,185,129,0.20)",
+                                color: "#059669",
+                              }
+                            : undefined
+                        }
                       >
                         {action.type === "send_email" && <Mail className="w-4.5 h-4.5" />}
                         {action.type === "schedule_calendar" && (
@@ -203,8 +210,11 @@ export function ActionFeed({
 
                     <div className="flex flex-col items-end gap-2 shrink-0">
                       {action.status === "completed" ? (
-                        <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <div
+                          className="w-6 h-6 rounded-full flex items-center justify-center"
+                          style={{ background: "rgba(16,185,129,0.20)" }}
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" style={{ color: "#059669" }} />
                         </div>
                       ) : action.status === "pending" ? (
                         <div className="flex items-center gap-1">
@@ -221,7 +231,8 @@ export function ActionFeed({
                               </button>
                               <button
                                 onClick={(e) => handleApprove(action.id, e)}
-                                className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 flex items-center justify-center transition-colors"
+                                className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+                                style={{ background: "rgba(16,185,129,0.10)", color: "#059669" }}
                                 title="Approve"
                               >
                                 <Check className="w-3.5 h-3.5" />

@@ -113,15 +113,27 @@ export default function ResetPassword() {
           </div>
 
           {success ? (
-            <div className="space-y-4 p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/30">
-              <div className="flex items-center gap-3 text-emerald-500">
+            <div
+              className="space-y-4 p-6"
+              style={{
+                background: "rgba(16,185,129,0.08)",
+                border: "1px solid rgba(16,185,129,0.28)",
+              }}
+            >
+              <div className="flex items-center gap-3" style={{ color: "#10b981" }}>
                 <Check className="w-5 h-5" />
                 <span className="text-sm font-medium">Password updated. Signing you in…</span>
               </div>
             </div>
           ) : !token ? (
-            <div className="space-y-4 p-6 rounded-2xl bg-rose-500/10 border border-rose-500/30">
-              <div className="flex items-start gap-3 text-rose-500">
+            <div
+              className="space-y-4 p-6 rounded-2xl"
+              style={{
+                background: "rgba(232,70,106,0.10)",
+                border: "1px solid rgba(232,70,106,0.30)",
+              }}
+            >
+              <div className="flex items-start gap-3" style={{ color: "#E8466A" }}>
                 <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
                 <span className="text-sm leading-relaxed">
                   This reset link is missing its token. Request a new one from the{" "}
@@ -176,7 +188,12 @@ export default function ResetPassword() {
               {error && (
                 <div
                   role="alert"
-                  className="flex items-start gap-3 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs"
+                  className="flex items-start gap-3 p-4 rounded-xl text-xs"
+                  style={{
+                    background: "rgba(232,70,106,0.10)",
+                    border: "1px solid rgba(232,70,106,0.30)",
+                    color: "#E8466A",
+                  }}
                 >
                   <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                   <span className="leading-relaxed">{error}</span>

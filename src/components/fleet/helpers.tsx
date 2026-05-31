@@ -148,6 +148,12 @@ export const AGENT_ROLES = [
       border: "border-amber-500/25",
       dot: "bg-amber-500",
     },
+    style: {
+      textColor: "#d97706",
+      bgColor: "rgba(245,158,11,0.10)",
+      borderColor: "rgba(245,158,11,0.25)",
+      dotColor: "#f59e0b",
+    },
   },
   {
     value: "customer_service",
@@ -159,6 +165,12 @@ export const AGENT_ROLES = [
       text: "text-emerald-600",
       border: "border-emerald-500/25",
       dot: "bg-emerald-500",
+    },
+    style: {
+      textColor: "#059669",
+      bgColor: "rgba(16,185,129,0.10)",
+      borderColor: "rgba(16,185,129,0.25)",
+      dotColor: "#10b981",
     },
   },
   {
@@ -172,6 +184,12 @@ export const AGENT_ROLES = [
       border: "border-violet-500/25",
       dot: "bg-violet-500",
     },
+    style: {
+      textColor: "#7c3aed",
+      bgColor: "rgba(139,92,246,0.10)",
+      borderColor: "rgba(139,92,246,0.25)",
+      dotColor: "#8b5cf6",
+    },
   },
   {
     value: "collections",
@@ -183,6 +201,12 @@ export const AGENT_ROLES = [
       text: "text-rose-600",
       border: "border-rose-500/25",
       dot: "bg-rose-500",
+    },
+    style: {
+      textColor: "#C53050",
+      bgColor: "rgba(232,70,106,0.10)",
+      borderColor: "rgba(232,70,106,0.25)",
+      dotColor: "#E8466A",
     },
   },
   {
@@ -196,6 +220,12 @@ export const AGENT_ROLES = [
       border: "border-blue-500/25",
       dot: "bg-blue-500",
     },
+    style: {
+      textColor: "#2563eb",
+      bgColor: "rgba(59,130,246,0.10)",
+      borderColor: "rgba(59,130,246,0.25)",
+      dotColor: "#3b82f6",
+    },
   },
   {
     value: "lead_qualifier",
@@ -207,6 +237,12 @@ export const AGENT_ROLES = [
       text: "text-orange-600",
       border: "border-orange-500/25",
       dot: "bg-orange-500",
+    },
+    style: {
+      textColor: "#ea580c",
+      bgColor: "rgba(249,115,22,0.10)",
+      borderColor: "rgba(249,115,22,0.25)",
+      dotColor: "#f97316",
     },
   },
   {
@@ -220,6 +256,12 @@ export const AGENT_ROLES = [
       border: "border-cyan-500/25",
       dot: "bg-cyan-500",
     },
+    style: {
+      textColor: "#0891b2",
+      bgColor: "rgba(6,182,212,0.10)",
+      borderColor: "rgba(6,182,212,0.25)",
+      dotColor: "#06b6d4",
+    },
   },
   {
     value: "marketing",
@@ -231,6 +273,12 @@ export const AGENT_ROLES = [
       text: "text-purple-600",
       border: "border-purple-500/25",
       dot: "bg-purple-500",
+    },
+    style: {
+      textColor: "#9333ea",
+      bgColor: "rgba(168,85,247,0.10)",
+      borderColor: "rgba(168,85,247,0.25)",
+      dotColor: "#a855f7",
     },
   },
 ] as const;
@@ -245,19 +293,18 @@ export function getRoleMeta(role?: string) {
 /** Small badge for the role in lists and detail views. */
 export function RoleBadge({ role, size = "sm" }: { role?: string; size?: "xs" | "sm" }) {
   const meta = getRoleMeta(role);
+  const s = meta.style;
   return (
     <span
       className={cn(
         "inline-flex items-center gap-1 rounded-full border leading-none",
-        meta.tw.bg,
-        meta.tw.text,
-        meta.tw.border,
         size === "xs"
           ? "text-[8px] uppercase tracking-[0.22em] px-1.5 py-0.5"
           : "text-[9px] uppercase tracking-[0.22em] px-2 py-0.5",
       )}
+      style={{ color: s.textColor, background: s.bgColor, borderColor: s.borderColor }}
     >
-      <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", meta.tw.dot)} />
+      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: s.dotColor }} />
       {meta.label}
     </span>
   );

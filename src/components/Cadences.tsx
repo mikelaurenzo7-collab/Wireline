@@ -296,7 +296,14 @@ export default function Cadences() {
                 <div className="flex items-center gap-2 mb-1">
                   <h4 className="text-[13px] font-semibold text-ink">{c.name}</h4>
                   {c.active ? (
-                    <span className="text-[9px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">
+                    <span
+                      className="text-[9px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded"
+                      style={{
+                        background: "rgba(16,185,129,0.15)",
+                        color: "#059669",
+                        border: "1px solid rgba(16,185,129,0.30)",
+                      }}
+                    >
                       Active
                     </span>
                   ) : (

@@ -170,8 +170,15 @@ export function NoKeyInline() {
   // problem to fix on the backend (alerted via Vercel logs +
   // /api/health/integrations). UI just shows a soft "warming up" state.
   return (
-    <div className="px-7 py-4 bg-amber-500/10 border-y border-amber-500/30 flex items-center gap-3">
-      <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+    <div
+      className="px-7 py-4 flex items-center gap-3"
+      style={{
+        background: "rgba(245,158,11,0.10)",
+        borderTop: "1px solid rgba(245,158,11,0.30)",
+        borderBottom: "1px solid rgba(245,158,11,0.30)",
+      }}
+    >
+      <AlertTriangle className="w-4 h-4 shrink-0" style={{ color: "#f59e0b" }} />
       <p className="text-xs text-ink/80 leading-relaxed">
         Wireline AI is warming up — try again in a moment. If this persists, our team is on it.
       </p>

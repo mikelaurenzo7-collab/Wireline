@@ -299,9 +299,15 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                 aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
               >
                 {theme === "light" ? (
-                  <Moon className="w-4.5 h-4.5 shrink-0 transition-transform duration-300 group-hover:rotate-12 text-white/60" strokeWidth={1.75} />
+                  <Moon
+                    className="w-4.5 h-4.5 shrink-0 transition-transform duration-300 group-hover:rotate-12 text-white/60"
+                    strokeWidth={1.75}
+                  />
                 ) : (
-                  <Sun className="w-4.5 h-4.5 shrink-0 transition-transform duration-300 group-hover:rotate-45 text-white/60" strokeWidth={1.75} />
+                  <Sun
+                    className="w-4.5 h-4.5 shrink-0 transition-transform duration-300 group-hover:rotate-45 text-white/60"
+                    strokeWidth={1.75}
+                  />
                 )}
                 {effective && (
                   <span className="text-[12px] font-medium truncate">
@@ -426,13 +432,12 @@ function RailItem({ item, active, badge, expanded, accent, shortcut }: RailItemP
           aria-label={`${badge} item${badge === 1 ? "" : "s"} need attention in ${item.label}`}
           className={cn(
             "relative z-10 shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full text-[9px] font-mono leading-none flex items-center justify-center font-semibold",
-            active
-              ? "bg-white/20 text-white"
-              : "bg-rose-500/20 text-rose-300 border border-rose-500/30",
+            active ? "bg-white/20 text-white" : "bg-rose-500/20 border border-rose-500/30",
           )}
-          style={
-            expanded
-              ? undefined
+          style={{
+            ...(!active ? { color: "#fda4af" } : {}),
+            ...(expanded
+              ? {}
               : {
                   position: "absolute",
                   top: 4,
@@ -441,8 +446,8 @@ function RailItem({ item, active, badge, expanded, accent, shortcut }: RailItemP
                   height: 14,
                   padding: "0 4px",
                   fontSize: 8,
-                }
-          }
+                }),
+          }}
         >
           {badge > 99 ? "99+" : badge}
         </span>
@@ -594,10 +599,8 @@ function TierInline() {
   return (
     <div className="mt-1 leading-none">
       <span
-        className={cn(
-          "text-[8.5px] uppercase tracking-[0.25em] font-semibold",
-          overage ? "text-rose-300" : "text-white/55",
-        )}
+        className="text-[8.5px] uppercase tracking-[0.25em] font-semibold"
+        style={{ color: overage ? "#fda4af" : "rgba(255,255,255,0.55)" }}
       >
         {tier.plan_name}
         {cap > 0 && (

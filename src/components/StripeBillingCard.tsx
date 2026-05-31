@@ -208,10 +208,19 @@ export default function StripeBillingCard() {
     // message and a contact path. Operator notifications happen via
     // Vercel logs + /api/health/integrations (owner-gated).
     return (
-      <div className="rounded-2xl glass border border-amber-500/25 bg-amber-500/[0.04] p-8 md:p-10 space-y-4">
+      <div
+        className="rounded-2xl glass p-8 md:p-10 space-y-4"
+        style={{ border: "1px solid rgba(245,158,11,0.25)", background: "rgba(245,158,11,0.04)" }}
+      >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-5 h-5 text-amber-500" />
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            style={{
+              background: "rgba(245,158,11,0.15)",
+              border: "1px solid rgba(245,158,11,0.30)",
+            }}
+          >
+            <AlertTriangle className="w-5 h-5" style={{ color: "#f59e0b" }} />
           </div>
           <h3 className="font-display italic lowercase text-2xl text-ink">
             billing is finishing setup
@@ -250,10 +259,13 @@ export default function StripeBillingCard() {
       {error && (
         <div
           role="alert"
-          className="rounded-2xl bg-rose-500/8 border border-rose-500/30 p-4 flex items-center gap-3"
+          className="rounded-2xl p-4 flex items-center gap-3"
+          style={{ background: "rgba(232,70,106,0.08)", border: "1px solid rgba(232,70,106,0.30)" }}
         >
-          <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
-          <p className="text-[11px] text-rose-500">{error}</p>
+          <AlertTriangle className="w-4 h-4 shrink-0" style={{ color: "#E8466A" }} />
+          <p className="text-[11px]" style={{ color: "#E8466A" }}>
+            {error}
+          </p>
         </div>
       )}
 
@@ -437,16 +449,37 @@ function ActiveSubCard({
 
   const statusBadge =
     sub.status === "active"
-      ? { label: "Active", cls: "bg-emerald-500/15 border-emerald-500/30 text-emerald-600" }
+      ? {
+          label: "Active",
+          style: {
+            background: "rgba(16,185,129,0.15)",
+            borderColor: "rgba(16,185,129,0.30)",
+            color: "#059669",
+          },
+        }
       : sub.status === "trialing"
-        ? { label: "Trial", cls: "bg-brand/15 border-brand/30 text-brand" }
+        ? { label: "Trial", style: undefined }
         : sub.status === "past_due"
-          ? { label: "Past Due", cls: "bg-amber-500/15 border-amber-500/30 text-amber-600" }
+          ? {
+              label: "Past Due",
+              style: {
+                background: "rgba(245,158,11,0.15)",
+                borderColor: "rgba(245,158,11,0.30)",
+                color: "#d97706",
+              },
+            }
           : sub.status === "canceled"
-            ? { label: "Canceled", cls: "bg-rose-500/15 border-rose-500/30 text-rose-500" }
+            ? {
+                label: "Canceled",
+                style: {
+                  background: "rgba(232,70,106,0.15)",
+                  borderColor: "rgba(232,70,106,0.30)",
+                  color: "#E8466A",
+                },
+              }
             : {
                 label: (sub.status || "Unknown").toLowerCase(),
-                cls: "bg-white/10 border-white/20 text-muted",
+                style: undefined,
               };
 
   return (
@@ -471,13 +504,21 @@ function ActiveSubCard({
               <span
                 className={cn(
                   "inline-flex items-center px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.25em] border",
-                  statusBadge.cls,
+                  sub.status === "trialing" && "bg-brand/15 border-brand/30 text-brand",
                 )}
+                style={statusBadge.style}
               >
                 {statusBadge.label}
               </span>
               {sub.cancel_at_period_end && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.25em] border bg-rose-500/15 border-rose-500/30 text-rose-500">
+                <span
+                  className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.25em]"
+                  style={{
+                    background: "rgba(232,70,106,0.15)",
+                    border: "1px solid rgba(232,70,106,0.30)",
+                    color: "#E8466A",
+                  }}
+                >
                   Cancels at period end
                 </span>
               )}
@@ -487,7 +528,7 @@ function ActiveSubCard({
             </h3>
             <p className="app-section-title/60">
               {sub.max_agents ? (
-                <span className={agentCount >= sub.max_agents ? "text-amber-600" : ""}>
+                <span style={agentCount >= sub.max_agents ? { color: "#d97706" } : undefined}>
                   {agentCount} / {sub.max_agents} agents
                 </span>
               ) : (

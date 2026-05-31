@@ -137,8 +137,10 @@ export default function ContactProfile() {
           role="alert"
           className="flex flex-col items-center justify-center gap-4 px-6 text-center"
         >
-          <AlertOctagon className="w-12 h-12 text-rose-500/60" />
-          <p className="text-sm font-medium text-rose-600">{err || "Contact not found"}</p>
+          <AlertOctagon className="w-12 h-12" style={{ color: "rgba(232,70,106,0.60)" }} />
+          <p className="text-sm font-medium" style={{ color: "#E8466A" }}>
+            {err || "Contact not found"}
+          </p>
           <Link
             to="/pipeline"
             className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-brand transition-colors"
@@ -197,9 +199,18 @@ export default function ContactProfile() {
         />
 
         {highIntent && (
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/25">
-            <Sparkles className="w-3.5 h-3.5 text-rose-600" />
-            <span className="text-[10px] uppercase tracking-[0.2em] text-rose-600 font-medium">
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full"
+            style={{
+              background: "rgba(232,70,106,0.10)",
+              border: "1px solid rgba(232,70,106,0.25)",
+            }}
+          >
+            <Sparkles className="w-3.5 h-3.5" style={{ color: "#E8466A" }} />
+            <span
+              className="text-[10px] uppercase tracking-[0.2em] font-medium"
+              style={{ color: "#E8466A" }}
+            >
               High intent lead
             </span>
           </div>
@@ -341,9 +352,16 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
             "shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-xl border flex items-center justify-center transition-all",
             event.type === "call_in" && "border-brand/30 bg-brand/8 text-brand",
             event.type === "call_out" && "border-brand-2/30 bg-brand-2/8 text-brand-deep",
-            event.type === "appointment" &&
-              "border-emerald-500/30 bg-emerald-500/8 text-emerald-600",
           )}
+          style={
+            event.type === "appointment"
+              ? {
+                  borderColor: "rgba(16,185,129,0.30)",
+                  background: "rgba(16,185,129,0.08)",
+                  color: "#059669",
+                }
+              : undefined
+          }
         >
           <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
         </div>
@@ -360,12 +378,25 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
               <span
                 className={cn(
                   "px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.25em]",
-                  event.lead_score >= 70
-                    ? "bg-rose-500/15 text-rose-500 border border-rose-500/30"
-                    : event.lead_score >= 50
-                      ? "bg-brand/15 text-brand border border-brand/30"
-                      : "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
+                  event.lead_score >= 50 &&
+                    event.lead_score < 70 &&
+                    "bg-brand/15 text-brand border border-brand/30",
                 )}
+                style={
+                  event.lead_score >= 70
+                    ? {
+                        background: "rgba(232,70,106,0.15)",
+                        color: "#E8466A",
+                        border: "1px solid rgba(232,70,106,0.30)",
+                      }
+                    : event.lead_score < 50
+                      ? {
+                          background: "rgba(113,113,122,0.15)",
+                          color: "rgba(212,212,216,1)",
+                          border: "1px solid rgba(113,113,122,0.30)",
+                        }
+                      : undefined
+                }
               >
                 {event.lead_score}/100
               </span>
@@ -405,7 +436,14 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
                 <p className="text-[11px] text-muted/70 mt-1 line-clamp-1">{event.coaching_note}</p>
               )}
               {event.lesson_extracted && (
-                <span className="inline-block mt-1 text-[8px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                <span
+                  className="inline-block mt-1 text-[8px] px-1.5 py-0.5 rounded"
+                  style={{
+                    background: "rgba(16,185,129,0.10)",
+                    color: "#059669",
+                    border: "1px solid rgba(16,185,129,0.20)",
+                  }}
+                >
                   Lesson captured
                 </span>
               )}

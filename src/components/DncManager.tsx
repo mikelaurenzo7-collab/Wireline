@@ -476,9 +476,15 @@ export default function DncManager() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-500/5 border border-amber-500/15">
-                <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-                <p className="text-[10px] text-amber-500/80 leading-snug">
+              <div
+                className="flex items-center gap-2.5 p-3 rounded-xl"
+                style={{
+                  background: "rgba(245,158,11,0.05)",
+                  border: "1px solid rgba(245,158,11,0.15)",
+                }}
+              >
+                <AlertTriangle className="w-4 h-4 shrink-0" style={{ color: "#f59e0b" }} />
+                <p className="text-[10px] leading-snug" style={{ color: "rgba(245,158,11,0.80)" }}>
                   This number will immediately be blocked from all outbound calls and campaigns.
                 </p>
               </div>

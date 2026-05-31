@@ -59,14 +59,14 @@ export default function SystemStatusBadge() {
         ? "ok"
         : "degraded";
 
-  const dotCls =
+  const dotColor =
     overall === "ok"
-      ? "bg-emerald-400"
+      ? "#34d399"
       : overall === "degraded"
-        ? "bg-amber-400"
+        ? "#fbbf24"
         : overall === "error"
-          ? "bg-rose-500"
-          : "bg-white/30";
+          ? "#E8466A"
+          : "rgba(255,255,255,0.30)";
 
   return (
     <div className="relative">
@@ -84,11 +84,8 @@ export default function SystemStatusBadge() {
         }`}
       >
         <span
-          className={cn(
-            "w-2 h-2 rounded-full shrink-0",
-            dotCls,
-            overall === "ok" && "animate-pulse",
-          )}
+          className={cn("w-2 h-2 rounded-full shrink-0", overall === "ok" && "animate-pulse")}
+          style={{ background: dotColor }}
         />
         {/* Hide the status text at narrow laptop widths — the colored
             dot alone communicates status, and the title attribute
@@ -148,7 +145,7 @@ export default function SystemStatusBadge() {
 
       {open && error && (
         <div className="absolute bottom-full left-0 mb-2 w-56 rounded-2xl glass-strong border border-white/10 p-4 space-y-2 z-50">
-          <div className="flex items-center gap-2 text-rose-500">
+          <div className="flex items-center gap-2" style={{ color: "#E8466A" }}>
             <WifiOff className="w-4 h-4" />
             <span className="text-xs">Server unreachable</span>
           </div>
@@ -163,13 +160,18 @@ function StatusRow({ label, ok, detail }: { label: string; ok: boolean; detail: 
     <div className="flex items-center justify-between gap-3">
       <div className="flex items-center gap-2">
         {ok ? (
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+          <CheckCircle2 className="w-3.5 h-3.5 shrink-0" style={{ color: "#059669" }} />
         ) : (
-          <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0" style={{ color: "#f59e0b" }} />
         )}
         <span className="text-[11px] text-ink/80">{label}</span>
       </div>
-      <span className={cn("text-[10px]", ok ? "text-ink/65" : "text-amber-400/80")}>{detail}</span>
+      <span
+        className="text-[10px]"
+        style={{ color: ok ? "rgba(26,22,20,0.65)" : "rgba(245,158,11,0.80)" }}
+      >
+        {detail}
+      </span>
     </div>
   );
 }

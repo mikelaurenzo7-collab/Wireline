@@ -202,9 +202,12 @@ export default function PronunciationDictionaryPanel() {
       </div>
 
       {!configured && (
-        <div className="rounded-xl border border-amber-500/40 bg-amber-500/8 p-3 flex items-start gap-2.5">
-          <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-          <p className="text-[12px] text-amber-700 leading-relaxed">
+        <div
+          className="rounded-xl p-3 flex items-start gap-2.5"
+          style={{ border: "1px solid rgba(245,158,11,0.40)", background: "rgba(245,158,11,0.08)" }}
+        >
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "#f59e0b" }} />
+          <p className="text-[12px] leading-relaxed" style={{ color: "#92400e" }}>
             Voice playback isn't connected yet. Pronunciation dictionaries will sync to your agents'
             voices once it's set up.
           </p>

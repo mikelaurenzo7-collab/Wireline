@@ -93,20 +93,23 @@ export default function AgentChat() {
             <ScrollArea className="h-full">
               <div className="flex lg:flex-col gap-1 lg:gap-1 overflow-x-auto lg:overflow-visible pb-1 lg:pb-0 pr-1 sm:pr-0">
                 {/* Director button */}
-                <button
+                <motion.button
                   onClick={() => navigate("/chat")}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
                   className={cn(
                     "shrink-0 lg:w-full text-left rounded-lg px-2.5 py-2 border transition-all flex items-center gap-2 min-h-11 lg:min-h-0",
                     showDirector
-                      ? "border-primary/30 bg-primary/[0.06]"
+                      ? "border-primary/30 bg-primary/[0.06] shadow-sm shadow-primary/10"
                       : "border-transparent hover:bg-accent hover:border-primary/15",
                   )}
                 >
                   <span
                     className={cn(
-                      "shrink-0 w-9 h-9 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-colors",
+                      "shrink-0 w-9 h-9 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all",
                       showDirector
-                        ? "bg-primary text-primary-foreground"
+                        ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                         : "bg-muted text-muted-foreground",
                     )}
                   >
@@ -124,33 +127,44 @@ export default function AgentChat() {
                       )}
                     </span>
                   </span>
-                </button>
+                </motion.button>
 
                 {/* Agent items */}
                 {agents.map((a) => {
                   const isActive = !showDirector && a.id === activeAgent?.id;
                   return (
-                    <button
+                    <motion.button
                       key={a.id}
                       onClick={() => navigate(`/chat/${a.id}`)}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
                       className={cn(
                         "shrink-0 lg:w-full text-left rounded-lg px-2.5 py-2 border transition-all flex items-center gap-2 min-h-11 lg:min-h-0",
                         isActive
-                          ? "border-primary/30 bg-primary/[0.06]"
+                          ? "border-primary/30 bg-primary/[0.06] shadow-sm shadow-primary/10"
                           : "border-transparent hover:bg-accent hover:border-primary/15",
                       )}
                     >
                       <span
                         className={cn(
-                          "shrink-0 w-9 h-9 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-[10px] font-semibold relative transition-colors",
+                          "shrink-0 w-9 h-9 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-[10px] font-semibold relative transition-all",
                           isActive
-                            ? "bg-primary text-primary-foreground"
+                            ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                             : "bg-muted text-muted-foreground",
                         )}
                       >
                         {a.name.slice(0, 1).toUpperCase()}
                         {isActive && (
-                          <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-background" />
+                          <motion.span
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                            className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background"
+                            style={{ background: "#10b981" }}
+                          >
+                            <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />
+                          </motion.span>
                         )}
                       </span>
                       <span className="min-w-0 hidden sm:block">
@@ -161,13 +175,16 @@ export default function AgentChat() {
                           {roleLabel(a.role)}
                         </span>
                       </span>
-                    </button>
+                    </motion.button>
                   );
                 })}
 
                 {/* Add agent */}
-                <button
+                <motion.button
                   onClick={() => navigate("/agents")}
+                  whileHover={{ scale: 1.02, borderStyle: "solid" }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
                   className="shrink-0 lg:w-full text-left rounded-lg px-2.5 py-2 border border-dashed border-border text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all flex items-center gap-2 lg:mt-1 min-h-11 lg:min-h-0"
                 >
                   <span className="shrink-0 w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-muted border flex items-center justify-center">
@@ -176,7 +193,7 @@ export default function AgentChat() {
                   <span className="hidden sm:block text-xs font-medium truncate">
                     {agents.length === 0 ? "Create first" : "Add"}
                   </span>
-                </button>
+                </motion.button>
               </div>
             </ScrollArea>
             <div className="pointer-events-none absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-background to-transparent lg:hidden" />
@@ -198,6 +215,7 @@ export default function AgentChat() {
             <AgentWorkspace
               agentId={activeAgent!.id}
               agentName={activeAgent!.name}
+              agentRole={activeAgent!.role ?? undefined}
               onToolsChange={setLiveTools}
               composerSeed={composerSeed}
             />
@@ -217,15 +235,25 @@ export default function AgentChat() {
               />
             </aside>
 
-            {/* Mobile dock trigger */}
-            <button
+            {/* Mobile dock trigger with enhanced animation */}
+            <motion.button
               onClick={() => setDockOpen(true)}
-              className="xl:hidden fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] right-4 z-30 inline-flex items-center gap-2 px-4 min-h-11 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 text-sm font-medium active:scale-95 transition-transform"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 20 }}
+              className="xl:hidden fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] right-4 z-30 inline-flex items-center gap-2 px-4 min-h-11 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 text-sm font-medium"
               aria-label="Open mission control"
             >
               <LayoutDashboard className="w-4 h-4" />
-              Control
-            </button>
+              <span>Control</span>
+              <motion.span
+                initial={{ scale: 1 }}
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50"
+                aria-hidden="true"
+              />
+            </motion.button>
 
             <AnimatePresence>
               {dockOpen && (

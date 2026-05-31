@@ -72,9 +72,9 @@ test.describe("Marketing surfaces — primary conversion path", () => {
   });
 });
 
-test.describe("Marketing surfaces — homepage FAQ (SEO + objection handling)", () => {
+test.describe("Marketing surfaces — FAQ page (SEO + objection handling)", () => {
   test("renders an accessible FAQ that discloses answers on demand", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/about");
 
     const faq = page.getByTestId("faq-section");
     await expect(faq.getByRole("heading", { level: 2 })).toBeVisible();
@@ -90,11 +90,11 @@ test.describe("Marketing surfaces — homepage FAQ (SEO + objection handling)", 
   test("publishes FAQPage structured data whose questions match the visible copy", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/about");
     await expect(page.getByTestId("faq-section")).toBeVisible();
 
     const jsonLd = await page.locator("#wireline-page-jsonld").textContent();
-    expect(jsonLd, "homepage must emit page-level JSON-LD").toBeTruthy();
+    expect(jsonLd, "/about must emit FAQPage JSON-LD").toBeTruthy();
 
     const parsed = JSON.parse(jsonLd!);
     expect(parsed["@type"]).toBe("FAQPage");

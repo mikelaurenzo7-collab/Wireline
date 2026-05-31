@@ -424,15 +424,22 @@ export default function FastStartWizard({
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3"
+                  className="mb-6 p-4 rounded-xl flex items-start gap-3"
+                  style={{
+                    background: "rgba(245,158,11,0.10)",
+                    border: "1px solid rgba(245,158,11,0.25)",
+                  }}
                 >
-                  <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                  <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" style={{ color: "#d97706" }} />
                   <div>
-                    <p className="text-sm text-amber-800">{error}</p>
+                    <p className="text-sm" style={{ color: "#92400e" }}>
+                      {error}
+                    </p>
                     {currentStep.skippable && (
                       <button
                         onClick={handleSkip}
-                        className="mt-2 text-xs text-amber-700 underline hover:text-amber-900"
+                        className="mt-2 text-xs underline"
+                        style={{ color: "#b45309" }}
                       >
                         Skip this step for now →
                       </button>
@@ -493,7 +500,7 @@ export default function FastStartWizard({
                         autoFocus
                       />
                     </label>
-                    <div className="flex items-center gap-2 text-xs text-emerald-600">
+                    <div className="flex items-center gap-2 text-xs" style={{ color: "#059669" }}>
                       <Wand2 className="w-4 h-4" />
                       <span>We'll auto-extract: services, hours, pricing, policies</span>
                     </div>
@@ -594,7 +601,7 @@ export default function FastStartWizard({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 text-xs text-emerald-600">
+                    <div className="flex items-center gap-2 text-xs" style={{ color: "#059669" }}>
                       <Sparkles className="w-4 h-4" />
                       <span>Our AI will generate: name, personality, and conversation script</span>
                     </div>

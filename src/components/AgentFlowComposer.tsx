@@ -663,15 +663,26 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
         {/* Validation banner — non-blocking. Shows operators what's
           incomplete without preventing them from saving a draft. */}
         {validationIssues.length > 0 && (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 space-y-1.5 shrink-0">
-            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.28em] text-amber-600">
+          <div
+            className="rounded-xl p-3 space-y-1.5 shrink-0"
+            style={{
+              border: "1px solid rgba(245,158,11,0.30)",
+              background: "rgba(245,158,11,0.05)",
+            }}
+          >
+            <div
+              className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.28em]"
+              style={{ color: "#d97706" }}
+            >
               <AlertTriangle className="w-3 h-3" />
               {validationIssues.length} item{validationIssues.length === 1 ? "" : "s"} to finish
             </div>
             <ul className="text-[11px] text-ink/70 leading-snug space-y-0.5 max-h-24 overflow-y-auto">
               {validationIssues.slice(0, 6).map((v, i) => (
                 <li key={i} className="flex items-start gap-1.5">
-                  <span className="text-amber-500 shrink-0">·</span>
+                  <span className="shrink-0" style={{ color: "#f59e0b" }}>
+                    ·
+                  </span>
                   <span>{v.message}</span>
                 </li>
               ))}
@@ -739,7 +750,10 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                           {step.name || "Unnamed Stage"}
                         </div>
                         {step.isEndNode && (
-                          <div className="text-[9px] uppercase tracking-[0.2em] text-rose-400 mt-0.5">
+                          <div
+                            className="text-[9px] uppercase tracking-[0.2em] mt-0.5"
+                            style={{ color: "#fb7185" }}
+                          >
                             Terminal Node
                           </div>
                         )}
@@ -811,12 +825,12 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       className="sr-only"
                     />
                     <div
-                      className={cn(
-                        "w-4 h-4 rounded border flex items-center justify-center transition-colors",
+                      className="w-4 h-4 rounded border flex items-center justify-center transition-colors glass"
+                      style={
                         activeStep.isEndNode
-                          ? "bg-rose-500 border-rose-500"
-                          : "glass border-white/20 group-hover:border-rose-500/50",
-                      )}
+                          ? { background: "#E8466A", borderColor: "#E8466A" }
+                          : { borderColor: "rgba(255,255,255,0.20)" }
+                      }
                     >
                       {activeStep.isEndNode && <CheckCircle2 className="w-3 h-3 text-white" />}
                     </div>
@@ -839,8 +853,14 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       Saving
                     </span>
                   ) : isDirty ? (
-                    <span className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.25em] text-amber-600">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    <span
+                      className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.25em]"
+                      style={{ color: "#d97706" }}
+                    >
+                      <span
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ background: "#f59e0b" }}
+                      />
                       Unsaved
                     </span>
                   ) : null}
@@ -852,7 +872,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     {isSaving ? (
                       <div className="w-3.5 h-3.5 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />
                     ) : saveSuccess ? (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <CheckCircle2 className="w-3.5 h-3.5" style={{ color: "#34d399" }} />
                     ) : (
                       <Save className="w-3.5 h-3.5" />
                     )}
@@ -900,7 +920,13 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     return (
                       <div className="flex items-center justify-between text-[10px] text-muted/70 -mt-1 px-1">
                         <span
-                          className={cn(tooLong && "text-amber-500", tooShort && "text-rose-500")}
+                          style={
+                            tooLong
+                              ? { color: "#f59e0b" }
+                              : tooShort
+                                ? { color: "#E8466A" }
+                                : undefined
+                          }
                         >
                           {words === 0
                             ? "Write what the agent should say in this stage"
@@ -984,7 +1010,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                 {/* Transition Condition */}
                 {!activeStep.isEndNode ? (
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-emerald-500">
+                    <div className="flex items-center gap-2" style={{ color: "#10b981" }}>
                       <ArrowRight className="w-4 h-4" />
                       <h4 className="text-[11px] uppercase tracking-[0.3em]">
                         Transition Condition
@@ -995,14 +1021,20 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       this condition continuously.
                     </p>
                     <div className="relative">
-                      <div className="absolute left-4 top-4 text-emerald-500/50">IF:</div>
+                      <div
+                        className="absolute left-4 top-4"
+                        style={{ color: "rgba(16,185,129,0.50)" }}
+                      >
+                        IF:
+                      </div>
                       <textarea
                         value={activeStep.transitionCondition}
                         onChange={(e) =>
                           handleUpdateStep(activeStep.id, "transitionCondition", e.target.value)
                         }
                         placeholder="e.g. The user has provided their email address and expressed interest in a demo."
-                        className="w-full h-24 bg-black/10 border border-emerald-500/20 rounded-xl pl-12 pr-4 py-4 text-sm text-ink leading-relaxed resize-none focus:outline-none focus:border-emerald-500/50 transition-colors placeholder:text-muted/70"
+                        className="w-full h-24 bg-black/10 rounded-xl pl-12 pr-4 py-4 text-sm text-ink leading-relaxed resize-none focus:outline-none transition-colors placeholder:text-muted/70"
+                        style={{ border: "1px solid rgba(16,185,129,0.20)" }}
                       />
                     </div>
 
@@ -1021,9 +1053,18 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     )}
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-6 text-center">
-                    <div className="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center mx-auto mb-3">
-                      <CheckCircle2 className="w-6 h-6 text-rose-500" />
+                  <div
+                    className="rounded-xl p-6 text-center"
+                    style={{
+                      border: "1px solid rgba(232,70,106,0.20)",
+                      background: "rgba(232,70,106,0.05)",
+                    }}
+                  >
+                    <div
+                      className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3"
+                      style={{ background: "rgba(232,70,106,0.10)" }}
+                    >
+                      <CheckCircle2 className="w-6 h-6" style={{ color: "#E8466A" }} />
                     </div>
                     <h4 className="text-sm font-medium text-ink mb-1">Terminal Stage</h4>
                     <p className="text-[11px] text-muted/70 max-w-md mx-auto">

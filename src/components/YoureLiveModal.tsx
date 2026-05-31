@@ -303,14 +303,18 @@ export default function YoureLiveModal({
             transition={{ delay: 0.1, duration: 0.6, type: "spring", stiffness: 200 }}
             className="relative inline-block mb-6"
           >
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-brand to-emerald-500 flex items-center justify-center shadow-lg shadow-brand/30">
+            <div
+              className="w-20 h-20 rounded-full flex items-center justify-center shadow-lg shadow-brand/30"
+              style={{ background: "linear-gradient(135deg, #8B3FD6, #10b981)" }}
+            >
               <PartyPopper className="w-10 h-10 text-white" />
             </div>
             <motion.div
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.5, duration: 0.3 }}
-              className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center border-2 border-white"
+              className="absolute -top-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center border-2 border-white"
+              style={{ background: "#10b981" }}
             >
               <CheckCircle2 className="w-4 h-4 text-white" />
             </motion.div>
@@ -334,10 +338,14 @@ export default function YoureLiveModal({
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4 }}
-            className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-emerald-950/20 border border-emerald-500/30"
+            className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full"
+            style={{
+              background: "rgba(16,185,129,0.10)",
+              border: "1px solid rgba(16,185,129,0.28)",
+            }}
           >
-            <Sparkles className="w-4 h-4 text-emerald-400" />
-            <span className="text-xs font-medium text-emerald-400">
+            <Sparkles className="w-4 h-4" style={{ color: "#34d399" }} />
+            <span className="text-xs font-medium" style={{ color: "#34d399" }}>
               {isQuickSetup ? "Lightning fast" : "Setup complete"} — {formatTime(timeToFirstCallMs)}
             </span>
           </motion.div>
@@ -350,18 +358,18 @@ export default function YoureLiveModal({
             className="flex items-center justify-center gap-6 mt-6 text-xs"
           >
             <div className="flex items-center gap-1.5 text-muted-foreground">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              <CheckCircle2 className="w-4 h-4" style={{ color: "#10b981" }} />
               <span>1 AI agent</span>
             </div>
             {knowledgeItems > 0 && (
               <div className="flex items-center gap-1.5 text-muted-foreground">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                <CheckCircle2 className="w-4 h-4" style={{ color: "#10b981" }} />
                 <span>{knowledgeItems} knowledge items</span>
               </div>
             )}
             {phoneNumber && (
               <div className="flex items-center gap-1.5 text-muted-foreground">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                <CheckCircle2 className="w-4 h-4" style={{ color: "#10b981" }} />
                 <span>Phone number ready</span>
               </div>
             )}
@@ -418,7 +426,7 @@ export default function YoureLiveModal({
             >
               {copied ? (
                 <>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <CheckCircle2 className="w-4 h-4" style={{ color: "#10b981" }} />
                   Copied!
                 </>
               ) : (
@@ -440,7 +448,7 @@ export default function YoureLiveModal({
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-white/10 text-[11px] uppercase tracking-[0.24em] text-ink hover:bg-white/5 transition-colors h-10"
               >
                 {copied ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <CheckCircle2 className="w-4 h-4" style={{ color: "#10b981" }} />
                 ) : (
                   <Copy className="w-4 h-4" />
                 )}

@@ -91,7 +91,8 @@ function StatCard({
   return (
     <div className="relative glass rounded-xl p-4 border border-black/10 overflow-hidden">
       <div
-        className={cn("absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20 blur-3xl", color)}
+        className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20 blur-3xl"
+        style={{ background: color }}
       />
       <div className="relative z-10">
         <div className="flex items-center justify-between mb-2">
@@ -416,25 +417,25 @@ export default function AuditLog() {
               label="Total Events"
               value={stats?.total.toLocaleString() || "—"}
               icon={Activity}
-              color="bg-cyan-400"
+              color="#22d3ee"
             />
             <StatCard
               label="API Calls"
               value={stats?.api_calls.toLocaleString() || "—"}
               icon={Cpu}
-              color="bg-purple-400"
+              color="#c084fc"
             />
             <StatCard
               label="Total Cost"
               value={stats ? `$${stats.total_cost.toFixed(2)}` : "—"}
               icon={DollarSign}
-              color="bg-emerald-400"
+              color="#34d399"
             />
             <StatCard
               label="Critical Events"
               value={stats?.critical_count || 0}
               icon={Shield}
-              color="bg-rose-400"
+              color="#fb7185"
             />
           </div>
 

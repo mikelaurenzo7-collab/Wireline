@@ -213,8 +213,14 @@ export default function DirectorWorkspace() {
               <p className="text-[13px] font-semibold text-ink leading-tight truncate">Director</p>
               <p className="flex items-center gap-1.5 text-[10px] text-muted leading-tight">
                 <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500/60" />
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                  <span
+                    className="animate-ping absolute inline-flex h-full w-full rounded-full"
+                    style={{ background: "rgba(16,185,129,0.60)" }}
+                  />
+                  <span
+                    className="relative inline-flex rounded-full h-1.5 w-1.5"
+                    style={{ background: "#10b981" }}
+                  />
                 </span>
                 Always-on manager
               </p>
@@ -259,7 +265,9 @@ export default function DirectorWorkspace() {
               Your Director
             </p>
             <h2 className="font-display italic text-2xl lg:text-[1.75rem] leading-[1.1] text-ink mb-3">
-              {agents.length > 0 ? `${agents.length} agent${agents.length === 1 ? "" : "s"} on deck.` : "Let’s build your fleet."}
+              {agents.length > 0
+                ? `${agents.length} agent${agents.length === 1 ? "" : "s"} on deck.`
+                : "Let’s build your fleet."}
             </h2>
             <p className="text-[13px] text-muted leading-relaxed mb-6 max-w-sm">
               {agents.length > 0
@@ -285,7 +293,9 @@ export default function DirectorWorkspace() {
                     <span className="shrink-0 w-6 h-6 rounded-full bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[9px] font-semibold flex items-center justify-center">
                       {a.name.slice(0, 1).toUpperCase()}
                     </span>
-                    <span className="min-w-0 text-[11px] font-medium text-ink truncate">{a.name}</span>
+                    <span className="min-w-0 text-[11px] font-medium text-ink truncate">
+                      {a.name}
+                    </span>
                   </button>
                 ))}
                 {agents.length > 4 && (

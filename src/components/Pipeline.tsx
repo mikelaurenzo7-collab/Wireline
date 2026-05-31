@@ -224,7 +224,12 @@ export default function Pipeline() {
                                   {lead.demo && (
                                     <Badge
                                       variant="outline"
-                                      className="text-[8px] uppercase tracking-[0.32em] px-1.5 py-0.5 rounded-md bg-amber-500/15 border border-dashed border-amber-500/50 text-amber-700 leading-none shrink-0"
+                                      className="text-[8px] uppercase tracking-[0.32em] px-1.5 py-0.5 rounded-md border border-dashed leading-none shrink-0"
+                                      style={{
+                                        background: "rgba(245,158,11,0.15)",
+                                        borderColor: "rgba(245,158,11,0.50)",
+                                        color: "#b45309",
+                                      }}
                                       title="Seeded showcase record — not a real lead"
                                     >
                                       Demo

@@ -6,6 +6,7 @@ import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatDate } from "../lib/safe-date";
 import PageShell, { Panel } from "./PageShell";
+import { PanelSkeleton } from "./Skeleton";
 import { useToast } from "../contexts/ToastContext";
 import EmptyState from "./EmptyState";
 
@@ -170,9 +171,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                 </div>
                 <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain panel-scroll p-2">
                   {loading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <Loader2 className="w-5 h-5 animate-spin text-muted" />
-                    </div>
+                    <PanelSkeleton rows={5} />
                   ) : threads.length === 0 ? (
                     <EmptyState
                       icon={MessageSquare}
@@ -258,8 +257,8 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                     </button>
                     <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pb-3">
                       {messagesLoading ? (
-                        <div className="flex items-center justify-center py-12">
-                          <Loader2 className="w-5 h-5 animate-spin text-muted" />
+                        <div className="space-y-2 p-3">
+                          <PanelSkeleton rows={4} />
                         </div>
                       ) : (
                         messages.map((m) => (

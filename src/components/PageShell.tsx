@@ -590,10 +590,8 @@ export function StatTile({
           {sub && <p className="text-caption truncate flex-1 uppercase tracking-wide">{sub}</p>}
           {trend && (
             <span
-              className={cn(
-                "shrink-0 text-[9px] font-mono font-medium",
-                trendPositive ? "text-emerald-600" : "text-rose-500",
-              )}
+              className="shrink-0 text-[9px] font-mono font-medium"
+              style={{ color: trendPositive ? "#059669" : "#E8466A" }}
             >
               {trendPositive ? "↑" : "↓"} {Math.abs(trend.value)}%
             </span>

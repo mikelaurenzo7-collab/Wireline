@@ -61,14 +61,22 @@ export default function TrialBanner() {
   // OR ≥90% outbound usage — both signal urgency without screaming.
   // Amber otherwise.
   const critical = (daysLeft !== null && daysLeft <= 2) || usagePct >= 90;
-  const containerCls = critical
-    ? "bg-rose-500/12 border-b border-rose-500/40"
-    : "bg-amber-500/10 border-b border-amber-500/30";
-  const textCls = critical ? "text-rose-700" : "text-amber-700";
-  const iconCls = critical ? "text-rose-500" : "text-amber-500";
-  const buttonCls = critical
-    ? "bg-rose-500/25 border border-rose-500/50 text-rose-700 hover:bg-rose-500/35"
-    : "bg-amber-500/20 border border-amber-500/40 text-amber-700 hover:bg-amber-500/30";
+  const containerStyle = critical
+    ? { background: "rgba(232,70,106,0.12)", borderBottom: "1px solid rgba(232,70,106,0.40)" }
+    : { background: "rgba(245,158,11,0.10)", borderBottom: "1px solid rgba(245,158,11,0.30)" };
+  const textColor = critical ? "#be123c" : "#b45309";
+  const iconColor = critical ? "#E8466A" : "#f59e0b";
+  const buttonStyle = critical
+    ? {
+        background: "rgba(232,70,106,0.25)",
+        border: "1px solid rgba(232,70,106,0.50)",
+        color: "#be123c",
+      }
+    : {
+        background: "rgba(245,158,11,0.20)",
+        border: "1px solid rgba(245,158,11,0.40)",
+        color: "#b45309",
+      };
 
   const openUpgrade = () => {
     const detail: TrialGateBlockDetail = {
@@ -119,16 +127,18 @@ export default function TrialBanner() {
     <motion.div
       initial={{ height: 0, opacity: 0 }}
       animate={{ height: "auto", opacity: 1 }}
-      className={`${containerCls} px-6 py-2.5 flex items-center justify-between gap-4 flex-wrap`}
+      className="px-6 py-2.5 flex items-center justify-between gap-4 flex-wrap"
+      style={containerStyle}
     >
-      <div className={`flex items-center gap-2.5 text-xs ${textCls}`}>
-        <AlertTriangle className={`w-3.5 h-3.5 shrink-0 ${iconCls}`} />
+      <div className="flex items-center gap-2.5 text-xs" style={{ color: textColor }}>
+        <AlertTriangle className="w-3.5 h-3.5 shrink-0" style={{ color: iconColor }} />
         <span>{message}</span>
       </div>
       <button
         type="button"
         onClick={openUpgrade}
-        className={`shrink-0 px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] transition-all ${buttonCls}`}
+        className="shrink-0 px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] transition-all"
+        style={buttonStyle}
       >
         Upgrade now
       </button>
