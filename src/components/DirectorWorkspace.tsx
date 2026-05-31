@@ -296,7 +296,7 @@ export default function DirectorWorkspace() {
             )}
 
             {/* Starter prompts */}
-            <div className="flex flex-wrap justify-center gap-2 w-full">
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5 w-full">
               {STARTER_PROMPTS.map((p) => (
                 <button
                   key={p}
@@ -441,7 +441,7 @@ export default function DirectorWorkspace() {
                       Quick Actions
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                     {DIRECTOR_CAPABILITIES.map((c) => (
                       <button
                         key={c.label}

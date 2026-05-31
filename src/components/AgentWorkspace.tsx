@@ -807,7 +807,7 @@ export default function AgentWorkspace({
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium transition-all cursor-pointer",
+                  "shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] sm:text-[11px] font-medium transition-all cursor-pointer",
                   isActive
                     ? "bg-brand/10 text-brand border border-brand/30"
                     : "text-muted hover:text-ink hover:bg-black/5 border border-transparent",
@@ -1186,7 +1186,7 @@ export default function AgentWorkspace({
                     type="button"
                     onClick={() => setToolsOpen(!toolsOpen)}
                     className={cn(
-                      "inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium transition-all cursor-pointer",
+                      "inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] sm:text-[11px] font-medium transition-all cursor-pointer",
                       toolsOpen
                         ? "bg-brand/10 text-brand border border-brand/30"
                         : "text-muted hover:text-brand hover:bg-brand/5 border border-transparent",

@@ -1059,7 +1059,6 @@ input:focus, textarea:focus, select:focus {
     min-height: 0;
     flex: 1 1 auto;
   }
-  .workspace-stage { padding-left: 0; padding-right: 0; padding-bottom: 0; }
   .app-surface { font-size: 13px !important; line-height: 1.42 !important; }
   .app-surface h1 { font-size: 1.26rem !important; }
   .app-surface h2 { font-size: 1.12rem !important; }
