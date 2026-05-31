@@ -828,7 +828,7 @@ export default function AgentWorkspace({
       {showChat && (
         <div className="flex-1 min-h-0 flex flex-col">
           {/* Messages */}
-          <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-6 space-y-5">
+          <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-5">
             {isLoading && messages.length === 0 ? (
               <div className="space-y-4 py-8">
                 <div className="flex justify-end">
@@ -888,7 +888,7 @@ export default function AgentWorkspace({
                     {/* Message bubble */}
                     <div
                       className={cn(
-                        "max-w-[78%] min-w-[180px] px-5 py-4 whitespace-pre-wrap break-words relative",
+                        "max-w-[88%] sm:max-w-[78%] min-w-[100px] sm:min-w-[180px] px-4 sm:px-5 py-3 sm:py-4 whitespace-pre-wrap break-words relative",
                         m.role === "operator"
                           ? "bg-gradient-to-br from-brand to-brand-deep text-white shadow-lg shadow-brand/20"
                           : "bg-white/80 dark:bg-[var(--wl-surface-dark)]/60 backdrop-blur-sm border border-brand/12 text-ink dark:text-foreground shadow-sm",

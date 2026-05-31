@@ -355,7 +355,7 @@ export default function AppShell() {
 
         <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
           <div className="workspace-stage flex-1 overflow-hidden relative z-10 min-h-0 px-2 pb-2 md:px-3 md:pb-3 lg:px-4 lg:pb-4">
-            <div className="app-surface max-w-[1840px] mx-auto px-2.5 md:px-3 lg:px-4 pt-1.5 md:pt-2.5 pb-0 md:pb-3 flex flex-col h-full min-h-0 mobile-page-canvas">
+            <div className="app-surface max-w-[1840px] mx-auto px-2.5 md:px-3 lg:px-4 pt-1.5 md:pt-2.5 pb-0 md:pb-3 flex flex-col h-full min-h-0 min-w-0 mobile-page-canvas">
               <ErrorBoundary key={location.pathname}>
                 <AppRoutes />
               </ErrorBoundary>

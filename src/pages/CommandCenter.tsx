@@ -388,9 +388,9 @@ export default function LiveOps() {
               the tab strip to keep the viewport short. */}
 
           {/* Grid Layout Container */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start pt-1">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-12 gap-4 items-start pt-1">
             {/* Left Pane (Main Operations) */}
-            <div className="lg:col-span-8 xl:col-span-9 space-y-4">
+            <div className="md:col-span-2 lg:col-span-8 xl:col-span-9 space-y-4">
               <div className="flex items-center justify-between gap-2">
                 <ClientSubTabs
                   tabs={[...OPS_TABS]}
@@ -576,7 +576,7 @@ export default function LiveOps() {
             </div>
 
             {/* Right Pane (Ops Intelligence Sidebar) */}
-            <div className="lg:col-span-4 xl:col-span-3 space-y-3">
+            <div className="md:col-span-1 lg:col-span-4 xl:col-span-3 space-y-3">
               {/* Telemetry Heartbeat Card */}
               <div className="glass border-brand/12 p-3.5 relative overflow-hidden">
                 <div className="flex items-center justify-between mb-2.5">

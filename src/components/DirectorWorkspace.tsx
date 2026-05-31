@@ -250,7 +250,7 @@ export default function DirectorWorkspace() {
       {/* Messages - expansive chat area */}
       <div
         ref={scrollRef}
-        className="flex-1 min-h-0 overflow-y-auto px-4 py-8 space-y-6"
+        className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6"
       >
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3">
@@ -334,7 +334,7 @@ export default function DirectorWorkspace() {
               {/* Message bubble */}
               <div
                 className={cn(
-                  "max-w-[75%] min-w-[200px] px-5 py-4 whitespace-pre-wrap break-words relative",
+                  "max-w-[88%] sm:max-w-[75%] min-w-[100px] sm:min-w-[200px] px-4 sm:px-5 py-3 sm:py-4 whitespace-pre-wrap break-words relative",
                   m.role === "operator"
                     ? "bg-gradient-to-br from-brand to-brand-deep text-white shadow-lg shadow-brand/20"
                     : "bg-white/80 dark:bg-[var(--wl-surface-dark)]/60 backdrop-blur-sm border border-brand/12 text-ink dark:text-foreground shadow-sm",
@@ -433,7 +433,7 @@ export default function DirectorWorkspace() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 4, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute bottom-full left-0 right-0 mb-2 bg-white/95 dark:bg-[var(--wl-surface-dark)]/95 backdrop-blur-md border border-brand/15 shadow-xl shadow-brand/10 p-2 z-20"
+                  className="absolute bottom-full left-0 right-0 mb-2 bg-white/95 dark:bg-[var(--wl-surface-dark)]/95 backdrop-blur-md border border-brand/15 shadow-xl shadow-brand/10 p-2 z-20 max-h-[55vh] overflow-y-auto"
                 >
                   <div className="flex items-center gap-2 px-3 py-2 border-b border-brand/8 mb-1">
                     <Sparkles className="w-3.5 h-3.5 text-brand/60" />

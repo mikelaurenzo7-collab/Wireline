@@ -334,52 +334,52 @@
   .app-surface .text-3xl { font-size: 23px !important; }
   .app-surface .text-4xl { font-size: 28px !important; }
 
-  .app-surface .p-10, .app-surface .p-8 { padding: 1.35rem !important; }
-  .app-surface .p-6 { padding: 1rem !important; }
-  .app-surface .p-5 { padding: 0.9rem !important; }
-  .app-surface .p-4 { padding: 0.75rem !important; }
-  .app-surface .p-3 { padding: 0.6rem !important; }
-  .app-surface .px-10, .app-surface .px-8 { padding-left: 1.35rem !important; padding-right: 1.35rem !important; }
-  .app-surface .px-6 { padding-left: 1rem !important; padding-right: 1rem !important; }
-  .app-surface .px-5 { padding-left: 0.9rem !important; padding-right: 0.9rem !important; }
-  .app-surface .px-4 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
-  .app-surface .px-3 { padding-left: 0.6rem !important; padding-right: 0.6rem !important; }
-  .app-surface .py-10, .app-surface .py-8 { padding-top: 1.35rem !important; padding-bottom: 1.35rem !important; }
-  .app-surface .py-6 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
-  .app-surface .py-5 { padding-top: 0.9rem !important; padding-bottom: 0.9rem !important; }
-  .app-surface .py-4 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
-  .app-surface .py-3 { padding-top: 0.6rem !important; padding-bottom: 0.6rem !important; }
-  .app-surface .pt-10, .app-surface .pt-8 { padding-top: 1.35rem !important; }
-  .app-surface .pt-6 { padding-top: 1rem !important; }
-  .app-surface .pt-5 { padding-top: 0.9rem !important; }
-  .app-surface .pt-4 { padding-top: 0.75rem !important; }
-  .app-surface .pb-10, .app-surface .pb-8 { padding-bottom: 1.35rem !important; }
-  .app-surface .pb-6 { padding-bottom: 1rem !important; }
-  .app-surface .pb-5 { padding-bottom: 0.9rem !important; }
-  .app-surface .pb-4 { padding-bottom: 0.75rem !important; }
+  .app-surface .p-10, .app-surface .p-8 { padding: 1.35rem; }
+  .app-surface .p-6 { padding: 1rem; }
+  .app-surface .p-5 { padding: 0.9rem; }
+  .app-surface .p-4 { padding: 0.75rem; }
+  .app-surface .p-3 { padding: 0.6rem; }
+  .app-surface .px-10, .app-surface .px-8 { padding-left: 1.35rem; padding-right: 1.35rem; }
+  .app-surface .px-6 { padding-left: 1rem; padding-right: 1rem; }
+  .app-surface .px-5 { padding-left: 0.9rem; padding-right: 0.9rem; }
+  .app-surface .px-4 { padding-left: 0.75rem; padding-right: 0.75rem; }
+  .app-surface .px-3 { padding-left: 0.6rem; padding-right: 0.6rem; }
+  .app-surface .py-10, .app-surface .py-8 { padding-top: 1.35rem; padding-bottom: 1.35rem; }
+  .app-surface .py-6 { padding-top: 1rem; padding-bottom: 1rem; }
+  .app-surface .py-5 { padding-top: 0.9rem; padding-bottom: 0.9rem; }
+  .app-surface .py-4 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+  .app-surface .py-3 { padding-top: 0.6rem; padding-bottom: 0.6rem; }
+  .app-surface .pt-10, .app-surface .pt-8 { padding-top: 1.35rem; }
+  .app-surface .pt-6 { padding-top: 1rem; }
+  .app-surface .pt-5 { padding-top: 0.9rem; }
+  .app-surface .pt-4 { padding-top: 0.75rem; }
+  .app-surface .pb-10, .app-surface .pb-8 { padding-bottom: 1.35rem; }
+  .app-surface .pb-6 { padding-bottom: 1rem; }
+  .app-surface .pb-5 { padding-bottom: 0.9rem; }
+  .app-surface .pb-4 { padding-bottom: 0.75rem; }
 
-  .app-surface .gap-10, .app-surface .gap-8 { gap: 1.2rem !important; }
-  .app-surface .gap-6 { gap: 0.95rem !important; }
-  .app-surface .gap-5 { gap: 0.8rem !important; }
-  .app-surface .gap-4 { gap: 0.7rem !important; }
-  .app-surface .gap-3 { gap: 0.55rem !important; }
-  .app-surface .space-y-8 > * + * { margin-top: 1.2rem !important; }
-  .app-surface .space-y-6 > * + * { margin-top: 0.95rem !important; }
-  .app-surface .space-y-5 > * + * { margin-top: 0.8rem !important; }
-  .app-surface .space-y-4 > * + * { margin-top: 0.7rem !important; }
-  .app-surface .space-y-3 > * + * { margin-top: 0.55rem !important; }
-  .app-surface .space-x-4 > * + * { margin-left: 0.7rem !important; }
-  .app-surface .space-x-3 > * + * { margin-left: 0.55rem !important; }
-  .app-surface .mt-8 { margin-top: 1.2rem !important; }
-  .app-surface .mt-6 { margin-top: 0.95rem !important; }
-  .app-surface .mt-5 { margin-top: 0.8rem !important; }
-  .app-surface .mt-4 { margin-top: 0.7rem !important; }
-  .app-surface .mt-3 { margin-top: 0.55rem !important; }
-  .app-surface .mb-8 { margin-bottom: 1.2rem !important; }
-  .app-surface .mb-6 { margin-bottom: 0.95rem !important; }
-  .app-surface .mb-5 { margin-bottom: 0.8rem !important; }
-  .app-surface .mb-4 { margin-bottom: 0.7rem !important; }
-  .app-surface .mb-3 { margin-bottom: 0.55rem !important; }
+  .app-surface .gap-10, .app-surface .gap-8 { gap: 1.2rem; }
+  .app-surface .gap-6 { gap: 0.95rem; }
+  .app-surface .gap-5 { gap: 0.8rem; }
+  .app-surface .gap-4 { gap: 0.7rem; }
+  .app-surface .gap-3 { gap: 0.55rem; }
+  .app-surface .space-y-8 > * + * { margin-top: 1.2rem; }
+  .app-surface .space-y-6 > * + * { margin-top: 0.95rem; }
+  .app-surface .space-y-5 > * + * { margin-top: 0.8rem; }
+  .app-surface .space-y-4 > * + * { margin-top: 0.7rem; }
+  .app-surface .space-y-3 > * + * { margin-top: 0.55rem; }
+  .app-surface .space-x-4 > * + * { margin-left: 0.7rem; }
+  .app-surface .space-x-3 > * + * { margin-left: 0.55rem; }
+  .app-surface .mt-8 { margin-top: 1.2rem; }
+  .app-surface .mt-6 { margin-top: 0.95rem; }
+  .app-surface .mt-5 { margin-top: 0.8rem; }
+  .app-surface .mt-4 { margin-top: 0.7rem; }
+  .app-surface .mt-3 { margin-top: 0.55rem; }
+  .app-surface .mb-8 { margin-bottom: 1.2rem; }
+  .app-surface .mb-6 { margin-bottom: 0.95rem; }
+  .app-surface .mb-5 { margin-bottom: 0.8rem; }
+  .app-surface .mb-4 { margin-bottom: 0.7rem; }
+  .app-surface .mb-3 { margin-bottom: 0.55rem; }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-display font-normal;
@@ -1046,7 +1046,13 @@ input:focus, textarea:focus, select:focus {
   .glass-strong, .glass-elevated { background: rgba(248, 243, 235, 0.98); backdrop-filter: blur(14px) saturate(150%); -webkit-backdrop-filter: blur(14px) saturate(150%); }
   .card-interactive:hover, .card-interactive-premium:hover { transform: none; }
   .brutal-btn:hover { transform: none; }
-  .mobile-page-canvas { padding-left: 0; padding-right: 0; padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); min-height: 0; flex: 1 1 auto; }
+  .mobile-page-canvas {
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    min-height: 0;
+    flex: 1 1 auto;
+  }
   .workspace-stage { padding-left: 0; padding-right: 0; padding-bottom: 0; }
   .app-surface { font-size: 13px !important; line-height: 1.42 !important; }
   .app-surface h1 { font-size: 1.26rem !important; }
@@ -1062,6 +1068,12 @@ input:focus, textarea:focus, select:focus {
   .app-surface .py-6 { padding-top: 1rem; padding-bottom: 1rem; }
   .app-surface .gap-6 { gap: 1rem; }
   .app-surface .gap-5 { gap: 0.875rem; }
+}
+
+/* Scroll fade indicators — visual hint that content continues offscreen */
+.scroll-fade-x {
+  mask-image: linear-gradient(to right, black 85%, transparent 98%);
+  -webkit-mask-image: linear-gradient(to right, black 85%, transparent 98%);
 }
 @media (hover: none) and (pointer: coarse) { .card-interactive:active { transform: scale(0.985); transition-duration: 80ms; } }
 

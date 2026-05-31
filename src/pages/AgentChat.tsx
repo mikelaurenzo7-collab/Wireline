@@ -171,7 +171,7 @@ export default function AgentChat() {
       </div>
 
       {/* ── Main Layout Workspace Split ── */}
-      <div className="flex-1 flex gap-3 lg:gap-4 min-h-0 min-w-0">
+      <div className="flex-1 flex gap-3 lg:gap-4 min-h-0 min-w-0 pb-[4.5rem] xl:pb-0">
         {/* Active Workspace View — no outer box, content lives directly on background */}
         <motion.div
           key={showDirector ? "director" : activeAgent?.id}
