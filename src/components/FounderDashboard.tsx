@@ -19,6 +19,7 @@ import { useAuth } from "../contexts/AuthContext";
 import AgentWorkspace from "./AgentWorkspace";
 import ClientRouteViewport from "./layout/ClientRouteViewport";
 import { Input } from "./ui/shadcn/Input";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 /**
  * Founder's Dashboard — Mike's command surface for his staff of 6
@@ -235,12 +236,13 @@ export default function FounderDashboard() {
       <ClientRouteViewport>
         <div className="flex flex-col h-full">
           <div className="shrink-0 px-4 md:px-6 py-3 border-b border-black/8 flex items-center gap-3 bg-paper/50 backdrop-blur-sm">
-            <button
+            <ShadButton
               onClick={() => setSelected(null)}
-              className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-ink transition-colors"
+              variant="ghost"
+              className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-ink"
             >
               ← All staff
-            </button>
+            </ShadButton>
             <span className="text-ink font-medium">
               {selected.name} · {selected.title}
             </span>
@@ -330,14 +332,15 @@ export default function FounderDashboard() {
                 placeholder="e.g. From today, always confirm the caller's email by spelling it back."
                 className="flex-1 bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 text-sm text-ink outline-none focus:border-brand/40 transition-colors placeholder:text-muted/70"
               />
-              <button
+              <ShadButton
                 onClick={sendBroadcast}
                 disabled={!broadcast.trim() || broadcasting}
-                className="px-4 py-2.5 rounded-lg bg-brand text-on-brand text-[11px] uppercase tracking-[0.2em] font-medium hover:opacity-90 disabled:opacity-40 transition-all flex items-center gap-2 shrink-0"
+                variant="default"
+                className="px-4 py-2.5 text-[11px] uppercase tracking-[0.2em] font-medium shrink-0"
               >
                 {broadcasting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                 Send to all 6
-              </button>
+              </ShadButton>
             </div>
             <p className="text-[10px] text-muted/70 mt-2">
               Lands in every staff member's chat memory — they'll factor it into future calls.

@@ -135,12 +135,13 @@ export default function TriageInbox() {
       ) : fetchErr ? (
         <div className="h-full flex flex-col items-center justify-center gap-3 px-6 text-center py-6">
           <p className="text-[10px] uppercase tracking-[0.35em] text-rose-500">{fetchErr}</p>
-          <button
+          <ShadButton
             onClick={fetchData}
-            className="text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors"
+            variant="ghost"
+            className="text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand"
           >
             Retry
-          </button>
+          </ShadButton>
         </div>
       ) : (
         body

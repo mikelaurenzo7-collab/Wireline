@@ -27,7 +27,9 @@ import PageShell, { Panel } from "./PageShell";
 import HubTabs, { CHANNELS_HUB } from "./HubTabs";
 import { useToast } from "../contexts/ToastContext";
 import ConfirmModal from "./ConfirmModal";
+import { EmptyState } from "./ui/EmptyState";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 import { Input } from "./ui/shadcn/Input";
 
 const APPT_AGENT_UNSET = "__unset__";
@@ -195,13 +197,15 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
               {isEdit ? "Edit Appointment" : "New Appointment"}
             </h2>
           </div>
-          <button
+          <ShadButton
             onClick={onClose}
             aria-label="Close"
-            className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg glass border border-black/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
+            variant="glass"
+            size="icon"
+            className="w-9 h-9 sm:w-8 sm:h-8"
           >
             <X className="w-4 h-4" />
-          </button>
+          </ShadButton>
         </header>
 
         <div className="p-5 space-y-4 overflow-y-auto max-h-[70vh] scrollbar-hide">
@@ -307,16 +311,18 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
         </div>
 
         <footer className="px-5 py-4 border-t border-white/10 flex items-center justify-end gap-2">
-          <button
+          <ShadButton
             onClick={onClose}
-            className="h-9 px-4 rounded-full glass border border-black/10 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
+            variant="outline"
+            className="h-9 px-4 rounded-full text-[10px] uppercase tracking-[0.28em]"
           >
             Cancel
-          </button>
-          <button
+          </ShadButton>
+          <ShadButton
             onClick={save}
             disabled={saving}
-            className="h-9 px-5 rounded-full bg-brand/15 border border-brand/50 text-brand text-[10px] uppercase tracking-[0.28em] hover:bg-brand/25 transition-all flex items-center gap-1.5 disabled:opacity-50"
+            variant="default"
+            className="h-9 px-5 rounded-full text-[10px] uppercase tracking-[0.28em]"
           >
             {saving ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -324,7 +330,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
               <CheckCircle2 className="w-3.5 h-3.5" />
             )}
             {isEdit ? "Save Changes" : "Book"}
-          </button>
+          </ShadButton>
         </footer>
       </motion.div>
     </div>
@@ -406,7 +412,7 @@ function CalendarGrid({
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-black/8">
-        <button
+        <ShadButton
           onClick={() =>
             setMonth((m) => {
               const d = new Date(m.year, m.month - 1, 1);
@@ -414,14 +420,16 @@ function CalendarGrid({
             })
           }
           aria-label="Previous month"
-          className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg glass border border-black/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
+          variant="glass"
+          size="icon"
+          className="w-9 h-9 sm:w-8 sm:h-8"
         >
           <ChevronLeft className="w-4 h-4" aria-hidden="true" />
-        </button>
+        </ShadButton>
         <span className="font-display italic lowercase text-xl text-ink">
           {monthNames[month.month]} {month.year}
         </span>
-        <button
+        <ShadButton
           onClick={() =>
             setMonth((m) => {
               const d = new Date(m.year, m.month + 1, 1);
@@ -429,10 +437,12 @@ function CalendarGrid({
             })
           }
           aria-label="Next month"
-          className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg glass border border-black/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
+          variant="glass"
+          size="icon"
+          className="w-9 h-9 sm:w-8 sm:h-8"
         >
           <ChevronRight className="w-4 h-4" aria-hidden="true" />
-        </button>
+        </ShadButton>
       </div>
 
       <div className="shrink-0 grid grid-cols-7 border-b border-black/8">
@@ -600,36 +610,41 @@ export default function AppointmentsView({ embedded = false }: { embedded?: bool
   const actions = (
     <div className="flex items-center gap-2">
       <div className="flex p-1 rounded-full glass border border-black/10">
-        <button
+        <ShadButton
           aria-label="List view"
           onClick={() => setViewMode("list")}
+          variant="ghost"
+          size="icon"
           className={cn(
-            "w-8 h-8 rounded-full flex items-center justify-center transition-colors",
+            "w-8 h-8 rounded-full",
             viewMode === "list" ? "bg-brand/20 text-brand" : "text-muted hover:text-ink",
           )}
         >
           <LayoutList className="w-3.5 h-3.5" />
-        </button>
-        <button
+        </ShadButton>
+        <ShadButton
           aria-label="Calendar view"
           onClick={() => setViewMode("calendar")}
+          variant="ghost"
+          size="icon"
           className={cn(
-            "w-8 h-8 rounded-full flex items-center justify-center transition-colors",
+            "w-8 h-8 rounded-full",
             viewMode === "calendar" ? "bg-brand/20 text-brand" : "text-muted hover:text-ink",
           )}
         >
           <LayoutGrid className="w-3.5 h-3.5" />
-        </button>
+        </ShadButton>
       </div>
-      <button
+      <ShadButton
         onClick={() => {
           setEditTarget(null);
           setShowModal(true);
         }}
-        className="h-9 px-4 rounded-full bg-brand/15 border border-brand/50 text-brand text-[10px] uppercase tracking-[0.28em] hover:bg-brand/25 transition-all flex items-center gap-1.5"
+        variant="default"
+        className="h-9 px-4 rounded-full text-[10px] uppercase tracking-[0.28em]"
       >
         <Plus className="w-3.5 h-3.5" /> Book
-      </button>
+      </ShadButton>
     </div>
   );
 
@@ -675,29 +690,24 @@ export default function AppointmentsView({ embedded = false }: { embedded?: bool
                         key="empty-active"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="h-full min-h-[200px] flex flex-col items-center justify-center px-6 py-12 text-center gap-4"
+                        className="h-full min-h-[200px]"
                       >
-                        <div className="w-14 h-14 rounded-2xl glass border border-black/10 flex items-center justify-center text-muted">
-                          <CalendarIcon className="w-6 h-6" />
-                        </div>
-                        <div className="space-y-1.5">
-                          <h3 className="font-display italic lowercase text-2xl text-ink">
-                            no active commitments
-                          </h3>
-                          <p className="app-section-title/70 max-w-xs">
-                            Book a commitment manually or let agents schedule during calls.
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            setEditTarget(null);
-                            setShowModal(true);
-                          }}
-                          className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-brand text-on-brand text-[10px] uppercase tracking-[0.28em] hover:bg-brand/90 transition-colors"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          Book appointment
-                        </button>
+                        <EmptyState
+                          icon={CalendarIcon}
+                          title="No active commitments"
+                          description="Book a commitment manually or let agents schedule during calls."
+                          actions={[
+                            {
+                              label: "Book appointment",
+                              onClick: () => {
+                                setEditTarget(null);
+                                setShowModal(true);
+                              },
+                              primary: true,
+                            },
+                          ]}
+                          className="h-full py-8"
+                        />
                       </motion.div>
                     ) : (
                       <div className="divide-y divide-white/5">
@@ -870,13 +880,15 @@ function AppointmentRow({
         {/* Actions */}
         <div className="shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <div className="relative">
-            <button
+            <ShadButton
               onClick={() => setShowStatusMenu((v) => !v)}
               title="Change status"
-              className="w-7 h-7 rounded-lg glass border border-black/10 flex items-center justify-center text-muted hover:text-brand hover:border-brand/30 transition-all text-[9px]"
+              variant="glass"
+              size="icon"
+              className="w-7 h-7 hover:text-brand hover:border-brand/30"
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
-            </button>
+            </ShadButton>
             <AnimatePresence>
               {showStatusMenu && (
                 <motion.div
@@ -909,27 +921,31 @@ function AppointmentRow({
               )}
             </AnimatePresence>
           </div>
-          <button
+          <ShadButton
             onClick={onEdit}
             title="Edit"
             aria-label="Edit appointment"
-            className="w-7 h-7 rounded-lg glass border border-black/10 flex items-center justify-center text-muted hover:text-ink hover:border-white/25 transition-all"
+            variant="glass"
+            size="icon"
+            className="w-7 h-7 hover:text-ink hover:border-white/25"
           >
             <Pencil className="w-3.5 h-3.5" />
-          </button>
-          <button
+          </ShadButton>
+          <ShadButton
             onClick={onDelete}
             disabled={deleting}
             title="Remove"
             aria-label="Remove appointment"
-            className="w-7 h-7 rounded-lg glass border border-black/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all disabled:opacity-50"
+            variant="glass"
+            size="icon"
+            className="w-7 h-7 hover:text-rose-500 hover:border-rose-500/30"
           >
             {deleting ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
               <Trash2 className="w-3.5 h-3.5" />
             )}
-          </button>
+          </ShadButton>
         </div>
       </div>
     </motion.div>
