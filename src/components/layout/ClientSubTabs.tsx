@@ -6,6 +6,8 @@ export type ClientSubTab = {
   id: string;
   label: string;
   icon?: ComponentType<{ className?: string }>;
+  /** Short badge text shown after the label (e.g. "3" or "LIVE"). */
+  badge?: string | number;
 };
 
 type ClientSubTabsProps = {
@@ -64,6 +66,18 @@ export default function ClientSubTabs({
               )}
               {Icon && <Icon className="relative z-[1] w-3.5 h-3.5" />}
               <span className="relative z-[1]">{tab.label}</span>
+              {tab.badge !== undefined && (
+                <span
+                  className={cn(
+                    "relative z-[1] inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[8px] font-bold uppercase tracking-wider",
+                    active
+                      ? "bg-white/25 text-on-brand"
+                      : "bg-brand/15 text-brand border border-brand/20",
+                  )}
+                >
+                  {tab.badge}
+                </span>
+              )}
             </button>
           );
         })}

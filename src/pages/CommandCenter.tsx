@@ -461,7 +461,20 @@ export default function LiveOps() {
           />
 
           <ClientSubTabs
-            tabs={[...OPS_TABS]}
+            tabs={[
+              {
+                ...OPS_TABS[0],
+                badge: calls.length > 0 ? calls.length : undefined,
+              },
+              {
+                ...OPS_TABS[1],
+                badge:
+                  actions.filter((a) => a.status === "pending").length > 0
+                    ? actions.filter((a) => a.status === "pending").length
+                    : undefined,
+              },
+              OPS_TABS[2],
+            ]}
             activeId={activeTab}
             onChange={setActiveTab}
             aria-label="Live Ops sections"

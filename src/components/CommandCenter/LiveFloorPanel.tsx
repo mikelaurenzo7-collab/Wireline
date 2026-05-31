@@ -9,16 +9,17 @@ import {
   Radio,
   Users,
   ShieldAlert,
-  Loader2,
   Activity,
   Headphones,
   Phone,
   Sparkles,
+  Timer,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useToast } from "../../contexts/ToastContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { Link } from "react-router-dom";
+import { PanelSkeleton } from "../Skeleton";
 
 export type FloorCall = {
   id: string;
@@ -41,6 +42,22 @@ type Props = {
   agents: FloorAgent[];
   loading?: boolean;
 };
+
+/** Counts up from the moment a call card first renders — resets when call ends. */
+function CallTimer() {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const m = Math.floor(elapsed / 60);
+  const s = elapsed % 60;
+  return (
+    <span className="font-mono text-[10px] text-muted tabular-nums">
+      {m}:{String(s).padStart(2, "0")}
+    </span>
+  );
+}
 
 export function LiveFloorPanel({ calls, agents, loading }: Props) {
   const { info } = useToast();
@@ -184,8 +201,14 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
         <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2 min-w-0">
             <span className="relative flex h-2 w-2 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full" style={{ background: "rgba(16,185,129,0.60)" }} />
-              <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "#10b981" }} />
+              <span
+                className="animate-ping absolute inline-flex h-full w-full rounded-full"
+                style={{ background: "rgba(16,185,129,0.60)" }}
+              />
+              <span
+                className="relative inline-flex rounded-full h-2 w-2"
+                style={{ background: "#10b981" }}
+              />
             </span>
             <h2 className="font-display italic text-lg sm:text-xl text-ink truncate">
               {calls.length === 0
@@ -202,8 +225,8 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-16 glass border border-black/8 rounded-2xl">
-            <Loader2 className="w-6 h-6 animate-spin text-brand" />
+          <div className="glass border border-black/8 rounded-2xl overflow-hidden">
+            <PanelSkeleton rows={3} />
           </div>
         ) : calls.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 sm:py-16 px-6 text-center glass border border-dashed border-black/10 rounded-2xl bg-black/[0.01]">
@@ -264,7 +287,13 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                           </span>
                         </p>
                       </div>
-                      {escalated && <ShieldAlert className="w-4 h-4 text-rose-500 shrink-0" />}
+                      <div className="shrink-0 flex flex-col items-end gap-1">
+                        {escalated && <ShieldAlert className="w-4 h-4 text-rose-500" />}
+                        <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider text-muted/70">
+                          <Timer className="w-3 h-3" />
+                          <CallTimer />
+                        </span>
+                      </div>
                     </div>
 
                     {call.thought && (

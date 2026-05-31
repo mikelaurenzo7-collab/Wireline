@@ -8,7 +8,6 @@ import {
   Search,
   Loader2,
   MessageCircle,
-  ChevronRight,
   Database,
   Activity,
   Signal,
@@ -42,6 +41,7 @@ import { PanelSkeleton } from "./Skeleton";
 import EmptyState from "./EmptyState";
 import { useToast } from "../contexts/ToastContext";
 import type { CallLog } from "../types/api";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 
 export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
   const { error: toastError } = useToast();
@@ -124,18 +124,20 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
         />
       </div>
       <div className="relative">
-        <Filter className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-        <select
-          aria-label="Filter by call direction"
-          className="h-9 pl-8 pr-7 rounded-full glass border border-black/10 text-[10px] uppercase tracking-[0.22em] text-ink appearance-none focus:border-brand/40 focus:outline-none transition-all cursor-pointer"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value as any)}
-        >
-          <option value="all">All</option>
-          <option value="inbound">Inbound</option>
-          <option value="outbound">Outbound</option>
-        </select>
-        <ChevronRight className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 rotate-90 text-muted pointer-events-none" />
+        <Filter className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none z-10" />
+        <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
+          <SelectTrigger
+            aria-label="Filter by call direction"
+            className="h-9 pl-8 rounded-full glass border-black/10 text-[10px] uppercase tracking-[0.22em] text-ink focus:border-brand/40 focus:ring-0 w-[120px]"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="inbound">Inbound</SelectItem>
+            <SelectItem value="outbound">Outbound</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <CsvExportButton type="calls" label="CSV" />
     </div>
@@ -244,9 +246,17 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                             className="shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight border"
                             style={
                               (call.lead_score || 0) >= 80
-                                ? { background: "rgba(16,185,129,0.12)", color: "#059669", borderColor: "rgba(16,185,129,0.20)" }
+                                ? {
+                                    background: "rgba(16,185,129,0.12)",
+                                    color: "#059669",
+                                    borderColor: "rgba(16,185,129,0.20)",
+                                  }
                                 : (call.lead_score || 0) >= 50
-                                  ? { background: "rgba(245,158,11,0.10)", color: "#d97706", borderColor: "rgba(245,158,11,0.20)" }
+                                  ? {
+                                      background: "rgba(245,158,11,0.10)",
+                                      color: "#d97706",
+                                      borderColor: "rgba(245,158,11,0.20)",
+                                    }
                                   : { background: "rgba(0,0,0,0.06)", borderColor: "transparent" }
                             }
                           >
@@ -258,10 +268,22 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                               className="shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight border"
                               style={
                                 call.qa_score >= 75
-                                  ? { background: "rgba(16,185,129,0.08)", color: "#059669", borderColor: "rgba(16,185,129,0.20)" }
+                                  ? {
+                                      background: "rgba(16,185,129,0.08)",
+                                      color: "#059669",
+                                      borderColor: "rgba(16,185,129,0.20)",
+                                    }
                                   : call.qa_score >= 50
-                                    ? { background: "rgba(245,158,11,0.08)", color: "#d97706", borderColor: "rgba(245,158,11,0.20)" }
-                                    : { background: "rgba(232,70,106,0.08)", color: "#E8466A", borderColor: "rgba(232,70,106,0.20)" }
+                                    ? {
+                                        background: "rgba(245,158,11,0.08)",
+                                        color: "#d97706",
+                                        borderColor: "rgba(245,158,11,0.20)",
+                                      }
+                                    : {
+                                        background: "rgba(232,70,106,0.08)",
+                                        color: "#E8466A",
+                                        borderColor: "rgba(232,70,106,0.20)",
+                                      }
                               }
                             >
                               ★{call.qa_score}
@@ -342,10 +364,20 @@ function SentimentDot({ sentiment }: { sentiment?: string | null }) {
   const s = (sentiment || "neutral").toLowerCase();
   if (s === "positive")
     return (
-      <SmilePlus className="w-3 h-3 shrink-0" style={{ color: "#34d399" }} aria-label="Positive sentiment" />
+      <SmilePlus
+        className="w-3 h-3 shrink-0"
+        style={{ color: "#34d399" }}
+        aria-label="Positive sentiment"
+      />
     );
   if (s === "negative")
-    return <Frown className="w-3 h-3 shrink-0" style={{ color: "#fb7185" }} aria-label="Negative sentiment" />;
+    return (
+      <Frown
+        className="w-3 h-3 shrink-0"
+        style={{ color: "#fb7185" }}
+        aria-label="Negative sentiment"
+      />
+    );
   return <Meh className="w-3 h-3 text-muted/70 shrink-0" aria-label="Neutral sentiment" />;
 }
 
@@ -544,7 +576,10 @@ function CallDetail({
                     label="Sentiment"
                     value={
                       <span
-                        className={cn("capitalize text-base", (call.sentiment || "neutral") === "neutral" && "text-muted/70")}
+                        className={cn(
+                          "capitalize text-base",
+                          (call.sentiment || "neutral") === "neutral" && "text-muted/70",
+                        )}
                         style={
                           (call.sentiment || "neutral") === "positive"
                             ? { color: "#059669" }
@@ -831,7 +866,10 @@ function RecordingPlayer({ url }: { url: string }) {
 
   if (loadError) {
     return (
-      <div className="rounded-xl glass border p-4 text-center space-y-2" style={{ borderColor: "rgba(232,70,106,0.20)" }}>
+      <div
+        className="rounded-xl glass border p-4 text-center space-y-2"
+        style={{ borderColor: "rgba(232,70,106,0.20)" }}
+      >
         <Activity className="w-5 h-5 mx-auto" style={{ color: "#fb7185" }} />
         <p className="text-[10px]" style={{ color: "#fb7185" }}>
           Recording could not be loaded. It may have expired.
