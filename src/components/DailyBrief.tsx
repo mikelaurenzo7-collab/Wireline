@@ -219,21 +219,23 @@ export default function DailyBrief() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
+            <ShadButton
               onClick={() => setShowSchedule((s) => !s)}
+              variant="outline"
               className={cn(
-                "px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] transition-all flex items-center gap-1.5",
+                "px-3 py-1.5 h-auto rounded-full text-[10px] uppercase tracking-[0.3em] transition-all",
                 showSchedule
-                  ? "bg-brand-2/15 border border-brand-2/40 text-brand-2"
-                  : "glass border border-white/10 text-muted hover:text-brand-2 hover:border-brand-2/40",
+                  ? "bg-brand-2/15 border-brand-2/40 text-brand-2"
+                  : "glass border-white/10 text-muted hover:text-brand-2 hover:border-brand-2/40",
               )}
             >
               <Mail className="w-3 h-3" /> Email Schedule
-            </button>
-            <button
+            </ShadButton>
+            <ShadButton
               onClick={() => load(true)}
               disabled={loading}
-              className="px-3 py-1.5 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
+              variant="outline"
+              className="px-3 py-1.5 h-auto rounded-full glass border-white/10 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40"
             >
               {loading ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -241,7 +243,7 @@ export default function DailyBrief() {
                 <RefreshCw className="w-3 h-3" />
               )}
               {data.cached ? "Refresh" : "Cached"}
-            </button>
+            </ShadButton>
           </div>
         </div>
 
@@ -600,10 +602,11 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
           )}
 
           <div className="flex items-center justify-between gap-3 flex-wrap pt-1">
-            <button
+            <ShadButton
               onClick={sendNow}
               disabled={sending || !gmailConnected || !recipient}
-              className="h-10 px-4 rounded-lg glass border border-brand-2/30 text-brand-2 hover:bg-brand-2/10 text-[11px] uppercase tracking-[0.25em] flex items-center gap-2 disabled:opacity-50"
+              variant="outline"
+              className="h-10 px-4 border-brand-2/30 text-brand-2 hover:bg-brand-2/10 text-[11px] uppercase tracking-[0.25em]"
             >
               {sending ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -611,7 +614,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 <Send className="w-3.5 h-3.5" />
               )}
               Send preview now
-            </button>
+            </ShadButton>
             <div className="flex items-center gap-3">
               {feedback && (
                 <span
@@ -623,10 +626,11 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                   {feedback.text}
                 </span>
               )}
-              <button
+              <ShadButton
                 onClick={save}
                 disabled={saving}
-                className="h-10 px-4 rounded-lg bg-brand text-on-brand text-[11px] uppercase tracking-[0.25em] flex items-center gap-2 disabled:opacity-50 hover:opacity-90"
+                variant="default"
+                className="h-10 px-4 text-[11px] uppercase tracking-[0.25em]"
               >
                 {saving ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -634,7 +638,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                   <Check className="w-3.5 h-3.5" />
                 )}
                 Save
-              </button>
+              </ShadButton>
             </div>
           </div>
         </>

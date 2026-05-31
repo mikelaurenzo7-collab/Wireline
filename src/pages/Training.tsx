@@ -19,6 +19,7 @@ import ClientRouteViewport from "../components/layout/ClientRouteViewport";
 import ClientRouteLoading from "../components/layout/ClientRouteLoading";
 import ClientSubTabs from "../components/layout/ClientSubTabs";
 import HubTabs, { TRAINING_HUB } from "../components/HubTabs";
+import { EmptyState } from "../components/ui/EmptyState";
 import { cn } from "../lib/utils";
 
 const SUB_TABS = [
@@ -68,30 +69,12 @@ export default function Training() {
     return (
       <ClientRouteViewport>
         <div className="flex flex-1 items-center justify-center min-h-[50vh] px-4">
-          <div className="text-center max-w-sm space-y-4">
-            <div className="relative w-16 h-16 mx-auto">
-              <span
-                aria-hidden
-                className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
-              />
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-lg shadow-brand/25 flex items-center justify-center">
-                <GraduationCap className="w-8 h-8" />
-              </div>
-            </div>
-            <h2 className="font-display italic text-xl text-ink">No agents to train yet</h2>
-            <p className="text-sm text-muted leading-relaxed">
-              Create your first agent in Chat, then return here to teach knowledge, voice,
-              pronunciation, and conversational flow.
-            </p>
-            <button
-              type="button"
-              onClick={() => navigate("/chat")}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brand text-on-brand text-sm font-medium hover:bg-brand-deep transition-colors min-h-[44px]"
-            >
-              Go to Chat
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+          <EmptyState
+            icon={GraduationCap}
+            title="No agents to train yet"
+            description="Create your first agent in Chat, then return here to teach knowledge, voice, pronunciation, and conversational flow."
+            actions={[{ label: "Go to Chat", onClick: () => navigate("/chat"), primary: true }]}
+          />
         </div>
       </ClientRouteViewport>
     );
