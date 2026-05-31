@@ -41,7 +41,7 @@ export default function ClientToolbar({ left, actions, className }: ClientToolba
               type="button"
               onClick={() => setOpen(true)}
               aria-label="Page actions"
-              className="md:hidden w-11 h-11 flex items-center justify-center text-muted border border-black/8 bg-paper/80 active:bg-black/5"
+              className="md:hidden w-9 h-9 flex items-center justify-center text-muted border border-black/8 bg-paper/80 active:bg-black/5"
             >
               <MoreHorizontal className="w-5 h-5" />
             </button>

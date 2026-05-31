@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { TrendingUp } from "lucide-react";
 import { fetchInsight, Spinner, ErrCard } from "./shared";
+import { EmptyState } from "../ui/EmptyState";
 
 export default function FunnelView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
@@ -37,29 +38,13 @@ export default function FunnelView({ days }: { days: number }) {
 
   if (stages.length === 0 || stages.every((s: any) => s.count === 0)) {
     return (
-      <div className="relative aurora-ring rounded-3xl">
-        <div className="relative rounded-3xl glass-strong overflow-hidden p-10 md:p-14 flex flex-col items-center gap-5 text-center">
-          <div className="relative">
-            <span
-              aria-hidden
-              className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
-            />
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25">
-              <TrendingUp className="w-8 h-8" />
-            </div>
-          </div>
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70 mb-2">
-              Conversion Funnel
-            </p>
-            <h3 className="font-display italic text-3xl text-ink mb-2">No calls yet</h3>
-            <p className="text-sm text-ink/65 max-w-sm leading-relaxed">
-              Your conversion funnel will populate once agents start handling calls. Run a test call
-              from the Dashboard to see data here.
-            </p>
-          </div>
-        </div>
-      </div>
+      <EmptyState
+        framed
+        icon={TrendingUp}
+        eyebrow="Conversion Funnel"
+        title="No calls yet"
+        description="Your conversion funnel will populate once agents start handling calls. Run a test call from the Dashboard to see data here."
+      />
     );
   }
 

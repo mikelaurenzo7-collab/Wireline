@@ -1,7 +1,8 @@
 import { Fragment } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ArrowLeft, CalendarDays, Clock3 } from "lucide-react";
+import { ArrowLeft, BookOpen, CalendarDays, Clock3 } from "lucide-react";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
+import { EmptyState } from "../components/ui/EmptyState";
 import { BLOG_POSTS, getBlogPostBySlug } from "../data/blog-posts";
 import { PageMeta } from "../lib/page-meta";
 
@@ -78,20 +79,14 @@ export default function BlogPost() {
           path="/blog"
           noIndex
         />
-        <section className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 pt-8 pb-24 text-center">
-          <p className="text-eyebrow text-brand mb-4">Wireline blog</p>
-          <h1 className="marketing-hero-title mb-6">That post is not here anymore.</h1>
-          <p className="text-base text-ink/75 leading-relaxed max-w-xl mx-auto mb-8">
-            The link may be outdated, or the article may have moved. Head back to the blog index to
-            browse the latest essays.
-          </p>
-          <Link
-            to="/blog"
-            className="inline-flex items-center gap-2 px-5 py-3 bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to blog
-          </Link>
+        <section className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 pt-8 pb-24">
+          <EmptyState
+            icon={BookOpen}
+            eyebrow="Wireline blog"
+            title="That post isn't here anymore."
+            description="The link may be outdated, or the article may have moved. Head back to the blog index to browse the latest essays."
+            actions={[{ label: "Back to blog", to: "/blog", primary: true }]}
+          />
         </section>
       </MarketingPageFrame>
     );

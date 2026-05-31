@@ -6,7 +6,6 @@ import {
   MessageSquare,
   CheckCircle2,
   Clock,
-  Loader2,
   Bot,
   ChevronRight,
   Calendar,
@@ -19,6 +18,8 @@ import { authFetch } from "../lib/api";
 import { formatTime } from "../lib/safe-date";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { Input } from "./ui/shadcn/Input";
+import { EmptyState } from "./ui/EmptyState";
+import ClientRouteLoading from "./layout/ClientRouteLoading";
 
 const FLEET_AGENT_UNSET = "__unset__";
 
@@ -136,10 +137,11 @@ export default function FleetTaskBridge() {
 
   if (loading && tasks.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-3 py-12">
-        <Loader2 className="w-5 h-5 animate-spin text-brand" />
-        <span className="app-section-title/70">Loading queue</span>
-      </div>
+      <ClientRouteLoading
+        icon={<RotateCw className="w-6 h-6 animate-spin-slow" />}
+        label="Loading queue"
+        className="min-h-[12rem]"
+      />
     );
   }
 
@@ -147,32 +149,27 @@ export default function FleetTaskBridge() {
   // doesn't masquerade as an empty success.
   if (error && tasks.length === 0) {
     return (
-      <div
-        role="alert"
-        className="h-full flex flex-col items-center justify-center gap-3 py-12 text-center"
-      >
-        <div className="w-12 h-12 rounded-2xl glass border border-rose-500/30 flex items-center justify-center text-rose-500">
-          <AlertTriangle className="w-5 h-5" />
-        </div>
-        <div className="space-y-1 max-w-xs">
-          <h4 className="font-display italic lowercase text-lg text-ink">queue offline</h4>
-          <p className="app-section-title/70">{error}</p>
-        </div>
+      <div role="alert" className="h-full">
+        <EmptyState
+          icon={AlertTriangle}
+          eyebrow="Queue offline"
+          title="We couldn't reach the fleet task service."
+          description={error}
+          accent="#e11d48"
+        />
       </div>
     );
   }
 
   if (tasks.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-3 py-12 text-center">
-        <div className="w-12 h-12 rounded-2xl glass border border-emerald-500/30 flex items-center justify-center text-emerald-500">
-          <CheckCircle2 className="w-5 h-5" />
-        </div>
-        <div className="space-y-1">
-          <h4 className="font-display italic lowercase text-lg text-ink">queue clear</h4>
-          <p className="app-section-title/70">All handoffs processed</p>
-        </div>
-      </div>
+      <EmptyState
+        icon={CheckCircle2}
+        eyebrow="Queue clear"
+        title="All handoffs processed."
+        description="The fleet is caught up. New tasks will show here as agents flag them."
+        accent="#10b981"
+      />
     );
   }
 

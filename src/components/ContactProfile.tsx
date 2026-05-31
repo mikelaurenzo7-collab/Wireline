@@ -10,7 +10,6 @@ import {
   DollarSign,
   Activity,
   ChevronLeft,
-  Loader2,
   ArrowUpRight,
   Sparkles,
   Target,
@@ -24,7 +23,9 @@ import { formatDate, formatDateTime } from "../lib/safe-date";
 import { formatMoney, safeFixed, formatPhone } from "../lib/safe-number";
 import { ResponsiveContainer, AreaChart, Area } from "recharts";
 import ClientRouteViewport from "./layout/ClientRouteViewport";
+import ClientRouteLoading from "./layout/ClientRouteLoading";
 import AppPageIntro from "./layout/AppPageIntro";
+import { EmptyState } from "./ui/EmptyState";
 
 interface ContactData {
   number: string;
@@ -126,26 +127,21 @@ export default function ContactProfile() {
   if (loading)
     return (
       <ClientRouteViewport className="items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-brand" />
+        <ClientRouteLoading icon={<Activity className="w-6 h-6" />} label="Loading contact" />
       </ClientRouteViewport>
     );
 
   if (err || !data)
     return (
       <ClientRouteViewport className="items-center justify-center">
-        <div
-          role="alert"
-          className="flex flex-col items-center justify-center gap-4 px-6 text-center"
-        >
-          <AlertOctagon className="w-12 h-12 text-rose-500/60" />
-          <p className="text-sm font-medium text-rose-600">{err || "Contact not found"}</p>
-          <Link
-            to="/pipeline"
-            className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-brand transition-colors"
-          >
-            ← Back to pipeline
-          </Link>
-        </div>
+        <EmptyState
+          icon={AlertOctagon}
+          eyebrow="Contact"
+          title={err || "Contact not found"}
+          description="This contact may have been merged or removed."
+          actions={[{ label: "← Back to pipeline", to: "/pipeline" }]}
+          accent="#e11d48"
+        />
       </ClientRouteViewport>
     );
 
@@ -249,9 +245,13 @@ export default function ContactProfile() {
             </span>
           </div>
           {timeline.length === 0 ? (
-            <div className="py-14 sm:py-16 px-6 text-center">
-              <p className="font-display italic text-lg text-ink/80">No interactions yet</p>
-              <p className="text-sm text-muted mt-2">Calls and appointments will appear here.</p>
+            <div className="py-6">
+              <EmptyState
+                icon={Activity}
+                eyebrow="Timeline"
+                title="No interactions yet"
+                description="Calls and appointments will appear here."
+              />
             </div>
           ) : (
             <div className="relative md:pl-8 md:before:absolute md:before:left-[1.65rem] md:before:top-4 md:before:bottom-4 md:before:w-px md:before:bg-black/8">

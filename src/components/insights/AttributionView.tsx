@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Megaphone } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { fetchInsight, Spinner, ErrCard, Stat } from "./shared";
+import { EmptyState } from "../ui/EmptyState";
 
 export default function AttributionView({ days }: { days: number }) {
   const [rows, setRows] = useState<any[]>([]);
@@ -36,35 +37,16 @@ export default function AttributionView({ days }: { days: number }) {
 
   if (totalCalls === 0) {
     return (
-      <div className="relative aurora-ring rounded-3xl">
-        <div className="relative rounded-3xl glass-strong border border-black/8 p-10 md:p-14 text-center overflow-hidden flex flex-col items-center gap-5">
-          <div className="relative">
-            <span
-              aria-hidden
-              className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
-            />
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25">
-              <Megaphone className="w-6 h-6" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
-              Campaign Attribution
-            </p>
-            <h3 className="font-display italic text-2xl text-ink leading-tight">
-              No tagged calls yet
-            </h3>
-            <p className="text-sm text-ink/65 max-w-md mx-auto leading-relaxed">
-              Tag your phone numbers with a campaign label in{" "}
-              <a href="/admin" className="text-brand hover:underline">
-                Admin → Carrier
-              </a>{" "}
-              (e.g. "Google Ads · Spring '26"). Every call to that number gets the tag and shows up
-              here.
-            </p>
-          </div>
-        </div>
-      </div>
+      <EmptyState
+        framed
+        icon={Megaphone}
+        eyebrow="Campaign Attribution"
+        title="No tagged calls yet"
+        description={
+          "Tag your phone numbers with a campaign label in Admin → Carrier (e.g. \u201CGoogle Ads · Spring '26\u201D). Every call to that number gets the tag and shows up here."
+        }
+        actions={[{ label: "Open Admin → Carrier", to: "/admin", primary: false }]}
+      />
     );
   }
 

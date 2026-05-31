@@ -384,7 +384,7 @@ export default function AdminSettings() {
             <div className="flex-1 min-h-0">
               {isLoading ? (
                 <ClientRouteLoading
-                  icon={<Loader2 className="w-8 h-8 text-brand animate-spin" aria-hidden />}
+                  icon={<Loader2 className="w-7 h-7 animate-spin" aria-hidden />}
                   label="Loading settings"
                 />
               ) : (

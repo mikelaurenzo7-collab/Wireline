@@ -31,6 +31,7 @@ import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { useAgents } from "../contexts/AgentsContext";
 import { cn } from "../lib/utils";
+import ClientRouteLoading from "./layout/ClientRouteLoading";
 
 type SuggestionKind =
   | "create_agent"
@@ -67,13 +68,19 @@ const STARTER_PROMPTS = [
   "Audit my fleet and tell me what to improve.",
 ] as const;
 
-// What the Director is *for* — shown as a quiet capability strip on the
-// welcome screen so a first-time operator instantly grasps its remit.
+// What the Director is *for* — quick-action pills that double as prompt
+// seeders. Rendered both on the empty-state hint row and just above the
+// composer so the chat box always advertises what it can do (the
+// Director's equivalent of an agent's connector toggles).
 const DIRECTOR_CAPABILITIES = [
-  { icon: Compass, label: "Plan" },
-  { icon: Plus, label: "Hire" },
-  { icon: GraduationCap, label: "Coach" },
-  { icon: BarChart3, label: "Analyze" },
+  { icon: Compass, label: "Plan", prompt: "Help me plan my agent fleet." },
+  { icon: Plus, label: "Hire", prompt: "What kind of agent should I hire next?" },
+  {
+    icon: GraduationCap,
+    label: "Coach",
+    prompt: "Coach me on improving my agents' performance.",
+  },
+  { icon: BarChart3, label: "Analyze", prompt: "Analyze my fleet's recent performance." },
 ] as const;
 
 export default function DirectorWorkspace() {
@@ -238,100 +245,58 @@ export default function DirectorWorkspace() {
         className="flex-1 min-h-0 overflow-y-auto px-6 py-6 space-y-4 scrollbar-hide"
       >
         {isLoading ? (
-          <div className="flex items-center justify-center py-20 text-muted" aria-busy="true">
-            <Loader2 className="w-6 h-6 animate-spin text-brand" />
-          </div>
+          <ClientRouteLoading
+            icon={<Compass className="w-6 h-6 animate-spin-slow" />}
+            label="Loading thread"
+            className="py-20"
+          />
         ) : messages.length === 0 ? (
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col items-center text-center py-12 lg:py-16 px-4 max-w-lg mx-auto"
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="flex flex-col items-center text-center pt-6 pb-2 px-2 max-w-lg mx-auto"
           >
-            {/* Branded medallion with dynamic pulsing halo */}
-            <div className="relative mb-6">
-              <span
-                aria-hidden="true"
-                className="absolute inset-0 -z-10 rounded-full bg-brand/20 blur-3xl scale-[2] animate-pulse"
-              />
-              <span className="relative flex w-16 h-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-[0_8px_24px_-4px_rgba(139,63,214,0.3)] border border-white/20">
-                <Sparkles className="w-7 h-7" />
-              </span>
-            </div>
-
-            <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-brand/85 font-semibold mb-3">
-              Fleet Commander
-            </p>
-            <h2 className="font-display italic text-3xl lg:text-[2.25rem] leading-[1.1] text-ink mb-4 tracking-tight">
-              {agents.length > 0
-                ? `${agents.length} Agent${agents.length === 1 ? "" : "s"} Active.`
-                : "Let’s build your fleet."}
-            </h2>
-            <p className="text-[14px] text-muted-foreground leading-relaxed mb-8 max-w-md">
-              {agents.length > 0
-                ? `I’m your always-on manager. Ask me to audit performance, compile logs, or train new behaviors across your fleet.`
-                : `I’m your strategist — tell me about your target audience and workflows, and I’ll design a custom fleet to field calls, schedule appointments, and follow up autonomously.`}
-            </p>
-
-            {/* Fleet-at-a-glance */}
-            {agents.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-                className="w-full mb-8 grid grid-cols-2 gap-2"
-              >
-                {agents.slice(0, 4).map((a) => (
-                  <button
-                    key={a.id}
-                    onClick={() => navigate(`/chat/${a.id}`)}
-                    className="flex items-center gap-3 rounded-xl border border-brand/10 bg-white/40 dark:bg-black/20 px-3.5 py-3 text-left hover:border-brand/30 hover:bg-white/60 dark:hover:bg-black/35 hover:shadow-md hover:-translate-y-px transition-all duration-300 cursor-pointer"
-                  >
-                    <span className="shrink-0 w-6 h-6 rounded-full bg-brand text-white text-[10px] font-semibold flex items-center justify-center">
-                      {a.name.slice(0, 1).toUpperCase()}
+            {/*
+              Intentionally minimal. The chat IS the product — the composer
+              below is where attention belongs. We avoid a hero card here so
+              the chat surface (especially on mobile) stays uncluttered.
+              A tiny capability strip + starter chips give a first-time
+              operator just enough orientation to start typing.
+            */}
+            {agents.length > 0 ? (
+              <p className="text-[12px] text-muted-foreground mb-3">
+                {agents.length} agent{agents.length === 1 ? "" : "s"} active — ask me anything about
+                your fleet.
+              </p>
+            ) : (
+              <div className="flex items-center justify-center gap-1.5 mb-3 flex-wrap">
+                {DIRECTOR_CAPABILITIES.map((c, i) => (
+                  <React.Fragment key={c.label}>
+                    {i > 0 && (
+                      <span className="w-0.5 h-0.5 rounded-full bg-brand/25" aria-hidden="true" />
+                    )}
+                    <span className="inline-flex items-center gap-1 px-1.5 text-brand/75">
+                      <c.icon className="w-3 h-3" aria-hidden="true" />
+                      <span className="font-mono text-[9px] uppercase tracking-[0.16em] font-semibold">
+                        {c.label}
+                      </span>
                     </span>
-                    <span className="min-w-0 text-[12px] font-medium text-ink truncate">
-                      {a.name}
-                    </span>
-                  </button>
+                  </React.Fragment>
                 ))}
-                {agents.length > 4 && (
-                  <div className="col-span-2 text-center pt-1">
-                    <span className="text-[11px] text-muted-foreground font-mono">
-                      +{agents.length - 4} more agents in your cockpit
-                    </span>
-                  </div>
-                )}
-              </motion.div>
+              </div>
             )}
 
-            {/* Capability strip */}
-            <div className="flex items-center justify-center gap-2 mb-8 bg-brand/[0.03] border border-brand/5 rounded-full px-4 py-2">
-              {DIRECTOR_CAPABILITIES.map((c, i) => (
-                <React.Fragment key={c.label}>
-                  {i > 0 && (
-                    <span className="w-1 h-1 rounded-full bg-brand/20" aria-hidden="true" />
-                  )}
-                  <span className="inline-flex items-center gap-1.5 px-1.5">
-                    <c.icon className="w-3.5 h-3.5 text-brand" aria-hidden="true" />
-                    <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-ink/75 font-semibold">
-                      {c.label}
-                    </span>
-                  </span>
-                </React.Fragment>
-              ))}
-            </div>
-
-            {/* Starter prompts */}
-            <div className="flex flex-col gap-2 w-full">
+            {/* Starter prompts — chip row, slimmer than the composer. */}
+            <div className="flex flex-wrap justify-center gap-1.5 w-full">
               {STARTER_PROMPTS.map((p) => (
                 <button
                   key={p}
                   onClick={() => send(p)}
-                  className="group flex items-center justify-between gap-4 text-left text-[13px] text-ink rounded-xl border border-brand/12 bg-white/40 dark:bg-black/10 px-4 py-3.5 hover:border-brand/35 hover:bg-white/60 dark:hover:bg-black/25 hover:shadow-lg hover:shadow-brand/5 hover:-translate-y-px transition-all duration-300 cursor-pointer"
+                  className="group inline-flex items-center gap-1 text-left text-[11px] text-ink/80 rounded-full border border-brand/15 bg-white/40 dark:bg-black/10 px-2.5 py-1 hover:border-brand/35 hover:bg-white/60 dark:hover:bg-black/25 transition-colors cursor-pointer"
                 >
-                  <span className="min-w-0 font-medium">{p}</span>
-                  <ArrowUpRight className="w-4 h-4 shrink-0 text-brand/40 group-hover:text-brand group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300" />
+                  <span className="min-w-0">{p}</span>
+                  <ArrowUpRight className="w-2.5 h-2.5 shrink-0 text-brand/40 group-hover:text-brand transition-colors" />
                 </button>
               ))}
             </div>
@@ -441,21 +406,42 @@ export default function DirectorWorkspace() {
       </div>
 
       {/* Composer */}
-      <div className="shrink-0 border-t border-brand/10 px-6 py-4 bg-background/20 backdrop-blur-md relative z-10">
-        <div className="flex items-end gap-2.5 rounded-xl border border-brand/15 bg-white/70 dark:bg-black/30 backdrop-blur-sm px-4 py-2.5 transition-all duration-300 focus-within:border-brand/40 focus-within:ring-4 focus-within:ring-brand/5 focus-within:shadow-[0_0_24px_rgba(139,63,214,0.06)]">
+      <div className="shrink-0 border-t border-brand/10 px-4 sm:px-6 py-3 sm:py-4 bg-background/20 backdrop-blur-md relative z-10">
+        {/* Quick-action capability strip — the Director's equivalent of an
+            agent's connector toggles. Always visible above the chat box so
+            the operator immediately sees what's possible and can seed a
+            prompt with one tap. Horizontally scrollable on small screens. */}
+        <div className="flex items-center gap-1.5 mb-2 overflow-x-auto scrollbar-hide -mx-1 px-1">
+          {DIRECTOR_CAPABILITIES.map((c) => (
+            <button
+              key={c.label}
+              type="button"
+              onClick={() => {
+                setInput(c.prompt);
+                inputRef.current?.focus();
+              }}
+              className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-medium text-brand/85 hover:text-brand bg-brand/[0.04] hover:bg-brand/[0.08] border border-brand/15 hover:border-brand/30 transition-colors cursor-pointer"
+              title={c.prompt}
+            >
+              <c.icon className="w-3 h-3" aria-hidden="true" />
+              <span>{c.label}</span>
+            </button>
+          ))}
+        </div>
+        <div className="flex items-end gap-2.5 rounded-2xl border border-brand/15 bg-white/70 dark:bg-black/30 backdrop-blur-sm px-4 py-3 min-h-[64px] transition-all duration-300 focus-within:border-brand/40 focus-within:ring-4 focus-within:ring-brand/5 focus-within:shadow-[0_0_24px_rgba(139,63,214,0.06)]">
           <textarea
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
-            rows={1}
+            rows={2}
             placeholder="Ask your Director anything…"
-            className="flex-1 resize-none bg-transparent text-[14px] text-ink dark:text-foreground placeholder:text-muted-foreground/60 outline-none max-h-24 py-1"
+            className="flex-1 resize-none bg-transparent text-[14px] text-ink dark:text-foreground placeholder:text-muted-foreground/60 outline-none min-h-[40px] max-h-40 py-0.5 leading-relaxed"
           />
           <button
             onClick={() => send(input)}
             disabled={!input.trim() || isSending}
-            className="shrink-0 w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand flex items-center justify-center shadow-md shadow-brand/20 disabled:opacity-40 disabled:shadow-none enabled:active:scale-95 enabled:hover:shadow-lg enabled:hover:shadow-brand/20 transition-all duration-200 cursor-pointer"
+            className="shrink-0 w-10 h-10 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand flex items-center justify-center shadow-md shadow-brand/20 disabled:opacity-40 disabled:shadow-none enabled:active:scale-95 enabled:hover:shadow-lg enabled:hover:shadow-brand/20 transition-all duration-200 cursor-pointer"
             aria-label="Send message"
           >
             {isSending ? (

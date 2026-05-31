@@ -57,10 +57,7 @@ export default function Training() {
   if (loading) {
     return (
       <ClientRouteViewport>
-        <ClientRouteLoading
-          icon={<GraduationCap className="w-8 h-8 text-brand/50" />}
-          label="Loading training"
-        />
+        <ClientRouteLoading icon={<GraduationCap className="w-7 h-7" />} label="Loading training" />
       </ClientRouteViewport>
     );
   }

@@ -30,6 +30,7 @@ import { cn } from "../../lib/utils";
 import { Link } from "react-router-dom";
 import { Panel } from "../PageShell";
 import EmptyState from "../EmptyState";
+import ClientRouteLoading from "../layout/ClientRouteLoading";
 import { formatDate } from "../../lib/safe-date";
 import { CAMPAIGN_STATUS } from "./shared";
 
@@ -98,21 +99,17 @@ export default function CampaignsTab({
           }
         >
           {campaignLoading ? (
-            <div className="h-full flex items-center justify-center">
-              <Loader2 className="w-5 h-5 animate-spin text-brand" />
-            </div>
+            <ClientRouteLoading
+              icon={<Megaphone className="w-6 h-6" />}
+              label="Loading campaigns"
+            />
           ) : campaigns.length === 0 ? (
-            <div className="h-full min-h-[200px] flex flex-col items-center justify-center gap-4 text-center px-6 py-12">
-              <div className="w-14 h-14 rounded-2xl glass border border-white/10 flex items-center justify-center text-muted">
-                <Megaphone className="w-6 h-6" />
-              </div>
-              <div className="space-y-1.5">
-                <h3 className="font-display italic lowercase text-2xl text-ink">no campaigns</h3>
-                <p className="app-section-title/70 max-w-xs">
-                  Create a campaign to group and track bulk outbound calling efforts.
-                </p>
-              </div>
-            </div>
+            <EmptyState
+              icon={Megaphone}
+              eyebrow="Campaigns"
+              title="No campaigns"
+              description="Create a campaign to group and track bulk outbound calling efforts."
+            />
           ) : (
             <div className="divide-y divide-white/5">
               {campaigns.map((c) => {
@@ -464,9 +461,11 @@ export default function CampaignsTab({
 
             {/* Leads list */}
             {campaignLeadsLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-5 h-5 animate-spin text-brand" />
-              </div>
+              <ClientRouteLoading
+                icon={<Megaphone className="w-6 h-6" />}
+                label="Loading leads"
+                className="py-12"
+              />
             ) : campaignLeads.length === 0 ? (
               <EmptyState
                 icon={Megaphone}

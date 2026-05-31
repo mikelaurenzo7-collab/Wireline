@@ -11,6 +11,7 @@ import { ToastProvider } from "./contexts/ToastContext";
 import { AgentsProvider } from "./contexts/AgentsContext";
 import AppShell from "./components/layout/AppShell";
 import NotFound from "./components/layout/NotFound";
+import MarketingRouteFallback from "./components/layout/MarketingRouteFallback";
 import MarketingChrome from "./components/marketing/MarketingChrome";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { BrandingProvider } from "./contexts/BrandingContext";
@@ -76,21 +77,21 @@ function AppContent() {
   // Public pages — accessible before auth.
   if (location.pathname === "/privacy") {
     return (
-      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+      <Suspense fallback={<MarketingRouteFallback />}>
         <PrivacyPolicy />
       </Suspense>
     );
   }
   if (location.pathname === "/terms") {
     return (
-      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+      <Suspense fallback={<MarketingRouteFallback />}>
         <TermsOfService />
       </Suspense>
     );
   }
   if (location.pathname === "/legal/data-deletion") {
     return (
-      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+      <Suspense fallback={<MarketingRouteFallback />}>
         <DataDeletion />
       </Suspense>
     );
@@ -99,14 +100,14 @@ function AppContent() {
   // platforms like Zoom that demand a vendor-hosted setup guide.
   if (location.pathname === "/docs/zoom") {
     return (
-      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+      <Suspense fallback={<MarketingRouteFallback />}>
         <ZoomDocs />
       </Suspense>
     );
   }
   if (location.pathname === "/support") {
     return (
-      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+      <Suspense fallback={<MarketingRouteFallback />}>
         <SupportPage />
       </Suspense>
     );
@@ -140,7 +141,7 @@ function AppContent() {
       ].includes(slug)
     ) {
       return (
-        <Suspense fallback={<div className="min-h-dvh bg-paper marketing-surface" />}>
+        <Suspense fallback={<MarketingRouteFallback />}>
           <div className="marketing-surface min-h-dvh">
             <VerticalLanding slug={slug} />
           </div>
@@ -150,7 +151,7 @@ function AppContent() {
   }
   if (location.pathname === "/pricing") {
     return (
-      <Suspense fallback={<div className="min-h-dvh" />}>
+      <Suspense fallback={<MarketingRouteFallback />}>
         <div className="marketing-surface min-h-dvh">
           <Pricing />
         </div>
@@ -159,21 +160,21 @@ function AppContent() {
   }
   if (location.pathname === "/compare") {
     return (
-      <Suspense fallback={<div className="min-h-dvh bg-paper marketing-surface" />}>
+      <Suspense fallback={<MarketingRouteFallback />}>
         <Compare />
       </Suspense>
     );
   }
   if (location.pathname === "/about") {
     return (
-      <Suspense fallback={<div className="min-h-dvh bg-paper marketing-surface" />}>
+      <Suspense fallback={<MarketingRouteFallback />}>
         <About />
       </Suspense>
     );
   }
   if (location.pathname === "/developers") {
     return (
-      <Suspense fallback={<div className="min-h-dvh bg-paper marketing-surface" />}>
+      <Suspense fallback={<MarketingRouteFallback />}>
         <div className="marketing-surface min-h-dvh">
           <Developers />
         </div>
@@ -182,7 +183,7 @@ function AppContent() {
   }
   if (location.pathname === "/blog") {
     return (
-      <Suspense fallback={<div className="min-h-dvh bg-paper marketing-surface" />}>
+      <Suspense fallback={<MarketingRouteFallback />}>
         <div className="marketing-surface min-h-dvh">
           <Blog />
         </div>
@@ -191,7 +192,7 @@ function AppContent() {
   }
   if (location.pathname.startsWith("/blog/")) {
     return (
-      <Suspense fallback={<div className="min-h-dvh bg-paper marketing-surface" />}>
+      <Suspense fallback={<MarketingRouteFallback />}>
         <div className="marketing-surface min-h-dvh">
           <BlogPost />
         </div>
@@ -203,7 +204,7 @@ function AppContent() {
   // can audition personas without signing in.
   if (location.pathname === "/showcase") {
     return (
-      <Suspense fallback={<div className="min-h-dvh bg-paper marketing-surface" />}>
+      <Suspense fallback={<MarketingRouteFallback />}>
         <div className="marketing-surface min-h-dvh">
           <Showcase />
         </div>
@@ -239,7 +240,7 @@ function AppContent() {
   // verify the system is up without an account.
   if (location.pathname === "/status") {
     return (
-      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+      <Suspense fallback={<MarketingRouteFallback />}>
         <ErrorBoundary>
           <Status />
         </ErrorBoundary>
@@ -251,7 +252,7 @@ function AppContent() {
   // record for prospects evaluating velocity.
   if (location.pathname === "/changelog") {
     return (
-      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+      <Suspense fallback={<MarketingRouteFallback />}>
         <ErrorBoundary>
           <PublicChangelog />
         </ErrorBoundary>
@@ -262,7 +263,7 @@ function AppContent() {
   // TrustSignals + footer. Honest, in-detail, never fabricated.
   if (location.pathname === "/security") {
     return (
-      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
+      <Suspense fallback={<MarketingRouteFallback />}>
         <ErrorBoundary>
           <Security />
         </ErrorBoundary>
@@ -274,7 +275,7 @@ function AppContent() {
   // instead of bouncing into the sign-in form.
   if (location.pathname === "/not-found" || location.pathname === "/404") {
     return (
-      <Suspense fallback={<div className="min-h-dvh bg-paper marketing-surface" />}>
+      <Suspense fallback={<MarketingRouteFallback />}>
         <PublicNotFound />
       </Suspense>
     );
@@ -288,7 +289,7 @@ function AppContent() {
     const path = location.pathname;
     if (path === "/" || path === "") {
       return (
-        <Suspense fallback={<div className="min-h-dvh bg-paper marketing-surface" />}>
+        <Suspense fallback={<MarketingRouteFallback />}>
           <div className="marketing-surface min-h-dvh">
             <LandingPage />
           </div>

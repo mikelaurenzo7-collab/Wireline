@@ -50,7 +50,7 @@ export default function ClientSubTabs({
               aria-selected={active}
               onClick={() => onChange(tab.id)}
               className={cn(
-                "relative shrink-0 inline-flex min-h-10 items-center gap-1.5 px-3 py-1.5 transition-colors text-[11px] uppercase tracking-[0.1em] font-medium whitespace-nowrap",
+                "relative shrink-0 inline-flex min-h-9 sm:min-h-10 items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 transition-colors text-[10px] sm:text-[11px] uppercase tracking-[0.1em] font-medium whitespace-nowrap",
                 active ? "app-tab-active" : "text-muted hover:text-ink hover:bg-black/4",
               )}
             >
