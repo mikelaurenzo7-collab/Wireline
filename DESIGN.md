@@ -1,15 +1,21 @@
-# Wireline Design System — Aurora Cream (Elevated)
+# Wireline Design System — Aurora Slate (Elevated)
 
 **Status:** Live (2026)
 **Goal:** One cohesive, premium, editorial visual language across every surface.
 
 ## 1. Core Design Philosophy
 
-Aurora Cream is an **editorial-luxury** design system — razor-sharp corners,
-warm cream paper textures, deep purple ink accents, and glass-morphism surfaces
-that catch light like cut gemstones. The aesthetic sits at the intersection of
-*Anthropic's editorial warmth*, *Vercel's glass polish*, and *old-money typographic
-rigor*.
+Aurora Slate is an **editorial-luxury** design system — razor-sharp corners,
+clean warm-toned paper, vibrant violet brand accents, near-black dark mode,
+and glass-morphism surfaces that catch light like cut gemstones. The aesthetic
+sits at the intersection of *Linear's clean polish*, *Anthropic's editorial
+warmth*, and *old-money typographic rigor*.
+
+**Key palette shifts from Aurora Cream:**
+- Light paper: `#F4F1EA` — cleaner warm off-white (was `#EFE9DC`)
+- Brand violet: `#7C3AED` — more vibrant, better contrast (was `#8B3FD6`)
+- Dark background: `#0C0A0F` — near-black with barely-there violet hint (was `#120f1a`)
+- Dark brand: `#A78BFA` — luminous violet that pops against near-black (was `#8B3FD6` on purple-muddy)
 
 Every element is hand-finished: crystalline glints on medallions, subtle scanline
 textures, floating aurora blobs, and a reduced-motion system that collapses
@@ -28,14 +34,15 @@ animations gracefully without losing the static beauty.
 ### Color Palette
 | Token | Light | Dark |
 |-------|-------|------|
-| `--color-brand` | `#8B3FD6` (vibrant purple) | `#8B3FD6` |
-| `--color-brand-deep` | `#6B2B99` | `#6B2B99` |
+| `--color-brand` | `#7C3AED` (vibrant violet) | `#A78BFA` (luminous lavender) |
+| `--color-brand-deep` | `#581C87` | `#3B1E6E` |
 | `--color-brand-ink` | `#f3e8ff` | `#f3e8ff` |
-| `--ink` | `#1A1614` (warm near-black) | `#f3e8ff` |
-| `--paper` | `#EFE9DC` (cream) | `#120f1a` (deep purple) |
-| `--purpleLight` | `#A87BD4` (distinct lavender) | — |
-| `--purpleMuted` | `#8B6FA8` (dusty purple) | — |
-| `--rose` | `#E8466A` (errors only) | `#ef4444` |
+| `--ink` | `#1C1917` (warm near-black) | `#FAFAF9` (warm white) |
+| `--paper` | `#F4F1EA` (clean off-white) | `#0C0A0F` (near-black) |
+| `--purpleLight` | `#A78BFA` (distinct lavender) | — |
+| `--purpleMuted` | `#8B7FCD` (muted violet) | — |
+| `--muted-foreground` | `#78716C` (clean warm-gray) | `#A1A1AA` (zinc-gray) |
+| `--rose` | `#E8466A` (errors only) | `#F87171` |
 
 ### Effects
 - **Glass surfaces:** `.glass` (light), `.glass-strong`, `.glass-elevated` (modals)
