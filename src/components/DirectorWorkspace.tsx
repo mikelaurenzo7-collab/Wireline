@@ -68,13 +68,19 @@ const STARTER_PROMPTS = [
   "Audit my fleet and tell me what to improve.",
 ] as const;
 
-// What the Director is *for* — a compact icon strip used inline in the
-// composer hint row when the operator hasn't sent a message yet.
+// What the Director is *for* — quick-action pills that double as prompt
+// seeders. Rendered both on the empty-state hint row and just above the
+// composer so the chat box always advertises what it can do (the
+// Director's equivalent of an agent's connector toggles).
 const DIRECTOR_CAPABILITIES = [
-  { icon: Compass, label: "Plan" },
-  { icon: Plus, label: "Hire" },
-  { icon: GraduationCap, label: "Coach" },
-  { icon: BarChart3, label: "Analyze" },
+  { icon: Compass, label: "Plan", prompt: "Help me plan my agent fleet." },
+  { icon: Plus, label: "Hire", prompt: "What kind of agent should I hire next?" },
+  {
+    icon: GraduationCap,
+    label: "Coach",
+    prompt: "Coach me on improving my agents' performance.",
+  },
+  { icon: BarChart3, label: "Analyze", prompt: "Analyze my fleet's recent performance." },
 ] as const;
 
 export default function DirectorWorkspace() {
@@ -400,21 +406,42 @@ export default function DirectorWorkspace() {
       </div>
 
       {/* Composer */}
-      <div className="shrink-0 border-t border-brand/10 px-6 py-4 bg-background/20 backdrop-blur-md relative z-10">
-        <div className="flex items-end gap-2.5 rounded-xl border border-brand/15 bg-white/70 dark:bg-black/30 backdrop-blur-sm px-4 py-2.5 transition-all duration-300 focus-within:border-brand/40 focus-within:ring-4 focus-within:ring-brand/5 focus-within:shadow-[0_0_24px_rgba(139,63,214,0.06)]">
+      <div className="shrink-0 border-t border-brand/10 px-4 sm:px-6 py-3 sm:py-4 bg-background/20 backdrop-blur-md relative z-10">
+        {/* Quick-action capability strip — the Director's equivalent of an
+            agent's connector toggles. Always visible above the chat box so
+            the operator immediately sees what's possible and can seed a
+            prompt with one tap. Horizontally scrollable on small screens. */}
+        <div className="flex items-center gap-1.5 mb-2 overflow-x-auto scrollbar-hide -mx-1 px-1">
+          {DIRECTOR_CAPABILITIES.map((c) => (
+            <button
+              key={c.label}
+              type="button"
+              onClick={() => {
+                setInput(c.prompt);
+                inputRef.current?.focus();
+              }}
+              className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-medium text-brand/85 hover:text-brand bg-brand/[0.04] hover:bg-brand/[0.08] border border-brand/15 hover:border-brand/30 transition-colors cursor-pointer"
+              title={c.prompt}
+            >
+              <c.icon className="w-3 h-3" aria-hidden="true" />
+              <span>{c.label}</span>
+            </button>
+          ))}
+        </div>
+        <div className="flex items-end gap-2.5 rounded-2xl border border-brand/15 bg-white/70 dark:bg-black/30 backdrop-blur-sm px-4 py-3 min-h-[64px] transition-all duration-300 focus-within:border-brand/40 focus-within:ring-4 focus-within:ring-brand/5 focus-within:shadow-[0_0_24px_rgba(139,63,214,0.06)]">
           <textarea
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
-            rows={1}
+            rows={2}
             placeholder="Ask your Director anything…"
-            className="flex-1 resize-none bg-transparent text-[14px] text-ink dark:text-foreground placeholder:text-muted-foreground/60 outline-none max-h-24 py-1"
+            className="flex-1 resize-none bg-transparent text-[14px] text-ink dark:text-foreground placeholder:text-muted-foreground/60 outline-none min-h-[40px] max-h-40 py-0.5 leading-relaxed"
           />
           <button
             onClick={() => send(input)}
             disabled={!input.trim() || isSending}
-            className="shrink-0 w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand flex items-center justify-center shadow-md shadow-brand/20 disabled:opacity-40 disabled:shadow-none enabled:active:scale-95 enabled:hover:shadow-lg enabled:hover:shadow-brand/20 transition-all duration-200 cursor-pointer"
+            className="shrink-0 w-10 h-10 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand flex items-center justify-center shadow-md shadow-brand/20 disabled:opacity-40 disabled:shadow-none enabled:active:scale-95 enabled:hover:shadow-lg enabled:hover:shadow-brand/20 transition-all duration-200 cursor-pointer"
             aria-label="Send message"
           >
             {isSending ? (
