@@ -81,48 +81,48 @@
 }
 
 .dark {
-  /* Dark mode surface colors */
-  --background: #09090b;
-  --foreground: #fafafa;
-  --card: rgba(9, 9, 11, 0.60);
-  --card-foreground: #fafafa;
-  --popover: rgba(9, 9, 11, 0.85);
-  --popover-foreground: #fafafa;
+  /* Dark mode surface colors — deep purple aesthetic */
+  --background: #120f1a;
+  --foreground: #f3e8ff;
+  --card: rgba(30, 20, 45, 0.85);
+  --card-foreground: #f3e8ff;
+  --popover: rgba(25, 16, 38, 0.95);
+  --popover-foreground: #f3e8ff;
 
   /* Brand primary */
   --primary: #8B3FD6;
   --primary-foreground: #ffffff;
 
   /* Secondary */
-  --secondary: #27272a;
-  --secondary-foreground: #fafafa;
+  --secondary: #2d1f42;
+  --secondary-foreground: #f3e8ff;
 
   /* Muted */
-  --muted: rgba(39, 39, 42, 0.5);
-  --muted-foreground: #a1a1aa;
+  --muted: rgba(139, 63, 214, 0.15);
+  --muted-foreground: #b89ad9;
 
   /* Accent */
-  --accent: rgba(139, 63, 214, 0.15);
-  --accent-foreground: #8B3FD6;
+  --accent: rgba(139, 63, 214, 0.20);
+  --accent-foreground: #c77dff;
 
   /* Destructive */
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
 
   /* Borders & inputs */
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.1);
-  --ring: rgba(139, 63, 214, 0.5);
+  --border: rgba(139, 63, 214, 0.20);
+  --input: rgba(139, 63, 214, 0.15);
+  --ring: rgba(139, 63, 214, 0.50);
 
   /* Sidebar */
-  --sidebar-background: rgba(9, 9, 11, 0.95);
-  --sidebar-foreground: #fafafa;
+  --sidebar-background: rgba(30, 15, 50, 0.98);
+  --sidebar-foreground: #f3e8ff;
   --sidebar-primary: #8B3FD6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(255, 255, 255, 0.05);
-  --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: rgba(139, 63, 214, 0.5);
+  --sidebar-accent: rgba(139, 63, 214, 0.15);
+  --sidebar-accent-foreground: #c77dff;
+  --sidebar-border: rgba(139, 63, 214, 0.25);
+  --sidebar-ring: rgba(139, 63, 214, 0.50);
 
   /* Charts */
   --chart-1: #8B3FD6;
@@ -132,12 +132,12 @@
   --chart-5: #3B154C;
 
   /* Dark mode theme re-mappings */
-  --ink: #fafafa;
-  --paper: #09090b;
+  --ink: #f3e8ff;
+  --paper: #120f1a;
 
-  /* Muted resolves to the cool zinc fades that read on dark cards. */
-  --muted-resolved: #a1a1aa;
-  --muted-soft-resolved: #71717a;
+  /* Muted resolves to soft purple-tinted text */
+  --muted-resolved: #b89ad9;
+  --muted-soft-resolved: #9370b5;
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -2276,75 +2276,84 @@ select:focus {
 
 /* ══════════════════════════════════════════════════════════════════
    DARK THEME UTILITY OVERRIDES — Glass surfaces & Interactive Cards
+   Deep purple aesthetic for dark mode
    ══════════════════════════════════════════════════════════════════ */
 .dark .glass {
   background:
-    linear-gradient(180deg, rgba(20, 16, 24, 0.70), rgba(15, 10, 20, 0.50)),
-    rgba(9, 9, 11, 0.60);
-  border: 1px solid rgba(139, 63, 214, 0.16);
-  box-shadow: 
-    0 1px 0 rgba(255, 255, 255, 0.04) inset,
-    0 4px 30px rgba(0, 0, 0, 0.4);
+    linear-gradient(180deg, rgba(35, 22, 55, 0.85), rgba(25, 15, 45, 0.70)),
+    rgba(18, 10, 35, 0.75);
+  border: 1px solid rgba(139, 63, 214, 0.25);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 4px 30px rgba(59, 21, 76, 0.4);
 }
 
 .dark .glass-strong {
   background:
-    linear-gradient(180deg, rgba(24, 18, 30, 0.85), rgba(18, 12, 24, 0.70)),
-    rgba(9, 9, 11, 0.85);
-  border: 1px solid rgba(139, 63, 214, 0.22);
-  box-shadow: 
-    0 1px 0 rgba(255, 255, 255, 0.06) inset,
-    0 8px 32px rgba(0, 0, 0, 0.5);
+    linear-gradient(180deg, rgba(40, 25, 65, 0.90), rgba(30, 18, 55, 0.80)),
+    rgba(22, 12, 42, 0.88);
+  border: 1px solid rgba(139, 63, 214, 0.30);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 8px 32px rgba(59, 21, 76, 0.5);
 }
 
 .dark .brutal-card {
   background:
-    linear-gradient(180deg, rgba(28, 28, 35, 0.80), rgba(20, 20, 25, 0.55)),
-    rgba(9, 9, 11, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+    linear-gradient(180deg, rgba(40, 28, 65, 0.85), rgba(30, 20, 50, 0.70)),
+    rgba(22, 12, 42, 0.80);
+  border: 1px solid rgba(139, 63, 214, 0.25);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.08) inset,
-    0 0 0 1px rgba(157, 78, 221, 0.1),
-    0 12px 40px -12px rgba(0, 0, 0, 0.5),
-    0 4px 16px -6px rgba(157, 78, 221, 0.15);
+    0 0 0 1px rgba(139, 63, 214, 0.15),
+    0 12px 40px -12px rgba(59, 21, 76, 0.5),
+    0 4px 16px -6px rgba(139, 63, 214, 0.20);
 }
 
 .dark .glass.card-interactive:hover {
   background:
-    linear-gradient(180deg, rgba(28, 28, 35, 0.80), rgba(20, 20, 25, 0.60)),
-    rgba(9, 9, 11, 0.70);
-  border-color: rgba(157, 78, 221, 0.35);
+    linear-gradient(180deg, rgba(45, 30, 75, 0.90), rgba(35, 22, 60, 0.75)),
+    rgba(25, 15, 48, 0.80);
+  border-color: rgba(139, 63, 214, 0.45);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.10) inset,
+    0 8px 24px rgba(59, 21, 76, 0.35);
+  transform: translateY(-2px);
 }
 
 .dark .glass-strong.card-interactive:hover {
   background:
-    linear-gradient(180deg, rgba(32, 32, 40, 0.92), rgba(24, 24, 30, 0.78)),
-    rgba(9, 9, 11, 0.90);
-  border-color: rgba(157, 78, 221, 0.45);
+    linear-gradient(180deg, rgba(50, 35, 85, 0.95), rgba(40, 25, 70, 0.85)),
+    rgba(30, 18, 55, 0.90);
+  border-color: rgba(139, 63, 214, 0.55);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 12px 32px rgba(59, 21, 76, 0.45);
+  transform: translateY(-2px);
 }
 
 .dark ::selection {
-  background: rgba(157, 78, 221, 0.30);
-  color: #fafafa;
+  background: rgba(139, 63, 214, 0.40);
+  color: #f3e8ff;
 }
 
 .dark ::-moz-selection {
-  background: rgba(157, 78, 221, 0.30);
-  color: #fafafa;
+  background: rgba(139, 63, 214, 0.40);
+  color: #f3e8ff;
 }
 
 .dark .text-aurora,
 .dark .text-stroke,
 .dark .brand-wordmark {
   color: #c77dff;
-  filter: drop-shadow(0 0 16px rgba(157, 78, 221, 0.30));
+  filter: drop-shadow(0 0 16px rgba(139, 63, 214, 0.40));
 }
 
 /* ── DYNAMIC THEME BORDER RESCUE ─────────────────────────────────────
    * Remap hardcoded white borders (border-white/* utilities) in light
    * mode to a premium, subtle brand-purple tint.
    * Remap hardcoded black borders (border-black/* utilities) in dark
-   * mode to a translucent white border. */
+   * mode to a translucent purple border. */
 :not(.dark) .border-white\/5 { border-color: rgba(139, 63, 214, 0.05); }
 :not(.dark) .border-white\/8 { border-color: rgba(139, 63, 214, 0.09); }
 :not(.dark) .border-white\/10 { border-color: rgba(139, 63, 214, 0.12); }
@@ -2353,12 +2362,12 @@ select:focus {
 :not(.dark) .border-white\/20 { border-color: rgba(139, 63, 214, 0.22); }
 :not(.dark) .border-white\/30 { border-color: rgba(139, 63, 214, 0.32); }
 
-.dark .border-black\/5 { border-color: rgba(255, 255, 255, 0.05); }
-.dark .border-black\/8 { border-color: rgba(255, 255, 255, 0.08); }
-.dark .border-black\/10 { border-color: rgba(255, 255, 255, 0.10); }
-.dark .border-black\/12 { border-color: rgba(255, 255, 255, 0.12); }
-.dark .border-black\/15 { border-color: rgba(255, 255, 255, 0.15); }
-.dark .border-black\/20 { border-color: rgba(255, 255, 255, 0.20); }
+.dark .border-black\/5 { border-color: rgba(139, 63, 214, 0.12); }
+.dark .border-black\/8 { border-color: rgba(139, 63, 214, 0.16); }
+.dark .border-black\/10 { border-color: rgba(139, 63, 214, 0.20); }
+.dark .border-black\/12 { border-color: rgba(139, 63, 214, 0.24); }
+.dark .border-black\/15 { border-color: rgba(139, 63, 214, 0.28); }
+.dark .border-black\/20 { border-color: rgba(139, 63, 214, 0.35); }
 
 /* ── PREMIUM SCROLLBARS ────────────────────────────────────────────── */
 ::-webkit-scrollbar {

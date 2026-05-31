@@ -14,16 +14,16 @@ export default function AuroraBackdrop() {
         className="absolute inset-0 hidden dark:block"
         style={{
           background:
-            "linear-gradient(120deg, rgba(139,63,214,0.12) 0%, rgba(139,63,214,0) 35%, rgba(37,84,74,0.08) 58%, rgba(37,84,74,0) 84%), linear-gradient(180deg, #09090b 0%, #120f16 100%)",
+            "linear-gradient(120deg, rgba(59,21,76,0.12) 0%, rgba(59,21,76,0) 35%, rgba(59,21,76,0.06) 58%, rgba(59,21,76,0) 84%), linear-gradient(180deg, #2D1A3E 0%, #1A0F28 100%)",
         }}
       />
       <div
-        className="absolute inset-0 opacity-[0.14] dark:opacity-[0.18]"
+        className="absolute inset-0 opacity-[0.14] dark:opacity-[0.12]"
         style={{
           backgroundImage:
             "linear-gradient(90deg, rgba(26,22,20,0.08) 1px, transparent 1px), linear-gradient(180deg, rgba(26,22,20,0.06) 1px, transparent 1px)",
           backgroundSize: "96px 96px",
-          maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.72), rgba(0,0,0,0.12))",
+          maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0.08))",
         }}
       />
 

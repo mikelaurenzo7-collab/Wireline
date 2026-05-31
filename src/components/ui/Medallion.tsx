@@ -35,9 +35,9 @@ export function Medallion({
   accent,
 }: MedallionProps) {
   const sizeClasses = {
-    sm: "w-9 h-9",
-    md: "w-14 h-14",
-    lg: "w-16 h-16",
+    sm: "w-6 h-6",
+    md: "w-9 h-9",
+    lg: "w-11 h-11",
   }[size];
 
   const accentStyle: React.CSSProperties | undefined = accent
