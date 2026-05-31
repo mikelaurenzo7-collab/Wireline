@@ -170,7 +170,7 @@ export default function DispatchTab({
                     >
                       <SelectTrigger
                         aria-label="Select agent to dial with"
-                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg pl-3 py-2 text-ink h-auto"
+                        className="w-full text-sm bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg pl-3 py-2 text-ink h-auto"
                       >
                         <SelectValue
                           placeholder={
@@ -223,7 +223,7 @@ export default function DispatchTab({
                           onChange={(e) => setCustomerNumber(e.target.value)}
                           placeholder="+1 555 000 0000"
                           className={cn(
-                            "w-full text-sm bg-black/5 border rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 tabular-nums",
+                            "w-full text-sm bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 tabular-nums",
                             customerNumber.length > 0
                               ? /^\+?[\d\s\-()]{7,15}$/.test(customerNumber)
                                 ? "border-emerald-500/50"
@@ -252,7 +252,7 @@ export default function DispatchTab({
                           value={customerName}
                           onChange={(e) => setCustomerName(e.target.value)}
                           placeholder="Optional"
-                          className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70"
+                          className="w-full text-sm bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70"
                         />
                       </div>
 
@@ -263,7 +263,7 @@ export default function DispatchTab({
                           onChange={(e) => setContext(e.target.value)}
                           rows={4}
                           placeholder="What should the agent say?"
-                          className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 resize-none leading-relaxed"
+                          className="w-full text-sm bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 resize-none leading-relaxed"
                         />
                       </div>
 
@@ -369,7 +369,7 @@ export default function DispatchTab({
                             >
                               <SelectTrigger
                                 aria-label="Assign to campaign"
-                                className="w-full text-sm bg-black/5 border border-black/10 rounded-lg pl-3 py-2 text-ink h-auto"
+                                className="w-full text-sm bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg pl-3 py-2 text-ink h-auto"
                               >
                                 <SelectValue placeholder="No campaign" />
                               </SelectTrigger>

@@ -347,8 +347,8 @@ return (
                 title={user?.email || "Account"}
               >
                 <div
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-[#3B154C] font-medium text-[10px] shrink-0"
-                  style={{ background: "#EFE9DC" }}
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-[#3B154C] font-medium text-[10px] shrink-0 dark:bg-[#3B154C] dark:text-[#EFE9DC]"
+                  style={{ background: theme === "dark" ? "#3B154C" : "#EFE9DC" }}
                   aria-hidden="true"
                 >
                   {user?.email?.slice(0, 1).toUpperCase() ?? "?"}

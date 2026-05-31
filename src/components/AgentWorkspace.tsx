@@ -891,7 +891,7 @@ export default function AgentWorkspace({
                         "max-w-[78%] min-w-[180px] rounded-2xl px-5 py-4 whitespace-pre-wrap break-words relative",
                         m.role === "operator"
                           ? "bg-gradient-to-br from-[#8B3FD6] to-[#5A2499] text-white rounded-br-md shadow-lg shadow-brand/20"
-                          : "bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm border border-brand/12 text-ink dark:text-foreground rounded-bl-md shadow-sm",
+                          : "bg-white/80 dark:bg-[var(--background)]/60 backdrop-blur-sm border border-brand/12 text-ink dark:text-foreground rounded-bl-md shadow-sm",
                       )}
                     >
                       {/* Reasoning - Claude style */}
@@ -1016,7 +1016,7 @@ export default function AgentWorkspace({
                         {agentName}
                       </span>
                     </div>
-                    <div className="bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm border border-brand/12 rounded-2xl rounded-bl-md px-5 py-4 shadow-sm">
+                    <div className="bg-white/80 dark:bg-[var(--background)]/60 backdrop-blur-sm border border-brand/12 rounded-2xl rounded-bl-md px-5 py-4 shadow-sm">
                       <div className="flex items-center gap-2.5 mb-2">
                         <span className="relative flex h-2 w-2">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
@@ -1123,7 +1123,7 @@ export default function AgentWorkspace({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 4, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute bottom-full left-4 right-4 mb-2 rounded-xl bg-white/95 dark:bg-[#1a1225]/95 backdrop-blur-md border border-brand/15 shadow-xl shadow-brand/10 p-3 z-20"
+                  className="absolute bottom-full left-4 right-4 mb-2 rounded-xl bg-white/95 dark:bg-[var(--background)]/95 backdrop-blur-md border border-brand/15 shadow-xl shadow-brand/10 p-3 z-20"
                 >
                   <div className="flex items-center gap-2 px-2 py-2 border-b border-brand/8 mb-2">
                     <Plug className="w-3.5 h-3.5 text-brand/60" />
@@ -1166,7 +1166,7 @@ export default function AgentWorkspace({
 
           {/* Composer - prominent at bottom */}
           <div className="shrink-0 px-4 pb-6 pt-2">
-            <div className="relative rounded-2xl border border-brand/20 bg-white/90 dark:bg-[#1a1225]/80 backdrop-blur-md shadow-lg shadow-brand/5 transition-all duration-300 focus-within:border-brand/40 focus-within:shadow-xl focus-within:shadow-brand/10">
+            <div className="relative rounded-2xl border border-brand/20 bg-white/90 dark:bg-[var(--background)]/80 backdrop-blur-md shadow-lg shadow-brand/5 transition-all duration-300 focus-within:border-brand/40 focus-within:shadow-xl focus-within:shadow-brand/10">
               <textarea
                 ref={inputRef}
                 value={input}
