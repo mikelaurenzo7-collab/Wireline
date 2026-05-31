@@ -121,14 +121,8 @@ export default function LeaderboardView({ days }: { days: number }) {
               </div>
               {a.rank_delta != null && (
                 <span
-                  className={cn(
-                    "text-[8px] font-bold tabular-nums leading-none",
-                    a.rank_delta > 0
-                      ? "text-emerald-500"
-                      : a.rank_delta < 0
-                        ? "text-rose-500"
-                        : "text-muted/70",
-                  )}
+                  className={cn("text-[8px] font-bold tabular-nums leading-none", a.rank_delta === 0 && "text-muted/70")}
+                  style={a.rank_delta !== 0 ? { color: a.rank_delta > 0 ? "#10b981" : "#E8466A" } : undefined}
                 >
                   {a.rank_delta > 0 ? `+${a.rank_delta}` : a.rank_delta === 0 ? "—" : a.rank_delta}
                 </span>

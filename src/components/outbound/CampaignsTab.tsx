@@ -144,12 +144,8 @@ export default function CampaignsTab({
                             {c.name}
                           </span>
                           <span
-                            className={cn(
-                              "px-2 py-0.5 rounded-full border text-[8px] uppercase tracking-[0.3em] shrink-0",
-                              statusMeta.bg,
-                              statusMeta.text,
-                              statusMeta.border,
-                            )}
+                            className="px-2 py-0.5 rounded-full border text-[8px] uppercase tracking-[0.3em] shrink-0"
+                            style={{ color: statusMeta.textColor, background: statusMeta.bgColor, borderColor: statusMeta.borderColor }}
                           >
                             {c.status}
                           </span>

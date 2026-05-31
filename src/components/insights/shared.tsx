@@ -8,7 +8,6 @@
  */
 import React from "react";
 import { BarChart3, CheckCircle2 as CheckCircle2Icon, AlertOctagon } from "lucide-react";
-import { cn } from "../../lib/utils";
 import { authFetch, readApiJson } from "../../lib/api";
 
 /* ── Data fetching ──────────────────────────────────────────────── */
@@ -64,28 +63,22 @@ export function Empty({ label, green }: { label: string; green?: boolean }) {
         <div className="relative">
           <span
             aria-hidden
-            className={cn(
-              "absolute inset-0 -z-10 rounded-full blur-2xl scale-150",
-              green ? "bg-emerald-500/25" : "bg-brand/30",
-            )}
+            className="absolute inset-0 -z-10 rounded-full blur-2xl scale-150"
+            style={{ background: green ? "rgba(16,185,129,0.25)" : "rgba(139,63,214,0.30)" }}
           />
           <div
-            className={cn(
-              "inline-flex items-center justify-center w-14 h-14 rounded-2xl text-on-brand shadow-sm",
-              green
-                ? "bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-emerald-500/25"
-                : "bg-gradient-to-br from-brand to-brand-deep shadow-brand/25",
-            )}
+            className="inline-flex items-center justify-center w-14 h-14 rounded-2xl text-on-brand shadow-sm"
+            style={green
+              ? { background: "linear-gradient(135deg, #10b981, #059669)", boxShadow: "0 4px 12px rgba(16,185,129,0.25)" }
+              : { background: "linear-gradient(135deg, var(--color-brand), var(--color-brand-deep))", boxShadow: "0 4px 12px rgba(139,63,214,0.25)" }}
           >
             <Icon className="w-6 h-6" />
           </div>
         </div>
         <div className="space-y-2">
           <p
-            className={cn(
-              "font-mono text-[10px] uppercase tracking-[0.32em]",
-              green ? "text-emerald-600/80" : "text-brand/70",
-            )}
+            className="font-mono text-[10px] uppercase tracking-[0.32em]"
+            style={{ color: green ? "rgba(5,150,105,0.80)" : "rgba(139,63,214,0.70)" }}
           >
             {green ? "All clear" : "No data yet"}
           </p>

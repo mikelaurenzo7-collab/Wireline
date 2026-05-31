@@ -391,13 +391,14 @@ export default function Integrations() {
                               <div className="flex items-center gap-2">
                                 {acc.provider === "yahoo" ? (
                                   <span
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-500 text-[9px] uppercase tracking-[0.3em]"
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em]"
+                                    style={{ background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.30)", color: "#d97706" }}
                                     title="Yahoo inbox sync is coming soon — OAuth connection is stored"
                                   >
                                     Connected · Inbox soon
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-[9px] uppercase tracking-[0.3em]">
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em]" style={{ background: "rgba(16,185,129,0.10)", border: "1px solid rgba(16,185,129,0.30)", color: "#059669" }}>
                                     <CheckCircle2 className="w-2.5 h-2.5" /> Synced
                                   </span>
                                 )}

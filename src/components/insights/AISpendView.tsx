@@ -143,7 +143,7 @@ function SpendBudgetCard() {
             </div>
           )}
           {!status?.hard_capped_now && isWarn && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-600 text-xs">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs" style={{ background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.30)", color: "#d97706" }}>
               <AlertTriangle className="w-3.5 h-3.5" /> Spend has crossed your warn threshold
             </div>
           )}
@@ -256,7 +256,7 @@ function SpendBudgetCard() {
           </div>
         )}
         {savedAt && !error && Date.now() - savedAt < 4000 && (
-          <div className="text-xs text-emerald-600">Saved.</div>
+          <div className="text-xs" style={{ color: "#059669" }}>Saved.</div>
         )}
       </div>
     </div>
@@ -457,7 +457,7 @@ export default function AISpendView({ days }: { days: number }) {
                     </div>
                     <div>
                       Cache reads{" "}
-                      <span className="text-emerald-500 font-mono ml-1">
+                      <span className="font-mono ml-1" style={{ color: "#10b981" }}>
                         {totals.cache_read.toLocaleString()}
                       </span>
                     </div>

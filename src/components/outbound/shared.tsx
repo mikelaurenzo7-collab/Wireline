@@ -21,30 +21,26 @@ export const CLOSED_CONFIRM: ConfirmState = {
 
 export const CAMPAIGN_STATUS: Record<
   string,
-  { text: string; bg: string; border: string; iconBorder: string }
+  { textColor: string; bgColor: string; borderColor: string }
 > = {
   draft: {
-    text: "text-muted",
-    bg: "bg-black/5",
-    border: "border-black/10",
-    iconBorder: "border-black/8",
+    textColor: "rgba(161,161,170,1)",
+    bgColor: "rgba(0,0,0,0.05)",
+    borderColor: "rgba(0,0,0,0.10)",
   },
   active: {
-    text: "text-emerald-600",
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/30",
-    iconBorder: "border-emerald-500/30",
+    textColor: "#059669",
+    bgColor: "rgba(16,185,129,0.10)",
+    borderColor: "rgba(16,185,129,0.30)",
   },
   paused: {
-    text: "text-amber-600",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/30",
-    iconBorder: "border-amber-500/30",
+    textColor: "#d97706",
+    bgColor: "rgba(245,158,11,0.10)",
+    borderColor: "rgba(245,158,11,0.30)",
   },
   completed: {
-    text: "text-violet-600",
-    bg: "bg-violet-500/10",
-    border: "border-violet-500/30",
-    iconBorder: "border-violet-500/30",
+    textColor: "#7c3aed",
+    bgColor: "rgba(139,92,246,0.10)",
+    borderColor: "rgba(139,92,246,0.30)",
   },
 };

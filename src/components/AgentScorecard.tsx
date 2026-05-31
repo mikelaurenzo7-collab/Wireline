@@ -11,7 +11,6 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { TrendingUp, TrendingDown, Loader2, Target, Sparkles, AlertTriangle } from "lucide-react";
 import { authFetch } from "../lib/api";
-import { cn } from "../lib/utils";
 import { formatPercent, safeFixed, formatInt } from "../lib/safe-number";
 
 type MetricFormat = "percent" | "number" | "seconds" | "score";
@@ -178,12 +177,10 @@ function DeltaPill({ pct }: { pct: number }) {
   const up = pct > 0;
   return (
     <span
-      className={cn(
-        "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-mono font-medium shadow-sm",
-        up
-          ? "bg-emerald-500/12 border border-emerald-500/25 text-emerald-400 shadow-emerald-500/5"
-          : "bg-rose-500/12 border border-rose-500/25 text-rose-400 shadow-rose-500/5",
-      )}
+      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-mono font-medium shadow-sm border"
+      style={up
+        ? { background: "rgba(16,185,129,0.12)", borderColor: "rgba(16,185,129,0.25)", color: "#34d399" }
+        : { background: "rgba(232,70,106,0.12)", borderColor: "rgba(232,70,106,0.25)", color: "#fb7185" }}
     >
       {up ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
       {up ? "+" : ""}
