@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 
 import { cn } from "../../lib/utils";
+import { Medallion } from "../ui/Medallion";
 
 type Props = {
   icon: ReactNode;
@@ -30,7 +31,16 @@ export default function ClientRouteLoading({ icon, label = "Loading…", classNa
             className="absolute -inset-3 rounded-full border border-brand/20 animate-[spin_8s_linear_infinite]"
           />
 
-          <div className="relative">{icon}</div>
+          {/*
+            Wrap the caller-supplied icon in the Medallion gem chassis so
+            every authenticated route's loading state shares the same
+            crystalline glint as our empty states. Callers can still pass
+            a custom React node (e.g. a spinner) and it inherits the gem
+            shimmer for free.
+          */}
+          <Medallion size="lg" withHalo={false} shimmer>
+            {icon}
+          </Medallion>
         </div>
 
         <span className="font-mono text-[11px] uppercase tracking-[0.24em] text-muted animate-pulse">

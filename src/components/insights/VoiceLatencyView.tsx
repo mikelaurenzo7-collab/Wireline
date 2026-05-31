@@ -7,6 +7,7 @@ import {
   VAPI_TOOL_TIMEOUT_MS,
 } from "../../lib/vapi-tool-results";
 import { fetchInsight, Spinner, ErrCard } from "./shared";
+import { EmptyState } from "../ui/EmptyState";
 
 interface VoiceTrend {
   date: string;
@@ -73,29 +74,13 @@ export default function VoiceLatencyView({ days }: { days: number }) {
 
   if (latency.sample_count === 0 && !hasVoiceMetrics) {
     return (
-      <div className="relative aurora-ring rounded-3xl">
-        <div className="relative rounded-3xl glass-strong border border-black/8 p-10 md:p-14 text-center flex flex-col items-center gap-5">
-          <div className="relative">
-            <span
-              aria-hidden
-              className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
-            />
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25">
-              <Gauge className="w-6 h-6" />
-            </div>
-          </div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
-            Voice Latency
-          </p>
-          <h3 className="font-display italic text-2xl text-ink text-balance">
-            No latency samples yet
-          </h3>
-          <p className="text-sm text-muted/80 max-w-md text-pretty leading-relaxed">
-            Run live calls and AI actions — p50/p95 response times appear here from your audit log
-            and voice provider telemetry.
-          </p>
-        </div>
-      </div>
+      <EmptyState
+        framed
+        icon={Gauge}
+        eyebrow="Voice Latency"
+        title="No latency samples yet"
+        description="Run live calls and AI actions — p50/p95 response times appear here from your audit log and voice provider telemetry."
+      />
     );
   }
 

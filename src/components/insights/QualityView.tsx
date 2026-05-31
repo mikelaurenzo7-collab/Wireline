@@ -19,6 +19,7 @@ import {
 import { authFetch, readApiJson } from "../../lib/api";
 import { useToast } from "../../contexts/ToastContext";
 import { fetchInsight, Spinner, qaColor } from "./shared";
+import { EmptyState } from "../ui/EmptyState";
 
 export default function QualityView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
@@ -80,42 +81,22 @@ export default function QualityView({ days }: { days: number }) {
   if (!data || data.count === 0) {
     return (
       <div className="space-y-4">
-        <div className="relative aurora-ring rounded-3xl">
-          <div className="relative rounded-3xl glass-strong overflow-hidden p-10 md:p-14 flex flex-col items-center gap-5 text-center">
-            <div className="relative">
-              <span
-                aria-hidden
-                className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
-              />
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25">
-                <Star className="w-8 h-8" />
-              </div>
-            </div>
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70 mb-2">
-                Call Quality
-              </p>
-              <h3 className="font-display italic text-3xl text-ink mb-2">No QA scores yet</h3>
-              <p className="text-sm text-ink/65 max-w-sm leading-relaxed">
-                Score an individual call in Call Logs, or use{" "}
-                <strong className="text-brand">Score All Unscored</strong> below to batch-evaluate
-                up to 20 calls at once.
-              </p>
-            </div>
-            <button
-              onClick={handleScoreAll}
-              disabled={scoring}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20 text-[11px] uppercase tracking-[0.25em] active:scale-95 transition-all duration-200 disabled:opacity-50"
-            >
-              {scoring ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Play className="w-3.5 h-3.5" />
-              )}
-              {scoring ? "Scoring…" : "Score All Unscored"}
-            </button>
-          </div>
-        </div>
+        <EmptyState
+          framed
+          icon={Star}
+          eyebrow="Call Quality"
+          title="No QA scores yet"
+          description="Score an individual call in Call Logs, or use Score All Unscored to batch-evaluate up to 20 calls at once."
+          actions={[
+            {
+              label: scoring ? "Scoring…" : "Score All Unscored",
+              onClick: () => {
+                if (!scoring) void handleScoreAll();
+              },
+              primary: true,
+            },
+          ]}
+        />
       </div>
     );
   }

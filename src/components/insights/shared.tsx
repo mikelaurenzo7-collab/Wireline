@@ -8,7 +8,6 @@
  */
 import React from "react";
 import { BarChart3, CheckCircle2 as CheckCircle2Icon, AlertOctagon } from "lucide-react";
-import { cn } from "../../lib/utils";
 import { authFetch, readApiJson } from "../../lib/api";
 
 /* ── Data fetching ──────────────────────────────────────────────── */
@@ -55,46 +54,19 @@ export function Spinner() {
 
 /* ── Empty state ────────────────────────────────────────────────── */
 
+import { EmptyState as UiEmptyState } from "../ui/EmptyState";
+
 export function Empty({ label, green }: { label: string; green?: boolean }) {
   const Icon = green ? CheckCircle2Icon : BarChart3;
   return (
-    <div className="relative aurora-ring rounded-3xl">
-      <div className="relative rounded-3xl glass-strong border border-black/8 p-12 md:p-14 text-center overflow-hidden flex flex-col items-center gap-5">
-        {/* Centered medallion with soft halo */}
-        <div className="relative">
-          <span
-            aria-hidden
-            className={cn(
-              "absolute inset-0 -z-10 rounded-full blur-2xl scale-150",
-              green ? "bg-emerald-500/25" : "bg-brand/30",
-            )}
-          />
-          <div
-            className={cn(
-              "inline-flex items-center justify-center w-14 h-14 rounded-2xl text-on-brand shadow-sm",
-              green
-                ? "bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-emerald-500/25"
-                : "bg-gradient-to-br from-brand to-brand-deep shadow-brand/25",
-            )}
-          >
-            <Icon className="w-6 h-6" />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <p
-            className={cn(
-              "font-mono text-[10px] uppercase tracking-[0.32em]",
-              green ? "text-emerald-600/80" : "text-brand/70",
-            )}
-          >
-            {green ? "All clear" : "No data yet"}
-          </p>
-          <p className="font-display italic text-2xl text-ink leading-tight text-balance max-w-sm mx-auto">
-            {label}
-          </p>
-        </div>
-      </div>
-    </div>
+    <UiEmptyState
+      icon={Icon}
+      title={label}
+      framed
+      withHalo
+      accent={green ? "#10B981" : undefined}
+      eyebrow={green ? "All clear" : "No data yet"}
+    />
   );
 }
 

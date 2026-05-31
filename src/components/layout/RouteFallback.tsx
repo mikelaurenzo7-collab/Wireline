@@ -1,6 +1,7 @@
 import React from "react";
 import { Compass } from "lucide-react";
 import { BRAND } from "../../constants/brand-colors";
+import { Medallion } from "../ui/Medallion";
 
 export default function RouteFallback() {
   return (
@@ -16,9 +17,9 @@ export default function RouteFallback() {
       </div>
 
       <div className="shrink-0 flex items-center gap-3 mb-6" aria-hidden="true">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand flex items-center justify-center shadow-lg shadow-brand/20">
+        <Medallion size="sm" withHalo={false} shimmer className="w-10 h-10">
           <Compass className="w-5 h-5 animate-pulse" />
-        </div>
+        </Medallion>
         <div className="space-y-2">
           <div className="h-2 w-28 rounded-full bg-black/8 overflow-hidden relative">
             <div className="absolute inset-0 skeleton-shimmer" />

@@ -16,7 +16,7 @@ interface Action {
 interface EmptyStateProps {
   icon: LucideIcon;
   title: string;
-  description: string;
+  description?: string;
   actions?: Action[];
   className?: string;
   /** Show the signature brand halo behind the medallion */
@@ -25,6 +25,12 @@ interface EmptyStateProps {
   eyebrow?: string;
   /** Optional accent override (hex/rgb) tinting the medallion + halo. */
   accent?: string;
+  /**
+   * Wrap the empty state in the canonical premium panel chrome
+   * (aurora-ring + glass-strong) so insights / dashboard panels share
+   * a single primitive instead of re-creating the gem frame ad-hoc.
+   */
+  framed?: boolean;
 }
 
 /**
@@ -44,15 +50,20 @@ export function EmptyState({
   withHalo = true,
   eyebrow = "No data yet",
   accent,
+  framed = false,
 }: EmptyStateProps) {
   const reduceMotion = useReducedMotion();
 
-  return (
+  const body = (
     <motion.div
       initial={reduceMotion ? false : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className={cn("flex flex-col items-center justify-center py-12 text-center px-6", className)}
+      className={cn(
+        "flex flex-col items-center justify-center py-12 text-center px-6",
+        framed && "py-0",
+        className,
+      )}
     >
       <motion.div
         animate={reduceMotion ? undefined : { y: [0, -4, 0] }}
@@ -108,5 +119,15 @@ export function EmptyState({
         </div>
       )}
     </motion.div>
+  );
+
+  if (!framed) return body;
+
+  return (
+    <div className="relative aurora-ring rounded-3xl">
+      <div className="relative rounded-3xl glass-strong border border-black/8 overflow-hidden p-10 md:p-14 flex flex-col items-center text-center">
+        {body}
+      </div>
+    </div>
   );
 }
