@@ -2,8 +2,25 @@ import React, { useState, useEffect } from "react";
 import { Activity, ServerCrash, Clock, Zap } from "lucide-react";
 import { authFetch } from "../../lib/api";
 
+interface LatencyCall {
+  ttftMs?: number | null;
+  sttError?: unknown;
+  pipelineError?: unknown;
+}
+
+interface ObservabilityMetrics {
+  avgTtftMs: number | null;
+  p99TtftMs: number | null;
+  pipelineSuccessRate: number;
+  sttErrorRate: number;
+  totalCalls: number;
+  activeConnections: number;
+  noData?: boolean;
+  isDemoMock?: boolean;
+}
+
 export default function ObservabilityDashboard() {
-  const [metrics, setMetrics] = useState<any>(null);
+  const [metrics, setMetrics] = useState<ObservabilityMetrics | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -16,10 +33,10 @@ export default function ObservabilityDashboard() {
           throw new Error(`Failed to load telemetry: ${res.status}`);
         }
         const data = await res.json();
-        
+
         if (!active) return;
-        
-        const calls = data.calls || [];
+
+        const calls: LatencyCall[] = data.calls || [];
         if (calls.length === 0) {
           setMetrics({
             avgTtftMs: null,
@@ -28,26 +45,28 @@ export default function ObservabilityDashboard() {
             sttErrorRate: 0,
             totalCalls: 0,
             activeConnections: 0,
-            noData: true
+            noData: true,
           });
           setLoading(false);
           return;
         }
 
         const ttfts = calls
-          .map((c: any) => c.ttftMs)
-          .filter((v: any) => v != null && typeof v === "number")
+          .map((c) => c.ttftMs)
+          .filter((v): v is number => v != null && typeof v === "number")
           .sort((a: number, b: number) => a - b);
 
         const avgTtft = ttfts.length
           ? Math.round(ttfts.reduce((acc: number, val: number) => acc + val, 0) / ttfts.length)
           : null;
-        
-        const p99Index = ttfts.length ? Math.min(Math.ceil(0.99 * (ttfts.length - 1)), ttfts.length - 1) : null;
+
+        const p99Index = ttfts.length
+          ? Math.min(Math.ceil(0.99 * (ttfts.length - 1)), ttfts.length - 1)
+          : null;
         const p99Ttft = p99Index !== null ? ttfts[p99Index] : null;
 
-        const sttErrors = calls.filter((c: any) => c.sttError).length;
-        const pipelineErrors = calls.filter((c: any) => c.pipelineError != null).length;
+        const sttErrors = calls.filter((c) => c.sttError).length;
+        const pipelineErrors = calls.filter((c) => c.pipelineError != null).length;
 
         const sttRate = (sttErrors / calls.length) * 100;
         const pipelineSuccess = ((calls.length - pipelineErrors) / calls.length) * 100;
@@ -59,7 +78,7 @@ export default function ObservabilityDashboard() {
           sttErrorRate: Math.round(sttRate * 100) / 100,
           totalCalls: calls.length,
           activeConnections: 1, // Live agent active link
-          noData: false
+          noData: false,
         });
         setLoading(false);
       } catch (err) {
@@ -73,7 +92,7 @@ export default function ObservabilityDashboard() {
             sttErrorRate: 0.05,
             totalCalls: 14205,
             activeConnections: 34,
-            isDemoMock: true
+            isDemoMock: true,
           });
           setLoading(false);
         }
@@ -102,7 +121,9 @@ export default function ObservabilityDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h3 className="text-lg font-medium text-ink">System Observability</h3>
-          <p className="text-sm text-muted">Real-time pipeline latency and agent resilience metrics.</p>
+          <p className="text-sm text-muted">
+            Real-time pipeline latency and agent resilience metrics.
+          </p>
         </div>
         {metrics?.isDemoMock && (
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-500 border border-amber-500/20">
@@ -123,7 +144,9 @@ export default function ObservabilityDashboard() {
           <Activity className="h-8 w-8 text-brand mx-auto animate-pulse" />
           <h4 className="text-sm font-semibold text-ink">Waiting for Telemetry</h4>
           <p className="text-xs text-muted max-w-md mx-auto">
-            Your telemetry pipelines are active. Metrics like voice TTFT, STT precision, and connection success rates will populate dynamically the moment your first call is connected.
+            Your telemetry pipelines are active. Metrics like voice TTFT, STT precision, and
+            connection success rates will populate dynamically the moment your first call is
+            connected.
           </p>
         </div>
       )}
@@ -136,7 +159,9 @@ export default function ObservabilityDashboard() {
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold text-ink">
-              {metrics?.avgTtftMs !== null && metrics?.avgTtftMs !== undefined ? metrics.avgTtftMs : "—"}
+              {metrics?.avgTtftMs !== null && metrics?.avgTtftMs !== undefined
+                ? metrics.avgTtftMs
+                : "—"}
             </span>
             <span className="text-xs text-muted">ms</span>
           </div>
@@ -150,7 +175,9 @@ export default function ObservabilityDashboard() {
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold text-ink">
-              {metrics?.p99TtftMs !== null && metrics?.p99TtftMs !== undefined ? metrics.p99TtftMs : "—"}
+              {metrics?.p99TtftMs !== null && metrics?.p99TtftMs !== undefined
+                ? metrics.p99TtftMs
+                : "—"}
             </span>
             <span className="text-xs text-muted">ms</span>
           </div>
@@ -164,7 +191,9 @@ export default function ObservabilityDashboard() {
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold text-ink">
-              {metrics?.pipelineSuccessRate !== null && metrics?.pipelineSuccessRate !== undefined ? metrics.pipelineSuccessRate : "—"}
+              {metrics?.pipelineSuccessRate !== null && metrics?.pipelineSuccessRate !== undefined
+                ? metrics.pipelineSuccessRate
+                : "—"}
             </span>
             <span className="text-xs text-muted">%</span>
           </div>
@@ -178,7 +207,9 @@ export default function ObservabilityDashboard() {
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold text-ink">
-              {metrics?.sttErrorRate !== null && metrics?.sttErrorRate !== undefined ? metrics.sttErrorRate : "—"}
+              {metrics?.sttErrorRate !== null && metrics?.sttErrorRate !== undefined
+                ? metrics.sttErrorRate
+                : "—"}
             </span>
             <span className="text-xs text-muted">%</span>
           </div>
