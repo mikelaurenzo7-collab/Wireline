@@ -62,8 +62,16 @@ describe("verifySupabaseJwt", () => {
     expect(await verifySupabaseJwt(`${header}.${body}.${sig}`, SECRET)).toBeNull();
   });
 
-  it("accepts a token with no exp claim (treated as non-expiring)", async () => {
+  it("rejects a token with no exp claim (no infinite-lifetime tokens)", async () => {
     const token = mintJwt({ sub: "user-1" });
-    expect((await verifySupabaseJwt(token, SECRET))?.sub).toBe("user-1");
+    expect(await verifySupabaseJwt(token, SECRET)).toBeNull();
+  });
+
+  it("rejects a token whose exp is not a number", async () => {
+    // Forge a token where exp is a string — the previous loose check
+    // (`if (payload.exp && payload.exp < now)`) would have accepted it
+    // because "abc" < now coerces to false.
+    const token = mintJwt({ sub: "user-1", exp: "not-a-number" });
+    expect(await verifySupabaseJwt(token, SECRET)).toBeNull();
   });
 });

@@ -36,17 +36,27 @@ router.post("/api/webhooks/elevenlabs", async (req: Request, res: Response) => {
     return res.status(401).json({ error: "Missing signature" });
   }
 
-  // The raw body must be available for HMAC verification. We
-  // configure express.json() with verify hook OR mount this route
-  // before express.json() and use express.raw(). Simplest path:
-  // re-serialize req.body (already parsed) for verification. This
-  // works as long as the body is canonical JSON (no key reordering),
-  // which ElevenLabs guarantees. If verification ever flakes, switch
-  // to express.raw() on this route specifically.
-  const expectedSig = crypto
-    .createHmac("sha256", secret)
-    .update(typeof req.body === "string" ? req.body : JSON.stringify(req.body))
-    .digest("hex");
+  // The raw request bytes — required for byte-identical HMAC. The
+  // raw body parser is mounted centrally in src/lib/body-parsers.ts
+  // BEFORE the global express.json(), so req.body is a Buffer here.
+  // We refuse to verify against a re-serialized parsed object because
+  // JSON.stringify is not byte-stable (key order, whitespace, unicode
+  // escaping all drift from what ElevenLabs signed).
+  const rawBody = req.body;
+  if (!Buffer.isBuffer(rawBody)) {
+    log.error("ElevenLabs webhook: raw body unavailable (body parser misordered?)", {
+      bodyType: typeof rawBody,
+    });
+    return res.status(500).json({ error: "Webhook misconfigured" });
+  }
+
+  let expectedSig: string;
+  try {
+    expectedSig = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+  } catch (err) {
+    log.error("ElevenLabs webhook: HMAC compute failed", { error: getErrorMessage(err) });
+    return res.status(500).json({ error: "Signature check failed" });
+  }
 
   let valid = false;
   try {
@@ -66,9 +76,20 @@ router.post("/api/webhooks/elevenlabs", async (req: Request, res: Response) => {
     return res.status(401).json({ error: "Invalid signature" });
   }
 
+  // Parse the (now signature-verified) JSON envelope.
+  let payload: { event_type?: string; voice_id?: string };
   try {
-    const event = req.body?.event_type as string | undefined;
-    const voiceId = req.body?.voice_id as string | undefined;
+    payload = JSON.parse(rawBody.toString("utf8")) as {
+      event_type?: string;
+      voice_id?: string;
+    };
+  } catch {
+    return res.status(400).json({ error: "Invalid JSON body" });
+  }
+
+  try {
+    const event = payload.event_type;
+    const voiceId = payload.voice_id;
 
     if (event === "voice.cloning.success" && voiceId) {
       // Mark the matching row completed + pull a fresh preview_url

@@ -40,9 +40,17 @@ export async function verifySupabaseJwt(token: string, secret: string): Promise<
     const payloadJson = Buffer.from(payloadB64, "base64url").toString("utf8");
     const payload = JSON.parse(payloadJson) as JwtPayload;
 
-    // 3. Check Expiry
+    // 3. Require numeric exp + enforce expiry. Reject tokens missing
+    //    `exp` or carrying a non-numeric value (e.g. a string or null
+    //    smuggled in by a forged/malformed token). A missing exp is
+    //    indistinguishable from an infinite-lifetime token and must
+    //    never validate.
     const now = Math.floor(Date.now() / 1000);
-    if (payload.exp && payload.exp < now) {
+    if (typeof payload.exp !== "number" || !Number.isFinite(payload.exp)) {
+      log.warn("JWT missing or non-numeric exp", { sub: payload.sub, exp: payload.exp });
+      return null;
+    }
+    if (payload.exp < now) {
       log.warn("JWT expired", { sub: payload.sub, exp: payload.exp, now });
       return null;
     }

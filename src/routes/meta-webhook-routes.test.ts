@@ -47,6 +47,7 @@ vi.mock("../lib/secret-vault", () => ({ decryptSecret: (s: string) => s }));
 
 import metaRouter from "./meta-webhook-routes";
 import { drizzle } from "../lib/server-context";
+import { installWebhookBodyParsers } from "../lib/body-parsers";
 
 const selectSpy = vi.mocked(drizzle.select as unknown as ReturnType<typeof vi.fn>);
 
@@ -57,18 +58,16 @@ const APP_SECRET = "meta-app-secret";
 const VERIFY_TOKEN = "meta-verify-token";
 
 function app() {
-  // The meta leadgen + deletion routes mount their OWN express.raw({ type:
-  // "*/*" }) so they can HMAC-verify the raw bytes. We mount only the router
-  // here, exercising that per-route raw parser in isolation.
-  //
-  // NOTE: we deliberately do NOT add a global express.json() ahead of the
-  // router. Doing so (as server.ts currently does at :163, before the router
-  // at :284) consumes the JSON body first, leaving the route's express.raw()
-  // with no raw bytes to verify — which appears to be a genuine production
-  // middleware-ordering bug for Meta JSON deliveries. That belongs in a
-  // separate, reviewed server.ts fix, not this test-only PR; tracking it as a
-  // follow-up rather than masking it here.
+  // Production middleware ordering: install vendor-webhook body parsers
+  // (registers express.raw for the Meta routes) BEFORE the global
+  // express.json. Previously the per-route express.raw lived inside the
+  // router itself, but it sat behind server.ts's global json() so it
+  // was a no-op in production. The fix moved parser registration to
+  // installWebhookBodyParsers; this test mirrors that ordering so a
+  // future regression of either piece breaks here loudly.
   const a = express();
+  installWebhookBodyParsers(a);
+  a.use(express.json());
   a.use(metaRouter);
   return a;
 }
