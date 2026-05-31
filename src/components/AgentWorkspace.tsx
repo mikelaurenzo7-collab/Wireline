@@ -33,6 +33,8 @@ import {
   MessagesSquare,
   Paperclip,
   Check,
+  ChevronDown,
+  ChevronUp,
   X,
   SlidersHorizontal,
   Power,
@@ -56,7 +58,11 @@ import { Switch } from "./ui/shadcn/Switch";
 import { Badge } from "./ui/shadcn/Badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/shadcn/Tooltip";
 import ToolCallTheater from "./chat/ToolCallTheater";
-import { getConnectorHealth, CONNECTOR_BRANDS } from "./chat/ConnectorBranding";
+import {
+  getConnectorHealth,
+  CONNECTOR_BRANDS,
+  selectRelevantConnectors,
+} from "./chat/ConnectorBranding";
 
 function fmtTime(iso: string): string {
   try {
@@ -64,6 +70,84 @@ function fmtTime(iso: string): string {
   } catch {
     return "";
   }
+}
+
+/** Compact collapsed record of a completed tool-call execution — persists in scroll view. */
+function CompletedTheaterPill({
+  record,
+}: {
+  record: { message: string; enabledToolsSnapshot: string[] };
+}) {
+  const connectors = selectRelevantConnectors(record.message, record.enabledToolsSnapshot);
+  const [expanded, setExpanded] = React.useState(false);
+
+  const names = connectors.map((c) => CONNECTOR_BRANDS[c]?.name).filter(Boolean);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 4, scaleX: 0.96 }}
+      animate={{ opacity: 1, y: 0, scaleX: 1 }}
+      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+      className="mb-1.5 self-start"
+    >
+      <button
+        onClick={() => setExpanded((e) => !e)}
+        className="group flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all border"
+        style={{
+          background: "rgba(16,185,129,0.04)",
+          borderColor: "rgba(16,185,129,0.2)",
+          color: "rgba(16,185,129,0.85)",
+        }}
+        aria-expanded={expanded}
+      >
+        <Check className="w-2.5 h-2.5 shrink-0" />
+        <span>{names.length > 0 ? `Used ${names.join(" · ")}` : "Executed"}</span>
+        <span className="text-emerald-600/50 ml-0.5">
+          {expanded ? (
+            <ChevronUp className="w-2.5 h-2.5" />
+          ) : (
+            <ChevronDown className="w-2.5 h-2.5" />
+          )}
+        </span>
+      </button>
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="mt-1 flex flex-wrap gap-1.5 px-1">
+              {connectors.map((c) => {
+                const brand = CONNECTOR_BRANDS[c];
+                if (!brand) return null;
+                return (
+                  <span
+                    key={c}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-semibold uppercase tracking-wide"
+                    style={{
+                      background: brand.color + "18",
+                      color: brand.color,
+                      border: `1px solid ${brand.color}30`,
+                    }}
+                  >
+                    {brand.abbreviation} · {brand.actionVerb}
+                  </span>
+                );
+              })}
+              {connectors.length === 0 && (
+                <span className="text-[10px] text-muted/60">
+                  Context recalled · Response composed
+                </span>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
 }
 
 const AgentTrainingInline = lazy(() => import("./AgentTraining"));
@@ -140,6 +224,12 @@ interface MessageProposals {
   actions: ProposedAction[];
 }
 
+/** A record of one completed ToolCallTheater shown inline in the chat stream. */
+interface TheaterRecord {
+  message: string;
+  enabledToolsSnapshot: string[];
+}
+
 interface WorkspaceMessage {
   id: string;
   role: "operator" | "agent";
@@ -147,14 +237,8 @@ interface WorkspaceMessage {
   createdAt: string;
   /** Attached to agent replies only — actionable proposals awaiting approval. */
   proposals?: MessageProposals;
-}
-
-/** A record of one completed ToolCallTheater shown inline in the chat stream. */
-interface TheaterRecord {
-  id: string;
-  message: string;
-  enabledToolsSnapshot: string[];
-  completedAt: string;
+  /** Attached to agent replies: the execution record from the preceding theater. */
+  theaterRecord?: TheaterRecord;
 }
 
 interface AgentWorkspaceProps {
@@ -188,10 +272,8 @@ export default function AgentWorkspace({
   const [enabledTools, setEnabledTools] = useState<string[]>([]);
   /** The last message the operator sent — passed to ToolCallTheater for context. */
   const [lastSentMessage, setLastSentMessage] = useState("");
-  /** Records of completed theaters that persist inline in the chat stream. */
-  const [_theaterRecords, setTheaterRecords] = useState<TheaterRecord[]>([]);
   /** Per-message thumbs up/down reactions keyed by message id. */
-  const [reactions, setReactions] = useState<Record<string, "up" | "down">>({});
+  const [reactions, setReactions] = useState<Record<string, "up" | "down" | undefined>>({});
   // The active tab + (for Training) its sub-tab live in the URL so every view
   // is deep-linkable as /chat/:id?tab=connectors or ?tab=training&sub=simulator
   // — and survives a refresh or a shared link. Switching agents drops the query
@@ -340,19 +422,10 @@ export default function AgentWorkspace({
         content: data.reply || "(empty reply)",
         createdAt: new Date().toISOString(),
         proposals: hasProposals ? proposals : undefined,
+        // Attach the execution record so it persists collapsed in the scroll view
+        theaterRecord: { message: text, enabledToolsSnapshot: enabledTools },
       };
       setMessages((prev) => [...prev, agentReply]);
-      // Persist a theater record so the cinematic execution block remains in
-      // the scroll history (collapsed) after the send completes.
-      setTheaterRecords((prev) => [
-        ...prev,
-        {
-          id: `theater-${Date.now()}`,
-          message: text,
-          enabledToolsSnapshot: enabledTools,
-          completedAt: new Date().toISOString(),
-        },
-      ]);
     } catch {
       // Roll back the optimistic operator message and surface error.
       setMessages((prev) => prev.filter((m) => m.id !== optimisticOperator.id));
@@ -753,6 +826,10 @@ export default function AgentWorkspace({
                         m.role === "operator" ? "items-end" : "items-start",
                       )}
                     >
+                      {/* Collapsed execution record — persists after each agent reply */}
+                      {m.role === "agent" && m.theaterRecord && (
+                        <CompletedTheaterPill record={m.theaterRecord} />
+                      )}
                       <div
                         className={cn(
                           "rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed transition-all duration-200",
@@ -880,8 +957,7 @@ export default function AgentWorkspace({
                               onClick={() =>
                                 setReactions((prev) => ({
                                   ...prev,
-                                  [m.id]:
-                                    prev[m.id] === "up" ? (undefined as unknown as "up") : "up",
+                                  [m.id]: prev[m.id] === "up" ? undefined : "up",
                                 }))
                               }
                               className={cn(
@@ -899,10 +975,7 @@ export default function AgentWorkspace({
                               onClick={() =>
                                 setReactions((prev) => ({
                                   ...prev,
-                                  [m.id]:
-                                    prev[m.id] === "down"
-                                      ? (undefined as unknown as "down")
-                                      : "down",
+                                  [m.id]: prev[m.id] === "down" ? undefined : "down",
                                 }))
                               }
                               className={cn(

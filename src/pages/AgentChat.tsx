@@ -215,6 +215,7 @@ export default function AgentChat() {
             <AgentWorkspace
               agentId={activeAgent!.id}
               agentName={activeAgent!.name}
+              agentRole={activeAgent!.role ?? undefined}
               onToolsChange={setLiveTools}
               composerSeed={composerSeed}
             />
