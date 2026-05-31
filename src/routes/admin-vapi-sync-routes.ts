@@ -24,6 +24,8 @@
 import crypto from "node:crypto";
 import { Router, Request, Response, NextFunction } from "express";
 import { log } from "../lib/server-context";
+import { AppError, asyncHandler } from "../lib/api-error";
+import { getErrorMessage } from "../lib/server-utils";
 import { authenticateUser } from "../middleware/auth";
 import { isPlatformAdmin } from "../middleware/platform-admin";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -213,7 +215,7 @@ function syncOptionalAuth(req: Request, res: Response, next: NextFunction) {
 router.post(
   "/api/admin/sync-vapi-knowledge",
   syncOptionalAuth,
-  async (req: AuthenticatedRequest, res: Response) => {
+  asyncHandler<AuthenticatedRequest>(async (req, res: Response) => {
     // Authorize via platform-admin session (owner email or is_admin) OR
     // X-Migration-Token header (for ops/CI without a session).
     const provided = req.headers["x-migration-token"] as string | undefined;
@@ -224,12 +226,22 @@ router.post(
       provided.length === expected.length &&
       crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(expected))
     );
-    const ownerOk = tokenOk ? false : await isPlatformAdmin(req.user);
+
+    let ownerOk = false;
+    try {
+      ownerOk = tokenOk ? false : await isPlatformAdmin(req.user);
+    } catch (e: unknown) {
+      log.error("[admin-vapi-sync] platform-admin check failed", {
+        error: getErrorMessage(e),
+      });
+      throw AppError.internal("Authorization check failed");
+    }
+
     if (!tokenOk && !ownerOk) {
-      return res.status(403).json({ error: "Platform admin access required" });
+      throw AppError.forbidden("Platform admin access required");
     }
     if (!process.env.VAPI_PRIVATE_KEY) {
-      return res.status(503).json({ error: "VAPI_PRIVATE_KEY not configured" });
+      throw AppError.serviceUnavailable("VAPI_PRIVATE_KEY not configured");
     }
 
     try {
@@ -271,7 +283,7 @@ router.post(
       log.error("Vapi knowledge sync failed", { error: e?.message });
       return res.status(500).json({ error: e?.message || "Sync failed" });
     }
-  },
+  }),
 );
 
 export default router;
