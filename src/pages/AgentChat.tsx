@@ -193,7 +193,7 @@ export default function AgentChat() {
                   <span className="hidden sm:block text-xs font-medium truncate">
                     {agents.length === 0 ? "Create first" : "Add"}
                   </span>
-                </button>
+                </motion.button>
               </div>
             </ScrollArea>
             <div className="pointer-events-none absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-background to-transparent lg:hidden" />
