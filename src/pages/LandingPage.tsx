@@ -193,7 +193,7 @@ export default function LandingPage() {
         {/* ─── Hero ───────────────────────────────────────────────── */}
         <section
           data-testid="hero-section"
-          className="relative min-h-[85svh] flex flex-col justify-center px-6 lg:px-12 pt-24 pb-16 lg:pt-28 lg:pb-24 overflow-hidden"
+          className="relative min-h-[72svh] sm:min-h-[85svh] flex flex-col justify-center px-6 lg:px-12 pt-24 pb-16 lg:pt-28 lg:pb-24 overflow-hidden"
         >
           <HeroDecorations />
           <div className="relative z-10 max-w-7xl mx-auto w-full">
@@ -228,7 +228,7 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                className="font-display italic text-[clamp(2.5rem,7vw,5.5rem)] leading-[0.95] tracking-tight text-ink max-w-4xl mx-auto"
+                className="font-display italic text-[clamp(2rem,7vw,5.5rem)] leading-[1.08] sm:leading-[0.95] tracking-tight text-ink max-w-4xl mx-auto"
               >
                 Every conversation, <span className="text-brand">answered like your best rep.</span>
               </motion.h1>
@@ -347,7 +347,7 @@ export default function LandingPage() {
               </motion.h2>
             </motion.div>
 
-            <div className={`grid grid-cols-1 ${demoColsClass} gap-4 max-w-5xl mx-auto`}>
+            <div className={`grid grid-cols-1 min-[480px]:grid-cols-2 ${demoColsClass} gap-4 max-w-5xl mx-auto`}>
               {demoAgents.map((agent, i) => (
                 <AgentCard
                   key={agent.tel}
@@ -424,7 +424,7 @@ export default function LandingPage() {
         {/* ─── Proof Tiles ────────────────────────────────────────── */}
         <section data-testid="proof-section" className="px-6 lg:px-12 py-20 lg:py-28">
           <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-gradient-to-r from-ink/[0.06] via-brand/10 to-ink/[0.06] border border-ink/[0.08]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-px bg-gradient-to-r from-ink/[0.06] via-brand/10 to-ink/[0.06] border border-ink/[0.08]">
               {STATS.map((stat, i) => (
                 <motion.div
                   key={stat.label}
@@ -503,8 +503,8 @@ export default function LandingPage() {
           style={{ background: "#1A1614" }}
         >
           <div className="max-w-7xl mx-auto px-6 lg:px-12 py-16 lg:py-20">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12 mb-16">
-              <div className="col-span-2 md:col-span-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12 mb-16">
+              <div className="sm:col-span-2 md:col-span-1">
                 <p className="font-display italic text-2xl text-paper/90 mb-3">Wireline</p>
                 <p className="text-[13px] text-paper/55 leading-relaxed max-w-xs">
                   AI voice + email agents for every business. One fleet, your playbook, 24/7.

@@ -799,7 +799,7 @@ export default function AgentWorkspace({
         </div>
 
         {/* Tab pills - horizontal scrollable */}
-        <div className="flex items-center gap-1 px-4 pb-2 overflow-x-auto scrollbar-hide">
+        <div className="flex items-center gap-1 px-4 pb-2 overflow-x-auto scrollbar-hide scroll-fade-x">
           {WORKSPACE_TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             return (

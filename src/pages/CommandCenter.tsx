@@ -436,7 +436,7 @@ export default function LiveOps() {
                   <span className="app-section-title block">Fleet analytics</span>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {/* Analytics: Sentiment */}
-                    <div className="glass border-brand/12 p-5 hover:border-brand/35 hover:-translate-y-px hover:shadow-lg hover:shadow-brand/5 transition-all duration-300">
+                    <div className="glass border-brand/12 p-4 sm:p-5 hover:border-brand/35 hover:-translate-y-px hover:shadow-lg hover:shadow-brand/5 transition-all duration-300">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="app-section-title flex items-center gap-2">
                           <Globe className="w-3.5 h-3.5 text-brand" />
@@ -528,7 +528,7 @@ export default function LiveOps() {
                     </div>
 
                     {/* Analytics: Unit Economics */}
-                    <div className="glass border-brand/12 p-5 hover:border-brand/35 hover:-translate-y-px hover:shadow-lg hover:shadow-brand/5 transition-all duration-300">
+                    <div className="glass border-brand/12 p-4 sm:p-5 hover:border-brand/35 hover:-translate-y-px hover:shadow-lg hover:shadow-brand/5 transition-all duration-300">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="app-section-title flex items-center gap-2">
                           <Zap className="w-3.5 h-3.5 text-brand" />
@@ -539,7 +539,7 @@ export default function LiveOps() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div className="p-4 bg-black/[0.02] border border-black/5">
                           <span className="app-section-title block mb-1">Cost / Min</span>
                           <span className="font-display italic text-2xl text-ink tabular-nums">
@@ -578,7 +578,7 @@ export default function LiveOps() {
             {/* Right Pane (Ops Intelligence Sidebar) */}
             <div className="md:col-span-1 lg:col-span-4 xl:col-span-3 space-y-3">
               {/* Telemetry Heartbeat Card */}
-              <div className="glass border-brand/12 p-3.5 relative overflow-hidden">
+              <div className="glass border-brand/12 p-3 sm:p-3.5 relative overflow-hidden">
                 <div className="flex items-center justify-between mb-2.5">
                   <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-brand font-bold flex items-center gap-2">
                     <span className="relative flex h-1.5 w-1.5">
@@ -607,7 +607,7 @@ export default function LiveOps() {
               </div>
 
               {/* Growth Action Card */}
-              <div className="glass border-brand/12 p-3.5 space-y-2.5">
+              <div className="glass border-brand/12 p-3 sm:p-3.5 space-y-2.5">
                 <div>
                   <h4 className="font-display italic text-[15px] leading-tight text-foreground">
                     Lead Generation

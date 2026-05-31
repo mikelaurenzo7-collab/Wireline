@@ -76,7 +76,7 @@ export default function AgentChat() {
 
       {/* ── Horizontal Agent Selection Bar ── */}
       <div className="shrink-0 mb-3 relative overflow-hidden">
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-1.5 px-1">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide scroll-fade-x py-1.5 px-1">
           {/* Director Selection Card */}
           <button
             onClick={() => navigate("/chat")}
