@@ -20,6 +20,7 @@ import { useToast } from "../../contexts/ToastContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { Input } from "../ui/shadcn/Input";
+import { EmptyState } from "../ui/EmptyState";
 
 export type FloorCall = {
   id: string;
@@ -207,22 +208,13 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
             <Loader2 className="w-6 h-6 animate-spin text-brand" />
           </div>
         ) : calls.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 sm:py-16 px-6 text-center glass border border-dashed border-black/10 rounded-2xl bg-black/[0.01]">
-            <div className="relative mb-4">
-              <span
-                aria-hidden
-                className="absolute inset-0 -z-10 rounded-full bg-brand/25 blur-2xl scale-150"
-              />
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand flex items-center justify-center shadow-lg shadow-brand/20">
-                <Phone className="w-6 h-6" />
-              </div>
-            </div>
-            <p className="font-display italic text-xl text-ink">Floor is quiet</p>
-            <p className="text-sm text-muted mt-2 max-w-sm leading-relaxed">
-              Active conversations appear here the moment an agent picks up. Listen in or
-              whisper-coach in one tap.
-            </p>
-          </div>
+          <EmptyState
+            icon={Phone}
+            eyebrow="Live floor"
+            title="Floor is quiet"
+            description="Active conversations appear here the moment an agent picks up. Listen in or whisper-coach in one tap."
+            className="glass border border-dashed border-black/10 rounded-2xl bg-black/[0.01] py-12 sm:py-16"
+          />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
             <AnimatePresence mode="popLayout">

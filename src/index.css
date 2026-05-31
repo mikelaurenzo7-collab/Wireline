@@ -961,6 +961,56 @@
   animation: shimmer 2.4s linear infinite;
 }
 
+/* ── CRYSTALLINE MEDALLION GLINT ─────────────────────────────────────
+   A slow diagonal light-sweep that travels across the signature gradient
+   medallion, plus a fixed specular highlight in the top-left corner. The
+   combination makes the medallion read like a cut gemstone catching the
+   light — the "watching crystal crystallize" aura, applied consistently
+   wherever the Medallion primitive appears (empty states, headers). */
+@keyframes medallion-glint {
+  0%   { transform: translateX(-160%) rotate(8deg); opacity: 0; }
+  18%  { opacity: 0.9; }
+  45%  { transform: translateX(160%) rotate(8deg); opacity: 0; }
+  100% { transform: translateX(160%) rotate(8deg); opacity: 0; }
+}
+
+.medallion-glint::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  /* Fixed top-left specular highlight — the "facet" catching ambient light. */
+  background:
+    radial-gradient(
+      120% 90% at 22% 14%,
+      rgba(255, 255, 255, 0.55) 0%,
+      rgba(255, 255, 255, 0.12) 28%,
+      transparent 56%
+    );
+  pointer-events: none;
+}
+
+.medallion-glint::after {
+  content: "";
+  position: absolute;
+  top: -40%;
+  left: 0;
+  width: 42%;
+  height: 180%;
+  border-radius: inherit;
+  /* Travelling glint stripe — the crystal sweep. */
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.0) 35%,
+    rgba(255, 255, 255, 0.65) 50%,
+    rgba(255, 255, 255, 0.0) 65%,
+    transparent 100%
+  );
+  animation: medallion-glint 4.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
 /* ── PREMIUM INTERACTION UTILITIES ──────────────────────────────────── */
 
 /* Card hover lift — consistent micro-interaction across all interactive cards.
@@ -1034,6 +1084,10 @@
   .skeleton-shimmer,
   .shimmer-line {
     animation: none !important;
+  }
+  .medallion-glint::after {
+    animation: none !important;
+    opacity: 0 !important;
   }
 }
 
