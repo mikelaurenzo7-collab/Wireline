@@ -25,6 +25,7 @@ import crypto from "node:crypto";
 import { Router, Request, Response, NextFunction } from "express";
 import { log } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
+import { isPlatformAdmin } from "../middleware/platform-admin";
 import type { AuthenticatedRequest } from "../types/auth";
 import { listVapiNumbers } from "../lib/vapi-phone-numbers";
 import {
@@ -213,7 +214,8 @@ router.post(
   "/api/admin/sync-vapi-knowledge",
   syncOptionalAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    // Authorize via owner-email session OR X-Migration-Token header.
+    // Authorize via platform-admin session (owner email or is_admin) OR
+    // X-Migration-Token header (for ops/CI without a session).
     const provided = req.headers["x-migration-token"] as string | undefined;
     const expected = process.env.MIGRATION_TOKEN;
     const tokenOk = !!(
@@ -222,10 +224,9 @@ router.post(
       provided.length === expected.length &&
       crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(expected))
     );
-    const ownerEmail = process.env.OWNER_EMAIL;
-    const ownerOk = !!(ownerEmail && req.user?.email === ownerEmail);
+    const ownerOk = tokenOk ? false : await isPlatformAdmin(req.user);
     if (!tokenOk && !ownerOk) {
-      return res.status(403).json({ error: "Owner only." });
+      return res.status(403).json({ error: "Platform admin access required" });
     }
     if (!process.env.VAPI_PRIVATE_KEY) {
       return res.status(503).json({ error: "VAPI_PRIVATE_KEY not configured" });

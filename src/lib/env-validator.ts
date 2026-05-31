@@ -53,6 +53,8 @@ const isPostgresUrl = (v: string) => /^postgresql:\/\//.test(v);
 const isStripeKey = (v: string) => /^sk_(test|live)_/.test(v);
 const isHex32 = (v: string) => /^[a-f0-9]{64}$/i.test(v);
 const isBase64Key = (v: string) => v.length >= 32;
+const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+const isE164Phone = (v: string) => /^\+[1-9]\d{6,14}$/.test(v);
 
 /**
  * Canonical environment variable registry
@@ -227,6 +229,31 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     required: false,
     description: "Comma-separated allowed origins for CORS",
     formatHint: "https://app1.com,https://app2.com",
+  },
+  {
+    name: "OWNER_EMAIL",
+    group: "operational",
+    required: false,
+    description:
+      "Platform owner email — gates owner-only admin surfaces and receives escalation/canary alerts",
+    validate: (v) => !v || isEmail(v),
+    formatHint: "founder@trywireline.com",
+  },
+  {
+    name: "OWNER_PHONE",
+    group: "operational",
+    required: false,
+    description: "Platform owner phone for urgent escalation SMS",
+    validate: (v) => !v || isE164Phone(v),
+    formatHint: "+13125550100 (E.164)",
+  },
+  {
+    name: "PLATFORM_SMS_FROM",
+    group: "operational",
+    required: false,
+    description: "Twilio sender number used for owner escalation SMS",
+    validate: (v) => !v || isE164Phone(v),
+    formatHint: "+13125550100 (E.164)",
   },
 ];
 
