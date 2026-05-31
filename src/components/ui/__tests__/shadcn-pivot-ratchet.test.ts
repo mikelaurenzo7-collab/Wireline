@@ -71,7 +71,7 @@ function countOccurrences(pattern: RegExp): number {
  *   should migrate. The single counter tracks total; exempt surfaces are noted in-file.
  */
 const BASELINE = {
-  rawButton: 386, // <button> outside ui/shadcn/*; 8 migrated to ShadButton (glass/icon variant) 2026-05-31
+  rawButton: 362, // <button> outside ui/shadcn/*; EmptyState primitives now route actions through ShadButton (legacy EmptyState delegates to canonical) 2026-05-31
   rawInput: 0, //  <input> outside ui/shadcn/*; fully migrated to shadcn Input/Checkbox/Slider. Stays at 0 forever.
   rawSelect: 0, // <select> outside ui/shadcn/*; fully migrated to shadcn Select. Stays at 0 forever.
   rawDialog: 0, //  <dialog>; we never use the native element. Stays at 0 forever.
