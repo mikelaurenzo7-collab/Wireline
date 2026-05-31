@@ -4,6 +4,7 @@ import { log, auditLogger, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, count } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
+import { requirePlatformAdmin } from "../middleware/platform-admin";
 import { validateBody, spendBudgetSchema } from "../lib/api-validation";
 import { getErrorMessage } from "../lib/server-utils";
 import {
@@ -521,11 +522,8 @@ router.get(
 router.get(
   "/admin/stripe-customer-audit",
   authenticateUser,
+  requirePlatformAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
-    const ownerEmail = process.env.OWNER_EMAIL;
-    if (!ownerEmail || req.user?.email !== ownerEmail) {
-      return res.status(403).json({ error: "Owner only." });
-    }
     if (!stripeAvailable()) {
       return res.status(503).json({ error: "Stripe not configured." });
     }

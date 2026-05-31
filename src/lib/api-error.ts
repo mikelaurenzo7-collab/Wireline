@@ -9,6 +9,8 @@
  * and leaked stack traces across the 50 route files.
  */
 
+import type { NextFunction, Request, RequestHandler, Response } from "express";
+
 export class AppError extends Error {
   status: number;
   code: string;
@@ -107,5 +109,30 @@ export function formatErrorResponse(
       code: safeStatus === 500 ? "INTERNAL_ERROR" : "ERROR",
       ...(requestId ? { requestId } : {}),
     },
+  };
+}
+
+/**
+ * Wrap an async Express handler so any rejected promise (e.g. a thrown
+ * {@link AppError}) is forwarded to `next()` instead of becoming an
+ * unhandled rejection.
+ *
+ * Without this, an `async (req, res) => { throw AppError.badRequest(...) }`
+ * handler rejects silently — Express never sees the error, the request hangs
+ * until the socket times out, and the response never flows through the global
+ * error handler / audit path. Wrapping the handler routes every thrown error
+ * to the standard `{ error, code, requestId }` response shape.
+ *
+ *   router.get("/api/thing", authenticateUser, asyncHandler(async (req, res) => {
+ *     const thing = await load(req.params.id);
+ *     if (!thing) throw AppError.notFound("Thing not found");
+ *     res.json(thing);
+ *   }));
+ */
+export function asyncHandler<Req extends Request = Request, Res extends Response = Response>(
+  handler: (req: Req, res: Res, next: NextFunction) => unknown | Promise<unknown>,
+): RequestHandler {
+  return (req, res, next) => {
+    void Promise.resolve(handler(req as Req, res as Res, next)).catch(next);
   };
 }

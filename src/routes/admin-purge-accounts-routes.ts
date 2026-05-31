@@ -22,6 +22,7 @@ import { Router, Response } from "express";
 import { drizzle, log } from "../lib/server-context";
 import { sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
+import { requirePlatformAdmin } from "../middleware/platform-admin";
 import type { AuthenticatedRequest } from "../types/auth";
 import { purgeAccount } from "../lib/account-deletion";
 
@@ -39,14 +40,11 @@ interface PurgeReport {
 router.post(
   "/api/admin/purge-non-preserved-accounts",
   authenticateUser,
+  requirePlatformAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     const ownerEmail = process.env.OWNER_EMAIL?.trim().toLowerCase();
     if (!ownerEmail) {
       return res.status(503).json({ error: "OWNER_EMAIL not configured" });
-    }
-    const callerEmail = req.user?.email?.trim().toLowerCase();
-    if (callerEmail !== ownerEmail) {
-      return res.status(403).json({ error: "Owner only." });
     }
 
     const e2eEmail = process.env.E2E_USER_EMAIL?.trim().toLowerCase();

@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { AppError, formatErrorResponse } from "./api-error";
+import { describe, expect, it, vi } from "vitest";
+import { AppError, asyncHandler, formatErrorResponse } from "./api-error";
 
 describe("AppError", () => {
   it("creates a bad request error", () => {
@@ -109,5 +109,59 @@ describe("formatErrorResponse", () => {
     const { status, body } = formatErrorResponse(err);
     expect(status).toBe(500);
     expect(body.error).toBe("Internal server error");
+  });
+});
+
+describe("asyncHandler", () => {
+  type Req = Parameters<ReturnType<typeof asyncHandler>>[0];
+  type Res = Parameters<ReturnType<typeof asyncHandler>>[1];
+
+  const req = {} as Req;
+  const res = {} as Res;
+
+  it("forwards a thrown AppError to next()", async () => {
+    const next = vi.fn();
+    const wrapped = asyncHandler(async () => {
+      throw AppError.badRequest("nope");
+    });
+    wrapped(req, res, next);
+    // Wait for the rejected promise's .catch(next) microtask to run.
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(next).toHaveBeenCalledTimes(1);
+    const err = next.mock.calls[0][0];
+    expect(err).toBeInstanceOf(AppError);
+    expect(err.status).toBe(400);
+  });
+
+  it("forwards a rejected promise (non-AppError) to next()", async () => {
+    const next = vi.fn();
+    const boom = new Error("boom");
+    const wrapped = asyncHandler(async () => {
+      throw boom;
+    });
+    wrapped(req, res, next);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(next).toHaveBeenCalledWith(boom);
+  });
+
+  it("does not call next() when the handler resolves", async () => {
+    const next = vi.fn();
+    const wrapped = asyncHandler(async () => {
+      /* success — sends a response itself */
+    });
+    wrapped(req, res, next);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("supports synchronous handlers that return a value", async () => {
+    const next = vi.fn();
+    const wrapped = asyncHandler(() => 42);
+    wrapped(req, res, next);
+    await Promise.resolve();
+    expect(next).not.toHaveBeenCalled();
   });
 });

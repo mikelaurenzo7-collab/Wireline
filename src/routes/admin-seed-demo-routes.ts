@@ -17,6 +17,7 @@ import { Router, Response } from "express";
 import { drizzle, log } from "../lib/server-context";
 import { sql, eq, and, inArray } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
+import { requirePlatformAdmin } from "../middleware/platform-admin";
 import { invalidateDashboard } from "../lib/dashboard-cache";
 import type { AuthenticatedRequest } from "../types/auth";
 import * as schema from "../db/schema";
@@ -228,12 +229,8 @@ function randomCreatedAt(daysBack: number): Date {
 router.post(
   "/api/admin/seed-demo-account",
   authenticateUser,
+  requirePlatformAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
-    const ownerEmail = process.env.OWNER_EMAIL;
-    if (!ownerEmail || req.user?.email !== ownerEmail) {
-      return res.status(403).json({ error: "Owner only." });
-    }
-
     const targetEmail =
       (typeof req.body?.email === "string" && req.body.email) || DEFAULT_DEMO_EMAIL;
 
