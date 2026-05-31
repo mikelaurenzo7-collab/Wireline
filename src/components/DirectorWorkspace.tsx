@@ -31,7 +31,6 @@ import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { useAgents } from "../contexts/AgentsContext";
 import { cn } from "../lib/utils";
-import { Medallion } from "./ui/Medallion";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
 
 type SuggestionKind =
@@ -69,8 +68,8 @@ const STARTER_PROMPTS = [
   "Audit my fleet and tell me what to improve.",
 ] as const;
 
-// What the Director is *for* — shown as a quiet capability strip on the
-// welcome screen so a first-time operator instantly grasps its remit.
+// What the Director is *for* — a compact icon strip used inline in the
+// composer hint row when the operator hasn't sent a message yet.
 const DIRECTOR_CAPABILITIES = [
   { icon: Compass, label: "Plan" },
   { icon: Plus, label: "Hire" },
@@ -247,95 +246,51 @@ export default function DirectorWorkspace() {
           />
         ) : messages.length === 0 ? (
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col items-center text-center py-12 lg:py-16 px-4 max-w-lg mx-auto"
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="flex flex-col items-center text-center pt-6 pb-2 px-2 max-w-lg mx-auto"
           >
             {/*
-              Branded medallion — uses the canonical Medallion primitive so
-              the gem glint + halo stays consistent with EmptyState and
-              ClientRouteLoading across the app.
+              Intentionally minimal. The chat IS the product — the composer
+              below is where attention belongs. We avoid a hero card here so
+              the chat surface (especially on mobile) stays uncluttered.
+              A tiny capability strip + starter chips give a first-time
+              operator just enough orientation to start typing.
             */}
-            <div className="mb-6">
-              <Medallion size="lg" withHalo shimmer>
-                <Sparkles className="w-7 h-7" />
-              </Medallion>
-            </div>
-
-            <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-brand/85 font-semibold mb-3">
-              Fleet Commander
-            </p>
-            <h2 className="font-display italic text-3xl lg:text-[2.25rem] leading-[1.1] text-ink mb-4 tracking-tight">
-              {agents.length > 0
-                ? `${agents.length} Agent${agents.length === 1 ? "" : "s"} Active.`
-                : "Let’s build your fleet."}
-            </h2>
-            <p className="text-[14px] text-muted-foreground leading-relaxed mb-8 max-w-md">
-              {agents.length > 0
-                ? `I’m your always-on manager. Ask me to audit performance, compile logs, or train new behaviors across your fleet.`
-                : `I’m your strategist — tell me about your target audience and workflows, and I’ll design a custom fleet to field calls, schedule appointments, and follow up autonomously.`}
-            </p>
-
-            {/* Fleet-at-a-glance */}
-            {agents.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-                className="w-full mb-8 grid grid-cols-2 gap-2"
-              >
-                {agents.slice(0, 4).map((a) => (
-                  <button
-                    key={a.id}
-                    onClick={() => navigate(`/chat/${a.id}`)}
-                    className="flex items-center gap-3 rounded-xl border border-brand/10 bg-white/40 dark:bg-black/20 px-3.5 py-3 text-left hover:border-brand/30 hover:bg-white/60 dark:hover:bg-black/35 hover:shadow-md hover:-translate-y-px transition-all duration-300 cursor-pointer"
-                  >
-                    <span className="shrink-0 w-6 h-6 rounded-full bg-brand text-white text-[10px] font-semibold flex items-center justify-center">
-                      {a.name.slice(0, 1).toUpperCase()}
+            {agents.length > 0 ? (
+              <p className="text-[12px] text-muted-foreground mb-3">
+                {agents.length} agent{agents.length === 1 ? "" : "s"} active — ask me anything about
+                your fleet.
+              </p>
+            ) : (
+              <div className="flex items-center justify-center gap-1.5 mb-3 flex-wrap">
+                {DIRECTOR_CAPABILITIES.map((c, i) => (
+                  <React.Fragment key={c.label}>
+                    {i > 0 && (
+                      <span className="w-0.5 h-0.5 rounded-full bg-brand/25" aria-hidden="true" />
+                    )}
+                    <span className="inline-flex items-center gap-1 px-1.5 text-brand/75">
+                      <c.icon className="w-3 h-3" aria-hidden="true" />
+                      <span className="font-mono text-[9px] uppercase tracking-[0.16em] font-semibold">
+                        {c.label}
+                      </span>
                     </span>
-                    <span className="min-w-0 text-[12px] font-medium text-ink truncate">
-                      {a.name}
-                    </span>
-                  </button>
+                  </React.Fragment>
                 ))}
-                {agents.length > 4 && (
-                  <div className="col-span-2 text-center pt-1">
-                    <span className="text-[11px] text-muted-foreground font-mono">
-                      +{agents.length - 4} more agents in your cockpit
-                    </span>
-                  </div>
-                )}
-              </motion.div>
+              </div>
             )}
 
-            {/* Capability strip */}
-            <div className="flex items-center justify-center gap-2 mb-8 bg-brand/[0.03] border border-brand/5 rounded-full px-4 py-2">
-              {DIRECTOR_CAPABILITIES.map((c, i) => (
-                <React.Fragment key={c.label}>
-                  {i > 0 && (
-                    <span className="w-1 h-1 rounded-full bg-brand/20" aria-hidden="true" />
-                  )}
-                  <span className="inline-flex items-center gap-1.5 px-1.5">
-                    <c.icon className="w-3.5 h-3.5 text-brand" aria-hidden="true" />
-                    <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-ink/75 font-semibold">
-                      {c.label}
-                    </span>
-                  </span>
-                </React.Fragment>
-              ))}
-            </div>
-
-            {/* Starter prompts */}
-            <div className="flex flex-col gap-2 w-full">
+            {/* Starter prompts — chip row, slimmer than the composer. */}
+            <div className="flex flex-wrap justify-center gap-1.5 w-full">
               {STARTER_PROMPTS.map((p) => (
                 <button
                   key={p}
                   onClick={() => send(p)}
-                  className="group flex items-center justify-between gap-4 text-left text-[13px] text-ink rounded-xl border border-brand/12 bg-white/40 dark:bg-black/10 px-4 py-3.5 hover:border-brand/35 hover:bg-white/60 dark:hover:bg-black/25 hover:shadow-lg hover:shadow-brand/5 hover:-translate-y-px transition-all duration-300 cursor-pointer"
+                  className="group inline-flex items-center gap-1 text-left text-[11px] text-ink/80 rounded-full border border-brand/15 bg-white/40 dark:bg-black/10 px-2.5 py-1 hover:border-brand/35 hover:bg-white/60 dark:hover:bg-black/25 transition-colors cursor-pointer"
                 >
-                  <span className="min-w-0 font-medium">{p}</span>
-                  <ArrowUpRight className="w-4 h-4 shrink-0 text-brand/40 group-hover:text-brand group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300" />
+                  <span className="min-w-0">{p}</span>
+                  <ArrowUpRight className="w-2.5 h-2.5 shrink-0 text-brand/40 group-hover:text-brand transition-colors" />
                 </button>
               ))}
             </div>

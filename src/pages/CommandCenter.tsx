@@ -10,7 +10,6 @@ import { LiveFloorPanel, type FloorAgent } from "../components/CommandCenter/Liv
 import { ActionFeed } from "../components/CommandCenter/ActionFeed";
 import OnboardingQuickstart from "../components/OnboardingQuickstart";
 import PageTransition from "../components/layout/PageTransition";
-import AppPageIntro from "../components/layout/AppPageIntro";
 import ClientRouteViewport from "../components/layout/ClientRouteViewport";
 import ClientSubTabs from "../components/layout/ClientSubTabs";
 import { clsx } from "clsx";
@@ -384,32 +383,32 @@ export default function LiveOps() {
     <PageTransition>
       <ClientRouteViewport className="overflow-y-auto">
         <div className="max-w-[1600px] mx-auto space-y-3 pb-4">
-          <AppPageIntro
-            eyebrow="Workspace · Command center"
-            title="Live Ops"
-            subtitle="Live callers on the floor, supervisor listen-in, action queue, and fleet analytics — one unified surface."
-            actions={
-              <button
-                onClick={refresh}
-                disabled={isRefreshing || loading}
-                className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn !p-3 !rounded-2xl cursor-pointer"
-                aria-label="Refresh"
-              >
-                <RefreshCw className={clsx("w-5 h-5", isRefreshing && "animate-spin")} />
-              </button>
-            }
-          />
+          {/* No editorial header here — Live Ops is a working surface; the
+              sidebar nav already names the page. Refresh sits inline with
+              the tab strip to keep the viewport short. */}
 
           {/* Grid Layout Container */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start pt-1">
             {/* Left Pane (Main Operations) */}
             <div className="lg:col-span-8 xl:col-span-9 space-y-4">
-              <ClientSubTabs
-                tabs={[...OPS_TABS]}
-                activeId={activeTab}
-                onChange={setActiveTab}
-                aria-label="Live Ops sections"
-              />
+              <div className="flex items-center justify-between gap-2">
+                <ClientSubTabs
+                  tabs={[...OPS_TABS]}
+                  activeId={activeTab}
+                  onChange={setActiveTab}
+                  aria-label="Live Ops sections"
+                  className="mb-0 md:mb-0 flex-1 min-w-0"
+                />
+                <button
+                  onClick={refresh}
+                  disabled={isRefreshing || loading}
+                  className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-muted hover:text-ink border border-black/8 bg-black/4 active:bg-black/8 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  aria-label="Refresh"
+                  title="Refresh"
+                >
+                  <RefreshCw className={clsx("w-4 h-4", isRefreshing && "animate-spin")} />
+                </button>
+              </div>
 
               {activeTab === "floor" && (
                 <section className="space-y-3 pt-1">
@@ -580,30 +579,30 @@ export default function LiveOps() {
             </div>
 
             {/* Right Pane (Ops Intelligence Sidebar) */}
-            <div className="lg:col-span-4 xl:col-span-3 space-y-4">
+            <div className="lg:col-span-4 xl:col-span-3 space-y-3">
               {/* Telemetry Heartbeat Card */}
-              <div className="google-m3-card p-5 google-m3-elevation-2 relative overflow-hidden">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xs font-mono uppercase tracking-[0.2em] text-brand font-bold flex items-center gap-2">
-                    <span className="relative flex h-2 w-2">
+              <div className="google-m3-card p-3.5 google-m3-elevation-2 relative overflow-hidden">
+                <div className="flex items-center justify-between mb-2.5">
+                  <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-brand font-bold flex items-center gap-2">
+                    <span className="relative flex h-1.5 w-1.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500/60" />
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
                     </span>
                     Live Telemetry
                   </h3>
-                  <span className="text-[10px] font-mono text-muted-foreground">Pulse Active</span>
+                  <span className="text-[9px] font-mono text-muted-foreground">Pulse Active</span>
                 </div>
 
-                <div className="space-y-3.5">
-                  <div className="flex items-center justify-between py-2 border-b border-brand/5">
-                    <span className="text-[13px] text-muted-foreground">Active Call Traffic</span>
-                    <span className="text-sm font-mono font-bold text-ink dark:text-foreground">
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between py-1 border-b border-brand/5">
+                    <span className="text-[12px] text-muted-foreground">Active Call Traffic</span>
+                    <span className="text-[12px] font-mono font-bold text-ink dark:text-foreground">
                       {calls.length} active
                     </span>
                   </div>
-                  <div className="flex items-center justify-between py-2 border-b border-brand/5">
-                    <span className="text-[13px] text-muted-foreground">Configured Agents</span>
-                    <span className="text-sm font-mono font-bold text-ink dark:text-foreground">
+                  <div className="flex items-center justify-between py-1">
+                    <span className="text-[12px] text-muted-foreground">Configured Agents</span>
+                    <span className="text-[12px] font-mono font-bold text-ink dark:text-foreground">
                       {stats?.agents?.length ?? 0}
                     </span>
                   </div>
@@ -611,12 +610,12 @@ export default function LiveOps() {
               </div>
 
               {/* Growth Action Card */}
-              <div className="google-m3-card p-5 google-m3-elevation-2 space-y-4">
+              <div className="google-m3-card p-3.5 google-m3-elevation-2 space-y-2.5">
                 <div>
-                  <h4 className="font-display italic text-lg leading-tight text-foreground">
+                  <h4 className="font-display italic text-[15px] leading-tight text-foreground">
                     Lead Generation
                   </h4>
-                  <p className="text-[11px] text-muted-foreground mt-1">
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
                     Autonomous growth engine queries lead databases dynamically.
                   </p>
                 </div>
@@ -657,12 +656,15 @@ export default function LiveOps() {
                       }
                     }}
                     disabled={activatingGrowth}
-                    className="w-full flex items-center justify-center gap-2.5 py-3 bg-gradient-to-br from-brand to-brand-deep text-on-brand rounded-xl shadow-md shadow-brand/20 transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-wait cursor-pointer google-m3-ripple"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-br from-brand to-brand-deep text-on-brand rounded-lg shadow-sm shadow-brand/20 transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-wait cursor-pointer google-m3-ripple"
                   >
                     <Zap
-                      className={clsx("w-4 h-4 fill-current", activatingGrowth && "animate-pulse")}
+                      className={clsx(
+                        "w-3.5 h-3.5 fill-current",
+                        activatingGrowth && "animate-pulse",
+                      )}
                     />
-                    <span className="text-xs font-black uppercase tracking-widest">
+                    <span className="text-[11px] font-black uppercase tracking-widest">
                       {activatingGrowth ? "Activating…" : "Activate Growth"}
                     </span>
                   </button>
@@ -670,42 +672,18 @@ export default function LiveOps() {
                   <button
                     onClick={() => navigate("/agents")}
                     title="Create an agent first"
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-brand/20 bg-brand/[0.02] text-brand hover:border-brand/45 transition-colors cursor-pointer google-m3-ripple"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-brand/20 bg-brand/[0.02] text-brand hover:border-brand/45 transition-colors cursor-pointer google-m3-ripple"
                   >
-                    <Zap className="w-4 h-4" />
-                    <span className="text-xs font-semibold">Deploy Agent First</span>
+                    <Zap className="w-3.5 h-3.5" />
+                    <span className="text-[11px] font-semibold">Deploy Agent First</span>
                   </button>
                 )}
               </div>
 
-              {/* Economic Summary Snippet */}
-              {stats?.unitEconomics && (
-                <div className="glass border-brand/12 rounded-2xl p-5 shadow-[0_8px_32px_rgba(139,63,214,0.01)] space-y-3.5">
-                  <h3 className="text-xs font-mono uppercase tracking-[0.2em] text-brand font-bold flex items-center gap-2">
-                    <Zap className="w-3.5 h-3.5 text-brand" />
-                    Ops Economics
-                  </h3>
-
-                  <div className="grid grid-cols-2 gap-2 text-center pt-1">
-                    <div className="bg-brand/[0.02] border border-brand/5 py-2.5 rounded-lg">
-                      <span className="text-[9px] uppercase tracking-[0.1em] text-muted-foreground block">
-                        Cost/Min
-                      </span>
-                      <span className="font-mono text-sm font-bold text-ink dark:text-foreground">
-                        ${stats.unitEconomics.costPerMinute ?? "0.00"}
-                      </span>
-                    </div>
-                    <div className="bg-brand/[0.02] border border-brand/5 py-2.5 rounded-lg">
-                      <span className="text-[9px] uppercase tracking-[0.1em] text-muted-foreground block">
-                        Cost/Lead
-                      </span>
-                      <span className="font-mono text-sm font-bold text-ink dark:text-foreground">
-                        ${stats.unitEconomics.costPerLead ?? "0.00"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Ops Economics moved out — the Analytics tab in the left
+                  pane already surfaces cost-per-min / cost-per-lead in
+                  larger form, so keeping a duplicate here only added
+                  scroll-distance without new signal. */}
             </div>
           </div>
         </div>
