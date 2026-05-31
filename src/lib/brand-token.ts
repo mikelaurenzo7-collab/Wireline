@@ -9,10 +9,10 @@
  * The resolver reads `--color-brand` from the document root at call time so
  * palette changes propagate without component edits, matching the
  * Phase 2 token-driven sweep applied to TopBar / PageShell chrome. The
- * literal `#8B3FD6` is kept only as an SSR-safe fallback for the brief moment
+ * literal `#7C3AED` is kept only as an SSR-safe fallback for the brief moment
  * before `document` is available.
  */
-export const BRAND_FALLBACK = "#8B3FD6";
+export const BRAND_FALLBACK = "#7C3AED";
 
 export function resolveBrandAccent(override?: string): string {
   if (override) return override;

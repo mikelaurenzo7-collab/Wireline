@@ -351,7 +351,7 @@ export default function AgentIntegrationCanvas({
                   </span>
                   <div
                     className="w-1 h-1 rounded-full transition-colors duration-300"
-                    style={{ background: connected ? "#8B3FD6" : "rgba(255,255,255,0.2)" }}
+                    style={{ background: connected ? "#7C3AED" : "rgba(255,255,255,0.2)" }}
                   />
                 </div>
               </button>
@@ -420,7 +420,7 @@ export default function AgentIntegrationCanvas({
                   )}
                   <div
                     className="w-1 h-1 rounded-full"
-                    style={{ background: connected ? "#8B3FD6" : "rgba(255,255,255,0.2)" }}
+                    style={{ background: connected ? "#7C3AED" : "rgba(255,255,255,0.2)" }}
                   />
                 </button>
               );

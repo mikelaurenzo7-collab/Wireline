@@ -112,7 +112,7 @@ function SpendBudgetCard() {
   const warnPct = Number(status?.warn_threshold_pct || 80);
   const isOver = limit > 0 && used >= limit;
   const isWarn = limit > 0 && pct >= warnPct && !isOver;
-  const barColor = isOver ? "#FF6B6B" : isWarn ? "#C4B5A0" : "#8B3FD6";
+  const barColor = isOver ? "#FF6B6B" : isWarn ? "#C4B5A0" : "#7C3AED";
   const period = status?.period || "—";
 
   return (
@@ -315,25 +315,25 @@ export default function AISpendView({ days }: { days: number }) {
               label="Total Spend"
               value={formatMoney(totals?.cost, 2)}
               icon={DollarSign}
-              accent="#8B3FD6"
+              accent="#7C3AED"
             />
             <SpendStat
               label="AI Calls"
               value={String(totals.calls)}
               icon={Brain}
-              accent="#8B3FD6"
+              accent="#7C3AED"
             />
             <SpendStat
               label="Avg / Call"
               value={formatMoney(totals?.avg_cost_per_call, 4)}
               icon={Receipt}
-              accent="#8B3FD6"
+              accent="#7C3AED"
             />
             <SpendStat
               label="Saved by Cache"
               value={formatMoney(totals?.cache_savings_usd, 2)}
               icon={Database}
-              accent="#8B3FD6"
+              accent="#7C3AED"
             />
           </div>
 
@@ -364,7 +364,7 @@ export default function AISpendView({ days }: { days: number }) {
                           animate={{ width: `${pct}%` }}
                           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: i * 0.02 }}
                           className="absolute inset-y-0 left-0 rounded-lg flex items-center px-3"
-                          style={{ background: "#8B3FD6" }}
+                          style={{ background: "#7C3AED" }}
                         >
                           <span className="text-[10px] font-mono text-on-brand font-medium">
                             ${safeFixed(d.cost, 2)}
@@ -404,7 +404,7 @@ export default function AISpendView({ days }: { days: number }) {
                             animate={{ width: `${pct}%` }}
                             transition={{ duration: 0.6, delay: i * 0.03 }}
                             className="absolute inset-y-0 left-0 rounded-full"
-                            style={{ background: "#8B3FD6" }}
+                            style={{ background: "#7C3AED" }}
                           />
                         </div>
                         <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.25em] text-muted">

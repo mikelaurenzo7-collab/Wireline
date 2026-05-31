@@ -712,7 +712,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       className={cn(
                         "relative z-10 flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer group",
                         activeStepId === step.id
-                          ? "bg-brand/10 border-brand/40 shadow-[0_0_15px_rgba(107, 43, 153 ,0.1)]"
+                          ? "bg-brand/10 border-brand/40 shadow-[0_0_15px_rgba(124, 58, 237 ,0.1)]"
                           : "glass border-white/10 hover:border-white/30",
                       )}
                     >

@@ -571,7 +571,7 @@ export default function AuditLog() {
                   icon={Shield}
                   title="No matches"
                   description="Try a different search term or widen the time range filter."
-                  accent="#8B3FD6"
+                  accent="#7C3AED"
                   actions={[
                     { label: "Clear search", onClick: () => setSearchQuery(""), primary: true },
                   ]}
@@ -581,7 +581,7 @@ export default function AuditLog() {
                   icon={Shield}
                   title="Audit trail is quiet"
                   description="Every agent action, escalation, and policy check writes here. Deploy an agent to start the feed."
-                  accent="#8B3FD6"
+                  accent="#7C3AED"
                   actions={[{ label: "Deploy an agent", to: "/agents", primary: true }]}
                 />
               )

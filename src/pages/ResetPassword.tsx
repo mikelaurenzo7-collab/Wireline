@@ -189,8 +189,8 @@ export default function ResetPassword() {
                 disabled={loading || !password || password !== confirm}
                 className="w-full px-5 py-3.5 min-h-[48px] rounded-xl text-sm font-medium text-paper transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.99]"
                 style={{
-                  background: "#8B3FD6",
-                  boxShadow: "0 8px 24px -8px rgba(107, 43, 153 ,0.50)",
+                  background: "#7C3AED",
+                  boxShadow: "0 8px 24px -8px rgba(124, 58, 237 ,0.50)",
                 }}
               >
                 {loading ? "Updating…" : "Reset password"}

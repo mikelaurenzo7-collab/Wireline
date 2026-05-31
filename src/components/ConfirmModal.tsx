@@ -132,7 +132,7 @@ export default function ConfirmModal({
                 style={{
                   background: danger
                     ? "radial-gradient(circle, #E8466A, transparent)"
-                    : "radial-gradient(circle, #8B3FD6, transparent)",
+                    : "radial-gradient(circle, #7C3AED, transparent)",
                 }}
               />
 

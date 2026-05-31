@@ -27,7 +27,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
           className="w-[55vw] h-[55vw] max-w-[700px] max-h-[700px] sm:opacity-40 opacity-25 rounded-full blur-3xl"
           style={{
             background:
-              "radial-gradient(circle, rgba(107, 43, 153 ,0.25), rgba(107, 43, 153 ,0.18) 50%, transparent 70%)",
+              "radial-gradient(circle, rgba(124, 58, 237 ,0.25), rgba(124, 58, 237 ,0.18) 50%, transparent 70%)",
           }}
         />
       </div>
@@ -84,17 +84,17 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
       >
         {isPublic ? (
           <>
-            <NotFoundCard to="/" icon={Home} label="Home" hint="Back to landing" accent="#8B3FD6" />
+            <NotFoundCard to="/" icon={Home} label="Home" hint="Back to landing" accent="#7C3AED" />
             <a
               href="tel:+16305811834"
               className="group relative flex items-center gap-3 p-4 rounded-2xl glass border border-black/10 hover:border-black/20 transition-colors"
-              style={{ boxShadow: "0 8px 24px -12px rgba(107, 43, 153 ,0.35)" }}
+              style={{ boxShadow: "0 8px 24px -12px rgba(124, 58, 237 ,0.35)" }}
             >
               <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                 style={{
-                  background: "#8B3FD6",
-                  boxShadow: "0 4px 12px -4px rgba(107, 43, 153 ,0.55)",
+                  background: "#7C3AED",
+                  boxShadow: "0 4px 12px -4px rgba(124, 58, 237 ,0.55)",
                 }}
               >
                 <Phone className="w-4 h-4 text-on-brand" strokeWidth={2.4} />
@@ -109,7 +109,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               icon={Compass}
               label="Pricing"
               hint="4 plans, free trial"
-              accent="#8B3FD6"
+              accent="#7C3AED"
             />
           </>
         ) : (
@@ -119,28 +119,28 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               icon={Home}
               label="Chat"
               hint="Mission control"
-              accent="#8B3FD6"
+              accent="#7C3AED"
             />
             <NotFoundCard
               to="/ops"
               icon={LayoutGrid}
               label="Live Ops"
               hint="Live callers"
-              accent="#8B3FD6"
+              accent="#7C3AED"
             />
             <NotFoundCard
               to="/agents"
               icon={MessageSquare}
               label="Agents"
               hint="Manage fleet"
-              accent="#8B3FD6"
+              accent="#7C3AED"
             />
             <NotFoundCard
               to="/phone"
               icon={Phone}
               label="Phone"
               hint="History & outbound"
-              accent="#8B3FD6"
+              accent="#7C3AED"
             />
           </>
         )}

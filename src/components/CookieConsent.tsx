@@ -70,8 +70,8 @@ export default function CookieConsent() {
             <div
               className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
               style={{
-                background: "rgba(107, 43, 153 ,0.12)",
-                border: "1px solid rgba(107, 43, 153 ,0.22)",
+                background: "rgba(124, 58, 237 ,0.12)",
+                border: "1px solid rgba(124, 58, 237 ,0.22)",
               }}
             >
               <Cookie className="w-3.5 h-3.5 text-brand" />

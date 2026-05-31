@@ -213,7 +213,7 @@ export default function AgentConfigPanel({
                   <div
                     className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
                     style={{
-                      background: "radial-gradient(circle, #8B3FD6, transparent)",
+                      background: "radial-gradient(circle, #7C3AED, transparent)",
                     }}
                   />
 
@@ -874,7 +874,7 @@ export default function AgentConfigPanel({
                   <div
                     className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
                     style={{
-                      background: "radial-gradient(circle, #8B3FD6, transparent)",
+                      background: "radial-gradient(circle, #7C3AED, transparent)",
                     }}
                   />
                   <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">

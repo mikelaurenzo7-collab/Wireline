@@ -83,7 +83,7 @@ export default function FunnelView({ days }: { days: number }) {
                   transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: i * 0.06 }}
                   className="absolute inset-y-0 left-0 rounded-full"
                   style={{
-                    background: `linear-gradient(90deg, #8B3FD6, #8B3FD6, #8B3FD6)`,
+                    background: `linear-gradient(90deg, #7C3AED, #7C3AED, #7C3AED)`,
                     backgroundSize: "200% 100%",
                   }}
                 />

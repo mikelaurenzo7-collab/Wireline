@@ -262,7 +262,7 @@ export default function TriageInbox() {
                   onFetchFailed={fetchData}
                 />
               </WidgetBoundary>,
-              "#8B3FD6",
+              "#7C3AED",
             )}
           </div>
 
@@ -305,7 +305,7 @@ export default function TriageInbox() {
                   onDiscard={removeGap}
                 />
               </WidgetBoundary>,
-              "#8B3FD6",
+              "#7C3AED",
             )}
           </div>
         </div>
@@ -347,7 +347,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
                   cy="22"
                   fill="none"
                   stroke={
-                    c.lead_score >= 80 ? "#8B3FD6" : c.lead_score >= 60 ? "#8B6FA8" : "#E8466A"
+                    c.lead_score >= 80 ? "#7C3AED" : c.lead_score >= 60 ? "#8B6FA8" : "#E8466A"
                   }
                   strokeWidth="4"
                   strokeDasharray={`${(c.lead_score / 100) * 100.53} 100.53`}

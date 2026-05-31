@@ -9,18 +9,18 @@ import { cn } from "../lib/utils";
 const META = {
   success: {
     icon: CheckCircle2,
-    color: "#8B3FD6",
+    color: "#7C3AED",
     border: "border-emerald-500/30",
     bg: "bg-emerald-500/10",
   },
   error: { icon: XCircle, color: "#f43f5e", border: "border-rose-500/30", bg: "bg-rose-500/10" },
   warning: {
     icon: AlertTriangle,
-    color: "#8B3FD6",
+    color: "#7C3AED",
     border: "border-amber-500/30",
     bg: "bg-amber-500/10",
   },
-  info: { icon: Info, color: "#8B3FD6", border: "border-brand/30", bg: "bg-brand/10" },
+  info: { icon: Info, color: "#7C3AED", border: "border-brand/30", bg: "bg-brand/10" },
 };
 
 function ToastItem({ toast }: { toast: Toast }) {

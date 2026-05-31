@@ -92,8 +92,8 @@ export function IntegrationPlaybookPanel({
             <div
               className="w-1.5 h-1.5 rounded-full"
               style={{
-                background: isConnected ? "#8B3FD6" : "#8B6FA8",
-                boxShadow: isConnected ? "0 0 4px #8B3FD6" : "none",
+                background: isConnected ? "#7C3AED" : "#8B6FA8",
+                boxShadow: isConnected ? "0 0 4px #7C3AED" : "none",
               }}
             />
             <span className="text-muted/70">{isConnected ? "Connected" : "Not connected"}</span>

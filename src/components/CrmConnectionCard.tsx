@@ -505,7 +505,7 @@ export default function CrmConnectionCard() {
                             <div className="mt-3 pt-3 border-t border-black/8">
                               <IntegrationCapabilityPanel
                                 integration={toolInt}
-                                accentColor={PROVIDER_ACCENT[key] ?? "#8B3FD6"}
+                                accentColor={PROVIDER_ACCENT[key] ?? "#7C3AED"}
                                 connected
                                 enabledTools={[]}
                                 compact

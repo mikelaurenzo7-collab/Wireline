@@ -277,7 +277,7 @@ export default function AgentTraining({
           <summary className="cursor-pointer list-none flex items-center gap-2 px-3 py-1.5 rounded-xl glass border border-white/10 hover:border-brand/30 transition-colors">
             <div
               className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
-              style={{ background: "#8B3FD6" }}
+              style={{ background: "#7C3AED" }}
             >
               <Sparkles className="w-3 h-3 text-on-brand" strokeWidth={2.5} />
             </div>
@@ -487,7 +487,7 @@ export default function AgentTraining({
               <section className="rounded-2xl glass border border-white/10 p-4 relative overflow-hidden">
                 <div
                   className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
-                  style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
+                  style={{ background: "radial-gradient(circle, #7C3AED, transparent)" }}
                 />
                 <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                   <div className="flex items-center gap-2.5">
@@ -828,7 +828,7 @@ export default function AgentTraining({
                   <div className="flex items-center gap-2.5 mb-4">
                     <div
                       className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                      style={{ background: "#8B3FD6" }}
+                      style={{ background: "#7C3AED" }}
                     >
                       <Sparkles className="w-3.5 h-3.5 text-on-brand" strokeWidth={2.5} />
                     </div>
@@ -926,7 +926,7 @@ export default function AgentTraining({
                   <div className="relative w-20 h-20 rounded-2xl glass border border-white/10 flex items-center justify-center mx-auto">
                     <div
                       className="absolute inset-0 rounded-2xl opacity-20 blur-xl"
-                      style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
+                      style={{ background: "radial-gradient(circle, #7C3AED, transparent)" }}
                     />
                     <PlayCircle className="w-10 h-10 text-brand relative z-10" strokeWidth={1.25} />
                   </div>

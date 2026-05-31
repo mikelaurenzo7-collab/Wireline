@@ -165,8 +165,8 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
                   className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                   style={{
                     background:
-                      "linear-gradient(135deg, rgba(107, 43, 153 ,0.12), rgba(107, 43, 153 ,0.10))",
-                    border: "1px solid rgba(107, 43, 153 ,0.20)",
+                      "linear-gradient(135deg, rgba(124, 58, 237 ,0.12), rgba(124, 58, 237 ,0.10))",
+                    border: "1px solid rgba(124, 58, 237 ,0.20)",
                   }}
                 >
                   {claiming === n.phone_number ? (

@@ -172,8 +172,8 @@ export default function ProductTour() {
               left: anchorRect.left - 4,
               width: anchorRect.width + 8,
               height: anchorRect.height + 8,
-              boxShadow: "0 0 0 2px rgba(107, 43, 153 ,0.7), 0 0 16px rgba(107, 43, 153 ,0.35)",
-              border: "2px solid rgba(107, 43, 153 ,0.8)",
+              boxShadow: "0 0 0 2px rgba(124, 58, 237 ,0.7), 0 0 16px rgba(124, 58, 237 ,0.35)",
+              border: "2px solid rgba(124, 58, 237 ,0.8)",
             }}
           />
         )}
@@ -211,7 +211,7 @@ export default function ProductTour() {
             style={{
               borderColor: "rgba(26, 22, 20, 0.10)",
               boxShadow:
-                "0 1px 0 rgba(255,255,255,0.9) inset, 0 22px 54px -24px rgba(26,22,20,0.32), 0 0 0 1px rgba(107, 43, 153 ,0.05)",
+                "0 1px 0 rgba(255,255,255,0.9) inset, 0 22px 54px -24px rgba(26,22,20,0.32), 0 0 0 1px rgba(124, 58, 237 ,0.05)",
             }}
           >
             {/* Header row */}
@@ -244,7 +244,7 @@ export default function ProductTour() {
                     style={{
                       width: i === stepIndex ? 16 : 6,
                       height: 6,
-                      background: i === stepIndex ? "#8B3FD6" : "rgba(0,0,0,0.15)",
+                      background: i === stepIndex ? "#7C3AED" : "rgba(0,0,0,0.15)",
                       transition: "width 0.3s ease",
                     }}
                   />

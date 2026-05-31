@@ -458,7 +458,7 @@ export function Panel({
       )}
       style={{
         boxShadow:
-          "0 1px 0 rgba(255,255,255,0.80) inset, 0 0 0 1px rgba(107, 43, 153 ,0.03), 0 8px 32px -10px rgba(0,0,0,0.10), 0 3px 12px -4px rgba(107, 43, 153 ,0.06)",
+          "0 1px 0 rgba(255,255,255,0.80) inset, 0 0 0 1px rgba(124, 58, 237 ,0.03), 0 8px 32px -10px rgba(0,0,0,0.10), 0 3px 12px -4px rgba(124, 58, 237 ,0.06)",
       }}
     >
       {/* Subtle ambient glow behind header */}

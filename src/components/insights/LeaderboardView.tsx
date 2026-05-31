@@ -65,21 +65,21 @@ export default function LeaderboardView({ days }: { days: number }) {
     {
       gradient: "linear-gradient(135deg, var(--color-brand), var(--color-brand-deep))",
       ring: "border-brand/40",
-      glow: "rgba(107, 43, 153 ,0.25)",
+      glow: "rgba(124, 58, 237 ,0.25)",
       textClass: "text-on-brand",
       iconBg: true,
     },
     {
-      gradient: "linear-gradient(135deg, rgba(107, 43, 153 ,0.20), rgba(107, 43, 153 ,0.10))",
+      gradient: "linear-gradient(135deg, rgba(124, 58, 237 ,0.20), rgba(124, 58, 237 ,0.10))",
       ring: "border-brand-2/30",
-      glow: "rgba(107, 43, 153 ,0.15)",
+      glow: "rgba(124, 58, 237 ,0.15)",
       textClass: "text-brand-2",
       iconBg: false,
     },
     {
-      gradient: "linear-gradient(135deg, rgba(107, 43, 153 ,0.15), rgba(107, 43, 153 ,0.08))",
+      gradient: "linear-gradient(135deg, rgba(124, 58, 237 ,0.15), rgba(124, 58, 237 ,0.08))",
       ring: "border-brand-3/25",
-      glow: "rgba(107, 43, 153 ,0.12)",
+      glow: "rgba(124, 58, 237 ,0.12)",
       textClass: "text-brand-3",
       iconBg: false,
     },
@@ -143,19 +143,19 @@ export default function LeaderboardView({ days }: { days: number }) {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
                 <Stat label="Calls" value={a.total_calls} />
-                <Stat label="Qualified" value={a.qualified} accent="#8B3FD6" />
+                <Stat label="Qualified" value={a.qualified} accent="#7C3AED" />
                 <Stat label="Avg Score" value={a.avg_lead_score} />
                 <Stat label="Bookings" value={a.bookings} />
                 <Stat label="Minutes" value={a.minutes} />
                 <Stat
                   label="$/Qual"
                   value={a.cost_per_qualified ? `$${a.cost_per_qualified}` : "—"}
-                  accent="#8B3FD6"
+                  accent="#7C3AED"
                 />
                 <Stat
                   label="$/Outcome"
                   value={a.cost_per_outcome ? `$${a.cost_per_outcome}` : "—"}
-                  accent="#8B3FD6"
+                  accent="#7C3AED"
                 />
                 <Stat label="Total $" value={a.total_cost ? `$${a.total_cost}` : "—"} />
               </div>

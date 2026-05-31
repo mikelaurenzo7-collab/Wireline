@@ -72,11 +72,11 @@ export default function HeatmapView({ days }: { days: number }) {
                           style={{
                             background:
                               cell && cell.count > 0
-                                ? `linear-gradient(135deg, rgba(107, 43, 153 ,${opacity}), rgba(107, 43, 153 ,${opacity * 0.8}))`
+                                ? `linear-gradient(135deg, rgba(124, 58, 237 ,${opacity}), rgba(124, 58, 237 ,${opacity * 0.8}))`
                                 : "rgba(0,0,0,0.03)",
                             border:
                               cell && cell.count > 0
-                                ? `1px solid rgba(107, 43, 153 ,${0.2 + intensity * 0.4})`
+                                ? `1px solid rgba(124, 58, 237 ,${0.2 + intensity * 0.4})`
                                 : "1px solid rgba(0,0,0,0.04)",
                           }}
                           title={`${wd} ${h}:00 — ${cell?.count || 0} calls${cell?.avg_score ? `, avg score ${cell.avg_score}` : ""}`}
@@ -97,7 +97,7 @@ export default function HeatmapView({ days }: { days: number }) {
                 key={i}
                 className="w-4 h-4 rounded"
                 style={{
-                  background: `linear-gradient(135deg, rgba(107, 43, 153 ,${o}), rgba(107, 43, 153 ,${o * 0.8}))`,
+                  background: `linear-gradient(135deg, rgba(124, 58, 237 ,${o}), rgba(124, 58, 237 ,${o * 0.8}))`,
                 }}
               />
             ))}

@@ -225,7 +225,7 @@ function getPasswordStrength(pw: string): PasswordStrength {
     1: { label: "Weak", color: "#FF9A5C" },
     2: { label: "Fair", color: "#FFD166" },
     3: { label: "Good", color: "#4DFFC4" },
-    4: { label: "Strong", color: "#8B3FD6" },
+    4: { label: "Strong", color: "#7C3AED" },
   };
   return { score: clamped, ...meta[clamped] };
 }
@@ -385,7 +385,7 @@ export default function AuthPortal() {
           aria-hidden
           style={{
             background:
-              "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(107,43,153,0.06), transparent 55%)",
+              "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(124,58,237,0.06), transparent 55%)",
           }}
         />
 
@@ -405,7 +405,7 @@ export default function AuthPortal() {
               className="border border-ink/[0.06] bg-paper overflow-hidden"
               style={{
                 boxShadow:
-                  "0 1px 0 rgba(255,255,255,0.9) inset, 0 24px 64px -24px rgba(26, 22, 20, 0.12), 0 8px 24px -12px rgba(107, 43, 153, 0.08)",
+                  "0 1px 0 rgba(255,255,255,0.9) inset, 0 24px 64px -24px rgba(26, 22, 20, 0.12), 0 8px 24px -12px rgba(124, 58, 237, 0.08)",
               }}
             >
               <div className="p-6 sm:p-8">
@@ -620,7 +620,7 @@ export default function AuthPortal() {
                   <button
                     type="submit"
                     disabled={loading || (isSignUp && !agreedToTerms)}
-                    className="w-full flex items-center justify-center gap-2 min-h-[48px] py-3.5 text-sm font-semibold text-white bg-brand hover:bg-[#8B3FD6] transition-all disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2 min-h-[48px] py-3.5 text-sm font-semibold text-white bg-brand hover:bg-[#7C3AED] transition-all disabled:opacity-50"
                   >
                     {loading ? (
                       <>

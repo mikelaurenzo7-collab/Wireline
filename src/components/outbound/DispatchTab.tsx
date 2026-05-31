@@ -488,7 +488,7 @@ export default function DispatchTab({
                     icon={UploadCloud}
                     title="Queue is idle"
                     description="Upload a CSV of contacts and your agent will dial through them with full call notes saved to the CRM."
-                    accent="#8B3FD6"
+                    accent="#7C3AED"
                     actions={[
                       {
                         label: "Upload CSV",

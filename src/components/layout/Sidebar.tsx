@@ -113,7 +113,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         onMouseLeave={() => setPeek(false)}
         className={cn(
           "hidden lg:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
-          "bg-[#3B154C]/96 border-r border-[#EFE9DC]/15 shadow-[0_0_32px_rgba(59,21,76,0.2)]"
+          "bg-[#581C87]/96 border-r border-[#EFE9DC]/15 shadow-[0_0_32px_rgba(59,21,76,0.2)]",
         )}
         style={{
           width: railWidth,
@@ -137,7 +137,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
               boxShadow: "0 4px 14px -4px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.22) inset",
             }}
           >
-            <WirelineMark className="w-4 h-4 text-[#3B154C] relative z-10" strokeWidth={130} />
+            <WirelineMark className="w-4 h-4 text-[#581C87] relative z-10" strokeWidth={130} />
             <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent" />
           </motion.div>
           <AnimatePresence>
@@ -214,7 +214,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
               aria-label="Account & billing"
               title={user.email}
             >
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[#3B154C] bg-[#EFE9DC] dark:text-[#3B154C] dark:bg-[#EFE9DC] font-semibold text-[11px] shrink-0">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[#581C87] bg-[#EFE9DC] dark:text-[#581C87] dark:bg-[#EFE9DC] font-semibold text-[11px] shrink-0">
                 {user.email?.slice(0, 1).toUpperCase() ?? "?"}
               </div>
               <div className="min-w-0 flex-1">
@@ -232,7 +232,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
               aria-label="Account"
               title={user.email}
             >
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[#3B154C] bg-[#EFE9DC] dark:text-[#3B154C] dark:bg-[#EFE9DC] font-semibold text-[11px]">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[#581C87] bg-[#EFE9DC] dark:text-[#581C87] dark:bg-[#EFE9DC] font-semibold text-[11px]">
                 {user.email?.slice(0, 1).toUpperCase() ?? "?"}
               </div>
             </Link>

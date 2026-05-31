@@ -105,7 +105,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
       <div
         aria-hidden="true"
         className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-20 blur-3xl pointer-events-none"
-        style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
+        style={{ background: "radial-gradient(circle, #7C3AED, transparent)" }}
       />
 
       <header className="relative flex items-start gap-3 mb-4">
@@ -113,8 +113,8 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
           className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border border-white/10 shadow-lg shadow-brand/10"
           style={{
             background:
-              "linear-gradient(135deg, rgba(107, 43, 153 ,0.20), rgba(107, 43, 153 ,0.05))",
-            color: "#8B3FD6",
+              "linear-gradient(135deg, rgba(124, 58, 237 ,0.20), rgba(124, 58, 237 ,0.05))",
+            color: "#7C3AED",
           }}
         >
           <Target className="w-4.5 h-4.5" />
@@ -223,12 +223,12 @@ function Sparkline({ values }: { values: number[] }) {
       >
         <defs>
           <linearGradient id="sparkfill" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#8B3FD6" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#8B3FD6" stopOpacity="0" />
+            <stop offset="0%" stopColor="#7C3AED" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#7C3AED" stopOpacity="0" />
           </linearGradient>
           <linearGradient id="sparkstroke" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0%" stopColor="#8B3FD6" />
-            <stop offset="100%" stopColor="#8B3FD6" />
+            <stop offset="0%" stopColor="#7C3AED" />
+            <stop offset="100%" stopColor="#7C3AED" />
           </linearGradient>
         </defs>
         <polyline
@@ -238,7 +238,7 @@ function Sparkline({ values }: { values: number[] }) {
           strokeLinecap="round"
           strokeLinejoin="round"
           points={points}
-          className="drop-shadow-[0_2px_8px_rgba(107, 43, 153 ,0.4)]"
+          className="drop-shadow-[0_2px_8px_rgba(124, 58, 237 ,0.4)]"
         />
         <polygon fill="url(#sparkfill)" points={`0,${h} ${points} ${w},${h}`} />
       </svg>

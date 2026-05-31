@@ -101,7 +101,7 @@ export function SupportPage() {
         <div className="flex items-center gap-3 mb-2">
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: "#8B3FD6" }}
+            style={{ background: "#7C3AED" }}
           >
             <ShieldCheck className="w-5 h-5 text-on-brand" />
           </div>
@@ -117,7 +117,7 @@ export function SupportPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-10">
           <a
             href={`tel:${supportAgent.tel}`}
-            className="marketing-panel p-4 min-h-[88px] hover:border-brand/30 hover:shadow-[0_8px_24px_-16px_rgba(107,43,153,0.25)] transition-all group"
+            className="marketing-panel p-4 min-h-[88px] hover:border-brand/30 hover:shadow-[0_8px_24px_-16px_rgba(124,58,237,0.25)] transition-all group"
           >
             <div className="w-9 h-9 rounded-lg bg-brand/10 flex items-center justify-center mb-3">
               <Phone className="w-4 h-4 text-brand" />
@@ -130,7 +130,7 @@ export function SupportPage() {
           </a>
           <a
             href="mailto:trywireline@yahoo.com"
-            className="marketing-panel p-4 min-h-[88px] hover:border-brand/30 hover:shadow-[0_8px_24px_-16px_rgba(107,43,153,0.25)] transition-all group"
+            className="marketing-panel p-4 min-h-[88px] hover:border-brand/30 hover:shadow-[0_8px_24px_-16px_rgba(124,58,237,0.25)] transition-all group"
           >
             <div className="w-9 h-9 rounded-lg bg-brand/10 flex items-center justify-center mb-3">
               <Mail className="w-4 h-4 text-brand" />
@@ -142,7 +142,7 @@ export function SupportPage() {
           </a>
           <Link
             to="/chat"
-            className="marketing-panel p-4 min-h-[88px] hover:border-brand/30 hover:shadow-[0_8px_24px_-16px_rgba(107,43,153,0.25)] transition-all group"
+            className="marketing-panel p-4 min-h-[88px] hover:border-brand/30 hover:shadow-[0_8px_24px_-16px_rgba(124,58,237,0.25)] transition-all group"
           >
             <div className="w-9 h-9 rounded-lg bg-brand/10 flex items-center justify-center mb-3">
               <MessageSquare className="w-4 h-4 text-brand" />

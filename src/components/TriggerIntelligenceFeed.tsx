@@ -14,10 +14,10 @@ type ActivityItem = {
 };
 
 const TYPE_META: Record<string, { icon: typeof Signal; color: string }> = {
-  SIGNAL_ANALYZED: { icon: Signal, color: "#8B3FD6" },
-  MISSION_INJECTED: { icon: Zap, color: "#8B3FD6" },
-  NEURAL_OPTIMIZATION: { icon: Cpu, color: "#8B3FD6" },
-  DIGITAL_RELAY: { icon: Radio, color: "#8B3FD6" },
+  SIGNAL_ANALYZED: { icon: Signal, color: "#7C3AED" },
+  MISSION_INJECTED: { icon: Zap, color: "#7C3AED" },
+  NEURAL_OPTIMIZATION: { icon: Cpu, color: "#7C3AED" },
+  DIGITAL_RELAY: { icon: Radio, color: "#7C3AED" },
 };
 
 const IMPORTANCE_RING: Record<string, string> = {
@@ -36,7 +36,7 @@ export default function TriggerIntelligenceFeed({ activity }: { activity: Activi
             <div
               className="absolute inset-0 rounded-full opacity-30 animate-ping"
               style={{
-                background: "radial-gradient(circle, rgba(107, 43, 153 ,0.5), transparent)",
+                background: "radial-gradient(circle, rgba(124, 58, 237 ,0.5), transparent)",
               }}
             />
             <div className="absolute inset-0 rounded-full glass border border-brand/30 flex items-center justify-center">

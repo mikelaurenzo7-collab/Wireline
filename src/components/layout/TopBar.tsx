@@ -195,15 +195,15 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
     );
   };
 
-return (
+  return (
     <>
       <header
         aria-label="Main navigation"
         className={cn(
           "shell-sticky-glass shrink-0 sticky top-0 z-50 border-b lg:hidden transition-all duration-300",
           theme === "light"
-            ? "bg-[#F5F0E6]/80 border-[#8B3FD6]/12 text-ink animate-fade-in"
-            : "bg-[#2D1A3E]/90 border-[#8B3FD6]/18 text-white animate-fade-in",
+            ? "bg-[#F5F0E6]/80 border-[#7C3AED]/12 text-ink animate-fade-in"
+            : "bg-[#2D1A3E]/90 border-[#7C3AED]/18 text-white animate-fade-in",
         )}
         style={{
           boxShadow:
@@ -347,7 +347,7 @@ return (
                 title={user?.email || "Account"}
               >
                 <div
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-[#3B154C] font-medium text-[10px] shrink-0"
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-[#581C87] font-medium text-[10px] shrink-0"
                   style={{ background: "#EFE9DC" }}
                   aria-hidden="true"
                 >

@@ -118,7 +118,7 @@ export function SlackPreviewCard() {
         >
           <div
             className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center text-[9px] font-bold text-white mt-0.5"
-            style={{ background: "#8B3FD6" }}
+            style={{ background: "#7C3AED" }}
           >
             W
           </div>
@@ -488,15 +488,15 @@ export function DocuSignPreviewCard() {
                 key={field}
                 className="flex items-center gap-2 px-2 py-1 rounded transition-all duration-600"
                 style={{
-                  background: isThisSigned ? "rgba(107,43,153,0.08)" : "rgba(255,199,32,0.06)",
-                  border: `1px solid ${isThisSigned ? "rgba(107,43,153,0.25)" : "rgba(255,199,32,0.15)"}`,
+                  background: isThisSigned ? "rgba(124,58,237,0.08)" : "rgba(255,199,32,0.06)",
+                  border: `1px solid ${isThisSigned ? "rgba(124,58,237,0.25)" : "rgba(255,199,32,0.15)"}`,
                 }}
               >
                 <div
                   className="w-2 h-2 rounded-full shrink-0 transition-all duration-500"
                   style={{
                     background: isThisSigned
-                      ? "#8B3FD6"
+                      ? "#7C3AED"
                       : i === 0
                         ? "#FFC720"
                         : "rgba(255,199,32,0.3)",
@@ -505,13 +505,13 @@ export function DocuSignPreviewCard() {
                 <span
                   className="text-[9px] transition-colors duration-500"
                   style={{
-                    color: isThisSigned ? "rgba(107,43,153,0.85)" : "rgba(255,255,255,0.55)",
+                    color: isThisSigned ? "rgba(124,58,237,0.85)" : "rgba(255,255,255,0.55)",
                   }}
                 >
                   {field} field
                 </span>
                 {isThisSigned ? (
-                  <CheckCircle2 size={9} style={{ color: "#8B3FD6", marginLeft: "auto" }} />
+                  <CheckCircle2 size={9} style={{ color: "#7C3AED", marginLeft: "auto" }} />
                 ) : i === 0 ? (
                   <span className="ml-auto text-[8px]" style={{ color: "#FFC720" }}>
                     Awaiting
@@ -754,7 +754,7 @@ export function TeamsPreviewCard() {
         >
           <div
             className="w-7 h-7 rounded shrink-0 flex items-center justify-center text-[9px] font-bold text-white mt-0.5"
-            style={{ background: "#8B3FD6" }}
+            style={{ background: "#7C3AED" }}
           >
             W
           </div>

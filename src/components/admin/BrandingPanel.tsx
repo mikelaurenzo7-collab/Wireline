@@ -53,13 +53,13 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
                 <Input
                   type="color"
                   className="brand-color-swatch w-11 h-11 rounded-xl bg-transparent border-input cursor-pointer p-0"
-                  value={settings.primary_color || "#8B3FD6"}
+                  value={settings.primary_color || "#7C3AED"}
                   onChange={(e) => onUpdate({ ...settings, primary_color: e.target.value })}
                 />
                 <Input
                   type="text"
                   className="app-input-soft flex-1 py-3 h-auto font-mono"
-                  value={settings.primary_color || "#8B3FD6"}
+                  value={settings.primary_color || "#7C3AED"}
                   onChange={(e) => onUpdate({ ...settings, primary_color: e.target.value })}
                 />
               </div>

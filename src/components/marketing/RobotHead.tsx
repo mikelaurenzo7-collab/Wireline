@@ -21,10 +21,10 @@ interface RobotHeadProps {
 }
 
 const COLORS = {
-  purple: "var(--wl-purple, #8B3FD6)",
-  purpleLight: "var(--wl-purple-light, #8B3FD6)",
-  purpleDeep: "var(--wl-purple-deep, #3B154C)",
-  emerald: "var(--wl-emerald, #8B3FD6)",
+  purple: "var(--wl-purple, #7C3AED)",
+  purpleLight: "var(--wl-purple-light, #7C3AED)",
+  purpleDeep: "var(--wl-purple-deep, #581C87)",
+  emerald: "var(--wl-emerald, #7C3AED)",
   emeraldSoft: "var(--wl-emerald-soft, #8B6FA8)",
   cream: "var(--wl-cream, #F5F0E6)",
   paper: "var(--wl-paper, #EFE9DC)",
@@ -653,7 +653,7 @@ export function RobotHead({
           transform: transforms,
           transition: animated ? "transform 0.45s cubic-bezier(0.23, 1, 0.32, 1)" : undefined,
           overflow: "visible",
-          filter: vivid ? undefined : "drop-shadow(0 3px 10px rgba(107, 43, 153, 0.12))",
+          filter: vivid ? undefined : "drop-shadow(0 3px 10px rgba(124, 58, 237, 0.12))",
         }}
       >
         <defs>

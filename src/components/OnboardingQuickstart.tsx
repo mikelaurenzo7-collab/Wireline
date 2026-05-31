@@ -42,7 +42,7 @@ const STEPS = [
     title: "Create your first agent",
     body: "Describe what your agent should do in one sentence. We'll generate the name, personality, instructions, and starter knowledge for you.",
     icon: Hammer,
-    accent: "#8B3FD6",
+    accent: "#7C3AED",
     badge: "~30 seconds",
   },
   {
@@ -50,7 +50,7 @@ const STEPS = [
     title: "Teach it about your business",
     body: "Paste your website URL and we'll pull in your services, pricing, hours, and policies automatically — ready in one click.",
     icon: Globe,
-    accent: "#8B3FD6",
+    accent: "#7C3AED",
     badge: "Instant",
   },
   {
@@ -58,7 +58,7 @@ const STEPS = [
     title: "Wire up a phone number",
     body: "Every Wireline plan includes a dedicated voice number — no Twilio bill, no separate setup. Provision yours in Integrations and route inbound calls to your agent.",
     icon: Phone,
-    accent: "#8B3FD6",
+    accent: "#7C3AED",
     badge: "1 click",
   },
   {
@@ -66,7 +66,7 @@ const STEPS = [
     title: "Run a live test call",
     body: "Talk to your agent live from your browser — no phone needed. Make sure it sounds the way you want.",
     icon: Mic,
-    accent: "#8B3FD6",
+    accent: "#7C3AED",
     badge: "Try it now",
   },
 ] as const;
@@ -197,17 +197,17 @@ export default function OnboardingQuickstart({
         <div className="relative rounded-3xl glass-strong overflow-hidden p-6 md:p-8">
           <div
             className="absolute -top-32 -right-32 w-96 h-96 rounded-full max-w-[60vw] max-h-[60vw] sm:max-w-none sm:max-h-none opacity-30 blur-3xl pointer-events-none"
-            style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
+            style={{ background: "radial-gradient(circle, #7C3AED, transparent)" }}
           />
           <div
             className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full max-w-[60vw] max-h-[60vw] sm:max-w-none sm:max-h-none opacity-25 blur-3xl pointer-events-none"
-            style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
+            style={{ background: "radial-gradient(circle, #7C3AED, transparent)" }}
           />
           <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
             <div className="flex items-start gap-4 flex-1 min-w-0">
               <div
                 className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: "linear-gradient(135deg, #8B3FD6, #8B3FD6, #8B3FD6)" }}
+                style={{ background: "linear-gradient(135deg, #7C3AED, #7C3AED, #7C3AED)" }}
               >
                 <Sparkles className="w-5 h-5 text-paper" strokeWidth={2.5} />
               </div>
@@ -330,11 +330,11 @@ export default function OnboardingQuickstart({
       <div className="relative rounded-3xl glass-strong overflow-hidden">
         <div
           className="absolute -top-32 -right-32 w-96 h-96 rounded-full max-w-[60vw] max-h-[60vw] sm:max-w-none sm:max-h-none opacity-30 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
+          style={{ background: "radial-gradient(circle, #7C3AED, transparent)" }}
         />
         <div
           className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full max-w-[60vw] max-h-[60vw] sm:max-w-none sm:max-h-none opacity-25 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
+          style={{ background: "radial-gradient(circle, #7C3AED, transparent)" }}
         />
 
         {/* Header — tightened so the 4 step cards land above the fold
@@ -346,7 +346,7 @@ export default function OnboardingQuickstart({
             <div className="flex items-center gap-3">
               <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, #8B3FD6, #8B3FD6, #8B3FD6)" }}
+                style={{ background: "linear-gradient(135deg, #7C3AED, #7C3AED, #7C3AED)" }}
               >
                 <WirelineMark className="w-4 h-4 text-paper" strokeWidth={130} />
               </div>
@@ -369,7 +369,7 @@ export default function OnboardingQuickstart({
                   animate={{ width: `${completionPct}%` }}
                   transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
                   className="h-full rounded-full"
-                  style={{ background: "linear-gradient(90deg, #8B3FD6, #8B3FD6, #8B3FD6)" }}
+                  style={{ background: "linear-gradient(90deg, #7C3AED, #7C3AED, #7C3AED)" }}
                 />
               </div>
             </div>
@@ -480,21 +480,21 @@ export default function OnboardingQuickstart({
                 label="Connect Email"
                 desc="Link Gmail or Outlook for email agents."
                 to="/admin"
-                accent="#8B3FD6"
+                accent="#7C3AED"
               />
               <PowerUpCard
                 icon={BarChart3}
                 label="Connect CRM"
                 desc="Salesforce or HubSpot — sync calls and deals."
                 to="/admin"
-                accent="#8B3FD6"
+                accent="#7C3AED"
               />
               <PowerUpCard
                 icon={Waves}
                 label="Webhooks & SLOs"
                 desc="Push events to Slack, CRM, or Zapier."
                 to="/admin"
-                accent="#8B3FD6"
+                accent="#7C3AED"
               />
             </div>
           </div>
@@ -753,11 +753,11 @@ function AllSetCard({
         {/* Aurora glow */}
         <div
           className="absolute -top-20 -right-20 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-20 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
+          style={{ background: "radial-gradient(circle, #7C3AED, transparent)" }}
         />
         <div
           className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-15 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
+          style={{ background: "radial-gradient(circle, #7C3AED, transparent)" }}
         />
 
         {/* Hero row */}
@@ -767,7 +767,7 @@ function AllSetCard({
             <motion.div
               className="absolute inset-0 rounded-full"
               style={{
-                background: "conic-gradient(from 0deg, #8B3FD6, #8B3FD6, #8B3FD6, #8B3FD6)",
+                background: "conic-gradient(from 0deg, #7C3AED, #7C3AED, #7C3AED, #7C3AED)",
               }}
               animate={{ rotate: 360 }}
               transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
