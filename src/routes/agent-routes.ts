@@ -30,6 +30,7 @@ import { normalizeEnabledTools } from "../lib/agent-capabilities";
 import { claudeErr } from "../lib/claude-response-helpers";
 import { isOwnerEmail } from "../lib/auth-service";
 import { agentCapHit, resolveAgentEntitlement } from "../lib/agent-entitlements";
+import { invalidateDashboard } from "../lib/dashboard-cache";
 
 const router = Router();
 
@@ -884,6 +885,10 @@ router.post(
         })
         .catch((err: unknown) => log.warn("audit log failed", { error: getErrorMessage(err) }));
 
+      // Bust the dashboard cache so agent count + fleet stats reflect the
+      // new agent immediately instead of waiting for the TTL to expire.
+      invalidateDashboard(req.user.id);
+
       res.json({ success: true, id: agentId });
     } catch (error) {
       log.error("Agent creation failed", { error: getErrorMessage(error) });
@@ -931,6 +936,8 @@ router.put(
           ip: req.ip,
         })
         .catch((err: unknown) => log.warn("audit log failed", { error: getErrorMessage(err) }));
+
+      invalidateDashboard(req.user.id);
 
       res.json({ success: true });
     } catch (error) {
@@ -1011,6 +1018,8 @@ router.delete(
           ip: req.ip,
         })
         .catch((err: unknown) => log.warn("audit log failed", { error: getErrorMessage(err) }));
+
+      invalidateDashboard(userId);
 
       res.json({ success: true });
     } catch (error: any) {
