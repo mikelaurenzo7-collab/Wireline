@@ -23,7 +23,7 @@ import {
   Sun,
   Moon,
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import WirelineMark from "../WirelineMark";
 import { useAuth } from "../../contexts/AuthContext";
 import { useBranding } from "../../contexts/BrandingContext";
@@ -63,6 +63,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
   );
   const [userOverride, setUserOverride] = useState<boolean | null>(null);
   const [peek, setPeek] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   const { theme, toggleTheme } = useTheme();
 
@@ -128,9 +129,9 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           aria-label={`${branding.brand_name} home`}
         >
           <motion.div
-            whileHover={{ rotate: 8, scale: 1.06 }}
-            whileTap={{ scale: 0.96 }}
-            transition={{ type: "spring", stiffness: 380, damping: 28 }}
+            whileHover={reduceMotion ? {} : { rotate: 8, scale: 1.06 }}
+            whileTap={reduceMotion ? {} : { scale: 0.96 }}
+            transition={reduceMotion ? { duration: 0.01 } : { type: "spring", stiffness: 380, damping: 28 }}
             className="relative w-8 h-8 shrink-0 rounded-lg flex items-center justify-center overflow-hidden"
             style={{
               background: "#EFE9DC",
@@ -140,19 +141,27 @@ export default function Sidebar({ navBadges }: SidebarProps) {
             <WirelineMark className="w-4 h-4 text-[#3B154C] relative z-10" strokeWidth={130} />
             <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent" />
           </motion.div>
-          <AnimatePresence>
-            {effective && (
-              <motion.span
-                initial={{ opacity: 0, x: -6 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -6 }}
-                transition={{ duration: 0.18 }}
-                className="brand-wordmark text-[15px] leading-none truncate text-[#EFE9DC] dark:text-[#EFE9DC] !filter-none"
-              >
-                {branding.brand_name.toUpperCase()}
-              </motion.span>
-            )}
-          </AnimatePresence>
+          {reduceMotion ? (
+            <span
+              className="brand-wordmark text-[15px] leading-none truncate text-[#EFE9DC] dark:text-[#EFE9DC] !filter-none"
+            >
+              {branding.brand_name.toUpperCase()}
+            </span>
+          ) : (
+            <AnimatePresence>
+              {effective && (
+                <motion.span
+                  initial={{ opacity: 0, x: -6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -6 }}
+                  transition={{ duration: 0.18 }}
+                  className="brand-wordmark text-[15px] leading-none truncate text-[#EFE9DC] dark:text-[#EFE9DC] !filter-none"
+                >
+                  {branding.brand_name.toUpperCase()}
+                </motion.span>
+              )}
+            </AnimatePresence>
+          )}
         </Link>
 
         {/* Search */}

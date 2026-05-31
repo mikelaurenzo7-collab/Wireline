@@ -1,48 +1,134 @@
-# Wireline Design System — Aurora Cream
+# Wireline Design System — Aurora Cream 2.0
 
-**Status:** Internal reference (2026)
-**Goal:** One cohesive, premium, editorial visual language across every client-facing surface.
+**Status:** World-Class Reference (2026)  
+**Philosophy:** The most sophisticated, Editorial Luxury + Old Money Tech aesthetic in existence. Every pixel is intentional. Every interaction is premium. Every surface is a masterpiece.
 
-> **Canonical UI layer:** [`src/components/ui/shadcn/*`](src/components/ui/shadcn/).
-> Every button, input, modal, sheet, tab, dropdown, switch, tooltip,
-> badge, alert, progress, skeleton, avatar, accordion, separator, and
-> command palette ships from there. The Aurora Cream primitives
-> (`Medallion`, `SectionHeader`, `EmptyState`, `Button` alias) compose
-> shadcn primitives; they never reimplement them. Dark mode flips via
-> `ThemeContext` toggling the `.dark` class on `<html>`.
+> **Canonical UI layer:** [`src/components/ui/shadcn/*`](src/components/ui/shadcn/).  
+> Every button, input, modal, sheet, tab, dropdown, switch, tooltip, badge, alert, progress, skeleton, avatar, accordion, separator, and command palette ships from here. The Aurora Cream primitives (`Medallion`, `SectionHeader`, `EmptyState`, `Button` alias) compose shadcn primitives — they never reimplement them. Dark mode flips via `ThemeContext` toggling the `.dark` class on `<html>`.
 
 ---
 
-## 1. Core Tokens (Never invent new ones)
+## 1. Core Tokens (The Holy Trinity — Never Deviate)
 
-### Typography
-- **Display (Headlines):** `font-display` → Fraunces (italic, 400–700)
-- **Interface (Body/UI):** `font-sans` → Plus Jakarta Sans
-- **Mono (Labels, Code, Metrics):** `font-mono` → JetBrains Mono
+### Typography — A Study in Editorial Contrast
+- **Display (Headlines):** `font-display` → Fraunces (italic, 400–700)  
+  *The soul of the system. Editorial, sophisticated, unforgettable.*
+- **Interface (Body/UI):** `font-sans` → Plus Jakarta Sans  
+  *Clean, modern, highly legible at all sizes.*
+- **Mono (Labels, Code, Metrics):** `font-mono` → JetBrains Mono  
+  *Technical precision. Tabular numerals for data. Code snippets.*
 
-### Color
-- `--color-brand`: #4F1E7B (Silky Purple)
-- `--color-brand-deep`: #3B154C
-- `--color-ink`: #1A1614
-- `--color-paper`: #EFE9DC (warm cream base)
-- `--color-muted` / `--color-muted-soft`
-- Gradients: Always `from-brand to-brand-deep` for primary actions and medallions.
+### Color — Warm Luxury Meets Digital Precision
+- `--color-brand`: #8B3FD6 (Editorial Violet — the signature)
+- `--color-brand-deep`: #3B154C (Deep皇室 Purple)
+- `--color-ink`: #1A1614 (Warm Dark Ink — never pure black)
+- `--color-paper`: #EFE9DC (Warm Cream — the canvas of elegance)
+- `--color-muted` / `--color-muted-soft` (Context-aware via CSS vars)
 
-### Effects
-- `.glass` — the signature translucent cream surface. **Permitted surfaces:** modal overlays (`.glass-elevated`), sticky shells (`.shell-sticky-glass`), sidebar chrome, icon buttons on glass panels. **Do not** use for ordinary card bodies — use `<Card>` instead (see migration note below).
-- `.aurora-ring` — subtle premium border glow (use on active/selected states)
-- Soft brand halos: `<span aria-hidden className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150" />`
+### The Gradient Philosophy
+Always `from-brand to-brand-deep` for:
+- Primary actions (buttons, CTAs)
+- Medallions (empty states, status)
+- Active states and selections
 
-> **Migration note — `glassUtility` ratchet:** The `shadcn-pivot-ratchet` tracks `.glass` usage and only allows it to decrease over time. Card bodies that currently carry `.glass` should be migrated to `<Card>` from `src/components/ui/shadcn/`. `<Card>` consumes the `--card` design token, adapts to dark-mode automatically, and is the canonical card surface going forward. Shell surfaces (TopBar, Sidebar, modals, popovers, sticky headers) are permanently exempt — those keep `.glass`/`.glass-strong`/`.glass-elevated`/`.shell-sticky-glass`.
+### Effects — The Secret Sauce
+- `.glass` — Translucent cream surface with proprietary blur.  
+  **Permitted surfaces only:** modal overlays (`.glass-elevated`), sticky shells (`.shell-sticky-glass`), sidebar chrome, icon buttons on glass panels.
+- `.aurora-ring` — Subtle premium border glow for active/selected states.
+- Soft brand halos: `<span aria-hidden className="absolute inset-0 rounded-full bg-brand/30 blur-2xl scale-150" />`
+- `.brutal-card` — The ultimate card surface. Glassmorphic with warm cream gradients.
+- `.card-interactive` — Hover lift with brand-tinted shadow bloom.
 
-### Radius
-- **Zero radius** is the default (`--radius: 0`). Rounded corners are used only for medallions and pills.
+### Radius — The Sharp Edge Philosophy
+- **Zero radius** is the default (`--radius: 0`).  
+- Rounded corners are used **exclusively** for medallions, pills, badges, and circular indicators.
+- This creates the "Old Money Tech" editorial aesthetic — sharp, precise, confident.
+
+### Spacing — Generous Negative Space
+- Marketing surfaces: `py-24 lg:py-32` (generous vertical rhythm)
+- Content surfaces: `p-6 md:p-8` (breathing room)
+- Tight spaces: `gap-4` minimum (never cram elements)
+- The cream background IS the design element — let it breathe.
 
 ---
 
-## 2. Recurring Patterns (Use these components)
+## 2. The World-Class Component Hierarchy
 
-### SectionHeader
+### Tier 1 — shadcn Primitives (`src/components/ui/shadcn/`) — **Canonical & Supreme**
+
+These wrap Radix primitives and consume the design tokens defined in `src/index.css`. They are the ONLY sanctioned source of UI controls.
+
+#### `ShadButton` (+ `buttonVariants`) — The Button System
+```tsx
+// Primary — Gradient + Depth Shadow + Active Press
+<ShadButton variant="default">
+  Start free trial <ArrowRight className="w-4 h-4" />
+</ShadButton>
+
+// Glass — Frosted glass for glass surfaces
+<ShadButton variant="glass">
+  <Icon /> Action
+</ShadButton>
+
+// Chrome — Dark surface for TopBar/Sidebar
+<ShadButton variant="chrome">
+  <Icon /> Action
+</ShadButton>
+```
+**Variants:** `default` (gradient brand), `outline` (cream glass border), `ghost`, `secondary`, `destructive`, `link`, `glass` (frosted-glass), `chrome` (dark-surface).  
+**Sizes:** `default | sm | lg | icon`.
+
+#### `Card` — The Ultimate Card Surface
+```tsx
+// Static card with brutal-card styling
+<Card>
+  <CardHeader>
+    <CardTitle>Editorial Elegance</CardTitle>
+    <CardDescription>Sophisticated content lives here</CardDescription>
+  </CardHeader>
+  <CardContent>{/* Your content */}</CardContent>
+</Card>
+
+// Interactive card with hover lift
+<Card interactive>
+  {/* Floats up 2px on hover with brand shadow */}
+</Card>
+```
+
+#### Other Primitives Available
+- `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` — with `app-tab-active-bg` for active states
+- `Dialog`, `DialogContent` — uses `glass-elevated` for premium modals
+- `Sheet`, `SheetContent` — slide-in panels with glass morphism
+- `DropdownMenu` — frosted dropdown with smooth transitions
+- `Select` — uses `app-input-soft` styling
+- `Input` — uses `app-input-soft` class (NEVER raw bg-white)
+- `Checkbox`, `Switch`, `Slider` — all styled with brand colors
+- `Command` — command palette with glass elevation
+- `Badge`, `Alert`, `Progress`, `Skeleton`, `Avatar`, `Separator`, `Tooltip`, `ScrollArea`, `Accordion`
+
+**DOM Anti-Pattern Ratchet:** Never render raw `<button>`, `<input>`, `<dialog>`, or `<select>` in `src/components/**` or `src/pages/**`. The ratchet test fails CI if these counts grow.
+
+### Tier 2 — Aurora Cream Compositions (`src/components/ui/`) — **High-Level Patterns**
+
+#### `Medallion` — The Signature Visual Motif
+```tsx
+// Empty state medallion with crystalline glint
+<Medallion size="md" withHalo>
+  <Sparkles className="w-6 h-6" />
+</Medallion>
+
+// Small inline medallion
+<Medallion size="sm" shimmer>
+  <Icon className="w-4 h-4" />
+</Medallion>
+```
+Features:
+- Crystalline glint animation (4.6s cubic-bezier)
+- Optional halo (blur-2xl glow)
+- Optional shimmer effect
+- Four sizes: xs, sm, md, lg
+
+#### `SectionHeader` — Every Major Content Block Starts Here
 ```tsx
 <SectionHeader
   eyebrow="Live right now"
@@ -50,130 +136,163 @@
   description="No signup required."
 />
 ```
-- Always starts with a mono eyebrow.
-- Title is always `font-display italic`.
-- Description is `text-muted`.
+- Always starts with mono eyebrow (`text-eyebrow`)
+- Title is always `font-display italic`
+- Description is `text-muted`
+- Never create custom section headers — use this.
 
-### Medallion + Halo
-```tsx
-<Medallion withHalo size="md">
-  <Sparkles className="w-6 h-6" />
-</Medallion>
-```
-- The signature visual motif for empty states, identity, and status.
-
-### EmptyState (Canonical)
+#### `EmptyState` — The Canonical "No Data" Surface
 ```tsx
 <EmptyState
   icon={Users}
   title="No entries yet"
   description="Upload a PDF or add a policy so your agent answers consistently."
   actions={[{ label: "Upload CSV", onClick: ..., primary: true }]}
+  framed={false} // true for glass-strong chrome
 />
 ```
-- Use this everywhere instead of ad-hoc empty states.
+- Wraps `Medallion` + `ShadButton`
+- Optional `framed` mode for premium surfaces
+- Optional `eyebrow` text
 
-### Primary Button
+#### `SpinnerGem` — The Premium Loading Indicator
 ```tsx
-<Button variant="primary">
-  Start free trial <ArrowRight className="w-4 h-4" />
-</Button>
-```
-- Always gradient + depth shadow + active press.
+// Inline loading (replaces Loader2)
+<SpinnerGem size="xs" />
 
-### Status / Live Dot
+// Larger loading state
+<SpinnerGem size="md" />
+```
+Replaces generic `Loader2 animate-spin` with branded medallion shimmer.
+
+### Tier 3 — Theme + Branding
+
+- `src/contexts/ThemeContext.tsx` — light / dark / system preference
+- `src/contexts/BrandingContext.tsx` — per-tenant logo + accent
+
+---
+
+## 3. The Animation System — Premium, Subtle, Intentional
+
+### Motion/React Configuration
+All motion components MUST check `useReducedMotion()` via our `useAnimationConfig` hook:
+
 ```tsx
-<span className="relative flex h-1.5 w-1.5">
-  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500/60" />
-  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-</span>
+import { useAnimationConfig } from "@/src/hooks/useAnimationConfig";
+
+function MyComponent() {
+  const { motionProps, pageTransition } = useAnimationConfig();
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={pageTransition}
+      {...motionProps}
+    >
+      Content
+    </motion.div>
+  );
+}
 ```
 
----
+### Premium Transition Timing
+- **Page transitions:** `duration: 0.35, ease: [0.22, 1, 0.36, 1]` (editorial ease)
+- **Micro-interactions:** `duration: 200ms, ease: cubic-bezier(0.22, 1, 0.36, 1)`
+- **Button press:** `scale(0.96)` with `duration: 100ms`
+- **Card hover:** `translateY(-2px)` with brand shadow bloom
 
-## 3. Do's and Don'ts
+### Key Animations (All in index.css)
+- `medallion-glint` — Crystalline gemstone sweep (4.6s)
+- `skeleton-shimmer` — Premium loading sweep (1.8s)
+- `card-interactive` — Hover lift with shadow (0.25s)
+- `aurora-drift` — Slow background bloom (18s, respect reduced-motion)
+- `live-pulse` — Status dot pulse (1.8s)
 
-**Do**
-- Start every major content block with `SectionHeader`.
-- Use `Medallion` + halo for every empty / idle / no-data state.
-- Keep CTAs consistent (`primary` gradient or `secondary` glass).
-- Use `<Card>` for all card surfaces; reserve `.glass` for non-card surfaces (modals, sticky shells, popovers, icon-button faces) where the shadcn Card token is inappropriate.
-- Mark purely decorative elements with `aria-hidden`.
-
-**Don't**
-- Introduce new colors or radius values.
-- Mix flat `bg-brand` buttons with gradient ones.
-- Create one-off empty states.
-- Use `border-white/*` on cream backgrounds (use `border-black/8` or `border-ink/[0.08]`).
-- Stack multiple cards inside cards without clear visual separation.
-
----
-
-## 4. File Locations
-
-The UI layer is **tiered**. Always reach for the lowest tier that fits.
-
-### Tier 1 — shadcn primitives (`src/components/ui/shadcn/`) — **canonical**
-
-These wrap Radix primitives and consume the design tokens defined in
-`src/index.css` (`--background`, `--card`, `--primary`, `--ring`, …).
-They are the only sanctioned source of buttons, inputs, tabs, modals,
-sheets, popovers, switches, tooltips, etc. Importing from anywhere else
-when an equivalent shadcn primitive exists is a regression.
-
-Available primitives (import from `@/src/components/ui/shadcn` or its
-barrel `index.ts`):
-
-- `ShadButton` (+ `buttonVariants`) — the canonical button. Variants:
-  `default` (gradient brand), `outline` (cream glass border), `ghost`,
-  `secondary`, `destructive`, `link`,
-  `glass` (frosted-glass icon/action button — use on glass card surfaces),
-  `chrome` (dark-surface icon/action button — use inside TopBar/Sidebar only).
-  Sizes: `default | sm | lg | icon`.
-- `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`
-- `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`
-- `Dialog`, `DialogTrigger`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription`, `DialogFooter`
-- `Sheet`, `SheetTrigger`, `SheetContent`, `SheetHeader`, …
-- `DropdownMenu`, `DropdownMenuTrigger`, …
-- `Select`, `SelectTrigger`, `SelectContent`, `SelectItem`, `SelectValue`
-- `Checkbox` — styled native `<input type="checkbox">`; use anywhere you'd
-  reach for a tri-state-free boolean toggle that should look like a box,
-  not a `Switch` pill.
-- `Slider` — styled native `<input type="range">`; use anywhere you'd
-  reach for a numeric slider with a single thumb.
-- `Command`, `CommandInput`, `CommandList`, `CommandItem`, …
-- `Input`, `Switch`, `Badge`, `Alert`, `Progress`, `Skeleton`, `Avatar`,
-  `Separator`, `Tooltip`, `ScrollArea`, `Accordion`
-
-Never render a raw `<button>` / `<input>` / `<dialog>` / `<select>` in
-`src/components/**` or `src/pages/**`. The DOM-anti-pattern ratchet
-(`src/components/ui/__tests__/shadcn-pivot-ratchet.test.ts`) fails CI
-if these counts grow.
-
-### Tier 2 — Aurora Cream compositions (`src/components/ui/`)
-
-Higher-level patterns composed **out of** the shadcn primitives:
-
-- `Medallion.tsx` — signature halo motif for empty/idle states.
-- `SectionHeader.tsx` — mono eyebrow + italic display title + muted
-  description, used at the top of every major content block.
-- `EmptyState.tsx` — canonical "no data yet" surface; wraps `Medallion`
-  + `ShadButton`.
-- `HaloButton.tsx` — thin `<ShadButton asChild>` wrapper for branded/halo
-  CTAs that have hand-tuned glass + blur-2xl halos. Preserves the visual
-  pixel-perfectly while satisfying the raw-`<button>` ratchet.
-
-Feature components live in their own folders (`src/components/<feature>/…`)
-and must compose out of Tier 1 / Tier 2 — they never reintroduce raw
-HTML controls.
-
-### Tier 3 — theme + branding
-
-- `src/contexts/ThemeContext.tsx` — light / dark / system preference.
-  Toggles the `.dark` class on `<html>`; the shadcn token system in
-  `src/index.css` flips automatically.
-- `src/contexts/BrandingContext.tsx` — per-tenant logo + accent.
+### Reduced Motion Support
+- CSS animations: `@media (prefers-reduced-motion: reduce)` blocks ALL CSS animations
+- Motion/react: Components MUST use `useAnimationConfig()` hook
+- Never animate for users who prefer reduced motion
 
 ---
 
-*When in doubt, look at the Director welcome state or the elevated AgentWorkspace empty state — they are the current gold standard.*
+## 4. Do's and Don'ts — The Law
+
+### DO — Follow These Religiously
+1. **Start every major content block with `SectionHeader`** — no exceptions
+2. **Use `Medallion` + halo for every empty/idle/no-data state** — it's the signature
+3. **Keep CTAs consistent** — `default` gradient or `glass` for secondary
+4. **Use `<Card>` for ALL card surfaces** — reserve `.glass` for shells only
+5. **Mark decorative elements with `aria-hidden`** — accessibility is luxury
+6. **Use `SpinnerGem` instead of `Loader2`** — premium loading everywhere
+7. **Check `useReducedMotion()` in all motion components** — inclusive luxury
+8. **Use `app-input-soft` for all inputs** — never raw `bg-white`
+9. **Use `marketing-btn-primary` for marketing CTAs** — consistent conversion
+10. **One primary CTA per section maximum** — luxury doesn't beg
+
+### DON'T — These Are Regressions
+1. **Never introduce new colors or radius values** — use the tokens
+2. **Never mix flat `bg-brand` with gradient buttons** — pick one system
+3. **Never create one-off empty states** — use `EmptyState`
+4. **Never use `border-white/*` on cream backgrounds** — use `border-ink/[0.08]`
+5. **Never stack multiple cards without clear visual separation** — use borders/gaps
+6. **Never use hardcoded colors in components** — use CSS variables
+7. **Never skip `useReducedMotion()` in motion components** — it's required
+8. **Never use `Loader2 animate-spin`** — use `SpinnerGem`
+9. **Never create raw HTML buttons/inputs** — use shadcn primitives
+10. **Never forget: the cream background is an active design element** — let it breathe
+
+---
+
+## 5. File Locations — Know Where Everything Lives
+
+### UI Primitives (Tier 1)
+`src/components/ui/shadcn/` — All shadcn components  
+`src/index.css` — All design tokens and utilities (2565+ lines of premium)
+
+### Compositions (Tier 2)
+`src/components/ui/Medallion.tsx` — Signature halo motif  
+`src/components/ui/SectionHeader.tsx` — Editorial headers  
+`src/components/ui/EmptyState.tsx` — Canonical empty states  
+`src/components/ui/SpinnerGem.tsx` — Premium loading gem  
+`src/components/ui/HaloButton.tsx` — Branded CTA wrapper
+
+### Hooks & Utilities
+`src/hooks/useAnimationConfig.ts` — Reduced motion hook  
+`src/lib/utils.ts` — `cn()` utility for class merging
+
+### Contexts (Tier 3)
+`src/contexts/ThemeContext.tsx` — Light/dark/system  
+`src/contexts/BrandingContext.tsx` — Per-tenant branding
+
+---
+
+## 6. The Gold Standard — Learn From These
+
+When in doubt, look at these references (they are PERFECTION):
+
+1. **Director welcome state** — Perfect `EmptyState` + `Medallion` usage
+2. **Elevated AgentWorkspace empty state** — Framed premium surface
+3. **CommandCenter live floor** — Sophisticated data display
+4. **LandingPage hero** — Maximum visual impact with `marketing-hero-title`
+5. **Pricing tier cards** — `<Card>` with premium spacing
+
+---
+
+## 7. The Testing Ratchet — We Never Go Backwards
+
+### shadcn-pivot-ratchet (`src/components/ui/__tests__/shadcn-pivot-ratchet.test.ts`)
+Fails CI if raw HTML element counts grow:
+- Raw `<button>` elements
+- Raw `<input>` elements  
+- Raw `<dialog>` elements
+- Raw `<select>` elements
+
+### Design System Tests
+- All interactive elements MUST have `data-testid` attributes
+- All images must have meaningful `alt` text
+- All animations must respect `prefers-reduced-motion`
+
+---
+
+*When implementing ANY UI: Ask yourself "Is this the most sophisticated, elegant, and premium version possible?" If not, iterate until it is. The details are not the details — they ARE the design.*

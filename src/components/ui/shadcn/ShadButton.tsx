@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/src/lib/utils";
 
@@ -18,12 +18,8 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 hover:shadow-md",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        // Glass variant — translucent cream surface for icon/action buttons on glass cards and modals.
-        // Keeps the frosted-glass aesthetic without re-implementing it ad-hoc.
         glass:
           "glass border border-white/10 text-ink/70 hover:text-ink hover:border-white/20 transition-all",
-        // Chrome variant — white/10 dark-surface treatment for TopBar, Sidebar, and other
-        // dark-chrome shells. Never use on cream/light backgrounds.
         chrome:
           "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:border-white/20 hover:text-white/90 transition-colors",
       },
@@ -47,15 +43,14 @@ export interface ShadButtonProps
 const ShadButton = React.forwardRef<HTMLButtonElement, ShadButtonProps>(
   ({ className, variant, size, asChild = false, disableAnimations = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
+    const reduceMotion = useReducedMotion();
 
-    // If animations are disabled or we're using Slot, use a regular button
-    if (disableAnimations || asChild) {
+    if (disableAnimations || asChild || reduceMotion) {
       return (
         <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
       );
     }
 
-    // Cast to avoid motion/react type complexity with ButtonHTMLAttributes
     const MotionButton = motion.button as React.ComponentType<
       Omit<
         React.ButtonHTMLAttributes<HTMLButtonElement>,
@@ -67,7 +62,6 @@ const ShadButton = React.forwardRef<HTMLButtonElement, ShadButtonProps>(
       } & React.RefAttributes<HTMLButtonElement>
     >;
 
-    // Premium micro-interactions — spring physics for buttery smoothness
     return (
       <MotionButton
         className={cn(buttonVariants({ variant, size, className }))}

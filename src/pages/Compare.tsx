@@ -15,6 +15,7 @@ import { motion } from "motion/react";
 import { Check, X, Minus, ArrowRight, Phone } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
+import { SectionHeader } from "../components/ui/SectionHeader";
 
 type Cell = true | false | "partial";
 
@@ -179,27 +180,14 @@ export default function Compare() {
       />
 
       <MarketingPageFrame mainClassName="!px-0 pt-20 sm:pt-24">
-        {/* Hero */}
-        <section className="relative z-10 max-w-6xl mx-auto pt-4 pb-12 sm:pt-8 sm:pb-16 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-4">
-              How Wireline compares
-            </p>
-            <h1 className="marketing-hero-title mb-5">
-              Honest scoring vs every voice-AI platform.
-            </h1>
-            <p className="marketing-hero-lead mx-auto">
-              Wireline is the horizontal platform that runs voice + SMS + email in one console with
-              supervisor cockpit, frontier reasoning, white-label numbers, and a real TCPA ledger.
-              Bland and Retell are excellent if you mainly want a voice API with a thin dashboard;
-              Air still wins on pure outbound price. Here's the full picture.
-            </p>
-          </motion.div>
-        </section>
+      {/* Hero */}
+      <section className="relative z-10 max-w-6xl mx-auto pt-4 pb-12 sm:pt-8 sm:pb-16 text-center">
+        <SectionHeader
+          eyebrow="How Wireline compares"
+          title="Honest scoring vs every voice-AI platform."
+          description="Wireline is the horizontal platform that runs voice + SMS + email in one console with supervisor cockpit, frontier reasoning, white-label numbers, and a real TCPA ledger. Bland and Retell are excellent if you mainly want a voice API with a thin dashboard; Air still wins on pure outbound price. Here's the full picture."
+        />
+      </section>
 
         {/* Matrix */}
         <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-20">
@@ -323,13 +311,11 @@ export default function Compare() {
 
         {/* Pricing Transparency */}
         <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16 text-center">
-          <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-3">
-            Transparent, flat-rate pricing.
-          </h2>
-          <p className="text-sm sm:text-base text-ink/65 max-w-2xl mx-auto mb-8 leading-relaxed">
-            No hidden telephony markups. No complex token math. You pay a flat rate for access to
-            the platform and standard pass-through for frontier LLM usage.
-          </p>
+          <SectionHeader
+            title="Transparent, flat-rate pricing."
+            description="No hidden telephony markups. No complex token math. You pay a flat rate for access to the platform and standard pass-through for frontier LLM usage."
+            className="mb-8"
+          />
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08] text-left">
             <div className="bg-paper p-6">
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-emerald-600 mb-1.5">
@@ -364,9 +350,10 @@ export default function Compare() {
 
         {/* When the competitor wins */}
         <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16">
-          <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-6 text-balance">
-            When a competitor is the better pick.
-          </h2>
+          <SectionHeader
+            title="When a competitor is the better pick."
+            className="mb-6 text-balance"
+          />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="glass border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-600 mb-2">
@@ -415,7 +402,7 @@ export default function Compare() {
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
               to="/signup"
-              className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-[#8B3FD6] transition-colors duration-300"
+              className="marketing-btn-primary"
             >
               Start free trial
               <ArrowRight className="w-4 h-4" />

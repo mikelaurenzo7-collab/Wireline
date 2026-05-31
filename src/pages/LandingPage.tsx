@@ -10,6 +10,7 @@ import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
 import type { ContactAgent } from "../data/contact-agents";
 import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
+import { SectionHeader } from "../components/ui/SectionHeader";
 
 const STATS = [
   { value: "24/7", label: "Availability" },
@@ -110,7 +111,7 @@ function AgentCard({
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.5, delay, ease: [0.16, 1, 0.3, 1] }}
       data-testid={`agent-card-${agent.name.toLowerCase()}`}
-      className="group block border border-white/5 hover:border-white/15 bg-white/[0.03] backdrop-blur-md transition-all duration-300 rounded-2xl overflow-hidden hover:shadow-[0_8px_32px_rgba(157,78,221,0.05)]"
+      className="group block border border-ink/15 bg-paper/80 transition-all duration-300 overflow-hidden hover:shadow-[0_8px_32px_rgba(157,78,221,0.05)]"
     >
       <div
         className={
@@ -195,6 +196,15 @@ export default function LandingPage() {
           data-testid="hero-section"
           className="relative min-h-[85svh] flex flex-col justify-center px-6 lg:px-12 pt-24 pb-16 lg:pt-28 lg:pb-24 overflow-hidden"
         >
+          {/* 3D spheres backdrop — subtle brand element at 5-8% opacity */}
+          <div className="absolute inset-0 pointer-events-none z-0 opacity-[0.06] mix-blend-multiply">
+            <img
+              src="https://static.prod-images.emergentagent.com/jobs/54584c6e-3405-4f20-a1e6-8648db882043/images/2d4d0bfed009adc6b8a18e9dc585a7a7c7f7a94b4abe19de936073f3ca1a4607.png"
+              alt=""
+              aria-hidden="true"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] max-w-none"
+            />
+          </div>
           <HeroDecorations />
           <div className="relative z-10 max-w-7xl mx-auto w-full">
             <motion.div
@@ -209,8 +219,8 @@ export default function LandingPage() {
                 </span>
               </span>
 
-              <h1 className="font-display italic text-[clamp(2.5rem,7vw,5.5rem)] leading-[0.95] tracking-tight text-ink max-w-4xl mx-auto">
-                Every conversation, <span className="text-brand">answered like your best rep.</span>
+              <h1 className="marketing-hero-title">
+                Every conversation, <span className="italic text-brand">answered.</span>
               </h1>
 
               <p className="mt-6 lg:mt-8 text-[clamp(1rem,1.5vw,1.2rem)] leading-relaxed text-ink/65 max-w-xl mx-auto">
@@ -218,49 +228,15 @@ export default function LandingPage() {
                 and email follow-ups. Trained on your playbook, improving with every call.
               </p>
 
-              <div className="mt-8 lg:mt-10 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4">
+              <div className="mt-8 lg:mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
                 <Link
                   to="/signup"
                   data-testid="hero-cta-primary"
-                  className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-[#8B3FD6] transition-colors duration-300"
+                  className="marketing-btn-primary"
                 >
                   Start free trial
                   <ArrowRight className="w-4 h-4" />
                 </Link>
-                {csDemo && (
-                  <div className="flex flex-col items-center gap-1.5 border border-ink/10 rounded-2xl p-3 bg-white/20 backdrop-blur-md shadow-sm">
-                    <BrowserCallWidget
-                      agentName={csDemo.name}
-                      buttonLabel={`Talk to ${csDemo.name} (CS)`}
-                    />
-                    <span className="text-[10px] text-ink/50 font-mono tracking-wider">
-                      Or dial:{" "}
-                      <a
-                        href={`tel:${csDemo.tel}`}
-                        className="text-brand hover:underline font-semibold"
-                      >
-                        {csDemo.display}
-                      </a>
-                    </span>
-                  </div>
-                )}
-                {salesDemo && (
-                  <div className="flex flex-col items-center gap-1.5 border border-ink/10 rounded-2xl p-3 bg-white/20 backdrop-blur-md shadow-sm">
-                    <BrowserCallWidget
-                      agentName={salesDemo.name}
-                      buttonLabel={`Talk to ${salesDemo.name} (Sales)`}
-                    />
-                    <span className="text-[10px] text-ink/50 font-mono tracking-wider">
-                      Or dial:{" "}
-                      <a
-                        href={`tel:${salesDemo.tel}`}
-                        className="text-brand hover:underline font-semibold"
-                      >
-                        {salesDemo.display}
-                      </a>
-                    </span>
-                  </div>
-                )}
               </div>
             </motion.div>
 
@@ -283,21 +259,12 @@ export default function LandingPage() {
         {/* ─── Agent Directory — Bento Grid ───────────────────────── */}
         <section data-testid="agent-directory" className="px-6 lg:px-12 pt-4 pb-20 lg:pb-28">
           <div className="max-w-7xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
+            <SectionHeader
+              eyebrow="Live right now"
+              title="Call inbound CS or outbound sales."
+              description="Use your company name in the demo."
               className="mb-10 lg:mb-14 text-center"
-            >
-              <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-3">
-                Live right now
-              </p>
-              <h2 className="font-display italic text-[clamp(1.8rem,4vw,3rem)] leading-[1.05] text-ink max-w-2xl mx-auto">
-                Call inbound CS or outbound sales.{" "}
-                <span className="text-ink/65">Use your company name in the demo.</span>
-              </h2>
-            </motion.div>
+            />
 
             <div className={`grid grid-cols-1 ${demoColsClass} gap-4 max-w-5xl mx-auto`}>
               {demoAgents.map((agent, i) => (
@@ -348,7 +315,7 @@ export default function LandingPage() {
               <Link
                 to="/signup"
                 data-testid="final-cta-button"
-                className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-[#8B3FD6] transition-colors duration-300"
+                className="marketing-btn-primary"
               >
                 Start free trial
                 <ArrowRight className="w-4 h-4" />
@@ -394,20 +361,11 @@ export default function LandingPage() {
           className="px-6 lg:px-12 py-20 lg:py-28 border-t border-ink/[0.08]"
         >
           <div className="max-w-3xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
+            <SectionHeader
+              eyebrow="Questions, answered"
+              title="Everything you'd ask your best rep."
               className="mb-10 lg:mb-14 text-center"
-            >
-              <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-3">
-                Questions, answered
-              </p>
-              <h2 className="font-display italic text-[clamp(1.8rem,4vw,3rem)] leading-[1.05] text-ink">
-                Everything you&rsquo;d ask your best rep.
-              </h2>
-            </motion.div>
+            />
 
             <div className="border-t border-ink/[0.12]">
               {FAQS.map((faq, i) => (

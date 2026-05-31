@@ -17,6 +17,7 @@ import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { WIRELINE_DEMO_AGENTS, type ContactAgent } from "../data/contact-agents";
 import { SHOWCASE_AGENTS, type ShowcaseAgent } from "../data/showcase-agents";
+import { SectionHeader } from "../components/ui/SectionHeader";
 
 /**
  * Single showcase card. The marquee persona (Mira, the singing
@@ -32,12 +33,11 @@ function ShowcaseCard({ agent }: { agent: ShowcaseAgent }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="glass border border-ink/[0.1] p-6 sm:p-8 transition-all duration-300 hover:border-brand/30"
+      className="border border-ink/[0.1] p-6 sm:p-8 transition-all duration-300 hover:border-brand/30"
     >
       <div className="flex items-start gap-4 mb-5">
         <div
-          className="w-12 h-12 flex items-center justify-center shrink-0"
-          style={{ background: agent.tint }}
+          className="w-12 h-12 flex items-center justify-center shrink-0 bg-brand"
           aria-hidden="true"
         >
           <Sparkles className="w-5 h-5 text-white" strokeWidth={2.2} />
@@ -77,12 +77,11 @@ function PhoneLineCard({ agent, label }: { agent: ContactAgent; label: string })
   return (
     <a
       href={`tel:${agent.tel}`}
-      className="group marketing-panel p-4 min-h-[56px] transition-all hover:border-brand/30 hover:shadow-[0_8px_24px_-16px_rgba(79,30,123,0.2)]"
+      className="group border border-ink/[0.1] p-4 min-h-[56px] transition-all hover:border-brand/30 hover:shadow-[0_8px_24px_-16px_rgba(79,30,123,0.2)]"
     >
       <div className="flex items-start gap-3">
         <div
-          className="w-10 h-10 flex items-center justify-center shrink-0"
-          style={{ background: `${agent.tint}1f`, color: agent.tint }}
+          className="w-10 h-10 flex items-center justify-center shrink-0 bg-brand/20 text-brand"
         >
           <Phone className="w-4 h-4" strokeWidth={2.3} />
         </div>
@@ -111,22 +110,11 @@ export default function Showcase() {
       />
 
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 pt-4 pb-10 sm:pt-8 sm:pb-14 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-4">
-            The playable showcase
-          </p>
-          <h1 className="marketing-hero-title text-4xl sm:text-5xl mb-6">
-            Audition the agents before you deploy one.
-          </h1>
-          <p className="marketing-hero-lead max-w-2xl mx-auto">
-            Every template below is a real Wireline persona — same voice engine, same brain, same
-            hand-off rules. Call any line to hear it live. Like what you hear? Spin up your own.
-          </p>
-        </motion.div>
+        <SectionHeader
+          eyebrow="The playable showcase"
+          title="Audition the agents before you deploy one."
+          description="Every template below is a real Wireline persona — same voice engine, same brain, same hand-off rules. Call any line to hear it live. Like what you hear? Spin up your own."
+        />
       </section>
 
       {/* Showcase cards */}
@@ -153,12 +141,11 @@ export default function Showcase() {
           a clean, even 3-on-3 block — pairs with Mira as the marquee card
           above. */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 pb-16">
-        <div className="flex items-center gap-2 mb-6">
-          <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-brand">
-            Demo lines by industry
-          </span>
-          <span className="h-px flex-1 bg-ink/[0.12]" />
-        </div>
+        <SectionHeader
+          eyebrow="Demo lines by industry"
+          title="Hear a live demo"
+          className="mb-6"
+        />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {WIRELINE_DEMO_AGENTS.map((agent) => (
             <PhoneLineCard key={agent.tel} agent={agent} label="Demo" />
@@ -172,13 +159,11 @@ export default function Showcase() {
 
       {/* CTA */}
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 pb-8 text-center">
-        <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-4 text-balance">
-          Deploy your own in under a minute.
-        </h2>
-        <p className="marketing-hero-lead mx-auto mb-6">
-          Pick a voice. Drop a knowledge base. Wireline writes the system prompt + first-message for
-          you. Live in production with a real number, 14-day free trial, no credit card.
-        </p>
+        <SectionHeader
+          title="Deploy your own in under a minute."
+          description="Pick a voice. Drop a knowledge base. Wireline writes the system prompt + first-message for you. Live in production with a real number, 14-day free trial, no credit card."
+          className="mb-6"
+        />
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link to="/signup" className="marketing-btn-primary">
             Start free trial

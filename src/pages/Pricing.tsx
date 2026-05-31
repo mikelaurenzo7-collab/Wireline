@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
+import { SectionHeader } from "../components/ui/SectionHeader";
+import { Card } from "../components/ui/shadcn/Card";
 import { Check, ArrowRight, Phone, Zap, ShieldCheck, Sparkles } from "lucide-react";
 
 type Tier = {
@@ -237,39 +239,11 @@ export default function Pricing() {
 
       {/* Hero */}
       <section className="relative z-10 px-4 sm:px-6 lg:px-10 xl:px-14 pt-4 sm:pt-6 pb-9 max-w-6xl mx-auto text-center">
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 border border-ink/15 bg-ink/[0.03] px-4 py-1.5 mb-6"
-        >
-          <span className="w-1.5 h-1.5 bg-brand" aria-hidden="true" />
-          <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/70">
-            Pricing · Start free, upgrade when ready
-          </span>
-        </motion.div>
-
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="font-display italic text-[clamp(2.25rem,5vw,4rem)] leading-[1.05] tracking-tight mb-4 text-balance"
-        >
-          <span className="text-brand">Plans that scale</span>
-          <br />
-          <span className="text-ink">with your fleet</span>
-        </motion.h1>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.15, duration: 0.6 }}
-          className="text-ink/65 text-base leading-relaxed max-w-xl mx-auto"
-        >
-          Every plan includes the dashboard, real-time call logs, sentiment scoring, and the
-          Wireline Demo Line for testing. Pick the agent + minute volume you need today; add more
-          agents à la carte if you outgrow your tier — no forced upgrade to the next bracket.
-        </motion.p>
+        <SectionHeader
+          eyebrow="Pricing · Start free, upgrade when ready"
+          title="Plans that scale with your fleet"
+          description="Every plan includes the dashboard, real-time call logs, sentiment scoring, and the Wireline Demo Line for testing. Pick the agent + minute volume you need today; add more agents à la carte if you outgrow your tier — no forced upgrade to the next bracket."
+        />
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -393,25 +367,16 @@ export default function Pricing() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + i * 0.08, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className={`relative p-4 lg:p-5 flex flex-col ${
-                tier.highlight ? "aurora-ring md:scale-[1.02] md:-my-1 md:z-10" : ""
-              }`}
+              className={`relative flex flex-col ${tier.highlight ? "md:scale-[1.02] md:-my-1 md:z-10" : ""}`}
             >
-              <div
-                className={`relative transition-all duration-300 ${
-                  tier.highlight
-                    ? "glass-strong border-2 border-brand/40"
-                    : "glass border border-ink/[0.08] hover:border-brand/30"
-                } p-5 flex flex-col flex-1 overflow-hidden`}
-                style={
-                  tier.highlight
-                    ? {
-                        boxShadow:
-                          "0 0 60px -15px rgba(107, 43, 153 ,0.55), 0 24px 48px -16px rgba(107, 43, 153 ,0.35), 0 0 0 1px rgba(255,255,255,0.08) inset",
-                      }
-                    : undefined
-                }
-              >
+              <Card className={`flex flex-col flex-1 p-5 ${tier.highlight ? "border-brand/40" : ""}`} style={
+                tier.highlight
+                  ? {
+                      boxShadow:
+                        "0 0 60px -15px rgba(107, 43, 153 ,0.55), 0 24px 48px -16px rgba(107, 43, 153 ,0.35), 0 0 0 1px rgba(255,255,255,0.08) inset",
+                    }
+                  : undefined
+              }>
                 <div className="mb-4">
                   <h2 className="font-display italic text-2xl text-ink mb-1">{tier.name}</h2>
                   <p className="text-[11px] text-ink/65 leading-snug">{tier.blurb}</p>
@@ -442,8 +407,8 @@ export default function Pricing() {
                     href={tier.ctaHref}
                     className={`group flex w-full min-h-[48px] items-center justify-center text-center py-3.5 text-[11px] uppercase tracking-[0.32em] font-medium transition-colors duration-300 mb-6 ${
                       tier.highlight
-                        ? "bg-brand text-white hover:bg-[#8B3FD6]"
-                        : "border border-ink/15 text-ink hover:border-brand/30 hover:bg-ink/[0.03]"
+                        ? "marketing-btn-primary"
+                        : "marketing-btn-secondary"
                     }`}
                   >
                     <span className="inline-flex items-center gap-2">
@@ -456,8 +421,8 @@ export default function Pricing() {
                     to={tier.ctaHref}
                     className={`group flex w-full min-h-[48px] items-center justify-center text-center py-3.5 text-[11px] uppercase tracking-[0.32em] font-medium transition-colors duration-300 mb-6 ${
                       tier.highlight
-                        ? "bg-brand text-white hover:bg-[#8B3FD6]"
-                        : "border border-ink/15 text-ink hover:border-brand/30 hover:bg-ink/[0.03]"
+                        ? "marketing-btn-primary"
+                        : "marketing-btn-secondary"
                     }`}
                   >
                     <span className="inline-flex items-center gap-2">
@@ -484,7 +449,7 @@ export default function Pricing() {
                     </li>
                   ))}
                 </ul>
-              </div>
+              </Card>
             </motion.div>
           ))}
         </div>
@@ -497,15 +462,12 @@ export default function Pricing() {
           className="mt-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto"
         >
           {VALUE_BULLETS.map(({ icon: Icon, text }) => (
-            <div
-              key={text}
-              className="glass border border-ink/[0.08] p-4 flex items-start gap-3 transition-all duration-300 hover:border-brand/30"
-            >
+            <Card key={text} className="p-4 flex items-start gap-3 hover:border-brand/30 transition-all duration-300">
               <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-brand/15 bg-brand/[0.06]">
                 <Icon className="w-4 h-4 text-brand" strokeWidth={2.2} />
               </div>
               <p className="text-[12px] text-ink/75 leading-snug">{text}</p>
-            </div>
+            </Card>
           ))}
         </motion.div>
 
@@ -519,14 +481,11 @@ export default function Pricing() {
           transition={{ delay: 0.85, duration: 0.6 }}
           className="mt-14 max-w-5xl mx-auto"
         >
-          <div className="text-center mb-6">
-            <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-2.5">
-              ROI snapshot · vs traditional headcount
-            </p>
-            <h3 className="font-display italic text-[clamp(1.5rem,3vw,2rem)] text-ink leading-[1.05]">
-              How much you save replacing one human role
-            </h3>
-          </div>
+          <SectionHeader
+            eyebrow="ROI snapshot · vs traditional headcount"
+            title="How much you save replacing one human role"
+            className="text-center mb-6"
+          />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               {
@@ -562,40 +521,41 @@ export default function Pricing() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.95 + i * 0.06, duration: 0.5 }}
-                  className="glass border border-ink/[0.08] p-5 relative overflow-hidden transition-all duration-300 hover:border-brand/30"
                 >
-                  <div
-                    className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-20 blur-3xl pointer-events-none"
-                    style={{ background: "#8B3FD6" }}
-                    aria-hidden="true"
-                  />
-                  <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ink/55 mb-1">
-                    Replace
-                  </p>
-                  <p className="text-[14px] font-semibold text-ink mb-3">{row.role}</p>
-                  <div className="space-y-1.5 mb-3 text-[11px]">
-                    <div className="flex justify-between text-ink/60">
-                      <span>Human ({row.humanCostLabel})</span>
-                      <span className="tabular-nums line-through">
-                        ${row.humanCost.toLocaleString()}/yr
+                  <Card className="p-5 relative overflow-hidden hover:border-brand/30 transition-all duration-300">
+                    <div
+                      className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-20 blur-3xl pointer-events-none"
+                      style={{ background: "#8B3FD6" }}
+                      aria-hidden="true"
+                    />
+                    <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ink/55 mb-1">
+                      Replace
+                    </p>
+                    <p className="text-[14px] font-semibold text-ink mb-3">{row.role}</p>
+                    <div className="space-y-1.5 mb-3 text-[11px]">
+                      <div className="flex justify-between text-ink/60">
+                        <span>Human ({row.humanCostLabel})</span>
+                        <span className="tabular-nums line-through">
+                          ${row.humanCost.toLocaleString()}/yr
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-ink/90">
+                        <span>
+                          Wireline {row.tier} ({row.tierLabel})
+                        </span>
+                        <span className="tabular-nums">${row.tierCost.toLocaleString()}/yr</span>
+                      </div>
+                    </div>
+                    <div className="pt-3 border-t border-ink/10 flex items-baseline justify-between">
+                      <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-emerald-600">
+                        You save
+                      </span>
+                      <span className="font-display italic text-2xl text-emerald-600 tabular-nums">
+                        ${savings.toLocaleString()}
+                        <span className="text-[11px] text-emerald-600/70 ml-1">/yr ({pct}%)</span>
                       </span>
                     </div>
-                    <div className="flex justify-between text-ink/90">
-                      <span>
-                        Wireline {row.tier} ({row.tierLabel})
-                      </span>
-                      <span className="tabular-nums">${row.tierCost.toLocaleString()}/yr</span>
-                    </div>
-                  </div>
-                  <div className="pt-3 border-t border-ink/10 flex items-baseline justify-between">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-emerald-600">
-                      You save
-                    </span>
-                    <span className="font-display italic text-2xl text-emerald-600 tabular-nums">
-                      ${savings.toLocaleString()}
-                      <span className="text-[11px] text-emerald-600/70 ml-1">/yr ({pct}%)</span>
-                    </span>
-                  </div>
+                  </Card>
                 </motion.div>
               );
             })}

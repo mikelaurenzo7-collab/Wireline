@@ -20,6 +20,7 @@ import ClientRouteLoading from "../components/layout/ClientRouteLoading";
 import ClientSubTabs from "../components/layout/ClientSubTabs";
 import HubTabs, { TRAINING_HUB } from "../components/HubTabs";
 import { EmptyState } from "../components/ui/EmptyState";
+import { SectionHeader } from "../components/ui/SectionHeader";
 import { cn } from "../lib/utils";
 
 const SUB_TABS = [
@@ -101,35 +102,26 @@ export default function Training() {
             ))}
           </div>
 
-          <div className="hidden lg:flex flex-col gap-1.5 h-full max-h-[calc(100dvh-12rem)] overflow-y-auto scrollbar-hide border border-black/8 glass p-3 relative">
-            <p className="px-2 py-1.5 mb-1 font-mono text-[10px] uppercase tracking-[0.25em] text-brand/70 font-semibold">
-              Select Agent
-            </p>
-            <div className="space-y-1.5">
-              {agents.map((agent) => (
-                <button
-                  key={agent.id}
-                  type="button"
-                  onClick={() => selectAgent(agent.id)}
-                  className={cn(
-                    "w-full text-left flex items-center gap-2.5 px-3 py-2.5 transition-all rounded-lg border group relative overflow-hidden",
-                    agent.id === selectedAgentId
-                      ? "border-brand/35 text-ink"
-                      : "border-transparent hover:bg-brand/[0.03] hover:border-brand/12 text-muted",
-                  )}
-                  style={
-                    agent.id === selectedAgentId
-                      ? {
-                          background:
-                            "linear-gradient(135deg, rgba(139, 63, 214, 0.08), rgba(139, 63, 214, 0.04))",
-                        }
-                      : undefined
-                  }
-                >
+              <div className="hidden lg:flex flex-col gap-1.5 h-full max-h-[calc(100dvh-12rem)] overflow-y-auto scrollbar-hide border border-black/8 glass p-3 relative">
+                <p className="px-2 py-1.5 mb-1 font-mono text-[10px] uppercase tracking-[0.25em] text-brand/70 font-semibold">
+                  Select Agent
+                </p>
+                <div className="space-y-1.5">
+                  {agents.map((agent) => (
+                    <button
+                      key={agent.id}
+                      type="button"
+                      onClick={() => selectAgent(agent.id)}
+                      className={cn(
+                        "w-full text-left flex items-center gap-2.5 px-3 py-2.5 transition-all rounded-lg border group relative overflow-hidden",
+                        agent.id === selectedAgentId
+                          ? "border-brand/35 bg-brand/10 text-ink"
+                          : "border-transparent hover:bg-brand/[0.03] hover:border-brand/12 text-muted",
+                      )}
+                    >
                   {agent.id === selectedAgentId && (
                     <div
-                      className="absolute left-0 top-0 bottom-0 w-[3px]"
-                      style={{ background: "linear-gradient(to bottom, #8B3FD6, #6B2B99)" }}
+                      className="absolute left-0 top-0 bottom-0 w-[3px] bg-brand"
                     />
                   )}
                   <div

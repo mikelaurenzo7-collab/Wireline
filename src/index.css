@@ -623,6 +623,9 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    /* NOTE: CSS animations respect this media query automatically.
+       For motion/react animations, components must use useReducedMotion() hook.
+       See /src/hooks/useAnimationConfig.ts for helper. */
     *,
     *::before,
     *::after {
