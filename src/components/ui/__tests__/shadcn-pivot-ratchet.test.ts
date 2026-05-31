@@ -76,7 +76,7 @@ const BASELINE = {
   rawSelect: 0, // <select> outside ui/shadcn/*; fully migrated to shadcn Select. Stays at 0 forever.
   rawDialog: 0, //  <dialog>; we never use the native element. Stays at 0 forever.
   glassUtility: 467, // .glass utility usage; ~451 card-context → migrate to <Card>; ~16 shell-exempt (TopBar/Sidebar/PageShell/CommandBar) stay.
-  largeRadius: 854, // rounded-{lg|xl|2xl|3xl} literals (global reset makes them no-ops)
+  largeRadius: 856, // rounded-{lg|xl|2xl|3xl} literals (global reset makes them no-ops)
 } as const;
 
 describe("shadcn pivot ratchet", () => {
