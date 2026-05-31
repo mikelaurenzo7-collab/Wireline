@@ -83,14 +83,17 @@ export default function Training() {
               Create your first agent in Chat, then return here to teach knowledge, voice,
               pronunciation, and conversational flow.
             </p>
-            <button
+            <motion.button
               type="button"
               onClick={() => navigate("/chat")}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brand text-on-brand text-sm font-medium hover:bg-brand-deep transition-colors min-h-[44px]"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 400, damping: 20 }}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brand text-on-brand text-sm font-medium hover:bg-brand-deep transition-colors min-h-[44px] shadow-sm shadow-brand/20"
             >
               Go to Chat
               <ChevronRight className="w-4 h-4" />
-            </button>
+            </motion.button>
           </div>
         </div>
       </ClientRouteViewport>
@@ -104,20 +107,23 @@ export default function Training() {
         <aside className="shrink-0 lg:w-52">
           <div className="lg:hidden flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
             {agents.map((agent) => (
-              <button
+              <motion.button
                 key={agent.id}
                 type="button"
                 onClick={() => selectAgent(agent.id)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
                 className={cn(
                   "shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all text-[12px] min-h-[40px]",
                   agent.id === selectedAgentId
-                    ? "border-brand/40 bg-brand/[0.06] text-ink font-medium aurora-ring"
+                    ? "border-brand/40 bg-brand/[0.06] text-ink font-medium aurora-ring shadow-sm shadow-brand/10"
                     : "border-black/8 glass text-muted hover:border-brand/25",
                 )}
               >
                 <Bot className="w-4 h-4 shrink-0" />
                 <span className="truncate max-w-[120px]">{agent.name}</span>
-              </button>
+              </motion.button>
             ))}
           </div>
 
@@ -126,18 +132,27 @@ export default function Training() {
               Agent
             </p>
             {agents.map((agent) => (
-              <button
+              <motion.button
                 key={agent.id}
                 type="button"
                 onClick={() => selectAgent(agent.id)}
+                whileHover={{ scale: 1.02, x: 2 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
                 className={cn(
                   "w-full text-left flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg transition-all group",
                   agent.id === selectedAgentId
-                    ? "bg-brand/[0.08] border border-brand/25 text-ink"
+                    ? "bg-brand/[0.08] border border-brand/25 text-ink shadow-sm shadow-brand/10"
                     : "border border-transparent hover:bg-brand/[0.04] hover:border-brand/10 text-muted",
                 )}
               >
-                <div
+                <motion.div
+                  animate={{
+                    scale: agent.id === selectedAgentId ? [1, 1.1, 1] : 1,
+                  }}
+                  transition={{
+                    duration: agent.id === selectedAgentId ? 0.4 : 0,
+                  }}
                   className={cn(
                     "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
                     agent.id === selectedAgentId
@@ -146,7 +161,7 @@ export default function Training() {
                   )}
                 >
                   <Bot className="w-3.5 h-3.5" />
-                </div>
+                </motion.div>
                 <div className="min-w-0 flex-1">
                   <p
                     className={cn(
@@ -163,9 +178,15 @@ export default function Training() {
                   )}
                 </div>
                 {agent.id === selectedAgentId && (
-                  <ChevronRight className="w-3.5 h-3.5 text-brand/50 shrink-0" />
+                  <motion.div
+                    initial={{ x: -4, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                  >
+                    <ChevronRight className="w-3.5 h-3.5 text-brand/50 shrink-0" />
+                  </motion.div>
                 )}
-              </button>
+              </motion.button>
             ))}
           </div>
         </aside>
