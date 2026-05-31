@@ -195,7 +195,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
     );
   };
 
-  return (
+return (
     <>
       <header
         aria-label="Main navigation"
@@ -203,15 +203,13 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
           "shell-sticky-glass shrink-0 sticky top-0 z-50 border-b lg:hidden transition-all duration-300",
           theme === "light"
             ? "bg-[#F5F0E6]/80 border-[#8B3FD6]/12 text-ink animate-fade-in"
-            : "bg-[#0C0A0F]/85 border-[#8B3FD6]/18 text-white animate-fade-in",
+            : "bg-[#2D1A3E]/90 border-[#8B3FD6]/18 text-white animate-fade-in",
         )}
         style={{
           boxShadow:
             theme === "light"
               ? "0 2px 12px rgba(139, 63, 214, 0.03)"
-              : "0 0 0 1px rgba(239, 233, 220, 0.06), 0 8px 24px -16px rgba(0, 0, 0, 0.5)",
-          /* Top safe area: notch / Dynamic Island on iPhone.
-             Left/right safe areas: landscape iPhone notch coverage. */
+              : "0 0 0 1px rgba(139, 63, 214, 0.15), 0 8px 24px -16px rgba(59, 21, 76, 0.5)",
           paddingTop: "max(0px, env(safe-area-inset-top, 0))",
           paddingLeft: "env(safe-area-inset-left)",
           paddingRight: "env(safe-area-inset-right)",
@@ -237,10 +235,10 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                   "0 4px 14px -4px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.22) inset",
               }}
             >
-              <WirelineMark className="w-4 h-4 text-[#3B154C] relative z-10" strokeWidth={130} />
+              <WirelineMark className="w-4 h-4 text-brand relative z-10" strokeWidth={130} />
               <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent" />
             </motion.div>
-            <span className="brand-wordmark text-[15px] sm:text-[16px] leading-none hidden sm:inline text-brand dark:text-[#EFE9DC] !filter-none">
+            <span className="brand-wordmark text-[15px] sm:text-[16px] leading-none hidden sm:inline text-brand dark:text-[#c77dff] !filter-none">
               {branding.brand_name.toUpperCase()}
             </span>
           </Link>

@@ -71,12 +71,12 @@ export default function CreateCampaignModal({
 
   return (
     <Dialog open={true} onOpenChange={(open: boolean) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md border border-white/10 shadow-2xl p-0 bg-black/85 backdrop-blur-xl rounded-2xl overflow-hidden">
-        <DialogHeader className="px-5 py-4 border-b border-white/10 flex flex-col space-y-0 text-left">
+      <DialogContent className="sm:max-w-md border border-white/10 dark:border-white/5 shadow-2xl p-0 bg-black/85 dark:bg-[#120f1a]/95 backdrop-blur-xl rounded-2xl overflow-hidden">
+        <DialogHeader className="px-5 py-4 border-b border-white/10 dark:border-white/5 flex flex-col space-y-0 text-left">
           <DialogDescription className="text-[9px] uppercase tracking-[0.4em] text-brand mb-0.5 font-bold">
             Signal · Campaigns
           </DialogDescription>
-          <DialogTitle className="font-display italic lowercase text-2xl text-ink leading-none">
+          <DialogTitle className="font-display italic lowercase text-2xl text-ink dark:text-foreground leading-none">
             new campaign
           </DialogTitle>
         </DialogHeader>
@@ -88,7 +88,7 @@ export default function CreateCampaignModal({
               placeholder="Q4 Win-Back Drive"
               value={form.name}
               onChange={(e) => set("name", e.target.value)}
-              className="bg-black/10 border-white/10 text-sm text-ink focus-visible:ring-brand/40"
+              className="bg-black/10 dark:bg-white/10 border-white/10 dark:border-white/10 text-sm text-ink dark:text-foreground focus-visible:ring-brand/40"
             />
           </div>
           <div className="space-y-1.5">
@@ -97,7 +97,7 @@ export default function CreateCampaignModal({
               placeholder="Re-engage churned users from past 90 days"
               value={form.goal}
               onChange={(e) => set("goal", e.target.value)}
-              className="bg-black/10 border-white/10 text-sm text-ink focus-visible:ring-brand/40"
+              className="bg-black/10 dark:bg-white/10 border-white/10 dark:border-white/10 text-sm text-ink dark:text-foreground focus-visible:ring-brand/40"
             />
           </div>
           {agents.length > 0 && (
@@ -111,7 +111,7 @@ export default function CreateCampaignModal({
               >
                 <SelectTrigger
                   aria-label="Default agent"
-                  className="w-full h-9 pl-3 pr-3 rounded-md border border-input bg-transparent text-sm text-ink"
+                  className="w-full h-9 pl-3 pr-3 rounded-md border border-input bg-transparent dark:bg-white/5 text-sm text-ink dark:text-foreground"
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -135,7 +135,7 @@ export default function CreateCampaignModal({
                 type="time"
                 value={form.call_window_start}
                 onChange={(e) => set("call_window_start", e.target.value)}
-                className="bg-black/10 border-white/10 text-sm text-ink focus-visible:ring-brand/40"
+                className="bg-black/10 dark:bg-white/10 border-white/10 dark:border-white/10 text-sm text-ink dark:text-foreground focus-visible:ring-brand/40"
               />
             </div>
             <div className="space-y-1.5">
@@ -144,7 +144,7 @@ export default function CreateCampaignModal({
                 type="time"
                 value={form.call_window_end}
                 onChange={(e) => set("call_window_end", e.target.value)}
-                className="bg-black/10 border-white/10 text-sm text-ink focus-visible:ring-brand/40"
+                className="bg-black/10 dark:bg-white/10 border-white/10 dark:border-white/10 text-sm text-ink dark:text-foreground focus-visible:ring-brand/40"
               />
             </div>
           </div>
@@ -157,7 +157,7 @@ export default function CreateCampaignModal({
               max="10"
               value={form.max_attempts}
               onChange={(e) => set("max_attempts", e.target.value)}
-              className="bg-black/10 border-white/10 text-sm text-ink focus-visible:ring-brand/40"
+              className="bg-black/10 dark:bg-white/10 border-white/10 dark:border-white/10 text-sm text-ink dark:text-foreground focus-visible:ring-brand/40"
             />
           </div>
 
@@ -172,11 +172,11 @@ export default function CreateCampaignModal({
           )}
         </div>
 
-        <div className="px-5 py-4 border-t border-white/10 flex items-center justify-end gap-2 bg-black/20">
+        <div className="px-5 py-4 border-t border-white/10 dark:border-white/5 flex items-center justify-end gap-2 bg-black/20 dark:bg-white/5">
           <ShadButton
             variant="outline"
             onClick={onClose}
-            className="rounded-xl h-9 border-white/10 hover:bg-white/5 uppercase tracking-[0.2em] text-[10px] font-bold text-muted hover:text-ink"
+            className="rounded-xl h-9 border-white/10 dark:border-white/10 hover:bg-white/5 dark:hover:bg-white/10 uppercase tracking-[0.2em] text-[10px] font-bold text-muted hover:text-ink dark:text-foreground"
           >
             Cancel
           </ShadButton>

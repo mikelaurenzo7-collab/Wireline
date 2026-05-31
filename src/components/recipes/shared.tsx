@@ -50,7 +50,7 @@ export function TextInput({ value, onChange, placeholder }: any) {
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full h-12 px-4 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm placeholder:text-muted/70 focus:border-brand/60 focus:bg-black/10 transition-all"
+      className="w-full h-12 px-4 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 outline-none text-ink dark:text-foreground text-sm placeholder:text-muted/70 focus:border-brand/60 focus:bg-black/10 dark:focus:bg-white/10 transition-all"
     />
   );
 }
@@ -62,7 +62,7 @@ export function TextArea({ value, onChange, placeholder, rows = 5 }: any) {
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       rows={rows}
-      className="w-full px-4 py-3 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm placeholder:text-muted/70 focus:border-brand/60 focus:bg-black/10 transition-all resize-none leading-relaxed font-sans"
+      className="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 outline-none text-ink dark:text-foreground text-sm placeholder:text-muted/70 focus:border-brand/60 focus:bg-black/10 dark:focus:bg-white/10 transition-all resize-none leading-relaxed font-sans"
     />
   );
 }
@@ -80,7 +80,7 @@ export function Select({
     <ShadSelect value={value} onValueChange={onChange}>
       <SelectTrigger
         aria-label="Recipe option"
-        className="w-full h-12 px-4 rounded-xl bg-black/5 border border-black/10 text-ink text-sm"
+        className="w-full h-12 px-4 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-ink dark:text-foreground text-sm"
       >
         <SelectValue />
       </SelectTrigger>

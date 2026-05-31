@@ -27,6 +27,7 @@ import { motion, AnimatePresence } from "motion/react";
 import WirelineMark from "../WirelineMark";
 import { useAuth } from "../../contexts/AuthContext";
 import { useBranding } from "../../contexts/BrandingContext";
+import { useTheme } from "../../contexts/ThemeContext";
 import { NAV_GROUPS, type NavItem, NAV_SHORTCUT_HINTS } from "../../constants/navigation";
 import { BRAND, NAV_GROUP_ACCENTS } from "../../constants/brand-colors";
 import { authFetch } from "../../lib/api";
@@ -63,26 +64,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
   const [userOverride, setUserOverride] = useState<boolean | null>(null);
   const [peek, setPeek] = useState(false);
 
-  const [theme, setTheme] = useState<"light" | "dark">(() => {
-    if (typeof window !== "undefined") {
-      return (localStorage.getItem("wireline_theme") as "light" | "dark") || "light";
-    }
-    return "light";
-  });
-
-  useEffect(() => {
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [theme]);
-
-  const toggleTheme = () => {
-    const nextTheme = theme === "light" ? "dark" : "light";
-    setTheme(nextTheme);
-    localStorage.setItem("wireline_theme", nextTheme);
-  };
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const onResize = () => setAutoExpanded(window.innerWidth >= AUTO_EXPAND_WIDTH);
@@ -131,9 +113,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         onMouseLeave={() => setPeek(false)}
         className={cn(
           "hidden lg:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
-          theme === "light"
-            ? "bg-[#3B154C]/96 border-r border-[#EFE9DC]/15 shadow-[0_0_32px_rgba(59,21,76,0.2)]"
-            : "bg-[#0C0A0F]/85 border-r border-[#8B3FD6]/18 shadow-[0_0_32px_rgba(0,0,0,0.6)]",
+          "bg-[#3B154C]/96 border-r border-[#EFE9DC]/15 shadow-[0_0_32px_rgba(59,21,76,0.2)]"
         )}
         style={{
           width: railWidth,

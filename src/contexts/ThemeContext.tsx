@@ -1,22 +1,17 @@
 /**
- * ThemeContext — surfaces the dark/light/system theme preference,
+ * ThemeContext — surfaces the dark/light theme preference,
  * persists it to localStorage, and toggles the `.dark` class on
- * `<html>` so the shadcn token system (`--background`, `--card`,
- * `--ring`, …) flips between the Aurora Cream and the dark palette
- * already defined in `src/index.css`.
+ * `<html>` so the shadcn token system flips between the Aurora Cream
+ * and the deep purple dark palette.
  *
- * Defaults to "system" so first-paint matches the operator's OS
- * preference; explicit "light"/"dark" choices override it.
+ * Defaults to "light" for a consistent, branded first experience.
  */
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-export type Theme = "light" | "dark" | "system";
+export type Theme = "light" | "dark";
 
 interface ThemeContextValue {
-  /** The user's stored preference ("system" means follow OS). */
   theme: Theme;
-  /** The effective theme actually being rendered ("light" | "dark"). */
-  resolvedTheme: "light" | "dark";
   setTheme: (next: Theme) => void;
   toggleTheme: () => void;
 }
@@ -29,58 +24,26 @@ function readStoredTheme(): Theme {
   if (typeof window === "undefined") return "light";
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (raw === "light" || raw === "dark" || raw === "system") return raw;
+    if (raw === "light" || raw === "dark") return raw;
   } catch {
     // localStorage may be unavailable (private mode, SSR). Fall back to light.
   }
   return "light";
 }
 
-function systemPrefersDark(): boolean {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches;
-}
-
-function applyResolvedTheme(theme: Theme): "light" | "dark" {
-  const resolved: "light" | "dark" =
-    theme === "system" ? (systemPrefersDark() ? "dark" : "light") : theme;
+function applyTheme(theme: Theme): void {
   if (typeof document !== "undefined") {
     const root = document.documentElement;
-    root.classList.toggle("dark", resolved === "dark");
-    root.style.colorScheme = resolved;
+    root.classList.toggle("dark", theme === "dark");
+    root.style.colorScheme = theme;
   }
-  return resolved;
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => readStoredTheme());
-  const [resolvedTheme, setResolved] = useState<"light" | "dark">(() =>
-    applyResolvedTheme(readStoredTheme()),
-  );
 
-  // Re-apply whenever the stored preference changes.
   useEffect(() => {
-    setResolved(applyResolvedTheme(theme));
-  }, [theme]);
-
-  // When the user is on "system", keep up with OS-level changes.
-  useEffect(() => {
-    if (
-      theme !== "system" ||
-      typeof window === "undefined" ||
-      typeof window.matchMedia !== "function"
-    ) {
-      return;
-    }
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => setResolved(applyResolvedTheme("system"));
-    // Safari < 14 only supports addListener
-    if (typeof mq.addEventListener === "function") {
-      mq.addEventListener("change", onChange);
-      return () => mq.removeEventListener("change", onChange);
-    }
-    mq.addListener(onChange);
-    return () => mq.removeListener(onChange);
+    applyTheme(theme);
   }, [theme]);
 
   const setTheme = useCallback((next: Theme) => {
@@ -93,15 +56,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toggleTheme = useCallback(() => {
-    // Cycle: light → dark → system → light. Operators usually want a
-    // simple binary, but keeping "system" reachable makes first-run
-    // sensible across team members on different OS palettes.
-    setTheme(theme === "light" ? "dark" : theme === "dark" ? "system" : "light");
+    setTheme(theme === "light" ? "dark" : "light");
   }, [theme, setTheme]);
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ theme, resolvedTheme, setTheme, toggleTheme }),
-    [theme, resolvedTheme, setTheme, toggleTheme],
+    () => ({ theme, setTheme, toggleTheme }),
+    [theme, setTheme],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
@@ -110,12 +70,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 export function useTheme(): ThemeContextValue {
   const ctx = useContext(ThemeContext);
   if (!ctx) {
-    // Soft fallback — pages rendered outside the provider (tests, storybook)
-    // still resolve `useTheme()` without crashing. Mirrors the pattern used
-    // by BrandingContext.
     return {
-      theme: "system",
-      resolvedTheme: systemPrefersDark() ? "dark" : "light",
+      theme: "light",
       setTheme: () => {},
       toggleTheme: () => {},
     };
