@@ -136,7 +136,7 @@ export default function BrowserCallWidget({
           "relative h-12 px-6 rounded-full font-mono text-[11px] uppercase tracking-[0.2em] font-semibold transition-all duration-300 active:scale-95 flex items-center justify-center gap-2.5 z-10 select-none shadow-md",
           callActive
             ? "bg-rose-500 text-white hover:bg-rose-600 shadow-rose-500/20"
-            : "bg-[#1A1614] text-[#EFE9DC] hover:text-white border border-[#EFE9DC]/10 hover:border-[#EFE9DC]/30 hover:shadow-lg",
+            : "bg-[#1C1917] text-[#F4F1EA] hover:text-white border border-[#F4F1EA]/10 hover:border-[#F4F1EA]/30 hover:shadow-lg",
         )}
       >
         {connecting ? (

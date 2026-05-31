@@ -385,7 +385,7 @@ export default function AuthPortal() {
           aria-hidden
           style={{
             background:
-              "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(124,58,237,0.06), transparent 55%)",
+              "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(124,58,237),0.06), transparent 55%)",
           }}
         />
 
@@ -405,7 +405,7 @@ export default function AuthPortal() {
               className="border border-ink/[0.06] bg-paper overflow-hidden"
               style={{
                 boxShadow:
-                  "0 1px 0 rgba(255,255,255,0.9) inset, 0 24px 64px -24px rgba(26, 22, 20, 0.12), 0 8px 24px -12px rgba(124, 58, 237, 0.08)",
+                  "0 1px 0 rgba(255,255,255,0.9) inset, 0 24px 64px -24px rgba(26, 22, 20, 0.12), 0 8px 24px -12px rgba(124,58,237), 0.08)",
               }}
             >
               <div className="p-6 sm:p-8">

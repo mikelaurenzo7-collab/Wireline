@@ -87,9 +87,8 @@ export function EmptyState({
           {actions.map((action, index) => {
             const isPrimary = !!action.primary;
             const sharedClasses = cn(
-              "rounded-xl",
               isPrimary &&
-                "bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20 hover:opacity-95",
+                "bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/25 hover:shadow-lg hover:shadow-brand/30 hover:-translate-y-px transition-all duration-200",
             );
 
             if (action.to) {
@@ -124,8 +123,8 @@ export function EmptyState({
   if (!framed) return body;
 
   return (
-    <div className="relative aurora-ring rounded-3xl">
-      <div className="relative rounded-3xl glass-strong border border-black/8 overflow-hidden p-10 md:p-14 flex flex-col items-center text-center">
+    <div className="relative aurora-ring">
+      <div className="relative glass-strong border border-black/8 overflow-hidden p-10 md:p-14 flex flex-col items-center text-center">
         {body}
       </div>
     </div>

@@ -185,7 +185,7 @@ function ProposalCard({
       }
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
       className={cn(
-        "rounded-xl border px-3 py-2.5 text-ink transition-all duration-200",
+        "border px-3 py-2.5 text-ink transition-all duration-200",
         state === "dismissed" ? "border-black/8 bg-black/3" : TONE_CLASSES[tone],
         !state && "hover:shadow-md cursor-default",
       )}
@@ -193,7 +193,7 @@ function ProposalCard({
       <div className="flex items-start gap-2.5">
         <span
           className={cn(
-            "mt-0.5 shrink-0 flex w-6 h-6 items-center justify-center rounded-lg",
+            "mt-0.5 shrink-0 flex w-6 h-6 items-center justify-center",
             state === "dismissed" ? "bg-black/5 text-muted/60" : TONE_ICON_CLASSES[tone],
           )}
         >
@@ -258,7 +258,7 @@ function ProposalCard({
             <button
               onClick={onApprove}
               disabled={approveDisabled}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[11px] font-medium shadow-sm shadow-brand/20 hover:opacity-95 active:scale-95 transition-all duration-200 disabled:opacity-40 disabled:shadow-none"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[11px] font-medium shadow-sm shadow-brand/20 hover:opacity-95 active:scale-95 transition-all duration-200 disabled:opacity-40 disabled:shadow-none"
             >
               {busy ? (
                 <>
@@ -275,7 +275,7 @@ function ProposalCard({
             <button
               onClick={onDismiss}
               disabled={busy}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] text-muted hover:text-ink hover:bg-black/5 transition-colors disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] text-muted hover:text-ink hover:bg-black/5 transition-colors disabled:opacity-40"
             >
               <X className="w-3 h-3" />
               Dismiss
@@ -772,7 +772,7 @@ export default function AgentWorkspace({
       <div className="shrink-0 border-b border-black/8">
         <div className="flex items-center justify-between px-4 py-2.5">
           <div className="flex items-center gap-3">
-            <span className="shrink-0 flex w-8 h-8 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[12px] font-semibold shadow-sm shadow-brand/25">
+            <span className="shrink-0 flex w-8 h-8 items-center justify-center bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[12px] font-semibold shadow-sm shadow-brand/25">
               {agentName.slice(0, 1).toUpperCase()}
             </span>
             <div>
@@ -790,7 +790,7 @@ export default function AgentWorkspace({
           {messages.length > 0 && (
             <button
               onClick={clearThread}
-              className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.18em] text-muted hover:text-rose-600 hover:bg-rose-500/8 transition-colors cursor-pointer"
+              className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] uppercase tracking-[0.18em] text-muted hover:text-rose-600 hover:bg-rose-500/8 transition-colors cursor-pointer"
             >
               <Trash2 className="w-3 h-3" />
               <span>Clear</span>
@@ -807,7 +807,7 @@ export default function AgentWorkspace({
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer",
+                  "shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium transition-all cursor-pointer",
                   isActive
                     ? "bg-brand/10 text-brand border border-brand/30"
                     : "text-muted hover:text-ink hover:bg-black/5 border border-transparent",
@@ -832,10 +832,10 @@ export default function AgentWorkspace({
             {isLoading && messages.length === 0 ? (
               <div className="space-y-4 py-8">
                 <div className="flex justify-end">
-                  <Skeleton className="h-12 w-64 rounded-2xl bg-brand/10" />
+                  <Skeleton className="h-12 w-64 bg-brand/10" />
                 </div>
                 <div className="flex justify-start">
-                  <Skeleton className="h-24 w-full max-w-lg rounded-2xl" />
+                  <Skeleton className="h-24 w-full max-w-lg" />
                 </div>
               </div>
             ) : messages.length === 0 ? (
@@ -848,7 +848,7 @@ export default function AgentWorkspace({
                 {/* Hero avatar */}
                 <div className="relative mb-5">
                   <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-brand/20 to-brand/5 blur-2xl scale-125" />
-                  <span className="flex w-14 h-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand text-xl font-semibold shadow-lg shadow-brand/25 aurora-ring">
+                  <span className="flex w-14 h-14 items-center justify-center bg-gradient-to-br from-brand to-brand-deep text-on-brand text-xl font-semibold shadow-lg shadow-brand/25 aurora-ring">
                     {agentName.slice(0, 1).toUpperCase()}
                   </span>
                 </div>
@@ -876,7 +876,7 @@ export default function AgentWorkspace({
                     {/* Agent avatar */}
                     {m.role === "agent" && (
                       <div className="flex items-center gap-2 mb-2 ml-1">
-                        <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15 text-[10px] font-semibold">
+                        <span className="shrink-0 flex w-7 h-7 items-center justify-center bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15 text-[10px] font-semibold">
                           {agentName.slice(0, 1).toUpperCase()}
                         </span>
                         <span className="text-[10px] text-muted uppercase tracking-[0.14em] font-medium">
@@ -888,10 +888,10 @@ export default function AgentWorkspace({
                     {/* Message bubble */}
                     <div
                       className={cn(
-                        "max-w-[78%] min-w-[180px] rounded-2xl px-5 py-4 whitespace-pre-wrap break-words relative",
+                        "max-w-[78%] min-w-[180px] px-5 py-4 whitespace-pre-wrap break-words relative",
                         m.role === "operator"
                           ? "bg-gradient-to-br from-brand to-brand-deep text-white shadow-lg shadow-brand/20"
-                          : "bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm border border-brand/12 text-ink dark:text-foreground rounded-bl-md shadow-sm",
+                          : "bg-white/80 dark:bg-[var(--wl-surface-dark)]/60 backdrop-blur-sm border border-brand/12 text-ink dark:text-foreground shadow-sm",
                       )}
                     >
                       {/* Reasoning - Claude style */}
@@ -1009,14 +1009,14 @@ export default function AgentWorkspace({
                     className="flex flex-col items-start"
                   >
                     <div className="flex items-center gap-2 mb-2 ml-1">
-                      <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15 text-[10px] font-semibold">
+                      <span className="shrink-0 flex w-7 h-7 items-center justify-center bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15 text-[10px] font-semibold">
                         {agentName.slice(0, 1).toUpperCase()}
                       </span>
                       <span className="text-[10px] text-muted uppercase tracking-[0.14em] font-medium">
                         {agentName}
                       </span>
                     </div>
-                    <div className="bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm border border-brand/12 rounded-2xl rounded-bl-md px-5 py-4 shadow-sm">
+                    <div className="bg-white/80 dark:bg-[var(--wl-surface-dark)]/60 backdrop-blur-sm border border-brand/12 px-5 py-4 shadow-sm">
                       <div className="flex items-center gap-2.5 mb-2">
                         <span className="relative flex h-2 w-2">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
@@ -1049,7 +1049,7 @@ export default function AgentWorkspace({
                             }}
                             exit={{ opacity: 0, y: -8 }}
                             className={cn(
-                              "mt-2.5 rounded-xl border px-4 py-3 text-xs transition-all",
+                              "mt-2.5 border px-4 py-3 text-xs transition-all",
                               step.status === "active"
                                 ? "border-brand/40 bg-brand/5 shadow-sm"
                                 : step.status === "done"
@@ -1123,7 +1123,7 @@ export default function AgentWorkspace({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 4, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute bottom-full left-4 right-4 mb-2 rounded-xl bg-white/95 dark:bg-[#1a1225]/95 backdrop-blur-md border border-brand/15 shadow-xl shadow-brand/10 p-3 z-20"
+                  className="absolute bottom-full left-4 right-4 mb-2 bg-white/95 dark:bg-[var(--wl-surface-dark)]/95 backdrop-blur-md border border-brand/15 shadow-xl shadow-brand/10 p-3 z-20"
                 >
                   <div className="flex items-center gap-2 px-2 py-2 border-b border-brand/8 mb-2">
                     <Plug className="w-3.5 h-3.5 text-brand/60" />
@@ -1140,7 +1140,7 @@ export default function AgentWorkspace({
                       enabledTools.map((tool) => (
                         <div
                           key={tool}
-                          className="flex items-center gap-2 px-2 py-2 rounded-lg bg-brand/5"
+                          className="flex items-center gap-2 px-2 py-2 bg-brand/5"
                         >
                           <span className="w-2 h-2 rounded-full bg-emerald-500" />
                           <span className="text-[12px] text-ink font-medium capitalize">
@@ -1166,7 +1166,7 @@ export default function AgentWorkspace({
 
           {/* Composer - prominent at bottom */}
           <div className="shrink-0 px-4 pb-6 pt-2">
-            <div className="relative rounded-2xl border border-brand/20 bg-white/90 dark:bg-[#1a1225]/80 backdrop-blur-md shadow-lg shadow-brand/5 transition-all duration-300 focus-within:border-brand/40 focus-within:shadow-xl focus-within:shadow-brand/10">
+            <div className="relative border border-brand/20 bg-white/90 dark:bg-[var(--wl-surface-dark)]/80 backdrop-blur-md shadow-lg shadow-brand/5 transition-all duration-300 focus-within:border-brand/40 focus-within:shadow-xl focus-within:shadow-brand/10">
               <textarea
                 ref={inputRef}
                 value={input}
@@ -1186,7 +1186,7 @@ export default function AgentWorkspace({
                     type="button"
                     onClick={() => setToolsOpen(!toolsOpen)}
                     className={cn(
-                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer",
+                      "inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium transition-all cursor-pointer",
                       toolsOpen
                         ? "bg-brand/10 text-brand border border-brand/30"
                         : "text-muted hover:text-brand hover:bg-brand/5 border border-transparent",
@@ -1211,7 +1211,7 @@ export default function AgentWorkspace({
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading || isSending}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-muted hover:text-brand hover:bg-brand/5 border border-transparent transition-all cursor-pointer disabled:opacity-40"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-muted hover:text-brand hover:bg-brand/5 border border-transparent transition-all cursor-pointer disabled:opacity-40"
                     title="Attach PDF"
                   >
                     {isUploading ? (
@@ -1226,7 +1226,7 @@ export default function AgentWorkspace({
                 <button
                   onClick={send}
                   disabled={!input.trim() || isSending || isUploading}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[12px] font-semibold shadow-md shadow-brand/25 disabled:opacity-40 disabled:shadow-none enabled:hover:shadow-lg enabled:hover:shadow-brand/30 enabled:active:scale-95 transition-all duration-200 cursor-pointer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[12px] font-semibold shadow-md shadow-brand/25 disabled:opacity-40 disabled:shadow-none enabled:hover:shadow-lg enabled:hover:shadow-brand/30 enabled:active:scale-95 transition-all duration-200 cursor-pointer"
                 >
                   {isSending ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

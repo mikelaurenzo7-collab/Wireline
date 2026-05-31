@@ -226,18 +226,19 @@
     isolation: isolate;
   }
 
-  :root {
-    --wl-purple: #7C3AED;
-    --wl-purple-light: #A78BFA;
-    --wl-purple-deep: #581C87;
-    --wl-purple-muted: #8B7FCD;
-    --wl-cream: #F4F1EA;
-    --wl-paper: #F4F1EA;
-    --wl-cream-warm: #E8E2D8;
-    --wl-ink: #1C1917;
-    --wl-emerald: #10b981;
-    --wl-emerald-soft: #34d399;
-  }
+:root {
+  --wl-purple: #7C3AED;
+  --wl-purple-light: #A78BFA;
+  --wl-purple-deep: #581C87;
+  --wl-purple-muted: #8B7FCD;
+  --wl-cream: #F4F1EA;
+  --wl-paper: #F4F1EA;
+  --wl-cream-warm: #E8E2D8;
+  --wl-ink: #1C1917;
+  --wl-emerald: #10b981;
+  --wl-emerald-soft: #34d399;
+  --wl-surface-dark: #181420;
+}
 
   input, textarea, select {
     font-size: max(16px, 1em);
@@ -821,10 +822,6 @@
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
-@keyframes shimmer-violet {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
 
 .entrance-fade { animation: fade-scale-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .entrance-slide { animation: slide-up-fade 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
@@ -845,6 +842,11 @@
 }
 
 .interactive-press:active { transform: scale(0.97); transition-duration: 0.08s; }
+
+/* Reusable brand gradient icon — use wherever from-brand to-brand-deep icons appear */
+.brand-gradient-icon {
+  @apply bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25;
+}
 .app-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
 .app-table-scroll table { min-width: 36rem; }
 

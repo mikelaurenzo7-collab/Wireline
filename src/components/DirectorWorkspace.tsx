@@ -227,7 +227,7 @@ export default function DirectorWorkspace() {
       {messages.length > 0 && (
         <div className="shrink-0 flex items-center justify-between px-6 py-3 border-b border-brand/8">
           <div className="flex items-center gap-2.5">
-            <span className="shrink-0 flex w-8 h-8 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/20 relative overflow-hidden">
+            <span className="shrink-0 flex w-8 h-8 items-center justify-center bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/20 relative overflow-hidden">
               <Sparkles className="w-4 h-4 relative z-10" />
               <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent" />
             </span>
@@ -238,7 +238,7 @@ export default function DirectorWorkspace() {
           </div>
           <button
             onClick={clearThread}
-            className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.18em] text-muted hover:text-rose-600 hover:bg-rose-500/8 transition-colors cursor-pointer"
+            className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] uppercase tracking-[0.18em] text-muted hover:text-rose-600 hover:bg-rose-500/8 transition-colors cursor-pointer"
             aria-label="Clear thread"
           >
             <Trash2 className="w-3 h-3" />
@@ -254,7 +254,7 @@ export default function DirectorWorkspace() {
       >
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-brand/20 to-brand/10 flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-brand/20 to-brand/10 flex items-center justify-center">
               <Loader2 className="w-5 h-5 animate-spin text-brand" />
             </div>
             <p className="text-[11px] text-muted uppercase tracking-[0.2em]">Loading thread</p>
@@ -269,7 +269,7 @@ export default function DirectorWorkspace() {
             {/* Hero identity */}
             <div className="relative mb-6">
               <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-brand/20 to-brand/5 blur-2xl scale-125" />
-              <span className="flex w-16 h-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-xl shadow-brand/30 relative overflow-hidden">
+              <span className="flex w-16 h-16 items-center justify-center bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-xl shadow-brand/30 relative overflow-hidden">
                 <Sparkles className="w-8 h-8 relative z-10" />
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/25 to-transparent" />
               </span>
@@ -324,7 +324,7 @@ export default function DirectorWorkspace() {
               {/* Director avatar for assistant */}
               {m.role === "director" && (
                 <div className="flex items-center gap-2 mb-2 ml-1">
-                  <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15">
+                  <span className="shrink-0 flex w-7 h-7 items-center justify-center bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15">
                     <Sparkles className="w-3.5 h-3.5" />
                   </span>
                   <span className="text-[10px] text-muted uppercase tracking-[0.14em] font-medium">Director</span>
@@ -334,10 +334,10 @@ export default function DirectorWorkspace() {
               {/* Message bubble */}
               <div
                 className={cn(
-                  "max-w-[75%] min-w-[200px] rounded-2xl px-5 py-4 whitespace-pre-wrap break-words relative",
+                  "max-w-[75%] min-w-[200px] px-5 py-4 whitespace-pre-wrap break-words relative",
                   m.role === "operator"
                     ? "bg-gradient-to-br from-brand to-brand-deep text-white shadow-lg shadow-brand/20"
-                    : "bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm border border-brand/12 text-ink dark:text-foreground rounded-bl-md shadow-sm",
+                    : "bg-white/80 dark:bg-[var(--wl-surface-dark)]/60 backdrop-blur-sm border border-brand/12 text-ink dark:text-foreground shadow-sm",
                 )}
               >
                 {/* Reasoning display - Claude style */}
@@ -403,12 +403,12 @@ export default function DirectorWorkspace() {
             className="flex flex-col items-start"
           >
             <div className="flex items-center gap-2 mb-2 ml-1">
-              <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15">
+              <span className="shrink-0 flex w-7 h-7 items-center justify-center bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15">
                 <Sparkles className="w-3.5 h-3.5" />
               </span>
               <span className="text-[10px] text-muted uppercase tracking-[0.14em] font-medium">Director</span>
             </div>
-            <div className="bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm border border-brand/12 rounded-2xl rounded-bl-md px-5 py-4 shadow-sm">
+            <div className="bg-white/80 dark:bg-[var(--wl-surface-dark)]/60 backdrop-blur-sm border border-brand/12 px-5 py-4 shadow-sm">
               <div className="flex items-center gap-2.5">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
@@ -433,7 +433,7 @@ export default function DirectorWorkspace() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 4, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute bottom-full left-0 right-0 mb-2 rounded-xl bg-white/95 dark:bg-[#1a1225]/95 backdrop-blur-md border border-brand/15 shadow-xl shadow-brand/10 p-2 z-20"
+                  className="absolute bottom-full left-0 right-0 mb-2 bg-white/95 dark:bg-[var(--wl-surface-dark)]/95 backdrop-blur-md border border-brand/15 shadow-xl shadow-brand/10 p-2 z-20"
                 >
                   <div className="flex items-center gap-2 px-3 py-2 border-b border-brand/8 mb-1">
                     <Sparkles className="w-3.5 h-3.5 text-brand/60" />
@@ -446,9 +446,9 @@ export default function DirectorWorkspace() {
                       <button
                         key={c.label}
                         onClick={() => selectCapability(c.prompt)}
-                        className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-left hover:bg-brand/8 transition-colors cursor-pointer"
+                        className="flex items-center gap-2 px-3 py-2.5 text-left hover:bg-brand/8 transition-colors cursor-pointer"
                       >
-                        <span className="w-7 h-7 rounded-lg bg-brand/10 flex items-center justify-center">
+                        <span className="w-7 h-7 bg-brand/10 flex items-center justify-center">
                           <c.icon className="w-3.5 h-3.5 text-brand" />
                         </span>
                         <div>
@@ -464,7 +464,7 @@ export default function DirectorWorkspace() {
           </div>
 
           {/* Main composer */}
-          <div className="relative rounded-2xl border border-brand/20 bg-white/90 dark:bg-[#1a1225]/80 backdrop-blur-md shadow-lg shadow-brand/5 transition-all duration-300 focus-within:border-brand/40 focus-within:shadow-xl focus-within:shadow-brand/10">
+          <div className="relative border border-brand/20 bg-white/90 dark:bg-[var(--wl-surface-dark)]/80 backdrop-blur-md shadow-lg shadow-brand/5 transition-all duration-300 focus-within:border-brand/40 focus-within:shadow-xl focus-within:shadow-brand/10">
             <textarea
               ref={inputRef}
               value={input}
@@ -482,7 +482,7 @@ export default function DirectorWorkspace() {
                 type="button"
                 onClick={() => setCapabilityOpen(!capabilityOpen)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer",
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium transition-all cursor-pointer",
                   capabilityOpen
                     ? "bg-brand/10 text-brand border border-brand/30"
                     : "text-muted hover:text-brand hover:bg-brand/5 border border-transparent"
@@ -498,7 +498,7 @@ export default function DirectorWorkspace() {
                 <button
                   onClick={() => send(input)}
                   disabled={!input.trim() || isSending}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[12px] font-semibold shadow-md shadow-brand/25 disabled:opacity-40 disabled:shadow-none enabled:hover:shadow-lg enabled:hover:shadow-brand/30 enabled:active:scale-95 transition-all duration-200 cursor-pointer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[12px] font-semibold shadow-md shadow-brand/25 disabled:opacity-40 disabled:shadow-none enabled:hover:shadow-lg enabled:hover:shadow-brand/30 enabled:active:scale-95 transition-all duration-200 cursor-pointer"
                   aria-label="Send message"
                 >
                   {isSending ? (

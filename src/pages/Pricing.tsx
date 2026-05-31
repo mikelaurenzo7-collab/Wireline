@@ -442,7 +442,7 @@ export default function Pricing() {
                     href={tier.ctaHref}
                     className={`group flex w-full min-h-[48px] items-center justify-center text-center py-3.5 text-[11px] uppercase tracking-[0.32em] font-medium transition-colors duration-300 mb-6 ${
                       tier.highlight
-                        ? "bg-brand text-white hover:bg-[#7C3AED]"
+                        ? "bg-brand text-white hover:bg-brand-deep"
                         : "border border-ink/15 text-ink hover:border-brand/30 hover:bg-ink/[0.03]"
                     }`}
                   >
@@ -456,7 +456,7 @@ export default function Pricing() {
                     to={tier.ctaHref}
                     className={`group flex w-full min-h-[48px] items-center justify-center text-center py-3.5 text-[11px] uppercase tracking-[0.32em] font-medium transition-colors duration-300 mb-6 ${
                       tier.highlight
-                        ? "bg-brand text-white hover:bg-[#7C3AED]"
+                        ? "bg-brand text-white hover:bg-brand-deep"
                         : "border border-ink/15 text-ink hover:border-brand/30 hover:bg-ink/[0.03]"
                     }`}
                   >
@@ -566,7 +566,7 @@ export default function Pricing() {
                 >
                   <div
                     className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-20 blur-3xl pointer-events-none"
-                    style={{ background: "#7C3AED" }}
+                    style={{ background: "var(--color-brand, #7C3AED)" }}
                     aria-hidden="true"
                   />
                   <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ink/55 mb-1">

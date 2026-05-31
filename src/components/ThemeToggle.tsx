@@ -20,7 +20,7 @@ export default function ThemeToggle({ className, variant = "inverse" }: Props) {
 
   const palette =
     variant === "inverse"
-      ? "chrome-muted hover:text-[#EFE9DC] hover:bg-white/10 focus-visible:ring-offset-transparent"
+      ? "chrome-muted hover:text-[#F4F1EA] hover:bg-white/10 focus-visible:ring-offset-transparent"
       : "text-muted-foreground hover:text-foreground hover:bg-accent";
 
   return (

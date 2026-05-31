@@ -113,7 +113,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         onMouseLeave={() => setPeek(false)}
         className={cn(
           "hidden lg:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
-          "bg-[#581C87]/96 border-r border-[#EFE9DC]/15 shadow-[0_0_32px_rgba(59,21,76,0.2)]",
+          "bg-[#581C87]/96 border-r border-[#F4F1EA]/15 shadow-[0_0_32px_rgba(59,21,76,0.2)]",
         )}
         style={{
           width: railWidth,
@@ -133,8 +133,9 @@ export default function Sidebar({ navBadges }: SidebarProps) {
             transition={{ type: "spring", stiffness: 380, damping: 28 }}
             className="relative w-8 h-8 shrink-0 rounded-lg flex items-center justify-center overflow-hidden"
             style={{
-              background: "#EFE9DC",
-              boxShadow: "0 4px 14px -4px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.22) inset",
+              background: "var(--wl-cream, #F4F1EA)",
+              boxShadow:
+                "0 4px 14px -4px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.22) inset",
             }}
           >
             <WirelineMark className="w-4 h-4 text-[#581C87] relative z-10" strokeWidth={130} />
@@ -147,7 +148,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -6 }}
                 transition={{ duration: 0.18 }}
-                className="brand-wordmark text-[15px] leading-none truncate text-[#EFE9DC] dark:text-[#EFE9DC] !filter-none"
+                className="brand-wordmark text-[15px] leading-none truncate text-[#F4F1EA] dark:text-[#F4F1EA] !filter-none"
               >
                 {branding.brand_name.toUpperCase()}
               </motion.span>
@@ -214,7 +215,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
               aria-label="Account & billing"
               title={user.email}
             >
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[#581C87] bg-[#EFE9DC] dark:text-[#581C87] dark:bg-[#EFE9DC] font-semibold text-[11px] shrink-0">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[#581C87] bg-[#F4F1EA] dark:text-[#581C87] dark:bg-[#F4F1EA] font-semibold text-[11px] shrink-0">
                 {user.email?.slice(0, 1).toUpperCase() ?? "?"}
               </div>
               <div className="min-w-0 flex-1">
@@ -232,7 +233,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
               aria-label="Account"
               title={user.email}
             >
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[#581C87] bg-[#EFE9DC] dark:text-[#581C87] dark:bg-[#EFE9DC] font-semibold text-[11px]">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[#581C87] bg-[#F4F1EA] dark:text-[#581C87] dark:bg-[#F4F1EA] font-semibold text-[11px]">
                 {user.email?.slice(0, 1).toUpperCase() ?? "?"}
               </div>
             </Link>

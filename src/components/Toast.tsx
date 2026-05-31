@@ -38,29 +38,28 @@ function ToastItem({ toast }: { toast: Toast }) {
       exit={{ opacity: 0, y: -8, scale: 0.94, transition: { duration: 0.18 } }}
       transition={{ type: "spring", stiffness: 380, damping: 32 }}
       className={cn(
-        // Full-width on mobile (parent strip already handles padding);
-        // fixed-width on sm+ to keep the desktop stack tidy.
-        "relative w-full sm:w-80 max-w-full sm:max-w-[92vw] rounded-2xl glass border shadow-2xl overflow-hidden",
+        "relative w-full sm:w-80 max-w-full sm:max-w-[92vw] border bg-white/95 dark:bg-[var(--wl-surface-dark)]/95 backdrop-blur-xl shadow-2xl overflow-hidden",
         m.border,
       )}
     >
-      {/* Accent strip */}
       <div
-        className="absolute left-0 inset-y-0 w-0.5 rounded-full"
+        className="absolute left-0 inset-y-0 w-0.5"
         style={{ background: m.color }}
       />
 
       <div className="flex items-start gap-3 px-4 py-3.5 pl-5">
         <div
           className={cn(
-            "shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5",
+            "shrink-0 w-7 h-7 flex items-center justify-center mt-0.5",
             m.bg,
           )}
         >
           <Icon className="w-3.5 h-3.5" style={{ color: m.color }} strokeWidth={2} />
         </div>
         <div className="flex-1 min-w-0 pr-2">
-          <p className="text-[12px] font-semibold text-ink leading-snug truncate">{toast.title}</p>
+          <p className="text-[12px] font-semibold text-ink leading-snug truncate">
+            {toast.title}
+          </p>
           {toast.message && (
             <p className="text-caption leading-snug mt-0.5 line-clamp-2">{toast.message}</p>
           )}
@@ -68,8 +67,7 @@ function ToastItem({ toast }: { toast: Toast }) {
         <button
           onClick={() => dismiss(toast.id)}
           aria-label="Dismiss notification"
-          // Larger hit area on touch devices; visible icon stays small.
-          className="shrink-0 w-9 h-9 sm:w-6 sm:h-6 -m-1.5 sm:m-0 sm:mt-0.5 flex items-center justify-center rounded-lg text-muted hover:text-ink hover:bg-white/8 transition-all"
+          className="shrink-0 w-9 h-9 sm:w-6 sm:h-6 -m-1.5 sm:m-0 sm:mt-0.5 flex items-center justify-center text-muted hover:text-ink hover:bg-white/8 transition-all cursor-pointer"
         >
           <X className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
         </button>
@@ -84,9 +82,6 @@ export default function ToastStack() {
   const location = useLocation();
   const marketingSticky = !user && isMarketingStickyCtaRoute(location.pathname);
 
-  // The mobile bottom tab bar was removed, so signed-in toasts now sit at the
-  // standard bottom gutter. Only the public marketing sticky CTA still needs
-  // extra clearance.
   const mobileBottom = marketingSticky
     ? MARKETING_STICKY_CTA_BOTTOM
     : "calc(0.75rem + env(safe-area-inset-bottom, 0px))";

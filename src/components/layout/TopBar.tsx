@@ -161,7 +161,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 : "text-ink/65 group-hover:text-ink"
               : active
                 ? ""
-                : "chrome-muted group-hover:text-brand dark:group-hover:text-[#EFE9DC]",
+                : "chrome-muted group-hover:text-brand dark:group-hover:text-[#F4F1EA]",
           )}
           style={active ? { color: activeTextColor } : undefined}
           strokeWidth={active ? 2.5 : 1.75}
@@ -230,7 +230,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
               transition={{ type: "spring", stiffness: 400, damping: 20 }}
               className="relative w-7 h-7 rounded-lg flex items-center justify-center overflow-hidden shrink-0"
               style={{
-                background: "#EFE9DC",
+                background: "#F4F1EA",
                 boxShadow:
                   "0 4px 14px -4px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.22) inset",
               }}
@@ -266,7 +266,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                       </span>
                     </>
                   )}
-                  <h1 className="font-display italic text-[18px] leading-none truncate text-brand dark:text-[#EFE9DC]">
+                  <h1 className="font-display italic text-[18px] leading-none truncate text-brand dark:text-[#F4F1EA]">
                     {breadcrumb.title}
                   </h1>
                 </motion.div>
@@ -307,7 +307,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 // CommandBar is lazy-loaded in AppShell; we dispatch a custom event it listens to
                 window.dispatchEvent(new CustomEvent("wireline:open-command-bar"));
               }}
-              className="flex items-center justify-center w-9 h-9 md:w-auto md:h-7 md:px-2 rounded-lg chrome-muted hover:text-[#EFE9DC] hover:bg-white/10 transition-colors"
+              className="flex items-center justify-center w-9 h-9 md:w-auto md:h-7 md:px-2 rounded-lg chrome-muted hover:text-[#F4F1EA] hover:bg-white/10 transition-colors"
               aria-label="Open command bar"
               title="Search ( / )"
             >
@@ -318,7 +318,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
             {/* Keyboard shortcut hint — desktop only */}
             <button
               onClick={onShowShortcuts}
-              className="hidden md:flex items-center gap-1.5 h-7 px-2 rounded-lg chrome-muted hover:text-[#EFE9DC] hover:bg-white/10 transition-colors"
+              className="hidden md:flex items-center gap-1.5 h-7 px-2 rounded-lg chrome-muted hover:text-[#F4F1EA] hover:bg-white/10 transition-colors"
               aria-label="Show keyboard shortcuts"
               title="Keyboard shortcuts"
             >
@@ -348,14 +348,14 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
               >
                 <div
                   className="w-6 h-6 rounded-full flex items-center justify-center text-[#581C87] font-medium text-[10px] shrink-0"
-                  style={{ background: "#EFE9DC" }}
+                  style={{ background: "#F4F1EA" }}
                   aria-hidden="true"
                 >
                   {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
                 </div>
                 <ChevronDown
                   className={cn(
-                    "w-3 h-3 text-[#EFE9DC]/60 transition-transform",
+                    "w-3 h-3 text-[#F4F1EA]/60 transition-transform",
                     userMenuOpen && "rotate-180",
                   )}
                 />
@@ -457,7 +457,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
               className="flex lg:hidden w-10 h-10 rounded-lg items-center justify-center hover:bg-brand/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
               aria-label="Open navigation"
             >
-              <Menu className="w-5 h-5 text-brand dark:text-[#EFE9DC]" />
+              <Menu className="w-5 h-5 text-brand dark:text-[#F4F1EA]" />
             </button>
           </div>
         </div>
@@ -495,7 +495,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                   className="flex items-center gap-2.5"
                 >
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-brand">
-                    <WirelineMark className="w-4 h-4 text-[#EFE9DC]" strokeWidth={130} />
+                    <WirelineMark className="w-4 h-4 text-[#F4F1EA]" strokeWidth={130} />
                   </div>
                   <span className="brand-wordmark text-[16px] leading-none">
                     {branding.brand_name.toUpperCase()}

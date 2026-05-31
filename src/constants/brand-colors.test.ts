@@ -78,7 +78,7 @@ describe("brand-colors", () => {
   });
 
   it("brand purple on white/cream background meets WCAG AA contrast", () => {
-    const ratio = contrastRatio(BRAND.purple, "#EFE9DC");
+    const ratio = contrastRatio(BRAND.purple, "#F4F1EA");
     expect(ratio).toBeGreaterThanOrEqual(3.0);
   });
 
