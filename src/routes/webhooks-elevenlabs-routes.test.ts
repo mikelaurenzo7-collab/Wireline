@@ -39,13 +39,27 @@ const SECRET = "elevenlabs-webhook-secret";
 
 function appWith() {
   const app = express();
-  app.use(express.json());
+  // The route mounts its own express.raw({ type: "*/*" }) so the raw bytes are
+  // available for HMAC verification. We mount only the router here, exercising
+  // that per-route raw parser in isolation (no global express.json() ahead of
+  // it — that would consume the stream and is exactly the production ordering
+  // bug the server-level fix addresses).
   app.use(elevenlabsRouter);
   return app;
 }
 
-function sign(body: unknown): string {
-  return crypto.createHmac("sha256", SECRET).update(JSON.stringify(body)).digest("hex");
+/** Sign the exact raw bytes, matching how the route verifies the payload. */
+function sign(raw: string): string {
+  return crypto.createHmac("sha256", SECRET).update(raw).digest("hex");
+}
+
+/** Helper: POST a raw JSON string with a (optionally signed) signature header. */
+function postRaw(raw: string, signature?: string) {
+  const req = request(appWith())
+    .post("/api/webhooks/elevenlabs")
+    .set("content-type", "application/json");
+  if (signature !== undefined) req.set("xi-webhook-signature", signature);
+  return req.send(raw);
 }
 
 describe("POST /api/webhooks/elevenlabs", () => {
@@ -62,57 +76,45 @@ describe("POST /api/webhooks/elevenlabs", () => {
 
   it("returns 503 when the signing secret is not configured", async () => {
     delete process.env.ELEVENLABS_WEBHOOK_SECRET;
-    const res = await request(appWith()).post("/api/webhooks/elevenlabs").send({ event_type: "x" });
+    const res = await postRaw(JSON.stringify({ event_type: "x" }));
     expect(res.status).toBe(503);
   });
 
   it("returns 401 when the signature header is missing", async () => {
-    const res = await request(appWith())
-      .post("/api/webhooks/elevenlabs")
-      .send({ event_type: "voice.cloning.success", voice_id: "v1" });
+    const res = await postRaw(
+      JSON.stringify({ event_type: "voice.cloning.success", voice_id: "v1" }),
+    );
     expect(res.status).toBe(401);
     expect(res.body.error).toMatch(/missing signature/i);
   });
 
   it("returns 401 when the signature does not match the body", async () => {
-    const body = { event_type: "voice.cloning.success", voice_id: "v1" };
-    const res = await request(appWith())
-      .post("/api/webhooks/elevenlabs")
-      .set("xi-webhook-signature", "deadbeef")
-      .send(body);
+    const raw = JSON.stringify({ event_type: "voice.cloning.success", voice_id: "v1" });
+    const res = await postRaw(raw, "deadbeef");
     expect(res.status).toBe(401);
     expect(res.body.error).toMatch(/invalid signature/i);
     expect(updateSpy).not.toHaveBeenCalled();
   });
 
   it("rejects a body whose signature was computed over different content", async () => {
-    const signed = { event_type: "voice.cloning.success", voice_id: "v1" };
-    const tampered = { event_type: "voice.cloning.success", voice_id: "ATTACKER" };
-    const res = await request(appWith())
-      .post("/api/webhooks/elevenlabs")
-      .set("xi-webhook-signature", sign(signed))
-      .send(tampered);
+    const signed = JSON.stringify({ event_type: "voice.cloning.success", voice_id: "v1" });
+    const tampered = JSON.stringify({ event_type: "voice.cloning.success", voice_id: "ATTACKER" });
+    const res = await postRaw(tampered, sign(signed));
     expect(res.status).toBe(401);
     expect(updateSpy).not.toHaveBeenCalled();
   });
 
   it("accepts a correctly-signed success event and updates the voice row", async () => {
-    const body = { event_type: "voice.cloning.success", voice_id: "v1" };
-    const res = await request(appWith())
-      .post("/api/webhooks/elevenlabs")
-      .set("xi-webhook-signature", sign(body))
-      .send(body);
+    const raw = JSON.stringify({ event_type: "voice.cloning.success", voice_id: "v1" });
+    const res = await postRaw(raw, sign(raw));
     expect(res.status).toBe(200);
     expect(res.body.ok).toBe(true);
     expect(updateSpy).toHaveBeenCalled();
   });
 
   it("accepts a correctly-signed no-op event without updating any row", async () => {
-    const body = { event_type: "voice.something.else" };
-    const res = await request(appWith())
-      .post("/api/webhooks/elevenlabs")
-      .set("xi-webhook-signature", sign(body))
-      .send(body);
+    const raw = JSON.stringify({ event_type: "voice.something.else" });
+    const res = await postRaw(raw, sign(raw));
     expect(res.status).toBe(200);
     expect(updateSpy).not.toHaveBeenCalled();
   });

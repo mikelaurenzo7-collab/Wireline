@@ -61,13 +61,9 @@ function app() {
   // "*/*" }) so they can HMAC-verify the raw bytes. We mount only the router
   // here, exercising that per-route raw parser in isolation.
   //
-  // NOTE: we deliberately do NOT add a global express.json() ahead of the
-  // router. Doing so (as server.ts currently does at :163, before the router
-  // at :284) consumes the JSON body first, leaving the route's express.raw()
-  // with no raw bytes to verify — which appears to be a genuine production
-  // middleware-ordering bug for Meta JSON deliveries. That belongs in a
-  // separate, reviewed server.ts fix, not this test-only PR; tracking it as a
-  // follow-up rather than masking it here.
+  // The production middleware ordering (global express.json() must NOT run
+  // ahead of the route's raw parser) is enforced by installBodyParsers and
+  // covered end-to-end by webhook-body-parsing.integration.test.ts.
   const a = express();
   a.use(metaRouter);
   return a;

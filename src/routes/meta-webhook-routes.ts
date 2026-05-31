@@ -76,12 +76,16 @@ function verifyMetaSignature(rawBody: Buffer, signature: string | undefined): bo
   const secret = process.env.META_APP_SECRET;
   if (!secret || !signature) return false;
   // Header format: "sha256=<hex>"
-  const expectedHex = createHmac("sha256", secret).update(rawBody).digest("hex");
-  const expected = `sha256=${expectedHex}`;
-  if (signature.length !== expected.length) return false;
   try {
+    const expectedHex = createHmac("sha256", secret).update(rawBody).digest("hex");
+    const expected = `sha256=${expectedHex}`;
+    if (signature.length !== expected.length) return false;
     return timingSafeEqual(Buffer.from(signature, "utf8"), Buffer.from(expected, "utf8"));
   } catch {
+    // Defence-in-depth: if the global JSON parser ever runs ahead of this
+    // route's raw parser, rawBody is a parsed object and createHmac().update()
+    // throws. Treat any HMAC/compare failure as an unverified signature rather
+    // than letting the request crash the handler.
     return false;
   }
 }

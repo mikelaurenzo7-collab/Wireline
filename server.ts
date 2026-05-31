@@ -36,6 +36,7 @@ import { AppError, formatErrorResponse } from "./src/lib/api-error";
 import { validateStartupEnv } from "./src/lib/startup";
 import { buildCSP, buildConnectSrcs } from "./src/lib/csp";
 import { isRedisConfigured, startMemoryCleanup } from "./src/lib/rate-limit";
+import { installBodyParsers } from "./src/lib/body-parsers";
 import { claudeRateLimiter } from "./src/middleware/api-rate-limits";
 import { initJobWorker } from "./src/lib/job-worker";
 import { performanceMonitoring } from "./src/middleware/performance";
@@ -154,13 +155,11 @@ app.use(
   }),
 );
 
-// Stripe webhook needs raw body
-app.use("/api/stripe-webhook", express.raw({ type: "application/json" }));
-
-// Scoped JSON body parsers
-app.use("/api/claude/knowledge-from-document", express.json({ limit: "50mb" }));
-app.use("/api/outbound/bulk", express.json({ limit: "16mb" }));
-app.use(express.json({ limit: "1mb" }));
+// Body parsers. Raw-body webhooks (Stripe, Meta, ElevenLabs) and Twilio's
+// urlencoded webhook MUST be registered before the global express.json(), or
+// the JSON parser consumes the stream and signature verification breaks. See
+// installBodyParsers for the ordering rationale.
+installBodyParsers(app);
 
 // Request correlation IDs
 app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
