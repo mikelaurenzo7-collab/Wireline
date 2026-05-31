@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { RefreshCw, Sparkles } from "lucide-react";
-import { cn } from "../../lib/utils";
 import { fetchInsight, Spinner, ErrCard, Empty } from "./shared";
 
 export default function FailureModesView() {
@@ -34,8 +33,14 @@ export default function FailureModesView() {
         <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
           {!data.cached && (
             <span className="relative flex h-1.5 w-1.5" aria-hidden>
-              <span className="absolute inline-flex h-full w-full rounded-full animate-ping" style={{ background: "rgba(16,185,129,0.60)" }} />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full" style={{ background: "#10b981" }} />
+              <span
+                className="absolute inline-flex h-full w-full rounded-full animate-ping"
+                style={{ background: "rgba(16,185,129,0.60)" }}
+              />
+              <span
+                className="relative inline-flex h-1.5 w-1.5 rounded-full"
+                style={{ background: "#10b981" }}
+              />
             </span>
           )}
           {data.cached ? "Cached" : "Fresh"} · {modes.length} clusters
@@ -65,10 +70,22 @@ export default function FailureModesView() {
                   className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] border"
                   style={
                     m.severity === "critical" || m.severity === "high"
-                      ? { background: "rgba(232,70,106,0.15)", color: "#E8466A", borderColor: "rgba(232,70,106,0.30)" }
+                      ? {
+                          background: "rgba(232,70,106,0.15)",
+                          color: "#E8466A",
+                          borderColor: "rgba(232,70,106,0.30)",
+                        }
                       : m.severity === "medium"
-                        ? { background: "rgba(245,158,11,0.15)", color: "#f59e0b", borderColor: "rgba(245,158,11,0.30)" }
-                        : { background: "rgba(113,113,122,0.15)", color: "rgba(212,212,216,0.80)", borderColor: "rgba(113,113,122,0.30)" }
+                        ? {
+                            background: "rgba(245,158,11,0.15)",
+                            color: "#f59e0b",
+                            borderColor: "rgba(245,158,11,0.30)",
+                          }
+                        : {
+                            background: "rgba(113,113,122,0.15)",
+                            color: "rgba(212,212,216,0.80)",
+                            borderColor: "rgba(113,113,122,0.30)",
+                          }
                   }
                 >
                   {m.severity}

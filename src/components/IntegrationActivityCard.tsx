@@ -11,7 +11,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Check, Loader2, Clock, ExternalLink, AlertCircle } from "lucide-react";
-import { cn } from "../lib/utils";
 
 export type IntegrationStatus = "pending" | "active" | "success" | "waiting" | "error";
 
@@ -142,7 +141,9 @@ export default function IntegrationActivityCard({
                 {status === "active" && <Loader2 className="w-2.5 h-2.5 animate-spin" />}
                 {status === "success" && <Check className="w-2.5 h-2.5" />}
                 {status === "error" && <AlertCircle className="w-2.5 h-2.5" />}
-                {(status === "waiting" || status === "pending") && <Clock className="w-2.5 h-2.5" />}
+                {(status === "waiting" || status === "pending") && (
+                  <Clock className="w-2.5 h-2.5" />
+                )}
                 {s.label}
               </span>
             </div>
