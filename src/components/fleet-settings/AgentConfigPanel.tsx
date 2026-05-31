@@ -8,7 +8,6 @@ import {
   ChevronLeft,
   Target,
   Briefcase,
-  ChevronRight,
   Loader2,
   RefreshCw,
   Clock,
@@ -35,6 +34,17 @@ import VoiceFineTuningPanel from "../VoiceFineTuningPanel";
 import AgentIntegrationCanvas from "../AgentIntegrationCanvas";
 import { Sparkline, RoleBadge, PREMIUM_VOICES, AGENT_ROLES } from "../fleet/helpers";
 import { resolveAgentTools, getRoleToolSet } from "../../lib/agent-capabilities";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/shadcn/Select";
+import { Input } from "../ui/shadcn/Input";
+import { Slider } from "../ui/shadcn/Slider";
 
 interface AgentConfigPanelProps {
   selectedAgent: any | null;
@@ -211,7 +221,7 @@ export default function AgentConfigPanel({
                     <div className="flex-1 w-full space-y-3">
                       <div className="flex items-center gap-2">
                         <span className="w-1 h-8 bg-brand rounded-full" />
-                        <input
+                        <Input
                           type="text"
                           value={selectedAgent.name}
                           onChange={(e) => updateAgentMeta({ name: e.target.value })}
@@ -243,19 +253,24 @@ export default function AgentConfigPanel({
                             Agent role
                           </label>
                           <div className="relative">
-                            <select
-                              aria-label="Agent role"
+                            <Select
                               value={selectedAgent.role || "customer_service"}
-                              onChange={(e) => updateAgentMeta({ role: e.target.value })}
-                              className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
+                              onValueChange={(v) => updateAgentMeta({ role: v })}
                             >
-                              {AGENT_ROLES.map((r) => (
-                                <option key={r.value} value={r.value}>
-                                  {r.label}
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none rotate-90" />
+                              <SelectTrigger
+                                aria-label="Agent role"
+                                className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 py-1.5 text-ink h-auto"
+                              >
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {AGENT_ROLES.map((r) => (
+                                  <SelectItem key={r.value} value={r.value}>
+                                    {r.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
                         <div className="flex flex-col gap-1.5">
@@ -370,7 +385,7 @@ export default function AgentConfigPanel({
                       <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
                         <LinkIcon className="w-2.5 h-2.5 text-brand" /> Knowledge URL
                       </label>
-                      <input
+                      <Input
                         type="url"
                         inputMode="url"
                         autoComplete="url"
@@ -384,7 +399,7 @@ export default function AgentConfigPanel({
                       <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
                         <Phone className="w-2.5 h-2.5 text-brand" /> Transfer phone
                       </label>
-                      <input
+                      <Input
                         type="tel"
                         inputMode="tel"
                         autoComplete="tel"
@@ -413,15 +428,13 @@ export default function AgentConfigPanel({
                               Voice signature
                             </label>
                             <div className="relative">
-                              <select
-                                aria-label="Voice signature"
+                              <Select
                                 value={
                                   PREMIUM_VOICES.find((v) => v.id === selectedAgent.voice_id)
                                     ? selectedAgent.voice_id
                                     : "custom"
                                 }
-                                onChange={(e) => {
-                                  const val = e.target.value;
+                                onValueChange={(val) => {
                                   if (val !== "custom") {
                                     const voiceData = PREMIUM_VOICES.find((v) => v.id === val);
                                     updateAgentMeta({
@@ -430,18 +443,25 @@ export default function AgentConfigPanel({
                                     });
                                   }
                                 }}
-                                className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
                               >
-                                <optgroup label="Premium">
-                                  {PREMIUM_VOICES.map((v) => (
-                                    <option key={v.id} value={v.id}>
-                                      {v.name}
-                                    </option>
-                                  ))}
-                                </optgroup>
-                                <option value="custom">Custom override</option>
-                              </select>
-                              <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none rotate-90" />
+                                <SelectTrigger
+                                  aria-label="Voice signature"
+                                  className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 py-1.5 text-ink h-auto"
+                                >
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectGroup>
+                                    <SelectLabel>Premium</SelectLabel>
+                                    {PREMIUM_VOICES.map((v) => (
+                                      <SelectItem key={v.id} value={v.id}>
+                                        {v.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectGroup>
+                                  <SelectItem value="custom">Custom override</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </div>
                           </div>
 
@@ -450,20 +470,25 @@ export default function AgentConfigPanel({
                               Archetype
                             </label>
                             <div className="relative">
-                              <select
-                                aria-label="Archetype"
+                              <Select
                                 value={selectedAgent.archetype || "Receptionist"}
-                                onChange={(e) => updateAgentMeta({ archetype: e.target.value })}
-                                className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
+                                onValueChange={(v) => updateAgentMeta({ archetype: v })}
                               >
-                                <option value="Receptionist">Receptionist</option>
-                                <option value="The Closer">The Closer</option>
-                                <option value="Support Tech">Support Tech</option>
-                                <option value="The Empath">The Empath</option>
-                                <option value="The Collector">The Collector</option>
-                                <option value="Lead Qualifier">Lead Qualifier</option>
-                              </select>
-                              <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none rotate-90" />
+                                <SelectTrigger
+                                  aria-label="Archetype"
+                                  className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 py-1.5 text-ink h-auto"
+                                >
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Receptionist">Receptionist</SelectItem>
+                                  <SelectItem value="The Closer">The Closer</SelectItem>
+                                  <SelectItem value="Support Tech">Support Tech</SelectItem>
+                                  <SelectItem value="The Empath">The Empath</SelectItem>
+                                  <SelectItem value="The Collector">The Collector</SelectItem>
+                                  <SelectItem value="Lead Qualifier">Lead Qualifier</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </div>
                           </div>
 
@@ -508,16 +533,21 @@ export default function AgentConfigPanel({
                               Ambient atmosphere
                             </label>
                             <div className="relative">
-                              <select
-                                aria-label="Ambient atmosphere"
+                              <Select
                                 value={selectedAgent.ambient_noise || "off"}
-                                onChange={(e) => updateAgentMeta({ ambient_noise: e.target.value })}
-                                className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
+                                onValueChange={(v) => updateAgentMeta({ ambient_noise: v })}
                               >
-                                <option value="off">Studio (silent)</option>
-                                <option value="office">Office (kinetic)</option>
-                              </select>
-                              <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none rotate-90" />
+                                <SelectTrigger
+                                  aria-label="Ambient atmosphere"
+                                  className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 py-1.5 text-ink h-auto"
+                                >
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="off">Studio (silent)</SelectItem>
+                                  <SelectItem value="office">Office (kinetic)</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </div>
                           </div>
 
@@ -530,8 +560,7 @@ export default function AgentConfigPanel({
                                 {Number((selectedAgent as any).voice_speed ?? 1.0).toFixed(2)}×
                               </span>
                             </div>
-                            <input
-                              type="range"
+                            <Slider
                               min={0.7}
                               max={1.2}
                               step={0.05}
@@ -565,7 +594,7 @@ export default function AgentConfigPanel({
                               <Zap className="w-2.5 h-2.5 text-brand" /> Initial greeting
                             </label>
                           </div>
-                          <input
+                          <Input
                             type="text"
                             value={selectedAgent.first_message || ""}
                             onChange={(e) => updateAgentMeta({ first_message: e.target.value })}
@@ -630,19 +659,22 @@ export default function AgentConfigPanel({
                                 Relay tone
                               </label>
                               <div className="relative">
-                                <select
-                                  aria-label="Relay tone"
+                                <Select
                                   value={selectedAgent.email_agent_tone || "Professional"}
-                                  onChange={(e) =>
-                                    updateAgentMeta({ email_agent_tone: e.target.value })
-                                  }
-                                  className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-emerald-400/50 cursor-pointer appearance-none text-ink"
+                                  onValueChange={(v) => updateAgentMeta({ email_agent_tone: v })}
                                 >
-                                  <option value="Professional">Authoritative</option>
-                                  <option value="Friendly">Diplomatic</option>
-                                  <option value="Direct">Concise</option>
-                                </select>
-                                <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none rotate-90" />
+                                  <SelectTrigger
+                                    aria-label="Relay tone"
+                                    className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 py-1.5 text-ink h-auto"
+                                  >
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Professional">Authoritative</SelectItem>
+                                    <SelectItem value="Friendly">Diplomatic</SelectItem>
+                                    <SelectItem value="Direct">Concise</SelectItem>
+                                  </SelectContent>
+                                </Select>
                               </div>
                             </div>
 
@@ -650,7 +682,7 @@ export default function AgentConfigPanel({
                               <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
                                 Signature
                               </label>
-                              <input
+                              <Input
                                 type="text"
                                 value={selectedAgent.email_signature || ""}
                                 onChange={(e) =>
@@ -1012,7 +1044,7 @@ export default function AgentConfigPanel({
                         Add directive
                       </label>
                       <div className="flex gap-1.5">
-                        <input
+                        <Input
                           type="text"
                           value={newDirective}
                           onChange={(e) => setNewDirective(e.target.value)}
@@ -1136,7 +1168,7 @@ export default function AgentConfigPanel({
                         Add fact
                       </label>
                       <div className="flex gap-1.5">
-                        <input
+                        <Input
                           type="text"
                           value={newKnowledge}
                           onChange={(e) => setNewKnowledge(e.target.value)}

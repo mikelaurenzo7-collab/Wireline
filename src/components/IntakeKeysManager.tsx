@@ -18,6 +18,8 @@ import {
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatDateTime } from "../lib/safe-date";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
+import { Input } from "./ui/shadcn/Input";
 
 interface IntakeKey {
   id: string;
@@ -197,7 +199,7 @@ export default function IntakeKeysManager() {
                 </button>
               </div>
               <div className="flex items-center gap-2">
-                <input
+                <Input
                   readOnly
                   value={
                     revealed ? justCreated.plaintext : "•".repeat(justCreated.plaintext.length)
@@ -238,7 +240,7 @@ export default function IntakeKeysManager() {
                     <span className="text-[10px] uppercase tracking-[0.3em] text-muted">
                       Key name
                     </span>
-                    <input
+                    <Input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="e.g. Webflow Demo Form"
@@ -249,22 +251,29 @@ export default function IntakeKeysManager() {
                     <span className="text-[10px] uppercase tracking-[0.3em] text-muted">
                       Default agent (optional)
                     </span>
-                    <select
-                      aria-label="Default agent"
-                      value={defaultAgentId}
-                      onChange={(e) => {
-                        setDefaultAgentId(e.target.value);
-                        if (!e.target.value) setAutoDial(false);
+                    <Select
+                      value={defaultAgentId || "__none__"}
+                      onValueChange={(v) => {
+                        const next = v === "__none__" ? "" : v;
+                        setDefaultAgentId(next);
+                        if (!next) setAutoDial(false);
                       }}
-                      className="w-full h-11 px-3 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
                     >
-                      <option value="">— None —</option>
-                      {agents.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.name}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger
+                        aria-label="Default agent"
+                        className="w-full h-11 px-3 rounded-xl bg-black/5 border border-black/10 text-ink text-sm"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">— None —</SelectItem>
+                        {agents.map((a) => (
+                          <SelectItem key={a.id} value={a.id}>
+                            {a.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </label>
                 </div>
                 <button

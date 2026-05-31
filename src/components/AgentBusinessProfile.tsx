@@ -18,10 +18,12 @@ import {
   Target,
   Plus,
   X,
-  ChevronDown,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "../lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
+import { Input } from "./ui/shadcn/Input";
+import { Checkbox } from "./ui/shadcn/Checkbox";
 
 // ── Types (kept in lockstep with src/lib/agent-runtime.ts) ─────────────
 
@@ -320,7 +322,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 >
                   {closed ? "Closed" : "Open"}
                 </button>
-                <input
+                <Input
                   type="time"
                   value={cfg.open ?? ""}
                   disabled={closed}
@@ -328,7 +330,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                   className="input-time"
                   aria-label={`${d.label} open time`}
                 />
-                <input
+                <Input
                   type="time"
                   value={cfg.close ?? ""}
                   disabled={closed}
@@ -496,7 +498,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70 font-semibold block mb-1">
                 Escalation phone (SMS)
               </span>
-              <input
+              <Input
                 type="tel"
                 inputMode="tel"
                 autoComplete="off"
@@ -514,7 +516,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70 font-semibold block mb-1">
                 Escalation email
               </span>
-              <input
+              <Input
                 type="email"
                 inputMode="email"
                 autoComplete="off"
@@ -546,8 +548,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 : "border-black/10 bg-paper hover:border-black/20")
             }
           >
-            <input
-              type="checkbox"
+            <Checkbox
               checked={value.escalation_handoff_enabled === true}
               disabled={!value.escalation_phone}
               onChange={(e) => onChange({ ...value, escalation_handoff_enabled: e.target.checked })}
@@ -599,7 +600,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               >
                 {`{${k}}`}
               </code>
-              <input
+              <Input
                 type="text"
                 value={v}
                 onChange={(e) => setVariable(k, e.target.value)}
@@ -620,7 +621,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
         </div>
 
         <div className="flex items-stretch gap-2 mt-2 pt-2 border-t border-black/8">
-          <input
+          <Input
             type="text"
             value={draftVarKey}
             onChange={(e) => setDraftVarKey(e.target.value)}
@@ -629,7 +630,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
             className="input-base w-32 font-mono"
             aria-label="New variable key"
           />
-          <input
+          <Input
             type="text"
             value={draftVarVal}
             onChange={(e) => setDraftVarVal(e.target.value)}
@@ -801,7 +802,7 @@ function ChipDraftInput({
 }) {
   return (
     <div className="flex items-stretch gap-2">
-      <input
+      <Input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -838,7 +839,7 @@ function TzSelect({ value, onChange }: { value: string; onChange: (v: string) =>
   if (custom) {
     return (
       <div className="flex items-stretch gap-2">
-        <input
+        <Input
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -862,19 +863,18 @@ function TzSelect({ value, onChange }: { value: string; onChange: (v: string) =>
   return (
     <div className="flex items-stretch gap-2">
       <div className="relative flex-1">
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="input-base w-full appearance-none pr-9 font-mono"
-          aria-label="Timezone"
-        >
-          {COMMON_TZS.map((tz) => (
-            <option key={tz} value={tz}>
-              {tz}
-            </option>
-          ))}
-        </select>
-        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none" />
+        <Select value={value} onValueChange={onChange}>
+          <SelectTrigger aria-label="Timezone" className="input-base w-full font-mono">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {COMMON_TZS.map((tz) => (
+              <SelectItem key={tz} value={tz}>
+                {tz}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <button
         type="button"

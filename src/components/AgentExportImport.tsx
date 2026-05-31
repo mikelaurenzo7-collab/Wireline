@@ -4,6 +4,7 @@ import { Download, Upload, CheckCircle2, Loader2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
+import { Input } from "./ui/shadcn/Input";
 
 interface Props {
   agentId: string;
@@ -103,7 +104,7 @@ export default function AgentExportImport({ agentId, agentName }: Props) {
       </button>
 
       {/* Import */}
-      <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
+      <Input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
       <button
         onClick={() => fileRef.current?.click()}
         disabled={isImporting}

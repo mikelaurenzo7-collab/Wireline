@@ -19,6 +19,7 @@ import { cn } from "../../lib/utils";
 import { useToast } from "../../contexts/ToastContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { Link } from "react-router-dom";
+import { Input } from "../ui/shadcn/Input";
 
 export type FloorCall = {
   id: string;
@@ -362,7 +363,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                     {whisperingCallId === call.id && (
                       <div className="mt-3 p-3 rounded-xl border border-violet-500/25 bg-violet-500/[0.04] space-y-2">
                         <div className="flex gap-2">
-                          <input
+                          <Input
                             type="text"
                             value={whisperText}
                             onChange={(e) => setWhisperText(e.target.value)}

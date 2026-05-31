@@ -8,6 +8,7 @@ import { formatDate } from "../lib/safe-date";
 import PageShell, { Panel } from "./PageShell";
 import { useToast } from "../contexts/ToastContext";
 import EmptyState from "./EmptyState";
+import { Input } from "./ui/shadcn/Input";
 
 interface SmsThread {
   id: string;
@@ -292,7 +293,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
 
                     <div className="shrink-0 border-t border-white/8 pt-3">
                       <div className="flex gap-2">
-                        <input
+                        <Input
                           type="text"
                           value={reply}
                           onChange={(e) => setReply(e.target.value)}

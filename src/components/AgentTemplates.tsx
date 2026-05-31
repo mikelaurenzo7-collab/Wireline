@@ -30,6 +30,7 @@ import { AGENTS_CHANGED_EVENT } from "../contexts/AgentsContext";
 import { cn } from "../lib/utils";
 import { useToast } from "../contexts/ToastContext";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
+import { Input } from "./ui/shadcn/Input";
 
 // ────────────────────────────────────────────────────────────────────────────
 // Template definitions
@@ -621,7 +622,7 @@ export default function AgentTemplates() {
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted/70 pointer-events-none" />
-          <input
+          <Input
             type="search"
             aria-label="Search templates"
             placeholder="Search templates…"

@@ -8,6 +8,7 @@ import {
   getCatalogEntry,
   getActiveTasksForIntegration,
 } from "../lib/integration-playbooks";
+import { Checkbox } from "./ui/shadcn/Checkbox";
 
 export interface IntegrationCapabilityPanelProps {
   integration: ToolIntegration;
@@ -185,8 +186,7 @@ export default function IntegrationCapabilityPanel({
                 return (
                   <li key={tool.name}>
                     <label className="flex items-start gap-2.5 px-3 py-2 cursor-pointer hover:bg-white/4">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={on}
                         onChange={() => onToggleTool(tool.name)}
                         className="mt-0.5 rounded border-white/20 text-brand focus:ring-brand/40"

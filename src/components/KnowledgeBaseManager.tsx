@@ -29,6 +29,10 @@ import { cn } from "../lib/utils";
 import { formatDate } from "../lib/safe-date";
 import EmptyState from "./EmptyState";
 import { RecipeModal } from "./ClaudeRecipes";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
+import { Input } from "./ui/shadcn/Input";
+
+const AGENT_UNSET = "__unset__";
 
 interface KnowledgeRow {
   id: number;
@@ -365,19 +369,25 @@ export default function KnowledgeBaseManager() {
               <div className="grid grid-cols-1 md:grid-cols-[260px,1fr,auto] gap-3 items-start">
                 <label className="space-y-1.5">
                   <span className="text-[10px] uppercase tracking-[0.3em] text-muted">Agent</span>
-                  <select
-                    aria-label="Agent"
-                    value={addAgent}
-                    onChange={(e) => setAddAgent(e.target.value)}
-                    className="w-full h-11 px-3 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
+                  <Select
+                    value={addAgent || AGENT_UNSET}
+                    onValueChange={(v) => setAddAgent(v === AGENT_UNSET ? "" : v)}
                   >
-                    <option value="">— Pick an agent —</option>
-                    {agents.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      aria-label="Agent"
+                      className="w-full h-11 px-3 rounded-xl bg-black/5 border border-black/10 text-ink text-sm"
+                    >
+                      <SelectValue placeholder="— Pick an agent —" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={AGENT_UNSET}>— Pick an agent —</SelectItem>
+                      {agents.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </label>
                 <label className="space-y-1.5">
                   <span className="text-[10px] uppercase tracking-[0.3em] text-muted">Content</span>
@@ -436,7 +446,7 @@ export default function KnowledgeBaseManager() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[280px]">
           <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
-          <input
+          <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search content or agent name…"

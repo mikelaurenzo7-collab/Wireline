@@ -14,6 +14,7 @@ import {
   Search,
 } from "lucide-react";
 import WirelineMark from "../WirelineMark";
+import ThemeToggle from "../ThemeToggle";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../../contexts/AuthContext";
 import { cn } from "../../lib/utils";
@@ -308,6 +309,11 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 ?
               </kbd>
             </button>
+
+            {/* Theme toggle — cycles light/dark/system, persists in
+                localStorage, toggles the `.dark` class on <html> so the
+                shadcn token system reflows the entire app. */}
+            <ThemeToggle />
 
             {/* Avatar / account dropdown — visible on ALL viewports now.
                 On mobile this replaces the sign-out that was buried in the

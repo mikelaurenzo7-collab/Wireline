@@ -5,6 +5,7 @@ import { authFetch } from "../../../lib/api";
 import { cn } from "../../../lib/utils";
 import { FormShell, Field, TextInput, Select, RunButton, ResultCard, ErrCard } from "../shared";
 import type { AgentLite } from "../types";
+import { Input } from "../../ui/shadcn/Input";
 
 export function KnowledgeFromDocumentForm({
   agents,
@@ -129,7 +130,7 @@ export function KnowledgeFromDocumentForm({
               onDrop={onDrop}
               className="relative flex flex-col items-center justify-center gap-3 px-6 py-10 rounded-2xl glass border-2 border-dashed border-white/15 hover:border-brand/40 transition-all cursor-pointer text-center"
             >
-              <input
+              <Input
                 type="file"
                 accept="application/pdf,.pdf"
                 onChange={onFile}

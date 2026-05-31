@@ -22,6 +22,7 @@ import {
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatDate, formatDateTime } from "../lib/safe-date";
+import { Input } from "./ui/shadcn/Input";
 
 interface BriefData {
   brief: {
@@ -556,7 +557,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
               <span className="text-[10px] uppercase tracking-[0.3em] text-muted flex items-center gap-1.5">
                 <Clock className="w-3 h-3" /> Send time (UTC)
               </span>
-              <input
+              <Input
                 type="time"
                 value={sendAt}
                 onChange={(e) => setSendAt(e.target.value)}
@@ -568,7 +569,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
             </label>
             <label className="space-y-1.5">
               <span className="text-[10px] uppercase tracking-[0.3em] text-muted">Recipient</span>
-              <input
+              <Input
                 type="email"
                 autoComplete="email"
                 autoCapitalize="none"

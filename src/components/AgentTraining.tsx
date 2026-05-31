@@ -31,6 +31,7 @@ import { useToast } from "../contexts/ToastContext";
 import AgentFlowComposer from "./AgentFlowComposer";
 import VoiceLibraryPanel from "./admin/VoiceLibraryPanel";
 import PronunciationDictionaryPanel from "./PronunciationDictionaryPanel";
+import { Input } from "./ui/shadcn/Input";
 
 type TrainingTab = "database" | "voices" | "pronunciation" | "simulator" | "flow";
 
@@ -654,7 +655,7 @@ export default function AgentTraining({
                       Add directive
                     </label>
                     <div className="flex gap-1.5">
-                      <input
+                      <Input
                         type="text"
                         value={newDirective}
                         onChange={(e) => setNewDirective(e.target.value)}
@@ -786,7 +787,7 @@ export default function AgentTraining({
                       Add fact
                     </label>
                     <div className="flex gap-1.5">
-                      <input
+                      <Input
                         type="text"
                         value={newKnowledge}
                         onChange={(e) => setNewKnowledge(e.target.value)}

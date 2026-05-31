@@ -8,7 +8,6 @@ import {
   Search,
   Loader2,
   MessageCircle,
-  ChevronRight,
   Database,
   Activity,
   Signal,
@@ -40,8 +39,10 @@ import PageShell, { Panel } from "./PageShell";
 import HubTabs, { CHANNELS_HUB } from "./HubTabs";
 import { PanelSkeleton } from "./Skeleton";
 import EmptyState from "./EmptyState";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { useToast } from "../contexts/ToastContext";
 import type { CallLog } from "../types/api";
+import { Input } from "./ui/shadcn/Input";
 
 export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
   const { error: toastError } = useToast();
@@ -114,7 +115,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
     <div className="flex w-full flex-wrap items-center justify-end gap-1.5 sm:w-auto">
       <div className="relative min-w-0 flex-1 sm:flex-none">
         <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-        <input
+        <Input
           type="search"
           aria-label="Search calls"
           placeholder="Search signals…"
@@ -124,18 +125,20 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
         />
       </div>
       <div className="relative">
-        <Filter className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-        <select
-          aria-label="Filter by call direction"
-          className="h-9 pl-8 pr-7 rounded-full glass border border-black/10 text-[10px] uppercase tracking-[0.22em] text-ink appearance-none focus:border-brand/40 focus:outline-none transition-all cursor-pointer"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value as any)}
-        >
-          <option value="all">All</option>
-          <option value="inbound">Inbound</option>
-          <option value="outbound">Outbound</option>
-        </select>
-        <ChevronRight className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 rotate-90 text-muted pointer-events-none" />
+        <Filter className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none z-10" />
+        <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
+          <SelectTrigger
+            aria-label="Filter by call direction"
+            className="h-9 pl-8 pr-3 rounded-full glass border border-black/10 text-[10px] uppercase tracking-[0.22em] text-ink"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="inbound">Inbound</SelectItem>
+            <SelectItem value="outbound">Outbound</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <CsvExportButton type="calls" label="CSV" />
     </div>

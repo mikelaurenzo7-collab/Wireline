@@ -22,6 +22,7 @@ import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatDateTime, formatTime } from "../lib/safe-date";
 import { PanelSkeleton } from "./Skeleton";
+import { Input } from "./ui/shadcn/Input";
 
 interface WebhookRow {
   id: string;
@@ -197,7 +198,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <label className="app-section-title">Name</label>
-          <input
+          <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Slack #sales channel"
@@ -206,7 +207,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
         </div>
         <div className="space-y-1.5">
           <label className="app-section-title">URL</label>
-          <input
+          <Input
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://hooks.slack.com/services/..."
@@ -266,7 +267,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
             (optional — when set, body is signed as X-Wireline-Signature: sha256=&lt;hex&gt;)
           </span>
         </label>
-        <input
+        <Input
           value={secret}
           onChange={(e) => setSecret(e.target.value)}
           placeholder="long-random-string-only-you-and-the-receiver-know"

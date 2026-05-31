@@ -13,6 +13,14 @@
 import React, { ReactNode, useState } from "react";
 import { AlertTriangle, ArrowRight, Check, Copy, Loader2, Sparkles } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { Input } from "../ui/shadcn/Input";
+import {
+  Select as ShadSelect,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/shadcn/Select";
 
 export function FormShell({ children }: { children: ReactNode }) {
   return <div className="p-7 space-y-6">{children}</div>;
@@ -38,7 +46,7 @@ export function Field({
 
 export function TextInput({ value, onChange, placeholder }: any) {
   return (
-    <input
+    <Input
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
@@ -69,18 +77,21 @@ export function Select({
   options: { value: string; label: string }[];
 }) {
   return (
-    <select
-      aria-label="Recipe option"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full h-12 px-4 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
-    >
-      {options.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </select>
+    <ShadSelect value={value} onValueChange={onChange}>
+      <SelectTrigger
+        aria-label="Recipe option"
+        className="w-full h-12 px-4 rounded-xl bg-black/5 border border-black/10 text-ink text-sm"
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((o) => (
+          <SelectItem key={o.value} value={o.value}>
+            {o.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </ShadSelect>
   );
 }
 

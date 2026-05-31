@@ -18,6 +18,9 @@ import PhoneNumberPicker from "../PhoneNumberPicker";
 import { cn } from "../../lib/utils";
 import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
+
+const CARRIER_AGENT_UNSET = "__unset__";
 
 interface CarrierPanelProps {
   settings: CarrierSettings;
@@ -173,24 +176,34 @@ export function CarrierPanel({
               Default inbound voice agent
             </label>
             <div className="relative">
-              <select
-                id="vapi-inbound-agent-id"
-                value={settings.vapi_phone_inbound_agent_id}
-                onChange={(e) =>
-                  onUpdateSettings({ ...settings, vapi_phone_inbound_agent_id: e.target.value })
+              <Select
+                value={settings.vapi_phone_inbound_agent_id || CARRIER_AGENT_UNSET}
+                onValueChange={(v) =>
+                  onUpdateSettings({
+                    ...settings,
+                    vapi_phone_inbound_agent_id: v === CARRIER_AGENT_UNSET ? "" : v,
+                  })
                 }
-                className="w-full text-sm bg-black/5 border border-input rounded-lg pl-3 pr-8 py-2 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
               >
-                <option value="">Oldest voice agent (fallback)</option>
-                {agents
-                  .filter((a) => a.channel === "voice" || a.channel === "omnichannel" || !a.channel)
-                  .map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name}
-                    </option>
-                  ))}
-              </select>
-              <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none rotate-90" />
+                <SelectTrigger
+                  id="vapi-inbound-agent-id"
+                  className="w-full text-sm bg-black/5 border border-input rounded-lg pl-3 py-2 text-ink h-auto"
+                >
+                  <SelectValue placeholder="Oldest voice agent (fallback)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={CARRIER_AGENT_UNSET}>Oldest voice agent (fallback)</SelectItem>
+                  {agents
+                    .filter(
+                      (a) => a.channel === "voice" || a.channel === "omnichannel" || !a.channel,
+                    )
+                    .map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -364,25 +377,32 @@ export function CarrierPanel({
                   <div className="flex items-center gap-2 shrink-0">
                     <LinkIcon className="w-3 h-3 text-brand" />
                     <div className="relative">
-                      <select
-                        aria-label={`Assign agent to ${pt.phone_number}`}
-                        value={pt.agent_id || ""}
-                        onChange={(e) => onUpdateNumberAgent(pt.id, e.target.value)}
-                        className="text-xs bg-black/5 border border-input rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink min-w-[150px]"
+                      <Select
+                        value={pt.agent_id || CARRIER_AGENT_UNSET}
+                        onValueChange={(v) =>
+                          onUpdateNumberAgent(pt.id, v === CARRIER_AGENT_UNSET ? "" : v)
+                        }
                       >
-                        <option value="">Unassigned</option>
-                        {agents
-                          .filter(
-                            (a) =>
-                              a.channel === "voice" || a.channel === "omnichannel" || !a.channel,
-                          )
-                          .map((a) => (
-                            <option key={a.id} value={a.id}>
-                              {a.name}
-                            </option>
-                          ))}
-                      </select>
-                      <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none rotate-90" />
+                        <SelectTrigger
+                          aria-label={`Assign agent to ${pt.phone_number}`}
+                          className="text-xs bg-black/5 border border-input rounded-lg pl-2.5 py-1.5 text-ink min-w-[150px] h-auto"
+                        >
+                          <SelectValue placeholder="Unassigned" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={CARRIER_AGENT_UNSET}>Unassigned</SelectItem>
+                          {agents
+                            .filter(
+                              (a) =>
+                                a.channel === "voice" || a.channel === "omnichannel" || !a.channel,
+                            )
+                            .map((a) => (
+                              <SelectItem key={a.id} value={a.id}>
+                                {a.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <ShadButton
                       type="button"

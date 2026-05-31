@@ -30,6 +30,7 @@ import {
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { PREMIUM_VOICES, DEFAULT_VOICE_BY_GENDER } from "./FleetSettings";
+import { Input } from "./ui/shadcn/Input";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -484,7 +485,7 @@ export default function FastStartWizard({
                       <span className="text-xs font-medium text-ink mb-1.5 block">
                         Your website URL
                       </span>
-                      <input
+                      <Input
                         type="url"
                         value={websiteUrl}
                         onChange={(e) => setWebsiteUrl(e.target.value)}
@@ -536,7 +537,7 @@ export default function FastStartWizard({
                       <span className="text-xs font-medium text-ink mb-1.5 block">
                         Preferred area code (optional)
                       </span>
-                      <input
+                      <Input
                         type="text"
                         value={areaCode}
                         onChange={(e) => setAreaCode(e.target.value.replace(/\D/g, "").slice(0, 3))}

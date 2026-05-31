@@ -14,6 +14,7 @@ import NotFound from "./components/layout/NotFound";
 import MarketingChrome from "./components/marketing/MarketingChrome";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { BrandingProvider } from "./contexts/BrandingContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { MotionConfig } from "motion/react";
 
 const Pricing = lazy(() => import("./pages/Pricing"));
@@ -321,15 +322,17 @@ export default function App() {
     // of aurora/glow/scale animations.
     <MotionConfig reducedMotion="user">
       <BrowserRouter>
-        <AuthProvider>
-          <BrandingProvider>
-            <ToastProvider>
-              <AppContent />
-              <ToastStack />
-              <CookieConsent />
-            </ToastProvider>
-          </BrandingProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <BrandingProvider>
+              <ToastProvider>
+                <AppContent />
+                <ToastStack />
+                <CookieConsent />
+              </ToastProvider>
+            </BrandingProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </BrowserRouter>
     </MotionConfig>
   );

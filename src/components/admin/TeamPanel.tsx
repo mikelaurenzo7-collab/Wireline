@@ -3,6 +3,7 @@ import { KeyRound, Trash2, Mail, Shield, User, Plus, Loader2 } from "lucide-reac
 import { cn } from "../../lib/utils";
 import { Panel } from "../PageShell";
 import { Input } from "../ui/shadcn/Input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
 interface TeamMember {
@@ -64,17 +65,20 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                       onChange={(e) => setInviteEmail(e.target.value)}
                     />
                   </div>
-                  <select
-                    aria-label="Role"
-                    className="w-32 px-3 py-2.5 bg-white/50 border border-input rounded-xl outline-none focus:border-brand/50 text-xs appearance-none cursor-pointer"
-                    value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value)}
-                  >
-                    <option value="member">Member</option>
-                    <option value="admin">Admin</option>
-                    <option value="owner">Owner</option>
-                    <option value="auditor">Auditor</option>
-                  </select>
+                  <Select value={inviteRole} onValueChange={setInviteRole}>
+                    <SelectTrigger
+                      aria-label="Role"
+                      className="w-32 px-3 py-2.5 bg-white/50 border border-input rounded-xl text-xs cursor-pointer h-auto"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="member">Member</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="owner">Owner</SelectItem>
+                      <SelectItem value="auditor">Auditor</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <ShadButton
                     disabled={isInviting || !inviteEmail}
                     variant="outline"

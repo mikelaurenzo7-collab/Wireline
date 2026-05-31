@@ -4,8 +4,7 @@
  * Extracted from the monolithic OutboundDialer.tsx.
  */
 import { useState, useEffect } from "react";
-import { Plus, Bot, Loader2, AlertTriangle, ChevronDown, Clock, X } from "lucide-react";
-import { cn } from "../../lib/utils";
+import { Plus, Bot, Loader2, AlertTriangle, Clock } from "lucide-react";
 import { authFetch } from "../../lib/api";
 import {
   Dialog,
@@ -15,6 +14,7 @@ import {
   DialogDescription,
 } from "../ui/shadcn/Dialog";
 import { Input } from "../ui/shadcn/Input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
 export default function CreateCampaignModal({
@@ -46,8 +46,6 @@ export default function CreateCampaignModal({
   }, [onClose]);
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
-  const inputCls =
-    "w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 transition-all";
 
   const save = async () => {
     if (!form.name.trim()) {
@@ -107,22 +105,25 @@ export default function CreateCampaignModal({
               <label className="app-section-title flex items-center gap-1.5">
                 <Bot className="w-2.5 h-2.5 text-brand" /> Default Agent
               </label>
-              <div className="relative">
-                <select
+              <Select
+                value={form.agent_id || "__unassigned__"}
+                onValueChange={(v) => set("agent_id", v === "__unassigned__" ? "" : v)}
+              >
+                <SelectTrigger
                   aria-label="Default agent"
-                  className={cn("w-full h-9 pl-3 pr-10 rounded-md border border-input bg-transparent text-sm text-ink focus:border-brand/50 focus:outline-none transition-all appearance-none cursor-pointer")}
-                  value={form.agent_id}
-                  onChange={(e) => set("agent_id", e.target.value)}
+                  className="w-full h-9 pl-3 pr-3 rounded-md border border-input bg-transparent text-sm text-ink"
                 >
-                  <option value="" className="bg-black text-ink">Unassigned</option>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__unassigned__">Unassigned</SelectItem>
                   {agents.map((a) => (
-                    <option key={a.id} value={a.id} className="bg-black text-ink">
+                    <SelectItem key={a.id} value={a.id}>
                       {a.name}
-                    </option>
+                    </SelectItem>
                   ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
-              </div>
+                </SelectContent>
+              </Select>
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">

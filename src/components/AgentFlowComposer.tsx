@@ -20,6 +20,8 @@ import { AnimatePresence, Reorder } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
+import { Checkbox } from "./ui/shadcn/Checkbox";
+import { Input } from "./ui/shadcn/Input";
 
 // Linear step definition for the agent flow
 export interface FlowStep {
@@ -787,7 +789,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     {activeStepIndex + 1}
                   </div>
                   <div>
-                    <input
+                    <Input
                       type="text"
                       value={activeStep.name}
                       onChange={(e) => handleUpdateStep(activeStep.id, "name", e.target.value)}
@@ -802,8 +804,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
 
                 <div className="flex items-center gap-3">
                   <label className="flex items-center gap-2 cursor-pointer group">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={!!activeStep.isEndNode}
                       onChange={(e) =>
                         handleUpdateStep(activeStep.id, "isEndNode", e.target.checked)

@@ -26,6 +26,8 @@ import {
   type SignupIntent,
 } from "../lib/signup-intent";
 import { getPasswordPolicyError } from "../lib/password-policy";
+import { Checkbox } from "./ui/shadcn/Checkbox";
+import { Input } from "./ui/shadcn/Input";
 
 function extractServerErrorMessage(payload: unknown): string | null {
   if (!payload || typeof payload !== "object") return null;
@@ -464,7 +466,7 @@ export default function AuthPortal() {
                       <Mail className="w-3.5 h-3.5 text-brand" />
                       Email
                     </label>
-                    <input
+                    <Input
                       id="auth-email"
                       type="email"
                       required
@@ -502,7 +504,7 @@ export default function AuthPortal() {
                         )}
                       </div>
                       <div className="relative">
-                        <input
+                        <Input
                           id="auth-password"
                           type={showPassword ? "text" : "password"}
                           required
@@ -595,8 +597,7 @@ export default function AuthPortal() {
 
                   {isSignUp && (
                     <label className="flex items-start gap-2 text-caption cursor-pointer">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={agreedToTerms}
                         onChange={(e) => setAgreedToTerms(e.target.checked)}
                         className="mt-1 accent-brand"
