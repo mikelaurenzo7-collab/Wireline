@@ -311,13 +311,13 @@ export default function Compare() {
             </table>
           </div>
           <p id="compare-legend" className="text-[10px] text-ink/55 mt-3 leading-relaxed">
-            <Check className="w-3 h-3 text-emerald-500 inline-block mr-1" aria-hidden /> fully
-            shipped &nbsp;·&nbsp;
-            <Minus className="w-3 h-3 text-amber-500 inline-block mr-1" /> partial / limited
-            &nbsp;·&nbsp;
-            <X className="w-3 h-3 text-rose-400/70 inline-block mr-1" /> not available. Scoring
-            reflects publicly-available product as of May 2026. Competitors' product surfaces change
-            frequently — corrections welcome at trywireline@yahoo.com.
+            <Check className="w-3 h-3 text-emerald-500 inline-block mr-1" aria-hidden="true" />{" "}
+            fully shipped &nbsp;·&nbsp;
+            <Minus className="w-3 h-3 text-amber-500 inline-block mr-1" aria-hidden="true" />{" "}
+            partial / limited &nbsp;·&nbsp;
+            <X className="w-3 h-3 text-rose-400/70 inline-block mr-1" aria-hidden="true" /> not
+            available. Scoring reflects publicly-available product as of May 2026. Competitors'
+            product surfaces change frequently — corrections welcome at trywireline@yahoo.com.
           </p>
         </section>
 

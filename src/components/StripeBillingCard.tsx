@@ -371,10 +371,10 @@ export default function StripeBillingCard() {
                   onClick={() => startCheckout(plan.id)}
                   disabled={isBusy || isCurrent || !plan.configured}
                   className={cn(
-                    "w-full py-3 rounded-xl text-[10px] uppercase tracking-[0.28em] font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed",
+                    "w-full py-3 rounded-xl text-[10px] uppercase tracking-[0.28em] font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-premium-button",
                     isCurrent
                       ? "bg-white/5 border border-white/10 text-muted"
-                      : "border border-white/20 hover:border-white/40 text-ink bg-white/5 hover:bg-white/10",
+                      : "border border-white/20 hover:border-white/40 text-ink bg-white/5 hover:bg-white/10 hover-premium-glow",
                   )}
                   style={!isCurrent && !isBusy ? { borderColor: `${accent}50` } : {}}
                 >
@@ -506,7 +506,7 @@ function ActiveSubCard({
         <button
           onClick={onPortal}
           disabled={busy}
-          className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl border text-[11px] uppercase tracking-[0.28em] transition-all disabled:opacity-50"
+          className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl border text-[11px] uppercase tracking-[0.28em] transition-all disabled:opacity-50 hover-premium-glow shadow-premium-button"
           style={{
             background: `${accent}12`,
             borderColor: `${accent}40`,

@@ -200,18 +200,19 @@ export default function DirectorWorkspace() {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col h-full min-h-0 bg-transparent">
       {/* Identity header — gives the Director presence in conversation:
           medallion + name + live status, with the clear-thread affordance. */}
       {messages.length > 0 && (
-        <div className="shrink-0 flex items-center justify-between gap-2 px-3 py-2.5 border-b border-black/8">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="shrink-0 flex w-8 h-8 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25">
-              <Sparkles className="w-4 h-4" />
+        <div className="shrink-0 flex items-center justify-between gap-2 px-6 py-4 border-b border-brand/10 bg-background/20 backdrop-blur-md relative z-20">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="shrink-0 flex w-9 h-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-[0_4px_12px_rgba(139,63,214,0.25)] relative overflow-hidden">
+              <Sparkles className="w-4 h-4 relative z-10" />
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent" />
             </span>
             <div className="min-w-0">
-              <p className="text-[13px] font-semibold text-ink leading-tight truncate">Director</p>
-              <p className="flex items-center gap-1.5 text-[10px] text-muted leading-tight">
+              <p className="text-[14px] font-semibold text-ink leading-tight">Director</p>
+              <p className="flex items-center gap-1.5 text-[10px] text-muted-foreground leading-tight mt-0.5">
                 <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500/60" />
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
@@ -222,88 +223,98 @@ export default function DirectorWorkspace() {
           </div>
           <button
             onClick={clearThread}
-            className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.22em] text-muted hover:text-rose-600 hover:bg-rose-500/8 transition-colors"
+            className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] uppercase tracking-[0.22em] text-muted hover:text-rose-600 hover:bg-rose-500/8 transition-colors border border-transparent hover:border-rose-500/10 cursor-pointer"
             aria-label="Clear Director thread"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Clear</span>
+            <span className="hidden sm:inline">Clear Thread</span>
           </button>
         </div>
       )}
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-3">
+      <div
+        ref={scrollRef}
+        className="flex-1 min-h-0 overflow-y-auto px-6 py-6 space-y-4 scrollbar-hide"
+      >
         {isLoading ? (
-          <div className="flex items-center justify-center py-12 text-muted" aria-busy="true">
-            <Loader2 className="w-5 h-5 animate-spin" />
+          <div className="flex items-center justify-center py-20 text-muted" aria-busy="true">
+            <Loader2 className="w-6 h-6 animate-spin text-brand" />
           </div>
         ) : messages.length === 0 ? (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col items-center text-center py-10 lg:py-14 px-3 max-w-md mx-auto"
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="flex flex-col items-center text-center py-12 lg:py-16 px-4 max-w-lg mx-auto"
           >
-            {/* Branded medallion with a soft aurora halo */}
-            <div className="relative mb-5">
+            {/* Branded medallion with dynamic pulsing halo */}
+            <div className="relative mb-6">
               <span
                 aria-hidden="true"
-                className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
+                className="absolute inset-0 -z-10 rounded-full bg-brand/20 blur-3xl scale-[2] animate-pulse"
               />
-              <span className="relative flex w-14 h-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-lg shadow-brand/25 aurora-ring">
-                <Sparkles className="w-6 h-6" />
+              <span className="relative flex w-16 h-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-[0_8px_24px_-4px_rgba(139,63,214,0.3)] border border-white/20">
+                <Sparkles className="w-7 h-7" />
               </span>
             </div>
 
-            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70 mb-3">
-              Your Director
+            <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-brand/85 font-semibold mb-3">
+              Fleet Commander
             </p>
-            <h2 className="font-display italic text-2xl lg:text-[1.75rem] leading-[1.1] text-ink mb-3">
-              {agents.length > 0 ? `${agents.length} agent${agents.length === 1 ? "" : "s"} on deck.` : "Let’s build your fleet."}
-            </h2>
-            <p className="text-[13px] text-muted leading-relaxed mb-6 max-w-sm">
+            <h2 className="font-display italic text-3xl lg:text-[2.25rem] leading-[1.1] text-ink mb-4 tracking-tight">
               {agents.length > 0
-                ? `I’m your always-on manager. Tell me what to improve, audit, or teach across your fleet — I’ll route it to the right place.`
-                : `I’m your always-on manager — tell me about your business and I’ll help you hire the right agents, coach them, and read the room across every call.`}
+                ? `${agents.length} Agent${agents.length === 1 ? "" : "s"} Active.`
+                : "Let’s build your fleet."}
+            </h2>
+            <p className="text-[14px] text-muted-foreground leading-relaxed mb-8 max-w-md">
+              {agents.length > 0
+                ? `I’m your always-on manager. Ask me to audit performance, compile logs, or train new behaviors across your fleet.`
+                : `I’m your strategist — tell me about your target audience and workflows, and I’ll design a custom fleet to field calls, schedule appointments, and follow up autonomously.`}
             </p>
 
-            {/* Fleet-at-a-glance — visible only when agents exist so the operator
-                instantly sees what’s running before they type a word. */}
+            {/* Fleet-at-a-glance */}
             {agents.length > 0 && (
               <motion.div
-                initial={{ opacity: 0, y: 4 }}
+                initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.12 }}
-                className="w-full mb-5 grid grid-cols-2 gap-1.5"
+                transition={{ delay: 0.15 }}
+                className="w-full mb-8 grid grid-cols-2 gap-2"
               >
                 {agents.slice(0, 4).map((a) => (
                   <button
                     key={a.id}
                     onClick={() => navigate(`/chat/${a.id}`)}
-                    className="flex items-center gap-2 rounded-xl border border-black/8 glass px-3 py-2.5 text-left hover:border-brand/25 hover:shadow-sm hover:-translate-y-px transition-all duration-300"
+                    className="flex items-center gap-3 rounded-xl border border-brand/10 bg-white/40 dark:bg-black/20 px-3.5 py-3 text-left hover:border-brand/30 hover:bg-white/60 dark:hover:bg-black/35 hover:shadow-md hover:-translate-y-px transition-all duration-300 cursor-pointer"
                   >
-                    <span className="shrink-0 w-6 h-6 rounded-full bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[9px] font-semibold flex items-center justify-center">
+                    <span className="shrink-0 w-6 h-6 rounded-full bg-brand text-white text-[10px] font-semibold flex items-center justify-center">
                       {a.name.slice(0, 1).toUpperCase()}
                     </span>
-                    <span className="min-w-0 text-[11px] font-medium text-ink truncate">{a.name}</span>
+                    <span className="min-w-0 text-[12px] font-medium text-ink truncate">
+                      {a.name}
+                    </span>
                   </button>
                 ))}
                 {agents.length > 4 && (
-                  <span className="flex items-center justify-center text-[10px] text-muted font-mono px-3 py-2.5">
-                    +{agents.length - 4} more
-                  </span>
+                  <div className="col-span-2 text-center pt-1">
+                    <span className="text-[11px] text-muted-foreground font-mono">
+                      +{agents.length - 4} more agents in your cockpit
+                    </span>
+                  </div>
                 )}
               </motion.div>
             )}
 
-            {/* Capability strip — instantly communicates the Director's remit */}
-            <div className="flex items-center justify-center gap-1.5 mb-7">
+            {/* Capability strip */}
+            <div className="flex items-center justify-center gap-2 mb-8 bg-brand/[0.03] border border-brand/5 rounded-full px-4 py-2">
               {DIRECTOR_CAPABILITIES.map((c, i) => (
                 <React.Fragment key={c.label}>
-                  {i > 0 && <span className="w-1 h-1 rounded-full bg-ink/15" aria-hidden="true" />}
-                  <span className="inline-flex items-center gap-1.5 px-1">
-                    <c.icon className="w-3.5 h-3.5 text-brand/60" aria-hidden="true" />
-                    <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
+                  {i > 0 && (
+                    <span className="w-1 h-1 rounded-full bg-brand/20" aria-hidden="true" />
+                  )}
+                  <span className="inline-flex items-center gap-1.5 px-1.5">
+                    <c.icon className="w-3.5 h-3.5 text-brand" aria-hidden="true" />
+                    <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-ink/75 font-semibold">
                       {c.label}
                     </span>
                   </span>
@@ -311,16 +322,16 @@ export default function DirectorWorkspace() {
               ))}
             </div>
 
-            {/* Starter prompts — first-class cards with hover-revealed arrow */}
+            {/* Starter prompts */}
             <div className="flex flex-col gap-2 w-full">
               {STARTER_PROMPTS.map((p) => (
                 <button
                   key={p}
                   onClick={() => send(p)}
-                  className="group flex items-center justify-between gap-3 text-left text-[13px] text-ink rounded-xl border border-black/10 glass px-3.5 py-3 hover:border-brand/30 hover:shadow-md hover:shadow-brand/5 hover:-translate-y-px transition-all duration-300"
+                  className="group flex items-center justify-between gap-4 text-left text-[13px] text-ink rounded-xl border border-brand/12 bg-white/40 dark:bg-black/10 px-4 py-3.5 hover:border-brand/35 hover:bg-white/60 dark:hover:bg-black/25 hover:shadow-lg hover:shadow-brand/5 hover:-translate-y-px transition-all duration-300 cursor-pointer"
                 >
-                  <span className="min-w-0">{p}</span>
-                  <ArrowUpRight className="w-4 h-4 shrink-0 text-muted/50 group-hover:text-brand group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300" />
+                  <span className="min-w-0 font-medium">{p}</span>
+                  <ArrowUpRight className="w-4 h-4 shrink-0 text-brand/40 group-hover:text-brand group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300" />
                 </button>
               ))}
             </div>
@@ -329,39 +340,47 @@ export default function DirectorWorkspace() {
           messages.map((m) => (
             <motion.div
               key={m.id}
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
               className={cn(
-                "flex items-end gap-2",
+                "flex items-end gap-3",
                 m.role === "operator" ? "justify-end" : "justify-start",
               )}
             >
-              {/* Director avatar — anchors the thread to a named manager */}
+              {/* Director avatar */}
               {m.role === "director" && (
                 <span
-                  className="shrink-0 flex w-7 h-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20 mb-0.5"
+                  className="shrink-0 flex w-8 h-8 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/20 mb-0.5"
                   aria-hidden="true"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <Sparkles className="w-4 h-4" />
                 </span>
               )}
-              <div className={cn("max-w-[84%] min-w-0", m.role === "operator" && "items-end")}>
+              <div
+                className={cn(
+                  "max-w-[80%] min-w-0 flex flex-col",
+                  m.role === "operator" && "items-end",
+                )}
+              >
                 <div
                   className={cn(
-                    "group rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap break-words",
-                    m.role === "operator"
-                      ? "bg-gradient-to-br from-brand to-brand-deep text-on-brand rounded-br-md shadow-sm shadow-brand/20"
-                      : "glass border border-black/8 text-ink rounded-bl-md",
+                    "group rounded-2xl px-4 py-3 text-[14px] leading-relaxed whitespace-pre-wrap break-words relative",
+                    m.role === m.role && m.role === "operator"
+                      ? "bg-gradient-to-br from-[#8B3FD6] to-[#5A2499] text-white rounded-br-none shadow-[0_4px_16px_-4px_rgba(139,63,214,0.3)] border border-brand/20"
+                      : "bg-white/60 dark:bg-[#120F16]/60 backdrop-blur-sm border border-brand/12 dark:border-brand/20 text-ink dark:text-foreground rounded-bl-none shadow-[0_4px_20px_-6px_rgba(139,63,214,0.03)]",
                   )}
                 >
                   {m.content}
-                  {/* Subtle hover-reveal timestamp — consistent with AgentWorkspace */}
+                  {/* Subtle hover timestamp */}
                   {m.createdAt && (
-                    <div className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex justify-end">
                       <time
                         dateTime={m.createdAt}
-                        className="text-[9px] text-muted/40 font-mono tabular-nums"
+                        className={cn(
+                          "text-[9px] font-mono tabular-nums",
+                          m.role === "operator" ? "text-white/60" : "text-muted-foreground/60",
+                        )}
                       >
                         {new Date(m.createdAt).toLocaleTimeString([], {
                           hour: "numeric",
@@ -372,16 +391,16 @@ export default function DirectorWorkspace() {
                   )}
                 </div>
                 {m.suggestions && m.suggestions.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
                     {m.suggestions.map((s, i) => {
                       const Icon = SUGGESTION_ICON[s.kind];
                       return (
                         <button
                           key={`${s.kind}-${i}`}
                           onClick={() => runSuggestion(s)}
-                          className="group inline-flex items-center gap-1.5 text-[11px] font-medium text-brand rounded-full border border-brand/30 bg-brand/[0.06] px-2.5 py-1 min-h-[28px] hover:bg-brand/12 hover:border-brand/45 hover:-translate-y-px transition-all duration-200"
+                          className="group inline-flex items-center gap-1.5 text-[11px] font-medium text-brand rounded-full border border-brand/20 bg-brand/[0.04] px-3.5 py-1.5 hover:bg-brand/10 hover:border-brand/40 hover:-translate-y-px active:scale-95 transition-all duration-300 shadow-[0_2px_8px_-2px_rgba(139,63,214,0.06)] cursor-pointer"
                         >
-                          <Icon className="w-3 h-3" />
+                          <Icon className="w-3 h-3 text-brand" />
                           {s.label}
                           <ArrowUpRight className="w-2.5 h-2.5 opacity-0 -ml-1 group-hover:opacity-100 group-hover:ml-0 transition-all duration-200" />
                         </button>
@@ -397,22 +416,24 @@ export default function DirectorWorkspace() {
           <motion.div
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="flex items-end gap-2 justify-start"
+            transition={{ duration: 0.2 }}
+            className="flex items-end gap-3 justify-start"
           >
             <span
-              className="shrink-0 flex w-7 h-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20 mb-0.5"
+              className="shrink-0 flex w-8 h-8 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/20 mb-0.5"
               aria-hidden="true"
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <Sparkles className="w-4 h-4" />
             </span>
-            <div className="glass border border-brand/20 rounded-2xl rounded-bl-md px-3 py-2 space-y-0.5">
-              <div className="flex items-center gap-2 text-[11px] text-ink/80">
+            <div className="bg-white/60 dark:bg-[#120F16]/60 backdrop-blur-sm border border-brand/20 rounded-2xl rounded-bl-none px-4 py-3 shadow-[0_4px_20px_-6px_rgba(139,63,214,0.03)]">
+              <div className="flex items-center gap-2 text-[12px] text-ink/80 dark:text-foreground/80">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-brand" />
                 </span>
-                <span className="font-medium">Thinking…</span>
+                <span className="font-semibold tracking-wider font-mono uppercase text-[10px]">
+                  Thinking…
+                </span>
               </div>
             </div>
           </motion.div>
@@ -420,8 +441,8 @@ export default function DirectorWorkspace() {
       </div>
 
       {/* Composer */}
-      <div className="shrink-0 border-t border-black/8 px-3 py-2.5">
-        <div className="flex items-end gap-1.5 rounded-xl border border-black/10 glass px-2.5 py-1.5 transition-all duration-300 focus-within:border-brand/40 focus-within:shadow-md focus-within:shadow-brand/5">
+      <div className="shrink-0 border-t border-brand/10 px-6 py-4 bg-background/20 backdrop-blur-md relative z-10">
+        <div className="flex items-end gap-2.5 rounded-xl border border-brand/15 bg-white/70 dark:bg-black/30 backdrop-blur-sm px-4 py-2.5 transition-all duration-300 focus-within:border-brand/40 focus-within:ring-4 focus-within:ring-brand/5 focus-within:shadow-[0_0_24px_rgba(139,63,214,0.06)]">
           <textarea
             ref={inputRef}
             value={input}
@@ -429,12 +450,12 @@ export default function DirectorWorkspace() {
             onKeyDown={onKeyDown}
             rows={1}
             placeholder="Ask your Director anything…"
-            className="flex-1 resize-none bg-transparent text-[13px] text-ink placeholder:text-muted/60 outline-none max-h-24 py-1"
+            className="flex-1 resize-none bg-transparent text-[14px] text-ink dark:text-foreground placeholder:text-muted-foreground/60 outline-none max-h-24 py-1"
           />
           <button
             onClick={() => send(input)}
             disabled={!input.trim() || isSending}
-            className="shrink-0 w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand flex items-center justify-center shadow-sm shadow-brand/20 disabled:opacity-40 disabled:shadow-none enabled:active:scale-95 transition-all duration-200"
+            className="shrink-0 w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand flex items-center justify-center shadow-md shadow-brand/20 disabled:opacity-40 disabled:shadow-none enabled:active:scale-95 enabled:hover:shadow-lg enabled:hover:shadow-brand/20 transition-all duration-200 cursor-pointer"
             aria-label="Send message"
           >
             {isSending ? (

@@ -129,14 +129,16 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         data-testid="aurora-rail"
         onMouseEnter={() => !expanded && setPeek(true)}
         onMouseLeave={() => setPeek(false)}
-        className="hidden lg:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55]"
+        className={cn(
+          "hidden lg:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
+          theme === "light"
+            ? "bg-[#F5F0E6]/80 border-r border-[#8B3FD6]/12 shadow-[0_0_24px_rgba(139,63,214,0.04)]"
+            : "bg-[#0C0A0F]/85 border-r border-[#8B3FD6]/18 shadow-[0_0_32px_rgba(0,0,0,0.6)]",
+        )}
         style={{
           width: railWidth,
-          background: "rgba(59,21,76,0.97)",
-          borderRight: "1px solid rgba(239,233,220,0.08)",
           backdropFilter: "blur(24px) saturate(160%)",
           WebkitBackdropFilter: "blur(24px) saturate(160%)",
-          transition: "width 240ms cubic-bezier(0.16,1,0.3,1)",
         }}
       >
         {/* Logo */}
@@ -165,7 +167,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -6 }}
                 transition={{ duration: 0.18 }}
-                className="brand-wordmark text-[15px] leading-none truncate !text-[#EFE9DC] !filter-none"
+                className="brand-wordmark text-[15px] leading-none truncate text-brand dark:text-[#EFE9DC] !filter-none"
               >
                 {branding.brand_name.toUpperCase()}
               </motion.span>
@@ -178,21 +180,23 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           type="button"
           onClick={() => window.dispatchEvent(new CustomEvent("wireline:open-command-bar"))}
           className={cn(
-            "shrink-0 mx-2 mb-1.5 h-8 flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] hover:border-white/20 transition-all group",
+            "shrink-0 mx-2 mb-1.5 h-8 flex items-center gap-2 rounded-md transition-all group " +
+              "border border-brand/15 bg-brand/[0.03] hover:bg-brand/8 hover:border-brand/30 " +
+              "dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:hover:border-white/20",
             effective ? "px-3" : "px-2 justify-center",
           )}
           aria-label="Open search ( / )"
         >
           <Search
-            className="w-3.5 h-3.5 shrink-0 text-white/50 group-hover:text-white/80 transition-colors"
+            className="w-3.5 h-3.5 shrink-0 text-brand/60 group-hover:text-brand dark:text-white/50 dark:group-hover:text-white/80 transition-colors"
             strokeWidth={2}
           />
           {effective && (
             <>
-              <span className="flex-1 text-left text-xs text-white/60 group-hover:text-white/80 transition-colors">
+              <span className="flex-1 text-left text-xs text-ink/60 group-hover:text-ink dark:text-white/60 dark:group-hover:text-white/80 transition-colors">
                 Search…
               </span>
-              <kbd className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-white/12 bg-white/4 text-white/40 leading-none">
+              <kbd className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-brand/15 bg-brand/5 text-brand/60 dark:border-white/12 dark:bg-white/4 dark:text-white/40 leading-none">
                 /
               </kbd>
             </>
@@ -218,7 +222,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
 
         {/* Footer */}
         <div
-          className="shrink-0 border-t border-white/[0.08] px-2 pt-2 pb-2 space-y-0.5"
+          className="shrink-0 border-t border-brand/10 dark:border-white/[0.08] px-2 pt-2 pb-2 space-y-0.5"
           style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
         >
           <LivePulse count={liveCalls} expanded={effective} />
@@ -226,18 +230,15 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           {effective && user && (
             <Link
               to="/admin?tab=subscription"
-              className="flex items-center gap-2.5 h-10 px-2 rounded-md hover:bg-white/[0.06] transition-all group"
+              className="flex items-center gap-2.5 h-10 px-2 rounded-md hover:bg-brand/5 dark:hover:bg-white/[0.06] transition-all group"
               aria-label="Account & billing"
               title={user.email}
             >
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center text-[#3B154C] font-semibold text-[11px] shrink-0"
-                style={{ background: "#EFE9DC" }}
-              >
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-white bg-brand dark:text-[#3B154C] dark:bg-[#EFE9DC] font-semibold text-[11px] shrink-0">
                 {user.email?.slice(0, 1).toUpperCase() ?? "?"}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-medium text-white/90 leading-none truncate">
+                <p className="text-[11px] font-medium text-ink/90 dark:text-white/90 leading-none truncate">
                   {user.email?.split("@")[0]}
                 </p>
                 <TierInline />
@@ -247,14 +248,11 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           {!effective && user && (
             <Link
               to="/admin?tab=subscription"
-              className="h-10 flex items-center justify-center rounded-md hover:bg-white/[0.06] transition-all"
+              className="h-10 flex items-center justify-center rounded-md hover:bg-brand/5 dark:hover:bg-white/[0.06] transition-all"
               aria-label="Account"
               title={user.email}
             >
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center text-[#3B154C] font-semibold text-[11px]"
-                style={{ background: "#EFE9DC" }}
-              >
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-white bg-brand dark:text-[#3B154C] dark:bg-[#EFE9DC] font-semibold text-[11px]">
                 {user.email?.slice(0, 1).toUpperCase() ?? "?"}
               </div>
             </Link>
@@ -295,13 +293,19 @@ export default function Sidebar({ navBadges }: SidebarProps) {
               <button
                 type="button"
                 onClick={toggleTheme}
-                className="w-full group h-9 flex items-center gap-2.5 px-2 rounded-md text-white/50 hover:text-white/90 hover:bg-white/8 transition-all cursor-pointer"
+                className="w-full group h-9 flex items-center gap-2.5 px-2 rounded-md text-ink/55 hover:text-ink hover:bg-brand/5 dark:text-white/55 dark:hover:text-white/90 dark:hover:bg-white/8 transition-all cursor-pointer"
                 aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
               >
                 {theme === "light" ? (
-                  <Moon className="w-4.5 h-4.5 shrink-0 transition-transform duration-300 group-hover:rotate-12 text-white/60" strokeWidth={1.75} />
+                  <Moon
+                    className="w-4.5 h-4.5 shrink-0 transition-transform duration-300 group-hover:rotate-12 text-brand dark:text-white/60"
+                    strokeWidth={1.75}
+                  />
                 ) : (
-                  <Sun className="w-4.5 h-4.5 shrink-0 transition-transform duration-300 group-hover:rotate-45 text-white/60" strokeWidth={1.75} />
+                  <Sun
+                    className="w-4.5 h-4.5 shrink-0 transition-transform duration-300 group-hover:rotate-45 text-brand dark:text-white/60"
+                    strokeWidth={1.75}
+                  />
                 )}
                 {effective && (
                   <span className="text-[12px] font-medium truncate">
@@ -326,7 +330,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
 
           <button
             onClick={() => signOut()}
-            className="w-full group h-9 flex items-center gap-2.5 px-2 rounded-md text-white/50 hover:text-white/90 hover:bg-white/8 transition-all"
+            className="w-full group h-9 flex items-center gap-2.5 px-2 rounded-md text-ink/55 hover:text-rose-600 hover:bg-rose-500/8 dark:text-white/50 dark:hover:text-white/90 dark:hover:bg-white/8 transition-all"
             aria-label="Sign out"
           >
             <LogOut className="w-4 h-4 shrink-0" strokeWidth={1.75} />
@@ -336,7 +340,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           <button
             type="button"
             onClick={() => setUserOverride(!expanded)}
-            className="w-full h-7 mt-0.5 flex items-center justify-center gap-2 px-2 rounded-md text-white/30 hover:text-white/70 hover:bg-white/6 transition-all"
+            className="w-full h-7 mt-0.5 flex items-center justify-center gap-2 px-2 rounded-md text-ink/35 hover:text-ink/75 hover:bg-brand/5 dark:text-white/30 dark:hover:text-white/70 dark:hover:bg-white/6 transition-all"
             aria-label={expanded ? "Collapse navigation" : "Expand navigation"}
             aria-pressed={expanded}
           >
@@ -378,8 +382,8 @@ function RailItem({ item, active, badge, expanded, accent, shortcut }: RailItemP
       className={cn(
         "group relative flex items-center gap-2.5 h-9 px-2 rounded-md transition-all duration-150",
         active
-          ? "bg-white/[0.12] text-white"
-          : "text-white/55 hover:text-white/85 hover:bg-white/[0.06]",
+          ? "bg-brand/12 text-brand font-semibold dark:bg-white/[0.12] dark:text-white"
+          : "text-ink/65 hover:text-ink hover:bg-brand/5 dark:text-white/55 dark:hover:text-white/85 dark:hover:bg-white/[0.06]",
       )}
     >
       {/* Active accent stripe */}
@@ -412,8 +416,8 @@ function RailItem({ item, active, badge, expanded, accent, shortcut }: RailItemP
               className={cn(
                 "relative z-10 text-[8px] font-mono px-1.5 py-0.5 rounded leading-none border whitespace-nowrap",
                 active
-                  ? "border-white/15 text-white/55 bg-white/10"
-                  : "border-white/12 text-white/40 bg-white/4 group-hover:border-white/20 group-hover:text-white/60",
+                  ? "border-brand/20 text-brand/60 bg-brand/5 dark:border-white/15 dark:text-white/55 dark:bg-white/10"
+                  : "border-brand/10 text-ink/40 bg-brand/[0.02] group-hover:border-brand/20 group-hover:text-ink/60 dark:border-white/12 dark:text-white/40 dark:bg-white/4 dark:group-hover:border-white/20 dark:group-hover:text-white/60",
               )}
             >
               {shortcut}
@@ -427,8 +431,8 @@ function RailItem({ item, active, badge, expanded, accent, shortcut }: RailItemP
           className={cn(
             "relative z-10 shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full text-[9px] font-mono leading-none flex items-center justify-center font-semibold",
             active
-              ? "bg-white/20 text-white"
-              : "bg-rose-500/20 text-rose-300 border border-rose-500/30",
+              ? "bg-brand/20 text-brand dark:bg-white/20 dark:text-white"
+              : "bg-rose-500/10 text-rose-600 border border-rose-500/20 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/30",
           )}
           style={
             expanded
@@ -526,8 +530,8 @@ function FooterItem({ to, icon: Icon, label, expanded, active, dataTour }: Foote
       className={cn(
         "group h-9 flex items-center gap-2.5 px-2 rounded-md transition-all",
         active
-          ? "bg-white/10 text-white/90"
-          : "text-white/50 hover:text-white/80 hover:bg-white/[0.06]",
+          ? "bg-brand/12 text-brand font-semibold dark:bg-white/10 dark:text-white/90"
+          : "text-ink/65 hover:text-ink hover:bg-brand/5 dark:text-white/50 dark:hover:text-white/80 dark:hover:bg-white/[0.06]",
       )}
     >
       <Icon className="w-4 h-4 shrink-0" strokeWidth={active ? 2.5 : 1.75} />
@@ -595,8 +599,8 @@ function TierInline() {
     <div className="mt-1 leading-none">
       <span
         className={cn(
-          "text-[8.5px] uppercase tracking-[0.25em] font-semibold",
-          overage ? "text-rose-300" : "text-white/55",
+          "text-[8.5px] uppercase tracking-[0.25em] font-semibold transition-colors",
+          overage ? "text-rose-600 dark:text-rose-300" : "text-brand/80 dark:text-white/55",
         )}
       >
         {tier.plan_name}
@@ -610,14 +614,21 @@ function TierInline() {
         )}
       </span>
       {cap > 0 && (
-        <div className="mt-0.5 h-[2px] rounded-full overflow-hidden bg-white/8">
+        <div
+          role="progressbar"
+          aria-valuenow={used}
+          aria-valuemin={0}
+          aria-valuemax={cap}
+          aria-label="Voice minutes usage"
+          className="mt-0.5 h-[2px] rounded-full overflow-hidden bg-brand/10 dark:bg-white/8"
+        >
           <div
             className="h-full rounded-full transition-all"
             style={{
               width: `${pct}%`,
               background: overage
-                ? `linear-gradient(90deg,${BRAND.rose},${BRAND.purpleMuted})`
-                : `linear-gradient(90deg,${BRAND.purpleLight},${BRAND.paper})`,
+                ? `linear-gradient(90deg, ${BRAND.rose}, ${BRAND.purpleDeep})`
+                : `linear-gradient(90deg, ${BRAND.purpleLight}, ${BRAND.purple})`,
             }}
           />
         </div>

@@ -171,7 +171,7 @@ export default function AgentConfigPanel({
         <button
           onClick={() => setSelectedAgent(null)}
           aria-label="Back to agent list"
-          className="md:hidden mb-3 inline-flex items-center gap-2 px-3 h-10 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.28em] text-ink/80 hover:border-brand/40 active:scale-95 transition-all"
+          className="md:hidden mb-3 inline-flex items-center gap-2 px-3 h-10 rounded-full glass text-[10px] uppercase tracking-[0.28em] text-ink/80 hover:border-brand/40 active:scale-95 transition-all"
         >
           <ChevronLeft className="w-3.5 h-3.5" /> Back to fleet
         </button>
@@ -183,7 +183,7 @@ export default function AgentConfigPanel({
             animate={{ opacity: 1, scale: 1 }}
             className="h-full flex flex-col items-center justify-center gap-4 text-center px-6"
           >
-            <div className="w-16 h-16 rounded-2xl glass border border-white/10 flex items-center justify-center text-muted">
+            <div className="w-16 h-16 rounded-2xl glass flex items-center justify-center text-muted">
               <Target className="w-7 h-7" />
             </div>
             <div className="space-y-1.5">
@@ -209,7 +209,7 @@ export default function AgentConfigPanel({
               const roleDefaultTools = getRoleToolSet(selectedAgent.role);
               const usingRoleDefaults = !Array.isArray(selectedAgent.enabled_tools);
               return (
-                <header className="rounded-2xl glass border border-white/10 p-4 relative overflow-hidden">
+                <header className="rounded-2xl glass p-4 relative overflow-hidden">
                   <div
                     className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
                     style={{
@@ -246,7 +246,7 @@ export default function AgentConfigPanel({
                       </div>
 
                       {/* Role assignment row */}
-                      <div className="rounded-xl glass border border-white/8 p-3 flex flex-wrap items-center gap-3">
+                      <div className="rounded-xl glass p-3 flex flex-wrap items-center gap-3">
                         <Briefcase className="w-3.5 h-3.5 text-brand shrink-0" />
                         <div className="flex-1 min-w-[180px] space-y-1">
                           <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
@@ -286,7 +286,7 @@ export default function AgentConfigPanel({
                               applyRoleTemplate(selectedAgent.role || "customer_service")
                             }
                             disabled={isApplyingTemplate}
-                            className="self-start inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/80 hover:border-brand/40 hover:text-brand transition-colors disabled:opacity-50"
+                            className="self-start inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full glass text-[10px] uppercase tracking-[0.25em] text-ink/80 hover:border-brand/40 hover:text-brand transition-colors disabled:opacity-50"
                           >
                             {isApplyingTemplate ? (
                               <Loader2 className="w-2.5 h-2.5 animate-spin" />
@@ -311,7 +311,7 @@ export default function AgentConfigPanel({
                         return (
                           <div className="md:col-span-2 space-y-2 mb-2">
                             <div className="grid grid-cols-4 gap-2">
-                              <div className="rounded-lg glass border border-white/8 p-2.5">
+                              <div className="rounded-lg glass p-2.5">
                                 <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">
                                   Calls
                                 </div>
@@ -319,7 +319,7 @@ export default function AgentConfigPanel({
                                   {s.callCount}
                                 </div>
                               </div>
-                              <div className="rounded-lg glass border border-white/8 p-2.5">
+                              <div className="rounded-lg glass p-2.5">
                                 <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1 flex items-center gap-1">
                                   <Clock className="w-2 h-2" /> Min
                                 </div>
@@ -327,7 +327,7 @@ export default function AgentConfigPanel({
                                   {s.totalMinutes}
                                 </div>
                               </div>
-                              <div className="rounded-lg glass border border-white/8 p-2.5">
+                              <div className="rounded-lg glass p-2.5">
                                 <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">
                                   Avg Score
                                 </div>
@@ -339,7 +339,7 @@ export default function AgentConfigPanel({
                                   )}
                                 </div>
                               </div>
-                              <div className="rounded-lg glass border border-white/8 p-2.5 relative">
+                              <div className="rounded-lg glass p-2.5 relative">
                                 <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">
                                   Sentiment
                                 </div>
@@ -350,7 +350,7 @@ export default function AgentConfigPanel({
                                 <button
                                   onClick={() => fetchAgentPerformance(selectedAgent.id, true)}
                                   title="Refresh stats"
-                                  className="absolute top-2 right-2 w-5 h-5 flex items-center justify-center rounded-full glass border border-white/10 text-muted/70 hover:text-brand transition-colors"
+                                  className="absolute top-2 right-2 w-5 h-5 flex items-center justify-center rounded-full glass text-muted/70 hover:text-brand transition-colors"
                                 >
                                   <RefreshCw className="w-2.5 h-2.5" />
                                 </button>
@@ -358,7 +358,7 @@ export default function AgentConfigPanel({
                             </div>
                             {/* 7-day activity sparkline */}
                             {s.sparkline && s.sparkline.some((v: number) => v > 0) && (
-                              <div className="rounded-lg glass border border-white/8 px-3 py-2 flex items-center gap-3">
+                              <div className="rounded-lg glass px-3 py-2 flex items-center gap-3">
                                 <span className="text-[8px] uppercase tracking-[0.3em] text-muted/70 shrink-0">
                                   7d
                                 </span>
@@ -414,7 +414,7 @@ export default function AgentConfigPanel({
                   <div className="relative z-10 mt-3 grid grid-cols-1 gap-3">
                     {/* Voice Node Config */}
                     {selectedAgent.channel !== "email" && (
-                      <div className="rounded-xl glass border border-white/8 p-3 space-y-3">
+                      <div className="rounded-xl glass p-3 space-y-3">
                         <div className="flex items-center gap-2 pb-2 border-b border-white/8">
                           <Radio className="w-3.5 h-3.5 text-brand" />
                           <h3 className="font-display italic lowercase text-base text-ink">
@@ -608,7 +608,7 @@ export default function AgentConfigPanel({
                     {(selectedAgent.channel === "email" ||
                       selectedAgent.channel === "omnichannel" ||
                       !selectedAgent.channel) && (
-                      <div className="rounded-xl glass border border-white/8 p-3 space-y-3">
+                      <div className="rounded-xl glass p-3 space-y-3">
                         <div className="flex items-center gap-2 pb-2 border-b border-white/8">
                           <Mail className="w-3.5 h-3.5 text-emerald-500" />
                           <h3 className="font-display italic lowercase text-base text-ink">
@@ -618,7 +618,7 @@ export default function AgentConfigPanel({
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div className="space-y-2">
-                            <div className="rounded-lg glass border border-white/8 p-3 flex items-center justify-between gap-3">
+                            <div className="rounded-lg glass p-3 flex items-center justify-between gap-3">
                               <div className="space-y-0.5 min-w-0">
                                 <h4 className="text-sm text-ink">Auto-respond</h4>
                                 <p className="text-[10px] text-muted/70 leading-relaxed">
@@ -708,7 +708,7 @@ export default function AgentConfigPanel({
                           : "";
                       const usingAutoComposed = !overrideValue.trim();
                       return (
-                        <div className="rounded-xl glass border border-white/8 p-3 space-y-3">
+                        <div className="rounded-xl glass p-3 space-y-3">
                           <div className="flex items-center justify-between gap-2 pb-2 border-b border-white/8">
                             <div className="flex items-center gap-2">
                               <FileText className="w-3.5 h-3.5 text-brand" />
@@ -725,7 +725,7 @@ export default function AgentConfigPanel({
                                 void updateAgentMeta({ system_prompt_override: null });
                               }}
                               disabled={usingAutoComposed}
-                              className="shrink-0 inline-flex items-center gap-1.5 h-11 sm:h-8 px-3 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/80 hover:border-brand/40 hover:text-brand transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="shrink-0 inline-flex items-center gap-1.5 h-11 sm:h-8 px-3 rounded-full glass text-[10px] uppercase tracking-[0.25em] text-ink/80 hover:border-brand/40 hover:text-brand transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               <RefreshCw className="w-2.5 h-2.5" />
                               Use auto-composed prompt
@@ -781,8 +781,8 @@ export default function AgentConfigPanel({
                       onResetToDefaults={resetAgentToolsToRoleDefaults}
                     />
 
-                    <div className="rounded-xl glass border border-white/8 p-3 space-y-3">
-                      <div className="rounded-lg border border-white/8 bg-white/3 p-3 space-y-3">
+                    <div className="rounded-xl glass p-3 space-y-3">
+                      <div className="rounded-lg border border-black/8 dark:border-white/8 bg-black/[0.02] dark:bg-white/3 p-3 space-y-3">
                         <div className="text-[9px] uppercase tracking-[0.3em] text-brand/70">
                           Channels
                         </div>
@@ -870,7 +870,7 @@ export default function AgentConfigPanel({
             ) : (
               <div className="space-y-3">
                 {/* Personality Matrix */}
-                <section className="rounded-2xl glass border border-white/10 p-4 relative overflow-hidden">
+                <section className="rounded-2xl glass p-4 relative overflow-hidden">
                   <div
                     className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
                     style={{
@@ -941,7 +941,7 @@ export default function AgentConfigPanel({
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                   {/* Directives */}
-                  <section className="rounded-2xl glass border border-white/10 p-3 flex flex-col min-h-[560px] md:h-[400px] max-h-[70vh]">
+                  <section className="rounded-2xl glass p-3 flex flex-col min-h-[560px] md:h-[400px] max-h-[70vh]">
                     <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-white/8">
                       <div>
                         <h3 className="font-display italic lowercase text-lg text-ink leading-none">
@@ -985,7 +985,7 @@ export default function AgentConfigPanel({
                                   <div className="flex justify-end gap-1.5">
                                     <button
                                       onClick={() => setEditingDirective(null)}
-                                      className="px-2.5 py-1 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink"
+                                      className="px-2.5 py-1 rounded-full glass text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink"
                                     >
                                       Cancel
                                     </button>
@@ -1019,7 +1019,7 @@ export default function AgentConfigPanel({
                                       }
                                       aria-label="Edit directive"
                                       title="Edit directive"
-                                      className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-ink hover:border-white/30"
+                                      className="w-6 h-6 rounded-full glass flex items-center justify-center text-muted hover:text-ink hover:border-white/30"
                                     >
                                       <Pencil className="w-3 h-3" />
                                     </button>
@@ -1027,7 +1027,7 @@ export default function AgentConfigPanel({
                                       onClick={() => deleteRule("directive", d.id)}
                                       aria-label="Delete directive"
                                       title="Delete directive"
-                                      className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30"
+                                      className="w-6 h-6 rounded-full glass flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30"
                                     >
                                       <Trash2 className="w-3 h-3" />
                                     </button>
@@ -1067,7 +1067,7 @@ export default function AgentConfigPanel({
                   </section>
 
                   {/* Knowledge Base */}
-                  <section className="rounded-2xl glass border border-white/10 p-3 flex flex-col min-h-[560px] md:h-[400px] max-h-[70vh]">
+                  <section className="rounded-2xl glass p-3 flex flex-col min-h-[560px] md:h-[400px] max-h-[70vh]">
                     <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-white/8">
                       <div>
                         <h3 className="font-display italic lowercase text-lg text-ink leading-none">
@@ -1109,7 +1109,7 @@ export default function AgentConfigPanel({
                                   <div className="flex justify-end gap-1.5">
                                     <button
                                       onClick={() => setEditingKnowledge(null)}
-                                      className="px-2.5 py-1 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink"
+                                      className="px-2.5 py-1 rounded-full glass text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink"
                                     >
                                       Cancel
                                     </button>
@@ -1143,7 +1143,7 @@ export default function AgentConfigPanel({
                                       }
                                       aria-label="Edit knowledge fact"
                                       title="Edit knowledge fact"
-                                      className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-ink hover:border-white/30"
+                                      className="w-6 h-6 rounded-full glass flex items-center justify-center text-muted hover:text-ink hover:border-white/30"
                                     >
                                       <Pencil className="w-3 h-3" />
                                     </button>
@@ -1151,7 +1151,7 @@ export default function AgentConfigPanel({
                                       onClick={() => deleteRule("knowledge", k.id)}
                                       aria-label="Delete knowledge fact"
                                       title="Delete knowledge fact"
-                                      className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-blue-400 hover:border-blue-500/30"
+                                      className="w-6 h-6 rounded-full glass flex items-center justify-center text-muted hover:text-blue-400 hover:border-blue-500/30"
                                     >
                                       <Trash2 className="w-3 h-3" />
                                     </button>

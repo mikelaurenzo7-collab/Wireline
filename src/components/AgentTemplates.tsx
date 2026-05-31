@@ -343,6 +343,10 @@ const DEFAULT_GENDER_BY_TEMPLATE: Record<string, "female" | "male"> = {
 // Template Card
 // ────────────────────────────────────────────────────────────────────────────
 
+// ────────────────────────────────────────────────────────────────────────────
+// Template Card
+// ────────────────────────────────────────────────────────────────────────────
+
 function TemplateCard({
   template,
   onDeploy,
@@ -367,10 +371,8 @@ function TemplateCard({
       exit={{ opacity: 0, scale: 0.96 }}
       whileHover={{ y: -4, scale: 1.01 }}
       className={cn(
-        "relative rounded-2xl glass border transition-all duration-300 flex flex-col group overflow-hidden card-interactive-premium",
-        hovered
-          ? "aurora-ring border-transparent shadow-xl shadow-brand/10"
-          : "border-white/10 shadow-sm",
+        "relative rounded-2xl glass transition-all duration-300 flex flex-col group overflow-hidden card-interactive-premium",
+        hovered ? "aurora-ring border-transparent shadow-xl shadow-brand/10" : "shadow-sm",
       )}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -392,9 +394,7 @@ function TemplateCard({
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
-            {/* Deployed-in-fleet badge — surfaces when this tenant already
-                has one or more agents instantiated from this template, so
-                operators don't accidentally double-deploy. */}
+            {/* Deployed-in-fleet badge */}
             {alreadyDeployed && (
               <span
                 className="px-1.5 py-0.5 rounded-full border text-[9px] uppercase tracking-[0.22em] leading-none flex items-center gap-1 bg-emerald-500/10 border-emerald-500/30 text-emerald-600"
@@ -419,7 +419,7 @@ function TemplateCard({
             </span>
             {/* Extra badge */}
             {template.badge && (
-              <span className="px-1.5 py-0.5 rounded-full bg-white/8 border border-white/15 text-[9px] uppercase tracking-[0.18em] leading-none text-ink/70">
+              <span className="px-1.5 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/8 border border-black/10 dark:border-white/15 text-[9px] uppercase tracking-[0.18em] leading-none text-ink/70">
                 {template.badge}
               </span>
             )}
@@ -455,8 +455,7 @@ function TemplateCard({
         </AnimatePresence>
       </div>
 
-      {/* Deploy button — label changes when the template is already in
-          the fleet so operators don't double-deploy without realizing it. */}
+      {/* Deploy button */}
       <div className="relative z-10 px-4 pb-4">
         <button
           onClick={() => onDeploy(template)}
@@ -481,9 +480,9 @@ function CustomAgentCard() {
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-white/10 border-dashed flex flex-col items-center justify-center gap-3 p-6 text-center min-h-[240px]"
+      className="rounded-2xl border border-brand/25 dark:border-white/10 border-dashed flex flex-col items-center justify-center gap-3 p-6 text-center min-h-[240px]"
     >
-      <div className="w-12 h-12 rounded-2xl glass border border-white/10 flex items-center justify-center">
+      <div className="w-12 h-12 rounded-2xl glass flex items-center justify-center">
         <Sparkles className="w-5 h-5 text-brand" />
       </div>
       <div className="space-y-1">
@@ -618,7 +617,7 @@ export default function AgentTemplates() {
     <div className="h-full flex flex-col overflow-hidden">
       {/* Top bar — page title removed per design direction; the left
           nav already labels this "Templates". Search stays. */}
-      <div className="px-4 py-3 border-b border-white/8 flex flex-col gap-3 shrink-0">
+      <div className="px-4 py-3 border-b border-black/8 dark:border-white/8 flex flex-col gap-3 shrink-0">
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted/70 pointer-events-none" />
@@ -642,7 +641,7 @@ export default function AgentTemplates() {
                 "px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.25em] transition-all border",
                 activeCategory === cat
                   ? "bg-brand/15 border-brand/40 text-brand"
-                  : "glass border-white/10 text-muted hover:text-ink hover:border-white/25",
+                  : "glass text-muted hover:text-ink hover:border-brand/25",
               )}
             >
               {cat}

@@ -150,7 +150,7 @@ const VALUE_BULLETS = [
 ];
 
 export default function Pricing() {
-  const [interval, setInterval] = useState<"month" | "year">("month");
+  const [billingInterval, setBillingInterval] = useState<"month" | "year">("month");
   // FAQ schema is built from copy that already lives on this page (the
   // reassurance paragraph + tier blurbs). Keeping it as structured data
   // — not visible UI — lets Google render FAQ rich results without
@@ -355,9 +355,9 @@ export default function Pricing() {
       <section className="relative z-10 px-4 sm:px-6 lg:px-10 max-w-7xl mx-auto pb-6">
         <div className="flex items-center justify-center gap-3">
           <button
-            onClick={() => setInterval("month")}
+            onClick={() => setBillingInterval("month")}
             className={`px-4 py-2 font-mono text-[11px] uppercase tracking-[0.28em] font-medium transition-all ${
-              interval === "month"
+              billingInterval === "month"
                 ? "bg-brand/15 border border-brand/40 text-brand"
                 : "border border-ink/15 text-ink/65 hover:text-ink hover:border-ink/30"
             }`}
@@ -365,9 +365,9 @@ export default function Pricing() {
             Monthly
           </button>
           <button
-            onClick={() => setInterval("year")}
+            onClick={() => setBillingInterval("year")}
             className={`px-4 py-2 font-mono text-[11px] uppercase tracking-[0.28em] font-medium transition-all relative ${
-              interval === "year"
+              billingInterval === "year"
                 ? "bg-brand/15 border border-brand/40 text-brand"
                 : "border border-ink/15 text-ink/65 hover:text-ink hover:border-ink/30"
             }`}
@@ -419,11 +419,11 @@ export default function Pricing() {
 
                 <div className="mb-5 flex items-baseline gap-1">
                   <span className="font-display italic text-4xl text-ink">
-                    {interval === "year" ? tier.priceAnnual : tier.price}
+                    {billingInterval === "year" ? tier.priceAnnual : tier.price}
                   </span>
                   {tier.cadence && (
                     <span className="text-[10px] text-ink/55">
-                      {interval === "year" ? "/ year" : tier.cadence}
+                      {billingInterval === "year" ? "/ year" : tier.cadence}
                     </span>
                   )}
                 </div>
@@ -437,19 +437,35 @@ export default function Pricing() {
                     14-day free trial · no card
                   </p>
                 )}
-                <a
-                  href={tier.ctaHref}
-                  className={`group flex w-full min-h-[48px] items-center justify-center text-center py-3.5 text-[11px] uppercase tracking-[0.32em] font-medium transition-colors duration-300 mb-6 ${
-                    tier.highlight
-                      ? "bg-brand text-white hover:bg-[#8B3FD6]"
-                      : "border border-ink/15 text-ink hover:border-brand/30 hover:bg-ink/[0.03]"
-                  }`}
-                >
-                  <span className="inline-flex items-center gap-2">
-                    {tier.cta}
-                    <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
-                  </span>
-                </a>
+                {tier.ctaHref.startsWith("mailto:") || tier.ctaHref.startsWith("tel:") ? (
+                  <a
+                    href={tier.ctaHref}
+                    className={`group flex w-full min-h-[48px] items-center justify-center text-center py-3.5 text-[11px] uppercase tracking-[0.32em] font-medium transition-colors duration-300 mb-6 ${
+                      tier.highlight
+                        ? "bg-brand text-white hover:bg-[#8B3FD6]"
+                        : "border border-ink/15 text-ink hover:border-brand/30 hover:bg-ink/[0.03]"
+                    }`}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      {tier.cta}
+                      <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </a>
+                ) : (
+                  <Link
+                    to={tier.ctaHref}
+                    className={`group flex w-full min-h-[48px] items-center justify-center text-center py-3.5 text-[11px] uppercase tracking-[0.32em] font-medium transition-colors duration-300 mb-6 ${
+                      tier.highlight
+                        ? "bg-brand text-white hover:bg-[#8B3FD6]"
+                        : "border border-ink/15 text-ink hover:border-brand/30 hover:bg-ink/[0.03]"
+                    }`}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      {tier.cta}
+                      <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </Link>
+                )}
 
                 <ul className="space-y-2.5 text-[12px] text-ink/80 flex-1">
                   {tier.features.map((f) => (

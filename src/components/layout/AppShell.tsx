@@ -293,22 +293,47 @@ export default function AppShell() {
         <TrialBanner />
 
         {/* Clean page header — replaces DesktopContextBar */}
-        <div className="hidden lg:block shrink-0 border-b border-border/40 bg-background/60 backdrop-blur-sm px-6 py-3">
-          <div className="flex items-center gap-3">
-            {pageCtx.eyebrow && (
-              <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
-                {pageCtx.eyebrow}
-              </span>
-            )}
-            <h1 className="font-display italic text-lg leading-tight text-foreground">
-              {pageCtx.title}
-            </h1>
-            {pageCtx.subtitle && (
-              <span className="hidden xl:inline text-xs text-muted-foreground">
-                {pageCtx.subtitle}
-              </span>
-            )}
+        <div className="hidden lg:block shrink-0 bg-background/40 backdrop-blur-md px-8 py-3.5 relative overflow-hidden">
+          {/* Subtle glowing radial aura behind title */}
+          <div
+            aria-hidden="true"
+            className="absolute left-8 top-1/2 -translate-y-1/2 w-48 h-10 pointer-events-none opacity-20 dark:opacity-30 blur-2xl"
+            style={{
+              background: "radial-gradient(circle, var(--color-brand) 0%, transparent 70%)",
+            }}
+            data-circular
+          />
+          <div className="flex items-baseline justify-between gap-4 relative z-10">
+            <div className="flex items-baseline gap-3 min-w-0">
+              {pageCtx.eyebrow && (
+                <>
+                  <span className="text-[9.5px] font-mono uppercase tracking-[0.25em] text-brand/70">
+                    {pageCtx.eyebrow}
+                  </span>
+                  <span aria-hidden="true" className="text-brand/30 text-xs">
+                    ·
+                  </span>
+                </>
+              )}
+              <h1 className="font-display italic text-2xl leading-none text-foreground tracking-tight">
+                {pageCtx.title}
+              </h1>
+              {pageCtx.subtitle && (
+                <span className="hidden xl:inline text-xs text-muted-foreground/80 font-sans font-normal ml-2">
+                  {pageCtx.subtitle}
+                </span>
+              )}
+            </div>
           </div>
+          {/* Custom fine-grain gradient divider */}
+          <div
+            aria-hidden="true"
+            className="absolute bottom-0 left-0 right-0 h-px"
+            style={{
+              background:
+                "linear-gradient(90deg, rgba(139,63,214,0.18) 0%, rgba(139,63,214,0.04) 50%, transparent 100%)",
+            }}
+          />
         </div>
 
         <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">

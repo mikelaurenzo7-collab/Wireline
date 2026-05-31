@@ -20,6 +20,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { cn } from "../../lib/utils";
 import { NAV_GROUPS, PAGE_TITLES, type NavItem } from "../../constants/navigation";
 import { useBranding } from "../../contexts/BrandingContext";
+import { useTheme } from "../../contexts/ThemeContext";
 
 interface Props {
   onShowShortcuts: () => void;
@@ -32,6 +33,7 @@ interface Props {
 
 export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, navBadges }: Props) {
   const location = useLocation();
+  const { theme } = useTheme();
   const { user, signOut } = useAuth();
   const { branding } = useBranding();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -105,8 +107,16 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
     const withLabel = opts.withLabel ?? true;
     const variant = opts.variant ?? "topbar";
     const isDrawer = variant === "drawer";
-    const activeBg = isDrawer ? "var(--color-brand)" : "var(--color-paper)";
-    const activeTextColor = isDrawer ? "var(--color-paper)" : "#3B154C";
+    const activeBg = isDrawer
+      ? "var(--color-brand)"
+      : theme === "light"
+        ? "rgba(139, 63, 214, 0.12)"
+        : "rgba(255, 255, 255, 0.12)";
+    const activeTextColor = isDrawer
+      ? "var(--color-paper)"
+      : theme === "light"
+        ? "var(--color-brand)"
+        : "#ffffff";
     return (
       <Link
         key={item.label}
@@ -124,7 +134,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
               : "text-ink/70 hover:text-ink hover:bg-black/5"
             : active
               ? "shadow-md shadow-brand-deep/10"
-              : "chrome-muted hover:text-[#EFE9DC] hover:bg-white/8 hover:shadow-sm",
+              : "text-ink/60 hover:text-ink hover:bg-brand/5 dark:text-white/60 dark:hover:text-white dark:hover:bg-white/8",
         )}
         style={active ? { color: activeTextColor } : undefined}
       >
@@ -151,7 +161,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 : "text-ink/65 group-hover:text-ink"
               : active
                 ? ""
-                : "chrome-muted group-hover:text-[#EFE9DC]",
+                : "chrome-muted group-hover:text-brand dark:group-hover:text-[#EFE9DC]",
           )}
           style={active ? { color: activeTextColor } : undefined}
           strokeWidth={active ? 2.5 : 1.75}
@@ -189,10 +199,17 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
     <>
       <header
         aria-label="Main navigation"
-        className="shell-sticky-glass shrink-0 sticky top-0 z-50 bg-brand-deep/92 border-b border-[#EFE9DC]/10 text-on-brand lg:hidden"
+        className={cn(
+          "shell-sticky-glass shrink-0 sticky top-0 z-50 border-b lg:hidden transition-all duration-300",
+          theme === "light"
+            ? "bg-[#F5F0E6]/80 border-[#8B3FD6]/12 text-ink animate-fade-in"
+            : "bg-[#0C0A0F]/85 border-[#8B3FD6]/18 text-white animate-fade-in",
+        )}
         style={{
           boxShadow:
-            "0 0 0 1px rgba(239, 233, 220, 0.06), 0 8px 24px -16px rgba(107, 43, 153, 0.15)",
+            theme === "light"
+              ? "0 2px 12px rgba(139, 63, 214, 0.03)"
+              : "0 0 0 1px rgba(239, 233, 220, 0.06), 0 8px 24px -16px rgba(0, 0, 0, 0.5)",
           /* Top safe area: notch / Dynamic Island on iPhone.
              Left/right safe areas: landscape iPhone notch coverage. */
           paddingTop: "max(0px, env(safe-area-inset-top, 0))",
@@ -223,7 +240,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
               <WirelineMark className="w-4 h-4 text-[#3B154C] relative z-10" strokeWidth={130} />
               <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent" />
             </motion.div>
-            <span className="brand-wordmark text-[15px] sm:text-[16px] leading-none hidden sm:inline !text-[#EFE9DC] !filter-none">
+            <span className="brand-wordmark text-[15px] sm:text-[16px] leading-none hidden sm:inline text-brand dark:text-[#EFE9DC] !filter-none">
               {branding.brand_name.toUpperCase()}
             </span>
           </Link>
@@ -251,7 +268,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                       </span>
                     </>
                   )}
-                  <h1 className="font-display italic text-[18px] leading-none truncate text-[#EFE9DC]">
+                  <h1 className="font-display italic text-[18px] leading-none truncate text-brand dark:text-[#EFE9DC]">
                     {breadcrumb.title}
                   </h1>
                 </motion.div>
@@ -271,7 +288,10 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
               return (
                 <React.Fragment key={group.label}>
                   {gIdx > 0 && (
-                    <span aria-hidden="true" className="mx-0.5 h-4 w-px bg-white/10 shrink-0" />
+                    <span
+                      aria-hidden="true"
+                      className="mx-0.5 h-4 w-px bg-brand/10 dark:bg-white/10 shrink-0"
+                    />
                   )}
                   {visibleItems.map((item) => renderNavItem(item))}
                 </React.Fragment>
@@ -436,10 +456,10 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 rail carries the nav instead. */}
             <button
               onClick={() => onDrawerChange(true)}
-              className="flex lg:hidden w-10 h-10 rounded-lg items-center justify-center hover:bg-white/5 active:scale-95 transition-all"
+              className="flex lg:hidden w-10 h-10 rounded-lg items-center justify-center hover:bg-brand/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
               aria-label="Open navigation"
             >
-              <Menu className="w-5 h-5 text-[#EFE9DC]" />
+              <Menu className="w-5 h-5 text-brand dark:text-[#EFE9DC]" />
             </button>
           </div>
         </div>

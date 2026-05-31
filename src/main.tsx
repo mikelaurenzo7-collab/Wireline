@@ -3,6 +3,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+// Open‑space preference – removed compact overrides
 
 // Global error + rejection safety net for voice + async surfaces.
 // Vapi WebSocket drops, ElevenLabs streaming failures, recipe promise

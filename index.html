@@ -39,7 +39,7 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content="light dark" />
 
     <!-- Canonical — points to the live production URL (was wireline.app, now trywireline.com).
          Keeping this in sync with the served domain prevents SEO juice fragmentation. -->
@@ -236,7 +236,10 @@
       }
     </script>
 
-    <!-- Preconnect to analytics origin only (fonts are self-hosted via Vite). -->
+    <!-- Preconnect to Google design resources and analytics. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <link rel="preconnect" href="https://plausible.io" crossorigin />
     <link rel="dns-prefetch" href="https://api.anthropic.com" />
     <link rel="dns-prefetch" href="https://api.vapi.ai" />

@@ -481,7 +481,7 @@ export default function CrmConnectionCard() {
                               className={cn(
                                 "disabled:opacity-50 disabled:cursor-not-allowed",
                                 "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-medium transition-all",
-                                "bg-brand/15 border border-brand/30 text-brand hover:bg-brand/25",
+                                "bg-brand/15 border border-brand/30 text-brand hover:bg-brand/25 hover-premium-glow shadow-premium-button",
                                 isConnecting && "opacity-60 pointer-events-none",
                               )}
                             >

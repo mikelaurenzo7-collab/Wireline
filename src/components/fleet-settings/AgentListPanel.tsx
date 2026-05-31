@@ -73,7 +73,7 @@ export default function AgentListPanel({
               <span className="app-section-title/70">Loading fleet</span>
             </div>
           ) : agents.length === 0 ? (
-            <div className="rounded-xl glass border border-white/10 border-dashed py-10 text-center px-4">
+            <div className="rounded-xl glass border-brand/20 border-dashed py-10 text-center px-4">
               <Bot className="w-8 h-8 text-brand/70 mx-auto mb-3" />
               <p className="font-display italic lowercase text-xl text-ink leading-tight">
                 no agents yet
@@ -94,7 +94,7 @@ export default function AgentListPanel({
                   "w-full flex items-center gap-1 transition-all rounded-xl border group overflow-hidden",
                   selectedAgent?.id === agent.id
                     ? "border-brand/35"
-                    : "glass border-white/8 hover:border-white/18",
+                    : "glass hover:border-brand/30",
                 )}
                 style={
                   selectedAgent?.id === agent.id
@@ -124,7 +124,7 @@ export default function AgentListPanel({
                       "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all border",
                       selectedAgent?.id === agent.id
                         ? "border-brand/35 bg-brand/12 text-brand"
-                        : "border-white/10 bg-white/3 text-ink/70 group-hover:text-ink group-hover:bg-white/8",
+                        : "border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/3 text-ink/70 group-hover:text-ink group-hover:bg-brand/5 dark:group-hover:bg-white/8",
                     )}
                   >
                     {agent.channel === "email" ? (
@@ -158,7 +158,7 @@ export default function AgentListPanel({
                   disabled={isDeletingAgent === agent.id}
                   title="Delete agent"
                   aria-label={`Delete agent ${agent.name}`}
-                  className="mr-2 shrink-0 w-7 h-7 rounded-lg glass border border-white/8 flex items-center justify-center text-muted/70 hover:text-rose-500 hover:border-rose-500/30 hover:bg-rose-500/8 disabled:opacity-40 transition-all"
+                  className="mr-2 shrink-0 w-7 h-7 rounded-lg glass flex items-center justify-center text-muted/70 hover:text-rose-500 hover:border-rose-500/30 hover:bg-rose-500/8 disabled:opacity-40 transition-all"
                 >
                   {isDeletingAgent === agent.id ? (
                     <Loader2 className="w-3 h-3 animate-spin" />

@@ -58,7 +58,7 @@ export default function HubTabs({ tabs, label, className, layoutIdPrefix }: HubT
                 <motion.span
                   layoutId={pillLayoutId}
                   aria-hidden="true"
-                  className="absolute inset-0 pointer-events-none bg-brand shadow-[0_2px_8px_-4px_rgba(79,30,123,0.55)]"
+                  className="absolute inset-0 pointer-events-none bg-gradient-to-b from-[#8B3FD6] to-[#6B2B99] shadow-[0_3px_12px_-5px_rgba(139,63,214,0.5)] border-t border-white/20 border-b border-black/10"
                   transition={{ type: "spring", stiffness: 380, damping: 32 }}
                 />
               )}

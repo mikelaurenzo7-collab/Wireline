@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { RefreshCw } from "lucide-react";
 import { ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from "recharts";
@@ -45,7 +44,7 @@ type ActionItem = {
   status: "pending" | "completed" | "failed";
   description: string;
   created_at: string;
-  payload?: any;
+  payload?: Record<string, unknown>;
   reasoning?: string;
 };
 
@@ -56,6 +55,45 @@ type LeadDossier = {
   job_title?: string;
   bio?: string;
   linked_in_url?: string;
+};
+
+type TelemetryStats = {
+  sentimentBreakdown?: {
+    positive?: number;
+    neutral?: number;
+    negative?: number;
+  };
+  unitEconomics?: {
+    efficiencyScore?: number;
+    costPerMinute?: number | string;
+    costPerLead?: number | string;
+  };
+  agents?: {
+    id: string;
+    name: string;
+    role?: string;
+  }[];
+};
+
+type SignalPayload = {
+  id: string;
+  agent_id?: string | null;
+  customer_number: string;
+  label?: string;
+  urgency?: number;
+  status?: string;
+  thought?: string;
+};
+
+type TaskPayload = {
+  id: string;
+  task_type: "send_email" | "schedule_calendar" | "update_crm_lead" | "create_internal_task";
+  priority: "high" | "medium" | "low";
+  status: string;
+  description?: string;
+  created_at: string;
+  payload?: Record<string, unknown>;
+  resolution_notes?: string;
 };
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -88,7 +126,7 @@ export default function LiveOps() {
   const [agents, setAgents] = useState<FloorAgent[]>([]);
   const [actions, setActions] = useState<ActionItem[]>([]);
   const [dossiers, setDossiers] = useState<Record<string, LeadDossier>>({});
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<TelemetryStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [presenceLoading, setPresenceLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -107,7 +145,7 @@ export default function LiveOps() {
 
       if (mountedRef.current) {
         setCalls(
-          (signals || []).map((s: any) => ({
+          (signals || []).map((s: SignalPayload) => ({
             id: s.id,
             agent_id: s.agent_id || undefined,
             customer_number: s.customer_number,
@@ -121,7 +159,7 @@ export default function LiveOps() {
 
         // Fetch dossiers for new numbers
         const numbers = (signals || [])
-          .map((s: any) => s.customer_number)
+          .map((s: SignalPayload) => s.customer_number)
           .filter((n: string) => !dossiersRef.current[n]);
         if (numbers.length > 0) {
           const dossRes = await authFetch(`/api/dashboard/dossiers?numbers=${numbers.join(",")}`);
@@ -131,11 +169,12 @@ export default function LiveOps() {
           }
         }
       }
-    } catch (err: any) {
+    } catch (err) {
       // Aborted / transient fetches are expected (navigation, intervals
       // racing component unmount) — only log unexpected failures.
-      const msg = String(err?.message || "");
-      if (err?.name === "AbortError" || msg.includes("Failed to fetch")) return;
+      const error = err as Error;
+      const msg = error.message || "";
+      if (error.name === "AbortError" || msg.includes("Failed to fetch")) return;
       log.error("Failed to fetch live presence", { err });
     }
   }, [user]);
@@ -157,7 +196,7 @@ export default function LiveOps() {
 
       if (mountedRef.current) {
         setActions(
-          (actionsData || []).map((t: any) => ({
+          (actionsData || []).map((t: TaskPayload) => ({
             id: t.id,
             type: t.task_type,
             priority: t.priority,
@@ -173,12 +212,13 @@ export default function LiveOps() {
             reasoning: t.resolution_notes,
           })),
         );
-        setStats(statsData);
+        setStats(statsData as TelemetryStats);
       }
-    } catch (err: any) {
+    } catch (err) {
       // Suppress aborted-fetch noise — they fire on every page navigation.
-      const msg = String(err?.message || "");
-      if (err?.name === "AbortError" || msg.includes("Failed to fetch")) {
+      const error = err as Error;
+      const msg = error.message || "";
+      if (error.name === "AbortError" || msg.includes("Failed to fetch")) {
         // expected when user navigates mid-request
       } else {
         log.error("Command Center data fetch failed", { err });
@@ -196,7 +236,7 @@ export default function LiveOps() {
       .then((data) => {
         if (alive && data?.agents) {
           setAgents(
-            data.agents.map((a: any) => ({
+            data.agents.map((a: FloorAgent) => ({
               id: a.id,
               name: a.name,
               role: a.role,
@@ -247,7 +287,7 @@ export default function LiveOps() {
               failCount = 0; // reset backoff on successful message
               const signals = payload.signals || [];
               setCalls(
-                signals.map((s: any) => ({
+                signals.map((s: SignalPayload) => ({
                   id: s.id,
                   agent_id: s.agent_id || undefined,
                   customer_number: s.customer_number,
@@ -261,7 +301,7 @@ export default function LiveOps() {
 
               // Fetch dossiers for new numbers
               const numbers = signals
-                .map((s: any) => s.customer_number)
+                .map((s: SignalPayload) => s.customer_number)
                 .filter((n: string) => !dossiersRef.current[n]);
               if (numbers.length > 0) {
                 authFetch(`/api/dashboard/dossiers?numbers=${numbers.join(",")}`)
@@ -343,23 +383,244 @@ export default function LiveOps() {
   return (
     <PageTransition>
       <ClientRouteViewport className="overflow-y-auto">
-        <div className="max-w-[1600px] mx-auto space-y-2 pb-2">
-          {/* Command header — the "Wireline OS" title + caption were
-            removed per design direction (the top nav already labels
-            this Home). The action button + live-stat tiles stay,
-            right-aligned. A small orientation strip on the left
-            clarifies what this page IS vs the nearby /cockpit page
-            (which manages the agent floor). */}
+        <div className="max-w-[1600px] mx-auto space-y-3 pb-4">
           <AppPageIntro
             eyebrow="Workspace · Command center"
             title="Live Ops"
             subtitle="Live callers on the floor, supervisor listen-in, action queue, and fleet analytics — one unified surface."
             actions={
-              <>
-                {/* Activate Growth — full button when the user has at least one
-                agent, disabled-stub when they don't. Stub still occupies the
-                slot so fresh accounts don't see a blank gap that reads as
-                broken UI. Hover-tooltip routes them to /agents to set up. */}
+              <button
+                onClick={refresh}
+                disabled={isRefreshing || loading}
+                className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn !p-3 !rounded-2xl cursor-pointer"
+                aria-label="Refresh"
+              >
+                <RefreshCw className={clsx("w-5 h-5", isRefreshing && "animate-spin")} />
+              </button>
+            }
+          />
+
+          {/* Grid Layout Container */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start pt-1">
+            {/* Left Pane (Main Operations) */}
+            <div className="lg:col-span-8 xl:col-span-9 space-y-4">
+              <ClientSubTabs
+                tabs={[...OPS_TABS]}
+                activeId={activeTab}
+                onChange={setActiveTab}
+                aria-label="Live Ops sections"
+              />
+
+              {activeTab === "floor" && (
+                <section className="space-y-3 pt-1">
+                  <div className="relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-brand/15 to-brand-2/15 rounded-[2rem] blur opacity-25 group-hover:opacity-40 transition duration-1000" />
+                    <div className="relative glass border-brand/12 rounded-[1.75rem] p-4 sm:p-5">
+                      <LiveFloorPanel calls={calls} agents={agents} loading={presenceLoading} />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 pt-4">
+                    <span className="app-section-title block">Get started</span>
+                    <OnboardingQuickstart />
+                  </div>
+                </section>
+              )}
+
+              {activeTab === "intel" && (
+                <section className="space-y-2 pt-1">
+                  <div className="glass border-brand/12 rounded-[1.75rem] p-5 min-h-[320px] flex flex-col">
+                    <ActionFeed actions={actions} onRefresh={refresh} />
+                  </div>
+                </section>
+              )}
+
+              {activeTab === "analytics" && (
+                <section className="space-y-4 pt-1">
+                  <span className="app-section-title block">Fleet analytics</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Analytics: Sentiment */}
+                    <div className="glass border-brand/12 rounded-[2rem] p-5 hover:border-brand/35 hover:-translate-y-px hover:shadow-lg hover:shadow-brand/5 transition-all duration-300">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="app-section-title flex items-center gap-2">
+                          <Globe className="w-3.5 h-3.5 text-brand" />
+                          Market Sentiment
+                        </h3>
+                      </div>
+
+                      {sentimentData.length === 0 ? (
+                        <div className="h-48 flex flex-col items-center justify-center gap-3 text-center border border-dashed border-brand/15 rounded-2xl bg-brand/[0.01] px-6">
+                          <div className="relative">
+                            <span
+                              aria-hidden
+                              className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
+                            />
+                            <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25 flex items-center justify-center">
+                              <Activity className="w-5 h-5" />
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
+                              Awaiting signal
+                            </p>
+                            <p className="font-display italic text-lg text-ink leading-tight">
+                              No conversations yet
+                            </p>
+                          </div>
+                          <p className="text-caption leading-relaxed">
+                            Make your first call to{" "}
+                            <a href="tel:+16306425661" className="text-brand hover:underline">
+                              (630) 642-5661
+                            </a>{" "}
+                            to see live sentiment.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8">
+                          <div className="w-full sm:w-1/2 h-[150px] min-w-0">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={sentimentData}
+                                  innerRadius={50}
+                                  outerRadius={80}
+                                  paddingAngle={5}
+                                  dataKey="value"
+                                  stroke="none"
+                                  isAnimationActive={true}
+                                  animationBegin={200}
+                                  animationDuration={800}
+                                >
+                                  {sentimentData.map((entry) => (
+                                    <Cell key={entry.name} fill={entry.color} />
+                                  ))}
+                                </Pie>
+                                <Tooltip
+                                  contentStyle={{
+                                    background: "rgba(28, 25, 23, 0.95)",
+                                    border: "1px solid rgba(139, 63, 214, 0.3)",
+                                    borderRadius: 0,
+                                    boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
+                                  }}
+                                  itemStyle={{ color: "#E0D8CC", fontSize: "11px" }}
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                          <div className="flex-1 space-y-3">
+                            {sentimentData.map((d) => (
+                              <div key={d.name} className="flex items-center justify-between group">
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className="w-2 h-2 rounded-full"
+                                    style={{ background: d.color }}
+                                  />
+                                  <span className="text-[11px] font-medium text-muted group-hover:text-ink transition-colors">
+                                    {d.name}
+                                  </span>
+                                </div>
+                                <span className="text-[11px] font-mono font-bold text-ink">
+                                  {totalSentiment > 0
+                                    ? `${Math.round((d.value / totalSentiment) * 100)}%`
+                                    : "—"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Analytics: Unit Economics */}
+                    <div className="glass border-brand/12 rounded-[2rem] p-5 hover:border-brand/35 hover:-translate-y-px hover:shadow-lg hover:shadow-brand/5 transition-all duration-300">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="app-section-title flex items-center gap-2">
+                          <Zap className="w-3.5 h-3.5 text-brand" />
+                          Unit Economics
+                        </h3>
+                        <div className="google-m3-badge">
+                          Efficiency: {stats?.unitEconomics?.efficiencyScore ?? 0}%
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
+                          <span className="app-section-title block mb-1">Cost / Min</span>
+                          <span className="font-display italic text-2xl text-ink tabular-nums">
+                            ${stats?.unitEconomics?.costPerMinute ?? "0.00"}
+                          </span>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
+                          <span className="app-section-title block mb-1">Cost / Lead</span>
+                          <span className="font-display italic text-2xl text-ink tabular-nums">
+                            ${stats?.unitEconomics?.costPerLead ?? "0.00"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 p-4 rounded-2xl bg-brand/5 border border-brand/10">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-eyebrow text-brand">Fleet ROI Projection</span>
+                          <span className="text-caption font-mono font-semibold text-brand">
+                            EXCELLENT
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full bg-brand/10 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${stats?.unitEconomics?.efficiencyScore ?? 0}%` }}
+                            className="h-full bg-brand rounded-full"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              )}
+            </div>
+
+            {/* Right Pane (Ops Intelligence Sidebar) */}
+            <div className="lg:col-span-4 xl:col-span-3 space-y-4">
+              {/* Telemetry Heartbeat Card */}
+              <div className="google-m3-card p-5 google-m3-elevation-2 relative overflow-hidden">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xs font-mono uppercase tracking-[0.2em] text-brand font-bold flex items-center gap-2">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500/60" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                    </span>
+                    Live Telemetry
+                  </h3>
+                  <span className="text-[10px] font-mono text-muted-foreground">Pulse Active</span>
+                </div>
+
+                <div className="space-y-3.5">
+                  <div className="flex items-center justify-between py-2 border-b border-brand/5">
+                    <span className="text-[13px] text-muted-foreground">Active Call Traffic</span>
+                    <span className="text-sm font-mono font-bold text-ink dark:text-foreground">
+                      {calls.length} active
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-brand/5">
+                    <span className="text-[13px] text-muted-foreground">Configured Agents</span>
+                    <span className="text-sm font-mono font-bold text-ink dark:text-foreground">
+                      {stats?.agents?.length ?? 0}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Growth Action Card */}
+              <div className="google-m3-card p-5 google-m3-elevation-2 space-y-4">
+                <div>
+                  <h4 className="font-display italic text-lg leading-tight text-foreground">
+                    Lead Generation
+                  </h4>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Autonomous growth engine queries lead databases dynamically.
+                  </p>
+                </div>
+
                 {(stats?.agents?.length ?? 0) > 0 ? (
                   <button
                     onClick={async () => {
@@ -385,17 +646,18 @@ export default function LiveOps() {
                             "Apollo Intelligence is sourcing new leads. They'll appear in Outbound shortly.",
                           );
                         }
-                      } catch (err: any) {
+                      } catch (err) {
+                        const error = err as Error;
                         toastError(
                           "Failed to activate growth engine",
-                          err?.message || "Check network and try again.",
+                          error.message || "Check network and try again.",
                         );
                       } finally {
                         setActivatingGrowth(false);
                       }
                     }}
                     disabled={activatingGrowth}
-                    className="app-primary-btn flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-brand to-brand-deep text-on-brand rounded-2xl shadow-sm shadow-brand/20 transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-wait"
+                    className="w-full flex items-center justify-center gap-2.5 py-3 bg-gradient-to-br from-brand to-brand-deep text-on-brand rounded-xl shadow-md shadow-brand/20 transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-wait cursor-pointer google-m3-ripple"
                   >
                     <Zap
                       className={clsx("w-4 h-4 fill-current", activatingGrowth && "animate-pulse")}
@@ -407,236 +669,45 @@ export default function LiveOps() {
                 ) : (
                   <button
                     onClick={() => navigate("/agents")}
-                    title="Create an agent first → /agents"
-                    className="app-primary-btn flex items-center gap-2 px-6 py-3 rounded-2xl border border-black/10 bg-paper/55 text-ink hover:border-brand/25 transition-colors"
+                    title="Create an agent first"
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-brand/20 bg-brand/[0.02] text-brand hover:border-brand/45 transition-colors cursor-pointer google-m3-ripple"
                   >
                     <Zap className="w-4 h-4" />
-                    <span className="text-xs font-black uppercase tracking-widest">
-                      Create an agent →
-                    </span>
+                    <span className="text-xs font-semibold">Deploy Agent First</span>
                   </button>
                 )}
-
-                {/* Live telemetry strip — bound to real fleet/presence state.
-                Previously this rendered hardcoded "0.02ms Latency" / "12 Online"
-                placeholders that violated the no-mocks rule and confused
-                operators who couldn't reconcile the numbers with their
-                actual data. */}
-                <div className="flex flex-wrap items-center gap-4 sm:gap-6 px-4 sm:px-6 py-3 bg-black/[0.02] border border-black/5 rounded-2xl max-md:w-full max-md:grid max-md:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("floor")}
-                    className="flex flex-col text-left hover:opacity-80 transition-opacity"
-                    title="View live floor"
-                  >
-                    <span className="text-eyebrow">Live Calls</span>
-                    <span className="text-xs font-mono font-bold text-brand">
-                      {calls.length} active
-                    </span>
-                  </button>
-                  <div className="w-px h-6 bg-black/5" />
-                  <button
-                    type="button"
-                    onClick={() => navigate("/agents")}
-                    className="flex flex-col text-left hover:opacity-80 transition-opacity"
-                    title="View fleet"
-                  >
-                    <span className="text-eyebrow">Fleet Size</span>
-                    <span className="text-xs font-mono font-bold text-brand">
-                      {stats?.agents?.length ?? 0} agents
-                    </span>
-                  </button>
-                </div>
-
-                <button
-                  onClick={refresh}
-                  disabled={isRefreshing || loading}
-                  className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn !p-3 !rounded-2xl"
-                  aria-label="Refresh"
-                >
-                  <RefreshCw className={clsx("w-5 h-5", isRefreshing && "animate-spin")} />
-                </button>
-              </>
-            }
-          />
-
-          <ClientSubTabs
-            tabs={[...OPS_TABS]}
-            activeId={activeTab}
-            onChange={setActiveTab}
-            aria-label="Live Ops sections"
-          />
-
-          {activeTab === "floor" && (
-            <section className="space-y-2 pt-1">
-              <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-brand/15 to-brand-2/15 rounded-[2rem] blur opacity-20 group-hover:opacity-35 transition duration-1000" />
-                <div className="relative glass border-black/5 rounded-[1.75rem] p-3 sm:p-4 md:p-5">
-                  <LiveFloorPanel calls={calls} agents={agents} loading={presenceLoading} />
-                </div>
               </div>
-            </section>
-          )}
 
-          {activeTab === "intel" && (
-            <section className="space-y-2 pt-1">
-              <div className="glass border-black/5 rounded-[1.75rem] p-4 md:p-5 min-h-[280px] flex flex-col">
-                <ActionFeed actions={actions} onRefresh={refresh} />
-              </div>
-            </section>
-          )}
+              {/* Economic Summary Snippet */}
+              {stats?.unitEconomics && (
+                <div className="glass border-brand/12 rounded-2xl p-5 shadow-[0_8px_32px_rgba(139,63,214,0.01)] space-y-3.5">
+                  <h3 className="text-xs font-mono uppercase tracking-[0.2em] text-brand font-bold flex items-center gap-2">
+                    <Zap className="w-3.5 h-3.5 text-brand" />
+                    Ops Economics
+                  </h3>
 
-          {activeTab === "analytics" && (
-            <section className="space-y-2 pt-1 border-t border-black/5">
-              <span className="app-section-title block">Fleet analytics</span>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {/* Analytics: Sentiment */}
-                <div className="glass border-black/5 rounded-[2rem] p-4 hover:border-brand/30 hover:-translate-y-px hover:shadow-md hover:shadow-brand/5 transition-all duration-300">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="app-section-title flex items-center gap-2">
-                      <Globe className="w-3.5 h-3.5 text-brand" />
-                      Market Sentiment
-                    </h3>
-                  </div>
-
-                  {sentimentData.length === 0 ? (
-                    <div className="h-48 flex flex-col items-center justify-center gap-3 text-center border border-dashed border-black/8 rounded-2xl bg-black/[0.01] px-6">
-                      <div className="relative">
-                        <span
-                          aria-hidden
-                          className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
-                        />
-                        <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25 flex items-center justify-center">
-                          <Activity className="w-5 h-5" />
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
-                          Awaiting signal
-                        </p>
-                        <p className="font-display italic text-lg text-ink leading-tight">
-                          No conversations yet
-                        </p>
-                      </div>
-                      <p className="text-caption leading-relaxed">
-                        Make your first call to{" "}
-                        <a href="tel:+16306425661" className="text-brand hover:underline">
-                          (630) 642-5661
-                        </a>{" "}
-                        to see live sentiment.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8">
-                      <div className="w-full sm:w-1/2 h-[150px] min-w-0">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={sentimentData}
-                              innerRadius={50}
-                              outerRadius={80}
-                              paddingAngle={5}
-                              dataKey="value"
-                              stroke="none"
-                              isAnimationActive={true}
-                              animationBegin={200}
-                              animationDuration={800}
-                            >
-                              {sentimentData.map((entry) => (
-                                <Cell key={entry.name} fill={entry.color} />
-                              ))}
-                            </Pie>
-                            <Tooltip
-                              contentStyle={{
-                                background: "rgba(28, 25, 23, 0.95)",
-                                border: "1px solid rgba(107, 43, 153 , 0.3)",
-                                borderRadius: 0,
-                                boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
-                              }}
-                              itemStyle={{ color: "#E0D8CC", fontSize: "11px" }}
-                            />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="flex-1 space-y-3">
-                        {sentimentData.map((d) => (
-                          <div key={d.name} className="flex items-center justify-between group">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="w-2 h-2 rounded-full"
-                                style={{ background: d.color }}
-                              />
-                              <span className="text-[11px] font-medium text-muted group-hover:text-ink transition-colors">
-                                {d.name}
-                              </span>
-                            </div>
-                            <span className="text-[11px] font-mono font-bold text-ink">
-                              {totalSentiment > 0
-                                ? `${Math.round((d.value / totalSentiment) * 100)}%`
-                                : "—"}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Analytics: Unit Economics */}
-                <div className="glass border-black/5 rounded-[2rem] p-4 hover:border-brand/30 hover:-translate-y-px hover:shadow-md hover:shadow-brand/5 transition-all duration-300">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="app-section-title flex items-center gap-2">
-                      <Zap className="w-3.5 h-3.5 text-brand" />
-                      Unit Economics
-                    </h3>
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-brand/10 border border-brand/20 rounded-full">
-                      <span className="text-eyebrow !text-[0.625rem] text-brand">
-                        Efficiency: {stats?.unitEconomics?.efficiencyScore ?? 0}%
+                  <div className="grid grid-cols-2 gap-2 text-center pt-1">
+                    <div className="bg-brand/[0.02] border border-brand/5 py-2.5 rounded-lg">
+                      <span className="text-[9px] uppercase tracking-[0.1em] text-muted-foreground block">
+                        Cost/Min
+                      </span>
+                      <span className="font-mono text-sm font-bold text-ink dark:text-foreground">
+                        ${stats.unitEconomics.costPerMinute ?? "0.00"}
                       </span>
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
-                      <span className="app-section-title block mb-1">Cost / Min</span>
-                      <span className="font-display italic text-2xl text-ink tabular-nums">
-                        ${stats?.unitEconomics?.costPerMinute ?? "0.00"}
+                    <div className="bg-brand/[0.02] border border-brand/5 py-2.5 rounded-lg">
+                      <span className="text-[9px] uppercase tracking-[0.1em] text-muted-foreground block">
+                        Cost/Lead
                       </span>
-                    </div>
-                    <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
-                      <span className="app-section-title block mb-1">Cost / Lead</span>
-                      <span className="font-display italic text-2xl text-ink tabular-nums">
-                        ${stats?.unitEconomics?.costPerLead ?? "0.00"}
+                      <span className="font-mono text-sm font-bold text-ink dark:text-foreground">
+                        ${stats.unitEconomics.costPerLead ?? "0.00"}
                       </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 p-4 rounded-2xl bg-brand/5 border border-brand/10">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-eyebrow text-brand">Fleet ROI Projection</span>
-                      <span className="text-caption font-mono font-semibold text-brand">
-                        EXCELLENT
-                      </span>
-                    </div>
-                    <div className="h-1.5 w-full bg-brand/10 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${stats?.unitEconomics?.efficiencyScore ?? 0}%` }}
-                        className="h-full bg-brand rounded-full"
-                      />
                     </div>
                   </div>
                 </div>
-              </div>
-            </section>
-          )}
-
-          {activeTab === "floor" && (
-            <section className="space-y-3 pt-2">
-              <span className="app-section-title">Get started</span>
-              <OnboardingQuickstart />
-            </section>
-          )}
+              )}
+            </div>
+          </div>
         </div>
       </ClientRouteViewport>
     </PageTransition>

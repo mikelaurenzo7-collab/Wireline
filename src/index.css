@@ -398,33 +398,103 @@
       font-size: 12px !important;
     }
 
-    /* Mobile "zoom out" pass — only inside the signed-in console main
-     * content (`.app-surface`). Body type is 15px on desktop; phones get
-     * 14px so dense dashboards, tables, and chat threads don't feel
-     * inflated. Marketing/landing/auth surfaces (outside .app-surface)
-     * are untouched and keep their editorial type scale. The micro-text
-     * floor above (text-[9px]→11px, text-[10px]→12px) still applies, so
-     * UI labels never drop below legibility. */
-    .app-surface {
-      font-size: 14px;
-      line-height: 1.5;
-    }
-    .app-surface h1 {
-      font-size: clamp(1.25rem, 5.2vw, 1.625rem);
-      line-height: 1.15;
-    }
-    .app-surface h2 {
-      font-size: clamp(1.0625rem, 4.4vw, 1.375rem);
-      line-height: 1.2;
-    }
-    .app-surface h3 {
-      font-size: clamp(0.9375rem, 3.8vw, 1.125rem);
-      line-height: 1.25;
-    }
-    /* The dashboard "headline" metric tiles (`.metric-value`,
-     * `.font-display` numbers inside `.stat-tile-mobile`) are already
-     * tuned below to 1.75rem on phones — keep that override authoritative. */
+  } /* End of max-width: 640px media query */
+
+  /* ── GLOBAL CONSOLE LAYOUT & TYPOGRAPHY OPEN SPACE (.app-surface) ───
+   * Adjusts all client-facing pages to feel open, spacious, and extremely 
+   * comfortable. Spacing, paddings, gaps, and text sizes are proportioned
+   * to be elegant, editorial, and easy on the eyes while remaining structured.
+   * Public marketing/auth pages are untouched. */
+  .app-surface {
+    font-size: 14.5px !important;
+    line-height: 1.5 !important;
   }
+  .app-surface h1 {
+    font-size: 1.85rem !important;
+    line-height: 1.2 !important;
+  }
+  .app-surface h2 {
+    font-size: 1.55rem !important;
+    line-height: 1.25 !important;
+  }
+  .app-surface h3 {
+    font-size: 1.28rem !important;
+    line-height: 1.3 !important;
+  }
+  .app-surface h4 {
+    font-size: 1.05rem !important;
+    line-height: 1.35 !important;
+  }
+
+  /* Scale font utility sizes for a comfortable and professional look */
+  .app-surface .text-xs { font-size: 11px !important; }
+  .app-surface .text-sm { font-size: 13px !important; }
+  .app-surface .text-base { font-size: 14.5px !important; }
+  .app-surface .text-lg { font-size: 16.5px !important; }
+  .app-surface .text-xl { font-size: 19px !important; }
+  .app-surface .text-2xl { font-size: 22px !important; }
+  .app-surface .text-3xl { font-size: 26px !important; }
+  .app-surface .text-4xl { font-size: 32px !important; }
+
+  /* Spacing Scale - Open, spacious, and comfortable (both mobile and desktop) */
+  .app-surface .p-10, .app-surface .p-8 { padding: 2rem !important; }     /* Generous breathing room */
+  .app-surface .p-6 { padding: 1.5rem !important; }                       /* Standard card padding (24px) */
+  .app-surface .p-5 { padding: 1.25rem !important; }                      /* Comfortable secondary padding (20px) */
+  .app-surface .p-4 { padding: 1rem !important; }                         /* Structured panel padding (16px) */
+  .app-surface .p-3 { padding: 0.75rem !important; }                      /* Structured compact padding (12px) */
+
+  .app-surface .px-10, .app-surface .px-8 { padding-left: 2rem !important; padding-right: 2rem !important; }
+  .app-surface .px-6 { padding-left: 1.5rem !important; padding-right: 1.5rem !important; }
+  .app-surface .px-5 { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
+  .app-surface .px-4 { padding-left: 1rem !important; padding-right: 1rem !important; }
+  .app-surface .px-3 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+
+  .app-surface .py-10, .app-surface .py-8 { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+  .app-surface .py-6 { padding-top: 1.5rem !important; padding-bottom: 1.5rem !important; }
+  .app-surface .py-5 { padding-top: 1.25rem !important; padding-bottom: 1.25rem !important; }
+  .app-surface .py-4 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+  .app-surface .py-3 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+
+  .app-surface .pt-10, .app-surface .pt-8 { padding-top: 2rem !important; }
+  .app-surface .pt-6 { padding-top: 1.5rem !important; }
+  .app-surface .pt-5 { padding-top: 1.25rem !important; }
+  .app-surface .pt-4 { padding-top: 1rem !important; }
+
+  .app-surface .pb-10, .app-surface .pb-8 { padding-bottom: 2rem !important; }
+  .app-surface .pb-6 { padding-bottom: 1.5rem !important; }
+  .app-surface .pb-5 { padding-bottom: 1.25rem !important; }
+  .app-surface .pb-4 { padding-bottom: 1rem !important; }
+
+  /* Gaps */
+  .app-surface .gap-10, .app-surface .gap-8 { gap: 1.75rem !important; }
+  .app-surface .gap-6 { gap: 1.5rem !important; }
+  .app-surface .gap-5 { gap: 1.25rem !important; }
+  .app-surface .gap-4 { gap: 1rem !important; }
+  .app-surface .gap-3 { gap: 0.75rem !important; }
+
+  /* Vertical List Spacing (space-y) */
+  .app-surface .space-y-8 > * + * { margin-top: 1.75rem !important; }
+  .app-surface .space-y-6 > * + * { margin-top: 1.5rem !important; }
+  .app-surface .space-y-5 > * + * { margin-top: 1.25rem !important; }
+  .app-surface .space-y-4 > * + * { margin-top: 1rem !important; }
+  .app-surface .space-y-3 > * + * { margin-top: 0.75rem !important; }
+
+  .app-surface .space-x-4 > * + * { margin-left: 1rem !important; }
+  .app-surface .space-x-3 > * + * { margin-left: 0.75rem !important; }
+
+  /* Margins */
+  .app-surface .mt-8 { margin-top: 1.75rem !important; }
+  .app-surface .mt-6 { margin-top: 1.5rem !important; }
+  .app-surface .mt-5 { margin-top: 1.25rem !important; }
+  .app-surface .mt-4 { margin-top: 1rem !important; }
+  .app-surface .mt-3 { margin-top: 0.75rem !important; }
+
+  .app-surface .mb-8 { margin-bottom: 1.75rem !important; }
+  .app-surface .mb-6 { margin-bottom: 1.5rem !important; }
+  .app-surface .mb-5 { margin-bottom: 1.25rem !important; }
+  .app-surface .mb-4 { margin-bottom: 1rem !important; }
+  .app-surface .mb-3 { margin-bottom: 0.75rem !important; }
+
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-display font-normal;
@@ -758,20 +828,26 @@
  * consistent warm tone — no white-vs-purple drift. */
 .glass {
   background:
-    linear-gradient(180deg, rgba(246, 241, 232, 0.82), rgba(244, 238, 228, 0.64)),
+    linear-gradient(180deg, rgba(246, 241, 232, 0.85), rgba(244, 238, 228, 0.68)),
     rgba(239, 233, 220, 0.62);
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
-  border: 1px solid rgba(0, 0, 0, 0.09);
+  border: 1px solid rgba(139, 63, 214, 0.12);
+  box-shadow: 
+    0 1px 0 rgba(255, 255, 255, 0.90) inset,
+    0 4px 20px -4px rgba(139, 63, 214, 0.04);
 }
 
 .glass-strong {
   background:
-    linear-gradient(180deg, rgba(247, 242, 234, 0.94), rgba(245, 240, 230, 0.84)),
+    linear-gradient(180deg, rgba(247, 242, 234, 0.96), rgba(245, 240, 230, 0.88)),
     rgba(239, 233, 220, 0.92);
   backdrop-filter: blur(24px) saturate(160%);
   -webkit-backdrop-filter: blur(24px) saturate(160%);
-  border: 1px solid rgba(0, 0, 0, 0.10);
+  border: 1px solid rgba(139, 63, 214, 0.18);
+  box-shadow: 
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 8px 32px -8px rgba(139, 63, 214, 0.08);
 }
 
 /* Reduced motion: kill the GPU-expensive backdrop blur entirely. The
@@ -818,6 +894,35 @@
 
 .animate-aurora-drift {
   animation: aurora-drift 18s ease-in-out infinite;
+}
+
+@keyframes aurora-blob-1 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33% { transform: translate3d(6%, -4%, 0) scale(1.08); }
+  66% { transform: translate3d(-4%, 6%, 0) scale(0.96); }
+}
+
+@keyframes aurora-blob-2 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33% { transform: translate3d(-5%, 6%, 0) scale(0.94); }
+  66% { transform: translate3d(4%, -4%, 0) scale(1.06); }
+}
+
+@keyframes aurora-blob-3 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(3%, 3%, 0) scale(1.10); }
+}
+
+.animate-aurora-blob-1 {
+  animation: aurora-blob-1 25s ease-in-out infinite;
+}
+
+.animate-aurora-blob-2 {
+  animation: aurora-blob-2 30s ease-in-out infinite;
+}
+
+.animate-aurora-blob-3 {
+  animation: aurora-blob-3 20s ease-in-out infinite;
 }
 
 /* Auth-portal aurora — slow breathing radial blobs behind the form
@@ -986,15 +1091,24 @@
   font-weight: 600;
   letter-spacing: 0.38em;
   text-transform: uppercase;
-  color: color-mix(in srgb, #efe9dc 78%, transparent);
+  color: color-mix(in srgb, var(--color-ink) 78%, transparent);
   line-height: 1.3;
+}
+.dark .chrome-eyebrow {
+  color: color-mix(in srgb, #efe9dc 78%, transparent);
 }
 
 .chrome-muted {
+  color: color-mix(in srgb, var(--color-ink) 82%, transparent);
+}
+.dark .chrome-muted {
   color: color-mix(in srgb, #efe9dc 82%, transparent);
 }
 
 .chrome-subtle {
+  color: color-mix(in srgb, var(--color-ink) 58%, transparent);
+}
+.dark .chrome-subtle {
   color: color-mix(in srgb, #efe9dc 58%, transparent);
 }
 
@@ -1867,13 +1981,21 @@ select:focus {
   background:
     linear-gradient(180deg, rgba(248, 243, 235, 0.92), rgba(245, 239, 229, 0.72)),
     rgba(239, 233, 220, 0.75);
-  border-color: rgba(107, 43, 153, 0.22);
+  border-color: rgba(139, 63, 214, 0.32);
+  box-shadow: 
+    0 1px 0 rgba(255, 255, 255, 0.90) inset,
+    0 8px 24px -6px rgba(139, 63, 214, 0.12);
+  transform: translateY(-2px);
 }
 .glass-strong.card-interactive:hover {
   background:
     linear-gradient(180deg, rgba(249, 244, 236, 0.98), rgba(246, 241, 231, 0.90)),
     rgba(239, 233, 220, 0.96);
-  border-color: rgba(107, 43, 153, 0.26);
+  border-color: rgba(139, 63, 214, 0.38);
+  box-shadow: 
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 12px 32px -8px rgba(139, 63, 214, 0.16);
+  transform: translateY(-2px);
 }
 
 /* Premium text link transitions inside app content */
@@ -1897,18 +2019,22 @@ select:focus {
    ══════════════════════════════════════════════════════════════════ */
 .dark .glass {
   background:
-    linear-gradient(180deg, rgba(20, 20, 25, 0.70), rgba(15, 15, 20, 0.50)),
+    linear-gradient(180deg, rgba(20, 16, 24, 0.70), rgba(15, 10, 20, 0.50)),
     rgba(9, 9, 11, 0.60);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(139, 63, 214, 0.16);
+  box-shadow: 
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 4px 30px rgba(0, 0, 0, 0.4);
 }
 
 .dark .glass-strong {
   background:
-    linear-gradient(180deg, rgba(28, 28, 35, 0.85), rgba(20, 20, 25, 0.70)),
+    linear-gradient(180deg, rgba(24, 18, 30, 0.85), rgba(18, 12, 24, 0.70)),
     rgba(9, 9, 11, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(139, 63, 214, 0.22);
+  box-shadow: 
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
 .dark .brutal-card {
@@ -1954,12 +2080,62 @@ select:focus {
   filter: drop-shadow(0 0 16px rgba(157, 78, 221, 0.30));
 }
 
+/* ── DYNAMIC THEME BORDER RESCUE ─────────────────────────────────────
+   * Remap hardcoded white borders (border-white/* utilities) in light
+   * mode to a premium, subtle brand-purple tint.
+   * Remap hardcoded black borders (border-black/* utilities) in dark
+   * mode to a translucent white border. */
+:not(.dark) .border-white\/5 { border-color: rgba(139, 63, 214, 0.05); }
+:not(.dark) .border-white\/8 { border-color: rgba(139, 63, 214, 0.09); }
+:not(.dark) .border-white\/10 { border-color: rgba(139, 63, 214, 0.12); }
+:not(.dark) .border-white\/12 { border-color: rgba(139, 63, 214, 0.14); }
+:not(.dark) .border-white\/15 { border-color: rgba(139, 63, 214, 0.18); }
+:not(.dark) .border-white\/20 { border-color: rgba(139, 63, 214, 0.22); }
+:not(.dark) .border-white\/30 { border-color: rgba(139, 63, 214, 0.32); }
+
+.dark .border-black\/5 { border-color: rgba(255, 255, 255, 0.05); }
+.dark .border-black\/8 { border-color: rgba(255, 255, 255, 0.08); }
+.dark .border-black\/10 { border-color: rgba(255, 255, 255, 0.10); }
+.dark .border-black\/12 { border-color: rgba(255, 255, 255, 0.12); }
+.dark .border-black\/15 { border-color: rgba(255, 255, 255, 0.15); }
+.dark .border-black\/20 { border-color: rgba(255, 255, 255, 0.20); }
+
+/* ── PREMIUM SCROLLBARS ────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 63, 214, 0.16);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 63, 214, 0.32);
+}
+
 .dark ::-webkit-scrollbar-thumb {
   background: rgba(157, 78, 221, 0.45);
 }
-
 .dark ::-webkit-scrollbar-thumb:hover {
   background: rgba(157, 78, 221, 0.65);
+}
+
+/* ── PREMIUM INTERACTIVE SHADOWS ───────────────────────────────────── */
+.shadow-premium-button {
+  box-shadow: 
+    0 1px 0 rgba(255, 255, 255, 0.20) inset,
+    0 4px 12px -2px rgba(139, 63, 214, 0.16);
+}
+.hover-premium-glow {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hover-premium-glow:hover {
+  box-shadow: 
+    0 1px 0 rgba(255, 255, 255, 0.25) inset,
+    0 8px 20px -4px rgba(139, 63, 214, 0.28);
+  transform: translateY(-1px);
 }
 
 .dark input,
@@ -2013,5 +2189,108 @@ select:focus {
   [data-motion-reduce="true"] {
     transform: none !important;
   }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   GOOGLE DESIGN SYSTEM BOOST (MATERIAL DESIGN 3 & DYNAMIC COLOR)
+   Translucent Material You elevations, tactile CSS ripple effects,
+   and dynamic icon scaling integrations.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Google Material symbols helper */
+.material-symbol {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  transition: font-variation-settings 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Hover-fill animation for Material Symbols */
+.material-symbol-interactive:hover .material-symbol,
+.material-symbol.material-symbol-interactive:hover {
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Google M3 Soft Multi-Layer Shadows */
+.google-m3-elevation-1 {
+  box-shadow: 
+    0 1px 3px 0 rgba(139, 63, 214, 0.06), 
+    0 1px 2px -1px rgba(139, 63, 214, 0.04);
+}
+
+.google-m3-elevation-2 {
+  box-shadow: 
+    0 4px 6px -1px rgba(139, 63, 214, 0.08), 
+    0 2px 4px -2px rgba(139, 63, 214, 0.06);
+}
+
+.google-m3-elevation-3 {
+  box-shadow: 
+    0 10px 15px -3px rgba(139, 63, 214, 0.10), 
+    0 4px 6px -4px rgba(139, 63, 214, 0.08);
+}
+
+/* Google-style Material You Card with cream glass hybrid */
+.google-m3-card {
+  background: rgba(246, 241, 232, 0.70);
+  border: 1px solid rgba(139, 63, 214, 0.08);
+  border-radius: 20px; /* Elegant, highly curved M3 border radius */
+  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.google-m3-card:hover {
+  background: rgba(246, 241, 232, 0.85);
+  border-color: rgba(139, 63, 214, 0.24);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 12px 20px -8px rgba(139, 63, 214, 0.12),
+    0 4px 8px -4px rgba(139, 63, 214, 0.08);
+}
+
+/* CSS-only Ripple simulation for button touch feedback */
+.google-m3-ripple {
+  position: relative;
+  overflow: hidden;
+  transition: background-color 0.25s cubic-bezier(0.2, 0, 0, 1), transform 0.15s ease;
+}
+
+.google-m3-ripple::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(139, 63, 214, 0.15) 0%, transparent 60%);
+  opacity: 0;
+  transform: scale(0.6);
+  transition: transform 0.4s cubic-bezier(0.1, 0.8, 0.3, 1), opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.google-m3-ripple:active::after {
+  opacity: 1;
+  transform: scale(2.2);
+  transition: 0s;
+}
+
+.google-m3-ripple:active {
+  transform: scale(0.97);
+}
+
+/* High-class material badge */
+.google-m3-badge {
+  @apply px-3 py-1 text-[11px] font-semibold tracking-wider uppercase rounded-full border;
+  border-color: rgba(139, 63, 214, 0.20);
+  background: rgba(139, 63, 214, 0.06);
+  color: var(--color-brand);
 }
 

@@ -121,7 +121,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
 
   return (
     <div className="h-full flex flex-col p-4 md:p-6 overflow-hidden max-w-[1400px] mx-auto w-full">
-      <div className="glass border border-white/10 rounded-2xl p-5 md:p-6 shrink-0 flex items-center justify-between mb-6 sticky top-0 z-10 bg-paper/80 backdrop-blur-xl">
+      <div className="glass rounded-2xl p-5 md:p-6 shrink-0 flex items-center justify-between mb-6 sticky top-0 z-10 bg-paper/80 backdrop-blur-xl">
         <div>
           <h3 className="font-display italic text-2xl text-ink flex items-center gap-3">
             <Blocks className="w-6 h-6 text-brand" />
@@ -173,7 +173,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                       "relative p-5 rounded-2xl border transition-all cursor-pointer overflow-hidden group",
                       isEnabled && !isMissingIntegration
                         ? "bg-brand/5 border-brand/30 shadow-[0_0_15px_rgba(107, 43, 153 ,0.05)]"
-                        : "glass border-white/10 hover:border-white/30",
+                        : "glass hover:border-brand/30",
                       isMissingIntegration && "opacity-75 cursor-not-allowed grayscale",
                     )}
                     onClick={() => {

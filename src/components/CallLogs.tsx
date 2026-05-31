@@ -442,7 +442,7 @@ function CallDetail({
             <button
               onClick={onBack}
               aria-label="Back to call list"
-              className="lg:hidden h-7 px-2 rounded-full border glass border-white/10 text-muted hover:text-ink hover:border-white/30 transition-all flex items-center gap-1 shrink-0 text-[9px] uppercase tracking-[0.22em]"
+              className="lg:hidden h-7 px-2 rounded-full border glass border-black/8 dark:border-white/10 text-muted hover:text-ink hover:border-black/30 dark:hover:border-white/30 transition-all flex items-center gap-1 shrink-0 text-[9px] uppercase tracking-[0.22em]"
             >
               <ArrowLeft className="w-2.5 h-2.5" /> Back
             </button>
@@ -455,7 +455,7 @@ function CallDetail({
               "disabled:opacity-50 disabled:cursor-not-allowed",
               "h-7 px-2.5 rounded-full border text-[9px] uppercase tracking-[0.22em] transition-all flex items-center gap-1 shrink-0",
               qaScore !== null
-                ? "glass border-white/10 text-muted hover:text-brand hover:border-brand/30"
+                ? "glass border-black/8 dark:border-white/10 text-muted hover:text-brand hover:border-brand/30"
                 : "bg-brand/10 border-brand/30 text-brand hover:bg-brand/20",
             )}
           >
