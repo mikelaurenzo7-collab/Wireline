@@ -23,6 +23,7 @@ import { cn } from "../lib/utils";
 import { formatDateTime, formatTime } from "../lib/safe-date";
 import { PanelSkeleton } from "./Skeleton";
 import { Input } from "./ui/shadcn/Input";
+import { EmptyState } from "./ui/EmptyState";
 
 interface WebhookRow {
   id: string;
@@ -143,16 +144,13 @@ export default function WebhooksManager() {
           {loading ? (
             <PanelSkeleton rows={3} />
           ) : hooks.length === 0 ? (
-            <div className="rounded-xl bg-black/20 border border-dashed border-white/10 p-6 text-center space-y-2">
-              <Webhook className="w-8 h-8 text-muted/70 mx-auto" />
-              <p className="text-[11px] uppercase tracking-[0.4em] text-muted">
-                No webhooks configured
-              </p>
-              <p className="text-xs text-ink/65">
-                Click <span className="text-brand">Add Webhook</span> to push events to Slack, CRM,
-                or Zapier.
-              </p>
-            </div>
+            <EmptyState
+              icon={Webhook}
+              eyebrow="Webhooks"
+              title="No webhooks configured"
+              description="Add a webhook to push events to Slack, CRM, or Zapier."
+              actions={[{ label: "Add webhook", onClick: () => setShowForm(true), primary: true }]}
+            />
           ) : (
             hooks.map((h) => <HookRow key={h.id} hook={h} onChanged={refresh} />)
           )}

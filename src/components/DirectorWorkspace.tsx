@@ -31,6 +31,8 @@ import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { useAgents } from "../contexts/AgentsContext";
 import { cn } from "../lib/utils";
+import { Medallion } from "./ui/Medallion";
+import ClientRouteLoading from "./layout/ClientRouteLoading";
 
 type SuggestionKind =
   | "create_agent"
@@ -238,9 +240,11 @@ export default function DirectorWorkspace() {
         className="flex-1 min-h-0 overflow-y-auto px-6 py-6 space-y-4 scrollbar-hide"
       >
         {isLoading ? (
-          <div className="flex items-center justify-center py-20 text-muted" aria-busy="true">
-            <Loader2 className="w-6 h-6 animate-spin text-brand" />
-          </div>
+          <ClientRouteLoading
+            icon={<Compass className="w-6 h-6 animate-spin-slow" />}
+            label="Loading thread"
+            className="py-20"
+          />
         ) : messages.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -248,15 +252,15 @@ export default function DirectorWorkspace() {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="flex flex-col items-center text-center py-12 lg:py-16 px-4 max-w-lg mx-auto"
           >
-            {/* Branded medallion with dynamic pulsing halo */}
-            <div className="relative mb-6">
-              <span
-                aria-hidden="true"
-                className="absolute inset-0 -z-10 rounded-full bg-brand/20 blur-3xl scale-[2] animate-pulse"
-              />
-              <span className="relative flex w-16 h-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-[0_8px_24px_-4px_rgba(139,63,214,0.3)] border border-white/20">
+            {/*
+              Branded medallion — uses the canonical Medallion primitive so
+              the gem glint + halo stays consistent with EmptyState and
+              ClientRouteLoading across the app.
+            */}
+            <div className="mb-6">
+              <Medallion size="lg" withHalo shimmer>
                 <Sparkles className="w-7 h-7" />
-              </span>
+              </Medallion>
             </div>
 
             <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-brand/85 font-semibold mb-3">

@@ -18,9 +18,10 @@
  */
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Brain, Sparkles, Phone, ShieldAlert, Trash2, ArrowUpRight, Loader2 } from "lucide-react";
+import { Brain, Sparkles, Phone, ShieldAlert, Trash2, ArrowUpRight } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { formatDate } from "../lib/safe-date";
+import ClientRouteLoading from "./layout/ClientRouteLoading";
 
 interface AgentMemoryPanelProps {
   agentId: string;
@@ -87,9 +88,11 @@ export default function AgentMemoryPanel({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-muted">
-        <Loader2 className="w-5 h-5 animate-spin" />
-      </div>
+      <ClientRouteLoading
+        icon={<Brain className="w-6 h-6" />}
+        label="Loading memory"
+        className="py-16"
+      />
     );
   }
 

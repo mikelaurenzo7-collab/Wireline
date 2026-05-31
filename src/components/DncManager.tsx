@@ -31,6 +31,8 @@ import {
 } from "./ui/shadcn/Dialog";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { EmptyState } from "./ui/EmptyState";
+import ClientRouteLoading from "./layout/ClientRouteLoading";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 
 interface DncEntry {
@@ -300,40 +302,33 @@ export default function DncManager() {
               }
             >
               {loading ? (
-                <div className="h-full flex flex-col items-center justify-center gap-3">
-                  <Loader2 className="w-6 h-6 animate-spin text-brand" />
-                  <p className="text-eyebrow">Loading DNC list…</p>
-                </div>
+                <ClientRouteLoading
+                  icon={<Shield className="w-6 h-6" />}
+                  label="Loading DNC list…"
+                />
               ) : filtered.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center gap-4 text-center">
-                  <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                    style={{
-                      background:
-                        "linear-gradient(135deg,rgba(107, 43, 153 ,0.15),rgba(107, 43, 153 ,0.15))",
-                    }}
-                  >
-                    <Shield className="w-7 h-7 text-rose-500" />
-                  </div>
-                  <div>
-                    <p className="font-display italic text-2xl text-ink mb-1">
-                      {entries.length === 0 ? "No numbers blocked" : "No matches"}
-                    </p>
-                    <p className="text-xs text-muted/70 max-w-xs leading-relaxed">
-                      {entries.length === 0
-                        ? "Add numbers manually or import a CSV to prevent them from being dialed by any agent."
-                        : "Try a different search."}
-                    </p>
-                  </div>
-                  {entries.length === 0 && (
-                    <button
-                      onClick={() => setShowAdd(true)}
-                      className="h-9 px-5 rounded-full flex items-center gap-2 text-[10px] uppercase tracking-[0.28em] bg-rose-500/15 border border-rose-500/40 text-rose-500 hover:bg-rose-500/25 transition-all"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> Add First Number
-                    </button>
-                  )}
-                </div>
+                <EmptyState
+                  icon={Shield}
+                  eyebrow={entries.length === 0 ? "Do-Not-Call" : "No matches"}
+                  title={entries.length === 0 ? "No numbers blocked" : "No matches"}
+                  description={
+                    entries.length === 0
+                      ? "Add numbers manually or import a CSV to prevent them from being dialed by any agent."
+                      : "Try a different search."
+                  }
+                  actions={
+                    entries.length === 0
+                      ? [
+                          {
+                            label: "Add first number",
+                            onClick: () => setShowAdd(true),
+                            primary: true,
+                          },
+                        ]
+                      : []
+                  }
+                  accent="#e11d48"
+                />
               ) : (
                 <div className="divide-y divide-white/5">
                   {filtered.map((entry) => (

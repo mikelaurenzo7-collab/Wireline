@@ -44,6 +44,7 @@ import IntegrationActivityCard, {
 import { Skeleton } from "./ui/shadcn/Skeleton";
 import { Checkbox } from "./ui/shadcn/Checkbox";
 import { Input } from "./ui/shadcn/Input";
+import { EmptyState } from "./ui/EmptyState";
 
 const AgentTrainingInline = lazy(() => import("./AgentTraining"));
 const AgentConnectorsInline = lazy(() => import("./AgentActionEngine"));
@@ -637,30 +638,14 @@ export default function AgentWorkspace({
 
   if (isSharedView) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="flex flex-col h-full min-h-0 items-center justify-center py-16 text-center px-6"
-      >
-        <div className="relative mb-5">
-          <span
-            aria-hidden="true"
-            className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
-          />
-          <span className="relative flex w-14 h-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-lg shadow-brand/25 aurora-ring">
-            <MessageSquare className="w-6 h-6" />
-          </span>
-        </div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70 mb-3">
-          Workspace
-        </p>
-        <h3 className="font-display italic text-2xl text-ink mb-3">Select an agent above</h3>
-        <p className="text-[13px] text-muted leading-relaxed max-w-sm">
-          Each agent has its own private workspace. Pick one from the rail to open its chat thread,
-          training, connectors, and memory.
-        </p>
-      </motion.div>
+      <div className="flex flex-col h-full min-h-0 items-center justify-center">
+        <EmptyState
+          icon={MessageSquare}
+          eyebrow="Workspace"
+          title="Select an agent above"
+          description="Each agent has its own private workspace. Pick one from the rail to open its chat thread, training, connectors, and memory."
+        />
+      </div>
     );
   }
 

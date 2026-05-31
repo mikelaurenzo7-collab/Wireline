@@ -9,6 +9,8 @@ import { cn } from "../../lib/utils";
 import { RoleBadge } from "../fleet/helpers";
 import CreateAgentSection from "./CreateAgentSection";
 import type { RoleValue } from "../fleet/helpers";
+import { EmptyState } from "../ui/EmptyState";
+import ClientRouteLoading from "../layout/ClientRouteLoading";
 
 interface Props {
   agents: any[];
@@ -64,25 +66,18 @@ export default function AgentListPanel({
       <div className="px-3 py-3 flex-1 overflow-y-auto space-y-2 scrollbar-hide">
         <AnimatePresence mode="popLayout">
           {isLoading ? (
-            <div
-              role="status"
-              aria-live="polite"
-              className="flex flex-col items-center justify-center gap-3 py-12"
-            >
-              <Loader2 className="w-5 h-5 animate-spin text-brand" aria-hidden="true" />
-              <span className="app-section-title/70">Loading fleet</span>
-            </div>
+            <ClientRouteLoading
+              icon={<Bot className="w-6 h-6" />}
+              label="Loading fleet"
+              className="py-12"
+            />
           ) : agents.length === 0 ? (
-            <div className="rounded-xl glass border-brand/20 border-dashed py-10 text-center px-4">
-              <Bot className="w-8 h-8 text-brand/70 mx-auto mb-3" />
-              <p className="font-display italic lowercase text-xl text-ink leading-tight">
-                no agents yet
-              </p>
-              <p className="text-caption mt-2 leading-relaxed">
-                Create your first AI agent below — it will answer calls, book appointments, and
-                follow up for you.
-              </p>
-            </div>
+            <EmptyState
+              icon={Bot}
+              eyebrow="Fleet"
+              title="No agents yet"
+              description="Create your first AI agent below — it will answer calls, book appointments, and follow up for you."
+            />
           ) : (
             agents.map((agent) => (
               <motion.div

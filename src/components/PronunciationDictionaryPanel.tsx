@@ -26,6 +26,8 @@ import { cn } from "../lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { Input } from "./ui/shadcn/Input";
 import { Checkbox } from "./ui/shadcn/Checkbox";
+import { EmptyState } from "./ui/EmptyState";
+import ClientRouteLoading from "./layout/ClientRouteLoading";
 
 interface DictEntry {
   from: string;
@@ -297,13 +299,18 @@ export default function PronunciationDictionaryPanel() {
           Your dictionaries · {dicts.length}
         </p>
         {loading ? (
-          <div className="rounded-xl border border-black/8 p-4 flex items-center gap-2 text-muted text-[12px]">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…
-          </div>
+          <ClientRouteLoading
+            icon={<BookOpen className="w-6 h-6" />}
+            label="Loading dictionaries"
+            className="py-10"
+          />
         ) : dicts.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-black/15 p-6 text-center text-[12px] text-muted">
-            No dictionaries yet. Create your first one above.
-          </div>
+          <EmptyState
+            icon={BookOpen}
+            eyebrow="Pronunciation"
+            title="No dictionaries yet"
+            description="Create your first one above to teach agents how to pronounce names, products, or brand terms."
+          />
         ) : (
           dicts.map((dict) => (
             <motion.div
