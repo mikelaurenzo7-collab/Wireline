@@ -32,6 +32,7 @@ import AgentFlowComposer from "./AgentFlowComposer";
 import VoiceLibraryPanel from "./admin/VoiceLibraryPanel";
 import PronunciationDictionaryPanel from "./PronunciationDictionaryPanel";
 import { Input } from "./ui/shadcn/Input";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 type TrainingTab = "database" | "voices" | "pronunciation" | "simulator" | "flow";
 
@@ -628,20 +629,24 @@ export default function AgentTraining({
                                   </div>
                                 </div>
                                 <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 shrink-0">
-                                  <button
+                                  <ShadButton
+                                    variant="glass"
+                                    size="icon"
                                     onClick={() =>
                                       setEditingDirective({ id: d.id, content: d.content })
                                     }
-                                    className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-ink hover:border-white/30"
+                                    className="w-6 h-6 rounded-full hover:border-white/30"
                                   >
                                     <Pencil className="w-3 h-3" />
-                                  </button>
-                                  <button
+                                  </ShadButton>
+                                  <ShadButton
+                                    variant="glass"
+                                    size="icon"
                                     onClick={() => deleteItem(d.id, "directive")}
-                                    className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30"
+                                    className="w-6 h-6 rounded-full hover:text-rose-500 hover:border-rose-500/30"
                                   >
                                     <Trash2 className="w-3 h-3" />
-                                  </button>
+                                  </ShadButton>
                                 </div>
                               </div>
                             )}
@@ -760,20 +765,24 @@ export default function AgentTraining({
                                   {k.content}
                                 </div>
                                 <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 shrink-0">
-                                  <button
+                                  <ShadButton
+                                    variant="glass"
+                                    size="icon"
                                     onClick={() =>
                                       setEditingKnowledge({ id: k.id, content: k.content })
                                     }
-                                    className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-ink hover:border-white/30"
+                                    className="w-6 h-6 rounded-full hover:border-white/30"
                                   >
                                     <Pencil className="w-3 h-3" />
-                                  </button>
-                                  <button
+                                  </ShadButton>
+                                  <ShadButton
+                                    variant="glass"
+                                    size="icon"
                                     onClick={() => deleteItem(k.id, "knowledge")}
-                                    className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-blue-600 hover:border-blue-500/30"
+                                    className="w-6 h-6 rounded-full hover:text-blue-600 hover:border-blue-500/30"
                                   >
                                     <Trash2 className="w-3 h-3" />
-                                  </button>
+                                  </ShadButton>
                                 </div>
                               </div>
                             )}

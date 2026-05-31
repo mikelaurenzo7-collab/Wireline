@@ -27,6 +27,7 @@ import { ThreadSummaryForm } from "./forms/ThreadSummaryForm";
 import { AgentReviewForm } from "./forms/AgentReviewForm";
 import { KnowledgeFromDocumentForm } from "./forms/KnowledgeFromDocumentForm";
 import { CallPlaybookForm } from "./forms/CallPlaybookForm";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 export function RecipeModal({
   recipe,
@@ -135,13 +136,15 @@ export function RecipeModal({
                 </p>
               </div>
             </div>
-            <button
+            <ShadButton
+              variant="glass"
+              size="icon"
               onClick={onClose}
               aria-label="Close"
-              className="w-10 h-10 rounded-full glass border border-white/10 flex items-center justify-center text-ink/70 hover:text-ink hover:border-brand/40 transition-all"
+              className="w-10 h-10 rounded-full hover:border-brand/40"
             >
               <X className="w-4 h-4" />
-            </button>
+            </ShadButton>
           </div>
 
           {available === false && <NoKeyInline />}

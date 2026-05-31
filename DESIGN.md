@@ -29,9 +29,11 @@
 - Gradients: Always `from-brand to-brand-deep` for primary actions and medallions.
 
 ### Effects
-- `.glass` — the signature translucent cream surface (use everywhere for cards)
+- `.glass` — the signature translucent cream surface. **Permitted surfaces:** modal overlays (`.glass-elevated`), sticky shells (`.shell-sticky-glass`), sidebar chrome, icon buttons on glass panels. **Do not** use for ordinary card bodies — use `<Card>` instead (see migration note below).
 - `.aurora-ring` — subtle premium border glow (use on active/selected states)
 - Soft brand halos: `<span aria-hidden className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150" />`
+
+> **Migration note — `glassUtility` ratchet:** The `shadcn-pivot-ratchet` tracks `.glass` usage and only allows it to decrease over time. Card bodies that currently carry `.glass` should be migrated to `<Card>` from `src/components/ui/shadcn/`. `<Card>` consumes the `--card` design token, adapts to dark-mode automatically, and is the canonical card surface going forward. Shell surfaces (TopBar, Sidebar, modals, popovers, sticky headers) are permanently exempt — those keep `.glass`/`.glass-strong`/`.glass-elevated`/`.shell-sticky-glass`.
 
 ### Radius
 - **Zero radius** is the default (`--radius: 0`). Rounded corners are used only for medallions and pills.
@@ -95,7 +97,7 @@
 - Start every major content block with `SectionHeader`.
 - Use `Medallion` + halo for every empty / idle / no-data state.
 - Keep CTAs consistent (`primary` gradient or `secondary` glass).
-- Use `glass` for all cards and surfaces.
+- Use `<Card>` for all card surfaces; reserve `.glass` for non-card surfaces (modals, sticky shells, popovers, icon-button faces) where the shadcn Card token is inappropriate.
 - Mark purely decorative elements with `aria-hidden`.
 
 **Don't**
@@ -124,7 +126,10 @@ barrel `index.ts`):
 
 - `ShadButton` (+ `buttonVariants`) — the canonical button. Variants:
   `default` (gradient brand), `outline` (cream glass border), `ghost`,
-  `secondary`, `destructive`, `link`. Sizes: `default | sm | lg | icon`.
+  `secondary`, `destructive`, `link`,
+  `glass` (frosted-glass icon/action button — use on glass card surfaces),
+  `chrome` (dark-surface icon/action button — use inside TopBar/Sidebar only).
+  Sizes: `default | sm | lg | icon`.
 - `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`
 - `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`
 - `Dialog`, `DialogTrigger`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription`, `DialogFooter`
@@ -154,6 +159,9 @@ Higher-level patterns composed **out of** the shadcn primitives:
   description, used at the top of every major content block.
 - `EmptyState.tsx` — canonical "no data yet" surface; wraps `Medallion`
   + `ShadButton`.
+- `HaloButton.tsx` — thin `<ShadButton asChild>` wrapper for branded/halo
+  CTAs that have hand-tuned glass + blur-2xl halos. Preserves the visual
+  pixel-perfectly while satisfying the raw-`<button>` ratchet.
 
 Feature components live in their own folders (`src/components/<feature>/…`)
 and must compose out of Tier 1 / Tier 2 — they never reintroduce raw
