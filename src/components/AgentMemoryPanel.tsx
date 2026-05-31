@@ -1,21 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- agent-config + overview rows aren't shared as client types yet. */
-/**
- * AgentMemoryPanel — the "Memory" tab inside an agent's chat workspace.
- *
- * Until now an agent's memory was implicit ("the thread IS the memory"). This
- * surfaces it: a single window onto everything the agent carries between calls
- * — the persistent operator thread, the recent calls it can recall, the
- * patterns it has learned, and the rules/personality that shape every reply.
- *
- * It writes nothing of its own except "clear memory" (which wipes the thread,
- * delegated back to the workspace's existing clear handler). Knowledge, rules,
- * voice and flow are edited in the Training tab — "Manage in Training" jumps
- * there rather than duplicating those editors here.
- *
- * Data is read from endpoints that already exist:
- *   - GET /api/agents/:id/workspace/overview  → recent call recall
- *   - GET /api/agent-config/:id               → lessons, rules, personality, facts
- */
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Brain, Sparkles, Phone, ShieldAlert, Trash2, ArrowUpRight } from "lucide-react";
@@ -26,11 +8,8 @@ import ClientRouteLoading from "./layout/ClientRouteLoading";
 interface AgentMemoryPanelProps {
   agentId: string;
   agentName: string;
-  /** Length of the persistent operator thread, owned by the parent workspace. */
   messageCount: number;
-  /** Clears the persistent thread (the parent already confirms + toasts). */
   onClearMemory: () => void;
-  /** Jump to the Training tab to edit the durable inputs. */
   onOpenTraining: () => void;
 }
 
@@ -98,15 +77,15 @@ export default function AgentMemoryPanel({
 
   return (
     <div className="h-full overflow-y-auto p-4 space-y-4">
-      {/* Hero */}
-      <section className="rounded-2xl glass border border-white/10 p-4 relative overflow-hidden">
+      {/* Hero — no glass box, just content with brand background accent */}
+      <div className="relative p-4 border border-black/[0.06] dark:border-brand/[0.10]">
         <div
-          className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
+          className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-10 blur-3xl pointer-events-none"
+          style={{ background: "radial-gradient(circle, #7C3AED, transparent)" }}
         />
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 rounded-xl glass border border-brand/30 text-brand flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 border border-brand/30 text-brand flex items-center justify-center shrink-0">
               <Brain className="w-4 h-4" />
             </div>
             <div className="min-w-0">
@@ -119,13 +98,13 @@ export default function AgentMemoryPanel({
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Persistent thread */}
-      <section className="rounded-2xl glass border border-white/10 p-4">
+      {/* Persistent thread — subtle section with bottom border */}
+      <div className="border border-black/[0.06] dark:border-brand/[0.10] p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl glass border border-brand/30 text-brand flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 border border-brand/30 text-brand flex items-center justify-center shrink-0">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
@@ -140,7 +119,7 @@ export default function AgentMemoryPanel({
           {messageCount > 0 && (
             <button
               onClick={onClearMemory}
-              className="shrink-0 inline-flex items-center gap-1.5 px-2.5 min-h-9 rounded-lg text-[10px] uppercase tracking-[0.18em] text-muted hover:text-rose-600 hover:bg-rose-500/8 transition-colors"
+              className="shrink-0 inline-flex items-center gap-1.5 px-2.5 min-h-9 text-[10px] uppercase tracking-[0.18em] text-muted hover:text-rose-600 hover:bg-rose-500/8 transition-colors"
               title="Clear this agent's memory thread"
             >
               <Trash2 className="w-3 h-3" />
@@ -152,12 +131,12 @@ export default function AgentMemoryPanel({
           Everything you discuss in the Chat tab persists here and is read back to {agentName} on
           every call, alongside the recent calls and learned patterns below.
         </p>
-      </section>
+      </div>
 
       {/* Recent call recall */}
-      <section className="rounded-2xl glass border border-white/10 p-4">
+      <div className="border border-black/[0.06] dark:border-brand/[0.10] p-4">
         <div className="flex items-center gap-2.5 mb-3">
-          <div className="w-8 h-8 rounded-xl glass border border-brand/30 text-brand flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 border border-brand/30 text-brand flex items-center justify-center shrink-0">
             <Phone className="w-4 h-4" />
           </div>
           <div>
@@ -182,20 +161,20 @@ export default function AgentMemoryPanel({
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.03 }}
-                className="rounded-xl bg-black/[0.03] border border-black/8 p-3"
+                className="bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.06] dark:border-brand/[0.08] p-3"
               >
                 <p className="text-[13px] text-ink/90 leading-relaxed">
                   {c.summary || "Call handled — no summary captured."}
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   {c.intent && (
-                    <span className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.14em] border border-brand/30 bg-brand/8 text-brand">
+                    <span className="px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] border border-brand/30 bg-brand/8 text-brand">
                       {c.intent}
                     </span>
                   )}
                   {c.sentiment && (
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.14em] border ${
+                      className={`px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] border ${
                         SENTIMENT_TONE[c.sentiment.toLowerCase()] || SENTIMENT_TONE.neutral
                       }`}
                     >
@@ -212,15 +191,15 @@ export default function AgentMemoryPanel({
             ))}
           </div>
         )}
-      </section>
+      </div>
 
       {/* Learned patterns */}
       {lessons.length > 0 && (
-        <section className="rounded-2xl glass border border-white/10 p-4">
+        <div className="border border-black/[0.06] dark:border-brand/[0.10] p-4">
           <div className="flex items-center gap-2.5 mb-3">
             <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: "#8B3FD6" }}
+              className="w-8 h-8 flex items-center justify-center shrink-0"
+              style={{ background: "#7C3AED" }}
             >
               <Sparkles className="w-4 h-4 text-on-brand" strokeWidth={2.5} />
             </div>
@@ -237,20 +216,20 @@ export default function AgentMemoryPanel({
             {lessons.map((lesson) => (
               <div
                 key={lesson.id}
-                className="rounded-xl bg-emerald-500/8 border border-emerald-500/20 p-3"
+                className="bg-emerald-500/8 border border-emerald-500/20 p-3"
               >
                 <p className="text-[13px] text-ink/90 leading-relaxed">{lesson.lesson}</p>
               </div>
             ))}
           </div>
-        </section>
+        </div>
       )}
 
       {/* Durable inputs summary → edit in Training */}
-      <section className="rounded-2xl glass border border-white/10 p-4">
+      <div className="border border-black/[0.06] dark:border-brand/[0.10] p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl glass border border-rose-500/30 text-rose-500 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 border border-rose-500/30 text-rose-500 flex items-center justify-center shrink-0">
               <ShieldAlert className="w-4 h-4" />
             </div>
             <div>
@@ -265,7 +244,7 @@ export default function AgentMemoryPanel({
           </div>
           <button
             onClick={onOpenTraining}
-            className="shrink-0 inline-flex items-center gap-1.5 px-2.5 min-h-9 rounded-lg text-[10px] uppercase tracking-[0.18em] text-brand hover:bg-brand/10 transition-colors"
+            className="shrink-0 inline-flex items-center gap-1.5 px-2.5 min-h-9 text-[10px] uppercase tracking-[0.18em] text-brand hover:bg-brand/10 transition-colors"
           >
             <ArrowUpRight className="w-3 h-3" />
             <span className="hidden sm:inline">Manage in Training</span>
@@ -274,10 +253,10 @@ export default function AgentMemoryPanel({
         </div>
         {personality && (
           <p className="mt-3 font-display italic text-base text-ink/90 leading-snug">
-            “{personality}”
+            &#x201C;{personality}&#x201D;
           </p>
         )}
-      </section>
+      </div>
     </div>
   );
 }

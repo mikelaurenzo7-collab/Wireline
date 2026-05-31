@@ -336,7 +336,7 @@ export default function DirectorWorkspace() {
                 className={cn(
                   "max-w-[75%] min-w-[200px] rounded-2xl px-5 py-4 whitespace-pre-wrap break-words relative",
                   m.role === "operator"
-                    ? "bg-gradient-to-br from-[#8B3FD6] to-[#5A2499] text-white rounded-br-md shadow-lg shadow-brand/20"
+                    ? "bg-gradient-to-br from-brand to-brand-deep text-white shadow-lg shadow-brand/20"
                     : "bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm border border-brand/12 text-ink dark:text-foreground rounded-bl-md shadow-sm",
                 )}
               >

@@ -1,6 +1,3 @@
-/**
- * Training — agent knowledge, voice, pronunciation, simulator, and flow.
- */
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -81,7 +78,9 @@ export default function Training() {
     <ClientRouteViewport>
       <HubTabs tabs={TRAINING_HUB} label="Training hub" className="mb-1 md:mb-2" />
       <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
+        {/* Agent selector sidebar — no glass box, agents float on background */}
         <aside className="shrink-0 lg:w-[280px] flex flex-col">
+          {/* Mobile agent scroll */}
           <div className="lg:hidden flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2">
             {agents.map((agent) => (
               <button
@@ -89,7 +88,7 @@ export default function Training() {
                 type="button"
                 onClick={() => selectAgent(agent.id)}
                 className={cn(
-                  "shrink-0 flex items-center gap-1.5 px-3.5 py-2 border transition-all text-[12px] min-h-[40px] rounded-lg",
+                  "shrink-0 flex items-center gap-1.5 px-3.5 py-2 border transition-all text-[12px] min-h-[40px]",
                   agent.id === selectedAgentId
                     ? "border-brand/45 bg-brand/12 text-ink font-semibold shadow-md shadow-brand/10"
                     : "border-black/8 glass text-muted hover:border-brand/25",
@@ -101,27 +100,28 @@ export default function Training() {
             ))}
           </div>
 
-          <div className="hidden lg:flex flex-col gap-1.5 h-full max-h-[calc(100dvh-12rem)] overflow-y-auto scrollbar-hide border border-black/8 glass p-3 relative">
+          {/* Desktop agent list — no outer glass card */}
+          <div className="hidden lg:flex flex-col gap-1 h-full max-h-[calc(100dvh-12rem)] overflow-y-auto scrollbar-hide p-3">
             <p className="px-2 py-1.5 mb-1 font-mono text-[10px] uppercase tracking-[0.25em] text-brand/70 font-semibold">
               Select Agent
             </p>
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               {agents.map((agent) => (
                 <button
                   key={agent.id}
                   type="button"
                   onClick={() => selectAgent(agent.id)}
                   className={cn(
-                    "w-full text-left flex items-center gap-2.5 px-3 py-2.5 transition-all rounded-lg border group relative overflow-hidden",
+                    "w-full text-left flex items-center gap-2.5 px-3 py-2.5 transition-all group relative overflow-hidden",
                     agent.id === selectedAgentId
-                      ? "border-brand/35 text-ink"
-                      : "border-transparent hover:bg-brand/[0.03] hover:border-brand/12 text-muted",
+                      ? "text-ink"
+                      : "text-muted hover:bg-brand/[0.03]",
                   )}
                   style={
                     agent.id === selectedAgentId
                       ? {
                           background:
-                            "linear-gradient(135deg, rgba(139, 63, 214, 0.08), rgba(139, 63, 214, 0.04))",
+                            "linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(124, 58, 237, 0.04))",
                         }
                       : undefined
                   }
@@ -129,12 +129,12 @@ export default function Training() {
                   {agent.id === selectedAgentId && (
                     <div
                       className="absolute left-0 top-0 bottom-0 w-[3px]"
-                      style={{ background: "linear-gradient(to bottom, #8B3FD6, #6B2B99)" }}
+                      style={{ background: "linear-gradient(to bottom, #7C3AED, #581C87)" }}
                     />
                   )}
                   <div
                     className={cn(
-                      "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-colors",
+                      "w-8 h-8 flex items-center justify-center shrink-0 border transition-colors",
                       agent.id === selectedAgentId
                         ? "border-brand/30 bg-brand/12 text-brand"
                         : "border-black/8 bg-black/[0.02] text-muted group-hover:text-brand group-hover:border-brand/20 group-hover:bg-brand/5",
@@ -168,10 +168,11 @@ export default function Training() {
           </div>
         </aside>
 
-        <main className="flex-1 min-w-0 min-h-0 flex flex-col border border-black/8 glass overflow-hidden relative">
+        {/* Main content area — no glass box, header sits directly */}
+        <main className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden relative">
           <header className="shrink-0 border-b border-black/6 bg-paper/60 backdrop-blur-sm px-3 sm:px-4 pt-3 pb-2 lg:pt-2">
             <div className="lg:hidden flex items-center gap-2 mb-2 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-brand/10 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 bg-brand/10 flex items-center justify-center shrink-0">
                 <GraduationCap className="w-4 h-4 text-brand" />
               </div>
               <div className="min-w-0">

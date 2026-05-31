@@ -412,11 +412,8 @@ export default function LiveOps() {
 
               {activeTab === "floor" && (
                 <section className="space-y-3 pt-1">
-                  <div className="relative group">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-brand/15 to-brand-2/15 rounded-[2rem] blur opacity-25 group-hover:opacity-40 transition duration-1000" />
-                    <div className="relative glass border-brand/12 rounded-[1.75rem] p-4 sm:p-5">
-                      <LiveFloorPanel calls={calls} agents={agents} loading={presenceLoading} />
-                    </div>
+                  <div className="glass border-brand/12 p-4 sm:p-5">
+                    <LiveFloorPanel calls={calls} agents={agents} loading={presenceLoading} />
                   </div>
 
                   <div className="space-y-3 pt-4">
@@ -428,7 +425,7 @@ export default function LiveOps() {
 
               {activeTab === "intel" && (
                 <section className="space-y-2 pt-1">
-                  <div className="glass border-brand/12 rounded-[1.75rem] p-5 min-h-[320px] flex flex-col">
+                  <div className="glass border-brand/12 p-5 min-h-[320px] flex flex-col">
                     <ActionFeed actions={actions} onRefresh={refresh} />
                   </div>
                 </section>
@@ -439,7 +436,7 @@ export default function LiveOps() {
                   <span className="app-section-title block">Fleet analytics</span>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {/* Analytics: Sentiment */}
-                    <div className="glass border-brand/12 rounded-[2rem] p-5 hover:border-brand/35 hover:-translate-y-px hover:shadow-lg hover:shadow-brand/5 transition-all duration-300">
+                    <div className="glass border-brand/12 p-5 hover:border-brand/35 hover:-translate-y-px hover:shadow-lg hover:shadow-brand/5 transition-all duration-300">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="app-section-title flex items-center gap-2">
                           <Globe className="w-3.5 h-3.5 text-brand" />
@@ -448,7 +445,7 @@ export default function LiveOps() {
                       </div>
 
                       {sentimentData.length === 0 ? (
-                        <div className="h-48 flex flex-col items-center justify-center gap-3 text-center border border-dashed border-brand/15 rounded-2xl bg-brand/[0.01] px-6">
+                        <div className="h-48 flex flex-col items-center justify-center gap-3 text-center border border-dashed border-brand/15 bg-brand/[0.01] px-6">
                           <div className="relative">
                             <span
                               aria-hidden
@@ -531,25 +528,25 @@ export default function LiveOps() {
                     </div>
 
                     {/* Analytics: Unit Economics */}
-                    <div className="glass border-brand/12 rounded-[2rem] p-5 hover:border-brand/35 hover:-translate-y-px hover:shadow-lg hover:shadow-brand/5 transition-all duration-300">
+                    <div className="glass border-brand/12 p-5 hover:border-brand/35 hover:-translate-y-px hover:shadow-lg hover:shadow-brand/5 transition-all duration-300">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="app-section-title flex items-center gap-2">
                           <Zap className="w-3.5 h-3.5 text-brand" />
                           Unit Economics
                         </h3>
-                        <div className="google-m3-badge">
+                        <div className="inline-flex items-center gap-1 px-3 py-1 text-[11px] font-semibold tracking-wider uppercase border border-brand/20 bg-brand/[0.06] text-brand">
                           Efficiency: {stats?.unitEconomics?.efficiencyScore ?? 0}%
                         </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-2">
-                        <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
+                        <div className="p-4 bg-black/[0.02] border border-black/5">
                           <span className="app-section-title block mb-1">Cost / Min</span>
                           <span className="font-display italic text-2xl text-ink tabular-nums">
                             ${stats?.unitEconomics?.costPerMinute ?? "0.00"}
                           </span>
                         </div>
-                        <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
+                        <div className="p-4 bg-black/[0.02] border border-black/5">
                           <span className="app-section-title block mb-1">Cost / Lead</span>
                           <span className="font-display italic text-2xl text-ink tabular-nums">
                             ${stats?.unitEconomics?.costPerLead ?? "0.00"}
@@ -557,7 +554,7 @@ export default function LiveOps() {
                         </div>
                       </div>
 
-                      <div className="mt-4 p-4 rounded-2xl bg-brand/5 border border-brand/10">
+                      <div className="mt-4 p-4 bg-brand/5 border border-brand/10">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-eyebrow text-brand">Fleet ROI Projection</span>
                           <span className="text-caption font-mono font-semibold text-brand">
@@ -581,7 +578,7 @@ export default function LiveOps() {
             {/* Right Pane (Ops Intelligence Sidebar) */}
             <div className="lg:col-span-4 xl:col-span-3 space-y-3">
               {/* Telemetry Heartbeat Card */}
-              <div className="google-m3-card p-3.5 google-m3-elevation-2 relative overflow-hidden">
+              <div className="glass border-brand/12 p-3.5 relative overflow-hidden">
                 <div className="flex items-center justify-between mb-2.5">
                   <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-brand font-bold flex items-center gap-2">
                     <span className="relative flex h-1.5 w-1.5">
@@ -610,7 +607,7 @@ export default function LiveOps() {
               </div>
 
               {/* Growth Action Card */}
-              <div className="google-m3-card p-3.5 google-m3-elevation-2 space-y-2.5">
+              <div className="glass border-brand/12 p-3.5 space-y-2.5">
                 <div>
                   <h4 className="font-display italic text-[15px] leading-tight text-foreground">
                     Lead Generation

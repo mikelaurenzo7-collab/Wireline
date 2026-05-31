@@ -121,7 +121,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
 
   return (
     <div className="h-full flex flex-col p-4 md:p-6 overflow-hidden max-w-[1400px] mx-auto w-full">
-      <div className="glass rounded-2xl p-5 md:p-6 shrink-0 flex items-center justify-between mb-6 sticky top-0 z-10 bg-paper/80 backdrop-blur-xl">
+      <div className="shrink-0 flex items-center justify-between mb-6 sticky top-0 z-10 bg-paper/60 backdrop-blur-sm px-2 -mx-2 pb-4 border-b border-black/[0.06] dark:border-brand/[0.10]">
         <div>
           <h3 className="font-display italic text-2xl text-ink flex items-center gap-3">
             <Blocks className="w-6 h-6 text-brand" />
@@ -136,7 +136,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="disabled:opacity-50 disabled:cursor-not-allowed h-10 px-6 rounded-full bg-brand/15 border border-brand/40 text-brand text-[11px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-all flex items-center gap-2"
+          className="disabled:opacity-50 disabled:cursor-not-allowed h-10 px-6 border border-brand/40 bg-brand/10 text-brand text-[11px] uppercase tracking-[0.25em] hover:bg-brand/20 transition-all flex items-center gap-2"
         >
           {isSaving ? (
             <div className="w-4 h-4 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />
@@ -170,10 +170,10 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                   <div
                     key={tool.name}
                     className={cn(
-                      "relative p-5 rounded-2xl border transition-all cursor-pointer overflow-hidden group",
+                      "relative p-5 border transition-all cursor-pointer overflow-hidden group",
                       isEnabled && !isMissingIntegration
-                        ? "bg-brand/5 border-brand/30 shadow-[0_0_15px_rgba(107, 43, 153 ,0.05)]"
-                        : "glass hover:border-brand/30",
+                        ? "bg-brand/5 border-brand/30 shadow-[0_0_15px_rgba(124,58,237,0.05)]"
+                        : "bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.06] dark:border-brand/[0.10] hover:border-brand/30",
                       isMissingIntegration && "opacity-75 cursor-not-allowed grayscale",
                     )}
                     onClick={() => {

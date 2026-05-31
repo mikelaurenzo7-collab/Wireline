@@ -81,9 +81,9 @@ export default function AgentChat() {
           <button
             onClick={() => navigate("/chat")}
             className={cn(
-              "group shrink-0 flex items-center gap-2.5 px-4 py-2 rounded-xl border transition-all duration-300 relative overflow-hidden cursor-pointer",
+              "group shrink-0 flex items-center gap-2.5 px-4 py-2 border transition-all duration-300 relative overflow-hidden cursor-pointer",
               showDirector
-                ? "border-brand/35 bg-white/70 dark:bg-white/5 shadow-[0_4px_16px_rgba(139,63,214,0.06)]"
+                ? "border-brand/35 bg-white/70 dark:bg-white/5 shadow-[0_4px_16px_rgba(124,58,237,0.06)]"
                 : "border-brand/10 bg-white/20 dark:bg-white/[0.02] hover:bg-white/50 dark:hover:bg-white/5 hover:border-brand/20",
             )}
           >
@@ -92,7 +92,7 @@ export default function AgentChat() {
             )}
             <span
               className={cn(
-                "shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors relative overflow-hidden",
+                "shrink-0 w-8 h-8 flex items-center justify-center transition-colors relative overflow-hidden",
                 showDirector
                   ? "bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25"
                   : "bg-brand/10 text-brand",
@@ -122,9 +122,9 @@ export default function AgentChat() {
                   key={a.id}
                   onClick={() => navigate(`/chat/${a.id}`)}
                   className={cn(
-                    "group shrink-0 flex items-center gap-2.5 px-4 py-2 rounded-xl border transition-all duration-300 relative overflow-hidden cursor-pointer",
+                    "group shrink-0 flex items-center gap-2.5 px-4 py-2 border transition-all duration-300 relative overflow-hidden cursor-pointer",
                     isActive
-                      ? "border-brand/35 bg-white/70 dark:bg-white/5 shadow-[0_4px_16px_rgba(139,63,214,0.06)]"
+                      ? "border-brand/35 bg-white/70 dark:bg-white/5 shadow-[0_4px_16px_rgba(124,58,237,0.06)]"
                       : "border-brand/10 bg-white/20 dark:bg-white/[0.02] hover:bg-white/50 dark:hover:bg-white/5 hover:border-brand/20",
                   )}
                 >
@@ -133,7 +133,7 @@ export default function AgentChat() {
                   )}
                   <span
                     className={cn(
-                      "shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-bold relative transition-colors",
+                      "shrink-0 w-8 h-8 flex items-center justify-center text-[11px] font-bold relative transition-colors",
                       isActive
                         ? "bg-gradient-to-br from-brand to-brand-deep text-on-brand"
                         : "bg-brand/10 text-brand",
@@ -160,9 +160,9 @@ export default function AgentChat() {
           {/* Add Agent pill */}
           <button
             onClick={() => navigate("/agents")}
-            className="group shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-dashed border-brand/20 hover:border-brand/40 text-brand hover:bg-brand/[0.02] transition-all duration-300 cursor-pointer"
+            className="group shrink-0 flex items-center gap-2 px-3.5 py-2.5 border border-dashed border-brand/20 hover:border-brand/40 text-brand hover:bg-brand/[0.02] transition-all duration-300 cursor-pointer"
           >
-            <span className="shrink-0 w-8 h-8 rounded-lg bg-brand/5 border border-dashed border-brand/25 flex items-center justify-center group-hover:bg-brand/10 transition-colors">
+            <span className="shrink-0 w-8 h-8 bg-brand/5 border border-dashed border-brand/25 flex items-center justify-center group-hover:bg-brand/10 transition-colors">
               <Plus className="w-4 h-4" />
             </span>
             <span className="text-[12px] font-semibold">Deploy Agent</span>
@@ -172,13 +172,13 @@ export default function AgentChat() {
 
       {/* ── Main Layout Workspace Split ── */}
       <div className="flex-1 flex gap-3 lg:gap-4 min-h-0 min-w-0">
-        {/* Active Workspace View */}
+        {/* Active Workspace View — no outer box, content lives directly on background */}
         <motion.div
           key={showDirector ? "director" : activeAgent?.id}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-          className="flex-1 min-w-0 min-h-0 rounded-2xl border border-brand/12 bg-white/30 dark:bg-black/10 backdrop-blur-sm overflow-hidden flex flex-col shadow-[0_8px_32px_rgba(139,63,214,0.02)]"
+          className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden"
         >
           {showDirector ? (
             <DirectorWorkspace />
@@ -192,10 +192,10 @@ export default function AgentChat() {
           )}
         </motion.div>
 
-        {/* Agent Dock (Control center tools pane) */}
+        {/* Agent Dock — no outer box, renders directly */}
         {!showDirector && activeAgent && (
           <>
-            <aside className="hidden xl:block xl:w-[20rem] shrink-0 min-h-0 bg-white/30 dark:bg-black/10 backdrop-blur-sm border border-brand/12 rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(139,63,214,0.02)]">
+            <aside className="hidden xl:flex xl:w-[20rem] shrink-0 min-h-0 flex-col overflow-hidden border-l border-black/[0.06] dark:border-brand/[0.10]">
               <AgentDock
                 key={activeAgent.id}
                 agentId={activeAgent.id}
@@ -208,7 +208,7 @@ export default function AgentChat() {
             {/* Floating Mobile Trigger */}
             <button
               onClick={() => setDockOpen(true)}
-              className="xl:hidden fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] right-4 z-30 inline-flex items-center gap-2.5 px-5 py-3 rounded-full bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-lg shadow-brand/25 text-sm font-semibold active:scale-95 transition-all cursor-pointer"
+              className="xl:hidden fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] right-4 z-30 inline-flex items-center gap-2.5 px-5 py-3 bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-lg shadow-brand/25 text-sm font-semibold active:scale-95 transition-all cursor-pointer"
               aria-label="Open mission control"
             >
               <LayoutDashboard className="w-4 h-4" />
@@ -235,7 +235,7 @@ export default function AgentChat() {
                     <div className="flex items-center justify-end mb-2">
                       <button
                         onClick={() => setDockOpen(false)}
-                        className="w-10 h-10 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-brand/5 transition-colors cursor-pointer"
+                        className="w-10 h-10 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-brand/5 transition-colors cursor-pointer"
                         aria-label="Close mission control"
                       >
                         <X className="w-4 h-4" />
