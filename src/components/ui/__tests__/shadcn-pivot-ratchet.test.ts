@@ -64,13 +64,18 @@ function countOccurrences(pattern: RegExp): number {
  * Each lowering should be accompanied by the migration commit that
  * earned it (e.g. replacing raw `<button>` with `Button`, or `glass`
  * with `Card`).
+ *
+ * glassUtility: 467 → not all .glass usage is equivalent.
+ *   ~16 occurrences are permanently shell-exempt (TopBar, Sidebar, PageShell, CommandBar)
+ *   and will never migrate to <Card>. The remaining ~451 are card-context and
+ *   should migrate. The single counter tracks total; exempt surfaces are noted in-file.
  */
 const BASELINE = {
-  rawButton: 394, // <button> outside ui/shadcn/*
+  rawButton: 386, // <button> outside ui/shadcn/*; 8 migrated to ShadButton (glass/icon variant) 2026-05-31
   rawInput: 0, //  <input> outside ui/shadcn/*; fully migrated to shadcn Input/Checkbox/Slider. Stays at 0 forever.
   rawSelect: 0, // <select> outside ui/shadcn/*; fully migrated to shadcn Select. Stays at 0 forever.
   rawDialog: 0, //  <dialog>; we never use the native element. Stays at 0 forever.
-  glassUtility: 467, // .glass utility usage; migrate to <Card>
+  glassUtility: 467, // .glass utility usage; ~451 card-context → migrate to <Card>; ~16 shell-exempt (TopBar/Sidebar/PageShell/CommandBar) stay.
   largeRadius: 854, // rounded-{lg|xl|2xl|3xl} literals (global reset makes them no-ops)
 } as const;
 

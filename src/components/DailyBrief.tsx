@@ -23,6 +23,7 @@ import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatDate, formatDateTime } from "../lib/safe-date";
 import { Input } from "./ui/shadcn/Input";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface BriefData {
   brief: {
@@ -486,13 +487,15 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-brand-2">
           <Mail className="w-3 h-3" /> Email this brief on a schedule
         </div>
-        <button
+        <ShadButton
+          variant="glass"
+          size="icon"
           onClick={onClose}
           aria-label="Close"
-          className="w-9 h-9 rounded-full glass border border-white/10 hover:border-white/30 flex items-center justify-center text-ink/70 hover:text-ink"
+          className="w-9 h-9 rounded-full hover:border-white/30"
         >
           <XIcon className="w-4 h-4" />
-        </button>
+        </ShadButton>
       </div>
 
       {loading ? (

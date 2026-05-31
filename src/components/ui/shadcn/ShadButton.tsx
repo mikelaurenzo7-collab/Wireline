@@ -18,6 +18,14 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 hover:shadow-md",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        // Glass variant — translucent cream surface for icon/action buttons on glass cards and modals.
+        // Keeps the frosted-glass aesthetic without re-implementing it ad-hoc.
+        glass:
+          "glass border border-white/10 text-ink/70 hover:text-ink hover:border-white/20 transition-all",
+        // Chrome variant — white/10 dark-surface treatment for TopBar, Sidebar, and other
+        // dark-chrome shells. Never use on cream/light backgrounds.
+        chrome:
+          "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:border-white/20 hover:text-white/90 transition-colors",
       },
       size: {
         default: "h-9 px-4 py-2",

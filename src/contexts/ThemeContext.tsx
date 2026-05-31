@@ -26,14 +26,14 @@ const STORAGE_KEY = "wireline.theme";
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function readStoredTheme(): Theme {
-  if (typeof window === "undefined") return "system";
+  if (typeof window === "undefined") return "light";
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw === "light" || raw === "dark" || raw === "system") return raw;
   } catch {
-    // localStorage may be unavailable (private mode, SSR). Fall back to system.
+    // localStorage may be unavailable (private mode, SSR). Fall back to light.
   }
-  return "system";
+  return "light";
 }
 
 function systemPrefersDark(): boolean {

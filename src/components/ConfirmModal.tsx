@@ -3,6 +3,7 @@ import { AlertTriangle, Loader2, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { cn } from "../lib/utils";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface Props {
   open: boolean;
@@ -160,13 +161,15 @@ export default function ConfirmModal({
                     {message}
                   </p>
                 </div>
-                <button
+                <ShadButton
+                  variant="glass"
+                  size="icon"
                   onClick={onCancel}
                   aria-label="Close dialog"
-                  className="ml-auto w-11 h-11 sm:w-8 sm:h-8 -m-1.5 sm:m-0 rounded-full glass border border-white/10 flex items-center justify-center text-ink/65 hover:text-ink hover:border-white/20 transition-all shrink-0 active:scale-95"
+                  className="ml-auto w-11 h-11 sm:w-8 sm:h-8 -m-1.5 sm:m-0 rounded-full hover:border-white/20 shrink-0 active:scale-95"
                 >
                   <X className="w-4 h-4 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
-                </button>
+                </ShadButton>
               </div>
 
               <div className="relative z-10 flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">

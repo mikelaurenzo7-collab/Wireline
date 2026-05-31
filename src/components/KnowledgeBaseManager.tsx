@@ -31,6 +31,7 @@ import EmptyState from "./EmptyState";
 import { RecipeModal } from "./ClaudeRecipes";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { Input } from "./ui/shadcn/Input";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 const AGENT_UNSET = "__unset__";
 
@@ -663,13 +664,15 @@ export default function KnowledgeBaseManager() {
                           )}
                           Save
                         </button>
-                        <button
+                        <ShadButton
+                          variant="glass"
+                          size="icon"
                           onClick={cancelEdit}
                           aria-label="Cancel edit"
-                          className="h-8 w-8 rounded-lg glass border border-white/10 flex items-center justify-center text-ink/70 hover:text-ink"
+                          className="h-8 w-8 rounded-lg"
                         >
                           <X className="w-3.5 h-3.5" />
-                        </button>
+                        </ShadButton>
                       </>
                     ) : (
                       <>
