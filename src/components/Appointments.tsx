@@ -477,11 +477,8 @@ function CalendarGrid({
                           <button
                             key={a.id}
                             onClick={() => onSelect(a)}
-                            className={cn(
-                              "w-full text-left px-1.5 py-0.5 rounded text-[9px] truncate transition-colors hover:opacity-80",
-                              m.bg,
-                              m.color,
-                            )}
+                            className="w-full text-left px-1.5 py-0.5 rounded text-[9px] truncate transition-colors hover:opacity-80"
+                            style={{ background: m.bgColor, color: m.textColor }}
                           >
                             {a.time} {a.customer_name}
                           </button>
@@ -897,7 +894,10 @@ function AppointmentRow({
                       }}
                       className="w-full text-left px-3 py-2 text-[10px] text-ink hover:bg-white/5 transition-colors flex items-center gap-2"
                     >
-                      <span className={cn("w-1.5 h-1.5 rounded-full", STATUS_META[s].dot)} />
+                      <span
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ background: STATUS_META[s].dotColor }}
+                      />
                       {s}
                     </button>
                   ))}
