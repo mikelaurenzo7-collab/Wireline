@@ -134,6 +134,12 @@ on the phone number / tool config in Vapi. Rotate both sides.
 origins AND `https://trywireline.com/api/oauth/google/callback`
 to redirect URIs. Same pattern for Microsoft (Azure AD).
 
+**OAuth returns to `/auth/oauth-complete` with "Failed to start session"**
+→ The provider login succeeded, but the short-lived session bridge table
+is missing or unavailable. Run the latest database migrations; the app
+also attempts to create `wireline_oauth_pending_codes` automatically on
+the next callback if the production database role has DDL permission.
+
 **Stripe webhook fails**
 → Stripe Dashboard → Webhooks → confirm endpoint URL is
 `https://trywireline.com/api/stripe-webhook`.

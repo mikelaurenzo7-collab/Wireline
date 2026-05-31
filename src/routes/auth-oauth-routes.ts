@@ -102,6 +102,74 @@ function findOrCreateUserByEmail(
  * the row. Codes live ~60s and are deleted on read.
  */
 const PENDING_CODE_TTL_MS = 60_000;
+let pendingCodeSchemaReady = false;
+let pendingCodeSchemaRepair: Promise<void> | null = null;
+
+function getErrorCode(err: unknown): string | undefined {
+  const code = (err as { code?: unknown })?.code;
+  return typeof code === "string" ? code : undefined;
+}
+
+function getErrorText(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+function shouldRepairPendingCodeSchema(err: unknown): boolean {
+  const code = getErrorCode(err);
+  if (code === "42P01" || code === "42703") return true;
+  const message = getErrorText(err);
+  return /wireline_oauth_pending_codes|relation .* does not exist|column .* does not exist/i.test(
+    message,
+  );
+}
+
+async function ensurePendingCodeSchema(): Promise<void> {
+  if (pendingCodeSchemaReady) return;
+  if (!pendingCodeSchemaRepair) {
+    pendingCodeSchemaRepair = (async () => {
+      await drizzle.execute(sql`
+        CREATE TABLE IF NOT EXISTS wireline_oauth_pending_codes (
+          code text PRIMARY KEY,
+          token text NOT NULL,
+          user_id uuid NOT NULL,
+          email text NOT NULL,
+          full_name text,
+          is_owner boolean NOT NULL DEFAULT false,
+          expires_at timestamptz NOT NULL,
+          created_at timestamptz NOT NULL DEFAULT now()
+        )
+      `);
+      await drizzle.execute(sql`
+        CREATE INDEX IF NOT EXISTS idx_oauth_pending_codes_expires_at
+          ON wireline_oauth_pending_codes (expires_at)
+      `);
+      pendingCodeSchemaReady = true;
+      log.info("auth oauth: repaired pending-code schema");
+    })().finally(() => {
+      pendingCodeSchemaRepair = null;
+    });
+  }
+  await pendingCodeSchemaRepair;
+}
+
+async function insertPendingCode(
+  code: string,
+  entry: {
+    token: string;
+    user: { id: string; email: string; fullName: string | null };
+    isOwner: boolean;
+  },
+): Promise<void> {
+  await drizzle.insert(schema.oauthPendingCodes).values({
+    code,
+    token: entry.token,
+    userId: entry.user.id,
+    email: entry.user.email,
+    fullName: entry.user.fullName,
+    isOwner: entry.isOwner,
+    expiresAt: new Date(Date.now() + PENDING_CODE_TTL_MS),
+  });
+}
 
 async function storePendingCode(
   code: string,
@@ -112,18 +180,30 @@ async function storePendingCode(
   },
 ): Promise<void> {
   try {
-    await drizzle.insert(schema.oauthPendingCodes).values({
-      code,
-      token: entry.token,
-      userId: entry.user.id,
-      email: entry.user.email,
-      fullName: entry.user.fullName,
-      isOwner: entry.isOwner,
-      expiresAt: new Date(Date.now() + PENDING_CODE_TTL_MS),
-    });
+    await insertPendingCode(code, entry);
+    pendingCodeSchemaReady = true;
   } catch (err) {
+    if (shouldRepairPendingCodeSchema(err)) {
+      log.warn("auth oauth: pending-code schema missing; repairing before retry", {
+        error: getErrorText(err),
+        code: getErrorCode(err),
+      });
+      try {
+        await ensurePendingCodeSchema();
+        await insertPendingCode(code, entry);
+        return;
+      } catch (repairErr) {
+        log.error("auth oauth: pending-code schema repair failed", {
+          initial_error: getErrorText(err),
+          error: getErrorText(repairErr),
+          code: getErrorCode(repairErr),
+        });
+        throw repairErr;
+      }
+    }
     log.error("auth oauth: failed to persist pending code", {
-      error: err instanceof Error ? err.message : String(err),
+      error: getErrorText(err),
+      code: getErrorCode(err),
     });
     throw err;
   }

@@ -188,7 +188,7 @@ export default function PageShell({
           <div
             role="tablist"
             aria-label="Page sub-navigation"
-            className="flex items-center gap-0.5 p-0.5 glass border border-black/8"
+            className="app-tab-strip flex items-center gap-0.5 p-0.5 glass border border-black/8"
           >
             {tabs.map((tab, i) => {
               const Icon = tab.icon;
@@ -211,20 +211,13 @@ export default function PageShell({
                   }}
                   className={cn(
                     "relative shrink-0 inline-flex min-h-11 sm:min-h-10 items-center gap-1.5 px-3 py-1.5 transition-all text-[11px] uppercase tracking-[0.1em] font-medium",
-                    active ? "text-on-brand" : "text-muted hover:text-ink hover:bg-black/5",
+                    active ? "app-tab-active" : "text-muted hover:text-ink hover:bg-black/4",
                   )}
                 >
                   {active && (
                     <motion.div
                       layoutId="tab-active-bg"
-                      className="absolute inset-0"
-                      style={{
-                        background:
-                          "linear-gradient(180deg, var(--color-brand) 0%, var(--color-brand-deep) 100%)",
-                        boxShadow:
-                          "0 3px 12px -6px color-mix(in srgb, var(--color-brand) 60%, transparent), 0 0 0 1px rgba(255,255,255,0.18) inset, 0 1px 0 rgba(255,255,255,0.32) inset",
-                        willChange: "transform, background-color",
-                      }}
+                      className="app-tab-active-bg absolute inset-0"
                       transition={{ type: "spring", stiffness: 420, damping: 36 }}
                     />
                   )}
@@ -235,7 +228,7 @@ export default function PageShell({
                       <span
                         className={cn(
                           "ml-0.5 px-1.5 py-px rounded-full text-[8px] font-mono leading-none",
-                          active ? "bg-white/20 text-on-brand" : "bg-black/8 text-muted",
+                          active ? "app-tab-active-badge" : "bg-black/8 text-muted",
                         )}
                       >
                         {tab.badge}
@@ -276,19 +269,13 @@ export default function PageShell({
                   }}
                   className={cn(
                     "native-tap-squish relative shrink-0 inline-flex min-h-11 items-center gap-1.5 px-3 py-2 transition-all text-[11px] uppercase tracking-[0.1em] font-medium whitespace-nowrap",
-                    active ? "text-on-brand" : "text-muted",
+                    active ? "app-tab-active" : "text-muted",
                   )}
                 >
                   {active && (
                     <motion.div
                       layoutId="mobile-tab-active-bg"
-                      className="absolute inset-0"
-                      style={{
-                        background:
-                          "linear-gradient(180deg, var(--color-brand) 0%, var(--color-brand-deep) 100%)",
-                        boxShadow:
-                          "0 3px 12px -6px color-mix(in srgb, var(--color-brand) 55%, transparent), 0 0 0 1px rgba(255,255,255,0.16) inset, 0 1px 0 rgba(255,255,255,0.28) inset",
-                      }}
+                      className="app-tab-active-bg absolute inset-0"
                       transition={{ type: "spring", stiffness: 420, damping: 36 }}
                     />
                   )}
@@ -299,7 +286,7 @@ export default function PageShell({
                       <span
                         className={cn(
                           "ml-0.5 px-1.5 py-px rounded-full text-[8px] font-mono leading-none",
-                          active ? "bg-white/20 text-on-brand" : "bg-black/8 text-muted",
+                          active ? "app-tab-active-badge" : "bg-black/8 text-muted",
                         )}
                       >
                         {tab.badge}

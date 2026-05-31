@@ -406,94 +406,96 @@
    * to be elegant, editorial, and easy on the eyes while remaining structured.
    * Public marketing/auth pages are untouched. */
   .app-surface {
-    font-size: 14.5px !important;
-    line-height: 1.5 !important;
+    font-size: 13.25px !important;
+    line-height: 1.45 !important;
+    --client-panel-bg: rgba(248, 244, 236, 0.74);
+    --client-panel-border: rgba(26, 22, 20, 0.085);
   }
   .app-surface h1 {
-    font-size: 1.85rem !important;
-    line-height: 1.2 !important;
+    font-size: 1.45rem !important;
+    line-height: 1.12 !important;
   }
   .app-surface h2 {
-    font-size: 1.55rem !important;
-    line-height: 1.25 !important;
+    font-size: 1.28rem !important;
+    line-height: 1.18 !important;
   }
   .app-surface h3 {
-    font-size: 1.28rem !important;
-    line-height: 1.3 !important;
+    font-size: 1.08rem !important;
+    line-height: 1.22 !important;
   }
   .app-surface h4 {
-    font-size: 1.05rem !important;
-    line-height: 1.35 !important;
+    font-size: 0.95rem !important;
+    line-height: 1.28 !important;
   }
 
   /* Scale font utility sizes for a comfortable and professional look */
   .app-surface .text-xs { font-size: 11px !important; }
-  .app-surface .text-sm { font-size: 13px !important; }
-  .app-surface .text-base { font-size: 14.5px !important; }
-  .app-surface .text-lg { font-size: 16.5px !important; }
-  .app-surface .text-xl { font-size: 19px !important; }
-  .app-surface .text-2xl { font-size: 22px !important; }
-  .app-surface .text-3xl { font-size: 26px !important; }
-  .app-surface .text-4xl { font-size: 32px !important; }
+  .app-surface .text-sm { font-size: 12px !important; }
+  .app-surface .text-base { font-size: 13.25px !important; }
+  .app-surface .text-lg { font-size: 15px !important; }
+  .app-surface .text-xl { font-size: 17px !important; }
+  .app-surface .text-2xl { font-size: 20px !important; }
+  .app-surface .text-3xl { font-size: 23px !important; }
+  .app-surface .text-4xl { font-size: 28px !important; }
 
   /* Spacing Scale - Open, spacious, and comfortable (both mobile and desktop) */
-  .app-surface .p-10, .app-surface .p-8 { padding: 2rem !important; }     /* Generous breathing room */
-  .app-surface .p-6 { padding: 1.5rem !important; }                       /* Standard card padding (24px) */
-  .app-surface .p-5 { padding: 1.25rem !important; }                      /* Comfortable secondary padding (20px) */
-  .app-surface .p-4 { padding: 1rem !important; }                         /* Structured panel padding (16px) */
-  .app-surface .p-3 { padding: 0.75rem !important; }                      /* Structured compact padding (12px) */
+  .app-surface .p-10, .app-surface .p-8 { padding: 1.35rem !important; }
+  .app-surface .p-6 { padding: 1rem !important; }
+  .app-surface .p-5 { padding: 0.9rem !important; }
+  .app-surface .p-4 { padding: 0.75rem !important; }
+  .app-surface .p-3 { padding: 0.6rem !important; }
 
-  .app-surface .px-10, .app-surface .px-8 { padding-left: 2rem !important; padding-right: 2rem !important; }
-  .app-surface .px-6 { padding-left: 1.5rem !important; padding-right: 1.5rem !important; }
-  .app-surface .px-5 { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
-  .app-surface .px-4 { padding-left: 1rem !important; padding-right: 1rem !important; }
-  .app-surface .px-3 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+  .app-surface .px-10, .app-surface .px-8 { padding-left: 1.35rem !important; padding-right: 1.35rem !important; }
+  .app-surface .px-6 { padding-left: 1rem !important; padding-right: 1rem !important; }
+  .app-surface .px-5 { padding-left: 0.9rem !important; padding-right: 0.9rem !important; }
+  .app-surface .px-4 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+  .app-surface .px-3 { padding-left: 0.6rem !important; padding-right: 0.6rem !important; }
 
-  .app-surface .py-10, .app-surface .py-8 { padding-top: 2rem !important; padding-bottom: 2rem !important; }
-  .app-surface .py-6 { padding-top: 1.5rem !important; padding-bottom: 1.5rem !important; }
-  .app-surface .py-5 { padding-top: 1.25rem !important; padding-bottom: 1.25rem !important; }
-  .app-surface .py-4 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
-  .app-surface .py-3 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+  .app-surface .py-10, .app-surface .py-8 { padding-top: 1.35rem !important; padding-bottom: 1.35rem !important; }
+  .app-surface .py-6 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+  .app-surface .py-5 { padding-top: 0.9rem !important; padding-bottom: 0.9rem !important; }
+  .app-surface .py-4 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+  .app-surface .py-3 { padding-top: 0.6rem !important; padding-bottom: 0.6rem !important; }
 
-  .app-surface .pt-10, .app-surface .pt-8 { padding-top: 2rem !important; }
-  .app-surface .pt-6 { padding-top: 1.5rem !important; }
-  .app-surface .pt-5 { padding-top: 1.25rem !important; }
-  .app-surface .pt-4 { padding-top: 1rem !important; }
+  .app-surface .pt-10, .app-surface .pt-8 { padding-top: 1.35rem !important; }
+  .app-surface .pt-6 { padding-top: 1rem !important; }
+  .app-surface .pt-5 { padding-top: 0.9rem !important; }
+  .app-surface .pt-4 { padding-top: 0.75rem !important; }
 
-  .app-surface .pb-10, .app-surface .pb-8 { padding-bottom: 2rem !important; }
-  .app-surface .pb-6 { padding-bottom: 1.5rem !important; }
-  .app-surface .pb-5 { padding-bottom: 1.25rem !important; }
-  .app-surface .pb-4 { padding-bottom: 1rem !important; }
+  .app-surface .pb-10, .app-surface .pb-8 { padding-bottom: 1.35rem !important; }
+  .app-surface .pb-6 { padding-bottom: 1rem !important; }
+  .app-surface .pb-5 { padding-bottom: 0.9rem !important; }
+  .app-surface .pb-4 { padding-bottom: 0.75rem !important; }
 
   /* Gaps */
-  .app-surface .gap-10, .app-surface .gap-8 { gap: 1.75rem !important; }
-  .app-surface .gap-6 { gap: 1.5rem !important; }
-  .app-surface .gap-5 { gap: 1.25rem !important; }
-  .app-surface .gap-4 { gap: 1rem !important; }
-  .app-surface .gap-3 { gap: 0.75rem !important; }
+  .app-surface .gap-10, .app-surface .gap-8 { gap: 1.2rem !important; }
+  .app-surface .gap-6 { gap: 0.95rem !important; }
+  .app-surface .gap-5 { gap: 0.8rem !important; }
+  .app-surface .gap-4 { gap: 0.7rem !important; }
+  .app-surface .gap-3 { gap: 0.55rem !important; }
 
   /* Vertical List Spacing (space-y) */
-  .app-surface .space-y-8 > * + * { margin-top: 1.75rem !important; }
-  .app-surface .space-y-6 > * + * { margin-top: 1.5rem !important; }
-  .app-surface .space-y-5 > * + * { margin-top: 1.25rem !important; }
-  .app-surface .space-y-4 > * + * { margin-top: 1rem !important; }
-  .app-surface .space-y-3 > * + * { margin-top: 0.75rem !important; }
+  .app-surface .space-y-8 > * + * { margin-top: 1.2rem !important; }
+  .app-surface .space-y-6 > * + * { margin-top: 0.95rem !important; }
+  .app-surface .space-y-5 > * + * { margin-top: 0.8rem !important; }
+  .app-surface .space-y-4 > * + * { margin-top: 0.7rem !important; }
+  .app-surface .space-y-3 > * + * { margin-top: 0.55rem !important; }
 
-  .app-surface .space-x-4 > * + * { margin-left: 1rem !important; }
-  .app-surface .space-x-3 > * + * { margin-left: 0.75rem !important; }
+  .app-surface .space-x-4 > * + * { margin-left: 0.7rem !important; }
+  .app-surface .space-x-3 > * + * { margin-left: 0.55rem !important; }
 
   /* Margins */
-  .app-surface .mt-8 { margin-top: 1.75rem !important; }
-  .app-surface .mt-6 { margin-top: 1.5rem !important; }
-  .app-surface .mt-5 { margin-top: 1.25rem !important; }
-  .app-surface .mt-4 { margin-top: 1rem !important; }
-  .app-surface .mt-3 { margin-top: 0.75rem !important; }
+  .app-surface .mt-8 { margin-top: 1.2rem !important; }
+  .app-surface .mt-6 { margin-top: 0.95rem !important; }
+  .app-surface .mt-5 { margin-top: 0.8rem !important; }
+  .app-surface .mt-4 { margin-top: 0.7rem !important; }
+  .app-surface .mt-3 { margin-top: 0.55rem !important; }
 
-  .app-surface .mb-8 { margin-bottom: 1.75rem !important; }
-  .app-surface .mb-6 { margin-bottom: 1.5rem !important; }
-  .app-surface .mb-5 { margin-bottom: 1.25rem !important; }
-  .app-surface .mb-4 { margin-bottom: 1rem !important; }
-  .app-surface .mb-3 { margin-bottom: 0.75rem !important; }
+  .app-surface .mb-8 { margin-bottom: 1.2rem !important; }
+  .app-surface .mb-6 { margin-bottom: 0.95rem !important; }
+  .app-surface .mb-5 { margin-bottom: 0.8rem !important; }
+  .app-surface .mb-4 { margin-bottom: 0.7rem !important; }
+  .app-surface .mb-3 { margin-bottom: 0.55rem !important; }
 
 
   h1, h2, h3, h4, h5, h6 {
@@ -724,6 +726,10 @@
     0 0 32px rgba(107, 43, 153, 0.18);
 }
 
+@utility animate-spin-slow {
+  animation: spin 3s linear infinite;
+}
+
 @utility scanline {
   @apply pointer-events-none fixed inset-0 z-[100] overflow-hidden;
   background:
@@ -828,26 +834,26 @@
  * consistent warm tone — no white-vs-purple drift. */
 .glass {
   background:
-    linear-gradient(180deg, rgba(246, 241, 232, 0.85), rgba(244, 238, 228, 0.68)),
-    rgba(239, 233, 220, 0.62);
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  border: 1px solid rgba(139, 63, 214, 0.12);
+    linear-gradient(180deg, rgba(250, 247, 240, 0.78), rgba(238, 231, 218, 0.62)),
+    rgba(245, 239, 229, 0.58);
+  backdrop-filter: blur(14px) saturate(135%);
+  -webkit-backdrop-filter: blur(14px) saturate(135%);
+  border: 1px solid rgba(26, 22, 20, 0.085);
   box-shadow: 
     0 1px 0 rgba(255, 255, 255, 0.90) inset,
-    0 4px 20px -4px rgba(139, 63, 214, 0.04);
+    0 4px 18px -6px rgba(34, 30, 25, 0.08);
 }
 
 .glass-strong {
   background:
-    linear-gradient(180deg, rgba(247, 242, 234, 0.96), rgba(245, 240, 230, 0.88)),
-    rgba(239, 233, 220, 0.92);
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  border: 1px solid rgba(139, 63, 214, 0.18);
+    linear-gradient(180deg, rgba(250, 247, 241, 0.94), rgba(239, 232, 219, 0.86)),
+    rgba(245, 239, 229, 0.88);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(26, 22, 20, 0.10);
   box-shadow: 
     0 1px 0 rgba(255, 255, 255, 0.95) inset,
-    0 8px 32px -8px rgba(139, 63, 214, 0.08);
+    0 10px 30px -12px rgba(34, 30, 25, 0.11);
 }
 
 /* Reduced motion: kill the GPU-expensive backdrop blur entirely. The
@@ -1269,6 +1275,141 @@
   font-variant-numeric: tabular-nums;
 }
 
+.app-field-label {
+  display: block;
+  margin: 0 0 0.35rem 0.0625rem;
+  font-size: 0.625rem;
+  line-height: 1.2;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-ink) 62%, transparent);
+}
+
+.app-form-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.app-input-soft,
+.app-surface input:not([type="color"]),
+.app-surface textarea,
+.app-surface select {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.46), rgba(255,255,255,0.28)),
+    rgba(239, 233, 220, 0.38) !important;
+  border-color: rgba(26, 22, 20, 0.13) !important;
+  color: var(--color-ink);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.72) inset,
+    0 8px 20px -18px rgba(26,22,20,0.35) !important;
+}
+
+.app-input-soft:focus,
+.app-surface input:not([type="color"]):focus,
+.app-surface textarea:focus,
+.app-surface select:focus {
+  background: rgba(255,255,255,0.58) !important;
+  border-color: color-mix(in srgb, var(--color-brand) 38%, rgba(26,22,20,0.12)) !important;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-brand) 18%, transparent),
+    0 10px 24px -18px color-mix(in srgb, var(--color-brand) 45%, transparent) !important;
+}
+
+.client-panel,
+.preview-panel {
+  border-color: rgba(26,22,20,0.075) !important;
+  background:
+    linear-gradient(180deg, rgba(250,247,241,0.80), rgba(241,235,224,0.58)),
+    rgba(245,239,229,0.64) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.78) inset,
+    0 20px 50px -34px rgba(26,22,20,0.32);
+}
+
+.brand-color-swatch {
+  border-color: rgba(26,22,20,0.12) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.72) inset,
+    0 8px 18px -14px rgba(26,22,20,0.42) !important;
+}
+
+.brand-preview-card {
+  border: 1px solid rgba(26,22,20,0.085);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.36), rgba(239,233,220,0.68)),
+    var(--color-paper);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.76) inset,
+    0 14px 34px -26px rgba(26,22,20,0.38);
+}
+
+.app-soft-divider {
+  border-color: rgba(26,22,20,0.10) !important;
+}
+
+.settings-tab-strip {
+  border-color: rgba(26,22,20,0.075) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.72) inset,
+    0 14px 34px -28px rgba(26,22,20,0.36);
+}
+
+.settings-tab-active {
+  color: color-mix(in srgb, var(--color-brand-deep) 88%, var(--color-ink)) !important;
+}
+
+.settings-tab-active-pill {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-brand) 13%, white), color-mix(in srgb, var(--color-brand) 9%, var(--color-paper)));
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.64) inset,
+    0 8px 20px -18px color-mix(in srgb, var(--color-brand) 56%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--color-brand) 14%, transparent) inset;
+}
+
+.app-tab-strip {
+  border-color: rgba(26,22,20,0.075) !important;
+}
+
+.app-tab-active {
+  color: color-mix(in srgb, var(--color-brand-deep) 88%, var(--color-ink)) !important;
+}
+
+.app-tab-active-bg {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-brand) 13%, white), color-mix(in srgb, var(--color-brand) 9%, var(--color-paper)));
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.64) inset,
+    0 8px 20px -18px color-mix(in srgb, var(--color-brand) 54%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--color-brand) 13%, transparent) inset;
+  will-change: transform, background-color;
+}
+
+.app-tab-active-badge {
+  background: color-mix(in srgb, var(--color-brand) 14%, white);
+  color: color-mix(in srgb, var(--color-brand-deep) 88%, var(--color-ink));
+}
+
+.app-primary-action {
+  min-height: 2.55rem;
+  padding: 0.75rem 1.25rem !important;
+  font-size: 0.6875rem !important;
+  font-weight: 700;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase;
+  color: #fff !important;
+  background: linear-gradient(180deg, var(--color-brand), var(--color-brand-deep)) !important;
+  border-color: rgba(255,255,255,0.22) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.24) inset,
+    0 14px 28px -16px color-mix(in srgb, var(--color-brand) 70%, transparent) !important;
+}
+
 /* Force light color scheme for native form controls */
 input[type="email"],
 input[type="password"],
@@ -1596,6 +1737,52 @@ select:focus {
   -webkit-backdrop-filter: blur(12px) saturate(180%);
 }
 
+.workspace-stage {
+  position: relative;
+}
+
+.workspace-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0.25rem 0.35rem 0.35rem;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(252, 249, 243, 0.76), rgba(244, 237, 226, 0.46)),
+    rgba(247, 242, 233, 0.36);
+  border: 1px solid rgba(26, 22, 20, 0.07);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.78) inset,
+    0 30px 90px -42px rgba(26, 22, 20, 0.24);
+  z-index: 0;
+}
+
+.workspace-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0.25rem 0.35rem 0.35rem;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(139,63,214,0.08), rgba(139,63,214,0) 18%, rgba(37,84,74,0) 78%, rgba(37,84,74,0.06)),
+    linear-gradient(180deg, rgba(255,255,255,0.32), transparent 18%);
+  mix-blend-mode: normal;
+  z-index: 0;
+}
+
+.workspace-stage > .app-surface {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 767px) {
+  .workspace-stage::before,
+  .workspace-stage::after {
+    inset: 0;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+  }
+}
+
 /* Fluid type — zero-breakpoint scaling for marketing + console heroes. */
 .type-fluid-hero {
   font-size: clamp(1.5rem, 1.1rem + 2.2vw, 2.75rem);
@@ -1795,7 +1982,7 @@ select:focus {
 
 @media (min-width: 1024px) {
   .mobile-page-canvas {
-    padding-top: 0.25rem;
+    padding-top: 0.125rem;
   }
 }
 
@@ -1845,6 +2032,25 @@ select:focus {
     padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
     min-height: 0;
     flex: 1 1 auto;
+  }
+
+  .workspace-stage {
+    padding-left: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+  }
+
+  .app-surface {
+    font-size: 13px !important;
+    line-height: 1.42 !important;
+  }
+
+  .app-surface h1 {
+    font-size: 1.26rem !important;
+  }
+
+  .app-surface h2 {
+    font-size: 1.12rem !important;
   }
 
   .mobile-page-canvas > * {

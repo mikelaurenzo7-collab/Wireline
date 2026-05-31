@@ -76,7 +76,7 @@ export default function SettingsTabSwitcher() {
       role="tablist"
       aria-label="Settings sub-navigation"
     >
-      <div className="flex items-center gap-0.5 p-0.5 glass border border-black/8 max-w-full overflow-x-auto scrollbar-hide">
+      <div className="settings-tab-strip flex items-center gap-0.5 p-0.5 glass border border-black/8 max-w-full overflow-x-auto scrollbar-hide">
         {TAB_GROUPS.map((group, gi) => (
           <React.Fragment key={gi}>
             {gi > 0 && (
@@ -94,15 +94,15 @@ export default function SettingsTabSwitcher() {
                   role="tab"
                   aria-selected={active}
                   className={cn(
-                    "relative shrink-0 inline-flex min-h-10 items-center gap-1.5 px-3 py-1.5 transition-colors text-[11px] uppercase tracking-[0.1em] font-medium whitespace-nowrap",
-                    active ? "text-on-brand" : "text-muted hover:text-ink hover:bg-black/5",
+                    "relative shrink-0 inline-flex min-h-9 items-center gap-1.5 px-3 py-1.5 transition-colors text-[10.5px] uppercase tracking-[0.12em] font-semibold whitespace-nowrap",
+                    active ? "settings-tab-active" : "text-muted hover:text-ink hover:bg-black/4",
                   )}
                 >
                   {active && (
                     <motion.span
                       layoutId="settings-hub-active-pill"
                       aria-hidden="true"
-                      className="absolute inset-0 pointer-events-none bg-brand shadow-[0_2px_8px_-4px_rgba(79,30,123,0.5)]"
+                      className="settings-tab-active-pill absolute inset-0 pointer-events-none"
                       transition={{ type: "spring", stiffness: 380, damping: 32 }}
                     />
                   )}

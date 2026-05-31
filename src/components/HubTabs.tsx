@@ -40,7 +40,7 @@ export default function HubTabs({ tabs, label, className, layoutIdPrefix }: HubT
         className,
       )}
     >
-      <div className="flex items-center gap-0.5 p-0.5 glass border border-black/8 shadow-[0_1px_0_rgba(255,255,255,0.5)_inset]">
+      <div className="app-tab-strip flex items-center gap-0.5 p-0.5 glass border border-black/8">
         {tabs.map((t) => {
           const Icon = t.icon;
           const active = pathname === t.path || pathname.startsWith(`${t.path}/`);
@@ -51,14 +51,14 @@ export default function HubTabs({ tabs, label, className, layoutIdPrefix }: HubT
               aria-current={active ? "page" : undefined}
               className={cn(
                 "group relative shrink-0 inline-flex min-h-10 items-center gap-1.5 px-3 py-1.5 transition-colors text-[11px] uppercase tracking-[0.1em] font-medium",
-                active ? "text-on-brand" : "text-muted hover:text-ink hover:bg-ink/[0.04]",
+                active ? "app-tab-active" : "text-muted hover:text-ink hover:bg-black/4",
               )}
             >
               {active && (
                 <motion.span
                   layoutId={pillLayoutId}
                   aria-hidden="true"
-                  className="absolute inset-0 pointer-events-none bg-gradient-to-b from-[#8B3FD6] to-[#6B2B99] shadow-[0_3px_12px_-5px_rgba(139,63,214,0.5)] border-t border-white/20 border-b border-black/10"
+                  className="app-tab-active-bg absolute inset-0"
                   transition={{ type: "spring", stiffness: 380, damping: 32 }}
                 />
               )}

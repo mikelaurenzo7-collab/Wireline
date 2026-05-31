@@ -228,7 +228,7 @@ export default function AppShell() {
   const pageCtx = getPageContext(location.pathname, location.search);
 
   return (
-    <div className="flex flex-col min-h-dvh text-ink font-sans overflow-hidden relative">
+    <div className="client-console flex flex-col min-h-dvh text-ink font-sans overflow-hidden relative">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-md focus:bg-primary focus:text-primary-foreground focus:text-sm focus:font-medium focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary/40"
@@ -293,21 +293,21 @@ export default function AppShell() {
         <TrialBanner />
 
         {/* Clean page header — replaces DesktopContextBar */}
-        <div className="hidden lg:block shrink-0 bg-background/40 backdrop-blur-md px-8 py-3.5 relative overflow-hidden">
+        <div className="hidden lg:block shrink-0 bg-background/35 backdrop-blur-md px-6 py-2.5 relative overflow-hidden">
           {/* Subtle glowing radial aura behind title */}
           <div
             aria-hidden="true"
-            className="absolute left-8 top-1/2 -translate-y-1/2 w-48 h-10 pointer-events-none opacity-20 dark:opacity-30 blur-2xl"
+            className="absolute left-6 top-1/2 -translate-y-1/2 w-40 h-8 pointer-events-none opacity-16 dark:opacity-24 blur-xl"
             style={{
               background: "radial-gradient(circle, var(--color-brand) 0%, transparent 70%)",
             }}
             data-circular
           />
           <div className="flex items-baseline justify-between gap-4 relative z-10">
-            <div className="flex items-baseline gap-3 min-w-0">
+            <div className="flex items-baseline gap-2.5 min-w-0">
               {pageCtx.eyebrow && (
                 <>
-                  <span className="text-[9.5px] font-mono uppercase tracking-[0.25em] text-brand/70">
+                  <span className="text-[9px] font-mono uppercase tracking-[0.22em] text-brand/70">
                     {pageCtx.eyebrow}
                   </span>
                   <span aria-hidden="true" className="text-brand/30 text-xs">
@@ -315,11 +315,11 @@ export default function AppShell() {
                   </span>
                 </>
               )}
-              <h1 className="font-display italic text-2xl leading-none text-foreground tracking-tight">
+              <h1 className="font-display italic text-xl leading-none text-foreground tracking-tight">
                 {pageCtx.title}
               </h1>
               {pageCtx.subtitle && (
-                <span className="hidden xl:inline text-xs text-muted-foreground/80 font-sans font-normal ml-2">
+                <span className="hidden xl:inline text-[11px] text-muted-foreground/80 font-sans font-normal ml-1">
                   {pageCtx.subtitle}
                 </span>
               )}
@@ -337,8 +337,8 @@ export default function AppShell() {
         </div>
 
         <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
-          <div className="flex-1 overflow-hidden relative z-10 min-h-0">
-            <div className="app-surface max-w-[1600px] mx-auto px-3 md:px-4 lg:px-5 pt-2 md:pt-4 pb-0 md:pb-4 flex flex-col h-full min-h-0 mobile-page-canvas">
+          <div className="workspace-stage flex-1 overflow-hidden relative z-10 min-h-0 px-2 pb-2 md:px-3 md:pb-3 lg:px-4 lg:pb-4">
+            <div className="app-surface max-w-[1840px] mx-auto px-2.5 md:px-3 lg:px-4 pt-1.5 md:pt-2.5 pb-0 md:pb-3 flex flex-col h-full min-h-0 mobile-page-canvas">
               <ErrorBoundary key={location.pathname}>
                 <AppRoutes />
               </ErrorBoundary>

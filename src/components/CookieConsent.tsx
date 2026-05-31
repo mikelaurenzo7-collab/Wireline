@@ -14,7 +14,9 @@ export default function CookieConsent() {
   useEffect(() => {
     // Only show if not already acknowledged
     if (!localStorage.getItem(STORAGE_KEY)) {
-      setHasSession(!!localStorage.getItem("wireline_session"));
+      const sessionPresent = !!localStorage.getItem("wireline_session");
+      setHasSession(sessionPresent);
+      if (sessionPresent) return;
       // Small delay so it doesn't compete with page load
       const t = setTimeout(() => setVisible(true), 1200);
       return () => clearTimeout(t);

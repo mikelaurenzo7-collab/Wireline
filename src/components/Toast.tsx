@@ -16,7 +16,7 @@ const META = {
   error: { icon: XCircle, color: "#f43f5e", border: "border-rose-500/30", bg: "bg-rose-500/10" },
   warning: {
     icon: AlertTriangle,
-    color: "#C4B5A0",
+    color: "#8B3FD6",
     border: "border-amber-500/30",
     bg: "bg-amber-500/10",
   },

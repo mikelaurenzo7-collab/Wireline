@@ -82,7 +82,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                   <ShadButton
                     disabled={isInviting || !inviteEmail}
                     variant="outline"
-                    className="brutal-btn !py-2 !px-6 flex items-center gap-2 disabled:opacity-50 border-input h-auto"
+                    className="app-primary-action flex items-center gap-2 disabled:opacity-50"
                     onClick={handleInvite}
                   >
                     {isInviting ? (

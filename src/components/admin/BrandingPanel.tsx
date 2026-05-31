@@ -13,16 +13,14 @@ interface BrandingPanelProps {
 
 export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: BrandingPanelProps) {
   return (
-    <div className="flex flex-col gap-6">
-      <div className="p-6 rounded-2xl glass border border-input">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25 flex items-center justify-center shrink-0">
+    <div className="flex flex-col gap-5">
+      <div className="client-panel p-5 md:p-6 rounded-2xl glass border border-input">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-8 h-8 rounded-xl bg-brand/10 border border-brand/18 text-brand shadow-sm shadow-brand/10 flex items-center justify-center shrink-0">
             <Bot className="w-4 h-4" />
           </div>
           <div className="min-w-0">
-            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
-              Appearance
-            </p>
+            <p className="app-form-eyebrow text-brand/70">Appearance</p>
             <h3 className="font-display italic text-lg text-ink leading-tight">Brand Identity</h3>
           </div>
         </div>
@@ -30,43 +28,37 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div>
-              <label className="block text-[9px] uppercase tracking-[0.2em] text-muted mb-1.5 ml-1">
-                Platform Name
-              </label>
+              <label className="app-field-label">Platform Name</label>
               <Input
                 type="text"
                 placeholder="Wireline OS"
-                className="bg-black/5 border-input focus-visible:ring-brand/40 rounded-xl py-3 h-auto"
+                className="app-input-soft py-3 h-auto"
                 value={settings.brand_name || ""}
                 onChange={(e) => onUpdate({ ...settings, brand_name: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-[9px] uppercase tracking-[0.2em] text-muted mb-1.5 ml-1">
-                Brand Logo URL
-              </label>
+              <label className="app-field-label">Brand Logo URL</label>
               <Input
                 type="text"
                 placeholder="https://assets.yoursite.com/logo.png"
-                className="bg-black/5 border-input focus-visible:ring-brand/40 rounded-xl py-3 h-auto"
+                className="app-input-soft py-3 h-auto"
                 value={settings.brand_logo_url || ""}
                 onChange={(e) => onUpdate({ ...settings, brand_logo_url: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-[9px] uppercase tracking-[0.2em] text-muted mb-1.5 ml-1">
-                Primary Color
-              </label>
-              <div className="flex gap-3">
+              <label className="app-field-label">Primary Color</label>
+              <div className="flex gap-2.5">
                 <Input
                   type="color"
-                  className="w-12 h-12 rounded-xl bg-transparent border-input cursor-pointer p-0"
+                  className="brand-color-swatch w-11 h-11 rounded-xl bg-transparent border-input cursor-pointer p-0"
                   value={settings.primary_color || "#8B3FD6"}
                   onChange={(e) => onUpdate({ ...settings, primary_color: e.target.value })}
                 />
                 <Input
                   type="text"
-                  className="flex-1 bg-black/5 border-input focus-visible:ring-brand/40 rounded-xl py-3 h-auto font-mono"
+                  className="app-input-soft flex-1 py-3 h-auto font-mono"
                   value={settings.primary_color || "#8B3FD6"}
                   onChange={(e) => onUpdate({ ...settings, primary_color: e.target.value })}
                 />
@@ -74,9 +66,9 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center p-6 border border-input bg-white/5 rounded-2xl">
-            <p className="text-[9px] uppercase tracking-[0.32em] text-muted/70 mb-6">Preview</p>
-            <div className="w-full p-6 rounded-3xl brutal-border bg-paper relative overflow-hidden group">
+          <div className="preview-panel flex flex-col items-center justify-center p-5 border border-input bg-white/25 rounded-2xl">
+            <p className="app-form-eyebrow text-muted/70 mb-5">Preview</p>
+            <div className="brand-preview-card w-full p-5 rounded-3xl bg-paper relative overflow-hidden group">
               <div
                 className="absolute inset-0 opacity-10 pointer-events-none"
                 style={{
@@ -110,7 +102,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
               </div>
               <div className="mt-6 flex justify-end">
                 <div
-                  className="px-4 py-2 rounded-full text-[8px] uppercase tracking-widest font-bold text-white"
+                  className="px-3.5 py-2 rounded-full text-[8px] uppercase tracking-[0.18em] font-bold text-white"
                   style={{ backgroundColor: settings.primary_color }}
                 >
                   Action
@@ -121,12 +113,12 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
         </div>
 
         {onSave && (
-          <div className="mt-8 pt-6 border-t border-input">
+          <div className="app-soft-divider mt-7 pt-5 border-t">
             <ShadButton
               onClick={onSave}
               disabled={isSaving}
               variant="outline"
-              className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn w-full md:w-auto !px-8 !py-3 !text-[10px] !tracking-[0.4em] flex items-center justify-center gap-2 border-input"
+              className="disabled:opacity-50 disabled:cursor-not-allowed app-primary-action w-full md:w-auto flex items-center justify-center gap-2 border-input"
             >
               {isSaving ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

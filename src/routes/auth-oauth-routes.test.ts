@@ -17,15 +17,69 @@ import type { Express } from "express";
 import http from "http";
 import type { AddressInfo } from "net";
 
+const mocks = vi.hoisted(() => ({
+  drizzle: {
+    select: vi.fn(),
+    insert: vi.fn(),
+    delete: vi.fn(),
+    execute: vi.fn(),
+  },
+  googleUserInfoGet: vi.fn(),
+  log: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+  startTrialForUser: vi.fn(),
+}));
+
+vi.mock("googleapis", () => {
+  class OAuth2Mock {
+    private clientId: string;
+    private redirectUri: string;
+
+    constructor(clientId: string, _clientSecret: string, redirectUri: string) {
+      this.clientId = clientId;
+      this.redirectUri = redirectUri;
+    }
+
+    generateAuthUrl(opts: { scope?: string[]; state?: string; prompt?: string }) {
+      const params = new URLSearchParams({
+        client_id: this.clientId,
+        redirect_uri: this.redirectUri,
+        state: opts.state || "",
+        scope: (opts.scope || []).join(" "),
+      });
+      if (opts.prompt) params.set("prompt", opts.prompt);
+      return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+    }
+
+    async getToken() {
+      return { tokens: { access_token: "provider-access-token" } };
+    }
+
+    setCredentials() {
+      return undefined;
+    }
+  }
+
+  return {
+    google: {
+      auth: { OAuth2: OAuth2Mock },
+      oauth2: () => ({ userinfo: { get: mocks.googleUserInfoGet } }),
+    },
+  };
+});
+
 // Mock server-context (drizzle + log) so the route module loads without
 // a real database connection.
 vi.mock("../lib/server-context", () => ({
-  drizzle: {},
-  log: {
-    info: () => undefined,
-    warn: () => undefined,
-    error: () => undefined,
-  },
+  drizzle: mocks.drizzle,
+  log: mocks.log,
+}));
+
+vi.mock("../lib/trial-gate", () => ({
+  startTrialForUser: mocks.startTrialForUser,
 }));
 
 // Mock auth-service so we don't pull in JWT secrets at module-load.
@@ -45,6 +99,7 @@ async function buildApp(): Promise<Express> {
   vi.resetModules();
   const mod = await import("./auth-oauth-routes");
   const app = express();
+  app.use(express.json());
   app.use(mod.default);
   return app;
 }
@@ -68,6 +123,12 @@ describe("OAuth /url endpoints", () => {
   const originalEnv = { ...process.env };
 
   beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.googleUserInfoGet.mockResolvedValue({
+      data: { email: "oauth-user@example.test", name: "OAuth User" },
+    });
+    mocks.startTrialForUser.mockResolvedValue(undefined);
+    mocks.drizzle.delete.mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) });
     // Reset provider env vars before each test so they don't leak.
     delete process.env.GOOGLE_CLIENT_ID;
     delete process.env.GOOGLE_CLIENT_SECRET;
@@ -177,6 +238,64 @@ describe("OAuth /url endpoints", () => {
         const body = await res.json();
         expect(body.url).toMatch(/^https:\/\/api\.login\.yahoo\.com\/oauth2\/request_auth/);
         expect(body.url).toContain("client_id=yahoo-test-client-id");
+      } finally {
+        await closeServer(server);
+      }
+    }, 30_000);
+  });
+
+  describe("callback session bridge", () => {
+    it("repairs a missing pending-code table before redirecting to the SPA", async () => {
+      process.env.APP_URL = "https://example.test";
+      process.env.GOOGLE_CLIENT_ID = "google-test-client-id";
+      process.env.GOOGLE_CLIENT_SECRET = "google-test-secret";
+
+      const userId = "af36620d-047e-4521-a726-8507d25444fd";
+      mocks.drizzle.select.mockReturnValue({
+        from: () => ({ where: () => ({ limit: vi.fn().mockResolvedValue([]) }) }),
+      });
+
+      const pendingValues = vi
+        .fn()
+        .mockRejectedValueOnce(
+          Object.assign(new Error('relation "wireline_oauth_pending_codes" does not exist'), {
+            code: "42P01",
+          }),
+        )
+        .mockResolvedValueOnce(undefined);
+
+      mocks.drizzle.insert
+        .mockImplementationOnce(() => ({
+          values: () => ({
+            returning: vi
+              .fn()
+              .mockResolvedValue([
+                { id: userId, email: "oauth-user@example.test", fullName: "OAuth User" },
+              ]),
+          }),
+        }))
+        .mockImplementation(() => ({ values: pendingValues }));
+      mocks.drizzle.execute.mockResolvedValue(undefined);
+
+      const app = await buildApp();
+      const { server, url } = await listen(app);
+      try {
+        const res = await fetch(
+          `${url}/api/auth/google/callback?code=provider-code&state=test-state`,
+          {
+            redirect: "manual",
+          },
+        );
+        expect(res.status).toBe(302);
+        const location = res.headers.get("location") || "";
+        expect(location).toMatch(/^https:\/\/example\.test\/auth\/oauth-complete\?code=/);
+        expect(location).not.toContain("Failed");
+        expect(mocks.drizzle.execute).toHaveBeenCalledTimes(2);
+        expect(pendingValues).toHaveBeenCalledTimes(2);
+        expect(mocks.log.warn).toHaveBeenCalledWith(
+          "auth oauth: pending-code schema missing; repairing before retry",
+          expect.objectContaining({ code: "42P01" }),
+        );
       } finally {
         await closeServer(server);
       }

@@ -115,8 +115,9 @@ export default function ProductTour() {
     if (!user) return;
     let cancelled = false;
     authFetch("/api/user-preferences")
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : null))
       .then((prefs) => {
+        if (!prefs) return;
         // Show the tour to brand-new users who have no preferences row yet
         // (tour_completed === undefined) AND to users who explicitly haven't
         // completed it (tour_completed === false). Only suppress when the
@@ -186,7 +187,7 @@ export default function ProductTour() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[910] bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[910] bg-paper/58 backdrop-blur-[2px]"
           />
         )}
       </AnimatePresence>
@@ -201,16 +202,16 @@ export default function ProductTour() {
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
           className={
             isCentered
-              ? "fixed z-[920] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm px-4"
+              ? "fixed z-[920] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[21rem] px-4"
               : "fixed z-[920] bottom-[max(1.5rem,env(safe-area-inset-bottom,0px))] inset-x-4 sm:inset-x-auto sm:right-6 sm:w-80"
           }
         >
           <div
-            className="glass-elevated rounded-2xl border p-5 shadow-2xl"
+            className="glass-elevated rounded-2xl border p-4 shadow-2xl"
             style={{
-              borderColor: "rgba(107, 43, 153 , 0.18)",
+              borderColor: "rgba(26, 22, 20, 0.10)",
               boxShadow:
-                "0 1px 0 rgba(255,255,255,0.9) inset, 0 24px 64px rgba(0,0,0,0.12), 0 0 0 1px rgba(107, 43, 153 ,0.06)",
+                "0 1px 0 rgba(255,255,255,0.9) inset, 0 22px 54px -24px rgba(26,22,20,0.32), 0 0 0 1px rgba(107, 43, 153 ,0.05)",
             }}
           >
             {/* Header row */}

@@ -303,7 +303,7 @@ export function CarrierPanel({
               onClick={onSaveSettings}
               disabled={isSaving}
               variant="outline"
-              className="brutal-btn !py-2.5 !px-5 !text-[11px] !tracking-[0.3em] disabled:opacity-50 border-input"
+              className="app-primary-action disabled:opacity-50"
             >
               {isSaving ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />

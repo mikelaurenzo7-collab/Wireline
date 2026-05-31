@@ -77,10 +77,10 @@ export default function OAuthComplete() {
       />
       <div className="flex flex-1 items-center justify-center px-4 py-10">
         <div
-          className="w-full max-w-sm rounded-2xl border border-black/8 bg-[#FAF8F5] p-8 text-center space-y-5"
+          className="w-full max-w-md border border-black/8 bg-[#FAF8F5]/92 p-7 sm:p-8 text-center space-y-5"
           style={{
             boxShadow:
-              "0 1px 0 rgba(255,255,255,0.9) inset, 0 20px 50px -24px rgba(107, 43, 153, 0.2)",
+              "0 1px 0 rgba(255,255,255,0.9) inset, 0 22px 56px -30px rgba(26, 22, 20, 0.28)",
           }}
         >
           {error ? (

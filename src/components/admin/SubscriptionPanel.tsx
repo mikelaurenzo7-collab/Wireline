@@ -121,7 +121,7 @@ export function SubscriptionPanel({
               onClick={onSaveSettings}
               disabled={isSaving}
               variant="outline"
-              className="brutal-btn w-full !py-2.5 !text-[11px] !tracking-[0.3em] disabled:opacity-50 border-input h-auto"
+              className="app-primary-action w-full disabled:opacity-50"
             >
               {isSaving ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />

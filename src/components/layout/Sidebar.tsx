@@ -36,8 +36,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/
 import { ScrollArea } from "../ui/shadcn/ScrollArea";
 
 const RAIL_COLLAPSED = 56;
-const RAIL_EXPANDED = 240;
-const AUTO_EXPAND_WIDTH = 1440;
+const RAIL_EXPANDED = 216;
+const AUTO_EXPAND_WIDTH = 1680;
 
 const GROUP_ACCENTS = NAV_GROUP_ACCENTS;
 

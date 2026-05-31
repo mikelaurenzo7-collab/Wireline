@@ -76,7 +76,7 @@ export default function EmptyState({
                     "px-4 py-2.5 rounded-full text-eyebrow tracking-[0.2em] transition-all",
                     action.primary
                       ? "brutal-btn !py-2"
-                      : "glass border border-white/10 text-muted hover:text-ink hover:border-brand/30",
+                      : "glass border border-black/10 text-muted hover:text-ink hover:border-brand/30",
                   )}
                 >
                   {action.label}
@@ -95,7 +95,7 @@ export default function EmptyState({
                     "px-4 py-2.5 rounded-full text-eyebrow tracking-[0.2em] transition-all",
                     action.primary
                       ? "brutal-btn !py-2"
-                      : "glass border border-white/10 text-muted hover:text-ink hover:border-brand/30",
+                      : "glass border border-black/10 text-muted hover:text-ink hover:border-brand/30",
                   )}
                 >
                   {action.label}
