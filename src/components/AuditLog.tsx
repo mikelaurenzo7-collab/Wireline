@@ -28,6 +28,7 @@ import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
 import { formatDateTime } from "../lib/safe-date";
 import type { AuditEvent, AuditSeverity } from "../types/audit";
+import { Input } from "./ui/shadcn/Input";
 
 interface AuditStats {
   total: number;
@@ -442,7 +443,7 @@ export default function AuditLog() {
           <div className="flex flex-col md:flex-row gap-3">
             <div className="flex-1 relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
-              <input
+              <Input
                 type="search"
                 aria-label="Search audit events"
                 placeholder="Search events..."

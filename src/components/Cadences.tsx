@@ -18,6 +18,7 @@ import { logFetchError } from "../lib/utils";
 import { useToast } from "../contexts/ToastContext";
 import { useApiError } from "../hooks/useApiError";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
+import { Input } from "./ui/shadcn/Input";
 
 type StepType = "call" | "sms" | "email";
 type Step = { type: StepType; delayHours: number; template?: string };
@@ -374,7 +375,7 @@ export default function Cadences() {
                 <label className="text-[10px] uppercase tracking-[0.32em] text-muted/80 mb-1.5 block">
                   Name
                 </label>
-                <input
+                <Input
                   value={draftName}
                   onChange={(e) => setDraftName(e.target.value)}
                   placeholder="e.g. Standard 3-touch"
@@ -385,7 +386,7 @@ export default function Cadences() {
                 <label className="text-[10px] uppercase tracking-[0.32em] text-muted/80 mb-1.5 block">
                   Description (optional)
                 </label>
-                <input
+                <Input
                   value={draftDescription}
                   onChange={(e) => setDraftDescription(e.target.value)}
                   placeholder="One-line summary"
@@ -427,7 +428,7 @@ export default function Cadences() {
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Clock className="w-3 h-3 text-muted/70" />
-                      <input
+                      <Input
                         type="number"
                         inputMode="numeric"
                         min={0}
@@ -438,7 +439,7 @@ export default function Cadences() {
                       <span className="text-[10px] text-muted/70">hours delay</span>
                     </div>
                     {s.type !== "call" && (
-                      <input
+                      <Input
                         value={s.template || ""}
                         onChange={(e) => updateStep(i, { template: e.target.value })}
                         placeholder={

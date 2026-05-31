@@ -131,6 +131,11 @@ barrel `index.ts`):
 - `Sheet`, `SheetTrigger`, `SheetContent`, `SheetHeader`, …
 - `DropdownMenu`, `DropdownMenuTrigger`, …
 - `Select`, `SelectTrigger`, `SelectContent`, `SelectItem`, `SelectValue`
+- `Checkbox` — styled native `<input type="checkbox">`; use anywhere you'd
+  reach for a tri-state-free boolean toggle that should look like a box,
+  not a `Switch` pill.
+- `Slider` — styled native `<input type="range">`; use anywhere you'd
+  reach for a numeric slider with a single thumb.
 - `Command`, `CommandInput`, `CommandList`, `CommandItem`, …
 - `Input`, `Switch`, `Badge`, `Alert`, `Progress`, `Skeleton`, `Avatar`,
   `Separator`, `Tooltip`, `ScrollArea`, `Accordion`

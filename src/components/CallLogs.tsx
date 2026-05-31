@@ -42,6 +42,7 @@ import EmptyState from "./EmptyState";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { useToast } from "../contexts/ToastContext";
 import type { CallLog } from "../types/api";
+import { Input } from "./ui/shadcn/Input";
 
 export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
   const { error: toastError } = useToast();
@@ -114,7 +115,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
     <div className="flex w-full flex-wrap items-center justify-end gap-1.5 sm:w-auto">
       <div className="relative min-w-0 flex-1 sm:flex-none">
         <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-        <input
+        <Input
           type="search"
           aria-label="Search calls"
           placeholder="Search signals…"

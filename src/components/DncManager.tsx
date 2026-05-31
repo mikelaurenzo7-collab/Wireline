@@ -223,7 +223,7 @@ export default function DncManager() {
               )}
               Refresh
             </button>
-            <input
+            <Input
               ref={fileRef}
               type="file"
               accept=".csv"
@@ -288,7 +288,7 @@ export default function DncManager() {
               actions={
                 <div className="relative">
                   <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-                  <input
+                  <Input
                     type="search"
                     aria-label="Search blocked numbers"
                     placeholder="Search numbers…"

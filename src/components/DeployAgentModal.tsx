@@ -6,6 +6,7 @@ import { X, Loader2, ArrowRight, User2, Users2, Play, Pause } from "lucide-react
 import { cn } from "../lib/utils";
 import { PREMIUM_VOICES, DEFAULT_VOICE_BY_GENDER } from "./FleetSettings";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
+import { Input } from "./ui/shadcn/Input";
 
 /**
  * Inline voice preview button — fetches /api/voices/:id/preview
@@ -292,7 +293,7 @@ export default function DeployAgentModal({
                   >
                     Agent name
                   </label>
-                  <input
+                  <Input
                     id="agent-name"
                     ref={nameInputRef}
                     type="text"

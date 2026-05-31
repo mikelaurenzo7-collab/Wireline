@@ -19,6 +19,7 @@ import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatDateTime } from "../lib/safe-date";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
+import { Input } from "./ui/shadcn/Input";
 
 interface IntakeKey {
   id: string;
@@ -198,7 +199,7 @@ export default function IntakeKeysManager() {
                 </button>
               </div>
               <div className="flex items-center gap-2">
-                <input
+                <Input
                   readOnly
                   value={
                     revealed ? justCreated.plaintext : "•".repeat(justCreated.plaintext.length)
@@ -239,7 +240,7 @@ export default function IntakeKeysManager() {
                     <span className="text-[10px] uppercase tracking-[0.3em] text-muted">
                       Key name
                     </span>
-                    <input
+                    <Input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="e.g. Webflow Demo Form"

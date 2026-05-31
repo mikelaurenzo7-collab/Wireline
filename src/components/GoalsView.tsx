@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Target, Plus, Pencil, Trash2, Check, X, Loader2 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
+import { Input } from "./ui/shadcn/Input";
 
 /* ──────────────────────────────────────────────────────────────────────────
    GoalsView — the Insights → Goals tab.
@@ -138,7 +139,7 @@ function GoalEditor({
         <span className="text-[9px] uppercase tracking-[0.22em] text-muted">
           Monthly target ({metric.unit})
         </span>
-        <input
+        <Input
           type="number"
           min={1}
           inputMode="numeric"
@@ -155,7 +156,7 @@ function GoalEditor({
 
       <label className="block">
         <span className="text-[9px] uppercase tracking-[0.22em] text-muted">Label (optional)</span>
-        <input
+        <Input
           type="text"
           value={label}
           maxLength={80}

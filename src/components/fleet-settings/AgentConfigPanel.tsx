@@ -43,6 +43,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/shadcn/Select";
+import { Input } from "../ui/shadcn/Input";
+import { Slider } from "../ui/shadcn/Slider";
 
 interface AgentConfigPanelProps {
   selectedAgent: any | null;
@@ -219,7 +221,7 @@ export default function AgentConfigPanel({
                     <div className="flex-1 w-full space-y-3">
                       <div className="flex items-center gap-2">
                         <span className="w-1 h-8 bg-brand rounded-full" />
-                        <input
+                        <Input
                           type="text"
                           value={selectedAgent.name}
                           onChange={(e) => updateAgentMeta({ name: e.target.value })}
@@ -383,7 +385,7 @@ export default function AgentConfigPanel({
                       <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
                         <LinkIcon className="w-2.5 h-2.5 text-brand" /> Knowledge URL
                       </label>
-                      <input
+                      <Input
                         type="url"
                         inputMode="url"
                         autoComplete="url"
@@ -397,7 +399,7 @@ export default function AgentConfigPanel({
                       <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
                         <Phone className="w-2.5 h-2.5 text-brand" /> Transfer phone
                       </label>
-                      <input
+                      <Input
                         type="tel"
                         inputMode="tel"
                         autoComplete="tel"
@@ -558,8 +560,7 @@ export default function AgentConfigPanel({
                                 {Number((selectedAgent as any).voice_speed ?? 1.0).toFixed(2)}×
                               </span>
                             </div>
-                            <input
-                              type="range"
+                            <Slider
                               min={0.7}
                               max={1.2}
                               step={0.05}
@@ -593,7 +594,7 @@ export default function AgentConfigPanel({
                               <Zap className="w-2.5 h-2.5 text-brand" /> Initial greeting
                             </label>
                           </div>
-                          <input
+                          <Input
                             type="text"
                             value={selectedAgent.first_message || ""}
                             onChange={(e) => updateAgentMeta({ first_message: e.target.value })}
@@ -681,7 +682,7 @@ export default function AgentConfigPanel({
                               <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
                                 Signature
                               </label>
-                              <input
+                              <Input
                                 type="text"
                                 value={selectedAgent.email_signature || ""}
                                 onChange={(e) =>
@@ -1043,7 +1044,7 @@ export default function AgentConfigPanel({
                         Add directive
                       </label>
                       <div className="flex gap-1.5">
-                        <input
+                        <Input
                           type="text"
                           value={newDirective}
                           onChange={(e) => setNewDirective(e.target.value)}
@@ -1167,7 +1168,7 @@ export default function AgentConfigPanel({
                         Add fact
                       </label>
                       <div className="flex gap-1.5">
-                        <input
+                        <Input
                           type="text"
                           value={newKnowledge}
                           onChange={(e) => setNewKnowledge(e.target.value)}

@@ -27,6 +27,7 @@
 import { useState } from "react";
 import { Sliders, RefreshCw, Info } from "lucide-react";
 import { cn } from "../lib/utils";
+import { Slider } from "./ui/shadcn/Slider";
 
 const DEFAULTS = {
   voice_stability: 0.5,
@@ -110,8 +111,7 @@ function SliderRow({
           {value.toFixed(2)}
         </span>
       </div>
-      <input
-        type="range"
+      <Slider
         min={0}
         max={1}
         step={0.05}

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Phone, MapPin, Search, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
+import { Input } from "./ui/shadcn/Input";
 
 interface AvailableNumber {
   phone_number: string;
@@ -208,7 +209,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="flex-1 relative">
             <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-            <input
+            <Input
               type="text"
               inputMode="numeric"
               maxLength={3}

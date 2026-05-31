@@ -3,6 +3,7 @@ import { useState } from "react";
 import { authFetch } from "../../../lib/api";
 import { cn } from "../../../lib/utils";
 import { FormShell, Field, TextArea, RunButton, ResultCard, ErrCard } from "../shared";
+import { Checkbox } from "../../ui/shadcn/Checkbox";
 
 export function CoachForm({
   callId,
@@ -58,8 +59,7 @@ export function CoachForm({
         </p>
       )}
       <label className="flex items-center gap-3 cursor-pointer text-sm text-ink/80">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={isLive}
           onChange={(e) => setIsLive(e.target.checked)}
           className="w-4 h-4 rounded border-black/20 bg-black/5 accent-brand"

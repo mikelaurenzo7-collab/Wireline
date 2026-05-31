@@ -42,6 +42,8 @@ import IntegrationActivityCard, {
   type IntegrationActivityCardProps,
 } from "./IntegrationActivityCard";
 import { Skeleton } from "./ui/shadcn/Skeleton";
+import { Checkbox } from "./ui/shadcn/Checkbox";
+import { Input } from "./ui/shadcn/Input";
 
 const AgentTrainingInline = lazy(() => import("./AgentTraining"));
 const AgentConnectorsInline = lazy(() => import("./AgentActionEngine"));
@@ -1066,7 +1068,7 @@ export default function AgentWorkspace({
         <div className="shrink-0 px-3 py-2.5 sm:py-2 border-t border-black/8 bg-paper/50">
           <div className="flex items-end gap-2 sm:gap-1.5">
             {/* Hidden file input — paperclip button triggers it */}
-            <input
+            <Input
               ref={fileInputRef}
               type="file"
               accept="application/pdf,.pdf"
@@ -1335,8 +1337,7 @@ function ProposalCard({
         <>
           {consent && (
             <label className="mt-2.5 flex items-start gap-2 text-[11px] text-muted leading-snug cursor-pointer">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={consent.checked}
                 onChange={(e) => consent.onChange(e.target.checked)}
                 className="mt-0.5 accent-brand"

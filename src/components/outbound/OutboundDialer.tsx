@@ -25,6 +25,7 @@ import CallbacksListExtracted from "./CallbacksList";
 import CreateCampaignModalExtracted from "./CreateCampaignModal";
 import DispatchTab from "./DispatchTab";
 import CampaignsTab from "./CampaignsTab";
+import { Input } from "../ui/shadcn/Input";
 
 export default function OutboundDialer({ embedded = false }: { embedded?: boolean }) {
   const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
@@ -86,8 +87,6 @@ export default function OutboundDialer({ embedded = false }: { embedded?: boolea
       console.error("Failed to load DNC entries for dialer check", e);
     }
   };
-
-
 
   useEffect(() => {
     fetchData();
@@ -195,7 +194,10 @@ export default function OutboundDialer({ embedded = false }: { embedded?: boolea
     }
     if (isNumberOnDncList(customerNumber, dncEntries)) {
       setDialError("Cannot dial: number is registered on your active Do-Not-Call (DNC) list.");
-      toastError("Blocked by DNC Policy", "This phone number is listed on your active Do-Not-Call list.");
+      toastError(
+        "Blocked by DNC Policy",
+        "This phone number is listed on your active Do-Not-Call list.",
+      );
       return;
     }
     setIsDialing(true);
@@ -343,7 +345,9 @@ export default function OutboundDialer({ embedded = false }: { embedded?: boolea
         }
 
         if (processedLeads.length === 0) {
-          setDialError(`All ${rawLeads.length} leads were scrubbed due to DNC matches or invalid formatting.`);
+          setDialError(
+            `All ${rawLeads.length} leads were scrubbed due to DNC matches or invalid formatting.`,
+          );
           toastError("Upload scrubbed", "All leads were filtered out by pre-flight compliance.");
           setIsUploading(false);
           return;
@@ -564,7 +568,7 @@ export default function OutboundDialer({ embedded = false }: { embedded?: boolea
           and campaign view) trigger it via fileInputRef, so it must live
           outside the Bulk-mode subtree. Hidden visually; click is fully
           synthetic. */}
-      <input
+      <Input
         type="file"
         accept=".csv"
         className="hidden"

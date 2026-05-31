@@ -4,6 +4,7 @@ import { Check, Plus, X } from "lucide-react";
 import { authFetch } from "../../../lib/api";
 import { FormShell, Field, TextArea, Select, RunButton, ResultCard, ErrCard } from "../shared";
 import type { AgentLite } from "../types";
+import { Checkbox } from "../../ui/shadcn/Checkbox";
 
 export function PersonaCloneForm({
   agents,
@@ -99,8 +100,7 @@ export function PersonaCloneForm({
       </Field>
       {agentId && (
         <label className="flex items-center gap-3 cursor-pointer text-sm text-ink/80">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={apply}
             onChange={(e) => setApply(e.target.checked)}
             className="w-4 h-4 rounded border-black/20 bg-black/5 accent-brand"

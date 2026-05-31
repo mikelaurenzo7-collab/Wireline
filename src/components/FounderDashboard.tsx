@@ -18,6 +18,7 @@ import { useToast } from "../contexts/ToastContext";
 import { useAuth } from "../contexts/AuthContext";
 import AgentWorkspace from "./AgentWorkspace";
 import ClientRouteViewport from "./layout/ClientRouteViewport";
+import { Input } from "./ui/shadcn/Input";
 
 /**
  * Founder's Dashboard — Mike's command surface for his staff of 6
@@ -321,7 +322,7 @@ export default function FounderDashboard() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <input
+              <Input
                 type="text"
                 value={broadcast}
                 onChange={(e) => setBroadcast(e.target.value)}

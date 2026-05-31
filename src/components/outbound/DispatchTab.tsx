@@ -29,6 +29,8 @@ import { ClaudeRecipeButton } from "../ClaudeRecipes";
 import { Panel } from "../PageShell";
 import EmptyState from "../EmptyState";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
+import { Checkbox } from "../ui/shadcn/Checkbox";
+import { Input } from "../ui/shadcn/Input";
 
 const DISPATCH_UNSET = "__unset__";
 
@@ -213,7 +215,7 @@ export default function DispatchTab({
                         <label className="app-section-title flex items-center gap-1.5">
                           <Phone className="w-2.5 h-2.5 text-brand" /> Phone number
                         </label>
-                        <input
+                        <Input
                           type="tel"
                           inputMode="tel"
                           autoComplete="tel"
@@ -245,7 +247,7 @@ export default function DispatchTab({
 
                       <div className="space-y-1.5">
                         <label className="app-section-title">Customer name</label>
-                        <input
+                        <Input
                           type="text"
                           value={customerName}
                           onChange={(e) => setCustomerName(e.target.value)}
@@ -266,8 +268,7 @@ export default function DispatchTab({
                       </div>
 
                       <label className="rounded-lg glass border border-brand/20 p-3 flex items-start gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={hasOutboundConsent}
                           onChange={(e) => setHasOutboundConsent(e.target.checked)}
                           className="mt-0.5 accent-brand"
@@ -386,8 +387,7 @@ export default function DispatchTab({
                       )}
 
                       <label className="rounded-lg glass border border-brand/20 p-3 flex items-start gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={hasOutboundConsent}
                           onChange={(e) => setHasOutboundConsent(e.target.checked)}
                           className="mt-0.5 accent-brand"

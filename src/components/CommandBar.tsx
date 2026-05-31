@@ -32,6 +32,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { useAuth } from "../contexts/AuthContext";
+import { Input } from "./ui/shadcn/Input";
 
 interface CommandItem {
   id: string;
@@ -351,7 +352,7 @@ export default function CommandBar() {
             {/* Search input */}
             <div className="relative z-10 glass-strong rounded-t-2xl px-5 py-4 flex items-center gap-3 border-b border-white/8">
               <Search className="w-4 h-4 text-brand/80 shrink-0" />
-              <input
+              <Input
                 autoFocus
                 aria-label="Command search input"
                 placeholder="Jump anywhere or take an action…"

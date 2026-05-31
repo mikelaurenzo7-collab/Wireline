@@ -16,6 +16,7 @@ import { cn } from "../../lib/utils";
 import { Link } from "react-router-dom";
 import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import { Slider } from "../ui/shadcn/Slider";
 
 interface SubscriptionPanelProps {
   settings: any;
@@ -101,8 +102,7 @@ export function SubscriptionPanel({
                 Max agents
               </label>
               <div className="flex items-center gap-3">
-                <input
-                  type="range"
+                <Slider
                   min="1"
                   max="20"
                   value={settings.max_agents}

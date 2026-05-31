@@ -30,6 +30,7 @@ import { formatDate } from "../lib/safe-date";
 import EmptyState from "./EmptyState";
 import { RecipeModal } from "./ClaudeRecipes";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
+import { Input } from "./ui/shadcn/Input";
 
 const AGENT_UNSET = "__unset__";
 
@@ -445,7 +446,7 @@ export default function KnowledgeBaseManager() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[280px]">
           <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
-          <input
+          <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search content or agent name…"

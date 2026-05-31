@@ -30,6 +30,7 @@ import {
 import { PageMeta } from "../lib/page-meta";
 import { WIRELINE_FEATURED_TEAM_AGENT } from "../data/contact-agents";
 import MarketingChrome from "./marketing/MarketingChrome";
+import { Input } from "./ui/shadcn/Input";
 
 const ISSUE_TYPES = [
   { value: "billing", label: "Billing or refund" },
@@ -205,7 +206,7 @@ export function SupportPage() {
                 >
                   Your email
                 </label>
-                <input
+                <Input
                   id="support-email"
                   type="email"
                   required
@@ -227,7 +228,7 @@ export function SupportPage() {
                 >
                   Subject
                 </label>
-                <input
+                <Input
                   id="support-subject"
                   type="text"
                   required

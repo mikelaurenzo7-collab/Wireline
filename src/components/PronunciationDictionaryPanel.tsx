@@ -24,6 +24,8 @@ import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
+import { Input } from "./ui/shadcn/Input";
+import { Checkbox } from "./ui/shadcn/Checkbox";
 
 interface DictEntry {
   from: string;
@@ -240,7 +242,7 @@ export default function PronunciationDictionaryPanel() {
             >
               Dictionary name
             </label>
-            <input
+            <Input
               id="dict-name"
               type="text"
               value={newName}
@@ -318,8 +320,7 @@ export default function PronunciationDictionaryPanel() {
                   </p>
                 </div>
                 <label className="flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-muted cursor-pointer">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={dict.active}
                     onChange={() => toggleActive(dict)}
                     className="w-3.5 h-3.5 accent-brand"
@@ -398,7 +399,7 @@ function EntryEditor({ entries, onChange, onAddRow, onRemoveRow }: EntryEditorPr
       ) : (
         entries.map((entry, idx) => (
           <div key={idx} className="grid grid-cols-[1fr_1fr_84px_28px] gap-2 items-center">
-            <input
+            <Input
               type="text"
               value={entry.from}
               onChange={(e) => {
@@ -410,7 +411,7 @@ function EntryEditor({ entries, onChange, onAddRow, onRemoveRow }: EntryEditorPr
               placeholder={entry.kind === "phoneme" ? "ACL" : "HVAC"}
               className="rounded-lg border border-black/10 bg-paper px-2.5 py-2 text-[12px] text-ink outline-none focus:border-brand/40"
             />
-            <input
+            <Input
               type="text"
               value={entry.to}
               onChange={(e) => {

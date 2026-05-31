@@ -10,6 +10,7 @@ import { cn } from "../../lib/utils";
 import { AGENT_ROLES, type RoleValue } from "../fleet/helpers";
 import { ClaudeRecipeButton } from "../ClaudeRecipes";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
+import { Input } from "../ui/shadcn/Input";
 
 interface Props {
   isCreating: boolean;
@@ -109,7 +110,7 @@ export default function CreateAgentSection({
               (lowercase, no spaces)
             </span>
           </label>
-          <input
+          <Input
             type="text"
             placeholder="e.g. sales-bot-1"
             value={newAgentId}
@@ -124,7 +125,7 @@ export default function CreateAgentSection({
               (what callers will hear)
             </span>
           </label>
-          <input
+          <Input
             type="text"
             placeholder="e.g. Sophie"
             value={newAgentName}

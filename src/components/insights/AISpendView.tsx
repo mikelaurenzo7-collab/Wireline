@@ -16,6 +16,7 @@ import { authFetch, readApiJson } from "../../lib/api";
 import { formatMoney, safeFixed } from "../../lib/safe-number";
 import { cn } from "../../lib/utils";
 import { fetchInsight, Spinner, ErrCard, Empty, SpendStat } from "./shared";
+import { Input } from "../ui/shadcn/Input";
 
 /* ─────────────────────────  Spend Budget Card  ─────────────────── */
 
@@ -189,7 +190,7 @@ function SpendBudgetCard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
           <label className="space-y-1.5">
             <span className="app-section-title">Monthly limit (USD)</span>
-            <input
+            <Input
               type="number"
               min="0"
               step="1"
@@ -202,7 +203,7 @@ function SpendBudgetCard() {
           </label>
           <label className="space-y-1.5">
             <span className="app-section-title">Warn at (% of limit)</span>
-            <input
+            <Input
               type="number"
               inputMode="numeric"
               min="1"

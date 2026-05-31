@@ -18,6 +18,7 @@ import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { formatTime } from "../lib/safe-date";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
+import { Input } from "./ui/shadcn/Input";
 
 const FLEET_AGENT_UNSET = "__unset__";
 
@@ -351,7 +352,7 @@ export default function FleetTaskBridge() {
                       <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
                         <Calendar className="w-2.5 h-2.5 text-brand" /> Due date
                       </label>
-                      <input
+                      <Input
                         type="date"
                         value={task.due_date ? task.due_date.split("T")[0] : ""}
                         onChange={(e) => updateDueDate(task.id, e.target.value)}

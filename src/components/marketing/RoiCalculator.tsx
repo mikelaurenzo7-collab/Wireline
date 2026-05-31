@@ -35,6 +35,7 @@ import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { Calculator, TrendingUp, Clock } from "lucide-react";
+import { Slider } from "../ui/shadcn/Slider";
 
 const WIRELINE_PRO_MONTHLY_USD = 499;
 const WIRELINE_PRO_ANNUAL_USD = WIRELINE_PRO_MONTHLY_USD * 12;
@@ -338,8 +339,7 @@ function SliderRow({
         </span>
         <span className="text-[12px] tabular-nums font-semibold text-ink">{suffix}</span>
       </div>
-      <input
-        type="range"
+      <Slider
         min={min}
         max={max}
         step={step}

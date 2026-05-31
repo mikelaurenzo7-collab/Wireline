@@ -17,6 +17,8 @@ import { Mic, Loader2, Trash2, Play, Pause, UploadCloud, AlertTriangle } from "l
 import { authFetch } from "../../lib/api";
 import { useToast } from "../../contexts/ToastContext";
 import { cn } from "../../lib/utils";
+import { Checkbox } from "../ui/shadcn/Checkbox";
+import { Input } from "../ui/shadcn/Input";
 
 interface ClonedVoice {
   voice_id: string;
@@ -202,7 +204,7 @@ export default function VoiceLibraryPanel() {
             >
               Voice name
             </label>
-            <input
+            <Input
               id="clone-name"
               type="text"
               value={cloneName}
@@ -222,7 +224,7 @@ export default function VoiceLibraryPanel() {
             >
               Audio sample (30-90s)
             </label>
-            <input
+            <Input
               id="clone-file"
               type="file"
               accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/m4a,audio/ogg,.mp3,.wav,.m4a,.ogg"
@@ -238,8 +240,7 @@ export default function VoiceLibraryPanel() {
           </div>
 
           <label className="flex items-start gap-2.5 text-[11px] text-ink/80 cursor-pointer">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={consent}
               onChange={(e) => setConsent(e.target.checked)}
               className="mt-0.5 w-3.5 h-3.5 accent-brand"

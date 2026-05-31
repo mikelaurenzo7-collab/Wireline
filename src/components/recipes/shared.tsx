@@ -13,6 +13,7 @@
 import React, { ReactNode, useState } from "react";
 import { AlertTriangle, ArrowRight, Check, Copy, Loader2, Sparkles } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { Input } from "../ui/shadcn/Input";
 import {
   Select as ShadSelect,
   SelectContent,
@@ -45,7 +46,7 @@ export function Field({
 
 export function TextInput({ value, onChange, placeholder }: any) {
   return (
-    <input
+    <Input
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}

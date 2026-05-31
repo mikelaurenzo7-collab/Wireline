@@ -7,6 +7,7 @@ import { toolIntegrationForProvider, PROVIDER_ACCENT } from "../lib/integration-
 import IntegrationCapabilityPanel from "./IntegrationCapabilityPanel";
 import { getIntegrationLogo } from "./layout/IntegrationLogos";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
+import { Input } from "./ui/shadcn/Input";
 
 const CRM_SELECT_UNSET = "__unset__";
 
@@ -518,7 +519,7 @@ export default function CrmConnectionCard() {
                           <div className="text-[9px] uppercase tracking-[0.25em] text-muted/90">
                             Your store domain
                           </div>
-                          <input
+                          <Input
                             type="text"
                             value={shopDomain}
                             onChange={(e) => {

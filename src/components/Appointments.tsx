@@ -28,6 +28,7 @@ import HubTabs, { CHANNELS_HUB } from "./HubTabs";
 import { useToast } from "../contexts/ToastContext";
 import ConfirmModal from "./ConfirmModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
+import { Input } from "./ui/shadcn/Input";
 
 const APPT_AGENT_UNSET = "__unset__";
 
@@ -206,7 +207,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
         <div className="p-5 space-y-4 overflow-y-auto max-h-[70vh] scrollbar-hide">
           <div className="grid grid-cols-1 gap-4">
             <Field label="Customer Name" icon={User}>
-              <input
+              <Input
                 className={inputCls}
                 placeholder="Jordan Pike"
                 value={form.customer_name}
@@ -214,7 +215,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
               />
             </Field>
             <Field label="Phone Number" icon={Phone}>
-              <input
+              <Input
                 className={inputCls}
                 placeholder="+1 555 000 0000"
                 value={form.phone_number}
@@ -223,7 +224,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
               />
             </Field>
             <Field label="Service Type" icon={Wrench}>
-              <input
+              <Input
                 className={inputCls}
                 placeholder="HVAC Repair, Plumbing Inspection…"
                 value={form.service_type}
@@ -232,7 +233,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Date" icon={CalendarIcon}>
-                <input
+                <Input
                   className={inputCls}
                   placeholder="Oct 15"
                   value={form.date}
@@ -240,7 +241,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
                 />
               </Field>
               <Field label="Time" icon={Clock}>
-                <input
+                <Input
                   className={inputCls}
                   placeholder="2:00 PM"
                   value={form.time}

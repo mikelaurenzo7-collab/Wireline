@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { getPasswordPolicyError } from "../lib/password-policy";
 import { PageMeta } from "../lib/page-meta";
 import MarketingChrome from "../components/marketing/MarketingChrome";
+import { Input } from "../components/ui/shadcn/Input";
 
 /**
  * /reset-password?token=<raw>
@@ -144,7 +145,7 @@ export default function ResetPassword() {
                   <Lock className="w-3 h-3 text-brand" />
                   New password
                 </label>
-                <input
+                <Input
                   type="password"
                   required
                   minLength={8}
@@ -161,7 +162,7 @@ export default function ResetPassword() {
                   <Lock className="w-3 h-3 text-brand" />
                   Confirm new password
                 </label>
-                <input
+                <Input
                   type="password"
                   required
                   minLength={8}
