@@ -142,7 +142,7 @@ export default function Pipeline() {
          *  scroll) so the operator can scan every stage without scrolling
          *  through the entire app shell. */}
         {totalLeads > 0 && (
-          <div className="h-full overflow-y-auto md:overflow-x-auto md:overflow-y-hidden pb-1">
+          <div className="h-full scroll-viewport md:overflow-x-auto md:overflow-y-hidden pb-1">
             <div className="flex flex-col md:flex-row gap-3 h-auto md:h-full pr-0 md:pr-3 md:snap-x md:snap-mandatory">
               {STAGES.map((stage) => {
                 const leads = board[stage.id] || [];

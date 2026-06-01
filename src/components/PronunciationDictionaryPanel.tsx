@@ -268,7 +268,7 @@ export default function PronunciationDictionaryPanel() {
             <button
               type="submit"
               disabled={creating || newName.trim().length < 1}
-              className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-brand text-on-brand px-4 py-2.5 text-[11px] uppercase tracking-[0.28em] hover:opacity-90 disabled:opacity-30 transition-opacity"
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-deep text-on-brand px-4 py-2.5 text-[11px] uppercase tracking-[0.28em] hover:opacity-90 disabled:opacity-30 transition-opacity"
             >
               {creating ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -355,7 +355,7 @@ export default function PronunciationDictionaryPanel() {
                 <button
                   onClick={() => saveDict(dict)}
                   disabled={savingId === dict.id}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-brand text-on-brand px-4 py-2 text-[10px] uppercase tracking-[0.28em] hover:opacity-90 disabled:opacity-30 transition-opacity"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-deep text-on-brand px-4 py-2 text-[10px] uppercase tracking-[0.28em] hover:opacity-90 disabled:opacity-30 transition-opacity"
                 >
                   {savingId === dict.id ? (
                     <Loader2 className="w-3 h-3 animate-spin" />

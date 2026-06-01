@@ -403,7 +403,7 @@ export default function KnowledgeBaseManager() {
                 <button
                   onClick={addFact}
                   disabled={adding || !addContent.trim() || !addAgent}
-                  className="h-11 px-5 rounded-xl bg-brand text-on-brand text-[11px] uppercase tracking-[0.25em] flex items-center gap-2 disabled:opacity-50 hover:opacity-90 self-end"
+                  className="touch-press h-11 px-5 rounded-xl bg-gradient-to-r from-brand to-brand-deep text-on-brand text-[11px] uppercase tracking-[0.25em] flex items-center gap-2 disabled:opacity-50 hover:opacity-90 self-end"
                 >
                   {adding ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -655,7 +655,7 @@ export default function KnowledgeBaseManager() {
                         <button
                           onClick={saveEdit}
                           disabled={savingId === editing!.id || !editing!.draft.trim()}
-                          className="h-8 px-3 rounded-lg bg-brand text-on-brand text-[9px] uppercase tracking-[0.25em] flex items-center gap-1.5 disabled:opacity-50 hover:opacity-90"
+                          className="touch-press h-8 px-3 rounded-lg bg-gradient-to-r from-brand to-brand-deep text-on-brand text-[9px] uppercase tracking-[0.25em] flex items-center gap-1.5 disabled:opacity-50 hover:opacity-90"
                         >
                           {savingId === editing!.id ? (
                             <Loader2 className="w-3 h-3 animate-spin" />

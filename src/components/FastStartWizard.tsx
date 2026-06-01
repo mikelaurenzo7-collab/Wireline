@@ -396,7 +396,7 @@ export default function FastStartWizard({
         </div>
 
         {/* Content */}
-        <div className="px-6 py-6 overflow-y-auto max-h-[60vh]">
+        <div className="px-6 py-6 scroll-viewport max-h-[60vh]">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep.id}

@@ -75,8 +75,8 @@ const BASELINE = {
   rawInput: 0, //  <input> outside ui/shadcn/*; fully migrated to shadcn Input/Checkbox/Slider. Stays at 0 forever.
   rawSelect: 0, // <select> outside ui/shadcn/*; fully migrated to shadcn Select. Stays at 0 forever.
   rawDialog: 0, //  <dialog>; we never use the native element. Stays at 0 forever.
-  glassUtility: 451, // .glass utility usage; FleetTaskBridge / DncManager / Webhooks / outbound CampaignsTab / fleet AgentListPanel empty/loading shells consolidated onto canonical primitives 2026-05-31
-  largeRadius: 812, // rounded-{lg|xl|2xl|3xl} literals; FleetTaskBridge / DirectorWorkspace / AgentWorkspace / DncManager / ContactProfile / Webhooks / Pronunciation / fleet AgentListPanel / outbound CampaignsTab empty + loading shells consolidated onto Medallion + EmptyState 2026-05-31
+  glassUtility: 397, // .glass → wl-panel on small icon containers (SubscriptionPanel, KnowledgeFromDocumentForm, SupervisedAgentTuner, AgentTemplates, EmailInbox) 2026-06-01
+  largeRadius: 796, // scroll-viewport migration removed overflow-y-auto patterns that co-located with rounded corners; marketing buttons cleaned 2026-06-01
 } as const;
 
 describe("shadcn pivot ratchet", () => {

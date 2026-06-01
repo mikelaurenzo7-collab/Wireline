@@ -46,7 +46,7 @@ export default function MarketingPageFrame({
         tabIndex={-1}
         className={cn(
           "relative z-10 flex-1 min-h-0",
-          scroll ? "overflow-y-auto" : "overflow-hidden flex flex-col",
+          scroll ? "scroll-viewport" : "overflow-hidden flex flex-col",
           stickyCta && scroll && "marketing-has-sticky-cta",
           scroll ? "px-5 py-8 md:py-12 lg:px-8" : "px-5 pb-4 lg:px-8 lg:pb-6",
           mainClassName,

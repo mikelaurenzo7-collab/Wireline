@@ -482,7 +482,7 @@ function CustomAgentCard() {
       animate={{ opacity: 1, y: 0 }}
       className="rounded-2xl border border-brand/25 dark:border-white/10 border-dashed flex flex-col items-center justify-center gap-3 p-6 text-center min-h-[240px]"
     >
-      <div className="w-12 h-12 rounded-2xl glass flex items-center justify-center">
+      <div className="w-12 h-12 rounded-2xl wl-panel flex items-center justify-center">
         <Sparkles className="w-5 h-5 text-brand" />
       </div>
       <div className="space-y-1">
