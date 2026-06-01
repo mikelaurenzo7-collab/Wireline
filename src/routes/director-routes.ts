@@ -2,6 +2,7 @@
  * Director routes — account-level strategist chat + creative artifact tooling.
  */
 import express, { type Response } from "express";
+import rateLimit from "express-rate-limit";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser } from "../middleware/auth";
@@ -29,6 +30,12 @@ import {
 } from "../lib/director-artifacts";
 
 const router = express.Router();
+const directorArtifactDownloadLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 const MAX_THREAD_LENGTH = 200;
 const CLAUDE_CONTEXT_WINDOW = 40;
@@ -539,6 +546,7 @@ router.delete(
 
 router.get(
   "/api/director/artifacts/:id/download",
+  directorArtifactDownloadLimiter,
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {

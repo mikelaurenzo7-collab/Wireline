@@ -223,14 +223,16 @@ export function generateLogoConcepts(
 
 export function normalizeVectorSvg(svg: string): string {
   const raw = clampText(svg, 20000);
-  const stripped = raw.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "");
-  if (!/^<svg[\s\S]*<\/svg>$/i.test(stripped)) {
+  if (/<\s*script[\s\S]*?>/i.test(raw) || /<\s*\/\s*script\s*>/i.test(raw)) {
+    throw new Error("SVG contains forbidden script tags.");
+  }
+  if (!/^<svg[\s\S]*<\/svg>$/i.test(raw)) {
     throw new Error("Invalid SVG payload for vector export.");
   }
-  if (Buffer.byteLength(stripped, "utf8") > 200 * 1024) {
+  if (Buffer.byteLength(raw, "utf8") > 200 * 1024) {
     throw new Error("SVG too large. Keep vector exports under 200KB.");
   }
-  return stripped;
+  return raw;
 }
 
 function simplePdf(title: string): Buffer {
@@ -260,6 +262,9 @@ function crc32(buf: Buffer): number {
 }
 
 function buildZip(files: Array<{ name: string; data: Buffer }>): Buffer {
+  if (!Number.isFinite(files.length) || files.length < 0 || files.length > 24) {
+    throw new Error("Invalid ZIP file count.");
+  }
   let offset = 0;
   const localParts: Buffer[] = [];
   const centralParts: Buffer[] = [];

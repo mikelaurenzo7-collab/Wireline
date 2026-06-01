@@ -33,6 +33,7 @@ import { useToast } from "../contexts/ToastContext";
 import { useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { cn } from "../lib/utils";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 type SuggestionKind =
   | "create_agent"
@@ -52,6 +53,7 @@ interface DirectorApproval {
   name: "generate_logo" | "vectorize_logo" | "brand_pack_export";
   label: string;
   requiresApproval: boolean;
+  approved?: boolean;
   input: Record<string, unknown>;
 }
 
@@ -469,24 +471,24 @@ export default function DirectorWorkspace() {
                   {m.approvals.map((a) => (
                     <div
                       key={a.callId}
-                      className="rounded-xl border border-brand/20 bg-brand/[0.04] px-3 py-2"
+                      className="rounded-[12px] border border-brand/20 bg-brand/[0.04] px-3 py-2"
                     >
                       <p className="text-[11px] text-muted mb-2">{a.label}</p>
                       <div className="flex items-center gap-2">
-                        <button
+                        <ShadButton
                           onClick={() => respondToApproval(a, true)}
-                          className="px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-brand text-white"
+                          className="px-3 py-1.5 rounded-[10px] text-[11px] font-semibold bg-brand text-white"
                           disabled={isSending}
                         >
                           Approve
-                        </button>
-                        <button
+                        </ShadButton>
+                        <ShadButton
                           onClick={() => respondToApproval(a, false)}
-                          className="px-3 py-1.5 rounded-lg text-[11px] font-semibold border border-brand/20 text-muted"
+                          className="px-3 py-1.5 rounded-[10px] text-[11px] font-semibold border border-brand/20 text-muted"
                           disabled={isSending}
                         >
                           Decline
-                        </button>
+                        </ShadButton>
                       </div>
                     </div>
                   ))}
@@ -498,12 +500,12 @@ export default function DirectorWorkspace() {
                   {m.previews.map((p) => (
                     <div
                       key={p.conceptId}
-                      className="rounded-xl border border-brand/15 bg-white/75 dark:bg-black/10 p-2 space-y-2"
+                      className="rounded-[12px] border border-brand/15 bg-white/75 dark:bg-black/10 p-2 space-y-2"
                     >
                       <img
                         src={p.previewDataUrl}
                         alt={p.title}
-                        className="w-full rounded-lg border border-brand/10 bg-white"
+                        className="w-full rounded-[10px] border border-brand/10 bg-white"
                       />
                       <div>
                         <p className="text-[11px] font-semibold text-ink">{p.title}</p>
@@ -511,7 +513,7 @@ export default function DirectorWorkspace() {
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {p.svg && (
-                          <button
+                          <ShadButton
                             onClick={() =>
                               respondToApproval(
                                 {
@@ -524,13 +526,13 @@ export default function DirectorWorkspace() {
                                 true,
                               )
                             }
-                            className="px-2 py-1 rounded-md text-[10px] border border-brand/20"
+                            className="px-2 py-1 rounded-[8px] text-[10px] border border-brand/20"
                           >
                             Vectorize
-                          </button>
+                          </ShadButton>
                         )}
                         {p.svg && (
-                          <button
+                          <ShadButton
                             onClick={() =>
                               respondToApproval(
                                 {
@@ -547,31 +549,31 @@ export default function DirectorWorkspace() {
                                 true,
                               )
                             }
-                            className="px-2 py-1 rounded-md text-[10px] border border-brand/20"
+                            className="px-2 py-1 rounded-[8px] text-[10px] border border-brand/20"
                           >
                             Export pack
-                          </button>
+                          </ShadButton>
                         )}
-                        <button
+                        <ShadButton
                           onClick={() =>
                             setInput(
                               `Refine concept ${p.title}: keep the core shape but adjust typography.`,
                             )
                           }
-                          className="px-2 py-1 rounded-md text-[10px] border border-brand/20"
+                          className="px-2 py-1 rounded-[8px] text-[10px] border border-brand/20"
                         >
                           Edit
-                        </button>
-                        <button
+                        </ShadButton>
+                        <ShadButton
                           onClick={() =>
                             setInput(
                               `Regenerate 3 new options from ${p.title} with stronger contrast.`,
                             )
                           }
-                          className="px-2 py-1 rounded-md text-[10px] border border-brand/20"
+                          className="px-2 py-1 rounded-[8px] text-[10px] border border-brand/20"
                         >
                           Regenerate
-                        </button>
+                        </ShadButton>
                       </div>
                     </div>
                   ))}
@@ -611,7 +613,7 @@ export default function DirectorWorkspace() {
 
       {featureFlags.artifactsPanel && artifacts.length > 0 && (
         <div className="shrink-0 px-4 pb-2">
-          <div className="max-w-3xl mx-auto rounded-xl border border-brand/15 bg-white/75 dark:bg-black/10 p-3">
+          <div className="max-w-3xl mx-auto rounded-[12px] border border-brand/15 bg-white/75 dark:bg-black/10 p-3">
             <div className="flex items-center justify-between mb-2">
               <p className="text-[10px] uppercase tracking-[0.16em] text-muted">Artifacts</p>
               <p className="text-[10px] text-muted">{artifacts.length} files</p>
@@ -620,7 +622,7 @@ export default function DirectorWorkspace() {
               {artifacts.slice(0, 20).map((a) => (
                 <div
                   key={a.id}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-brand/10 px-2.5 py-2"
+                  className="flex items-center justify-between gap-2 rounded-[10px] border border-brand/10 px-2.5 py-2"
                 >
                   <div className="min-w-0">
                     <p className="text-[11px] font-medium text-ink truncate">{a.name}</p>
@@ -632,28 +634,28 @@ export default function DirectorWorkspace() {
                   <div className="flex items-center gap-1.5 shrink-0">
                     <a
                       href={a.downloadUrl}
-                      className="px-2.5 py-1.5 rounded-md text-[10px] border border-brand/20"
+                      className="px-2.5 py-1.5 rounded-[8px] text-[10px] border border-brand/20"
                     >
                       Download
                     </a>
-                    <button
+                    <ShadButton
                       onClick={() =>
                         setInput(
                           `Regenerate ${a.name} with a fresh variation and keep brand style.`,
                         )
                       }
-                      className="px-2.5 py-1.5 rounded-md text-[10px] border border-brand/20"
+                      className="px-2.5 py-1.5 rounded-[8px] text-[10px] border border-brand/20"
                     >
                       Regenerate
-                    </button>
-                    <button
+                    </ShadButton>
+                    <ShadButton
                       onClick={() =>
                         setInput(`Edit ${a.name}: keep layout but adjust color contrast.`)
                       }
-                      className="px-2.5 py-1.5 rounded-md text-[10px] border border-brand/20"
+                      className="px-2.5 py-1.5 rounded-[8px] text-[10px] border border-brand/20"
                     >
                       Edit
-                    </button>
+                    </ShadButton>
                   </div>
                 </div>
               ))}

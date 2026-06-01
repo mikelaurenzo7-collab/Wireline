@@ -42,12 +42,10 @@ describe("director-logo-tools", () => {
     expect(generated.critique.toLowerCase()).toContain("best concept");
   });
 
-  it("sanitizes vector svg and strips scripts", () => {
-    const cleaned = normalizeVectorSvg(
-      '<svg><script>alert(1)</script><rect width="1" height="1"/></svg>',
-    );
-    expect(cleaned).toContain("<svg>");
-    expect(cleaned).not.toContain("script");
+  it("rejects vector svg payloads containing scripts", () => {
+    expect(() =>
+      normalizeVectorSvg('<svg><script>alert(1)</script><rect width="1" height="1"/></svg>'),
+    ).toThrow(/forbidden script/i);
   });
 
   it("builds a zip brand pack", () => {
