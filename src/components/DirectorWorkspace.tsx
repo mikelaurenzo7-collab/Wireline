@@ -31,6 +31,7 @@ import {
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { useAgents } from "../contexts/AgentsContext";
+import { useAuth } from "../contexts/AuthContext";
 import { cn } from "../lib/utils";
 
 type SuggestionKind =
@@ -82,6 +83,7 @@ const DIRECTOR_CAPABILITIES = [
 
 export default function DirectorWorkspace() {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const { agents } = useAgents();
   const { error: toastError, success: toastSuccess } = useToast();
   const [messages, setMessages] = useState<DirectorMessage[]>([]);
@@ -94,10 +96,19 @@ export default function DirectorWorkspace() {
   const capabilityRef = useRef<HTMLDivElement | null>(null);
 
   const loadMessages = useCallback(async () => {
+    if (authLoading) return;
+    if (!user) {
+      setMessages([]);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
       const r = await authFetch("/api/director/messages");
-      if (!r.ok) throw new Error("Failed to load messages");
+      if (!r.ok) {
+        if (r.status === 401 || r.status === 403) return;
+        throw new Error("Failed to load messages");
+      }
       const data = await r.json();
       setMessages(Array.isArray(data.messages) ? data.messages : []);
     } catch {
@@ -105,11 +116,16 @@ export default function DirectorWorkspace() {
     } finally {
       setIsLoading(false);
     }
-  }, [toastError]);
+  }, [authLoading, toastError, user]);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setMessages([]);
+      return;
+    }
     loadMessages();
-  }, [loadMessages]);
+  }, [authLoading, loadMessages, user]);
 
   useEffect(() => {
     if (scrollRef.current) {

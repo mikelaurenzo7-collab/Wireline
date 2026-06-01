@@ -63,6 +63,15 @@ async function loadFleet(userId: string): Promise<DirectorFleetAgent[]> {
   return rows.map((r) => ({ id: r.id, name: r.name ?? null, role: r.role ?? null }));
 }
 
+async function loadFleetSafe(userId: string): Promise<DirectorFleetAgent[]> {
+  try {
+    return await loadFleet(userId);
+  } catch (e) {
+    log.warn("director fleet load failed", { error: getErrorMessage(e), userId });
+    return [];
+  }
+}
+
 // GET /api/director/messages — load thread history + fleet snapshot.
 router.get(
   "/api/director/messages",
@@ -70,7 +79,7 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       await ensureDirectorTable();
-      const fleet = await loadFleet(req.user.id);
+      const fleet = await loadFleetSafe(req.user.id);
       const messages = await drizzle
         .select()
         .from(schema.directorConversationMessages)
@@ -110,7 +119,7 @@ router.post(
         return res.status(400).json({ error: "Message too long — keep under 4000 chars" });
       }
 
-      const fleet = await loadFleet(req.user.id);
+      const fleet = await loadFleetSafe(req.user.id);
 
       // Aggregate fleet activity (last 7 days) for context. Best-effort —
       // a failed stats query must never block the chat.
