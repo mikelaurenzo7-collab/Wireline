@@ -28,7 +28,7 @@ Wireline has been rigorously audited and hardened for production deployment. Fro
 - **Agent Extensibility & Integrations:** The autonomous Action Engine seamlessly orchestrates CRM, calendar, and email syncs with strict data isolation. Extensibility is baked in for any custom agent logic.
 - **Optimized Performance:** Zero-latency skeletal app shells, PWA caching (`sw.js`), and Vite's aggressive tree-shaking guarantee lightning-fast load times.
 - **Ironclad Security:** AES-256-GCM envelope encryption protects all tenant secrets at rest. Complete with CSP hardening and Supabase Row Level Security (RLS).
-- **Scalability:** 15 custom database indexes enable O(1) query lookups on critical paths, backed by active Supabase connection pooling for serverless edge scaling.
+- **Scalability:** 53 custom database indexes enable O(1) query lookups on critical paths, backed by active Supabase connection pooling for serverless edge scaling.
 - **Marketing & SEO:** Fully populated semantic meta tags and OpenGraph integration ready the site for search indexers and social sharing.
 
 ---

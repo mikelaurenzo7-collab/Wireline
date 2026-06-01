@@ -114,7 +114,7 @@ API route (/api/claude/*, /api/jobs/*, /api/daily-brief/*)
 
 ## 3. Database Schema (Key Tables)
 
-55 tables managed by Drizzle; 17 migrations, all idempotent
+57 tables managed by Drizzle; 27 migrations, all idempotent
 (`IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`).
 
 | Table | Purpose |
@@ -134,7 +134,7 @@ API route (/api/claude/*, /api/jobs/*, /api/daily-brief/*)
 | `wireline_outbound_campaigns` / `wireline_outbound_leads` | Outbound dialer + lead state machine |
 
 Account deletion is handled by `src/lib/account-deletion.ts`, which
-manually cascades through all 55 tables in dependency order. FKs exist from
+manually cascades through all 57 tables in dependency order. FKs exist from
 `wireline_settings`, `wireline_user_preferences`, and `wireline_spend_budgets`
 to `wireline_users` with cascade-delete; the remaining tables are cleaned
 up by the deletion module to give precise control over sequencing and

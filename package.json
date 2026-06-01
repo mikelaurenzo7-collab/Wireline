@@ -31,7 +31,7 @@
     "vapi:patch-webhooks": "node scripts/patch-vapi-prod-webhooks.mjs",
     "vapi:patch-flux-ab": "node scripts/patch-vapi-showcase-flux-ab.mjs",
     "vapi:sync-showcase": "tsx scripts/sync-wireline-showcase.mts",
-    "docs:check": "node scripts/check-readme-pricing.mjs",
+    "docs:check": "node scripts/check-readme-pricing.mjs && node scripts/check-docs-structure.mjs",
     "authz:check": "tsx scripts/generate-authz-matrix.ts",
     "security:audit": "npm audit --audit-level=high --omit=dev",
     "security:audit:full": "npm audit --omit=dev",
