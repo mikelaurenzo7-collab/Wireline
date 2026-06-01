@@ -5,7 +5,7 @@ import type { AuthenticatedRequest } from "../types/auth";
 import { log, auditLogger, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, desc } from "drizzle-orm";
-import { authenticateUser } from "../middleware/auth";
+import { authenticateUser, claudeRateLimiter } from "../middleware/auth";
 import { validateBody, applyRoleSchema, agentManualEntrySchema } from "../lib/api-validation";
 import {
   getErrorMessage,
@@ -456,6 +456,7 @@ router.delete(
 router.post(
   "/api/train/extract",
   authenticateUser,
+  claudeRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     const { message, agentId = "default-agent" } = req.body;
     const userId = req.user.id;

@@ -26,6 +26,7 @@ import { claudeRateLimiter } from "../middleware/api-rate-limits";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
+import { auditLogger } from "../lib/server-context";
 import {
   planWorkspace,
   WORKSPACE_FIELDS,
@@ -492,6 +493,14 @@ router.post(
         return res.status(400).json({ error: result.error || "Action failed" });
       }
       log.info("workspace action executed", { agentId, kind });
+      void auditLogger
+        .logAgentOperation("workspace_action", {
+          userId: req.user.id,
+          agentId,
+          metadata: { kind, to, subject: subject || "(none)", actionResult: result.success },
+          ip: req.ip,
+        })
+        .catch((err: unknown) => log.warn("audit log failed", { error: getErrorMessage(err) }));
       res.json({ success: true, kind });
     } catch (e) {
       log.error("workspace run-action failed", { error: getErrorMessage(e) });

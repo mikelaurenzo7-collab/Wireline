@@ -105,7 +105,7 @@ export class AuditLogger {
   }
 
   async logAgentOperation(
-    action: "created" | "updated" | "deleted" | "training_updated",
+    action: "created" | "updated" | "deleted" | "training_updated" | "workspace_action",
     params: {
       userId: string;
       agentId: string;
@@ -119,6 +119,7 @@ export class AuditLogger {
       updated: "agent.updated",
       deleted: "agent.deleted",
       training_updated: "agent.training_updated",
+      workspace_action: "agent.workspace_action",
     };
 
     return await this.log({

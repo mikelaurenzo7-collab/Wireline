@@ -41,7 +41,9 @@ export type WorkspaceFieldKey =
   | "out_of_hours_message"
   | "transfer_phone"
   | "escalation_email"
-  | "escalation_phone";
+  | "escalation_phone"
+  | "kpi_focus"
+  | "compliance_mode";
 
 interface FieldSpec {
   /** Drizzle column name on `schema.agents`. */
@@ -101,6 +103,18 @@ export const WORKSPACE_FIELDS: Record<WorkspaceFieldKey, FieldSpec> = {
     column: "escalationPhone",
     label: "Escalation phone number",
     kind: "phone",
+    maxLen: 20,
+  },
+  kpi_focus: {
+    column: "kpiFocus",
+    label: "KPI focus",
+    kind: "text",
+    maxLen: 20,
+  },
+  compliance_mode: {
+    column: "complianceMode",
+    label: "Compliance mode",
+    kind: "text",
     maxLen: 20,
   },
 };
@@ -337,8 +351,21 @@ function validateFieldValue(field: WorkspaceFieldKey, raw: unknown): string | nu
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? value : null;
   }
   if (spec.kind === "phone") {
-    // Lenient E.164-ish: digits, spaces, +, -, parens. Reject anything else.
     return /^[+\d][\d\s()-]{5,19}$/.test(value) ? value : null;
+  }
+  if (field === "compliance_mode") {
+    const allowed = new Set(["none", "hipaa", "pci", "gdpr", "financial", "legal", "standard"]);
+    return allowed.has(value) ? value : null;
+  }
+  if (field === "kpi_focus") {
+    const allowed = new Set([
+      "general",
+      "conversions",
+      "qualifications",
+      "resolutions",
+      "satisfaction",
+    ]);
+    return allowed.has(value) ? value : null;
   }
   return value;
 }
