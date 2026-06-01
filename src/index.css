@@ -19,6 +19,51 @@
   background-repeat: repeat;
 }
 
+/* Explicit elevation system — maps to the luxurious shadow tokens defined in :root/.dark */
+.elev-0 { box-shadow: var(--shadow-0); }
+.elev-1 { box-shadow: var(--shadow-1); }
+.elev-2 { box-shadow: var(--shadow-2); }
+.elev-3 { box-shadow: var(--shadow-3); }
+.elev-glow { box-shadow: var(--shadow-glow); }
+
+/* Refined glass layering for surfaces that need it (modals, sticky chrome, icon buttons).
+   Never use on standard card bodies — use .elev-* + bg-card instead. */
+.glass-1 {
+  background: rgba(239, 233, 220, 0.78);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid rgba(26, 22, 20, 0.08);
+}
+.dark .glass-1 {
+  background: rgba(30, 20, 45, 0.82);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.glass-2 {
+  background: rgba(239, 233, 220, 0.88);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(26, 22, 20, 0.06);
+}
+.dark .glass-2 {
+  background: rgba(30, 20, 45, 0.90);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Editorial hairline / aurora divider — consistent across the system */
+.hairline {
+  height: 1px;
+  background: linear-gradient(to right, rgba(26,22,20,0.08), rgba(26,22,20,0.03), transparent);
+}
+.dark .hairline {
+  background: linear-gradient(to right, rgba(255,255,255,0.08), rgba(255,255,255,0.03), transparent);
+}
+
+.aurora-divider {
+  height: 1px;
+  background: linear-gradient(to right, rgba(139,63,214,0.12), rgba(139,63,214,0.04), transparent);
+}
+
 /* Body receives the paper feel at the root level on all surfaces */
 html, body, .marketing-surface, .app-surface {
   background-color: var(--color-paper);

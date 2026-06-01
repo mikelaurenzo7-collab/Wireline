@@ -3,14 +3,17 @@ import { motion, HTMLMotionProps } from "motion/react";
 import { cn } from "@/src/lib/utils";
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Enable hover lift effect (default: false) */
+  /** Elevation level — uses the new editorial shadow system */
+  elevation?: "0" | "1" | "2" | "3" | "glow";
+  /** Enable refined hover lift (uses luxury spring) */
   interactive?: boolean;
 }
 
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, interactive = false, ...props }, ref) => {
+  ({ className, elevation = "1", interactive = false, ...props }, ref) => {
+    const elevClass = `elev-${elevation}`;
+
     if (interactive) {
-      // Cast to any to avoid motion/react type complexity with HTMLAttributes
       const MotionDiv = motion.div as React.ComponentType<
         HTMLMotionProps<"div"> & React.RefAttributes<HTMLDivElement>
       >;
@@ -18,11 +21,12 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
         <MotionDiv
           ref={ref}
           whileHover={{
-            y: -2,
-            transition: { type: "spring", stiffness: 400, damping: 25 },
+            y: -1,
+            transition: { type: "spring", stiffness: 380, damping: 28 },
           }}
           className={cn(
-            "rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer hover:shadow-lg transition-shadow duration-200",
+            "rounded-lg border bg-card text-card-foreground cursor-pointer transition-all duration-200",
+            elevClass,
             className,
           )}
           {...(props as HTMLMotionProps<"div">)}
@@ -33,7 +37,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
     return (
       <div
         ref={ref}
-        className={cn("rounded-lg border bg-card text-card-foreground shadow-sm", className)}
+        className={cn("rounded-lg border bg-card text-card-foreground", elevClass, className)}
         {...props}
       />
     );
