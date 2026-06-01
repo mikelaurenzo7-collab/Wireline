@@ -2425,6 +2425,18 @@ select:focus {
     transform: none;
   }
 
+  /* ── MOBILE SCROLL UNLOCK ──
+   * The strict viewport lock (overflow:hidden on html/body/#root) cuts off
+   * content that exceeds 100dvh on small screens.  Rather than unlocking
+   * the document (which causes Safari address-bar bounce), we turn the
+   * workspace-stage into a contained scroll surface on mobile only.
+   * Desktop keeps the locked viewport with panel-level scroll. */
+  .workspace-stage {
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
   /* Page canvas gutter — pairs with AppShell px-3 */
   .mobile-page-canvas {
     padding-left: 0;
@@ -2432,6 +2444,8 @@ select:focus {
     padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
     min-height: 0;
     flex: 1 1 auto;
+    /* Allow children to expand naturally instead of being clipped */
+    overflow: visible;
   }
 
   /* iOS visual-viewport keyboard compensation. When the virtual keyboard
@@ -2455,11 +2469,17 @@ select:focus {
     padding-left: 0;
     padding-right: 0;
     padding-bottom: 0;
+    /* Height auto so content can grow beyond viewport and scroll */
+    height: auto;
+    min-height: 100%;
   }
 
   .app-surface {
     font-size: 13px !important;
     line-height: 1.42 !important;
+    /* Let content grow naturally on mobile — don't clip to h-full */
+    height: auto !important;
+    min-height: 100%;
   }
 
   .app-surface h1 {
@@ -2478,8 +2498,7 @@ select:focus {
   .mobile-route-stack {
     display: flex;
     flex-direction: column;
-    height: 100%;
-    min-height: 0;
+    min-height: 100%;
     gap: 0.5rem;
   }
 
