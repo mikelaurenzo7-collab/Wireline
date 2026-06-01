@@ -303,7 +303,7 @@ const h = vi.hoisted(() => {
     stripe,
     stripeAvailable: vi.fn(() => true),
     syncSubscriptionFromStripe: vi.fn(async () => undefined),
-    verifySupabaseJwt: vi.fn(async (token: string) =>
+    verifyInternalJwt: vi.fn(async (token: string) =>
       token === "valid-token"
         ? {
             sub: "user-1",
@@ -341,7 +341,7 @@ vi.mock("../lib/stripe-helpers", () => ({
     { price: interval === "year" ? "price_annual" : "price_monthly", quantity: 1 },
   ]),
 }));
-vi.mock("../lib/auth-utils", () => ({ verifySupabaseJwt: h.verifySupabaseJwt }));
+vi.mock("../lib/auth-utils", () => ({ verifyInternalJwt: h.verifyInternalJwt }));
 vi.mock("../lib/internal-jwt-secret", () => ({
   requireInternalJwtSecret: h.requireInternalJwtSecret,
 }));
@@ -406,7 +406,7 @@ describe("billing routes integration", () => {
     vi.clearAllMocks();
     h.stripeAvailable.mockReturnValue(true);
     h.requireInternalJwtSecret.mockReturnValue("x".repeat(32));
-    h.verifySupabaseJwt.mockImplementation(async (token: string) =>
+    h.verifyInternalJwt.mockImplementation(async (token: string) =>
       token === "valid-token"
         ? {
             sub: "user-1",

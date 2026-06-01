@@ -7,7 +7,7 @@ import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
-import { verifySupabaseJwt } from "./auth-utils";
+import { verifyInternalJwt } from "./auth-utils";
 import { getInternalJwtSecret } from "./internal-jwt-secret";
 
 // ────────────────────────────────────────────────────────────────────
@@ -222,7 +222,7 @@ export async function resolveUserIdFromOAuthSession(req: express.Request): Promi
   if (!bearerToken) return null;
 
   const secret = getInternalJwtSecret() || "";
-  const payload = await verifySupabaseJwt(bearerToken, secret);
+  const payload = await verifyInternalJwt(bearerToken, secret);
   return payload?.sub ?? null;
 }
 

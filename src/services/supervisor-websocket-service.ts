@@ -9,7 +9,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { parse as parseUrl } from "node:url";
 import { IncomingMessage } from "node:http";
 import { log, drizzle } from "../lib/server-context";
-import { verifySupabaseJwt } from "../lib/auth-utils";
+import { verifyInternalJwt } from "../lib/auth-utils";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
@@ -76,7 +76,7 @@ export function initSupervisorWebSocketServer(server: any) {
     let userId: string;
     try {
       const secret = requireInternalJwtSecret();
-      const payload = await verifySupabaseJwt(token, secret);
+      const payload = await verifyInternalJwt(token, secret);
       if (!payload?.sub) {
         ws.close(4001, "Invalid or expired token");
         return;

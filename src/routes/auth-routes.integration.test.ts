@@ -227,7 +227,7 @@ const h = vi.hoisted(() => {
     sendPasswordResetEmail: vi.fn(async () => ({ ok: true, provider: "test" })),
     sendEmailVerification: vi.fn(async () => ({ ok: true, provider: "test" })),
     requireInternalJwtSecret: vi.fn(() => "super-secret-jwt-key-that-is-long-enough"),
-    verifySupabaseJwt: vi.fn(async (token: string) =>
+    verifyInternalJwt: vi.fn(async (token: string) =>
       token === "valid-session-token"
         ? {
             sub: "user-1",
@@ -285,7 +285,7 @@ vi.mock("../lib/trial-gate", () => ({ startTrialForUser: vi.fn(async () => undef
 vi.mock("../lib/internal-jwt-secret", () => ({
   requireInternalJwtSecret: h.requireInternalJwtSecret,
 }));
-vi.mock("../lib/auth-utils", () => ({ verifySupabaseJwt: h.verifySupabaseJwt }));
+vi.mock("../lib/auth-utils", () => ({ verifyInternalJwt: h.verifyInternalJwt }));
 
 import authRouter from "./auth-routes";
 
@@ -310,7 +310,7 @@ describe("auth routes integration", () => {
 
     vi.clearAllMocks();
     h.requireInternalJwtSecret.mockReturnValue("super-secret-jwt-key-that-is-long-enough");
-    h.verifySupabaseJwt.mockImplementation(async (token: string) =>
+    h.verifyInternalJwt.mockImplementation(async (token: string) =>
       token === "valid-session-token"
         ? {
             sub: "user-1",
@@ -380,7 +380,7 @@ describe("auth routes integration", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.token).toMatch(/^[^.]+\.[^.]+\.[^.]+$/);
-    expect(h.verifySupabaseJwt).toHaveBeenCalledWith(
+    expect(h.verifyInternalJwt).toHaveBeenCalledWith(
       "valid-session-token",
       "super-secret-jwt-key-that-is-long-enough",
     );

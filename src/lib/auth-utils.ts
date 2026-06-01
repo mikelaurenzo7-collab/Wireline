@@ -3,7 +3,12 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { log } from "./server-context";
 
 /**
- * Standard Supabase / jose-style JWT payload.
+ * Wireline internal JWT payload (HS256, signed with `INTERNAL_JWT_SECRET`).
+ *
+ * The shape mirrors a standard RFC 7519 / jose payload — `sub`, `aud`, `iat`,
+ * `exp`, `iss` — purely because that is the conventional JWT vocabulary, not
+ * because Supabase Auth is the issuer. Wireline mints and verifies these
+ * tokens entirely in-process; there is no round-trip to Supabase Auth.
  */
 export interface JwtPayload {
   aud: string;
@@ -18,10 +23,12 @@ export interface JwtPayload {
 }
 
 /**
- * Verifies a Supabase JWT locally using the HMAC secret.
- * This avoids a round-trip to the Supabase API and removes the need for the SDK.
+ * Verifies a Wireline internal JWT locally using the HMAC secret
+ * (`INTERNAL_JWT_SECRET`). This is **not** a Supabase Auth token — Wireline
+ * mints and verifies its own session JWTs, so there is no SDK or network
+ * round-trip involved.
  */
-export async function verifySupabaseJwt(token: string, secret: string): Promise<JwtPayload | null> {
+export async function verifyInternalJwt(token: string, secret: string): Promise<JwtPayload | null> {
   try {
     const [headerB64, payloadB64, signatureB64] = token.split(".");
     if (!headerB64 || !payloadB64 || !signatureB64) return null;

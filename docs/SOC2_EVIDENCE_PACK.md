@@ -72,7 +72,7 @@ export const authenticateUser = async (
   const token = extractBearerToken(req);
   if (!token) return res.status(401).json({ error: "No authorization token" });
   
-  const verified = await verifySupabaseJwt(token);
+  const verified = await verifyInternalJwt(token);
   if (!verified) return res.status(401).json({ error: "Invalid token" });
   
   req.user = verified;
@@ -154,7 +154,7 @@ const event = stripe.webhooks.constructEvent(
 
 // Twilio webhook authentication (dual)
 const isValidCron = secureCompare(providedSecret, process.env.CRON_SECRET);
-const isValidJwt = await verifySupabaseJwt(token);
+const isValidJwt = await verifyInternalJwt(token);
 ```
 
 **Evidence:**
