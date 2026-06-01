@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- recipe payload bridges loosely typed agent API. */
 import { useState } from "react";
 import { Check, Plus, X } from "lucide-react";
-import { authFetch } from "../../../lib/api";
 import { FormShell, Field, TextArea, Select, RunButton, ResultCard, ErrCard } from "../shared";
 import type { AgentLite } from "../types";
 import { Checkbox } from "../../ui/shadcn/Checkbox";
+import { useRecipeAsync } from "../useRecipeAsync";
 
 export function PersonaCloneForm({
   agents,
@@ -19,29 +18,11 @@ export function PersonaCloneForm({
   const [description, setDescription] = useState("");
   const [samples, setSamples] = useState<string[]>([""]);
   const [apply, setApply] = useState(!!initAgent);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [result, setResult] = useState<any>(null);
+  const { loading, err, result, run } = useRecipeAsync("/api/claude/persona-clone");
 
-  const run = async () => {
-    setLoading(true);
-    setErr(null);
-    setResult(null);
-    try {
-      const cleaned = samples.map((s) => s.trim()).filter(Boolean);
-      const r = await authFetch("/api/claude/persona-clone", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description, samples: cleaned, agentId, applyToAgent: apply }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error);
-      setResult(data);
-    } catch (e: any) {
-      setErr(e.message);
-    } finally {
-      setLoading(false);
-    }
+  const submit = () => {
+    const cleaned = samples.map((s) => s.trim()).filter(Boolean);
+    run({ description, samples: cleaned, agentId, applyToAgent: apply });
   };
 
   return (
@@ -110,7 +91,7 @@ export function PersonaCloneForm({
         </label>
       )}
       <RunButton
-        onClick={run}
+        onClick={submit}
         loading={loading}
         disabled={disabled || samples.every((s) => !s.trim())}
         label="Compile Persona"

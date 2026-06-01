@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- recipe payload bridges loosely typed agent API. */
 import { useEffect, useState } from "react";
-import { authFetch } from "../../../lib/api";
 import { cn } from "../../../lib/utils";
 import { FormShell, Field, TextInput, Select, RunButton, ErrCard } from "../shared";
 import type { AgentLite } from "../types";
+import { useRecipeAsync } from "../useRecipeAsync";
 
 export function ObjectionDrillForm({
   agents,
@@ -19,33 +19,13 @@ export function ObjectionDrillForm({
   const [agentId, setAgentId] = useState(initAgent || agents[0]?.id || "");
   const [topic, setTopic] = useState(initial?.topic ?? "");
   const [count, setCount] = useState(5);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [result, setResult] = useState<any>(null);
+  const { loading, err, result, run } = useRecipeAsync("/api/claude/objection-drill");
 
   useEffect(() => {
     if (!agentId && agents[0]) setAgentId(agents[0].id);
   }, [agents, agentId]);
 
-  const run = async () => {
-    setLoading(true);
-    setErr(null);
-    setResult(null);
-    try {
-      const r = await authFetch("/api/claude/objection-drill", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agentId, topic, count }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error);
-      setResult(data);
-    } catch (e: any) {
-      setErr(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const submit = () => run({ agentId, topic, count });
 
   return (
     <FormShell>
@@ -74,7 +54,7 @@ export function ObjectionDrillForm({
         />
       </Field>
       <RunButton
-        onClick={run}
+        onClick={submit}
         loading={loading}
         disabled={disabled || !topic}
         label="Compose Drills"

@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- recipe payload bridges loosely typed agent API. */
 import { useEffect, useState } from "react";
-import { authFetch } from "../../../lib/api";
 import { FormShell, Field, TextArea, Select, RunButton, ResultCard, ErrCard } from "../shared";
 import type { AgentLite } from "../types";
+import { useRecipeAsync } from "../useRecipeAsync";
 
 const TECHNIQUE_LABEL: Record<string, string> = {
   acknowledge_redirect: "Acknowledge & Redirect",
@@ -25,33 +25,18 @@ export function CallPlaybookForm({
 }) {
   const [agentId, setAgentId] = useState(initAgent || agents[0]?.id || "");
   const [scenario, setScenario] = useState(initial?.scenario ?? "");
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [playbook, setPlaybook] = useState<any>(null);
+  const {
+    loading,
+    err,
+    result: playbook,
+    run,
+  } = useRecipeAsync("/api/claude/call-playbook", "playbook");
 
   useEffect(() => {
     if (!agentId && agents[0]) setAgentId(agents[0].id);
   }, [agents, agentId]);
 
-  const run = async () => {
-    setLoading(true);
-    setErr(null);
-    setPlaybook(null);
-    try {
-      const r = await authFetch("/api/claude/call-playbook", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agentId, scenario }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error);
-      setPlaybook(data.playbook);
-    } catch (e: any) {
-      setErr(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const submit = () => run({ agentId, scenario });
 
   return (
     <FormShell>
@@ -71,7 +56,7 @@ export function CallPlaybookForm({
         />
       </Field>
       <RunButton
-        onClick={run}
+        onClick={submit}
         loading={loading}
         disabled={disabled || !agentId || !scenario}
         label="Build Playbook"

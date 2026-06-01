@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- recipe payload bridges loosely typed agent API. */
-import { useState } from "react";
-import { authFetch } from "../../../lib/api";
 import { cn } from "../../../lib/utils";
 import { FormShell, RunButton, ResultCard, ErrCard } from "../shared";
+import { useRecipeAsync } from "../useRecipeAsync";
 
 export function ThreadSummaryForm({
   threadId,
@@ -11,32 +10,16 @@ export function ThreadSummaryForm({
   threadId?: string;
   disabled: boolean;
 }) {
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [s, setS] = useState<any>(null);
+  const {
+    loading,
+    err,
+    result: s,
+    run,
+  } = useRecipeAsync("/api/claude/summarize-thread", "summary");
 
-  const run = async () => {
-    if (!threadId) {
-      setErr("No thread selected.");
-      return;
-    }
-    setLoading(true);
-    setErr(null);
-    setS(null);
-    try {
-      const r = await authFetch("/api/claude/summarize-thread", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ threadId }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error);
-      setS(data.summary);
-    } catch (e: any) {
-      setErr(e.message);
-    } finally {
-      setLoading(false);
-    }
+  const submit = () => {
+    if (!threadId) return;
+    run({ threadId });
   };
 
   return (
@@ -48,7 +31,7 @@ export function ThreadSummaryForm({
         </p>
       )}
       <RunButton
-        onClick={run}
+        onClick={submit}
         loading={loading}
         disabled={disabled || !threadId}
         label="Summarize"
