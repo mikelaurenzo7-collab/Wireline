@@ -381,7 +381,7 @@ export default function LiveOps() {
 
   return (
     <PageTransition>
-      <ClientRouteViewport className="overflow-y-auto">
+      <ClientRouteViewport className="scroll-viewport">
         <div className="max-w-[1600px] mx-auto space-y-3 pb-4">
           {/* No editorial header here — Live Ops is a working surface; the
               sidebar nav already names the page. Refresh sits inline with
@@ -402,7 +402,7 @@ export default function LiveOps() {
                 <button
                   onClick={refresh}
                   disabled={isRefreshing || loading}
-                  className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-muted hover:text-ink border border-black/8 bg-black/4 active:bg-black/8 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="touch-press shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-muted hover:text-ink wl-panel disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   aria-label="Refresh"
                   title="Refresh"
                 >
@@ -414,7 +414,7 @@ export default function LiveOps() {
                 <section className="space-y-3 pt-1">
                   <div className="relative group">
                     <div className="absolute -inset-1 bg-gradient-to-r from-brand/15 to-brand-2/15 rounded-[2rem] blur opacity-25 group-hover:opacity-40 transition duration-1000" />
-                    <div className="relative glass border-brand/12 rounded-[1.75rem] p-4 sm:p-5">
+                    <div className="relative wl-panel-elevated rounded-[1.75rem] p-4 sm:p-5">
                       <LiveFloorPanel calls={calls} agents={agents} loading={presenceLoading} />
                     </div>
                   </div>
@@ -428,7 +428,7 @@ export default function LiveOps() {
 
               {activeTab === "intel" && (
                 <section className="space-y-2 pt-1">
-                  <div className="glass border-brand/12 rounded-[1.75rem] p-5 min-h-[320px] flex flex-col">
+                  <div className="wl-panel-elevated rounded-[1.75rem] p-5 min-h-[320px] flex flex-col">
                     <ActionFeed actions={actions} onRefresh={refresh} />
                   </div>
                 </section>
@@ -439,9 +439,9 @@ export default function LiveOps() {
                   <span className="app-section-title block">Fleet analytics</span>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {/* Analytics: Sentiment */}
-                    <div className="glass border-brand/12 rounded-[2rem] p-5 hover:border-brand/35 hover:-translate-y-px hover:shadow-lg hover:shadow-brand/5 transition-all duration-300">
+                    <div className="wl-panel-elevated rounded-[2rem] p-5 hover:border-brand/35 hover:-translate-y-px hover:shadow-lg hover:shadow-brand/5 transition-all duration-300">
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="app-section-title flex items-center gap-2">
+                        <h3 className="wl-label flex items-center gap-2">
                           <Globe className="w-3.5 h-3.5 text-brand" />
                           Market Sentiment
                         </h3>
@@ -531,9 +531,9 @@ export default function LiveOps() {
                     </div>
 
                     {/* Analytics: Unit Economics */}
-                    <div className="glass border-brand/12 rounded-[2rem] p-5 hover:border-brand/35 hover:-translate-y-px hover:shadow-lg hover:shadow-brand/5 transition-all duration-300">
+                    <div className="wl-panel-elevated rounded-[2rem] p-5 hover:border-brand/35 hover:-translate-y-px hover:shadow-lg hover:shadow-brand/5 transition-all duration-300">
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="app-section-title flex items-center gap-2">
+                        <h3 className="wl-label flex items-center gap-2">
                           <Zap className="w-3.5 h-3.5 text-brand" />
                           Unit Economics
                         </h3>
@@ -543,14 +543,14 @@ export default function LiveOps() {
                       </div>
 
                       <div className="grid grid-cols-2 gap-2">
-                        <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
-                          <span className="app-section-title block mb-1">Cost / Min</span>
+                        <div className="p-4 rounded-2xl wl-panel">
+                          <span className="wl-label block mb-1">Cost / Min</span>
                           <span className="font-display italic text-2xl text-ink tabular-nums">
                             ${stats?.unitEconomics?.costPerMinute ?? "0.00"}
                           </span>
                         </div>
-                        <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
-                          <span className="app-section-title block mb-1">Cost / Lead</span>
+                        <div className="p-4 rounded-2xl wl-panel">
+                          <span className="wl-label block mb-1">Cost / Lead</span>
                           <span className="font-display italic text-2xl text-ink tabular-nums">
                             ${stats?.unitEconomics?.costPerLead ?? "0.00"}
                           </span>
@@ -581,9 +581,9 @@ export default function LiveOps() {
             {/* Right Pane (Ops Intelligence Sidebar) */}
             <div className="lg:col-span-4 xl:col-span-3 space-y-3">
               {/* Telemetry Heartbeat Card */}
-              <div className="google-m3-card p-3.5 google-m3-elevation-2 relative overflow-hidden">
+              <div className="wl-panel-elevated p-3.5 relative overflow-hidden rounded-2xl">
                 <div className="flex items-center justify-between mb-2.5">
-                  <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-brand font-bold flex items-center gap-2">
+                  <h3 className="wl-label text-brand font-bold flex items-center gap-2">
                     <span className="relative flex h-1.5 w-1.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500/60" />
                       <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
@@ -610,7 +610,7 @@ export default function LiveOps() {
               </div>
 
               {/* Growth Action Card */}
-              <div className="google-m3-card p-3.5 google-m3-elevation-2 space-y-2.5">
+              <div className="wl-panel-elevated p-3.5 rounded-2xl space-y-2.5">
                 <div>
                   <h4 className="font-display italic text-[15px] leading-tight text-foreground">
                     Lead Generation
@@ -656,7 +656,7 @@ export default function LiveOps() {
                       }
                     }}
                     disabled={activatingGrowth}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-br from-brand to-brand-deep text-on-brand rounded-lg shadow-sm shadow-brand/20 transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-wait cursor-pointer google-m3-ripple"
+                    className="touch-press w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-br from-brand to-brand-deep text-on-brand rounded-lg shadow-sm shadow-brand/20 transition-all duration-200 disabled:opacity-60 disabled:cursor-wait cursor-pointer"
                   >
                     <Zap
                       className={clsx(
@@ -672,7 +672,7 @@ export default function LiveOps() {
                   <button
                     onClick={() => navigate("/agents")}
                     title="Create an agent first"
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-brand/20 bg-brand/[0.02] text-brand hover:border-brand/45 transition-colors cursor-pointer google-m3-ripple"
+                    className="touch-press w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-brand/20 bg-brand/[0.02] text-brand hover:border-brand/45 transition-colors cursor-pointer"
                   >
                     <Zap className="w-3.5 h-3.5" />
                     <span className="text-[11px] font-semibold">Deploy Agent First</span>

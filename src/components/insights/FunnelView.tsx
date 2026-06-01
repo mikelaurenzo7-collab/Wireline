@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { TrendingUp } from "lucide-react";
 import { fetchInsight, Spinner, ErrCard } from "./shared";
-import { EmptyState } from "../ui/EmptyState";
+import { InlineEmpty } from "../ui/InlineEmpty";
 
 export default function FunnelView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
@@ -38,12 +38,9 @@ export default function FunnelView({ days }: { days: number }) {
 
   if (stages.length === 0 || stages.every((s: any) => s.count === 0)) {
     return (
-      <EmptyState
-        framed
+      <InlineEmpty
         icon={TrendingUp}
-        eyebrow="Conversion Funnel"
-        title="No calls yet"
-        description="Your conversion funnel will populate once agents start handling calls. Run a test call from the Dashboard to see data here."
+        label="No calls yet — your funnel populates as agents handle calls."
       />
     );
   }

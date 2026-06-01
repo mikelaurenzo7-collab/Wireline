@@ -144,7 +144,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
             <button
               onClick={fetchThreads}
               disabled={loading}
-              className="h-11 px-3.5 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
+              className="h-11 px-3.5 rounded-full wl-panel text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
             >
               {loading ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -169,7 +169,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                     {threads.length}
                   </span>
                 </div>
-                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain panel-scroll p-2">
+                <div className="flex-1 min-h-0 scroll-viewport panel-scroll p-2">
                   {loading ? (
                     <div className="flex items-center justify-center py-12">
                       <Loader2 className="w-5 h-5 animate-spin text-muted" />
@@ -257,7 +257,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                     >
                       <ArrowLeft className="w-2.5 h-2.5" /> Back
                     </button>
-                    <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pb-3">
+                    <div className="flex-1 min-h-0 scroll-viewport space-y-2 pb-3">
                       {messagesLoading ? (
                         <div className="flex items-center justify-center py-12">
                           <Loader2 className="w-5 h-5 animate-spin text-muted" />

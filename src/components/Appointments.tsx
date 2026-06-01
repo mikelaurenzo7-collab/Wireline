@@ -208,7 +208,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
           </ShadButton>
         </header>
 
-        <div className="p-5 space-y-4 overflow-y-auto max-h-[70vh] scrollbar-hide">
+        <div className="p-5 space-y-4 scroll-viewport max-h-[70vh] scrollbar-hide">
           <div className="grid grid-cols-1 gap-4">
             <Field label="Customer Name" icon={User}>
               <Input
@@ -456,7 +456,7 @@ function CalendarGrid({
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-hide overflow-x-auto">
+      <div className="flex-1 scroll-viewport scrollbar-hide overflow-x-auto">
         <div className="grid grid-cols-7 min-w-[21rem]">
           {cells.map((cell, idx) => {
             const isToday =
@@ -609,7 +609,7 @@ export default function AppointmentsView({ embedded = false }: { embedded?: bool
 
   const actions = (
     <div className="flex items-center gap-2">
-      <div className="flex p-1 rounded-full glass border border-black/10">
+      <div className="flex p-1 rounded-full wl-panel">
         <ShadButton
           aria-label="List view"
           onClick={() => setViewMode("list")}
@@ -830,7 +830,7 @@ function AppointmentRow({
       className="px-4 py-3.5 hover:bg-white/3 transition-colors group"
     >
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-xl glass border border-black/10 flex items-center justify-center text-brand shrink-0 mt-0.5">
+        <div className="w-9 h-9 rounded-xl wl-panel flex items-center justify-center text-brand shrink-0 mt-0.5">
           <User className="w-4 h-4" />
         </div>
 

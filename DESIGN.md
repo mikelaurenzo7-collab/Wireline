@@ -99,6 +99,13 @@
 - Keep CTAs consistent (`primary` gradient or `secondary` glass).
 - Use `<Card>` for all card surfaces; reserve `.glass` for non-card surfaces (modals, sticky shells, popovers, icon-button faces) where the shadcn Card token is inappropriate.
 - Mark purely decorative elements with `aria-hidden`.
+- **Decouple visual size from hit targets.** Keep visual elements compact (36px inputs, 32px secondary buttons, 20px utility icons). Expand interactive hit areas to 44–48px minimum using invisible `::after` pseudo-elements, transparent outer padding, or container bounds — never by inflating the visual container.
+- Use sharp 14px body typography, high-contrast dark surfaces, and thin ambient-luminosity borders for information density.
+- Use `.wl-panel` and `.wl-panel-elevated` for specular depth surfaces instead of flat `border border-black/8` patterns.
+- Apply `.touch-press` to all small interactive elements (buttons, pills) for zero-latency GPU-driven feedback.
+- Use `.wl-orbit` with `data-active` for orbital activity indicators around agent avatars.
+- Use `.scroll-viewport` on any container that needs isolated inner scrolling (overscroll containment).
+- Apply `.wl-label` for premium uppercase captions (10px, tracking +0.03em).
 
 **Don't**
 - Introduce new colors or radius values.
@@ -106,6 +113,39 @@
 - Create one-off empty states.
 - Use `border-white/*` on cream backgrounds (use `border-black/8` or `border-ink/[0.08]`).
 - Stack multiple cards inside cards without clear visual separation.
+- Use bulky `w-11 h-11` / `w-12 h-12` classes to satisfy tap targets — this distorts the compact visual silhouette. Use `hit-area-44` or the built-in `::after` expansion on ShadButton instead.
+- Use heavy flat `border border-black/8` for workspace panels — migrate to `.wl-panel` / `.wl-panel-elevated` specular depth system.
+
+---
+
+## 3b. Mobile-First Architecture — Locked Viewport
+
+The app shell uses a **strict locked viewport** pattern:
+
+- `html`, `body`, `#root` are pinned to `height: 100dvh; overflow: hidden`
+- No document-level scroll — the browser chrome stays perfectly stationary
+- All scrollable areas use `.scroll-viewport` (`overflow-y: auto; overscroll-behavior-y: contain`)
+- This eliminates scroll chaining, rubber-band bounce, and address-bar jank
+
+### Wireline Identity Classes
+
+| Class | Purpose |
+|-------|---------|
+| `.wl-panel` | Specular depth surface (ambient blur + inset highlight) |
+| `.wl-panel-elevated` | Primary workspace container (deeper blur + aurora glow) |
+| `.touch-press` | Zero-latency GPU-driven scale(0.97) on :active |
+| `.touch-press-deep` | Deeper press for larger surfaces (scale 0.95 + opacity) |
+| `.wl-orbit` | Orbital activity ring around agent avatars |
+| `.wl-label` | Premium uppercase caption (10px, +0.03em tracking) |
+| `.scroll-viewport` | Isolated scroll container with overscroll containment |
+
+### Bottom Sheet Pattern (Mobile)
+
+On mobile (<xl), panels slide up from the bottom as full-width sheets instead of side drawers. They include:
+- A drag handle (36px × 4px rounded indicator)
+- Spring physics animation (damping: 32, stiffness: 340)
+- Max height of 85dvh to maintain context
+- `.wl-panel-elevated` specular treatment
 
 ---
 

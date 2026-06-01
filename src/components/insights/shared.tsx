@@ -54,20 +54,11 @@ export function Spinner() {
 
 /* ── Empty state ────────────────────────────────────────────────── */
 
-import { EmptyState as UiEmptyState } from "../ui/EmptyState";
+import { InlineEmpty } from "../ui/InlineEmpty";
 
 export function Empty({ label, green }: { label: string; green?: boolean }) {
   const Icon = green ? CheckCircle2Icon : BarChart3;
-  return (
-    <UiEmptyState
-      icon={Icon}
-      title={label}
-      framed
-      withHalo
-      accent={green ? "#10B981" : undefined}
-      eyebrow={green ? "All clear" : "No data yet"}
-    />
-  );
+  return <InlineEmpty icon={Icon} label={label} accent={green ? "#10B981" : undefined} />;
 }
 
 /* ── Error card ─────────────────────────────────────────────────── */

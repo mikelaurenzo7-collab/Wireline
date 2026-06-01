@@ -336,7 +336,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
             <div ref={userMenuRef} className="relative">
               <button
                 onClick={() => setUserMenuOpen((v) => !v)}
-                className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-colors px-1.5 py-2.5 md:py-1 min-h-[44px]"
+                className="touch-press flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-colors px-1.5 py-2.5 md:py-1 min-h-[44px]"
                 aria-label="Account menu"
                 aria-expanded={userMenuOpen}
                 aria-haspopup="menu"
@@ -365,12 +365,10 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                     transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
                     role="menu"
                     aria-label="Account menu"
-                    className="absolute right-0 top-full mt-2 min-w-[240px] w-64 md:w-72 max-w-[90vw] rounded-xl glass-strong border border-black/8 shadow-xl overflow-hidden z-50"
+                    className="absolute right-0 top-full mt-2 min-w-[240px] w-64 md:w-72 max-w-[90vw] rounded-xl wl-panel-elevated shadow-xl overflow-hidden z-50"
                   >
                     <div className="px-4 py-3 border-b border-black/8">
-                      <p className="text-[10px] uppercase tracking-[0.12em] text-muted mb-1">
-                        Signed in as
-                      </p>
+                      <p className="wl-label text-muted mb-1">Signed in as</p>
                       <p className="text-[12px] font-medium text-ink truncate">
                         {user?.email || "—"}
                       </p>
@@ -500,14 +498,14 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 {/* 44pt close button */}
                 <button
                   onClick={() => onDrawerChange(false)}
-                  className="w-11 h-11 rounded-lg flex items-center justify-center text-ink/70 hover:text-ink hover:bg-black/5 transition-colors"
+                  className="touch-press w-11 h-11 rounded-lg flex items-center justify-center text-ink/70 hover:text-ink hover:bg-black/5 transition-colors"
                   aria-label="Close navigation"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <nav className="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-3">
+              <nav className="flex-1 min-h-0 scroll-viewport space-y-3">
                 {NAV_GROUPS.map((group) => {
                   const visibleItems = group.items.filter(
                     (item) => !item.ownerOnly || user?.is_owner === true,
@@ -525,7 +523,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
               </nav>
 
               <div className="pt-3 mt-3 aurora-divider space-y-2">
-                <div className="flex items-center gap-2 rounded-lg border border-black/8 glass px-2 py-2">
+                <div className="flex items-center gap-2 rounded-lg wl-panel px-2 py-2">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-on-brand font-medium text-sm shrink-0 bg-brand">
                     {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
                   </div>
@@ -533,14 +531,12 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                     <p className="text-[12px] font-medium text-ink truncate leading-none mb-0.5">
                       {user?.email?.split("@")[0]}
                     </p>
-                    <p className="text-[9px] tracking-[0.12em] uppercase text-muted truncate">
-                      {user?.email?.split("@")[1]}
-                    </p>
+                    <p className="wl-label text-muted truncate">{user?.email?.split("@")[1]}</p>
                   </div>
                   <button
                     onClick={() => signOut()}
                     aria-label="Sign out"
-                    className="w-11 h-11 rounded-md flex items-center justify-center text-ink/65 hover:text-rose-600 hover:bg-rose-500/8 border border-black/7 hover:border-rose-500/35 transition-colors"
+                    className="touch-press w-11 h-11 rounded-md flex items-center justify-center text-ink/65 hover:text-rose-600 hover:bg-rose-500/8 wl-panel hover:border-rose-500/35 transition-colors"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                   </button>

@@ -14,6 +14,7 @@ import React from "react";
 import { motion } from "motion/react";
 import { Check, Loader2, Clock, ExternalLink } from "lucide-react";
 import { cn } from "../lib/utils";
+import { AgentActivityIndicator } from "./ui/AgentActivityIndicator";
 
 export type IntegrationStatus = "pending" | "active" | "success" | "waiting";
 
@@ -134,7 +135,11 @@ export default function IntegrationActivityCard({
                         : "1px solid rgba(0, 0, 0, 0.05)",
               }}
             >
-              <StatusIcon className="w-2.5 h-2.5" />
+              {status === "active" ? (
+                <AgentActivityIndicator active size={14} pose="on-call" className="inline-flex" />
+              ) : (
+                <StatusIcon className="w-2.5 h-2.5" />
+              )}
               {config.label}
             </span>
           </div>

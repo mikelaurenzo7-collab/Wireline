@@ -236,7 +236,7 @@ export default function OnboardingQuickstart({
               </a>
               <a
                 href="mailto:trywireline@yahoo.com?subject=Wireline%20kickoff"
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full glass border border-white/12 text-ink text-[11px] uppercase tracking-[0.3em] hover:border-white/24 transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full wl-panel text-ink text-[11px] uppercase tracking-[0.3em] hover:border-white/24 transition-colors"
               >
                 <Mail className="w-3.5 h-3.5" />
                 Email the founder
@@ -699,7 +699,7 @@ function PowerUpCard({
   return (
     <Link
       to={to}
-      className="rounded-xl glass border border-black/8 p-4 card-interactive group overflow-hidden relative"
+      className="rounded-xl wl-panel p-4 card-interactive group overflow-hidden relative"
     >
       <div
         className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-15 blur-2xl pointer-events-none"
@@ -807,7 +807,7 @@ function AllSetCard({
             <Link
               key={to}
               to={to}
-              className="group flex items-center gap-3 h-11 rounded-xl glass border border-white/8 px-3.5 hover:border-white/20 hover:bg-white/4 transition-all"
+              className="group flex items-center gap-3 h-11 rounded-xl wl-panel px-3.5 hover:border-white/20 hover:bg-white/4 transition-all"
             >
               <div className="w-7 h-7 rounded-lg bg-brand/12 border border-brand/20 flex items-center justify-center shrink-0 text-brand">
                 <Icon className="w-3.5 h-3.5" />

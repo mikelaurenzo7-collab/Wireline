@@ -18,7 +18,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { clsx } from "clsx";
 import { authFetch } from "../../lib/api";
 import { useToast } from "../../contexts/ToastContext";
-import { EmptyState } from "../ui/EmptyState";
+import { InlineEmpty } from "../ui/InlineEmpty";
 
 interface ActionItem {
   id: string;
@@ -86,7 +86,7 @@ export function ActionFeed({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="app-section-title flex items-center gap-2">
+        <h3 className="wl-label flex items-center gap-2">
           <Sparkles className="w-3.5 h-3.5 text-brand" />
           Intelligence Hub
         </h3>
@@ -95,13 +95,11 @@ export function ActionFeed({
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-3 custom-scrollbar">
+      <div className="flex-1 scroll-viewport pr-2 -mr-2 space-y-3 custom-scrollbar">
         {actions.length === 0 ? (
-          <EmptyState
+          <InlineEmpty
             icon={Sparkles}
-            eyebrow="Fleet synchronized"
-            title="All clear"
-            description="Autonomous agents are monitoring signals. No manual intervention required."
+            label="All clear — no manual intervention required."
             className="h-64"
           />
         ) : (
@@ -116,7 +114,7 @@ export function ActionFeed({
                 className={clsx(
                   "relative group rounded-2xl border transition-all duration-300 overflow-hidden",
                   action.status === "pending"
-                    ? "bg-white/40 border-black/8 hover:border-brand/30 hover:bg-white/60"
+                    ? "wl-panel hover:border-brand/30"
                     : "bg-black/[0.02] border-black/4 opacity-60",
                   isExpanded && "border-brand/40 bg-white/80 ring-1 ring-brand/10 shadow-lg",
                 )}
@@ -235,7 +233,7 @@ export function ActionFeed({
                         {/* Reasoning section */}
                         {action.reasoning && (
                           <div className="space-y-1.5">
-                            <h4 className="text-[9px] uppercase tracking-[0.3em] text-brand font-bold flex items-center gap-1.5">
+                            <h4 className="wl-label text-brand font-bold flex items-center gap-1.5">
                               <Sparkles className="w-3 h-3" /> AI Reasoning
                             </h4>
                             <p className="text-[11px] text-ink/70 leading-relaxed italic">
@@ -246,9 +244,7 @@ export function ActionFeed({
 
                         {/* Payload Preview */}
                         <div className="space-y-2">
-                          <h4 className="text-[9px] uppercase tracking-[0.3em] text-muted font-bold">
-                            Drafted Content
-                          </h4>
+                          <h4 className="wl-label text-muted font-bold">Drafted Content</h4>
                           <div className="rounded-xl bg-white/80 border border-black/5 p-4 overflow-hidden">
                             {action.type === "send_email" ? (
                               <div className="space-y-3">
@@ -289,14 +285,14 @@ export function ActionFeed({
                             <button
                               disabled={isProcessing}
                               onClick={(e) => handleReject(action.id, e)}
-                              className="flex-1 h-9 rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-600 text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-rose-500/10 transition-all disabled:opacity-50"
+                              className="touch-press flex-1 h-9 rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-600 text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-rose-500/10 transition-all disabled:opacity-50"
                             >
                               Dismiss Action
                             </button>
                             <button
                               disabled={isProcessing}
                               onClick={(e) => handleApprove(action.id, e)}
-                              className="disabled:opacity-50 disabled:cursor-not-allowed flex-[2] h-9 rounded-xl brutal-btn !py-0 !text-[10px] !tracking-[0.2em] !font-bold flex items-center justify-center gap-2"
+                              className="touch-press disabled:opacity-50 disabled:cursor-not-allowed flex-[2] h-9 rounded-xl brutal-btn !py-0 !text-[10px] !tracking-[0.2em] !font-bold flex items-center justify-center gap-2"
                             >
                               {isProcessing ? (
                                 <Clock className="w-3.5 h-3.5 animate-spin" />

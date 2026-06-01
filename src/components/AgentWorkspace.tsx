@@ -48,6 +48,7 @@ import { Skeleton } from "./ui/shadcn/Skeleton";
 import { Checkbox } from "./ui/shadcn/Checkbox";
 import { Input } from "./ui/shadcn/Input";
 import { EmptyState } from "./ui/EmptyState";
+import { AgentActivityIndicator } from "./ui/AgentActivityIndicator";
 
 const AgentTrainingInline = lazy(() => import("./AgentTraining"));
 const AgentConnectorsInline = lazy(() => import("./AgentActionEngine"));
@@ -1022,10 +1023,7 @@ export default function AgentWorkspace({
                     </div>
                     <div className="bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm border border-brand/12 rounded-2xl rounded-bl-md px-5 py-4 shadow-sm">
                       <div className="flex items-center gap-2.5 mb-2">
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-brand" />
-                        </span>
+                        <AgentActivityIndicator active size={24} pose="on-call" />
                         <span className="text-[12px] text-muted font-medium">
                           {agentName} is thinking…
                         </span>

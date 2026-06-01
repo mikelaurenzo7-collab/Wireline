@@ -262,7 +262,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
     <button
       onClick={syncInbox}
       disabled={syncing}
-      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full glass border border-white/10 text-ink text-[11px] uppercase tracking-[0.22em] hover:border-brand/40 transition-colors disabled:opacity-60"
+      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full wl-panel text-ink text-[11px] uppercase tracking-[0.22em] hover:border-brand/40 transition-colors disabled:opacity-60"
     >
       {syncing ? (
         <Loader2 className="w-3 h-3 animate-spin text-brand" />
@@ -307,7 +307,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                     {threads.length}
                   </span>
                 </div>
-                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain panel-scroll">
+                <div className="flex-1 min-h-0 scroll-viewport panel-scroll">
                   <AnimatePresence mode="sync">
                     {loading ? (
                       <PanelSkeleton rows={6} />
@@ -420,7 +420,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           <button
                             // 44x44 hit area meets the WCAG 2.5.5 / Apple HIG touch
                             // target minimum on mobile; the visible icon stays small.
-                            className="lg:hidden w-11 h-11 rounded-lg glass border border-white/10 flex items-center justify-center text-ink shrink-0 active:scale-95 transition-transform"
+                            className="lg:hidden w-11 h-11 rounded-lg wl-panel flex items-center justify-center text-ink shrink-0 active:scale-95 transition-transform"
                             onClick={() => setSelectedThread(null)}
                             aria-label="Back to thread list"
                           >
@@ -461,7 +461,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           />
                           <button
                             onClick={() => handlePhoneHandoff(selectedThread)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full glass border border-white/10 text-ink text-[10px] uppercase tracking-[0.25em] hover:border-brand/40 transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full wl-panel text-ink text-[10px] uppercase tracking-[0.25em] hover:border-brand/40 transition-colors"
                             title="Route this thread to a voice fleet agent"
                           >
                             <Phone className="w-3 h-3 text-brand" />
@@ -471,7 +471,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                       </div>
 
                       {/* Messages */}
-                      <div className="flex-1 overflow-y-auto scrollbar-hide p-4 space-y-3">
+                      <div className="flex-1 scroll-viewport scrollbar-hide p-4 space-y-3">
                         <AnimatePresence>
                           {messages.map((msg, idx) => (
                             <motion.div
@@ -544,7 +544,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                                       key={i}
                                       onClick={() => setReplyText(r.body)}
                                       title={r.body}
-                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full glass border border-black/10 text-ink/70 text-[10px] tracking-wide hover:border-brand/40 hover:text-ink hover:bg-brand/5 transition-all"
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full wl-panel text-ink/70 text-[10px] tracking-wide hover:border-brand/40 hover:text-ink hover:bg-brand/5 transition-all"
                                     >
                                       <span>{r.label}</span>
                                     </button>
@@ -553,7 +553,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           </div>
                         )}
 
-                        <div className="rounded-xl glass border border-black/10 focus-within:border-brand/35 transition-colors overflow-hidden">
+                        <div className="rounded-xl wl-panel focus-within:border-brand/35 transition-colors overflow-hidden">
                           <div className="px-3 pt-2.5 pb-1 flex items-center gap-2 text-muted/70">
                             <Terminal className="w-3 h-3" />
                             <span className="text-[9px] uppercase tracking-[0.35em]">
@@ -576,7 +576,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                             <button
                               onClick={fetchQuickReplies}
                               disabled={isLoadingQuickReplies}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full glass border border-black/10 text-ink text-[10px] uppercase tracking-[0.25em] hover:border-brand/35 transition-colors disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full wl-panel text-ink text-[10px] uppercase tracking-[0.25em] hover:border-brand/35 transition-colors disabled:opacity-50"
                               title="Generate 3 quick-reply options"
                             >
                               {isLoadingQuickReplies ? (
@@ -589,7 +589,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                             <button
                               onClick={handleDraftAI}
                               disabled={isDrafting}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full glass border border-black/10 text-ink text-[10px] uppercase tracking-[0.25em] hover:border-brand/35 transition-colors disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full wl-panel text-ink text-[10px] uppercase tracking-[0.25em] hover:border-brand/35 transition-colors disabled:opacity-50"
                             >
                               {isDrafting ? (
                                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -614,7 +614,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                       animate={{ opacity: 1, scale: 1 }}
                       className="h-full flex flex-col items-center justify-center gap-4 px-6 text-center"
                     >
-                      <div className="w-16 h-16 rounded-2xl glass border border-white/10 flex items-center justify-center text-muted">
+                      <div className="w-16 h-16 rounded-2xl wl-panel flex items-center justify-center text-muted">
                         <Mail className="w-7 h-7" />
                       </div>
                       <div className="space-y-1.5">
