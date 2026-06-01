@@ -7,7 +7,7 @@ import {
   VAPI_TOOL_TIMEOUT_MS,
 } from "../../lib/vapi-tool-results";
 import { fetchInsight, Spinner, ErrCard } from "./shared";
-import { EmptyState } from "../ui/EmptyState";
+import { InlineEmpty } from "../ui/InlineEmpty";
 
 interface VoiceTrend {
   date: string;
@@ -74,13 +74,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
 
   if (latency.sample_count === 0 && !hasVoiceMetrics) {
     return (
-      <EmptyState
-        framed
-        icon={Gauge}
-        eyebrow="Voice Latency"
-        title="No latency samples yet"
-        description="Run live calls and AI actions — p50/p95 response times appear here from your audit log and voice provider telemetry."
-      />
+      <InlineEmpty icon={Gauge} label="No latency samples yet — run live calls to populate." />
     );
   }
 

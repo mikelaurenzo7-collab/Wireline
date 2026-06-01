@@ -358,7 +358,7 @@ function RailItem({ item, active, badge, expanded, accent, shortcut }: RailItemP
       aria-label={expanded ? undefined : item.label}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group relative flex items-center gap-2.5 h-9 px-2 rounded-md transition-all duration-150",
+        "touch-press group relative flex items-center gap-2.5 h-9 px-2 rounded-md transition-all duration-150",
         active
           ? "bg-white/[0.15] text-white font-semibold dark:bg-white/[0.12] dark:text-white"
           : "text-white/70 hover:text-white hover:bg-white/[0.08] dark:text-white/55 dark:hover:text-white/85 dark:hover:bg-white/[0.06]",
@@ -506,7 +506,7 @@ function FooterItem({ to, icon: Icon, label, expanded, active, dataTour }: Foote
       {...(dataTour ? { "data-tour": dataTour } : {})}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group h-9 flex items-center gap-2.5 px-2 rounded-md transition-all",
+        "touch-press group h-9 flex items-center gap-2.5 px-2 rounded-md transition-all",
         active
           ? "bg-white/[0.15] text-white font-semibold dark:bg-white/10 dark:text-white/90"
           : "text-white/70 hover:text-white hover:bg-white/[0.08] dark:text-white/50 dark:hover:text-white/80 dark:hover:bg-white/[0.06]",

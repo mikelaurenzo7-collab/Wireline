@@ -126,7 +126,7 @@ All migrations use `IF NOT EXISTS` — safe to re-run.
 
 - Tailwind CSS 4 — no raw CSS except `src/index.css` globals
 - Mobile-first: design for 390px, scale up with `sm:`, `md:`, `lg:`
-- Touch targets: minimum `w-11 h-11` (44px) on mobile
+- Touch targets: minimum 44×44px hit area on mobile, achieved via invisible `::after` pseudo-elements or transparent padding — NOT by inflating visual container size. Visual heights stay compact (36px inputs, 32px secondary buttons, 20px icons).
 - Use `clsx()` + `tailwind-merge` for conditional classes
 
 ### Testing

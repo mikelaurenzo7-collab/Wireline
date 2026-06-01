@@ -31,7 +31,7 @@ import { Card } from "./ui/shadcn/Card";
 import { Badge } from "./ui/shadcn/Badge";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "./ui/shadcn/Tooltip";
 import { ShadButton } from "./ui/shadcn/ShadButton";
-import { EmptyState } from "./ui/EmptyState";
+import { InlineEmpty } from "./ui/InlineEmpty";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
 
 interface HotLead {
@@ -128,7 +128,7 @@ export default function TriageInbox() {
       scroll
       flush
       accent={accent}
-      className="h-full min-h-[260px]"
+      className="h-full min-h-[160px] sm:min-h-[260px]"
     >
       {loading && !data ? (
         <ClientRouteLoading
@@ -824,13 +824,8 @@ function Empty({
   green?: boolean;
 }) {
   return (
-    <div className="h-full">
-      <EmptyState
-        icon={Icon as React.ComponentProps<typeof EmptyState>["icon"]}
-        eyebrow={green ? "All clear" : "Triage"}
-        title={label}
-        accent={green ? "#10b981" : undefined}
-      />
+    <div className="h-full flex items-center justify-center">
+      <InlineEmpty icon={Icon} label={label} accent={green ? "#10b981" : undefined} />
     </div>
   );
 }

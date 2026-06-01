@@ -80,72 +80,71 @@ export default function Training() {
   return (
     <ClientRouteViewport>
       <HubTabs tabs={TRAINING_HUB} label="Training hub" className="mb-1 md:mb-2" />
-      <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
-        <aside className="shrink-0 lg:w-[280px] flex flex-col">
-          <div className="lg:hidden flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2">
+      <div className="flex flex-col lg:flex-row gap-3 flex-1 min-h-0">
+        <aside className="shrink-0 lg:w-[260px] flex flex-col">
+          {/* Mobile: horizontal orbit strip */}
+          <div className="lg:hidden flex items-center gap-2 overflow-x-auto scrollbar-hide scroll-viewport pb-2">
             {agents.map((agent) => (
               <button
                 key={agent.id}
                 type="button"
                 onClick={() => selectAgent(agent.id)}
                 className={cn(
-                  "shrink-0 flex items-center gap-1.5 px-3.5 py-2 border transition-all text-[12px] min-h-[40px] rounded-lg",
+                  "touch-press shrink-0 flex items-center gap-2 px-3 py-2 transition-all text-[12px] min-h-[40px]",
                   agent.id === selectedAgentId
-                    ? "border-brand/45 bg-brand/12 text-ink font-semibold shadow-md shadow-brand/10"
-                    : "border-black/8 glass text-muted hover:border-brand/25",
+                    ? "wl-panel-elevated font-semibold text-ink"
+                    : "text-muted hover:bg-white/40 dark:hover:bg-white/[0.04]",
                 )}
               >
-                <Bot className="w-4 h-4 shrink-0" />
-                <span className="truncate max-w-[120px]">{agent.name}</span>
+                <span className="wl-orbit" data-active={agent.id === selectedAgentId}>
+                  <span
+                    className={cn(
+                      "w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors",
+                      agent.id === selectedAgentId
+                        ? "bg-gradient-to-br from-brand to-brand-deep text-on-brand"
+                        : "bg-brand/8 text-brand",
+                    )}
+                  >
+                    <Bot className="w-3.5 h-3.5" />
+                  </span>
+                </span>
+                <span className="truncate max-w-[100px]">{agent.name}</span>
               </button>
             ))}
           </div>
 
-          <div className="hidden lg:flex flex-col gap-1.5 h-full max-h-[calc(100dvh-12rem)] overflow-y-auto scrollbar-hide border border-black/8 glass p-3 relative">
-            <p className="px-2 py-1.5 mb-1 font-mono text-[10px] uppercase tracking-[0.25em] text-brand/70 font-semibold">
-              Select Agent
-            </p>
-            <div className="space-y-1.5">
+          {/* Desktop: vertical agent list with specular depth */}
+          <div className="hidden lg:flex flex-col gap-1.5 h-full max-h-[calc(100dvh-12rem)] scroll-viewport wl-panel p-3 relative">
+            <p className="px-2 py-1.5 mb-1 wl-label text-brand/70">Select Agent</p>
+            <div className="space-y-1">
               {agents.map((agent) => (
                 <button
                   key={agent.id}
                   type="button"
                   onClick={() => selectAgent(agent.id)}
                   className={cn(
-                    "w-full text-left flex items-center gap-2.5 px-3 py-2.5 transition-all rounded-lg border group relative overflow-hidden",
+                    "touch-press w-full text-left flex items-center gap-2.5 px-3 py-2.5 transition-all group relative overflow-hidden cursor-pointer",
                     agent.id === selectedAgentId
-                      ? "border-brand/35 text-ink"
-                      : "border-transparent hover:bg-brand/[0.03] hover:border-brand/12 text-muted",
+                      ? "wl-panel-elevated text-ink"
+                      : "hover:bg-brand/[0.03] text-muted",
                   )}
-                  style={
-                    agent.id === selectedAgentId
-                      ? {
-                          background:
-                            "linear-gradient(135deg, rgba(139, 63, 214, 0.08), rgba(139, 63, 214, 0.04))",
-                        }
-                      : undefined
-                  }
                 >
-                  {agent.id === selectedAgentId && (
-                    <div
-                      className="absolute left-0 top-0 bottom-0 w-[3px]"
-                      style={{ background: "linear-gradient(to bottom, #8B3FD6, #6B2B99)" }}
-                    />
-                  )}
-                  <div
-                    className={cn(
-                      "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-colors",
-                      agent.id === selectedAgentId
-                        ? "border-brand/30 bg-brand/12 text-brand"
-                        : "border-black/8 bg-black/[0.02] text-muted group-hover:text-brand group-hover:border-brand/20 group-hover:bg-brand/5",
-                    )}
-                  >
-                    <Bot className="w-4 h-4" />
-                  </div>
+                  <span className="wl-orbit" data-active={agent.id === selectedAgentId}>
+                    <span
+                      className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors",
+                        agent.id === selectedAgentId
+                          ? "bg-gradient-to-br from-brand to-brand-deep text-on-brand"
+                          : "bg-brand/8 text-brand group-hover:bg-brand/12",
+                      )}
+                    >
+                      <Bot className="w-4 h-4" />
+                    </span>
+                  </span>
                   <div className="min-w-0 flex-1">
                     <p
                       className={cn(
-                        "text-[12px] truncate leading-tight",
+                        "text-[12px] truncate leading-tight tracking-[-0.01em]",
                         agent.id === selectedAgentId
                           ? "font-semibold text-ink"
                           : "font-medium text-ink/80",
@@ -168,15 +167,18 @@ export default function Training() {
           </div>
         </aside>
 
-        <main className="flex-1 min-w-0 min-h-0 flex flex-col border border-black/8 glass overflow-hidden relative">
-          <header className="shrink-0 border-b border-black/6 bg-paper/60 backdrop-blur-sm px-3 sm:px-4 pt-3 pb-2 lg:pt-2">
+        {/* Main content — elevated workspace panel */}
+        <main className="flex-1 min-w-0 min-h-0 flex flex-col wl-panel-elevated overflow-hidden relative">
+          <header className="shrink-0 border-b border-brand/6 bg-white/40 dark:bg-black/20 backdrop-blur-sm px-3 sm:px-4 pt-3 pb-2 lg:pt-2">
             <div className="lg:hidden flex items-center gap-2 mb-2 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-brand/10 flex items-center justify-center shrink-0">
-                <GraduationCap className="w-4 h-4 text-brand" />
-              </div>
+              <span className="wl-orbit" data-active="true">
+                <span className="w-8 h-8 rounded-full bg-gradient-to-br from-brand/15 to-brand/8 flex items-center justify-center shrink-0">
+                  <GraduationCap className="w-4 h-4 text-brand" />
+                </span>
+              </span>
               <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-muted">Training</p>
-                <h1 className="text-sm font-semibold text-ink truncate">
+                <p className="wl-label text-muted">Training</p>
+                <h1 className="text-sm font-semibold text-ink truncate tracking-[-0.01em]">
                   {selectedAgent?.name ?? "Agent"}
                 </h1>
               </div>
@@ -190,7 +192,7 @@ export default function Training() {
             />
           </header>
 
-          <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="flex-1 min-h-0 scroll-viewport">
             <AnimatePresence mode="wait">
               {selectedAgentId && (
                 <motion.div

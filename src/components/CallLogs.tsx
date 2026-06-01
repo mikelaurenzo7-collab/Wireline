@@ -119,7 +119,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
           type="search"
           aria-label="Search calls"
           placeholder="Search signals…"
-          className="h-9 w-full sm:w-44 lg:w-60 pl-8 pr-3 rounded-full glass border border-black/10 text-[11px] text-ink placeholder:text-muted/70 focus:border-brand/40 focus:outline-none transition-all"
+          className="h-9 w-full sm:w-44 lg:w-60 pl-8 pr-3 rounded-full wl-panel text-[11px] text-ink placeholder:text-muted/70 focus:border-brand/40 focus:outline-none transition-all"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -129,7 +129,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
         <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
           <SelectTrigger
             aria-label="Filter by call direction"
-            className="h-9 pl-8 pr-3 rounded-full glass border border-black/10 text-[10px] uppercase tracking-[0.22em] text-ink"
+            className="h-9 pl-8 pr-3 rounded-full wl-panel text-[10px] uppercase tracking-[0.22em] text-ink"
           >
             <SelectValue />
           </SelectTrigger>
@@ -311,7 +311,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
           ) : (
             <Panel title="Call Detail" hint="Select a call" icon={FileText}>
               <div className="h-full flex flex-col items-center justify-center gap-4 text-center">
-                <div className="w-16 h-16 rounded-2xl glass border border-black/8 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-2xl wl-panel flex items-center justify-center">
                   <FileText className="w-8 h-8 text-muted/70" />
                 </div>
                 <div>
@@ -525,9 +525,9 @@ function CallDetail({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.18 }}
-                className="h-full overflow-y-auto scrollbar-hide p-4 space-y-3"
+                className="h-full scroll-viewport scrollbar-hide p-4 space-y-3"
               >
-                <div className="rounded-xl glass border border-black/8 p-4">
+                <div className="rounded-xl wl-panel p-4">
                   <div className="text-[9px] uppercase tracking-[0.3em] text-brand mb-2 flex items-center gap-1.5">
                     <FileText className="w-3 h-3" /> Mission summary
                   </div>
@@ -572,7 +572,7 @@ function CallDetail({
                 )}
                 {/* QA Scorecard */}
                 {qaScore !== null && qaBreakdown ? (
-                  <div className="rounded-xl glass border border-black/8 p-4">
+                  <div className="rounded-xl wl-panel p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div
                         className="text-[9px] uppercase tracking-[0.3em] flex items-center gap-1.5"
@@ -654,7 +654,7 @@ function CallDetail({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.18 }}
-                className="h-full overflow-y-auto scrollbar-hide p-4 space-y-2"
+                className="h-full scroll-viewport scrollbar-hide p-4 space-y-2"
               >
                 {transcriptLines.length === 0 ? (
                   <p className="text-muted/70 text-[10px] uppercase tracking-[0.4em] text-center py-12">
@@ -729,7 +729,7 @@ function CallDetail({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.18 }}
-                className="h-full overflow-y-auto scrollbar-hide p-4 space-y-3"
+                className="h-full scroll-viewport scrollbar-hide p-4 space-y-3"
               >
                 {call.recording_url ? (
                   <RecordingPlayer url={call.recording_url} />
@@ -764,7 +764,7 @@ function Stat({
 }) {
   const resolvedAccent = resolveBrandAccent(accent);
   return (
-    <div className="rounded-lg glass border border-black/8 p-2.5">
+    <div className="rounded-lg wl-panel p-2.5">
       <div
         className="text-[8px] uppercase tracking-[0.28em] text-muted mb-1 flex items-center gap-1"
         style={{ color: resolvedAccent }}
@@ -852,7 +852,7 @@ function RecordingPlayer({ url }: { url: string }) {
   }
 
   return (
-    <div className="rounded-xl glass border border-black/8 p-4 space-y-4">
+    <div className="rounded-xl wl-panel p-4 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="text-[9px] uppercase tracking-[0.3em] text-brand flex items-center gap-1.5">
@@ -922,7 +922,7 @@ function RecordingPlayer({ url }: { url: string }) {
         <button
           onClick={() => skip(-10)}
           aria-label="Rewind 10 seconds"
-          className="w-7 h-7 rounded-full glass border border-black/10 flex items-center justify-center text-muted hover:text-ink hover:border-black/20 transition-all"
+          className="w-7 h-7 rounded-full wl-panel flex items-center justify-center text-muted hover:text-ink hover:border-black/20 transition-all"
         >
           <SkipForward className="w-3 h-3 rotate-180" />
         </button>
@@ -941,7 +941,7 @@ function RecordingPlayer({ url }: { url: string }) {
         <button
           onClick={() => skip(10)}
           aria-label="Forward 10 seconds"
-          className="w-7 h-7 rounded-full glass border border-black/10 flex items-center justify-center text-muted hover:text-ink hover:border-black/20 transition-all"
+          className="w-7 h-7 rounded-full wl-panel flex items-center justify-center text-muted hover:text-ink hover:border-black/20 transition-all"
         >
           <SkipForward className="w-3 h-3" />
         </button>
@@ -960,7 +960,7 @@ function RecordingPlayer({ url }: { url: string }) {
         <button
           onClick={cycleSpeed}
           aria-label={`Playback speed: ${SPEEDS[speedIdx]}x`}
-          className="h-6 px-2 rounded-full glass border border-black/10 text-[9px] font-mono text-muted hover:text-ink hover:border-black/20 transition-all"
+          className="h-6 px-2 rounded-full wl-panel text-[9px] font-mono text-muted hover:text-ink hover:border-black/20 transition-all"
         >
           {SPEEDS[speedIdx]}x
         </button>

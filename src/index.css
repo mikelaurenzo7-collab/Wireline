@@ -86,6 +86,142 @@ html, body, .marketing-surface, .app-surface {
 .motion-soft      { transition: all 320ms var(--ease-soft); }
 .motion-snappy    { transition: all 160ms var(--ease-snappy); }
 
+/* ═══════════════════════════════════════════════════════════════════
+   WIRELINE IDENTITY — Premium Mobile-First Architecture
+   Zero-latency touch, specular depth, orbital motion language.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── ZERO-LATENCY TOUCH STATES ──
+ * GPU-driven active feedback that bypasses the paint cycle.
+ * Hardware-accelerated micro-transforms for instant physical response. */
+.touch-press {
+  transition: transform 0.1s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+.touch-press:active {
+  transform: scale(0.97);
+}
+
+/* Deeper press for larger interactive surfaces */
+.touch-press-deep {
+  transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.12s ease;
+  will-change: transform;
+}
+.touch-press-deep:active {
+  transform: scale(0.95);
+  opacity: 0.92;
+}
+
+/* ── WIRELINE SPECULAR DEPTH SYSTEM ──
+ * Replaces heavy flat borders with ambient luminosity. Panels feel like
+ * they exist in physical space — lit from above, floating over depth. */
+.wl-panel {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(16px) saturate(130%);
+  -webkit-backdrop-filter: blur(16px) saturate(130%);
+  border: 1px solid rgba(139, 63, 214, 0.06);
+  box-shadow:
+    0 8px 32px rgba(26, 22, 20, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+.dark .wl-panel {
+  background: rgba(15, 12, 23, 0.75);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid rgba(155, 92, 224, 0.08);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Elevated version for primary workspace containers */
+.wl-panel-elevated {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(24px) saturate(145%);
+  -webkit-backdrop-filter: blur(24px) saturate(145%);
+  border: 1px solid rgba(139, 63, 214, 0.08);
+  box-shadow:
+    0 12px 48px rgba(26, 22, 20, 0.06),
+    0 2px 8px rgba(139, 63, 214, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+.dark .wl-panel-elevated {
+  background: rgba(15, 12, 23, 0.82);
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  border: 1px solid rgba(155, 92, 224, 0.12);
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.6),
+    0 2px 8px rgba(155, 92, 224, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* ── ISOLATED SCROLL VIEWPORT ──
+ * Inner containers that own their scroll axis. Prevents scroll chaining
+ * so the locked app shell stays rigid while content scrolls freely. */
+.scroll-viewport {
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── WIRELINE ORBITAL INDICATOR ──
+ * Unique identity: circular activity ring that shows agent state.
+ * The orbit path pulses with brand luminosity when active. */
+.wl-orbit {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wl-orbit::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  border: 2px solid rgba(139, 63, 214, 0.15);
+  transition: all 0.4s var(--ease-editorial);
+}
+.wl-orbit[data-active="true"]::before {
+  border-color: rgba(139, 63, 214, 0.5);
+  box-shadow: 0 0 16px rgba(139, 63, 214, 0.2);
+  animation: orbit-pulse 2.4s ease-in-out infinite;
+}
+@keyframes orbit-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.04); }
+}
+
+.dark .wl-orbit::before {
+  border-color: rgba(155, 92, 224, 0.2);
+}
+.dark .wl-orbit[data-active="true"]::before {
+  border-color: rgba(155, 92, 224, 0.6);
+  box-shadow: 0 0 24px rgba(155, 92, 224, 0.3);
+}
+
+/* ── UTILITY CAPTIONS / LABELS ──
+ * Premium uppercase labels with positive tracking for small sizes */
+.wl-label {
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  font-weight: 600;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+/* ── SCROLL CONTAINMENT for scroll-viewport children ── */
+@media (prefers-reduced-motion: reduce) {
+  .touch-press:active,
+  .touch-press-deep:active {
+    transform: none;
+    opacity: 1;
+  }
+  .wl-orbit[data-active="true"]::before {
+    animation: none;
+  }
+}
+
 
 /* ══════════════════════════════════════════════════════════════════
    SHADCN/UI THEME — Wireline Aurora Cream
@@ -418,29 +554,42 @@ html, body, .marketing-surface, .app-surface {
      * so our type scale stays consistent across orientations. */
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
-    min-height: 100%;
-    min-height: 100dvh;
-    background: var(--color-paper);
+    /* ── LOCKED VIEWPORT APP SHELL ──
+     * Treat the mobile browser as an isolated app canvas. The viewport
+     * is pinned to exactly 100dvh (dynamic viewport height protects
+     * against mobile address bar resizing). No document-level scroll. */
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
     overscroll-behavior: none;
+    background: var(--color-paper);
   }
 
   body {
-    @apply font-sans bg-paper text-ink text-[15px] leading-relaxed selection:bg-brand/20 selection:text-ink antialiased overflow-x-hidden;
+    @apply font-sans bg-paper text-ink text-[14px] leading-relaxed selection:bg-brand/20 selection:text-ink antialiased overflow-x-hidden;
     background: var(--color-paper);
     -webkit-tap-highlight-color: transparent;
-    overscroll-behavior-y: none;
+    /* Locked viewport — no body scroll, inner panels own their scroll */
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
     font-feature-settings: "cv11", "ss01";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    min-height: 100%;
-    min-height: 100dvh;
+    /* ── HIGH-DENSITY MICRO-TYPOGRAPHY ──
+     * Negative tracking on body text for hyper-precision on Retina displays */
+    letter-spacing: -0.01em;
+    line-height: 1.4;
     padding-left: env(safe-area-inset-left, 0);
     padding-right: env(safe-area-inset-right, 0);
     touch-action: manipulation;
   }
 
   #root {
-    min-height: 100dvh;
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
     isolation: isolate;
   }
 
@@ -522,13 +671,21 @@ html, body, .marketing-surface, .app-surface {
 
   } /* End of max-width: 640px media query */
 
+  /* ═══════════════════════════════════════════════════════════════════
+     PREMIUM MOBILE DENSITY — Hit-target / visual-size decoupling
+     Visual elements stay compact (36px inputs, 32px secondary buttons,
+     20px icons). Interactive hit areas expand to 44-48px minimum via
+     invisible ::after pseudo-elements or transparent padding — never
+     by bloating the visual container.
+     ═══════════════════════════════════════════════════════════════════ */
+
   /* ── GLOBAL CONSOLE LAYOUT & TYPOGRAPHY OPEN SPACE (.app-surface) ───
    * Adjusts all client-facing pages to feel open, spacious, and extremely 
    * comfortable. Spacing, paddings, gaps, and text sizes are proportioned
    * to be elegant, editorial, and easy on the eyes while remaining structured.
    * Public marketing/auth pages are untouched. */
   .app-surface {
-    font-size: 13.25px !important;
+    font-size: 14px !important;
     line-height: 1.45 !important;
     --client-panel-bg: rgba(248, 244, 236, 0.74);
     --client-panel-border: rgba(26, 22, 20, 0.085);
@@ -756,7 +913,49 @@ html, body, .marketing-surface, .app-surface {
   }
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  AURORA UTILITIES  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ═══════════════════════════════════════════════════════════════════════
+   PREMIUM MOBILE DENSITY — Invisible hit-target expansion utilities
+   These use ::after pseudo-elements to expand the clickable area to
+   44-48px minimum without inflating the visual footprint. Apply to any
+   compact element (buttons, icon buttons, inputs) that needs accessibility
+   compliance while maintaining a tight, dense visual rhythm.
+
+   Usage:
+     .hit-area-44  → expands to 44×44px tap target via centered ::after
+     .hit-area-48  → expands to 48×48px tap target via centered ::after
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@utility hit-area-44 {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 44px;
+    min-height: 44px;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+@utility hit-area-48 {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 48px;
+    min-height: 48px;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+/* â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€  AURORA UTILITIES  â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */
 
 @utility brutal-border {
   @apply border border-black/8;
@@ -850,6 +1049,18 @@ html, body, .marketing-surface, .app-surface {
 
 @utility animate-spin-slow {
   animation: spin 3s linear infinite;
+}
+
+/* Agent activity bounce — gentle vertical oscillation */
+@keyframes wl-agent-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+.wl-agent-bounce {
+  animation: wl-agent-bounce 1.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wl-agent-bounce { animation: none; }
 }
 
 @utility scanline {

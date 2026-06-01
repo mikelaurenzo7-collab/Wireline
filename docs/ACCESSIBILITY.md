@@ -14,7 +14,7 @@ operator-facing surfaces.
 | Category | Implementation | Evidence |
 |----------|---------------|----------|
 | **Keyboard navigation** | All interactive elements reachable via Tab/Enter/Escape | CommandBar, modal dismissal, form navigation |
-| **Touch targets** | Minimum 44×44px on mobile (w-11 h-11) | Enforced via design guideline + code review |
+| **Touch targets** | Minimum 44×44px hit area on mobile via invisible ::after pseudo-elements (visual elements stay compact: 36px inputs, 32px buttons, 20px icons) | CSS utility `hit-area-44` / `hit-area-48`; ShadButton ::after expansion |
 | **Color contrast** | Dark theme with high-contrast text (slate-100 on dark navy) | Tailwind palette selections |
 | **Reduced motion** | `motion/react` respects `prefers-reduced-motion` | Framer Motion default behavior |
 | **Focus indicators** | Visible focus rings on all interactive elements | Tailwind's `focus:ring-2` pattern |

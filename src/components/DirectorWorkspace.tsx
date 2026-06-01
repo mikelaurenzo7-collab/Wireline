@@ -300,20 +300,24 @@ export default function DirectorWorkspace() {
     <div className="flex flex-col h-full min-h-0 bg-transparent">
       {/* Minimal header - just identity */}
       {messages.length > 0 && (
-        <div className="shrink-0 flex items-center justify-between px-6 py-3 border-b border-brand/8">
+        <div className="shrink-0 flex items-center justify-between px-6 py-3 border-b border-brand/6">
           <div className="flex items-center gap-2.5">
-            <span className="shrink-0 flex w-8 h-8 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/20 relative overflow-hidden">
-              <Sparkles className="w-4 h-4 relative z-10" />
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent" />
+            <span className="wl-orbit" data-active={isSending}>
+              <span className="shrink-0 flex w-9 h-9 items-center justify-center rounded-full bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/20 relative overflow-hidden">
+                <Sparkles className="w-4 h-4 relative z-10" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent" />
+              </span>
             </span>
             <div>
-              <p className="text-[13px] font-semibold text-ink leading-tight">Director</p>
-              <p className="text-[10px] text-muted leading-tight">Always-on fleet manager</p>
+              <p className="text-[13px] font-semibold text-ink leading-tight tracking-[-0.01em]">
+                Director
+              </p>
+              <p className="wl-label text-muted leading-tight">Always-on fleet manager</p>
             </div>
           </div>
           <button
             onClick={clearThread}
-            className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.18em] text-muted hover:text-rose-600 hover:bg-rose-500/8 transition-colors cursor-pointer"
+            className="touch-press shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] uppercase tracking-[0.18em] text-muted hover:text-rose-600 hover:bg-rose-500/8 transition-colors cursor-pointer"
             aria-label="Clear thread"
           >
             <Trash2 className="w-3 h-3" />
@@ -322,8 +326,8 @@ export default function DirectorWorkspace() {
         </div>
       )}
 
-      {/* Messages - expansive chat area */}
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-8 space-y-6">
+      {/* Messages - isolated scroll viewport */}
+      <div ref={scrollRef} className="flex-1 min-h-0 scroll-viewport px-4 py-8 space-y-6">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-brand/20 to-brand/10 flex items-center justify-center">
@@ -374,7 +378,7 @@ export default function DirectorWorkspace() {
                 <button
                   key={p}
                   onClick={() => send(p)}
-                  className="group inline-flex items-center gap-2 text-left text-[11px] text-ink/80 rounded-full border border-brand/15 bg-white/50 dark:bg-black/10 px-3 py-2 hover:border-brand/35 hover:bg-white/70 dark:hover:bg-black/20 transition-all cursor-pointer"
+                  className="touch-press group inline-flex items-center gap-2 text-left text-[11px] text-ink/80 rounded-full border border-brand/15 bg-white/50 dark:bg-black/10 px-3 py-2 hover:border-brand/35 hover:bg-white/70 dark:hover:bg-black/20 transition-all cursor-pointer"
                 >
                   <span className="min-w-0">{p}</span>
                   <ArrowUpRight className="w-3 h-3 shrink-0 text-brand/50 group-hover:text-brand transition-colors" />
@@ -583,7 +587,7 @@ export default function DirectorWorkspace() {
           ))
         )}
 
-        {/* Thinking indicator */}
+        {/* Thinking indicator — orbital pulse */}
         {isSending && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -591,14 +595,14 @@ export default function DirectorWorkspace() {
             className="flex flex-col items-start"
           >
             <div className="flex items-center gap-2 mb-2 ml-1">
-              <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15">
-                <Sparkles className="w-3.5 h-3.5" />
+              <span className="wl-orbit" data-active="true">
+                <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-full bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15">
+                  <Sparkles className="w-3.5 h-3.5" />
+                </span>
               </span>
-              <span className="text-[10px] text-muted uppercase tracking-[0.14em] font-medium">
-                Director
-              </span>
+              <span className="wl-label text-muted">Director</span>
             </div>
-            <div className="bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm border border-brand/12 rounded-2xl rounded-bl-md px-5 py-4 shadow-sm">
+            <div className="wl-panel rounded-2xl rounded-bl-md px-5 py-4">
               <div className="flex items-center gap-2.5">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
@@ -706,8 +710,8 @@ export default function DirectorWorkspace() {
             </AnimatePresence>
           </div>
 
-          {/* Main composer */}
-          <div className="relative rounded-2xl border border-brand/20 bg-white/90 dark:bg-[#1a1225]/80 backdrop-blur-md shadow-lg shadow-brand/5 transition-all duration-300 focus-within:border-brand/40 focus-within:shadow-xl focus-within:shadow-brand/10">
+          {/* Main composer — specular depth treatment */}
+          <div className="relative wl-panel-elevated transition-all duration-300 focus-within:shadow-[0_12px_48px_rgba(139,63,214,0.08),inset_0_1px_0_rgba(255,255,255,0.9)]">
             <textarea
               ref={inputRef}
               value={input}
@@ -743,7 +747,7 @@ export default function DirectorWorkspace() {
                 <button
                   onClick={() => send(input)}
                   disabled={!input.trim() || isSending}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[12px] font-semibold shadow-md shadow-brand/25 disabled:opacity-40 disabled:shadow-none enabled:hover:shadow-lg enabled:hover:shadow-brand/30 enabled:active:scale-95 transition-all duration-200 cursor-pointer"
+                  className="touch-press inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[12px] font-semibold shadow-md shadow-brand/25 disabled:opacity-40 disabled:shadow-none enabled:hover:shadow-lg enabled:hover:shadow-brand/30 transition-all duration-200 cursor-pointer"
                   aria-label="Send message"
                 >
                   {isSending ? (

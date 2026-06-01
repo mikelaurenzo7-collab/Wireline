@@ -156,7 +156,7 @@ export default function PageShell({
                 <button
                   onClick={() => setMobileActionsOpen(true)}
                   aria-label="Page actions"
-                  className="md:hidden w-9 h-9 flex items-center justify-center text-muted border border-black/8 bg-black/4 active:bg-black/8 transition-colors"
+                  className="touch-press md:hidden w-9 h-9 flex items-center justify-center text-muted wl-panel"
                 >
                   <MoreHorizontal className="w-5 h-5" />
                 </button>
@@ -174,7 +174,7 @@ export default function PageShell({
             <button
               onClick={() => setMobileActionsOpen(true)}
               aria-label="Page actions"
-              className="md:hidden w-9 h-9 flex items-center justify-center text-muted border border-black/8 bg-black/4 active:bg-black/8 transition-colors"
+              className="touch-press md:hidden w-9 h-9 flex items-center justify-center text-muted wl-panel"
             >
               <MoreHorizontal className="w-5 h-5" />
             </button>
@@ -188,7 +188,7 @@ export default function PageShell({
           <div
             role="tablist"
             aria-label="Page sub-navigation"
-            className="app-tab-strip flex items-center gap-0.5 p-0.5 glass border border-black/8"
+            className="app-tab-strip flex items-center gap-0.5 p-0.5 wl-panel"
           >
             {tabs.map((tab, i) => {
               const Icon = tab.icon;
@@ -210,7 +210,7 @@ export default function PageShell({
                     else if (e.key === "End") setActiveId(tabs[tabs.length - 1].id);
                   }}
                   className={cn(
-                    "relative shrink-0 inline-flex min-h-9 sm:min-h-10 items-center gap-1.5 px-3 py-1.5 transition-all text-[11px] uppercase tracking-[0.1em] font-medium",
+                    "touch-press relative shrink-0 inline-flex min-h-9 sm:min-h-10 items-center gap-1.5 px-3 py-1.5 transition-all text-[11px] uppercase tracking-[0.1em] font-medium",
                     active ? "app-tab-active" : "text-muted hover:text-ink hover:bg-black/4",
                   )}
                 >
@@ -268,7 +268,7 @@ export default function PageShell({
                     else if (e.key === "End") setActiveId(tabs[tabs.length - 1].id);
                   }}
                   className={cn(
-                    "native-tap-squish relative shrink-0 inline-flex min-h-9 items-center gap-1.5 px-2.5 py-1.5 transition-all text-[10px] uppercase tracking-[0.1em] font-medium whitespace-nowrap",
+                    "touch-press relative shrink-0 inline-flex min-h-9 items-center gap-1.5 px-2.5 py-1.5 transition-all text-[10px] uppercase tracking-[0.1em] font-medium whitespace-nowrap",
                     active ? "app-tab-active" : "text-muted",
                   )}
                 >
@@ -302,7 +302,7 @@ export default function PageShell({
               onClick={() => setMobileActionsOpen(true)}
               aria-label="Page actions"
               data-no-min-touch
-              className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-muted border border-black/8 bg-black/4 active:bg-black/8 transition-colors"
+              className="touch-press shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-muted wl-panel"
             >
               <MoreHorizontal className="w-5 h-5" />
             </button>

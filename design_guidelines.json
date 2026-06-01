@@ -38,7 +38,18 @@
     "container": "max-w-7xl mx-auto px-6 lg:px-12",
     "section_padding": "py-24 lg:py-32",
     "grid_bento": "grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12",
-    "philosophy": "Use generous spacing. Do not cram elements. Allow the warm cream paper background to act as negative space. Optical alignment is crucial."
+    "philosophy": "Use generous spacing. Do not cram elements. Allow the warm cream paper background to act as negative space. Optical alignment is crucial.",
+    "mobile_density": {
+      "philosophy": "Completely separate visual layout from interactive hitbox. Visual elements stay highly compact; hit targets expand invisibly.",
+      "visual_heights": {
+        "text_input": "36px (h-9)",
+        "secondary_button": "32px (h-8)",
+        "utility_icon": "20px (size-5)"
+      },
+      "hit_target_minimum": "44px–48px via invisible ::after pseudo-elements, transparent outer padding, or container bounds",
+      "typography": "14px body copy, sharp and precise",
+      "borders": "1px thin borders, high-contrast dark surfaces"
+    }
   },
   "components": {
     "buttons": {

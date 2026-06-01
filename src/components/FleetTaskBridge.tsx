@@ -18,6 +18,7 @@ import { authFetch } from "../lib/api";
 import { formatTime } from "../lib/safe-date";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { Input } from "./ui/shadcn/Input";
+import { InlineEmpty } from "./ui/InlineEmpty";
 import { EmptyState } from "./ui/EmptyState";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
 
@@ -163,11 +164,9 @@ export default function FleetTaskBridge() {
 
   if (tasks.length === 0) {
     return (
-      <EmptyState
+      <InlineEmpty
         icon={CheckCircle2}
-        eyebrow="Queue clear"
-        title="All handoffs processed."
-        description="The fleet is caught up. New tasks will show here as agents flag them."
+        label="All handoffs processed — queue clear."
         accent="#10b981"
       />
     );
