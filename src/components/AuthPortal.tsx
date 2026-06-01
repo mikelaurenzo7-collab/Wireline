@@ -185,7 +185,7 @@ function OAuthSignInButtons({
 
   return (
     <div className="space-y-3 mb-5">
-      <div className="grid grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
         {providers.map((p) => (
           <button
             key={p.id}

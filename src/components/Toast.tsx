@@ -97,7 +97,7 @@ export default function ToastStack() {
       aria-live="polite"
       aria-atomic="false"
       aria-label="Notifications"
-      className="fixed inset-x-3 max-md:bottom-[var(--toast-mobile-bottom)] md:bottom-5 md:inset-x-auto md:right-5 z-[9999] flex flex-col gap-2 items-stretch md:items-end pointer-events-none"
+      className="toast-stack fixed inset-x-3 max-md:bottom-[var(--toast-mobile-bottom)] md:bottom-5 md:inset-x-auto md:right-5 z-[9999] flex flex-col gap-2 items-stretch md:items-end pointer-events-none"
       style={{
         ["--toast-mobile-bottom" as string]: mobileBottom,
         paddingBottom: 0,

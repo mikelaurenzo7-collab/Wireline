@@ -2080,12 +2080,26 @@ select:focus {
   .mobile-page-canvas {
     padding-left: 0;
     padding-right: 0;
-    /* Fill the viewport beneath the top bar. The bottom tab bar was
-       removed, so reserve home-indicator / browser-chrome clearance here
-       instead of via a spacer — at least 0.5rem of breathing room. */
     padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
     min-height: 0;
     flex: 1 1 auto;
+  }
+
+  /* iOS visual-viewport keyboard compensation. When the virtual keyboard
+     is shown on iOS Safari, the visual viewport shrinks but CSS dvh/svh
+     do not always track it in real time. The AppShell publishes the live
+     viewport height via --vv-height; fixed-bottom and sticky elements use
+     this to avoid being occluded by the keyboard. */
+  .marketing-sticky-cta {
+    bottom: calc(env(safe-area-inset-bottom, 0px));
+  }
+  @supports (bottom: calc(1px - var(--vv-height, 0px))) {
+    .toast-stack {
+      bottom: calc(1.5rem + max(0px, var(--vv-offset-top, 0px)));
+    }
+    .marketing-sticky-cta {
+      bottom: calc(max(0px, var(--vv-offset-top, 0px)) + env(safe-area-inset-bottom, 0px));
+    }
   }
 
   .workspace-stage {

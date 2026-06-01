@@ -221,7 +221,7 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
         </div>
         <button
           onClick={() => load("refresh")}
-          className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors"
+          className="shrink-0 min-w-[44px] min-h-[44px] w-7 h-7 rounded-lg flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors"
           title="Refresh"
           aria-label="Refresh dock"
         >
@@ -235,7 +235,7 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
           <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted/70 mb-2">
             Pulse · last {pulse?.windowHours ?? 24}h
           </p>
-          <div className="grid grid-cols-5 gap-1.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1.5">
             {stats.map((s) => (
               <div
                 key={s.label}

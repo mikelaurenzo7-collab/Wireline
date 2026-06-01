@@ -23,7 +23,10 @@ export default function MarketingStickyCta({
 }: Props) {
   return (
     <div
-      className={cn("lg:hidden fixed inset-x-0 bottom-0 z-[45] pointer-events-none", className)}
+      className={cn(
+        "marketing-sticky-cta lg:hidden fixed inset-x-0 bottom-0 z-[45] pointer-events-none",
+        className,
+      )}
       aria-hidden={false}
     >
       <div

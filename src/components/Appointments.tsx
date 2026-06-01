@@ -445,7 +445,7 @@ function CalendarGrid({
         </ShadButton>
       </div>
 
-      <div className="shrink-0 grid grid-cols-7 border-b border-black/8">
+      <div className="shrink-0 grid grid-cols-7 border-b border-black/8 min-w-[21rem]">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div
             key={d}
@@ -456,8 +456,8 @@ function CalendarGrid({
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-hide">
-        <div className="grid grid-cols-7">
+      <div className="flex-1 overflow-y-auto scrollbar-hide overflow-x-auto">
+        <div className="grid grid-cols-7 min-w-[21rem]">
           {cells.map((cell, idx) => {
             const isToday =
               cell.day !== null &&

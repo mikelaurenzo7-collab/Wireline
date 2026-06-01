@@ -14,6 +14,7 @@ import { NAV_GROUPS, PAGE_TITLES, APP_KEYBOARD_SHORTCUTS } from "../../constants
 import { BRAND } from "../../constants/brand-colors";
 import { useBranding } from "../../contexts/BrandingContext";
 import { useViewTransitionRoute } from "../../hooks/useViewTransitionRoute";
+import { useVisualViewport } from "../../hooks/useVisualViewport";
 
 const CommandBar = lazy(() => import("../CommandBar"));
 const ProductTour = lazy(() => import("../ProductTour"));
@@ -124,6 +125,17 @@ export default function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   useViewTransitionRoute();
+  const vv = useVisualViewport();
+
+  useEffect(() => {
+    if (vv.height == null) return;
+    document.documentElement.style.setProperty("--vv-height", `${vv.height}px`);
+    document.documentElement.style.setProperty("--vv-offset-top", `${vv.offsetTop}px`);
+    return () => {
+      document.documentElement.style.removeProperty("--vv-height");
+      document.documentElement.style.removeProperty("--vv-offset-top");
+    };
+  }, [vv.height, vv.offsetTop]);
 
   useEffect(() => {
     if (!user) return;
@@ -292,52 +304,31 @@ export default function AppShell() {
         <EmailVerifyBanner />
         <TrialBanner />
 
-        {/* Clean page header — replaces DesktopContextBar */}
-        <div className="hidden lg:block shrink-0 bg-background/35 backdrop-blur-md px-6 py-2.5 relative overflow-hidden">
-          {/* Subtle glowing radial aura behind title */}
-          <div
-            aria-hidden="true"
-            className="absolute left-6 top-1/2 -translate-y-1/2 w-40 h-8 pointer-events-none opacity-16 dark:opacity-24 blur-xl"
-            style={{
-              background: "radial-gradient(circle, var(--color-brand) 0%, transparent 70%)",
-            }}
-            data-circular
-          />
-          <div className="flex items-baseline justify-between gap-4 relative z-10">
-            <div className="flex items-baseline gap-2.5 min-w-0">
-              {pageCtx.eyebrow && (
-                <>
-                  <span className="text-[9px] font-mono uppercase tracking-[0.22em] text-brand/70">
-                    {pageCtx.eyebrow}
-                  </span>
-                  <span aria-hidden="true" className="text-brand/30 text-xs">
-                    ·
-                  </span>
-                </>
-              )}
-              <h1 className="font-display italic text-xl leading-none text-foreground tracking-tight">
-                {pageCtx.title}
-              </h1>
-              {pageCtx.subtitle && (
-                <span className="hidden xl:inline text-[11px] text-muted-foreground/80 font-sans font-normal ml-1">
-                  {pageCtx.subtitle}
+        {/* Mobile/tablet page heading — condenses the desktop page context
+            into a compact one-line bar visible below the TopBar. The desktop
+            breadcrumb block above (`hidden lg:block`) carries the full
+            eyebrow + italic title + subtitle; this one provides the same
+            title on viewports where that block is invisible. */}
+        <div className="lg:hidden shrink-0 bg-background/35 backdrop-blur-md px-3 py-1.5 border-b border-black/[0.05] dark:border-white/[0.04]">
+          <div className="flex items-center gap-1.5 min-w-0">
+            {pageCtx.eyebrow && (
+              <>
+                <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-brand/60 shrink-0">
+                  {pageCtx.eyebrow}
                 </span>
-              )}
-            </div>
+                <span aria-hidden="true" className="text-brand/30 text-[10px]">
+                  ·
+                </span>
+              </>
+            )}
+            <h1 className="font-display italic text-sm leading-none text-foreground tracking-tight truncate">
+              {pageCtx.title}
+            </h1>
           </div>
-          {/* Custom fine-grain gradient divider */}
-          <div
-            aria-hidden="true"
-            className="absolute bottom-0 left-0 right-0 h-px"
-            style={{
-              background:
-                "linear-gradient(90deg, rgba(139,63,214,0.18) 0%, rgba(139,63,214,0.04) 50%, transparent 100%)",
-            }}
-          />
         </div>
 
         <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
-          <div className="workspace-stage flex-1 overflow-hidden relative z-10 min-h-0 px-2 pb-2 md:px-3 md:pb-3 lg:px-4 lg:pb-4">
+          <div className="workspace-stage flex-1 overflow-hidden relative z-10 min-h-0 px-3 pb-2 md:px-3 md:pb-3 lg:px-4 lg:pb-4">
             <div className="app-surface max-w-[1840px] mx-auto px-2.5 md:px-3 lg:px-4 pt-1.5 md:pt-2.5 pb-0 md:pb-3 flex flex-col h-full min-h-0 mobile-page-canvas">
               <ErrorBoundary key={location.pathname}>
                 <AppRoutes />

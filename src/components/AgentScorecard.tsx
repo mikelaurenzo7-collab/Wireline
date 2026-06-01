@@ -150,7 +150,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
 
       {/* Secondary row */}
       {data.secondary?.length > 0 && (
-        <div className="relative mt-5 pt-4 border-t border-brand/10 grid grid-cols-3 gap-4">
+        <div className="relative mt-5 pt-4 border-t border-brand/10 grid grid-cols-3 gap-2 sm:gap-4">
           {data.secondary.map((s, i) => (
             <div key={`${s.label}-${i}`} className="min-w-0 flex flex-col gap-1">
               <div className="text-[9px] uppercase tracking-[0.25em] font-semibold text-muted/70 truncate">

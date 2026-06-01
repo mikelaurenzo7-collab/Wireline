@@ -310,7 +310,7 @@ export default function AgentConfigPanel({
                         const posPct = Math.round((s.sentiment.positive / total) * 100);
                         return (
                           <div className="md:col-span-2 space-y-2 mb-2">
-                            <div className="grid grid-cols-4 gap-2">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                               <div className="rounded-lg glass p-2.5">
                                 <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">
                                   Calls
