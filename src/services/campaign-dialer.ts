@@ -6,6 +6,23 @@ import { isDncBlocked } from "../lib/compliance";
 import { evaluateOutboundConsent } from "../lib/tcpa-consent";
 import { placeOutboundCall } from "../lib/vapi-client";
 
+/**
+ * Returns true when `now` (HH:MM, 24-hour) falls inside the [start, end] call
+ * window. Handles two cases:
+ *   - Same-day window (start <= end, e.g. 09:00–17:00): inclusive on both ends.
+ *   - Overnight window (start > end, e.g. 20:00–06:00): matches times on either
+ *     side of midnight. The naive `now >= start && now <= end` check would never
+ *     be true for an overnight window, so the campaign would never dial.
+ * All inputs are zero-padded HH:MM strings, so lexicographic comparison matches
+ * chronological order.
+ */
+export function isWithinCallWindow(start: string, end: string, now: string): boolean {
+  if (start <= end) {
+    return now >= start && now <= end;
+  }
+  return now >= start || now <= end;
+}
+
 export class CampaignDialerService {
   /**
    * Processes active campaigns and dials eligible leads.
@@ -167,6 +184,6 @@ export class CampaignDialerService {
     const now =
       currentTimeOverride ||
       new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-    return now >= start && now <= end;
+    return isWithinCallWindow(start, end, now);
   }
 }
