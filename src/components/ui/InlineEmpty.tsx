@@ -11,7 +11,7 @@ interface InlineEmptyProps {
   /** Short message like "No hot leads" or "All clear" */
   label: string;
   /** Optional tiny Lucide icon (rendered at 14px) */
-  icon?: React.ComponentType<{ className?: string }>;
+  icon?: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   /** Optional accent color for the icon */
   accent?: string;
   className?: string;
