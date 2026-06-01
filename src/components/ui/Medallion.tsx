@@ -57,13 +57,38 @@ export function Medallion({
       )}
       <div
         className={cn(
-          "relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand flex items-center justify-center shadow-sm shadow-brand/25",
+          "group relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand via-[#9B5CE0] to-brand-deep text-on-brand flex items-center justify-center shadow-sm shadow-brand/25 ring-1 ring-white/10",
           shimmer && "medallion-glint",
           sizeClasses,
         )}
         style={accentStyle}
       >
-        <span className="relative z-[1] inline-flex items-center justify-center">{children}</span>
+        {/* Ultra-fine inner specular rim — gives true cut-gem depth */}
+        <span
+          aria-hidden
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(145deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.06) 28%, transparent 52%, rgba(0,0,0,0.12) 78%)",
+            mixBlendMode: "soft-light",
+          }}
+        />
+        {/* Crystalline facet highlight that travels on hover — extremely subtle */}
+        {shimmer && (
+          <span
+            aria-hidden
+            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
+            style={{
+              background:
+                "linear-gradient(125deg, transparent 20%, rgba(255,255,255,0.28) 42%, transparent 64%)",
+              transform: "translateX(-30%)",
+              animation: "medallion-facet 2.8s ease-in-out infinite",
+            }}
+          />
+        )}
+        <span className="relative z-[1] inline-flex items-center justify-center drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]">
+          {children}
+        </span>
       </div>
     </div>
   );

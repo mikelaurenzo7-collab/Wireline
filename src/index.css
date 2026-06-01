@@ -6,6 +6,41 @@
 @import "@fontsource/jetbrains-mono/600.css";
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════════════════════════
+   GLOBAL EDITORIAL FOUNDATION
+   Subtle paper tactility + refined focus + consistent motion language
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Extremely fine, high-frequency paper grain — feels like premium stock
+   without any performance cost (two tiny radial gradients). */
+.paper-texture {
+  background-image: var(--paper-grain);
+  background-size: 3.2px 3.4px;
+  background-repeat: repeat;
+}
+
+/* Body receives the paper feel at the root level on all surfaces */
+html, body, .marketing-surface, .app-surface {
+  background-color: var(--color-paper);
+}
+
+/* Refined, generous, never harsh focus treatment — editorial quality */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: calc(var(--radius) * 0.6);
+  transition: box-shadow 120ms var(--ease-editorial);
+}
+
+.dark :focus-visible {
+  box-shadow: var(--focus-ring-dark);
+}
+
+/* Motion presets — use these classes or reference the CSS vars */
+.motion-editorial { transition: all 240ms var(--ease-editorial); }
+.motion-soft      { transition: all 320ms var(--ease-soft); }
+.motion-snappy    { transition: all 160ms var(--ease-snappy); }
+
 
 /* ══════════════════════════════════════════════════════════════════
    SHADCN/UI THEME — Wireline Aurora Cream
@@ -78,6 +113,35 @@
    * <html>. */
   --muted-resolved: #5A534A;
   --muted-soft-resolved: #71717a;
+
+  /* ═══════════════════════════════════════════════════════════════
+     REFINED EDITORIAL FOUNDATION — Aurora Cream 2.5
+     Extreme attention to depth, rhythm, light, and tactility.
+     ═══════════════════════════════════════════════════════════════ */
+
+  /* Elevation — luxurious, paper-aware shadows. Never harsh. */
+  --shadow-0: none;
+  --shadow-1: 0 1px 2px rgba(26,22,20,0.04), 0 1px 1px rgba(26,22,20,0.03);
+  --shadow-2: 0 4px 12px rgba(26,22,20,0.06), 0 1px 3px rgba(26,22,20,0.05);
+  --shadow-3: 0 10px 30px rgba(26,22,20,0.08), 0 3px 8px rgba(26,22,20,0.06);
+  --shadow-glow: 0 0 0 1px rgba(139,63,214,0.08), 0 8px 32px rgba(139,63,214,0.06);
+  --shadow-inset: inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -1px 0 rgba(26,22,20,0.04);
+
+  /* Motion language — consistent editorial springs */
+  --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-soft: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-snappy: cubic-bezier(0.32, 0, 0.67, 0);
+  --spring-gentle: 400 25 1;
+  --spring-lux: 320 28 1;
+
+  /* Focus — refined, generous, brand-tinted, never harsh */
+  --focus-ring: 0 0 0 3px rgba(139, 63, 214, 0.12);
+  --focus-ring-dark: 0 0 0 3px rgba(199, 125, 255, 0.18);
+
+  /* Paper tactility — extremely subtle warm grain (performance safe) */
+  --paper-grain: 
+    radial-gradient(circle at 25% 30%, rgba(26,22,20,0.012) 0.6px, transparent 0.8px),
+    radial-gradient(circle at 70% 65%, rgba(26,22,20,0.009) 0.5px, transparent 0.7px);
 }
 
 .dark {
@@ -138,6 +202,19 @@
   /* Muted resolves to soft purple-tinted text */
   --muted-resolved: #b89ad9;
   --muted-soft-resolved: #9370b5;
+
+  /* Dark elevation — deeper, velvet shadows with purple undertone */
+  --shadow-0: none;
+  --shadow-1: 0 1px 2px rgba(0,0,0,0.3), 0 1px 1px rgba(0,0,0,0.2);
+  --shadow-2: 0 6px 18px rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.25);
+  --shadow-3: 0 14px 40px rgba(0,0,0,0.45), 0 4px 12px rgba(0,0,0,0.3);
+  --shadow-glow: 0 0 0 1px rgba(139,63,214,0.25), 0 10px 40px rgba(139,63,214,0.15);
+  --shadow-inset: inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,0.4);
+
+  /* Dark paper grain — cooler, more velvety */
+  --paper-grain: 
+    radial-gradient(circle at 25% 30%, rgba(255,255,255,0.015) 0.5px, transparent 0.7px),
+    radial-gradient(circle at 70% 65%, rgba(255,255,255,0.01) 0.4px, transparent 0.6px);
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -972,6 +1049,13 @@
   18%  { opacity: 0.9; }
   45%  { transform: translateX(160%) rotate(8deg); opacity: 0; }
   100% { transform: translateX(160%) rotate(8deg); opacity: 0; }
+}
+
+/* New ultra-subtle travelling facet for richer gem optics on hover */
+@keyframes medallion-facet {
+  0%   { transform: translateX(-38%) skewX(-6deg); }
+  50%  { transform: translateX(42%) skewX(-6deg); }
+  100% { transform: translateX(-38%) skewX(-6deg); }
 }
 
 .medallion-glint::before {
