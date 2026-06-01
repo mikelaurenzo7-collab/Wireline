@@ -9,6 +9,7 @@ import {
   signupRateLimiter,
   forgotPasswordRateLimiter,
   resendVerificationRateLimiter,
+  resetPasswordRateLimiter,
 } from "../middleware/rate-limit-middleware";
 import { sendPasswordResetEmail } from "../lib/email-service";
 import { authenticateUser } from "../middleware/auth";
@@ -425,6 +426,7 @@ router.post(
  */
 router.post(
   "/api/auth/reset-password",
+  resetPasswordRateLimiter,
   validateBody(resetPasswordSchema),
   async (req: Request, res: Response) => {
     try {

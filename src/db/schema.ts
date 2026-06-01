@@ -40,7 +40,7 @@ export const users = pgTable("wireline_users", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
-// Single-use password-reset tokens with 15-minute TTL. The token itself is
+// Single-use password-reset tokens with 1-hour TTL. The token itself is
 // only stored hashed (sha256) so a DB leak doesn't enable account takeover.
 export const passwordResetTokens = pgTable("wireline_password_reset_tokens", {
   id: uuid("id").primaryKey().defaultRandom(),

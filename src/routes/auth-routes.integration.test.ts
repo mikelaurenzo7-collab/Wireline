@@ -274,6 +274,7 @@ vi.mock("../middleware/rate-limit-middleware", () => {
     signupRateLimiter: passThrough,
     forgotPasswordRateLimiter: passThrough,
     resendVerificationRateLimiter: passThrough,
+    resetPasswordRateLimiter: passThrough,
   };
 });
 vi.mock("../lib/email-service", () => ({

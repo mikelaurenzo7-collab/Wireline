@@ -263,8 +263,9 @@
     <script>
       (function() {
         try {
-          var t = localStorage.getItem('wireline_theme');
-          if (t === 'dark') {
+          var t = localStorage.getItem('wireline.theme');
+          var dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) {
             document.documentElement.classList.add('dark');
           }
         } catch (e) {}

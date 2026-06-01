@@ -114,13 +114,13 @@ API route (/api/claude/*, /api/jobs/*, /api/daily-brief/*)
 
 ## 3. Database Schema (Key Tables)
 
-53 tables managed by Drizzle; 17 migrations, all idempotent
+55 tables managed by Drizzle; 17 migrations, all idempotent
 (`IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`).
 
 | Table | Purpose |
 |------|---------|
 | `wireline_users` | Identity, email-verification timestamps |
-| `wireline_password_reset_tokens` | Hashed single-use reset tokens (15 min TTL) |
+| `wireline_password_reset_tokens` | Hashed single-use reset tokens (1 h TTL) |
 | `wireline_email_verification_tokens` | Hashed single-use verification tokens (24 h TTL) |
 | `wireline_settings` | Per-tenant config (voice LLM, trial state, branding) |
 | `wireline_agents` | Fleet inventory (voice ID, role, personality vibe, tools) |
@@ -133,8 +133,12 @@ API route (/api/claude/*, /api/jobs/*, /api/daily-brief/*)
 | `wireline_pronunciation_dictionaries` | Per-tenant ElevenLabs pronunciation overrides |
 | `wireline_outbound_campaigns` / `wireline_outbound_leads` | Outbound dialer + lead state machine |
 
-All FKs cascade-delete from `wireline_users` so an account-deletion is one
-transaction — no orphan rows, no manual cleanup.
+Account deletion is handled by `src/lib/account-deletion.ts`, which
+manually cascades through all 55 tables in dependency order. FKs exist from
+`wireline_settings`, `wireline_user_preferences`, and `wireline_spend_budgets`
+to `wireline_users` with cascade-delete; the remaining tables are cleaned
+up by the deletion module to give precise control over sequencing and
+logging.
 
 ---
 
