@@ -563,7 +563,15 @@ router.get(
 
       res.setHeader("Content-Type", loaded.artifact.mimeType);
       res.setHeader("Content-Length", String(loaded.artifact.sizeBytes));
-      res.setHeader("Content-Disposition", `attachment; filename="${loaded.artifact.name}"`);
+      // Sanitize the filename to prevent HTTP header injection / response splitting:
+      // strip control chars, quotes and backslashes, and provide an RFC 5987 encoded fallback.
+      const safeName = Array.from(loaded.artifact.name)
+        .map((ch) => (ch.charCodeAt(0) < 0x20 || ch === '"' || ch === "\\" ? "_" : ch))
+        .join("");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(loaded.artifact.name)}`,
+      );
       res.send(loaded.data);
     } catch (e) {
       log.error("director artifact download failed", { error: getErrorMessage(e) });

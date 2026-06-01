@@ -118,6 +118,7 @@ export async function loadDirectorArtifactData(input: {
   artifactId: string;
   userId: string;
 }): Promise<{ artifact: DirectorStoredArtifact; data: Buffer } | null> {
+  if (!/^\d+$/.test(input.artifactId)) return null;
   const rows = await drizzle
     .select({
       id: schema.directorArtifacts.id,

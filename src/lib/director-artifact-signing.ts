@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { getInternalJwtSecret } from "./internal-jwt-secret";
 
 export interface SignedDownloadToken {
   artifactId: string;
@@ -8,7 +9,7 @@ export interface SignedDownloadToken {
 }
 
 function secret(): string {
-  return process.env.INTERNAL_JWT_SECRET || "wireline-director-artifact-dev-secret";
+  return getInternalJwtSecret() || "wireline-director-artifact-dev-secret";
 }
 
 function signPayload(payload: string): string {

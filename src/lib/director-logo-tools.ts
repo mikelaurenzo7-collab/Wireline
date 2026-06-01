@@ -205,9 +205,7 @@ export function generateLogoConcepts(
     concepts: Math.min(6, Math.max(1, Number(briefInput.concepts || 3))),
   };
 
-  const concepts = Array.from({ length: Math.max(3, brief.concepts) }, (_, i) =>
-    makeSvgConcept(i, brief),
-  ).slice(0, brief.concepts);
+  const concepts = Array.from({ length: brief.concepts }, (_, i) => makeSvgConcept(i, brief));
 
   const ranked = [...concepts].sort((a, b) => b.score - a.score);
   const chosen = ranked[0];
