@@ -125,7 +125,7 @@ export default function PageShell({
   return (
     <div
       className={cn(
-        "h-full w-full flex flex-col overflow-hidden max-md:overflow-visible max-md:h-auto max-md:min-h-full",
+        "h-full w-full flex flex-col overflow-hidden max-md:overflow-visible max-md:h-auto",
         tabs &&
           tabs.length > 0 &&
           "mobile-route-stack max-md:flex max-md:flex-col max-md:gap-2 max-md:min-h-0",

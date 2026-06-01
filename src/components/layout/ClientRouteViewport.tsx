@@ -25,16 +25,12 @@ export default function ClientRouteViewport({
     <div
       className={cn(
         "relative h-full min-h-0 flex flex-col",
-        scroll
-          ? "scroll-viewport"
-          : "overflow-hidden max-md:overflow-visible max-md:h-auto max-md:min-h-full",
+        scroll ? "scroll-viewport" : "overflow-hidden max-md:overflow-visible max-md:h-auto",
         className,
       )}
     >
       {ambience && <ClientRouteAmbience />}
-      <div className="relative z-[1] flex flex-col flex-1 min-h-0 max-md:min-h-full">
-        {children}
-      </div>
+      <div className="relative z-[1] flex flex-col flex-1 min-h-0 max-md:min-h-0">{children}</div>
     </div>
   );
 }

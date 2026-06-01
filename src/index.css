@@ -2400,6 +2400,32 @@ select:focus {
 }
 
 @media (max-width: 767px) {
+  /* ── MOBILE VIEWPORT UNLOCK ──
+   * The strict viewport lock (overflow:hidden + height:100dvh on
+   * html/body/#root) clips content that exceeds one screen. On mobile
+   * we release the lock entirely so the native scroll surface is the
+   * document itself — this avoids nested-scroll jank, Safari rubber-
+   * banding quirks, and content cut-off on small viewports. Desktop
+   * keeps the locked viewport with panel-level scroll unchanged. */
+  html {
+    height: auto !important;
+    overflow: visible !important;
+    overflow-x: hidden !important;
+    overscroll-behavior-y: contain;
+  }
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    overflow-x: hidden !important;
+    overscroll-behavior-y: contain;
+  }
+  #root {
+    height: auto !important;
+    min-height: 100dvh;
+    overflow: visible !important;
+    overflow-x: hidden !important;
+  }
+
   /* Lighter glass on phones — skip expensive blur, keep warm cream opacity. */
   .glass {
     background: rgba(246, 241, 232, 0.94);
@@ -2425,16 +2451,14 @@ select:focus {
     transform: none;
   }
 
-  /* ── MOBILE SCROLL UNLOCK ──
-   * The strict viewport lock (overflow:hidden on html/body/#root) cuts off
-   * content that exceeds 100dvh on small screens.  Rather than unlocking
-   * the document (which causes Safari address-bar bounce), we turn the
-   * workspace-stage into a contained scroll surface on mobile only.
-   * Desktop keeps the locked viewport with panel-level scroll. */
+  /* Workspace stage: no more nested scroll — document scrolls natively */
   .workspace-stage {
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
-    -webkit-overflow-scrolling: touch;
+    overflow: visible;
+    height: auto;
+    min-height: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-bottom: 0;
   }
 
   /* Page canvas gutter — pairs with AppShell px-3 */
@@ -2446,6 +2470,7 @@ select:focus {
     flex: 1 1 auto;
     /* Allow children to expand naturally instead of being clipped */
     overflow: visible;
+    height: auto !important;
   }
 
   /* iOS visual-viewport keyboard compensation. When the virtual keyboard
@@ -2465,21 +2490,13 @@ select:focus {
     }
   }
 
-  .workspace-stage {
-    padding-left: 0;
-    padding-right: 0;
-    padding-bottom: 0;
-    /* Height auto so content can grow beyond viewport and scroll */
-    height: auto;
-    min-height: 100%;
-  }
-
   .app-surface {
     font-size: 13px !important;
     line-height: 1.42 !important;
     /* Let content grow naturally on mobile — don't clip to h-full */
     height: auto !important;
-    min-height: 100%;
+    min-height: 0;
+    overflow: visible !important;
   }
 
   .app-surface h1 {
@@ -2494,11 +2511,15 @@ select:focus {
     min-height: 0;
   }
 
+  /* ── MOBILE CONTENT REARRANGEMENT ──
+   * On mobile we stack everything vertically and compact spacing so
+   * all content is reachable by scrolling. No viewport clipping. */
+
   /* Unified tab + panel stack on mobile routes */
   .mobile-route-stack {
     display: flex;
     flex-direction: column;
-    min-height: 100%;
+    min-height: 0;
     gap: 0.5rem;
   }
 
@@ -2548,6 +2569,46 @@ select:focus {
   }
   .app-surface .gap-5 {
     gap: 0.875rem;
+  }
+
+  /* ── MOBILE GRID STACK ──
+   * Multi-column grids (e.g. CommandCenter 12-col) must stack into a
+   * single column on mobile so every card is reachable by scrolling.
+   * We also reduce vertical gaps to pack more signal per fold. */
+  .app-surface [class*="grid-cols-12"],
+  .app-surface [class*="grid-cols-2"] {
+    grid-template-columns: 1fr !important;
+  }
+  .app-surface [class*="col-span-"] {
+    grid-column: 1 / -1 !important;
+  }
+
+  /* Collapse oversized rounded corners on mobile for tighter fit */
+  .app-surface [class*="rounded-[2rem]"],
+  .app-surface [class*="rounded-[1.75rem]"] {
+    border-radius: 1rem !important;
+  }
+
+  /* Compact panels — less vertical padding on mobile cards */
+  .app-surface .wl-panel-elevated {
+    padding: 0.75rem !important;
+  }
+
+  /* ClientRouteViewport: never clip on mobile */
+  .client-console main {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+  .client-console main > div {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Shrink the mobile page heading bar */
+  .client-console .shrink-0.bg-background\/35 {
+    padding-top: 0.125rem;
+    padding-bottom: 0.125rem;
   }
 }
 
