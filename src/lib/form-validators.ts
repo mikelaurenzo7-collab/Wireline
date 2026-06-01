@@ -45,7 +45,9 @@ export type AgentForm = z.infer<typeof AgentFormSchema>;
 // rules on top of the agent's role-derived system prompt. Each field
 // is optional so partial PATCH-style updates work.
 
-const HHMM = z.string().regex(/^\d{1,2}:\d{2}$/, "Time must be HH:MM (24-hour)");
+// Accepts 24-hour HH:MM with an optional leading zero on the hour (e.g. "9:00"
+// or "09:00"). Rejects out-of-range values such as "24:00", "25:30" or "9:70".
+const HHMM = z.string().regex(/^([01]?\d|2[0-3]):[0-5]\d$/, "Time must be HH:MM (24-hour)");
 
 export const DayHoursSchema = z
   .object({
@@ -179,11 +181,11 @@ export const CampaignCreateSchema = z.object({
   agent_id: z.string().uuid("Invalid agent ID").optional().nullable(),
   call_window_start: z
     .string()
-    .regex(/^\d{2}:\d{2}$/, "Start time must be in HH:MM format")
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Start time must be HH:MM in 24-hour format")
     .optional(),
   call_window_end: z
     .string()
-    .regex(/^\d{2}:\d{2}$/, "End time must be in HH:MM format")
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "End time must be HH:MM in 24-hour format")
     .optional(),
   max_attempts: z
     .number()
@@ -207,11 +209,11 @@ export const CampaignUpdateSchema = z
     status: z.enum(["draft", "active", "paused", "completed", "failed"]).optional(),
     call_window_start: z
       .string()
-      .regex(/^\d{2}:\d{2}$/, "Start time must be in HH:MM format")
+      .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Start time must be HH:MM in 24-hour format")
       .optional(),
     call_window_end: z
       .string()
-      .regex(/^\d{2}:\d{2}$/, "End time must be in HH:MM format")
+      .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "End time must be HH:MM in 24-hour format")
       .optional(),
     max_attempts: z
       .number()

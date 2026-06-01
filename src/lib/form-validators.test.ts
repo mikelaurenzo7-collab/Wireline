@@ -7,6 +7,9 @@ import {
   GeminiLessonSchema,
   GeminiFollowupTaskSchema,
   GeminiAgentExtractionSchema,
+  BusinessHoursSchema,
+  CampaignCreateSchema,
+  CampaignUpdateSchema,
 } from "./form-validators";
 
 describe("SignInFormSchema", () => {
@@ -160,6 +163,45 @@ describe("Gemini LLM response schemas", () => {
     const r = GeminiAgentExtractionSchema.safeParse({
       directives: [{ priority: 5 }], // missing required `content`
     });
+    expect(r.success).toBe(false);
+  });
+});
+
+describe("HH:MM time validation", () => {
+  // Business hours accept an optional leading zero on the hour ("9:00").
+  it("BusinessHoursSchema accepts valid 24-hour times", () => {
+    for (const t of ["00:00", "9:00", "09:30", "13:45", "23:59"]) {
+      const r = BusinessHoursSchema.safeParse({ mon: { open: t, close: "17:00" } });
+      expect(r.success, `expected ${t} to be valid`).toBe(true);
+    }
+  });
+
+  it("BusinessHoursSchema rejects out-of-range times", () => {
+    for (const t of ["24:00", "25:30", "9:70", "12:99", "99:99", "1:5", "abc"]) {
+      const r = BusinessHoursSchema.safeParse({ mon: { open: t, close: "17:00" } });
+      expect(r.success, `expected ${t} to be rejected`).toBe(false);
+    }
+  });
+
+  // Campaign call windows require a zero-padded two-digit hour.
+  it("CampaignCreateSchema accepts valid call window times", () => {
+    const r = CampaignCreateSchema.safeParse({
+      name: "Q3 push",
+      call_window_start: "09:00",
+      call_window_end: "17:30",
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("CampaignCreateSchema rejects invalid call window times", () => {
+    for (const t of ["25:70", "24:00", "9:00", "08:60", "1234"]) {
+      const r = CampaignCreateSchema.safeParse({ name: "x", call_window_start: t });
+      expect(r.success, `expected ${t} to be rejected`).toBe(false);
+    }
+  });
+
+  it("CampaignUpdateSchema rejects invalid call window times", () => {
+    const r = CampaignUpdateSchema.safeParse({ call_window_end: "29:99" });
     expect(r.success).toBe(false);
   });
 });
