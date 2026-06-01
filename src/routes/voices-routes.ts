@@ -19,7 +19,7 @@
  */
 import { Router, type Request, type Response } from "express";
 import { and, desc, eq } from "drizzle-orm";
-import rateLimit from "express-rate-limit";
+import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser } from "../middleware/auth";
 import { log, drizzle } from "../lib/server-context";
@@ -36,11 +36,10 @@ import {
 
 const router = Router();
 
-const cloneRateLimiter = rateLimit({
+const cloneRateLimiter = createIpRateLimiter({
+  bucket: "api:voice-clone",
   windowMs: 24 * 60 * 60_000, // 24h
   max: 5,
-  standardHeaders: true,
-  legacyHeaders: false,
   message: { error: "Clone limit reached. Try again tomorrow." },
 });
 

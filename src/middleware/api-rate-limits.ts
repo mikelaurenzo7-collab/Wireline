@@ -273,3 +273,58 @@ export const fleetRateLimit = createRateLimiter({
   windowMs: 60 * 1000,
   max: 120,
 });
+
+// ──────────────────────────────────────────────────────────────────────
+//  IP-based rate limiter — for unauthenticated/webhook endpoints where
+//  no req.user exists. Keys by IP address. Uses the same distributed
+//  Redis-backed rateLimit engine as the authenticated limiters.
+// ──────────────────────────────────────────────────────────────────────
+
+interface IpRateLimiterOpts {
+  /** Logical bucket name (e.g. "webhook:twilio"). */
+  bucket: string;
+  /** Window duration in milliseconds. */
+  windowMs: number;
+  /** Maximum requests allowed per IP in the window. */
+  max: number;
+  /** JSON body returned on 429. Defaults to generic message. */
+  message?: Record<string, string>;
+}
+
+/**
+ * Creates an IP-keyed rate limit middleware for unauthenticated routes.
+ * Replaces express-rate-limit with the unified distributed limiter.
+ */
+export function createIpRateLimiter(opts: IpRateLimiterOpts): RateLimitMiddleware {
+  const errorBody = opts.message ?? { error: "Too many requests. Please try again later." };
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const ip = req.ip || req.socket.remoteAddress || "unknown";
+    try {
+      const result = await rateLimit(ip, {
+        bucket: opts.bucket,
+        windowMs: opts.windowMs,
+        max: opts.max,
+      });
+
+      // Standard rate-limit headers
+      res.set("RateLimit-Limit", String(opts.max));
+      res.set("RateLimit-Remaining", String(result.remaining));
+      res.set("RateLimit-Reset", String(Math.ceil((Date.now() + result.resetMs) / 1000)));
+
+      if (!result.allowed) {
+        const retryAfterSeconds = Math.ceil(result.resetMs / 1000);
+        res.set("Retry-After", String(retryAfterSeconds));
+        res.status(429).json(errorBody);
+        return;
+      }
+      next();
+    } catch (err) {
+      // Fail-OPEN on error — better to serve traffic than block webhooks.
+      log.error("ip rate limiter error, fail-open", {
+        bucket: opts.bucket,
+        error: getErrorMessage(err),
+      });
+      next();
+    }
+  };
+}

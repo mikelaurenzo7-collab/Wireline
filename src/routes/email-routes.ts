@@ -6,16 +6,15 @@ import { eq, and, desc, asc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
-import rateLimit from "express-rate-limit";
+import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { IntegrationService } from "../lib/integrations";
 
 const router = Router();
 
-const emailAccountRateLimiter = rateLimit({
+const emailAccountRateLimiter = createIpRateLimiter({
+  bucket: "api:email-accounts",
   windowMs: 15 * 60 * 1000,
   max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
 });
 
 router.get(

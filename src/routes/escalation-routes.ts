@@ -25,7 +25,7 @@
  */
 
 import { Router, Request, Response } from "express";
-import rateLimit from "express-rate-limit";
+import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
@@ -37,11 +37,10 @@ import { postMessage as slackPostMessage, getDefaultChannel } from "../lib/slack
 // Real Vapi incidents during a busy period might legitimately produce a handful of escalations.
 // Abuse/flooding could spam the owner with SMS or pollute the triage queue.
 // 12 req / 60s per IP is generous for legitimate traffic and still blocks scripted attacks.
-const escalationRateLimiter = rateLimit({
+const escalationRateLimiter = createIpRateLimiter({
+  bucket: "webhook:escalation",
   windowMs: 60_000,
   max: 12,
-  standardHeaders: true,
-  legacyHeaders: false,
   message: { error: "Too many escalation requests from this source." },
 });
 
