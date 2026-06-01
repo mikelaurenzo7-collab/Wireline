@@ -40,7 +40,7 @@ function ToastItem({ toast }: { toast: Toast }) {
       className={cn(
         // Full-width on mobile (parent strip already handles padding);
         // fixed-width on sm+ to keep the desktop stack tidy.
-        "relative w-full sm:w-80 max-w-full sm:max-w-[92vw] rounded-2xl glass border shadow-2xl overflow-hidden",
+        "relative w-full sm:w-80 max-w-full sm:max-w-[92vw] rounded-2xl glass-1 elev-2 border overflow-hidden",
         m.border,
       )}
     >

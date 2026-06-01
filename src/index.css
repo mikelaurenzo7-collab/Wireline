@@ -190,59 +190,59 @@ html, body, .marketing-surface, .app-surface {
 }
 
 .dark {
-  /* Dark mode surface colors — deep purple aesthetic */
-  --background: #120f1a;
+  /* Dark mode surface colors — deep velvet editorial purple-black */
+  --background: #0f0c17;
   --foreground: #f3e8ff;
-  --card: rgba(30, 20, 45, 0.85);
+  --card: rgba(24, 18, 38, 0.92);
   --card-foreground: #f3e8ff;
-  --popover: rgba(25, 16, 38, 0.95);
+  --popover: rgba(20, 15, 32, 0.97);
   --popover-foreground: #f3e8ff;
 
-  /* Brand primary */
-  --primary: #8B3FD6;
+  /* Brand primary — slightly more luminous for velvet contrast */
+  --primary: #9B5CE0;
   --primary-foreground: #ffffff;
 
-  /* Secondary */
-  --secondary: #2d1f42;
+  /* Secondary — richer velvet */
+  --secondary: #261a38;
   --secondary-foreground: #f3e8ff;
 
-  /* Muted */
-  --muted: rgba(139, 63, 214, 0.15);
+  /* Muted — softer, more atmospheric */
+  --muted: rgba(155, 92, 224, 0.12);
   --muted-foreground: #b89ad9;
 
-  /* Accent */
-  --accent: rgba(139, 63, 214, 0.20);
-  --accent-foreground: #c77dff;
+  /* Accent — luminous velvet highlight */
+  --accent: rgba(155, 92, 224, 0.22);
+  --accent-foreground: #d4b3ff;
 
   /* Destructive */
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
 
-  /* Borders & inputs */
-  --border: rgba(139, 63, 214, 0.20);
-  --input: rgba(139, 63, 214, 0.15);
-  --ring: rgba(139, 63, 214, 0.50);
+  /* Borders & inputs — finer, more luxurious */
+  --border: rgba(155, 92, 224, 0.18);
+  --input: rgba(155, 92, 224, 0.12);
+  --ring: rgba(155, 92, 224, 0.45);
 
-  /* Sidebar */
-  --sidebar-background: rgba(30, 15, 50, 0.98);
+  /* Sidebar — deeper velvet */
+  --sidebar-background: rgba(22, 15, 36, 0.98);
   --sidebar-foreground: #f3e8ff;
-  --sidebar-primary: #8B3FD6;
+  --sidebar-primary: #9B5CE0;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(139, 63, 214, 0.15);
-  --sidebar-accent-foreground: #c77dff;
-  --sidebar-border: rgba(139, 63, 214, 0.25);
-  --sidebar-ring: rgba(139, 63, 214, 0.50);
+  --sidebar-accent: rgba(155, 92, 224, 0.14);
+  --sidebar-accent-foreground: #d4b3ff;
+  --sidebar-border: rgba(155, 92, 224, 0.22);
+  --sidebar-ring: rgba(155, 92, 224, 0.45);
 
-  /* Charts */
-  --chart-1: #8B3FD6;
-  --chart-2: #8B3FD6;
+  /* Charts — refined for velvet dark */
+  --chart-1: #9B5CE0;
+  --chart-2: #9B5CE0;
   --chart-3: #8B6FA8;
-  --chart-4: #8B3FD6;
+  --chart-4: #6B2B99;
   --chart-5: #3B154C;
 
   /* Dark mode theme re-mappings */
   --ink: #f3e8ff;
-  --paper: #120f1a;
+  --paper: #0f0c17;
 
   /* Muted resolves to soft purple-tinted text */
   --muted-resolved: #b89ad9;
@@ -250,16 +250,16 @@ html, body, .marketing-surface, .app-surface {
 
   /* Dark elevation — deeper, velvet shadows with purple undertone */
   --shadow-0: none;
-  --shadow-1: 0 1px 2px rgba(0,0,0,0.3), 0 1px 1px rgba(0,0,0,0.2);
-  --shadow-2: 0 6px 18px rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.25);
-  --shadow-3: 0 14px 40px rgba(0,0,0,0.45), 0 4px 12px rgba(0,0,0,0.3);
-  --shadow-glow: 0 0 0 1px rgba(139,63,214,0.25), 0 10px 40px rgba(139,63,214,0.15);
-  --shadow-inset: inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,0.4);
+  --shadow-1: 0 1px 2px rgba(0,0,0,0.35), 0 1px 1px rgba(0,0,0,0.25);
+  --shadow-2: 0 8px 24px rgba(0,0,0,0.42), 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-3: 0 18px 48px rgba(0,0,0,0.52), 0 6px 16px rgba(0,0,0,0.35);
+  --shadow-glow: 0 0 0 1px rgba(155,92,224,0.28), 0 12px 48px rgba(155,92,224,0.18);
+  --shadow-inset: inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 0 rgba(0,0,0,0.5);
 
-  /* Dark paper grain — cooler, more velvety */
+  /* Dark paper grain — cooler, more velvety, higher tactility */
   --paper-grain: 
-    radial-gradient(circle at 25% 30%, rgba(255,255,255,0.015) 0.5px, transparent 0.7px),
-    radial-gradient(circle at 70% 65%, rgba(255,255,255,0.01) 0.4px, transparent 0.6px);
+    radial-gradient(circle at 22% 28%, rgba(255,255,255,0.018) 0.6px, transparent 0.8px),
+    radial-gradient(circle at 72% 68%, rgba(255,255,255,0.012) 0.5px, transparent 0.7px);
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -2121,15 +2121,24 @@ select:focus {
   text-shadow: 0 0 8px rgba(107, 43, 153, 0.35);
 }
 
-/* Futuristic Recharts Custom Tooltip Glassmorphic component */
+/* Futuristic Recharts Custom Tooltip — Wave 4 velvet experiential enrichment */
 .recharts-tooltip-custom-glass {
-  background: rgba(28, 25, 23, 0.92) !important;
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
-  border: 1px solid rgba(107, 43, 153, 0.3) !important;
+  background: rgba(20, 15, 32, 0.96) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(155, 92, 224, 0.22) !important;
   border-radius: 0 !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
-  padding: 12px !important;
+  box-shadow: var(--shadow-3) !important;
+  padding: 14px 16px !important;
+  font-feature-settings: "tnum" !important;
+}
+
+/* Light mode override for the same tooltip */
+@media (prefers-color-scheme: light) {
+  .recharts-tooltip-custom-glass {
+    background: rgba(239, 233, 220, 0.96) !important;
+    border-color: rgba(139, 63, 214, 0.18) !important;
+  }
 }
 
 /* Neon animated checkbox styling */
