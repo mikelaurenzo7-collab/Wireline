@@ -1,4 +1,3 @@
-import React from "react";
 import { Compass } from "lucide-react";
 import { BRAND } from "../../constants/brand-colors";
 import { Medallion } from "../ui/Medallion";

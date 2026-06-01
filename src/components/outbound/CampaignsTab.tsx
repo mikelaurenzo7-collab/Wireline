@@ -2,7 +2,6 @@
  * are forwarded from OutboundDialer's untyped /api/campaigns responses. The
  * prop shapes intentionally mirror those any[] sources so tightening can
  * happen in one pass once contracts/api-types.ts covers the outbound module. */
-import React from "react";
 import {
   Loader2,
   Megaphone,

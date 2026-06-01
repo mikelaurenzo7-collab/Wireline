@@ -13,7 +13,6 @@
  *   <StatusOrb status="idle" size="lg" withOrbit />
  *   <StatusOrb status="error" />
  */
-import React from "react";
 import { cn } from "../../lib/utils";
 
 type OrbStatus = "active" | "idle" | "busy" | "error" | "offline";

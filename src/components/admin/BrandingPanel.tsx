@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import React from "react";
 import { Bot, Zap, Save, Loader2 } from "lucide-react";
 import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";

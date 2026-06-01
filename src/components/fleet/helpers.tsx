@@ -17,7 +17,6 @@
  *
  * No behavior change. ~230 LOC moved.
  */
-import React from "react";
 import { cn } from "../../lib/utils";
 
 /** Tiny SVG sparkline — renders a 7-value array as a smooth path. */

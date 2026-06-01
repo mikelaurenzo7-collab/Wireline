@@ -9,7 +9,6 @@
  * progress until the audit is real; "HIPAA compliant" stays "HIPAA
  * controls implemented" until BAA + audit are signed.
  */
-import React from "react";
 import { motion } from "motion/react";
 import {
   Lock,

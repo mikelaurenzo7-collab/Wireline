@@ -1,5 +1,3 @@
-import React from "react";
-
 export default function AuroraBackdrop() {
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-paper transition-colors duration-500">
