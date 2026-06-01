@@ -6,7 +6,7 @@ import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, desc, inArray, isNotNull } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
-import { getErrorMessage } from "../lib/server-utils";
+import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { CampaignCreateSchema, CampaignUpdateSchema } from "../lib/form-validators";
 import { computeOutcomeBreakdown, computeCallStats } from "../lib/campaign-analytics";
 import { validateBody } from "../lib/api-validation";
@@ -59,7 +59,7 @@ router.get("/api/campaigns", authenticateUser, async (req: AuthenticatedRequest,
       return { ...c, leads_count: s.total, dialed_count: s.dialed, connected_count: s.connected };
     });
 
-    res.json({ campaigns: enriched });
+    res.json({ campaigns: mapObjectToSnake(enriched) });
   } catch (error: any) {
     log.error("Failed to fetch campaigns", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to fetch campaigns" });
@@ -97,7 +97,7 @@ router.post(
         })
         .returning()) as any[];
 
-      res.json({ campaign: data });
+      res.json({ campaign: mapObjectToSnake(data) });
     } catch (error: any) {
       log.error("Failed to create campaign", { error: getErrorMessage(error) });
       res.status(500).json({ error: "Failed to create campaign" });
@@ -143,7 +143,7 @@ router.patch(
         )
         .returning()) as any[];
 
-      res.json({ campaign: data });
+      res.json({ campaign: mapObjectToSnake(data) });
     } catch (error: any) {
       log.error("Failed to update campaign", { error: getErrorMessage(error) });
       res.status(500).json({ error: "Failed to update campaign" });
@@ -208,7 +208,7 @@ router.get(
         .offset(offset);
 
       res.json({
-        leads: data || [],
+        leads: mapObjectToSnake(data || []),
         total: count || 0,
         hasMore: offset + limit < count,
       });
@@ -279,7 +279,12 @@ router.get(
         );
       }
 
-      res.json({ campaign, total, outcomes, call_stats });
+      res.json({
+        campaign: mapObjectToSnake(campaign),
+        total,
+        outcomes,
+        call_stats,
+      });
     } catch (e: any) {
       log.error("Campaign analytics failed", { error: e?.message });
       res.status(500).json({ error: "Failed to load analytics" });
