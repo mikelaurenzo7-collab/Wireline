@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import type { User } from "../types/auth";
 import { log, auditLogger, tenantStore } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
-import { verifySupabaseJwt as verifyInternalJwt } from "../lib/auth-utils";
+import { verifyInternalJwt } from "../lib/auth-utils";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 
 /**

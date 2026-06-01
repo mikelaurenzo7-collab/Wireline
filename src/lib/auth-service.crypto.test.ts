@@ -12,7 +12,7 @@ vi.mock("./server-context", () => ({
 vi.mock("../db/schema", () => ({ users: {} }));
 
 import { generateToken, hashPassword, isOwnerEmail, verifyPassword } from "./auth-service";
-import { verifySupabaseJwt } from "./auth-utils";
+import { verifyInternalJwt } from "./auth-utils";
 
 describe("hashPassword / verifyPassword", () => {
   it("verifies a correct password against its own hash", () => {
@@ -91,7 +91,7 @@ describe("generateToken", () => {
 
   it("mints a token that verifies under the same secret", async () => {
     const token = generateToken({ id: "user-42", email: "user@wireline.com" });
-    const payload = await verifySupabaseJwt(token, SECRET);
+    const payload = await verifyInternalJwt(token, SECRET);
     expect(payload?.sub).toBe("user-42");
     expect(payload?.email).toBe("user@wireline.com");
     expect(payload?.aud).toBe("authenticated");
