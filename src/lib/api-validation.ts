@@ -247,11 +247,11 @@ export const createCampaignSchema = z.object({
   agentId: uuidSchema.optional(),
   callWindowStart: z
     .string()
-    .regex(/^\d{2}:\d{2}$/, "Time must be in HH:MM format")
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Time must be HH:MM in 24-hour format")
     .optional(),
   callWindowEnd: z
     .string()
-    .regex(/^\d{2}:\d{2}$/, "Time must be in HH:MM format")
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Time must be HH:MM in 24-hour format")
     .optional(),
   timezone: z.string().optional(),
   dailyDialLimit: z.number().int().min(1).max(1000).optional(),
