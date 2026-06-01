@@ -318,7 +318,7 @@ export default function IntakeKeysManager() {
                   <button
                     onClick={create}
                     disabled={creating || !name.trim()}
-                    className="h-11 px-5 rounded-xl bg-brand text-on-brand text-xs uppercase tracking-[0.25em] font-medium flex items-center gap-2 disabled:opacity-50 hover:opacity-90 transition-all"
+                    className="touch-press h-11 px-5 rounded-xl bg-gradient-to-r from-brand to-brand-deep text-on-brand text-xs uppercase tracking-[0.25em] font-medium flex items-center gap-2 disabled:opacity-50 hover:opacity-90 transition-all"
                   >
                     {creating ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />

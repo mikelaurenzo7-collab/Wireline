@@ -111,7 +111,7 @@ export function SubscriptionPanel({
                   }
                   className="flex-1 accent-brand"
                 />
-                <div className="w-12 h-12 rounded-xl glass border border-brand/40 text-brand flex items-center justify-center font-display italic text-2xl tabular-nums">
+                <div className="w-12 h-12 rounded-xl wl-panel border border-brand/40 text-brand flex items-center justify-center font-display italic text-2xl tabular-nums">
                   {settings.max_agents}
                 </div>
               </div>

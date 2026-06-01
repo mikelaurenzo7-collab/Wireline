@@ -138,7 +138,7 @@ export function KnowledgeFromDocumentForm({
               />
               {file ? (
                 <>
-                  <div className="w-12 h-12 rounded-2xl glass border border-brand/30 flex items-center justify-center text-brand">
+                  <div className="w-12 h-12 rounded-2xl wl-panel border border-brand/30 flex items-center justify-center text-brand">
                     <FileText className="w-5 h-5" />
                   </div>
                   <div className="space-y-1">
@@ -162,7 +162,7 @@ export function KnowledgeFromDocumentForm({
                 </>
               ) : (
                 <>
-                  <div className="w-12 h-12 rounded-2xl glass border border-white/10 flex items-center justify-center text-brand">
+                  <div className="w-12 h-12 rounded-2xl wl-panel border border-white/10 flex items-center justify-center text-brand">
                     <FileUp className="w-5 h-5" />
                   </div>
                   <div className="space-y-1">

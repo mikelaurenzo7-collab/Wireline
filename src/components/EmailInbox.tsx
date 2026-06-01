@@ -428,7 +428,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           </button>
                           <div
                             className={cn(
-                              "shrink-0 w-12 h-12 rounded-xl glass border flex flex-col items-center justify-center",
+                              "shrink-0 w-12 h-12 rounded-xl wl-panel border flex flex-col items-center justify-center",
                               (selectedThread.lead_score || 0) >= 80
                                 ? "border-rose-500/40 text-rose-500"
                                 : (selectedThread.lead_score || 0) >= 50

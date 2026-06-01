@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- recipe payload bridges loosely typed agent API. */
 import { useState } from "react";
-import { authFetch } from "../../../lib/api";
 import {
   FormShell,
   Field,
@@ -12,6 +11,7 @@ import {
   ErrCard,
 } from "../shared";
 import type { AgentLite } from "../types";
+import { useRecipeAsync } from "../useRecipeAsync";
 
 export function ColdEmailForm({
   agents,
@@ -35,30 +35,10 @@ export function ColdEmailForm({
     tone: "professional",
     callToAction: initial?.callToAction ?? "",
   });
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [email, setEmail] = useState<any>(null);
+  const { loading, err, result: email, run } = useRecipeAsync("/api/claude/cold-email", "email");
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
-  const run = async () => {
-    setLoading(true);
-    setErr(null);
-    setEmail(null);
-    try {
-      const r = await authFetch("/api/claude/cold-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, agentId: agentId || undefined }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error);
-      setEmail(data.email);
-    } catch (e: any) {
-      setErr(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const submit = () => run({ ...form, agentId: agentId || undefined });
 
   return (
     <FormShell>
@@ -141,7 +121,7 @@ export function ColdEmailForm({
         />
       </Field>
       <RunButton
-        onClick={run}
+        onClick={submit}
         loading={loading}
         disabled={disabled || !form.valueProp || !form.ourCompany}
         label="Compose Email"

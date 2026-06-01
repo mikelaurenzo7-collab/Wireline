@@ -6,7 +6,6 @@
  * moon = dark, monitor = system). Uses the shadcn token system so it
  * looks correct against both light and dark TopBars.
  */
-import React from "react";
 import { Moon, Sun, Monitor } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 import { cn } from "../lib/utils";

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- recipe payload bridges loosely typed agent API. */
 import { useEffect, useState } from "react";
-import { authFetch } from "../../../lib/api";
 import {
   FormShell,
   Field,
@@ -12,6 +11,7 @@ import {
   ErrCard,
 } from "../shared";
 import type { AgentLite } from "../types";
+import { useRecipeAsync } from "../useRecipeAsync";
 
 export function BriefForm({
   agents,
@@ -29,39 +29,20 @@ export function BriefForm({
   const [number, setNumber] = useState(initial?.customerNumber ?? "");
   const [reason, setReason] = useState(initial?.reasonForCall ?? "");
   const [past, setPast] = useState(initial?.pastInteractionSummary ?? "");
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [brief, setBrief] = useState<any>(null);
+  const { loading, err, result: brief, run } = useRecipeAsync("/api/claude/brief", "brief");
 
   useEffect(() => {
     if (!agentId && agents[0]) setAgentId(agents[0].id);
   }, [agents, agentId]);
 
-  const run = async () => {
-    setLoading(true);
-    setErr(null);
-    setBrief(null);
-    try {
-      const r = await authFetch("/api/claude/brief", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          agentId,
-          customerName: name,
-          customerNumber: number,
-          reasonForCall: reason,
-          pastInteractionSummary: past,
-        }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error);
-      setBrief(data.brief);
-    } catch (e: any) {
-      setErr(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const submit = () =>
+    run({
+      agentId,
+      customerName: name,
+      customerNumber: number,
+      reasonForCall: reason,
+      pastInteractionSummary: past,
+    });
 
   return (
     <FormShell>
@@ -100,7 +81,7 @@ export function BriefForm({
         />
       </Field>
       <RunButton
-        onClick={run}
+        onClick={submit}
         loading={loading}
         disabled={disabled || !reason}
         label="Generate Brief"

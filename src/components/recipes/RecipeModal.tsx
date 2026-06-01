@@ -149,7 +149,7 @@ export function RecipeModal({
 
           {available === false && <NoKeyInline />}
           <WidgetBoundary label={meta.title}>
-            <div className="flex-1 overflow-y-auto scrollbar-hide">
+            <div className="flex-1 scroll-viewport scrollbar-hide">
               {recipe === "brief" && (
                 <BriefForm
                   agents={agents}

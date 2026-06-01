@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- vendor webhook payloads are JSON envelopes with provider-specific shapes. */
 import express, { Request, Response } from "express";
-import rateLimit from "express-rate-limit";
+import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
@@ -12,11 +12,10 @@ import { getErrorMessage } from "../lib/server-utils";
 // Meta retries failed deliveries with exponential backoff.
 // 60 requests per minute allows for legitimate retry bursts while
 // preventing leadgen bombing or DNC list pollution attacks.
-const metaRateLimiter = rateLimit({
+const metaRateLimiter = createIpRateLimiter({
+  bucket: "webhook:meta",
   windowMs: 60_000,
   max: 60,
-  standardHeaders: true,
-  legacyHeaders: false,
   message: { error: "Too many leadgen events. Please try again later." },
 });
 

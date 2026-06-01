@@ -1,4 +1,3 @@
-import React from "react";
 import { Phone, ArrowRight, MessageCircle, BookOpen, ExternalLink } from "lucide-react";
 import { motion } from "motion/react";
 import ClientRouteViewport from "./layout/ClientRouteViewport";

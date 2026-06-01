@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- recipe payload bridges loosely typed agent API. */
 import { useState } from "react";
 import { Building2, ExternalLink } from "lucide-react";
-import { authFetch } from "../../../lib/api";
 import {
   FormShell,
   Field,
@@ -12,40 +11,22 @@ import {
   ErrCard,
   Stat,
 } from "../shared";
+import { useRecipeAsync } from "../useRecipeAsync";
 
 export function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled: boolean }) {
   const [name, setName] = useState(initial?.customerName ?? "");
   const [number, setNumber] = useState(initial?.customerNumber ?? "");
   const [context, setContext] = useState(initial?.context ?? "");
   const [industryHint, setIndustryHint] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [enrichment, setEnrichment] = useState<any>(null);
+  const {
+    loading,
+    err,
+    result: enrichment,
+    run,
+  } = useRecipeAsync("/api/claude/enrich-lead", "enrichment");
 
-  const run = async () => {
-    setLoading(true);
-    setErr(null);
-    setEnrichment(null);
-    try {
-      const r = await authFetch("/api/claude/enrich-lead", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customer_number: number,
-          customer_name: name,
-          context,
-          industry_hint: industryHint,
-        }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error);
-      setEnrichment(data.enrichment);
-    } catch (e: any) {
-      setErr(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const submit = () =>
+    run({ customer_number: number, customer_name: name, context, industry_hint: industryHint });
 
   const confidenceAccent =
     enrichment?.research_confidence === "high"
@@ -88,7 +69,7 @@ export function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled:
         />
       </Field>
       <RunButton
-        onClick={run}
+        onClick={submit}
         loading={loading}
         disabled={disabled || !number}
         label="Research Lead"

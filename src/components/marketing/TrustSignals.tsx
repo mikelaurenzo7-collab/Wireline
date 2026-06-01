@@ -23,7 +23,6 @@
  * Mobile-first: stacks to single column under sm; collapses badge
  * details under md; full grid at lg+.
  */
-import React from "react";
 import { motion } from "motion/react";
 import {
   Lock,

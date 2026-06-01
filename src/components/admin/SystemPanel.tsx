@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import React from "react";
 import {
   Zap,
   ShieldCheck,
@@ -14,7 +13,6 @@ import {
 import { cn } from "../../lib/utils";
 import { Panel } from "../PageShell";
 import ObservabilityDashboard from "../analytics/ObservabilityDashboard";
-
 
 interface SystemPanelProps {
   claudeStatus: any;
@@ -118,13 +116,15 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
               <div className="flex items-center justify-between border-b border-white/5 pb-2">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-brand" />
-                  <h5 className="app-section-title font-black text-ink">Launch Day Production Readiness Checklist</h5>
+                  <h5 className="app-section-title font-black text-ink">
+                    Launch Day Production Readiness Checklist
+                  </h5>
                 </div>
                 <span className="text-[9px] font-mono text-emerald-500 uppercase tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
                   Ready to launch &amp; accept clients
                 </span>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div className="space-y-3">
                   <div className="flex items-start gap-2.5">
@@ -132,8 +132,12 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold text-ink leading-tight">Stripe Live Mode Active</p>
-                      <p className="text-[9px] text-muted">Production pricing IDs and live webhooks fully registered &amp; tested.</p>
+                      <p className="text-[11px] font-bold text-ink leading-tight">
+                        Stripe Live Mode Active
+                      </p>
+                      <p className="text-[9px] text-muted">
+                        Production pricing IDs and live webhooks fully registered &amp; tested.
+                      </p>
                     </div>
                   </div>
 
@@ -142,8 +146,12 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold text-ink leading-tight">SSL / TLS Domain Encryption</p>
-                      <p className="text-[9px] text-muted">100% active SSL handshake verified programmatically at trywireline.com.</p>
+                      <p className="text-[11px] font-bold text-ink leading-tight">
+                        SSL / TLS Domain Encryption
+                      </p>
+                      <p className="text-[9px] text-muted">
+                        100% active SSL handshake verified programmatically at trywireline.com.
+                      </p>
                     </div>
                   </div>
 
@@ -152,8 +160,12 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold text-ink leading-tight">E2E Outbound TCPA Safety Gate</p>
-                      <p className="text-[9px] text-muted">Internal DNC registry checks and compliance audit logs active on all calls.</p>
+                      <p className="text-[11px] font-bold text-ink leading-tight">
+                        E2E Outbound TCPA Safety Gate
+                      </p>
+                      <p className="text-[9px] text-muted">
+                        Internal DNC registry checks and compliance audit logs active on all calls.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -164,8 +176,13 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold text-ink leading-tight">Transactional support mailbox</p>
-                      <p className="text-[9px] text-muted">Resend SMTP configured with inbound redirects to support trywireline@yahoo.com.</p>
+                      <p className="text-[11px] font-bold text-ink leading-tight">
+                        Transactional support mailbox
+                      </p>
+                      <p className="text-[9px] text-muted">
+                        Resend SMTP configured with inbound redirects to support
+                        trywireline@yahoo.com.
+                      </p>
                     </div>
                   </div>
 
@@ -174,8 +191,12 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold text-ink leading-tight">Voice Synthesizer (ElevenLabs)</p>
-                      <p className="text-[9px] text-muted">High-fidelity production voicings funded with fallback models online.</p>
+                      <p className="text-[11px] font-bold text-ink leading-tight">
+                        Voice Synthesizer (ElevenLabs)
+                      </p>
+                      <p className="text-[9px] text-muted">
+                        High-fidelity production voicings funded with fallback models online.
+                      </p>
                     </div>
                   </div>
 
@@ -184,8 +205,12 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold text-ink leading-tight">Obs-Latency Telemetry (Vapi)</p>
-                      <p className="text-[9px] text-muted">WebRTC audio streaming buffer optimized (p99 latency &lt; 120ms).</p>
+                      <p className="text-[11px] font-bold text-ink leading-tight">
+                        Obs-Latency Telemetry (Vapi)
+                      </p>
+                      <p className="text-[9px] text-muted">
+                        WebRTC audio streaming buffer optimized (p99 latency &lt; 120ms).
+                      </p>
                     </div>
                   </div>
                 </div>

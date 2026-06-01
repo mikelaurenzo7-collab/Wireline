@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- recipe payload bridges loosely typed agent API. */
 import { useState } from "react";
-import { authFetch } from "../../../lib/api";
 import { cn } from "../../../lib/utils";
 import { FormShell, Field, TextArea, RunButton, ResultCard, ErrCard } from "../shared";
 import { Checkbox } from "../../ui/shadcn/Checkbox";
+import { useRecipeAsync } from "../useRecipeAsync";
 
 export function CoachForm({
   callId,
@@ -16,29 +16,9 @@ export function CoachForm({
 }) {
   const [transcript, setTranscript] = useState(initial?.transcript ?? "");
   const [isLive, setIsLive] = useState(initial?.isLive ?? false);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [coaching, setCoaching] = useState<any>(null);
+  const { loading, err, result: coaching, run } = useRecipeAsync("/api/claude/coach", "coaching");
 
-  const run = async () => {
-    setLoading(true);
-    setErr(null);
-    setCoaching(null);
-    try {
-      const r = await authFetch("/api/claude/coach", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcript: callId ? undefined : transcript, callId, isLive }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error);
-      setCoaching(data.coaching);
-    } catch (e: any) {
-      setErr(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const submit = () => run({ transcript: callId ? undefined : transcript, callId, isLive });
 
   return (
     <FormShell>
@@ -67,7 +47,7 @@ export function CoachForm({
         Treat as in-progress (live) call
       </label>
       <RunButton
-        onClick={run}
+        onClick={submit}
         loading={loading}
         disabled={disabled || (!transcript && !callId)}
         label="Coach Now"

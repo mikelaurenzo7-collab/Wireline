@@ -1,7 +1,6 @@
 /**
  * PublicChangelog.tsx — public-facing changelog at /changelog.
  */
-import React from "react";
 import { motion } from "motion/react";
 import { Rocket, Shield, Sparkles, Wrench, Zap } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";

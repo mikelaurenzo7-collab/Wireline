@@ -226,7 +226,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
             type="button"
             onClick={searchByAreaCode}
             disabled={searching || searchAreaCode.length !== 3}
-            className="shrink-0 h-10 px-5 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:bg-brand-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="shrink-0 h-10 px-5 rounded-full bg-gradient-to-r from-brand to-brand-deep text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {searching ? (
               <>

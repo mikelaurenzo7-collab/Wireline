@@ -2400,6 +2400,32 @@ select:focus {
 }
 
 @media (max-width: 767px) {
+  /* ── MOBILE VIEWPORT UNLOCK ──
+   * The strict viewport lock (overflow:hidden + height:100dvh on
+   * html/body/#root) clips content that exceeds one screen. On mobile
+   * we release the lock entirely so the native scroll surface is the
+   * document itself — this avoids nested-scroll jank, Safari rubber-
+   * banding quirks, and content cut-off on small viewports. Desktop
+   * keeps the locked viewport with panel-level scroll unchanged. */
+  html {
+    height: auto !important;
+    overflow: visible !important;
+    overflow-x: hidden !important;
+    overscroll-behavior-y: contain;
+  }
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    overflow-x: hidden !important;
+    overscroll-behavior-y: contain;
+  }
+  #root {
+    height: auto !important;
+    min-height: 100dvh;
+    overflow: visible !important;
+    overflow-x: hidden !important;
+  }
+
   /* Lighter glass on phones — skip expensive blur, keep warm cream opacity. */
   .glass {
     background: rgba(246, 241, 232, 0.94);
@@ -2425,6 +2451,16 @@ select:focus {
     transform: none;
   }
 
+  /* Workspace stage: no more nested scroll — document scrolls natively */
+  .workspace-stage {
+    overflow: visible;
+    height: auto;
+    min-height: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+  }
+
   /* Page canvas gutter — pairs with AppShell px-3 */
   .mobile-page-canvas {
     padding-left: 0;
@@ -2432,6 +2468,9 @@ select:focus {
     padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
     min-height: 0;
     flex: 1 1 auto;
+    /* Allow children to expand naturally instead of being clipped */
+    overflow: visible;
+    height: auto !important;
   }
 
   /* iOS visual-viewport keyboard compensation. When the virtual keyboard
@@ -2451,15 +2490,13 @@ select:focus {
     }
   }
 
-  .workspace-stage {
-    padding-left: 0;
-    padding-right: 0;
-    padding-bottom: 0;
-  }
-
   .app-surface {
     font-size: 13px !important;
     line-height: 1.42 !important;
+    /* Let content grow naturally on mobile — don't clip to h-full */
+    height: auto !important;
+    min-height: 0;
+    overflow: visible !important;
   }
 
   .app-surface h1 {
@@ -2474,11 +2511,14 @@ select:focus {
     min-height: 0;
   }
 
+  /* ── MOBILE CONTENT REARRANGEMENT ──
+   * On mobile we stack everything vertically and compact spacing so
+   * all content is reachable by scrolling. No viewport clipping. */
+
   /* Unified tab + panel stack on mobile routes */
   .mobile-route-stack {
     display: flex;
     flex-direction: column;
-    height: 100%;
     min-height: 0;
     gap: 0.5rem;
   }
@@ -2529,6 +2569,46 @@ select:focus {
   }
   .app-surface .gap-5 {
     gap: 0.875rem;
+  }
+
+  /* ── MOBILE GRID STACK ──
+   * Multi-column grids (e.g. CommandCenter 12-col) must stack into a
+   * single column on mobile so every card is reachable by scrolling.
+   * We also reduce vertical gaps to pack more signal per fold. */
+  .app-surface [class*="grid-cols-12"],
+  .app-surface [class*="grid-cols-2"] {
+    grid-template-columns: 1fr !important;
+  }
+  .app-surface [class*="col-span-"] {
+    grid-column: 1 / -1 !important;
+  }
+
+  /* Collapse oversized rounded corners on mobile for tighter fit */
+  .app-surface [class*="rounded-[2rem]"],
+  .app-surface [class*="rounded-[1.75rem]"] {
+    border-radius: 1rem !important;
+  }
+
+  /* Compact panels — less vertical padding on mobile cards */
+  .app-surface .wl-panel-elevated {
+    padding: 0.75rem !important;
+  }
+
+  /* ClientRouteViewport: never clip on mobile */
+  .client-console main {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+  .client-console main > div {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Shrink the mobile page heading bar */
+  .client-console .shrink-0.bg-background\/35 {
+    padding-top: 0.125rem;
+    padding-bottom: 0.125rem;
   }
 }
 
@@ -2824,6 +2904,42 @@ select:focus {
 }
 
 /* ══════════════════════════════════════════════════════════════════
+   WIRELINE CONSTELLATION PRIMITIVES — Premium Generative Visuals
+   StatusOrb, PulseRing, ConstellationField motion language.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── STATUS ORB ── Breathing + orbital rotation + core pulse */
+@keyframes status-orb-breathe {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+@keyframes status-orb-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 6px currentColor; }
+  50% { transform: scale(1.12); box-shadow: 0 0 14px currentColor; }
+}
+
+@keyframes status-orb-orbit {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ── PULSE RING ── Expanding concentric sonar ripples */
+@keyframes pulse-ring-expand {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.8;
+  }
+  70% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
    GOOGLE DESIGN SYSTEM BOOST (MATERIAL DESIGN 3 & DYNAMIC COLOR)
    Translucent Material You elevations, tactile CSS ripple effects,
    and dynamic icon scaling integrations.
@@ -2924,5 +3040,178 @@ select:focus {
   border-color: rgba(139, 63, 214, 0.20);
   background: rgba(139, 63, 214, 0.06);
   color: var(--color-brand);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   WIRELINE IDENTITY v3 — Holographic / Void / Signal System
+   Next-generation design primitives that give Wireline its unique,
+   unmistakable visual fingerprint. These utilities support the new
+   NebulaPulse, GlyphMorph, PrismBadge, VoidButton, and SignalThread
+   component primitives.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── HOLOGRAPHIC SURFACE ──
+ * Use on any element that needs the prismatic iridescent treatment.
+ * Rotates a conic gradient continuously for a living rainbow sheen. */
+@property --holo-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes holo-rotate {
+  to { --holo-angle: 360deg; }
+}
+
+.holo-surface {
+  position: relative;
+  overflow: hidden;
+}
+.holo-surface::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background: conic-gradient(
+    from var(--holo-angle),
+    rgba(139, 63, 214, 0.4),
+    rgba(214, 63, 150, 0.3),
+    rgba(88, 28, 135, 0.4),
+    rgba(139, 63, 214, 0.3),
+    rgba(183, 63, 214, 0.35),
+    rgba(139, 63, 214, 0.4)
+  );
+  filter: blur(8px);
+  opacity: 0.5;
+  animation: holo-rotate 6s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ── VOID DEPTH ──
+ * Deep gravitational shadow for elements that need to feel like they
+ * are floating above a cosmic void. */
+.void-depth {
+  box-shadow:
+    0 20px 60px -20px rgba(59, 21, 76, 0.4),
+    0 8px 24px -8px rgba(139, 63, 214, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+.dark .void-depth {
+  box-shadow:
+    0 20px 60px -20px rgba(0, 0, 0, 0.7),
+    0 8px 24px -8px rgba(155, 92, 224, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* ── PLASMA GLOW ──
+ * Animated pulsing brand glow for emphasis elements. */
+@keyframes plasma-glow-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 20px rgba(139, 63, 214, 0.2),
+      0 0 40px rgba(139, 63, 214, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 30px rgba(139, 63, 214, 0.35),
+      0 0 60px rgba(139, 63, 214, 0.15),
+      0 0 80px rgba(139, 63, 214, 0.05);
+  }
+}
+.plasma-glow {
+  animation: plasma-glow-pulse 3s ease-in-out infinite;
+}
+
+/* ── SIGNAL FLOW ──
+ * Horizontal gradient that animates endlessly — use on decorative
+ * dividers, progress bars, and connection indicators. */
+@keyframes signal-flow {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.signal-flow {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(139, 63, 214, 0.4) 25%,
+    rgba(183, 63, 214, 0.6) 50%,
+    rgba(139, 63, 214, 0.4) 75%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: signal-flow 3s linear infinite;
+}
+.dark .signal-flow {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(155, 92, 224, 0.4) 25%,
+    rgba(199, 125, 255, 0.6) 50%,
+    rgba(155, 92, 224, 0.4) 75%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+}
+
+/* ── WARP DISTORTION ──
+ * Subtle perspective tilt on hover for cards/panels — creates a
+ * sense of depth like looking through warped glass. */
+.warp-tilt {
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+.warp-tilt:hover {
+  transform: perspective(1000px) rotateX(2deg) rotateY(-1deg) translateZ(4px);
+}
+
+/* ── CHROMATIC ABERRATION ──
+ * Extremely subtle RGB split on hover for edgy tech elements. */
+.chromatic-hover:hover {
+  text-shadow:
+    -0.5px 0 rgba(139, 63, 214, 0.4),
+    0.5px 0 rgba(214, 63, 150, 0.4);
+  transition: text-shadow 0.2s ease;
+}
+
+/* ── RESONANCE RING ──
+ * Multi-layered animated ring that expands outward continuously.
+ * Use for live indicators, active agent status, etc. */
+@keyframes resonance-expand {
+  0% { transform: scale(0.8); opacity: 0.6; }
+  100% { transform: scale(2); opacity: 0; }
+}
+.resonance-ring {
+  position: relative;
+}
+.resonance-ring::before,
+.resonance-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(139, 63, 214, 0.4);
+  animation: resonance-expand 2.4s ease-out infinite;
+  pointer-events: none;
+}
+.resonance-ring::after {
+  animation-delay: 1.2s;
+}
+
+/* Reduced motion — kill all new identity animations */
+@media (prefers-reduced-motion: reduce) {
+  .holo-surface::before,
+  .plasma-glow,
+  .signal-flow,
+  .resonance-ring::before,
+  .resonance-ring::after {
+    animation: none !important;
+  }
+  .warp-tilt:hover {
+    transform: none;
+  }
+  .chromatic-hover:hover {
+    text-shadow: none;
+  }
 }
 

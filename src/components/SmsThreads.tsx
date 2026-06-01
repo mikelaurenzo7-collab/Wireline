@@ -311,7 +311,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                           onClick={handleSend}
                           disabled={sending || !reply.trim()}
                           aria-label="Send SMS reply"
-                          className="shrink-0 w-11 h-11 rounded-lg bg-brand text-on-brand hover:bg-brand/90 transition-colors flex items-center justify-center disabled:opacity-40"
+                          className="touch-press shrink-0 w-11 h-11 rounded-lg bg-gradient-to-r from-brand to-brand-deep text-on-brand hover:opacity-90 transition-colors flex items-center justify-center disabled:opacity-40"
                         >
                           {sending ? (
                             <Loader2 className="w-4 h-4 animate-spin" />

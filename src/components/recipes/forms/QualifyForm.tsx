@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- recipe payload bridges loosely typed agent API. */
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
-import { authFetch } from "../../../lib/api";
 import { cn } from "../../../lib/utils";
 import { FormShell, Field, TextArea, RunButton, ResultCard, ErrCard } from "../shared";
+import { useRecipeAsync } from "../useRecipeAsync";
 
 export function QualifyForm({
   callId,
@@ -15,33 +15,10 @@ export function QualifyForm({
   disabled: boolean;
 }) {
   const [transcript, setTranscript] = useState(initial?.transcript ?? "");
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [q, setQ] = useState<any>(null);
+  const { loading, err, result: q, run } = useRecipeAsync("/api/claude/qualify", "qualification");
 
-  const run = async () => {
-    setLoading(true);
-    setErr(null);
-    setQ(null);
-    try {
-      const r = await authFetch("/api/claude/qualify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          source: "voice_call",
-          transcript: callId ? undefined : transcript,
-          callId,
-        }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error);
-      setQ(data.qualification);
-    } catch (e: any) {
-      setErr(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const submit = () =>
+    run({ source: "voice_call", transcript: callId ? undefined : transcript, callId });
 
   return (
     <FormShell>
@@ -65,7 +42,7 @@ export function QualifyForm({
         </p>
       )}
       <RunButton
-        onClick={run}
+        onClick={submit}
         loading={loading}
         disabled={disabled || (!transcript && !callId)}
         label="Score Lead"

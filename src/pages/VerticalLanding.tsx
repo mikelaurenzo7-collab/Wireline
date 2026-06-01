@@ -247,7 +247,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
           <CtaLink
             href={cfg.primaryCta.href}
-            className="inline-flex items-center gap-2 px-5 py-3 bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-brand to-brand-deep text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
           >
             {cfg.primaryCta.label}
             <ArrowRight className="w-4 h-4" />

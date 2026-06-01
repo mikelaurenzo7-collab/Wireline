@@ -1,4 +1,3 @@
-import React from "react";
 import { motion } from "motion/react";
 import { X, Activity } from "lucide-react";
 import { type ToolIntegration, type AgentToolName } from "../../lib/agent-capabilities";

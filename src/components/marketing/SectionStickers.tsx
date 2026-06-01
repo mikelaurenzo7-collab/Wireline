@@ -1,7 +1,6 @@
 /**
  * SectionStickers — gutter-placed robot stickers with editorial motion.
  */
-import React from "react";
 import { RobotHead, type RobotPose } from "./RobotHead";
 import { stickerGutterInset, stickerGutterInsetNarrow } from "./sticker-gutter";
 

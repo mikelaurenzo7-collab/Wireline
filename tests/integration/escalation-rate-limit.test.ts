@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import request from "supertest";
 import express, { type Request, type Response } from "express";
-import rateLimit from "express-rate-limit";
+import { createIpRateLimiter } from "../../src/middleware/api-rate-limits";
 
 // We test the exact rate limiter configuration and behavior that was added
 // to src/routes/escalation-routes.ts for owner protection.
@@ -15,16 +15,11 @@ import rateLimit from "express-rate-limit";
 const ESCALATION_WINDOW_MS = 60_000;
 const ESCALATION_MAX = 12;
 
-const escalationRateLimiter = rateLimit({
+const escalationRateLimiter = createIpRateLimiter({
+  bucket: "test:escalation",
   windowMs: ESCALATION_WINDOW_MS,
   max: ESCALATION_MAX,
-  standardHeaders: true,
-  legacyHeaders: false,
   message: { error: "Too many escalation requests from this source." },
-  // Disable express-rate-limit's proxy validation: under supertest we set
-  // X-Forwarded-For without a real proxy chain, which would otherwise emit a
-  // ValidationError. Keying is driven by trust-proxy + XFF below.
-  validate: false,
 });
 
 // Minimal mount that mirrors production wiring (limiter first, then handler).

@@ -22,8 +22,8 @@
  */
 
 import { Router, Request, Response } from "express";
-import rateLimit from "express-rate-limit";
 import Twilio from "twilio";
+import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
@@ -35,11 +35,10 @@ const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || "";
 // Legitimate SMS volumes from real users are low (1-2 per interaction).
 // Burst protection against SMS bombing or DNC list pollution attacks.
 // 30 requests per minute per IP allows legitimate bursts while blocking abuse.
-const twilioRateLimiter = rateLimit({
+const twilioRateLimiter = createIpRateLimiter({
+  bucket: "webhook:twilio",
   windowMs: 60_000,
   max: 30,
-  standardHeaders: true,
-  legacyHeaders: false,
   message: { error: "Too many SMS requests. Please try again later." },
 });
 

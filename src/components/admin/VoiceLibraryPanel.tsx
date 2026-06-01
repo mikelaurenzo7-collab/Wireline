@@ -255,7 +255,7 @@ export default function VoiceLibraryPanel() {
             <button
               type="submit"
               disabled={cloning || !consent || !cloneFile || cloneName.trim().length < 2}
-              className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-brand text-on-brand px-4 py-2.5 text-[11px] uppercase tracking-[0.28em] hover:opacity-90 disabled:opacity-30 transition-opacity"
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-deep text-on-brand px-4 py-2.5 text-[11px] uppercase tracking-[0.28em] hover:opacity-90 disabled:opacity-30 transition-opacity"
             >
               {cloning ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />

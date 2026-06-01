@@ -15,7 +15,7 @@
  */
 import { Router, type Request, type Response } from "express";
 import { log } from "../lib/server-context";
-import rateLimit from "express-rate-limit";
+import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { getErrorMessage } from "../lib/server-utils";
 
 // Direct Resend call — the centralized email-service has typed
@@ -66,11 +66,10 @@ const ISSUE_TYPES = new Set(["billing", "tech", "feature", "agent", "account", "
 // 5 tickets per 15 minutes per IP. Plenty for legitimate use,
 // kills spam. Tracked in-memory; multi-region deploys may permit
 // modest bypass but that's fine for a contact form.
-const ticketRateLimiter = rateLimit({
+const ticketRateLimiter = createIpRateLimiter({
+  bucket: "public:support-ticket",
   windowMs: 15 * 60_000,
   max: 5,
-  standardHeaders: true,
-  legacyHeaders: false,
   message: { error: "Too many support requests. Try again in 15 minutes." },
 });
 

@@ -240,7 +240,7 @@ export default function AppShell() {
   const pageCtx = getPageContext(location.pathname, location.search);
 
   return (
-    <div className="client-console flex flex-col min-h-dvh text-ink font-sans overflow-hidden relative">
+    <div className="client-console flex flex-col min-h-dvh text-ink font-sans overflow-hidden max-md:overflow-visible relative">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-md focus:bg-primary focus:text-primary-foreground focus:text-sm focus:font-medium focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary/40"
@@ -299,7 +299,7 @@ export default function AppShell() {
       <main
         id="main-content"
         tabIndex={-1}
-        className="flex-1 overflow-hidden relative flex flex-col z-10 focus:outline-none lg:pl-[var(--wireline-rail-w,56px)] transition-[padding-left] duration-[240ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
+        className="flex-1 overflow-hidden max-md:overflow-y-auto max-md:overscroll-y-contain relative flex flex-col z-10 focus:outline-none lg:pl-[var(--wireline-rail-w,56px)] transition-[padding-left] duration-[240ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
       >
         <EmailVerifyBanner />
         <TrialBanner />
@@ -309,7 +309,7 @@ export default function AppShell() {
             breadcrumb block above (`hidden lg:block`) carries the full
             eyebrow + italic title + subtitle; this one provides the same
             title on viewports where that block is invisible. */}
-        <div className="lg:hidden shrink-0 bg-background/35 backdrop-blur-md px-3 py-1.5 border-b border-black/[0.05] dark:border-white/[0.04]">
+        <div className="lg:hidden shrink-0 bg-background/35 backdrop-blur-md px-3 py-1 border-b border-black/[0.05] dark:border-white/[0.04]">
           <div className="flex items-center gap-1.5 min-w-0">
             {pageCtx.eyebrow && (
               <>
@@ -327,9 +327,9 @@ export default function AppShell() {
           </div>
         </div>
 
-        <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
-          <div className="workspace-stage flex-1 overflow-hidden relative z-10 min-h-0 px-3 pb-2 md:px-3 md:pb-3 lg:px-4 lg:pb-4">
-            <div className="app-surface max-w-[1840px] mx-auto px-2.5 md:px-3 lg:px-4 pt-1.5 md:pt-2.5 pb-0 md:pb-3 flex flex-col h-full min-h-0 mobile-page-canvas">
+        <div className="flex-1 relative flex flex-col min-h-0 max-md:min-h-0 overflow-hidden max-md:overflow-visible">
+          <div className="workspace-stage flex-1 overflow-hidden max-md:overflow-visible relative z-10 min-h-0 px-3 pb-2 md:px-3 md:pb-3 lg:px-4 lg:pb-4">
+            <div className="app-surface max-w-[1840px] mx-auto px-2.5 md:px-3 lg:px-4 pt-1.5 md:pt-2.5 pb-0 md:pb-3 flex flex-col h-full max-md:h-auto min-h-0 mobile-page-canvas">
               <ErrorBoundary key={location.pathname}>
                 <AppRoutes />
               </ErrorBoundary>

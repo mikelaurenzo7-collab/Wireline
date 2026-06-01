@@ -125,7 +125,7 @@ export default function PageShell({
   return (
     <div
       className={cn(
-        "h-full w-full flex flex-col overflow-hidden",
+        "h-full w-full flex flex-col overflow-hidden max-md:overflow-visible max-md:h-auto",
         tabs &&
           tabs.length > 0 &&
           "mobile-route-stack max-md:flex max-md:flex-col max-md:gap-2 max-md:min-h-0",
@@ -133,7 +133,7 @@ export default function PageShell({
     >
       {/* ── Page header — every route gets editorial hierarchy ─────────── */}
       {showPageHeader && (
-        <header className="shrink-0 mb-2 md:mb-3 flex flex-col items-center text-center gap-1">
+        <header className="shrink-0 mb-1 md:mb-3 flex flex-col items-center text-center gap-0.5 md:gap-1">
           <div className="min-w-0 w-full max-w-2xl">
             {(eyebrow || title) && (
               <div className="lg:hidden">
@@ -310,9 +310,12 @@ export default function PageShell({
         </div>
       )}
 
-      {/* ── Body — bounded, never scrolls itself ───────────────────────── */}
+      {/* ── Body — bounded on desktop, scrollable on mobile ──────────── */}
       <div
-        className={cn("flex-1 min-h-0 overflow-hidden", bodyClassName)}
+        className={cn(
+          "flex-1 min-h-0 overflow-hidden max-md:overflow-y-auto max-md:overscroll-contain max-md:min-h-0",
+          bodyClassName,
+        )}
         onPointerDown={(e) => {
           // N4: don't initiate swipe when the actions sheet is open.
           if (mobileActionsOpen) return;

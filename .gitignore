@@ -7,6 +7,9 @@ coverage/
 .env*
 !.env.example
 
+# IDE — committed .vscode is intentional (shared workspace settings)
+.gitconfig
+
 # Generated image assets — built from scripts/*.svg via `npm run assets`.
 # Don't commit PNGs to avoid binary churn; the build pipeline produces them.
 public/og-image.png

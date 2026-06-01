@@ -274,7 +274,7 @@ export function SupportPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-brand text-on-brand px-5 py-3 text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-deep text-on-brand px-5 py-3 text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 {submitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

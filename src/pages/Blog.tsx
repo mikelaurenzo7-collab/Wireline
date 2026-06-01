@@ -73,7 +73,7 @@ export default function Blog() {
             </p>
             <Link
               to={`/blog/${featuredPost.id}`}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
+              className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-brand to-brand-deep text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
             >
               Read the post
               <ArrowRight className="w-4 h-4" />
