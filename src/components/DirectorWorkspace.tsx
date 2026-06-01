@@ -31,7 +31,9 @@ import {
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { useAgents } from "../contexts/AgentsContext";
+import { useAuth } from "../contexts/AuthContext";
 import { cn } from "../lib/utils";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 type SuggestionKind =
   | "create_agent"
@@ -46,12 +48,43 @@ interface DirectorSuggestion {
   agentId?: string;
 }
 
+interface DirectorApproval {
+  callId: string;
+  name: "generate_logo" | "vectorize_logo" | "brand_pack_export";
+  label: string;
+  requiresApproval: boolean;
+  approved?: boolean;
+  input: Record<string, unknown>;
+}
+
+interface DirectorPreview {
+  conceptId: string;
+  title: string;
+  rationale: string;
+  previewDataUrl: string;
+  svg?: string;
+}
+
+interface DirectorArtifact {
+  id: string;
+  name: string;
+  toolName: string;
+  artifactType: string;
+  mimeType: string;
+  sizeBytes: number;
+  createdAt: string;
+  metadata?: Record<string, unknown>;
+  downloadUrl: string;
+}
+
 interface DirectorMessage {
   id: string;
   role: "operator" | "director";
   content: string;
   createdAt: string;
   suggestions?: DirectorSuggestion[];
+  approvals?: DirectorApproval[];
+  previews?: DirectorPreview[];
   reasoning?: string;
 }
 
@@ -82,6 +115,7 @@ const DIRECTOR_CAPABILITIES = [
 
 export default function DirectorWorkspace() {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const { agents } = useAgents();
   const { error: toastError, success: toastSuccess } = useToast();
   const [messages, setMessages] = useState<DirectorMessage[]>([]);
@@ -89,27 +123,55 @@ export default function DirectorWorkspace() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [capabilityOpen, setCapabilityOpen] = useState(false);
+  const [artifacts, setArtifacts] = useState<DirectorArtifact[]>([]);
+  const [featureFlags, setFeatureFlags] = useState({
+    toolExecution: true,
+    creativeTools: true,
+    artifactsPanel: true,
+  });
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const capabilityRef = useRef<HTMLDivElement | null>(null);
 
   const loadMessages = useCallback(async () => {
+    if (authLoading) return;
+    if (!user) {
+      setMessages([]);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
       const r = await authFetch("/api/director/messages");
-      if (!r.ok) throw new Error("Failed to load messages");
+      if (!r.ok) {
+        if (r.status === 401 || r.status === 403) return;
+        throw new Error("Failed to load messages");
+      }
       const data = await r.json();
       setMessages(Array.isArray(data.messages) ? data.messages : []);
+      setArtifacts(Array.isArray(data.artifacts) ? data.artifacts : []);
+      if (data.featureFlags && typeof data.featureFlags === "object") {
+        setFeatureFlags({
+          toolExecution: data.featureFlags.toolExecution !== false,
+          creativeTools: data.featureFlags.creativeTools !== false,
+          artifactsPanel: data.featureFlags.artifactsPanel !== false,
+        });
+      }
     } catch {
       toastError("Couldn't load the Director", "Check connection and refresh");
     } finally {
       setIsLoading(false);
     }
-  }, [toastError]);
+  }, [authLoading, toastError, user]);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setMessages([]);
+      return;
+    }
     loadMessages();
-  }, [loadMessages]);
+  }, [authLoading, loadMessages, user]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -153,24 +215,26 @@ export default function DirectorWorkspace() {
   );
 
   const send = useCallback(
-    async (text: string) => {
+    async (text: string, opts?: { approval?: DirectorApproval }) => {
       const trimmed = text.trim();
-      if (!trimmed || isSending) return;
-      const optimistic: DirectorMessage = {
-        id: `tmp-${Date.now()}`,
-        role: "operator",
-        content: trimmed,
-        createdAt: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, optimistic]);
-      setInput("");
+      if ((!trimmed && !opts?.approval) || isSending) return;
+      const optimistic: DirectorMessage | null = trimmed
+        ? {
+            id: `tmp-${Date.now()}`,
+            role: "operator",
+            content: trimmed,
+            createdAt: new Date().toISOString(),
+          }
+        : null;
+      if (optimistic) setMessages((prev) => [...prev, optimistic]);
+      if (trimmed) setInput("");
       setIsSending(true);
       setCapabilityOpen(false);
       try {
         const r = await authFetch("/api/director/messages", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: trimmed }),
+          body: JSON.stringify({ content: trimmed, approval: opts?.approval }),
         });
         if (!r.ok) throw new Error("Send failed");
         const data = await r.json();
@@ -180,12 +244,15 @@ export default function DirectorWorkspace() {
           content: data.reply || "(empty reply)",
           createdAt: new Date().toISOString(),
           suggestions: Array.isArray(data.suggestions) ? data.suggestions : undefined,
+          approvals: Array.isArray(data.approvals) ? data.approvals : undefined,
+          previews: Array.isArray(data.previews) ? data.previews : undefined,
           reasoning: data.reasoning,
         };
         setMessages((prev) => [...prev, reply]);
+        if (Array.isArray(data.artifacts)) setArtifacts(data.artifacts);
       } catch {
-        setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
-        setInput(trimmed);
+        if (optimistic) setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
+        if (trimmed) setInput(trimmed);
         toastError("Couldn't send", "Try again in a moment");
       } finally {
         setIsSending(false);
@@ -218,6 +285,15 @@ export default function DirectorWorkspace() {
     setInput(prompt);
     setCapabilityOpen(false);
     inputRef.current?.focus();
+  };
+
+  const respondToApproval = (approval: DirectorApproval, approved: boolean) => {
+    send("", {
+      approval: {
+        ...approval,
+        approved,
+      },
+    });
   };
 
   return (
@@ -389,6 +465,120 @@ export default function DirectorWorkspace() {
                   })}
                 </div>
               )}
+
+              {m.approvals && m.approvals.length > 0 && (
+                <div className="mt-3 ml-1 space-y-2 w-full max-w-[560px]">
+                  {m.approvals.map((a) => (
+                    <div
+                      key={a.callId}
+                      className="rounded-[12px] border border-brand/20 bg-brand/[0.04] px-3 py-2"
+                    >
+                      <p className="text-[11px] text-muted mb-2">{a.label}</p>
+                      <div className="flex items-center gap-2">
+                        <ShadButton
+                          onClick={() => respondToApproval(a, true)}
+                          className="px-3 py-1.5 rounded-[10px] text-[11px] font-semibold bg-brand text-white"
+                          disabled={isSending}
+                        >
+                          Approve
+                        </ShadButton>
+                        <ShadButton
+                          onClick={() => respondToApproval(a, false)}
+                          className="px-3 py-1.5 rounded-[10px] text-[11px] font-semibold border border-brand/20 text-muted"
+                          disabled={isSending}
+                        >
+                          Decline
+                        </ShadButton>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {m.previews && m.previews.length > 0 && (
+                <div className="mt-3 ml-1 grid gap-2 sm:grid-cols-2 w-full max-w-[680px]">
+                  {m.previews.map((p) => (
+                    <div
+                      key={p.conceptId}
+                      className="rounded-[12px] border border-brand/15 bg-white/75 dark:bg-black/10 p-2 space-y-2"
+                    >
+                      <img
+                        src={p.previewDataUrl}
+                        alt={p.title}
+                        className="w-full rounded-[10px] border border-brand/10 bg-white"
+                      />
+                      <div>
+                        <p className="text-[11px] font-semibold text-ink">{p.title}</p>
+                        <p className="text-[10px] text-muted line-clamp-2">{p.rationale}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {p.svg && (
+                          <ShadButton
+                            onClick={() =>
+                              respondToApproval(
+                                {
+                                  callId: `vectorize-${p.conceptId}`,
+                                  name: "vectorize_logo",
+                                  label: "Vectorize concept",
+                                  requiresApproval: true,
+                                  input: { concept_id: p.conceptId, svg: p.svg },
+                                },
+                                true,
+                              )
+                            }
+                            className="px-2 py-1 rounded-[8px] text-[10px] border border-brand/20"
+                          >
+                            Vectorize
+                          </ShadButton>
+                        )}
+                        {p.svg && (
+                          <ShadButton
+                            onClick={() =>
+                              respondToApproval(
+                                {
+                                  callId: `pack-${p.conceptId}`,
+                                  name: "brand_pack_export",
+                                  label: "Export brand pack",
+                                  requiresApproval: true,
+                                  input: {
+                                    concept_id: p.conceptId,
+                                    concept_name: p.title,
+                                    svg: p.svg,
+                                  },
+                                },
+                                true,
+                              )
+                            }
+                            className="px-2 py-1 rounded-[8px] text-[10px] border border-brand/20"
+                          >
+                            Export pack
+                          </ShadButton>
+                        )}
+                        <ShadButton
+                          onClick={() =>
+                            setInput(
+                              `Refine concept ${p.title}: keep the core shape but adjust typography.`,
+                            )
+                          }
+                          className="px-2 py-1 rounded-[8px] text-[10px] border border-brand/20"
+                        >
+                          Edit
+                        </ShadButton>
+                        <ShadButton
+                          onClick={() =>
+                            setInput(
+                              `Regenerate 3 new options from ${p.title} with stronger contrast.`,
+                            )
+                          }
+                          className="px-2 py-1 rounded-[8px] text-[10px] border border-brand/20"
+                        >
+                          Regenerate
+                        </ShadButton>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </motion.div>
           ))
         )}
@@ -420,6 +610,59 @@ export default function DirectorWorkspace() {
           </motion.div>
         )}
       </div>
+
+      {featureFlags.artifactsPanel && artifacts.length > 0 && (
+        <div className="shrink-0 px-4 pb-2">
+          <div className="max-w-3xl mx-auto rounded-[12px] border border-brand/15 bg-white/75 dark:bg-black/10 p-3">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-muted">Artifacts</p>
+              <p className="text-[10px] text-muted">{artifacts.length} files</p>
+            </div>
+            <div className="grid gap-2 max-h-36 overflow-auto">
+              {artifacts.slice(0, 20).map((a) => (
+                <div
+                  key={a.id}
+                  className="flex items-center justify-between gap-2 rounded-[10px] border border-brand/10 px-2.5 py-2"
+                >
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-medium text-ink truncate">{a.name}</p>
+                    <p className="text-[10px] text-muted">
+                      {a.artifactType} · v{Number(a.metadata?.version || 1)} ·{" "}
+                      {(a.sizeBytes / 1024).toFixed(1)} KB
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <a
+                      href={a.downloadUrl}
+                      className="px-2.5 py-1.5 rounded-[8px] text-[10px] border border-brand/20"
+                    >
+                      Download
+                    </a>
+                    <ShadButton
+                      onClick={() =>
+                        setInput(
+                          `Regenerate ${a.name} with a fresh variation and keep brand style.`,
+                        )
+                      }
+                      className="px-2.5 py-1.5 rounded-[8px] text-[10px] border border-brand/20"
+                    >
+                      Regenerate
+                    </ShadButton>
+                    <ShadButton
+                      onClick={() =>
+                        setInput(`Edit ${a.name}: keep layout but adjust color contrast.`)
+                      }
+                      className="px-2.5 py-1.5 rounded-[8px] text-[10px] border border-brand/20"
+                    >
+                      Edit
+                    </ShadButton>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Composer - prominent at bottom, Claude-style */}
       <div className="shrink-0 px-4 pb-6 pt-2">

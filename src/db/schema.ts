@@ -551,6 +551,48 @@ export const directorConversationMessages = pgTable(
   }),
 );
 
+// Director artifacts — persisted generated files and their backing objects.
+//
+// Storage model:
+// 1) wireline_director_artifact_objects stores the raw base64 payload keyed by
+//    object_key (our object-store abstraction).
+// 2) wireline_director_artifacts stores per-thread/version metadata and points
+//    at the object key for signed delivery.
+export const directorArtifactObjects = pgTable(
+  "wireline_director_artifact_objects",
+  {
+    objectKey: text("object_key").primaryKey(),
+    userId: uuid("user_id").notNull(),
+    mimeType: text("mime_type").notNull(),
+    base64Data: text("base64_data").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  () => ({
+    userIdx: sql`CREATE INDEX IF NOT EXISTS idx_director_artifact_objects_user_created ON wireline_director_artifact_objects USING btree (user_id, created_at DESC)`,
+  }),
+);
+
+export const directorArtifacts = pgTable(
+  "wireline_director_artifacts",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
+    userId: uuid("user_id").notNull(),
+    threadKey: text("thread_key").notNull().default("director"),
+    messageId: bigint("message_id", { mode: "bigint" }),
+    toolName: text("tool_name").notNull(),
+    artifactType: text("artifact_type").notNull(),
+    name: text("name").notNull(),
+    objectKey: text("object_key").notNull(),
+    metadata: jsonb("metadata").default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  () => ({
+    userThreadIdx: sql`CREATE INDEX IF NOT EXISTS idx_director_artifacts_user_thread_created ON wireline_director_artifacts USING btree (user_id, thread_key, created_at DESC)`,
+    objectIdx: sql`CREATE INDEX IF NOT EXISTS idx_director_artifacts_object ON wireline_director_artifacts USING btree (object_key)`,
+  }),
+);
+
 // 2.2 COMMITMENTS & LOGISTICS
 export const appointments = pgTable(
   "wireline_appointments",
