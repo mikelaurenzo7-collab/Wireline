@@ -2843,6 +2843,42 @@ select:focus {
 }
 
 /* ══════════════════════════════════════════════════════════════════
+   WIRELINE CONSTELLATION PRIMITIVES — Premium Generative Visuals
+   StatusOrb, PulseRing, ConstellationField motion language.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── STATUS ORB ── Breathing + orbital rotation + core pulse */
+@keyframes status-orb-breathe {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+@keyframes status-orb-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 6px currentColor; }
+  50% { transform: scale(1.12); box-shadow: 0 0 14px currentColor; }
+}
+
+@keyframes status-orb-orbit {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ── PULSE RING ── Expanding concentric sonar ripples */
+@keyframes pulse-ring-expand {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.8;
+  }
+  70% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
    GOOGLE DESIGN SYSTEM BOOST (MATERIAL DESIGN 3 & DYNAMIC COLOR)
    Translucent Material You elevations, tactile CSS ripple effects,
    and dynamic icon scaling integrations.
