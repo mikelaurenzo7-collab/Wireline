@@ -112,13 +112,11 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         onMouseEnter={() => !expanded && setPeek(true)}
         onMouseLeave={() => setPeek(false)}
         className={cn(
-          "hidden lg:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
-          "bg-[#3B154C]/96 border-r border-[#EFE9DC]/15 shadow-[0_0_32px_rgba(59,21,76,0.2)]"
+          "hidden lg:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] glass-2 elev-3",
+          "border-r border-[#EFE9DC]/12",
         )}
         style={{
           width: railWidth,
-          backdropFilter: "blur(24px) saturate(160%)",
-          WebkitBackdropFilter: "blur(24px) saturate(160%)",
         }}
       >
         {/* Logo */}
@@ -128,10 +126,10 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           aria-label={`${branding.brand_name} home`}
         >
           <motion.div
-            whileHover={{ rotate: 8, scale: 1.06 }}
-            whileTap={{ scale: 0.96 }}
-            transition={{ type: "spring", stiffness: 380, damping: 28 }}
-            className="relative w-8 h-8 shrink-0 rounded-lg flex items-center justify-center overflow-hidden"
+            whileHover={{ rotate: 6, scale: 1.05 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 360, damping: 26 }}
+            className="relative w-8 h-8 shrink-0 rounded-lg flex items-center justify-center overflow-hidden elev-1"
             style={{
               background: "#EFE9DC",
               boxShadow: "0 4px 14px -4px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.22) inset",

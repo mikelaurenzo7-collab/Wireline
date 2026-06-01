@@ -195,21 +195,17 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
     );
   };
 
-return (
+  return (
     <>
       <header
         aria-label="Main navigation"
         className={cn(
-          "shell-sticky-glass shrink-0 sticky top-0 z-50 border-b lg:hidden transition-all duration-300",
+          "shell-sticky-glass shrink-0 sticky top-0 z-50 border-b lg:hidden transition-all duration-300 glass-2 elev-1",
           theme === "light"
-            ? "bg-[#F5F0E6]/80 border-[#8B3FD6]/12 text-ink animate-fade-in"
-            : "bg-[#2D1A3E]/90 border-[#8B3FD6]/18 text-white animate-fade-in",
+            ? "border-[#8B3FD6]/10 text-ink animate-fade-in"
+            : "border-[#8B3FD6]/20 text-white animate-fade-in",
         )}
         style={{
-          boxShadow:
-            theme === "light"
-              ? "0 2px 12px rgba(139, 63, 214, 0.03)"
-              : "0 0 0 1px rgba(139, 63, 214, 0.15), 0 8px 24px -16px rgba(59, 21, 76, 0.5)",
           paddingTop: "max(0px, env(safe-area-inset-top, 0))",
           paddingLeft: "env(safe-area-inset-left)",
           paddingRight: "env(safe-area-inset-right)",
@@ -225,10 +221,10 @@ return (
             aria-label={`${branding.brand_name} home`}
           >
             <motion.div
-              whileHover={{ rotate: 8, scale: 1.06 }}
-              whileTap={{ scale: 0.96 }}
-              transition={{ type: "spring", stiffness: 400, damping: 20 }}
-              className="relative w-7 h-7 rounded-lg flex items-center justify-center overflow-hidden shrink-0"
+              whileHover={{ rotate: 6, scale: 1.05 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 380, damping: 26 }}
+              className="relative w-7 h-7 rounded-lg flex items-center justify-center overflow-hidden shrink-0 elev-1"
               style={{
                 background: "#EFE9DC",
                 boxShadow:
@@ -479,8 +475,8 @@ return (
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
-              transition={{ type: "spring", stiffness: 360, damping: 32 }}
-              className="fixed top-0 bottom-0 left-0 w-[min(21rem,calc(100vw-0.75rem))] z-[85] glass-strong border-r border-black/8 flex flex-col p-4 lg:hidden"
+              transition={{ type: "spring", stiffness: 340, damping: 30 }}
+              className="fixed top-0 bottom-0 left-0 w-[min(21rem,calc(100vw-0.75rem))] z-[85] glass-2 elev-2 border-r border-black/8 flex flex-col p-4 lg:hidden"
               style={{
                 paddingTop: "max(1rem, env(safe-area-inset-top))",
                 paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
@@ -528,7 +524,7 @@ return (
                 })}
               </nav>
 
-              <div className="pt-3 mt-3 border-t border-black/8 space-y-2">
+              <div className="pt-3 mt-3 aurora-divider space-y-2">
                 <div className="flex items-center gap-2 rounded-lg border border-black/8 glass px-2 py-2">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-on-brand font-medium text-sm shrink-0 bg-brand">
                     {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
