@@ -521,6 +521,8 @@ export const agentConversationMessages = pgTable(
     // lives in the migration (this Drizzle version doesn't expose .$type()).
     role: text("role").notNull(),
     content: text("content").notNull(),
+    /** Claude's adaptive thinking/reasoning text for this message (nullable). */
+    reasoning: text("reasoning"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   () => ({
@@ -544,6 +546,8 @@ export const directorConversationMessages = pgTable(
     // lives in the migration (this Drizzle version doesn't expose .$type()).
     role: text("role").notNull(),
     content: text("content").notNull(),
+    /** Claude's adaptive thinking/reasoning text for this message (nullable). */
+    reasoning: text("reasoning"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   () => ({

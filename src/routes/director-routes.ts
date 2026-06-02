@@ -48,12 +48,18 @@ async function ensureDirectorTables(): Promise<void> {
       user_id     UUID NOT NULL,
       role        TEXT NOT NULL CHECK (role IN ('operator', 'director')),
       content     TEXT NOT NULL,
+      reasoning   TEXT,
       created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
   await drizzle.execute(sql`
     CREATE INDEX IF NOT EXISTS idx_director_conv_user
       ON wireline_director_conversation_messages (user_id, created_at DESC);
+  `);
+  // Add reasoning column if table already existed without it.
+  await drizzle.execute(sql`
+    ALTER TABLE wireline_director_conversation_messages
+      ADD COLUMN IF NOT EXISTS reasoning TEXT;
   `);
 
   await drizzle.execute(sql`
@@ -344,6 +350,7 @@ router.get(
           id: String(m.id),
           role: m.role,
           content: m.content,
+          reasoning: m.reasoning || undefined,
           createdAt: m.createdAt,
         })),
       });
@@ -427,6 +434,8 @@ router.post(
       let artifacts: unknown[] = [];
       let clarifyingQuestions: string[] = [];
       let toolTelemetry: Record<string, unknown> | undefined;
+      let reasoning: string | undefined;
+      let thinkingDurationMs: number | undefined;
 
       if (approval && featureFlags.toolExecution) {
         if (!approval.approved) {
@@ -490,6 +499,8 @@ router.post(
           reply = plan.reply;
           suggestions = plan.suggestions;
           model = plan.model;
+          reasoning = plan.reasoning;
+          thinkingDurationMs = plan.thinkingDurationMs;
         } catch (e) {
           log.error("director planner failed", { error: getErrorMessage(e) });
           reply =
@@ -501,6 +512,7 @@ router.post(
         userId: req.user.id,
         role: "director",
         content: reply,
+        reasoning: reasoning || null,
       });
 
       if (artifacts.length === 0) {
@@ -518,6 +530,8 @@ router.post(
         clarifyingQuestions,
         toolTelemetry,
         featureFlags,
+        reasoning,
+        thinkingDurationMs,
       });
     } catch (e) {
       log.error("director POST failed", { error: getErrorMessage(e) });

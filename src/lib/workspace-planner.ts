@@ -18,7 +18,7 @@
  * toggle-tool / run-action) which reuse the existing, already-gated
  * action engine + outbound dial paths.
  */
-import { runStructured, type ToolSchema } from "./claude-structured";
+import { runStructuredWithThinking, type ToolSchema } from "./claude-structured";
 import { CLAUDE_MODELS } from "./claude-models";
 import {
   AGENT_TOOL_CATALOG,
@@ -140,6 +140,10 @@ export interface WorkspacePlan {
   changes: ProposedChange[];
   toolToggles: ProposedToolToggle[];
   actions: ProposedAction[];
+  /** Claude's adaptive thinking reasoning (when deep thinking is enabled). */
+  reasoning?: string;
+  /** Approximate thinking duration in ms (for UI badge). */
+  thinkingDurationMs?: number;
 }
 
 export interface PlanWorkspaceInput {
@@ -424,7 +428,11 @@ export function normalizePlan(raw: RawDirectAgent): WorkspacePlan {
  * unavailable — the caller decides the fallback copy.
  */
 export async function planWorkspace(input: PlanWorkspaceInput): Promise<WorkspacePlan> {
-  const raw = await runStructured<RawDirectAgent>({
+  const {
+    result: raw,
+    thinking,
+    thinkingDurationMs,
+  } = await runStructuredWithThinking<RawDirectAgent>({
     system: buildSystemPrompt(input),
     user: buildUserContent(input),
     tool: DIRECT_AGENT_TOOL,
@@ -435,5 +443,6 @@ export async function planWorkspace(input: PlanWorkspaceInput): Promise<Workspac
     model: CLAUDE_MODELS.SONNET,
     maxTokens: 1500,
   });
-  return normalizePlan(raw);
+  const plan = normalizePlan(raw);
+  return { ...plan, reasoning: thinking, thinkingDurationMs };
 }

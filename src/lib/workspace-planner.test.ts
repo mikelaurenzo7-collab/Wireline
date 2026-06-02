@@ -8,6 +8,7 @@ const { runStructuredMock } = vi.hoisted(() => ({ runStructuredMock: vi.fn() }))
 
 vi.mock("./claude-structured", () => ({
   runStructured: runStructuredMock,
+  runStructuredWithThinking: runStructuredMock,
 }));
 
 import { normalizePlan, planWorkspace, type PlanWorkspaceInput } from "./workspace-planner";
@@ -136,19 +137,25 @@ describe("planWorkspace", () => {
 
   it("forwards the structured output through normalizePlan", async () => {
     runStructuredMock.mockResolvedValue({
-      reply: "I've drafted a warmer greeting.",
-      config_changes: [
-        { field: "first_message", value: "Hey, so glad you called!", summary: "Warmer greeting" },
-      ],
+      result: {
+        reply: "I've drafted a warmer greeting.",
+        config_changes: [
+          { field: "first_message", value: "Hey, so glad you called!", summary: "Warmer greeting" },
+        ],
+      },
+      thinking: "Analyzed operator request for warmth.",
+      thinkingDurationMs: 1200,
     });
     const plan = await planWorkspace(input);
     expect(runStructuredMock).toHaveBeenCalledTimes(1);
     expect(plan.reply).toContain("warmer greeting");
     expect(plan.changes[0].field).toBe("first_message");
+    expect(plan.reasoning).toBe("Analyzed operator request for warmth.");
+    expect(plan.thinkingDurationMs).toBe(1200);
   });
 
   it("passes a forced tool and a Sonnet model to the model layer", async () => {
-    runStructuredMock.mockResolvedValue({ reply: "ok" });
+    runStructuredMock.mockResolvedValue({ result: { reply: "ok" } });
     await planWorkspace(input);
     const args = runStructuredMock.mock.calls[0][0];
     expect(args.tool?.name).toBe("direct_agent");

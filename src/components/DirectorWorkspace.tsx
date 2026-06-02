@@ -33,6 +33,7 @@ import { useToast } from "../contexts/ToastContext";
 import { useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { cn } from "../lib/utils";
+import { ThinkingDisplay, LiveThinkingIndicator } from "./ui/ThinkingDisplay";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
 type SuggestionKind =
@@ -86,6 +87,8 @@ interface DirectorMessage {
   approvals?: DirectorApproval[];
   previews?: DirectorPreview[];
   reasoning?: string;
+  thinkingDurationMs?: number;
+  model?: "sonnet" | "opus";
 }
 
 const SUGGESTION_ICON: Record<SuggestionKind, React.ElementType> = {
@@ -247,6 +250,8 @@ export default function DirectorWorkspace() {
           approvals: Array.isArray(data.approvals) ? data.approvals : undefined,
           previews: Array.isArray(data.previews) ? data.previews : undefined,
           reasoning: data.reasoning,
+          thinkingDurationMs: data.thinkingDurationMs,
+          model: data.model,
         };
         setMessages((prev) => [...prev, reply]);
         if (Array.isArray(data.artifacts)) setArtifacts(data.artifacts);
@@ -418,15 +423,12 @@ export default function DirectorWorkspace() {
               >
                 {/* Reasoning display - Claude style */}
                 {m.role === "director" && m.reasoning && (
-                  <div className="mb-3 pb-3 border-b border-brand/10">
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <Sparkles className="w-3 h-3 text-brand/60" />
-                      <span className="text-[9px] uppercase tracking-[0.16em] text-brand/60 font-medium">
-                        Reasoning
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-muted leading-relaxed italic">{m.reasoning}</p>
-                  </div>
+                  <ThinkingDisplay
+                    reasoning={m.reasoning}
+                    thinkingDurationMs={m.thinkingDurationMs}
+                    isDeep={m.model === "opus"}
+                    animate={false}
+                  />
                 )}
 
                 <p className="text-[14px] leading-relaxed">{m.content}</p>
@@ -587,7 +589,7 @@ export default function DirectorWorkspace() {
           ))
         )}
 
-        {/* Thinking indicator — orbital pulse */}
+        {/* Thinking indicator — multi-stage animated */}
         {isSending && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -603,13 +605,7 @@ export default function DirectorWorkspace() {
               <span className="wl-label text-muted">Director</span>
             </div>
             <div className="wl-panel rounded-2xl rounded-bl-md px-5 py-4">
-              <div className="flex items-center gap-2.5">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-brand" />
-                </span>
-                <span className="text-[12px] text-muted font-medium">Thinking…</span>
-              </div>
+              <LiveThinkingIndicator isDeep={false} />
             </div>
           </motion.div>
         )}

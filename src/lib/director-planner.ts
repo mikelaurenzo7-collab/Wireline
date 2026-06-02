@@ -17,7 +17,7 @@
  *     whole fleet", "analyze everything and build a plan"), we escalate to
  *     Opus with adaptive thinking. Detected by `wantsDeepAnalysis()`.
  */
-import { runStructured, type ToolSchema } from "./claude-structured";
+import { runStructuredWithThinking, type ToolSchema } from "./claude-structured";
 import { CLAUDE_MODELS } from "./claude-models";
 
 /** Lightweight navigation suggestions the Director can surface as chips. */
@@ -42,6 +42,10 @@ export interface DirectorPlan {
   suggestions: DirectorSuggestion[];
   /** Which model tier handled this turn (for UI/telemetry). */
   model: "sonnet" | "opus";
+  /** Claude's adaptive thinking reasoning (only present on deep-analysis turns). */
+  reasoning?: string;
+  /** Approximate thinking duration in ms (for UI badge). */
+  thinkingDurationMs?: number;
 }
 
 export interface DirectorFleetAgent {
@@ -221,7 +225,11 @@ export function normalizeDirectorPlan(
 export async function planDirector(input: PlanDirectorInput): Promise<DirectorPlan> {
   const deep = wantsDeepAnalysis(input.operatorMessage);
   const model = deep ? CLAUDE_MODELS.OPUS : CLAUDE_MODELS.SONNET;
-  const raw = await runStructured<RawDirectorReply>({
+  const {
+    result: raw,
+    thinking,
+    thinkingDurationMs,
+  } = await runStructuredWithThinking<RawDirectorReply>({
     system: buildSystemPrompt(input, deep),
     user: buildUserContent(input),
     tool: DIRECTOR_TOOL,
@@ -229,5 +237,6 @@ export async function planDirector(input: PlanDirectorInput): Promise<DirectorPl
     deepThink: deep,
     maxTokens: deep ? 3000 : 1200,
   });
-  return normalizeDirectorPlan(raw, input.fleet, deep ? "opus" : "sonnet");
+  const plan = normalizeDirectorPlan(raw, input.fleet, deep ? "opus" : "sonnet");
+  return { ...plan, reasoning: thinking, thinkingDurationMs };
 }

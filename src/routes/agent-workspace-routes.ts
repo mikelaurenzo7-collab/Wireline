@@ -95,6 +95,7 @@ router.get(
           id: String(m.id),
           role: m.role,
           content: m.content,
+          reasoning: m.reasoning || undefined,
           createdAt: m.createdAt,
         })),
       });
@@ -187,6 +188,8 @@ router.post(
       let changes: unknown[] = [];
       let toolToggles: unknown[] = [];
       let actions: unknown[] = [];
+      let reasoning: string | undefined;
+      let thinkingDurationMs: number | undefined;
 
       if (!process.env.ANTHROPIC_API_KEY) {
         reply =
@@ -203,6 +206,8 @@ router.post(
           changes = plan.changes;
           toolToggles = plan.toolToggles;
           actions = plan.actions;
+          reasoning = plan.reasoning;
+          thinkingDurationMs = plan.thinkingDurationMs;
         } catch (e) {
           log.error("workspace planner failed", { error: getErrorMessage(e), agentId });
           reply =
@@ -215,9 +220,10 @@ router.post(
         agentId,
         role: "agent",
         content: reply,
+        reasoning: reasoning || null,
       });
 
-      res.json({ reply, changes, toolToggles, actions });
+      res.json({ reply, changes, toolToggles, actions, reasoning, thinkingDurationMs });
     } catch (e) {
       log.error("workspace POST failed", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to send message" });

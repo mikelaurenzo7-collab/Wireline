@@ -41,6 +41,7 @@ import {
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
+import { ThinkingDisplay, LiveThinkingIndicator } from "./ui/ThinkingDisplay";
 import IntegrationActivityCard, {
   type IntegrationActivityCardProps,
 } from "./IntegrationActivityCard";
@@ -126,6 +127,7 @@ interface WorkspaceMessage {
   createdAt: string;
   proposals?: MessageProposals;
   reasoning?: string;
+  thinkingDurationMs?: number;
 }
 
 interface AgentWorkspaceProps {
@@ -572,6 +574,7 @@ export default function AgentWorkspace({
         createdAt: new Date().toISOString(),
         proposals: hasProposals ? proposals : undefined,
         reasoning: data.reasoning,
+        thinkingDurationMs: data.thinkingDurationMs,
       };
       setMessages((prev) => [...prev, agentReply]);
     } catch {
@@ -899,17 +902,12 @@ export default function AgentWorkspace({
                     >
                       {/* Reasoning - Claude style */}
                       {m.role === "agent" && m.reasoning && (
-                        <div className="mb-3 pb-3 border-b border-brand/10">
-                          <div className="flex items-center gap-1.5 mb-1.5">
-                            <Sparkles className="w-3 h-3 text-brand/60" />
-                            <span className="text-[9px] uppercase tracking-[0.16em] text-brand/60 font-medium">
-                              Reasoning
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-muted leading-relaxed italic">
-                            {m.reasoning}
-                          </p>
-                        </div>
+                        <ThinkingDisplay
+                          reasoning={m.reasoning}
+                          thinkingDurationMs={m.thinkingDurationMs}
+                          isDeep={false}
+                          animate={false}
+                        />
                       )}
 
                       <p className="text-[14px] leading-relaxed">{m.content}</p>
@@ -1024,19 +1022,7 @@ export default function AgentWorkspace({
                     <div className="bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm border border-brand/12 rounded-2xl rounded-bl-md px-5 py-4 shadow-sm">
                       <div className="flex items-center gap-2.5 mb-2">
                         <AgentActivityIndicator active size={24} pose="on-call" />
-                        <span className="text-[12px] text-muted font-medium">
-                          {agentName} is thinking…
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[10px] text-muted/70">
-                        <motion.span
-                          animate={{ opacity: [0.4, 1, 0.4] }}
-                          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                          className="inline-flex items-center gap-1"
-                        >
-                          <Sparkles className="w-3 h-3" />
-                          Analyzing context & drafting response
-                        </motion.span>
+                        <LiveThinkingIndicator isDeep={false} />
                       </div>
 
                       {/* Live reasoning steps */}

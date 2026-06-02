@@ -54,6 +54,15 @@ interface StructuredOptions {
   maxTokens?: number;
 }
 
+/** Result from runStructuredWithThinking that includes optional reasoning from thinking blocks. */
+export interface StructuredResult<T> {
+  result: T;
+  /** Concatenated text from Claude's adaptive thinking blocks (if any). */
+  thinking?: string;
+  /** Approximate duration of the thinking phase in milliseconds. */
+  thinkingDurationMs?: number;
+}
+
 /**
  * Run a single tool-call and return the parsed input. The tool is `tool_choice`
  * forced so Claude must produce a structured payload.
@@ -62,6 +71,18 @@ interface StructuredOptions {
  * to save 60-80% on token costs vs Opus. Use 'complex' only for deep reasoning.
  */
 export async function runStructured<T = any>(opts: StructuredOptions): Promise<T> {
+  const { result } = await runStructuredWithThinking<T>(opts);
+  return result;
+}
+
+/**
+ * Like `runStructured`, but also extracts and returns Claude's adaptive thinking
+ * blocks alongside the structured payload. Use this when you need to surface
+ * reasoning to the UI.
+ */
+export async function runStructuredWithThinking<T = any>(
+  opts: StructuredOptions,
+): Promise<StructuredResult<T>> {
   const client = getClient();
   // Select model based on complexity tier or explicit model override
   const model =
@@ -96,15 +117,35 @@ export async function runStructured<T = any>(opts: StructuredOptions): Promise<T
 
   const t0 = Date.now();
   const response = await client.messages.create(body);
-  recordUsage(model, response, Date.now() - t0);
+  const totalMs = Date.now() - t0;
+  recordUsage(model, response, totalMs);
+
+  // Extract thinking blocks (present when adaptive thinking is enabled).
+  const thinkingParts: string[] = [];
+  let toolResult: T | undefined;
+
   for (const block of response.content) {
+    if (block.type === "thinking" && "thinking" in block) {
+      thinkingParts.push((block as any).thinking);
+    }
     if (block.type === "tool_use" && block.name === opts.tool.name) {
-      return block.input as T;
+      toolResult = block.input as T;
     }
   }
-  throw new Error(
-    `Claude returned no ${opts.tool.name} tool_use block (stop_reason=${response.stop_reason})`,
-  );
+
+  if (toolResult === undefined) {
+    throw new Error(
+      `Claude returned no ${opts.tool.name} tool_use block (stop_reason=${response.stop_reason})`,
+    );
+  }
+
+  const thinking = thinkingParts.length > 0 ? thinkingParts.join("\n\n") : undefined;
+
+  return {
+    result: toolResult,
+    thinking,
+    thinkingDurationMs: thinking ? totalMs : undefined,
+  };
 }
 
 /* ────────────────────────────────────────────────────────────────────────
