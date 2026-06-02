@@ -21,7 +21,7 @@
 import express, { type Response } from "express";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import type { AuthenticatedRequest } from "../types/auth";
-import { authenticateUser } from "../middleware/auth";
+import { authenticateUser, authenticateEventStream } from "../middleware/auth";
 import { claudeRateLimiter } from "../middleware/api-rate-limits";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
@@ -38,6 +38,7 @@ import {
   normalizeEnabledTools,
 } from "../lib/agent-capabilities";
 import { executeAction } from "../lib/action-engine";
+import { runStructuredStream } from "../lib/claude-structured";
 
 const router = express.Router();
 
@@ -227,6 +228,154 @@ router.post(
     } catch (e) {
       log.error("workspace POST failed", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to send message" });
+    }
+  },
+);
+
+// POST /api/agents/:id/workspace/messages/stream — SSE streaming endpoint.
+// Streams thinking chunks as they arrive from Claude, then emits the final reply.
+router.post(
+  "/api/agents/:id/workspace/messages/stream",
+  authenticateEventStream,
+  claudeRateLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const agentId = req.params.id;
+      const operatorMessage = String(req.body?.content || "").trim();
+      if (!operatorMessage) {
+        return res.status(400).json({ error: "Message content required" });
+      }
+      if (operatorMessage.length > 4000) {
+        return res.status(400).json({ error: "Message too long" });
+      }
+      if (!process.env.ANTHROPIC_API_KEY) {
+        return res.status(503).json({ error: "LLM not configured" });
+      }
+
+      const [agent] = await drizzle
+        .select({
+          id: schema.agents.id,
+          name: schema.agents.name,
+          role: schema.agents.role,
+          archetype: schema.agents.archetype,
+          enabledTools: schema.agents.enabledTools,
+        })
+        .from(schema.agents)
+        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+        .limit(1);
+      if (!agent) return res.status(404).json({ error: "Agent not found" });
+
+      // Set up SSE headers
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+      res.setHeader("Content-Encoding", "none");
+
+      res.write(`event: meta\ndata: ${JSON.stringify({ agentId, agentName: agent.name })}\n\n`);
+
+      // Load history
+      const priorMessages = await drizzle
+        .select()
+        .from(schema.agentConversationMessages)
+        .where(
+          and(
+            eq(schema.agentConversationMessages.agentId, agentId),
+            eq(schema.agentConversationMessages.userId, req.user.id),
+          ),
+        )
+        .orderBy(desc(schema.agentConversationMessages.createdAt))
+        .limit(CLAUDE_CONTEXT_WINDOW);
+
+      const history = priorMessages.reverse().map((m) => ({
+        role: m.role === "operator" ? ("operator" as const) : ("agent" as const),
+        content: m.content,
+      }));
+
+      // Persist operator message
+      await drizzle.insert(schema.agentConversationMessages).values({
+        userId: req.user.id,
+        agentId,
+        role: "operator",
+        content: operatorMessage,
+      });
+
+      const { CLAUDE_MODELS } = await import("../lib/claude-models");
+
+      const DIRECT_AGENT_TOOL_SCHEMA = {
+        name: "direct_agent",
+        description: "Reply to the operator and propose changes.",
+        input_schema: {
+          type: "object" as const,
+          properties: {
+            reply: { type: "string", description: "Conversational reply (≤120 words)." },
+            config_changes: { type: "array", items: { type: "object" } },
+            tool_toggles: { type: "array", items: { type: "object" } },
+            actions: { type: "array", items: { type: "object" } },
+          },
+          required: ["reply"],
+        },
+      };
+
+      const name = agent.name || "the agent";
+      const role = agent.role || "AI receptionist";
+      const system = `You are ${name}, a Wireline AI ${role}. Reply in first person, warm and concise.`;
+      const transcript = history
+        .slice(-12)
+        .map((m) => `${m.role === "operator" ? "Operator" : "You"}: ${m.content}`)
+        .join("\n");
+      const user = `${transcript ? `Conversation:\n${transcript}\n\n` : ""}Operator: ${operatorMessage}`;
+
+      let closed = false;
+      req.on("close", () => {
+        closed = true;
+      });
+
+      const writeSse = (event: string, data: unknown) => {
+        if (closed) return;
+        res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+      };
+
+      try {
+        const { result, thinking, thinkingDurationMs } = await runStructuredStream(
+          {
+            system,
+            user,
+            tool: DIRECT_AGENT_TOOL_SCHEMA,
+            model: CLAUDE_MODELS.SONNET,
+            maxTokens: 1500,
+          },
+          {
+            onThinkingStart: () => writeSse("thinking_start", {}),
+            onThinkingChunk: (text) => writeSse("thinking_chunk", { text }),
+            onThinkingEnd: (fullText, durationMs) =>
+              writeSse("thinking_end", { thinking: fullText, durationMs }),
+            onResult: (r) => writeSse("reply", r),
+          },
+        );
+
+        const reply = typeof result?.reply === "string" ? result.reply.trim() : "";
+
+        // Persist agent reply
+        await drizzle.insert(schema.agentConversationMessages).values({
+          userId: req.user.id,
+          agentId,
+          role: "agent",
+          content: reply || "(empty)",
+          reasoning: thinking || null,
+        });
+
+        writeSse("done", { reply, reasoning: thinking, thinkingDurationMs });
+      } catch (e) {
+        log.error("workspace stream failed", { error: getErrorMessage(e), agentId });
+        writeSse("error", { message: "Failed to generate response" });
+      }
+
+      if (!closed) res.end();
+    } catch (e) {
+      log.error("workspace stream setup failed", { error: getErrorMessage(e) });
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Failed to start stream" });
+      }
     }
   },
 );

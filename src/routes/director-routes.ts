@@ -5,12 +5,13 @@ import express, { type Response } from "express";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import type { AuthenticatedRequest } from "../types/auth";
-import { authenticateUser } from "../middleware/auth";
+import { authenticateUser, authenticateEventStream } from "../middleware/auth";
 import { claudeRateLimiter } from "../middleware/api-rate-limits";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
-import { planDirector, type DirectorFleetAgent } from "../lib/director-planner";
+import { planDirector, wantsDeepAnalysis, type DirectorFleetAgent } from "../lib/director-planner";
+import { runStructuredStream } from "../lib/claude-structured";
 import { loadDirectorFeatureFlags } from "../lib/director-feature-flags";
 import {
   checkCreativePolicy,
@@ -536,6 +537,160 @@ router.post(
     } catch (e) {
       log.error("director POST failed", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to send message" });
+    }
+  },
+);
+
+// POST /api/director/messages/stream — SSE streaming endpoint for real-time thinking display.
+// Streams thinking chunks as they arrive from Claude, then emits the final reply.
+router.post(
+  "/api/director/messages/stream",
+  authenticateEventStream,
+  claudeRateLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      await ensureDirectorTables();
+      const operatorMessage = String(req.body?.content || "").trim();
+      if (!operatorMessage) {
+        return res.status(400).json({ error: "Message content required" });
+      }
+      if (operatorMessage.length > 4000) {
+        return res.status(400).json({ error: "Message too long" });
+      }
+      if (!process.env.ANTHROPIC_API_KEY) {
+        return res.status(503).json({ error: "LLM not configured" });
+      }
+
+      // Set up SSE headers
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+      res.setHeader("Content-Encoding", "none");
+
+      const fleet = await loadFleetSafe(req.user.id);
+      const deep = wantsDeepAnalysis(operatorMessage);
+
+      // Emit metadata
+      res.write(
+        `event: meta\ndata: ${JSON.stringify({ model: deep ? "opus" : "sonnet", deep })}\n\n`,
+      );
+
+      // Load history for context
+      const priorMessages = await drizzle
+        .select()
+        .from(schema.directorConversationMessages)
+        .where(eq(schema.directorConversationMessages.userId, req.user.id))
+        .orderBy(desc(schema.directorConversationMessages.createdAt))
+        .limit(CLAUDE_CONTEXT_WINDOW);
+
+      const history = priorMessages.reverse().map((m) => ({
+        role: m.role === "operator" ? ("operator" as const) : ("director" as const),
+        content: m.content,
+      }));
+
+      // Save operator message
+      await drizzle.insert(schema.directorConversationMessages).values({
+        userId: req.user.id,
+        role: "operator",
+        content: operatorMessage,
+      });
+
+      // Import the director planner internals for streaming
+      const { CLAUDE_MODELS } = await import("../lib/claude-models");
+
+      const DIRECTOR_TOOL_SCHEMA = {
+        name: "director_reply",
+        description: "Reply to the operator as their AI Director.",
+        input_schema: {
+          type: "object" as const,
+          properties: {
+            reply: { type: "string", description: "Conversational reply (≤160 words)." },
+            suggestions: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  kind: { type: "string" },
+                  label: { type: "string" },
+                  agentId: { type: "string" },
+                },
+                required: ["kind", "label"],
+              },
+            },
+          },
+          required: ["reply"],
+        },
+      };
+
+      const model = deep ? CLAUDE_MODELS.OPUS : CLAUDE_MODELS.SONNET;
+
+      // Build prompts (simplified version)
+      const fleetLines =
+        fleet.length === 0
+          ? "(No agents yet.)"
+          : fleet
+              .map((a) => `- ${a.name || "Unnamed"} (${a.role || "agent"}) · id=${a.id}`)
+              .join("\n");
+
+      const system = `You are the Director — the operator's AI manager inside Wireline. Reply directly and decisively.\n\nFleet:\n${fleetLines}`;
+      const transcript = history
+        .slice(-12)
+        .map((m) => `${m.role === "operator" ? "Operator" : "Director"}: ${m.content}`)
+        .join("\n");
+      const user = `${transcript ? `Conversation:\n${transcript}\n\n` : ""}Operator: ${operatorMessage}`;
+
+      let closed = false;
+      req.on("close", () => {
+        closed = true;
+      });
+
+      const writeSse = (event: string, data: unknown) => {
+        if (closed) return;
+        res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+      };
+
+      try {
+        const { result, thinking, thinkingDurationMs } = await runStructuredStream(
+          {
+            system,
+            user,
+            tool: DIRECTOR_TOOL_SCHEMA,
+            model,
+            deepThink: deep,
+            maxTokens: deep ? 3000 : 1200,
+          },
+          {
+            onThinkingStart: () => writeSse("thinking_start", {}),
+            onThinkingChunk: (text) => writeSse("thinking_chunk", { text }),
+            onThinkingEnd: (fullText, durationMs) =>
+              writeSse("thinking_end", { thinking: fullText, durationMs }),
+            onResult: (r) => writeSse("reply", r),
+          },
+        );
+
+        const reply = typeof result?.reply === "string" ? result.reply.trim() : "";
+        const suggestions = Array.isArray(result?.suggestions) ? result.suggestions : [];
+
+        // Persist
+        await drizzle.insert(schema.directorConversationMessages).values({
+          userId: req.user.id,
+          role: "director",
+          content: reply || "(empty)",
+          reasoning: thinking || null,
+        });
+
+        writeSse("done", { reply, suggestions, reasoning: thinking, thinkingDurationMs });
+      } catch (e) {
+        log.error("director stream failed", { error: getErrorMessage(e) });
+        writeSse("error", { message: "Failed to generate response" });
+      }
+
+      if (!closed) res.end();
+    } catch (e) {
+      log.error("director stream setup failed", { error: getErrorMessage(e) });
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Failed to start stream" });
+      }
     }
   },
 );

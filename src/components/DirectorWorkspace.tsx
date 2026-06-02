@@ -34,7 +34,10 @@ import { useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { cn } from "../lib/utils";
 import { ThinkingDisplay, LiveThinkingIndicator } from "./ui/ThinkingDisplay";
+import { LiveTaskPipeline, type PipelineStep } from "./ui/LiveTaskPipeline";
+import { ArtifactCard, type ArtifactType } from "./ui/ArtifactCard";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { useStreamingChat } from "../hooks/useStreamingChat";
 
 type SuggestionKind =
   | "create_agent"
@@ -136,6 +139,68 @@ export default function DirectorWorkspace() {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const capabilityRef = useRef<HTMLDivElement | null>(null);
 
+  // Streaming chat integration
+  const {
+    state: streamState,
+    send: streamSend,
+    reset: streamReset,
+    isStreaming,
+  } = useStreamingChat("/api/director/messages/stream", {
+    onComplete: (data) => {
+      const reply: DirectorMessage = {
+        id: `director-${Date.now()}`,
+        role: "director",
+        content: (data.reply as string) || "(empty reply)",
+        createdAt: new Date().toISOString(),
+        suggestions: Array.isArray(data.suggestions)
+          ? (data.suggestions as DirectorSuggestion[])
+          : undefined,
+        reasoning: (data.reasoning as string) || undefined,
+        thinkingDurationMs: (data.thinkingDurationMs as number) || undefined,
+        model: (data.model as "sonnet" | "opus") || undefined,
+      };
+      setMessages((prev) => [...prev, reply]);
+      if (Array.isArray(data.artifacts)) setArtifacts(data.artifacts as DirectorArtifact[]);
+      setIsSending(false);
+      streamReset();
+      inputRef.current?.focus();
+    },
+    onError: (msg) => {
+      toastError("Stream failed", msg);
+      setIsSending(false);
+      streamReset();
+    },
+  });
+
+  // Pipeline steps derived from streaming state
+  const streamPipeline: PipelineStep[] = (() => {
+    if (!isStreaming && streamState.phase === "idle") return [];
+    const steps: PipelineStep[] = [];
+    const phase = streamState.phase;
+
+    steps.push({
+      id: "connect",
+      label: "Connecting to Director",
+      status: phase === "connecting" ? "active" : "done",
+    });
+    if (phase === "thinking" || phase === "replying" || phase === "done") {
+      steps.push({
+        id: "thinking",
+        label: streamState.isDeep ? "Deep analysis (Opus)" : "Reasoning",
+        status: phase === "thinking" ? "active" : "done",
+        elapsedMs: phase === "thinking" ? undefined : streamState.thinkingDurationMs,
+      });
+    }
+    if (phase === "replying" || phase === "done") {
+      steps.push({
+        id: "reply",
+        label: "Composing reply",
+        status: phase === "replying" ? "active" : "done",
+      });
+    }
+    return steps;
+  })();
+
   const loadMessages = useCallback(async () => {
     if (authLoading) return;
     if (!user) {
@@ -233,6 +298,14 @@ export default function DirectorWorkspace() {
       if (trimmed) setInput("");
       setIsSending(true);
       setCapabilityOpen(false);
+
+      // Use streaming for regular messages (no approvals — those stay non-streaming)
+      if (!opts?.approval) {
+        streamSend({ content: trimmed });
+        return;
+      }
+
+      // Fallback: non-streaming for approval responses
       try {
         const r = await authFetch("/api/director/messages", {
           method: "POST",
@@ -264,7 +337,7 @@ export default function DirectorWorkspace() {
         inputRef.current?.focus();
       }
     },
-    [isSending, toastError],
+    [isSending, toastError, streamSend],
   );
 
   const clearThread = useCallback(async () => {
@@ -589,7 +662,7 @@ export default function DirectorWorkspace() {
           ))
         )}
 
-        {/* Thinking indicator — multi-stage animated */}
+        {/* Live streaming indicator — shows pipeline + thinking */}
         {isSending && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -604,8 +677,19 @@ export default function DirectorWorkspace() {
               </span>
               <span className="wl-label text-muted">Director</span>
             </div>
-            <div className="wl-panel rounded-2xl rounded-bl-md px-5 py-4">
-              <LiveThinkingIndicator isDeep={false} />
+            <div className="wl-panel rounded-2xl rounded-bl-md px-5 py-4 space-y-3">
+              {/* Pipeline visualization */}
+              {streamPipeline.length > 0 && <LiveTaskPipeline steps={streamPipeline} />}
+              {/* Live thinking text */}
+              {streamState.phase === "thinking" && streamState.thinkingText && (
+                <div className="text-[11px] text-muted/70 leading-relaxed max-h-32 overflow-y-auto border-t border-brand/8 pt-2 mt-2">
+                  <p className="whitespace-pre-wrap line-clamp-6">
+                    {streamState.thinkingText.slice(-500)}
+                  </p>
+                </div>
+              )}
+              {/* Fallback pulsing indicator */}
+              {streamPipeline.length === 0 && <LiveThinkingIndicator isDeep={false} />}
             </div>
           </motion.div>
         )}
@@ -618,46 +702,18 @@ export default function DirectorWorkspace() {
               <p className="text-[10px] uppercase tracking-[0.16em] text-muted">Artifacts</p>
               <p className="text-[10px] text-muted">{artifacts.length} files</p>
             </div>
-            <div className="grid gap-2 max-h-36 overflow-auto">
+            <div className="grid gap-2 max-h-48 overflow-auto sm:grid-cols-2">
               {artifacts.slice(0, 20).map((a) => (
-                <div
+                <ArtifactCard
                   key={a.id}
-                  className="flex items-center justify-between gap-2 rounded-[10px] border border-brand/10 px-2.5 py-2"
-                >
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-medium text-ink truncate">{a.name}</p>
-                    <p className="text-[10px] text-muted">
-                      {a.artifactType} · v{Number(a.metadata?.version || 1)} ·{" "}
-                      {(a.sizeBytes / 1024).toFixed(1)} KB
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <a
-                      href={a.downloadUrl}
-                      className="px-2.5 py-1.5 rounded-[8px] text-[10px] border border-brand/20"
-                    >
-                      Download
-                    </a>
-                    <ShadButton
-                      onClick={() =>
-                        setInput(
-                          `Regenerate ${a.name} with a fresh variation and keep brand style.`,
-                        )
-                      }
-                      className="px-2.5 py-1.5 rounded-[8px] text-[10px] border border-brand/20"
-                    >
-                      Regenerate
-                    </ShadButton>
-                    <ShadButton
-                      onClick={() =>
-                        setInput(`Edit ${a.name}: keep layout but adjust color contrast.`)
-                      }
-                      className="px-2.5 py-1.5 rounded-[8px] text-[10px] border border-brand/20"
-                    >
-                      Edit
-                    </ShadButton>
-                  </div>
-                </div>
+                  name={a.name}
+                  type={a.artifactType as ArtifactType}
+                  mimeType={a.mimeType}
+                  sizeBytes={a.sizeBytes}
+                  downloadUrl={a.downloadUrl}
+                  metadata={a.metadata}
+                  className="w-full"
+                />
               ))}
             </div>
           </div>
