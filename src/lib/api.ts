@@ -161,6 +161,20 @@ const TRIAL_GATE_CODES = new Set([
  */
 export const TRIAL_GATE_EVENT = "wireline:trial-gate-block";
 
+/**
+ * Fired by authFetch when the backend reports the bearer session is dead
+ * (`401` + `code: "SESSION_INVALID"`). AuthContext listens and signs the
+ * user out, so a single stale token bounces the operator to /signin
+ * instead of painting "Invalid or expired session" into every panel.
+ */
+export const SESSION_EXPIRED_EVENT = "wireline:session-expired";
+
+/**
+ * sessionStorage flag read by <AuthPortal/> after an automatic sign-out so
+ * the sign-in screen can explain *why* the operator landed back there.
+ */
+export const SESSION_EXPIRED_FLAG = "wireline_session_expired";
+
 export interface TrialGateBlockDetail {
   code: "TRIAL_EXPIRED" | "TRIAL_LIMIT_HIT" | "SUBSCRIPTION_REQUIRED" | "EMAIL_UNVERIFIED";
   error: string;
@@ -204,6 +218,55 @@ async function maybeDispatchTrialGateEvent(response: Response): Promise<void> {
   } catch {
     // Body wasn't JSON, or parsing failed — caller probably didn't get
     // a trial-gate 402 anyway. Skip.
+  }
+}
+
+/**
+ * De-dupe guard so a burst of parallel 401s (a dashboard fires many
+ * requests at once) only triggers a single sign-out + redirect.
+ * `sessionExpiredHandled` latches once we've confirmed a dead session;
+ * `sessionCheckInFlight` is set synchronously so concurrent 401s don't all
+ * race past the guard while the first one is still reading its body.
+ */
+let sessionExpiredHandled = false;
+let sessionCheckInFlight = false;
+
+/**
+ * Best-effort dead-session sniffer. The backend tags auth failures with
+ * `code: "SESSION_INVALID"` (see src/middleware/auth.ts); when we see one
+ * AND the client actually believed it was signed in, we fire a global
+ * event so AuthContext can sign out and bounce to /signin. Clones the
+ * response so the caller can still read the body normally. No-ops in
+ * non-browser contexts.
+ */
+async function maybeDispatchSessionExpiredEvent(
+  response: Response,
+  hadToken: boolean,
+): Promise<void> {
+  if (response.status !== 401) return;
+  if (!hadToken) return;
+  if (typeof window === "undefined") return;
+  if (sessionExpiredHandled || sessionCheckInFlight) return;
+  // Latch synchronously, before the async body read, so parallel 401s in
+  // the same tick collapse into a single sign-out.
+  sessionCheckInFlight = true;
+  try {
+    const cloned = response.clone();
+    const body = (await cloned.json()) as Record<string, any>;
+    if (body?.code !== "SESSION_INVALID") return;
+    sessionExpiredHandled = true;
+    try {
+      sessionStorage.setItem(SESSION_EXPIRED_FLAG, "1");
+    } catch {
+      /* private mode / storage disabled — the event alone still works */
+    }
+    window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+  } catch {
+    // Non-JSON 401 (e.g. proxy HTML) — not our structured auth failure.
+  } finally {
+    // Clear the in-flight latch. If this was a real dead session,
+    // `sessionExpiredHandled` now keeps the gate closed anyway.
+    sessionCheckInFlight = false;
   }
 }
 
@@ -281,6 +344,20 @@ export function getAccessToken(): string | null {
   }
 }
 
+/**
+ * Re-arm the dead-session sniffer. Called on a fresh sign-in so a future
+ * expiry is detected again after the operator re-authenticates.
+ */
+export function resetSessionExpiredGuard(): void {
+  sessionExpiredHandled = false;
+  sessionCheckInFlight = false;
+  try {
+    sessionStorage.removeItem(SESSION_EXPIRED_FLAG);
+  } catch {
+    /* storage disabled — nothing to clear */
+  }
+}
+
 export async function authFetch(url: string, options: RequestInit = {}) {
   const sessionJson = localStorage.getItem("wireline_session");
   let token: string | null = null;
@@ -292,6 +369,8 @@ export async function authFetch(url: string, options: RequestInit = {}) {
       token = null;
     }
   }
+
+  const hadToken = !!token;
 
   if (token && !url.includes("/api/auth/refresh")) {
     token = await maybeRefreshToken(token);
@@ -317,6 +396,10 @@ export async function authFetch(url: string, options: RequestInit = {}) {
     // caller's contract is "I get a Response back immediately." The
     // modal listener handles whatever the event carries.
     void maybeDispatchTrialGateEvent(response);
+    // Same fire-and-forget contract for dead-session detection. A 401 with
+    // SESSION_INVALID means the bearer is no longer valid; sign the
+    // operator out globally instead of leaking the raw error into the UI.
+    void maybeDispatchSessionExpiredEvent(response, hadToken);
     return response;
   } finally {
     clearTimeout(timer);

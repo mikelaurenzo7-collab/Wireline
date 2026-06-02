@@ -33,7 +33,12 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
     const token = authHeader?.split(" ")[1];
 
     if (!token) {
-      return res.status(401).json({ error: "No authorization token provided" });
+      // SESSION_INVALID lets the SPA distinguish a dead session (sign the
+      // user out, bounce to /signin) from an endpoint-specific 401. See
+      // maybeDispatchSessionExpiredEvent in src/lib/api.ts.
+      return res
+        .status(401)
+        .json({ error: "No authorization token provided", code: "SESSION_INVALID" });
     }
 
     let secret: string;
@@ -65,7 +70,7 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
         })
         .catch((err: unknown) => log.warn("audit log failed", { error: getErrorMessage(err) }));
 
-      return res.status(401).json({ error: "Invalid or expired session" });
+      return res.status(401).json({ error: "Invalid or expired session", code: "SESSION_INVALID" });
     }
 
     // Map JWT payload to a compatible User object
@@ -120,7 +125,9 @@ export async function authenticateEventStream(req: Request, res: Response, next:
     const token = headerToken || queryToken;
 
     if (!token) {
-      return res.status(401).json({ error: "No authorization token provided" });
+      return res
+        .status(401)
+        .json({ error: "No authorization token provided", code: "SESSION_INVALID" });
     }
 
     let secret: string;
@@ -141,7 +148,7 @@ export async function authenticateEventStream(req: Request, res: Response, next:
     const payload = await verifyInternalJwt(token, secret);
 
     if (!payload) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      return res.status(401).json({ error: "Invalid or expired session", code: "SESSION_INVALID" });
     }
 
     authedReq.user = {

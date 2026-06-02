@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { SESSION_EXPIRED_EVENT, resetSessionExpiredGuard } from "../lib/api";
 
 export interface User {
   id: string;
@@ -55,6 +56,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // the OAuth bridge page). Empty deps: setters are referentially
   // stable, so these never need to change.
   const signIn = useCallback((newSession: Session) => {
+    // Fresh credentials — re-arm the dead-session sniffer so a later
+    // expiry is caught again.
+    resetSessionExpiredGuard();
     localStorage.setItem("wireline_session", JSON.stringify(newSession));
     setSession(newSession);
     setUser(newSession.user);
@@ -65,6 +69,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSession(null);
     setUser(null);
   }, []);
+
+  // Global dead-session handler. authFetch fires SESSION_EXPIRED_EVENT when
+  // the backend reports a 401/SESSION_INVALID; we sign out so AppContent
+  // bounces the operator to /signin (preserving the return path) instead of
+  // every panel rendering a raw "Invalid or expired session" error.
+  useEffect(() => {
+    const onExpired = () => {
+      // Only act if we still think we're signed in — avoids a redundant
+      // sign-out on the login screen.
+      if (localStorage.getItem("wireline_session")) {
+        void signOut();
+      }
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
+  }, [signOut]);
 
   return (
     <AuthContext.Provider value={{ user, session, loading, signOut, signIn }}>

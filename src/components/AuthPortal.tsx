@@ -26,6 +26,7 @@ import {
   type SignupIntent,
 } from "../lib/signup-intent";
 import { getPasswordPolicyError } from "../lib/password-policy";
+import { SESSION_EXPIRED_FLAG } from "../lib/api";
 import { Checkbox } from "./ui/shadcn/Checkbox";
 import { Input } from "./ui/shadcn/Input";
 
@@ -245,6 +246,10 @@ export default function AuthPortal() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  // Set when the operator was auto-signed-out by a dead session (see
+  // AuthContext). Read from sessionStorage on mount so the sign-in screen
+  // can explain why they landed back here.
+  const [sessionNotice, setSessionNotice] = useState<string | null>(null);
   const [signupIntent, setSignupIntent] = useState<SignupIntent | null>(() =>
     captureSignupIntentFromLocation(),
   );
@@ -256,6 +261,17 @@ export default function AuthPortal() {
 
   useEffect(() => {
     setSignupIntent(captureSignupIntentFromLocation());
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(SESSION_EXPIRED_FLAG)) {
+        setSessionNotice("Your session expired for security. Please sign in again to continue.");
+        sessionStorage.removeItem(SESSION_EXPIRED_FLAG);
+      }
+    } catch {
+      /* storage disabled — skip the notice */
+    }
   }, []);
 
   useEffect(() => {
@@ -570,6 +586,18 @@ export default function AuthPortal() {
                   )}
 
                   <AnimatePresence mode="wait">
+                    {sessionNotice && (
+                      <motion.div
+                        role="status"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="flex gap-2 p-3 bg-amber-500/10 border border-amber-500/25 text-amber-800 text-sm"
+                      >
+                        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                        <span>{sessionNotice}</span>
+                      </motion.div>
+                    )}
                     {error && (
                       <motion.div
                         role="alert"

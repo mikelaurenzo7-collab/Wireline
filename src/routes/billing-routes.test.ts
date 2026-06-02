@@ -480,7 +480,10 @@ describe("billing routes integration", () => {
       .send({ plan_id: "starter" });
 
     expect(response.status).toBe(401);
-    expect(response.body).toEqual({ error: "No authorization token provided" });
+    expect(response.body).toEqual({
+      error: "No authorization token provided",
+      code: "SESSION_INVALID",
+    });
     expect(h.stripe.checkout.sessions.create).not.toHaveBeenCalled();
   });
 
