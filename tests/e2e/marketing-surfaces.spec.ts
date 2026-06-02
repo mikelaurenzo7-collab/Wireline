@@ -73,6 +73,17 @@ test.describe("Marketing surfaces — primary conversion path", () => {
 });
 
 test.describe("Marketing surfaces — homepage FAQ (SEO + objection handling)", () => {
+  test("renders the richer trust proof surface before the demo directory", async ({ page }) => {
+    await page.goto("/");
+
+    const trustSignals = page.getByTestId("trust-signals");
+    await expect(trustSignals).toBeVisible();
+    await expect(trustSignals.getByRole("heading", { level: 2 })).toContainText(
+      /built for businesses that can't afford to miss a call/i,
+    );
+    await expect(trustSignals.getByText(/verify the shop/i)).toBeVisible();
+  });
+
   test("renders an accessible FAQ that discloses answers on demand", async ({ page }) => {
     await page.goto("/");
 
