@@ -5,6 +5,7 @@ import { ArrowRight, ArrowUpRight, Plus } from "lucide-react";
 import PublicSiteHeader from "../components/marketing/PublicSiteHeader";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import { HeroDecorations } from "../components/marketing/HeroDecorations";
+import TrustSignals from "../components/marketing/TrustSignals";
 import { PageMeta } from "../lib/page-meta";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
@@ -277,6 +278,12 @@ export default function LandingPage() {
                 </span>
               ))}
             </motion.div>
+          </div>
+        </section>
+
+        <section className="px-6 lg:px-12 pb-8 lg:pb-10">
+          <div className="max-w-7xl mx-auto">
+            <TrustSignals />
           </div>
         </section>
 
