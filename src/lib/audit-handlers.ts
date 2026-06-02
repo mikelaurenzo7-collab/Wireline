@@ -26,6 +26,8 @@ export interface AuditFilterInput {
 }
 
 const EVENT_TYPE_TOKEN = /^[a-z0-9_.-]+$/i;
+const AUDIT_EXPORT_MAX_ROWS = 5_000;
+const AUDIT_EXPORT_FORMATS = new Set(["csv", "json"]);
 
 export function buildAuditFilters(userId: string, filters: AuditFilterInput) {
   const { event_type, severity, resource_type, start_date, end_date, search, days } = filters;
@@ -250,8 +252,12 @@ export function createAuditExportHandler(deps: AuditRoutesDeps) {
     } = req.query;
 
     const days = parseDays(daysParam, 30);
+    const exportFormat = String(format || "csv").toLowerCase();
     if (isNaN(days)) {
       return res.status(400).json({ error: "Invalid numeric parameters" });
+    }
+    if (!AUDIT_EXPORT_FORMATS.has(exportFormat)) {
+      return res.status(400).json({ error: "Invalid export format" });
     }
 
     try {
@@ -269,25 +275,33 @@ export function createAuditExportHandler(deps: AuditRoutesDeps) {
         .select()
         .from(schema.auditLog)
         .where(filters)
-        .orderBy(desc(schema.auditLog.createdAt));
+        .orderBy(desc(schema.auditLog.createdAt))
+        .limit(AUDIT_EXPORT_MAX_ROWS + 1);
+      const events = data || [];
+      const exceedsExportLimit = events.length > AUDIT_EXPORT_MAX_ROWS;
 
       void auditLogger
         .logDataOperation("export", {
           userId,
           resourceType: "audit_log",
-          recordCount: data?.length || 0,
+          recordCount: Math.min(events.length, AUDIT_EXPORT_MAX_ROWS),
           ip: req.ip,
         })
         .catch(() => {});
 
-      if (format === "json") {
+      if (exceedsExportLimit) {
+        return res.status(413).json({
+          error: `Audit export exceeds ${AUDIT_EXPORT_MAX_ROWS.toLocaleString()} rows. Narrow your filters and try again.`,
+        });
+      }
+
+      if (exportFormat === "json") {
         res.setHeader("Content-Type", "application/json");
         res.setHeader("Content-Disposition", `attachment; filename="audit-log-${Date.now()}.json"`);
-        res.json(data);
+        res.json(mapObjectToSnake(events));
         return;
       }
 
-      const events = data || [];
       const headers = [
         "createdAt",
         "eventType",
