@@ -54,6 +54,15 @@ interface StructuredOptions {
   maxTokens?: number;
 }
 
+/** Result from runStructuredWithThinking that includes optional reasoning from thinking blocks. */
+export interface StructuredResult<T> {
+  result: T;
+  /** Concatenated text from Claude's adaptive thinking blocks (if any). */
+  thinking?: string;
+  /** Approximate duration of the thinking phase in milliseconds. */
+  thinkingDurationMs?: number;
+}
+
 /**
  * Run a single tool-call and return the parsed input. The tool is `tool_choice`
  * forced so Claude must produce a structured payload.
@@ -62,6 +71,18 @@ interface StructuredOptions {
  * to save 60-80% on token costs vs Opus. Use 'complex' only for deep reasoning.
  */
 export async function runStructured<T = any>(opts: StructuredOptions): Promise<T> {
+  const { result } = await runStructuredWithThinking<T>(opts);
+  return result;
+}
+
+/**
+ * Like `runStructured`, but also extracts and returns Claude's adaptive thinking
+ * blocks alongside the structured payload. Use this when you need to surface
+ * reasoning to the UI.
+ */
+export async function runStructuredWithThinking<T = any>(
+  opts: StructuredOptions,
+): Promise<StructuredResult<T>> {
   const client = getClient();
   // Select model based on complexity tier or explicit model override
   const model =
@@ -96,20 +117,154 @@ export async function runStructured<T = any>(opts: StructuredOptions): Promise<T
 
   const t0 = Date.now();
   const response = await client.messages.create(body);
-  recordUsage(model, response, Date.now() - t0);
+  const totalMs = Date.now() - t0;
+  recordUsage(model, response, totalMs);
+
+  // Extract thinking blocks (present when adaptive thinking is enabled).
+  const thinkingParts: string[] = [];
+  let toolResult: T | undefined;
+
   for (const block of response.content) {
+    if (block.type === "thinking" && "thinking" in block) {
+      thinkingParts.push((block as any).thinking);
+    }
     if (block.type === "tool_use" && block.name === opts.tool.name) {
-      return block.input as T;
+      toolResult = block.input as T;
     }
   }
-  throw new Error(
-    `Claude returned no ${opts.tool.name} tool_use block (stop_reason=${response.stop_reason})`,
-  );
+
+  if (toolResult === undefined) {
+    throw new Error(
+      `Claude returned no ${opts.tool.name} tool_use block (stop_reason=${response.stop_reason})`,
+    );
+  }
+
+  const thinking = thinkingParts.length > 0 ? thinkingParts.join("\n\n") : undefined;
+
+  return {
+    result: toolResult,
+    thinking,
+    thinkingDurationMs: thinking ? totalMs : undefined,
+  };
 }
 
 /* ────────────────────────────────────────────────────────────────────────
- *  Plain text completion — for free-form generation (drafts, emails).
+ *  Streaming structured output — for real-time thinking/response display.
  * ──────────────────────────────────────────────────────────────────── */
+
+export interface StreamCallbacks {
+  onThinkingStart?: () => void;
+  onThinkingChunk?: (text: string) => void;
+  onThinkingEnd?: (fullThinking: string, durationMs: number) => void;
+  onResult?: (result: any) => void;
+  onError?: (error: Error) => void;
+}
+
+/**
+ * Stream a structured tool-call with real-time thinking callbacks.
+ * Uses the Anthropic streaming API to emit thinking chunks as they arrive,
+ * then returns the final structured result.
+ */
+export async function runStructuredStream<T = any>(
+  opts: StructuredOptions,
+  callbacks: StreamCallbacks,
+): Promise<StructuredResult<T>> {
+  const client = getClient();
+  const model =
+    opts.model ?? (opts.complexity ? selectModelForTask(opts.complexity) : DEFAULT_MODEL);
+
+  const body: Anthropic.MessageCreateParams = {
+    model,
+    max_tokens: opts.maxTokens ?? 4096,
+    system: opts.cacheSystem
+      ? [
+          {
+            type: "text",
+            text: opts.system,
+            cache_control: { type: "ephemeral" },
+          },
+        ]
+      : opts.system,
+    tools: [opts.tool],
+    tool_choice: { type: "tool", name: opts.tool.name },
+    messages: [{ role: "user", content: opts.user }],
+    stream: true,
+  };
+
+  if (opts.deepThink) {
+    body.thinking = { type: "adaptive" };
+    body.output_config = { effort: "high" };
+  }
+
+  const t0 = Date.now();
+  let thinkingStarted = false;
+  const thinkingParts: string[] = [];
+  let _toolJson = "";
+  let inToolInput = false;
+
+  try {
+    const stream = client.messages.stream(body);
+
+    for await (const event of stream) {
+      if (event.type === "content_block_start") {
+        const block = (event as any).content_block;
+        if (block?.type === "thinking") {
+          thinkingStarted = true;
+          callbacks.onThinkingStart?.();
+        } else if (block?.type === "tool_use") {
+          inToolInput = true;
+        }
+      } else if (event.type === "content_block_delta") {
+        const delta = (event as any).delta;
+        if (delta?.type === "thinking_delta" && delta.thinking) {
+          thinkingParts.push(delta.thinking);
+          callbacks.onThinkingChunk?.(delta.thinking);
+        } else if (delta?.type === "input_json_delta" && delta.partial_json) {
+          _toolJson += delta.partial_json;
+        }
+      } else if (event.type === "content_block_stop") {
+        if (thinkingStarted && !inToolInput) {
+          const fullThinking = thinkingParts.join("");
+          callbacks.onThinkingEnd?.(fullThinking, Date.now() - t0);
+          thinkingStarted = false;
+        }
+        if (inToolInput) {
+          inToolInput = false;
+        }
+      }
+    }
+
+    const finalMessage = await stream.finalMessage();
+    const totalMs = Date.now() - t0;
+    recordUsage(model, finalMessage, totalMs);
+
+    // Extract result from final message
+    let toolResult: T | undefined;
+    for (const block of finalMessage.content) {
+      if (block.type === "tool_use" && block.name === opts.tool.name) {
+        toolResult = block.input as T;
+      }
+    }
+
+    if (toolResult === undefined) {
+      throw new Error(
+        `Claude returned no ${opts.tool.name} tool_use block (stop_reason=${finalMessage.stop_reason})`,
+      );
+    }
+
+    const thinking = thinkingParts.length > 0 ? thinkingParts.join("") : undefined;
+    callbacks.onResult?.(toolResult);
+
+    return {
+      result: toolResult,
+      thinking,
+      thinkingDurationMs: thinking ? totalMs : undefined,
+    };
+  } catch (err) {
+    callbacks.onError?.(err as Error);
+    throw err;
+  }
+}
 
 interface CompletionOptions {
   system: string;

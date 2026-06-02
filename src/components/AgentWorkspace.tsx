@@ -41,6 +41,8 @@ import {
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
+import { ThinkingDisplay, LiveThinkingIndicator } from "./ui/ThinkingDisplay";
+import { LiveTaskPipeline, type PipelineStep } from "./ui/LiveTaskPipeline";
 import IntegrationActivityCard, {
   type IntegrationActivityCardProps,
 } from "./IntegrationActivityCard";
@@ -49,6 +51,7 @@ import { Checkbox } from "./ui/shadcn/Checkbox";
 import { Input } from "./ui/shadcn/Input";
 import { EmptyState } from "./ui/EmptyState";
 import { AgentActivityIndicator } from "./ui/AgentActivityIndicator";
+import { useStreamingChat } from "../hooks/useStreamingChat";
 
 const AgentTrainingInline = lazy(() => import("./AgentTraining"));
 const AgentConnectorsInline = lazy(() => import("./AgentActionEngine"));
@@ -126,6 +129,7 @@ interface WorkspaceMessage {
   createdAt: string;
   proposals?: MessageProposals;
   reasoning?: string;
+  thinkingDurationMs?: number;
 }
 
 interface AgentWorkspaceProps {
@@ -318,6 +322,75 @@ export default function AgentWorkspace({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [consentKeys, setConsentKeys] = useState<Record<string, boolean>>({});
   const toolsRef = useRef<HTMLDivElement>(null);
+
+  // Streaming chat integration
+  const streamEndpoint = `/api/agents/${encodeURIComponent(agentId)}/workspace/messages/stream`;
+  const {
+    state: streamState,
+    send: streamSend,
+    reset: streamReset,
+    isStreaming,
+  } = useStreamingChat(streamEndpoint, {
+    onComplete: (data) => {
+      const proposals: MessageProposals = {
+        changes: Array.isArray(data.changes) ? (data.changes as ProposedChange[]) : [],
+        toolToggles: Array.isArray(data.toolToggles)
+          ? (data.toolToggles as ProposedToolToggle[])
+          : [],
+        actions: Array.isArray(data.actions) ? (data.actions as ProposedAction[]) : [],
+      };
+      const hasProposals =
+        proposals.changes.length > 0 ||
+        proposals.toolToggles.length > 0 ||
+        proposals.actions.length > 0;
+      const agentReply: WorkspaceMessage = {
+        id: `agent-${Date.now()}`,
+        role: "agent",
+        content: (data.reply as string) || "(empty reply)",
+        createdAt: new Date().toISOString(),
+        proposals: hasProposals ? proposals : undefined,
+        reasoning: (data.reasoning as string) || undefined,
+        thinkingDurationMs: (data.thinkingDurationMs as number) || undefined,
+      };
+      setMessages((prev) => [...prev, agentReply]);
+      setIsSending(false);
+      streamReset();
+      inputRef.current?.focus();
+    },
+    onError: (msg) => {
+      toastError("Stream failed", msg);
+      setIsSending(false);
+      streamReset();
+    },
+  });
+
+  // Pipeline steps for live streaming state
+  const streamPipeline: PipelineStep[] = (() => {
+    if (!isStreaming && streamState.phase === "idle") return [];
+    const steps: PipelineStep[] = [];
+    const phase = streamState.phase;
+    steps.push({
+      id: "connect",
+      label: "Connecting",
+      status: phase === "connecting" ? "active" : "done",
+    });
+    if (phase === "thinking" || phase === "replying" || phase === "done") {
+      steps.push({
+        id: "thinking",
+        label: streamState.isDeep ? "Deep reasoning" : "Thinking",
+        status: phase === "thinking" ? "active" : "done",
+        elapsedMs: phase === "thinking" ? undefined : streamState.thinkingDurationMs,
+      });
+    }
+    if (phase === "replying" || phase === "done") {
+      steps.push({
+        id: "reply",
+        label: "Composing reply",
+        status: phase === "replying" ? "active" : "done",
+      });
+    }
+    return steps;
+  })();
 
   const setActiveTab = useCallback(
     (next: WorkspaceTab) => {
@@ -548,41 +621,9 @@ export default function AgentWorkspace({
     setInput("");
     setIsSending(true);
     setToolsOpen(false);
-    try {
-      const r = await authFetch(`/api/agents/${encodeURIComponent(agentId)}/workspace/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: text }),
-      });
-      if (!r.ok) throw new Error("Send failed");
-      const data = await r.json();
-      const proposals: MessageProposals = {
-        changes: Array.isArray(data.changes) ? data.changes : [],
-        toolToggles: Array.isArray(data.toolToggles) ? data.toolToggles : [],
-        actions: Array.isArray(data.actions) ? data.actions : [],
-      };
-      const hasProposals =
-        proposals.changes.length > 0 ||
-        proposals.toolToggles.length > 0 ||
-        proposals.actions.length > 0;
-      const agentReply: WorkspaceMessage = {
-        id: `agent-${Date.now()}`,
-        role: "agent",
-        content: data.reply || "(empty reply)",
-        createdAt: new Date().toISOString(),
-        proposals: hasProposals ? proposals : undefined,
-        reasoning: data.reasoning,
-      };
-      setMessages((prev) => [...prev, agentReply]);
-    } catch {
-      setMessages((prev) => prev.filter((m) => m.id !== optimisticOperator.id));
-      setInput(text);
-      toastError("Couldn't send", "Try again in a moment");
-    } finally {
-      setIsSending(false);
-      inputRef.current?.focus();
-    }
-  }, [input, isSending, agentId, toastError]);
+    // Use streaming
+    streamSend({ content: text });
+  }, [input, isSending, streamSend]);
 
   const clearThread = useCallback(async () => {
     if (!confirm("Clear this entire chat thread?")) return;
@@ -899,17 +940,12 @@ export default function AgentWorkspace({
                     >
                       {/* Reasoning - Claude style */}
                       {m.role === "agent" && m.reasoning && (
-                        <div className="mb-3 pb-3 border-b border-brand/10">
-                          <div className="flex items-center gap-1.5 mb-1.5">
-                            <Sparkles className="w-3 h-3 text-brand/60" />
-                            <span className="text-[9px] uppercase tracking-[0.16em] text-brand/60 font-medium">
-                              Reasoning
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-muted leading-relaxed italic">
-                            {m.reasoning}
-                          </p>
-                        </div>
+                        <ThinkingDisplay
+                          reasoning={m.reasoning}
+                          thinkingDurationMs={m.thinkingDurationMs}
+                          isDeep={false}
+                          animate={false}
+                        />
                       )}
 
                       <p className="text-[14px] leading-relaxed">{m.content}</p>
@@ -1024,20 +1060,24 @@ export default function AgentWorkspace({
                     <div className="bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm border border-brand/12 rounded-2xl rounded-bl-md px-5 py-4 shadow-sm">
                       <div className="flex items-center gap-2.5 mb-2">
                         <AgentActivityIndicator active size={24} pose="on-call" />
-                        <span className="text-[12px] text-muted font-medium">
-                          {agentName} is thinking…
-                        </span>
+                        <LiveThinkingIndicator isDeep={false} />
                       </div>
-                      <div className="flex items-center gap-1.5 text-[10px] text-muted/70">
-                        <motion.span
-                          animate={{ opacity: [0.4, 1, 0.4] }}
-                          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                          className="inline-flex items-center gap-1"
-                        >
-                          <Sparkles className="w-3 h-3" />
-                          Analyzing context & drafting response
-                        </motion.span>
-                      </div>
+
+                      {/* SSE streaming pipeline */}
+                      {streamPipeline.length > 0 && (
+                        <div className="mb-2 border-b border-brand/8 pb-2">
+                          <LiveTaskPipeline steps={streamPipeline} />
+                        </div>
+                      )}
+
+                      {/* Live thinking text from stream */}
+                      {streamState.phase === "thinking" && streamState.thinkingText && (
+                        <div className="text-[11px] text-muted/70 leading-relaxed max-h-24 overflow-y-auto mb-2">
+                          <p className="whitespace-pre-wrap line-clamp-4">
+                            {streamState.thinkingText.slice(-400)}
+                          </p>
+                        </div>
+                      )}
 
                       {/* Live reasoning steps */}
                       <AnimatePresence>
