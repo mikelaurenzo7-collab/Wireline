@@ -69,7 +69,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               The rest of the app is fine — only this view failed. Reload the page or head back to
               the dashboard.
             </p>
-            <details className="relative z-10 rounded-xl bg-black/30 border border-white/8 p-4 text-xs text-ink/70 font-mono overflow-x-auto">
+            <details className="relative z-10 rounded-xl bg-ink/[0.03] border border-black/8 dark:bg-white/[0.04] dark:border-white/[0.08] p-4 text-xs text-ink/70 font-mono overflow-x-auto">
               <summary className="cursor-pointer text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink transition-colors">
                 Error details
               </summary>
@@ -84,7 +84,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               </button>
               <a
                 href="/"
-                className="px-5 py-3 rounded-full glass border border-white/10 text-[11px] uppercase tracking-[0.3em] text-ink/80 hover:border-brand/40 hover:text-brand transition-all flex items-center gap-2"
+                className="px-5 py-3 rounded-full glass border border-black/8 dark:border-white/[0.08] text-[11px] uppercase tracking-[0.3em] text-ink/80 hover:border-brand/40 hover:text-brand transition-all flex items-center gap-2"
               >
                 <Home className="w-3.5 h-3.5" /> Back to Dashboard
               </a>
