@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
+import { AnimatedCounter } from "../components/ui/AnimatedCounter";
 import { Check, ArrowRight, Phone, Zap, ShieldCheck, Sparkles } from "lucide-react";
 
 type Tier = {
@@ -592,7 +593,7 @@ export default function Pricing() {
                       You save
                     </span>
                     <span className="font-display italic text-2xl text-emerald-600 tabular-nums">
-                      ${savings.toLocaleString()}
+                      <AnimatedCounter value={savings} prefix="$" />
                       <span className="text-[11px] text-emerald-600/70 ml-1">/yr ({pct}%)</span>
                     </span>
                   </div>
