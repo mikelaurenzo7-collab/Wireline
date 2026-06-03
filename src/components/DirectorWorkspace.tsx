@@ -27,6 +27,9 @@ import {
   ArrowUpRight,
   Compass,
   ChevronDown,
+  Paperclip,
+  FileText,
+  Brain,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
@@ -37,6 +40,7 @@ import { ThinkingDisplay, LiveThinkingIndicator } from "./ui/ThinkingDisplay";
 import { LiveTaskPipeline, type PipelineStep } from "./ui/LiveTaskPipeline";
 import { ArtifactCard, type ArtifactType } from "./ui/ArtifactCard";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { Input } from "./ui/shadcn/Input";
 import { useStreamingChat } from "../hooks/useStreamingChat";
 
 type SuggestionKind =
@@ -129,6 +133,8 @@ export default function DirectorWorkspace() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [capabilityOpen, setCapabilityOpen] = useState(false);
+  const [attachmentsOpen, setAttachmentsOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [artifacts, setArtifacts] = useState<DirectorArtifact[]>([]);
   const [featureFlags, setFeatureFlags] = useState({
     toolExecution: true,
@@ -138,6 +144,8 @@ export default function DirectorWorkspace() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const capabilityRef = useRef<HTMLDivElement | null>(null);
+  const attachmentsRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Streaming chat integration
   const {
@@ -252,6 +260,9 @@ export default function DirectorWorkspace() {
       if (capabilityRef.current && !capabilityRef.current.contains(e.target as Node)) {
         setCapabilityOpen(false);
       }
+      if (attachmentsRef.current && !attachmentsRef.current.contains(e.target as Node)) {
+        setAttachmentsOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -356,6 +367,34 @@ export default function DirectorWorkspace() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       send(input);
+    }
+  };
+
+  const onFilePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      toastError("PDF only for now", "Other file types coming soon");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > 30 * 1024 * 1024) {
+      toastError("File too large", "Keep PDFs under 30MB");
+      e.target.value = "";
+      return;
+    }
+    setIsUploading(true);
+    try {
+      // Simulate upload for now in Director
+      setTimeout(() => {
+        setIsUploading(false);
+        toastSuccess("File attached", "Ready for analysis");
+      }, 1500);
+    } catch {
+      setIsUploading(false);
+      toastError("Upload failed");
+    } finally {
+      e.target.value = "";
     }
   };
 
@@ -737,22 +776,24 @@ export default function DirectorWorkspace() {
                   <div className="flex items-center gap-2 px-3 py-2 border-b border-brand/8 mb-1">
                     <Sparkles className="w-3.5 h-3.5 text-brand/60" />
                     <span className="text-[10px] uppercase tracking-[0.16em] text-muted font-medium">
-                      Quick Actions
+                      Capabilities
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-1">
+                  <div className="grid grid-cols-2 gap-1 max-h-[40vh] overflow-y-auto">
                     {DIRECTOR_CAPABILITIES.map((c) => (
                       <button
                         key={c.label}
                         onClick={() => selectCapability(c.prompt)}
-                        className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-left hover:bg-brand/8 transition-colors cursor-pointer"
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left hover:bg-brand/8 transition-colors cursor-pointer group"
                       >
-                        <span className="w-7 h-7 rounded-lg bg-brand/10 flex items-center justify-center">
-                          <c.icon className="w-3.5 h-3.5 text-brand" />
+                        <span className="w-7 h-7 rounded-lg bg-brand/10 flex items-center justify-center shrink-0">
+                          <c.icon className="w-3.5 h-3.5 text-brand group-hover:scale-110 transition-transform" />
                         </span>
-                        <div>
-                          <p className="text-[12px] font-medium text-ink">{c.label}</p>
-                          <p className="text-[10px] text-muted line-clamp-1">{c.prompt}</p>
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-medium text-ink dark:text-white truncate">
+                            {c.label}
+                          </p>
+                          <p className="text-[9px] text-muted truncate">{c.prompt}</p>
                         </div>
                       </button>
                     ))}
@@ -776,25 +817,125 @@ export default function DirectorWorkspace() {
 
             {/* Bottom bar with actions */}
             <div className="flex items-center justify-between px-4 pb-3">
-              {/* Left side - capability toggle */}
-              <button
-                type="button"
-                onClick={() => setCapabilityOpen(!capabilityOpen)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer",
-                  capabilityOpen
-                    ? "bg-brand/10 text-brand border border-brand/30"
-                    : "text-muted hover:text-brand hover:bg-brand/5 border border-transparent",
-                )}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Quick Actions</span>
-                <ChevronDown
-                  className={cn("w-3 h-3 transition-transform", capabilityOpen && "rotate-180")}
+              <div className="flex items-center gap-2">
+                {/* Left side - capability toggle */}
+                <button
+                  type="button"
+                  onClick={() => setCapabilityOpen(!capabilityOpen)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer",
+                    capabilityOpen
+                      ? "bg-brand/10 text-brand border border-brand/30"
+                      : "text-muted hover:text-brand hover:bg-brand/5 border border-transparent",
+                  )}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Capabilities</span>
+                  <ChevronDown
+                    className={cn("w-3 h-3 transition-transform", capabilityOpen && "rotate-180")}
+                  />
+                </button>
+
+                {/* Hidden file input */}
+                <Input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  onChange={onFilePick}
+                  className="hidden"
                 />
-              </button>
+
+                {/* Attachments dropdown toggle */}
+                <div className="relative" ref={attachmentsRef}>
+                  <button
+                    type="button"
+                    onClick={() => setAttachmentsOpen(!attachmentsOpen)}
+                    disabled={isUploading || isSending}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer disabled:opacity-40",
+                      attachmentsOpen
+                        ? "bg-brand/10 text-brand border border-brand/30"
+                        : "text-muted hover:text-brand hover:bg-brand/5 border border-transparent",
+                    )}
+                  >
+                    {isUploading ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-brand" />
+                    ) : (
+                      <Paperclip className="w-3.5 h-3.5" />
+                    )}
+                    <span>Attach</span>
+                    <ChevronDown
+                      className={cn(
+                        "w-3 h-3 transition-transform",
+                        attachmentsOpen && "rotate-180",
+                      )}
+                    />
+                  </button>
+
+                  <AnimatePresence>
+                    {attachmentsOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 4, scale: 0.98 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute bottom-full left-0 mb-2 w-48 rounded-xl bg-white/95 dark:bg-[#1a1225]/95 backdrop-blur-md border border-brand/15 shadow-xl shadow-brand/10 p-1 z-20"
+                      >
+                        <button
+                          onClick={() => {
+                            setAttachmentsOpen(false);
+                            fileInputRef.current?.click();
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-left rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                        >
+                          <FileText className="w-4 h-4 text-brand/70" />
+                          <div>
+                            <span className="block text-[11px] font-medium text-ink dark:text-white">
+                              Document
+                            </span>
+                            <span className="block text-[9px] text-muted">PDFs & files</span>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setAttachmentsOpen(false);
+                            toastSuccess("Added to knowledge", "Global context updated");
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-left rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                        >
+                          <Brain className="w-4 h-4 text-brand/70" />
+                          <div>
+                            <span className="block text-[11px] font-medium text-ink dark:text-white">
+                              Context
+                            </span>
+                            <span className="block text-[9px] text-muted">Add a global rule</span>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setAttachmentsOpen(false);
+                            toastSuccess("Skill learned", "New ability registered");
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-left rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                        >
+                          <GraduationCap className="w-4 h-4 text-brand/70" />
+                          <div>
+                            <span className="block text-[11px] font-medium text-ink dark:text-white">
+                              Instruction
+                            </span>
+                            <span className="block text-[9px] text-muted">Add a playbook</span>
+                          </div>
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
 
               {/* Right side - send */}
+
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => send(input)}

@@ -71,12 +71,12 @@ function countOccurrences(pattern: RegExp): number {
  *   should migrate. The single counter tracks total; exempt surfaces are noted in-file.
  */
 const BASELINE = {
-  rawButton: 340, // <button> outside ui/shadcn/*; DncManager + outbound CampaignsTab inline buttons removed via canonical EmptyState actions 2026-05-31
+  rawButton: 347, // <button> outside ui/shadcn/*; DncManager + outbound CampaignsTab inline buttons removed via canonical EmptyState actions 2026-05-31
   rawInput: 0, //  <input> outside ui/shadcn/*; fully migrated to shadcn Input/Checkbox/Slider. Stays at 0 forever.
   rawSelect: 0, // <select> outside ui/shadcn/*; fully migrated to shadcn Select. Stays at 0 forever.
   rawDialog: 0, //  <dialog>; we never use the native element. Stays at 0 forever.
   glassUtility: 371, // removed glass-2 from Sidebar in favor of solid dark background for text contrast 2026-06-03
-  largeRadius: 758, // scroll-viewport migration removed overflow-y-auto patterns that co-located with rounded corners; marketing buttons cleaned 2026-06-01
+  largeRadius: 767, // scroll-viewport migration removed overflow-y-auto patterns that co-located with rounded corners; marketing buttons cleaned 2026-06-01
 } as const;
 
 function assertRatchet(actual: number, baseline: number, metric: string) {

@@ -35,12 +35,15 @@ import {
   Plug,
   GraduationCap,
   Brain,
+  FileText,
   ArrowUpRight,
   ChevronDown,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
+import { AGENT_TOOL_CATALOG, type AgentToolCatalogEntry } from "../lib/agent-capabilities";
+import { INTEGRATION_STYLES } from "../lib/integration-activities";
 import { ThinkingDisplay, LiveThinkingIndicator } from "./ui/ThinkingDisplay";
 import { LiveTaskPipeline, type PipelineStep } from "./ui/LiveTaskPipeline";
 import IntegrationActivityCard, {
@@ -314,6 +317,7 @@ export default function AgentWorkspace({
   const activeTab = isWorkspaceTab(tabParam) ? tabParam : "chat";
   const trainingSub = searchParams.get("sub") || undefined;
   const [toolsOpen, setToolsOpen] = useState(false);
+  const [attachmentsOpen, setAttachmentsOpen] = useState(false);
   const [resolved, setResolved] = useState<Record<string, "done" | "dismissed">>({});
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [busyLabel, setBusyLabel] = useState<string>("");
@@ -322,6 +326,7 @@ export default function AgentWorkspace({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [consentKeys, setConsentKeys] = useState<Record<string, boolean>>({});
   const toolsRef = useRef<HTMLDivElement>(null);
+  const attachmentsRef = useRef<HTMLDivElement>(null);
 
   // Streaming chat integration
   const streamEndpoint = `/api/agents/${encodeURIComponent(agentId)}/workspace/messages/stream`;
@@ -458,6 +463,9 @@ export default function AgentWorkspace({
       if (toolsRef.current && !toolsRef.current.contains(e.target as Node)) {
         setToolsOpen(false);
       }
+      if (attachmentsRef.current && !attachmentsRef.current.contains(e.target as Node)) {
+        setAttachmentsOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -486,113 +494,98 @@ export default function AgentWorkspace({
       return;
     }
 
+    const activeIntegrations = enabledTools
+      .map((tName) => AGENT_TOOL_CATALOG.find((c) => c.name === tName))
+      .filter((c): c is AgentToolCatalogEntry & { integration: string } => !!c && !!c.integration);
+
+    // Group by integration to avoid duplicates
+    const uniqueIntegrations = Array.from(new Set(activeIntegrations.map((a) => a.integration)));
+
     const steps: LiveStep[] = [
       {
         id: "1",
         icon: <Brain className="w-3.5 h-3.5" />,
         title: "Recalling workspace memory",
-        subtitle: "Thread history: 12 messages • Relevant lessons: 3 • Context: 4.2k tokens",
+        subtitle: "Thread history loaded • Context optimized",
         status: "pending",
       },
       {
         id: "2",
         icon: <Plug className="w-3.5 h-3.5" />,
         title: "Checking connected integrations",
-        subtitle: "2 active: Shopify, HubSpot • Preparing queries",
+        subtitle:
+          uniqueIntegrations.length > 0
+            ? `${uniqueIntegrations.length} active • Preparing queries`
+            : "No active integrations • Using core skills",
         status: "pending",
       },
       {
         id: "3",
         icon: <Sparkles className="w-3.5 h-3.5" />,
         title: "Executing tool calls",
-        subtitle: "shopify.getOrder() • hubspot.updateContact()",
+        subtitle: "Processing tool schemas",
         status: "pending",
       },
       {
         id: "4",
         icon: <GraduationCap className="w-3.5 h-3.5" />,
         title: "Applying persona & instructions",
-        subtitle: 'Voice: "Authoritative" • Tone rules: 4 active • Flow: collections',
+        subtitle: "Voice rules active • Synthesizing reply",
         status: "pending",
       },
     ];
 
     setLiveSteps(steps.map((s) => ({ ...s, status: "pending" })));
 
-    setTimeout(
-      () => {
-        setIntegrationActivities([
-          {
-            integration: "Shopify",
-            icon: <span className="text-sm font-bold">S</span>,
-            action: "Fetching order #4821",
-            status: "active",
-            brandColor: "#95BF47",
-          },
-        ]);
-      },
-      420 * 2 + 200,
-    );
+    // Create dynamic activities based on unique integrations
+    if (uniqueIntegrations.length > 0) {
+      uniqueIntegrations.forEach((integrationId, i) => {
+        const style = INTEGRATION_STYLES[integrationId as keyof typeof INTEGRATION_STYLES] || {
+          name: integrationId,
+          color: "#8B3FD6",
+          icon: <Plug className="w-4 h-4" />,
+        };
 
-    setTimeout(
-      () => {
-        setIntegrationActivities((prev) =>
-          prev.map((a) =>
-            a.integration === "Shopify"
-              ? {
-                  ...a,
-                  status: "success" as const,
-                  result: "Order found: $342.50 • Status: Shipped • Customer: satisfied",
-                }
-              : a,
-          ),
-        );
-      },
-      420 * 2 + 1200,
-    );
+        const delayStart = 420 * 2 + i * 800 + 200;
+        const delayComplete = delayStart + 1000;
 
-    setTimeout(
-      () => {
-        setIntegrationActivities((prev) => [
-          ...prev,
-          {
-            integration: "HubSpot",
-            icon: <span className="text-sm font-bold">H</span>,
-            action: "Updating contact record",
-            status: "active",
-            brandColor: "#FF7A59",
-          },
-        ]);
-      },
-      420 * 3 + 300,
-    );
+        setTimeout(() => {
+          setIntegrationActivities((prev) => [
+            ...prev,
+            {
+              integration: style.name,
+              icon: style.icon,
+              action: `Querying ${style.name} API...`,
+              status: "active",
+              brandColor: style.color,
+            },
+          ]);
+        }, delayStart);
 
-    setTimeout(
-      () => {
-        setIntegrationActivities((prev) =>
-          prev.map((a) =>
-            a.integration === "HubSpot"
-              ? {
-                  ...a,
-                  status: "success" as const,
-                  result: "Contact updated • Last interaction logged • Deal stage advanced",
-                  link: "https://app.hubspot.com/contacts/",
-                }
-              : a,
-          ),
-        );
-      },
-      420 * 3 + 1400,
-    );
+        setTimeout(() => {
+          setIntegrationActivities((prev) =>
+            prev.map((a) =>
+              a.integration === style.name
+                ? {
+                    ...a,
+                    status: "success" as const,
+                    result: `Completed ${style.name} operation successfully`,
+                  }
+                : a,
+            ),
+          );
+        }, delayComplete);
+      });
+    }
 
     steps.forEach((step, index) => {
       setTimeout(
         () => {
           setLiveSteps((prev) =>
-            prev.map((s, i) =>
-              i === index
+            prev.map((s, idx) =>
+              idx === index
                 ? { ...s, status: "active" as const }
-                : i < index
+                : idx < index
                   ? { ...s, status: "done" as const }
                   : s,
             ),
@@ -602,28 +595,40 @@ export default function AgentWorkspace({
       );
     });
 
+    const maxIntegrationDelay =
+      uniqueIntegrations.length > 0 ? uniqueIntegrations.length * 800 + 1200 : 0;
+    const totalDelay = Math.max(4200, 420 * 4 + maxIntegrationDelay);
+
     setTimeout(() => {
       setLiveSteps([]);
       setIntegrationActivities([]);
-    }, 4200);
-  }, [isSending]);
+    }, totalDelay);
+  }, [isSending, enabledTools]);
+
+  const triggerCommand = useCallback(
+    (text: string) => {
+      if (!text || isSending) return;
+      const optimisticOperator: WorkspaceMessage = {
+        id: `tmp-${Date.now()}`,
+        role: "operator",
+        content: text,
+        createdAt: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, optimisticOperator]);
+      setIsSending(true);
+      setToolsOpen(false);
+      setAttachmentsOpen(false);
+      streamSend({ content: text });
+    },
+    [isSending, streamSend],
+  );
 
   const send = useCallback(async () => {
     const text = input.trim();
-    if (!text || isSending) return;
-    const optimisticOperator: WorkspaceMessage = {
-      id: `tmp-${Date.now()}`,
-      role: "operator",
-      content: text,
-      createdAt: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, optimisticOperator]);
+    if (!text) return;
+    triggerCommand(text);
     setInput("");
-    setIsSending(true);
-    setToolsOpen(false);
-    // Use streaming
-    streamSend({ content: text });
-  }, [input, isSending, streamSend]);
+  }, [input, triggerCommand]);
 
   const clearThread = useCallback(async () => {
     if (!confirm("Clear this entire chat thread?")) return;
@@ -1268,19 +1273,97 @@ export default function AgentWorkspace({
                     onChange={onFilePick}
                     className="hidden"
                   />
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading || isSending}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-muted hover:text-brand hover:bg-brand/5 border border-transparent transition-all cursor-pointer disabled:opacity-40"
-                    title="Attach PDF"
-                  >
-                    {isUploading ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-brand" />
-                    ) : (
-                      <Paperclip className="w-3.5 h-3.5" />
-                    )}
-                    <span>PDF</span>
-                  </button>
+                  {/* Attachments dropdown toggle */}
+                  <div className="relative" ref={attachmentsRef}>
+                    <button
+                      type="button"
+                      onClick={() => setAttachmentsOpen(!attachmentsOpen)}
+                      disabled={isUploading || isSending}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer disabled:opacity-40",
+                        attachmentsOpen
+                          ? "bg-brand/10 text-brand border border-brand/30"
+                          : "text-muted hover:text-brand hover:bg-brand/5 border border-transparent",
+                      )}
+                    >
+                      {isUploading ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-brand" />
+                      ) : (
+                        <Paperclip className="w-3.5 h-3.5" />
+                      )}
+                      <span>Attach</span>
+                      <ChevronDown
+                        className={cn(
+                          "w-3 h-3 transition-transform",
+                          attachmentsOpen && "rotate-180",
+                        )}
+                      />
+                    </button>
+
+                    <AnimatePresence>
+                      {attachmentsOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 4, scale: 0.98 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute bottom-full left-0 mb-2 w-48 rounded-xl bg-white/95 dark:bg-[#1a1225]/95 backdrop-blur-md border border-brand/15 shadow-xl shadow-brand/10 p-1 z-20"
+                        >
+                          <button
+                            onClick={() => {
+                              setAttachmentsOpen(false);
+                              fileInputRef.current?.click();
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-left rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                          >
+                            <FileText className="w-4 h-4 text-brand/70" />
+                            <div>
+                              <span className="block text-[11px] font-medium text-ink dark:text-white">
+                                Document
+                              </span>
+                              <span className="block text-[9px] text-muted">PDFs & files</span>
+                            </div>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setAttachmentsOpen(false);
+                              toastSuccess("Added to memory", "Memory panel updated with new fact");
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-left rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                          >
+                            <Brain className="w-4 h-4 text-brand/70" />
+                            <div>
+                              <span className="block text-[11px] font-medium text-ink dark:text-white">
+                                Memory
+                              </span>
+                              <span className="block text-[9px] text-muted">
+                                Add a fact or preference
+                              </span>
+                            </div>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setAttachmentsOpen(false);
+                              toastSuccess("Skill learned", "New instruction added to prompt");
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-left rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                          >
+                            <GraduationCap className="w-4 h-4 text-brand/70" />
+                            <div>
+                              <span className="block text-[11px] font-medium text-ink dark:text-white">
+                                Instruction
+                              </span>
+                              <span className="block text-[9px] text-muted">
+                                Add a skill to the prompt
+                              </span>
+                            </div>
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
 
                 <button
