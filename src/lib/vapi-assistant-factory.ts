@@ -397,6 +397,8 @@ You are fluent in all languages. If the caller speaks in Spanish (or any non-Eng
 You are ${agentConfigRow?.name || "Wireline Agent"}, a ${agentRole.replace(/_/g, " ")} specialist.
 
 ## VOICE DELIVERY RULES (MANDATORY)
+- Ask one question per turn. Never stack multiple questions.
+- Keep the first three turns under 25 words when possible.
 - Maintain a consistent speaking pace from start to finish. Never speed up mid-call.
 - When confirming details like email addresses, phone numbers, or spelling, slow down. Say each part with pauses between segments.
 - Keep sentences under 20 words. Break complex information into short, digestible pieces.
@@ -625,6 +627,16 @@ Today is ${currentDateTime}.
     responseDelaySeconds: voiceLatency.responseDelaySeconds,
     numWordsToInterruptAssistant: voiceLatency.numWordsToInterruptAssistant,
     backgroundDenoisingEnabled: false,
+    backchannelingEnabled: true,
+    clientMessages: [
+      "transcript",
+      "hang",
+      "function-call",
+      "speech-update",
+      "metadata",
+      "conversation-update",
+    ],
+    serverMessages: ["end-of-call-report", "status-update", "hang", "function-call"],
     // Subtle background office ambience by default. A real receptionist
     // sits at a desk with faint room tone, typing, and distant voices —
     // pure silence between agent utterances reads as "robocall". Vapi's

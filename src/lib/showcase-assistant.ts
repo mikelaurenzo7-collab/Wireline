@@ -676,9 +676,51 @@ export function buildShowcaseAssistantPayload(
     responseDelaySeconds: 0,
     numWordsToInterruptAssistant: 2,
     backgroundDenoisingEnabled: false,
-    backgroundSound: "off",
+    backchannelingEnabled: true,
+    backgroundSound: "office",
+    clientMessages: [
+      "transcript",
+      "hang",
+      "function-call",
+      "speech-update",
+      "metadata",
+      "conversation-update",
+    ],
+    serverMessages: ["end-of-call-report", "status-update", "hang", "function-call"],
     startSpeakingPlan: speechPipeline.startSpeakingPlan,
     transcriber: speechPipeline.transcriber,
+    analysisPlan: {
+      summaryPrompt:
+        "Summarize this call in 2-3 sentences. Focus on: (1) what the caller wanted, (2) what the agent did, (3) any follow-up the agent committed to.",
+      structuredDataPrompt: "Extract structured data from this call.",
+      structuredDataSchema: {
+        type: "object",
+        properties: {
+          caller_intent: {
+            type: "string",
+            description:
+              "One of: book_appointment, ask_question, complaint, sales_inquiry, support, transfer_request, other",
+          },
+          outcome: {
+            type: "string",
+            description:
+              "One of: resolved, scheduled, transferred, voicemail, unresolved, callback_needed",
+          },
+          commitments: {
+            type: "array",
+            items: { type: "string" },
+            description:
+              "List of any commitments the agent made (e.g., 'will send invoice by 5pm', 'will call back tomorrow')",
+          },
+          sentiment: {
+            type: "string",
+            description: "One of: positive, neutral, negative, frustrated",
+          },
+        },
+      },
+      successEvaluationPrompt:
+        "Did the agent successfully address what the caller wanted? Reply with 'true' or 'false' only.",
+    },
     metadata: {
       wireline_transcriber_mode: transcriberMode,
       wireline_showcase_agent: agent.name,
