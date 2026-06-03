@@ -71,40 +71,54 @@ function countOccurrences(pattern: RegExp): number {
  *   should migrate. The single counter tracks total; exempt surfaces are noted in-file.
  */
 const BASELINE = {
-  rawButton: 360, // <button> outside ui/shadcn/*; DncManager + outbound CampaignsTab inline buttons removed via canonical EmptyState actions 2026-05-31
+  rawButton: 340, // <button> outside ui/shadcn/*; DncManager + outbound CampaignsTab inline buttons removed via canonical EmptyState actions 2026-05-31
   rawInput: 0, //  <input> outside ui/shadcn/*; fully migrated to shadcn Input/Checkbox/Slider. Stays at 0 forever.
   rawSelect: 0, // <select> outside ui/shadcn/*; fully migrated to shadcn Select. Stays at 0 forever.
   rawDialog: 0, //  <dialog>; we never use the native element. Stays at 0 forever.
-  glassUtility: 397, // .glass → wl-panel on small icon containers (SubscriptionPanel, KnowledgeFromDocumentForm, SupervisedAgentTuner, AgentTemplates, EmailInbox) 2026-06-01
-  largeRadius: 796, // scroll-viewport migration removed overflow-y-auto patterns that co-located with rounded corners; marketing buttons cleaned 2026-06-01
+  glassUtility: 372, // .glass → wl-panel on small icon containers (SubscriptionPanel, KnowledgeFromDocumentForm, SupervisedAgentTuner, AgentTemplates, EmailInbox) 2026-06-01
+  largeRadius: 758, // scroll-viewport migration removed overflow-y-auto patterns that co-located with rounded corners; marketing buttons cleaned 2026-06-01
 } as const;
 
+function assertRatchet(actual: number, baseline: number, metric: string) {
+  if (actual > baseline) {
+    throw new Error(
+      `Ratchet regression! ${metric} grew to ${actual} (baseline is ${baseline}). Revert your change or raise the baseline.`,
+    );
+  }
+  if (actual < baseline) {
+    throw new Error(
+      `Ratchet WIN! ${metric} shrank to ${actual} (baseline is ${baseline}). You MUST edit shadcn-pivot-ratchet.test.ts to lower the baseline and lock in your greatness.`,
+    );
+  }
+  expect(actual).toBe(baseline);
+}
+
 describe("shadcn pivot ratchet", () => {
-  it("never grows raw <button> usage", () => {
-    expect(countOccurrences(/<button(?=[\s>])/g)).toBeLessThanOrEqual(BASELINE.rawButton);
+  it("enforces raw <button> usage", () => {
+    assertRatchet(countOccurrences(/<button(?=[\s>])/g), BASELINE.rawButton, "raw <button>");
   });
 
-  it("never grows raw <input> usage", () => {
-    expect(countOccurrences(/<input(?=[\s>])/g)).toBeLessThanOrEqual(BASELINE.rawInput);
+  it("enforces raw <input> usage", () => {
+    assertRatchet(countOccurrences(/<input(?=[\s>])/g), BASELINE.rawInput, "raw <input>");
   });
 
-  it("never grows raw <select> usage", () => {
-    expect(countOccurrences(/<select(?=[\s>])/g)).toBeLessThanOrEqual(BASELINE.rawSelect);
+  it("enforces raw <select> usage", () => {
+    assertRatchet(countOccurrences(/<select(?=[\s>])/g), BASELINE.rawSelect, "raw <select>");
   });
 
   it("blocks the native <dialog> element entirely", () => {
-    expect(countOccurrences(/<dialog(?=[\s>])/g)).toBeLessThanOrEqual(BASELINE.rawDialog);
+    assertRatchet(countOccurrences(/<dialog(?=[\s>])/g), BASELINE.rawDialog, "raw <dialog>");
   });
 
-  it("never grows .glass utility usage", () => {
-    // Match the bare utility class only, not unrelated identifiers
-    // like `glassmorphism` or `useGlass`.
-    expect(countOccurrences(/\bglass(?!\w)/g)).toBeLessThanOrEqual(BASELINE.glassUtility);
+  it("enforces .glass utility usage", () => {
+    assertRatchet(countOccurrences(/\bglass(?!\w)/g), BASELINE.glassUtility, ".glass utility");
   });
 
-  it("never grows rounded-{lg|xl|2xl|3xl} literals", () => {
-    expect(countOccurrences(/\brounded-(lg|xl|2xl|3xl)\b/g)).toBeLessThanOrEqual(
+  it("enforces rounded-{lg|xl|2xl|3xl} literals", () => {
+    assertRatchet(
+      countOccurrences(/\brounded-(lg|xl|2xl|3xl)\b/g),
       BASELINE.largeRadius,
+      "large border-radius",
     );
   });
 });
