@@ -533,18 +533,31 @@ router.post(
       if (typeof rawValue !== "string" || !rawValue.trim()) {
         return res.status(400).json({ error: "Value required" });
       }
-      let value = rawValue.trim().slice(0, spec.maxLen);
+      let value: string | boolean = rawValue.trim().slice(0, spec.maxLen);
+      if (spec.kind === "boolean") {
+        value = value.toLowerCase() === "true";
+      }
       if (spec.kind === "vibe") {
-        value = value.toLowerCase();
-        if (!(WORKSPACE_VIBE_OPTIONS as readonly string[]).includes(value)) {
+        value = String(value).toLowerCase();
+        if (!(WORKSPACE_VIBE_OPTIONS as readonly string[]).includes(value as string)) {
           return res.status(400).json({
             error: `Vibe must be one of: ${WORKSPACE_VIBE_OPTIONS.join(", ")}`,
           });
         }
-      } else if (spec.kind === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      } else if (
+        spec.kind === "email" &&
+        typeof value === "string" &&
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+      ) {
         return res.status(400).json({ error: "That doesn't look like a valid email." });
-      } else if (spec.kind === "phone" && !/^[+\d][\d\s()-]{5,19}$/.test(value)) {
+      } else if (
+        spec.kind === "phone" &&
+        typeof value === "string" &&
+        !/^[+\d][\d\s()-]{5,19}$/.test(value)
+      ) {
         return res.status(400).json({ error: "That doesn't look like a valid phone number." });
+      } else if (spec.kind === "url" && typeof value === "string" && !/^https?:\/\//.test(value)) {
+        return res.status(400).json({ error: "That doesn't look like a valid URL." });
       }
 
       const agent = await findOwnedAgent(agentId, req.user.id);
