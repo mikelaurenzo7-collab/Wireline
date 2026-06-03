@@ -75,7 +75,7 @@ const BASELINE = {
   rawInput: 0, //  <input> outside ui/shadcn/*; fully migrated to shadcn Input/Checkbox/Slider. Stays at 0 forever.
   rawSelect: 0, // <select> outside ui/shadcn/*; fully migrated to shadcn Select. Stays at 0 forever.
   rawDialog: 0, //  <dialog>; we never use the native element. Stays at 0 forever.
-  glassUtility: 372, // .glass → wl-panel on small icon containers (SubscriptionPanel, KnowledgeFromDocumentForm, SupervisedAgentTuner, AgentTemplates, EmailInbox) 2026-06-01
+  glassUtility: 371, // removed glass-2 from Sidebar in favor of solid dark background for text contrast 2026-06-03
   largeRadius: 758, // scroll-viewport migration removed overflow-y-auto patterns that co-located with rounded corners; marketing buttons cleaned 2026-06-01
 } as const;
 

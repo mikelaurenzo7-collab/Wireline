@@ -554,13 +554,14 @@ html, body, .marketing-surface, .app-surface {
      * so our type scale stays consistent across orientations. */
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
-    /* ── LOCKED VIEWPORT APP SHELL ──
-     * Treat the mobile browser as an isolated app canvas. The viewport
-     * is pinned to exactly 100dvh (dynamic viewport height protects
-     * against mobile address bar resizing). No document-level scroll. */
-    height: 100%;
-    height: 100dvh;
-    overflow: hidden;
+    /* ── FLEXIBLE VIEWPORT APP SHELL ──
+     * Uses min-height so the shell fills the viewport but can grow if
+     * content overflows — prevents clipping on short laptop screens.
+     * Overflow-y auto lets the browser create a scrollbar only when needed. */
+    min-height: 100%;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
     overscroll-behavior: none;
     background: var(--color-paper);
   }
@@ -569,10 +570,12 @@ html, body, .marketing-surface, .app-surface {
     @apply font-sans bg-paper text-ink text-[14px] leading-relaxed selection:bg-brand/20 selection:text-ink antialiased overflow-x-hidden;
     background: var(--color-paper);
     -webkit-tap-highlight-color: transparent;
-    /* Locked viewport — no body scroll, inner panels own their scroll */
-    height: 100%;
-    height: 100dvh;
-    overflow: hidden;
+    /* Flexible viewport — panels still own their scroll but the body can
+       expand beyond 100dvh if content requires it (laptop-safe). */
+    min-height: 100%;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
     overscroll-behavior: none;
     font-feature-settings: "cv11", "ss01";
     -webkit-font-smoothing: antialiased;
@@ -587,9 +590,10 @@ html, body, .marketing-surface, .app-surface {
   }
 
   #root {
-    height: 100%;
-    height: 100dvh;
-    overflow: hidden;
+    min-height: 100%;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
     isolation: isolate;
   }
 
@@ -2403,21 +2407,21 @@ select:focus {
 }
 
 @media (max-width: 767px) {
-  /* ── MOBILE VIEWPORT UNLOCK ──
-   * The strict viewport lock (overflow:hidden + height:100dvh on
-   * html/body/#root) clips content that exceeds one screen. On mobile
-   * we release the lock entirely so the native scroll surface is the
-   * document itself — this avoids nested-scroll jank, Safari rubber-
-   * banding quirks, and content cut-off on small viewports. Desktop
-   * keeps the locked viewport with panel-level scroll unchanged. */
+  /* ── MOBILE VIEWPORT ──
+   * The base styles already use min-height + overflow-y:auto which is
+   * laptop-safe. On mobile we additionally switch to height:auto so the
+   * document grows fully naturally (no min-height constraint) — this
+   * avoids nested-scroll jank and Safari rubber-banding quirks. */
   html {
     height: auto !important;
+    min-height: 0 !important;
     overflow: visible !important;
     overflow-x: hidden !important;
     overscroll-behavior-y: contain;
   }
   body {
     height: auto !important;
+    min-height: 0 !important;
     overflow: visible !important;
     overflow-x: hidden !important;
     overscroll-behavior-y: contain;
