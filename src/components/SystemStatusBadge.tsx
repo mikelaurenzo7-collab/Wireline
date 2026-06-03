@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, Wifi, WifiOff } from "lucide-react";
 import { cn } from "../lib/utils";
 
-type CapabilityKey = "claude" | "vapi" | "supabase";
+type CapabilityKey = "claude" | "vapi" | "drizzle";
 
 interface HealthData {
   status: "ok" | "degraded";
@@ -10,14 +10,14 @@ interface HealthData {
   capabilities: {
     claude: boolean;
     vapi: boolean;
-    supabase: boolean;
+    drizzle: boolean;
   };
 }
 
 const CAPABILITY_LABELS: Record<CapabilityKey, string> = {
   claude: "Cognitive Layer",
   vapi: "Voice Bridge",
-  supabase: "Data Vault",
+  drizzle: "Data Vault",
 };
 
 /**
@@ -32,7 +32,7 @@ export default function SystemStatusBadge() {
 
   const poll = async () => {
     try {
-      const r = await fetch("/api/health");
+      const r = await fetch("/api/health/internal");
       if (!r.ok && r.status !== 503) {
         setError(true);
         return;

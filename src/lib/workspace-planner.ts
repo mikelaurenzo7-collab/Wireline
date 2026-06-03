@@ -41,7 +41,16 @@ export type WorkspaceFieldKey =
   | "out_of_hours_message"
   | "transfer_phone"
   | "escalation_email"
-  | "escalation_phone";
+  | "escalation_phone"
+  | "website_url"
+  | "archetype"
+  | "timezone"
+  | "email_auto_respond"
+  | "ambient_noise"
+  | "slack_channel_id"
+  | "name"
+  | "auto_zoom_link"
+  | "autonomy_level";
 
 interface FieldSpec {
   /** Drizzle column name on `schema.agents`. */
@@ -53,9 +62,18 @@ interface FieldSpec {
     | "outOfHoursMessage"
     | "transferPhone"
     | "escalationEmail"
-    | "escalationPhone";
+    | "escalationPhone"
+    | "websiteUrl"
+    | "archetype"
+    | "timezone"
+    | "emailAutoRespond"
+    | "ambientNoise"
+    | "slackChannelId"
+    | "name"
+    | "autoZoomLink"
+    | "autonomyLevel";
   label: string;
-  kind: "text" | "vibe" | "phone" | "email";
+  kind: "text" | "vibe" | "phone" | "email" | "boolean" | "url";
   maxLen: number;
 }
 
@@ -101,6 +119,60 @@ export const WORKSPACE_FIELDS: Record<WorkspaceFieldKey, FieldSpec> = {
     column: "escalationPhone",
     label: "Escalation phone number",
     kind: "phone",
+    maxLen: 20,
+  },
+  website_url: {
+    column: "websiteUrl",
+    label: "Website URL",
+    kind: "url",
+    maxLen: 200,
+  },
+  archetype: {
+    column: "archetype",
+    label: "Agent archetype",
+    kind: "text",
+    maxLen: 50,
+  },
+  timezone: {
+    column: "timezone",
+    label: "Timezone",
+    kind: "text",
+    maxLen: 50,
+  },
+  email_auto_respond: {
+    column: "emailAutoRespond",
+    label: "Email auto-respond",
+    kind: "boolean",
+    maxLen: 5,
+  },
+  ambient_noise: {
+    column: "ambientNoise",
+    label: "Ambient noise",
+    kind: "text",
+    maxLen: 20,
+  },
+  slack_channel_id: {
+    column: "slackChannelId",
+    label: "Slack channel ID",
+    kind: "text",
+    maxLen: 50,
+  },
+  name: {
+    column: "name",
+    label: "Agent name",
+    kind: "text",
+    maxLen: 100,
+  },
+  auto_zoom_link: {
+    column: "autoZoomLink",
+    label: "Auto-generate Zoom links",
+    kind: "boolean",
+    maxLen: 5,
+  },
+  autonomy_level: {
+    column: "autonomyLevel",
+    label: "Autonomy level",
+    kind: "text",
     maxLen: 20,
   },
 };
@@ -196,7 +268,7 @@ const DIRECT_AGENT_TOOL: ToolSchema = {
             value: {
               type: "string",
               description:
-                "The exact new value. For personality_vibe use one of: warm, playful, authoritative.",
+                "The exact new value. For personality_vibe use one of: warm, playful, authoritative. For booleans, use 'true' or 'false'.",
             },
             summary: {
               type: "string",

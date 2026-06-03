@@ -93,6 +93,16 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
     envVars: ["GEMINI_API_KEY"],
     docsUrl: "https://aistudio.google.com/app/apikey",
   },
+  {
+    id: "openai",
+    label: "OpenAI",
+    description: "Optional fallback LLM provider used by some reasoning recipes.",
+    group: "ai",
+    required: false,
+    envVars: ["OPENAI_API_KEY"],
+    fallback: "Without it, recipes rely purely on Anthropic.",
+    docsUrl: "https://platform.openai.com/api-keys",
+  },
 
   // ─── voice ──────────────────────────────────────────────────────────────
   {
@@ -106,17 +116,29 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
     fallback:
       "When VAPI_WEBHOOK_SECRET is unset in dev, webhook auth is skipped. Production rejects webhooks until it matches Vapi dashboard header + assistant serverUrlSecret.",
   },
+  {
+    id: "elevenlabs",
+    label: "ElevenLabs",
+    description: "Voice generation and custom voice cloning for agents.",
+    group: "voice",
+    required: false,
+    envVars: ["ELEVENLABS_API_KEY"],
+    fallback:
+      "Without it, voice cloning features are disabled and agents fallback to standard voices.",
+    docsUrl: "https://elevenlabs.io/docs/api-reference",
+  },
 
   // ─── oauth ──────────────────────────────────────────────────────────────
   {
     id: "google-oauth",
-    label: "Google OAuth / Gmail",
-    description: "Connects operator Gmail mailboxes for the email agent and Daily Brief delivery.",
+    label: "Google Workspace (OAuth)",
+    description:
+      "Connects operator Google accounts for the email agent, Daily Brief delivery, and Google Sheets call logging.",
     group: "oauth",
     required: false,
     envVars: ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"],
     fallback:
-      "Without it, Gmail-based email agents and the scheduled Daily Brief email are disabled.",
+      "Without it, Gmail-based email agents, Daily Brief email, and Google Sheets logging are disabled.",
   },
   {
     id: "microsoft-oauth",
@@ -126,6 +148,15 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
     required: false,
     envVars: ["MICROSOFT_CLIENT_ID", "MICROSOFT_CLIENT_SECRET"],
     fallback: "Without it, only Gmail accounts can be linked to email agents.",
+  },
+  {
+    id: "yahoo-oauth",
+    label: "Yahoo OAuth / Mail",
+    description: "Connects operator Yahoo mailboxes for the email agent.",
+    group: "oauth",
+    required: false,
+    envVars: ["YAHOO_CLIENT_ID", "YAHOO_CLIENT_SECRET"],
+    fallback: "Without it, Yahoo accounts cannot be linked.",
   },
 
   // ─── billing ────────────────────────────────────────────────────────────
@@ -244,6 +275,17 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
     docsUrl: "https://shopify.dev/docs/apps/build/authentication-authorization",
   },
   {
+    id: "square",
+    label: "Square",
+    description:
+      "OAuth integration for payments and inventory (lookup customer/order, send invoice, check inventory, create payment link).",
+    group: "actions",
+    required: false,
+    envVars: ["SQUARE_APPLICATION_ID", "SQUARE_APPLICATION_SECRET"],
+    fallback:
+      "Operators connect via Admin → Integrations → Square. Without APPLICATION_ID/SECRET the Connect Square button is hidden.",
+  },
+  {
     id: "microsoft-teams",
     label: "Microsoft Teams",
     description:
@@ -292,6 +334,26 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
     fallback:
       "Without it, rate limits fall back to per-process in-memory state. On Vercel this means near-zero protection against runaway spend.",
     docsUrl: "https://console.upstash.com",
+  },
+  {
+    id: "sentry",
+    label: "Sentry",
+    description: "Error tracking and performance monitoring.",
+    group: "infra",
+    required: false,
+    envVars: ["SENTRY_DSN"],
+    fallback: "Without it, errors are only logged to the console.",
+    docsUrl: "https://docs.sentry.io/",
+  },
+  {
+    id: "resend",
+    label: "Resend",
+    description: "Transactional email delivery for platform notifications.",
+    group: "infra",
+    required: false,
+    envVars: ["RESEND_API_KEY"],
+    fallback: "Without it, platform emails (like password resets or invites) will fail to send.",
+    docsUrl: "https://resend.com/docs",
   },
 
   // ─── security ───────────────────────────────────────────────────────────
@@ -400,10 +462,12 @@ export function getHealthCapabilities() {
   return {
     claude: claudeBrain.isClaudeAvailable(),
     gemini: envIsPresent("GEMINI_API_KEY"),
+    openai: envIsPresent("OPENAI_API_KEY"),
     vapi: envIsPresent("VAPI_PRIVATE_KEY"),
     drizzle: envIsPresent("POSTGRES_URL"),
     google_oauth: envIsPresent("GOOGLE_CLIENT_ID"),
     microsoft_oauth: envIsPresent("MICROSOFT_CLIENT_ID"),
+    yahoo_oauth: envIsPresent("YAHOO_CLIENT_ID"),
     stripe: envIsPresent("STRIPE_SECRET_KEY"),
     apollo: apolloPlatformConfigured(),
     docusign:
@@ -415,9 +479,14 @@ export function getHealthCapabilities() {
     upstash: envIsPresent("UPSTASH_REDIS_REST_URL") && envIsPresent("UPSTASH_REDIS_REST_TOKEN"),
     secret_vault: envIsPresent("WIRELINE_DATA_KEY"),
     shopify: envIsPresent("SHOPIFY_CLIENT_ID") && envIsPresent("SHOPIFY_CLIENT_SECRET"),
+    square: envIsPresent("SQUARE_APPLICATION_ID") && envIsPresent("SQUARE_APPLICATION_SECRET"),
     microsoft_teams: microsoftGraphConfigured(),
     microsoft_excel: microsoftGraphConfigured(),
     slack: slackOAuthConfigured(),
+    zoom: envIsPresent("ZOOM_CLIENT_ID") && envIsPresent("ZOOM_CLIENT_SECRET"),
     meta: envIsPresent("META_APP_ID") && envIsPresent("META_APP_SECRET"),
+    elevenlabs: envIsPresent("ELEVENLABS_API_KEY"),
+    sentry: envIsPresent("SENTRY_DSN"),
+    resend: envIsPresent("RESEND_API_KEY"),
   };
 }
