@@ -127,7 +127,7 @@ describe("buildShowcaseAssistantPayload — Flux transcriber", () => {
     expect(payload.name).toBe("Jordan — Inbound CS Demo");
     expect(payload.transcriber.model).toBe("flux-general-en");
     expect(payload.metadata.wireline_transcriber_mode).toBe("flux-eot");
-    expect(payload.firstMessage).toMatch(/Wireline customer-service demo/i);
+    expect(payload.firstMessage).toMatch(/Wireline demo/i);
     expect(payload.voice?.voiceId).toBe("EXAVITQu4vr4xnSDxMaL");
   });
 

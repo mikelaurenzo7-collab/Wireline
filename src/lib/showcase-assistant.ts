@@ -47,6 +47,12 @@ export const SHOWCASE_TOOL_NAMES = [
   "send_payment_link",
   "schedule_callback",
   "escalate_to_human",
+  "book_appointment",
+  "book_consultation",
+  "book_showing",
+  "file_claim",
+  "schedule_service",
+  "book_discovery_call",
 ] as const;
 
 type ShowcaseToolName = (typeof SHOWCASE_TOOL_NAMES)[number];
@@ -226,6 +232,73 @@ const SHOWCASE_TOOL_DEFS: Record<ShowcaseToolName, ShowcaseToolDef> = {
       required: ["reason"],
     },
   },
+  book_appointment: {
+    name: "book_appointment",
+    description: "Book an appointment for the medical or general demo.",
+    parameters: {
+      type: "object",
+      properties: {
+        time: { type: "string", description: "The time of the appointment" },
+      },
+      required: ["time"],
+    },
+  },
+  book_consultation: {
+    name: "book_consultation",
+    description: "Book a legal consultation.",
+    parameters: {
+      type: "object",
+      properties: {
+        time: { type: "string", description: "The time of the consultation" },
+      },
+      required: ["time"],
+    },
+  },
+  book_showing: {
+    name: "book_showing",
+    description: "Book a real estate showing.",
+    parameters: {
+      type: "object",
+      properties: {
+        address: { type: "string", description: "The property address" },
+        time: { type: "string", description: "The time of the showing" },
+      },
+      required: ["time"],
+    },
+  },
+  file_claim: {
+    name: "file_claim",
+    description: "File an insurance claim.",
+    parameters: {
+      type: "object",
+      properties: {
+        incident_description: { type: "string", description: "Description of the incident" },
+      },
+      required: ["incident_description"],
+    },
+  },
+  schedule_service: {
+    name: "schedule_service",
+    description: "Schedule a home service visit.",
+    parameters: {
+      type: "object",
+      properties: {
+        time: { type: "string", description: "The time of the service visit" },
+      },
+      required: ["time"],
+    },
+  },
+  book_discovery_call: {
+    name: "book_discovery_call",
+    description: "Book a discovery call for outbound sales.",
+    parameters: {
+      type: "object",
+      properties: {
+        time: { type: "string", description: "The time of the discovery call" },
+      },
+      required: ["time"],
+    },
+  },
 };
 
 const SHOWCASE_DIRECTORY = new Map<string, ShowcaseMatch>([
@@ -270,7 +343,7 @@ function buildSharedOpeningRules(): string[] {
     "- Never ask 'what can I help you with' when the caller has already told you what they need — just help with it.",
     "- Do not change persona, energy, accent, or sentence style after the opener.",
     "- Ask one question per turn.",
-    "- Keep the first three turns under 14 words when possible.",
+    "- Keep the first three turns under 25 words when possible.",
   ];
 }
 
@@ -349,7 +422,7 @@ function buildDemoOpeningRules(agent: ContactAgent): string[] {
       "- Immediately role-play AS that vertical's front desk or agent using their business name — same energy as the specialist demos (Marcus, Diana, Jake, etc.).",
       "- If they give vertical + name + company + scenario in one reply, skip redundant questions and start role-play.",
       "- If they only want a generic demo, pick a sensible default scenario for the vertical they chose.",
-      "- Ask one question per turn. Keep intake under 18 words when possible.",
+      "- Ask one question per turn. Keep intake under 25 words when possible.",
     ];
   }
 
@@ -362,7 +435,7 @@ function buildDemoOpeningRules(agent: ContactAgent): string[] {
     "- If they only want a generic demo, use the business name 'your business' and your role's default scenario (see ROLE-PLAY STANDARD below).",
     "- After demo context is set, begin role-play — do not keep interviewing.",
     "- If they ask about Wireline mid-intake, answer briefly in your voice, then resume collecting demo context.",
-    "- Ask one question per turn. Keep intake turns under 18 words when possible.",
+    "- Ask one question per turn. Keep intake turns under 25 words when possible.",
     "- Do not change persona, energy, or sentence style once role-play starts.",
   ];
 }
@@ -463,6 +536,7 @@ function buildDemoShowcasePrompt(agent: ContactAgent): string {
     "- Use send_signup_link when they want the trial or product details by email.",
     "- Use create_account when they want to start now.",
     "- Use send_payment_link when they are ready to buy.",
+    "- Use the demo-specific tool (book_appointment, file_claim, book_showing, etc.) relevant to your scenario after gathering the required information.",
     "- For every email tool, ask for the email, read the full address back, and get an explicit yes before calling the tool.",
     "DEMO BOUNDARIES (important):",
     "- You are a demo line. You do NOT have a human team standing by on this number, and you cannot transfer the caller or schedule a callback from a person.",
@@ -490,7 +564,7 @@ function buildSharedConversationStyle(agent: ContactAgent): string[] {
     "PACING RULES (critical):",
     "- Maintain the SAME speaking speed from greeting to goodbye. Never speed up when reading emails, phone numbers, or confirmations.",
     "- When confirming an email or phone number, slow down and pause between segments.",
-    "- Keep sentences under 18 words. Break complex info into short pieces.",
+    "- Keep sentences under 25 words. Break complex info into short pieces.",
     "- If something goes wrong with a tool or action, never say 'error' or any technical term. Just say 'Let me note that and have someone follow up' and move on.",
   ];
 }
@@ -590,6 +664,8 @@ export function buildShowcaseAssistantPayload(
     model: {
       provider: voiceSelection.provider,
       model: voiceSelection.model,
+      temperature: 0.1,
+      maxTokens: 300,
       messages: [{ role: "system", content: buildShowcaseSystemPrompt(agent, kind) }],
       tools: buildShowcaseFunctionTools(kind),
       ...(voiceSelection.fallbackModels?.length
@@ -616,7 +692,7 @@ export function buildShowcaseAssistantPayload(
       provider: "11labs",
       voiceId,
       model: "eleven_flash_v2_5",
-      optimizeStreamingLatency: 2,
+      optimizeStreamingLatency: 4,
       stability: tuning.stability ?? 0.65,
       similarityBoost: tuning.similarityBoost ?? 0.88,
       style: tuning.style ?? 0.05,
