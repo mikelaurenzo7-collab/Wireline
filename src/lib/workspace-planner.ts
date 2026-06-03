@@ -47,7 +47,10 @@ export type WorkspaceFieldKey =
   | "timezone"
   | "email_auto_respond"
   | "ambient_noise"
-  | "slack_channel_id";
+  | "slack_channel_id"
+  | "name"
+  | "auto_zoom_link"
+  | "autonomy_level";
 
 interface FieldSpec {
   /** Drizzle column name on `schema.agents`. */
@@ -65,7 +68,10 @@ interface FieldSpec {
     | "timezone"
     | "emailAutoRespond"
     | "ambientNoise"
-    | "slackChannelId";
+    | "slackChannelId"
+    | "name"
+    | "autoZoomLink"
+    | "autonomyLevel";
   label: string;
   kind: "text" | "vibe" | "phone" | "email" | "boolean" | "url";
   maxLen: number;
@@ -150,6 +156,24 @@ export const WORKSPACE_FIELDS: Record<WorkspaceFieldKey, FieldSpec> = {
     label: "Slack channel ID",
     kind: "text",
     maxLen: 50,
+  },
+  name: {
+    column: "name",
+    label: "Agent name",
+    kind: "text",
+    maxLen: 100,
+  },
+  auto_zoom_link: {
+    column: "autoZoomLink",
+    label: "Auto-generate Zoom links",
+    kind: "boolean",
+    maxLen: 5,
+  },
+  autonomy_level: {
+    column: "autonomyLevel",
+    label: "Autonomy level",
+    kind: "text",
+    maxLen: 20,
   },
 };
 
