@@ -90,9 +90,9 @@ const ROWS: Row[] = [
     retell: false,
   },
   {
-    feature: "10+ CRM / messaging / ads integrations",
+    feature: "15+ CRM / messaging / ads integrations",
     detail:
-      "HubSpot, Salesforce, Slack, Zoom, Apollo, Meta Lead Ads, Google Workspace, Microsoft 365, Yahoo Mail, DocuSign.",
+      "HubSpot, Salesforce, Slack, Zoom, Apollo, Meta Lead Ads, Google Workspace, Microsoft 365, Yahoo Mail, DocuSign, Shopify, Square, ElevenLabs, Sentry, Resend.",
     wireline: true,
     air: "partial",
     synthflow: "partial",
