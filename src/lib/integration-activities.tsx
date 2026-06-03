@@ -10,6 +10,9 @@ import {
   MessagesSquare,
   Sparkles,
   ShoppingBag,
+  CreditCard,
+  FileSpreadsheet,
+  Table,
 } from "lucide-react";
 import type { ToolIntegration } from "./agent-capabilities";
 
@@ -27,4 +30,12 @@ export const INTEGRATION_STYLES: Record<
   meta: { name: "Meta", color: "#0668E1", icon: <Plug className="w-4 h-4" /> },
   gemini: { name: "Gemini", color: "#1A73E8", icon: <Sparkles className="w-4 h-4" /> },
   shopify: { name: "Shopify", color: "#95BF47", icon: <ShoppingBag className="w-4 h-4" /> },
+  square: { name: "Square", color: "#006AFF", icon: <CreditCard className="w-4 h-4" /> },
+  microsoft_teams: { name: "MS Teams", color: "#6264A7", icon: <Users className="w-4 h-4" /> },
+  microsoft_excel: {
+    name: "Excel",
+    color: "#217346",
+    icon: <FileSpreadsheet className="w-4 h-4" />,
+  },
+  google_sheets: { name: "Sheets", color: "#34A853", icon: <Table className="w-4 h-4" /> },
 };
