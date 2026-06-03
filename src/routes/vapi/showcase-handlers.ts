@@ -268,6 +268,21 @@ export async function handleShowcaseToolCalls(args: {
       continue;
     }
 
+    if (
+      toolName === "book_appointment" ||
+      toolName === "book_consultation" ||
+      toolName === "book_showing" ||
+      toolName === "file_claim" ||
+      toolName === "schedule_service" ||
+      toolName === "book_discovery_call"
+    ) {
+      results.push({
+        toolCallId: toolCall.id,
+        result: "DEMO_SUCCESS: Action successfully simulated for the demo.",
+      });
+      continue;
+    }
+
     results.push({
       toolCallId: toolCall.id,
       result: "That's not something I can do on this line, but I'm happy to help you another way.",

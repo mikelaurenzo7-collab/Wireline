@@ -55,7 +55,7 @@ describe("showcase agent catalog", () => {
   it("Jordan and Jake first messages frame Wireline demos (not employee lines)", () => {
     const jordan = WIRELINE_DEMO_AGENTS.find((a) => a.name === "Jordan")!;
     const jake = WIRELINE_DEMO_AGENTS.find((a) => a.name === "Jake")!;
-    expect(jordan.firstMessage).toMatch(/customer-service demo/i);
+    expect(jordan.firstMessage).toMatch(/Wireline demo/i);
     expect(jake.firstMessage).toMatch(/sales demo/i);
     expect(jordan.firstMessage).not.toMatch(/^Hi, thanks for calling Wireline — this is Sarah/);
   });
