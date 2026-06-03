@@ -13,16 +13,24 @@ import {
   Check,
   X,
   Sparkles,
+  MessageSquare,
+  FileText,
+  Users,
+  Hash,
+  Link,
+  Receipt,
+  Package,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { clsx } from "clsx";
 import { authFetch } from "../../lib/api";
 import { useToast } from "../../contexts/ToastContext";
 import { InlineEmpty } from "../ui/InlineEmpty";
+import type { ActionType } from "../../lib/action-types";
 
 interface ActionItem {
   id: string;
-  type: "send_email" | "schedule_calendar" | "update_crm_lead" | "create_internal_task";
+  type: ActionType;
   priority: "high" | "medium" | "low";
   status: "pending" | "completed" | "failed";
   description: string;
@@ -30,6 +38,29 @@ interface ActionItem {
   payload?: any;
   reasoning?: string;
 }
+
+const ACTION_DISPLAY_CONFIG: Record<ActionType, { icon: React.ElementType; styles: string }> = {
+  send_email: { icon: Mail, styles: "bg-brand/10 border-brand/20 text-brand" },
+  send_text_message: {
+    icon: MessageSquare,
+    styles: "bg-violet-500/10 border-violet-500/20 text-violet-600",
+  },
+  schedule_calendar: { icon: Calendar, styles: "bg-brand-2/10 border-brand-2/20 text-brand-2" },
+  update_crm_lead: {
+    icon: UserPlus,
+    styles: "bg-emerald-500/10 border-emerald-500/20 text-emerald-600",
+  },
+  create_internal_task: { icon: ListTodo, styles: "bg-muted/10 border-muted/20 text-muted" },
+  send_contract: { icon: FileText, styles: "bg-amber-500/10 border-amber-500/20 text-amber-600" },
+  prospect_leads: { icon: Users, styles: "bg-blue-500/10 border-blue-500/20 text-blue-600" },
+  notify_slack: { icon: Hash, styles: "bg-fuchsia-500/10 border-fuchsia-500/20 text-fuchsia-600" },
+  create_payment_link: {
+    icon: Link,
+    styles: "bg-indigo-500/10 border-indigo-500/20 text-indigo-600",
+  },
+  send_invoice: { icon: Receipt, styles: "bg-teal-500/10 border-teal-500/20 text-teal-600" },
+  check_inventory: { icon: Package, styles: "bg-slate-500/10 border-slate-500/20 text-slate-600" },
+};
 
 export function ActionFeed({
   actions,
@@ -107,6 +138,12 @@ export function ActionFeed({
             const isExpanded = expandedId === action.id;
             const isProcessing = processingId === action.id;
 
+            const displayConfig = ACTION_DISPLAY_CONFIG[action.type] || {
+              icon: AlertCircle,
+              styles: "bg-muted/10 border-muted/20 text-muted",
+            };
+            const Icon = displayConfig.icon;
+
             return (
               <motion.div
                 layout
@@ -138,23 +175,10 @@ export function ActionFeed({
                       <div
                         className={clsx(
                           "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border transition-all",
-                          action.type === "send_email" && "bg-brand/10 border-brand/20 text-brand",
-                          action.type === "schedule_calendar" &&
-                            "bg-brand-2/10 border-brand-2/20 text-brand-2",
-                          action.type === "update_crm_lead" &&
-                            "bg-emerald-500/10 border-emerald-500/20 text-emerald-600",
-                          action.type === "create_internal_task" &&
-                            "bg-muted/10 border-muted/20 text-muted",
+                          displayConfig.styles,
                         )}
                       >
-                        {action.type === "send_email" && <Mail className="w-4.5 h-4.5" />}
-                        {action.type === "schedule_calendar" && (
-                          <Calendar className="w-4.5 h-4.5" />
-                        )}
-                        {action.type === "update_crm_lead" && <UserPlus className="w-4.5 h-4.5" />}
-                        {action.type === "create_internal_task" && (
-                          <ListTodo className="w-4.5 h-4.5" />
-                        )}
+                        <Icon className="w-4.5 h-4.5" />
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-ink truncate leading-snug">
@@ -194,14 +218,14 @@ export function ActionFeed({
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
                                 onClick={(e) => handleReject(action.id, e)}
-                                className="w-7 h-7 rounded-lg bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 flex items-center justify-center transition-colors"
+                                className="hit-area-44 w-7 h-7 rounded-lg bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 flex items-center justify-center transition-colors relative"
                                 title="Reject"
                               >
                                 <X className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={(e) => handleApprove(action.id, e)}
-                                className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 flex items-center justify-center transition-colors"
+                                className="hit-area-44 w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 flex items-center justify-center transition-colors relative"
                                 title="Approve"
                               >
                                 <Check className="w-3.5 h-3.5" />
@@ -258,7 +282,33 @@ export function ActionFeed({
                                   {action.payload?.body || "No content drafted."}
                                 </div>
                               </div>
-                            ) : action.type === "update_crm_lead" ? (
+                            ) : action.type === "send_text_message" ? (
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2 pb-2 border-bottom border-black/5">
+                                  <span className="text-[10px] font-mono text-muted">TO:</span>
+                                  <span className="text-[11px] font-medium text-ink">
+                                    {action.payload?.to || "—"}
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-ink/80 leading-relaxed whitespace-pre-wrap font-sans">
+                                  {action.payload?.message || "No content drafted."}
+                                </div>
+                              </div>
+                            ) : action.type === "notify_slack" ? (
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2 pb-2 border-bottom border-black/5">
+                                  <span className="text-[10px] font-mono text-muted">CHANNEL:</span>
+                                  <span className="text-[11px] font-medium text-ink">
+                                    {action.payload?.channel || "—"}
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-ink/80 leading-relaxed whitespace-pre-wrap font-sans">
+                                  {action.payload?.message || "No content drafted."}
+                                </div>
+                              </div>
+                            ) : action.type === "update_crm_lead" ||
+                              action.type === "prospect_leads" ||
+                              action.type === "check_inventory" ? (
                               <div className="grid grid-cols-2 gap-3">
                                 {Object.entries(action.payload || {}).map(([key, val]) => (
                                   <div key={key} className="flex flex-col gap-1">
@@ -285,14 +335,14 @@ export function ActionFeed({
                             <button
                               disabled={isProcessing}
                               onClick={(e) => handleReject(action.id, e)}
-                              className="touch-press flex-1 h-9 rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-600 text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-rose-500/10 transition-all disabled:opacity-50"
+                              className="hit-area-44 touch-press flex-1 h-9 rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-600 text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-rose-500/10 transition-all disabled:opacity-50 relative"
                             >
                               Dismiss Action
                             </button>
                             <button
                               disabled={isProcessing}
                               onClick={(e) => handleApprove(action.id, e)}
-                              className="touch-press disabled:opacity-50 disabled:cursor-not-allowed flex-[2] h-9 rounded-xl brutal-btn !py-0 !text-[10px] !tracking-[0.2em] !font-bold flex items-center justify-center gap-2"
+                              className="hit-area-44 touch-press disabled:opacity-50 disabled:cursor-not-allowed flex-[2] h-9 rounded-xl brutal-btn !py-0 !text-[10px] !tracking-[0.2em] !font-bold flex items-center justify-center gap-2 relative"
                             >
                               {isProcessing ? (
                                 <Clock className="w-3.5 h-3.5 animate-spin" />
