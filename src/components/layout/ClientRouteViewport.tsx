@@ -25,7 +25,7 @@ export default function ClientRouteViewport({
     <div
       className={cn(
         "relative h-full min-h-0 flex flex-col",
-        scroll ? "scroll-viewport" : "overflow-hidden max-md:overflow-visible max-md:h-auto",
+        scroll ? "scroll-viewport" : "overflow-x-hidden overflow-y-auto",
         className,
       )}
     >

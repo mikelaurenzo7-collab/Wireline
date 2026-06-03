@@ -112,11 +112,12 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         onMouseEnter={() => !expanded && setPeek(true)}
         onMouseLeave={() => setPeek(false)}
         className={cn(
-          "hidden lg:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] glass-2 elev-3",
-          "border-r border-[#EFE9DC]/12",
+          "hidden lg:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] elev-3",
+          "border-r border-white/[0.08]",
         )}
         style={{
           width: railWidth,
+          background: "linear-gradient(180deg, #3B154C 0%, #2D1040 55%, #1F0C30 100%)",
         }}
       >
         {/* Logo */}
