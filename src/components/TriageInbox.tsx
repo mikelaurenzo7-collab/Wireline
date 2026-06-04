@@ -21,7 +21,6 @@ import { motion, AnimatePresence } from "motion/react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
-import { BRAND } from "../constants/brand-colors";
 import { formatDate, formatDateTime } from "../lib/safe-date";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
@@ -33,7 +32,8 @@ import { Card } from "./ui/shadcn/Card";
 import { Badge } from "./ui/shadcn/Badge";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "./ui/shadcn/Tooltip";
 import { ShadButton } from "./ui/shadcn/ShadButton";
-import { InlineEmpty } from "./ui/InlineEmpty";
+import { EmptyState } from "./ui/EmptyState";
+import { OPS_TRIAGE_EMPTY } from "../lib/wireline-ops-design";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
 
 interface HotLead {
@@ -324,7 +324,7 @@ export default function TriageInbox() {
 
 function HotLeads({ items }: { items: HotLead[] }) {
   if (items.length === 0)
-    return <Empty icon={Flame} label="No hot leads right now — keep dialing." />;
+    return <TriagePanelEmpty icon={Flame} config={OPS_TRIAGE_EMPTY.hotLeads} />;
   return (
     <ul className="p-2 space-y-2 list-none stagger-children">
       {items.map((c) => (
@@ -444,7 +444,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
 
 function ComplianceList({ items }: { items: FleetTask[] }) {
   if (items.length === 0)
-    return <Empty icon={ShieldAlert} label="All clear — no compliance flags." green />;
+    return <TriagePanelEmpty icon={ShieldAlert} config={OPS_TRIAGE_EMPTY.compliance} positive />;
   return (
     <ul className="p-2 space-y-2 list-none">
       {items.map((t) => (
@@ -514,13 +514,7 @@ function KnowledgeGaps({
   onDiscard: (id: string) => void;
 }) {
   if (items.length === 0)
-    return (
-      <Empty
-        icon={BookOpen}
-        label="No captured knowledge gaps. Your agents are answering everything."
-        green
-      />
-    );
+    return <TriagePanelEmpty icon={BookOpen} config={OPS_TRIAGE_EMPTY.knowledgeGaps} positive />;
   return (
     <ul className="p-2 space-y-2 list-none">
       <AnimatePresence initial={false}>
@@ -669,7 +663,7 @@ function OpenTasks({
   onFetchFailed: () => void;
 }) {
   if (items.length === 0)
-    return <Empty icon={ListTodo} label="Inbox zero. You're caught up." green />;
+    return <TriagePanelEmpty icon={ListTodo} config={OPS_TRIAGE_EMPTY.openTasks} positive />;
   return (
     <ul className="p-2 space-y-2 list-none">
       <AnimatePresence initial={false}>
@@ -780,7 +774,7 @@ const OpenTaskRow: React.FC<{
 
 function Escalations({ items }: { items: EscalationCall[] }) {
   if (items.length === 0)
-    return <Empty icon={AlertOctagon} label="No escalations on file." green />;
+    return <TriagePanelEmpty icon={AlertOctagon} config={OPS_TRIAGE_EMPTY.escalations} positive />;
   return (
     <ul className="p-2 space-y-2 list-none">
       {items.map((c) => (
@@ -829,18 +823,33 @@ function Escalations({ items }: { items: EscalationCall[] }) {
   );
 }
 
-function Empty({
+function TriagePanelEmpty({
   icon: Icon,
-  label,
-  green,
+  config,
+  positive,
 }: {
   icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  green?: boolean;
+  config: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    actions?: readonly { label: string; to: string; primary?: boolean }[];
+  };
+  /** Positive empty — no outbound pressure, softer layout */
+  positive?: boolean;
 }) {
   return (
-    <div className="h-full flex items-center justify-center">
-      <InlineEmpty icon={Icon} label={label} accent={green ? BRAND.purple : undefined} />
+    <div className="h-full flex items-center justify-center py-4 px-2">
+      <EmptyState
+        icon={Icon}
+        eyebrow={config.eyebrow}
+        title={config.title}
+        description={config.description}
+        actions={config.actions ? [...config.actions] : undefined}
+        density="compact"
+        withHalo={!positive}
+        className="py-4"
+      />
     </div>
   );
 }

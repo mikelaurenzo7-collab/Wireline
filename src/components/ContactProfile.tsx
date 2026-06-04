@@ -26,6 +26,7 @@ import ClientRouteViewport from "./layout/ClientRouteViewport";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
 import AppPageIntro from "./layout/AppPageIntro";
 import { EmptyState } from "./ui/EmptyState";
+import { OPS_CHANNEL_EMPTY } from "../lib/wireline-ops-design";
 
 interface ContactData {
   number: string;
@@ -136,11 +137,10 @@ export default function ContactProfile() {
       <ClientRouteViewport className="items-center justify-center">
         <EmptyState
           icon={AlertOctagon}
-          eyebrow="Contact"
-          title={err || "Contact not found"}
-          description="This contact may have been merged or removed."
-          actions={[{ label: "← Back to pipeline", to: "/pipeline" }]}
-          accent="#e11d48"
+          eyebrow={OPS_CHANNEL_EMPTY.contactNotFound.eyebrow}
+          title={err || OPS_CHANNEL_EMPTY.contactNotFound.title}
+          description={OPS_CHANNEL_EMPTY.contactNotFound.description}
+          actions={[...OPS_CHANNEL_EMPTY.contactNotFound.actions]}
         />
       </ClientRouteViewport>
     );
@@ -248,9 +248,12 @@ export default function ContactProfile() {
             <div className="py-6">
               <EmptyState
                 icon={Activity}
-                eyebrow="Timeline"
-                title="No interactions yet"
-                description="Calls and appointments will appear here."
+                eyebrow={OPS_CHANNEL_EMPTY.contactTimeline.eyebrow}
+                title={OPS_CHANNEL_EMPTY.contactTimeline.title}
+                description={OPS_CHANNEL_EMPTY.contactTimeline.description}
+                actions={[...OPS_CHANNEL_EMPTY.contactTimeline.actions]}
+                density="compact"
+                withHalo={false}
               />
             </div>
           ) : (

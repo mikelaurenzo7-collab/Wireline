@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import PageShell, { Panel } from "./PageShell";
 import EmptyState from "./EmptyState";
+import { OPS_CHANNEL_EMPTY } from "../lib/wireline-ops-design";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { authFetch } from "../lib/api";
 import AdminHubViewport from "./layout/AdminHubViewport";
@@ -575,8 +576,9 @@ export default function AuditLog() {
               searchQuery.trim() ? (
                 <EmptyState
                   icon={Shield}
-                  title="No matches"
-                  description="Try a different search term or widen the time range filter."
+                  eyebrow={OPS_CHANNEL_EMPTY.auditNoMatch.eyebrow}
+                  title={OPS_CHANNEL_EMPTY.auditNoMatch.title}
+                  description={OPS_CHANNEL_EMPTY.auditNoMatch.description}
                   actions={[
                     { label: "Clear search", onClick: () => setSearchQuery(""), primary: true },
                   ]}
@@ -584,9 +586,10 @@ export default function AuditLog() {
               ) : (
                 <EmptyState
                   icon={Shield}
-                  title="Audit trail is quiet"
-                  description="Every agent action, escalation, and policy check writes here. Deploy an agent to start the feed."
-                  actions={[{ label: "Deploy an agent", to: "/agents", primary: true }]}
+                  eyebrow={OPS_CHANNEL_EMPTY.audit.eyebrow}
+                  title={OPS_CHANNEL_EMPTY.audit.title}
+                  description={OPS_CHANNEL_EMPTY.audit.description}
+                  actions={[...OPS_CHANNEL_EMPTY.audit.actions]}
                 />
               )
             ) : (

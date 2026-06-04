@@ -5,6 +5,7 @@ import {
   OPS_COPY,
   OPS_PULSE_METRICS,
   OPS_CHANNEL_EMPTY,
+  OPS_TRIAGE_EMPTY,
 } from "./wireline-ops-design";
 import { WIRELINE_DIRECTOR_BRAND } from "./wireline-director-design";
 import { BRAND } from "../constants/brand-colors";
@@ -46,5 +47,16 @@ describe("Wireline Live Ops design contract", () => {
   it("centralizes test call contact for analytics empty", () => {
     expect(OPS_COPY.testCallHref).toMatch(/^tel:/);
     expect(OPS_COPY.testCallNumber).toContain("630");
+  });
+
+  it("defines triage panel empty copy with route CTAs", () => {
+    expect(OPS_TRIAGE_EMPTY.hotLeads.actions?.some((a) => a.to.includes("outbound"))).toBe(true);
+    expect(OPS_TRIAGE_EMPTY.openTasks.actions?.some((a) => a.to.includes("intel"))).toBe(true);
+  });
+
+  it("defines integrations and audit empty copy", () => {
+    expect(OPS_CHANNEL_EMPTY.integrations.title.toLowerCase()).toContain("carrier");
+    expect(OPS_CHANNEL_EMPTY.audit.actions.some((a) => a.to === "/agents")).toBe(true);
+    expect(OPS_CHANNEL_EMPTY.campaigns.actions.some((a) => a.to.includes("outbound"))).toBe(true);
   });
 });

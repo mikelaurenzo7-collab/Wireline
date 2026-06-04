@@ -126,4 +126,86 @@ export const OPS_CHANNEL_EMPTY = {
       { label: "Open Fleet", to: "/agents" },
     ],
   },
+  integrations: {
+    eyebrow: "Email carriers",
+    title: "No carriers linked",
+    description:
+      "Connect Gmail, Outlook, or Yahoo — agents triage and reply from caller moments below.",
+  },
+  audit: {
+    eyebrow: "Audit",
+    title: "Audit trail is quiet",
+    description:
+      "Every agent action, escalation, and policy check writes here. Deploy an agent to start the feed.",
+    actions: [
+      { label: "Deploy an agent", to: "/agents", primary: true },
+      { label: "Open Live Ops", to: "/ops" },
+    ],
+  },
+  auditNoMatch: {
+    eyebrow: "Audit",
+    title: "No matches",
+    description: "Try a different search term or widen the time range filter.",
+  },
+  campaigns: {
+    eyebrow: "Campaigns",
+    title: "No campaigns yet",
+    description:
+      "Group outbound lists into campaigns — track dials, connects, and outcomes in one place.",
+    actions: [
+      { label: "Create campaign", to: "/phone?tab=outbound", primary: true },
+      { label: "Import leads", to: "/pipeline" },
+    ],
+  },
+  contactNotFound: {
+    eyebrow: "Contact",
+    title: "Contact not found",
+    description: "This number may have been merged, removed, or never synced to your fleet.",
+    actions: [{ label: "Back to pipeline", to: "/pipeline", primary: true }],
+  },
+  contactTimeline: {
+    eyebrow: "Timeline",
+    title: "No interactions yet",
+    description: "Calls and appointments with this contact appear here once agents engage.",
+    actions: [
+      { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
+      { label: "View call history", to: "/phone" },
+    ],
+  },
+} as const;
+
+/** Triage panel empty states — `/triage` widget columns */
+export const OPS_TRIAGE_EMPTY = {
+  hotLeads: {
+    eyebrow: "Hot leads",
+    title: "No hot leads yet",
+    description: "High-intent callers surface here after outbound dials or inbound conversations.",
+    actions: [
+      { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
+      { label: "Monitor floor", to: "/ops" },
+    ],
+  },
+  compliance: {
+    eyebrow: "Compliance",
+    title: "All clear",
+    description: "No DNC or policy flags need review right now.",
+  },
+  openTasks: {
+    eyebrow: "Open tasks",
+    title: "Inbox zero",
+    description: "No operator approvals waiting in the queue.",
+    actions: [{ label: "View action queue", to: "/ops?tab=intel" }],
+  },
+  knowledgeGaps: {
+    eyebrow: "Knowledge gaps",
+    title: "Coverage looks solid",
+    description: "Repeated stump questions will appear here so you can teach agents fast.",
+    actions: [{ label: "Open training", to: "/training" }],
+  },
+  escalations: {
+    eyebrow: "Escalations",
+    title: "No escalations",
+    description: "Supervisor handoffs and urgent calls will land here.",
+    actions: [{ label: "Live floor", to: "/ops" }],
+  },
 } as const;

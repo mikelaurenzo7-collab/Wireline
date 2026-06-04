@@ -182,7 +182,7 @@ export default function DispatchTab({
                         <SelectValue
                           placeholder={
                             agents.length === 0
-                              ? "No agents — create one in Settings > Agents"
+                              ? "No agents — deploy one in Fleet"
                               : "Select an agent…"
                           }
                         />
@@ -190,7 +190,7 @@ export default function DispatchTab({
                       <SelectContent>
                         {agents.length === 0 ? (
                           <SelectItem value={DISPATCH_UNSET} disabled>
-                            No agents — create one in Settings &gt; Agents
+                            No agents — deploy one in Fleet
                           </SelectItem>
                         ) : (
                           <>

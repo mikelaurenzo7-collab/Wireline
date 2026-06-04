@@ -9,6 +9,7 @@ import { useToast } from "../contexts/ToastContext";
 import ConfirmModal from "./ConfirmModal";
 import CrmConnectionCard from "./CrmConnectionCard";
 import { EMAIL_INBOUND_TASKS } from "../lib/integration-playbooks";
+import { OPS_CHANNEL_EMPTY } from "../lib/wireline-ops-design";
 import { getIntegrationLogo } from "./layout/IntegrationLogos";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
@@ -280,9 +281,9 @@ export default function Integrations() {
               ) : accounts.length === 0 ? (
                 <EmptyState
                   icon={Mail}
-                  eyebrow="Email carriers"
-                  title="No carriers linked"
-                  description="Connect Gmail, Outlook, or Yahoo — agents triage and reply from caller moments below."
+                  eyebrow={OPS_CHANNEL_EMPTY.integrations.eyebrow}
+                  title={OPS_CHANNEL_EMPTY.integrations.title}
+                  description={OPS_CHANNEL_EMPTY.integrations.description}
                   className="py-8"
                   actions={[
                     {
@@ -290,8 +291,16 @@ export default function Integrations() {
                       onClick: handleConnectGmail,
                       primary: true,
                     },
-                    { label: "Connect Outlook", onClick: handleConnectOutlook },
-                    { label: "Connect Yahoo", onClick: handleConnectYahoo },
+                    {
+                      label: "Connect Outlook",
+                      onClick: handleConnectOutlook,
+                      primary: true,
+                    },
+                    {
+                      label: "Connect Yahoo",
+                      onClick: handleConnectYahoo,
+                      primary: true,
+                    },
                   ]}
                 >
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left stagger-children">

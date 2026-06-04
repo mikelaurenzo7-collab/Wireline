@@ -29,6 +29,7 @@ import { cn } from "../../lib/utils";
 import { Link } from "react-router-dom";
 import { Panel } from "../PageShell";
 import EmptyState from "../EmptyState";
+import { OPS_CHANNEL_EMPTY } from "../../lib/wireline-ops-design";
 import ClientRouteLoading from "../layout/ClientRouteLoading";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { formatDate } from "../../lib/safe-date";
@@ -110,9 +111,10 @@ export default function CampaignsTab({
           ) : campaigns.length === 0 ? (
             <EmptyState
               icon={Megaphone}
-              eyebrow="Campaigns"
-              title="No campaigns"
-              description="Create a campaign to group and track bulk outbound calling efforts."
+              eyebrow={OPS_CHANNEL_EMPTY.campaigns.eyebrow}
+              title={OPS_CHANNEL_EMPTY.campaigns.title}
+              description={OPS_CHANNEL_EMPTY.campaigns.description}
+              actions={[...OPS_CHANNEL_EMPTY.campaigns.actions]}
             />
           ) : (
             <div className="divide-y divide-white/5">
