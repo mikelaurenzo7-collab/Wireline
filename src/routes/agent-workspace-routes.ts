@@ -372,9 +372,10 @@ router.post(
 
       if (!closed) res.end();
     } catch (e) {
-      log.error("workspace stream setup failed", { error: getErrorMessage(e) });
+      const errMsg = getErrorMessage(e);
+      log.error("workspace stream setup failed", { error: errMsg });
       if (!res.headersSent) {
-        res.status(500).json({ error: "Failed to start stream" });
+        res.status(500).json({ error: "Failed to start stream", detail: errMsg });
       }
     }
   },

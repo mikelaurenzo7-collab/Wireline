@@ -281,6 +281,17 @@ export function getAccessToken(): string | null {
   }
 }
 
+/**
+ * Return a valid access token, refreshing transparently if the current one
+ * is expired or close to expiry. Streaming endpoints should use this instead
+ * of `getAccessToken()` so long-lived pages don't send stale JWTs.
+ */
+export async function getFreshAccessToken(): Promise<string | null> {
+  const token = getAccessToken();
+  if (!token) return null;
+  return maybeRefreshToken(token);
+}
+
 export async function authFetch(url: string, options: RequestInit = {}) {
   const sessionJson = localStorage.getItem("wireline_session");
   let token: string | null = null;

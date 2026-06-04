@@ -12,7 +12,7 @@
  * manual SSE parsing since EventSource only supports GET).
  */
 import { useCallback, useRef, useState } from "react";
-import { getAccessToken } from "../lib/api";
+import { getFreshAccessToken } from "../lib/api";
 
 export type StreamPhase = "idle" | "connecting" | "thinking" | "replying" | "done" | "error";
 
@@ -73,7 +73,7 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
 
       setState({ phase: "connecting", thinkingText: "", isDeep: false });
 
-      const token = getAccessToken();
+      const token = await getFreshAccessToken();
       try {
         const res = await fetch(endpoint, {
           method: "POST",

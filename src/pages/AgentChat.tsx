@@ -9,7 +9,6 @@ import { useAgents } from "../contexts/AgentsContext";
 import { useVisualViewportVar } from "../lib/use-visual-viewport";
 import ClientRouteViewport from "../components/layout/ClientRouteViewport";
 import ClientRouteLoading from "../components/layout/ClientRouteLoading";
-import HubTabs, { TRAINING_HUB } from "../components/HubTabs";
 import { cn } from "../lib/utils";
 
 const DIRECTOR_ID = "director";
@@ -72,8 +71,6 @@ export default function AgentChat() {
 
   return (
     <ClientRouteViewport>
-      <HubTabs tabs={TRAINING_HUB} label="Training hub" className="mb-2 shrink-0" />
-
       {/* ── Agent Orbit Strip — Wireline Identity ──
        * Horizontal selection with orbital activity indicators.
        * Each agent avatar shows a pulsing orbit ring when active. */}

@@ -5,7 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { log } from "../lib/server-logger";
-import { authFetch, getAccessToken } from "../lib/api";
+import { authFetch, getFreshAccessToken } from "../lib/api";
 import { LiveFloorPanel, type FloorAgent } from "../components/CommandCenter/LiveFloorPanel";
 import { ActionFeed } from "../components/CommandCenter/ActionFeed";
 import OnboardingQuickstart from "../components/OnboardingQuickstart";
@@ -270,11 +270,11 @@ export default function LiveOps() {
       }, delay);
     };
 
-    const setupPresenceStream = () => {
+    const setupPresenceStream = async () => {
       if (!user) return;
 
       try {
-        const token = getAccessToken();
+        const token = await getFreshAccessToken();
         if (!token) return;
         const streamUrl = `${window.location.origin}/api/fleet/presence/stream?token=${encodeURIComponent(token)}`;
         eventSource = new EventSource(streamUrl, { withCredentials: true });

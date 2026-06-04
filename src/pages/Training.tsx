@@ -18,7 +18,6 @@ import { useAgents } from "../contexts/AgentsContext";
 import ClientRouteViewport from "../components/layout/ClientRouteViewport";
 import ClientRouteLoading from "../components/layout/ClientRouteLoading";
 import ClientSubTabs from "../components/layout/ClientSubTabs";
-import HubTabs, { TRAINING_HUB } from "../components/HubTabs";
 import { EmptyState } from "../components/ui/EmptyState";
 import { cn } from "../lib/utils";
 
@@ -79,7 +78,6 @@ export default function Training() {
 
   return (
     <ClientRouteViewport>
-      <HubTabs tabs={TRAINING_HUB} label="Training hub" className="mb-1 md:mb-2" />
       <div className="flex flex-col lg:flex-row gap-3 flex-1 min-h-0">
         <aside className="shrink-0 lg:w-[260px] flex flex-col">
           {/* Mobile: horizontal orbit strip */}
