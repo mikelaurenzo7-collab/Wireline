@@ -109,7 +109,7 @@ export function ArtifactCard({
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
       className={cn(
-        "group rounded-md border border-brand/15 bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm",
+        "group rounded-md border border-brand/15 bg-paper/90 dark:bg-[#1a1225]/60 backdrop-blur-sm",
         "shadow-sm hover:shadow-md transition-all duration-200",
         isImageType ? "overflow-hidden" : "p-3",
         className,
@@ -130,7 +130,7 @@ export function ArtifactCard({
               <a
                 href={downloadUrl}
                 download={name}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm text-[10px] font-semibold text-ink shadow-lg hover:bg-white transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-paper/95 backdrop-blur-sm text-[10px] font-semibold text-ink shadow-lg hover:bg-white transition-colors"
                 title="Download"
               >
                 <Download className="w-3 h-3" />
@@ -140,7 +140,7 @@ export function ArtifactCard({
                 href={downloadUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/70 backdrop-blur-sm text-[10px] font-medium text-ink/80 hover:bg-white/90 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-paper/85 backdrop-blur-sm text-[10px] font-medium text-ink/80 hover:bg-paper/95 transition-colors"
                 title="Open"
               >
                 <ExternalLink className="w-3 h-3" />
@@ -155,7 +155,7 @@ export function ArtifactCard({
         <span
           className={cn(
             "flex-shrink-0 flex w-8 h-8 items-center justify-center rounded-md",
-            isImageType ? "bg-fuchsia-500/10 text-fuchsia-500" : "bg-brand/8 text-brand",
+            isImageType ? "bg-brand/10 text-brand" : "bg-brand/8 text-brand",
           )}
         >
           <Icon className="w-4 h-4" />

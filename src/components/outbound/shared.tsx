@@ -30,10 +30,10 @@ export const CAMPAIGN_STATUS: Record<
     iconBorder: "border-black/8",
   },
   active: {
-    text: "text-emerald-600",
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/30",
-    iconBorder: "border-emerald-500/30",
+    text: "wl-text-success",
+    bg: "wl-status-success",
+    border: "border-[color-mix(in_srgb,var(--wl-signal)_30%,transparent)]",
+    iconBorder: "border-[color-mix(in_srgb,var(--wl-signal)_30%,transparent)]",
   },
   paused: {
     text: "text-amber-600",

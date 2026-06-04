@@ -41,7 +41,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
   };
 
   return (
-    <div className="h-full grid grid-cols-1 xl:grid-cols-3 gap-3 min-h-0 overflow-y-auto scrollbar-hide pb-6">
+    <div className="h-full grid grid-cols-1 xl:grid-cols-3 gap-3 min-h-0 scroll-viewport pb-6">
       <div className="xl:col-span-2 space-y-3">
         <Panel title="Team Management" hint="ACCESS CONTROL" icon={KeyRound} scroll>
           <div className="space-y-6">

@@ -45,7 +45,7 @@ export default function AgentListPanel({
   return (
     <aside
       className={cn(
-        "w-full md:w-[350px] lg:w-[420px] border-b md:border-b-0 md:border-r border-white/8 h-auto md:h-full flex flex-col shrink-0",
+        "w-full md:w-[350px] lg:w-[420px] border-b md:border-b-0 md:border-r border-white/8 h-auto md:h-full md:min-h-0 flex flex-col shrink-0 overflow-hidden",
         selectedAgent && "hidden md:flex",
       )}
     >
@@ -64,7 +64,7 @@ export default function AgentListPanel({
         </span>
       </div>
 
-      <div className="px-3 py-3 flex-1 overflow-y-auto space-y-2 scrollbar-hide">
+      <div className="px-3 py-3 flex-1 min-h-0 scroll-viewport space-y-2">
         <AnimatePresence mode="popLayout">
           {isLoading ? (
             <ClientRouteLoading
@@ -123,7 +123,7 @@ export default function AgentListPanel({
                       "w-9 h-9 rounded-md flex items-center justify-center shrink-0 transition-all border",
                       selectedAgent?.id === agent.id
                         ? "border-brand/35 bg-brand/12 text-brand"
-                        : "border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/3 text-ink/70 group-hover:text-ink group-hover:bg-brand/5 dark:group-hover:bg-white/8",
+                        : "border-black/8 dark:border-white/10 bg-paper/70 dark:bg-white/3 text-ink/70 group-hover:text-ink group-hover:bg-brand/5 dark:group-hover:bg-white/8",
                     )}
                   >
                     {agent.channel === "email" ? (
@@ -138,11 +138,11 @@ export default function AgentListPanel({
                     </div>
                     <div className="flex items-center flex-wrap gap-1.5 mt-1">
                       <RoleBadge role={agent.role} size="xs" />
-                      <span className="text-[8px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded-full bg-white/5 border border-white/8 text-ink/40 leading-none">
+                      <span className="text-[8px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded-full bg-paper-warm/80 border border-black/8 text-ink/50 leading-none">
                         {agent.channel}
                       </span>
                       {agentStats[agent.id] && (
-                        <span className="text-[8px] font-mono px-1.5 py-0.5 rounded-full bg-white/5 border border-white/8 text-ink/40 leading-none">
+                        <span className="text-[8px] font-mono px-1.5 py-0.5 rounded-full bg-paper-warm/80 border border-black/8 text-ink/50 leading-none">
                           {agentStats[agent.id].callCount} calls
                         </span>
                       )}

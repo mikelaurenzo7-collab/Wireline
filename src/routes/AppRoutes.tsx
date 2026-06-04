@@ -34,9 +34,8 @@ export default function AppRoutes() {
     <AnimatePresence>
       <Suspense fallback={<RouteFallback />}>
         <Routes>
-          {/* Chat is the home surface — it runs the show. Landing on / (deploy
-              root, OAuth return, bookmarks) sends operators straight to Chat. */}
-          <Route path="/" element={<Navigate to="/chat" replace />} />
+          {/* Live Ops is the default landing surface for signed-in operators. */}
+          <Route path="/" element={<Navigate to="/ops" replace />} />
           <Route
             path="/ops"
             element={

@@ -7,6 +7,7 @@ import ErrorBoundary from "../ErrorBoundary";
 import AuroraBackdrop from "./AuroraBackdrop";
 import TopBar from "./TopBar";
 import Sidebar from "./Sidebar";
+import DesktopPageContext from "./DesktopPageContext";
 import TrialBanner from "./TrialBanner";
 import EmailVerifyBanner from "./EmailVerifyBanner";
 import AppRoutes from "../../routes/AppRoutes";
@@ -17,7 +18,7 @@ import { useViewTransitionRoute } from "../../hooks/useViewTransitionRoute";
 import { useVisualViewport } from "../../hooks/useVisualViewport";
 
 const CommandBar = lazy(() => import("../CommandBar"));
-const ProductTour = lazy(() => import("../ProductTour"));
+const PostSignupOnboarding = lazy(() => import("../PostSignupOnboarding"));
 const TrialGateModal = lazy(() => import("../TrialGateModal"));
 const KeyboardShortcuts = lazy(() => import("../KeyboardShortcuts"));
 
@@ -237,7 +238,7 @@ export default function AppShell() {
   return (
     <div
       data-testid="client-console"
-      className="client-console flex flex-col min-h-dvh text-ink font-sans overflow-x-hidden overflow-y-auto relative"
+      className="client-console flex flex-col min-h-dvh md:h-dvh md:max-h-dvh md:min-h-0 text-ink font-sans overflow-x-hidden overflow-y-auto md:overflow-hidden relative"
     >
       <a
         href="#main-content"
@@ -250,7 +251,7 @@ export default function AppShell() {
       <ErrorBoundary fallback={null}>
         <Suspense fallback={null}>
           <CommandBar />
-          <ProductTour />
+          <PostSignupOnboarding />
           <TrialGateModal />
           {showShortcuts && (
             <KeyboardShortcuts open={showShortcuts} onClose={() => setShowShortcuts(false)} />
@@ -296,17 +297,23 @@ export default function AppShell() {
       <main
         id="main-content"
         tabIndex={-1}
-        className="flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain relative flex flex-col z-10 focus:outline-none lg:pl-[var(--wireline-rail-w,56px)] transition-[padding-left] duration-[240ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
+        className="client-console__main flex-1 min-h-0 overflow-x-hidden overflow-y-auto md:overflow-hidden overscroll-y-contain relative flex flex-col z-10 focus:outline-none lg:pl-[var(--wireline-rail-w,56px)] transition-[padding-left] duration-[240ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
       >
         <EmailVerifyBanner />
         <TrialBanner />
+
+        <DesktopPageContext
+          eyebrow={pageCtx.eyebrow}
+          title={pageCtx.title}
+          subtitle={pageCtx.subtitle}
+        />
 
         {/* Mobile/tablet page heading — condenses the desktop page context
             into a compact one-line bar visible below the TopBar. The desktop
             breadcrumb block above (`hidden lg:block`) carries the full
             eyebrow + italic title + subtitle; this one provides the same
             title on viewports where that block is invisible. */}
-        <div className="lg:hidden shrink-0 bg-paper/80 backdrop-blur-md px-3 py-1 border-b border-black/[0.05] dark:border-white/[0.04]">
+        <div className="lg:hidden shrink-0 bg-paper/95 backdrop-blur-md px-3 py-1 border-b border-black/[0.06] dark:border-white/[0.04]">
           <div className="flex items-center gap-1.5 min-w-0">
             {pageCtx.eyebrow && (
               <>
@@ -324,9 +331,9 @@ export default function AppShell() {
           </div>
         </div>
 
-        <div className="flex-1 relative flex flex-col min-h-0">
-          <div className="workspace-stage flex-1 overflow-x-hidden overflow-y-auto relative z-10 min-h-0 px-3 pb-2 md:px-3 md:pb-3 lg:px-4 lg:pb-4">
-            <div className="app-surface max-w-[1840px] mx-auto px-2.5 md:px-3 lg:px-4 pt-1.5 md:pt-2.5 pb-0 md:pb-3 flex flex-col min-h-0 mobile-page-canvas">
+        <div className="client-console__stage-wrap flex-1 relative flex flex-col min-h-0">
+          <div className="client-console__stage workspace-stage flex-1 overflow-x-hidden overflow-y-auto md:overflow-hidden relative z-10 min-h-0 px-3 pb-2 md:px-3 md:pb-3 lg:px-4 lg:pb-4">
+            <div className="app-surface max-w-[1840px] mx-auto w-full px-2.5 md:px-3 lg:px-4 pt-1.5 md:pt-2.5 pb-0 md:pb-3 flex flex-col flex-1 min-h-0 mobile-page-canvas">
               <ErrorBoundary key={location.pathname}>
                 <AppRoutes />
               </ErrorBoundary>

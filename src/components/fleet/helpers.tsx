@@ -154,10 +154,10 @@ export const AGENT_ROLES = [
     description: "Handles inbound issues and support",
     color: "emerald",
     tw: {
-      bg: "bg-emerald-500/10",
-      text: "text-emerald-600",
-      border: "border-emerald-500/25",
-      dot: "bg-emerald-500",
+      bg: "wl-status-success",
+      text: "wl-text-success",
+      border: "border-[color-mix(in_srgb,var(--wl-signal)_25%,transparent)]",
+      dot: "bg-brand",
     },
   },
   {
@@ -190,10 +190,10 @@ export const AGENT_ROLES = [
     description: "Diagnoses and resolves technical issues",
     color: "blue",
     tw: {
-      bg: "bg-blue-500/10",
-      text: "text-blue-600",
+      bg: "bg-brand/10",
+      text: "text-brand",
       border: "border-blue-500/25",
-      dot: "bg-blue-500",
+      dot: "bg-brand",
     },
   },
   {

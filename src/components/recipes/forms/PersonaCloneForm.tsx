@@ -109,7 +109,7 @@ export function PersonaCloneForm({
       {result?.persona && (
         <div className="space-y-3 pt-3">
           {result.applied && (
-            <div className="rounded-md bg-emerald-500/10 border border-emerald-500/30 p-3 text-emerald-500 text-xs flex items-center gap-2">
+            <div className="rounded-md wl-status-success border p-3 wl-text-success text-xs flex items-center gap-2">
               <Check className="w-3.5 h-3.5" /> Persona saved to agent — voice + email replies will
               use it on next call.
             </div>
@@ -135,7 +135,7 @@ export function PersonaCloneForm({
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <ResultCard title="Do">
-              <ul className="list-disc list-inside text-emerald-500/90 space-y-1">
+              <ul className="list-disc list-inside wl-text-success/90 space-y-1">
                 {result.persona.do_rules.map((r: string, i: number) => (
                   <li key={i}>{r}</li>
                 ))}

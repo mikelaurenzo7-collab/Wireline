@@ -181,7 +181,7 @@ function DeltaPill({ pct }: { pct: number }) {
       className={cn(
         "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-mono font-medium shadow-sm",
         up
-          ? "bg-emerald-500/12 border border-emerald-500/25 text-emerald-400 shadow-emerald-500/5"
+          ? "bg-brand/12 border border-[color-mix(in_srgb,var(--wl-signal)_25%,transparent)] wl-text-success shadow-[color-mix(in_srgb,var(--wl-signal)_8%,transparent)]"
           : "bg-rose-500/12 border border-rose-500/25 text-rose-400 shadow-rose-500/5",
       )}
     >

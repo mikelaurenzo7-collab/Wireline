@@ -153,7 +153,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
         </ShadButton>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide space-y-8 pb-12">
+      <div className="flex-1 min-h-0 scroll-viewport space-y-8 pb-12">
         {Object.entries(groupedTools).map(([group, tools]) => (
           <div key={group} className="space-y-4">
             <div className="flex items-center gap-3">

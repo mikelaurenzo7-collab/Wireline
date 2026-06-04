@@ -20,6 +20,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { cn } from "../../lib/utils";
 import { NAV_GROUPS, PAGE_TITLES, type NavItem } from "../../constants/navigation";
 import { useBranding } from "../../contexts/BrandingContext";
+import { BRAND } from "../../constants/brand-colors";
 import { useTheme } from "../../contexts/ThemeContext";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
@@ -263,7 +264,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                       </span>
                     </>
                   )}
-                  <h1 className="font-display italic text-[18px] leading-none truncate text-brand dark:text-[#EFE9DC]">
+                  <h1 className="font-display italic text-[18px] leading-none truncate text-brand dark:text-[color:var(--wl-paper)] lg:sr-only">
                     {breadcrumb.title}
                   </h1>
                 </motion.div>
@@ -353,8 +354,8 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 title={user?.email || "Account"}
               >
                 <div
-                  className="avatar-ring w-6 h-6 rounded-full flex items-center justify-center text-[#3B154C] font-medium text-[10px] shrink-0"
-                  style={{ background: "#EFE9DC" }}
+                  className="avatar-ring w-6 h-6 rounded-full flex items-center justify-center font-medium text-[10px] shrink-0"
+                  style={{ background: BRAND.cream, color: BRAND.purpleDeep }}
                   aria-hidden="true"
                 >
                   {user?.email?.slice(0, 1).toUpperCase() ?? "?"}

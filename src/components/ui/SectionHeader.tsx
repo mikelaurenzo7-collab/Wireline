@@ -41,9 +41,7 @@ export function SectionHeader({
         </div>
         {actions && <div className="shrink-0 self-start pt-0.5">{actions}</div>}
       </div>
-      {divider && (
-        <div className="mt-3 h-px w-full bg-gradient-to-r from-black/8 via-black/4 to-transparent dark:from-white/8 dark:via-white/4" />
-      )}
+      {divider && <div className="mt-3 aurora-divider" aria-hidden="true" />}
     </div>
   );
 }

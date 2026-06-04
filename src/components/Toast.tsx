@@ -10,9 +10,9 @@ import { ShadButton } from "./ui/shadcn/ShadButton";
 const META = {
   success: {
     icon: CheckCircle2,
-    color: "#8B3FD6",
-    border: "border-emerald-500/30",
-    bg: "bg-emerald-500/10",
+    color: "#10b981",
+    border: "border-[color-mix(in_srgb,var(--wl-signal)_35%,transparent)]",
+    bg: "wl-status-success",
   },
   error: { icon: XCircle, color: "#f43f5e", border: "border-rose-500/30", bg: "bg-rose-500/10" },
   warning: {

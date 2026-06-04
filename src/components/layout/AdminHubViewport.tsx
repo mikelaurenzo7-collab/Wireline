@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import ClientRouteViewport from "./ClientRouteViewport";
 import SettingsTabSwitcher from "../admin/SettingsTabSwitcher";
-import { cn } from "../../lib/utils";
 
 type AdminHubViewportProps = {
   children: ReactNode;
@@ -16,9 +15,9 @@ type AdminHubViewportProps = {
  */
 export default function AdminHubViewport({ children, scroll, className }: AdminHubViewportProps) {
   return (
-    <ClientRouteViewport className={cn(scroll && "overflow-y-auto", className)}>
+    <ClientRouteViewport scroll={scroll} className={className}>
       <SettingsTabSwitcher />
-      <div className="flex-1 min-h-0 flex flex-col">{children}</div>
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">{children}</div>
     </ClientRouteViewport>
   );
 }

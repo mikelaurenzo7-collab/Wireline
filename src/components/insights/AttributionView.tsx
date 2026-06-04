@@ -98,7 +98,7 @@ export default function AttributionView({ days }: { days: number }) {
                   <td className="px-3 py-2.5 text-right tabular-nums text-muted/80">
                     {Math.round((Number(r.total_seconds) || 0) / 60)}
                   </td>
-                  <td className="px-3 py-2.5 text-right tabular-nums text-emerald-600">{booked}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums wl-text-success">{booked}</td>
                   <td className="px-3 py-2.5 text-right tabular-nums text-brand">
                     {Number(r.qualified) || 0}
                   </td>
@@ -107,7 +107,7 @@ export default function AttributionView({ days }: { days: number }) {
                       className={cn(
                         "inline-block px-1.5 py-0.5 rounded-full text-[10px] font-medium tabular-nums border",
                         Number(conv) >= 30
-                          ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/25"
+                          ? "wl-status-success wl-text-success border"
                           : Number(conv) >= 15
                             ? "bg-amber-500/12 text-amber-600 border-amber-500/20"
                             : "bg-rose-500/10 text-rose-500 border-rose-500/20",

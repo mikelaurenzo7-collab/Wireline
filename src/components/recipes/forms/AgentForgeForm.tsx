@@ -98,7 +98,7 @@ export function AgentForgeForm({ initial, disabled }: { initial?: any; disabled:
       {design && (
         <div className="space-y-4 pt-3">
           {createdAgentId && (
-            <div className="rounded-md bg-emerald-500/10 border border-emerald-500/30 p-4 text-emerald-500 text-sm flex items-center gap-3">
+            <div className="rounded-md wl-status-success border p-4 wl-text-success text-sm flex items-center gap-3">
               <Check className="w-4 h-4" />
               Agent created. Open Fleet Topology to assign a phone number and voice.
             </div>
@@ -143,7 +143,7 @@ export function AgentForgeForm({ initial, disabled }: { initial?: any; disabled:
           </ResultCard>
           {design.success_metrics?.length > 0 && (
             <ResultCard title="Success Metrics">
-              <ul className="list-disc list-inside text-emerald-500/90 space-y-1">
+              <ul className="list-disc list-inside wl-text-success/90 space-y-1">
                 {design.success_metrics.map((m: string, i: number) => (
                   <li key={i}>{m}</li>
                 ))}

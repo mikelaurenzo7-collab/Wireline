@@ -1,6 +1,7 @@
 /** Full-height viewport wrapper for authenticated app routes inside AppShell.
- *  Enforces the locked-viewport pattern: outer shell never scrolls,
- *  inner panels own their own scroll axis via overscroll-behavior: contain. */
+ *  Desktop: participates in the flex height chain (`flex-1 min-h-0`).
+ *  `scroll` — this wrapper scrolls (long-form pages).
+ *  default — `overflow-hidden`; child split panes / PageShell panels scroll. */
 
 import type { ReactNode } from "react";
 import { cn } from "../../lib/utils";
@@ -24,8 +25,8 @@ export default function ClientRouteViewport({
   return (
     <div
       className={cn(
-        "relative h-full min-h-0 flex flex-col",
-        scroll ? "scroll-viewport" : "overflow-x-hidden overflow-y-auto",
+        "relative flex flex-col flex-1 min-h-0 w-full",
+        scroll ? "scroll-viewport" : "overflow-hidden",
         className,
       )}
     >

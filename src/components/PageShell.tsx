@@ -54,6 +54,8 @@ interface PageShellProps {
   defaultTab?: string;
   /** Optional className applied to the body region. */
   bodyClassName?: string;
+  /** Parent ClientRouteViewport scrolls — do not clip body on desktop. */
+  scrollable?: boolean;
 }
 
 export default function PageShell({
@@ -65,6 +67,7 @@ export default function PageShell({
   children,
   defaultTab,
   bodyClassName,
+  scrollable = false,
 }: PageShellProps) {
   const showPageHeader = Boolean(title || subtitle || eyebrow);
   const [activeId, setActiveId] = useState<string>(
@@ -126,7 +129,10 @@ export default function PageShell({
   return (
     <div
       className={cn(
-        "h-full w-full flex flex-col overflow-hidden max-md:overflow-visible max-md:h-auto",
+        "w-full flex flex-col",
+        scrollable
+          ? "h-auto min-h-0 overflow-visible"
+          : "h-full min-h-0 overflow-hidden max-md:overflow-visible max-md:h-auto",
         tabs &&
           tabs.length > 0 &&
           "mobile-route-stack max-md:flex max-md:flex-col max-md:gap-2 max-md:min-h-0",
@@ -332,7 +338,9 @@ export default function PageShell({
       {/* ── Body — bounded on desktop, scrollable on mobile ──────────── */}
       <div
         className={cn(
-          "flex-1 min-h-0 overflow-hidden max-md:overflow-y-auto max-md:overscroll-contain max-md:min-h-0",
+          scrollable
+            ? "flex-none overflow-visible"
+            : "flex-1 min-h-0 overflow-hidden max-md:overflow-y-auto max-md:overscroll-contain max-md:min-h-0",
           bodyClassName,
         )}
         onPointerDown={(e) => {
@@ -534,7 +542,7 @@ export function Panel({
         className={cn(
           "flex-1 min-h-0",
           scroll
-            ? "overflow-y-auto overscroll-contain scroll-pb-6 panel-scroll"
+            ? "scroll-viewport overscroll-contain scroll-pb-6 panel-scroll"
             : "overflow-hidden",
           !flush && "p-3 max-md:p-4",
           bodyClassName,
@@ -605,7 +613,7 @@ export function StatTile({
             <span
               className={cn(
                 "shrink-0 text-[9px] font-mono font-medium",
-                trendPositive ? "text-emerald-600" : "text-rose-500",
+                trendPositive ? "wl-text-success" : "text-rose-500",
               )}
             >
               {trendPositive ? "↑" : "↓"} {Math.abs(trend.value)}%

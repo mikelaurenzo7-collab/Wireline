@@ -4,20 +4,22 @@
  * Solid warm paper with optional subtle grain — no purple/teal aurora washes
  * that competed with data UI. Dark mode keeps a restrained velvet base.
  */
+import { BRAND } from "../../constants/brand-colors";
+
 export default function AuroraBackdrop() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-paper transition-colors duration-500"
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden authenticated-canvas transition-colors duration-500"
     >
-      {/* Light — rich solid cream */}
-      <div className="absolute inset-0 dark:hidden bg-paper" />
+      {/* Light — rich editorial cream (matches auth portal) */}
+      <div className="absolute inset-0 dark:hidden authenticated-canvas paper-texture" />
 
       {/* Dark — deep editorial base */}
       <div
         className="absolute inset-0 hidden dark:block"
         style={{
-          background: "linear-gradient(180deg, #2D1A3E 0%, #1A0F28 100%)",
+          background: `linear-gradient(180deg, #2D1A3E 0%, ${BRAND.purpleInk} 100%)`,
         }}
       />
 
@@ -37,8 +39,7 @@ export default function AuroraBackdrop() {
       <div
         className="absolute inset-0 dark:hidden"
         style={{
-          background:
-            "radial-gradient(120% 70% at 50% -8%, rgba(255,255,255,0.22) 0%, transparent 42%)",
+          background: `radial-gradient(120% 70% at 50% -8%, color-mix(in srgb, ${BRAND.cream} 35%, white) 0%, transparent 42%)`,
         }}
       />
     </div>

@@ -48,7 +48,8 @@ export default function IntegrationLiveActionCard({
       className={cn(
         "wl-integration-live-card relative overflow-hidden rounded-md border bg-card shadow-sm",
         isActive && "border-brand/25 shadow-lg shadow-brand/10 ring-1 ring-brand/12",
-        isSuccess && "border-emerald-400/30 shadow-sm shadow-emerald-500/5",
+        isSuccess &&
+          "border-[color-mix(in_srgb,var(--wl-signal)_30%,transparent)] shadow-sm shadow-[color-mix(in_srgb,var(--wl-signal)_8%,transparent)]",
         isProposal && !isActive && !isSuccess && "bg-brand/[0.02] border-dashed",
         !isActive && !isSuccess && !isProposal && "border-border opacity-70",
       )}
@@ -58,7 +59,7 @@ export default function IntegrationLiveActionCard({
         className="h-1 w-full"
         style={{
           background: isSuccess
-            ? `linear-gradient(90deg, #10B981, #10B98188, transparent)`
+            ? "linear-gradient(90deg, var(--wl-signal), color-mix(in srgb, var(--wl-signal) 55%, transparent), transparent)"
             : `linear-gradient(90deg, ${brand.color}, ${brand.color}88, transparent)`,
         }}
       />
@@ -76,11 +77,11 @@ export default function IntegrationLiveActionCard({
           <div
             className={cn(
               "shrink-0 flex h-8 w-8 items-center justify-center rounded-md text-primary-foreground shadow-sm transition-all duration-300",
-              isSuccess && "shadow-emerald-500/20",
+              isSuccess && "shadow-[color-mix(in_srgb,var(--wl-signal)_20%,transparent)]",
             )}
             style={{
               background: isSuccess
-                ? `linear-gradient(135deg, #10B981, #059669)`
+                ? "linear-gradient(135deg, var(--wl-signal), color-mix(in srgb, var(--wl-signal) 75%, #120f1a))"
                 : `linear-gradient(135deg, ${brand.color}, ${brand.color}cc)`,
             }}
           >
@@ -118,11 +119,11 @@ export default function IntegrationLiveActionCard({
           <motion.div
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-2.5 flex items-center gap-1.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/8 rounded-md px-2.5 py-1.5"
+            className="mt-2.5 flex items-center gap-1.5 text-[10px] font-medium wl-text-success dark:wl-text-success bg-brand/8 rounded-md px-2.5 py-1.5"
           >
             <span className="relative flex h-2 w-2 shrink-0">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400/40 animate-ping" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              <span className="absolute inline-flex h-full w-full rounded-full bg-brand/40 animate-ping" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-brand" />
             </span>
             {action.resultLine}
           </motion.div>

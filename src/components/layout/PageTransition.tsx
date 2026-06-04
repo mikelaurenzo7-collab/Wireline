@@ -1,14 +1,20 @@
 import React from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 
 export default function PageTransition({ children }: { children: React.ReactNode }) {
+  const reduceMotion = useReducedMotion();
+
+  if (reduceMotion) {
+    return <div className="h-full motion-route-enter">{children}</div>;
+  }
+
   return (
     <motion.div
-      initial={{ opacity: 0, transform: "translate3d(0, 8px, 0)", filter: "blur(4px)" }}
-      animate={{ opacity: 1, transform: "translate3d(0, 0, 0)", filter: "blur(0px)" }}
-      exit={{ opacity: 0, transform: "translate3d(0, 4px, 0)", filter: "blur(2px)" }}
-      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-      className="h-full will-change-[transform,opacity,filter]"
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 4 }}
+      transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+      className="h-full min-h-0"
     >
       {children}
     </motion.div>

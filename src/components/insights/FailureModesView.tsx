@@ -35,8 +35,8 @@ export default function FailureModesView() {
         <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
           {!data.cached && (
             <span className="relative flex h-1.5 w-1.5" aria-hidden>
-              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500/60 animate-ping" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <span className="absolute inline-flex h-full w-full rounded-full bg-brand/60 animate-ping" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand" />
             </span>
           )}
           {data.cached ? "Cached" : "Fresh"} · {modes.length} clusters

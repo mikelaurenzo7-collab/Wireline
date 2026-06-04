@@ -299,8 +299,8 @@ export default function OnboardingQuickstart({
               phoneNumber={completionData.phoneNumber}
               timeToFirstCallMs={completionData.timeToFirstCallMs}
               knowledgeItems={completionData.knowledgeItems}
-              onTestCall={() => navigate("/")}
-              onViewDashboard={() => navigate("/")}
+              onTestCall={() => navigate("/ops")}
+              onViewDashboard={() => navigate("/ops")}
             />
           )}
         </AnimatePresence>
@@ -527,8 +527,8 @@ export default function OnboardingQuickstart({
             phoneNumber={completionData.phoneNumber}
             timeToFirstCallMs={completionData.timeToFirstCallMs}
             knowledgeItems={completionData.knowledgeItems}
-            onTestCall={() => navigate("/")}
-            onViewDashboard={() => navigate("/")}
+            onTestCall={() => navigate("/ops")}
+            onViewDashboard={() => navigate("/ops")}
           />
         )}
       </AnimatePresence>

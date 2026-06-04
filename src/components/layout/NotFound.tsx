@@ -115,17 +115,17 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
         ) : (
           <>
             <NotFoundCard
-              to="/chat"
+              to="/ops"
               icon={Home}
-              label="Chat"
+              label="Live Ops"
               hint="Mission control"
               accent="#8B3FD6"
             />
             <NotFoundCard
-              to="/ops"
+              to="/chat"
               icon={LayoutGrid}
-              label="Live Ops"
-              hint="Live callers"
+              label="Chat"
+              hint="Director & agents"
               accent="#8B3FD6"
             />
             <NotFoundCard

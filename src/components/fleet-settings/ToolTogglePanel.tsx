@@ -18,7 +18,7 @@ interface ToolTogglePanelProps {
 export default function ToolTogglePanel({ selectedAgent, updateAgentMeta }: ToolTogglePanelProps) {
   return (
     <div className="rounded-md wl-panel border border-border p-3 space-y-3">
-      <div className="rounded-md border border-black/8 dark:border-white/8 bg-black/[0.02] dark:bg-white/3 p-3 space-y-3">
+      <div className="rounded-md border border-black/8 dark:border-white/8 bg-paper/80 dark:bg-white/3 p-3 space-y-3">
         <div className="text-[9px] uppercase tracking-[0.3em] text-brand/70">Channels</div>
         <div className="flex flex-wrap gap-2">
           {(["voice", "email", "sms"] as const).map((ch) => {
@@ -100,7 +100,7 @@ export default function ToolTogglePanel({ selectedAgent, updateAgentMeta }: Tool
               className="w-full text-xs bg-black/5 border border-black/10 rounded-md px-3 py-2 text-ink font-mono"
             />
           </div>
-          <div className="rounded-md border border-black/8 dark:border-white/8 bg-black/[0.02] dark:bg-white/3 p-3 flex items-center justify-between gap-3">
+          <div className="rounded-md border border-black/8 dark:border-white/8 bg-paper/80 dark:bg-white/3 p-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[10px] uppercase tracking-[0.25em] text-brand/70 flex items-center gap-1.5">
                 <Video className="w-3 h-3" /> Auto Zoom link

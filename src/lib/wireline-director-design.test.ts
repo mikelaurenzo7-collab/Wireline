@@ -5,6 +5,7 @@ import {
   WL_APP_CLASSES,
   DIRECTOR_PHASE_COPY,
   DIRECTOR_STARTER_PROMPTS,
+  DIRECTOR_SCENE_BADGES,
   DIRECTOR_EMPTY_HERO,
   DIRECTOR_LIVE_STEP_COPY,
   LIVE_FEED_LABELS,
@@ -30,6 +31,12 @@ describe("Wireline Director design contract", () => {
     expect(WL_APP_CLASSES.panelFrame).toContain("wl-panel-elevated");
     expect(WL_APP_CLASSES.panelFrame).not.toContain("aurora");
     expect(WL_APP_CLASSES.insightStatCard).toContain("wl-panel");
+  });
+
+  it("exposes authenticated status and modal surface hooks", () => {
+    expect(WL_APP_CLASSES.statusSuccess).toBe("wl-status-success");
+    expect(WL_APP_CLASSES.modalSurface).toBe("wl-modal-surface");
+    expect(WL_APP_CLASSES.pulseLive).toBe("wl-pulse-live");
   });
 
   it("exposes app settings panel classes without glass or aurora blobs", () => {
@@ -72,6 +79,14 @@ describe("Wireline Director design contract", () => {
     expect(DIRECTOR_LIVE_STEP_COPY.contextCoach("Mira")).toContain("Mira");
     expect(DIRECTOR_LIVE_STEP_COPY.integrationsOn.toLowerCase()).toContain("integration");
     expect(DIRECTOR_LIVE_STEP_COPY.executeTitle.toLowerCase()).toContain("approval");
+  });
+
+  it("scene badges stay on purple/cream palette", () => {
+    for (const badge of Object.values(DIRECTOR_SCENE_BADGES)) {
+      expect(badge.color).toMatch(/text-brand/);
+      expect(badge.bg).toMatch(/brand/);
+      expect(badge.bg).not.toMatch(/emerald|sky|fuchsia|blue/i);
+    }
   });
 
   it("live feed labels distinguish scripted vs proposal modes", () => {

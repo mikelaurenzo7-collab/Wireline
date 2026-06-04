@@ -34,7 +34,45 @@ export const WL_DIRECTOR_CLASSES = {
 } as const;
 
 /** Reusable app surfaces outside Director (settings, integrations, ops panels) */
+/** Director message scene chips — purple/cream only (no sky/fuchsia literals). */
+export const DIRECTOR_SCENE_BADGES = {
+  creative: {
+    label: "Creative",
+    color: "text-brand-deep",
+    bg: "bg-brand/10 border-brand/25",
+  },
+  analysis: {
+    label: "Analysis",
+    color: "text-brand",
+    bg: "bg-brand/8 border-brand/20",
+  },
+  integration: {
+    label: "Integration",
+    color: "text-brand",
+    bg: "bg-brand/8 border-brand/20",
+  },
+  training: {
+    label: "Training",
+    color: "text-brand-deep",
+    bg: "bg-brand/10 border-brand/25",
+  },
+  comms: {
+    label: "Comms",
+    color: "text-brand",
+    bg: "bg-brand/8 border-brand/20",
+  },
+  fleet: {
+    label: "Fleet Ops",
+    color: "text-brand",
+    bg: "bg-brand/8 border-brand/20",
+  },
+} as const;
+
 export const WL_APP_CLASSES = {
+  /** Desktop editorial subtitle under TopBar — operator context */
+  pageContext: "wl-page-context",
+  /** Director / chat primary surface */
+  missionCanvas: "wl-mission-canvas",
   settingsPanel: "wl-panel-elevated border border-border rounded-md p-6 space-y-5 mt-8",
   settingsIcon:
     "w-10 h-10 rounded-md bg-brand flex items-center justify-center text-primary-foreground shrink-0",
@@ -44,6 +82,11 @@ export const WL_APP_CLASSES = {
   statusOk: "bg-brand/10 text-brand border-brand/20",
   statusPending: "bg-brand/8 text-brand/90 border-brand/25",
   statusDead: "bg-destructive/10 text-destructive border-destructive/30",
+  /** Executed approval / success — signal green, used sparingly */
+  statusSuccess: "wl-status-success",
+  textSuccess: "wl-text-success",
+  pulseLive: "wl-pulse-live",
+  modalSurface: "wl-modal-surface",
   /** Framed empty / insight stat — elevated panel without aurora chrome */
   panelFrame: "relative rounded-md wl-panel-elevated border border-border overflow-hidden",
   insightStatCard: "relative rounded-md wl-panel border border-black/8 overflow-hidden",

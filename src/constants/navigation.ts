@@ -38,8 +38,9 @@ export type NavItem = {
 // Four-group nav: Workspace (command), Channels (communication surfaces),
 // Sales (pipeline), Admin (settings).
 //
-// Chat remains the primary control surface — the Director + per-agent threads
-// are mission control. Training has been elevated to its own sidebar page
+// Live Ops is the default landing surface — live floor, actions, and analytics.
+// Chat (Director + per-agent threads) is where operators coach and configure.
+// Training has been elevated to its own sidebar page
 // because the customization depth (knowledge, voices, pronunciation, simulator,
 // flow) warrants dedicated real-estate rather than a buried tab.
 //
@@ -55,6 +56,13 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: "Workspace",
     items: [
       {
+        label: "Live Ops",
+        path: "/ops",
+        icon: LayoutGrid,
+        dataTour: "dashboard",
+        matches: ["/dashboard", "/command", "/live", "/cockpit"],
+      },
+      {
         label: "Chat",
         path: "/chat",
         icon: MessagesSquare,
@@ -67,13 +75,6 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         icon: GraduationCap,
         dataTour: "training",
         matches: ["/knowledge"],
-      },
-      {
-        label: "Live Ops",
-        path: "/ops",
-        icon: LayoutGrid,
-        dataTour: "dashboard",
-        matches: ["/dashboard", "/command", "/live", "/cockpit"],
       },
       { label: "Triage", path: "/triage", icon: Inbox },
       { label: "Insights", path: "/insights", icon: BarChart3, dataTour: "insights" },

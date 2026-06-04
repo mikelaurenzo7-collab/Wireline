@@ -34,7 +34,6 @@ import { authFetch } from "../../lib/api";
 import { useLivePresence } from "../../hooks/useLivePresence";
 import { cn } from "../../lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/shadcn/Tooltip";
-import { ScrollArea } from "../ui/shadcn/ScrollArea";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
 const RAIL_COLLAPSED = 56;
@@ -110,11 +109,9 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         )}
         style={{
           width: railWidth,
-          background: "linear-gradient(180deg, #3B154C 0%, #2D1040 55%, #1F0C30 100%)",
+          background: `linear-gradient(180deg, ${BRAND.purpleDeep} 0%, #2D1040 55%, #1F0C30 100%)`,
         }}
       >
-        {/* Animated edge light — subtle gradient seam on the right edge */}
-        <div className="sidebar-edge-light" aria-hidden="true" />
         {/* Logo */}
         <Link
           to="/"
@@ -127,11 +124,15 @@ export default function Sidebar({ navBadges }: SidebarProps) {
             transition={{ type: "spring", stiffness: 360, damping: 26 }}
             className="relative w-8 h-8 shrink-0 rounded-md flex items-center justify-center overflow-hidden elev-1"
             style={{
-              background: "#EFE9DC",
+              background: BRAND.cream,
               boxShadow: "0 4px 14px -4px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.22) inset",
             }}
           >
-            <WirelineMark className="w-4 h-4 text-[#3B154C] relative z-10" strokeWidth={130} />
+            <WirelineMark
+              className="w-4 h-4 relative z-10"
+              style={{ color: BRAND.purpleDeep }}
+              strokeWidth={130}
+            />
             <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent" />
           </motion.div>
           <AnimatePresence>
@@ -141,7 +142,8 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -6 }}
                 transition={{ duration: 0.18 }}
-                className="brand-wordmark text-[15px] leading-none truncate text-[#EFE9DC] dark:text-[#EFE9DC] !filter-none"
+                className="brand-wordmark text-[15px] leading-none truncate !filter-none"
+                style={{ color: BRAND.cream }}
               >
                 {branding.brand_name.toUpperCase()}
               </motion.span>
@@ -178,35 +180,33 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         </ShadButton>
 
         {/* Nav items */}
-        <ScrollArea className="flex-1 min-h-0">
-          <nav className="py-2 px-2">
-            {NAV_GROUPS.filter((g) => g.label !== "Admin").map((group, gi) => (
-              <div key={group.label}>
-                {gi > 0 && <div className="wl-nav-divider" aria-hidden="true" />}
-                {effective && (
-                  <p className="px-2 pt-1.5 pb-1 text-[9px] font-semibold uppercase tracking-[0.25em] text-white/35 dark:text-white/25 select-none">
-                    {group.label}
-                  </p>
-                )}
-                <div className="space-y-0.5">
-                  {group.items
-                    .filter((item) => !item.ownerOnly || user?.is_owner === true)
-                    .map((item) => (
-                      <RailItem
-                        key={item.path}
-                        item={item}
-                        active={isActive(item)}
-                        badge={resolveBadge(item, navBadges)}
-                        expanded={effective}
-                        accent={NAV_GROUP_ACCENTS[group.label] || BRAND.purple}
-                        shortcut={SHORTCUTS[item.path]}
-                      />
-                    ))}
-                </div>
+        <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scroll-viewport wl-rail-scroll py-2 px-2">
+          {NAV_GROUPS.filter((g) => g.label !== "Admin").map((group, gi) => (
+            <div key={group.label}>
+              {gi > 0 && <div className="wl-nav-divider" aria-hidden="true" />}
+              {effective && (
+                <p className="px-2 pt-1.5 pb-1 text-[9px] font-semibold uppercase tracking-[0.25em] text-white/35 dark:text-white/25 select-none">
+                  {group.label}
+                </p>
+              )}
+              <div className="space-y-0.5">
+                {group.items
+                  .filter((item) => !item.ownerOnly || user?.is_owner === true)
+                  .map((item) => (
+                    <RailItem
+                      key={item.path}
+                      item={item}
+                      active={isActive(item)}
+                      badge={resolveBadge(item, navBadges)}
+                      expanded={effective}
+                      accent={NAV_GROUP_ACCENTS[group.label] || BRAND.purple}
+                      shortcut={SHORTCUTS[item.path]}
+                    />
+                  ))}
               </div>
-            ))}
-          </nav>
-        </ScrollArea>
+            </div>
+          ))}
+        </nav>
 
         {/* Footer */}
         <div
@@ -222,7 +222,10 @@ export default function Sidebar({ navBadges }: SidebarProps) {
               aria-label="Account & billing"
               title={user.email}
             >
-              <div className="avatar-ring w-7 h-7 rounded-full flex items-center justify-center text-[#3B154C] bg-[#EFE9DC] dark:text-[#3B154C] dark:bg-[#EFE9DC] font-semibold text-[11px] shrink-0">
+              <div
+                className="avatar-ring w-7 h-7 rounded-full flex items-center justify-center font-semibold text-[11px] shrink-0"
+                style={{ color: BRAND.purpleDeep, background: BRAND.cream }}
+              >
                 {user.email?.slice(0, 1).toUpperCase() ?? "?"}
               </div>
               <div className="min-w-0 flex-1">
@@ -240,7 +243,10 @@ export default function Sidebar({ navBadges }: SidebarProps) {
               aria-label="Account"
               title={user.email}
             >
-              <div className="avatar-ring w-7 h-7 rounded-full flex items-center justify-center text-[#3B154C] bg-[#EFE9DC] dark:text-[#3B154C] dark:bg-[#EFE9DC] font-semibold text-[11px]">
+              <div
+                className="avatar-ring w-7 h-7 rounded-full flex items-center justify-center font-semibold text-[11px]"
+                style={{ color: BRAND.purpleDeep, background: BRAND.cream }}
+              >
                 {user.email?.slice(0, 1).toUpperCase() ?? "?"}
               </div>
             </Link>

@@ -376,13 +376,13 @@ export default function FleetSettings() {
             inactive panel, wiping form state, scroll positions, and
             input focus every time the operator flipped tabs. Now
             both stay mounted; React diffs are stable. */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
           <div
             id="fleet-panel-templates"
             role="tabpanel"
             tabIndex={0}
             hidden={activeTab !== "templates"}
-            className="h-full overflow-hidden"
+            className="flex-1 min-h-0 flex flex-col overflow-hidden"
             style={{ display: activeTab === "templates" ? undefined : "none" }}
           >
             <AgentTemplates />
@@ -393,7 +393,7 @@ export default function FleetSettings() {
             tabIndex={0}
             hidden={activeTab !== "fleet"}
             style={{ display: activeTab === "fleet" ? undefined : "none" }}
-            className="h-full flex flex-col md:flex-row"
+            className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden"
           >
             {/* Sidebar: Agents List — extracted to fleet-settings/AgentListPanel.tsx */}
             <AgentListPanel

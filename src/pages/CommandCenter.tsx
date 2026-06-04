@@ -2,13 +2,13 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { RefreshCw } from "lucide-react";
 import { ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from "recharts";
 import { useAuth } from "../contexts/AuthContext";
-import { useToast } from "../contexts/ToastContext";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { log } from "../lib/server-logger";
 import { authFetch, refreshSessionIfNeeded } from "../lib/api";
 import { LiveFloorPanel, type FloorAgent } from "../components/CommandCenter/LiveFloorPanel";
 import { ActionFeed } from "../components/CommandCenter/ActionFeed";
-import OnboardingQuickstart from "../components/OnboardingQuickstart";
+import { OpsPulseStrip } from "../components/CommandCenter/OpsPulseStrip";
+import { OpsIntelligenceRail } from "../components/CommandCenter/OpsIntelligenceRail";
 import PageTransition from "../components/layout/PageTransition";
 import ClientRouteViewport from "../components/layout/ClientRouteViewport";
 import ClientSubTabs from "../components/layout/ClientSubTabs";
@@ -16,8 +16,7 @@ import { clsx } from "clsx";
 import { motion } from "motion/react";
 import { Radio, Zap, Globe, Activity, ListTodo } from "lucide-react";
 import { ShadButton } from "../components/ui/shadcn/ShadButton";
-import { BRAND } from "../constants/brand-colors";
-import { WIRELINE_DIRECTOR_BRAND } from "../lib/wireline-director-design";
+import { WL_OPS_CLASSES, OPS_SENTIMENT_COLORS, OPS_COPY } from "../lib/wireline-ops-design";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -100,18 +99,10 @@ type TaskPayload = {
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
-const SENTIMENT_COLORS = {
-  positive: WIRELINE_DIRECTOR_BRAND.signal,
-  neutral: BRAND.purple,
-  negative: BRAND.rose,
-};
-
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function LiveOps() {
   const { user } = useAuth();
-  const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
   const activeTab: OpsTabId =
@@ -379,33 +370,39 @@ export default function LiveOps() {
         {
           name: "Positive",
           value: stats.sentimentBreakdown?.positive ?? 0,
-          color: SENTIMENT_COLORS.positive,
+          color: OPS_SENTIMENT_COLORS.positive,
         },
         {
           name: "Neutral",
           value: stats.sentimentBreakdown?.neutral ?? 0,
-          color: SENTIMENT_COLORS.neutral,
+          color: OPS_SENTIMENT_COLORS.neutral,
         },
         {
           name: "Negative",
           value: stats.sentimentBreakdown?.negative ?? 0,
-          color: SENTIMENT_COLORS.negative,
+          color: OPS_SENTIMENT_COLORS.negative,
         },
       ].filter((d) => d.value > 0)
     : [];
 
   const totalSentiment = sentimentData.reduce((s, d) => s + d.value, 0);
+  const pendingActions = actions.filter((a) => a.status === "pending").length;
+  const escalations = calls.filter((c) => c.status === "escalated").length;
+  const fleetAgentCount = stats?.agents?.length ?? agents.length;
 
   return (
     <PageTransition>
-      <ClientRouteViewport className="scroll-viewport">
-        <div className="max-w-[1600px] mx-auto space-y-3 pb-4">
-          {/* No editorial header here — Live Ops is a working surface; the
-              sidebar nav already names the page. Refresh sits inline with
-              the tab strip to keep the viewport short. */}
+      <ClientRouteViewport scroll>
+        <div className={clsx("max-w-[1600px] mx-auto pb-4", WL_OPS_CLASSES.canvas)}>
+          <OpsPulseStrip
+            liveCalls={calls.length}
+            pendingActions={pendingActions}
+            fleetAgents={fleetAgentCount}
+            escalations={escalations}
+            loading={loading || presenceLoading}
+          />
 
-          {/* Grid Layout Container */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start pt-1">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start px-2 sm:px-3 pt-2 pb-1">
             {/* Left Pane (Main Operations) */}
             <div className="lg:col-span-8 xl:col-span-9 space-y-4">
               <div className="flex items-center justify-between gap-2">
@@ -433,23 +430,15 @@ export default function LiveOps() {
 
               {activeTab === "floor" && (
                 <section className="space-y-3 pt-1">
-                  <div className="relative group">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-brand/15 to-brand-2/15 rounded-[2rem] blur opacity-25 group-hover:opacity-40 transition duration-1000" />
-                    <div className="relative wl-panel-elevated rounded-[1.75rem] p-4 sm:p-5">
-                      <LiveFloorPanel calls={calls} agents={agents} loading={presenceLoading} />
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 pt-4">
-                    <span className="app-section-title block">Get started</span>
-                    <OnboardingQuickstart />
+                  <div className={WL_OPS_CLASSES.floorFrame}>
+                    <LiveFloorPanel calls={calls} agents={agents} loading={presenceLoading} />
                   </div>
                 </section>
               )}
 
               {activeTab === "intel" && (
                 <section className="space-y-2 pt-1">
-                  <div className="wl-panel-elevated rounded-[1.75rem] p-5 min-h-[320px] flex flex-col">
+                  <div className="wl-panel-elevated rounded-md p-5 min-h-[320px] flex flex-col">
                     <ActionFeed actions={actions} onRefresh={refresh} />
                   </div>
                 </section>
@@ -457,10 +446,10 @@ export default function LiveOps() {
 
               {activeTab === "analytics" && (
                 <section className="space-y-4 pt-1">
-                  <span className="app-section-title block">Fleet analytics</span>
+                  <span className="app-section-title block">{OPS_COPY.analyticsSection}</span>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 stagger-children">
                     {/* Analytics: Sentiment */}
-                    <div className="wl-panel-elevated rounded-[2rem] p-5 hover:border-brand/35 hover:-translate-y-px hover:shadow-lg hover:shadow-brand/5 transition-all duration-300">
+                    <div className="wl-panel-elevated rounded-md p-5 hover:border-brand/35 transition-colors duration-200">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="wl-label flex items-center gap-2">
                           <Globe className="w-3.5 h-3.5 text-brand" />
@@ -484,15 +473,14 @@ export default function LiveOps() {
                               Awaiting signal
                             </p>
                             <p className="font-display italic text-lg text-ink leading-tight">
-                              No conversations yet
+                              {OPS_COPY.sentimentEmptyTitle}
                             </p>
                           </div>
                           <p className="text-caption leading-relaxed">
-                            Make your first call to{" "}
+                            {OPS_COPY.sentimentEmptyHint}{" "}
                             <a href="tel:+16306425661" className="text-brand hover:underline">
                               (630) 642-5661
-                            </a>{" "}
-                            to see live sentiment.
+                            </a>
                           </p>
                         </div>
                       ) : (
@@ -552,15 +540,15 @@ export default function LiveOps() {
                     </div>
 
                     {/* Analytics: Unit Economics */}
-                    <div className="wl-panel-elevated rounded-[2rem] p-5 hover:border-brand/35 hover:-translate-y-px hover:shadow-lg hover:shadow-brand/5 transition-all duration-300">
+                    <div className="wl-panel-elevated rounded-md p-5 hover:border-brand/35 transition-colors duration-200">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="wl-label flex items-center gap-2">
                           <Zap className="w-3.5 h-3.5 text-brand" />
                           Unit Economics
                         </h3>
-                        <div className="google-m3-badge">
-                          Efficiency: {stats?.unitEconomics?.efficiencyScore ?? 0}%
-                        </div>
+                        <span className={WL_OPS_CLASSES.scoreBadge}>
+                          {OPS_COPY.roiLabel}: {stats?.unitEconomics?.efficiencyScore ?? 0}%
+                        </span>
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 stagger-children">
@@ -584,9 +572,13 @@ export default function LiveOps() {
 
                       <div className="mt-4 p-4 rounded-md bg-brand/5 border border-brand/10">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-eyebrow text-brand">Fleet ROI Projection</span>
-                          <span className="text-caption font-mono font-semibold text-brand">
-                            EXCELLENT
+                          <span className="text-eyebrow text-brand">{OPS_COPY.roiLabel}</span>
+                          <span className="text-caption font-mono font-semibold text-brand tabular-nums">
+                            {(stats?.unitEconomics?.efficiencyScore ?? 0) >= 70
+                              ? "Strong"
+                              : (stats?.unitEconomics?.efficiencyScore ?? 0) >= 40
+                                ? "Building"
+                                : "Early"}
                           </span>
                         </div>
                         <div className="h-1.5 w-full bg-brand/10 rounded-full overflow-hidden">
@@ -603,130 +595,12 @@ export default function LiveOps() {
               )}
             </div>
 
-            {/* Right Pane (Ops Intelligence Sidebar) */}
-            <div className="lg:col-span-4 xl:col-span-3 space-y-3">
-              {/* Telemetry Heartbeat Card */}
-              <div className="wl-panel-elevated p-3.5 relative overflow-hidden rounded-md">
-                <div className="flex items-center justify-between mb-2.5">
-                  <h3 className="wl-label text-brand font-bold flex items-center gap-2">
-                    <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500/60" />
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-                    </span>
-                    Live Telemetry
-                  </h3>
-                  <span className="text-[9px] font-mono text-muted-foreground">Pulse Active</span>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between py-1 border-b border-brand/5">
-                    <span className="text-[12px] text-ink/50">Active Call Traffic</span>
-                    <motion.span
-                      key={calls.length}
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="text-[12px] font-mono font-bold text-ink"
-                    >
-                      {calls.length} active
-                    </motion.span>
-                  </div>
-                  <div className="flex items-center justify-between py-1">
-                    <span className="text-[12px] text-ink/50">Configured Agents</span>
-                    <motion.span
-                      key={stats?.agents?.length ?? 0}
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="text-[12px] font-mono font-bold text-ink"
-                    >
-                      {stats?.agents?.length ?? 0}
-                    </motion.span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Growth Action Card */}
-              <div className="wl-panel-elevated p-3.5 rounded-md space-y-2.5">
-                <div>
-                  <h4 className="font-display italic text-[15px] leading-tight text-foreground">
-                    Lead Generation
-                  </h4>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    Autonomous growth engine queries lead databases dynamically.
-                  </p>
-                </div>
-
-                {(stats?.agents?.length ?? 0) > 0 ? (
-                  <ShadButton
-                    type="button"
-                    disableAnimations
-                    onClick={async () => {
-                      if (activatingGrowth) return;
-                      setActivatingGrowth(true);
-                      try {
-                        const res = await authFetch("/api/jobs/prospect", { method: "POST" });
-                        if (!res.ok) {
-                          const body = await res.json().catch(() => ({}));
-                          throw new Error(body.error || `HTTP ${res.status}`);
-                        }
-                        const body = (await res.json().catch(() => ({}))) as {
-                          prospectingEnabled?: boolean;
-                        };
-                        if (body.prospectingEnabled === false) {
-                          toastInfo(
-                            "Prospecting is disabled",
-                            "Open Settings → Growth to enable autonomous prospecting and configure targeting.",
-                          );
-                        } else {
-                          toastSuccess(
-                            "Growth engine queued",
-                            "Apollo Intelligence is sourcing new leads. They'll appear in Outbound shortly.",
-                          );
-                        }
-                      } catch (err) {
-                        const error = err as Error;
-                        toastError(
-                          "Failed to activate growth engine",
-                          error.message || "Check network and try again.",
-                        );
-                      } finally {
-                        setActivatingGrowth(false);
-                      }
-                    }}
-                    disabled={activatingGrowth}
-                    className="touch-press w-full gap-2 rounded-md bg-gradient-to-br from-brand to-brand-deep py-2.5 text-on-brand shadow-sm shadow-brand/20 disabled:cursor-wait"
-                  >
-                    <Zap
-                      className={clsx(
-                        "w-3.5 h-3.5 fill-current",
-                        activatingGrowth && "animate-pulse",
-                      )}
-                    />
-                    <span className="text-[11px] font-black uppercase tracking-widest">
-                      {activatingGrowth ? "Activating…" : "Activate Growth"}
-                    </span>
-                  </ShadButton>
-                ) : (
-                  <ShadButton
-                    type="button"
-                    variant="outline"
-                    disableAnimations
-                    onClick={() => navigate("/agents")}
-                    title="Create an agent first"
-                    className="touch-press w-full gap-2 rounded-md border-brand/20 bg-brand/[0.02] py-2.5 text-brand hover:border-brand/45"
-                  >
-                    <Zap className="w-3.5 h-3.5" />
-                    <span className="text-[11px] font-semibold">Deploy Agent First</span>
-                  </ShadButton>
-                )}
-              </div>
-
-              {/* Ops Economics moved out — the Analytics tab in the left
-                  pane already surfaces cost-per-min / cost-per-lead in
-                  larger form, so keeping a duplicate here only added
-                  scroll-distance without new signal. */}
-            </div>
+            <OpsIntelligenceRail
+              liveCalls={calls.length}
+              fleetAgents={fleetAgentCount}
+              activatingGrowth={activatingGrowth}
+              onActivatingGrowthChange={setActivatingGrowth}
+            />
           </div>
         </div>
       </ClientRouteViewport>

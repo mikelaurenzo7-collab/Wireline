@@ -35,11 +35,11 @@ export default function ClientSubTabs({
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        "shrink-0 flex items-center justify-center gap-1 overflow-x-auto scrollbar-hide mb-2 md:mb-3",
+        "shrink-0 flex items-center justify-center gap-1 overflow-x-auto scroll-viewport mb-2 md:mb-3 pb-0.5",
         className,
       )}
     >
-      <div className="app-tab-strip flex items-center gap-0.5 p-0.5 wl-panel">
+      <div className="app-tab-strip wl-subtab-strip flex items-center gap-0.5 p-0.5 wl-panel">
         {tabs.map((tab) => {
           const active = tab.id === activeId;
           const Icon = tab.icon;

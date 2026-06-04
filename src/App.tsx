@@ -61,8 +61,7 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Redirect authenticated users away from auth-only pages to the chat —
-  // Wireline's primary control surface (and the new-operator onboarding home).
+  // Redirect authenticated users away from auth-only pages to Live Ops.
   useEffect(() => {
     if (
       user &&
@@ -70,7 +69,7 @@ function AppContent() {
         location.pathname === "/signin" ||
         location.pathname === "/signup")
     ) {
-      navigate("/chat", { replace: true });
+      navigate("/ops", { replace: true });
     }
   }, [user, location.pathname, navigate]);
 

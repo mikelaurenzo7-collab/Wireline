@@ -64,8 +64,8 @@ function LiveReplyPreview({ text }: { text: string }) {
         </span>
         <span className="inline-flex items-center gap-1 text-[9px] text-muted font-mono tabular-nums">
           <span className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400/70" />
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/50" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-brand" />
           </span>
           streaming
         </span>
@@ -100,7 +100,7 @@ function ThinkingStream({ text, isDeep }: { text: string; isDeep: boolean }) {
     >
       <div className="flex items-center gap-2 px-3 py-2 border-b border-brand/8">
         {isDeep ? (
-          <Brain className="w-3.5 h-3.5 text-amber-600/80" />
+          <Brain className="w-3.5 h-3.5 text-brand/80" />
         ) : (
           <Sparkles className="w-3 h-3 text-brand/70" />
         )}
@@ -112,7 +112,7 @@ function ThinkingStream({ text, isDeep }: { text: string; isDeep: boolean }) {
         ref={scrollRef}
         className="relative max-h-28 overflow-y-auto scroll-viewport px-3 py-2.5"
       >
-        <div className="pointer-events-none sticky top-0 -mb-6 h-4 bg-gradient-to-b from-[#faf8f5] dark:from-[#1a1225] to-transparent z-10" />
+        <div className="pointer-events-none sticky top-0 -mb-6 h-4 bg-gradient-to-b from-paper dark:from-[#1a1225] to-transparent z-10" />
         <p className="text-[11px] text-muted/80 leading-relaxed whitespace-pre-wrap font-mono">
           {tail}
         </p>
@@ -132,7 +132,8 @@ function OrchestrationStep({ step, index }: { step: DirectorLiveStep; index: num
         "flex items-start gap-3 rounded-md border px-3 py-2.5 transition-all duration-300",
         step.status === "active" &&
           "border-brand/35 bg-brand/[0.06] shadow-[0_0_0_1px_rgba(139,63,214,0.08)]",
-        step.status === "done" && "border-emerald-400/25 bg-emerald-50/50 dark:bg-emerald-950/20",
+        step.status === "done" &&
+          "border-[color-mix(in_srgb,var(--wl-signal)_25%,transparent)] bg-[color-mix(in_srgb,var(--wl-signal)_6%,var(--card))]",
         step.status === "pending" && "border-black/5 bg-white/40 dark:bg-black/20 opacity-60",
       )}
       data-status={step.status}
@@ -141,7 +142,7 @@ function OrchestrationStep({ step, index }: { step: DirectorLiveStep; index: num
         className={cn(
           "shrink-0 flex h-7 w-7 items-center justify-center rounded-md",
           step.status === "active" && "bg-brand/15 text-brand",
-          step.status === "done" && "bg-emerald-500/15 text-emerald-600",
+          step.status === "done" && "bg-brand/15 wl-text-success",
           step.status === "pending" && "bg-black/5 text-muted",
         )}
       >

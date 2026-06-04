@@ -70,7 +70,7 @@ export default function CsvExportButton({
       {busy ? (
         <Loader2 className="w-3.5 h-3.5 animate-spin" />
       ) : done ? (
-        <Check className="w-3.5 h-3.5 text-emerald-500" />
+        <Check className="w-3.5 h-3.5 wl-text-success" />
       ) : (
         <Download className="w-3.5 h-3.5" />
       )}

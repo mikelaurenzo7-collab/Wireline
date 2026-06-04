@@ -105,7 +105,7 @@ export function AgentReviewForm({
           </ResultCard>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <ResultCard title="Strengths">
-              <ul className="list-disc list-inside text-emerald-500/90 space-y-1">
+              <ul className="list-disc list-inside wl-text-success/90 space-y-1">
                 {review.strengths.map((s: string, i: number) => (
                   <li key={i}>{s}</li>
                 ))}
@@ -155,7 +155,7 @@ export function AgentReviewForm({
                   className={cn(
                     "shrink-0 rounded-full text-[10px] uppercase tracking-[0.3em]",
                     appliedSet.has(i)
-                      ? "border-emerald-500/30 text-emerald-500"
+                      ? "border-[color-mix(in_srgb,var(--wl-signal)_30%,transparent)] wl-text-success"
                       : "border-brand/30 text-brand hover:bg-brand/10",
                   )}
                 >

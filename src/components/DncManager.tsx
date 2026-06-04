@@ -429,7 +429,7 @@ export default function DncManager() {
 
         {/* Add number modal */}
         <Dialog open={showAdd} onOpenChange={setShowAdd}>
-          <DialogContent className="sm:max-w-md border border-white/10 shadow-2xl p-6 bg-black/85 backdrop-blur-xl rounded-md">
+          <DialogContent className="sm:max-w-md border border-white/10 shadow-2xl p-6 wl-modal-surface rounded-md">
             <DialogHeader className="flex flex-row items-center gap-3 space-y-0 pb-4 border-b border-white/5">
               <div className="w-9 h-9 rounded-md bg-rose-500/10 border border-rose-500/30 flex items-center justify-center">
                 <Shield className="w-4.5 h-4.5 text-rose-500" />

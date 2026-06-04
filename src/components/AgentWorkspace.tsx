@@ -894,7 +894,7 @@ export default function AgentWorkspace({
       {showChat && (
         <div className="flex-1 min-h-0 flex flex-col">
           {/* Messages */}
-          <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-6 space-y-5">
+          <div ref={scrollRef} className="flex-1 min-h-0 scroll-viewport px-4 py-6 space-y-5">
             {isLoading && messages.length === 0 ? (
               <div className="space-y-4 py-8">
                 <div className="flex justify-end">
@@ -1082,7 +1082,7 @@ export default function AgentWorkspace({
                         {agentName}
                       </span>
                     </div>
-                    <div className="bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm border border-brand/12 rounded-md rounded-bl-md px-5 py-4 shadow-sm">
+                    <div className="bg-paper/90 dark:bg-[#1a1225]/60 backdrop-blur-sm border border-brand/12 rounded-md rounded-bl-md px-5 py-4 shadow-sm">
                       <div className="flex items-center gap-2.5 mb-2">
                         <AgentActivityIndicator active size={24} pose="on-call" />
                         <LiveThinkingIndicator isDeep={false} />
@@ -1245,7 +1245,7 @@ export default function AgentWorkspace({
 
           {/* Composer - prominent at bottom */}
           <div className="shrink-0 px-4 pb-6 pt-2">
-            <div className="relative rounded-md border border-brand/20 bg-white/90 dark:bg-[#1a1225]/80 backdrop-blur-md shadow-lg shadow-brand/5 transition-all duration-300 focus-within:border-brand/40 focus-within:shadow-xl focus-within:shadow-brand/10">
+            <div className="relative rounded-md border border-brand/20 bg-paper/95 dark:bg-[#1a1225]/80 backdrop-blur-md shadow-lg shadow-brand/5 transition-all duration-300 focus-within:border-brand/40 focus-within:shadow-xl focus-within:shadow-brand/10">
               <textarea
                 ref={inputRef}
                 value={input}
@@ -1426,7 +1426,7 @@ export default function AgentWorkspace({
 
       {/* Training tab */}
       {showTraining && (
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="flex-1 min-h-0 scroll-viewport">
           <Suspense
             fallback={
               <div className="flex items-center justify-center py-12 text-muted">
@@ -1445,7 +1445,7 @@ export default function AgentWorkspace({
 
       {/* Connectors tab */}
       {showConnectors && (
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="flex-1 min-h-0 scroll-viewport">
           <div className="px-4 pt-3">
             <a
               href="/integrations"
@@ -1469,7 +1469,7 @@ export default function AgentWorkspace({
 
       {/* Memory tab */}
       {showMemory && (
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="flex-1 min-h-0 scroll-viewport">
           <Suspense
             fallback={
               <div className="flex items-center justify-center py-12 text-muted">

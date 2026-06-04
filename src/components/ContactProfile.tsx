@@ -151,7 +151,7 @@ export default function ContactProfile() {
   const highIntent = data.stats.avg_lead_score >= 70;
 
   return (
-    <ClientRouteViewport className="overflow-y-auto">
+    <ClientRouteViewport scroll>
       <div className="max-w-[1200px] mx-auto space-y-4 sm:space-y-5 pb-6">
         <Link
           to="/pipeline"
@@ -341,8 +341,7 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
             "shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-md border flex items-center justify-center transition-all",
             event.type === "call_in" && "border-brand/30 bg-brand/8 text-brand",
             event.type === "call_out" && "border-brand-2/30 bg-brand-2/8 text-brand-deep",
-            event.type === "appointment" &&
-              "border-emerald-500/30 bg-emerald-500/8 text-emerald-600",
+            event.type === "appointment" && "wl-status-success wl-text-success",
           )}
         >
           <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -405,7 +404,7 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
                 <p className="text-[11px] text-ink/40 mt-1 line-clamp-1">{event.coaching_note}</p>
               )}
               {event.lesson_extracted && (
-                <span className="inline-block mt-1 text-[8px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                <span className="inline-block mt-1 text-[8px] px-1.5 py-0.5 rounded wl-status-success wl-text-success border border-[color-mix(in_srgb,var(--wl-signal)_20%,transparent)]">
                   Lesson captured
                 </span>
               )}

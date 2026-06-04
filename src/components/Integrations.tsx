@@ -19,7 +19,7 @@ const CLOSED_CONFIRM: ConfirmState = { open: false, onConfirm: () => {} };
 // Provider badge metadata
 const PROVIDER_META: Record<string, { label: string; color: string; logoName: string }> = {
   google: { label: "Google Workspace", color: "text-brand", logoName: "Google" },
-  microsoft: { label: "Microsoft / Outlook", color: "text-blue-600", logoName: "Microsoft" },
+  microsoft: { label: "Microsoft / Outlook", color: "text-brand", logoName: "Microsoft" },
   yahoo: { label: "Yahoo Mail", color: "text-purple-600", logoName: "Yahoo" },
 };
 
@@ -233,7 +233,7 @@ export default function Integrations() {
           {/* Scroll container — the page (email panel + CRM/Shopify
             connectors) is taller than the viewport; PageShell's body
             doesn't scroll, so this wrapper owns the scroll. */}
-          <div className="h-full overflow-y-auto panel-scroll flex flex-col gap-3 pb-4 max-md:pb-6">
+          <div className="flex-1 min-h-0 scroll-viewport flex flex-col gap-3 pb-4 max-md:pb-6">
             <Panel
               title="Email carriers"
               hint="GMAIL · OUTLOOK"
@@ -254,7 +254,7 @@ export default function Integrations() {
                   <ShadButton
                     onClick={handleConnectOutlook}
                     variant="outline"
-                    className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] uppercase tracking-[0.25em] hover:bg-blue-500/20 transition-colors"
+                    className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-brand/10 border border-brand/30 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/20 transition-colors"
                   >
                     <Plus className="w-3 h-3" />
                     Outlook
@@ -318,7 +318,7 @@ export default function Integrations() {
                     <ShadButton
                       onClick={handleConnectOutlook}
                       variant="outline"
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] uppercase tracking-[0.25em] hover:bg-blue-500/20 transition-colors"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand/10 border border-brand/30 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/20 transition-colors"
                     >
                       <span className="w-4 h-4">{getIntegrationLogo("Microsoft")}</span> Connect
                       Outlook
@@ -390,7 +390,7 @@ export default function Integrations() {
                                     Connected · Inbox soon
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-[9px] uppercase tracking-[0.3em]">
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand/10 border border-brand/30 text-brand text-[9px] uppercase tracking-[0.3em]">
                                     <CheckCircle2 className="w-2.5 h-2.5" /> Synced
                                   </span>
                                 )}

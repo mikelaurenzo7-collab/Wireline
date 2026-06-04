@@ -155,7 +155,7 @@ export default function ObservabilityDashboard() {
         <div className="wl-panel border border-white/5 p-5 rounded-md shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-muted">Avg TTFT</span>
-            <Zap className="h-4 w-4 text-emerald-500" />
+            <Zap className="h-4 w-4 wl-text-success" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold text-ink">
@@ -165,7 +165,7 @@ export default function ObservabilityDashboard() {
             </span>
             <span className="text-xs text-muted">ms</span>
           </div>
-          <div className="mt-1 text-xs text-emerald-500 font-medium">Optimum latency</div>
+          <div className="mt-1 text-xs wl-text-success font-medium">Optimum latency</div>
         </div>
 
         <div className="wl-panel border border-white/5 p-5 rounded-md shadow-sm">
@@ -187,7 +187,7 @@ export default function ObservabilityDashboard() {
         <div className="wl-panel border border-white/5 p-5 rounded-md shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-muted">Pipeline Uptime</span>
-            <Activity className="h-4 w-4 text-emerald-500" />
+            <Activity className="h-4 w-4 wl-text-success" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold text-ink">
@@ -203,7 +203,7 @@ export default function ObservabilityDashboard() {
         <div className="wl-panel border border-white/5 p-5 rounded-md shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-muted">STT Error Rate</span>
-            <ServerCrash className="h-4 w-4 text-emerald-500" />
+            <ServerCrash className="h-4 w-4 wl-text-success" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold text-ink">

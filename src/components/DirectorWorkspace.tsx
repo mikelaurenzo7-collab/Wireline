@@ -56,6 +56,7 @@ import { useToast } from "../contexts/ToastContext";
 import { hydrateAgentsFromFleet, useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { cn } from "../lib/utils";
+import FleetSetupNudge from "./FleetSetupNudge";
 import { ThinkingDisplay } from "./ui/ThinkingDisplay";
 import type { PipelineStep } from "./ui/LiveTaskPipeline";
 import { ArtifactCard, type ArtifactType } from "./ui/ArtifactCard";
@@ -83,7 +84,9 @@ import { INTEGRATION_STYLES } from "../lib/integration-activities";
 import type { ToolIntegration } from "../lib/agent-capabilities";
 import {
   DIRECTOR_EMPTY_HERO,
+  DIRECTOR_SCENE_BADGES,
   DIRECTOR_STARTER_PROMPTS,
+  WL_APP_CLASSES,
   WL_DIRECTOR_CLASSES,
 } from "../lib/wireline-director-design";
 
@@ -230,46 +233,13 @@ function detectMessageScene(
   return "general";
 }
 
-const SCENE_META: Record<
-  Exclude<MessageScene, "general">,
-  { icon: React.ElementType; label: string; color: string; bg: string }
-> = {
-  creative: {
-    icon: Palette,
-    label: "Creative",
-    color: "text-fuchsia-500",
-    bg: "bg-fuchsia-500/8 border-fuchsia-500/20",
-  },
-  analysis: {
-    icon: BarChart3,
-    label: "Analysis",
-    color: "text-blue-500",
-    bg: "bg-blue-500/8 border-blue-500/20",
-  },
-  integration: {
-    icon: Plug,
-    label: "Integration",
-    color: "text-emerald-500",
-    bg: "bg-emerald-500/8 border-emerald-500/20",
-  },
-  training: {
-    icon: GraduationCap,
-    label: "Training",
-    color: "text-amber-500",
-    bg: "bg-amber-500/8 border-amber-500/20",
-  },
-  comms: {
-    icon: MessageCircle,
-    label: "Comms",
-    color: "text-sky-500",
-    bg: "bg-sky-500/8 border-sky-500/20",
-  },
-  fleet: {
-    icon: Bot,
-    label: "Fleet Ops",
-    color: "text-brand",
-    bg: "bg-brand/8 border-brand/20",
-  },
+const SCENE_ICONS: Record<Exclude<MessageScene, "general">, React.ElementType> = {
+  creative: Palette,
+  analysis: BarChart3,
+  integration: Plug,
+  training: GraduationCap,
+  comms: MessageCircle,
+  fleet: Bot,
 };
 
 export default function DirectorWorkspace({
@@ -939,7 +909,10 @@ export default function DirectorWorkspace({
   const lastDirectorMessageId = [...messages].reverse().find((m) => m.role === "director")?.id;
 
   return (
-    <div data-testid="director-workspace" className="flex flex-col h-full min-h-0 bg-transparent">
+    <div
+      data-testid="director-workspace"
+      className={cn("flex flex-col h-full min-h-0", WL_APP_CLASSES.missionCanvas)}
+    >
       {/* Minimal header - just identity */}
       {messages.length > 0 && (
         <div
@@ -996,7 +969,10 @@ export default function DirectorWorkspace({
       )}
 
       {/* Messages - isolated scroll viewport */}
-      <div ref={scrollRef} className="flex-1 min-h-0 scroll-viewport px-4 py-8 space-y-6">
+      <div
+        ref={scrollRef}
+        className="flex-1 min-h-0 scroll-viewport wl-scroll-edge px-4 py-8 space-y-6"
+      >
         {loadDegraded && !isLoading && (
           <p className="rounded-md border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-[11px] text-amber-900/80 dark:text-amber-100/80">
             Some Director data could not be loaded. Your thread may be incomplete — refresh to
@@ -1046,6 +1022,8 @@ export default function DirectorWorkspace({
               </p>
             )}
 
+            <FleetSetupNudge className="mb-5 max-w-md" />
+
             {/* Starter prompts */}
             <div className="flex flex-wrap justify-center gap-2 w-full">
               {DIRECTOR_STARTER_PROMPTS.map((p) => (
@@ -1074,8 +1052,10 @@ export default function DirectorWorkspace({
               m.role === "director"
                 ? detectMessageScene(m.content, m.previews, m.proposals)
                 : "general";
-            const sceneMeta =
-              scene !== "general" ? SCENE_META[scene as Exclude<MessageScene, "general">] : null;
+            const sceneKey =
+              scene !== "general" ? (scene as Exclude<MessageScene, "general">) : null;
+            const sceneBadge = sceneKey ? DIRECTOR_SCENE_BADGES[sceneKey] : null;
+            const SceneIcon = sceneKey ? SCENE_ICONS[sceneKey] : null;
             return (
               <motion.div
                 key={m.id}
@@ -1099,18 +1079,18 @@ export default function DirectorWorkspace({
                         </span>
                       ) : null}
                     </span>
-                    {sceneMeta && (
+                    {sceneBadge && SceneIcon && (
                       <motion.span
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         className={cn(
-                          "inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[8px] uppercase tracking-[0.14em] font-bold transition-colors",
-                          sceneMeta.bg,
-                          sceneMeta.color,
+                          "inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[8px] uppercase tracking-[0.14em] font-bold transition-colors wl-scene-pulse",
+                          sceneBadge.bg,
+                          sceneBadge.color,
                         )}
                       >
-                        <sceneMeta.icon className="w-2.5 h-2.5" />
-                        {sceneMeta.label}
+                        <SceneIcon className="w-2.5 h-2.5" />
+                        {sceneBadge.label}
                       </motion.span>
                     )}
                   </div>
@@ -1437,9 +1417,9 @@ export default function DirectorWorkspace({
                   <div className="mt-4 ml-1 w-full max-w-[720px]">
                     {/* Gallery header */}
                     <div className="flex items-center gap-2.5 mb-3">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-fuchsia-500/10 to-violet-500/10 border border-fuchsia-500/20">
-                        <Sparkles className="w-3 h-3 text-fuchsia-500" />
-                        <span className="text-[9px] uppercase tracking-[0.12em] font-bold text-fuchsia-600 dark:text-fuchsia-400">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-brand/10 to-brand-deep/10 border border-brand/25">
+                        <Sparkles className="w-3 h-3 text-brand" />
+                        <span className="text-[9px] uppercase tracking-[0.12em] font-bold text-brand">
                           {m.previews.length} concept{m.previews.length !== 1 ? "s" : ""} generated
                         </span>
                       </span>
@@ -1456,7 +1436,7 @@ export default function DirectorWorkspace({
                           key={p.conceptId}
                           initial={{ opacity: 0, scale: 0.95 }}
                           animate={{ opacity: 1, scale: 1 }}
-                          className="group relative rounded-xl border border-brand/12 bg-white/90 dark:bg-[#1a1225]/60 overflow-hidden shadow-sm hover:shadow-xl hover:border-brand/25 transition-all duration-300"
+                          className="group relative rounded-xl border border-brand/12 bg-paper/95 dark:bg-[#1a1225]/60 overflow-hidden shadow-sm hover:shadow-xl hover:border-brand/25 transition-all duration-300"
                         >
                           {/* Image canvas with hover overlay */}
                           <div className="relative overflow-hidden bg-[repeating-conic-gradient(#f0f0f0_0%_25%,#ffffff_0%_50%)] dark:bg-[repeating-conic-gradient(#1a1a2e_0%_25%,#0f0c17_0%_50%)] bg-[length:16px_16px]">
@@ -1472,7 +1452,7 @@ export default function DirectorWorkspace({
                                   <a
                                     href={p.previewDataUrl}
                                     download={`${p.title || "concept"}.png`}
-                                    className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/95 backdrop-blur-sm text-[11px] font-semibold text-ink shadow-xl hover:bg-white transition-colors"
+                                    className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-paper/95 backdrop-blur-sm text-[11px] font-semibold text-ink shadow-xl hover:bg-paper transition-colors"
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     <Download className="w-3.5 h-3.5" />
@@ -1482,7 +1462,7 @@ export default function DirectorWorkspace({
                                     <a
                                       href={`data:image/svg+xml;base64,${btoa(p.svg)}`}
                                       download={`${p.title || "concept"}.svg`}
-                                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/70 backdrop-blur-sm text-[10px] font-medium text-ink/80 hover:bg-white/90 transition-colors"
+                                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-paper/85 backdrop-blur-sm text-[10px] font-medium text-ink/80 hover:bg-paper/95 transition-colors"
                                       onClick={(e) => e.stopPropagation()}
                                     >
                                       <Download className="w-3 h-3" />
@@ -1503,7 +1483,7 @@ export default function DirectorWorkspace({
                                 </div>
                               </>
                             ) : (
-                              <div className="w-full aspect-square flex items-center justify-center bg-gradient-to-br from-brand/5 to-fuchsia-500/5">
+                              <div className="w-full aspect-square flex items-center justify-center bg-gradient-to-br from-brand/5 to-brand-deep/5">
                                 <div className="text-center space-y-2">
                                   <Palette className="w-10 h-10 text-brand/20 mx-auto" />
                                   <p className="text-[10px] text-muted/60">Generating preview…</p>
@@ -1537,7 +1517,7 @@ export default function DirectorWorkspace({
                                       true,
                                     )
                                   }
-                                  className="px-2.5 py-1 rounded-lg text-[10px] font-semibold border border-fuchsia-500/25 bg-fuchsia-500/5 text-fuchsia-600 hover:bg-fuchsia-500/10"
+                                  className="px-2.5 py-1 rounded-lg text-[10px] font-semibold border border-brand/25 bg-brand/5 text-brand hover:bg-brand/10"
                                 >
                                   <Sparkles className="w-2.5 h-2.5" />
                                   Vectorize
@@ -1635,7 +1615,7 @@ export default function DirectorWorkspace({
           );
           return (
             <div className="shrink-0 px-4 pb-2">
-              <div className="max-w-3xl mx-auto rounded-xl border border-brand/15 bg-white/80 dark:bg-black/15 backdrop-blur-sm p-3 space-y-3">
+              <div className="max-w-3xl mx-auto rounded-xl border border-brand/15 bg-paper/90 dark:bg-black/15 backdrop-blur-sm p-3 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-muted font-semibold">
@@ -1651,7 +1631,7 @@ export default function DirectorWorkspace({
                 {/* Image artifact thumbnails — the actual logos/visuals */}
                 {imageArts.length > 0 && (
                   <div>
-                    <p className="text-[9px] uppercase tracking-[0.16em] text-fuchsia-500/70 font-semibold mb-2 flex items-center gap-1.5">
+                    <p className="text-[9px] uppercase tracking-[0.16em] text-brand/70 font-semibold mb-2 flex items-center gap-1.5">
                       <ImageIcon className="w-3 h-3" />
                       Media · {imageArts.length} image{imageArts.length !== 1 ? "s" : ""}
                     </p>
@@ -1672,7 +1652,7 @@ export default function DirectorWorkspace({
                             <a
                               href={a.downloadUrl}
                               download={a.name}
-                              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm text-[9px] font-semibold text-ink shadow-lg hover:bg-white transition-colors"
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-paper/95 backdrop-blur-sm text-[9px] font-semibold text-ink shadow-lg hover:bg-white transition-colors"
                             >
                               <Download className="w-2.5 h-2.5" />
                               Download

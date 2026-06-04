@@ -180,9 +180,9 @@ export default function IntegrationActivityCard({
 
       {/* Progress indicator for active state */}
       {status === "active" && (
-        <div className="mt-2 h-1 w-full rounded-full bg-blue-200/50 overflow-hidden">
+        <div className="mt-2 h-1 w-full rounded-full bg-brand/15 overflow-hidden">
           <motion.div
-            className="h-full bg-blue-500"
+            className="h-full bg-brand"
             initial={{ width: "0%" }}
             animate={{ width: "75%" }}
             transition={{ duration: 1.5, ease: "easeOut" }}

@@ -7,14 +7,14 @@ import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
 
 const TONE_CLASSES: Record<string, string> = {
   brand: "border-brand/25 bg-brand/[0.04]",
-  emerald: "border-emerald-500/25 bg-emerald-500/[0.04]",
-  amber: "border-amber-500/30 bg-amber-500/[0.05]",
+  emerald: "border-[color-mix(in_srgb,var(--wl-signal)_25%,transparent)] bg-brand/[0.04]",
+  amber: "border-brand/30 bg-brand/[0.05]",
 };
 
 const TONE_ICON_CLASSES: Record<string, string> = {
   brand: "bg-brand/10 text-brand",
-  emerald: "bg-emerald-500/12 text-emerald-600",
-  amber: "bg-amber-500/12 text-amber-600",
+  emerald: "bg-brand/12 wl-text-success",
+  amber: "bg-brand/12 text-brand-deep",
 };
 
 export interface ProposalCardProps {
@@ -107,7 +107,7 @@ export default function ProposalCard({
           animate={{ opacity: 1, y: 0 }}
           className={cn(
             "mt-2 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em]",
-            state === "done" ? "text-emerald-600" : "text-muted/70",
+            state === "done" ? "wl-text-success" : "text-muted/70",
           )}
         >
           {state === "done" ? (

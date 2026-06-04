@@ -398,7 +398,7 @@ function TemplateCard({
             {/* Deployed-in-fleet badge */}
             {alreadyDeployed && (
               <span
-                className="px-1.5 py-0.5 rounded-full border text-[9px] uppercase tracking-[0.22em] leading-none flex items-center gap-1 bg-emerald-500/10 border-emerald-500/30 text-emerald-600"
+                className="px-1.5 py-0.5 rounded-full border text-[9px] uppercase tracking-[0.22em] leading-none flex items-center gap-1 wl-status-success border wl-text-success"
                 title={
                   deployedCount === 1 ? "Already in your fleet" : `${deployedCount} in your fleet`
                 }
@@ -412,7 +412,7 @@ function TemplateCard({
               className={cn(
                 "px-1.5 py-0.5 rounded-full border text-[9px] uppercase tracking-[0.22em] leading-none",
                 template.channel === "email"
-                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600"
+                  ? "wl-status-success border wl-text-success"
                   : "bg-brand/10 border-brand/30 text-brand",
               )}
             >
@@ -618,7 +618,7 @@ export default function AgentTemplates() {
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {/* Top bar — page title removed per design direction; the left
           nav already labels this "Templates". Search stays. */}
       <div className="px-4 py-3 border-b border-black/8 dark:border-white/8 flex flex-col gap-3 shrink-0">
@@ -659,7 +659,7 @@ export default function AgentTemplates() {
       </div>
 
       {/* Grid */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 scrollbar-hide">
+      <div className="flex-1 min-h-0 scroll-viewport px-4 py-4">
         <AnimatePresence mode="popLayout">
           {visible.length === 0 && (
             <motion.div

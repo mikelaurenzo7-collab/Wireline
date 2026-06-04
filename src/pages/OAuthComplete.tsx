@@ -58,7 +58,7 @@ export default function OAuthComplete() {
         }
         await syncSignupIntent(getStoredSignupIntent()).catch(() => {});
         signIn({ user });
-        navigate("/chat", { replace: true });
+        navigate("/ops", { replace: true });
       } catch {
         setError("Sign-in failed. Please try again.");
       }

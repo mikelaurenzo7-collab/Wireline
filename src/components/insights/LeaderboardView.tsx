@@ -124,7 +124,7 @@ export default function LeaderboardView({ days }: { days: number }) {
                   className={cn(
                     "text-[8px] font-bold tabular-nums leading-none",
                     a.rank_delta > 0
-                      ? "text-emerald-500"
+                      ? "wl-text-success"
                       : a.rank_delta < 0
                         ? "text-rose-500"
                         : "text-muted/70",

@@ -24,6 +24,7 @@ import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { InlineEmpty } from "../ui/InlineEmpty";
 import { AgentActivityIndicator } from "../ui/AgentActivityIndicator";
+import { WL_OPS_CLASSES, OPS_COPY } from "../../lib/wireline-ops-design";
 
 export type FloorCall = {
   id: string;
@@ -197,9 +198,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-brand" />
             </span>
             <h2 className="font-display italic text-lg sm:text-xl text-ink truncate">
-              {calls.length === 0
-                ? "No live callers"
-                : `${calls.length} live caller${calls.length === 1 ? "" : "s"}`}
+              {OPS_COPY.floorTitle(calls.length)}
             </h2>
           </div>
           {escalations.length > 0 && (
@@ -215,7 +214,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
             <Loader2 className="w-6 h-6 animate-spin text-brand" />
           </div>
         ) : calls.length === 0 ? (
-          <InlineEmpty icon={Phone} label="Floor is quiet — active conversations appear here." />
+          <InlineEmpty icon={Phone} label={OPS_COPY.floorQuiet} />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
             <AnimatePresence mode="popLayout">
@@ -230,10 +229,8 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.98 }}
                     className={cn(
-                      "rounded-md p-4 border transition-all duration-300",
-                      escalated
-                        ? "border-rose-500/40 bg-rose-500/[0.04] shadow-[0_0_24px_rgba(244,63,94,0.12)]"
-                        : "wl-panel hover:border-brand/25",
+                      "transition-all duration-300",
+                      escalated ? WL_OPS_CLASSES.callCardEscalated : WL_OPS_CLASSES.callCard,
                     )}
                   >
                     <div className="flex items-start gap-3 mb-3">

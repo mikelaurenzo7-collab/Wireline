@@ -245,13 +245,13 @@ function renderBlock(block: string, bi: number): React.ReactNode {
       const palette: Record<string, { border: string; bg: string; label: string }> = {
         note: {
           border: "border-l-blue-400",
-          bg: "bg-blue-500/[0.06]",
-          label: "text-blue-600 dark:text-blue-400",
+          bg: "bg-brand/[0.06]",
+          label: "text-brand dark:text-brand-2",
         },
         tip: {
-          border: "border-l-emerald-400",
-          bg: "bg-emerald-500/[0.06]",
-          label: "text-emerald-600 dark:text-emerald-400",
+          border: "border-l-brand/40",
+          bg: "bg-brand/[0.06]",
+          label: "text-brand dark:text-brand-2",
         },
         warning: {
           border: "border-l-amber-400",

@@ -136,13 +136,13 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                 className={cn(
                   "rounded-md border p-4",
                   tile.healthy
-                    ? "bg-emerald-50/50 border-emerald-200/50"
+                    ? "bg-brand/8 border-brand/20"
                     : "bg-amber-50/50 border-amber-200/50",
                 )}
               >
                 <div className="flex items-center gap-2 mb-2">
                   <tile.icon
-                    className={cn("w-3 h-3", tile.healthy ? "text-emerald-600" : "text-amber-600")}
+                    className={cn("w-3 h-3", tile.healthy ? "text-brand" : "text-brand-deep")}
                   />
                   <p className="font-mono text-[9px] uppercase tracking-[0.28em] text-muted">
                     {tile.label}
@@ -151,7 +151,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                 <p
                   className={cn(
                     "font-display italic text-2xl",
-                    tile.healthy ? "text-emerald-700" : "text-amber-700",
+                    tile.healthy ? "text-brand" : "text-brand-deep",
                   )}
                 >
                   {tile.value}

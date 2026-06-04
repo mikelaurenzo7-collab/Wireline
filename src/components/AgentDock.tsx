@@ -234,7 +234,7 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
         </ShadButton>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-5 scrollbar-hide">
+      <div className="flex-1 min-h-0 scroll-viewport px-4 py-4 space-y-5">
         {/* Pulse */}
         <section>
           <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink/40 mb-2">

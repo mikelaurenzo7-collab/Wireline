@@ -12,16 +12,19 @@
  *   - Easy share (helps with word-of-mouth)
  */
 import React, { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   PartyPopper,
   Sparkles,
   Mic,
   ArrowRight,
-  BarChart3,
+  LayoutGrid,
   Share2,
   CheckCircle2,
   Copy,
+  BarChart3,
+  MessagesSquare,
   Users,
 } from "lucide-react";
 import {
@@ -32,6 +35,16 @@ import {
   DialogDescription,
 } from "./ui/shadcn/Dialog";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { CONSOLE_MAP, YOURE_LIVE_COPY } from "../lib/wireline-onboarding-copy";
+import { WIRELINE_DIRECTOR_BRAND } from "../lib/wireline-director-design";
+import { cn } from "../lib/utils";
+
+const CONSOLE_MAP_ICONS = {
+  ops: LayoutGrid,
+  chat: MessagesSquare,
+  agents: Users,
+  insights: BarChart3,
+} as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -159,11 +172,12 @@ function NextStepCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 + delay * 0.1, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       onClick={onClick}
-      className={`group w-full text-left p-4 rounded-md border transition-all duration-300 ${
+      className={cn(
+        "group touch-press w-full text-left p-4 rounded-md border transition-all duration-300",
         primary
           ? "bg-gradient-to-br from-brand/10 to-brand/5 border-brand/30 hover:border-brand/50 hover:shadow-lg hover:shadow-brand/10"
-          : "bg-white/50 border-black/10 hover:border-black/20 hover:bg-white/70"
-      }`}
+          : "wl-panel border-border hover:border-brand/25",
+      )}
     >
       <div className="flex items-start gap-3">
         <div
@@ -212,6 +226,7 @@ export default function YoureLiveModal({
   onTestCall,
   onViewDashboard,
 }: YoureLiveModalProps) {
+  const navigate = useNavigate();
   const [showConfetti, setShowConfetti] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -286,172 +301,188 @@ export default function YoureLiveModal({
 
   const isQuickSetup = timeToFirstCallMs < 300000; // Under 5 minutes
 
+  const signalClass = "text-[color:var(--wl-signal,#10B981)]";
+
   return (
     <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
-      <DialogContent className="sm:max-w-lg border border-white/10 shadow-2xl p-0 bg-black/85 backdrop-blur-xl rounded-md overflow-hidden max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className={cn(
+          "sm:max-w-lg p-0 overflow-hidden max-h-[90vh] overflow-y-auto scroll-viewport",
+          "wl-celebration-panel [&>button.absolute]:hidden",
+        )}
+      >
         <ConfettiExplosion active={showConfetti} />
 
-        {/* Hero Section */}
-        <div className="relative px-8 pt-10 pb-6 text-center">
-          {/* Glow effects */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-gradient-to-b from-brand/30 to-transparent blur-3xl pointer-events-none" />
+        <div className="relative px-6 sm:px-8 pt-8 pb-5 text-center">
+          <div
+            className="absolute top-0 left-1/2 -translate-x-1/2 w-56 h-28 bg-gradient-to-b from-brand/20 to-transparent blur-3xl pointer-events-none"
+            aria-hidden
+          />
 
-          {/* Animated success icon */}
           <motion.div
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ delay: 0.1, duration: 0.6, type: "spring", stiffness: 200 }}
-            className="relative inline-block mb-6"
+            className="relative inline-block mb-5"
           >
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-brand to-emerald-500 flex items-center justify-center shadow-lg shadow-brand/30">
-              <PartyPopper className="w-10 h-10 text-white" />
+            <div className="w-16 h-16 rounded-md bg-gradient-to-br from-brand to-brand-deep flex items-center justify-center shadow-lg shadow-brand/25">
+              <PartyPopper className="w-8 h-8 text-on-brand" />
             </div>
-            <motion.div
+            <motion.span
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.3 }}
-              className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center border-2 border-white"
+              transition={{ delay: 0.45, duration: 0.3 }}
+              className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center border-2 border-paper"
+              style={{ backgroundColor: WIRELINE_DIRECTOR_BRAND.signal }}
             >
-              <CheckCircle2 className="w-4 h-4 text-white" />
-            </motion.div>
+              <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+            </motion.span>
           </motion.div>
 
-          <DialogHeader className="flex flex-col space-y-0 text-center items-center pb-2">
-            <DialogDescription className="text-[10px] uppercase tracking-[0.45em] text-brand font-bold mb-2">
-              Setup Complete
+          <DialogHeader className="flex flex-col space-y-0 text-center items-center pb-1">
+            <DialogDescription className="wl-label text-brand mb-1">
+              {YOURE_LIVE_COPY.eyebrow}
             </DialogDescription>
-            <DialogTitle className="font-display italic text-3xl md:text-4xl text-ink leading-tight">
-              You're Live!
+            <DialogTitle className="font-display italic text-3xl text-ink leading-tight">
+              {YOURE_LIVE_COPY.title}
             </DialogTitle>
           </DialogHeader>
 
-          <p className="text-sm text-muted mt-2 max-w-xs mx-auto">
-            <strong className="text-ink">{agentName}</strong> is ready to answer calls
+          <p className="text-sm text-muted mt-1 max-w-xs mx-auto">
+            {YOURE_LIVE_COPY.subtitle(agentName)}
           </p>
 
-          {/* Time badge */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
+            initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4 }}
-            className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-brand/10 border border-brand/30"
+            transition={{ delay: 0.35 }}
+            className="inline-flex items-center gap-2 mt-3 px-3 py-1.5 rounded-full bg-brand/10 border border-brand/25"
           >
-            <Sparkles className="w-4 h-4 text-brand" />
-            <span className="text-xs font-medium text-brand">
-              {isQuickSetup ? "Lightning fast" : "Setup complete"} — {formatTime(timeToFirstCallMs)}
+            <Sparkles className="w-3.5 h-3.5 text-brand" />
+            <span className="text-[11px] font-medium text-brand tabular-nums">
+              {isQuickSetup ? "Lightning fast" : "Setup complete"} · {formatTime(timeToFirstCallMs)}
             </span>
           </motion.div>
 
-          {/* Stats */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="flex items-center justify-center gap-6 mt-6 text-xs"
+            transition={{ delay: 0.45 }}
+            className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mt-4 text-[11px] text-muted"
           >
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              <span>1 AI agent</span>
-            </div>
+            <span className={cn("inline-flex items-center gap-1", signalClass)}>
+              <CheckCircle2 className="w-3.5 h-3.5" />1 agent
+            </span>
             {knowledgeItems > 0 && (
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                <span>{knowledgeItems} knowledge items</span>
-              </div>
+              <span className={cn("inline-flex items-center gap-1", signalClass)}>
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                {knowledgeItems} knowledge
+              </span>
             )}
             {phoneNumber && (
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                <span>Phone number ready</span>
-              </div>
+              <span className={cn("inline-flex items-center gap-1", signalClass)}>
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Number ready
+              </span>
             )}
           </motion.div>
         </div>
 
-        {/* Divider */}
-        <div className="px-8">
-          <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        <div className="px-6 sm:px-8">
+          <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
         </div>
 
-        {/* Next Steps */}
-        <div className="px-8 py-6 space-y-3">
-          <p className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground mb-4 font-bold">
-            What to do next
-          </p>
+        <div className="px-6 sm:px-8 py-5 space-y-3">
+          <p className="wl-label text-muted mb-1">{YOURE_LIVE_COPY.nextLabel}</p>
 
           <NextStepCard
             icon={Mic}
-            title="Talk to your agent"
-            description="Place a test call right from your browser — no phone needed. Make sure it sounds perfect."
-            action="Start test call →"
+            title={YOURE_LIVE_COPY.testCallTitle}
+            description={YOURE_LIVE_COPY.testCallDetail}
+            action={YOURE_LIVE_COPY.testCallAction}
             onClick={onTestCall}
             primary
             delay={0}
           />
 
           <NextStepCard
-            icon={BarChart3}
-            title="View your dashboard"
-            description="See call analytics, manage your agent's settings, and add more capabilities."
-            action="Go to dashboard →"
+            icon={LayoutGrid}
+            title={YOURE_LIVE_COPY.opsTitle}
+            description={YOURE_LIVE_COPY.opsDetail}
+            action={YOURE_LIVE_COPY.opsAction}
             onClick={onViewDashboard}
             delay={1}
           />
-
-          <NextStepCard
-            icon={Users}
-            title="Invite your team"
-            description="Add colleagues to review calls, manage leads, and collaborate."
-            action="Team settings →"
-            onClick={onViewDashboard}
-            delay={2}
-          />
         </div>
 
-        {/* Footer actions */}
-        <div className="px-8 pb-8 pt-2">
-          <div className="flex items-center justify-center gap-3">
-            <ShadButton
-              variant="outline"
-              onClick={handleShare}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-white/10 text-[11px] uppercase tracking-[0.24em] text-ink hover:bg-white/5 transition-colors h-10"
-            >
-              {copied ? (
-                <>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <Share2 className="w-4 h-4" />
-                  Share
-                </>
-              )}
-            </ShadButton>
-
-            {phoneNumber && (
-              <ShadButton
-                variant="outline"
-                onClick={() => {
-                  navigator.clipboard.writeText(phoneNumber);
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 2000);
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-white/10 text-[11px] uppercase tracking-[0.24em] text-ink hover:bg-white/5 transition-colors h-10"
-              >
-                {copied ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                ) : (
-                  <Copy className="w-4 h-4" />
-                )}
-                {phoneNumber}
-              </ShadButton>
-            )}
+        <div className="px-6 sm:px-8 pb-6">
+          <p className="wl-label text-brand mb-2">{CONSOLE_MAP.sectionTitle}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {CONSOLE_MAP.items.map((item) => {
+              const Icon = CONSOLE_MAP_ICONS[item.id as keyof typeof CONSOLE_MAP_ICONS];
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="wl-console-map-item touch-press"
+                  onClick={() => {
+                    onClose();
+                    navigate(item.path);
+                  }}
+                >
+                  <span className="shrink-0 flex h-8 w-8 items-center justify-center rounded-md bg-brand/10 text-brand">
+                    <Icon className="w-4 h-4" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[11px] font-semibold text-ink uppercase tracking-[0.1em]">
+                      {item.label}
+                    </span>
+                    <span className="block text-[10px] text-muted leading-snug mt-0.5">
+                      {item.detail}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
+        </div>
 
-          <p className="text-center text-[10px] text-muted-foreground mt-4 italic">
-            Your agent is live and ready to take calls 24/7
-          </p>
+        <div className="px-6 sm:px-8 pb-7 pt-1 flex flex-wrap items-center justify-center gap-2">
+          <ShadButton
+            type="button"
+            variant="outline"
+            disableAnimations
+            onClick={handleShare}
+            className="touch-press rounded-full text-[10px] uppercase tracking-[0.22em] gap-1.5"
+          >
+            {copied ? (
+              <>
+                <CheckCircle2 className={cn("w-3.5 h-3.5", signalClass)} />
+                Copied
+              </>
+            ) : (
+              <>
+                <Share2 className="w-3.5 h-3.5" />
+                Share win
+              </>
+            )}
+          </ShadButton>
+          {phoneNumber && (
+            <ShadButton
+              type="button"
+              variant="outline"
+              disableAnimations
+              onClick={() => {
+                navigator.clipboard.writeText(phoneNumber);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+              className="touch-press rounded-full text-[10px] uppercase tracking-[0.22em] gap-1.5 font-mono"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              {phoneNumber}
+            </ShadButton>
+          )}
         </div>
       </DialogContent>
     </Dialog>

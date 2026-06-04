@@ -82,8 +82,9 @@ function AgentCard({
 
 export default function HelpCenter() {
   return (
-    <ClientRouteViewport scroll className="overflow-y-auto">
+    <ClientRouteViewport scroll>
       <PageShell
+        scrollable
         title=""
         eyebrow=""
         subtitle=""
@@ -108,77 +109,75 @@ export default function HelpCenter() {
           </>
         }
       >
-        <div className="h-full overflow-y-auto pr-1">
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 pb-4">
-            <div className="xl:col-span-2 space-y-4">
-              <Panel
-                title={`Wireline team · ${WIRELINE_CONTACT_AGENTS.length} live lines`}
-                hint="Tap to dial"
-                icon={Phone}
-              >
-                <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3 gap-3">
-                  {WIRELINE_CONTACT_AGENTS.map((a, i) => (
-                    <motion.div
-                      key={a.tel}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.04, duration: 0.32 }}
-                    >
-                      <AgentCard agent={a} large />
-                    </motion.div>
-                  ))}
-                </div>
-              </Panel>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 pb-4">
+          <div className="xl:col-span-2 space-y-4">
+            <Panel
+              title={`Wireline team · ${WIRELINE_CONTACT_AGENTS.length} live lines`}
+              hint="Tap to dial"
+              icon={Phone}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3 gap-3">
+                {WIRELINE_CONTACT_AGENTS.map((a, i) => (
+                  <motion.div
+                    key={a.tel}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.04, duration: 0.32 }}
+                  >
+                    <AgentCard agent={a} large />
+                  </motion.div>
+                ))}
+              </div>
+            </Panel>
 
-              <Panel
-                title={`Demo catalog · ${WIRELINE_DEMO_AGENTS.length} role-play agents`}
-                hint="See what the platform can do"
-                icon={Phone}
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {WIRELINE_DEMO_AGENTS.map((a) => (
-                    <AgentCard key={a.tel} agent={a} isDemo />
-                  ))}
-                </div>
-                <p className="text-[10px] text-muted/70 mt-3 leading-relaxed">
-                  Ria is the concierge line: ask for a use case and she will role-play it. The other
-                  demo lines are direct industry examples and will also answer Wireline product
-                  questions when asked.
-                </p>
-              </Panel>
-            </div>
+            <Panel
+              title={`Demo catalog · ${WIRELINE_DEMO_AGENTS.length} role-play agents`}
+              hint="See what the platform can do"
+              icon={Phone}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {WIRELINE_DEMO_AGENTS.map((a) => (
+                  <AgentCard key={a.tel} agent={a} isDemo />
+                ))}
+              </div>
+              <p className="text-[10px] text-muted/70 mt-3 leading-relaxed">
+                Ria is the concierge line: ask for a use case and she will role-play it. The other
+                demo lines are direct industry examples and will also answer Wireline product
+                questions when asked.
+              </p>
+            </Panel>
+          </div>
 
-            <div className="space-y-4">
-              <Panel title="What Wireline does" hint="Quick reference" icon={BookOpen}>
-                <div className="space-y-3">
-                  {WIRELINE_FEATURES.map((f) => (
-                    <div key={f.title}>
-                      <p className="text-[11px] uppercase tracking-[0.28em] text-brand/90 mb-1">
-                        {f.title}
-                      </p>
-                      <p className="text-[12px] text-muted/80 leading-snug">{f.blurb}</p>
-                    </div>
-                  ))}
-                </div>
-              </Panel>
+          <div className="space-y-4">
+            <Panel title="What Wireline does" hint="Quick reference" icon={BookOpen}>
+              <div className="space-y-3">
+                {WIRELINE_FEATURES.map((f) => (
+                  <div key={f.title}>
+                    <p className="text-[11px] uppercase tracking-[0.28em] text-brand/90 mb-1">
+                      {f.title}
+                    </p>
+                    <p className="text-[12px] text-muted/80 leading-snug">{f.blurb}</p>
+                  </div>
+                ))}
+              </div>
+            </Panel>
 
-              <Panel
-                title="Integrations"
-                hint={`${WIRELINE_INTEGRATIONS.length} wired`}
-                icon={ExternalLink}
-              >
-                <div className="flex flex-wrap gap-1.5">
-                  {WIRELINE_INTEGRATIONS.map((i) => (
-                    <span
-                      key={i}
-                      className="text-[10px] uppercase tracking-[0.22em] px-2 py-1 rounded-md bg-brand/[0.06] border border-black/8 text-ink/80"
-                    >
-                      {i}
-                    </span>
-                  ))}
-                </div>
-              </Panel>
-            </div>
+            <Panel
+              title="Integrations"
+              hint={`${WIRELINE_INTEGRATIONS.length} wired`}
+              icon={ExternalLink}
+            >
+              <div className="flex flex-wrap gap-1.5">
+                {WIRELINE_INTEGRATIONS.map((i) => (
+                  <span
+                    key={i}
+                    className="text-[10px] uppercase tracking-[0.22em] px-2 py-1 rounded-md bg-brand/[0.06] border border-black/8 text-ink/80"
+                  >
+                    {i}
+                  </span>
+                ))}
+              </div>
+            </Panel>
           </div>
         </div>
       </PageShell>

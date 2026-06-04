@@ -30,6 +30,7 @@ import { Checkbox } from "./ui/shadcn/Checkbox";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { BRAND } from "../constants/brand-colors";
+import { markFreshSignupSession } from "../lib/post-signup-onboarding";
 
 function extractServerErrorMessage(payload: unknown): string | null {
   if (!payload || typeof payload !== "object") return null;
@@ -360,6 +361,7 @@ export default function AuthPortal() {
         if (!data.user?.id) {
           throw new Error("Authentication succeeded but user payload was missing.");
         }
+        if (isSignUp) markFreshSignupSession();
         signIn({ user: data.user });
       }
     } catch (err: unknown) {

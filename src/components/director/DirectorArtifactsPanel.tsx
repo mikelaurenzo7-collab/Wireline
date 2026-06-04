@@ -38,7 +38,7 @@ export default function DirectorArtifactsPanel({ artifacts }: DirectorArtifactsP
 
   return (
     <div className="shrink-0 px-4 pb-2">
-      <div className="max-w-3xl mx-auto rounded-xl border border-brand/15 bg-white/80 dark:bg-black/15 backdrop-blur-sm p-3 space-y-3">
+      <div className="max-w-3xl mx-auto rounded-xl border border-brand/15 bg-paper/90 dark:bg-black/15 backdrop-blur-sm p-3 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-muted font-semibold">
@@ -54,7 +54,7 @@ export default function DirectorArtifactsPanel({ artifacts }: DirectorArtifactsP
         {/* Image artifact thumbnails — the actual logos/visuals */}
         {imageArts.length > 0 && (
           <div>
-            <p className="text-[9px] uppercase tracking-[0.16em] text-fuchsia-500/70 font-semibold mb-2 flex items-center gap-1.5">
+            <p className="text-[9px] uppercase tracking-[0.16em] text-brand/70 font-semibold mb-2 flex items-center gap-1.5">
               <ImageIcon className="w-3 h-3" />
               Media · {imageArts.length} image{imageArts.length !== 1 ? "s" : ""}
             </p>
@@ -75,7 +75,7 @@ export default function DirectorArtifactsPanel({ artifacts }: DirectorArtifactsP
                     <a
                       href={a.downloadUrl}
                       download={a.name}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm text-[9px] font-semibold text-ink shadow-lg hover:bg-white transition-colors"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-paper/95 backdrop-blur-sm text-[9px] font-semibold text-ink shadow-lg hover:bg-white transition-colors"
                     >
                       <Download className="w-2.5 h-2.5" />
                       Download

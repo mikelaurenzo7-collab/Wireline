@@ -28,6 +28,7 @@ import { useToast } from "../../contexts/ToastContext";
 import { InlineEmpty } from "../ui/InlineEmpty";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import type { ActionType } from "../../lib/action-types";
+import { OPS_COPY } from "../../lib/wireline-ops-design";
 
 interface ActionItem {
   id: string;
@@ -111,20 +112,16 @@ export function ActionFeed({
       <div className="flex items-center justify-between mb-6">
         <h3 className="wl-label flex items-center gap-2">
           <Sparkles className="w-3.5 h-3.5 text-brand" />
-          Intelligence Hub
+          {OPS_COPY.intelHub}
         </h3>
-        <span className="text-[9px] font-mono text-ink/40 bg-black/5 px-2 py-0.5 rounded-full">
-          {actions.filter((a) => a.status === "pending").length} PENDING
+        <span className="wl-ops-score-badge">
+          {actions.filter((a) => a.status === "pending").length} pending
         </span>
       </div>
 
       <div className="flex-1 scroll-viewport pr-2 -mr-2 space-y-3 custom-scrollbar">
         {actions.length === 0 ? (
-          <InlineEmpty
-            icon={Sparkles}
-            label="All clear — no manual intervention required."
-            className="h-64"
-          />
+          <InlineEmpty icon={Sparkles} label={OPS_COPY.intelEmpty} className="h-64" />
         ) : (
           actions.map((action) => {
             const isExpanded = expandedId === action.id;
@@ -145,7 +142,7 @@ export function ActionFeed({
                   action.status === "pending"
                     ? "wl-panel hover:border-brand/30"
                     : "bg-black/[0.02] border-black/4 opacity-60",
-                  isExpanded && "border-brand/40 bg-white/80 ring-1 ring-brand/10 shadow-lg",
+                  isExpanded && "border-brand/40 bg-paper/90 ring-1 ring-brand/10 shadow-lg",
                 )}
                 onClick={() => setExpandedId(isExpanded ? null : action.id)}
               >
@@ -266,7 +263,7 @@ export function ActionFeed({
 
                         <div className="space-y-2">
                           <h4 className="wl-label text-muted font-bold">Drafted Content</h4>
-                          <div className="rounded-md bg-white/80 border border-black/5 p-4 overflow-hidden">
+                          <div className="rounded-md bg-paper/90 border border-black/5 p-4 overflow-hidden">
                             {action.type === "send_email" ? (
                               <div className="space-y-3">
                                 <div className="flex items-center gap-2 pb-2 border-bottom border-black/5">

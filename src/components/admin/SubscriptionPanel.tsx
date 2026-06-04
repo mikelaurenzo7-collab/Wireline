@@ -49,7 +49,7 @@ export function SubscriptionPanel({
   };
 
   return (
-    <div className="h-full overflow-y-auto scrollbar-hide space-y-3 pb-4">
+    <div className="h-full min-h-0 scroll-viewport space-y-3 pb-4">
       <StripeBillingCard />
 
       <Panel title="subscription state" hint="SIMULATOR" icon={CreditCard}>
@@ -157,7 +157,7 @@ export function SubscriptionPanel({
                   className={cn(
                     "px-1.5 py-0.5 rounded-full border text-[9px] uppercase tracking-[0.25em] leading-none",
                     settings.subscription_status === "active"
-                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500"
+                      ? "wl-status-success border wl-text-success"
                       : "bg-rose-500/10 border-rose-500/30 text-rose-500",
                   )}
                 >

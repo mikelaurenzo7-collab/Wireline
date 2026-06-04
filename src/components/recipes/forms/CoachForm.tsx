@@ -61,10 +61,8 @@ export function CoachForm({
               <span
                 className={cn(
                   "inline-flex px-3 py-1 rounded-full text-[11px] uppercase tracking-[0.3em]",
-                  coaching.sentiment === "delighted" &&
-                    "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30",
-                  coaching.sentiment === "positive" &&
-                    "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30",
+                  coaching.sentiment === "delighted" && "wl-status-success border wl-text-success",
+                  coaching.sentiment === "positive" && "wl-status-success border wl-text-success",
                   coaching.sentiment === "neutral" &&
                     "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
                   coaching.sentiment === "frustrated" &&
@@ -93,8 +91,7 @@ export function CoachForm({
                     "bg-amber-500/15 text-amber-500 border border-amber-500/30",
                   coaching.escalation_risk === "low" &&
                     "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
-                  coaching.escalation_risk === "none" &&
-                    "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30",
+                  coaching.escalation_risk === "none" && "wl-status-success border wl-text-success",
                 )}
               >
                 {coaching.escalation_risk}
@@ -108,7 +105,7 @@ export function CoachForm({
           </ResultCard>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <ResultCard title="What's Working">
-              <ul className="list-disc list-inside text-emerald-500/90 space-y-1">
+              <ul className="list-disc list-inside wl-text-success/90 space-y-1">
                 {coaching.whats_working.map((s: string, i: number) => (
                   <li key={i}>{s}</li>
                 ))}

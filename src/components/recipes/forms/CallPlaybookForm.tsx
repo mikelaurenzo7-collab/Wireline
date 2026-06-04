@@ -120,7 +120,7 @@ export function CallPlaybookForm({
               <div className="space-y-3">
                 {playbook.closing_variants.map((c: any, i: number) => (
                   <div key={i} className="flex items-start gap-3">
-                    <span className="shrink-0 mt-0.5 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.25em] bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                    <span className="shrink-0 mt-0.5 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.25em] wl-status-success border wl-text-success">
                       {c.style?.replace(/_/g, " ")}
                     </span>
                     <p className="text-ink/90 text-sm italic">"{c.script}"</p>
@@ -138,7 +138,7 @@ export function CallPlaybookForm({
 
           {playbook.success_criteria && (
             <ResultCard title="Success Criteria">
-              <p className="text-emerald-500/90 text-sm">{playbook.success_criteria}</p>
+              <p className="wl-text-success/90 text-sm">{playbook.success_criteria}</p>
             </ResultCard>
           )}
         </div>

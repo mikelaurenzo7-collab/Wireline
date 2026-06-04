@@ -70,8 +70,7 @@ export function ObjectionDrillForm({
                 <span
                   className={cn(
                     "px-2.5 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em]",
-                    s.difficulty === "easy" &&
-                      "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30",
+                    s.difficulty === "easy" && "wl-status-success border wl-text-success",
                     s.difficulty === "medium" && "bg-brand/15 text-brand border border-brand/30",
                     s.difficulty === "hard" &&
                       "bg-rose-500/15 text-rose-500 border border-rose-500/30",

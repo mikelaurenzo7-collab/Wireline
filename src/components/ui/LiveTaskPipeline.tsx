@@ -51,13 +51,14 @@ export function LiveTaskPipeline({ steps, className, variant = "default" }: Live
             >
               <span
                 className={cn(
-                  "absolute left-0 top-2.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 bg-[#faf8f5] dark:bg-[#1a1225]",
-                  step.status === "done" && "border-emerald-500/60",
+                  "absolute left-0 top-2.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 bg-paper dark:bg-[#1a1225]",
+                  step.status === "done" &&
+                    "border-[color-mix(in_srgb,var(--wl-signal)_50%,transparent)]",
                   step.status === "active" && "border-brand bg-brand/10",
                   step.status === "pending" && "border-black/10",
                 )}
               >
-                {step.status === "done" && <Check className="w-2 h-2 text-emerald-500" />}
+                {step.status === "done" && <Check className="w-2 h-2 wl-text-success" />}
                 {step.status === "active" && (
                   <Loader2 className="w-2 h-2 text-brand animate-spin" />
                 )}
@@ -104,7 +105,7 @@ export function LiveTaskPipeline({ steps, className, variant = "default" }: Live
           >
             {/* Status icon */}
             <span className="flex-shrink-0 w-4 h-4 flex items-center justify-center">
-              {step.status === "done" && <Check className="w-3.5 h-3.5 text-emerald-500" />}
+              {step.status === "done" && <Check className="w-3.5 h-3.5 wl-text-success" />}
               {step.status === "active" && (
                 <Loader2 className="w-3.5 h-3.5 text-brand animate-spin" />
               )}

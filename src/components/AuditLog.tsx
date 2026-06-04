@@ -414,7 +414,7 @@ export default function AuditLog() {
           </ShadButton>
         }
       >
-        <div className="h-full flex flex-col gap-4 p-4 overflow-y-auto scrollbar-hide">
+        <div className="h-full min-h-0 flex flex-col gap-4 p-4 scroll-viewport">
           {/* Stats Overview */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard

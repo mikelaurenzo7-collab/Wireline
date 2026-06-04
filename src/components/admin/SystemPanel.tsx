@@ -45,7 +45,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
   };
 
   return (
-    <div className="h-full min-h-0 overflow-y-auto scrollbar-hide pb-6">
+    <div className="h-full min-h-0 scroll-viewport pb-6">
       <div className="space-y-3">
         <Panel title="Platform Health" hint="SYSTEM TELEMETRY" icon={Activity} scroll>
           <div className="space-y-8">

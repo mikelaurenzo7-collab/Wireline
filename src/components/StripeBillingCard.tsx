@@ -452,7 +452,10 @@ function ActiveSubCard({
 
   const statusBadge =
     sub.status === "active"
-      ? { label: "Active", cls: "bg-emerald-500/15 border-emerald-500/30 text-emerald-600" }
+      ? {
+          label: "Active",
+          cls: "bg-brand/15 border-[color-mix(in_srgb,var(--wl-signal)_30%,transparent)] wl-text-success",
+        }
       : sub.status === "trialing"
         ? { label: "Trial", cls: "bg-brand/15 border-brand/30 text-brand" }
         : sub.status === "past_due"

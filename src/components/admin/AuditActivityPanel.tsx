@@ -85,7 +85,7 @@ export function AuditActivityPanel() {
   const windowOpts = [7, 14, 30, 90] as const;
 
   return (
-    <div className="h-full flex flex-col gap-3 overflow-y-auto scrollbar-hide pb-6">
+    <div className="h-full min-h-0 flex flex-col gap-3 scroll-viewport pb-6">
       {/* Window selector */}
       <div className="flex items-center justify-between shrink-0">
         <h3 className="text-eyebrow">AI Usage · Last</h3>
