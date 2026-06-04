@@ -20,7 +20,7 @@ import { formatDate, formatTime } from "../lib/safe-date";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import PageShell, { Panel } from "./PageShell";
 import { PanelSkeleton } from "./Skeleton";
-import EmptyState from "./EmptyState";
+import { EmptyState } from "./ui/EmptyState";
 import { useToast } from "../contexts/ToastContext";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 

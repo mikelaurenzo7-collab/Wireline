@@ -272,7 +272,7 @@ export default function FounderDashboard() {
         <div className="mb-6">
           <p className="app-section-title mb-1">Founder · Command</p>
           <h1 className="font-display italic lowercase text-3xl md:text-4xl text-ink leading-none">
-            <span className="text-aurora">your wireline staff</span>
+            <div className="hero-word-reveal flex flex-wrap"><span className="text-aurora block">your</span><span className="text-aurora block ml-2">wireline</span><span className="text-aurora block ml-2">staff</span></div>
           </h1>
           <p className="text-[13px] text-muted/80 mt-2 max-w-xl leading-relaxed">
             Six AI agents run Wireline's own phone lines. Chat with any of them — they remember
@@ -351,7 +351,7 @@ export default function FounderDashboard() {
         </div>
 
         {/* Staff roster */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 wl-reveal-stagger">
           {STAFF.map((s) => {
             const exists = provisionedIds === null || provisionedIds.has(s.agentId);
             return (
@@ -371,7 +371,7 @@ export default function FounderDashboard() {
                 )}
               >
                 <div className="flex items-center gap-2.5 mb-2">
-                  <div className="w-9 h-9 rounded-md bg-paper flex items-center justify-center text-brand shrink-0">
+                  <div className="w-9 h-9 rounded-md bg-paper flex items-center justify-center text-brand shrink-0 relative"><div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-brand wl-badge-pulse border-2 border-white"></div>
                     <s.icon className="w-4.5 h-4.5" />
                   </div>
                   <div>

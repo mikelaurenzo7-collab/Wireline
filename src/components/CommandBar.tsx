@@ -337,7 +337,7 @@ export default function CommandBar() {
             role="dialog"
             aria-modal="true"
             aria-label="Command bar"
-            className="relative w-full max-w-xl overflow-hidden"
+            className="relative w-full max-w-xl overflow-hidden wl-panel elev-glow"
           >
             {/* Aurora ring border */}
             <div className="absolute inset-0 rounded-md p-px overflow-hidden pointer-events-none z-20">
