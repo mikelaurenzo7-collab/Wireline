@@ -20,6 +20,8 @@ const h = vi.hoisted(() => {
       "name",
       "channel",
       "role",
+      "voiceId",
+      "firstMessage",
       "enabledTools",
       "systemPromptOverride",
       "kpiFocus",
@@ -261,7 +263,22 @@ describe("agent routes integration", () => {
         },
       ],
     });
-    expect(h.state.selectCalls[0]).toEqual({ table: "agents", shape: undefined });
+    // listAgentsForUser now uses an explicit projection (AGENT_LIST_FALLBACK_SELECT)
+    // so a production DB lagging a Drizzle column migration can't 503 the roster.
+    expect(h.state.selectCalls[0]).toEqual({
+      table: "agents",
+      shape: {
+        id: "agents.id",
+        userId: "agents.userId",
+        name: "agents.name",
+        role: "agents.role",
+        channel: "agents.channel",
+        voiceId: "agents.voiceId",
+        firstMessage: "agents.firstMessage",
+        enabledTools: "agents.enabledTools",
+        createdAt: "agents.createdAt",
+      },
+    });
   });
 
   it("returns degraded 503 when listing agents fails", async () => {

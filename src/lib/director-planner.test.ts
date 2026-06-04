@@ -28,8 +28,8 @@ describe("wantsDeepAnalysis — Opus escalation heuristic", () => {
 
 describe("normalizeDirectorPlan — reply", () => {
   it("falls back to a default reply when missing/empty", () => {
-    expect(normalizeDirectorPlan({}, FLEET, "sonnet").reply).toMatch(/business/i);
-    expect(normalizeDirectorPlan({ reply: "   " }, FLEET, "sonnet").reply).toMatch(/business/i);
+    expect(normalizeDirectorPlan({}, FLEET, "sonnet").reply).toMatch(/orchestrate/i);
+    expect(normalizeDirectorPlan({ reply: "   " }, FLEET, "sonnet").reply).toMatch(/orchestrate/i);
   });
 
   it("passes the model tier through", () => {
