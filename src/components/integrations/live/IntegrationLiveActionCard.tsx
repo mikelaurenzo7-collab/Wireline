@@ -47,28 +47,46 @@ export default function IntegrationLiveActionCard({
       }}
       className={cn(
         "wl-integration-live-card relative overflow-hidden rounded-md border bg-card shadow-sm",
-        isActive && "border-brand/25 shadow-md shadow-brand/8 ring-1 ring-brand/10",
-        isSuccess && "border-brand/30",
-        isProposal && !isActive && !isSuccess && "bg-brand/[0.02]",
+        isActive && "border-brand/25 shadow-lg shadow-brand/10 ring-1 ring-brand/12",
+        isSuccess && "border-emerald-400/30 shadow-sm shadow-emerald-500/5",
+        isProposal && !isActive && !isSuccess && "bg-brand/[0.02] border-dashed",
         !isActive && !isSuccess && !isProposal && "border-border opacity-70",
       )}
     >
+      {/* Brand color bar with gradient */}
       <div
         className="h-1 w-full"
         style={{
-          background: `linear-gradient(90deg, ${brand.color}, ${brand.color}88, transparent)`,
+          background: isSuccess
+            ? `linear-gradient(90deg, #10B981, #10B98188, transparent)`
+            : `linear-gradient(90deg, ${brand.color}, ${brand.color}88, transparent)`,
         }}
       />
 
-      <div className="px-3.5 pt-3 pb-3">
+      {/* Subtle brand wash background */}
+      <div
+        className="absolute inset-0 opacity-[0.03] pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse at top left, ${brand.color}, transparent 70%)`,
+        }}
+      />
+
+      <div className="relative px-3.5 pt-3 pb-3">
         <div className="flex items-start gap-2.5 mb-2.5">
           <div
-            className="shrink-0 flex h-8 w-8 items-center justify-center rounded-md text-primary-foreground shadow-sm"
+            className={cn(
+              "shrink-0 flex h-8 w-8 items-center justify-center rounded-md text-primary-foreground shadow-sm transition-all duration-300",
+              isSuccess && "shadow-emerald-500/20",
+            )}
             style={{
-              background: `linear-gradient(135deg, ${brand.color}, ${brand.color}cc)`,
+              background: isSuccess
+                ? `linear-gradient(135deg, #10B981, #059669)`
+                : `linear-gradient(135deg, ${brand.color}, ${brand.color}cc)`,
             }}
           >
-            {action.integration === "director" ? (
+            {isSuccess ? (
+              <Check className="w-4 h-4" />
+            ) : action.integration === "director" ? (
               <Compass className="w-4 h-4" />
             ) : (
               <span className="flex items-center justify-center [&>svg]:w-4 [&>svg]:h-4">
@@ -97,23 +115,29 @@ export default function IntegrationLiveActionCard({
         />
 
         {isSuccess && action.resultLine && (
-          <motion.p
+          <motion.div
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-2.5 flex items-center gap-1.5 text-[10px] font-medium text-brand"
+            className="mt-2.5 flex items-center gap-1.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/8 rounded-md px-2.5 py-1.5"
           >
-            <Check className="w-3 h-3 shrink-0" />
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400/40 animate-ping" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
             {action.resultLine}
-          </motion.p>
+          </motion.div>
         )}
 
         {isActive && (
-          <div className="mt-2.5 h-0.5 rounded-full bg-muted overflow-hidden">
+          <div className="mt-2.5 h-1 rounded-full bg-muted/30 overflow-hidden">
             <motion.div
-              className="h-full rounded-full bg-brand"
-              initial={{ width: "8%" }}
-              animate={{ width: ["8%", "72%", "88%"] }}
-              transition={{ duration: 1.8, ease: "easeInOut" }}
+              className="h-full rounded-full"
+              style={{
+                background: `linear-gradient(90deg, ${brand.color}66, ${brand.color})`,
+              }}
+              initial={{ width: "5%" }}
+              animate={{ width: ["5%", "65%", "85%"] }}
+              transition={{ duration: 2.2, ease: "easeInOut" }}
             />
           </div>
         )}

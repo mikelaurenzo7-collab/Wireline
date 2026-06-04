@@ -8,7 +8,7 @@ import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
 
 function renderInline(text: string): React.ReactNode[] {
   const nodes: React.ReactNode[] = [];
-  const pattern = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g;
+  const pattern = /(\*\*[^*]+\*\*|~~[^~]+~~|`[^`]+`|!\[[^\]]*\]\([^)]+\)|\[[^\]]+\]\([^)]+\))/g;
   let last = 0;
   let match: RegExpExecArray | null;
   let key = 0;
@@ -22,6 +22,12 @@ function renderInline(text: string): React.ReactNode[] {
           {token.slice(2, -2)}
         </strong>,
       );
+    } else if (token.startsWith("~~")) {
+      nodes.push(
+        <del key={key++} className="text-muted/60 line-through decoration-muted/40">
+          {token.slice(2, -2)}
+        </del>,
+      );
     } else if (token.startsWith("`")) {
       nodes.push(
         <code
@@ -31,6 +37,25 @@ function renderInline(text: string): React.ReactNode[] {
           {token.slice(1, -1)}
         </code>,
       );
+    } else if (token.startsWith("![")) {
+      const imgMatch = /^!\[([^\]]*)\]\(([^)]+)\)$/.exec(token);
+      if (imgMatch) {
+        nodes.push(
+          <span key={key++} className="block my-2">
+            <img
+              src={imgMatch[2]}
+              alt={imgMatch[1] || "Image"}
+              className="max-w-full max-h-72 rounded-lg border border-brand/10 shadow-sm object-contain"
+              loading="lazy"
+            />
+            {imgMatch[1] && (
+              <span className="block text-[10px] text-muted/60 mt-1 italic">{imgMatch[1]}</span>
+            )}
+          </span>,
+        );
+      } else {
+        nodes.push(token);
+      }
     } else {
       const linkMatch = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(token);
       if (linkMatch) {
@@ -113,6 +138,14 @@ function renderBlock(block: string, bi: number): React.ReactNode {
     if (fence) return <CodeBlock key={bi} lang={fence[1]} code={fence[2] || ""} />;
   }
 
+  if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
+    return (
+      <div key={bi} className="py-1.5">
+        <div className="h-px bg-gradient-to-r from-transparent via-brand/20 to-transparent" />
+      </div>
+    );
+  }
+
   const lines = trimmed.split("\n");
   const first = lines[0]?.trim() ?? "";
 
@@ -193,6 +226,70 @@ function renderBlock(block: string, bi: number): React.ReactNode {
             );
           })}
       </ol>
+    );
+  }
+
+  const isBlockquote = lines.every((l) => !l.trim() || l.trim().startsWith(">"));
+  if (isBlockquote && lines.some((l) => l.trim().startsWith(">"))) {
+    const quoteLines = lines.filter((l) => l.trim().startsWith(">"));
+    const firstQuote = quoteLines[0]?.trim().replace(/^>\s*/, "") || "";
+    const calloutMatch = /^\[!(NOTE|TIP|WARNING|IMPORTANT|CAUTION)\]\s*(.*)$/i.exec(firstQuote);
+
+    if (calloutMatch) {
+      const cType = calloutMatch[1].toLowerCase();
+      const cTitle = calloutMatch[2]?.trim() || calloutMatch[1];
+      const cBody = quoteLines
+        .slice(1)
+        .map((l) => l.replace(/^>\s*/, ""))
+        .join(" ");
+      const palette: Record<string, { border: string; bg: string; label: string }> = {
+        note: {
+          border: "border-l-blue-400",
+          bg: "bg-blue-500/[0.06]",
+          label: "text-blue-600 dark:text-blue-400",
+        },
+        tip: {
+          border: "border-l-emerald-400",
+          bg: "bg-emerald-500/[0.06]",
+          label: "text-emerald-600 dark:text-emerald-400",
+        },
+        warning: {
+          border: "border-l-amber-400",
+          bg: "bg-amber-500/[0.06]",
+          label: "text-amber-600 dark:text-amber-400",
+        },
+        important: {
+          border: "border-l-violet-400",
+          bg: "bg-violet-500/[0.06]",
+          label: "text-violet-600 dark:text-violet-400",
+        },
+        caution: {
+          border: "border-l-rose-400",
+          bg: "bg-rose-500/[0.06]",
+          label: "text-rose-600 dark:text-rose-400",
+        },
+      };
+      const cp = palette[cType] || palette.note;
+      return (
+        <div key={bi} className={cn("rounded-md border-l-[3px] px-3.5 py-2.5", cp.border, cp.bg)}>
+          <p className={cn("text-[11px] font-bold uppercase tracking-[0.12em] mb-1", cp.label)}>
+            {cTitle}
+          </p>
+          {cBody && (
+            <p className="text-[13px] text-ink/85 leading-relaxed">{renderInline(cBody)}</p>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <blockquote key={bi} className="border-l-2 border-brand/25 pl-3.5 py-0.5">
+        {quoteLines.map((l, i) => (
+          <p key={i} className="text-[13px] text-ink/70 italic leading-relaxed">
+            {renderInline(l.replace(/^>\s*/, ""))}
+          </p>
+        ))}
+      </blockquote>
     );
   }
 

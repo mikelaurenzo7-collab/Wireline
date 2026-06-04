@@ -366,6 +366,54 @@ html, body, .marketing-surface, .app-surface {
   border-color: rgba(139, 63, 214, 0.22);
 }
 
+/* ── SCENE BADGES ── */
+@media (prefers-reduced-motion: no-preference) {
+  .wl-scene-pulse {
+    animation: scene-glow 2s ease-in-out 1;
+  }
+  @keyframes scene-glow {
+    0%,
+    100% {
+      box-shadow: none;
+    }
+    50% {
+      box-shadow: 0 0 12px currentColor;
+    }
+  }
+}
+
+/* ── MEDIA GALLERY ── */
+.wl-media-canvas {
+  background-image: repeating-conic-gradient(#f0f0f0 0% 25%, #ffffff 0% 50%);
+  background-size: 16px 16px;
+}
+.dark .wl-media-canvas {
+  background-image: repeating-conic-gradient(#1a1a2e 0% 25%, #0f0c17 0% 50%);
+}
+
+.wl-media-overlay {
+  transition: opacity 0.25s ease;
+}
+
+/* ── CALLOUT BLOCKS ── */
+.wl-director-doc blockquote {
+  position: relative;
+}
+.wl-director-doc blockquote::before {
+  content: "";
+  position: absolute;
+  left: -0.5px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(
+    180deg,
+    rgba(139, 63, 214, 0.35),
+    rgba(139, 63, 214, 0.1)
+  );
+  border-radius: 2px;
+}
+
 /* ── UTILITY CAPTIONS / LABELS ──
  * Premium uppercase labels with positive tracking for small sizes */
 .wl-label {
