@@ -18,6 +18,7 @@ import {
 import { cn } from "../../lib/utils";
 import { useToast } from "../../contexts/ToastContext";
 import { useAuth } from "../../contexts/AuthContext";
+import { getFreshAccessToken } from "../../lib/api";
 import { Link } from "react-router-dom";
 import { Input } from "../ui/shadcn/Input";
 import { InlineEmpty } from "../ui/InlineEmpty";
@@ -47,7 +48,7 @@ type Props = {
 
 export function LiveFloorPanel({ calls, agents, loading }: Props) {
   const { info } = useToast();
-  const { user, session } = useAuth();
+  const { user } = useAuth();
 
   const [listeningCallId, setListeningCallId] = useState<string | null>(null);
   const [whisperingCallId, setWhisperingCallId] = useState<string | null>(null);
@@ -71,10 +72,12 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
     setAudioLevel(0);
   };
 
-  const startListening = (callId: string) => {
+  const startListening = async (callId: string) => {
     if (!user?.id) return;
     stopListening();
     try {
+      const token = await getFreshAccessToken();
+      if (!token) return;
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       const ctx = new AudioCtx();
       audioContextRef.current = ctx;
@@ -86,7 +89,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
 
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const ws = new WebSocket(
-        `${protocol}//${window.location.host}/api/supervisor/stream?callId=${callId}&mode=listen&token=${session?.access_token}`,
+        `${protocol}//${window.location.host}/api/supervisor/stream?callId=${callId}&mode=listen&token=${token}`,
       );
       ws.binaryType = "arraybuffer";
       audioWsRef.current = ws;
@@ -131,12 +134,14 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
     setWhisperLogs([]);
   };
 
-  const startWhispering = (callId: string) => {
+  const startWhispering = async (callId: string) => {
     if (!user?.id) return;
     stopWhispering();
+    const token = await getFreshAccessToken();
+    if (!token) return;
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const ws = new WebSocket(
-      `${protocol}//${window.location.host}/api/supervisor/stream?callId=${callId}&mode=whisper&token=${session?.access_token}`,
+      `${protocol}//${window.location.host}/api/supervisor/stream?callId=${callId}&mode=whisper&token=${token}`,
     );
     whisperWsRef.current = ws;
     ws.onopen = () => {
