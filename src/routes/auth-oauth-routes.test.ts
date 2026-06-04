@@ -293,7 +293,9 @@ describe("OAuth /url endpoints", () => {
         const location = res.headers.get("location") || "";
         expect(location).toMatch(/^https:\/\/example\.test\/auth\/oauth-complete\?code=/);
         expect(location).not.toContain("Failed");
-        expect(mocks.drizzle.execute).toHaveBeenCalledTimes(3);
+        // ensurePendingCodeSchema runs four DDL statements: CREATE TABLE,
+        // ALTER ADD bridge_state, CREATE INDEX, and the RLS-lockdown DO block.
+        expect(mocks.drizzle.execute).toHaveBeenCalledTimes(4);
         expect(pendingValues).toHaveBeenCalledTimes(2);
         expect(pendingValues).toHaveBeenLastCalledWith(expect.objectContaining({ bridgeState }));
         expect(mocks.log.warn).toHaveBeenCalledWith(
