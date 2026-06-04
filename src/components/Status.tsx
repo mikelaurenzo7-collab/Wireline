@@ -70,16 +70,16 @@ const STATE_META: Record<
 > = {
   operational: {
     label: "Operational",
-    tone: "text-emerald-700",
-    pill: "bg-emerald-500/10 text-emerald-700 border-emerald-500/25",
-    bgGradient: "from-emerald-500/8 via-emerald-500/4 to-transparent",
+    tone: "text-brand",
+    pill: "bg-brand/10 text-brand border-brand/25",
+    bgGradient: "from-brand/8 via-brand/4 to-transparent",
     icon: CheckCircle2,
   },
   degraded: {
     label: "Degraded",
-    tone: "text-amber-700",
-    pill: "bg-amber-500/10 text-amber-700 border-amber-500/25",
-    bgGradient: "from-amber-500/8 via-amber-500/4 to-transparent",
+    tone: "text-brand/80",
+    pill: "bg-brand/8 text-brand/90 border-brand/20",
+    bgGradient: "from-brand/6 via-brand/3 to-transparent",
     icon: AlertTriangle,
   },
   outage: {

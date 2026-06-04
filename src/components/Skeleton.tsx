@@ -19,7 +19,7 @@ const ACCENT_SHIMMER: Record<string, string> = {
   cyan: "from-brand/0 via-brand/20 to-brand/0",
   violet: "from-brand-2/0 via-brand-2/20 to-brand-2/0",
   magenta: "from-brand-3/0 via-brand-3/20 to-brand-3/0",
-  emerald: "from-emerald-500/0 via-emerald-500/20 to-emerald-500/0",
+  emerald: "from-brand/0 via-brand/15 to-brand/0",
 };
 
 /** Single skeleton line / block — the atom of the system. */

@@ -334,10 +334,10 @@ export default function YoureLiveModal({
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4 }}
-            className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-emerald-950/20 border border-emerald-500/30"
+            className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-brand/10 border border-brand/30"
           >
-            <Sparkles className="w-4 h-4 text-emerald-400" />
-            <span className="text-xs font-medium text-emerald-400">
+            <Sparkles className="w-4 h-4 text-brand" />
+            <span className="text-xs font-medium text-brand">
               {isQuickSetup ? "Lightning fast" : "Setup complete"} — {formatTime(timeToFirstCallMs)}
             </span>
           </motion.div>

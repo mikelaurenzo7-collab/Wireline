@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { Activity, AlertTriangle, Loader2, TrendingUp } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
+import { BRAND } from "../constants/brand-colors";
 import { Progress } from "./ui/shadcn/Progress";
 
 interface UsageSnapshot {
@@ -68,7 +69,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
   const isOver = snap.overage_minutes > 0;
   const isWarn = !isOver && pct >= 80;
 
-  const barAccent = isOver ? "#f43f5e" : isWarn ? "#f59e0b" : "#8B3FD6";
+  const barAccent = isOver ? BRAND.rose : isWarn ? BRAND.purpleMuted : BRAND.purple;
   const resetDate = new Date(snap.reset_at);
   const resetLabel = resetDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 

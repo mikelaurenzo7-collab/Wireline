@@ -35,10 +35,11 @@ test.describe("Marketing surfaces — layout & design integrity", () => {
 });
 
 test.describe("Marketing surfaces — primary conversion path", () => {
-  test("landing surfaces a trial CTA that points at signup", async ({ page }) => {
+  test("landing surfaces trial CTA in the header", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
 
-    const trialCta = page.getByRole("link", { name: /start free trial/i }).first();
+    const trialCta = page.getByTestId("header-cta");
     await expect(trialCta).toBeVisible();
     await expect(trialCta).toHaveAttribute("href", /\/signup/);
   });

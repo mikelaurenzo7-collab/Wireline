@@ -1,48 +1,75 @@
 /**
- * Post-migration design audit — locks in Composer-grade app chrome.
- * Counts anti-patterns in feature components (excludes shadcn layer + marketing pages).
+ * Wireline design audit — app-wide static contract (authenticated + marketing scopes).
  */
 import { describe, it, expect } from "vitest";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import {
+  countPatternInScope,
+  DESIGN_AUDIT_BASELINE,
+  OFF_BRAND_GRADIENT_PATTERN,
+  OFF_BRAND_HEX_PATTERN,
+} from "../../../lib/wireline-design-audit";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const COMPONENTS_ROOT = path.resolve(__dirname, "../../../components");
-const EXCLUDED_DIRS = [
-  path.resolve(__dirname, "../shadcn"),
-  __dirname,
-  path.resolve(COMPONENTS_ROOT, "marketing"),
-];
-
-function walk(dir: string, acc: string[] = []): string[] {
-  if (!fs.existsSync(dir)) return acc;
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (EXCLUDED_DIRS.some((ex) => full === ex || full.startsWith(ex + path.sep))) continue;
-    if (entry.isDirectory()) walk(full, acc);
-    else if (/\.(tsx|ts)$/.test(entry.name) && !/\.test\.(tsx?|spec\.tsx?)$/.test(entry.name))
-      acc.push(full);
+function assertMax(actual: number, max: number, metric: string) {
+  if (actual > max) {
+    throw new Error(
+      `${metric} = ${actual} exceeds max ${max}. Fix drift or update baseline intentionally.`,
+    );
   }
-  return acc;
+  expect(actual).toBeLessThanOrEqual(max);
 }
 
-function countInComponents(pattern: RegExp): number {
-  let total = 0;
-  for (const file of walk(COMPONENTS_ROOT)) {
-    const text = fs.readFileSync(file, "utf8");
-    const matches = text.match(pattern);
-    if (matches) total += matches.length;
-  }
-  return total;
-}
-
-describe("wireline design audit (app components)", () => {
-  it("has no aurora-ring in authenticated app components", () => {
-    expect(countInComponents(/\baurora-ring\b/g)).toBe(0);
+describe("wireline design audit — authenticated app surfaces", () => {
+  it("has no aurora-ring in app components or pages", () => {
+    assertMax(
+      countPatternInScope(/\baurora-ring\b/g, "app"),
+      DESIGN_AUDIT_BASELINE.appAuroraRing,
+      "app aurora-ring",
+    );
   });
 
-  it("has no brutal-btn in app components", () => {
-    expect(countInComponents(/\bbrutal-btn\b/g)).toBe(0);
+  it("has no brutal-btn in app components or pages", () => {
+    assertMax(
+      countPatternInScope(/\bbrutal-btn\b/g, "app"),
+      DESIGN_AUDIT_BASELINE.appBrutalBtn,
+      "app brutal-btn",
+    );
+  });
+
+  it("has no decorative off-brand hex literals in app code", () => {
+    assertMax(
+      countPatternInScope(OFF_BRAND_HEX_PATTERN, "app"),
+      DESIGN_AUDIT_BASELINE.appOffBrandHex,
+      "app off-brand hex",
+    );
+  });
+
+  it("has no off-hue Tailwind gradient literals in app code", () => {
+    assertMax(
+      countPatternInScope(OFF_BRAND_GRADIENT_PATTERN, "app"),
+      DESIGN_AUDIT_BASELINE.appOffBrandGradient,
+      "app off-brand gradients",
+    );
+  });
+
+  it("has no .glass utility in app feature code", () => {
+    assertMax(
+      countPatternInScope(/\bglass(?!\w)/g, "app"),
+      DESIGN_AUDIT_BASELINE.appGlassUtility,
+      "app .glass",
+    );
+  });
+});
+
+describe("wireline design audit — marketing surfaces", () => {
+  it("allows aurora-ring only within marketing budget", () => {
+    assertMax(
+      countPatternInScope(/\baurora-ring\b/g, "marketing"),
+      DESIGN_AUDIT_BASELINE.marketingAuroraRingMax,
+      "marketing aurora-ring",
+    );
+  });
+
+  it("keeps marketing free of brutal-btn", () => {
+    expect(countPatternInScope(/\bbrutal-btn\b/g, "marketing")).toBe(0);
   });
 });

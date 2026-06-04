@@ -3,6 +3,7 @@ import Vapi from "@vapi-ai/web";
 import { PhoneOff, Mic, Loader2, AlertCircle, Volume2 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import { BRAND } from "../../constants/brand-colors";
 
 // Retrieve Vapi public key safely from Vite environment
 const VAPI_PUBLIC_KEY = import.meta.env.VITE_VAPI_PUBLIC_KEY || "";
@@ -32,7 +33,7 @@ export default function BrowserCallWidget({
   const [error, setError] = useState<string | null>(null);
   const [speakerActive, setSpeakerActive] = useState(false);
 
-  const activeColor = agentName === "Jake" ? "#f59e0b" : "#8B3FD6"; // Orange for Jake, Purple for others
+  const activeColor = agentName === "Jake" ? BRAND.purpleDeep : BRAND.purple;
 
   // Initialize Vapi SDK on mount
   useEffect(() => {

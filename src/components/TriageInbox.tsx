@@ -21,6 +21,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
+import { BRAND } from "../constants/brand-colors";
 import { formatDate, formatDateTime } from "../lib/safe-date";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
@@ -723,16 +724,16 @@ const OpenTaskRow: React.FC<{
           className={cn(
             "shrink-0 w-6 h-6 rounded-full border transition-all mt-0.5 flex items-center justify-center p-0",
             completing
-              ? "border-emerald-500/60 bg-emerald-500/20"
-              : "border-input bg-background/50 hover:border-emerald-500/60 hover:bg-emerald-500/10 hover:text-emerald-400",
+              ? "border-brand/60 bg-brand/20"
+              : "border-input bg-background/50 hover:border-brand/50 hover:bg-brand/10 hover:text-brand",
           )}
           aria-label="Mark task complete"
           title="Mark complete"
         >
           {completing ? (
-            <Loader2 className="w-3 h-3 animate-spin text-emerald-400" />
+            <Loader2 className="w-3 h-3 animate-spin text-brand" />
           ) : (
-            <Check className="w-3 h-3 text-muted/70 hover:text-emerald-400 transition-colors" />
+            <Check className="w-3 h-3 text-muted/70 hover:text-brand transition-colors" />
           )}
         </ShadButton>
 
@@ -835,7 +836,7 @@ function Empty({
 }) {
   return (
     <div className="h-full flex items-center justify-center">
-      <InlineEmpty icon={Icon} label={label} accent={green ? "#10b981" : undefined} />
+      <InlineEmpty icon={Icon} label={label} accent={green ? BRAND.purple : undefined} />
     </div>
   );
 }
