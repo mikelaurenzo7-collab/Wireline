@@ -38,6 +38,7 @@ export default function OAuthComplete() {
         const res = await fetch("/api/auth/oauth/exchange", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({ code }),
         });
         if (!res.ok) {

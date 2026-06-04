@@ -275,6 +275,7 @@ vi.mock("../middleware/rate-limit-middleware", () => {
     forgotPasswordRateLimiter: passThrough,
     resendVerificationRateLimiter: passThrough,
     resetPasswordRateLimiter: passThrough,
+    migrateSessionRateLimiter: passThrough,
   };
 });
 vi.mock("../lib/email-service", () => ({
@@ -424,6 +425,21 @@ describe("auth routes integration", () => {
     expect([...h.state.passwordResetTokens.values()][0]?.usedAt).toBeInstanceOf(Date);
     expect(h.state.users.get("user-1")?.passwordHash).not.toBe(
       `salt1:${deriveHash("correct-password", "salt1")}`,
+    );
+  });
+
+  it("migrate-session requires Authorization Bearer", async () => {
+    const app = buildApp();
+    const missing = await request(app).post("/api/auth/migrate-session").send({});
+    expect(missing.status).toBe(400);
+    expect(missing.body.error).toMatch(/Bearer/i);
+
+    const ok = await request(app)
+      .post("/api/auth/migrate-session")
+      .set("Authorization", "Bearer valid-session-token");
+    expect(ok.status).toBe(200);
+    expect(ok.body.user).toEqual(
+      expect.objectContaining({ id: "user-1", email: "person@example.com" }),
     );
   });
 });

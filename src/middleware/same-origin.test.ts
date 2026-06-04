@@ -22,6 +22,8 @@ describe("assertSameOrigin", () => {
     a.use(assertSameOrigin);
     a.post("/api/agents", (_req, res) => res.json({ ok: true }));
     a.post("/api/webhooks/vapi", (_req, res) => res.json({ ok: true }));
+    a.post("/api/intake/lead", (_req, res) => res.json({ ok: true }));
+    a.post("/api/intake/keys", (_req, res) => res.json({ ok: true }));
     return a;
   }
 
@@ -48,5 +50,22 @@ describe("assertSameOrigin", () => {
       .set("Origin", "https://evil.example")
       .send({});
     expect(res.status).toBe(200);
+  });
+
+  it("skips origin checks for public intake ingest only", async () => {
+    const res = await request(app())
+      .post("/api/intake/lead")
+      .set("Origin", "https://evil.example")
+      .send({});
+    expect(res.status).toBe(200);
+  });
+
+  it("blocks foreign origin on intake key management", async () => {
+    const res = await request(app())
+      .post("/api/intake/keys")
+      .set("Origin", "https://evil.example")
+      .send({});
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe("CSRF_ORIGIN");
   });
 });

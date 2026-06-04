@@ -37,6 +37,13 @@ import { generateToken, isOwnerEmail } from "../lib/auth-service";
 import { authSuccessBody, setSessionCookie } from "../lib/session-cookie";
 import { scheduleFounderBootstrap } from "../lib/founder-bootstrap";
 import { generateOAuthState, verifyOAuthState } from "../lib/oauth-helpers";
+import { getCanonicalAppUrl } from "../lib/app-url";
+import {
+  createOAuthBridgeState,
+  readOAuthBridgeStateCookie,
+  setOAuthBridgeStateCookie,
+  clearOAuthBridgeStateCookie,
+} from "../lib/oauth-bridge-cookie";
 import { oauthRateLimiter } from "../middleware/rate-limit-middleware";
 
 const router = Router();
@@ -61,8 +68,12 @@ const GOOGLE_SIGNIN_SCOPES = ["openid", "email", "profile"];
 const MICROSOFT_SIGNIN_SCOPES = ["openid", "email", "profile", "offline_access", "User.Read"];
 const YAHOO_SIGNIN_SCOPES = ["openid", "email", "profile"];
 
-function appOrigin(req: Request): string {
-  return (process.env.APP_URL || `${req.protocol}://${req.get("host")}` || "").replace(/\/+$/, "");
+function oauthAppBaseUrl(): string {
+  return getCanonicalAppUrl();
+}
+
+function beginOAuthSignIn(res: Response): void {
+  setOAuthBridgeStateCookie(res, createOAuthBridgeState());
 }
 
 function findOrCreateUserByEmail(
@@ -137,9 +148,14 @@ async function ensurePendingCodeSchema(): Promise<void> {
           email text NOT NULL,
           full_name text,
           is_owner boolean NOT NULL DEFAULT false,
+          bridge_state text,
           expires_at timestamptz NOT NULL,
           created_at timestamptz NOT NULL DEFAULT now()
         )
+      `);
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_oauth_pending_codes
+          ADD COLUMN IF NOT EXISTS bridge_state text
       `);
       await drizzle.execute(sql`
         CREATE INDEX IF NOT EXISTS idx_oauth_pending_codes_expires_at
@@ -160,6 +176,7 @@ async function insertPendingCode(
     token: string;
     user: { id: string; email: string; fullName: string | null };
     isOwner: boolean;
+    bridgeState: string;
   },
 ): Promise<void> {
   await drizzle.insert(schema.oauthPendingCodes).values({
@@ -169,6 +186,7 @@ async function insertPendingCode(
     email: entry.user.email,
     fullName: entry.user.fullName,
     isOwner: entry.isOwner,
+    bridgeState: entry.bridgeState,
     expiresAt: new Date(Date.now() + PENDING_CODE_TTL_MS),
   });
 }
@@ -179,6 +197,7 @@ async function storePendingCode(
     token: string;
     user: { id: string; email: string; fullName: string | null };
     isOwner: boolean;
+    bridgeState: string;
   },
 ): Promise<void> {
   try {
@@ -215,13 +234,14 @@ async function consumePendingCode(code: string): Promise<{
   token: string;
   user: { id: string; email: string; fullName: string | null };
   isOwner: boolean;
+  bridgeState: string | null;
 } | null> {
   // Single-shot read-and-delete. We rely on a DELETE … RETURNING so
   // a concurrent exchange request can only succeed for one caller.
   const rows = (await drizzle.execute(sql`
     DELETE FROM wireline_oauth_pending_codes
     WHERE code = ${code}
-    RETURNING code, token, user_id, email, full_name, is_owner, expires_at
+    RETURNING code, token, user_id, email, full_name, is_owner, bridge_state, expires_at
   `)) as unknown as {
     rows?: Array<{
       code: string;
@@ -230,6 +250,7 @@ async function consumePendingCode(code: string): Promise<{
       email: string;
       full_name: string | null;
       is_owner: boolean;
+      bridge_state: string | null;
       expires_at: Date | string;
     }>;
   };
@@ -241,6 +262,7 @@ async function consumePendingCode(code: string): Promise<{
   return {
     token: row.token,
     isOwner: row.is_owner,
+    bridgeState: row.bridge_state,
     user: { id: row.user_id, email: row.email, fullName: row.full_name },
   };
 }
@@ -264,9 +286,14 @@ async function bridgeRedirect(
   user: { id: string; email: string; fullName: string | null },
   token: string,
   errorMessage?: string,
+  req?: Request,
 ): Promise<string> {
   if (errorMessage) {
     return `${baseUrl}/auth/oauth-complete?error=${encodeURIComponent(errorMessage)}`;
+  }
+  const bridgeState = req ? readOAuthBridgeStateCookie(req) : undefined;
+  if (!bridgeState) {
+    return `${baseUrl}/auth/oauth-complete?error=${encodeURIComponent("Sign-in session expired. Please try again.")}`;
   }
   const code = randomBytes(32).toString("base64url");
   try {
@@ -274,6 +301,7 @@ async function bridgeRedirect(
       token,
       user,
       isOwner: isOwnerEmail(user.email),
+      bridgeState,
     });
   } catch {
     return `${baseUrl}/auth/oauth-complete?error=${encodeURIComponent("Failed to start session. Please try again.")}`;
@@ -290,7 +318,8 @@ router.get("/api/auth/google/url", oauthRateLimiter, (req: Request, res: Respons
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
       return res.status(503).json({ error: "Google sign-in is not configured." });
     }
-    const baseUrl = appOrigin(req);
+    beginOAuthSignIn(res);
+    const baseUrl = oauthAppBaseUrl();
     const redirectUri = `${baseUrl}/api/auth/google/callback`;
     const client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
@@ -312,7 +341,7 @@ router.get("/api/auth/google/url", oauthRateLimiter, (req: Request, res: Respons
 });
 
 router.get("/api/auth/google/callback", async (req: Request, res: Response) => {
-  const baseUrl = appOrigin(req);
+  const baseUrl = oauthAppBaseUrl();
   const { code, state } = req.query;
   const vs = verifyOAuthState(state as string | undefined);
   if (!vs.ok) {
@@ -346,7 +375,7 @@ router.get("/api/auth/google/callback", async (req: Request, res: Response) => {
     const user = await findOrCreateUserByEmail(email, name);
     scheduleFounderBootstrap(user.id, user.email);
     const token = generateToken({ id: user.id, email: user.email });
-    return res.redirect(await bridgeRedirect(baseUrl, user, token));
+    return res.redirect(await bridgeRedirect(baseUrl, user, token, undefined, req));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Google sign-in failed.";
     log.error("auth oauth google: callback failed", { error: message });
@@ -361,7 +390,8 @@ router.get("/api/auth/microsoft/url", oauthRateLimiter, (req: Request, res: Resp
     if (!process.env.MICROSOFT_CLIENT_ID || !process.env.MICROSOFT_CLIENT_SECRET) {
       return res.status(503).json({ error: "Microsoft sign-in is not configured." });
     }
-    const baseUrl = appOrigin(req);
+    beginOAuthSignIn(res);
+    const baseUrl = oauthAppBaseUrl();
     const redirectUri = `${baseUrl}/api/auth/microsoft/callback`;
     const params = new URLSearchParams({
       client_id: process.env.MICROSOFT_CLIENT_ID,
@@ -382,7 +412,7 @@ router.get("/api/auth/microsoft/url", oauthRateLimiter, (req: Request, res: Resp
 });
 
 router.get("/api/auth/microsoft/callback", async (req: Request, res: Response) => {
-  const baseUrl = appOrigin(req);
+  const baseUrl = oauthAppBaseUrl();
   const { code, state, error_description } = req.query;
   const vs = verifyOAuthState(state as string | undefined);
   if (!vs.ok) {
@@ -436,7 +466,7 @@ router.get("/api/auth/microsoft/callback", async (req: Request, res: Response) =
     const user = await findOrCreateUserByEmail(email, name);
     scheduleFounderBootstrap(user.id, user.email);
     const token = generateToken({ id: user.id, email: user.email });
-    return res.redirect(await bridgeRedirect(baseUrl, user, token));
+    return res.redirect(await bridgeRedirect(baseUrl, user, token, undefined, req));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Microsoft sign-in failed.";
     log.error("auth oauth microsoft: callback failed", { error: message });
@@ -459,7 +489,8 @@ router.get("/api/auth/yahoo/url", oauthRateLimiter, (req: Request, res: Response
     if (!process.env.YAHOO_CLIENT_ID || !process.env.YAHOO_CLIENT_SECRET) {
       return res.status(503).json({ error: "Yahoo sign-in is not configured." });
     }
-    const baseUrl = appOrigin(req);
+    beginOAuthSignIn(res);
+    const baseUrl = oauthAppBaseUrl();
     const redirectUri = `${baseUrl}/api/auth/yahoo/callback`;
     const params = new URLSearchParams({
       client_id: process.env.YAHOO_CLIENT_ID,
@@ -479,7 +510,7 @@ router.get("/api/auth/yahoo/url", oauthRateLimiter, (req: Request, res: Response
 });
 
 router.get("/api/auth/yahoo/callback", async (req: Request, res: Response) => {
-  const baseUrl = appOrigin(req);
+  const baseUrl = oauthAppBaseUrl();
   const { code, state, error_description } = req.query;
   const vs = verifyOAuthState(state as string | undefined);
   if (!vs.ok) {
@@ -532,7 +563,7 @@ router.get("/api/auth/yahoo/callback", async (req: Request, res: Response) => {
     const user = await findOrCreateUserByEmail(email, name);
     scheduleFounderBootstrap(user.id, user.email);
     const token = generateToken({ id: user.id, email: user.email });
-    return res.redirect(await bridgeRedirect(baseUrl, user, token));
+    return res.redirect(await bridgeRedirect(baseUrl, user, token, undefined, req));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Yahoo sign-in failed.";
     log.error("auth oauth yahoo: callback failed", { error: message });
@@ -551,6 +582,11 @@ router.post("/api/auth/oauth/exchange", oauthRateLimiter, async (req: Request, r
   if (!entry) {
     return res.status(400).json({ error: "Invalid or expired code" });
   }
+  const cookieState = readOAuthBridgeStateCookie(req);
+  if (!cookieState || !entry.bridgeState || cookieState !== entry.bridgeState) {
+    return res.status(400).json({ error: "Invalid or expired code" });
+  }
+  clearOAuthBridgeStateCookie(res);
   setSessionCookie(res, entry.token);
   return res.json({
     ...authSuccessBody({

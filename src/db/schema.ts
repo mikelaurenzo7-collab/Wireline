@@ -1547,6 +1547,8 @@ export const oauthPendingCodes = pgTable("wireline_oauth_pending_codes", {
   email: text("email").notNull(),
   fullName: text("full_name"),
   isOwner: boolean("is_owner").notNull().default(false),
+  /** Binds exchange to the browser that started OAuth (httpOnly cookie). */
+  bridgeState: text("bridge_state"),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

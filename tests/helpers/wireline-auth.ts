@@ -36,7 +36,7 @@ export async function authenticatePage(page: Page, baseURL: string) {
     };
     const token = signTestJwt(user, secret);
     const migrate = await page.request.post(`${baseURL}/api/auth/migrate-session`, {
-      data: { token },
+      headers: { Authorization: `Bearer ${token}` },
     });
     expect(migrate.ok()).toBeTruthy();
   }

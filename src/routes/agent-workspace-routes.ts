@@ -15,6 +15,7 @@ import { claudeRateLimiter } from "../middleware/api-rate-limits";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
+import { findOwnedAgentProfile } from "../lib/agent-ownership";
 import {
   planWorkspace,
   WORKSPACE_FIELDS,
@@ -491,21 +492,6 @@ router.delete(
   },
 );
 
-// Shared owner-or-404 lookup for the action endpoints below.
-async function findOwnedAgent(agentId: string, userId: string) {
-  const [agent] = await drizzle
-    .select({
-      id: schema.agents.id,
-      name: schema.agents.name,
-      role: schema.agents.role,
-      enabledTools: schema.agents.enabledTools,
-    })
-    .from(schema.agents)
-    .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
-    .limit(1);
-  return agent ?? null;
-}
-
 // POST /api/agents/:id/workspace/apply-change — apply a single allowlisted
 // config change the operator approved from a chat proposal card. Only the
 // fields in WORKSPACE_FIELDS can be written this way; values are validated
@@ -550,7 +536,7 @@ router.post(
         return res.status(400).json({ error: "That doesn't look like a valid URL." });
       }
 
-      const agent = await findOwnedAgent(agentId, req.user.id);
+      const agent = await findOwnedAgentProfile(agentId, req.user.id);
       if (!agent) return res.status(404).json({ error: "Agent not found" });
 
       await drizzle
@@ -582,7 +568,7 @@ router.post(
       if (typeof enable !== "boolean")
         return res.status(400).json({ error: "enable must be boolean" });
 
-      const agent = await findOwnedAgent(agentId, req.user.id);
+      const agent = await findOwnedAgentProfile(agentId, req.user.id);
       if (!agent) return res.status(404).json({ error: "Agent not found" });
 
       const current = resolveAgentTools(agent.role ?? undefined, agent.enabledTools);
@@ -627,7 +613,7 @@ router.post(
       if (!to) return res.status(400).json({ error: "Recipient required" });
       if (!body) return res.status(400).json({ error: "Message body required" });
 
-      const agent = await findOwnedAgent(agentId, req.user.id);
+      const agent = await findOwnedAgentProfile(agentId, req.user.id);
       if (!agent) return res.status(404).json({ error: "Agent not found" });
 
       const payload =
@@ -670,7 +656,7 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const agentId = req.params.id;
-      const agent = await findOwnedAgent(agentId, req.user.id);
+      const agent = await findOwnedAgentProfile(agentId, req.user.id);
       if (!agent) return res.status(404).json({ error: "Agent not found" });
 
       const since = new Date(Date.now() - 24 * 60 * 60 * 1000);

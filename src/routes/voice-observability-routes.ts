@@ -6,8 +6,8 @@
  *   GET  /api/insights/latency     — Tenant latency trends (auth)
  */
 import express, { Request, Response } from "express";
-import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
+import { vapiWebhookSecretOk } from "../lib/vapi-webhook-auth";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, desc } from "drizzle-orm";
@@ -23,32 +23,6 @@ import type { AuthenticatedRequest } from "../types/auth";
 
 const router = express.Router();
 
-/**
- * Verify the Vapi webhook secret on the public telemetry endpoint.
- *
- * Without this, anyone who knows or guesses a `vapiCallId` could POST forged
- * latency/error metrics that get attributed to that tenant — polluting their
- * dashboards and potentially tripping the voice-degradation alerter. We use
- * the same X-Vapi-Secret the escalation + main Vapi webhooks check, with a
- * timing-safe compare. When VAPI_WEBHOOK_SECRET is unset (local dev), we allow
- * passthrough — matching the convention in escalation-routes.ts so test and
- * dev environments aren't forced to configure the secret.
- */
-function vapiSecretOk(req: Request): boolean {
-  const expected = process.env.VAPI_WEBHOOK_SECRET || "";
-  if (!expected) return true; // dev / unconfigured — allow (matches escalation convention)
-  const provided =
-    (req.headers["x-vapi-secret"] as string | undefined) ||
-    (req.headers["x-vapi-signature"] as string | undefined) ||
-    "";
-  if (provided.length !== expected.length) return false;
-  try {
-    return timingSafeEqual(Buffer.from(provided), Buffer.from(expected));
-  } catch {
-    return false;
-  }
-}
-
 // POST /api/voice/metrics — called by Vapi webhooks (or similar) on call end
 const MetricsBodySchema = z.object({
   vapiCallId: z.string().min(1),
@@ -63,7 +37,7 @@ const MetricsBodySchema = z.object({
 
 router.post("/voice/metrics", async (req: Request, res: Response) => {
   try {
-    if (!vapiSecretOk(req)) {
+    if (!vapiWebhookSecretOk(req)) {
       log.warn("Rejected /voice/metrics with bad or missing Vapi secret");
       return res.status(401).json({ error: "Unauthorized" });
     }

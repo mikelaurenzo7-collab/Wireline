@@ -4,7 +4,7 @@ import { log, auditLogger, tenantStore } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { verifyInternalJwt } from "../lib/auth-utils";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
-import { getSessionTokenFromRequest } from "../lib/session-cookie";
+import { getSessionTokenFromRequest, isProductionRuntime } from "../lib/session-cookie";
 
 /**
  * Express Request with an attached sovereign User.
@@ -96,12 +96,9 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
 /**
  * Authentication middleware for Server-Sent Events (EventSource) endpoints.
  *
- * The browser `EventSource` API cannot attach an `Authorization` header, so SSE
- * streams must carry the bearer token as a `?token=` query parameter instead
- * (mirroring the supervisor WebSocket upgrade in supervisor-websocket-service).
- * An `Authorization` header is still accepted as a fallback for non-browser
- * clients. On success the request is run inside the tenant AsyncLocalStorage
- * scope so downstream queries are RLS-scoped just like `authenticateUser`.
+ * Browser clients should use the httpOnly `wireline_session` cookie (EventSource
+ * sends cookies on same-origin requests). In development, `?token=` is still
+ * accepted for local debugging. In production, query tokens are rejected.
  */
 export async function authenticateEventStream(req: Request, res: Response, next: NextFunction) {
   try {
@@ -109,6 +106,13 @@ export async function authenticateEventStream(req: Request, res: Response, next:
 
     if (authedReq.user?.id) {
       return tenantStore.getStore() ? next() : tenantStore.run(authedReq.user.id, () => next());
+    }
+
+    if (isProductionRuntime() && typeof req.query.token === "string" && req.query.token) {
+      return res.status(401).json({
+        error: "Query token authentication is not supported. Use session cookies.",
+        code: "SSE_QUERY_TOKEN_DEPRECATED",
+      });
     }
 
     const token =

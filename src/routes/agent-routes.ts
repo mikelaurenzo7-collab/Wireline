@@ -1317,42 +1317,57 @@ router.post(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { lessonId, content } = req.body;
+      const { lessonId } = req.body;
       const agentId = req.params.id;
 
-      // SECURITY: verify the caller owns the target agent before inserting
-      // a directive against it. Without this, an attacker could promote a
-      // lesson into another user's agent's directives.
-      const [ownedAgent] = await drizzle
-        .select({ id: schema.agents.id })
-        .from(schema.agents)
-        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+      if (lessonId === undefined || lessonId === null || lessonId === "") {
+        return res.status(400).json({ error: "lessonId is required" });
+      }
+      let lessonIdBig: bigint;
+      try {
+        lessonIdBig = BigInt(lessonId);
+      } catch {
+        return res.status(400).json({ error: "lessonId is invalid" });
+      }
+
+      if (!(await findOwnedAgentId(agentId, req.user.id))) {
+        return res.status(404).json({ error: "Agent not found" });
+      }
+
+      const [lesson] = await drizzle
+        .select({ id: schema.agentLessons.id, lesson: schema.agentLessons.lesson })
+        .from(schema.agentLessons)
+        .where(
+          and(
+            eq(schema.agentLessons.id, lessonIdBig),
+            eq(schema.agentLessons.agentId, agentId),
+            eq(schema.agentLessons.userId, req.user.id),
+          ),
+        )
         .limit(1);
-      if (!ownedAgent) return res.status(404).json({ error: "Agent not found" });
+      if (!lesson) return res.status(404).json({ error: "Lesson not found" });
 
-      // Validate content shape — keeps the directive within table limits.
-      if (typeof content !== "string" || content.trim().length === 0) {
-        return res.status(400).json({ error: "content is required" });
+      const directiveContent = lesson.lesson.trim();
+      if (directiveContent.length === 0) {
+        return res.status(400).json({ error: "Lesson has no content to promote" });
       }
-      if (content.length > 1000) {
-        return res.status(400).json({ error: "content must be 1000 characters or less" });
+      if (directiveContent.length > 1000) {
+        return res.status(400).json({ error: "Lesson content must be 1000 characters or less" });
       }
 
-      // Insert into wireline_directives (the table that agent-config reads from).
-      // Priority 5 = medium on the 1-10 scale used throughout the app.
       await drizzle.insert(schema.directives).values({
         agentId: agentId,
-        content: content.trim(),
+        content: directiveContent,
         priority: 5,
         userId: req.user.id,
       });
 
-      // Delete the lesson after promotion — verify ownership first
       await drizzle
         .delete(schema.agentLessons)
         .where(
           and(
-            eq(schema.agentLessons.id, BigInt(lessonId)),
+            eq(schema.agentLessons.id, lessonIdBig),
+            eq(schema.agentLessons.agentId, agentId),
             eq(schema.agentLessons.userId, req.user.id),
           ),
         );

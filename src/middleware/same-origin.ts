@@ -7,7 +7,8 @@ const ORIGIN_CHECK_SKIP_PREFIXES = [
   "/api/stripe-webhook",
   "/api/webhooks/",
   "/api/twilio-webhook",
-  "/api/intake/",
+  "/api/intake/lead",
+  "/api/intake/leads",
   "/api/health",
   "/api/public-stats",
 ];

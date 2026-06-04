@@ -142,11 +142,13 @@ All migrations use `IF NOT EXISTS` — safe to re-run.
 
 Sessions use an **httpOnly** `wireline_session` cookie (`SameSite=Lax`, `Secure` in production). The client calls APIs with `credentials: "include"`. Bearer tokens in `Authorization` are still accepted for scripts and legacy flows; they are not stored in `localStorage`.
 
-`POST /api/auth/migrate-session` is rate-limited and rotates the JWT when moving off legacy `localStorage` — do not return tokens in JSON bodies.
+`POST /api/auth/migrate-session` is rate-limited and rotates the JWT when moving off legacy `localStorage`. Send the legacy JWT only via `Authorization: Bearer …` (not a JSON body); do not return tokens in JSON responses.
+
+When `POSTGRES_URL` is configured as a GitHub Actions secret, CI runs `tests/integration/agent-tenant-isolation.integration.test.ts` against live Postgres.
 
 ### CSRF posture
 
-SameSite=Lax blocks most cross-site cookie sends on `POST`. For defense in depth, `assertSameOrigin` (in `server.ts`) rejects `POST`/`PUT`/`PATCH`/`DELETE` on `/api/*` when `Origin` or `Referer` is present and not in `APP_URL` / `CORS_ORIGINS`. Vendor webhooks under `/api/webhooks/*`, Stripe, Twilio, and intake are excluded.
+SameSite=Lax blocks most cross-site cookie sends on `POST`. For defense in depth, `assertSameOrigin` (in `server.ts`) rejects `POST`/`PUT`/`PATCH`/`DELETE` on `/api/*` when `Origin` or `Referer` is present and not in `APP_URL` / `CORS_ORIGINS`. Vendor webhooks under `/api/webhooks/*`, Stripe, Twilio, and public intake ingest (`/api/intake/lead`, `/api/intake/leads`) are excluded. Intake key management (`/api/intake/keys`, etc.) is origin-checked.
 
 ```typescript
 import { authenticateUser } from "../middleware/auth";

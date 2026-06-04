@@ -33,6 +33,7 @@ import { bootstrapFounderFleetIfEmpty, scheduleFounderBootstrap } from "../lib/f
 import { authSuccessBody, clearSessionCookie, setSessionCookie } from "../lib/session-cookie";
 import { verifyInternalJwt } from "../lib/auth-utils";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
+import { resolveCanonicalAppUrl } from "../lib/app-url";
 const router = Router();
 
 function sendAuthSuccess(
@@ -354,10 +355,12 @@ router.post(
   async (req: Request, res: Response) => {
     const authHeader =
       typeof req.headers.authorization === "string" ? req.headers.authorization : "";
-    const bearer = authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : "";
-    const bodyToken = typeof req.body?.token === "string" ? req.body.token.trim() : "";
-    const token = bearer || bodyToken;
-    if (!token) return res.status(400).json({ error: "Missing token" });
+    const token = authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : "";
+    if (!token) {
+      return res.status(400).json({
+        error: "Missing token. Send Authorization: Bearer <legacy-jwt>.",
+      });
+    }
     try {
       const secret = requireInternalJwtSecret();
       const payload = await verifyInternalJwt(token, secret);
@@ -386,16 +389,6 @@ router.post("/api/auth/signout", async (_req: Request, res: Response) => {
   clearSessionCookie(res);
   res.json({ success: true });
 });
-
-/**
- * Resolve the absolute URL base for password reset links. Mirrors the
- * pattern in billing-routes — prefer the configured APP_URL, fall back
- * to the request's origin header, then localhost for dev. The result is
- * trailing-slash-trimmed so callers can append a clean `/reset-password`.
- */
-function appBaseUrl(req: Request): string {
-  return (process.env.APP_URL || req.get("origin") || "http://localhost:3000").replace(/\/+$/, "");
-}
 
 /**
  * Equalize response time across the registered/unregistered paths in
@@ -452,29 +445,34 @@ router.post(
       const issued = await equalizedDuration(authService.createPasswordResetToken(email, req.ip));
 
       if (issued) {
-        const resetUrl = `${appBaseUrl(req)}/reset-password?token=${encodeURIComponent(issued.token)}`;
-        // SECURITY: NEVER log the plaintext token — that's account
-        // takeover for anyone with log access. The email helper logs
-        // only the resetUrl when transport is the dev-fallback path,
-        // and that path warns loudly that it's not safe for prod.
-        const sendResult = await sendPasswordResetEmail({
-          to: email,
-          resetUrl,
-          expiresAt: issued.expiresAt,
-        });
-        log.info("Password reset token issued", {
-          email,
-          expiresAt: issued.expiresAt.toISOString(),
-          tokenPrefix: issued.token.slice(0, 6) + "…",
-          transport: sendResult.provider,
-          delivery_ok: sendResult.ok,
-        });
-        if (!sendResult.ok) {
-          log.warn("Password reset email send failed", {
-            email,
-            transport: sendResult.provider,
-            error: sendResult.error,
+        const appUrl = resolveCanonicalAppUrl();
+        if ("error" in appUrl) {
+          log.error("Password reset skipped: APP_URL not configured in production");
+        } else {
+          const resetUrl = `${appUrl.url}/reset-password?token=${encodeURIComponent(issued.token)}`;
+          // SECURITY: NEVER log the plaintext token — that's account
+          // takeover for anyone with log access. The email helper logs
+          // only the resetUrl when transport is the dev-fallback path,
+          // and that path warns loudly that it's not safe for prod.
+          const sendResult = await sendPasswordResetEmail({
+            to: email,
+            resetUrl,
+            expiresAt: issued.expiresAt,
           });
+          log.info("Password reset token issued", {
+            email,
+            expiresAt: issued.expiresAt.toISOString(),
+            tokenPrefix: issued.token.slice(0, 6) + "…",
+            transport: sendResult.provider,
+            delivery_ok: sendResult.ok,
+          });
+          if (!sendResult.ok) {
+            log.warn("Password reset email send failed", {
+              email,
+              transport: sendResult.provider,
+              error: sendResult.error,
+            });
+          }
         }
       }
 

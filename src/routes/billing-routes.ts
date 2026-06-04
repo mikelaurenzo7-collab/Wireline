@@ -20,11 +20,9 @@ import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
 import { getVoiceUsageSnapshot } from "../lib/voice-usage";
 import Stripe from "stripe";
 import type { AuthenticatedRequest } from "../types/auth";
+import { resolveCanonicalAppUrl } from "../lib/app-url";
 
 const router = express.Router();
-function billingBaseUrl(req: Request): string {
-  return (process.env.APP_URL || req.get("origin") || "http://localhost:3000").replace(/\/+$/, "");
-}
 
 // ─── Stripe Webhook ──────────────────────────────────────────────────────────
 
@@ -666,7 +664,13 @@ router.post(
         });
       }
 
-      const base = billingBaseUrl(req);
+      const appUrl = resolveCanonicalAppUrl();
+      if ("error" in appUrl) {
+        return res
+          .status(503)
+          .json({ error: "Billing is unavailable: APP_URL is not configured." });
+      }
+      const base = appUrl.url;
       const lineItems = subscriptionCheckoutLineItems(plan, interval);
       if (!lineItems.length) {
         return res.status(503).json({
@@ -722,10 +726,15 @@ router.post(
           .status(404)
           .json({ error: "No Stripe customer for this user yet — run checkout first." });
       }
-      const base = billingBaseUrl(req);
+      const appUrl = resolveCanonicalAppUrl();
+      if ("error" in appUrl) {
+        return res
+          .status(503)
+          .json({ error: "Billing portal unavailable: APP_URL is not configured." });
+      }
       const portal = await stripe.billingPortal.sessions.create({
         customer: sub.stripeCustomerId,
-        return_url: `${base}/admin`,
+        return_url: `${appUrl.url}/admin`,
       });
       res.json({ url: portal.url });
       void auditLogger

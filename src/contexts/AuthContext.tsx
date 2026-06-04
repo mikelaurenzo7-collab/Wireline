@@ -50,9 +50,11 @@ async function migrateLegacyLocalStorage(): Promise<void> {
     }
     await fetch("/api/auth/migrate-session", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${parsed.access_token}`,
+      },
       credentials: "include",
-      body: JSON.stringify({ token: parsed.access_token }),
     });
   } catch {
     /* ignore — session hydrate will fail cleanly */

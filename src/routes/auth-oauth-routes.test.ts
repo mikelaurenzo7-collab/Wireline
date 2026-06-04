@@ -16,6 +16,7 @@ import express from "express";
 import type { Express } from "express";
 import http from "http";
 import type { AddressInfo } from "net";
+import { OAUTH_BRIDGE_STATE_COOKIE } from "../lib/oauth-bridge-cookie";
 
 const mocks = vi.hoisted(() => ({
   drizzle: {
@@ -251,6 +252,7 @@ describe("OAuth /url endpoints", () => {
       process.env.GOOGLE_CLIENT_SECRET = "google-test-secret";
 
       const userId = "af36620d-047e-4521-a726-8507d25444fd";
+      const bridgeState = "test-bridge-state-value";
       mocks.drizzle.select.mockReturnValue({
         from: () => ({ where: () => ({ limit: vi.fn().mockResolvedValue([]) }) }),
       });
@@ -284,18 +286,132 @@ describe("OAuth /url endpoints", () => {
           `${url}/api/auth/google/callback?code=provider-code&state=test-state`,
           {
             redirect: "manual",
+            headers: { Cookie: `${OAUTH_BRIDGE_STATE_COOKIE}=${bridgeState}` },
           },
         );
         expect(res.status).toBe(302);
         const location = res.headers.get("location") || "";
         expect(location).toMatch(/^https:\/\/example\.test\/auth\/oauth-complete\?code=/);
         expect(location).not.toContain("Failed");
-        expect(mocks.drizzle.execute).toHaveBeenCalledTimes(2);
+        expect(mocks.drizzle.execute).toHaveBeenCalledTimes(3);
         expect(pendingValues).toHaveBeenCalledTimes(2);
+        expect(pendingValues).toHaveBeenLastCalledWith(expect.objectContaining({ bridgeState }));
         expect(mocks.log.warn).toHaveBeenCalledWith(
           "auth oauth: pending-code schema missing; repairing before retry",
           expect.objectContaining({ code: "42P01" }),
         );
+      } finally {
+        await closeServer(server);
+      }
+    }, 30_000);
+
+    it("redirects with error when bridge cookie is missing on callback", async () => {
+      process.env.APP_URL = "https://example.test";
+      process.env.GOOGLE_CLIENT_ID = "google-test-client-id";
+      process.env.GOOGLE_CLIENT_SECRET = "google-test-secret";
+      mocks.drizzle.select.mockReturnValue({
+        from: () => ({ where: () => ({ limit: vi.fn().mockResolvedValue([]) }) }),
+      });
+      mocks.drizzle.insert.mockImplementation(() => ({
+        values: () => ({
+          returning: vi.fn().mockResolvedValue([
+            {
+              id: "af36620d-047e-4521-a726-8507d25444fd",
+              email: "oauth-user@example.test",
+              fullName: "OAuth User",
+            },
+          ]),
+        }),
+      }));
+
+      const app = await buildApp();
+      const { server, url } = await listen(app);
+      try {
+        const res = await fetch(
+          `${url}/api/auth/google/callback?code=provider-code&state=test-state`,
+          { redirect: "manual" },
+        );
+        expect(res.status).toBe(302);
+        const location = decodeURIComponent(res.headers.get("location") || "");
+        expect(location).toContain("Sign-in session expired");
+      } finally {
+        await closeServer(server);
+      }
+    }, 30_000);
+  });
+
+  describe("POST /api/auth/oauth/exchange", () => {
+    const bridgeState = "bridge-for-exchange-test";
+    const pendingCode = "one-time-code-abc";
+
+    function mockConsumeRow(overrides?: { bridge_state?: string | null }) {
+      mocks.drizzle.execute.mockResolvedValue({
+        rows: [
+          {
+            code: pendingCode,
+            token: "session-jwt",
+            user_id: "af36620d-047e-4521-a726-8507d25444fd",
+            email: "oauth-user@example.test",
+            full_name: "OAuth User",
+            is_owner: false,
+            bridge_state: overrides?.bridge_state ?? bridgeState,
+            expires_at: new Date(Date.now() + 60_000),
+          },
+        ],
+      });
+    }
+
+    it("rejects exchange without bridge cookie", async () => {
+      mockConsumeRow();
+      const app = await buildApp();
+      const { server, url } = await listen(app);
+      try {
+        const res = await fetch(`${url}/api/auth/oauth/exchange`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: pendingCode }),
+        });
+        expect(res.status).toBe(400);
+      } finally {
+        await closeServer(server);
+      }
+    }, 30_000);
+
+    it("rejects exchange when bridge cookie does not match", async () => {
+      mockConsumeRow();
+      const app = await buildApp();
+      const { server, url } = await listen(app);
+      try {
+        const res = await fetch(`${url}/api/auth/oauth/exchange`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Cookie: `${OAUTH_BRIDGE_STATE_COOKIE}=wrong-state`,
+          },
+          body: JSON.stringify({ code: pendingCode }),
+        });
+        expect(res.status).toBe(400);
+      } finally {
+        await closeServer(server);
+      }
+    }, 30_000);
+
+    it("succeeds when bridge cookie matches stored state", async () => {
+      mockConsumeRow();
+      const app = await buildApp();
+      const { server, url } = await listen(app);
+      try {
+        const res = await fetch(`${url}/api/auth/oauth/exchange`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Cookie: `${OAUTH_BRIDGE_STATE_COOKIE}=${bridgeState}`,
+          },
+          body: JSON.stringify({ code: pendingCode }),
+        });
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.email).toBe("oauth-user@example.test");
       } finally {
         await closeServer(server);
       }
