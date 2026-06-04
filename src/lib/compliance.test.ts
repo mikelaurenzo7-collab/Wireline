@@ -6,20 +6,7 @@
  * tests that own a transactional fixture.
  */
 import { describe, it, expect } from "vitest";
-import { DNC_IMPORT_MAX_ENTRIES, dncImportLimitError, normalizeDncPhone } from "./compliance.js";
-
-describe("dncImportLimitError", () => {
-  it("allows imports within the cap", () => {
-    expect(dncImportLimitError(DNC_IMPORT_MAX_ENTRIES)).toBeNull();
-    expect(dncImportLimitError(1)).toBeNull();
-  });
-
-  it("rejects imports above the cap with a clear message", () => {
-    const err = dncImportLimitError(DNC_IMPORT_MAX_ENTRIES + 1);
-    expect(err).toMatch(/5,?000/);
-    expect(err).toMatch(/maximum/i);
-  });
-});
+import { normalizeDncPhone } from "./compliance.js";
 
 describe("normalizeDncPhone", () => {
   it("strips all non-digit characters", () => {

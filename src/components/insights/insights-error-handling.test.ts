@@ -69,7 +69,7 @@ describe("DncManager API contract", () => {
   it("uses readApiJson and import limits", () => {
     const src = read("components/DncManager.tsx");
     expect(src).toContain("readApiJson");
-    expect(src).toContain("dncImportLimitError");
+    expect(src).toContain("dnc-import-limits");
     expect(src).toContain("DNC_IMPORT_MAX_ENTRIES");
   });
 });

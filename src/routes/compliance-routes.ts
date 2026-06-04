@@ -10,7 +10,8 @@ import {
   getConsentRuleForPhone,
   CONSENT_RULE_VERSION,
 } from "../lib/tcpa-consent";
-import { DNC_IMPORT_MAX_ENTRIES, dncImportLimitError, normalizeDncPhone } from "../lib/compliance";
+import { DNC_IMPORT_MAX_ENTRIES, dncImportLimitError } from "../lib/dnc-import-limits";
+import { normalizeDncPhone } from "../lib/compliance";
 import { getErrorMessage } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 

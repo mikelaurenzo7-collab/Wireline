@@ -19,7 +19,7 @@ import Papa from "papaparse";
 import { authFetch, readApiJson } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatDate } from "../lib/safe-date";
-import { DNC_IMPORT_MAX_ENTRIES, dncImportLimitError } from "../lib/compliance";
+import { DNC_IMPORT_MAX_ENTRIES, dncImportLimitError } from "../lib/dnc-import-limits";
 import { OPS_SUPPORT_EMPTY } from "../lib/wireline-ops-design";
 import { BRAND } from "../constants/brand-colors";
 import PageShell, { Panel } from "./PageShell";
