@@ -621,8 +621,29 @@ export default function AgentTraining({
                             ) : (
                               <div className="flex gap-2 items-start justify-between">
                                 <div className="flex-1 min-w-0">
-                                  <div className="text-[9px] uppercase tracking-[0.3em] text-muted/70 mb-1">
-                                    Priority {d.priority}
+                                  <div className="mb-1.5">
+                                    <span
+                                      className={cn(
+                                        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] uppercase tracking-[0.2em] font-semibold border",
+                                        d.priority <= 2
+                                          ? "bg-rose-500/10 border-rose-500/30 text-rose-600"
+                                          : d.priority <= 4
+                                            ? "bg-amber-400/10 border-amber-400/30 text-amber-600"
+                                            : "bg-emerald-500/10 border-emerald-500/30 text-emerald-700",
+                                      )}
+                                    >
+                                      <span
+                                        className={cn(
+                                          "w-1 h-1 rounded-full",
+                                          d.priority <= 2
+                                            ? "bg-rose-500"
+                                            : d.priority <= 4
+                                              ? "bg-amber-400"
+                                              : "bg-emerald-500",
+                                        )}
+                                      />
+                                      P{d.priority}
+                                    </span>
                                   </div>
                                   <div className="text-sm text-ink/90 leading-relaxed">
                                     {d.content}

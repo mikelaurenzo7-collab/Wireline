@@ -542,16 +542,20 @@ export default function LiveOps() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="p-4 rounded-2xl wl-panel">
-                          <span className="wl-label block mb-1">Cost / Min</span>
-                          <span className="font-display italic text-2xl text-ink tabular-nums">
+                      <div className="grid grid-cols-2 gap-2 stagger-children">
+                        <div className="p-4 rounded-2xl wl-panel relative overflow-hidden group hover:-translate-y-px transition-transform">
+                          <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-brand/8 blur-xl -translate-y-4 translate-x-4" />
+                          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand/40 to-transparent" />
+                          <span className="wl-label block mb-1 relative z-10">Cost / Min</span>
+                          <span className="font-display italic text-2xl text-ink tabular-nums relative z-10">
                             ${stats?.unitEconomics?.costPerMinute ?? "0.00"}
                           </span>
                         </div>
-                        <div className="p-4 rounded-2xl wl-panel">
-                          <span className="wl-label block mb-1">Cost / Lead</span>
-                          <span className="font-display italic text-2xl text-ink tabular-nums">
+                        <div className="p-4 rounded-2xl wl-panel relative overflow-hidden group hover:-translate-y-px transition-transform">
+                          <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-brand-deep/8 blur-xl -translate-y-4 translate-x-4" />
+                          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand-deep/40 to-transparent" />
+                          <span className="wl-label block mb-1 relative z-10">Cost / Lead</span>
+                          <span className="font-display italic text-2xl text-ink tabular-nums relative z-10">
                             ${stats?.unitEconomics?.costPerLead ?? "0.00"}
                           </span>
                         </div>
@@ -595,16 +599,28 @@ export default function LiveOps() {
 
                 <div className="space-y-1">
                   <div className="flex items-center justify-between py-1 border-b border-brand/5">
-                    <span className="text-[12px] text-muted-foreground">Active Call Traffic</span>
-                    <span className="text-[12px] font-mono font-bold text-ink dark:text-foreground">
+                    <span className="text-[12px] text-ink/50">Active Call Traffic</span>
+                    <motion.span
+                      key={calls.length}
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="text-[12px] font-mono font-bold text-ink"
+                    >
                       {calls.length} active
-                    </span>
+                    </motion.span>
                   </div>
                   <div className="flex items-center justify-between py-1">
-                    <span className="text-[12px] text-muted-foreground">Configured Agents</span>
-                    <span className="text-[12px] font-mono font-bold text-ink dark:text-foreground">
+                    <span className="text-[12px] text-ink/50">Configured Agents</span>
+                    <motion.span
+                      key={stats?.agents?.length ?? 0}
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="text-[12px] font-mono font-bold text-ink"
+                    >
                       {stats?.agents?.length ?? 0}
-                    </span>
+                    </motion.span>
                   </div>
                 </div>
               </div>

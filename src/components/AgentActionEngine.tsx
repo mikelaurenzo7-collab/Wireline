@@ -160,7 +160,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
               <div className="h-px bg-brand/10 flex-1" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 stagger-children">
               {tools.map((tool) => {
                 const isEnabled = enabledTools.includes(tool.name);
                 const status = getIntegrationStatus(tool.integration);
@@ -172,8 +172,8 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                     className={cn(
                       "relative p-5 rounded-2xl border transition-all cursor-pointer overflow-hidden group",
                       isEnabled && !isMissingIntegration
-                        ? "bg-brand/5 border-brand/30 shadow-[0_0_15px_rgba(107, 43, 153 ,0.05)]"
-                        : "glass hover:border-brand/30",
+                        ? "bg-brand/5 border-brand/30 shadow-[0_4px_24px_rgba(139,63,214,0.08)] hover:-translate-y-px"
+                        : "glass hover:border-brand/30 hover:-translate-y-px",
                       isMissingIntegration && "opacity-75 cursor-not-allowed grayscale",
                     )}
                     onClick={() => {
@@ -182,7 +182,10 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                   >
                     {/* Background glow if enabled */}
                     {isEnabled && !isMissingIntegration && (
-                      <div className="absolute inset-0 bg-gradient-to-br from-brand/10 to-transparent opacity-50" />
+                      <>
+                        <div className="absolute inset-0 bg-gradient-to-br from-brand/10 to-transparent opacity-50" />
+                        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand/50 to-transparent" />
+                      </>
                     )}
 
                     <div className="relative z-10 flex items-start gap-4">
