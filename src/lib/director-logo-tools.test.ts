@@ -19,6 +19,10 @@ describe("director-logo-tools", () => {
     expect(brief.usage).toMatch(/website/i);
   });
 
+  it("detects missing brief fields", () => {
+    expect(missingCreativeFields({ prompt: "x" })).toEqual(["style", "colors", "usage"]);
+  });
+
   it("extracts creative brief fields from natural language follow-ups", () => {
     const brief = parseCreativeBriefFromText(
       "Minimal geometric mark. Deep blue (#1a3a5c) and electric teal (#00d4aa). Primary use: website header and app icon.",
