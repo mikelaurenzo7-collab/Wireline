@@ -72,7 +72,7 @@ export default function About() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="glass border border-brand/20 p-5 sm:p-8 flex flex-col sm:flex-row items-start gap-4 sm:gap-6"
+            className="glass card-shimmer border border-brand/20 p-5 sm:p-8 flex flex-col sm:flex-row items-start gap-4 sm:gap-6"
           >
             <div
               className="w-14 h-14 sm:w-20 sm:h-20 flex items-center justify-center shrink-0"
@@ -116,7 +116,7 @@ export default function About() {
           <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-8">
             How Wireline operates
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 stagger-children">
             {PRINCIPLES.map((p, i) => (
               <motion.div
                 key={p.title}
@@ -124,7 +124,7 @@ export default function About() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.08 }}
-                className="glass border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30"
+                className="glass card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30 hover:shadow-[0_12px_48px_rgba(139,63,214,0.06)]"
               >
                 <div
                   className="w-8 h-8 flex items-center justify-center mb-3"
