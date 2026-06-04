@@ -45,6 +45,16 @@ test.describe("Wireline design — public marketing surfaces", () => {
     await expect(page.getByTestId("hero-showcase-link")).toBeVisible();
     await assertHeaderTrialCta(page);
   });
+
+  test("landing gutter robots render on xl viewports", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await gotoHydrated(page, "/");
+    await expect(page.getByTestId("hero-robot-decorations")).toBeVisible();
+    await expect(page.getByTestId("proof-robot-decorations")).toBeVisible();
+    await expect(page.getByTestId("integrations-robot-decorations")).toBeVisible();
+    await page.getByTestId("faq-section").scrollIntoViewIfNeeded();
+    await expect(page.getByTestId("faq-robot-decorations")).toBeVisible();
+  });
 });
 
 test.describe("Wireline design — public responsive integrity", () => {

@@ -1,6 +1,6 @@
 /**
- * HeroDecorations — six gutter robots (3 left, 3 right). Hero-only; no other
- * sections use sticker decorations.
+ * HeroDecorations — six gutter robots (3 left, 3 right). Hero uses vivid treatment;
+ * lower sections use LandingSectionDecorations (ghost tier).
  */
 import { SectionStickers, type SectionStickerSlot } from "./SectionStickers";
 

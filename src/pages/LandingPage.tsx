@@ -5,6 +5,7 @@ import { ArrowUpRight, Plus } from "lucide-react";
 import PublicSiteHeader from "../components/marketing/PublicSiteHeader";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import { HeroDecorations } from "../components/marketing/HeroDecorations";
+import { LandingSectionDecorations } from "../components/marketing/LandingSectionDecorations";
 import { PageMeta } from "../lib/page-meta";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
@@ -113,7 +114,7 @@ export default function LandingPage() {
         {/* ─── Hero ───────────────────────────────────────────────── */}
         <section
           data-testid="hero-section"
-          className="relative min-h-[85svh] flex flex-col justify-center px-6 lg:px-12 pt-24 pb-16 lg:pt-28 lg:pb-24 overflow-hidden"
+          className="relative min-h-[85svh] flex flex-col justify-center px-6 lg:px-12 pt-24 pb-20 lg:pt-28 lg:pb-28 overflow-hidden"
         >
           <div className="hero-aurora-orb" aria-hidden="true" />
           <div className="hero-aurora-orb-warm" aria-hidden="true" />
@@ -138,13 +139,8 @@ export default function LandingPage() {
               </motion.span>
 
               <h1 className="hero-word-reveal hero-headline-glow font-display italic text-[clamp(2.2rem,7vw,5.5rem)] leading-[0.95] tracking-tight text-ink max-w-4xl mx-auto">
-                <span>Every </span>
-                <span>conversation, </span>
-                <span className="text-brand">answered </span>
-                <span className="text-brand">like </span>
-                <span className="text-brand">your </span>
-                <span className="text-brand">best </span>
-                <span className="text-brand">rep.</span>
+                <span className="block">Every conversation,</span>
+                <span className="block text-brand mt-1 sm:mt-2">answered like your best rep.</span>
               </h1>
 
               <motion.p
@@ -242,9 +238,10 @@ export default function LandingPage() {
         {/* ─── Proof ──────────────────────────────────────────────── */}
         <section
           data-testid="proof-section"
-          className="px-6 lg:px-12 py-16 lg:py-24 border-t border-ink/[0.06]"
+          className="landing-section landing-section--band px-6 lg:px-12"
         >
-          <div className="max-w-7xl mx-auto">
+          <LandingSectionDecorations section="proof" />
+          <div className="landing-section-inner max-w-7xl">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08]">
               {STATS.map((stat, i) => (
                 <motion.div
@@ -271,14 +268,15 @@ export default function LandingPage() {
         </section>
 
         {/* ─── Integrations ───────────────────────────────────────── */}
-        <section data-testid="integrations-section" className="px-6 lg:px-12 pb-16 lg:pb-24">
-          <div className="max-w-5xl mx-auto">
+        <section data-testid="integrations-section" className="landing-section px-6 lg:px-12">
+          <LandingSectionDecorations section="integrations" />
+          <div className="landing-section-inner max-w-5xl">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
-              className="text-center mb-10"
+              className="landing-section-head text-center"
             >
               <p className="font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-3">
                 Your stack
@@ -292,17 +290,15 @@ export default function LandingPage() {
         </section>
 
         {/* ─── FAQ ────────────────────────────────────────────────── */}
-        <section
-          data-testid="faq-section"
-          className="px-6 lg:px-12 py-20 lg:py-28 border-t border-ink/[0.08]"
-        >
-          <div className="max-w-3xl mx-auto">
+        <section data-testid="faq-section" className="landing-section px-6 lg:px-12">
+          <LandingSectionDecorations section="faq" />
+          <div className="landing-section-inner max-w-3xl">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="mb-10 lg:mb-14 text-center"
+              className="landing-section-head text-center"
             >
               <p className="font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-3">
                 Questions, answered
@@ -344,7 +340,7 @@ export default function LandingPage() {
         {/* ─── Footer ─────────────────────────────────────────────── */}
         <footer
           data-testid="landing-footer"
-          className="footer-brand-glow bg-ink text-paper"
+          className="footer-brand-glow bg-ink text-paper border-t border-paper/[0.08]"
           style={{ background: "#1A1614" }}
         >
           <div className="max-w-7xl mx-auto px-6 lg:px-12 py-16 lg:py-20">

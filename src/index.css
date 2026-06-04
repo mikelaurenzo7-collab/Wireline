@@ -1804,6 +1804,53 @@ html, body, .marketing-surface, .app-surface {
   border-radius: 0;
 }
 
+/* Landing page — unified vertical rhythm + gutter-safe sections */
+.landing-section {
+  position: relative;
+  overflow: hidden;
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-ink) 6%, transparent);
+}
+
+@media (min-width: 1024px) {
+  .landing-section {
+    padding-top: 7rem;
+    padding-bottom: 7rem;
+  }
+}
+
+.landing-section-inner {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.landing-section-head {
+  margin-bottom: 2.5rem;
+}
+
+@media (min-width: 1024px) {
+  .landing-section-head {
+    margin-bottom: 3.5rem;
+  }
+}
+
+/** Compact band — stats row; avoids a double-rhythm gap before the next section. */
+.landing-section--band {
+  padding-top: 3.5rem;
+  padding-bottom: 3.5rem;
+}
+
+@media (min-width: 1024px) {
+  .landing-section--band {
+    padding-top: 4.5rem;
+    padding-bottom: 4.5rem;
+  }
+}
+
 .marketing-body {
   font-size: 0.8125rem;
   line-height: 1.55;
@@ -3552,16 +3599,11 @@ select:focus {
 }
 
 .hero-word-reveal > span {
-  display: inline-block;
+  display: block;
   animation: word-reveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .hero-word-reveal > span:nth-child(1) { animation-delay: 0.1s; }
-.hero-word-reveal > span:nth-child(2) { animation-delay: 0.18s; }
-.hero-word-reveal > span:nth-child(3) { animation-delay: 0.26s; }
-.hero-word-reveal > span:nth-child(4) { animation-delay: 0.34s; }
-.hero-word-reveal > span:nth-child(5) { animation-delay: 0.42s; }
-.hero-word-reveal > span:nth-child(6) { animation-delay: 0.5s; }
-.hero-word-reveal > span:nth-child(7) { animation-delay: 0.58s; }
+.hero-word-reveal > span:nth-child(2) { animation-delay: 0.35s; }
 
 /* ── FAQ EXPAND — smooth height reveal with content fade ───────────────── */
 .faq-details[open] > p {
