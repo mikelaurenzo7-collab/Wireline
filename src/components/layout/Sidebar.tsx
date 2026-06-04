@@ -20,16 +20,13 @@ import {
   LogOut,
   Search,
   Settings,
-  Sun,
-  Moon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import WirelineMark from "../WirelineMark";
 import { useAuth } from "../../contexts/AuthContext";
 import { useBranding } from "../../contexts/BrandingContext";
-import { useTheme } from "../../contexts/ThemeContext";
-import { NAV_GROUPS, type NavItem, NAV_SHORTCUT_HINTS } from "../../constants/navigation";
-import { BRAND, NAV_GROUP_ACCENTS } from "../../constants/brand-colors";
+import { SIDEBAR_NAV_ITEMS, type NavItem, NAV_SHORTCUT_HINTS } from "../../constants/navigation";
+import { BRAND, ROUTE_ACCENTS } from "../../constants/brand-colors";
 import { authFetch } from "../../lib/api";
 import { useLivePresence } from "../../hooks/useLivePresence";
 import { cn } from "../../lib/utils";
@@ -55,8 +52,6 @@ export default function Sidebar({ navBadges }: SidebarProps) {
   );
   const [userOverride, setUserOverride] = useState<boolean | null>(null);
   const [peek, setPeek] = useState(false);
-
-  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const onResize = () => setAutoExpanded(window.innerWidth >= AUTO_EXPAND_WIDTH);
@@ -115,7 +110,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         {/* Logo */}
         <Link
           to="/"
-          className="shrink-0 flex items-center gap-3 h-12 px-3 group"
+          className="shrink-0 flex items-center gap-3 h-10 px-2.5 group"
           aria-label={`${branding.brand_name} home`}
         >
           <motion.div
@@ -158,8 +153,8 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           disableAnimations
           onClick={() => window.dispatchEvent(new CustomEvent("wireline:open-command-bar"))}
           className={cn(
-            "shrink-0 mx-2 mb-1.5 h-8 w-full justify-start gap-2 rounded-md border border-white/20 bg-white/[0.08] hover:bg-white/[0.15] hover:border-white/30 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:hover:border-white/20",
-            effective ? "px-3" : "px-2 justify-center",
+            "shrink-0 mx-1.5 mb-1 h-7 w-[calc(100%-0.75rem)] justify-start gap-2 rounded-md border border-white/20 bg-white/[0.08] hover:bg-white/[0.15] hover:border-white/30 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:hover:border-white/20",
+            effective ? "px-2.5" : "px-1.5 justify-center",
           )}
           aria-label="Open search ( / )"
         >
@@ -179,46 +174,39 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           )}
         </ShadButton>
 
-        {/* Nav items */}
-        <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scroll-viewport wl-rail-scroll py-2 px-2">
-          {NAV_GROUPS.filter((g) => g.label !== "Admin").map((group, gi) => (
-            <div key={group.label}>
-              {gi > 0 && <div className="wl-nav-divider" aria-hidden="true" />}
-              {effective && (
-                <p className="px-2 pt-1.5 pb-1 text-[9px] font-semibold uppercase tracking-[0.25em] text-white/35 dark:text-white/25 select-none">
-                  {group.label}
-                </p>
-              )}
-              <div className="space-y-0.5">
-                {group.items
-                  .filter((item) => !item.ownerOnly || user?.is_owner === true)
-                  .map((item) => (
-                    <RailItem
-                      key={item.path}
-                      item={item}
-                      active={isActive(item)}
-                      badge={resolveBadge(item, navBadges)}
-                      expanded={effective}
-                      accent={NAV_GROUP_ACCENTS[group.label] || BRAND.purple}
-                      shortcut={SHORTCUTS[item.path]}
-                    />
-                  ))}
-              </div>
-            </div>
-          ))}
+        {/* Nav — single flat list; section labels live in page context only */}
+        <nav
+          className="flex-1 min-h-0 flex flex-col justify-center overflow-x-hidden px-1.5 py-0.5 wl-rail-nav"
+          aria-label="Console pages"
+        >
+          <div className="space-y-px">
+            {SIDEBAR_NAV_ITEMS.filter((item) => !item.ownerOnly || user?.is_owner === true).map(
+              (item) => (
+                <RailItem
+                  key={item.path}
+                  item={item}
+                  active={isActive(item)}
+                  badge={resolveBadge(item, navBadges)}
+                  expanded={effective}
+                  accent={ROUTE_ACCENTS[item.path]?.[0] ?? BRAND.purple}
+                  shortcut={SHORTCUTS[item.path]}
+                />
+              ),
+            )}
+          </div>
         </nav>
 
         {/* Footer */}
         <div
-          className="shrink-0 border-t border-white/[0.15] dark:border-white/[0.08] px-2 pt-2 pb-2 space-y-0.5"
-          style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
+          className="shrink-0 border-t border-white/[0.15] dark:border-white/[0.08] px-1.5 pt-1.5 pb-1.5 space-y-px"
+          style={{ paddingBottom: "max(0.375rem, env(safe-area-inset-bottom))" }}
         >
           <LivePulse count={liveCalls} expanded={effective} />
 
           {effective && user && (
             <Link
               to="/admin?tab=subscription"
-              className="flex items-center gap-2.5 h-10 px-2 rounded-md hover:bg-white/[0.08] dark:hover:bg-white/[0.06] transition-all group"
+              className="flex items-center gap-2 h-8 px-2 rounded-md hover:bg-white/[0.08] dark:hover:bg-white/[0.06] transition-all group"
               aria-label="Account & billing"
               title={user.email}
             >
@@ -239,7 +227,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           {!effective && user && (
             <Link
               to="/admin?tab=subscription"
-              className="h-10 flex items-center justify-center rounded-md hover:bg-white/[0.08] dark:hover:bg-white/[0.06] transition-all"
+              className="h-8 flex items-center justify-center rounded-md hover:bg-white/[0.08] dark:hover:bg-white/[0.06] transition-all"
               aria-label="Account"
               title={user.email}
             >
@@ -282,54 +270,12 @@ export default function Sidebar({ navBadges }: SidebarProps) {
             />
           )}
 
-          {(() => {
-            const themeToggleBtn = (
-              <ShadButton
-                type="button"
-                variant="ghost"
-                disableAnimations
-                onClick={toggleTheme}
-                className="w-full group h-9 justify-start gap-2.5 px-2 rounded-md text-white/60 hover:text-white hover:bg-white/[0.08] dark:text-white/55 dark:hover:text-white/90 dark:hover:bg-white/8"
-                aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
-              >
-                {theme === "light" ? (
-                  <Moon
-                    className="w-4.5 h-4.5 shrink-0 transition-transform duration-300 group-hover:rotate-12 text-white/70 dark:text-white/60"
-                    strokeWidth={1.75}
-                  />
-                ) : (
-                  <Sun
-                    className="w-4.5 h-4.5 shrink-0 transition-transform duration-300 group-hover:rotate-45 text-white/70 dark:text-white/60"
-                    strokeWidth={1.75}
-                  />
-                )}
-                {effective && (
-                  <span className="text-[12px] font-medium truncate">
-                    {theme === "light" ? "Dark Mode" : "Light Mode"}
-                  </span>
-                )}
-              </ShadButton>
-            );
-
-            if (!effective) {
-              return (
-                <Tooltip>
-                  <TooltipTrigger asChild>{themeToggleBtn}</TooltipTrigger>
-                  <TooltipContent side="right" className="ml-1">
-                    {theme === "light" ? "Dark Mode" : "Light Mode"}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            }
-            return themeToggleBtn;
-          })()}
-
           <ShadButton
             type="button"
             variant="ghost"
             disableAnimations
             onClick={() => signOut()}
-            className="w-full group h-9 justify-start gap-2.5 px-2 rounded-md text-white/60 hover:text-rose-300 hover:bg-rose-500/15 dark:text-white/50 dark:hover:text-white/90 dark:hover:bg-white/8"
+            className="w-full group h-8 justify-start gap-2 px-2 rounded-md text-white/60 hover:text-rose-300 hover:bg-rose-500/15 dark:text-white/50 dark:hover:text-white/90 dark:hover:bg-white/8"
             aria-label="Sign out"
           >
             <LogOut className="w-4 h-4 shrink-0" strokeWidth={1.75} />
@@ -381,7 +327,7 @@ function RailItem({ item, active, badge, expanded, accent, shortcut }: RailItemP
       aria-label={expanded ? undefined : item.label}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "touch-press group relative flex items-center gap-2.5 h-9 px-2 rounded-md transition-all duration-150",
+        "touch-press group relative flex items-center gap-2 h-8 px-2 rounded-md transition-all duration-150",
         active
           ? "bg-white/[0.15] text-white font-semibold dark:bg-white/[0.12] dark:text-white"
           : "text-white/70 hover:text-white hover:bg-white/[0.08] dark:text-white/55 dark:hover:text-white/85 dark:hover:bg-white/[0.06]",
@@ -486,7 +432,7 @@ function LivePulse({ count, expanded }: { count: number; expanded: boolean }) {
   return (
     <div
       className={cn(
-        "flex items-center gap-2 h-8 px-2 rounded-md",
+        "flex items-center gap-2 h-7 px-2 rounded-md",
         live ? "bg-purple-500/10 wl-ambient-glow" : "bg-white/[0.03]",
       )}
       title={live ? `${count} live call${count === 1 ? "" : "s"}` : "Floor is quiet"}
@@ -529,7 +475,7 @@ function FooterItem({ to, icon: Icon, label, expanded, active, dataTour }: Foote
       {...(dataTour ? { "data-tour": dataTour } : {})}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "touch-press group h-9 flex items-center gap-2.5 px-2 rounded-md transition-all",
+        "touch-press group h-8 flex items-center gap-2 px-2 rounded-md transition-all",
         active
           ? "bg-white/[0.15] text-white font-semibold dark:bg-white/10 dark:text-white/90"
           : "text-white/70 hover:text-white hover:bg-white/[0.08] dark:text-white/50 dark:hover:text-white/80 dark:hover:bg-white/[0.06]",

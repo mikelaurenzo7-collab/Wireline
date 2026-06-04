@@ -3,19 +3,46 @@
  * Lock navigation IA after Live Ops merge + Activity consolidation.
  */
 import { describe, expect, it } from "vitest";
-import { NAV_GROUPS, PAGE_TITLES, APP_KEYBOARD_SHORTCUTS } from "./navigation";
+import { NAV_GROUPS, PAGE_TITLES, APP_KEYBOARD_SHORTCUTS, SIDEBAR_NAV_ITEMS } from "./navigation";
 
 describe("Top-bar navigation IA", () => {
-  it("ships exactly four groups in the documented order", () => {
+  it("ships exactly four logical groups in the documented order", () => {
     expect(NAV_GROUPS.map((g) => g.label)).toEqual(["Workspace", "Channels", "Sales", "Admin"]);
   });
 
-  it("Workspace group: Chat, Training, Live Ops, Triage, Insights", () => {
-    const ws = NAV_GROUPS.find((g) => g.label === "Workspace")!;
-    expect(ws.items.map((i) => i.path)).toEqual([
+  it("desktop rail is a single flat list without Settings (footer only)", () => {
+    expect(SIDEBAR_NAV_ITEMS.map((i) => i.path)).toEqual([
+      "/ops",
       "/chat",
       "/training",
+      "/triage",
+      "/insights",
+      "/phone",
+      "/email",
+      "/sms",
+      "/pipeline",
+      "/agents",
+    ]);
+    expect(SIDEBAR_NAV_ITEMS.map((i) => i.section)).toEqual([
+      "Workspace",
+      "Workspace",
+      "Workspace",
+      "Workspace",
+      "Workspace",
+      "Channels",
+      "Channels",
+      "Channels",
+      "Sales",
+      "Fleet",
+    ]);
+  });
+
+  it("Workspace group: Live Ops first, then Chat, Training, Triage, Insights", () => {
+    const ws = NAV_GROUPS.find((g) => g.label === "Workspace")!;
+    expect(ws.items.map((i) => i.path)).toEqual([
       "/ops",
+      "/chat",
+      "/training",
       "/triage",
       "/insights",
     ]);
@@ -34,24 +61,24 @@ describe("Top-bar navigation IA", () => {
   });
 
   it("Activity is not a separate sidebar item (history lives under Phone)", () => {
-    const paths = NAV_GROUPS.flatMap((g) => g.items).map((i) => i.path);
+    const paths = SIDEBAR_NAV_ITEMS.map((i) => i.path);
     expect(paths).not.toContain("/activity");
   });
 
   it("Live Ops matches legacy dashboard and cockpit routes", () => {
-    const ops = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.path === "/ops")!;
+    const ops = SIDEBAR_NAV_ITEMS.find((i) => i.path === "/ops")!;
     expect(ops.matches).toEqual(
       expect.arrayContaining(["/dashboard", "/command", "/live", "/cockpit"]),
     );
   });
 
   it("Training matches legacy /knowledge route", () => {
-    const training = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.path === "/training")!;
+    const training = SIDEBAR_NAV_ITEMS.find((i) => i.path === "/training")!;
     expect(training.matches).toContain("/knowledge");
   });
 
   it("Cockpit is not a separate sidebar item (merged into Live Ops)", () => {
-    const paths = NAV_GROUPS.flatMap((g) => g.items).map((i) => i.path);
+    const paths = SIDEBAR_NAV_ITEMS.map((i) => i.path);
     expect(paths).not.toContain("/cockpit");
   });
 

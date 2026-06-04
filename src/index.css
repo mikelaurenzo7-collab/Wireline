@@ -2150,6 +2150,19 @@ html, body, .marketing-surface, .app-surface {
   padding: 0.35rem 0.25rem 0;
 }
 
+/* Desktop rail — flat nav, no section headers; scroll only on very short viewports */
+.wl-rail-nav {
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(239, 233, 220, 0.2) transparent;
+}
+@media (min-height: 760px) {
+  .wl-rail-nav {
+    overflow-y: hidden;
+  }
+}
+
 /* Director / primary chat canvas */
 .wl-mission-canvas {
   position: relative;

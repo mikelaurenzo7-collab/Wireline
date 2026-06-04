@@ -11,7 +11,12 @@ import DesktopPageContext from "./DesktopPageContext";
 import TrialBanner from "./TrialBanner";
 import EmailVerifyBanner from "./EmailVerifyBanner";
 import AppRoutes from "../../routes/AppRoutes";
-import { NAV_GROUPS, PAGE_TITLES, APP_KEYBOARD_SHORTCUTS } from "../../constants/navigation";
+import {
+  findNavItemForPath,
+  NAV_GROUPS,
+  PAGE_TITLES,
+  APP_KEYBOARD_SHORTCUTS,
+} from "../../constants/navigation";
 import { BRAND } from "../../constants/brand-colors";
 import { useBranding } from "../../contexts/BrandingContext";
 import { useViewTransitionRoute } from "../../hooks/useViewTransitionRoute";
@@ -49,6 +54,64 @@ function getPageContext(
   const adminTab = params.get("tab");
 
   if (exactTitle) {
+    const navMatch = findNavItemForPath(pathname);
+    const section = navMatch?.section;
+    if (navMatch) {
+      if (pathname === "/phone") {
+        if (phoneTab === "outbound")
+          return {
+            eyebrow: section,
+            title: "Outbound",
+            subtitle: "Campaigns, dispatch & lead queue",
+          };
+        if (phoneTab === "appointments")
+          return {
+            eyebrow: section,
+            title: "Appointments",
+            subtitle: "Scheduled by your agents",
+          };
+        return { eyebrow: section, title: "Phone", subtitle: ROUTE_SUBTITLES["/phone"] };
+      }
+      if (pathname === "/ops") {
+        if (opsTab === "intel")
+          return {
+            eyebrow: section,
+            title: "Live Ops",
+            subtitle: "Pending actions & follow-ups",
+          };
+        if (opsTab === "analytics")
+          return {
+            eyebrow: section,
+            title: "Live Ops",
+            subtitle: "Sentiment & unit economics",
+          };
+        return { eyebrow: section, title: "Live Ops", subtitle: ROUTE_SUBTITLES["/ops"] };
+      }
+      if (pathname === "/admin") {
+        const tabMeta: Record<string, { title: string; subtitle: string }> = {
+          subscription: { title: "Billing", subtitle: "Plan, usage & payment" },
+          team: { title: "Team", subtitle: "Members & invitations" },
+          branding: { title: "Branding", subtitle: "Logo, colors & white-label" },
+          carrier: { title: "Carrier", subtitle: "Numbers, routing & voice network" },
+          flywheel: { title: "Growth", subtitle: "Prospecting & autonomous outreach" },
+          system: { title: "System", subtitle: "Platform health & dependencies" },
+          activity: { title: "Activity", subtitle: "Recent configuration changes" },
+        };
+        if (adminTab && tabMeta[adminTab]) return { eyebrow: "Admin", ...tabMeta[adminTab] };
+        return { eyebrow: "Admin", title: "Settings", subtitle: ROUTE_SUBTITLES["/admin"] };
+      }
+      if (pathname === "/agents")
+        return {
+          eyebrow: section ?? "Fleet",
+          title: "Agents",
+          subtitle: ROUTE_SUBTITLES["/agents"],
+        };
+      return {
+        eyebrow: section,
+        title: exactTitle,
+        subtitle: ROUTE_SUBTITLES[pathname],
+      };
+    }
     for (const group of NAV_GROUPS) {
       const match = group.items.find(
         (item) =>
@@ -56,52 +119,11 @@ function getPageContext(
           item.matches?.some((m) => pathname === m || pathname.startsWith(`${m}/`)),
       );
       if (match) {
-        if (pathname === "/phone") {
-          if (phoneTab === "outbound")
-            return {
-              eyebrow: group.label,
-              title: "Outbound",
-              subtitle: "Campaigns, dispatch & lead queue",
-            };
-          if (phoneTab === "appointments")
-            return {
-              eyebrow: group.label,
-              title: "Appointments",
-              subtitle: "Scheduled by your agents",
-            };
-          return { eyebrow: group.label, title: "Phone", subtitle: ROUTE_SUBTITLES["/phone"] };
-        }
-        if (pathname === "/ops") {
-          if (opsTab === "intel")
-            return {
-              eyebrow: group.label,
-              title: "Live Ops",
-              subtitle: "Pending actions & follow-ups",
-            };
-          if (opsTab === "analytics")
-            return {
-              eyebrow: group.label,
-              title: "Live Ops",
-              subtitle: "Sentiment & unit economics",
-            };
-          return { eyebrow: group.label, title: "Live Ops", subtitle: ROUTE_SUBTITLES["/ops"] };
-        }
-        if (pathname === "/admin") {
-          const tabMeta: Record<string, { title: string; subtitle: string }> = {
-            subscription: { title: "Billing", subtitle: "Plan, usage & payment" },
-            team: { title: "Team", subtitle: "Members & invitations" },
-            branding: { title: "Branding", subtitle: "Logo, colors & white-label" },
-            carrier: { title: "Carrier", subtitle: "Numbers, routing & voice network" },
-            flywheel: { title: "Growth", subtitle: "Prospecting & autonomous outreach" },
-            system: { title: "System", subtitle: "Platform health & dependencies" },
-            activity: { title: "Activity", subtitle: "Recent configuration changes" },
-          };
-          if (adminTab && tabMeta[adminTab]) return { eyebrow: group.label, ...tabMeta[adminTab] };
-          return { eyebrow: group.label, title: "Settings", subtitle: ROUTE_SUBTITLES["/admin"] };
-        }
-        if (pathname === "/agents")
-          return { eyebrow: group.label, title: "Agents", subtitle: ROUTE_SUBTITLES["/agents"] };
-        return { eyebrow: group.label, title: exactTitle, subtitle: ROUTE_SUBTITLES[pathname] };
+        return {
+          eyebrow: match.section ?? group.label,
+          title: exactTitle,
+          subtitle: ROUTE_SUBTITLES[pathname],
+        };
       }
     }
     return { title: exactTitle, subtitle: ROUTE_SUBTITLES[pathname] };
@@ -306,6 +328,7 @@ export default function AppShell() {
           eyebrow={pageCtx.eyebrow}
           title={pageCtx.title}
           subtitle={pageCtx.subtitle}
+          onShowShortcuts={() => setShowShortcuts(true)}
         />
 
         {/* Mobile/tablet page heading — condenses the desktop page context

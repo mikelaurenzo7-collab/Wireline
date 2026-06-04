@@ -1,3 +1,6 @@
+import { Keyboard } from "lucide-react";
+import ThemeToggle from "../ThemeToggle";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 import { cn } from "../../lib/utils";
 import { WL_APP_CLASSES } from "../../lib/wireline-director-design";
 
@@ -6,13 +9,20 @@ type Props = {
   title: string;
   subtitle?: string;
   className?: string;
+  onShowShortcuts?: () => void;
 };
 
 /**
  * lg+ page context — eyebrow, title, and route subtitle in the cream workspace.
- * TopBar keeps compact breadcrumb; this block gives operators full hierarchy.
+ * Theme + shortcuts live here on desktop (sidebar stays nav-only).
  */
-export default function DesktopPageContext({ eyebrow, title, subtitle, className }: Props) {
+export default function DesktopPageContext({
+  eyebrow,
+  title,
+  subtitle,
+  className,
+  onShowShortcuts,
+}: Props) {
   if (!title && !subtitle) return null;
 
   return (
@@ -28,6 +38,27 @@ export default function DesktopPageContext({ eyebrow, title, subtitle, className
               {subtitle}
             </p>
           )}
+        </div>
+        <div
+          className="flex items-center gap-1 shrink-0 pb-0.5"
+          role="toolbar"
+          aria-label="Page tools"
+        >
+          {onShowShortcuts && (
+            <ShadButton
+              type="button"
+              variant="ghost"
+              size="icon"
+              disableAnimations
+              onClick={onShowShortcuts}
+              className="h-8 w-8 rounded-md text-muted hover:text-ink hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+              aria-label="Keyboard shortcuts"
+              title="Keyboard shortcuts (?)"
+            >
+              <Keyboard className="w-4 h-4" strokeWidth={1.75} />
+            </ShadButton>
+          )}
+          <ThemeToggle variant="default" className="!h-8 !w-8 !min-w-8 !px-0 rounded-md shrink-0" />
         </div>
       </div>
       <div className="mt-3 aurora-divider" aria-hidden="true" />

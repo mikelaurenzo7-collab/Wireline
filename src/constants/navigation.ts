@@ -33,7 +33,13 @@ export type NavItem = {
   matches?: string[];
   /** When true, the item only renders for the platform owner. */
   ownerOnly?: boolean;
+  /** Page context / breadcrumb only — not rendered in the desktop rail */
+  section?: string;
 };
+
+function withSection(items: NavItem[], section: string): NavItem[] {
+  return items.map((item) => ({ ...item, section }));
+}
 
 // Four-group nav: Workspace (command), Channels (communication surfaces),
 // Sales (pipeline), Admin (settings).
@@ -51,84 +57,104 @@ export type NavItem = {
 // Live Ops (/ops) is the unified command center: live callers, supervisor
 // floor tools (listen-in / whisper), action feed, and fleet analytics.
 // /cockpit redirects here — one surface, no duplicate nav slot.
-export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
+const WORKSPACE_NAV: NavItem[] = [
   {
-    label: "Workspace",
-    items: [
-      {
-        label: "Live Ops",
-        path: "/ops",
-        icon: LayoutGrid,
-        dataTour: "dashboard",
-        matches: ["/dashboard", "/command", "/live", "/cockpit"],
-      },
-      {
-        label: "Chat",
-        path: "/chat",
-        icon: MessagesSquare,
-        dataTour: "chat",
-        matches: ["/chat"],
-      },
-      {
-        label: "Training",
-        path: "/training",
-        icon: GraduationCap,
-        dataTour: "training",
-        matches: ["/knowledge"],
-      },
-      { label: "Triage", path: "/triage", icon: Inbox },
-      { label: "Insights", path: "/insights", icon: BarChart3, dataTour: "insights" },
-    ],
+    label: "Live Ops",
+    path: "/ops",
+    icon: LayoutGrid,
+    dataTour: "dashboard",
+    matches: ["/dashboard", "/command", "/live", "/cockpit"],
   },
   {
-    label: "Channels",
-    items: [
-      {
-        label: "Phone",
-        path: "/phone",
-        icon: Phone,
-        dataTour: "phone",
-        matches: ["/logs", "/outbound", "/appointments", "/activity"],
-      },
-      {
-        label: "Email",
-        path: "/email",
-        icon: Mail,
-        dataTour: "email",
-        matches: ["/inbox"],
-      },
-      {
-        label: "SMS",
-        path: "/sms",
-        icon: MessageCircle,
-        dataTour: "sms",
-      },
-    ],
+    label: "Chat",
+    path: "/chat",
+    icon: MessagesSquare,
+    dataTour: "chat",
+    matches: ["/chat"],
   },
   {
-    label: "Sales",
-    items: [{ label: "Pipeline", path: "/pipeline", icon: Kanban }],
+    label: "Training",
+    path: "/training",
+    icon: GraduationCap,
+    dataTour: "training",
+    matches: ["/knowledge"],
+  },
+  { label: "Triage", path: "/triage", icon: Inbox },
+  { label: "Insights", path: "/insights", icon: BarChart3, dataTour: "insights" },
+];
+
+const CHANNELS_NAV: NavItem[] = [
+  {
+    label: "Phone",
+    path: "/phone",
+    icon: Phone,
+    dataTour: "phone",
+    matches: ["/logs", "/outbound", "/appointments", "/activity"],
   },
   {
-    label: "Admin",
-    items: [
-      {
-        label: "Agents",
-        path: "/agents",
-        icon: Users,
-        dataTour: "agents",
-        matches: ["/agents"],
-      },
-      {
-        label: "Settings",
-        path: "/admin",
-        icon: SlidersHorizontal,
-        dataTour: "settings",
-        matches: ["/integrations", "/dnc", "/audit", "/admin"],
-      },
-    ],
+    label: "Email",
+    path: "/email",
+    icon: Mail,
+    dataTour: "email",
+    matches: ["/inbox"],
+  },
+  {
+    label: "SMS",
+    path: "/sms",
+    icon: MessageCircle,
+    dataTour: "sms",
   },
 ];
+
+const SALES_NAV: NavItem[] = [{ label: "Pipeline", path: "/pipeline", icon: Kanban }];
+
+const FLEET_NAV: NavItem[] = [
+  {
+    label: "Agents",
+    path: "/agents",
+    icon: Users,
+    dataTour: "agents",
+    matches: ["/agents"],
+  },
+];
+
+const ADMIN_NAV: NavItem[] = [
+  {
+    label: "Settings",
+    path: "/admin",
+    icon: SlidersHorizontal,
+    dataTour: "settings",
+    matches: ["/integrations", "/dnc", "/audit", "/admin"],
+  },
+];
+
+/** Logical IA groups — used for mobile drawer sections and docs; labels are not shown on desktop rail. */
+export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
+  { label: "Workspace", items: withSection(WORKSPACE_NAV, "Workspace") },
+  { label: "Channels", items: withSection(CHANNELS_NAV, "Channels") },
+  { label: "Sales", items: withSection(SALES_NAV, "Sales") },
+  {
+    label: "Admin",
+    items: [...withSection(FLEET_NAV, "Fleet"), ...withSection(ADMIN_NAV, "Admin")],
+  },
+];
+
+/** Single continuous desktop rail — no section headers, fits without scroll on typical viewports. */
+export const SIDEBAR_NAV_ITEMS: NavItem[] = [
+  ...withSection(WORKSPACE_NAV, "Workspace"),
+  ...withSection(CHANNELS_NAV, "Channels"),
+  ...withSection(SALES_NAV, "Sales"),
+  ...withSection(FLEET_NAV, "Fleet"),
+];
+
+export function findNavItemForPath(pathname: string): NavItem | undefined {
+  const candidates = [...SIDEBAR_NAV_ITEMS, ...ADMIN_NAV];
+  for (const item of candidates) {
+    if (pathname === item.path) return item;
+    if (item.matches?.some((m) => pathname === m || pathname.startsWith(`${m}/`))) return item;
+  }
+  return undefined;
+}
 
 export const PAGE_TITLES: Record<string, string> = {
   "/ops": "Live Ops",
