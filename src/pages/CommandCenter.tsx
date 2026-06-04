@@ -393,7 +393,12 @@ export default function LiveOps() {
   return (
     <PageTransition>
       <ClientRouteViewport scroll>
-        <div className={clsx("max-w-[1600px] mx-auto pb-4", WL_OPS_CLASSES.canvas)}>
+        <div
+          className={clsx(
+            "max-w-[1600px] mx-auto pb-4 w-full lg:flex-1 lg:flex lg:flex-col lg:min-h-0",
+            WL_OPS_CLASSES.canvas,
+          )}
+        >
           <OpsPulseStrip
             liveCalls={calls.length}
             pendingActions={pendingActions}
@@ -402,9 +407,9 @@ export default function LiveOps() {
             loading={loading || presenceLoading}
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start px-2 sm:px-3 pt-2 pb-1">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start lg:items-stretch px-2 sm:px-3 pt-2 pb-1 lg:flex-1 lg:min-h-0">
             {/* Left Pane (Main Operations) */}
-            <div className="lg:col-span-8 xl:col-span-9 space-y-4">
+            <div className="lg:col-span-8 xl:col-span-9 space-y-4 lg:flex lg:flex-col lg:min-h-0">
               <div className="flex items-center justify-between gap-2">
                 <ClientSubTabs
                   tabs={[...OPS_TABS]}
@@ -429,8 +434,13 @@ export default function LiveOps() {
               </div>
 
               {activeTab === "floor" && (
-                <section className="space-y-3 pt-1">
-                  <div className={WL_OPS_CLASSES.floorFrame}>
+                <section className="space-y-3 pt-1 lg:flex-1 lg:flex lg:flex-col lg:min-h-0">
+                  <div
+                    className={clsx(
+                      WL_OPS_CLASSES.floorFrame,
+                      "lg:flex-1 lg:flex lg:flex-col lg:min-h-0",
+                    )}
+                  >
                     <LiveFloorPanel calls={calls} agents={agents} loading={presenceLoading} />
                   </div>
                 </section>

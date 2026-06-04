@@ -188,7 +188,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
   const escalations = calls.filter((c) => c.status === "escalated");
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 min-h-0">
+    <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 min-h-0 lg:h-full">
       {/* Active callers — hero column */}
       <section className="xl:col-span-8 min-h-0 flex flex-col">
         <div className="flex items-center justify-between gap-3 mb-3">
@@ -214,7 +214,9 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
             <Loader2 className="w-6 h-6 animate-spin text-brand" />
           </div>
         ) : calls.length === 0 ? (
-          <InlineEmpty icon={Phone} label={OPS_COPY.floorQuiet} />
+          <div className="flex-1 flex items-center justify-center min-h-[200px]">
+            <InlineEmpty icon={Phone} label={OPS_COPY.floorQuiet} />
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
             <AnimatePresence mode="popLayout">
