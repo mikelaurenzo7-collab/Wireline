@@ -85,7 +85,7 @@ export function ThinkingDisplay({
   const visibleSteps = animate ? steps.slice(0, revealedCount) : steps;
 
   return (
-    <div className="mb-3 pb-3 border-b border-brand/10">
+    <div className="mb-2 pb-2 border-b border-brand/10">
       {/* Header — clickable to expand/collapse */}
       <ShadButton
         type="button"

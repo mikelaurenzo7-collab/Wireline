@@ -31,6 +31,10 @@ export const WL_DIRECTOR_CLASSES = {
   orchestrationStep: "wl-orchestration-step",
   liveOutput: "wl-live-output",
   threadHeader: "wl-director-thread-header",
+  threadColumn: "wl-director-thread",
+  messageStack: "wl-director-message-stack",
+  messageBubble: "wl-director-message",
+  operatorMessageStack: "wl-director-message-stack wl-director-message-stack--operator",
 } as const;
 
 /** Reusable app surfaces outside Director (settings, integrations, ops panels) */
@@ -66,7 +70,193 @@ export const DIRECTOR_SCENE_BADGES = {
     color: "text-brand",
     bg: "bg-brand/8 border-brand/20",
   },
+  document: {
+    label: "Deliverable",
+    color: "text-brand-deep",
+    bg: "bg-brand/10 border-brand/25",
+  },
 } as const;
+
+export type DirectorCapabilityCategory =
+  | "strategy"
+  | "create"
+  | "execute"
+  | "research"
+  | "integrations"
+  | "coach"
+  | "creative";
+
+export const DIRECTOR_CAPABILITY_CATEGORY_LABELS: Record<DirectorCapabilityCategory, string> = {
+  strategy: "Strategy & ops",
+  create: "Documents & copy",
+  execute: "Outbound comms",
+  research: "Live research",
+  integrations: "Connected apps",
+  coach: "Agent coaching",
+  creative: "Brand & visuals",
+};
+
+export interface DirectorCapabilityItem {
+  id: string;
+  label: string;
+  description: string;
+  category: DirectorCapabilityCategory;
+  /** Example operator utterance — sent when picked from catalog */
+  example: string;
+}
+
+/** Full capability matrix — what clients can ask Director to do */
+export const DIRECTOR_CAPABILITY_CATALOG: readonly DirectorCapabilityItem[] = [
+  {
+    id: "fleet-audit",
+    label: "Fleet audit",
+    description: "Cross-agent review with prioritized fixes",
+    category: "strategy",
+    example: "Audit my fleet — what should I fix first?",
+  },
+  {
+    id: "weekly-priorities",
+    label: "Weekly priorities",
+    description: "Ops focus for the next 7 days from live call data",
+    category: "strategy",
+    example: "What should my team focus on this week based on recent calls?",
+  },
+  {
+    id: "gtm-plan",
+    label: "GTM one-pager",
+    description: "Positioning, ICP, and channel plan for your offer",
+    category: "strategy",
+    example: "Draft a one-page GTM plan for my business",
+  },
+  {
+    id: "business-plan",
+    label: "Business plan",
+    description: "Structured plan with goals, metrics, and milestones",
+    category: "create",
+    example: "Draft a one-page business plan for my company",
+  },
+  {
+    id: "call-script",
+    label: "Call script",
+    description: "Opener, discovery, objection handling, close",
+    category: "create",
+    example: "Write a phone script for booking HVAC estimates",
+  },
+  {
+    id: "email-sequence",
+    label: "Email sequence",
+    description: "Multi-touch follow-up with subject lines",
+    category: "create",
+    example: "Draft a 3-email follow-up sequence for missed calls",
+  },
+  {
+    id: "sop",
+    label: "SOP / playbook",
+    description: "Step-by-step ops doc your team can run",
+    category: "create",
+    example: "Write an SOP for how agents should handle billing disputes",
+  },
+  {
+    id: "outbound-call",
+    label: "Place a call",
+    description: "Outbound call draft — approve before dialing",
+    category: "execute",
+    example: "Call Jordan Lee back about tomorrow's estimate",
+  },
+  {
+    id: "outbound-text",
+    label: "Send a text",
+    description: "SMS follow-up drafted for one-click send",
+    category: "execute",
+    example: "Text the lead we spoke with yesterday a booking link",
+  },
+  {
+    id: "outbound-email",
+    label: "Send email",
+    description: "Transactional or follow-up email on approval",
+    category: "execute",
+    example: "Email the customer a summary of our call and next steps",
+  },
+  {
+    id: "workflow",
+    label: "Multi-step workflow",
+    description: "CRM lookup → message → log — staged as steps",
+    category: "execute",
+    example: "Look up their Shopify order, text them the status, and log it in CRM",
+  },
+  {
+    id: "competitor-scan",
+    label: "Competitor scan",
+    description: "Live web research with cited sources",
+    category: "research",
+    example: "Research competitors and pricing in my market",
+  },
+  {
+    id: "regulatory",
+    label: "Compliance lookup",
+    description: "TCPA, FDCPA, industry rules — grounded search",
+    category: "research",
+    example: "What are the latest TCPA rules for outbound SMS to leads?",
+  },
+  {
+    id: "crm-lookup",
+    label: "CRM lookup",
+    description: "Find contacts, deals, and log outcomes",
+    category: "integrations",
+    example: "Find this caller in HubSpot and summarize their deal stage",
+  },
+  {
+    id: "shopify-order",
+    label: "Shopify / Square",
+    description: "Order status, inventory, returns, invoices",
+    category: "integrations",
+    example: "Look up order #1042 in Shopify and draft a status update",
+  },
+  {
+    id: "slack-alert",
+    label: "Slack / Teams alert",
+    description: "Notify your team when something needs eyes",
+    category: "integrations",
+    example: "Post a Slack alert when a hot lead calls twice in one day",
+  },
+  {
+    id: "coach-greeting",
+    label: "Tune greeting",
+    description: "Update agent opener and personality in one approval",
+    category: "coach",
+    example: "Make Ava's greeting warmer and mention same-day service",
+  },
+  {
+    id: "coach-tools",
+    label: "Toggle capabilities",
+    description: "Turn integrations and tools on/off per agent",
+    category: "coach",
+    example: "Turn on calendar booking and SMS for my sales agent",
+  },
+  {
+    id: "post-call",
+    label: "Post-call coaching",
+    description: "Review a recent call and propose script fixes",
+    category: "coach",
+    example: "Review Ava's last 5 calls and suggest script improvements",
+  },
+  {
+    id: "logo",
+    label: "Logo concepts",
+    description: "Three on-brand concepts + vectorize / brand pack",
+    category: "creative",
+    example: "Generate 3 logo concepts for my home services brand",
+  },
+] as const;
+
+export const DIRECTOR_COMPOSER_HINTS = [
+  "Message Director…",
+  "Ask for a fleet audit, GTM plan, or weekly priorities…",
+  "Draft scripts, SOPs, email sequences, or a business plan…",
+  "Research competitors, pricing, or compliance — live web intel…",
+  "Orchestrate calls, texts, emails, and CRM work in one thread…",
+  "Coach an agent: select Coach, then describe the change…",
+] as const;
 
 export const WL_APP_CLASSES = {
   /** Desktop editorial subtitle under TopBar — operator context */
@@ -172,14 +362,42 @@ export const DIRECTOR_STARTER_PROMPTS: readonly DirectorStarterPrompt[] = [
     label: "Research competitors and pricing in my market",
     intent: "Live web intel via grounded search",
   },
+  {
+    id: "outbound-sequence",
+    label: "Build a follow-up sequence for missed calls",
+    intent: "Multi-touch comms + scripts",
+  },
+  {
+    id: "support-playbook",
+    label: "Write a support playbook for angry callers",
+    intent: "SOP + escalation paths",
+  },
+  {
+    id: "logo-brand",
+    label: "Generate logo concepts for my brand",
+    intent: "Creative approval flow",
+  },
+  {
+    id: "post-call-coach",
+    label: "Review recent calls and coach my agents",
+    intent: "Fleet coaching from call history",
+  },
+  {
+    id: "collections",
+    label: "Help me set up compliant collections outreach",
+    intent: "FDCPA-aware comms planning",
+  },
 ] as const;
 
 export const DIRECTOR_CAPABILITY_PILLS = [
   { id: "voice", label: "Voice" },
   { id: "email", label: "Email" },
   { id: "sms", label: "SMS" },
+  { id: "documents", label: "Documents" },
+  { id: "research", label: "Research" },
   { id: "crm", label: "CRM" },
   { id: "integrations", label: "Integrations" },
+  { id: "creative", label: "Creative" },
 ] as const;
 
 export const DIRECTOR_LOADING_COPY = {
@@ -218,4 +436,24 @@ export const LIVE_FEED_LABELS = {
   scripted: "Live integrations",
   proposal: "Proposed workflow",
   proposalHint: "Approve below to execute — nothing runs until you confirm.",
+  proposalCount: (n: number) =>
+    n === 1 ? "1 action awaiting approval" : `${n} actions awaiting approval`,
+  researchEyebrow: "Grounded web sources",
 } as const;
+
+/** Group catalog items by category for UI accordions */
+export function directorCapabilitiesByCategory(): Record<
+  DirectorCapabilityCategory,
+  DirectorCapabilityItem[]
+> {
+  const grouped = {} as Record<DirectorCapabilityCategory, DirectorCapabilityItem[]>;
+  for (const cat of Object.keys(
+    DIRECTOR_CAPABILITY_CATEGORY_LABELS,
+  ) as DirectorCapabilityCategory[]) {
+    grouped[cat] = [];
+  }
+  for (const item of DIRECTOR_CAPABILITY_CATALOG) {
+    grouped[item.category].push(item);
+  }
+  return grouped;
+}

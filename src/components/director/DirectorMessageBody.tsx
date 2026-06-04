@@ -91,7 +91,7 @@ function CodeBlock({ code, lang }: { code: string; lang?: string }) {
           </span>
         </div>
       )}
-      <pre className="overflow-x-auto p-3 text-[12px] leading-relaxed font-mono text-ink/90 bg-black/[0.03] dark:bg-white/[0.03]">
+      <pre className="overflow-x-auto p-2 text-[11px] leading-normal font-mono text-ink/90 bg-black/[0.03] dark:bg-white/[0.03]">
         <code>{code.trimEnd()}</code>
       </pre>
     </div>
@@ -103,7 +103,7 @@ function MarkdownTable({ rows }: { rows: string[][] }) {
   const [head, ...body] = rows;
   return (
     <div className="app-table-scroll rounded-md border border-black/8 dark:border-white/10">
-      <table className="w-full text-[13px]">
+      <table className="w-full text-[12px]">
         <thead>
           <tr className="border-b border-black/8 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04]">
             {head.map((cell, i) => (
@@ -151,17 +151,17 @@ function renderBlock(block: string, bi: number): React.ReactNode {
 
   if (first.startsWith("### ")) {
     return (
-      <h4 key={bi} className="text-[13px] font-semibold text-ink tracking-[-0.01em] pt-1">
+      <h4 key={bi} className="font-semibold text-ink tracking-[-0.01em] pt-0.5">
         {renderInline(first.slice(4))}
       </h4>
     );
   }
   if (first.startsWith("## ")) {
     return (
-      <h3 key={bi} className="text-[14px] font-bold text-ink tracking-[-0.02em] pt-1">
+      <h3 key={bi} className="font-bold text-ink tracking-[-0.02em] pt-0.5">
         {renderInline(first.slice(3))}
         {lines.slice(1).map((l, i) => (
-          <span key={i} className="block text-[14px] font-normal text-ink/90 mt-1">
+          <span key={i} className="block font-normal text-ink/90 mt-0.5">
             {renderInline(l)}
           </span>
         ))}
@@ -170,7 +170,7 @@ function renderBlock(block: string, bi: number): React.ReactNode {
   }
   if (first.startsWith("# ")) {
     return (
-      <h2 key={bi} className="text-[15px] font-bold text-ink tracking-[-0.02em]">
+      <h2 key={bi} className="font-bold text-ink tracking-[-0.02em]">
         {renderInline(first.slice(2))}
       </h2>
     );
@@ -201,7 +201,7 @@ function renderBlock(block: string, bi: number): React.ReactNode {
         {lines
           .filter((l) => /^[-*•]\s/.test(l.trim()))
           .map((l, i) => (
-            <li key={i} className="text-[14px] leading-relaxed text-ink/90 flex gap-2">
+            <li key={i} className="text-ink/90 flex gap-1.5 leading-normal">
               <span className="text-brand/50 shrink-0">•</span>
               <span>{renderInline(l.replace(/^[-*•]\s*/, ""))}</span>
             </li>
@@ -219,8 +219,8 @@ function renderBlock(block: string, bi: number): React.ReactNode {
           .map((l, i) => {
             const text = l.replace(/^\d+\.\s*/, "");
             return (
-              <li key={i} className="text-[14px] leading-relaxed text-ink/90 flex gap-2">
-                <span className="text-brand/60 shrink-0 font-mono text-[12px] w-5">{i + 1}.</span>
+              <li key={i} className="text-ink/90 flex gap-1.5 leading-normal">
+                <span className="text-brand/60 shrink-0 font-mono text-[10px] w-4">{i + 1}.</span>
                 <span>{renderInline(text)}</span>
               </li>
             );
@@ -244,29 +244,29 @@ function renderBlock(block: string, bi: number): React.ReactNode {
         .join(" ");
       const palette: Record<string, { border: string; bg: string; label: string }> = {
         note: {
-          border: "border-l-blue-400",
+          border: "border-l-brand/35",
           bg: "bg-brand/[0.06]",
-          label: "text-brand dark:text-brand-2",
+          label: "text-brand",
         },
         tip: {
-          border: "border-l-brand/40",
-          bg: "bg-brand/[0.06]",
-          label: "text-brand dark:text-brand-2",
+          border: "border-l-brand/50",
+          bg: "bg-brand/[0.08]",
+          label: "text-brand-deep",
         },
         warning: {
-          border: "border-l-amber-400",
-          bg: "bg-amber-500/[0.06]",
-          label: "text-amber-600 dark:text-amber-400",
+          border: "border-l-brand-deep/50",
+          bg: "bg-brand/[0.05]",
+          label: "text-brand-deep",
         },
         important: {
-          border: "border-l-violet-400",
-          bg: "bg-violet-500/[0.06]",
-          label: "text-violet-600 dark:text-violet-400",
+          border: "border-l-brand",
+          bg: "bg-brand/[0.07]",
+          label: "text-brand",
         },
         caution: {
-          border: "border-l-rose-400",
-          bg: "bg-rose-500/[0.06]",
-          label: "text-rose-600 dark:text-rose-400",
+          border: "border-l-destructive/40",
+          bg: "bg-destructive/[0.06]",
+          label: "text-destructive",
         },
       };
       const cp = palette[cType] || palette.note;
@@ -275,9 +275,7 @@ function renderBlock(block: string, bi: number): React.ReactNode {
           <p className={cn("text-[11px] font-bold uppercase tracking-[0.12em] mb-1", cp.label)}>
             {cTitle}
           </p>
-          {cBody && (
-            <p className="text-[13px] text-ink/85 leading-relaxed">{renderInline(cBody)}</p>
-          )}
+          {cBody && <p className="text-[12px] text-ink/85 leading-normal">{renderInline(cBody)}</p>}
         </div>
       );
     }
@@ -285,7 +283,7 @@ function renderBlock(block: string, bi: number): React.ReactNode {
     return (
       <blockquote key={bi} className="border-l-2 border-brand/25 pl-3.5 py-0.5">
         {quoteLines.map((l, i) => (
-          <p key={i} className="text-[13px] text-ink/70 italic leading-relaxed">
+          <p key={i} className="text-[12px] text-ink/70 italic leading-normal">
             {renderInline(l.replace(/^>\s*/, ""))}
           </p>
         ))}
@@ -294,7 +292,7 @@ function renderBlock(block: string, bi: number): React.ReactNode {
   }
 
   return (
-    <p key={bi} className="text-[14px] leading-relaxed text-ink/90 whitespace-pre-wrap">
+    <p key={bi} className="text-ink/90 leading-normal whitespace-pre-wrap">
       {renderInline(trimmed)}
     </p>
   );
@@ -323,7 +321,7 @@ export function DirectorMessageBody({
   }
 
   return (
-    <div className={cn("space-y-2.5", WL_DIRECTOR_CLASSES.docBody, className)}>
+    <div className={cn("space-y-1.5", WL_DIRECTOR_CLASSES.docBody, className)}>
       {segments.map((block, bi) => renderBlock(block, bi))}
     </div>
   );

@@ -8,10 +8,14 @@ import {
   DIRECTOR_SCENE_BADGES,
   DIRECTOR_EMPTY_HERO,
   DIRECTOR_CAPABILITY_PILLS,
+  DIRECTOR_CAPABILITY_CATALOG,
+  DIRECTOR_CAPABILITY_CATEGORY_LABELS,
   DIRECTOR_LOADING_COPY,
   DIRECTOR_LIVE_STEP_COPY,
+  DIRECTOR_COMPOSER_HINTS,
   LIVE_FEED_LABELS,
   directorPhaseCopy,
+  directorCapabilitiesByCategory,
 } from "./wireline-director-design";
 
 describe("Wireline Director design contract", () => {
@@ -27,6 +31,8 @@ describe("Wireline Director design contract", () => {
     expect(WL_DIRECTOR_CLASSES.directorBubble).toBe("wl-director-bubble");
     expect(WL_DIRECTOR_CLASSES.proposalCard).toBe("wl-proposal-card");
     expect(WL_DIRECTOR_CLASSES.orchestrationStep).toBe("wl-orchestration-step");
+    expect(WL_DIRECTOR_CLASSES.threadColumn).toBe("wl-director-thread");
+    expect(WL_DIRECTOR_CLASSES.messageStack).toContain("wl-director-message-stack");
   });
 
   it("exposes framed panel classes without aurora chrome", () => {
@@ -64,15 +70,15 @@ describe("Wireline Director design contract", () => {
     expect(deep.headline.toLowerCase()).toContain("fleet");
   });
 
-  it("starter prompts cover fleet, deploy, audit, deliverables, and research", () => {
+  it("starter prompts cover fleet, deploy, audit, deliverables, research, and verticals", () => {
     const ids = DIRECTOR_STARTER_PROMPTS.map((p) => p.id);
-    expect(ids).toEqual([
-      "first-agent",
-      "sales-setup",
-      "fleet-audit",
-      "business-plan",
-      "market-research",
-    ]);
+    expect(ids).toContain("first-agent");
+    expect(ids).toContain("fleet-audit");
+    expect(ids).toContain("business-plan");
+    expect(ids).toContain("market-research");
+    expect(ids).toContain("collections");
+    expect(ids).toContain("logo-brand");
+    expect(DIRECTOR_STARTER_PROMPTS.length).toBeGreaterThanOrEqual(8);
     expect(DIRECTOR_STARTER_PROMPTS.every((p) => p.label.length > 10)).toBe(true);
   });
 
@@ -83,9 +89,22 @@ describe("Wireline Director design contract", () => {
     expect(DIRECTOR_EMPTY_HERO.capabilityEyebrow).toBeTruthy();
   });
 
-  it("capability pills cover core Wireline channels", () => {
+  it("capability pills cover channels, documents, research, and creative", () => {
     const labels = DIRECTOR_CAPABILITY_PILLS.map((p) => p.label);
-    expect(labels).toEqual(["Voice", "Email", "SMS", "CRM", "Integrations"]);
+    expect(labels).toContain("Voice");
+    expect(labels).toContain("Documents");
+    expect(labels).toContain("Research");
+    expect(labels).toContain("Creative");
+    expect(labels.length).toBeGreaterThanOrEqual(8);
+  });
+
+  it("capability catalog spans all operator-facing categories", () => {
+    const grouped = directorCapabilitiesByCategory();
+    for (const cat of Object.keys(DIRECTOR_CAPABILITY_CATEGORY_LABELS)) {
+      expect(grouped[cat as keyof typeof grouped].length).toBeGreaterThan(0);
+    }
+    expect(DIRECTOR_CAPABILITY_CATALOG.length).toBeGreaterThanOrEqual(18);
+    expect(DIRECTOR_CAPABILITY_CATALOG.every((c) => c.example.length > 8)).toBe(true);
   });
 
   it("loading copy stays mission-control native", () => {
@@ -105,10 +124,18 @@ describe("Wireline Director design contract", () => {
       expect(badge.bg).toMatch(/brand/);
       expect(badge.bg).not.toMatch(/emerald|sky|fuchsia|blue/i);
     }
+    expect(DIRECTOR_SCENE_BADGES.document.label).toBe("Deliverable");
   });
 
   it("live feed labels distinguish scripted vs proposal modes", () => {
     expect(LIVE_FEED_LABELS.proposal).toBe("Proposed workflow");
     expect(LIVE_FEED_LABELS.proposalHint).toMatch(/approve/i);
+    expect(LIVE_FEED_LABELS.proposalCount(3)).toContain("3");
+    expect(LIVE_FEED_LABELS.researchEyebrow).toMatch(/source/i);
+  });
+
+  it("composer hints rotate through capability areas", () => {
+    expect(DIRECTOR_COMPOSER_HINTS.length).toBeGreaterThanOrEqual(4);
+    expect(DIRECTOR_COMPOSER_HINTS.some((h) => h.toLowerCase().includes("research"))).toBe(true);
   });
 });

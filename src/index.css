@@ -329,22 +329,54 @@ html, body, .marketing-surface, .app-surface {
   backdrop-filter: blur(12px) saturate(130%);
   border: 1px solid rgba(139, 63, 214, 0.1);
   box-shadow:
-    0 4px 24px rgba(26, 22, 20, 0.04),
+    0 2px 12px rgba(26, 22, 20, 0.04),
     inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 .dark .wl-director-bubble {
   background: rgba(15, 12, 23, 0.88);
   border-color: rgba(155, 92, 224, 0.12);
   box-shadow:
-    0 4px 24px rgba(0, 0, 0, 0.35),
+    0 2px 12px rgba(0, 0, 0, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .wl-operator-bubble {
   background: linear-gradient(145deg, #8B3FD6 0%, #6B2FA8 100%);
   box-shadow:
-    0 8px 28px rgba(139, 63, 214, 0.28),
+    0 4px 16px rgba(139, 63, 214, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+/* Director chat thread — centered column, compact bubbles */
+.wl-director-thread {
+  width: 100%;
+  max-width: 40rem;
+  margin-inline: auto;
+}
+
+.wl-director-message-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: min(100%, 28rem);
+  min-width: 0;
+}
+
+.wl-director-message-stack--operator {
+  max-width: min(100%, 18rem);
+  align-items: flex-end;
+}
+
+.wl-director-message {
+  width: 100%;
+  min-width: 0;
+  padding: 0.625rem 0.875rem;
+}
+
+.wl-director-message--operator {
+  width: fit-content;
+  max-width: 100%;
 }
 
 .wl-composer-dock {
@@ -377,8 +409,36 @@ html, body, .marketing-surface, .app-surface {
 .wl-director-doc h4 {
   letter-spacing: -0.02em;
 }
+.wl-director-doc {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+.wl-director-doc h2 {
+  font-size: 0.9375rem;
+  line-height: 1.35;
+}
+.wl-director-doc h3 {
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+.wl-director-doc h4 {
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+.wl-director-doc p,
+.wl-director-doc li {
+  font-size: inherit;
+  line-height: inherit;
+}
 .wl-director-doc ul li::marker {
   color: rgba(139, 63, 214, 0.45);
+}
+.wl-director-doc pre {
+  font-size: 0.6875rem;
+  line-height: 1.45;
+}
+.wl-director-doc table {
+  font-size: 0.75rem;
 }
 
 .wl-live-feed-header {
