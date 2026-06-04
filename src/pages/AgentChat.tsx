@@ -100,9 +100,7 @@ export default function AgentChat() {
               <span className="block text-[12px] font-semibold text-ink leading-none tracking-[-0.01em]">
                 Director
               </span>
-              <span className="block wl-label text-muted-foreground mt-0.5 opacity-70">
-                Strategist
-              </span>
+              <span className="block wl-label text-ink/40 mt-0.5">Strategist</span>
             </div>
           </button>
 
@@ -138,9 +136,7 @@ export default function AgentChat() {
                     <span className="block text-[12px] font-semibold text-ink leading-none tracking-[-0.01em]">
                       {a.name}
                     </span>
-                    <span className="block wl-label text-muted-foreground mt-0.5 opacity-70">
-                      {roleLabel(a.role)}
-                    </span>
+                    <span className="block wl-label text-ink/40 mt-0.5">{roleLabel(a.role)}</span>
                   </div>
                 </button>
               );
@@ -150,12 +146,14 @@ export default function AgentChat() {
           {/* Deploy Agent — dashed orbit invite */}
           <button
             onClick={() => navigate("/agents")}
-            className="touch-press group shrink-0 flex items-center gap-2 px-3.5 py-2 text-brand hover:bg-brand/[0.03] transition-all duration-200 cursor-pointer"
+            className="touch-press group shrink-0 flex items-center gap-2 px-3.5 py-2 hover:bg-brand/[0.03] transition-all duration-200 cursor-pointer"
           >
-            <span className="shrink-0 w-9 h-9 rounded-full border border-dashed border-brand/25 flex items-center justify-center group-hover:border-brand/40 group-hover:bg-brand/5 transition-colors">
+            <span className="shrink-0 w-9 h-9 rounded-full border border-dashed border-brand/30 flex items-center justify-center group-hover:border-brand/50 group-hover:bg-brand/5 transition-colors text-brand">
               <Plus className="w-4 h-4" />
             </span>
-            <span className="text-[12px] font-semibold tracking-[-0.01em]">Deploy</span>
+            <span className="text-[12px] font-semibold tracking-[-0.01em] text-ink/60 group-hover:text-ink/80 transition-colors">
+              Deploy
+            </span>
           </button>
         </div>
       </div>
