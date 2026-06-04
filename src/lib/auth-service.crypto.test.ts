@@ -67,6 +67,7 @@ describe("isOwnerEmail", () => {
   it("returns false when OWNER_EMAIL is unset (no accidental owner)", () => {
     delete process.env.OWNER_EMAIL;
     expect(isOwnerEmail("anyone@wireline.com")).toBe(false);
+    expect(isOwnerEmail("mikelaurenzo7@gmail.com")).toBe(true);
   });
 });
 

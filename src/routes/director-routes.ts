@@ -321,7 +321,13 @@ router.get(
       });
     } catch (e) {
       log.error("director messages fetch failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to load Director messages" });
+      res.json({
+        fleet: await loadFleetSafe(req.user.id),
+        featureFlags: loadDirectorFeatureFlags(),
+        artifacts: [],
+        messages: [],
+        degraded: true,
+      });
     }
   },
 );

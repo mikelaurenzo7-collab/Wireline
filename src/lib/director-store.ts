@@ -22,6 +22,19 @@ export interface DirectorStoredMessage {
 
 let directorSchemaEnsured = false;
 
+/** Fast path — skip heavy DDL when migrations already applied. */
+async function probeDirectorSchemaReady(): Promise<boolean> {
+  try {
+    await drizzle.execute(
+      sql`SELECT metadata FROM wireline_director_conversation_messages LIMIT 0`,
+    );
+    await drizzle.execute(sql`SELECT 1 FROM wireline_director_artifacts LIMIT 0`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function isPostgresMissingColumn(error: unknown, column = "reasoning"): boolean {
   const msg = getErrorMessage(error).toLowerCase();
   return (
@@ -39,6 +52,10 @@ export function isPostgresMissingRelation(error: unknown): boolean {
 /** Best-effort DDL for Director tables/columns. Never blocks reads on failure. */
 export async function ensureDirectorSchema(): Promise<void> {
   if (directorSchemaEnsured) return;
+  if (await probeDirectorSchemaReady()) {
+    directorSchemaEnsured = true;
+    return;
+  }
   try {
     await drizzle.execute(sql`
       CREATE TABLE IF NOT EXISTS wireline_director_conversation_messages (
@@ -135,7 +152,11 @@ export async function loadDirectorMessages(
       log.warn("director messages table missing, returning empty list", { userId });
       return [];
     }
-    throw e;
+    log.warn("director messages load failed, returning empty list", {
+      userId,
+      error: getErrorMessage(e),
+    });
+    return [];
   }
 }
 

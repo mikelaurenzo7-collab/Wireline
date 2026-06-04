@@ -1,11 +1,8 @@
 import React, { useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { Compass } from "lucide-react";
 import DirectorWorkspace from "../components/DirectorWorkspace";
 import { useVisualViewportVar } from "../lib/use-visual-viewport";
 import ClientRouteViewport from "../components/layout/ClientRouteViewport";
-import ClientRouteLoading from "../components/layout/ClientRouteLoading";
-import { useAgents } from "../contexts/AgentsContext";
 
 /**
  * Chat — single Director surface. Per-agent coaching happens via the Coach
@@ -15,7 +12,6 @@ export default function AgentChat() {
   const { id: legacyAgentId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { loading } = useAgents();
   useVisualViewportVar();
 
   const focusAgentId = searchParams.get("agent");
@@ -35,17 +31,6 @@ export default function AgentChat() {
       return next;
     });
   };
-
-  if (loading) {
-    return (
-      <ClientRouteViewport>
-        <ClientRouteLoading
-          icon={<Compass className="w-7 h-7 animate-spin-slow" />}
-          label="Loading Director"
-        />
-      </ClientRouteViewport>
-    );
-  }
 
   return (
     <ClientRouteViewport>

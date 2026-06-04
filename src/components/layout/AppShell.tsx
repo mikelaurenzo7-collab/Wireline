@@ -307,7 +307,7 @@ export default function AppShell() {
             breadcrumb block above (`hidden lg:block`) carries the full
             eyebrow + italic title + subtitle; this one provides the same
             title on viewports where that block is invisible. */}
-        <div className="lg:hidden shrink-0 bg-background/35 backdrop-blur-md px-3 py-1 border-b border-black/[0.05] dark:border-white/[0.04]">
+        <div className="lg:hidden shrink-0 bg-paper/80 backdrop-blur-md px-3 py-1 border-b border-black/[0.05] dark:border-white/[0.04]">
           <div className="flex items-center gap-1.5 min-w-0">
             {pageCtx.eyebrow && (
               <>

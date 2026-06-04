@@ -38,6 +38,36 @@ const AgentsContext = createContext<AgentsContextValue>({
  */
 export const AGENTS_CHANGED_EVENT = "wireline:agents-changed";
 
+function parseAgentsPayload(data: unknown): WorkspaceAgentSummary[] {
+  const list = Array.isArray((data as { agents?: unknown[] })?.agents)
+    ? (data as { agents: unknown[] }).agents
+    : [];
+  return list
+    .filter((a: { id?: unknown }) => typeof a?.id === "string" && a.id)
+    .map((a: { id: string; name?: string; role?: string }) => ({
+      id: a.id,
+      name: a.name || "Untitled agent",
+      role: a.role ?? null,
+    }));
+}
+
+async function fetchAgentsWithRetry(attempts = 2): Promise<WorkspaceAgentSummary[]> {
+  let lastError: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const r = await authFetch("/api/agents");
+      if (r.ok) return parseAgentsPayload(await r.json());
+      lastError = new Error(`HTTP ${r.status}`);
+    } catch (e) {
+      lastError = e;
+    }
+    if (i < attempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 400 * (i + 1)));
+    }
+  }
+  throw lastError;
+}
+
 export function AgentsProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const location = useLocation();
@@ -54,24 +84,16 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     let cancelled = false;
-    setLoading(true);
-    authFetch("/api/agents")
-      .then((r) => (r.ok ? r.json() : { agents: [] }))
-      .then((data) => {
-        if (cancelled) return;
-        const list = Array.isArray(data?.agents) ? data.agents : [];
-        setAgents(
-          list
-            .filter((a: { id?: unknown }) => typeof a?.id === "string" && a.id)
-            .map((a: { id: string; name?: string; role?: string }) => ({
-              id: a.id,
-              name: a.name || "Untitled agent",
-              role: a.role ?? null,
-            })),
-        );
+    const isBackgroundRefresh = agents.length > 0;
+    if (!isBackgroundRefresh) setLoading(true);
+
+    fetchAgentsWithRetry()
+      .then((list) => {
+        if (!cancelled) setAgents(list);
       })
       .catch(() => {
-        if (!cancelled) setAgents([]);
+        // Never wipe a good roster on a transient refetch failure.
+        if (!cancelled) setAgents((prev) => (prev.length > 0 ? prev : []));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -79,6 +101,7 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- agents.length gates background vs initial load only
   }, [user, nonce]);
 
   // Refetch when an agent is created/deleted elsewhere, and whenever the

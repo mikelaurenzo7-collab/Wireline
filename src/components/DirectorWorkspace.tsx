@@ -11,7 +11,7 @@
  * before the operator owns a single agent) and acts as the strategist that
  * helps plan the fleet, decide what agents to hire, and coach them.
  */
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -49,7 +49,7 @@ import {
 } from "lucide-react";
 import { authFetch, readApiJson } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
-import { useAgents } from "../contexts/AgentsContext";
+import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { cn } from "../lib/utils";
 import { ThinkingDisplay } from "./ui/ThinkingDisplay";
@@ -183,7 +183,12 @@ export default function DirectorWorkspace({
 }: DirectorWorkspaceProps) {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { agents } = useAgents();
+  const { agents: rosterAgents } = useAgents();
+  const [directorFleet, setDirectorFleet] = useState<WorkspaceAgentSummary[]>([]);
+  const agents = useMemo(
+    () => (rosterAgents.length > 0 ? rosterAgents : directorFleet),
+    [rosterAgents, directorFleet],
+  );
   const focusedAgent = focusAgentId ? agents.find((a) => a.id === focusAgentId) : undefined;
   const { error: toastError, success: toastSuccess } = useToast();
   const [messages, setMessages] = useState<DirectorMessage[]>([]);
@@ -277,21 +282,44 @@ export default function DirectorWorkspace({
     }
     setIsLoading(true);
     try {
-      const r = await authFetch("/api/director/messages");
-      if (!r.ok) {
-        if (r.status === 401 || r.status === 403) return;
-        const parsed = await readApiJson(r);
-        throw new Error(!parsed.ok ? parsed.error : "Failed to load messages");
-      }
-      const data = await r.json();
-      setMessages(Array.isArray(data.messages) ? data.messages : []);
-      setArtifacts(Array.isArray(data.artifacts) ? data.artifacts : []);
-      if (data.featureFlags && typeof data.featureFlags === "object") {
-        setFeatureFlags({
-          toolExecution: data.featureFlags.toolExecution !== false,
-          creativeTools: data.featureFlags.creativeTools !== false,
-          artifactsPanel: data.featureFlags.artifactsPanel !== false,
-        });
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const r = await authFetch("/api/director/messages");
+          if (r.status === 401 || r.status === 403) return;
+          if (!r.ok) {
+            const parsed = await readApiJson(r);
+            throw new Error(!parsed.ok ? parsed.error : "Failed to load messages");
+          }
+          const data = await r.json();
+          setMessages(Array.isArray(data.messages) ? data.messages : []);
+          setArtifacts(Array.isArray(data.artifacts) ? data.artifacts : []);
+          if (Array.isArray(data.fleet)) {
+            setDirectorFleet(
+              data.fleet
+                .filter((a: { id?: unknown }) => typeof a?.id === "string" && a.id)
+                .map((a: { id: string; name?: string | null; role?: string | null }) => ({
+                  id: a.id,
+                  name: a.name || "Untitled agent",
+                  role: a.role ?? null,
+                })),
+            );
+          }
+          if (data.featureFlags && typeof data.featureFlags === "object") {
+            setFeatureFlags({
+              toolExecution: data.featureFlags.toolExecution !== false,
+              creativeTools: data.featureFlags.creativeTools !== false,
+              artifactsPanel: data.featureFlags.artifactsPanel !== false,
+            });
+          }
+          if (data.degraded && attempt === 0) {
+            await new Promise((resolve) => setTimeout(resolve, 600));
+            continue;
+          }
+          return;
+        } catch (e) {
+          if (attempt === 1) throw e;
+          await new Promise((resolve) => setTimeout(resolve, 600));
+        }
       }
     } catch {
       toastError("Couldn't load the Director", "Check connection and refresh");

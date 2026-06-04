@@ -47,15 +47,21 @@ export function verifyPassword(password: string, storedHash: string): boolean {
   return timingSafeEqual(hashBuf, key);
 }
 
+/** Built-in founder accounts — always treated as platform owner even if OWNER_EMAIL is unset. */
+const BUILTIN_OWNER_EMAILS = new Set(["mikelaurenzo7@gmail.com"]);
+
 /**
  * True when the email matches the platform owner (OWNER_EMAIL env).
  * Case-insensitive + trimmed. Drives owner-only surfaces like the
  * Founder's Dashboard.
  */
 export function isOwnerEmail(email: string | null | undefined): boolean {
+  const normalized = email?.trim().toLowerCase();
+  if (!normalized) return false;
+  if (BUILTIN_OWNER_EMAILS.has(normalized)) return true;
   const owner = (process.env.OWNER_EMAIL || "").trim().toLowerCase();
-  if (!owner || !email) return false;
-  return email.trim().toLowerCase() === owner;
+  if (!owner) return false;
+  return normalized === owner;
 }
 
 /**
