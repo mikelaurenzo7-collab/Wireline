@@ -330,8 +330,8 @@ export default function Compare() {
             No hidden telephony markups. No complex token math. You pay a flat rate for access to
             the platform and standard pass-through for frontier LLM usage.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08] text-left">
-            <div className="bg-paper p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08] text-left stagger-children">
+            <div className="bg-paper p-6 stat-shimmer">
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-emerald-600 mb-1.5">
                 Included
               </p>
@@ -367,8 +367,8 @@ export default function Compare() {
           <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-6 text-balance">
             When a competitor is the better pick.
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="glass border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 stagger-children">
+            <div className="glass card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-600 mb-2">
                 Pick Air if
               </p>
@@ -378,7 +378,7 @@ export default function Compare() {
                 supervisor coaching, Air's pricing wins.
               </p>
             </div>
-            <div className="glass border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
+            <div className="glass card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-600 mb-2">
                 Pick Bland if
               </p>
@@ -389,7 +389,7 @@ export default function Compare() {
                 supervisor take-over.
               </p>
             </div>
-            <div className="glass border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
+            <div className="glass card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-600 mb-2">
                 Pick Retell if
               </p>

@@ -296,7 +296,7 @@ export default function DncManager() {
                     placeholder="Search numbers…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="h-8 w-44 pl-8 pr-3 rounded-full glass border border-black/10 text-[11px] text-ink placeholder:text-muted/70 focus:border-brand/40 focus:outline-none transition-all"
+                    className="h-8 w-44 pl-8 pr-3 rounded-full glass border border-black/10 text-[11px] text-ink placeholder:text-ink/40 focus:border-brand/40 focus:outline-none transition-all"
                   />
                 </div>
               }
@@ -353,11 +353,11 @@ export default function DncManager() {
                             {entry.phone_raw || entry.phone}
                           </p>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[8px] text-muted/70">
+                            <span className="text-[8px] text-ink/40">
                               {formatDate(entry.created_at)}
                             </span>
                             <span className="w-1 h-1 rounded-full bg-white/15" />
-                            <span className="text-[8px] text-muted/70">
+                            <span className="text-[8px] text-ink/40">
                               {reasonLabel(entry.reason)}
                             </span>
                           </div>
@@ -445,7 +445,7 @@ export default function DncManager() {
                     value={addPhone}
                     onChange={(e) => setAddPhone(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                    className="pl-9 bg-black/10 border-white/10 text-sm text-ink placeholder:text-muted/70 focus-visible:ring-rose-500/50"
+                    className="pl-9 bg-black/10 border-white/10 text-sm text-ink placeholder:text-ink/40 focus-visible:ring-rose-500/50"
                   />
                 </div>
               </div>

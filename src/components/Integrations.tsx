@@ -276,29 +276,32 @@ export default function Integrations() {
                   <span className="app-section-title/70">Loading integrations</span>
                 </div>
               ) : accounts.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center gap-4 py-8 text-center px-6">
-                  <div className="w-14 h-14 rounded-2xl glass border border-black/10 flex items-center justify-center text-muted">
-                    <Mail className="w-6 h-6" />
+                <div className="h-full flex flex-col items-center justify-center gap-4 py-8 text-center px-6 stagger-children">
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-2xl bg-brand/15 blur-xl scale-125" />
+                    <div className="relative w-14 h-14 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center text-brand">
+                      <Mail className="w-6 h-6" />
+                    </div>
                   </div>
                   <div className="space-y-1.5">
                     <h3 className="font-display italic lowercase text-2xl text-ink">
                       no carriers linked
                     </h3>
-                    <p className="app-section-title/70 max-w-sm">
+                    <p className="text-[12px] text-ink/50 max-w-sm">
                       Connect Gmail, Outlook, or Yahoo — agents triage and reply from caller moments
                       below.
                     </p>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg text-left">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg text-left stagger-children">
                     {EMAIL_INBOUND_TASKS.map((task) => (
                       <div
                         key={task.id}
-                        className="rounded-lg border border-black/8 bg-paper/60 px-3 py-2"
+                        className="rounded-lg border border-brand/8 bg-brand/[0.02] px-3 py-2"
                       >
                         <p className="text-[10px] text-ink font-medium leading-snug">
                           {task.callerMoment}
                         </p>
-                        <p className="text-[10px] text-muted/70 mt-1 leading-snug">
+                        <p className="text-[10px] text-ink/40 mt-1 leading-snug">
                           {task.agentAction}
                         </p>
                       </div>
@@ -357,7 +360,7 @@ export default function Integrations() {
                       ))}
                     </div>
                   </div>
-                  <div className="divide-y divide-white/6">
+                  <div className="divide-y divide-white/6 stagger-children">
                     {accounts.map((acc) => {
                       const meta = PROVIDER_META[acc.provider] || PROVIDER_META.google;
                       return (
@@ -366,7 +369,7 @@ export default function Integrations() {
                           initial={{ opacity: 0, y: 4 }}
                           animate={{ opacity: 1, y: 0 }}
                           key={acc.id}
-                          className="px-3 py-2 flex flex-col xl:flex-row xl:items-center gap-3 hover:bg-white/3 transition-colors"
+                          className="px-3 py-2 flex flex-col xl:flex-row xl:items-center gap-3 hover:bg-brand/[0.025] transition-colors group"
                         >
                           <div className="flex items-center gap-3 min-w-0 flex-1">
                             <div
@@ -401,7 +404,7 @@ export default function Integrations() {
                           </div>
 
                           <div className="flex items-center gap-2 shrink-0">
-                            <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 inline-flex items-center gap-1.5">
+                            <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40 inline-flex items-center gap-1.5">
                               <Bot className="w-3 h-3 text-brand" /> Route to
                             </label>
                             <div className="relative">

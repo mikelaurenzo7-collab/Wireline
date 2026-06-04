@@ -92,12 +92,12 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
               <div className="flex items-center gap-2 shrink-0 ml-3">
                 <span className="font-mono text-[11px] text-brand">
                   {item.user}
-                  <span className="text-muted/70 ml-0.5 text-[9px]">{item.unit}</span>
+                  <span className="text-ink/40 ml-0.5 text-[9px]">{item.unit}</span>
                 </span>
-                <span className="text-muted/70 text-[9px]">vs</span>
+                <span className="text-ink/40 text-[9px]">vs</span>
                 <span className="font-mono text-[11px] text-ink/70">
                   {item.benchmark}
-                  <span className="text-muted/70 ml-0.5 text-[9px]">{item.unit}</span>
+                  <span className="text-ink/40 ml-0.5 text-[9px]">{item.unit}</span>
                 </span>
               </div>
             </div>
@@ -121,7 +121,7 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
           </div>
 
           {/* Expand chevron */}
-          <div className="shrink-0 text-muted/70 group-hover:text-muted/70 transition-colors">
+          <div className="shrink-0 text-ink/40 group-hover:text-ink/40 transition-colors">
             {expanded ? (
               <ChevronUp className="w-3.5 h-3.5" />
             ) : (
@@ -222,8 +222,8 @@ export default function PerformanceBenchmarks() {
   if (data.total_calls === 0) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3 py-8">
-        <TrendingUp className="w-8 h-8 text-muted/70" />
-        <p className="text-[9px] uppercase tracking-[0.5em] text-muted/70">
+        <TrendingUp className="w-8 h-8 text-ink/40" />
+        <p className="text-[9px] uppercase tracking-[0.5em] text-ink/40">
           No call data in the last 30 days
         </p>
         <Link

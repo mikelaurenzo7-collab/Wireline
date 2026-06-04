@@ -939,8 +939,8 @@ export default function AgentWorkspace({
                       className={cn(
                         "max-w-[78%] min-w-[180px] rounded-2xl px-5 py-4 whitespace-pre-wrap break-words relative",
                         m.role === "operator"
-                          ? "bg-gradient-to-br from-[#8B3FD6] to-[#5A2499] text-white rounded-br-md shadow-lg shadow-brand/20"
-                          : "bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm border border-brand/12 text-ink dark:text-foreground rounded-bl-md shadow-sm",
+                          ? "bg-gradient-to-br from-brand to-brand-deep text-white rounded-br-sm shadow-lg shadow-brand/25"
+                          : "bg-paper/95 dark:bg-black/40 backdrop-blur-sm border border-brand/10 text-ink dark:text-foreground rounded-bl-sm shadow-sm",
                       )}
                     >
                       {/* Reasoning - Claude style */}
@@ -1184,7 +1184,7 @@ export default function AgentWorkspace({
                 >
                   <div className="flex items-center gap-2 px-2 py-2 border-b border-brand/8 mb-2">
                     <Plug className="w-3.5 h-3.5 text-brand/60" />
-                    <span className="text-[10px] uppercase tracking-[0.16em] text-muted font-medium">
+                    <span className="text-[10px] uppercase tracking-[0.16em] text-ink/50 font-medium">
                       {enabledTools.length > 0
                         ? `${enabledTools.length} Active Tools`
                         : "No Tools Active"}
@@ -1252,13 +1252,13 @@ export default function AgentWorkspace({
                       "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer",
                       toolsOpen
                         ? "bg-brand/10 text-brand border border-brand/30"
-                        : "text-muted hover:text-brand hover:bg-brand/5 border border-transparent",
+                        : "text-ink/50 hover:text-brand hover:bg-brand/5 border border-transparent",
                     )}
                   >
                     <Plug className="w-3.5 h-3.5" />
                     <span>Tools</span>
                     {enabledTools.length > 0 && (
-                      <span className="text-[9px] text-muted/70">({enabledTools.length})</span>
+                      <span className="text-[9px] text-ink/40">({enabledTools.length})</span>
                     )}
                     <ChevronDown
                       className={cn("w-3 h-3 transition-transform", toolsOpen && "rotate-180")}
@@ -1283,7 +1283,7 @@ export default function AgentWorkspace({
                         "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer disabled:opacity-40",
                         attachmentsOpen
                           ? "bg-brand/10 text-brand border border-brand/30"
-                          : "text-muted hover:text-brand hover:bg-brand/5 border border-transparent",
+                          : "text-ink/50 hover:text-brand hover:bg-brand/5 border border-transparent",
                       )}
                     >
                       {isUploading ? (

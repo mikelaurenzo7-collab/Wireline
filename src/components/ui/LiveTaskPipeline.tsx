@@ -56,7 +56,7 @@ export function LiveTaskPipeline({ steps, className }: LiveTaskPipelineProps) {
             <span
               className={cn(
                 "text-[11px] leading-tight",
-                step.status === "done" && "text-muted/70",
+                step.status === "done" && "text-ink/40",
                 step.status === "active" && "text-ink font-medium",
                 step.status === "pending" && "text-muted/50",
               )}

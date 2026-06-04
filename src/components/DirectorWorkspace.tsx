@@ -18,7 +18,6 @@ import {
   Send,
   Loader2,
   Trash2,
-  Sparkles,
   Plus,
   MessagesSquare,
   Activity,
@@ -30,6 +29,18 @@ import {
   Paperclip,
   FileText,
   Brain,
+  Plug,
+  Phone,
+  Calendar,
+  Users,
+  MessageCircle,
+  Video,
+  FileSignature,
+  Search,
+  ShoppingBag,
+  Grid3X3,
+  Megaphone,
+  Table,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
@@ -112,15 +123,21 @@ const STARTER_PROMPTS = [
   "Audit my fleet and tell me what to improve.",
 ] as const;
 
-const DIRECTOR_CAPABILITIES = [
-  { icon: Compass, label: "Plan", prompt: "Help me plan my agent fleet." },
-  { icon: Plus, label: "Hire", prompt: "What kind of agent should I hire next?" },
-  {
-    icon: GraduationCap,
-    label: "Coach",
-    prompt: "Coach me on improving my agents' performance.",
-  },
-  { icon: BarChart3, label: "Analyze", prompt: "Analyze my fleet's recent performance." },
+const CONNECTOR_CATALOG = [
+  { icon: Phone, id: "twilio", label: "Twilio", desc: "Voice & SMS" },
+  { icon: Calendar, id: "calendar", label: "Calendar", desc: "Google / Outlook" },
+  { icon: Users, id: "crm", label: "CRM", desc: "Salesforce / HubSpot" },
+  { icon: MessageCircle, id: "slack", label: "Slack", desc: "Team notifications" },
+  { icon: Video, id: "zoom", label: "Zoom", desc: "Meeting links" },
+  { icon: FileSignature, id: "docusign", label: "DocuSign", desc: "Contracts" },
+  { icon: Search, id: "apollo", label: "Apollo", desc: "Lead enrichment" },
+  { icon: Search, id: "gemini", label: "Gemini", desc: "Web grounding" },
+  { icon: ShoppingBag, id: "shopify", label: "Shopify", desc: "E-commerce" },
+  { icon: Grid3X3, id: "square", label: "Square", desc: "Payments & POS" },
+  { icon: MessageCircle, id: "microsoft_teams", label: "MS Teams", desc: "Team notifications" },
+  { icon: Table, id: "microsoft_excel", label: "Excel", desc: "Call logging" },
+  { icon: Table, id: "google_sheets", label: "Google Sheets", desc: "Call logging" },
+  { icon: Megaphone, id: "meta", label: "Meta CAPI", desc: "Lead attribution" },
 ] as const;
 
 export default function DirectorWorkspace() {
@@ -132,7 +149,7 @@ export default function DirectorWorkspace() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [capabilityOpen, setCapabilityOpen] = useState(false);
+  const [connectorsOpen, setConnectorsOpen] = useState(false);
   const [attachmentsOpen, setAttachmentsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [artifacts, setArtifacts] = useState<DirectorArtifact[]>([]);
@@ -143,7 +160,7 @@ export default function DirectorWorkspace() {
   });
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
-  const capabilityRef = useRef<HTMLDivElement | null>(null);
+  const connectorsRef = useRef<HTMLDivElement | null>(null);
   const attachmentsRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -257,8 +274,8 @@ export default function DirectorWorkspace() {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (capabilityRef.current && !capabilityRef.current.contains(e.target as Node)) {
-        setCapabilityOpen(false);
+      if (connectorsRef.current && !connectorsRef.current.contains(e.target as Node)) {
+        setConnectorsOpen(false);
       }
       if (attachmentsRef.current && !attachmentsRef.current.contains(e.target as Node)) {
         setAttachmentsOpen(false);
@@ -308,7 +325,7 @@ export default function DirectorWorkspace() {
       if (optimistic) setMessages((prev) => [...prev, optimistic]);
       if (trimmed) setInput("");
       setIsSending(true);
-      setCapabilityOpen(false);
+      setConnectorsOpen(false);
 
       // Use streaming for regular messages (no approvals — those stay non-streaming)
       if (!opts?.approval) {
@@ -398,12 +415,6 @@ export default function DirectorWorkspace() {
     }
   };
 
-  const selectCapability = (prompt: string) => {
-    setInput(prompt);
-    setCapabilityOpen(false);
-    inputRef.current?.focus();
-  };
-
   const respondToApproval = (approval: DirectorApproval, approved: boolean) => {
     send("", {
       approval: {
@@ -421,7 +432,7 @@ export default function DirectorWorkspace() {
           <div className="flex items-center gap-2.5">
             <span className="wl-orbit" data-active={isSending}>
               <span className="shrink-0 flex w-9 h-9 items-center justify-center rounded-full bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/20 relative overflow-hidden">
-                <Sparkles className="w-4 h-4 relative z-10" />
+                <Compass className="w-4 h-4 relative z-10" />
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent" />
               </span>
             </span>
@@ -463,7 +474,7 @@ export default function DirectorWorkspace() {
             <div className="relative mb-6">
               <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-brand/20 to-brand/5 blur-2xl scale-125" />
               <span className="flex w-16 h-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-xl shadow-brand/30 relative overflow-hidden">
-                <Sparkles className="w-8 h-8 relative z-10" />
+                <Compass className="w-8 h-8 relative z-10" />
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/25 to-transparent" />
               </span>
             </div>
@@ -474,19 +485,9 @@ export default function DirectorWorkspace() {
                 your fleet.
               </p>
             ) : (
-              <div className="flex items-center justify-center gap-2 mb-4 flex-wrap">
-                {DIRECTOR_CAPABILITIES.map((c, i) => (
-                  <React.Fragment key={c.label}>
-                    {i > 0 && <span className="w-0.5 h-0.5 rounded-full bg-brand/25" />}
-                    <span className="inline-flex items-center gap-1 px-2 py-1 text-brand/70">
-                      <c.icon className="w-3 h-3" />
-                      <span className="font-mono text-[9px] uppercase tracking-[0.14em] font-semibold">
-                        {c.label}
-                      </span>
-                    </span>
-                  </React.Fragment>
-                ))}
-              </div>
+              <p className="text-[12px] text-ink/50 mb-4">
+                Plan your fleet, hire agents, coach performance, and analyze results.
+              </p>
             )}
 
             {/* Starter prompts */}
@@ -516,7 +517,7 @@ export default function DirectorWorkspace() {
               {m.role === "director" && (
                 <div className="flex items-center gap-2 mb-2 ml-1">
                   <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15">
-                    <Sparkles className="w-3.5 h-3.5" />
+                    <Compass className="w-3.5 h-3.5" />
                   </span>
                   <span className="text-[10px] text-muted uppercase tracking-[0.14em] font-medium">
                     Director
@@ -529,8 +530,8 @@ export default function DirectorWorkspace() {
                 className={cn(
                   "max-w-[75%] min-w-[200px] rounded-2xl px-5 py-4 whitespace-pre-wrap break-words relative",
                   m.role === "operator"
-                    ? "bg-gradient-to-br from-[#8B3FD6] to-[#5A2499] text-white rounded-br-md shadow-lg shadow-brand/20"
-                    : "bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm border border-brand/12 text-ink dark:text-foreground rounded-bl-md shadow-sm",
+                    ? "bg-gradient-to-br from-brand to-brand-deep text-white rounded-br-sm shadow-lg shadow-brand/25"
+                    : "bg-paper/95 dark:bg-black/40 backdrop-blur-sm border border-brand/10 text-ink dark:text-foreground rounded-bl-sm shadow-sm",
                 )}
               >
                 {/* Reasoning display - Claude style */}
@@ -711,7 +712,7 @@ export default function DirectorWorkspace() {
             <div className="flex items-center gap-2 mb-2 ml-1">
               <span className="wl-orbit" data-active="true">
                 <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-full bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15">
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <Compass className="w-3.5 h-3.5" />
                 </span>
               </span>
               <span className="wl-label text-muted">Director</span>
@@ -762,10 +763,10 @@ export default function DirectorWorkspace() {
       {/* Composer - prominent at bottom, Claude-style */}
       <div className="shrink-0 px-4 pb-6 pt-2">
         <div className="max-w-3xl mx-auto">
-          {/* Capability dropdown - clever positioning */}
-          <div ref={capabilityRef} className="relative mb-2">
+          {/* Connectors dropdown */}
+          <div ref={connectorsRef} className="relative mb-2">
             <AnimatePresence>
-              {capabilityOpen && (
+              {connectorsOpen && (
                 <motion.div
                   initial={{ opacity: 0, y: 8, scale: 0.96 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -774,29 +775,35 @@ export default function DirectorWorkspace() {
                   className="absolute bottom-full left-0 right-0 mb-2 rounded-xl bg-white/95 dark:bg-[#1a1225]/95 backdrop-blur-md border border-brand/15 shadow-xl shadow-brand/10 p-2 z-20"
                 >
                   <div className="flex items-center gap-2 px-3 py-2 border-b border-brand/8 mb-1">
-                    <Sparkles className="w-3.5 h-3.5 text-brand/60" />
-                    <span className="text-[10px] uppercase tracking-[0.16em] text-muted font-medium">
-                      Capabilities
+                    <Plug className="w-3.5 h-3.5 text-brand/60" />
+                    <span className="text-[10px] uppercase tracking-[0.16em] text-ink/50 font-medium">
+                      Connectors
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-1 max-h-[40vh] overflow-y-auto">
-                    {DIRECTOR_CAPABILITIES.map((c) => (
-                      <button
-                        key={c.label}
-                        onClick={() => selectCapability(c.prompt)}
-                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left hover:bg-brand/8 transition-colors cursor-pointer group"
+                    {CONNECTOR_CATALOG.map((c) => (
+                      <div
+                        key={c.id}
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg group"
                       >
                         <span className="w-7 h-7 rounded-lg bg-brand/10 flex items-center justify-center shrink-0">
-                          <c.icon className="w-3.5 h-3.5 text-brand group-hover:scale-110 transition-transform" />
+                          <c.icon className="w-3.5 h-3.5 text-brand" />
                         </span>
                         <div className="min-w-0">
-                          <p className="text-[11px] font-medium text-ink dark:text-white truncate">
-                            {c.label}
-                          </p>
-                          <p className="text-[9px] text-muted truncate">{c.prompt}</p>
+                          <p className="text-[11px] font-medium text-ink truncate">{c.label}</p>
+                          <p className="text-[9px] text-ink/40 truncate">{c.desc}</p>
                         </div>
-                      </button>
+                      </div>
                     ))}
+                  </div>
+                  <div className="mt-1 pt-1.5 border-t border-brand/8">
+                    <a
+                      href="/integrations"
+                      className="flex items-center gap-2 px-3 py-2 text-[11px] font-medium text-brand hover:text-brand/80 transition-colors"
+                    >
+                      <ArrowUpRight className="w-3 h-3" />
+                      Manage integrations
+                    </a>
                   </div>
                 </motion.div>
               )}
@@ -818,21 +825,21 @@ export default function DirectorWorkspace() {
             {/* Bottom bar with actions */}
             <div className="flex items-center justify-between px-4 pb-3">
               <div className="flex items-center gap-2">
-                {/* Left side - capability toggle */}
+                {/* Left side - connectors toggle */}
                 <button
                   type="button"
-                  onClick={() => setCapabilityOpen(!capabilityOpen)}
+                  onClick={() => setConnectorsOpen(!connectorsOpen)}
                   className={cn(
                     "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer",
-                    capabilityOpen
+                    connectorsOpen
                       ? "bg-brand/10 text-brand border border-brand/30"
-                      : "text-muted hover:text-brand hover:bg-brand/5 border border-transparent",
+                      : "text-ink/50 hover:text-brand hover:bg-brand/5 border border-transparent",
                   )}
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Capabilities</span>
+                  <Plug className="w-3.5 h-3.5" />
+                  <span>Connectors</span>
                   <ChevronDown
-                    className={cn("w-3 h-3 transition-transform", capabilityOpen && "rotate-180")}
+                    className={cn("w-3 h-3 transition-transform", connectorsOpen && "rotate-180")}
                   />
                 </button>
 
@@ -855,7 +862,7 @@ export default function DirectorWorkspace() {
                       "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer disabled:opacity-40",
                       attachmentsOpen
                         ? "bg-brand/10 text-brand border border-brand/30"
-                        : "text-muted hover:text-brand hover:bg-brand/5 border border-transparent",
+                        : "text-ink/50 hover:text-brand hover:bg-brand/5 border border-transparent",
                     )}
                   >
                     {isUploading ? (

@@ -232,10 +232,10 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
       <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-5 scrollbar-hide">
         {/* Pulse */}
         <section>
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted/70 mb-2">
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink/40 mb-2">
             Pulse · last {pulse?.windowHours ?? 24}h
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1.5 stagger-children">
             {stats.map((s) => (
               <div
                 key={s.label}
@@ -249,7 +249,7 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
                     s.value
                   )}
                 </span>
-                <span className="mt-0.5 text-[8px] uppercase tracking-[0.12em] text-muted/70">
+                <span className="mt-0.5 text-[8px] uppercase tracking-[0.12em] text-ink/40">
                   {s.label}
                 </span>
               </div>
@@ -259,10 +259,10 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
 
         {/* Quick actions */}
         <section>
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted/70 mb-2">
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink/40 mb-2">
             Launch an action
           </p>
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-2 gap-1.5 stagger-children">
             {QUICK_ACTIONS.map((a) => (
               <button
                 key={a.label}
@@ -274,18 +274,18 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
               </button>
             ))}
           </div>
-          <p className="mt-2 text-[9px] text-muted/70 leading-relaxed">
+          <p className="mt-2 text-[9px] text-ink/40 leading-relaxed">
             Seeds a draft into the composer — you review and send, the agent proposes, you approve.
           </p>
         </section>
 
-        {/* Capabilities by integration */}
+        {/* Connectors by integration */}
         <section>
           <div className="flex items-center justify-between mb-2">
-            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted/70">
-              Capabilities
+            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink/40">
+              Connectors
             </p>
-            <span className="text-[9px] uppercase tracking-[0.18em] text-brand/80">
+            <span className="text-[9px] uppercase tracking-[0.18em] text-brand">
               {enabledCount}/{AGENT_TOOL_CATALOG.length} on
             </span>
           </div>
@@ -297,10 +297,10 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
               return (
                 <div key={group}>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] font-medium text-ink/80">
+                    <span className="text-[10px] font-medium text-ink/70">
                       {GROUP_META[group].label}
                     </span>
-                    <span className="text-[9px] text-muted/60 tabular-nums">
+                    <span className="text-[9px] text-ink/40 tabular-nums">
                       {onCount}/{items.length}
                     </span>
                   </div>
@@ -323,7 +323,7 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
                             "inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] border transition-colors",
                             on
                               ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 cursor-default"
-                              : "bg-black/3 border-black/8 text-muted/70 hover:border-brand/40 hover:text-ink",
+                              : "bg-black/3 border-black/8 text-ink/50 hover:border-brand/40 hover:text-ink",
                           )}
                         >
                           {on ? <Check className="w-2.5 h-2.5" /> : <Zap className="w-2.5 h-2.5" />}
@@ -340,11 +340,11 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
 
         {/* Recent call outcomes */}
         <section>
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted/70 mb-2">
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink/40 mb-2">
             Latest calls
           </p>
           {overview && overview.recentCalls.length === 0 ? (
-            <p className="text-[11px] text-muted/70 leading-relaxed">
+            <p className="text-[11px] text-ink/40 leading-relaxed">
               No calls yet. When {agentName} starts taking calls, the latest outcomes show here.
             </p>
           ) : (

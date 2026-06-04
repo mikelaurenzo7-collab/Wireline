@@ -5,7 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { log } from "../lib/server-logger";
-import { authFetch, getAccessToken } from "../lib/api";
+import { authFetch, getFreshAccessToken } from "../lib/api";
 import { LiveFloorPanel, type FloorAgent } from "../components/CommandCenter/LiveFloorPanel";
 import { ActionFeed } from "../components/CommandCenter/ActionFeed";
 import OnboardingQuickstart from "../components/OnboardingQuickstart";
@@ -270,11 +270,11 @@ export default function LiveOps() {
       }, delay);
     };
 
-    const setupPresenceStream = () => {
+    const setupPresenceStream = async () => {
       if (!user) return;
 
       try {
-        const token = getAccessToken();
+        const token = await getFreshAccessToken();
         if (!token) return;
         const streamUrl = `${window.location.origin}/api/fleet/presence/stream?token=${encodeURIComponent(token)}`;
         eventSource = new EventSource(streamUrl, { withCredentials: true });
@@ -310,11 +310,11 @@ export default function LiveOps() {
                       setDossiers((prev) => ({ ...prev, ...dossData.dossiers }));
                     }
                   })
-                  .catch(() => {});
+                  .catch((err) => console.error("Dossier fetch failed", err));
               }
             }
-          } catch (_e) {
-            // silent parsing catch
+          } catch {
+            // SSE message parse — non-critical
           }
         };
 
@@ -437,7 +437,7 @@ export default function LiveOps() {
               {activeTab === "analytics" && (
                 <section className="space-y-4 pt-1">
                   <span className="app-section-title block">Fleet analytics</span>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 stagger-children">
                     {/* Analytics: Sentiment */}
                     <div className="wl-panel-elevated rounded-[2rem] p-5 hover:border-brand/35 hover:-translate-y-px hover:shadow-lg hover:shadow-brand/5 transition-all duration-300">
                       <div className="flex items-center justify-between mb-4">
@@ -542,16 +542,20 @@ export default function LiveOps() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="p-4 rounded-2xl wl-panel">
-                          <span className="wl-label block mb-1">Cost / Min</span>
-                          <span className="font-display italic text-2xl text-ink tabular-nums">
+                      <div className="grid grid-cols-2 gap-2 stagger-children">
+                        <div className="p-4 rounded-2xl wl-panel relative overflow-hidden group hover:-translate-y-px transition-transform">
+                          <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-brand/8 blur-xl -translate-y-4 translate-x-4" />
+                          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand/40 to-transparent" />
+                          <span className="wl-label block mb-1 relative z-10">Cost / Min</span>
+                          <span className="font-display italic text-2xl text-ink tabular-nums relative z-10">
                             ${stats?.unitEconomics?.costPerMinute ?? "0.00"}
                           </span>
                         </div>
-                        <div className="p-4 rounded-2xl wl-panel">
-                          <span className="wl-label block mb-1">Cost / Lead</span>
-                          <span className="font-display italic text-2xl text-ink tabular-nums">
+                        <div className="p-4 rounded-2xl wl-panel relative overflow-hidden group hover:-translate-y-px transition-transform">
+                          <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-brand-deep/8 blur-xl -translate-y-4 translate-x-4" />
+                          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand-deep/40 to-transparent" />
+                          <span className="wl-label block mb-1 relative z-10">Cost / Lead</span>
+                          <span className="font-display italic text-2xl text-ink tabular-nums relative z-10">
                             ${stats?.unitEconomics?.costPerLead ?? "0.00"}
                           </span>
                         </div>
@@ -595,16 +599,28 @@ export default function LiveOps() {
 
                 <div className="space-y-1">
                   <div className="flex items-center justify-between py-1 border-b border-brand/5">
-                    <span className="text-[12px] text-muted-foreground">Active Call Traffic</span>
-                    <span className="text-[12px] font-mono font-bold text-ink dark:text-foreground">
+                    <span className="text-[12px] text-ink/50">Active Call Traffic</span>
+                    <motion.span
+                      key={calls.length}
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="text-[12px] font-mono font-bold text-ink"
+                    >
                       {calls.length} active
-                    </span>
+                    </motion.span>
                   </div>
                   <div className="flex items-center justify-between py-1">
-                    <span className="text-[12px] text-muted-foreground">Configured Agents</span>
-                    <span className="text-[12px] font-mono font-bold text-ink dark:text-foreground">
+                    <span className="text-[12px] text-ink/50">Configured Agents</span>
+                    <motion.span
+                      key={stats?.agents?.length ?? 0}
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="text-[12px] font-mono font-bold text-ink"
+                    >
                       {stats?.agents?.length ?? 0}
-                    </span>
+                    </motion.span>
                   </div>
                 </div>
               </div>

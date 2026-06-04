@@ -3474,3 +3474,299 @@ select:focus {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   VISUAL POLISH v4 — Deep enrichment layer
+   Purposeful, editorial micro-interactions and ambient effects that elevate
+   every surface from "good" to "the founders clearly care about this."
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── SIDEBAR EDGE LIGHT ── */
+@keyframes sidebar-edge-sweep {
+  0%   { background-position: 0% 0%; }
+  50%  { background-position: 0% 100%; }
+  100% { background-position: 0% 0%; }
+}
+.sidebar-edge-light {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(155, 92, 224, 0.08) 15%,
+    rgba(199, 125, 255, 0.35) 50%,
+    rgba(155, 92, 224, 0.08) 85%,
+    transparent 100%
+  );
+  background-size: 100% 200%;
+  animation: sidebar-edge-sweep 8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ── FADE-IN UTILITY ── */
+@keyframes wl-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-in {
+  animation: wl-fade-in 0.4s ease-out both;
+}
+
+/* ── STAGGER ENTRANCE ── */
+@keyframes stagger-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.stagger-children > * {
+  animation: stagger-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0.04s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.08s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.12s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.16s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.20s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.24s; }
+.stagger-children > *:nth-child(7) { animation-delay: 0.28s; }
+.stagger-children > *:nth-child(8) { animation-delay: 0.32s; }
+
+/* ── AUTH PORTAL AURORA BLOBS ── */
+.auth-aurora-a {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at 40% 40%,
+    rgba(139, 63, 214, 0.10) 0%,
+    rgba(107, 43, 153, 0.04) 50%,
+    transparent 75%
+  );
+  filter: blur(80px);
+  animation: wireline-aurora-a 14s ease-in-out infinite alternate;
+  pointer-events: none;
+  top: 15%;
+  left: 20%;
+}
+.auth-aurora-b {
+  position: absolute;
+  width: 350px;
+  height: 350px;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at 60% 50%,
+    rgba(183, 63, 214, 0.08) 0%,
+    rgba(155, 92, 224, 0.03) 55%,
+    transparent 80%
+  );
+  filter: blur(70px);
+  animation: wireline-aurora-b 19s ease-in-out infinite alternate;
+  pointer-events: none;
+  bottom: 10%;
+  right: 15%;
+}
+
+/* ── PASSWORD STRENGTH GRADIENT ── */
+@keyframes strength-pulse {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}
+.pw-strength-bar {
+  height: 3px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(26, 22, 20, 0.06);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.pw-strength-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1), background 0.4s ease;
+  animation: strength-pulse 2s ease-in-out infinite;
+}
+
+/* ── OAUTH BUTTON POLISH ── */
+.oauth-btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.oauth-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(139, 63, 214, 0.04), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+.oauth-btn:hover::after {
+  opacity: 1;
+}
+.oauth-btn:hover {
+  border-color: rgba(139, 63, 214, 0.25) !important;
+  transform: translateY(-1px);
+  box-shadow:
+    0 4px 12px -4px rgba(139, 63, 214, 0.12),
+    0 1px 0 rgba(255, 255, 255, 0.8) inset;
+}
+.oauth-btn:active {
+  transform: scale(0.98);
+  transition-duration: 0.08s;
+}
+
+/* ── PRICING TIER SPOTLIGHT ── */
+.tier-spotlight {
+  position: relative;
+}
+.tier-spotlight::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: -10%;
+  right: -10%;
+  bottom: -20%;
+  background: radial-gradient(
+    ellipse 70% 60% at 50% 40%,
+    rgba(139, 63, 214, 0.08) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ── FOOTER BRAND GLOW ── */
+.footer-brand-glow {
+  position: relative;
+}
+.footer-brand-glow::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(600px, 80vw);
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(139, 63, 214, 0.5) 30%,
+    rgba(155, 92, 224, 0.7) 50%,
+    rgba(139, 63, 214, 0.5) 70%,
+    transparent 100%
+  );
+}
+
+/* ── AGENT CARD AMBIENT ── */
+.agent-card-ambient {
+  position: relative;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.agent-card-ambient::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 1;
+}
+.agent-card-ambient:hover {
+  border-color: rgba(139, 63, 214, 0.25);
+  box-shadow:
+    0 16px 48px -12px rgba(139, 63, 214, 0.12),
+    0 4px 16px -4px rgba(26, 22, 20, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+}
+
+/* ── AVATAR RING ── */
+.avatar-ring {
+  position: relative;
+}
+.avatar-ring::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, rgba(139, 63, 214, 0.5), rgba(212, 175, 255, 0.3));
+  z-index: -1;
+}
+
+/* ── PROOF TILE SHIMMER ── */
+.stat-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.stat-shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(139, 63, 214, 0.06) 40%,
+    rgba(139, 63, 214, 0.10) 50%,
+    rgba(139, 63, 214, 0.06) 60%,
+    transparent 100%
+  );
+  animation: shimmer-sweep 4s cubic-bezier(0.23, 1, 0.32, 1) infinite;
+  pointer-events: none;
+}
+
+/* ── NAV GROUP SEPARATOR ── */
+.nav-group-sep {
+  height: 1px;
+  margin: 6px 8px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.12) 30%,
+    rgba(155, 92, 224, 0.18) 50%,
+    rgba(255, 255, 255, 0.12) 70%,
+    transparent 100%
+  );
+}
+
+/* ── TOAST ENTRANCE ── */
+@keyframes toast-enter {
+  from { opacity: 0; transform: translateY(16px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.toast-enter {
+  animation: toast-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── DARK MODE ENRICHMENT ── */
+.dark .auth-aurora-a {
+  background: radial-gradient(ellipse at 40% 40%, rgba(155, 92, 224, 0.15) 0%, rgba(139, 63, 214, 0.06) 50%, transparent 75%);
+}
+.dark .auth-aurora-b {
+  background: radial-gradient(ellipse at 60% 50%, rgba(199, 125, 255, 0.10) 0%, rgba(155, 92, 224, 0.05) 55%, transparent 80%);
+}
+.dark .hero-aurora-orb {
+  background: radial-gradient(ellipse at 30% 40%, rgba(155, 92, 224, 0.20) 0%, rgba(139, 63, 214, 0.10) 35%, rgba(107, 43, 153, 0.05) 60%, transparent 80%);
+}
+.dark .hero-aurora-orb-warm {
+  background: radial-gradient(ellipse at 60% 50%, rgba(212, 175, 255, 0.14) 0%, rgba(155, 92, 224, 0.07) 45%, transparent 75%);
+}
+.dark .footer-brand-glow::before {
+  background: linear-gradient(90deg, transparent 0%, rgba(155, 92, 224, 0.6) 30%, rgba(199, 125, 255, 0.8) 50%, rgba(155, 92, 224, 0.6) 70%, transparent 100%);
+}
+
+/* ── REDUCED MOTION — v4 layer ── */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-edge-light,
+  .auth-aurora-a,
+  .auth-aurora-b { animation: none !important; }
+  .pw-strength-fill { animation: none !important; }
+  .oauth-btn:hover { transform: none; }
+  .agent-card-ambient:hover { transform: none; }
+  .stat-shimmer::after { animation: none !important; }
+  .stagger-children > * { animation: none !important; opacity: 1; transform: none; }
+}

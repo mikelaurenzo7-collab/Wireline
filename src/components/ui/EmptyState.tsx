@@ -86,9 +86,10 @@ export function EmptyState({
           {actions.map((action, index) => {
             const isPrimary = !!action.primary;
             const sharedClasses = cn(
-              "rounded-xl",
-              isPrimary &&
-                "bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20 hover:opacity-95",
+              "rounded-full transition-all",
+              isPrimary
+                ? "bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20 hover:shadow-md hover:shadow-brand/25 hover:-translate-y-px"
+                : "hover:-translate-y-px",
             );
 
             if (action.to) {

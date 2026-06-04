@@ -205,7 +205,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                                 <p className="font-mono text-sm text-ink truncate">
                                   {t.customer_number}
                                 </p>
-                                <p className="text-[10px] text-muted/70 mt-0.5">
+                                <p className="text-[10px] text-ink/40 mt-0.5">
                                   {formatDate(
                                     t.last_message_at,
                                     {
@@ -276,7 +276,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                             <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">
                               {m.body}
                             </p>
-                            <p className="text-[9px] uppercase tracking-[0.25em] text-muted/70 mt-1.5">
+                            <p className="text-[9px] uppercase tracking-[0.25em] text-ink/40 mt-1.5">
                               {m.direction === "out" ? "You" : "Caller"} ·{" "}
                               {formatDate(
                                 m.created_at,
@@ -305,7 +305,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                           }}
                           placeholder="Type a reply…"
                           disabled={sending}
-                          className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 disabled:opacity-50"
+                          className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 disabled:opacity-50"
                         />
                         <button
                           onClick={handleSend}
@@ -320,7 +320,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                           )}
                         </button>
                       </div>
-                      <p className="text-[10px] text-muted/70 mt-1.5 leading-relaxed">
+                      <p className="text-[10px] text-ink/40 mt-1.5 leading-relaxed">
                         Sent from your Twilio sender · TCPA opt-out applies · STOP keyword
                         auto-honored.
                       </p>

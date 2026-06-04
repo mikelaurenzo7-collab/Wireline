@@ -343,7 +343,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 title={user?.email || "Account"}
               >
                 <div
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-[#3B154C] font-medium text-[10px] shrink-0"
+                  className="avatar-ring w-6 h-6 rounded-full flex items-center justify-center text-[#3B154C] font-medium text-[10px] shrink-0"
                   style={{ background: "#EFE9DC" }}
                   aria-hidden="true"
                 >
@@ -365,11 +365,15 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                     transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
                     role="menu"
                     aria-label="Account menu"
-                    className="absolute right-0 top-full mt-2 min-w-[240px] w-64 md:w-72 max-w-[90vw] rounded-xl wl-panel-elevated shadow-xl overflow-hidden z-50"
+                    className="absolute right-0 top-full mt-2 min-w-[240px] w-64 md:w-72 max-w-[90vw] rounded-xl wl-panel-elevated shadow-2xl shadow-brand/8 overflow-hidden z-50"
                   >
-                    <div className="px-4 py-3 border-b border-black/8">
-                      <p className="wl-label text-muted mb-1">Signed in as</p>
-                      <p className="text-[12px] font-medium text-ink truncate">
+                    {/* Account header — brand-tinted */}
+                    <div className="relative px-4 py-3.5 border-b border-black/8 overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-br from-brand/[0.04] to-transparent pointer-events-none" />
+                      <p className="text-[9px] uppercase tracking-[0.2em] text-ink/35 mb-1">
+                        Signed in as
+                      </p>
+                      <p className="text-[12px] font-semibold text-ink truncate relative z-10">
                         {user?.email || "—"}
                       </p>
                     </div>
@@ -377,37 +381,37 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                       <Link
                         to="/admin?tab=subscription"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
+                        className="flex items-center gap-2.5 px-4 py-2.5 md:py-2 text-[12px] font-medium text-ink/70 hover:bg-brand/[0.04] hover:text-ink transition-colors group"
                         role="menuitem"
                       >
-                        <CreditCard className="w-3.5 h-3.5 text-muted" />
+                        <CreditCard className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
                         Billing &amp; subscription
                       </Link>
                       <Link
                         to="/admin"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
+                        className="flex items-center gap-2.5 px-4 py-2.5 md:py-2 text-[12px] font-medium text-ink/70 hover:bg-brand/[0.04] hover:text-ink transition-colors group"
                         role="menuitem"
                       >
-                        <Settings className="w-3.5 h-3.5 text-muted" />
+                        <Settings className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
                         Settings
                       </Link>
                       <Link
                         to="/integrations"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
+                        className="flex items-center gap-2.5 px-4 py-2.5 md:py-2 text-[12px] font-medium text-ink/70 hover:bg-brand/[0.04] hover:text-ink transition-colors group"
                         role="menuitem"
                       >
-                        <PlugZap className="w-3.5 h-3.5 text-muted" />
+                        <PlugZap className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
                         Integrations
                       </Link>
                       <Link
                         to="/help"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
+                        className="flex items-center gap-2.5 px-4 py-2.5 md:py-2 text-[12px] font-medium text-ink/70 hover:bg-brand/[0.04] hover:text-ink transition-colors group"
                         role="menuitem"
                       >
-                        <LifeBuoy className="w-3.5 h-3.5 text-muted" />
+                        <LifeBuoy className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
                         Help &amp; support
                       </Link>
                       {/* Founder Dashboard — only visible to the platform founder (internal platform meta) */}
@@ -415,10 +419,10 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                         <Link
                           to="/founder"
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
+                          className="flex items-center gap-2.5 px-4 py-2.5 md:py-2 text-[12px] font-medium text-ink/70 hover:bg-brand/[0.04] hover:text-ink transition-colors group"
                           role="menuitem"
                         >
-                          <Crown className="w-3.5 h-3.5 text-muted" />
+                          <Crown className="w-3.5 h-3.5 text-amber-500/60 group-hover:text-amber-500 transition-colors" />
                           Founder Dashboard
                         </Link>
                       )}
@@ -429,10 +433,10 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                           setUserMenuOpen(false);
                           signOut();
                         }}
-                        className="w-full flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-rose-600 hover:bg-rose-500/8 transition-colors"
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 md:py-2 text-[12px] font-medium text-rose-600 hover:bg-rose-500/[0.06] transition-colors group"
                         role="menuitem"
                       >
-                        <LogOut className="w-3.5 h-3.5" />
+                        <LogOut className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                         Sign out
                       </button>
                     </div>
@@ -524,7 +528,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
 
               <div className="pt-3 mt-3 aurora-divider space-y-2">
                 <div className="flex items-center gap-2 rounded-lg wl-panel px-2 py-2">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-on-brand font-medium text-sm shrink-0 bg-brand">
+                  <div className="avatar-ring w-8 h-8 rounded-full flex items-center justify-center text-on-brand font-medium text-sm shrink-0 bg-brand">
                     {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
                   </div>
                   <div className="min-w-0 flex-1">

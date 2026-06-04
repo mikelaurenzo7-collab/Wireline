@@ -145,7 +145,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           transition={{ duration: 0.6 }}
           className="glass border border-brand/25 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8"
         >
-          <div className="font-display italic text-5xl sm:text-6xl text-brand leading-none shrink-0">
+          <div className="font-display italic text-5xl sm:text-6xl text-brand leading-none shrink-0 stat-shimmer">
             {cfg.statValue}
           </div>
           <p className="text-sm sm:text-base text-ink/80 leading-relaxed">{cfg.statLabel}</p>
@@ -157,7 +157,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-8">
           What your AI agent handles
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 stagger-children">
           {cfg.pains.map((pain, i) => {
             const Icon = pain.icon;
             return (
@@ -167,7 +167,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.08 }}
-                className="glass border border-white/10 p-5"
+                className="glass card-shimmer border border-white/10 p-5 transition-all duration-300 hover:border-brand/30"
               >
                 <div className="w-10 h-10 flex items-center justify-center mb-3 bg-brand">
                   <Icon className="w-5 h-5 text-on-brand" strokeWidth={2} />

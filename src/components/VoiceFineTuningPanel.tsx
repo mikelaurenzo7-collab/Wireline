@@ -75,7 +75,7 @@ function SliderRow({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
+        <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
           {label}
           {/* Help tooltip — hover/focus to reveal. Plain English, one
               line; the comments in this file carry the deep ElevenLabs
@@ -89,7 +89,7 @@ function SliderRow({
             tabIndex={0}
           >
             <Info
-              className="w-2.5 h-2.5 text-muted/70 hover:text-brand cursor-help"
+              className="w-2.5 h-2.5 text-ink/40 hover:text-brand cursor-help"
               aria-label={`What does ${label} do?`}
             />
             {showTip && (
@@ -105,7 +105,7 @@ function SliderRow({
         <span
           className={cn(
             "text-[10px] font-medium tabular-nums",
-            isDefault ? "text-muted/70" : "text-ink",
+            isDefault ? "text-ink/40" : "text-ink",
           )}
         >
           {value.toFixed(2)}
@@ -179,7 +179,7 @@ export default function VoiceFineTuningPanel({
         className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left"
         aria-expanded={advancedOpen}
       >
-        <span className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.3em] text-muted/70">
+        <span className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.3em] text-ink/40">
           <Sliders className="w-2.5 h-2.5 text-brand" />
           Voice fine-tuning
           {!atDefaults && (
@@ -190,14 +190,14 @@ export default function VoiceFineTuningPanel({
             />
           )}
         </span>
-        <span className="text-[9px] uppercase tracking-[0.25em] text-muted/70">
+        <span className="text-[9px] uppercase tracking-[0.25em] text-ink/40">
           {advancedOpen ? "Hide advanced" : "Show advanced"}
         </span>
       </button>
 
       {advancedOpen && (
         <div className="px-3 pb-3 pt-1 space-y-3 border-t border-white/8">
-          <p className="text-[10px] text-muted/70 leading-relaxed">
+          <p className="text-[10px] text-ink/40 leading-relaxed">
             Power-user tuning for ElevenLabs voices. Defaults work for most agents — only worth
             touching if you cloned your own voice and want to dial it in.
           </p>
@@ -233,10 +233,10 @@ export default function VoiceFineTuningPanel({
               the other "yes / no" pills elsewhere in FleetSettings. */}
           <div className="flex items-center justify-between gap-3 pt-1">
             <div className="space-y-0.5 min-w-0">
-              <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
+              <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
                 Speaker boost
               </label>
-              <p className="text-[9px] text-muted/70 leading-relaxed">
+              <p className="text-[9px] text-ink/40 leading-relaxed">
                 Lifts loudness and presence. Turn off for soft, intimate voices.
               </p>
             </div>
@@ -276,7 +276,7 @@ export default function VoiceFineTuningPanel({
                 "disabled:opacity-50 disabled:cursor-not-allowed",
                 "inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.25em] transition-colors",
                 atDefaults
-                  ? "text-muted/70 cursor-not-allowed"
+                  ? "text-ink/40 cursor-not-allowed"
                   : "text-muted/80 hover:text-brand cursor-pointer",
               )}
             >

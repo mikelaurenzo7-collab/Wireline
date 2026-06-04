@@ -2,9 +2,8 @@ import { describe, expect, it } from "vitest";
 import { CHANNELS_HUB, TRAINING_HUB } from "./HubTabs";
 
 describe("Hub tab definitions", () => {
-  it("TRAINING_HUB links Chat and Training (not stale /knowledge)", () => {
+  it("TRAINING_HUB still exports Chat and Training paths for internal use", () => {
     expect(TRAINING_HUB.map((t) => t.path)).toEqual(["/chat", "/training"]);
-    expect(TRAINING_HUB.map((t) => t.label)).toEqual(["Chat", "Training"]);
   });
 
   it("CHANNELS_HUB covers Phone, Email, SMS (sidebar targets; not mounted on channel pages)", () => {

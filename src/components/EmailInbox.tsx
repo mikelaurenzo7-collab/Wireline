@@ -329,7 +329,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                               ? "bg-rose-500/12 text-rose-500 border-rose-500/25"
                               : score >= 50
                                 ? "bg-brand/12 text-brand border-brand/25"
-                                : "bg-black/4 text-muted/70 border-black/8";
+                                : "bg-black/4 text-ink/40 border-black/8";
                           return (
                             <motion.button
                               layout
@@ -365,10 +365,10 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                               {/* Content */}
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between gap-2 mb-0.5">
-                                  <span className="text-[9px] uppercase tracking-[0.24em] text-muted/70 truncate">
+                                  <span className="text-[9px] uppercase tracking-[0.24em] text-ink/40 truncate">
                                     {thread.customer_email}
                                   </span>
-                                  <span className="text-[8px] tabular-nums text-muted/70 shrink-0">
+                                  <span className="text-[8px] tabular-nums text-ink/40 shrink-0">
                                     {formatDate(thread.last_message_at)}
                                   </span>
                                 </div>
@@ -376,7 +376,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                                   {thread.subject || "(no subject)"}
                                 </h4>
                                 <div className="flex items-center gap-2">
-                                  <p className="text-[10px] text-muted/70 truncate flex-1">
+                                  <p className="text-[10px] text-ink/40 truncate flex-1">
                                     {thread.summary || "Pending analysis…"}
                                   </p>
                                   <span
@@ -494,7 +494,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                                 <div
                                   className={cn(
                                     "text-[9px] uppercase tracking-[0.3em] mb-2 flex items-center gap-1.5",
-                                    msg.role === "ai" ? "text-brand" : "text-muted/70",
+                                    msg.role === "ai" ? "text-brand" : "text-ink/40",
                                   )}
                                 >
                                   {msg.role === "ai" ? (
@@ -512,7 +512,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                                   {msg.content}
                                 </p>
                               </div>
-                              <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70 mt-1.5 tabular-nums">
+                              <span className="text-[9px] uppercase tracking-[0.3em] text-ink/40 mt-1.5 tabular-nums">
                                 {formatTime(msg.created_at)}
                               </span>
                             </motion.div>
@@ -527,7 +527,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
                               <Zap className="w-3 h-3 text-brand" />
-                              <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
+                              <span className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
                                 Quick replies
                               </span>
                             </div>
@@ -554,7 +554,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                         )}
 
                         <div className="rounded-xl wl-panel focus-within:border-brand/35 transition-colors overflow-hidden">
-                          <div className="px-3 pt-2.5 pb-1 flex items-center gap-2 text-muted/70">
+                          <div className="px-3 pt-2.5 pb-1 flex items-center gap-2 text-ink/40">
                             <Terminal className="w-3 h-3" />
                             <span className="text-[9px] uppercase tracking-[0.35em]">
                               Compose reply
@@ -564,11 +564,11 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                             value={replyText}
                             onChange={(e) => setReplyText(e.target.value)}
                             placeholder="Type a reply or ask the agent to draft one…"
-                            className="w-full px-3 pb-3 min-h-[100px] outline-none text-ink text-sm leading-relaxed resize-none bg-transparent placeholder:text-muted/70"
+                            className="w-full px-3 pb-3 min-h-[100px] outline-none text-ink text-sm leading-relaxed resize-none bg-transparent placeholder:text-ink/40"
                           />
                         </div>
                         <div className="flex items-center justify-between gap-3">
-                          <p className="text-[10px] text-muted/70 flex-1 leading-relaxed hidden md:block">
+                          <p className="text-[10px] text-ink/40 flex-1 leading-relaxed hidden md:block">
                             Drafts use trained heuristics from this agent's persona and prior thread
                             context.
                           </p>

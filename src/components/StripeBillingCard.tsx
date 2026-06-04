@@ -275,7 +275,7 @@ export default function StripeBillingCard() {
             </p>
           )}
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 stagger-children">
           {plans.map((plan) => {
             const Icon = PLAN_ICONS[plan.id] || Building2;
             const accent = PLAN_ACCENTS[plan.id] || "#8B3FD6";
@@ -285,9 +285,10 @@ export default function StripeBillingCard() {
             return (
               <motion.div
                 key={plan.id}
-                whileHover={{ y: -3 }}
+                whileHover={{ y: -4 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
                 className={cn(
-                  "relative rounded-2xl glass border p-7 flex flex-col gap-5 transition-all",
+                  "relative rounded-2xl glass border p-7 flex flex-col gap-5 transition-all group overflow-hidden",
                   isCurrent
                     ? "border-brand/40 bg-brand/5"
                     : isSignupMatch
@@ -393,6 +394,16 @@ export default function StripeBillingCard() {
                     Available soon — contact us to start on this tier
                   </p>
                 )}
+                {/* Accent bar — pulses on current plan */}
+                <div
+                  className={cn(
+                    "absolute bottom-0 left-0 right-0 h-[2px] transition-opacity duration-300",
+                    isCurrent ? "opacity-100" : "opacity-0 group-hover:opacity-60",
+                  )}
+                  style={{
+                    background: `linear-gradient(90deg, transparent, ${accent}, transparent)`,
+                  }}
+                />
               </motion.div>
             );
           })}

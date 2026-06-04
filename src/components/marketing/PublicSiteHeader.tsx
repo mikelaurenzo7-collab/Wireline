@@ -80,7 +80,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
             <div className="w-8 h-8 flex items-center justify-center shrink-0 bg-brand">
               <WirelineMark className="w-4 h-4 text-white" strokeWidth={130} />
             </div>
-            <span className="font-display italic text-xl text-ink leading-none hidden sm:block">
+            <span className="font-display italic text-xl text-ink leading-none hidden sm:block chromatic-hover">
               Wireline
             </span>
           </Link>

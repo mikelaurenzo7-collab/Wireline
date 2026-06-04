@@ -86,7 +86,7 @@ export default function FleetSettings() {
           .then((data) => {
             if (data) setIntegrationStatus(data);
           })
-          .catch(() => {});
+          .catch((err) => console.error("CRM status refresh failed", err));
       }
     };
     window.addEventListener("message", onMessage);

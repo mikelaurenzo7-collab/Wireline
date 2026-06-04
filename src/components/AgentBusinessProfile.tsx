@@ -486,7 +486,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
             agent's to the support lead. */}
         <div className="mt-4 pt-4 border-t border-black/5">
           <p className="text-eyebrow/65 font-semibold mb-1">Route alerts to (this agent only)</p>
-          <p className="text-[10px] text-muted/70 mb-3 leading-relaxed">
+          <p className="text-[10px] text-ink/40 mb-3 leading-relaxed">
             Both optional. Leave blank to use the tenant-wide Manager Alert Number from{" "}
             <a href="/admin?tab=carrier" className="text-[#8B3FD6] hover:underline">
               Settings → Carrier
@@ -495,7 +495,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
           </p>
           <div className="grid sm:grid-cols-2 gap-3">
             <label className="block">
-              <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70 font-semibold block mb-1">
+              <span className="text-[9px] uppercase tracking-[0.3em] text-ink/40 font-semibold block mb-1">
                 Escalation phone (SMS)
               </span>
               <Input
@@ -513,7 +513,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               />
             </label>
             <label className="block">
-              <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70 font-semibold block mb-1">
+              <span className="text-[9px] uppercase tracking-[0.3em] text-ink/40 font-semibold block mb-1">
                 Escalation email
               </span>
               <Input
@@ -560,7 +560,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               <p className="text-[12px] font-semibold text-ink leading-tight">
                 Warm-transfer the live caller
               </p>
-              <p className="text-[10.5px] text-muted/70 leading-relaxed mt-0.5">
+              <p className="text-[10.5px] text-ink/40 leading-relaxed mt-0.5">
                 {value.escalation_phone
                   ? "When this agent escalates, the live call transfers to the phone above instead of just sending an alert. The agent will say a brief handoff line before transferring."
                   : "Set an escalation phone above to enable warm-transfer. Without one, the caller has nowhere to be routed."}
@@ -585,7 +585,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
       >
         <div className="space-y-1.5">
           {variableEntries.length === 0 && (
-            <div className="text-[11px] text-muted/70 italic px-1 py-2">
+            <div className="text-[11px] text-ink/40 italic px-1 py-2">
               No variables yet. Add ones like <code className="text-ink/80">business_name</code>,{" "}
               <code className="text-ink/80">website</code>,{" "}
               <code className="text-ink/80">support_email</code>, then reference them as{" "}
@@ -612,7 +612,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 type="button"
                 onClick={() => removeVariable(k)}
                 aria-label={`Remove ${k}`}
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-muted/70 hover:text-rose-500 hover:bg-rose-500/8 transition-colors shrink-0"
+                className="w-9 h-9 rounded-lg flex items-center justify-center text-ink/40 hover:text-rose-500 hover:bg-rose-500/8 transition-colors shrink-0"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -727,16 +727,16 @@ function Field({
 }) {
   return (
     <div className="space-y-1">
-      <label className="text-[9px] uppercase tracking-[0.32em] text-muted/70">{label}</label>
+      <label className="text-[9px] uppercase tracking-[0.32em] text-ink/40">{label}</label>
       {children}
-      {hint && <p className="text-[10px] text-muted/70 leading-snug">{hint}</p>}
+      {hint && <p className="text-[10px] text-ink/40 leading-snug">{hint}</p>}
     </div>
   );
 }
 
 function CharCount({ value, max }: { value: string; max: number }) {
   const len = value.length;
-  const tone = len > max * 0.9 ? "text-amber-600" : "text-muted/70";
+  const tone = len > max * 0.9 ? "text-amber-600" : "text-ink/40";
   return (
     <p className={cn("text-[9px] tabular-nums text-right", tone)}>
       {len}/{max}
@@ -754,7 +754,7 @@ function ChipList({
   tone: "rose" | "amber";
 }) {
   if (chips.length === 0) {
-    return <p className="text-[11px] text-muted/70 italic px-1 py-1">None yet.</p>;
+    return <p className="text-[11px] text-ink/40 italic px-1 py-1">None yet.</p>;
   }
   const toneClass =
     tone === "rose"

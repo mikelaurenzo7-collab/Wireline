@@ -426,7 +426,7 @@ export default function OnboardingQuickstart({
 
         {/* Steps — 4 columns on lg so all four 'Get Started' cards fit
             in a single row above the fold. 2 cols on tablet, 1 on mobile. */}
-        <div className="relative z-10 p-3 md:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+        <div className="relative z-10 p-3 md:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 stagger-children">
           {STEPS.map((s, i) => (
             <Step
               key={s.id}
@@ -474,7 +474,7 @@ export default function OnboardingQuickstart({
             <div className="app-section-title mb-3 flex items-center gap-2">
               <Link2 className="w-3 h-3" /> Power up your fleet
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 stagger-children">
               <PowerUpCard
                 icon={Mail}
                 label="Connect Email"
@@ -818,7 +818,7 @@ function AllSetCard({
                 </div>
                 <div className="text-[8px] uppercase tracking-[0.24em] text-muted">{hint}</div>
               </div>
-              <ArrowRight className="w-3.5 h-3.5 text-muted/70 group-hover:text-brand transition-colors shrink-0" />
+              <ArrowRight className="w-3.5 h-3.5 text-ink/40 group-hover:text-brand transition-colors shrink-0" />
             </Link>
           ))}
         </div>

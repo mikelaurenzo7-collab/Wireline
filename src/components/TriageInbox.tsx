@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { authFetch } from "../lib/api";
+import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
 import { formatDate, formatDateTime } from "../lib/safe-date";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
@@ -229,7 +230,7 @@ export default function TriageInbox() {
           ──────────────────────────────────────────────────────────── */}
         <div
           className={cn(
-            "h-full min-h-0 overflow-y-auto lg:overflow-hidden",
+            "h-full min-h-0 overflow-y-auto lg:overflow-hidden stagger-children",
             "grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
             "lg:[grid-template-rows:minmax(0,1.15fr)_minmax(0,1fr)]",
             "auto-rows-fr",
@@ -320,7 +321,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
   if (items.length === 0)
     return <Empty icon={Flame} label="No hot leads right now — keep dialing." />;
   return (
-    <ul className="p-2 space-y-2 list-none">
+    <ul className="p-2 space-y-2 list-none stagger-children">
       {items.map((c) => (
         <li key={c.id} className="relative list-none group">
           <Card className="bg-black/10 border-white/5 hover:border-brand/20 transition-all p-3 flex items-center gap-3 rounded-xl relative">
@@ -536,6 +537,7 @@ const KnowledgeGapRow: React.FC<{
   const [content, setContent] = useState(cleaned);
   const [busy, setBusy] = useState(false);
   const [discarding, setDiscarding] = useState(false);
+  const { toast } = useToast();
 
   const promote = async () => {
     setBusy(true);
@@ -545,7 +547,13 @@ const KnowledgeGapRow: React.FC<{
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customContent: editing ? content : undefined }),
       });
-      if (r.ok) onPromoted();
+      if (r.ok) {
+        onPromoted();
+      } else {
+        toast({ title: "Couldn't promote knowledge gap", type: "error" });
+      }
+    } catch {
+      toast({ title: "Couldn't promote knowledge gap", type: "error" });
     } finally {
       setBusy(false);
     }
@@ -560,9 +568,11 @@ const KnowledgeGapRow: React.FC<{
       if (r.ok) {
         onDiscard(gap.id);
       } else {
+        toast({ title: "Couldn't discard knowledge gap", type: "error" });
         setDiscarding(false);
       }
     } catch {
+      toast({ title: "Couldn't discard knowledge gap", type: "error" });
       setDiscarding(false);
     }
   };

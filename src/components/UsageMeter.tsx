@@ -48,7 +48,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
     return (
       <div
         className={cn(
-          "flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-muted/70",
+          "flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-ink/40",
           compact ? "py-1.5 px-3" : "py-4 px-5",
         )}
       >
@@ -82,10 +82,10 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
           className="w-2 h-2 rounded-full animate-pulse"
           style={{ background: barAccent, boxShadow: `0 0 8px ${barAccent}` }}
         />
-        <span className="text-muted/70 font-semibold tracking-wider">VOICE</span>
+        <span className="text-ink/40 font-semibold tracking-wider">VOICE</span>
         <span className="text-ink font-bold tabular-nums">{used.toLocaleString()}</span>
-        <span className="text-muted/70 font-light">/</span>
-        <span className="text-muted/70 tabular-nums">{included.toLocaleString()}</span>
+        <span className="text-ink/40 font-light">/</span>
+        <span className="text-ink/40 tabular-nums">{included.toLocaleString()}</span>
       </div>
     );
   }
@@ -113,17 +113,17 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
             <h4 className="font-display italic text-lg text-ink leading-tight font-bold">
               Voice minutes
             </h4>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70 font-medium">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40 font-medium">
               This month · resets {resetLabel}
             </p>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-[11px] font-mono text-muted/70">
+          <div className="text-[11px] font-mono text-ink/40">
             <span className="text-ink tabular-nums text-base font-bold">
               {used.toLocaleString()}
             </span>
-            <span className="text-muted/70"> / {included.toLocaleString()}</span>
+            <span className="text-ink/40"> / {included.toLocaleString()}</span>
           </div>
           <p className="text-[9px] uppercase tracking-[0.3em] text-brand font-semibold mt-0.5">
             {pct}% used

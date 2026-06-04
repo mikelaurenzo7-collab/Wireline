@@ -18,7 +18,6 @@ import { useAgents } from "../contexts/AgentsContext";
 import ClientRouteViewport from "../components/layout/ClientRouteViewport";
 import ClientRouteLoading from "../components/layout/ClientRouteLoading";
 import ClientSubTabs from "../components/layout/ClientSubTabs";
-import HubTabs, { TRAINING_HUB } from "../components/HubTabs";
 import { EmptyState } from "../components/ui/EmptyState";
 import { cn } from "../lib/utils";
 
@@ -79,11 +78,10 @@ export default function Training() {
 
   return (
     <ClientRouteViewport>
-      <HubTabs tabs={TRAINING_HUB} label="Training hub" className="mb-1 md:mb-2" />
       <div className="flex flex-col lg:flex-row gap-3 flex-1 min-h-0">
         <aside className="shrink-0 lg:w-[260px] flex flex-col">
           {/* Mobile: horizontal orbit strip */}
-          <div className="lg:hidden flex items-center gap-2 overflow-x-auto scrollbar-hide scroll-viewport pb-2">
+          <div className="lg:hidden flex items-center gap-2 overflow-x-auto scrollbar-hide scroll-viewport pb-2 stagger-children">
             {agents.map((agent) => (
               <button
                 key={agent.id}
@@ -116,7 +114,7 @@ export default function Training() {
           {/* Desktop: vertical agent list with specular depth */}
           <div className="hidden lg:flex flex-col gap-1.5 h-full max-h-[calc(100dvh-12rem)] scroll-viewport wl-panel p-3 relative">
             <p className="px-2 py-1.5 mb-1 wl-label text-brand/70">Select Agent</p>
-            <div className="space-y-1">
+            <div className="space-y-1 stagger-children">
               {agents.map((agent) => (
                 <button
                   key={agent.id}
@@ -153,7 +151,7 @@ export default function Training() {
                       {agent.name}
                     </p>
                     {agent.role && (
-                      <p className="text-[10px] text-muted/70 truncate capitalize mt-0.5">
+                      <p className="text-[10px] text-ink/40 truncate capitalize mt-0.5">
                         {agent.role.replace(/_/g, " ")}
                       </p>
                     )}
