@@ -23,6 +23,7 @@ import {
   resetPasswordSchema,
 } from "../lib/api-validation";
 import { getPostgresErrorCode } from "../lib/pg-errors";
+import { bootstrapFounderFleetIfEmpty, scheduleFounderBootstrap } from "../lib/founder-bootstrap";
 
 const router = Router();
 
@@ -44,6 +45,8 @@ router.post(
       if (!result) {
         return res.status(401).json({ error: "Invalid email or password" });
       }
+
+      scheduleFounderBootstrap(result.user.id, result.user.email);
 
       res.json(result);
     } catch (error) {
@@ -117,6 +120,8 @@ router.post(
         utmMedium,
         utmCampaign,
       });
+
+      scheduleFounderBootstrap(result.user.id, result.user.email);
 
       // Mint + email the verification link. Best-effort: if the
       // transport is down (no RESEND_API_KEY), signup still succeeds
@@ -441,6 +446,25 @@ router.post(
     } catch (error) {
       log.error("Auth: reset-password complete failed", { error });
       return res.status(500).json({ error: "Internal server error" });
+    }
+  },
+);
+
+/**
+ * GET /api/auth/bootstrap
+ * One-shot session bootstrap — seeds the founder fleet when the owner account
+ * has zero agents. Safe to call on every app load; no-ops when already seeded.
+ */
+router.get(
+  "/api/auth/bootstrap",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const result = await bootstrapFounderFleetIfEmpty(req.user.id, req.user.email);
+      res.json({ ok: true, founderSeeded: result.seeded });
+    } catch (error) {
+      log.warn("Auth: bootstrap failed", { userId: req.user.id, error });
+      res.status(503).json({ ok: false, founderSeeded: false, error: "Bootstrap failed" });
     }
   },
 );

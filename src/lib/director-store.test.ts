@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { isPostgresMissingColumn, isPostgresMissingRelation } from "./director-store";
+import {
+  isPostgresMissingColumn,
+  isPostgresMissingRelation,
+  type DirectorMessagesLoadResult,
+} from "./director-store";
 
 describe("director-store postgres error helpers", () => {
   it("detects missing reasoning column errors", () => {
@@ -20,5 +24,13 @@ describe("director-store postgres error helpers", () => {
     ).toBe(true);
     expect(isPostgresMissingRelation(new Error("42P01 undefined_table"))).toBe(true);
     expect(isPostgresMissingRelation(new Error("timeout"))).toBe(false);
+  });
+});
+
+describe("DirectorMessagesLoadResult shape", () => {
+  it("documents degraded empty fallback contract", () => {
+    const fallback: DirectorMessagesLoadResult = { messages: [], degraded: true };
+    expect(fallback.degraded).toBe(true);
+    expect(fallback.messages).toEqual([]);
   });
 });

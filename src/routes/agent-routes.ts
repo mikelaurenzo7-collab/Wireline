@@ -29,7 +29,6 @@ import { SentryEvents } from "../lib/sentry-events";
 import { getDefaultAgentTools, normalizeEnabledTools } from "../lib/agent-capabilities";
 import { claudeErr } from "../lib/claude-response-helpers";
 import { isOwnerEmail } from "../lib/auth-service";
-import { seedFounderFleet } from "../lib/founder-fleet-seed";
 import { agentCapHit, resolveAgentEntitlement } from "../lib/agent-entitlements";
 import { invalidateDashboard } from "../lib/dashboard-cache";
 
@@ -37,29 +36,12 @@ const router = Router();
 
 router.get("/api/agents", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    let agentsList = await drizzle
+    const agentsList = await drizzle
       .select()
       .from(schema.agents)
       .where(eq(schema.agents.userId, req.user.id))
       .orderBy(desc(schema.agents.createdAt))
       .limit(500);
-
-    if (agentsList.length === 0 && isOwnerEmail(req.user.email)) {
-      try {
-        await seedFounderFleet(req.user.id);
-        agentsList = await drizzle
-          .select()
-          .from(schema.agents)
-          .where(eq(schema.agents.userId, req.user.id))
-          .orderBy(desc(schema.agents.createdAt))
-          .limit(500);
-      } catch (seedError: unknown) {
-        log.warn("founder fleet auto-seed failed", {
-          userId: req.user.id,
-          error: getErrorMessage(seedError),
-        });
-      }
-    }
 
     // SPA reads snake_case (agent.voice_id, agent.first_message, agent.user_id).
     // Drizzle returns camelCase. Normalize so FleetSettings and downstream
@@ -67,7 +49,7 @@ router.get("/api/agents", authenticateUser, async (req: AuthenticatedRequest, re
     res.json({ agents: mapObjectToSnake(agentsList) });
   } catch (error: any) {
     log.warn("Failed to fetch agents", { userId: req.user.id, error: getErrorMessage(error) });
-    res.json({ agents: [] });
+    res.status(503).json({ agents: [], degraded: true, error: "Failed to fetch agents" });
   }
 });
 

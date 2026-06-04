@@ -11,7 +11,7 @@
  * before the operator owns a single agent) and acts as the strategist that
  * helps plan the fleet, decide what agents to hire, and coach them.
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -49,7 +49,7 @@ import {
 } from "lucide-react";
 import { authFetch, readApiJson } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
-import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
+import { hydrateAgentsFromFleet, useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { cn } from "../lib/utils";
 import { ThinkingDisplay } from "./ui/ThinkingDisplay";
@@ -183,12 +183,7 @@ export default function DirectorWorkspace({
 }: DirectorWorkspaceProps) {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { agents: rosterAgents } = useAgents();
-  const [directorFleet, setDirectorFleet] = useState<WorkspaceAgentSummary[]>([]);
-  const agents = useMemo(
-    () => (rosterAgents.length > 0 ? rosterAgents : directorFleet),
-    [rosterAgents, directorFleet],
-  );
+  const { agents } = useAgents();
   const focusedAgent = focusAgentId ? agents.find((a) => a.id === focusAgentId) : undefined;
   const { error: toastError, success: toastSuccess } = useToast();
   const [messages, setMessages] = useState<DirectorMessage[]>([]);
@@ -213,6 +208,7 @@ export default function DirectorWorkspace({
     creativeTools: true,
     artifactsPanel: true,
   });
+  const [loadDegraded, setLoadDegraded] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const connectorsRef = useRef<HTMLDivElement | null>(null);
@@ -291,10 +287,11 @@ export default function DirectorWorkspace({
             throw new Error(!parsed.ok ? parsed.error : "Failed to load messages");
           }
           const data = await r.json();
+          setLoadDegraded(data.degraded === true);
           setMessages(Array.isArray(data.messages) ? data.messages : []);
           setArtifacts(Array.isArray(data.artifacts) ? data.artifacts : []);
           if (Array.isArray(data.fleet)) {
-            setDirectorFleet(
+            hydrateAgentsFromFleet(
               data.fleet
                 .filter((a: { id?: unknown }) => typeof a?.id === "string" && a.id)
                 .map((a: { id: string; name?: string | null; role?: string | null }) => ({
@@ -322,6 +319,7 @@ export default function DirectorWorkspace({
         }
       }
     } catch {
+      setLoadDegraded(true);
       toastError("Couldn't load the Director", "Check connection and refresh");
     } finally {
       setIsLoading(false);
@@ -902,6 +900,12 @@ export default function DirectorWorkspace({
 
       {/* Messages - isolated scroll viewport */}
       <div ref={scrollRef} className="flex-1 min-h-0 scroll-viewport px-4 py-8 space-y-6">
+        {loadDegraded && !isLoading && (
+          <p className="rounded-md border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-[11px] text-amber-900/80 dark:text-amber-100/80">
+            Some Director data could not be loaded. Your thread may be incomplete — refresh to
+            retry.
+          </p>
+        )}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3">
             <div className="w-10 h-10 rounded-md bg-gradient-to-br from-brand/20 to-brand/10 flex items-center justify-center">

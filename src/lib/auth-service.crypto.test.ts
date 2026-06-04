@@ -11,7 +11,13 @@ vi.mock("./server-context", () => ({
 }));
 vi.mock("../db/schema", () => ({ users: {} }));
 
-import { generateToken, hashPassword, isOwnerEmail, verifyPassword } from "./auth-service";
+import {
+  generateToken,
+  hashPassword,
+  isOwnerEmail,
+  resetOwnerEmailCacheForTests,
+  verifyPassword,
+} from "./auth-service";
 import { verifyInternalJwt } from "./auth-utils";
 
 describe("hashPassword / verifyPassword", () => {
@@ -44,17 +50,31 @@ describe("hashPassword / verifyPassword", () => {
 
 describe("isOwnerEmail", () => {
   const ORIG = process.env.OWNER_EMAIL;
+  const ORIG_EXTRA = process.env.OWNER_EMAILS;
   beforeEach(() => {
+    resetOwnerEmailCacheForTests();
     process.env.OWNER_EMAIL = "Founder@Wireline.com";
+    delete process.env.OWNER_EMAILS;
   });
   afterEach(() => {
+    resetOwnerEmailCacheForTests();
     if (ORIG === undefined) delete process.env.OWNER_EMAIL;
     else process.env.OWNER_EMAIL = ORIG;
+    if (ORIG_EXTRA === undefined) delete process.env.OWNER_EMAILS;
+    else process.env.OWNER_EMAILS = ORIG_EXTRA;
   });
 
   it("matches case-insensitively and trims whitespace", () => {
     expect(isOwnerEmail("founder@wireline.com")).toBe(true);
     expect(isOwnerEmail("  FOUNDER@WIRELINE.COM  ")).toBe(true);
+  });
+
+  it("supports OWNER_EMAILS comma-separated allowlist", () => {
+    process.env.OWNER_EMAILS = "ops@wireline.com, QA@Example.com ";
+    resetOwnerEmailCacheForTests();
+    expect(isOwnerEmail("ops@wireline.com")).toBe(true);
+    expect(isOwnerEmail("qa@example.com")).toBe(true);
+    expect(isOwnerEmail("founder@wireline.com")).toBe(true);
   });
 
   it("rejects non-owner and empty/null inputs", () => {
@@ -66,8 +86,8 @@ describe("isOwnerEmail", () => {
 
   it("returns false when OWNER_EMAIL is unset (no accidental owner)", () => {
     delete process.env.OWNER_EMAIL;
+    resetOwnerEmailCacheForTests();
     expect(isOwnerEmail("anyone@wireline.com")).toBe(false);
-    expect(isOwnerEmail("mikelaurenzo7@gmail.com")).toBe(true);
   });
 });
 

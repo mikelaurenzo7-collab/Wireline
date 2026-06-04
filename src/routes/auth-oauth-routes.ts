@@ -34,6 +34,7 @@ import * as schema from "../db/schema";
 import { eq, lt } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { generateToken, isOwnerEmail } from "../lib/auth-service";
+import { scheduleFounderBootstrap } from "../lib/founder-bootstrap";
 import { generateOAuthState, verifyOAuthState } from "../lib/oauth-helpers";
 import { oauthRateLimiter } from "../middleware/rate-limit-middleware";
 
@@ -342,6 +343,7 @@ router.get("/api/auth/google/callback", async (req: Request, res: Response) => {
       );
     }
     const user = await findOrCreateUserByEmail(email, name);
+    scheduleFounderBootstrap(user.id, user.email);
     const token = generateToken({ id: user.id, email: user.email });
     return res.redirect(await bridgeRedirect(baseUrl, user, token));
   } catch (err: unknown) {
@@ -431,6 +433,7 @@ router.get("/api/auth/microsoft/callback", async (req: Request, res: Response) =
       );
     }
     const user = await findOrCreateUserByEmail(email, name);
+    scheduleFounderBootstrap(user.id, user.email);
     const token = generateToken({ id: user.id, email: user.email });
     return res.redirect(await bridgeRedirect(baseUrl, user, token));
   } catch (err: unknown) {
@@ -526,6 +529,7 @@ router.get("/api/auth/yahoo/callback", async (req: Request, res: Response) => {
       );
     }
     const user = await findOrCreateUserByEmail(email, name);
+    scheduleFounderBootstrap(user.id, user.email);
     const token = generateToken({ id: user.id, email: user.email });
     return res.redirect(await bridgeRedirect(baseUrl, user, token));
   } catch (err: unknown) {

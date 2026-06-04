@@ -237,7 +237,16 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     description:
       "Platform owner email — gates owner-only admin surfaces and receives escalation/canary alerts",
     validate: (v) => !v || isEmail(v),
-    formatHint: "founder@trywireline.com",
+    formatHint: "mikelaurenzo7@gmail.com",
+  },
+  {
+    name: "OWNER_EMAILS",
+    group: "operational",
+    required: false,
+    description:
+      "Comma-separated additional platform owner emails (same privileges as OWNER_EMAIL)",
+    validate: (v) => !v || v.split(",").every((entry) => !entry.trim() || isEmail(entry.trim())),
+    formatHint: "ops@trywireline.com,qa@trywireline.com",
   },
   {
     name: "OWNER_PHONE",

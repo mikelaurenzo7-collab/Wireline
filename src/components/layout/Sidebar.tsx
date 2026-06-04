@@ -260,7 +260,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
               )
             }
           />
-          {user?.email === "mikelaurenzo7@gmail.com" && (
+          {user?.is_owner && (
             <FooterItem
               to="/founder"
               icon={Crown}

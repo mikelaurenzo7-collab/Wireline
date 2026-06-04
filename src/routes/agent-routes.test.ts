@@ -262,13 +262,17 @@ describe("agent routes integration", () => {
     expect(h.state.selectCalls[0]).toEqual({ table: "agents", shape: undefined });
   });
 
-  it("returns a 500 when listing agents fails", async () => {
+  it("returns degraded 503 when listing agents fails", async () => {
     h.state.selectResults = [new Error("database offline")];
 
     const response = await request(await buildApp()).get("/api/agents");
 
-    expect(response.status).toBe(500);
-    expect(response.body).toEqual({ error: "Failed to fetch agents" });
+    expect(response.status).toBe(503);
+    expect(response.body).toEqual({
+      agents: [],
+      degraded: true,
+      error: "Failed to fetch agents",
+    });
     expect(h.log.warn).toHaveBeenCalledWith(
       "Failed to fetch agents",
       expect.objectContaining({ userId: "user-1", error: "database offline" }),

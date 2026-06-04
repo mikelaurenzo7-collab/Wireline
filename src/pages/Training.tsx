@@ -33,7 +33,7 @@ const SUB_TABS = [
 export default function Training() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { agents, loading } = useAgents();
+  const { agents, loading, degraded, refresh } = useAgents();
 
   const selectedAgentId = searchParams.get("agent") || (agents[0]?.id ?? "");
   const activeSubTab = searchParams.get("tab") || "database";
@@ -54,10 +54,25 @@ export default function Training() {
 
   const selectedAgent = agents.find((a) => a.id === selectedAgentId);
 
-  if (loading) {
+  if (loading && agents.length === 0) {
     return (
       <ClientRouteViewport>
         <ClientRouteLoading icon={<GraduationCap className="w-7 h-7" />} label="Loading training" />
+      </ClientRouteViewport>
+    );
+  }
+
+  if (!loading && degraded && agents.length === 0) {
+    return (
+      <ClientRouteViewport>
+        <div className="flex flex-1 items-center justify-center min-h-[50vh] px-4">
+          <EmptyState
+            icon={GraduationCap}
+            title="Couldn't load your agents"
+            description="The server returned a partial response. Check your connection and try again."
+            actions={[{ label: "Retry", onClick: () => refresh(), primary: true }]}
+          />
+        </div>
       </ClientRouteViewport>
     );
   }

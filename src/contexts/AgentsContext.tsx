@@ -6,7 +6,15 @@
  * never takes up space), and (2) the per-agent chat page rail. Fetching
  * once here keeps them in sync and avoids duplicate /api/agents calls.
  */
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { authFetch } from "../lib/api";
@@ -20,6 +28,7 @@ export interface WorkspaceAgentSummary {
 interface AgentsContextValue {
   agents: WorkspaceAgentSummary[];
   loading: boolean;
+  degraded: boolean;
   hasAgents: boolean;
   refresh: () => void;
 }
@@ -27,6 +36,7 @@ interface AgentsContextValue {
 const AgentsContext = createContext<AgentsContextValue>({
   agents: [],
   loading: true,
+  degraded: false,
   hasAgents: false,
   refresh: () => {},
 });
@@ -37,6 +47,9 @@ const AgentsContext = createContext<AgentsContextValue>({
  * chat rail — and the rest of the app — without a full reload.
  */
 export const AGENTS_CHANGED_EVENT = "wireline:agents-changed";
+
+/** Hydrate roster from Director fleet when /api/agents is temporarily empty. */
+export const AGENTS_HYDRATE_EVENT = "wireline:agents-hydrate";
 
 function parseAgentsPayload(data: unknown): WorkspaceAgentSummary[] {
   const list = Array.isArray((data as { agents?: unknown[] })?.agents)
@@ -51,12 +64,38 @@ function parseAgentsPayload(data: unknown): WorkspaceAgentSummary[] {
     }));
 }
 
-async function fetchAgentsWithRetry(attempts = 2): Promise<WorkspaceAgentSummary[]> {
+function parseFleetPayload(fleet: unknown): WorkspaceAgentSummary[] {
+  if (!Array.isArray(fleet)) return [];
+  return fleet
+    .filter((a: { id?: unknown }) => typeof a?.id === "string" && a.id)
+    .map((a: { id: string; name?: string | null; role?: string | null }) => ({
+      id: a.id,
+      name: a.name || "Untitled agent",
+      role: a.role ?? null,
+    }));
+}
+
+async function fetchAgentsWithRetry(attempts = 2): Promise<{
+  agents: WorkspaceAgentSummary[];
+  degraded: boolean;
+}> {
   let lastError: unknown;
   for (let i = 0; i < attempts; i++) {
     try {
       const r = await authFetch("/api/agents");
-      if (r.ok) return parseAgentsPayload(await r.json());
+      const body = r.ok ? await r.json().catch(() => null) : await r.json().catch(() => null);
+      if (r.ok && body) {
+        return {
+          agents: parseAgentsPayload(body),
+          degraded: body.degraded === true,
+        };
+      }
+      if (body && (r.status === 503 || body.degraded === true)) {
+        return {
+          agents: parseAgentsPayload(body),
+          degraded: true,
+        };
+      }
       lastError = new Error(`HTTP ${r.status}`);
     } catch (e) {
       lastError = e;
@@ -68,65 +107,97 @@ async function fetchAgentsWithRetry(attempts = 2): Promise<WorkspaceAgentSummary
   throw lastError;
 }
 
+/** Push fleet rows into AgentsContext when the agents API is empty. */
+export function hydrateAgentsFromFleet(fleet: WorkspaceAgentSummary[]): void {
+  if (typeof window === "undefined" || fleet.length === 0) return;
+  window.dispatchEvent(new CustomEvent(AGENTS_HYDRATE_EVENT, { detail: fleet }));
+}
+
 export function AgentsProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const location = useLocation();
   const [agents, setAgents] = useState<WorkspaceAgentSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [degraded, setDegraded] = useState(false);
   const [nonce, setNonce] = useState(0);
+  const hasLoadedOnceRef = useRef(false);
+  const bootstrapRanRef = useRef(false);
 
   const refresh = useCallback(() => setNonce((n) => n + 1), []);
 
   useEffect(() => {
     if (!user) {
       setAgents([]);
+      setDegraded(false);
       setLoading(false);
+      hasLoadedOnceRef.current = false;
+      bootstrapRanRef.current = false;
       return;
     }
+
+    if (!bootstrapRanRef.current) {
+      bootstrapRanRef.current = true;
+      void authFetch("/api/auth/bootstrap")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data?.founderSeeded) refresh();
+        })
+        .catch(() => undefined);
+    }
+
     let cancelled = false;
-    const isBackgroundRefresh = agents.length > 0;
+    const isBackgroundRefresh = hasLoadedOnceRef.current;
     if (!isBackgroundRefresh) setLoading(true);
 
     fetchAgentsWithRetry()
-      .then((list) => {
-        if (!cancelled) setAgents(list);
+      .then(({ agents: list, degraded: fetchDegraded }) => {
+        if (cancelled) return;
+        setAgents(list);
+        setDegraded(fetchDegraded);
+        hasLoadedOnceRef.current = true;
       })
       .catch(() => {
-        // Never wipe a good roster on a transient refetch failure.
-        if (!cancelled) setAgents((prev) => (prev.length > 0 ? prev : []));
+        if (cancelled) return;
+        setAgents((prev) => (prev.length > 0 ? prev : []));
+        setDegraded(true);
+        hasLoadedOnceRef.current = true;
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- agents.length gates background vs initial load only
-  }, [user, nonce]);
+  }, [user, nonce, refresh]);
 
-  // Refetch when an agent is created/deleted elsewhere, and whenever the
-  // browser tab regains focus — both are cheap and keep the rail honest.
   useEffect(() => {
     if (!user) return;
     const onChanged = () => refresh();
     const onFocus = () => refresh();
+    const onHydrate = (event: Event) => {
+      const fleet = parseFleetPayload((event as CustomEvent<unknown>).detail);
+      if (fleet.length === 0) return;
+      setAgents((prev) => (prev.length > 0 ? prev : fleet));
+      setDegraded(false);
+    };
     window.addEventListener(AGENTS_CHANGED_EVENT, onChanged);
     window.addEventListener("focus", onFocus);
+    window.addEventListener(AGENTS_HYDRATE_EVENT, onHydrate);
     return () => {
       window.removeEventListener(AGENTS_CHANGED_EVENT, onChanged);
       window.removeEventListener("focus", onFocus);
+      window.removeEventListener(AGENTS_HYDRATE_EVENT, onHydrate);
     };
   }, [user, refresh]);
 
-  // Landing on the chat surface always pulls a fresh roster so an agent
-  // added moments ago on another screen is already in the rail.
   useEffect(() => {
     if (user && location.pathname.startsWith("/chat")) refresh();
   }, [location.pathname, user, refresh]);
 
   const value = useMemo<AgentsContextValue>(
-    () => ({ agents, loading, hasAgents: agents.length > 0, refresh }),
-    [agents, loading, refresh],
+    () => ({ agents, loading, degraded, hasAgents: agents.length > 0, refresh }),
+    [agents, loading, degraded, refresh],
   );
 
   return <AgentsContext.Provider value={value}>{children}</AgentsContext.Provider>;

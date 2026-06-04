@@ -60,7 +60,7 @@ specific branch for Preview which is awkward — prefer the UI.
 | `VITE_VAPI_PUBLIC_KEY`                              | In-browser Vapi widget                                                                      |
 | `VAPI_WEBHOOK_SECRET`                               | Auth on `/api/vapi-webhook` and `/api/escalate`                                             |
 | `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN`          | Outbound SMS, inbound webhook                                                               |
-| `OWNER_PHONE` / `OWNER_EMAIL` / `PLATFORM_SMS_FROM` | Escalation routing (where agent escalations go)                                             |
+| `OWNER_PHONE` / `OWNER_EMAIL` / `PLATFORM_SMS_FROM` | Escalation routing (where agent escalations go). Set `OWNER_EMAIL=mikelaurenzo7@gmail.com` for the founder account. |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`       | Billing                                                                                     |
 | `ANTHROPIC_API_KEY`                                 | Claude API for agent reasoning                                                              |
 

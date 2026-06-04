@@ -425,7 +425,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                         Help &amp; support
                       </Link>
                       {/* Founder Dashboard — only visible to the platform founder (internal platform meta) */}
-                      {user?.email === "mikelaurenzo7@gmail.com" && (
+                      {user?.is_owner && (
                         <Link
                           to="/founder"
                           onClick={() => setUserMenuOpen(false)}

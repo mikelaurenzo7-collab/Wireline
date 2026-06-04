@@ -11,6 +11,7 @@ import type { WirelinePersonaId } from "./wireline-agent-escalation";
 import { AGENT_TOOL_NAME_VALUES, type AgentToolName } from "./agent-capabilities";
 import { ROLE_PERSONALITY_TEMPLATES } from "./agent-constants";
 import { pickRotatedVoiceId } from "../data/voice-roster";
+import { getOwnerEmails } from "./auth-service";
 
 export const ALL_AGENT_TOOLS: AgentToolName[] = [...AGENT_TOOL_NAME_VALUES];
 
@@ -412,7 +413,9 @@ export async function seedFounderFleet(userId: string): Promise<FounderFleetSeed
 }
 
 export async function resolveFounderUserId(ownerEmail?: string): Promise<string | null> {
-  const email = (ownerEmail || process.env.OWNER_EMAIL || "").trim().toLowerCase();
+  const email = (ownerEmail || process.env.OWNER_EMAIL || [...getOwnerEmails()][0] || "")
+    .trim()
+    .toLowerCase();
   if (!email) return null;
   const [row] = await drizzle
     .select({ id: schema.users.id })

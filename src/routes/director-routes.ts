@@ -290,13 +290,21 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const fleet = await loadFleetSafe(req.user.id);
-      const artifacts = await listDirectorArtifactsSafe(req.user.id, 200);
-      const messages = await loadDirectorMessages(req.user.id, MAX_THREAD_LENGTH);
+      const { artifacts, degraded: artifactsDegraded } = await listDirectorArtifactsSafe(
+        req.user.id,
+        200,
+      );
+      const { messages, degraded: messagesDegraded } = await loadDirectorMessages(
+        req.user.id,
+        MAX_THREAD_LENGTH,
+      );
+      const degraded = messagesDegraded || artifactsDegraded;
 
       res.json({
         fleet,
         featureFlags: loadDirectorFeatureFlags(),
         artifacts: artifacts.map((a) => withSignedUrl(req.user.id, a)),
+        degraded: degraded || undefined,
         messages: messages.reverse().map((m) => {
           const meta = parseDirectorMetadata(m.metadata);
           return {
@@ -321,8 +329,14 @@ router.get(
       });
     } catch (e) {
       log.error("director messages fetch failed", { error: getErrorMessage(e) });
+      let fleet: DirectorFleetAgent[] = [];
+      try {
+        fleet = await loadFleetSafe(req.user.id);
+      } catch {
+        fleet = [];
+      }
       res.json({
-        fleet: await loadFleetSafe(req.user.id),
+        fleet,
         featureFlags: loadDirectorFeatureFlags(),
         artifacts: [],
         messages: [],
@@ -379,7 +393,7 @@ router.post(
 
       const priorMessages = await loadDirectorMessages(req.user.id, CLAUDE_CONTEXT_WINDOW);
 
-      const history = priorMessages.reverse().map((m) => ({
+      const history = priorMessages.messages.reverse().map((m) => ({
         role: m.role === "operator" ? ("operator" as const) : ("director" as const),
         content: m.content,
       }));
@@ -499,7 +513,7 @@ router.post(
       });
 
       if (artifacts.length === 0) {
-        const latest = await listDirectorArtifactsSafe(req.user.id, 40);
+        const { artifacts: latest } = await listDirectorArtifactsSafe(req.user.id, 40);
         artifacts = latest.map((a) => withSignedUrl(req.user.id, a));
       }
 
@@ -562,7 +576,7 @@ router.post(
       // Load history for context
       const priorMessages = await loadDirectorMessages(req.user.id, CLAUDE_CONTEXT_WINDOW);
 
-      const history = priorMessages.reverse().map((m) => ({
+      const history = priorMessages.messages.reverse().map((m) => ({
         role: m.role === "operator" ? ("operator" as const) : ("director" as const),
         content: m.content,
       }));
