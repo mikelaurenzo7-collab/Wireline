@@ -96,6 +96,10 @@ import {
   WL_DIRECTOR_CLASSES,
 } from "../lib/wireline-director-design";
 import LoadingDots from "./LoadingDots";
+import {
+  detectDirectorMessageScene,
+  type DirectorMessageScene,
+} from "../lib/director-message-scene";
 
 type SuggestionKind =
   | "create_agent"
@@ -191,63 +195,7 @@ const CONNECTOR_CATALOG = [
   { icon: Megaphone, id: "meta", label: "Meta CAPI", desc: "Lead attribution" },
 ] as const;
 
-type MessageScene =
-  | "creative"
-  | "analysis"
-  | "integration"
-  | "training"
-  | "comms"
-  | "fleet"
-  | "document"
-  | "general";
-
-const SCENE_PATTERNS: Array<{ scene: MessageScene; re: RegExp }> = [
-  {
-    scene: "creative",
-    re: /\b(logo|brand.?pack|design|illustration|image|video|visual|color.?palette|generat.*image|creat.*visual|render|mockup|artwork|icon.?set|banner|thumbnail|svg|vectorize|brand.?kit|creative)\b/i,
-  },
-  {
-    scene: "document",
-    re: /\b(business plan|one.?pager|sop|playbook|runbook|proposal|contract|email sequence|call script|checklist|deliverable|marketing copy|landing page copy|objection)\b/i,
-  },
-  {
-    scene: "analysis",
-    re: /\b(audit|research|competitor|analyz|metrics|report|insight|benchmark|forecast|trend|breakdown|assess|evaluat|pricing|market)\b/i,
-  },
-  {
-    scene: "integration",
-    re: /\b(shopify|crm|hubspot|salesforce|slack|twilio|square|calendar|docusign|zoom|excel|sheets|api|webhook|integration)\b/i,
-  },
-  {
-    scene: "training",
-    re: /\b(train|knowledge|playbook|instruction|learn|teach|script|guide|onboard|curriculum|module|lesson|practice)\b/i,
-  },
-  {
-    scene: "comms",
-    re: /\b(call|sms|outreach|follow.?up|campaign|broadcast|sequence|dial|ring)\b/i,
-  },
-  {
-    scene: "fleet",
-    re: /\b(agent|deploy|hire|configure|fleet|workforce|capability)\b/i,
-  },
-];
-
-function detectMessageScene(
-  content: string,
-  previews?: DirectorPreview[],
-  proposals?: DirectorMessage["proposals"],
-): MessageScene {
-  if (previews && previews.length > 0) return "creative";
-  if (proposals?.integrationJobs && proposals.integrationJobs.length > 0) return "integration";
-  if (proposals?.actions && proposals.actions.length > 0) return "comms";
-  if ((content.match(/^##\s/gm) || []).length >= 2) return "document";
-  for (const { scene, re } of SCENE_PATTERNS) {
-    if (re.test(content)) return scene;
-  }
-  return "general";
-}
-
-const SCENE_ICONS: Record<Exclude<MessageScene, "general">, React.ElementType> = {
+const SCENE_ICONS: Record<Exclude<DirectorMessageScene, "general">, React.ElementType> = {
   creative: Palette,
   analysis: BarChart3,
   integration: Plug,
@@ -573,14 +521,23 @@ export default function DirectorWorkspace({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!capabilitiesOpen) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setCapabilitiesOpen(false);
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [capabilitiesOpen]);
+
   const [composerHintIndex, setComposerHintIndex] = useState(0);
   useEffect(() => {
-    if (isSending || input.trim()) return;
+    if (reduceMotion || isSending || input.trim()) return;
     const timer = setInterval(() => {
       setComposerHintIndex((i) => (i + 1) % DIRECTOR_COMPOSER_HINTS.length);
     }, 6500);
     return () => clearInterval(timer);
-  }, [isSending, input]);
+  }, [isSending, input, reduceMotion]);
 
   const pickCapabilityExample = useCallback((text: string) => {
     setInput(text);
@@ -1122,10 +1079,10 @@ export default function DirectorWorkspace({
             {messages.map((m) => {
               const scene =
                 m.role === "director"
-                  ? detectMessageScene(m.content, m.previews, m.proposals)
+                  ? detectDirectorMessageScene(m.content, m.previews, m.proposals)
                   : "general";
               const sceneKey =
-                scene !== "general" ? (scene as Exclude<MessageScene, "general">) : null;
+                scene !== "general" ? (scene as Exclude<DirectorMessageScene, "general">) : null;
               const sceneBadge = sceneKey ? DIRECTOR_SCENE_BADGES[sceneKey] : null;
               const SceneIcon = sceneKey ? SCENE_ICONS[sceneKey] : null;
               return (
@@ -1290,7 +1247,7 @@ export default function DirectorWorkspace({
                                       <ProposalCard
                                         key={key}
                                         icon={<Power className="w-3.5 h-3.5" />}
-                                        tone="emerald"
+                                        tone="brand"
                                         title={`${t.enable ? "Turn on" : "Turn off"} ${t.label}`}
                                         detail={t.reason}
                                         state={resolved[key]}
@@ -1910,6 +1867,10 @@ export default function DirectorWorkspace({
                     variant="outline"
                     size="sm"
                     disableAnimations
+                    id="director-capabilities-trigger"
+                    aria-expanded={capabilitiesOpen}
+                    aria-haspopup="dialog"
+                    aria-controls="director-capabilities-panel"
                     onClick={() => {
                       setCapabilitiesOpen(!capabilitiesOpen);
                       setConnectorsOpen(false);
@@ -1931,6 +1892,9 @@ export default function DirectorWorkspace({
                   <AnimatePresence>
                     {capabilitiesOpen && (
                       <motion.div
+                        id="director-capabilities-panel"
+                        role="dialog"
+                        aria-labelledby="director-capabilities-trigger"
                         initial={{ opacity: 0, y: 8, scale: 0.96 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 4, scale: 0.98 }}

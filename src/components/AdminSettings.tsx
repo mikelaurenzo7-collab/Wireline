@@ -60,7 +60,7 @@ export default function AdminSettings() {
   const [phoneNumbers, setPhoneNumbers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [, setIsDeletingNumber] = useState<number | string | null>(null);
+  const [isDeletingNumber, setIsDeletingNumber] = useState<number | string | null>(null);
   const [claudeStatus, setClaudeStatus] = useState<{
     available: boolean;
     model: string;
@@ -338,18 +338,19 @@ export default function AdminSettings() {
       message:
         "Remove this phone number from your fleet? The number stays in your Wireline voice network, but it will stop routing calls to agents.",
       onConfirm: async () => {
-        setConfirmState(CLOSED_CONFIRM);
         setIsDeletingNumber(id);
         try {
           const resp = await authFetch(`/api/phone-numbers/${id}`, { method: "DELETE" });
           if (resp.ok) {
             setPhoneNumbers((prev) => prev.filter((n) => n.id !== id));
           }
+          setConfirmState(CLOSED_CONFIRM);
         } catch (e) {
           console.error(e);
           toastError("Delete failed", "Could not remove this carrier number. Please try again.");
+        } finally {
+          setIsDeletingNumber(null);
         }
-        setIsDeletingNumber(null);
       },
     });
   };
@@ -536,6 +537,7 @@ export default function AdminSettings() {
         title={confirmState.title}
         message={confirmState.message}
         danger
+        loading={isDeletingNumber !== null}
         onConfirm={confirmState.onConfirm}
         onCancel={() => setConfirmState(CLOSED_CONFIRM)}
       />

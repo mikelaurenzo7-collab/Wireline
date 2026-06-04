@@ -106,12 +106,15 @@ export function DirectorCapabilityCatalog({
             const items = grouped[cat];
             if (items.length === 0) return null;
             const isOpen = openCategory === cat;
+            const panelId = `director-cap-${cat}`;
             return (
               <div key={cat} className="rounded-md overflow-hidden">
                 <ShadButton
                   type="button"
                   variant="ghost"
                   disableAnimations
+                  aria-expanded={isOpen}
+                  aria-controls={panelId}
                   onClick={() => setOpenCategory(isOpen ? null : cat)}
                   className="w-full h-auto justify-start gap-2 px-3 py-2 rounded-md text-[11px] font-semibold text-foreground"
                 >
@@ -124,6 +127,9 @@ export function DirectorCapabilityCatalog({
                 <AnimatePresence initial={false}>
                   {isOpen && (
                     <motion.div
+                      id={panelId}
+                      role="region"
+                      aria-label={DIRECTOR_CAPABILITY_CATEGORY_LABELS[cat]}
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}

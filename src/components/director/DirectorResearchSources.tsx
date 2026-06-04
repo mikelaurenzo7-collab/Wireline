@@ -3,6 +3,7 @@
  */
 import { ExternalLink, Globe } from "lucide-react";
 import { LIVE_FEED_LABELS } from "../../lib/wireline-director-design";
+import { safeExternalHref } from "../../lib/safe-external-url";
 
 export interface ResearchSource {
   title?: string;
@@ -24,27 +25,30 @@ export function DirectorResearchSources({ sources }: { sources: ResearchSource[]
         </span>
       </div>
       <ul className="flex flex-col gap-1.5">
-        {sources.map((s, i) => (
-          <li key={`${s.uri || s.title}-${i}`}>
-            {s.uri ? (
-              <a
-                href={s.uri}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-start gap-2 text-[11px] text-brand hover:text-brand/80 transition-colors"
-              >
-                <ExternalLink className="w-3 h-3 shrink-0 mt-0.5 opacity-60 group-hover:opacity-100" />
-                <span className="underline-offset-2 group-hover:underline line-clamp-2">
-                  {s.title || s.uri}
+        {sources.map((s, i) => {
+          const href = safeExternalHref(s.uri);
+          return (
+            <li key={`${s.uri || s.title}-${i}`}>
+              {href ? (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-start gap-2 text-[11px] text-brand hover:text-brand/80 transition-colors"
+                >
+                  <ExternalLink className="w-3 h-3 shrink-0 mt-0.5 opacity-60 group-hover:opacity-100" />
+                  <span className="underline-offset-2 group-hover:underline line-clamp-2">
+                    {s.title || href}
+                  </span>
+                </a>
+              ) : (
+                <span className="text-[11px] text-muted-foreground line-clamp-2">
+                  {s.title || s.uri || "Source"}
                 </span>
-              </a>
-            ) : (
-              <span className="text-[11px] text-muted-foreground line-clamp-2">
-                {s.title || "Source"}
-              </span>
-            )}
-          </li>
-        ))}
+              )}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

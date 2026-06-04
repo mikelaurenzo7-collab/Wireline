@@ -576,16 +576,17 @@ export default function AppointmentsView({ embedded = false }: { embedded?: bool
       open: true,
       id,
       onConfirm: async () => {
-        setConfirmState(CLOSED_CONFIRM);
         setDeletingId(id);
         try {
           await authFetch(`/api/appointments/${id}`, { method: "DELETE" });
           setAppointments((prev) => prev.filter((a) => a.id !== id));
+          setConfirmState(CLOSED_CONFIRM);
         } catch (e) {
           console.error("Delete failed:", e);
           toastError("Delete failed", "Could not remove this appointment. Please try again.");
+        } finally {
+          setDeletingId(null);
         }
-        setDeletingId(null);
       },
     });
   };
@@ -798,6 +799,7 @@ export default function AppointmentsView({ embedded = false }: { embedded?: bool
         title="Cancel appointment"
         message="Cancel and remove this appointment? This cannot be undone."
         danger
+        loading={deletingId !== null}
         onConfirm={confirmState.onConfirm}
         onCancel={() => setConfirmState(CLOSED_CONFIRM)}
       />

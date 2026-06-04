@@ -31,6 +31,7 @@ export default function Integrations() {
   const [agents, setAgents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
 
   const fetchAccounts = async () => {
     try {
@@ -140,12 +141,15 @@ export default function Integrations() {
     setConfirmState({
       open: true,
       onConfirm: async () => {
-        setConfirmState(CLOSED_CONFIRM);
+        setIsDisconnecting(true);
         try {
           await authFetch(`/api/emails/accounts/${id}`, { method: "DELETE" });
           fetchAccounts();
+          setConfirmState(CLOSED_CONFIRM);
         } catch {
           toastError("Disconnect failed", "Could not disconnect this account. Please try again.");
+        } finally {
+          setIsDisconnecting(false);
         }
       },
     });
@@ -453,6 +457,7 @@ export default function Integrations() {
         title="Disconnect carrier?"
         message="This email account will be unlinked and its threads will no longer be processed by your agents."
         danger
+        loading={isDisconnecting}
         onConfirm={confirmState.onConfirm}
         onCancel={() => setConfirmState(CLOSED_CONFIRM)}
       />

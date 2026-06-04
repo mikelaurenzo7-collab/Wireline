@@ -5,6 +5,7 @@
 import React from "react";
 import { cn } from "../../lib/utils";
 import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
+import { safeExternalHref } from "../../lib/safe-external-url";
 
 function renderInline(text: string): React.ReactNode[] {
   const nodes: React.ReactNode[] = [];
@@ -40,14 +41,21 @@ function renderInline(text: string): React.ReactNode[] {
     } else if (token.startsWith("![")) {
       const imgMatch = /^!\[([^\]]*)\]\(([^)]+)\)$/.exec(token);
       if (imgMatch) {
+        const imgSrc = safeExternalHref(imgMatch[2]);
         nodes.push(
           <span key={key++} className="block my-2">
-            <img
-              src={imgMatch[2]}
-              alt={imgMatch[1] || "Image"}
-              className="max-w-full max-h-72 rounded-md border border-brand/10 shadow-sm object-contain"
-              loading="lazy"
-            />
+            {imgSrc ? (
+              <img
+                src={imgSrc}
+                alt={imgMatch[1] || "Image"}
+                className="max-w-full max-h-72 rounded-md border border-brand/10 shadow-sm object-contain"
+                loading="lazy"
+              />
+            ) : (
+              <span className="text-[11px] text-muted-foreground italic">
+                {imgMatch[1] || "Image unavailable"}
+              </span>
+            )}
             {imgMatch[1] && (
               <span className="block text-[10px] text-muted/60 mt-1 italic">{imgMatch[1]}</span>
             )}
@@ -59,17 +67,26 @@ function renderInline(text: string): React.ReactNode[] {
     } else {
       const linkMatch = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(token);
       if (linkMatch) {
-        nodes.push(
-          <a
-            key={key++}
-            href={linkMatch[2]}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-brand underline underline-offset-2 hover:text-brand/80"
-          >
-            {linkMatch[1]}
-          </a>,
-        );
+        const href = safeExternalHref(linkMatch[2]);
+        if (href) {
+          nodes.push(
+            <a
+              key={key++}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand underline underline-offset-2 hover:text-brand/80"
+            >
+              {linkMatch[1]}
+            </a>,
+          );
+        } else {
+          nodes.push(
+            <span key={key++} className="text-ink">
+              {linkMatch[1]}
+            </span>,
+          );
+        }
       } else {
         nodes.push(token);
       }
