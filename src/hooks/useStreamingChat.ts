@@ -78,6 +78,8 @@ export function parseSseEvents(
  * Returns a `send` function that POSTs to a streaming endpoint and
  * a reactive `state` object that updates through the streaming lifecycle.
  */
+const STREAM_IDLE_MS = 120_000;
+
 export function useStreamingChat(endpoint: string, options?: UseStreamingChatOptions) {
   const [state, setState] = useState<StreamingState>(INITIAL_STATE);
   const abortRef = useRef<AbortController | null>(null);
@@ -119,6 +121,11 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
+      let timedOut = false;
+      const timeoutId = window.setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, STREAM_IDLE_MS);
 
       completionRef.current = false;
       latestReplyRef.current = undefined;
@@ -262,10 +269,19 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
         setState({ ...INITIAL_STATE, phase: "error", error: msg });
         finalizeError(msg);
       } catch (e: unknown) {
-        if ((e as Error)?.name === "AbortError") return;
+        if ((e as Error)?.name === "AbortError") {
+          if (timedOut) {
+            const msg = "Stream timed out before the Director finished";
+            setState({ ...INITIAL_STATE, phase: "error", error: msg });
+            finalizeError(msg);
+          }
+          return;
+        }
         const msg = (e as Error)?.message || "Stream connection failed";
         setState({ ...INITIAL_STATE, phase: "error", error: msg });
         finalizeError(msg);
+      } finally {
+        window.clearTimeout(timeoutId);
       }
     },
     [endpoint, finalizeComplete, finalizeError],

@@ -319,9 +319,9 @@ export default function AppShell() {
                 </span>
               </>
             )}
-            <h1 className="font-display italic text-sm leading-none text-foreground tracking-tight truncate">
+            <p className="font-display italic text-sm leading-none text-foreground tracking-tight truncate">
               {pageCtx.title}
-            </h1>
+            </p>
           </div>
         </div>
 

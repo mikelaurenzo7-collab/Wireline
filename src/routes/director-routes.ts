@@ -395,11 +395,17 @@ router.post(
       }));
 
       if (operatorMessage) {
-        await insertDirectorMessage({
-          userId: req.user.id,
-          role: "operator",
-          content: operatorMessage,
-        });
+        const skipPersist = req.body?.skipOperatorPersist === true;
+        const last = priorMessages.messages[0];
+        const duplicatePending =
+          skipPersist && last?.role === "operator" && last.content.trim() === operatorMessage;
+        if (!duplicatePending) {
+          await insertDirectorMessage({
+            userId: req.user.id,
+            role: "operator",
+            content: operatorMessage,
+          });
+        }
       }
 
       let reply = "";

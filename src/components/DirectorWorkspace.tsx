@@ -349,12 +349,11 @@ export default function DirectorWorkspace({
     },
     onError: (msg, { streamEstablished }) => {
       const pending = pendingSendRef.current;
-      if (!streamEstablished && pending?.trimmed) {
-        void sendNonStreamingRef.current?.(pending.trimmed, pending.optimisticId);
+      if (pending?.trimmed) {
+        void sendNonStreamingRef.current?.(pending.trimmed, pending.optimisticId, {
+          skipOperatorPersist: streamEstablished,
+        });
         return;
-      }
-      if (pending?.optimisticId) {
-        setMessages((prev) => prev.filter((m) => m.id !== pending.optimisticId));
       }
       void loadMessages();
       toastError("Stream interrupted", msg);
@@ -366,7 +365,7 @@ export default function DirectorWorkspace({
   });
 
   const sendNonStreaming = useCallback(
-    async (trimmed: string, optimisticId?: string) => {
+    async (trimmed: string, optimisticId?: string, opts?: { skipOperatorPersist?: boolean }) => {
       try {
         const r = await authFetch("/api/director/messages", {
           method: "POST",
@@ -374,6 +373,7 @@ export default function DirectorWorkspace({
           body: JSON.stringify({
             content: trimmed,
             ...(focusAgentId ? { focusAgentId } : {}),
+            ...(opts?.skipOperatorPersist ? { skipOperatorPersist: true } : {}),
           }),
         });
         const parsed = await readApiJson<Record<string, unknown>>(r);
@@ -841,6 +841,8 @@ export default function DirectorWorkspace({
     });
   };
 
+  const lastDirectorMessageId = [...messages].reverse().find((m) => m.role === "director")?.id;
+
   return (
     <div className="flex flex-col h-full min-h-0 bg-transparent">
       {/* Minimal header - just identity */}
@@ -1260,26 +1262,29 @@ export default function DirectorWorkspace({
                 </div>
               )}
 
-              {m.clarifyingQuestions && m.clarifyingQuestions.length > 0 && (
-                <div className="mt-3 ml-1 flex flex-wrap gap-2 max-w-[560px]">
-                  {m.clarifyingQuestions.map((q) => (
-                    <ShadButton
-                      key={q}
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disableAnimations
-                      onClick={() => {
-                        setInput(q.replace(/\?$/, "") + " — ");
-                        inputRef.current?.focus();
-                      }}
-                      className="h-auto text-[11px] text-left rounded-full border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10"
-                    >
-                      {q}
-                    </ShadButton>
-                  ))}
-                </div>
-              )}
+              {m.role === "director" &&
+                m.id === lastDirectorMessageId &&
+                m.clarifyingQuestions &&
+                m.clarifyingQuestions.length > 0 && (
+                  <div className="mt-3 ml-1 flex flex-wrap gap-2 max-w-[560px]">
+                    {m.clarifyingQuestions.map((q) => (
+                      <ShadButton
+                        key={q}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disableAnimations
+                        onClick={() => {
+                          setInput(q.replace(/\?$/, "") + " — ");
+                          inputRef.current?.focus();
+                        }}
+                        className="h-auto text-[11px] text-left rounded-full border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10"
+                      >
+                        {q}
+                      </ShadButton>
+                    ))}
+                  </div>
+                )}
 
               {m.approvals && m.approvals.length > 0 && (
                 <div className="mt-3 ml-1 space-y-2 w-full max-w-[560px]">

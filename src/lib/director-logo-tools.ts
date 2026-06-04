@@ -99,18 +99,52 @@ export function parseCreativeBriefFromText(
     .map((h) => h.content)
     .join("\n")}\n${message}`;
 
-  const style = text.match(/style\s*[:=-]\s*([^\n,.]+)/i)?.[1]?.trim() || "";
-  const colors = text.match(/(?:color|palette)s?\s*[:=-]\s*([^\n.]+)/i)?.[1]?.trim() || "";
-  const usage =
-    text.match(/(?:usage|use\s*case|for)\s*[:=-]\s*([^\n.]+)/i)?.[1]?.trim() ||
-    (/(app icon|website|business card|billboard|social|print)/i.exec(text)?.[1] ?? "");
+  let style = text.match(/style\s*[:=-]\s*([^\n,.]+)/i)?.[1]?.trim() || "";
+  let colors = text.match(/(?:color|palette)s?\s*[:=-]\s*([^\n.]+)/i)?.[1]?.trim() || "";
+  let usage =
+    text.match(/(?:usage|use\s*case|primary use)\s*[:=-]\s*([^\n.]+)/i)?.[1]?.trim() ||
+    (/(app icon|website header|website|business card|billboard|social|print)/i.exec(text)?.[1] ??
+      "");
+
+  if (!style) {
+    const styleMatch = text.match(
+      /\b(minimal(?:ist)?|modern|geometric|bold|playful|professional|clean|abstract|retro|vintage|flat)\b[^.\n]*/i,
+    );
+    if (styleMatch) style = styleMatch[0].trim();
+  }
+
+  if (!colors) {
+    const hexes = [...text.matchAll(/#[0-9a-fA-F]{3,8}\b/g)].map((m) => m[0]);
+    const colorPhrase = text.match(
+      /\b(deep blue|electric teal|navy(?:\s+and\s+gold)?|teal|blue(?:\s+and\s+\w+)?|brand colors?)[^.\n]*/i,
+    );
+    if (hexes.length > 0) {
+      colors = [...hexes, colorPhrase?.[0]?.trim() ?? ""].filter(Boolean).join(", ");
+    } else if (colorPhrase) {
+      colors = colorPhrase[0].trim();
+    }
+  }
+
+  if (!usage) {
+    const usageMatch = text.match(/(?:used?(?:\s+most)?\s+for|primary use|for)\s+([^.\n]+)/i);
+    if (usageMatch) usage = usageMatch[1].trim();
+  }
+
+  const logoHistory = history
+    .filter((h) => h.role === "operator" && /logo|brand|mark|icon/i.test(h.content))
+    .map((h) => h.content);
+  const promptSource = /logo|brand|mark|icon/i.test(message)
+    ? message
+    : (logoHistory[0] ?? message);
+
+  const conceptMatch = message.match(/(\d+)\s+logo concepts?/i);
 
   return {
-    prompt: clampText(message, 600),
+    prompt: clampText(promptSource, 600),
     style: clampText(style, 120),
     colors: clampText(colors, 120),
     usage: clampText(usage, 120),
-    concepts: 3,
+    concepts: conceptMatch ? Math.min(6, Math.max(1, parseInt(conceptMatch[1], 10))) : 3,
   };
 }
 
