@@ -235,7 +235,7 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
           <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted/70 mb-2">
             Pulse · last {pulse?.windowHours ?? 24}h
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1.5 stagger-children">
             {stats.map((s) => (
               <div
                 key={s.label}
@@ -262,7 +262,7 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
           <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted/70 mb-2">
             Launch an action
           </p>
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-2 gap-1.5 stagger-children">
             {QUICK_ACTIONS.map((a) => (
               <button
                 key={a.label}

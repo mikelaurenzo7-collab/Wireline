@@ -229,7 +229,7 @@ export default function TriageInbox() {
           ──────────────────────────────────────────────────────────── */}
         <div
           className={cn(
-            "h-full min-h-0 overflow-y-auto lg:overflow-hidden",
+            "h-full min-h-0 overflow-y-auto lg:overflow-hidden stagger-children",
             "grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
             "lg:[grid-template-rows:minmax(0,1.15fr)_minmax(0,1fr)]",
             "auto-rows-fr",
@@ -320,7 +320,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
   if (items.length === 0)
     return <Empty icon={Flame} label="No hot leads right now — keep dialing." />;
   return (
-    <ul className="p-2 space-y-2 list-none">
+    <ul className="p-2 space-y-2 list-none stagger-children">
       {items.map((c) => (
         <li key={c.id} className="relative list-none group">
           <Card className="bg-black/10 border-white/5 hover:border-brand/20 transition-all p-3 flex items-center gap-3 rounded-xl relative">

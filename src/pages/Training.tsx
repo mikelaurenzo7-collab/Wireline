@@ -81,7 +81,7 @@ export default function Training() {
       <div className="flex flex-col lg:flex-row gap-3 flex-1 min-h-0">
         <aside className="shrink-0 lg:w-[260px] flex flex-col">
           {/* Mobile: horizontal orbit strip */}
-          <div className="lg:hidden flex items-center gap-2 overflow-x-auto scrollbar-hide scroll-viewport pb-2">
+          <div className="lg:hidden flex items-center gap-2 overflow-x-auto scrollbar-hide scroll-viewport pb-2 stagger-children">
             {agents.map((agent) => (
               <button
                 key={agent.id}
@@ -114,7 +114,7 @@ export default function Training() {
           {/* Desktop: vertical agent list with specular depth */}
           <div className="hidden lg:flex flex-col gap-1.5 h-full max-h-[calc(100dvh-12rem)] scroll-viewport wl-panel p-3 relative">
             <p className="px-2 py-1.5 mb-1 wl-label text-brand/70">Select Agent</p>
-            <div className="space-y-1">
+            <div className="space-y-1 stagger-children">
               {agents.map((agent) => (
                 <button
                   key={agent.id}

@@ -110,7 +110,7 @@ export default function AgentChat() {
           <div className="h-7 w-px bg-gradient-to-b from-transparent via-brand/15 to-transparent shrink-0 mx-0.5" />
 
           {/* Active Agents — orbital ring per agent */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 stagger-children">
             {agents.map((a) => {
               const isActive = !showDirector && a.id === activeAgent?.id;
               return (
