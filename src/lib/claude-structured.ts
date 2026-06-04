@@ -188,7 +188,6 @@ export async function runStructuredStream<T = any>(
     tools: [opts.tool],
     tool_choice: { type: "tool", name: opts.tool.name },
     messages: [{ role: "user", content: opts.user }],
-    stream: true,
   };
 
   if (opts.deepThink) {
