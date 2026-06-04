@@ -174,14 +174,28 @@ export const DIRECTOR_STARTER_PROMPTS: readonly DirectorStarterPrompt[] = [
   },
 ] as const;
 
+export const DIRECTOR_CAPABILITY_PILLS = [
+  { id: "voice", label: "Voice" },
+  { id: "email", label: "Email" },
+  { id: "sms", label: "SMS" },
+  { id: "crm", label: "CRM" },
+  { id: "integrations", label: "Integrations" },
+] as const;
+
+export const DIRECTOR_LOADING_COPY = {
+  headline: "Opening mission control",
+  sub: "Thread history · fleet context · integrations",
+} as const;
+
 export const DIRECTOR_EMPTY_HERO = {
   eyebrow: "Mission control",
   title: "Your always-on",
   titleAccent: "business wingman",
   subtitleWithFleet: (n: number) =>
-    `${n} agent${n === 1 ? "" : "s"} live — orchestrate calls, comms, and integrations from one thread.`,
+    `${n} agent${n === 1 ? "" : "s"} on deck — orchestrate calls, comms, and integrations from one thread.`,
   subtitleNoFleet:
-    "Plan your fleet, research your market, coach agents, run Shopify and CRM work, and ship — before you hire agent #1.",
+    "Plan your fleet, research your market, coach agents, and run CRM work — before agent #1 goes live.",
+  capabilityEyebrow: "One console for",
 } as const;
 
 export const DIRECTOR_LIVE_STEP_COPY = {

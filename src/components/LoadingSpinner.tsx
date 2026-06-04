@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import type { CSSProperties } from "react";
 import { cn } from "../lib/utils";
 
 interface LoadingSpinnerProps {
@@ -8,10 +8,11 @@ interface LoadingSpinnerProps {
 
 export default function LoadingSpinner({ className, size = 24 }: LoadingSpinnerProps) {
   return (
-    <Loader2
-      className={cn("animate-spin text-primary", className)}
-      size={size}
+    <div
+      role="status"
       aria-label="Loading..."
+      className={cn("wl-brand-spinner shrink-0", className)}
+      style={{ "--wl-spinner-size": `${size}px` } as CSSProperties}
     />
   );
 }

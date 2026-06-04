@@ -459,7 +459,9 @@ function LivePulse({ count, expanded }: { count: number; expanded: boolean }) {
       </span>
       {expanded && (
         <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-          <span className="chrome-eyebrow tracking-[0.2em]">{live ? "Live" : "Quiet"}</span>
+          <span className="chrome-eyebrow tracking-[0.2em]">
+            {live ? "Fleet pulse" : "Standing by"}
+          </span>
           <span className="text-[10px] font-mono text-white/75">{count > 0 ? count : "—"}</span>
         </div>
       )}

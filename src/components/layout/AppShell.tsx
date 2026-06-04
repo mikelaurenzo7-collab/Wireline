@@ -39,14 +39,15 @@ const ROUTE_SUBTITLES: Record<string, string> = {
   "/sms": "Two-way conversations & automated follow-ups",
   "/training": "Teach, tune & refine your agents",
   "/ops": "Live callers, supervisor tools & fleet pulse",
-  "/triage": "Flagged conversations needing review",
-  "/insights": "Performance analytics & trend discovery",
-  "/pipeline": "Leads across the funnel",
+  "/triage": "Flagged conversations needing human review",
+  "/insights": "Performance analytics, topics & trend discovery",
+  "/pipeline": "Leads across the funnel — scored and staged",
   "/admin": "Account configuration & integrations",
   "/agents": "Deploy, configure & manage your fleet",
   "/integrations": "Email, CRM & third-party connections",
   "/dnc": "Do-not-call list & TCPA compliance",
   "/audit": "Security events & compliance ledger",
+  "/chat": "Director wingman — plan, coach, and approve from one thread",
 };
 
 function getPageContext(

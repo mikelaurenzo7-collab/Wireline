@@ -13,7 +13,7 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import {
   Send,
   Loader2,
@@ -86,9 +86,12 @@ import {
   DIRECTOR_EMPTY_HERO,
   DIRECTOR_SCENE_BADGES,
   DIRECTOR_STARTER_PROMPTS,
+  DIRECTOR_CAPABILITY_PILLS,
+  DIRECTOR_LOADING_COPY,
   WL_APP_CLASSES,
   WL_DIRECTOR_CLASSES,
 } from "../lib/wireline-director-design";
+import LoadingDots from "./LoadingDots";
 
 type SuggestionKind =
   | "create_agent"
@@ -247,6 +250,7 @@ export default function DirectorWorkspace({
   onFocusAgentChange,
 }: DirectorWorkspaceProps) {
   const navigate = useNavigate();
+  const reduceMotion = useReducedMotion();
   const { user, loading: authLoading } = useAuth();
   const { agents } = useAgents();
   const focusedAgent = focusAgentId ? agents.find((a) => a.id === focusAgentId) : undefined;
@@ -985,11 +989,14 @@ export default function DirectorWorkspace({
           </p>
         )}
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-3">
-            <div className="w-10 h-10 rounded-md bg-gradient-to-br from-brand/20 to-brand/10 flex items-center justify-center">
-              <Loader2 className="w-5 h-5 animate-spin text-brand" />
+          <div className="wl-director-loading" role="status" aria-live="polite">
+            <div className="wl-director-loading-orb">
+              <LoadingDots />
             </div>
-            <p className="text-[11px] text-muted uppercase tracking-[0.2em]">Loading thread</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink/80">
+              {DIRECTOR_LOADING_COPY.headline}
+            </p>
+            <p className="text-[11px] text-muted">{DIRECTOR_LOADING_COPY.sub}</p>
           </div>
         ) : messages.length === 0 ? (
           <motion.div
@@ -1001,10 +1008,14 @@ export default function DirectorWorkspace({
             {/* Hero identity */}
             <div className={cn("relative mb-6", WL_DIRECTOR_CLASSES.heroOrb)}>
               <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-brand/20 to-brand/5 blur-2xl scale-125" />
-              <span className="flex w-16 h-16 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-xl shadow-brand/30 relative overflow-hidden">
+              <motion.span
+                animate={reduceMotion ? undefined : { rotate: [0, 4, -4, 0] }}
+                transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
+                className="flex w-16 h-16 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-xl shadow-brand/30 relative overflow-hidden"
+              >
                 <Compass className="w-8 h-8 relative z-10" />
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/25 to-transparent" />
-              </span>
+              </motion.span>
             </div>
 
             <p className="text-[10px] uppercase tracking-[0.22em] text-brand/70 font-semibold mb-2">
@@ -1027,10 +1038,25 @@ export default function DirectorWorkspace({
               </p>
             )}
 
+            <p className="wl-label text-brand/60 mb-2.5">{DIRECTOR_EMPTY_HERO.capabilityEyebrow}</p>
+            <div className="flex flex-wrap justify-center gap-1.5 mb-5 max-w-md">
+              {DIRECTOR_CAPABILITY_PILLS.map((pill, i) => (
+                <motion.span
+                  key={pill.id}
+                  initial={{ opacity: 0, scale: 0.92 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.35 + i * 0.05, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                  className="wl-capability-pill"
+                >
+                  {pill.label}
+                </motion.span>
+              ))}
+            </div>
+
             <FleetSetupNudge className="mb-5 max-w-md" />
 
             {/* Starter prompts */}
-            <div className="flex flex-wrap justify-center gap-2 w-full">
+            <div className="stagger-children flex flex-wrap justify-center gap-2 w-full">
               {DIRECTOR_STARTER_PROMPTS.map((p) => (
                 <ShadButton
                   key={p.id}

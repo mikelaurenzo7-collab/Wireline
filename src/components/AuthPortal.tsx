@@ -14,6 +14,7 @@ import {
   EyeOff,
   ArrowLeft,
 } from "lucide-react";
+import AuthShowcasePanel from "./auth/AuthShowcasePanel";
 import PublicSiteHeader from "./marketing/PublicSiteHeader";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
@@ -390,304 +391,315 @@ export default function AuthPortal() {
           className="relative z-10 flex-1 flex items-center justify-center px-4 py-6 pt-20 min-h-0 scroll-viewport"
           style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))" }}
         >
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-[420px]"
-          >
-            <div
-              className="border border-ink/[0.06] bg-paper overflow-hidden"
-              style={{
-                boxShadow:
-                  "0 1px 0 rgba(255,255,255,0.9) inset, 0 24px 64px -24px rgba(26, 22, 20, 0.12), 0 8px 24px -12px rgba(107, 43, 153, 0.08)",
-              }}
+          <div className="w-full max-w-[960px] lg:grid lg:grid-cols-[1fr,min(420px,100%)] lg:gap-12 xl:gap-16 lg:items-center">
+            <AuthShowcasePanel />
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-[420px] lg:max-w-none mx-auto"
             >
-              <div className="p-6 sm:p-8">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={mode}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                  >
-                    <div className="mb-6">
-                      <h1 className="font-display italic text-2xl sm:text-3xl text-ink leading-tight">
-                        {isReset ? "Reset password" : isSignUp ? "Create account" : "Welcome back"}
-                      </h1>
-                      <p className="text-caption mt-1.5">
-                        {isReset
-                          ? "We'll email you a secure reset link."
-                          : isSignUp
-                            ? "14-day trial · no credit card"
-                            : "Operator console access"}
-                      </p>
-                      {isSignUp && intentLabel && (
-                        <p className="mt-2 inline-flex rounded-full border border-brand/20 bg-brand/8 px-3 py-1 text-eyebrow !text-brand">
-                          From your visit · {intentLabel}
+              <div
+                className="border border-ink/[0.06] bg-paper overflow-hidden"
+                style={{
+                  boxShadow:
+                    "0 1px 0 rgba(255,255,255,0.9) inset, 0 24px 64px -24px rgba(26, 22, 20, 0.12), 0 8px 24px -12px rgba(107, 43, 153, 0.08)",
+                }}
+              >
+                <div className="p-6 sm:p-8">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={mode}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                      <div className="mb-6">
+                        <h1 className="font-display italic text-2xl sm:text-3xl text-ink leading-tight">
+                          {isReset
+                            ? "Reset password"
+                            : isSignUp
+                              ? "Create account"
+                              : "Welcome back"}
+                        </h1>
+                        <p className="text-caption mt-1.5">
+                          {isReset
+                            ? "We'll email you a secure reset link."
+                            : isSignUp
+                              ? "14-day trial · no credit card"
+                              : "Operator console access"}
                         </p>
-                      )}
-                    </div>
-
-                    {!isReset && (
-                      <div className="mb-5">
-                        <div className="relative flex p-1 bg-ink/[0.04] border border-ink/[0.06]">
-                          <motion.div
-                            layout
-                            className="absolute inset-y-1 w-[calc(50%-4px)] bg-brand/10 border border-brand/20"
-                            style={{ left: isSignUp ? "calc(50% + 2px)" : "4px" }}
-                            transition={{ type: "spring", stiffness: 400, damping: 34 }}
-                          />
-                          {[
-                            { label: "Sign in", value: false },
-                            { label: "Sign up", value: true },
-                          ].map((opt) => (
-                            <ShadButton
-                              key={String(opt.value)}
-                              type="button"
-                              variant="ghost"
-                              disableAnimations
-                              onClick={() => setIsSignUp(opt.value)}
-                              className={cn(
-                                "relative z-10 flex-1 h-auto py-2.5 text-sm font-semibold rounded-none",
-                                isSignUp === opt.value ? "text-ink" : "text-muted hover:text-ink",
-                              )}
-                            >
-                              {opt.label}
-                            </ShadButton>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {!isReset && (
-                      <OAuthSignInButtons disabled={loading} onError={(m) => setError(m || null)} />
-                    )}
-
-                    <form onSubmit={handleAuth} className="space-y-4">
-                      <div className="space-y-1.5">
-                        <label
-                          htmlFor="auth-email"
-                          className="text-eyebrow flex items-center gap-1.5"
-                        >
-                          <Mail className="w-3.5 h-3.5 text-brand" />
-                          Email
-                        </label>
-                        <Input
-                          id="auth-email"
-                          type="email"
-                          required
-                          autoComplete="email"
-                          inputMode="email"
-                          spellCheck={false}
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="auth-input"
-                          placeholder="you@company.com"
-                        />
+                        {isSignUp && intentLabel && (
+                          <p className="mt-2 inline-flex rounded-full border border-brand/20 bg-brand/8 px-3 py-1 text-eyebrow !text-brand">
+                            From your visit · {intentLabel}
+                          </p>
+                        )}
                       </div>
 
                       {!isReset && (
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <label
-                              htmlFor="auth-password"
-                              className="text-eyebrow flex items-center gap-1.5"
-                            >
-                              <Lock className="w-3.5 h-3.5 text-brand" />
-                              Password
-                            </label>
-                            {!isSignUp && (
-                              <ShadButton
-                                type="button"
-                                variant="link"
-                                disableAnimations
-                                onClick={() => {
-                                  setMode("reset");
-                                  setError(null);
-                                }}
-                                className="text-caption font-medium text-brand h-auto p-0"
-                              >
-                                Forgot?
-                              </ShadButton>
-                            )}
-                          </div>
-                          <div className="relative">
-                            <Input
-                              id="auth-password"
-                              type={showPassword ? "text" : "password"}
-                              required
-                              minLength={isSignUp ? 8 : undefined}
-                              autoComplete={isSignUp ? "new-password" : "current-password"}
-                              value={password}
-                              onChange={(e) => setPassword(e.target.value)}
-                              className="auth-input pr-11"
-                              placeholder="••••••••••••"
+                        <div className="mb-5">
+                          <div className="relative flex p-1 bg-ink/[0.04] border border-ink/[0.06]">
+                            <motion.div
+                              layout
+                              className="absolute inset-y-1 w-[calc(50%-4px)] bg-brand/10 border border-brand/20"
+                              style={{ left: isSignUp ? "calc(50% + 2px)" : "4px" }}
+                              transition={{ type: "spring", stiffness: 400, damping: 34 }}
                             />
-                            <ShadButton
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              disableAnimations
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-1 top-1/2 -translate-y-1/2 text-muted hover:text-ink h-8 w-8"
-                              aria-label={showPassword ? "Hide password" : "Show password"}
-                              tabIndex={-1}
-                            >
-                              {showPassword ? (
-                                <EyeOff className="w-4 h-4" />
-                              ) : (
-                                <Eye className="w-4 h-4" />
-                              )}
-                            </ShadButton>
+                            {[
+                              { label: "Sign in", value: false },
+                              { label: "Sign up", value: true },
+                            ].map((opt) => (
+                              <ShadButton
+                                key={String(opt.value)}
+                                type="button"
+                                variant="ghost"
+                                disableAnimations
+                                onClick={() => setIsSignUp(opt.value)}
+                                className={cn(
+                                  "relative z-10 flex-1 h-auto py-2.5 text-sm font-semibold rounded-none",
+                                  isSignUp === opt.value ? "text-ink" : "text-muted hover:text-ink",
+                                )}
+                              >
+                                {opt.label}
+                              </ShadButton>
+                            ))}
                           </div>
-                          {isSignUp && password.length > 0 && pwStrength && (
-                            <>
-                              <div className="pw-strength-bar mt-1.5">
-                                <div
-                                  className="pw-strength-fill"
-                                  style={{
-                                    width: `${(pwStrength.score / 4) * 100}%`,
-                                    background: `linear-gradient(90deg, ${pwStrength.color}, ${pwStrength.score >= 3 ? BRAND.purple : pwStrength.color})`,
-                                  }}
-                                />
-                              </div>
-                              <p className="text-caption" style={{ color: pwStrength.color }}>
-                                {pwStrength.label}
-                              </p>
-                            </>
-                          )}
-                          {isSignUp && (
-                            <ul
-                              className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5 text-caption text-muted/80"
-                              aria-label="Password requirements"
-                            >
-                              <li className={password.length >= 8 ? "text-brand" : ""}>
-                                {password.length >= 8 ? "✓" : "•"} 8+ characters
-                              </li>
-                              <li className={/[A-Z]/.test(password) ? "text-brand" : ""}>
-                                {/[A-Z]/.test(password) ? "✓" : "•"} Uppercase letter
-                              </li>
-                              <li className={/[a-z]/.test(password) ? "text-brand" : ""}>
-                                {/[a-z]/.test(password) ? "✓" : "•"} Lowercase letter
-                              </li>
-                              <li className={/[0-9]/.test(password) ? "text-brand" : ""}>
-                                {/[0-9]/.test(password) ? "✓" : "•"} Number
-                              </li>
-                            </ul>
-                          )}
                         </div>
                       )}
 
-                      {isReset && (
-                        <ShadButton
-                          type="button"
-                          variant="link"
-                          disableAnimations
-                          onClick={() => {
-                            setMode("signin");
-                            setError(null);
-                          }}
-                          className="text-caption font-medium text-brand h-auto p-0 justify-start"
-                        >
-                          ← Back to sign in
-                        </ShadButton>
+                      {!isReset && (
+                        <OAuthSignInButtons
+                          disabled={loading}
+                          onError={(m) => setError(m || null)}
+                        />
                       )}
 
-                      <AnimatePresence mode="wait">
-                        {error && (
-                          <motion.div
-                            role="alert"
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="flex gap-2 p-3 bg-destructive/10 border border-destructive/25 text-destructive text-sm"
+                      <form onSubmit={handleAuth} className="space-y-4">
+                        <div className="space-y-1.5">
+                          <label
+                            htmlFor="auth-email"
+                            className="text-eyebrow flex items-center gap-1.5"
                           >
-                            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                            <span>{error}</span>
-                          </motion.div>
-                        )}
-                        {message && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="flex gap-2 p-3 bg-brand/10 border border-brand/25 text-brand text-sm"
-                          >
-                            <Check className="w-4 h-4 shrink-0 mt-0.5" />
-                            <span>{message}</span>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-
-                      {isSignUp && (
-                        <label className="flex items-start gap-2 text-caption cursor-pointer">
-                          <Checkbox
-                            checked={agreedToTerms}
-                            onChange={(e) => setAgreedToTerms(e.target.checked)}
-                            className="mt-1 accent-brand"
+                            <Mail className="w-3.5 h-3.5 text-brand" />
+                            Email
+                          </label>
+                          <Input
+                            id="auth-email"
+                            type="email"
                             required
+                            autoComplete="email"
+                            inputMode="email"
+                            spellCheck={false}
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="auth-input"
+                            placeholder="you@company.com"
                           />
-                          <span>
-                            I agree to the{" "}
-                            <Link to="/terms" className="text-brand underline">
-                              Terms
-                            </Link>{" "}
-                            and{" "}
-                            <Link to="/privacy" className="text-brand underline">
-                              Privacy
-                            </Link>
-                            .
-                          </span>
-                        </label>
-                      )}
+                        </div>
 
-                      <ShadButton
-                        type="submit"
-                        variant="editorial"
-                        disableAnimations
-                        disabled={loading || (isSignUp && !agreedToTerms)}
-                        className="w-full min-h-[48px] py-3.5 text-sm font-semibold"
-                      >
-                        {loading ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" /> Connecting…
-                          </>
-                        ) : isReset ? (
-                          <>
-                            <Mail className="w-4 h-4" /> Send reset link
-                          </>
-                        ) : isSignUp ? (
-                          <>
-                            <UserPlus className="w-4 h-4" /> Create account{" "}
-                            <ArrowRight className="w-4 h-4" />
-                          </>
-                        ) : (
-                          <>
-                            <LogIn className="w-4 h-4" /> Sign in <ArrowRight className="w-4 h-4" />
-                          </>
+                        {!isReset && (
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <label
+                                htmlFor="auth-password"
+                                className="text-eyebrow flex items-center gap-1.5"
+                              >
+                                <Lock className="w-3.5 h-3.5 text-brand" />
+                                Password
+                              </label>
+                              {!isSignUp && (
+                                <ShadButton
+                                  type="button"
+                                  variant="link"
+                                  disableAnimations
+                                  onClick={() => {
+                                    setMode("reset");
+                                    setError(null);
+                                  }}
+                                  className="text-caption font-medium text-brand h-auto p-0"
+                                >
+                                  Forgot?
+                                </ShadButton>
+                              )}
+                            </div>
+                            <div className="relative">
+                              <Input
+                                id="auth-password"
+                                type={showPassword ? "text" : "password"}
+                                required
+                                minLength={isSignUp ? 8 : undefined}
+                                autoComplete={isSignUp ? "new-password" : "current-password"}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="auth-input pr-11"
+                                placeholder="••••••••••••"
+                              />
+                              <ShadButton
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                disableAnimations
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-1 top-1/2 -translate-y-1/2 text-muted hover:text-ink h-8 w-8"
+                                aria-label={showPassword ? "Hide password" : "Show password"}
+                                tabIndex={-1}
+                              >
+                                {showPassword ? (
+                                  <EyeOff className="w-4 h-4" />
+                                ) : (
+                                  <Eye className="w-4 h-4" />
+                                )}
+                              </ShadButton>
+                            </div>
+                            {isSignUp && password.length > 0 && pwStrength && (
+                              <>
+                                <div className="pw-strength-bar mt-1.5">
+                                  <div
+                                    className="pw-strength-fill"
+                                    style={{
+                                      width: `${(pwStrength.score / 4) * 100}%`,
+                                      background: `linear-gradient(90deg, ${pwStrength.color}, ${pwStrength.score >= 3 ? BRAND.purple : pwStrength.color})`,
+                                    }}
+                                  />
+                                </div>
+                                <p className="text-caption" style={{ color: pwStrength.color }}>
+                                  {pwStrength.label}
+                                </p>
+                              </>
+                            )}
+                            {isSignUp && (
+                              <ul
+                                className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5 text-caption text-muted/80"
+                                aria-label="Password requirements"
+                              >
+                                <li className={password.length >= 8 ? "text-brand" : ""}>
+                                  {password.length >= 8 ? "✓" : "•"} 8+ characters
+                                </li>
+                                <li className={/[A-Z]/.test(password) ? "text-brand" : ""}>
+                                  {/[A-Z]/.test(password) ? "✓" : "•"} Uppercase letter
+                                </li>
+                                <li className={/[a-z]/.test(password) ? "text-brand" : ""}>
+                                  {/[a-z]/.test(password) ? "✓" : "•"} Lowercase letter
+                                </li>
+                                <li className={/[0-9]/.test(password) ? "text-brand" : ""}>
+                                  {/[0-9]/.test(password) ? "✓" : "•"} Number
+                                </li>
+                              </ul>
+                            )}
+                          </div>
                         )}
-                      </ShadButton>
-                    </form>
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-            </div>
 
-            <div className="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-caption">
-              <Link
-                to="/"
-                className="inline-flex items-center gap-1.5 font-medium text-ink/80 hover:text-ink"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Back to home
-              </Link>
-              <Link to="/showcase" className="font-medium text-brand hover:underline">
-                Try live demo lines
-              </Link>
-            </div>
-          </motion.div>
+                        {isReset && (
+                          <ShadButton
+                            type="button"
+                            variant="link"
+                            disableAnimations
+                            onClick={() => {
+                              setMode("signin");
+                              setError(null);
+                            }}
+                            className="text-caption font-medium text-brand h-auto p-0 justify-start"
+                          >
+                            ← Back to sign in
+                          </ShadButton>
+                        )}
+
+                        <AnimatePresence mode="wait">
+                          {error && (
+                            <motion.div
+                              role="alert"
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="flex gap-2 p-3 bg-destructive/10 border border-destructive/25 text-destructive text-sm"
+                            >
+                              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                              <span>{error}</span>
+                            </motion.div>
+                          )}
+                          {message && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="flex gap-2 p-3 bg-brand/10 border border-brand/25 text-brand text-sm"
+                            >
+                              <Check className="w-4 h-4 shrink-0 mt-0.5" />
+                              <span>{message}</span>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        {isSignUp && (
+                          <label className="flex items-start gap-2 text-caption cursor-pointer">
+                            <Checkbox
+                              checked={agreedToTerms}
+                              onChange={(e) => setAgreedToTerms(e.target.checked)}
+                              className="mt-1 accent-brand"
+                              required
+                            />
+                            <span>
+                              I agree to the{" "}
+                              <Link to="/terms" className="text-brand underline">
+                                Terms
+                              </Link>{" "}
+                              and{" "}
+                              <Link to="/privacy" className="text-brand underline">
+                                Privacy
+                              </Link>
+                              .
+                            </span>
+                          </label>
+                        )}
+
+                        <ShadButton
+                          type="submit"
+                          variant="editorial"
+                          disableAnimations
+                          disabled={loading || (isSignUp && !agreedToTerms)}
+                          className="w-full min-h-[48px] py-3.5 text-sm font-semibold"
+                        >
+                          {loading ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" /> Connecting…
+                            </>
+                          ) : isReset ? (
+                            <>
+                              <Mail className="w-4 h-4" /> Send reset link
+                            </>
+                          ) : isSignUp ? (
+                            <>
+                              <UserPlus className="w-4 h-4" /> Create account{" "}
+                              <ArrowRight className="w-4 h-4" />
+                            </>
+                          ) : (
+                            <>
+                              <LogIn className="w-4 h-4" /> Sign in{" "}
+                              <ArrowRight className="w-4 h-4" />
+                            </>
+                          )}
+                        </ShadButton>
+                      </form>
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-caption">
+                <Link
+                  to="/"
+                  className="inline-flex items-center gap-1.5 font-medium text-ink/80 hover:text-ink"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  Back to home
+                </Link>
+                <Link to="/showcase" className="font-medium text-brand hover:underline">
+                  Try live demo lines
+                </Link>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </div>
     </>

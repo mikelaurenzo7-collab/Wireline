@@ -460,8 +460,11 @@ export default function CommandBar() {
                 </div>
               ) : (
                 <div className="py-16 flex flex-col items-center justify-center gap-3">
-                  <Terminal className="w-8 h-8 text-ink/40" />
-                  <p className="app-section-title/65">No matching commands</p>
+                  <div className="w-12 h-12 rounded-md wl-panel flex items-center justify-center border border-brand/15">
+                    <Terminal className="w-5 h-5 text-brand/60" />
+                  </div>
+                  <p className="wl-label text-muted">No matching commands</p>
+                  <p className="text-[11px] text-muted/70">Try “ops”, “agents”, or “insights”</p>
                 </div>
               )}
 

@@ -57,6 +57,32 @@ export const CONSOLE_MAP = {
   ],
 } as const;
 
+/** Editorial panel on auth — first impression before the operator console. */
+export const AUTH_PORTAL_SHOWCASE = {
+  eyebrow: "Operator console",
+  title: "Mission control for your",
+  titleAccent: "AI fleet",
+  subtitle:
+    "Wireline runs phone, email, and SMS agents on real numbers — trained on your playbook, supervised from one calm cockpit.",
+  features: [
+    {
+      id: "director",
+      label: "Director wingman",
+      detail: "Plan hires, coach agents, draft deliverables, and approve actions in one thread.",
+    },
+    {
+      id: "live-ops",
+      label: "Live Ops floor",
+      detail: "Listen in, whisper-coach, approve CRM writes, and watch fleet pulse in real time.",
+    },
+    {
+      id: "deploy",
+      label: "Under 10 minutes",
+      detail: "Paste your site, pick a voice, provision a number — no developers required.",
+    },
+  ],
+} as const;
+
 export const YOURE_LIVE_COPY = {
   eyebrow: "Fleet live",
   title: "You're live",

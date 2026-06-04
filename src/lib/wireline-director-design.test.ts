@@ -7,6 +7,8 @@ import {
   DIRECTOR_STARTER_PROMPTS,
   DIRECTOR_SCENE_BADGES,
   DIRECTOR_EMPTY_HERO,
+  DIRECTOR_CAPABILITY_PILLS,
+  DIRECTOR_LOADING_COPY,
   DIRECTOR_LIVE_STEP_COPY,
   LIVE_FEED_LABELS,
   directorPhaseCopy,
@@ -78,6 +80,17 @@ describe("Wireline Director design contract", () => {
     expect(DIRECTOR_EMPTY_HERO.titleAccent).toBe("business wingman");
     expect(DIRECTOR_EMPTY_HERO.subtitleWithFleet(2)).toContain("2 agents");
     expect(DIRECTOR_EMPTY_HERO.subtitleNoFleet.toLowerCase()).toContain("fleet");
+    expect(DIRECTOR_EMPTY_HERO.capabilityEyebrow).toBeTruthy();
+  });
+
+  it("capability pills cover core Wireline channels", () => {
+    const labels = DIRECTOR_CAPABILITY_PILLS.map((p) => p.label);
+    expect(labels).toEqual(["Voice", "Email", "SMS", "CRM", "Integrations"]);
+  });
+
+  it("loading copy stays mission-control native", () => {
+    expect(DIRECTOR_LOADING_COPY.headline.toLowerCase()).toContain("mission");
+    expect(DIRECTOR_LOADING_COPY.sub.toLowerCase()).toContain("fleet");
   });
 
   it("live step copy distinguishes coach vs fleet and integration states", () => {
