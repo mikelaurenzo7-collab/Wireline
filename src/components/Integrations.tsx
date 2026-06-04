@@ -72,6 +72,7 @@ export default function Integrations() {
     init();
 
     const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
       if (event.data?.type === "OAUTH_AUTH_SUCCESS") {
         fetchAccounts();
         toastSuccess("Account linked", `${event.data.email} connected successfully.`);

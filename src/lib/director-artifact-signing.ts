@@ -8,7 +8,11 @@ export interface SignedDownloadToken {
 }
 
 function secret(): string {
-  return process.env.INTERNAL_JWT_SECRET || "wireline-director-artifact-dev-secret";
+  const s = process.env.INTERNAL_JWT_SECRET;
+  if (!s) {
+    throw new Error("INTERNAL_JWT_SECRET environment variable is required for artifact signing");
+  }
+  return s;
 }
 
 function signPayload(payload: string): string {

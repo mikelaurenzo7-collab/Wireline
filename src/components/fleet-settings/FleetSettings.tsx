@@ -80,6 +80,7 @@ export default function FleetSettings() {
       }
     })();
     const onMessage = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return;
       if (e.data?.type === "CRM_OAUTH_SUCCESS") {
         authFetch("/api/oauth/crm/status")
           .then((r) => (r.ok ? r.json() : null))

@@ -229,6 +229,7 @@ export default function CrmConnectionCard() {
 
   useEffect(() => {
     const handler = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return;
       if (e.data?.type === "CRM_OAUTH_SUCCESS") {
         setConnecting(null);
         fetchStatus();

@@ -120,7 +120,7 @@ router.post(
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
       log.error("admin purge failed", { error: msg });
-      return res.status(500).json({ error: "Purge failed", detail: msg });
+      return res.status(500).json({ error: "Purge failed" });
     }
   },
 );

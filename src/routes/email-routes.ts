@@ -24,7 +24,13 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const accounts = await drizzle
-        .select()
+        .select({
+          id: schema.emailAccounts.id,
+          emailAddress: schema.emailAccounts.emailAddress,
+          provider: schema.emailAccounts.provider,
+          agentId: schema.emailAccounts.agentId,
+          createdAt: schema.emailAccounts.createdAt,
+        })
         .from(schema.emailAccounts)
         .where(eq(schema.emailAccounts.userId, req.user.id))
         .orderBy(desc(schema.emailAccounts.createdAt));

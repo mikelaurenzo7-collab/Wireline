@@ -123,8 +123,8 @@ router.post(
         message: "SMS + agent teams + call queues tables ensured.",
       });
     } catch (e: any) {
-      log.error("SMS migration failed", { error: e?.message });
-      return res.status(500).json({ error: e?.message || "Migration failed" });
+      log.error("SMS migration failed", { error: e?.message, stack: e?.stack });
+      return res.status(500).json({ error: "Migration failed" });
     }
   },
 );
@@ -232,8 +232,8 @@ router.post(
           "wireline_password_reset_tokens + agents.silence_timeout_seconds + agents.personality_vibe + settings.trial_ends_at + settings.trial_outbound_count ensured.",
       });
     } catch (e: any) {
-      log.error("Auth/agent migration failed", { error: e?.message });
-      return res.status(500).json({ error: e?.message || "Migration failed" });
+      log.error("Auth/agent migration failed", { error: e?.message, stack: e?.stack });
+      return res.status(500).json({ error: "Migration failed" });
     }
   },
 );
@@ -346,8 +346,8 @@ router.post(
           "phone_numbers.campaign_label + call_logs/outbound_leads attribution + cadences + cadence_runs + supervisor_subscriptions ensured.",
       });
     } catch (e: any) {
-      log.error("Competitive batch migration failed", { error: e?.message });
-      return res.status(500).json({ error: e?.message || "Migration failed" });
+      log.error("Competitive batch migration failed", { error: e?.message, stack: e?.stack });
+      return res.status(500).json({ error: "Migration failed" });
     }
   },
 );
@@ -433,8 +433,8 @@ router.post(
           "demo column added to call_logs / outbound_leads / appointments / dnc_list with backfill; orphaned supervisor_subscriptions cleaned.",
       });
     } catch (e: any) {
-      log.error("Audit3 migration failed", { error: e?.message });
-      return res.status(500).json({ error: e?.message || "Migration failed" });
+      log.error("Audit3 migration failed", { error: e?.message, stack: e?.stack });
+      return res.status(500).json({ error: "Migration failed" });
     }
   },
 );
@@ -507,8 +507,8 @@ router.post(
       log.info("migrate-user-fks completed", { results });
       res.json({ ok: true, results });
     } catch (err: any) {
-      log.error("migrate-user-fks failed", { error: err?.message, results });
-      res.status(500).json({ error: err?.message || "Migration failed", results });
+      log.error("migrate-user-fks failed", { error: err?.message, stack: err?.stack, results });
+      res.status(500).json({ error: "Migration failed" });
     }
   },
 );
@@ -528,8 +528,8 @@ router.post(
       log.info("migrate-extra-agents completed", { userId: req.user?.id || "migration-token" });
       res.json({ ok: true });
     } catch (err: any) {
-      log.error("migrate-extra-agents failed", { error: err?.message });
-      res.status(500).json({ error: err?.message || "Migration failed" });
+      log.error("migrate-extra-agents failed", { error: err?.message, stack: err?.stack });
+      res.status(500).json({ error: "Migration failed" });
     }
   },
 );
@@ -560,8 +560,8 @@ router.post(
       log.info("migrate-cloned-voices completed", { userId: req.user?.id || "migration-token" });
       res.json({ ok: true });
     } catch (err: any) {
-      log.error("migrate-cloned-voices failed", { error: err?.message });
-      res.status(500).json({ error: err?.message || "Migration failed" });
+      log.error("migrate-cloned-voices failed", { error: err?.message, stack: err?.stack });
+      res.status(500).json({ error: "Migration failed" });
     }
   },
 );
@@ -591,8 +591,8 @@ router.post(
       log.info("migrate-agent-workspace completed", { userId: req.user?.id || "migration-token" });
       res.json({ ok: true });
     } catch (err: any) {
-      log.error("migrate-agent-workspace failed", { error: err?.message });
-      res.status(500).json({ error: err?.message || "Migration failed" });
+      log.error("migrate-agent-workspace failed", { error: err?.message, stack: err?.stack });
+      res.status(500).json({ error: "Migration failed" });
     }
   },
 );
@@ -659,8 +659,8 @@ router.post(
       });
       res.json({ ok: true });
     } catch (err: any) {
-      log.error("migrate-director-workspace failed", { error: err?.message });
-      res.status(500).json({ error: err?.message || "Migration failed" });
+      log.error("migrate-director-workspace failed", { error: err?.message, stack: err?.stack });
+      res.status(500).json({ error: "Migration failed" });
     }
   },
 );
@@ -698,8 +698,8 @@ router.post(
       });
       res.json({ ok: true, message: "wireline_pronunciation_dictionaries ensured." });
     } catch (err: any) {
-      log.error("migrate-pronunciation-dicts failed", { error: err?.message });
-      res.status(500).json({ error: err?.message || "Migration failed" });
+      log.error("migrate-pronunciation-dicts failed", { error: err?.message, stack: err?.stack });
+      res.status(500).json({ error: "Migration failed" });
     }
   },
 );
@@ -732,8 +732,8 @@ router.post(
       });
       res.json({ ok: true, message: "wireline_agents.voice_speed ensured (default 1.0)." });
     } catch (err: any) {
-      log.error("migrate-voice-speed failed", { error: err?.message });
-      res.status(500).json({ error: err?.message || "Migration failed" });
+      log.error("migrate-voice-speed failed", { error: err?.message, stack: err?.stack });
+      res.status(500).json({ error: "Migration failed" });
     }
   },
 );
@@ -769,8 +769,8 @@ router.post(
         message: "wireline_agents.secondary_voice_id ensured (nullable text).",
       });
     } catch (err: any) {
-      log.error("migrate-secondary-voice failed", { error: err?.message });
-      res.status(500).json({ error: err?.message || "Migration failed" });
+      log.error("migrate-secondary-voice failed", { error: err?.message, stack: err?.stack });
+      res.status(500).json({ error: "Migration failed" });
     }
   },
 );
@@ -805,8 +805,8 @@ router.post(
           "Webhook routing indexes ensured (phone_numbers.vapi_number_id, settings.vapi_phone_number_id, call_logs agent+customer+created_at).",
       });
     } catch (err: any) {
-      log.error("migrate-webhook-indexes failed", { error: err?.message });
-      res.status(500).json({ error: err?.message || "Migration failed" });
+      log.error("migrate-webhook-indexes failed", { error: err?.message, stack: err?.stack });
+      res.status(500).json({ error: "Migration failed" });
     }
   },
 );

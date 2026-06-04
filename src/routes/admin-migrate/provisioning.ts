@@ -65,8 +65,11 @@ router.post(
         .limit(1);
       ownerUserId = ownerRow?.id || null;
     } catch (e: any) {
-      log.error("provision-wireline-agents owner lookup failed", { error: e?.message });
-      return res.status(500).json({ error: "Owner lookup failed: " + e?.message });
+      log.error("provision-wireline-agents owner lookup failed", {
+        error: e?.message,
+        stack: e?.stack,
+      });
+      return res.status(500).json({ error: "Owner lookup failed" });
     }
 
     if (!ownerUserId) {
@@ -149,7 +152,7 @@ router.post(
           error: e?.message,
         });
         return res.status(500).json({
-          error: `Failed provisioning persona ${persona.id}: ${e?.message}`,
+          error: `Failed provisioning persona ${persona.id}`,
           provisioned,
         });
       }
@@ -221,8 +224,8 @@ router.post("/api/admin/test-email", optionalAuth, async (req: Request, res: Res
           ? "Likely the sending domain isn't verified in Resend. Add + verify trywireline.com under Resend → Domains, then set RESEND_FROM_EMAIL or keep the noreply@trywireline.com default."
           : "See resend_body for the exact error.",
     });
-  } catch (e: any) {
-    return res.status(500).json({ ok: false, error: e?.message || "fetch failed" });
+  } catch (_e: any) {
+    return res.status(500).json({ ok: false, error: "Email send failed" });
   }
 });
 
@@ -306,7 +309,7 @@ router.get("/api/admin/founder-stats", optionalAuth, async (req: Request, res: R
     });
   } catch (e: any) {
     log.error("founder-stats failed", { error: e?.message });
-    return res.status(500).json({ ok: false, error: e?.message || "stats query failed" });
+    return res.status(500).json({ ok: false, error: "Stats query failed" });
   }
 });
 
@@ -375,7 +378,7 @@ router.post("/api/admin/purge-demo-users", optionalAuth, async (req: Request, re
     });
   } catch (e: any) {
     log.error("purge-demo-users failed", { error: e?.message });
-    return res.status(500).json({ ok: false, error: e?.message || "purge failed" });
+    return res.status(500).json({ ok: false, error: "Purge failed" });
   }
 });
 
@@ -415,8 +418,8 @@ router.post(
       log.info("migrate-goals completed", { userId: req.user?.id || "migration-token" });
       return res.json({ ok: true, message: "Performance goals table ensured." });
     } catch (e: any) {
-      log.error("migrate-goals failed", { error: e?.message });
-      return res.status(500).json({ error: e?.message || "Migration failed" });
+      log.error("migrate-goals failed", { error: e?.message, stack: e?.stack });
+      return res.status(500).json({ error: "Migration failed" });
     }
   },
 );
@@ -464,8 +467,8 @@ router.post(
           "Per-agent escalation routing columns ensured (escalation_phone, escalation_email, escalation_handoff_enabled).",
       });
     } catch (e: any) {
-      log.error("migrate-escalation-routing failed", { error: e?.message });
-      return res.status(500).json({ error: e?.message || "Migration failed" });
+      log.error("migrate-escalation-routing failed", { error: e?.message, stack: e?.stack });
+      return res.status(500).json({ error: "Migration failed" });
     }
   },
 );
@@ -544,7 +547,7 @@ router.post(
       log.error("[backfill-voice-defaults] Failed backfilling voice defaults", {
         error: e?.message,
       });
-      return res.status(500).json({ ok: false, error: e?.message || "Migration backfill failed" });
+      return res.status(500).json({ ok: false, error: "Migration backfill failed" });
     }
   },
 );

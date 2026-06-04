@@ -281,7 +281,7 @@ router.post(
       });
     } catch (e: any) {
       log.error("Vapi knowledge sync failed", { error: e?.message });
-      return res.status(500).json({ error: e?.message || "Sync failed" });
+      return res.status(500).json({ error: "Sync failed" });
     }
   }),
 );
