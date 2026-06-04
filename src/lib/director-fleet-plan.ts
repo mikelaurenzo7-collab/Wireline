@@ -9,13 +9,30 @@ import {
   type ProposedAction,
   type WorkspaceActionKind,
 } from "./workspace-planner";
-import {
-  DIRECTOR_SUGGESTION_KINDS,
-  type DirectorFleetAgent,
-  type DirectorSuggestion,
-  type DirectorSuggestionKind,
-} from "./director-planner";
 import { DIRECTOR_INTEGRATION_TOOLS } from "./director-integration-tools";
+
+/** Lightweight navigation suggestions the Director can surface as chips. */
+export const DIRECTOR_SUGGESTION_KINDS = [
+  "create_agent",
+  "focus_agent",
+  "view_ops",
+  "open_training",
+  "open_insights",
+] as const;
+export type DirectorSuggestionKind = (typeof DIRECTOR_SUGGESTION_KINDS)[number];
+
+export interface DirectorSuggestion {
+  kind: DirectorSuggestionKind;
+  label: string;
+  /** Required for `focus_agent` — selects that agent in the Coach menu. */
+  agentId?: string;
+}
+
+export interface DirectorFleetAgent {
+  id: string;
+  name: string | null;
+  role: string | null;
+}
 
 export interface DirectorBusinessContext {
   businessName?: string | null;

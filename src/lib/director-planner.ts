@@ -23,6 +23,7 @@ import {
   buildDirectorFleetSystemPrompt,
   normalizeDirectorFleetPlan,
   type DirectorBusinessContext,
+  type DirectorFleetAgent,
   type DirectorFleetPlan,
 } from "./director-fleet-plan";
 import { formatDirectorIntegrationPrompt } from "./director-integration-prompt";
@@ -39,22 +40,12 @@ export type {
   DirectorProposedAction,
 } from "./director-fleet-plan";
 
-/** Lightweight navigation suggestions the Director can surface as chips. */
-export const DIRECTOR_SUGGESTION_KINDS = [
-  "create_agent",
-  "focus_agent",
-  "view_ops",
-  "open_training",
-  "open_insights",
-] as const;
-export type DirectorSuggestionKind = (typeof DIRECTOR_SUGGESTION_KINDS)[number];
-
-export interface DirectorSuggestion {
-  kind: DirectorSuggestionKind;
-  label: string;
-  /** Required for `focus_agent` — selects that agent in the Coach menu. */
-  agentId?: string;
-}
+export {
+  DIRECTOR_SUGGESTION_KINDS,
+  type DirectorSuggestionKind,
+  type DirectorSuggestion,
+  type DirectorFleetAgent,
+} from "./director-fleet-plan";
 
 export interface DirectorPlan extends DirectorFleetPlan {
   /** Which model tier handled this turn (for UI/telemetry). */
@@ -65,12 +56,6 @@ export interface DirectorPlan extends DirectorFleetPlan {
   thinkingDurationMs?: number;
   /** Sources from auto web research when injected into this turn. */
   researchSources?: DirectorResearchSource[];
-}
-
-export interface DirectorFleetAgent {
-  id: string;
-  name: string | null;
-  role: string | null;
 }
 
 export interface PlanDirectorInput {

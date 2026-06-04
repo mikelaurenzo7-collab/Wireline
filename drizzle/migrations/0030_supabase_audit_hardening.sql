@@ -57,8 +57,9 @@ CREATE POLICY "tenant_isolation" ON wireline_director_profile
   USING (user_id = NULLIF(current_setting('app.current_user_id', true), '')::uuid)
   WITH CHECK (user_id = NULLIF(current_setting('app.current_user_id', true), '')::uuid);
 
--- 4) Server-only tables stay RLS-enabled with no tenant policies (fail-closed)
-ALTER TABLE IF EXISTS wireline_oauth_pending_codes ENABLE ROW LEVEL SECURITY;
+-- 4) Server-only tables: oauth bridge has no RLS (postgres role only).
+--    stripe_events stays RLS-enabled with no tenant policies (fail-closed).
+ALTER TABLE IF EXISTS wireline_oauth_pending_codes DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS wireline_stripe_events ENABLE ROW LEVEL SECURITY;
 
 -- 5) Remove anon role grants (Wireline does not use supabase-js / anon key)
