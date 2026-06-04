@@ -181,17 +181,23 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         >
           <div className="space-y-px">
             {SIDEBAR_NAV_ITEMS.filter((item) => !item.ownerOnly || user?.is_owner === true).map(
-              (item) => (
-                <RailItem
-                  key={item.path}
-                  item={item}
-                  active={isActive(item)}
-                  badge={resolveBadge(item, navBadges)}
-                  expanded={effective}
-                  accent={ROUTE_ACCENTS[item.path]?.[0] ?? BRAND.purple}
-                  shortcut={SHORTCUTS[item.path]}
-                />
-              ),
+              (item, index, items) => {
+                const prev = items[index - 1];
+                const clusterBreak = prev && prev.section !== item.section;
+                return (
+                  <React.Fragment key={item.path}>
+                    {clusterBreak && <div className="wl-rail-cluster-gap" aria-hidden="true" />}
+                    <RailItem
+                      item={item}
+                      active={isActive(item)}
+                      badge={resolveBadge(item, navBadges)}
+                      expanded={effective}
+                      accent={ROUTE_ACCENTS[item.path]?.[0] ?? BRAND.purple}
+                      shortcut={SHORTCUTS[item.path]}
+                    />
+                  </React.Fragment>
+                );
+              },
             )}
           </div>
         </nav>

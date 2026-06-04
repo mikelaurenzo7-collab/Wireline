@@ -28,7 +28,7 @@ export default function DesktopPageContext({
   return (
     <header className={cn("hidden lg:block shrink-0", WL_APP_CLASSES.pageContext, className)}>
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           {eyebrow && <p className="wl-label text-brand/70 mb-1">{eyebrow}</p>}
           <h1 className="font-display italic text-[1.65rem] leading-[1.05] tracking-[-0.02em] text-ink text-balance">
             {title}
@@ -40,7 +40,7 @@ export default function DesktopPageContext({
           )}
         </div>
         <div
-          className="flex items-center gap-1 shrink-0 pb-0.5"
+          className={cn(WL_APP_CLASSES.chromeToolbar, "shrink-0")}
           role="toolbar"
           aria-label="Page tools"
         >
@@ -58,7 +58,7 @@ export default function DesktopPageContext({
               <Keyboard className="w-4 h-4" strokeWidth={1.75} />
             </ShadButton>
           )}
-          <ThemeToggle variant="default" className="!h-8 !w-8 !min-w-8 !px-0 rounded-md shrink-0" />
+          <ThemeToggle variant="default" compact className="rounded-md" />
         </div>
       </div>
       <div className="mt-3 aurora-divider" aria-hidden="true" />

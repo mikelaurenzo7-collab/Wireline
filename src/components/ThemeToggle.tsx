@@ -15,9 +15,11 @@ interface Props {
   className?: string;
   /** Inverse styling sits on the dark purple TopBar (light-on-purple). */
   variant?: "default" | "inverse";
+  /** Fixed icon-only control for page chrome toolbars. */
+  compact?: boolean;
 }
 
-export default function ThemeToggle({ className, variant = "inverse" }: Props) {
+export default function ThemeToggle({ className, variant = "inverse", compact = false }: Props) {
   const { theme, toggleTheme, resolvedTheme } = useTheme();
 
   const Icon = theme === "system" ? Monitor : theme === "dark" ? Moon : Sun;
@@ -39,7 +41,9 @@ export default function ThemeToggle({ className, variant = "inverse" }: Props) {
       data-testid="theme-toggle"
       disableAnimations
       className={cn(
-        "md:w-auto md:h-7 md:px-2 md:[&_svg]:size-4",
+        compact
+          ? "h-8 w-8 min-w-8 px-0 [&_svg]:size-4"
+          : "md:w-auto md:h-7 md:px-2 md:[&_svg]:size-4",
         variant === "inverse"
           ? "chrome-muted hover:text-[#EFE9DC] hover:bg-white/10 focus-visible:ring-offset-transparent"
           : "text-muted-foreground hover:text-foreground hover:bg-accent",

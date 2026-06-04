@@ -2163,6 +2163,45 @@ html, body, .marketing-surface, .app-surface {
   }
 }
 
+.wl-rail-cluster-gap {
+  height: 0.25rem;
+  margin: 0.125rem 0;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(239, 233, 220, 0.14) 20%,
+    rgba(239, 233, 220, 0.14) 80%,
+    transparent
+  );
+}
+
+.wl-chrome-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.125rem;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--color-brand) 12%, transparent);
+  background: color-mix(in srgb, var(--paper) 88%, white);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.65) inset;
+}
+.dark .wl-chrome-toolbar {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+}
+
+.wl-mobile-context-bar {
+  border-bottom: 1px solid color-mix(in srgb, var(--color-ink) 6%, transparent);
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  backdrop-filter: blur(10px);
+}
+.dark .wl-mobile-context-bar {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--background) 92%, transparent);
+}
+
 /* Director / primary chat canvas */
 .wl-mission-canvas {
   position: relative;

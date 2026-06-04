@@ -90,6 +90,10 @@ export const WL_APP_CLASSES = {
   /** Framed empty / insight stat — elevated panel without aurora chrome */
   panelFrame: "relative rounded-md wl-panel-elevated border border-border overflow-hidden",
   insightStatCard: "relative rounded-md wl-panel border border-black/8 overflow-hidden",
+  /** Grouped icon controls (theme, shortcuts) on cream workspace header */
+  chromeToolbar: "wl-chrome-toolbar",
+  /** Compact mobile route strip under TopBar */
+  mobileContextBar: "wl-mobile-context-bar",
 } as const;
 
 export type DirectorStreamPhase = "connecting" | "thinking" | "replying" | "done";

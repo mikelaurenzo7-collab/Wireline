@@ -14,7 +14,7 @@ export default function PageTransition({ children }: { children: React.ReactNode
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 4 }}
       transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-      className="h-full min-h-0"
+      className="h-full min-h-0 motion-route-enter"
     >
       {children}
     </motion.div>

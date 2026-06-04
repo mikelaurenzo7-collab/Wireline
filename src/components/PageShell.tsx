@@ -153,7 +153,7 @@ export default function PageShell({
               </div>
             )}
             {subtitle && (
-              <p className="mt-0.5 lg:mt-0 text-caption max-w-2xl text-pretty">{subtitle}</p>
+              <p className="mt-0.5 text-caption max-w-2xl text-pretty lg:hidden">{subtitle}</p>
             )}
           </div>
           {actions && (

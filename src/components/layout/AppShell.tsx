@@ -8,6 +8,11 @@ import AuroraBackdrop from "./AuroraBackdrop";
 import TopBar from "./TopBar";
 import Sidebar from "./Sidebar";
 import DesktopPageContext from "./DesktopPageContext";
+import ThemeToggle from "../ThemeToggle";
+import { ShadButton } from "../ui/shadcn/ShadButton";
+import { Keyboard } from "lucide-react";
+import { shouldShowAppPageContext } from "../../lib/wireline-app-chrome";
+import { WL_APP_CLASSES } from "../../lib/wireline-director-design";
 import TrialBanner from "./TrialBanner";
 import EmailVerifyBanner from "./EmailVerifyBanner";
 import AppRoutes from "../../routes/AppRoutes";
@@ -18,6 +23,7 @@ import {
   APP_KEYBOARD_SHORTCUTS,
 } from "../../constants/navigation";
 import { BRAND } from "../../constants/brand-colors";
+import { cn } from "../../lib/utils";
 import { useBranding } from "../../contexts/BrandingContext";
 import { useViewTransitionRoute } from "../../hooks/useViewTransitionRoute";
 import { useVisualViewport } from "../../hooks/useVisualViewport";
@@ -256,6 +262,7 @@ export default function AppShell() {
   }
 
   const pageCtx = getPageContext(location.pathname, location.search);
+  const showPageContext = shouldShowAppPageContext(location.pathname);
 
   return (
     <div
@@ -324,39 +331,66 @@ export default function AppShell() {
         <EmailVerifyBanner />
         <TrialBanner />
 
-        <DesktopPageContext
-          eyebrow={pageCtx.eyebrow}
-          title={pageCtx.title}
-          subtitle={pageCtx.subtitle}
-          onShowShortcuts={() => setShowShortcuts(true)}
-        />
+        {showPageContext && (
+          <DesktopPageContext
+            eyebrow={pageCtx.eyebrow}
+            title={pageCtx.title}
+            subtitle={pageCtx.subtitle}
+            onShowShortcuts={() => setShowShortcuts(true)}
+          />
+        )}
 
-        {/* Mobile/tablet page heading — condenses the desktop page context
-            into a compact one-line bar visible below the TopBar. The desktop
-            breadcrumb block above (`hidden lg:block`) carries the full
-            eyebrow + italic title + subtitle; this one provides the same
-            title on viewports where that block is invisible. */}
-        <div className="lg:hidden shrink-0 bg-paper/95 backdrop-blur-md px-3 py-1 border-b border-black/[0.06] dark:border-white/[0.04]">
-          <div className="flex items-center gap-1.5 min-w-0">
-            {pageCtx.eyebrow && (
-              <>
-                <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-brand/60 shrink-0">
-                  {pageCtx.eyebrow}
-                </span>
-                <span aria-hidden="true" className="text-brand/30 text-[10px]">
-                  ·
-                </span>
-              </>
-            )}
-            <p className="font-display italic text-sm leading-none text-foreground tracking-tight truncate">
-              {pageCtx.title}
-            </p>
+        {/* Mobile/tablet route context — title strip + tools (theme moved off sidebar). */}
+        {showPageContext && (
+          <div className={cn("lg:hidden shrink-0 px-3 py-2", WL_APP_CLASSES.mobileContextBar)}>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  {pageCtx.eyebrow && (
+                    <>
+                      <span className="wl-label text-brand/65 shrink-0">{pageCtx.eyebrow}</span>
+                      <span aria-hidden="true" className="text-brand/25 text-[10px]">
+                        ·
+                      </span>
+                    </>
+                  )}
+                  <p className="font-display italic text-sm leading-none text-foreground tracking-tight truncate">
+                    {pageCtx.title}
+                  </p>
+                </div>
+                {pageCtx.subtitle && (
+                  <p className="mt-1 text-[11px] leading-snug text-muted line-clamp-2 text-pretty">
+                    {pageCtx.subtitle}
+                  </p>
+                )}
+              </div>
+              <div className={cn(WL_APP_CLASSES.chromeToolbar, "shrink-0")}>
+                <ShadButton
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disableAnimations
+                  onClick={() => setShowShortcuts(true)}
+                  className="h-8 w-8 rounded-md text-muted hover:text-ink"
+                  aria-label="Keyboard shortcuts"
+                  title="Shortcuts (?)"
+                >
+                  <Keyboard className="w-4 h-4" strokeWidth={1.75} />
+                </ShadButton>
+                <ThemeToggle variant="default" compact className="rounded-md" />
+              </div>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="client-console__stage-wrap flex-1 relative flex flex-col min-h-0">
           <div className="client-console__stage workspace-stage flex-1 overflow-x-hidden overflow-y-auto md:overflow-hidden relative z-10 min-h-0 px-3 pb-2 md:px-3 md:pb-3 lg:px-4 lg:pb-4">
-            <div className="app-surface max-w-[1840px] mx-auto w-full px-2.5 md:px-3 lg:px-4 pt-1.5 md:pt-2.5 pb-0 md:pb-3 flex flex-col flex-1 min-h-0 mobile-page-canvas">
+            <div
+              className={cn(
+                "app-surface max-w-[1840px] mx-auto w-full px-2.5 md:px-3 lg:px-4 pb-0 md:pb-3 flex flex-col flex-1 min-h-0 mobile-page-canvas",
+                showPageContext ? "pt-1.5 md:pt-2.5" : "pt-1 md:pt-1.5",
+              )}
+            >
               <ErrorBoundary key={location.pathname}>
                 <AppRoutes />
               </ErrorBoundary>

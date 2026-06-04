@@ -165,8 +165,8 @@ export function SupportPage() {
 
           {submitted ? (
             <div className="py-10 text-center">
-              <div className="w-12 h-12 rounded-full bg-emerald-500/15 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+              <div className="w-12 h-12 rounded-full wl-status-success flex items-center justify-center mx-auto mb-4">
+                <CheckCircle2 className="w-6 h-6 wl-text-success" />
               </div>
               <p className="font-display italic text-xl text-ink mb-2">Ticket received</p>
               <p className="text-[12px] text-muted leading-relaxed max-w-md mx-auto">
