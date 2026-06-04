@@ -3,8 +3,8 @@
  * each integration gets a tailored visual (Shopify order card, Slack bubble, etc.)
  */
 import React from "react";
-import { cn } from "../../lib/utils";
-import type { IntegrationVisualKind } from "../../lib/integration-live-scripts";
+import { cn } from "../../../lib/utils";
+import type { IntegrationVisualKind } from "../../../lib/integration-live-scripts";
 
 function Skeleton({ className }: { className?: string }) {
   return <div className={cn("rounded bg-black/5 dark:bg-white/10 animate-pulse", className)} />;
