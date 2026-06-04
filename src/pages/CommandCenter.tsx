@@ -310,11 +310,11 @@ export default function LiveOps() {
                       setDossiers((prev) => ({ ...prev, ...dossData.dossiers }));
                     }
                   })
-                  .catch(() => {});
+                  .catch((err) => console.error("Dossier fetch failed", err));
               }
             }
-          } catch (_e) {
-            // silent parsing catch
+          } catch {
+            // SSE message parse — non-critical
           }
         };
 

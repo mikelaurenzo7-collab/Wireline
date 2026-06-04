@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { authFetch } from "../lib/api";
+import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
 import { formatDate, formatDateTime } from "../lib/safe-date";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
@@ -536,6 +537,7 @@ const KnowledgeGapRow: React.FC<{
   const [content, setContent] = useState(cleaned);
   const [busy, setBusy] = useState(false);
   const [discarding, setDiscarding] = useState(false);
+  const { toast } = useToast();
 
   const promote = async () => {
     setBusy(true);
@@ -545,7 +547,13 @@ const KnowledgeGapRow: React.FC<{
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customContent: editing ? content : undefined }),
       });
-      if (r.ok) onPromoted();
+      if (r.ok) {
+        onPromoted();
+      } else {
+        toast({ title: "Couldn't promote knowledge gap", type: "error" });
+      }
+    } catch {
+      toast({ title: "Couldn't promote knowledge gap", type: "error" });
     } finally {
       setBusy(false);
     }
@@ -560,9 +568,11 @@ const KnowledgeGapRow: React.FC<{
       if (r.ok) {
         onDiscard(gap.id);
       } else {
+        toast({ title: "Couldn't discard knowledge gap", type: "error" });
         setDiscarding(false);
       }
     } catch {
+      toast({ title: "Couldn't discard knowledge gap", type: "error" });
       setDiscarding(false);
     }
   };

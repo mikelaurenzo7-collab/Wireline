@@ -40,7 +40,9 @@ export function AuditActivityPanel() {
       .then((d) => {
         if (active) setSummary(d);
       })
-      .catch(() => {})
+      .catch((err) => {
+        if (err.name !== "AbortError") console.error("Audit summary fetch failed", err);
+      })
       .finally(() => {
         if (active) setLoading(false);
       });
@@ -61,7 +63,9 @@ export function AuditActivityPanel() {
       .then((d) => {
         if (active) setRecent(d.logs || []);
       })
-      .catch(() => {})
+      .catch((err) => {
+        if (err.name !== "AbortError") console.error("Audit recent fetch failed", err);
+      })
       .finally(() => {
         if (active) setRecentLoading(false);
       });
