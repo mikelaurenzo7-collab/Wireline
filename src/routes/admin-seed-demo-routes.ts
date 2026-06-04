@@ -19,6 +19,7 @@ import { sql, eq, and, inArray } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { requirePlatformAdmin } from "../middleware/platform-admin";
 import { invalidateDashboard } from "../lib/dashboard-cache";
+import { seedFounderFleet, resolveFounderUserId } from "../lib/founder-fleet-seed";
 import type { AuthenticatedRequest } from "../types/auth";
 import * as schema from "../db/schema";
 import {
@@ -434,6 +435,37 @@ router.post(
     } catch (e: any) {
       log.error("Demo seed failed", { error: e?.message, userId, targetEmail });
       return res.status(500).json({ error: e?.message || "Seed failed", reportSoFar: report });
+    }
+  },
+);
+
+/**
+ * Owner-only: seed the founder account with the full agent roster, max
+ * tool capabilities, and training artifacts (knowledge, directives, lessons).
+ * Defaults to OWNER_EMAIL; override with { email } in the POST body.
+ */
+router.post(
+  "/api/admin/seed-founder-fleet",
+  authenticateUser,
+  requirePlatformAdmin,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const targetEmail = (typeof req.body?.email === "string" && req.body.email.trim()) || undefined;
+    try {
+      const userId = await resolveFounderUserId(targetEmail);
+      if (!userId) {
+        return res.status(412).json({
+          error: targetEmail
+            ? `No user found for ${targetEmail}`
+            : "OWNER_EMAIL is not set or no matching user exists.",
+        });
+      }
+      const report = await seedFounderFleet(userId);
+      invalidateDashboard(userId);
+      return res.json({ ok: true, userId, email: targetEmail || process.env.OWNER_EMAIL, report });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Founder fleet seed failed";
+      log.error("Founder fleet seed failed", { error: msg });
+      return res.status(500).json({ error: msg });
     }
   },
 );

@@ -1,6 +1,6 @@
 /**
  * Aurora Cream Skeleton System
- * Animated placeholder components that match the frosted-glass design language.
+ * Animated placeholder components that match the frosted-wl-panel design language.
  * Use these instead of spinners for any data-loading state.
  */
 
@@ -31,7 +31,7 @@ export function Skeleton({ className, accent = "cyan", ...props }: SkeletonProps
       aria-live="polite"
       aria-label="Loading…"
       className={cn(
-        "relative overflow-hidden rounded-lg bg-black/[0.07] border border-black/[0.05]",
+        "relative overflow-hidden rounded-md bg-black/[0.07] border border-black/[0.05]",
         className,
       )}
       {...props}
@@ -58,7 +58,7 @@ interface RowSkeletonProps {
 function RowSkeleton({ showIcon = true, showValue = true }: RowSkeletonProps) {
   return (
     <div className="flex items-center gap-3 px-4 py-3">
-      {showIcon && <Skeleton className="w-9 h-9 rounded-xl shrink-0" accent="violet" />}
+      {showIcon && <Skeleton className="w-9 h-9 rounded-md shrink-0" accent="violet" />}
       <div className="flex-1 space-y-1.5">
         <Skeleton className="h-3 w-3/5 rounded" accent="cyan" />
         <Skeleton className="h-2 w-4/5 rounded" accent="cyan" />

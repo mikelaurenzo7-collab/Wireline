@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ChevronDown, ChevronUp, TrendingUp } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { authFetch } from "../lib/api";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface BenchmarkItem {
   label: string;
@@ -41,15 +42,15 @@ const statusConfig: Record<
 > = {
   green: {
     icon: "✓",
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-500/10",
-    borderColor: "border-emerald-500/30",
+    color: "text-brand",
+    bgColor: "bg-brand/10",
+    borderColor: "border-brand/25",
   },
   yellow: {
     icon: "~",
-    color: "text-amber-600",
-    bgColor: "bg-amber-500/10",
-    borderColor: "border-amber-500/30",
+    color: "text-brand/90",
+    bgColor: "bg-brand/8",
+    borderColor: "border-brand/25",
   },
   red: {
     icon: "↑",
@@ -71,9 +72,12 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
 
   return (
     <div className="border-b border-white/5 last:border-b-0">
-      <button
+      <ShadButton
+        type="button"
+        disableAnimations
+        variant="ghost"
         onClick={() => setExpanded((v) => !v)}
-        className="w-full text-left px-4 py-3 hover:bg-white/2 transition-all group"
+        className="w-full h-auto justify-start text-left px-4 py-3 hover:bg-white/2 group rounded-none"
       >
         <div className="flex items-center gap-3">
           {/* Status badge */}
@@ -109,8 +113,7 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
                 initial={{ width: 0 }}
                 animate={{ width: `${userPct}%` }}
                 transition={{ duration: 1, ease: "easeOut" }}
-                className="absolute top-0 left-0 h-full rounded-full"
-                style={{ background: "#8B3FD6" }}
+                className="absolute top-0 left-0 h-full rounded-full bg-brand"
               />
               {/* Benchmark marker */}
               <div
@@ -129,7 +132,7 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
             )}
           </div>
         </div>
-      </button>
+      </ShadButton>
 
       <AnimatePresence>
         {expanded && (
@@ -141,7 +144,7 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
             className="overflow-hidden"
           >
             <div
-              className={`mx-4 mb-3 px-3 py-2.5 rounded-lg glass border text-[11px] text-ink/70 leading-relaxed ${cfg.borderColor}`}
+              className={`mx-4 mb-3 px-3 py-2.5 rounded-md wl-panel border text-[11px] text-ink/70 leading-relaxed ${cfg.borderColor}`}
             >
               💡 {item.tip}
             </div>
@@ -228,7 +231,7 @@ export default function PerformanceBenchmarks() {
         </p>
         <Link
           to="/outbound"
-          className="px-3 py-1.5 rounded-full glass border border-brand/30 text-brand text-[9px] uppercase tracking-[0.25em] hover:bg-brand/10 transition-all"
+          className="px-3 py-1.5 rounded-full wl-panel border border-brand/30 text-brand text-[9px] uppercase tracking-[0.25em] hover:bg-brand/10 transition-all"
         >
           Start Outbound Campaign →
         </Link>

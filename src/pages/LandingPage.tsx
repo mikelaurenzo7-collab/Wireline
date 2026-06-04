@@ -1,14 +1,13 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { ArrowRight, ArrowUpRight, Plus } from "lucide-react";
+import { ArrowUpRight, Plus } from "lucide-react";
 import PublicSiteHeader from "../components/marketing/PublicSiteHeader";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import { HeroDecorations } from "../components/marketing/HeroDecorations";
 import { PageMeta } from "../lib/page-meta";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
-import type { ContactAgent } from "../data/contact-agents";
 import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
 
 const STATS = [
@@ -46,7 +45,7 @@ const FAQS = [
   },
   {
     q: "Can I try it before I buy?",
-    a: "Two ways. Call any live demo agent from your phone right now — no signup. Or start a 14-day free trial with no credit card, deploy a real agent on a real number, run live calls, and cancel before the trial ends with no charge.",
+    a: "Two ways. Call Jordan or Jake from the hero above — no signup. Or start a 14-day free trial from the header: no credit card, deploy a real agent on a real number, run live calls, and cancel before the trial ends with no charge.",
   },
   {
     q: "Is my data secure?",
@@ -92,91 +91,13 @@ const FOOTER_COLS = [
   },
 ];
 
-function AgentCard({
-  agent,
-  featured = false,
-  delay = 0,
-  badge = "Live demo",
-}: {
-  agent: ContactAgent;
-  featured?: boolean;
-  delay?: number;
-  badge?: string;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.97 }}
-      whileInView={{ opacity: 1, y: 0, scale: 1 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.6, delay, ease: [0.16, 1, 0.3, 1] }}
-      data-testid={`agent-card-${agent.name.toLowerCase()}`}
-      className="card-shimmer agent-card-ambient group block border border-white/5 bg-white/[0.03] backdrop-blur-md overflow-hidden"
-    >
-      <div
-        className={
-          featured
-            ? "p-6 md:p-8 flex flex-col justify-between h-full min-h-[260px]"
-            : "p-5 md:p-6 flex flex-col justify-between h-full min-h-[220px]"
-        }
-      >
-        <div>
-          <div className="flex items-center gap-2.5 mb-3">
-            <span
-              className={`font-display italic ${featured ? "text-2xl lg:text-3xl" : "text-lg lg:text-xl"} text-ink leading-none`}
-            >
-              {agent.name}
-            </span>
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] px-2 py-0.5 leading-none text-brand bg-brand/8 border border-brand/20">
-              {badge}
-            </span>
-          </div>
-          <p
-            className={`text-ink/70 leading-relaxed ${featured ? "text-[13px] sm:text-sm max-w-sm" : "text-[12px] sm:text-[13px]"}`}
-          >
-            {agent.role}
-          </p>
-          <p className="mt-2 text-[11px] sm:text-[12px] text-ink/55 leading-relaxed">
-            Tell {agent.name} your company name and any scenario details — services, hours, or what
-            you want to hear.
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mt-6 border-t border-ink/5 pt-4">
-          <div className="flex flex-col">
-            <span className="text-[9px] uppercase tracking-wider text-ink/40 font-mono">
-              Dial via phone
-            </span>
-            <a
-              href={`tel:${agent.tel}`}
-              className={`font-mono tabular-nums text-brand ${featured ? "text-base" : "text-xs"} font-semibold hover:underline`}
-            >
-              {agent.display}
-            </a>
-          </div>
-          <div className="shrink-0 flex items-center justify-end">
-            <BrowserCallWidget agentName={agent.name} buttonLabel={`Talk to ${agent.name}`} />
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
 export default function LandingPage() {
   useEffect(() => {
     captureSignupIntentFromLocation();
   }, []);
 
-  // Landing shows skill demos only — not the real employee lines (Sarah/Liam),
-  // so curious visitors never escalate to the founder's inbox.
-  const demoAgents = LANDING_PUBLIC_DEMO_AGENTS;
-  const csDemo = demoAgents.find((a) => a.name === "Jordan") ?? demoAgents[0];
-  const salesDemo = demoAgents.find((a) => a.name === "Jake") ?? demoAgents[1];
-  const demoColsClass =
-    demoAgents.length <= 1
-      ? ""
-      : demoAgents.length === 2
-        ? "sm:grid-cols-2"
-        : "sm:grid-cols-2 lg:grid-cols-3";
+  const csDemo = LANDING_PUBLIC_DEMO_AGENTS.find((a) => a.name === "Jordan");
+  const salesDemo = LANDING_PUBLIC_DEMO_AGENTS.find((a) => a.name === "Jake");
 
   return (
     <>
@@ -187,7 +108,6 @@ export default function LandingPage() {
         structuredData={FAQ_STRUCTURED_DATA}
       />
       <div className="marketing-surface min-h-dvh bg-paper relative">
-        {/* ─── Header ─────────────────────────────────────────────── */}
         <PublicSiteHeader active="home" />
 
         {/* ─── Hero ───────────────────────────────────────────────── */}
@@ -195,7 +115,6 @@ export default function LandingPage() {
           data-testid="hero-section"
           className="relative min-h-[85svh] flex flex-col justify-center px-6 lg:px-12 pt-24 pb-16 lg:pt-28 lg:pb-24 overflow-hidden"
         >
-          {/* Cinematic aurora orbs */}
           <div className="hero-aurora-orb" aria-hidden="true" />
           <div className="hero-aurora-orb-warm" aria-hidden="true" />
 
@@ -244,14 +163,6 @@ export default function LandingPage() {
                 transition={{ duration: 0.6, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
                 className="mt-8 lg:mt-10 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4"
               >
-                <Link
-                  to="/signup"
-                  data-testid="hero-cta-primary"
-                  className="cta-glow magnetic-hover inline-flex items-center gap-2.5 bg-brand text-white font-medium text-[13px] sm:text-sm px-7 py-3.5 hover:bg-[#8B3FD6] hover:shadow-[0_16px_48px_-8px_rgba(139,63,214,0.4)] transition-all duration-500"
-                >
-                  Start free trial
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
                 {csDemo && (
                   <div className="flex flex-col items-center gap-1.5 border border-ink/10 p-3 bg-white/20 backdrop-blur-md shadow-sm">
                     <BrowserCallWidget
@@ -287,9 +198,33 @@ export default function LandingPage() {
                   </div>
                 )}
               </motion.div>
+
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.05, duration: 0.5 }}
+                className="mt-5 font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.18em] text-ink/50"
+              >
+                14-day free trial · No card · Start from the header
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.1, duration: 0.5 }}
+                className="mt-4"
+              >
+                <Link
+                  to="/showcase"
+                  data-testid="hero-showcase-link"
+                  className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-ink/55 hover:text-brand transition-colors"
+                >
+                  Medical, legal, real estate &amp; more — hear a live demo
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </Link>
+              </motion.div>
             </motion.div>
 
-            {/* Trust signals */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -308,91 +243,11 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ─── Agent Directory — Bento Grid ───────────────────────── */}
-        <section data-testid="agent-directory" className="px-6 lg:px-12 pt-4 pb-20 lg:pb-28">
-          <div className="max-w-7xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="mb-10 lg:mb-14 text-center"
-            >
-              <p className="font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-3">
-                Live right now
-              </p>
-              <h2 className="font-display italic text-[clamp(1.6rem,4vw,3rem)] leading-[1.05] text-ink max-w-2xl mx-auto">
-                Call inbound CS or outbound sales.{" "}
-                <span className="text-ink/65">Use your company name in the demo.</span>
-              </h2>
-            </motion.div>
-
-            <div className={`grid grid-cols-1 ${demoColsClass} gap-4 max-w-5xl mx-auto`}>
-              {demoAgents.map((agent, i) => (
-                <AgentCard
-                  key={agent.tel}
-                  agent={agent}
-                  delay={i * 0.08}
-                  badge={agent.name === "Jake" ? "Sales demo" : "CS demo"}
-                />
-              ))}
-            </div>
-
-            {/* Full vertical demo catalog lives on /showcase */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="mt-8 text-center"
-            >
-              <Link
-                to="/showcase"
-                data-testid="agent-directory-demos-link"
-                className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-ink/65 hover:text-brand transition-colors"
-              >
-                Want an agent for your industry? Hear a live demo
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </Link>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* ─── Final CTA ──────────────────────────────────────────── */}
-        <section data-testid="final-cta" className="px-6 lg:px-12 pb-16 lg:pb-20">
-          <div className="max-w-7xl mx-auto text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.98 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <h2 className="font-display italic text-[clamp(1.8rem,4.5vw,3.5rem)] leading-[1.05] text-ink mb-6">
-                Ready to run your fleet?
-              </h2>
-              <p className="text-ink/65 text-base sm:text-lg max-w-lg mx-auto mb-8">
-                14-day free trial. No credit card. Your first agent goes live in under 10 minutes.
-              </p>
-              <Link
-                to="/signup"
-                data-testid="final-cta-button"
-                className="cta-glow magnetic-hover inline-flex items-center gap-2.5 bg-brand text-white font-medium text-[13px] sm:text-sm px-7 py-3.5 hover:bg-[#8B3FD6] hover:shadow-[0_16px_48px_-8px_rgba(139,63,214,0.4)] transition-all duration-500"
-              >
-                Start free trial
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </motion.div>
-
-            {/* Integration logos — moved here: directly under the CTA, above
-                the proof claims. Fills the open area and shortens the page. */}
-            <div className="mt-16 lg:mt-20 pt-10 lg:pt-12 border-t border-ink/[0.08] max-w-5xl mx-auto">
-              <IntegrationLogos compact />
-            </div>
-          </div>
-        </section>
-
-        {/* ─── Proof Tiles ────────────────────────────────────────── */}
-        <section data-testid="proof-section" className="px-6 lg:px-12 py-20 lg:py-28">
+        {/* ─── Proof ──────────────────────────────────────────────── */}
+        <section
+          data-testid="proof-section"
+          className="px-6 lg:px-12 py-16 lg:py-24 border-t border-ink/[0.06]"
+        >
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08]">
               {STATS.map((stat, i) => (
@@ -401,7 +256,7 @@ export default function LandingPage() {
                   initial={{ opacity: 0, y: 20, scale: 0.96 }}
                   whileInView={{ opacity: 1, y: 0, scale: 1 }}
                   viewport={{ once: true }}
-                  transition={{ delay: i * 0.15, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                  transition={{ delay: i * 0.12, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
                   className="bg-paper p-8 md:p-10 lg:p-12 group stat-shimmer"
                 >
                   <p
@@ -419,7 +274,28 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ─── FAQ — top-of-funnel objection handling ──────────────── */}
+        {/* ─── Integrations ───────────────────────────────────────── */}
+        <section data-testid="integrations-section" className="px-6 lg:px-12 pb-16 lg:pb-24">
+          <div className="max-w-5xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="text-center mb-10"
+            >
+              <p className="font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-3">
+                Your stack
+              </p>
+              <h2 className="font-display italic text-[clamp(1.4rem,3.5vw,2.25rem)] leading-[1.08] text-ink">
+                Plugs into the tools you already run.
+              </h2>
+            </motion.div>
+            <IntegrationLogos compact />
+          </div>
+        </section>
+
+        {/* ─── FAQ ────────────────────────────────────────────────── */}
         <section
           data-testid="faq-section"
           className="px-6 lg:px-12 py-20 lg:py-28 border-t border-ink/[0.08]"
@@ -469,7 +345,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ─── Footer — Inverse ───────────────────────────────────── */}
+        {/* ─── Footer ─────────────────────────────────────────────── */}
         <footer
           data-testid="landing-footer"
           className="footer-brand-glow bg-ink text-paper"
@@ -508,22 +384,13 @@ export default function LandingPage() {
               <p className="font-mono text-[11px] text-paper/40 tracking-[0.08em]">
                 &copy; {new Date().getFullYear()} Wireline Inc.
               </p>
-              <div className="flex items-center gap-4">
-                <Link
-                  to="/signin"
-                  data-testid="footer-signin"
-                  className="text-[13px] text-paper/55 hover:text-paper transition-colors"
-                >
-                  Sign in
-                </Link>
-                <Link
-                  to="/signup"
-                  data-testid="footer-signup"
-                  className="text-[13px] text-paper/55 hover:text-paper transition-colors"
-                >
-                  Create account
-                </Link>
-              </div>
+              <Link
+                to="/signin"
+                data-testid="footer-signin"
+                className="text-[13px] text-paper/55 hover:text-paper transition-colors"
+              >
+                Sign in
+              </Link>
             </div>
           </div>
         </footer>

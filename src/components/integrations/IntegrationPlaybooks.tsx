@@ -4,6 +4,7 @@ import { type ToolIntegration, type AgentToolName } from "../../lib/agent-capabi
 import { getIntegrationPlaybook } from "../../lib/integration-playbooks";
 import IntegrationCapabilityPanel from "../IntegrationCapabilityPanel";
 import { type IntegrationMeta, resolveConnected, ACTIVITY_LOG } from "./PreviewCards";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 interface PlaybookPanelProps {
   activeKey: ToolIntegration;
@@ -48,7 +49,7 @@ export function IntegrationPlaybookPanel({
       transition={{ duration: 0.18, ease: "easeOut" }}
     >
       <div
-        className="rounded-xl border p-3 space-y-3"
+        className="rounded-md border p-3 space-y-3"
         style={{
           borderColor: `${activeIntegration.color}30`,
           background: `${activeIntegration.color}06`,
@@ -58,7 +59,7 @@ export function IntegrationPlaybookPanel({
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2.5">
             <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+              className="w-8 h-8 rounded-md flex items-center justify-center shrink-0"
               style={{
                 background: `${activeIntegration.color}20`,
                 boxShadow: `0 0 10px ${activeIntegration.color}30`,
@@ -75,14 +76,17 @@ export function IntegrationPlaybookPanel({
               </div>
             </div>
           </div>
-          <button
+          <ShadButton
             type="button"
+            disableAnimations
+            variant="ghost"
+            size="icon"
             onClick={onClose}
             aria-label="Close integration panel"
-            className="p-1 rounded-lg hover:bg-white/8 transition-colors shrink-0"
+            className="h-8 w-8 shrink-0 hover:bg-white/8"
           >
             <X className="w-3.5 h-3.5 text-muted/70" />
-          </button>
+          </ShadButton>
         </div>
 
         {/* Connection status */}
@@ -135,7 +139,7 @@ export function IntegrationPlaybookPanel({
               Recent Activity
             </div>
             <div
-              className="rounded-lg overflow-hidden"
+              className="rounded-md overflow-hidden"
               style={{ border: `1px solid ${activeIntegration.color}18` }}
             >
               {ACTIVITY_LOG[activeKey]!.map((item, i) => (

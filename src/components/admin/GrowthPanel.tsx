@@ -52,16 +52,12 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
         <Panel title="Growth Engine" hint="AUTONOMOUS OUTREACH" icon={TrendingUp} scroll>
           <div className="space-y-8">
             {/* Master Control */}
-            <div className="relative group overflow-hidden rounded-2xl glass border border-brand/30 bg-brand/5 p-6 transition-all hover:bg-brand/10">
-              <div
-                className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-20 blur-3xl group-hover:opacity-40 transition-opacity"
-                style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
-              />
+            <div className="relative group overflow-hidden rounded-md wl-panel border border-brand/30 bg-brand/5 p-6 transition-all hover:bg-brand/10">
               <div className="relative z-10 flex items-center justify-between">
                 <div className="flex gap-4">
                   <div
                     className={cn(
-                      "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all",
+                      "w-12 h-12 rounded-md flex items-center justify-center shrink-0 transition-all",
                       settings.prospecting_enabled
                         ? "bg-brand/20 text-brand shadow-[0_0_15px_rgba(107, 43, 153 ,0.3)]"
                         : "bg-black/10 text-muted",
@@ -81,22 +77,27 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     </p>
                   </div>
                 </div>
-                <button
+                <ShadButton
+                  type="button"
+                  variant="ghost"
+                  disableAnimations
                   onClick={() =>
                     setSettings({ ...settings, prospecting_enabled: !settings.prospecting_enabled })
                   }
                   className={cn(
-                    "w-14 h-7 rounded-full transition-all relative flex items-center px-1",
-                    settings.prospecting_enabled ? "bg-brand" : "bg-black/20",
+                    "w-14 h-7 rounded-full p-0 min-h-0 transition-all relative flex items-center px-1",
+                    settings.prospecting_enabled ? "bg-brand hover:bg-brand" : "bg-black/20",
                   )}
+                  aria-pressed={settings.prospecting_enabled}
+                  aria-label="Toggle autonomous prospecting"
                 >
                   <div
                     className={cn(
-                      "w-5 h-5 rounded-full bg-[#FFFFFF] transition-all shadow-lg",
+                      "w-5 h-5 rounded-full bg-paper transition-all shadow-lg",
                       settings.prospecting_enabled ? "translate-x-7" : "translate-x-0",
                     )}
                   />
-                </button>
+                </ShadButton>
               </div>
             </div>
 
@@ -130,12 +131,12 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                         e.key === "Enter" && addTag("target_titles", newTitle, setNewTitle)
                       }
                       placeholder="e.g. CEO, Sales VP"
-                      className="flex-1 text-sm bg-black/5 border border-input rounded-xl px-4 py-2.5 outline-none focus-visible:ring-brand/40 transition-all placeholder:text-muted/70 h-auto"
+                      className="flex-1 text-sm bg-black/5 border border-input rounded-md px-4 py-2.5 outline-none focus-visible:ring-brand/40 transition-all placeholder:text-muted/70 h-auto"
                     />
                     <ShadButton
                       onClick={() => addTag("target_titles", newTitle, setNewTitle)}
                       variant="outline"
-                      className="p-2.5 bg-brand/10 text-brand rounded-xl hover:bg-brand/20 transition-all border-input w-10 h-10 shrink-0 p-0"
+                      className="p-2.5 bg-brand/10 text-brand rounded-md hover:bg-brand/20 transition-all border-input w-10 h-10 shrink-0 p-0"
                     >
                       <Plus className="w-4 h-4" />
                     </ShadButton>
@@ -144,15 +145,20 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     {(settings.target_titles || []).map((t: string) => (
                       <span
                         key={t}
-                        className="px-2.5 py-1 glass border border-brand/20 bg-brand/5 rounded-lg text-[10px] font-bold text-ink flex items-center gap-2 hover:border-brand/40 transition-all"
+                        className="px-2.5 py-1 wl-panel border border-brand/20 bg-brand/5 rounded-md text-[10px] font-bold text-ink flex items-center gap-2 hover:border-brand/40 transition-all"
                       >
                         {t}
-                        <button
+                        <ShadButton
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disableAnimations
                           onClick={() => removeTag("target_titles", t)}
-                          className="text-muted hover:text-rose-500 transition-colors"
+                          className="min-h-0 h-auto w-auto p-0 text-muted hover:text-rose-500"
+                          aria-label={`Remove ${t}`}
                         >
                           <Trash2 className="w-3 h-3" />
-                        </button>
+                        </ShadButton>
                       </span>
                     ))}
                   </div>
@@ -181,12 +187,12 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                         addTag("target_industries", newIndustry, setNewIndustry)
                       }
                       placeholder="e.g. Fintech, SaaS"
-                      className="flex-1 text-sm bg-black/5 border border-input rounded-xl px-4 py-2.5 outline-none focus-visible:ring-brand/40 transition-all placeholder:text-muted/70 h-auto"
+                      className="flex-1 text-sm bg-black/5 border border-input rounded-md px-4 py-2.5 outline-none focus-visible:ring-brand/40 transition-all placeholder:text-muted/70 h-auto"
                     />
                     <ShadButton
                       onClick={() => addTag("target_industries", newIndustry, setNewIndustry)}
                       variant="outline"
-                      className="p-2.5 bg-brand-3/10 text-brand-3 rounded-xl hover:bg-brand-3/20 transition-all border-input w-10 h-10 shrink-0 p-0"
+                      className="p-2.5 bg-brand-3/10 text-brand-3 rounded-md hover:bg-brand-3/20 transition-all border-input w-10 h-10 shrink-0 p-0"
                     >
                       <Plus className="w-4 h-4" />
                     </ShadButton>
@@ -195,15 +201,20 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     {(settings.target_industries || []).map((t: string) => (
                       <span
                         key={t}
-                        className="px-2.5 py-1 glass border border-brand-3/20 bg-brand-3/5 rounded-lg text-[10px] font-bold text-ink flex items-center gap-2 hover:border-brand-3/40 transition-all"
+                        className="px-2.5 py-1 wl-panel border border-brand/20 bg-brand/5 rounded-md text-[10px] font-bold text-ink flex items-center gap-2 hover:border-brand/40 transition-all"
                       >
                         {t}
-                        <button
+                        <ShadButton
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disableAnimations
                           onClick={() => removeTag("target_industries", t)}
-                          className="text-muted hover:text-rose-500 transition-colors"
+                          className="min-h-0 h-auto w-auto p-0 text-muted hover:text-rose-500"
+                          aria-label={`Remove ${t}`}
                         >
                           <Trash2 className="w-3 h-3" />
-                        </button>
+                        </ShadButton>
                       </span>
                     ))}
                   </div>
@@ -231,12 +242,12 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                         e.key === "Enter" && addTag("target_states", newState, setNewState)
                       }
                       placeholder="e.g. CA, NY, Texas"
-                      className="flex-1 text-sm bg-black/5 border border-input rounded-xl px-4 py-2.5 outline-none focus-visible:ring-brand/40 transition-all placeholder:text-muted/70 h-auto"
+                      className="flex-1 text-sm bg-black/5 border border-input rounded-md px-4 py-2.5 outline-none focus-visible:ring-brand/40 transition-all placeholder:text-muted/70 h-auto"
                     />
                     <ShadButton
                       onClick={() => addTag("target_states", newState, setNewState)}
                       variant="outline"
-                      className="p-2.5 bg-brand/10 text-brand rounded-xl hover:bg-brand/20 transition-all border-input w-10 h-10 shrink-0 p-0"
+                      className="p-2.5 bg-brand/10 text-brand rounded-md hover:bg-brand/20 transition-all border-input w-10 h-10 shrink-0 p-0"
                     >
                       <Plus className="w-4 h-4" />
                     </ShadButton>
@@ -245,15 +256,20 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     {(settings.target_states || []).map((t: string) => (
                       <span
                         key={t}
-                        className="px-2.5 py-1 glass border border-black/20 bg-black/5 rounded-lg text-[10px] font-bold text-ink flex items-center gap-2 hover:border-black/30 transition-all"
+                        className="px-2.5 py-1 wl-panel border border-black/20 bg-black/5 rounded-md text-[10px] font-bold text-ink flex items-center gap-2 hover:border-black/30 transition-all"
                       >
                         {t}
-                        <button
+                        <ShadButton
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disableAnimations
                           onClick={() => removeTag("target_states", t)}
-                          className="text-muted hover:text-rose-500 transition-colors"
+                          className="min-h-0 h-auto w-auto p-0 text-muted hover:text-rose-500"
+                          aria-label={`Remove ${t}`}
                         >
                           <Trash2 className="w-3 h-3" />
-                        </button>
+                        </ShadButton>
                       </span>
                     ))}
                   </div>
@@ -281,8 +297,11 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                       { label: "501-1k", value: "501,1000" },
                       { label: "1k+", value: "1001,1000000" },
                     ].map((range) => (
-                      <button
+                      <ShadButton
                         key={range.value}
+                        type="button"
+                        variant="ghost"
+                        disableAnimations
                         onClick={() => {
                           const current = settings.target_employee_ranges || [];
                           if (current.includes(range.value)) {
@@ -300,14 +319,14 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                           }
                         }}
                         className={cn(
-                          "px-2 py-2 rounded-xl border text-[10px] font-bold transition-all",
+                          "px-2 py-2 rounded-md border text-[10px] font-bold h-auto min-h-0",
                           (settings.target_employee_ranges || []).includes(range.value)
                             ? "bg-brand/10 border-brand/40 text-brand shadow-[0_0_10px_rgba(107, 43, 153 ,0.1)]"
                             : "bg-black/5 border-input text-muted/70 hover:border-black/20",
                         )}
                       >
                         {range.label}
-                      </button>
+                      </ShadButton>
                     ))}
                   </div>
                 </div>
@@ -336,7 +355,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
       <div className="space-y-3">
         <Panel title="Growth Intelligence" hint="COGNITIVE FEEDBACK" icon={Sparkles} scroll>
           <div className="space-y-4">
-            <div className="p-5 rounded-2xl glass border border-input bg-brand/5 space-y-4">
+            <div className="p-5 rounded-md wl-panel border border-input bg-brand/5 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] uppercase tracking-[0.3em] font-black text-brand">
                   ICP Efficiency
@@ -347,7 +366,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                 <span className="text-4xl font-display text-ink">
                   92<span className="text-lg text-muted">%</span>
                 </span>
-                <TrendingUp className="w-4 h-4 text-emerald-500 mb-1" />
+                <TrendingUp className="w-4 h-4 text-brand mb-1" />
               </div>
               <p className="text-[10px] text-muted leading-relaxed">
                 Your current configuration has a 92% match rate with high-intent decision makers in
@@ -367,12 +386,12 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
               </div>
               {[
                 { label: "Sourced", value: "1,284", color: "text-ink" },
-                { label: "Qualified", value: "412", color: "text-brand-3" },
+                { label: "Qualified", value: "412", color: "text-brand" },
                 { label: "In-Call", value: "28", color: "text-brand" },
               ].map((stat) => (
                 <div
                   key={stat.label}
-                  className="p-3 rounded-xl glass border border-input flex items-center justify-between"
+                  className="p-3 rounded-md wl-panel border border-input flex items-center justify-between"
                 >
                   <span className="text-[10px] uppercase tracking-[0.2em] text-muted">
                     {stat.label}
@@ -382,7 +401,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
               ))}
             </div>
 
-            <div className="p-4 rounded-xl bg-black/20 border border-white/5">
+            <div className="p-4 rounded-md bg-black/20 border border-white/5">
               <p className="text-[9px] uppercase tracking-widest text-muted/70 mb-2">
                 Strategy Advice
               </p>

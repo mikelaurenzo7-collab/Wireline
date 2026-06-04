@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import { motion } from "motion/react";
 import { cn } from "../../lib/utils";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 export type ClientSubTab = {
   id: string;
@@ -43,14 +44,16 @@ export default function ClientSubTabs({
           const active = tab.id === activeId;
           const Icon = tab.icon;
           return (
-            <button
+            <ShadButton
               key={tab.id}
               type="button"
+              variant="ghost"
+              disableAnimations
               role="tab"
               aria-selected={active}
               onClick={() => onChange(tab.id)}
               className={cn(
-                "touch-press relative shrink-0 inline-flex min-h-9 sm:min-h-10 items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 transition-colors text-[10px] sm:text-[11px] uppercase tracking-[0.1em] font-medium whitespace-nowrap",
+                "touch-press relative shrink-0 inline-flex min-h-9 sm:min-h-10 h-auto items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 transition-colors text-[10px] sm:text-[11px] uppercase tracking-[0.1em] font-medium whitespace-nowrap rounded-none",
                 active ? "app-tab-active" : "text-muted hover:text-ink hover:bg-black/4",
               )}
             >
@@ -64,7 +67,7 @@ export default function ClientSubTabs({
               )}
               {Icon && <Icon className="relative z-[1] w-3.5 h-3.5" />}
               <span className="relative z-[1]">{tab.label}</span>
-            </button>
+            </ShadButton>
           );
         })}
       </div>

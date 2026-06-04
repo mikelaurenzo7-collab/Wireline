@@ -19,6 +19,7 @@ import { authFetch, safeJson, TRIAL_GATE_EVENT, type TrialGateBlockDetail } from
 import { cn } from "../lib/utils";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { getStoredSignupIntent, recommendedPlanFromIntent } from "../lib/signup-intent";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 /**
  * Self-serve tiers we surface in the picker. Enterprise is intentionally
@@ -205,15 +206,19 @@ export default function TrialGateModal() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 24 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full max-w-3xl rounded-t-3xl sm:rounded-3xl bg-paper border border-black/10 shadow-2xl overflow-y-auto overscroll-contain max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-0.75rem)]"
+            className="relative w-full max-w-3xl rounded-t-md sm:rounded-md bg-paper border border-black/10 shadow-2xl overflow-y-auto overscroll-contain max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-0.75rem)]"
           >
-            <button
+            <ShadButton
+              type="button"
+              disableAnimations
+              variant="ghost"
+              size="icon"
               onClick={() => setDetail(null)}
               aria-label="Close"
-              className="absolute top-4 right-4 w-11 h-11 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors z-10"
+              className="absolute top-4 right-4 w-11 h-11 sm:w-9 sm:h-9 rounded-full text-muted hover:text-ink hover:bg-black/5 z-10 after:hidden"
             >
               <X className="w-4 h-4" />
-            </button>
+            </ShadButton>
 
             <div className="px-6 sm:px-8 pt-8 pb-6">
               <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-brand mb-3 font-medium">
@@ -235,16 +240,18 @@ export default function TrialGateModal() {
                   const isPending = pending === tier.id;
                   const isRecommended = tier.id === recommendedPlanId;
                   return (
-                    <button
+                    <ShadButton
                       key={tier.id}
+                      type="button"
+                      disableAnimations
+                      variant="outline"
                       onClick={() => checkout(tier.id)}
                       disabled={!!pending}
                       className={cn(
-                        "relative text-left rounded-2xl border p-4 transition-all touch-manipulation",
+                        "relative h-auto w-full justify-start text-left rounded-md p-4 touch-manipulation",
                         isRecommended
                           ? "border-brand/50 bg-brand/5 hover:border-brand hover:bg-brand/10"
-                          : "border-black/10 hover:border-brand/30 hover:bg-black/3",
-                        "disabled:opacity-50 disabled:cursor-not-allowed",
+                          : "hover:border-brand/30 hover:bg-black/3",
                       )}
                     >
                       {isRecommended && (
@@ -273,7 +280,7 @@ export default function TrialGateModal() {
                           </>
                         )}
                       </div>
-                    </button>
+                    </ShadButton>
                   );
                 })}
               </div>

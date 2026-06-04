@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { AnimatePresence } from "motion/react";
 import { Sparkles, RefreshCw } from "lucide-react";
 import { cn } from "../lib/utils";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 import WirelineMark from "./WirelineMark";
 import {
   AGENT_TOOL_CATALOG,
@@ -57,7 +58,7 @@ export default function AgentIntegrationCanvas({
       .length;
 
   return (
-    <div className="rounded-xl glass border border-white/8 p-3 space-y-3">
+    <div className="rounded-md wl-panel border border-white/8 p-3 space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 pb-2 border-b border-white/8">
         <div className="flex items-center gap-2">
@@ -70,15 +71,18 @@ export default function AgentIntegrationCanvas({
             </p>
           </div>
         </div>
-        <button
+        <ShadButton
           type="button"
+          variant="outline"
+          size="sm"
+          disableAnimations
           onClick={onResetToDefaults}
           disabled={usingRoleDefaults}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/80 hover:border-brand/40 hover:text-brand transition-colors disabled:opacity-40"
+          className="rounded-full text-[10px] uppercase tracking-[0.25em]"
         >
           <RefreshCw className="w-2.5 h-2.5" />
           Role defaults
-        </button>
+        </ShadButton>
       </div>
 
       {/* Status chips */}
@@ -270,13 +274,15 @@ export default function AgentIntegrationCanvas({
             const connected = resolveConnected(n.key, integrationStatus);
             const isActive = activeKey === n.key;
             return (
-              <button
+              <ShadButton
                 key={n.key}
                 type="button"
+                variant="ghost"
+                disableAnimations
                 onClick={() => setActiveKey(isActive ? null : n.key)}
                 aria-pressed={isActive}
                 aria-label={`${n.label} integration — ${enabledCount} tools enabled`}
-                className="absolute flex flex-col items-center gap-1 transition-transform duration-150"
+                className="absolute flex flex-col items-center gap-1 h-auto p-0 hover:bg-transparent transition-transform duration-150"
                 style={{
                   left: `${n.cx}%`,
                   top: `${n.cy}%`,
@@ -287,7 +293,7 @@ export default function AgentIntegrationCanvas({
                 {/* Icon box with count badge */}
                 <div className="relative">
                   <div
-                    className="w-9 h-9 rounded-2xl flex items-center justify-center transition-all duration-150"
+                    className="w-9 h-9 rounded-md flex items-center justify-center transition-all duration-150"
                     style={{
                       background: isActive
                         ? `${n.color}28`
@@ -351,10 +357,10 @@ export default function AgentIntegrationCanvas({
                   </span>
                   <div
                     className="w-1 h-1 rounded-full transition-colors duration-300"
-                    style={{ background: connected ? "#8B3FD6" : "rgba(255,255,255,0.2)" }}
+                    style={{ background: connected ? "var(--brand)" : "rgba(255,255,255,0.2)" }}
                   />
                 </div>
-              </button>
+              </ShadButton>
             );
           })}
         </div>
@@ -377,12 +383,14 @@ export default function AgentIntegrationCanvas({
               const connected = resolveConnected(meta.key, integrationStatus);
               const isActive = activeKey === meta.key;
               return (
-                <button
+                <ShadButton
                   key={meta.key}
                   type="button"
+                  variant="ghost"
+                  disableAnimations
                   onClick={() => setActiveKey(isActive ? null : meta.key)}
                   aria-pressed={isActive}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border transition-all shrink-0"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border h-auto shrink-0"
                   style={{
                     borderColor: isActive
                       ? meta.color
@@ -420,9 +428,9 @@ export default function AgentIntegrationCanvas({
                   )}
                   <div
                     className="w-1 h-1 rounded-full"
-                    style={{ background: connected ? "#8B3FD6" : "rgba(255,255,255,0.2)" }}
+                    style={{ background: connected ? "var(--brand)" : "rgba(255,255,255,0.2)" }}
                   />
-                </button>
+                </ShadButton>
               );
             })}
           </div>

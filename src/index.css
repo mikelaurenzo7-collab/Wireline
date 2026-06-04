@@ -200,6 +200,172 @@ html, body, .marketing-surface, .app-surface {
   box-shadow: 0 0 24px rgba(155, 92, 224, 0.3);
 }
 
+/* Director live session — subtle activity shimmer */
+.director-live-panel {
+  isolation: isolate;
+}
+.director-live-shimmer {
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(139, 63, 214, 0.06) 50%,
+    transparent 60%
+  );
+  background-size: 200% 100%;
+  animation: director-live-sweep 2.8s ease-in-out infinite;
+}
+@keyframes director-live-sweep {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .director-live-shimmer {
+    animation: none;
+    opacity: 0.15;
+  }
+}
+
+/* ── DIRECTOR MISSION CONTROL ──
+ * Chat surface: ambient depth (no grid), bubbles, composer, proposal rail */
+.wl-mission-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.wl-director-thread-header {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.72) 0%,
+    rgba(255, 255, 255, 0.45) 100%
+  );
+  backdrop-filter: blur(10px) saturate(120%);
+}
+.dark .wl-director-thread-header {
+  background: linear-gradient(
+    180deg,
+    rgba(15, 12, 23, 0.85) 0%,
+    rgba(15, 12, 23, 0.55) 100%
+  );
+}
+
+.wl-orchestration-step {
+  backdrop-filter: blur(8px);
+}
+.wl-orchestration-step[data-status="active"] {
+  box-shadow: 0 4px 20px rgba(139, 63, 214, 0.08);
+}
+.wl-orchestration-step[data-status="done"] {
+  box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.08);
+}
+
+.wl-live-output {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+.dark .wl-live-output {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.wl-director-bubble {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px) saturate(130%);
+  border: 1px solid rgba(139, 63, 214, 0.1);
+  box-shadow:
+    0 4px 24px rgba(26, 22, 20, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+.dark .wl-director-bubble {
+  background: rgba(15, 12, 23, 0.88);
+  border-color: rgba(155, 92, 224, 0.12);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.wl-operator-bubble {
+  background: linear-gradient(145deg, #8B3FD6 0%, #6B2FA8 100%);
+  box-shadow:
+    0 8px 28px rgba(139, 63, 214, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.wl-composer-dock {
+  border-radius: 1.25rem;
+}
+.wl-composer-dock:focus-within {
+  box-shadow:
+    0 12px 48px rgba(139, 63, 214, 0.1),
+    0 0 0 1px rgba(139, 63, 214, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.wl-proposal-card {
+  position: relative;
+  overflow: hidden;
+}
+.wl-proposal-rail::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, rgba(139, 63, 214, 0.55), rgba(139, 63, 214, 0.08));
+  border-radius: 3px 0 0 3px;
+}
+
+.wl-director-doc h2,
+.wl-director-doc h3,
+.wl-director-doc h4 {
+  letter-spacing: -0.02em;
+}
+.wl-director-doc ul li::marker {
+  color: rgba(139, 63, 214, 0.45);
+}
+
+.wl-live-feed-header {
+  letter-spacing: 0.18em;
+}
+
+.wl-director-hero-orb {
+  position: relative;
+}
+.wl-director-hero-orb::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(139, 63, 214, 0.16), transparent 70%);
+  filter: blur(14px);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .wl-director-hero-orb::before {
+    animation: orbit-pulse 4.5s ease-in-out infinite;
+  }
+}
+
+.wl-starter-chip {
+  border-radius: 9999px;
+  border: 1px solid rgba(139, 63, 214, 0.15);
+  background: rgba(255, 255, 255, 0.55);
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+}
+.wl-starter-chip:hover {
+  border-color: rgba(139, 63, 214, 0.35);
+  background: rgba(255, 255, 255, 0.78);
+  transform: translateY(-1px);
+}
+.dark .wl-starter-chip {
+  background: rgba(15, 12, 23, 0.45);
+}
+.dark .wl-starter-chip:hover {
+  background: rgba(15, 12, 23, 0.65);
+}
+
+.wl-integration-live-card[data-proposal="true"] {
+  border-style: dashed;
+  border-color: rgba(139, 63, 214, 0.22);
+}
+
 /* ── UTILITY CAPTIONS / LABELS ──
  * Premium uppercase labels with positive tracking for small sizes */
 .wl-label {
@@ -233,11 +399,11 @@ html, body, .marketing-surface, .app-surface {
   --radius: 0.75rem;
 
   /* Surface colors */
-  --background: #EFE9DC;
+  --background: #F5F0E6;
   --foreground: #1A1614;
-  --card: rgba(239, 233, 220, 0.80);
+  --card: rgba(245, 240, 230, 0.88);
   --card-foreground: #1A1614;
-  --popover: rgba(239, 233, 220, 0.92);
+  --popover: rgba(245, 240, 230, 0.96);
   --popover-foreground: #1A1614;
 
   /* Brand primary — lighter editorial violet that matches the hero accent.
@@ -285,7 +451,7 @@ html, body, .marketing-surface, .app-surface {
 
   /* Core theme variables */
   --ink: #1A1614;
-  --paper: #EFE9DC;
+  --paper: #F5F0E6;
 
   /* Muted typography — resolves to the warm cream-ink fades on light
    * and the cool zinc fades on dark. Referenced by --color-muted /

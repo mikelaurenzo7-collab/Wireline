@@ -200,7 +200,7 @@ export default function TriageInbox() {
               onClick={fetchData}
               disabled={loading}
               variant="outline"
-              className="h-9 px-3 rounded-full glass border border-input text-eyebrow hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
+              className="h-9 px-3 rounded-full wl-panel border border-input text-eyebrow hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
             >
               {loading ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -324,7 +324,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
     <ul className="p-2 space-y-2 list-none stagger-children">
       {items.map((c) => (
         <li key={c.id} className="relative list-none group">
-          <Card className="bg-black/10 border-white/5 hover:border-brand/20 transition-all p-3 flex items-center gap-3 rounded-xl relative">
+          <Card className="bg-black/10 border-white/5 hover:border-brand/20 transition-all p-3 flex items-center gap-3 rounded-md relative">
             {/* Absolute overlay link covering the entire row target */}
             <Link
               to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
@@ -380,7 +380,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
                         {c.summary}
                       </p>
                     </TooltipTrigger>
-                    <TooltipContent className="bg-popover border border-input p-2.5 max-w-xs text-xs text-ink rounded-lg shadow-xl">
+                    <TooltipContent className="bg-popover border border-input p-2.5 max-w-xs text-xs text-ink rounded-md shadow-xl">
                       {c.summary}
                     </TooltipContent>
                   </Tooltip>
@@ -423,7 +423,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
               <ShadButton
                 variant="outline"
                 size="icon"
-                className="w-8 h-8 rounded-xl bg-background/50 border border-input flex items-center justify-center text-ink/70 transition-all hover:border-brand/25 hover:text-brand p-0"
+                className="w-8 h-8 rounded-md bg-background/50 border border-input flex items-center justify-center text-ink/70 transition-all hover:border-brand/25 hover:text-brand p-0"
               >
                 <ChevronRight className="w-3.5 h-3.5" />
               </ShadButton>
@@ -446,7 +446,7 @@ function ComplianceList({ items }: { items: FleetTask[] }) {
         <li key={t.id} className="relative list-none">
           <Card
             className={cn(
-              "p-3 flex items-start gap-3 rounded-xl transition-all",
+              "p-3 flex items-start gap-3 rounded-md transition-all",
               t.priority === "high"
                 ? "bg-rose-950/15 border-rose-500/20 hover:border-rose-500/40"
                 : t.priority === "medium"
@@ -584,7 +584,7 @@ const KnowledgeGapRow: React.FC<{
       transition={{ duration: 0.18 }}
       className="mb-2 list-none"
     >
-      <Card className="bg-black/10 border-white/5 hover:border-brand/20 transition-all p-3 flex items-start gap-3 rounded-xl">
+      <Card className="bg-black/10 border-white/5 hover:border-brand/20 transition-all p-3 flex items-start gap-3 rounded-md">
         <div className="flex items-start gap-3 w-full">
           <BookOpen className="w-4 h-4 text-brand shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0 text-left">
@@ -596,7 +596,7 @@ const KnowledgeGapRow: React.FC<{
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={2}
-                className="w-full px-3 py-2 rounded-lg bg-black/25 border border-input outline-none text-ink text-[12px] focus:ring-1 focus:ring-brand/40 focus:border-brand/40 transition-all resize-none"
+                className="w-full px-3 py-2 rounded-md bg-black/25 border border-input outline-none text-ink text-[12px] focus:ring-1 focus:ring-brand/40 focus:border-brand/40 transition-all resize-none"
               />
             ) : (
               <p className="text-[12px] text-ink/90 leading-snug">{cleaned}</p>
@@ -640,7 +640,7 @@ const KnowledgeGapRow: React.FC<{
               size="sm"
               onClick={promote}
               disabled={busy || discarding}
-              className="h-7 rounded-xl bg-brand/20 hover:bg-brand/35 border border-brand/40 text-brand px-3 text-[9px] uppercase tracking-[0.28em] font-normal transition-all flex items-center gap-1"
+              className="h-7 rounded-md bg-brand/20 hover:bg-brand/35 border border-brand/40 text-brand px-3 text-[9px] uppercase tracking-[0.28em] font-normal transition-all flex items-center gap-1"
             >
               {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
               Promote
@@ -714,7 +714,7 @@ const OpenTaskRow: React.FC<{
       transition={{ duration: 0.18 }}
       className="mb-2 list-none"
     >
-      <Card className="bg-black/10 border-white/5 hover:border-brand/20 transition-all p-3 flex items-start gap-3 rounded-xl">
+      <Card className="bg-black/10 border-white/5 hover:border-brand/20 transition-all p-3 flex items-start gap-3 rounded-md">
         <ShadButton
           variant="outline"
           size="icon"
@@ -780,7 +780,7 @@ function Escalations({ items }: { items: EscalationCall[] }) {
     <ul className="p-2 space-y-2 list-none">
       {items.map((c) => (
         <li key={c.id} className="relative list-none group">
-          <Card className="bg-rose-950/10 border-rose-500/10 hover:border-rose-500/30 transition-all p-3 flex items-start gap-3 rounded-xl relative">
+          <Card className="bg-rose-950/10 border-rose-500/10 hover:border-rose-500/30 transition-all p-3 flex items-start gap-3 rounded-md relative">
             {/* Absolute overlay link covering the entire row target */}
             <Link
               to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}

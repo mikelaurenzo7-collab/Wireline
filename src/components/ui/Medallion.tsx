@@ -57,7 +57,7 @@ export function Medallion({
       )}
       <div
         className={cn(
-          "group relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand via-[#9B5CE0] to-brand-deep text-on-brand flex items-center justify-center shadow-sm shadow-brand/25 ring-1 ring-white/10",
+          "group relative overflow-hidden rounded-md bg-gradient-to-br from-brand via-[#9B5CE0] to-brand-deep text-on-brand flex items-center justify-center shadow-sm shadow-brand/25 ring-1 ring-white/10",
           shimmer && "medallion-glint",
           sizeClasses,
         )}

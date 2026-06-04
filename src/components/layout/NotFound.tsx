@@ -87,11 +87,11 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
             <NotFoundCard to="/" icon={Home} label="Home" hint="Back to landing" accent="#8B3FD6" />
             <a
               href="tel:+16305811834"
-              className="group relative flex items-center gap-3 p-4 rounded-2xl glass border border-black/10 hover:border-black/20 transition-colors"
+              className="group relative flex items-center gap-3 p-4 rounded-md wl-panel border border-black/10 hover:border-black/20 transition-colors"
               style={{ boxShadow: "0 8px 24px -12px rgba(107, 43, 153 ,0.35)" }}
             >
               <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                className="w-9 h-9 rounded-md flex items-center justify-center shrink-0"
                 style={{
                   background: "#8B3FD6",
                   boxShadow: "0 4px 12px -4px rgba(107, 43, 153 ,0.55)",
@@ -179,10 +179,10 @@ function NotFoundCard({
   return (
     <Link
       to={to}
-      className="group relative flex items-center gap-3 p-4 rounded-2xl glass border border-black/10 hover:border-black/20 transition-colors"
+      className="group relative flex items-center gap-3 p-4 rounded-md wl-panel border border-black/10 hover:border-black/20 transition-colors"
     >
       <div
-        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border border-black/8"
+        className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border border-black/8"
         style={{
           background: `linear-gradient(135deg, ${accent}25, ${accent}10)`,
           color: accent,

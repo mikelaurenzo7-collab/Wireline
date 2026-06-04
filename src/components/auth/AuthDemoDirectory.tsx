@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ChevronDown, Phone } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 import type { ContactAgent } from "../../data/contact-agents";
 
 function AgentContactCard({
@@ -19,7 +20,7 @@ function AgentContactCard({
       <div className="flex items-center gap-2.5 min-w-0">
         <div
           className={cn(
-            "rounded-lg flex items-center justify-center shrink-0",
+            "rounded-md flex items-center justify-center shrink-0",
             landing ? "w-9 h-9" : "w-6 h-6",
           )}
           style={{ background: isDemo ? "rgba(0,0,0,0.04)" : `${agent.tint}18` }}
@@ -76,7 +77,7 @@ function AgentContactCard({
       return (
         <a
           href={`tel:${agent.tel}`}
-          className="block rounded-xl border border-black/8 bg-paper/70 px-3 py-3 min-h-[56px] hover:border-brand/30 hover:bg-paper active:scale-[0.99] transition-all"
+          className="block rounded-md border border-black/8 bg-paper/70 px-3 py-3 min-h-[56px] hover:border-brand/30 hover:bg-paper active:scale-[0.99] transition-all"
           aria-label={`Call ${agent.name} at ${agent.display}`}
         >
           {card}
@@ -85,17 +86,17 @@ function AgentContactCard({
     }
 
     return (
-      <div className="rounded-lg border border-black/8 bg-white/65 px-2 py-1.5 hover:border-brand/20 transition-colors">
+      <div className="rounded-md border border-black/8 bg-white/65 px-2 py-1.5 hover:border-brand/20 transition-colors">
         {card}
       </div>
     );
   }
 
   return (
-    <div className="relative rounded-xl p-3 overflow-hidden border border-black/8 bg-white/60">
+    <div className="relative rounded-md p-3 overflow-hidden border border-black/8 bg-white/60">
       <div className="flex items-start gap-3">
         <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/10"
+          className="w-8 h-8 rounded-md flex items-center justify-center shrink-0 border border-white/10"
           style={{ background: isDemo ? "rgba(255,255,255,0.03)" : `${agent.tint}1a` }}
         >
           <Phone
@@ -179,10 +180,12 @@ export function AuthDemoDirectory({
 
   return (
     <div className={cn("space-y-3", className)}>
-      <button
+      <ShadButton
         type="button"
+        disableAnimations
+        variant="outline"
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center justify-between gap-3 rounded-xl border border-[#8B3FD6]/20 bg-[#8B3FD6]/5 px-3.5 py-3 min-h-[48px] text-left transition-colors hover:bg-[#8B3FD6]/10 active:bg-[#8B3FD6]/14"
+        className="w-full h-auto min-h-[48px] justify-between gap-3 rounded-md border-[#8B3FD6]/20 bg-[#8B3FD6]/5 px-3.5 py-3 text-left hover:bg-[#8B3FD6]/10 active:bg-[#8B3FD6]/14"
         aria-expanded={expanded}
       >
         <div>
@@ -201,7 +204,7 @@ export function AuthDemoDirectory({
             expanded && "rotate-180",
           )}
         />
-      </button>
+      </ShadButton>
 
       {!expanded && featured && <AgentContactCard agent={featured} isDemo={false} />}
 

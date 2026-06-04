@@ -140,7 +140,7 @@ export default function ObservabilityDashboard() {
       </div>
 
       {metrics?.noData && (
-        <div className="rounded-xl border border-white/5 bg-[#120f14]/50 p-6 text-center space-y-2">
+        <div className="rounded-md border border-white/5 bg-[#120f14]/50 p-6 text-center space-y-2">
           <Activity className="h-8 w-8 text-brand mx-auto animate-pulse" />
           <h4 className="text-sm font-semibold text-ink">Waiting for Telemetry</h4>
           <p className="text-xs text-muted max-w-md mx-auto">
@@ -152,7 +152,7 @@ export default function ObservabilityDashboard() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="glass border border-white/5 p-5 rounded-xl shadow-sm">
+        <div className="wl-panel border border-white/5 p-5 rounded-md shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-muted">Avg TTFT</span>
             <Zap className="h-4 w-4 text-emerald-500" />
@@ -168,7 +168,7 @@ export default function ObservabilityDashboard() {
           <div className="mt-1 text-xs text-emerald-500 font-medium">Optimum latency</div>
         </div>
 
-        <div className="glass border border-white/5 p-5 rounded-xl shadow-sm">
+        <div className="wl-panel border border-white/5 p-5 rounded-md shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-muted">p99 Latency</span>
             <Clock className="h-4 w-4 text-amber-500" />
@@ -184,7 +184,7 @@ export default function ObservabilityDashboard() {
           <div className="mt-1 text-xs text-muted">Time-to-first-token limit</div>
         </div>
 
-        <div className="glass border border-white/5 p-5 rounded-xl shadow-sm">
+        <div className="wl-panel border border-white/5 p-5 rounded-md shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-muted">Pipeline Uptime</span>
             <Activity className="h-4 w-4 text-emerald-500" />
@@ -200,7 +200,7 @@ export default function ObservabilityDashboard() {
           <div className="mt-1 text-xs text-muted">Zero dropping</div>
         </div>
 
-        <div className="glass border border-white/5 p-5 rounded-xl shadow-sm">
+        <div className="wl-panel border border-white/5 p-5 rounded-md shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-muted">STT Error Rate</span>
             <ServerCrash className="h-4 w-4 text-emerald-500" />

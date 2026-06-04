@@ -13,9 +13,9 @@ interface BrandingPanelProps {
 export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: BrandingPanelProps) {
   return (
     <div className="flex flex-col gap-5">
-      <div className="client-panel p-5 md:p-6 rounded-2xl glass border border-input">
+      <div className="client-panel p-5 md:p-6 rounded-md wl-panel border border-input">
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-8 h-8 rounded-xl bg-brand/10 border border-brand/18 text-brand shadow-sm shadow-brand/10 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-md bg-brand/10 border border-brand/18 text-brand shadow-sm shadow-brand/10 flex items-center justify-center shrink-0">
             <Bot className="w-4 h-4" />
           </div>
           <div className="min-w-0">
@@ -51,7 +51,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
               <div className="flex gap-2.5">
                 <Input
                   type="color"
-                  className="brand-color-swatch w-11 h-11 rounded-xl bg-transparent border-input cursor-pointer p-0"
+                  className="brand-color-swatch w-11 h-11 rounded-md bg-transparent border-input cursor-pointer p-0"
                   value={settings.primary_color || "#8B3FD6"}
                   onChange={(e) => onUpdate({ ...settings, primary_color: e.target.value })}
                 />
@@ -65,9 +65,9 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
             </div>
           </div>
 
-          <div className="preview-panel flex flex-col items-center justify-center p-5 border border-input bg-white/25 rounded-2xl">
+          <div className="preview-panel flex flex-col items-center justify-center p-5 border border-input bg-white/25 rounded-md">
             <p className="app-form-eyebrow text-muted/70 mb-5">Preview</p>
-            <div className="brand-preview-card w-full p-5 rounded-3xl bg-paper relative overflow-hidden group">
+            <div className="brand-preview-card w-full p-5 rounded-md bg-paper relative overflow-hidden group">
               <div
                 className="absolute inset-0 opacity-10 pointer-events-none"
                 style={{

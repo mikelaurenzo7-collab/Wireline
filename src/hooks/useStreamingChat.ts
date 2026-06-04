@@ -23,6 +23,8 @@ export interface StreamingState {
   thinkingText: string;
   /** Whether the model is using deep (Opus) analysis. */
   isDeep: boolean;
+  /** True once the server has started the SSE stream (meta or later). */
+  streamEstablished: boolean;
   /** Duration of thinking in ms (set when thinking_end fires). */
   thinkingDurationMs?: number;
   /** The final reply payload (set when reply or done fires). */
@@ -37,13 +39,39 @@ const INITIAL_STATE: StreamingState = {
   phase: "idle",
   thinkingText: "",
   isDeep: false,
+  streamEstablished: false,
 };
 
 interface UseStreamingChatOptions {
   /** Called when the full response is complete. */
   onComplete?: (data: Record<string, unknown>) => void;
   /** Called on error. */
-  onError?: (message: string) => void;
+  onError?: (message: string, context: { streamEstablished: boolean }) => void;
+}
+
+/** Parse one SSE event block from a line batch. Exported for tests. */
+export function parseSseEvents(
+  lines: string[],
+  handleEvent: (event: string, data: Record<string, unknown>) => void,
+): void {
+  let currentEvent = "";
+  for (const rawLine of lines) {
+    const line = rawLine.replace(/\r$/, "");
+    if (line.startsWith("event: ")) {
+      currentEvent = line.slice(7).trim();
+    } else if (line.startsWith("data: ") && currentEvent) {
+      const dataStr = line.slice(6);
+      try {
+        const data = JSON.parse(dataStr) as Record<string, unknown>;
+        handleEvent(currentEvent, data);
+      } catch {
+        // Non-JSON data line, skip
+      }
+      currentEvent = "";
+    } else if (line === "") {
+      currentEvent = "";
+    }
+  }
 }
 
 /**
@@ -53,8 +81,16 @@ interface UseStreamingChatOptions {
 export function useStreamingChat(endpoint: string, options?: UseStreamingChatOptions) {
   const [state, setState] = useState<StreamingState>(INITIAL_STATE);
   const abortRef = useRef<AbortController | null>(null);
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+  const completionRef = useRef(false);
+  const latestReplyRef = useRef<Record<string, unknown> | undefined>(undefined);
+  const streamEstablishedRef = useRef(false);
 
   const reset = useCallback(() => {
+    completionRef.current = false;
+    latestReplyRef.current = undefined;
+    streamEstablishedRef.current = false;
     setState(INITIAL_STATE);
   }, []);
 
@@ -64,14 +100,30 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
     setState((s) => (s.phase === "idle" || s.phase === "done" ? s : { ...s, phase: "idle" }));
   }, []);
 
+  const finalizeComplete = useCallback((data: Record<string, unknown>) => {
+    if (completionRef.current) return;
+    completionRef.current = true;
+    optionsRef.current?.onComplete?.(data);
+  }, []);
+
+  const finalizeError = useCallback((message: string) => {
+    if (completionRef.current) return;
+    completionRef.current = true;
+    optionsRef.current?.onError?.(message, {
+      streamEstablished: streamEstablishedRef.current,
+    });
+  }, []);
+
   const send = useCallback(
     async (body: Record<string, unknown>) => {
-      // Abort any existing stream
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
 
-      setState({ phase: "connecting", thinkingText: "", isDeep: false });
+      completionRef.current = false;
+      latestReplyRef.current = undefined;
+      streamEstablishedRef.current = false;
+      setState({ phase: "connecting", thinkingText: "", isDeep: false, streamEstablished: false });
 
       const token = await getFreshAccessToken();
       try {
@@ -89,13 +141,14 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
           const errText = await res.text().catch(() => "Stream failed");
           const msg = `Stream error: ${res.status} ${errText}`;
           setState({ ...INITIAL_STATE, phase: "error", error: msg });
-          options?.onError?.(msg);
+          finalizeError(msg);
           return;
         }
 
         if (!res.body) {
-          setState({ ...INITIAL_STATE, phase: "error", error: "No response body" });
-          options?.onError?.("No response body");
+          const msg = "No response body";
+          setState({ ...INITIAL_STATE, phase: "error", error: msg });
+          finalizeError(msg);
           return;
         }
 
@@ -103,111 +156,120 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
         const decoder = new TextDecoder();
         let buffer = "";
 
+        const handleEvent = (event: string, data: Record<string, unknown>) => {
+          switch (event) {
+            case "meta":
+              streamEstablishedRef.current = true;
+              setState((s) => ({
+                ...s,
+                phase: "connecting",
+                isDeep: data.deep === true,
+                model: (data.model as string) || undefined,
+                streamEstablished: true,
+              }));
+              break;
+
+            case "thinking_start":
+              streamEstablishedRef.current = true;
+              setState((s) => ({
+                ...s,
+                phase: "thinking",
+                thinkingText: "",
+                streamEstablished: true,
+              }));
+              break;
+
+            case "thinking_chunk":
+              streamEstablishedRef.current = true;
+              setState((s) => ({
+                ...s,
+                phase: "thinking",
+                thinkingText: s.thinkingText + ((data.text as string) || ""),
+                streamEstablished: true,
+              }));
+              break;
+
+            case "thinking_end":
+              streamEstablishedRef.current = true;
+              setState((s) => ({
+                ...s,
+                phase: "thinking",
+                thinkingText: (data.thinking as string) || s.thinkingText,
+                thinkingDurationMs: (data.durationMs as number) || undefined,
+                streamEstablished: true,
+              }));
+              break;
+
+            case "reply":
+              streamEstablishedRef.current = true;
+              latestReplyRef.current = data;
+              setState((s) => ({
+                ...s,
+                phase: "replying",
+                reply: data,
+                streamEstablished: true,
+              }));
+              break;
+
+            case "done":
+              streamEstablishedRef.current = true;
+              latestReplyRef.current = data;
+              setState((s) => ({
+                ...s,
+                phase: "done",
+                reply: data,
+                thinkingText: (data.reasoning as string) || s.thinkingText,
+                thinkingDurationMs: (data.thinkingDurationMs as number) || s.thinkingDurationMs,
+                streamEstablished: true,
+              }));
+              finalizeComplete(data);
+              break;
+
+            case "error":
+              setState((s) => ({
+                ...s,
+                phase: "error",
+                error: (data.message as string) || "Stream error",
+              }));
+              finalizeError((data.message as string) || "Stream error");
+              break;
+          }
+        };
+
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
           if (controller.signal.aborted) break;
 
           buffer += decoder.decode(value, { stream: true });
-
-          // Parse SSE events from buffer
           const lines = buffer.split("\n");
-          buffer = lines.pop() || ""; // Keep incomplete line in buffer
-
-          let currentEvent = "";
-          for (const line of lines) {
-            if (line.startsWith("event: ")) {
-              currentEvent = line.slice(7).trim();
-            } else if (line.startsWith("data: ") && currentEvent) {
-              const dataStr = line.slice(6);
-              try {
-                const data = JSON.parse(dataStr);
-                handleEvent(currentEvent, data);
-              } catch {
-                // Non-JSON data line, skip
-              }
-              currentEvent = "";
-            } else if (line === "") {
-              currentEvent = "";
-            }
-          }
+          buffer = lines.pop() || "";
+          parseSseEvents(lines, handleEvent);
         }
 
-        // If we never got a "done" event, finalize anyway
-        setState((s) => {
-          if (s.phase !== "done" && s.phase !== "error") {
-            return { ...s, phase: "done" };
-          }
-          return s;
-        });
+        if (controller.signal.aborted) return;
+
+        if (completionRef.current) return;
+
+        if (latestReplyRef.current) {
+          const payload = latestReplyRef.current;
+          setState((s) => ({ ...s, phase: "done", reply: payload }));
+          finalizeComplete(payload);
+          return;
+        }
+
+        const msg = "Stream ended before the Director finished replying";
+        setState({ ...INITIAL_STATE, phase: "error", error: msg });
+        finalizeError(msg);
       } catch (e: unknown) {
         if ((e as Error)?.name === "AbortError") return;
         const msg = (e as Error)?.message || "Stream connection failed";
         setState({ ...INITIAL_STATE, phase: "error", error: msg });
-        options?.onError?.(msg);
+        finalizeError(msg);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [endpoint],
+    [endpoint, finalizeComplete, finalizeError],
   );
-
-  function handleEvent(event: string, data: Record<string, unknown>) {
-    switch (event) {
-      case "meta":
-        setState((s) => ({
-          ...s,
-          phase: "connecting",
-          isDeep: data.deep === true,
-          model: (data.model as string) || undefined,
-        }));
-        break;
-
-      case "thinking_start":
-        setState((s) => ({ ...s, phase: "thinking", thinkingText: "" }));
-        break;
-
-      case "thinking_chunk":
-        setState((s) => ({
-          ...s,
-          phase: "thinking",
-          thinkingText: s.thinkingText + ((data.text as string) || ""),
-        }));
-        break;
-
-      case "thinking_end":
-        setState((s) => ({
-          ...s,
-          phase: "thinking",
-          thinkingText: (data.thinking as string) || s.thinkingText,
-          thinkingDurationMs: (data.durationMs as number) || undefined,
-        }));
-        break;
-
-      case "reply":
-        setState((s) => ({ ...s, phase: "replying", reply: data }));
-        break;
-
-      case "done":
-        setState((s) => ({
-          ...s,
-          phase: "done",
-          reply: data,
-          thinkingText: (data.reasoning as string) || s.thinkingText,
-          thinkingDurationMs: (data.thinkingDurationMs as number) || s.thinkingDurationMs,
-        }));
-        options?.onComplete?.(data);
-        break;
-
-      case "error":
-        setState((s) => ({
-          ...s,
-          phase: "error",
-          error: (data.message as string) || "Stream error",
-        }));
-        options?.onError?.((data.message as string) || "Stream error");
-        break;
-    }
-  }
 
   return {
     state,

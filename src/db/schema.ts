@@ -548,6 +548,8 @@ export const directorConversationMessages = pgTable(
     content: text("content").notNull(),
     /** Claude's adaptive thinking/reasoning text for this message (nullable). */
     reasoning: text("reasoning"),
+    /** Structured reply payload — proposals, suggestions, creative approvals, etc. */
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   () => ({

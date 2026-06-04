@@ -14,6 +14,8 @@ import { motion } from "motion/react";
 import { cn } from "../../lib/utils";
 import { authFetch } from "../../lib/api";
 import { formatDateTime } from "../../lib/safe-date";
+import { BRAND } from "../../constants/brand-colors";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 /** Minimum cost denominator to avoid division-by-zero in bar chart scaling. */
 const MIN_COST_THRESHOLD = 0.0001;
@@ -87,18 +89,21 @@ export function AuditActivityPanel() {
       {/* Window selector */}
       <div className="flex items-center justify-between shrink-0">
         <h3 className="text-eyebrow">AI Usage · Last</h3>
-        <div className="flex p-0.5 rounded-full glass border border-white/10">
+        <div className="flex p-0.5 rounded-full wl-panel border border-white/10">
           {windowOpts.map((d) => (
-            <button
+            <ShadButton
               key={d}
+              type="button"
+              variant="ghost"
+              disableAnimations
               onClick={() => setDays(d)}
               className={cn(
-                "px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.22em] transition-colors",
+                "h-auto px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.22em]",
                 days === d ? "bg-brand/20 text-brand" : "text-muted hover:text-ink",
               )}
             >
               {d}d
-            </button>
+            </ShadButton>
           ))}
         </div>
       </div>
@@ -134,7 +139,7 @@ export function AuditActivityPanel() {
                 icon: BarChart3,
               },
             ].map((s) => (
-              <div key={s.label} className="p-4 rounded-2xl glass border border-white/10">
+              <div key={s.label} className="p-4 rounded-md wl-panel border border-white/10">
                 <div className="flex items-center gap-2 mb-2 opacity-40">
                   <s.icon className="w-3 h-3" />
                   <span className="text-[8px] uppercase tracking-widest">{s.label}</span>
@@ -146,7 +151,7 @@ export function AuditActivityPanel() {
 
           {/* Action breakdown */}
           <div className="grid md:grid-cols-2 gap-3 shrink-0">
-            <div className="p-6 rounded-3xl glass border border-white/10 flex flex-col gap-4">
+            <div className="p-6 rounded-md wl-panel border border-white/10 flex flex-col gap-4">
               <h4 className="text-eyebrow">Cost by Action</h4>
               <div className="space-y-4">
                 {byAction.length === 0 ? (
@@ -174,15 +179,15 @@ export function AuditActivityPanel() {
             </div>
 
             {/* Daily Trend */}
-            <div className="p-6 rounded-3xl glass border border-white/10 flex flex-col gap-4">
+            <div className="p-6 rounded-md wl-panel border border-white/10 flex flex-col gap-4">
               <h4 className="text-eyebrow">Cost Trend</h4>
               <div className="h-48 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={byDay}>
                     <defs>
                       <linearGradient id="costGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8B3FD6" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#8B3FD6" stopOpacity={0} />
+                        <stop offset="5%" stopColor={BRAND.purple} stopOpacity={0.3} />
+                        <stop offset="95%" stopColor={BRAND.purple} stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid
@@ -216,7 +221,7 @@ export function AuditActivityPanel() {
                     <Area
                       type="monotone"
                       dataKey="cost"
-                      stroke="#8B3FD6"
+                      stroke={BRAND.purple}
                       strokeWidth={2}
                       fillOpacity={1}
                       fill="url(#costGrad)"
@@ -228,7 +233,7 @@ export function AuditActivityPanel() {
           </div>
 
           {/* Recent Ledger */}
-          <div className="flex-1 min-h-[300px] p-6 rounded-3xl glass border border-white/10 flex flex-col gap-4">
+          <div className="flex-1 min-h-[300px] p-6 rounded-md wl-panel border border-white/10 flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h4 className="text-eyebrow">Recent Autonomous Actions</h4>
               {recentLoading && <Loader2 className="w-3 h-3 animate-spin text-muted" />}
@@ -244,14 +249,14 @@ export function AuditActivityPanel() {
                 recent.map((entry: any) => (
                   <div
                     key={entry.id}
-                    className="flex items-center gap-4 py-2.5 px-3 hover:bg-black/5 rounded-xl transition-all border-b border-black/[0.03] last:border-0 group"
+                    className="flex items-center gap-4 py-2.5 px-3 hover:bg-black/5 rounded-md transition-all border-b border-black/[0.03] last:border-0 group"
                   >
                     <div
                       className={cn(
-                        "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
+                        "w-7 h-7 rounded-md flex items-center justify-center shrink-0",
                         entry.status === "error"
                           ? "bg-rose-500/10 text-rose-500"
-                          : "bg-emerald-500/10 text-emerald-500",
+                          : "bg-brand/10 text-brand",
                       )}
                     >
                       <Cpu className="w-3.5 h-3.5" />

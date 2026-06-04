@@ -436,7 +436,7 @@ ${input.transcript || "(none)"}
     deepThink: true,
     cacheSystem: true,
     maxTokens: 4096,
-    complexity: "medium",
+    complexity: "complex",
   });
 }
 
@@ -992,7 +992,7 @@ Deliver the daily brief now.`;
     deepThink: true,
     cacheSystem: true,
     maxTokens: 3072,
-    complexity: "medium",
+    complexity: "complex",
   });
 }
 

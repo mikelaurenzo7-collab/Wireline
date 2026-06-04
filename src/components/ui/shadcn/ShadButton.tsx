@@ -21,7 +21,7 @@ const buttonVariants = cva(
         // Glass variant — translucent cream surface for icon/action buttons on glass cards and modals.
         // Keeps the frosted-glass aesthetic without re-implementing it ad-hoc.
         glass:
-          "glass border border-white/10 text-ink/70 hover:text-ink hover:border-white/20 transition-all",
+          "wl-panel border border-white/10 text-ink/70 hover:text-ink hover:border-white/20 transition-all",
         // Chrome variant — white/10 dark-surface treatment for TopBar, Sidebar, and other
         // dark-chrome shells. Never use on cream/light backgrounds.
         chrome:

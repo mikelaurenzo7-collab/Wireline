@@ -6,6 +6,7 @@
 import { CalendarClock, Loader2, RefreshCw } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { safeDate } from "../../lib/safe-date";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 export default function CallbacksList({
   callbacks,
@@ -34,12 +35,16 @@ export default function CallbacksList({
           When agents use the schedule_callback tool during a call, those contacts appear here and
           are auto-dialed at the promised time.
         </p>
-        <button
+        <ShadButton
+          type="button"
+          disableAnimations
+          variant="outline"
+          size="sm"
           onClick={onRefresh}
-          className="mt-2 h-8 px-4 rounded-full glass border border-white/10 text-[9px] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5"
+          className="mt-2 rounded-full text-[9px] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40"
         >
           <RefreshCw className="w-3 h-3" /> Refresh
-        </button>
+        </ShadButton>
       </div>
     );
   }
@@ -50,12 +55,16 @@ export default function CallbacksList({
     <div className="h-full flex flex-col min-h-0">
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
         <span className="text-eyebrow">{callbacks.length} scheduled · auto-dialed at due time</span>
-        <button
+        <ShadButton
+          type="button"
+          disableAnimations
+          variant="outline"
+          size="sm"
           onClick={onRefresh}
-          className="h-7 px-3 rounded-full glass border border-white/10 text-[9px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5"
+          className="h-7 rounded-full text-[9px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40"
         >
           <RefreshCw className="w-2.5 h-2.5" /> Refresh
-        </button>
+        </ShadButton>
       </div>
       <ul className="flex-1 overflow-y-auto divide-y divide-white/5 scrollbar-hide">
         {callbacks.map((cb) => {

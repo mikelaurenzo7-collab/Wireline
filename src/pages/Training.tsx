@@ -20,6 +20,7 @@ import ClientRouteLoading from "../components/layout/ClientRouteLoading";
 import ClientSubTabs from "../components/layout/ClientSubTabs";
 import { EmptyState } from "../components/ui/EmptyState";
 import { cn } from "../lib/utils";
+import { ShadButton } from "../components/ui/shadcn/ShadButton";
 
 const SUB_TABS = [
   { id: "database", label: "Knowledge", icon: Database },
@@ -83,12 +84,14 @@ export default function Training() {
           {/* Mobile: horizontal orbit strip */}
           <div className="lg:hidden flex items-center gap-2 overflow-x-auto scrollbar-hide scroll-viewport pb-2 stagger-children">
             {agents.map((agent) => (
-              <button
+              <ShadButton
                 key={agent.id}
                 type="button"
+                disableAnimations
+                variant={agent.id === selectedAgentId ? "secondary" : "ghost"}
                 onClick={() => selectAgent(agent.id)}
                 className={cn(
-                  "touch-press shrink-0 flex items-center gap-2 px-3 py-2 transition-all text-[12px] min-h-[40px]",
+                  "touch-press shrink-0 h-auto gap-2 px-3 py-2 text-[12px] min-h-[40px]",
                   agent.id === selectedAgentId
                     ? "wl-panel-elevated font-semibold text-ink"
                     : "text-muted hover:bg-white/40 dark:hover:bg-white/[0.04]",
@@ -107,7 +110,7 @@ export default function Training() {
                   </span>
                 </span>
                 <span className="truncate max-w-[100px]">{agent.name}</span>
-              </button>
+              </ShadButton>
             ))}
           </div>
 
@@ -116,12 +119,14 @@ export default function Training() {
             <p className="px-2 py-1.5 mb-1 wl-label text-brand/70">Select Agent</p>
             <div className="space-y-1 stagger-children">
               {agents.map((agent) => (
-                <button
+                <ShadButton
                   key={agent.id}
                   type="button"
+                  disableAnimations
+                  variant={agent.id === selectedAgentId ? "secondary" : "ghost"}
                   onClick={() => selectAgent(agent.id)}
                   className={cn(
-                    "touch-press w-full text-left flex items-center gap-2.5 px-3 py-2.5 transition-all group relative overflow-hidden cursor-pointer",
+                    "touch-press w-full h-auto justify-start text-left gap-2.5 px-3 py-2.5 group relative overflow-hidden",
                     agent.id === selectedAgentId
                       ? "wl-panel-elevated text-ink"
                       : "hover:bg-brand/[0.03] text-muted",
@@ -159,7 +164,7 @@ export default function Training() {
                   {agent.id === selectedAgentId && (
                     <ChevronRight className="w-3.5 h-3.5 text-brand/55 shrink-0" />
                   )}
-                </button>
+                </ShadButton>
               ))}
             </div>
           </div>

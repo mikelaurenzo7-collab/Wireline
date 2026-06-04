@@ -3,6 +3,7 @@ import { Download, Loader2, Check } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { useToast } from "../contexts/ToastContext";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 export type CsvExportType = "calls" | "leads" | "appointments" | "tasks";
 
@@ -51,16 +52,20 @@ export default function CsvExportButton({
 
   const styles = {
     default:
-      "px-4 py-2.5 rounded-full glass border border-white/10 text-[11px] uppercase tracking-[0.3em] text-ink/80 hover:text-brand hover:border-brand/40 transition-all flex items-center gap-2",
+      "rounded-full text-[11px] uppercase tracking-[0.3em] text-ink/80 hover:text-brand hover:border-brand/40",
     ghost:
-      "px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors flex items-center gap-1.5",
+      "rounded-full text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand h-auto px-3 py-1.5",
   };
 
   return (
-    <button
+    <ShadButton
+      type="button"
+      disableAnimations
+      variant={variant === "ghost" ? "ghost" : "outline"}
+      size="sm"
       onClick={onClick}
       disabled={busy}
-      className={cn(styles[variant], "disabled:opacity-50")}
+      className={cn(styles[variant])}
     >
       {busy ? (
         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -70,6 +75,6 @@ export default function CsvExportButton({
         <Download className="w-3.5 h-3.5" />
       )}
       {label ?? "Export CSV"}
-    </button>
+    </ShadButton>
   );
 }

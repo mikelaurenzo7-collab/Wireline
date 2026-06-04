@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Check, Plus, X } from "lucide-react";
 import { FormShell, Field, TextArea, Select, RunButton, ResultCard, ErrCard } from "../shared";
+import { ShadButton } from "../../ui/shadcn/ShadButton";
 import type { AgentLite } from "../types";
 import { Checkbox } from "../../ui/shadcn/Checkbox";
 import { useRecipeAsync } from "../useRecipeAsync";
@@ -49,22 +50,29 @@ export function PersonaCloneForm({
                 placeholder={`Sample ${i + 1}`}
               />
               {samples.length > 1 && (
-                <button
+                <ShadButton
+                  type="button"
+                  disableAnimations
+                  variant="outline"
+                  size="icon"
                   onClick={() => setSamples((arr) => arr.filter((_, j) => j !== i))}
-                  className="w-10 h-10 rounded-xl glass border border-white/10 flex items-center justify-center text-rose-500 hover:bg-rose-500/10 transition-colors shrink-0 self-start mt-1"
+                  className="w-10 h-10 rounded-md text-rose-500 hover:bg-rose-500/10 shrink-0 self-start mt-1 after:hidden"
                 >
                   <X className="w-4 h-4" />
-                </button>
+                </ShadButton>
               )}
             </div>
           ))}
           {samples.length < 8 && (
-            <button
+            <ShadButton
+              type="button"
+              disableAnimations
+              variant="outline"
               onClick={() => setSamples((arr) => [...arr, ""])}
-              className="w-full py-2 rounded-xl glass border border-dashed border-white/10 text-[11px] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center justify-center gap-2"
+              className="w-full py-2 rounded-md border-dashed text-[11px] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40"
             >
               <Plus className="w-3.5 h-3.5" /> Add Sample
-            </button>
+            </ShadButton>
           )}
         </div>
       </Field>
@@ -101,7 +109,7 @@ export function PersonaCloneForm({
       {result?.persona && (
         <div className="space-y-3 pt-3">
           {result.applied && (
-            <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-3 text-emerald-500 text-xs flex items-center gap-2">
+            <div className="rounded-md bg-emerald-500/10 border border-emerald-500/30 p-3 text-emerald-500 text-xs flex items-center gap-2">
               <Check className="w-3.5 h-3.5" /> Persona saved to agent — voice + email replies will
               use it on next call.
             </div>

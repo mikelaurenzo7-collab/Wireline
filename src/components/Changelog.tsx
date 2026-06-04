@@ -115,7 +115,7 @@ const ENTRIES: Entry[] = [
   {
     date: "May 18, 2026",
     tag: "polish",
-    title: "Warm-glass uniformity across the auth canvas",
+    title: "Warm-wl-panel uniformity across the auth canvas",
     body: "Glass surfaces previously layered pure-white over the warm-paper background. Cards looked white on the auth'd console pages because so much of the viewport is cards. Shifted to a warm-cream tint so the operator canvas matches the marketing terracotta.",
   },
   {
@@ -155,14 +155,14 @@ export function ChangelogPage() {
       <div className="max-w-3xl mx-auto px-5 sm:px-6 py-10 sm:py-16">
         <Link
           to="/"
-          className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-muted hover:text-ink transition-colors mb-10 -mx-2 px-2 py-2 rounded-lg hover:bg-black/[0.03]"
+          className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-muted hover:text-ink transition-colors mb-10 -mx-2 px-2 py-2 rounded-md hover:bg-black/[0.03]"
         >
           <ArrowLeft className="w-3.5 h-3.5" /> Back to app
         </Link>
 
         <div className="flex items-center gap-3 mb-2">
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            className="w-10 h-10 rounded-md flex items-center justify-center shrink-0"
             style={{ background: "#8B3FD6" }}
           >
             <Sparkles className="w-5 h-5 text-on-brand" />

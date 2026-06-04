@@ -108,7 +108,7 @@ export function CarrierPanel({
       <Panel title="Wireline Voice Network" hint="CALLS" icon={Cpu} scroll>
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <div className="rounded-xl glass border border-brand/30 p-3 space-y-1.5">
+            <div className="rounded-md wl-panel border border-brand/30 p-3 space-y-1.5">
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
                 <p className="text-[9px] uppercase tracking-[0.3em] text-ink/80">
@@ -121,9 +121,9 @@ export function CarrierPanel({
             </div>
             <div
               className={cn(
-                "rounded-xl border p-3 space-y-1.5",
+                "rounded-md border p-3 space-y-1.5",
                 hasBrowserVoiceKey
-                  ? "bg-emerald-500/10 border-emerald-500/30"
+                  ? "bg-brand/10 border-brand/30"
                   : "bg-rose-500/10 border-rose-500/30",
               )}
             >
@@ -131,7 +131,7 @@ export function CarrierPanel({
                 <span
                   className={cn(
                     "w-1.5 h-1.5 rounded-full animate-pulse",
-                    hasBrowserVoiceKey ? "bg-emerald-500" : "bg-rose-500",
+                    hasBrowserVoiceKey ? "bg-brand" : "bg-rose-500",
                   )}
                 />
                 <p className="text-[9px] uppercase tracking-[0.3em] text-ink/80">
@@ -141,7 +141,7 @@ export function CarrierPanel({
               <p
                 className={cn(
                   "text-[9px] uppercase tracking-[0.3em]",
-                  hasBrowserVoiceKey ? "text-emerald-500" : "text-rose-500",
+                  hasBrowserVoiceKey ? "text-brand" : "text-rose-500",
                 )}
               >
                 {hasBrowserVoiceKey ? "Connected" : "Missing"}
@@ -163,7 +163,7 @@ export function CarrierPanel({
               onChange={(e) =>
                 onUpdateSettings({ ...settings, vapi_phone_number_id: e.target.value })
               }
-              className="w-full text-sm bg-black/5 border border-input rounded-lg px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink placeholder:text-ink/40 font-mono"
+              className="w-full text-sm bg-black/5 border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink placeholder:text-ink/40 font-mono"
               placeholder="e.g. 3c7a9f…"
             />
           </div>
@@ -187,7 +187,7 @@ export function CarrierPanel({
               >
                 <SelectTrigger
                   id="vapi-inbound-agent-id"
-                  className="w-full text-sm bg-black/5 border border-input rounded-lg pl-3 py-2 text-ink h-auto"
+                  className="w-full text-sm bg-black/5 border border-input rounded-md pl-3 py-2 text-ink h-auto"
                 >
                   <SelectValue placeholder="Oldest voice agent (fallback)" />
                 </SelectTrigger>
@@ -226,7 +226,7 @@ export function CarrierPanel({
                   model overrides.
                 </p>
 
-                <div className="rounded-2xl glass border border-input p-4 space-y-3 bg-black/10">
+                <div className="rounded-md wl-panel border border-input p-4 space-y-3 bg-black/10">
                   <div className="text-[10px] uppercase tracking-[0.4em] text-brand">
                     Custom Model Selection
                   </div>
@@ -245,9 +245,11 @@ export function CarrierPanel({
                         desc: "Low-latency outage fallback for Anthropic voice disruptions; GPT can remain a second-tier recovery path.",
                       },
                     ].map((p) => (
-                      <button
+                      <ShadButton
                         key={p.v}
                         type="button"
+                        variant="ghost"
+                        disableAnimations
                         onClick={() =>
                           onUpdateSettings({
                             ...settings,
@@ -257,7 +259,7 @@ export function CarrierPanel({
                           })
                         }
                         className={cn(
-                          "text-left rounded-xl p-3 transition-all border",
+                          "w-full h-auto justify-start text-left rounded-md p-3 border",
                           settings.voice_llm_provider === p.v
                             ? "bg-brand/10 border-brand/40"
                             : "bg-black/20 border-input hover:border-white/30",
@@ -270,7 +272,7 @@ export function CarrierPanel({
                           </span>
                         </div>
                         <p className="text-[10px] text-muted/80 leading-snug">{p.desc}</p>
-                      </button>
+                      </ShadButton>
                     ))}
                   </div>
                   <div className="space-y-1.5 pt-2">
@@ -287,7 +289,7 @@ export function CarrierPanel({
                       onChange={(e) =>
                         onUpdateSettings({ ...settings, voice_llm_model: e.target.value })
                       }
-                      className="w-full text-sm bg-black/5 border border-input rounded-lg px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink font-mono"
+                      className="w-full text-sm bg-black/5 border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink font-mono"
                     />
                   </div>
                 </div>
@@ -331,7 +333,7 @@ export function CarrierPanel({
       <Panel title="Wireline Phone Numbers" hint="VOICE ROUTING" icon={Phone} scroll>
         <div className="space-y-3">
           {phoneNumbers.length === 0 ? (
-            <div className="rounded-xl glass border border-white/10 border-dashed py-8 text-center">
+            <div className="rounded-md wl-panel border border-white/10 border-dashed py-8 text-center">
               <p className="app-section-title/70">No active lines</p>
             </div>
           ) : (
@@ -342,7 +344,7 @@ export function CarrierPanel({
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   key={pt.id}
-                  className="rounded-xl glass border border-input p-3 flex flex-col xl:flex-row xl:items-center gap-2"
+                  className="rounded-md wl-panel border border-input p-3 flex flex-col xl:flex-row xl:items-center gap-2"
                 >
                   <div className="flex-1 min-w-0">
                     <div className="font-display italic text-lg text-ink leading-none tabular-nums truncate">
@@ -372,7 +374,7 @@ export function CarrierPanel({
                         /* silent — operator will see no save indicator */
                       }
                     }}
-                    className="text-[11px] bg-black/5 border border-input rounded-lg px-2.5 py-1.5 outline-none focus-visible:ring-brand/40 text-ink min-w-[200px] placeholder:text-ink/40 h-auto"
+                    className="text-[11px] bg-black/5 border border-input rounded-md px-2.5 py-1.5 outline-none focus-visible:ring-brand/40 text-ink min-w-[200px] placeholder:text-ink/40 h-auto"
                   />
                   <div className="flex items-center gap-2 shrink-0">
                     <LinkIcon className="w-3 h-3 text-brand" />
@@ -385,7 +387,7 @@ export function CarrierPanel({
                       >
                         <SelectTrigger
                           aria-label={`Assign agent to ${pt.phone_number}`}
-                          className="text-xs bg-black/5 border border-input rounded-lg pl-2.5 py-1.5 text-ink min-w-[150px] h-auto"
+                          className="text-xs bg-black/5 border border-input rounded-md pl-2.5 py-1.5 text-ink min-w-[150px] h-auto"
                         >
                           <SelectValue placeholder="Unassigned" />
                         </SelectTrigger>
@@ -409,7 +411,7 @@ export function CarrierPanel({
                       aria-label={`Delete ${pt.phone_number}`}
                       onClick={() => onDeleteNumber(pt.id)}
                       variant="outline"
-                      className="w-7 h-7 rounded-full glass border border-input flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all p-0"
+                      className="w-7 h-7 rounded-full wl-panel border border-input flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all p-0"
                     >
                       <Trash2 className="w-3 h-3" />
                     </ShadButton>
@@ -419,7 +421,7 @@ export function CarrierPanel({
             </div>
           )}
 
-          <div className="rounded-xl glass border border-input p-3 space-y-3">
+          <div className="rounded-md wl-panel border border-input p-3 space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-[10px] uppercase tracking-[0.3em] text-ink inline-flex items-center gap-1.5">
                 <Plus className="w-3 h-3 text-brand" /> Add Wireline number
@@ -446,14 +448,14 @@ export function CarrierPanel({
                 value={newNumber}
                 onChange={(e) => setNewNumber(e.target.value)}
                 placeholder="+1 800 555 0100"
-                className="w-full text-sm bg-black/5 border border-input rounded-lg px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink tabular-nums h-auto"
+                className="w-full text-sm bg-black/5 border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink tabular-nums h-auto"
               />
               <Input
                 type="text"
                 value={newNumberVapiId}
                 onChange={(e) => setNewNumberVapiId(e.target.value)}
                 placeholder="Wireline voice number ID"
-                className="w-full text-sm bg-black/5 border border-input rounded-lg px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink font-mono h-auto"
+                className="w-full text-sm bg-black/5 border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink font-mono h-auto"
               />
             </div>
             <ShadButton
@@ -484,7 +486,7 @@ export function CarrierPanel({
       >
         <div className="space-y-3">
           {settings?.byoc_enabled && (
-            <div className="rounded-xl border border-brand/30 bg-brand/[0.06] p-3 space-y-2">
+            <div className="rounded-md border border-brand/30 bg-brand/[0.06] p-3 space-y-2">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm text-ink leading-none">Bring-your-own-carrier webhook</p>
@@ -512,15 +514,18 @@ export function CarrierPanel({
             </div>
           )}
 
-          <div className="flex items-center justify-between rounded-xl border border-input bg-white/[0.02] p-3">
+          <div className="flex items-center justify-between rounded-md border border-input bg-white/[0.02] p-3">
             <div>
               <p className="text-sm text-ink leading-none">Enable outbound SMS</p>
               <p className="text-[10px] text-ink/40 mt-1 leading-relaxed">
                 Lets your agents follow up via text. Replies trigger TCPA opt-out tracking.
               </p>
             </div>
-            <button
+            <ShadButton
               type="button"
+              variant="ghost"
+              size="icon"
+              disableAnimations
               onClick={() =>
                 onUpdateSettings({
                   ...settings,
@@ -529,17 +534,17 @@ export function CarrierPanel({
               }
               aria-pressed={!!settings.twilio_messaging_enabled}
               className={cn(
-                "shrink-0 w-11 h-6 rounded-full transition-colors relative",
-                settings.twilio_messaging_enabled ? "bg-brand" : "bg-black/15",
+                "shrink-0 w-11 h-6 rounded-full p-0 relative",
+                settings.twilio_messaging_enabled ? "bg-brand hover:bg-brand" : "bg-black/15",
               )}
             >
               <span
                 className={cn(
-                  "absolute top-0.5 w-5 h-5 rounded-full bg-[#FFFFFF] transition-all shadow",
+                  "absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow",
                   settings.twilio_messaging_enabled ? "left-5" : "left-0.5",
                 )}
               />
-            </button>
+            </ShadButton>
           </div>
 
           <div className="space-y-1.5">
@@ -559,7 +564,7 @@ export function CarrierPanel({
                 onUpdateSettings({ ...settings, twilio_sms_from_number: e.target.value })
               }
               placeholder="+1 800 555 0100"
-              className="w-full text-sm bg-black/5 border border-input rounded-lg px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink placeholder:text-ink/40 font-mono h-auto"
+              className="w-full text-sm bg-black/5 border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink placeholder:text-ink/40 font-mono h-auto"
             />
             <p className="text-[10px] text-ink/40 leading-relaxed">
               A Twilio-verified number you own. Outbound texts go from this number.
@@ -581,7 +586,7 @@ export function CarrierPanel({
                 onUpdateSettings({ ...settings, twilio_messaging_service_sid: e.target.value })
               }
               placeholder="MG••••••••••••••••••••••••••••••••"
-              className="w-full text-sm bg-black/5 border border-input rounded-lg px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink placeholder:text-ink/40 font-mono h-auto"
+              className="w-full text-sm bg-black/5 border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink placeholder:text-ink/40 font-mono h-auto"
             />
             <p className="text-[10px] text-ink/40 leading-relaxed">
               Twilio's pool of numbers with auto-failover. Overrides the single sender above.
@@ -626,15 +631,18 @@ export function CarrierPanel({
               </p>
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-input bg-white/[0.02] p-3">
+            <div className="flex items-center justify-between rounded-md border border-input bg-white/[0.02] p-3">
               <div className="min-w-0">
                 <p className="text-sm text-ink leading-none">Operator alerts</p>
                 <p className="text-[10px] text-ink/40 mt-1 leading-relaxed">
                   We'll text the number below when notable events happen.
                 </p>
               </div>
-              <button
+              <ShadButton
                 type="button"
+                variant="ghost"
+                size="icon"
+                disableAnimations
                 onClick={() =>
                   onUpdateSettings({
                     ...settings,
@@ -643,17 +651,19 @@ export function CarrierPanel({
                 }
                 aria-pressed={!!settings.twilio_manager_alerts_enabled}
                 className={cn(
-                  "shrink-0 w-11 h-6 rounded-full transition-colors relative",
-                  settings.twilio_manager_alerts_enabled ? "bg-brand" : "bg-black/15",
+                  "shrink-0 w-11 h-6 rounded-full p-0 relative",
+                  settings.twilio_manager_alerts_enabled
+                    ? "bg-brand hover:bg-brand"
+                    : "bg-black/15",
                 )}
               >
                 <span
                   className={cn(
-                    "absolute top-0.5 w-5 h-5 rounded-full bg-[#FFFFFF] transition-all shadow",
+                    "absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow",
                     settings.twilio_manager_alerts_enabled ? "left-5" : "left-0.5",
                   )}
                 />
-              </button>
+              </ShadButton>
             </div>
 
             {settings.twilio_manager_alerts_enabled && (
@@ -677,7 +687,7 @@ export function CarrierPanel({
                     })
                   }
                   placeholder="+1 555 555 0100"
-                  className="w-full text-sm bg-black/5 border border-input rounded-lg px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink placeholder:text-ink/40 font-mono h-auto"
+                  className="w-full text-sm bg-black/5 border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink placeholder:text-ink/40 font-mono h-auto"
                 />
                 <p className="text-[10px] text-ink/40 leading-relaxed">
                   Standard messaging rates apply. We send no more than ~5 alerts per day per agent

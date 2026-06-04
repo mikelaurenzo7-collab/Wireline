@@ -4,6 +4,8 @@ import { motion } from "motion/react";
 import { RefreshCw } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { fetchInsight, Spinner, ErrCard, Empty } from "./shared";
+import { ShadButton } from "../ui/shadcn/ShadButton";
+import { WL_APP_CLASSES } from "../../lib/wireline-director-design";
 
 export default function TopicsView() {
   const [data, setData] = useState<any>(null);
@@ -42,12 +44,16 @@ export default function TopicsView() {
           )}
           {data.cached ? "Cached" : "Fresh"} · {data.total_analyzed} signals analyzed
         </div>
-        <button
+        <ShadButton
+          type="button"
+          disableAnimations
+          variant="outline"
+          size="sm"
           onClick={() => load(true)}
-          className="px-3 py-1.5 rounded-full glass border border-black/10 font-mono text-[10px] uppercase tracking-[0.2em] text-muted hover:text-ink hover:border-brand/25 transition-all flex items-center gap-1.5"
+          className="rounded-full font-mono text-[10px] uppercase tracking-[0.2em] text-muted hover:text-ink hover:border-brand/25"
         >
           <RefreshCw className="w-3 h-3" /> Refresh
-        </button>
+        </ShadButton>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {topics.map((t: any, i: number) => {
@@ -58,54 +64,47 @@ export default function TopicsView() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="relative aurora-ring rounded-2xl"
+              className={cn(WL_APP_CLASSES.insightStatCard, "p-5")}
             >
-              <div className="relative rounded-2xl glass border border-black/8 p-5 overflow-hidden">
-                <div className="absolute inset-x-0 bottom-0 h-1 bg-black/[0.05]" />
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${pct}%` }}
-                  transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: i * 0.05 }}
-                  className="absolute inset-x-0 bottom-0 h-1"
-                  style={{ background: "#8B3FD6" }}
-                />
-                <div className="space-y-2">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <h4 className="font-display italic text-2xl text-ink leading-tight">
-                      {t.name}
-                    </h4>
-                    <span className="font-display italic text-3xl text-aurora tabular-nums">
-                      {t.count}
+              <div className="absolute inset-x-0 bottom-0 h-1 bg-black/[0.05]" />
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${pct}%` }}
+                transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: i * 0.05 }}
+                className="absolute inset-x-0 bottom-0 h-1 bg-brand"
+              />
+              <div className="space-y-2">
+                <div className="flex items-baseline justify-between gap-3">
+                  <h4 className="font-display italic text-2xl text-ink leading-tight">{t.name}</h4>
+                  <span className="font-display italic text-3xl text-aurora tabular-nums">
+                    {t.count}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] bg-brand/15 text-brand border border-brand/30">
+                    {t.category}
+                  </span>
+                  {t.trend && (
+                    <span
+                      className={cn(
+                        "px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em]",
+                        t.trend === "growing" && "bg-brand/15 text-brand border border-brand/30",
+                        t.trend === "new" && "bg-brand-2/15 text-brand-2 border border-brand-2/30",
+                        t.trend === "steady" &&
+                          "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
+                        t.trend === "declining" &&
+                          "bg-rose-500/15 text-rose-500 border border-rose-500/30",
+                      )}
+                    >
+                      {t.trend}
                     </span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] bg-brand/15 text-brand border border-brand/30">
-                      {t.category}
-                    </span>
-                    {t.trend && (
-                      <span
-                        className={cn(
-                          "px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em]",
-                          t.trend === "growing" &&
-                            "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30",
-                          t.trend === "new" &&
-                            "bg-brand-2/15 text-brand-2 border border-brand-2/30",
-                          t.trend === "steady" &&
-                            "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
-                          t.trend === "declining" &&
-                            "bg-rose-500/15 text-rose-500 border border-rose-500/30",
-                        )}
-                      >
-                        {t.trend}
-                      </span>
-                    )}
-                  </div>
-                  {t.example_quote && (
-                    <p className="text-xs text-ink/65 italic leading-relaxed mt-2">
-                      "{t.example_quote}"
-                    </p>
                   )}
                 </div>
+                {t.example_quote && (
+                  <p className="text-xs text-ink/65 italic leading-relaxed mt-2">
+                    "{t.example_quote}"
+                  </p>
+                )}
               </div>
             </motion.div>
           );

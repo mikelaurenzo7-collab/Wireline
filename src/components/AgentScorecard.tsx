@@ -74,7 +74,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
 
   if (loading && !data) {
     return (
-      <section className="rounded-2xl glass border border-white/10 p-5 flex items-center gap-3">
+      <section className="rounded-md wl-panel border border-white/10 p-5 flex items-center gap-3">
         <Loader2 className="w-4 h-4 animate-spin text-brand" />
         <span className="app-section-title/70">Loading scorecard</span>
       </section>
@@ -85,7 +85,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
     return (
       <section
         role="alert"
-        className="rounded-2xl bg-rose-500/8 border border-rose-500/30 p-4 flex items-start gap-2.5"
+        className="rounded-md bg-rose-500/8 border border-rose-500/30 p-4 flex items-start gap-2.5"
       >
         <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
         <span className="text-xs text-rose-500">Couldn't load scorecard. {error}</span>
@@ -100,7 +100,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className="relative rounded-2xl premium-glass card-interactive-premium p-5 overflow-hidden"
+      className="relative rounded-md wl-panel-elevated card-interactive-premium p-5 overflow-hidden"
     >
       <div
         aria-hidden="true"
@@ -110,7 +110,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
 
       <header className="relative flex items-start gap-3 mb-4">
         <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border border-white/10 shadow-lg shadow-brand/10"
+          className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border border-white/10 shadow-lg shadow-brand/10"
           style={{
             background:
               "linear-gradient(135deg, rgba(107, 43, 153 ,0.20), rgba(107, 43, 153 ,0.05))",

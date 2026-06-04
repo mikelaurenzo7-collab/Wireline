@@ -5,6 +5,7 @@ import { Phone, MapPin, Search, Loader2, AlertCircle, RefreshCw } from "lucide-r
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { Input } from "./ui/shadcn/Input";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface AvailableNumber {
   phone_number: string;
@@ -132,14 +133,17 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
             Each agent gets its own number so callers can reach it directly.
           </p>
         </div>
-        <button
+        <ShadButton
           type="button"
+          variant="outline"
+          size="icon"
+          disableAnimations
           onClick={refresh}
           aria-label="Refresh available numbers"
-          className="shrink-0 h-9 w-9 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-brand hover:border-brand/40 transition-all"
+          className="shrink-0 rounded-full border-white/10 text-muted hover:text-brand hover:border-brand/40"
         >
           <RefreshCw className="w-3.5 h-3.5" />
-        </button>
+        </ShadButton>
       </div>
 
       {/* Available pool */}
@@ -155,14 +159,14 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
                 disabled={!!claiming}
                 whileHover={{ y: -1 }}
                 className={cn(
-                  "text-left p-3.5 rounded-xl glass border transition-all flex items-center gap-3 group",
+                  "text-left p-3.5 rounded-md wl-panel border transition-all flex items-center gap-3 group",
                   claiming === n.phone_number
                     ? "border-brand/40 bg-brand/5"
                     : "border-white/10 hover:border-brand/40 hover:bg-brand/[0.03]",
                 )}
               >
                 <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                  className="w-9 h-9 rounded-md flex items-center justify-center shrink-0"
                   style={{
                     background:
                       "linear-gradient(135deg, rgba(107, 43, 153 ,0.12), rgba(107, 43, 153 ,0.10))",
@@ -196,7 +200,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
           </div>
         </div>
       ) : (
-        <div className="rounded-xl glass border border-white/10 p-5 text-center">
+        <div className="rounded-md wl-panel border border-white/10 p-5 text-center">
           <p className="text-[12px] text-muted">
             No numbers in pool right now. Search by area code below to find one.
           </p>
@@ -204,7 +208,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
       )}
 
       {/* Area-code search */}
-      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-3">
+      <div className="rounded-md border border-white/10 bg-white/[0.02] p-4 space-y-3">
         <p className="text-eyebrow/60">Search by area code</p>
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="flex-1 relative">
@@ -219,14 +223,15 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
               onKeyDown={(e) => {
                 if (e.key === "Enter") searchByAreaCode();
               }}
-              className="w-full h-10 pl-9 pr-3 rounded-full glass border border-white/10 text-sm text-ink placeholder:text-muted/70 focus:border-brand/40 focus:outline-none transition-all font-mono"
+              className="w-full h-10 pl-9 pr-3 rounded-full wl-panel border border-white/10 text-sm text-ink placeholder:text-muted/70 focus:border-brand/40 focus:outline-none transition-all font-mono"
             />
           </div>
-          <button
+          <ShadButton
             type="button"
+            disableAnimations
             onClick={searchByAreaCode}
             disabled={searching || searchAreaCode.length !== 3}
-            className="shrink-0 h-10 px-5 rounded-full bg-gradient-to-r from-brand to-brand-deep text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="shrink-0 h-10 rounded-full bg-gradient-to-r from-brand to-brand-deep px-5 text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {searching ? (
               <>
@@ -239,22 +244,25 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
                 Get number
               </>
             )}
-          </button>
+          </ShadButton>
         </div>
         {/* Popular codes as quick-fill chips */}
         {areaCodes.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {areaCodes.slice(0, 12).map((ac) => (
-              <button
+              <ShadButton
                 key={`${ac.code}-${ac.city}`}
                 type="button"
+                variant="outline"
+                size="sm"
+                disableAnimations
                 onClick={() => setSearchAreaCode(ac.code)}
-                className="px-2.5 py-1 rounded-full bg-white/5 border border-white/8 hover:border-brand/30 hover:bg-brand/5 transition-all text-[10px] text-muted hover:text-brand"
+                className="h-auto rounded-full border-white/8 bg-white/5 px-2.5 py-1 text-[10px] text-muted hover:border-brand/30 hover:bg-brand/5 hover:text-brand"
                 title={`${ac.city}, ${ac.state}`}
               >
                 <span className="font-mono">{ac.code}</span>
                 <span className="ml-1.5 opacity-60">{ac.city}</span>
-              </button>
+              </ShadButton>
             ))}
           </div>
         )}
@@ -267,7 +275,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            className="flex items-start gap-2 p-3 rounded-xl bg-rose-500/8 border border-rose-500/25"
+            className="flex items-start gap-2 p-3 rounded-md bg-rose-500/8 border border-rose-500/25"
           >
             <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
             <p className="text-[11px] text-rose-500 leading-relaxed">{error}</p>

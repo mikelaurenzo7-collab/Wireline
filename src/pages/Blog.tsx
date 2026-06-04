@@ -49,7 +49,7 @@ export default function Blog() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.55 }}
-            className="glass border border-brand/20 p-6 sm:p-8 lg:p-10"
+            className="wl-panel border border-brand/20 p-6 sm:p-8 lg:p-10"
           >
             <p className="text-[10px] uppercase tracking-[0.35em] text-brand/80 mb-3">
               Featured post
@@ -99,7 +99,7 @@ export default function Blog() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.45, delay: index * 0.06 }}
-                className="glass border border-white/10 p-5 sm:p-6 flex flex-col"
+                className="wl-panel border border-white/10 p-5 sm:p-6 flex flex-col"
               >
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-ink/60 mb-4">
                   <span className="inline-flex items-center gap-1.5">

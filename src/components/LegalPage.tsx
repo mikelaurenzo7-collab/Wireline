@@ -22,14 +22,14 @@ function LegalLayout({
       <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
         <Link
           to="/"
-          className="inline-flex items-center gap-2 text-caption font-medium text-muted hover:text-ink transition-colors mb-8 -mx-2 px-2 py-2 rounded-lg hover:bg-black/[0.03] min-h-[44px]"
+          className="inline-flex items-center gap-2 text-caption font-medium text-muted hover:text-ink transition-colors mb-8 -mx-2 px-2 py-2 rounded-md hover:bg-black/[0.03] min-h-[44px]"
         >
           <ArrowLeft className="w-3.5 h-3.5" /> Back home
         </Link>
 
         <div className="flex items-center gap-3 mb-2">
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            className="w-10 h-10 rounded-md flex items-center justify-center shrink-0"
             style={{ background: "#8B3FD6" }}
           >
             <Icon className="w-5 h-5 text-on-brand" />
@@ -222,7 +222,7 @@ export function PrivacyPolicy() {
             these rights
           </li>
         </ul>
-        <p className="mt-3 p-3 rounded-lg border border-brand/20 bg-brand/5 text-brand/90 text-[12px]">
+        <p className="mt-3 p-3 rounded-md border border-brand/20 bg-brand/5 text-brand/90 text-[12px]">
           <strong>We do not sell or share your personal information.</strong> We do not sell
           personal information to third parties, and we do not share personal information for
           cross-context behavioral advertising as defined under the CCPA/CPRA.

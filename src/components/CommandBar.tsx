@@ -33,6 +33,7 @@ import { cn } from "../lib/utils";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { useAuth } from "../contexts/AuthContext";
 import { Input } from "./ui/shadcn/Input";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface CommandItem {
   id: string;
@@ -339,9 +340,9 @@ export default function CommandBar() {
             className="relative w-full max-w-xl overflow-hidden"
           >
             {/* Aurora ring border */}
-            <div className="absolute inset-0 rounded-2xl p-px overflow-hidden pointer-events-none z-20">
+            <div className="absolute inset-0 rounded-md p-px overflow-hidden pointer-events-none z-20">
               <div
-                className="absolute inset-0 rounded-2xl"
+                className="absolute inset-0 rounded-md"
                 style={{
                   background:
                     "linear-gradient(135deg, rgba(107, 43, 153 ,0.6), rgba(107, 43, 153 ,0.4) 50%, rgba(107, 43, 153 ,0.5))",
@@ -350,7 +351,7 @@ export default function CommandBar() {
             </div>
 
             {/* Search input */}
-            <div className="relative z-10 glass-strong rounded-t-2xl px-5 py-4 flex items-center gap-3 border-b border-white/8">
+            <div className="relative z-10 wl-panel-elevated rounded-t-md px-5 py-4 flex items-center gap-3 border-b border-white/8">
               <Search className="w-4 h-4 text-brand/80 shrink-0" />
               <Input
                 autoFocus
@@ -361,13 +362,13 @@ export default function CommandBar() {
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={onKeyDown}
               />
-              <kbd className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded-md glass border border-white/15 text-[9px] text-ink/40 uppercase tracking-[0.2em] leading-none shrink-0">
+              <kbd className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded-md wl-panel border border-white/15 text-[9px] text-ink/40 uppercase tracking-[0.2em] leading-none shrink-0">
                 ESC
               </kbd>
             </div>
 
             {/* Results */}
-            <div className="relative z-10 glass-strong rounded-b-2xl max-h-[60dvh] sm:max-h-[420px] overflow-y-auto">
+            <div className="relative z-10 wl-panel-elevated rounded-b-md max-h-[60dvh] sm:max-h-[420px] overflow-y-auto">
               {filteredCommands.length > 0 ? (
                 <div className="py-2">
                   {["Navigation", "Actions"].map((category) => {
@@ -385,12 +386,15 @@ export default function CommandBar() {
                             const globalIndex = filteredCommands.indexOf(cmd);
                             const isSelected = globalIndex === selectedIndex;
                             return (
-                              <button
+                              <ShadButton
                                 key={cmd.id}
+                                type="button"
+                                variant="ghost"
+                                disableAnimations
                                 onClick={() => handleAction(cmd)}
                                 onMouseEnter={() => setSelectedIndex(globalIndex)}
                                 className={cn(
-                                  "w-full rounded-xl px-3 py-2.5 flex items-center gap-3 text-left transition-all",
+                                  "group w-full h-auto rounded-md px-3 py-2.5 flex items-center gap-3 text-left justify-start",
                                   isSelected
                                     ? "bg-white/8 border border-brand/25"
                                     : "border border-transparent hover:bg-white/5",
@@ -399,10 +403,10 @@ export default function CommandBar() {
                                 {/* Icon */}
                                 <div
                                   className={cn(
-                                    "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all",
+                                    "w-8 h-8 rounded-md flex items-center justify-center shrink-0 transition-all",
                                     isSelected
                                       ? "bg-brand/15 border border-brand/30 text-brand"
-                                      : "glass border border-white/10 text-muted",
+                                      : "wl-panel border border-white/10 text-muted",
                                   )}
                                 >
                                   <cmd.icon className="w-3.5 h-3.5" />
@@ -431,7 +435,7 @@ export default function CommandBar() {
                                         "hidden sm:flex items-center px-1.5 py-0.5 rounded-md border text-[9px] leading-none uppercase tracking-[0.2em] transition-all",
                                         isSelected
                                           ? "bg-brand/15 border-brand/30 text-brand"
-                                          : "glass border-white/15 text-ink/40",
+                                          : "wl-panel border-white/15 text-ink/40",
                                       )}
                                     >
                                       {cmd.shortcut}
@@ -446,7 +450,7 @@ export default function CommandBar() {
                                     )}
                                   />
                                 </div>
-                              </button>
+                              </ShadButton>
                             );
                           })}
                         </div>
@@ -466,7 +470,7 @@ export default function CommandBar() {
                 <div className="flex items-center gap-3 text-[8px] uppercase tracking-[0.28em] text-ink/40">
                   <span className="flex items-center gap-1">
                     <kbd
-                      className="px-1 py-0.5 rounded glass border border-white/12 text-[7px]"
+                      className="px-1 py-0.5 rounded wl-panel border border-white/12 text-[7px]"
                       aria-label="Arrow keys to navigate"
                     >
                       ↑↓
@@ -475,7 +479,7 @@ export default function CommandBar() {
                   </span>
                   <span className="flex items-center gap-1">
                     <kbd
-                      className="px-1 py-0.5 rounded glass border border-white/12 text-[7px]"
+                      className="px-1 py-0.5 rounded wl-panel border border-white/12 text-[7px]"
                       aria-label="Enter key to execute"
                     >
                       ↵
@@ -484,7 +488,7 @@ export default function CommandBar() {
                   </span>
                   <span className="flex items-center gap-1">
                     <kbd
-                      className="px-1 py-0.5 rounded glass border border-white/12 text-[7px]"
+                      className="px-1 py-0.5 rounded wl-panel border border-white/12 text-[7px]"
                       aria-label="Escape key to close"
                     >
                       ESC

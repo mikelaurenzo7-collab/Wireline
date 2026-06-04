@@ -18,6 +18,7 @@ import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { safeDate, formatDate } from "../lib/safe-date";
 import UsageMeter from "./UsageMeter";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 import { getStoredSignupIntent, recommendedPlanFromIntent } from "../lib/signup-intent";
 
 interface Plan {
@@ -195,7 +196,7 @@ export default function StripeBillingCard() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl glass border border-white/10 p-10 flex items-center gap-4">
+      <div className="rounded-md wl-panel border border-white/10 p-10 flex items-center gap-4">
         <Loader2 className="w-5 h-5 animate-spin text-brand" />
         <span className="app-section-title/70">Loading billing state…</span>
       </div>
@@ -208,9 +209,9 @@ export default function StripeBillingCard() {
     // message and a contact path. Operator notifications happen via
     // Vercel logs + /api/health/integrations (owner-gated).
     return (
-      <div className="rounded-2xl glass border border-amber-500/25 bg-amber-500/[0.04] p-8 md:p-10 space-y-4">
+      <div className="rounded-md wl-panel border border-amber-500/25 bg-amber-500/[0.04] p-8 md:p-10 space-y-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-md bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">
             <AlertTriangle className="w-5 h-5 text-amber-500" />
           </div>
           <h3 className="font-display italic lowercase text-2xl text-ink">
@@ -250,7 +251,7 @@ export default function StripeBillingCard() {
       {error && (
         <div
           role="alert"
-          className="rounded-2xl bg-rose-500/8 border border-rose-500/30 p-4 flex items-center gap-3"
+          className="rounded-md bg-rose-500/8 border border-rose-500/30 p-4 flex items-center gap-3"
         >
           <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
           <p className="text-[11px] text-rose-500">{error}</p>
@@ -258,7 +259,7 @@ export default function StripeBillingCard() {
       )}
 
       {/* Plan picker */}
-      <div className="rounded-2xl glass border border-white/10 p-8 md:p-10 space-y-8">
+      <div className="rounded-md wl-panel border border-white/10 p-8 md:p-10 space-y-8">
         <div className="border-b border-white/8 pb-6">
           <h3 className="font-display italic lowercase text-3xl text-ink">
             {hasActive ? "change plan" : "choose a plan"}
@@ -288,7 +289,7 @@ export default function StripeBillingCard() {
                 whileHover={{ y: -4 }}
                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
                 className={cn(
-                  "relative rounded-2xl glass border p-7 flex flex-col gap-5 transition-all group overflow-hidden",
+                  "relative rounded-md wl-panel border p-7 flex flex-col gap-5 transition-all group overflow-hidden",
                   isCurrent
                     ? "border-brand/40 bg-brand/5"
                     : isSignupMatch
@@ -328,7 +329,7 @@ export default function StripeBillingCard() {
                 )}
                 <div className="flex items-center justify-between">
                   <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center"
+                    className="w-12 h-12 rounded-md flex items-center justify-center"
                     style={{ background: `${accent}18`, border: `1px solid ${accent}40` }}
                   >
                     <Icon className="w-6 h-6" style={{ color: accent }} />
@@ -368,14 +369,17 @@ export default function StripeBillingCard() {
                     </li>
                   ))}
                 </ul>
-                <button
+                <ShadButton
+                  type="button"
+                  disableAnimations
+                  variant={isCurrent ? "secondary" : "outline"}
                   onClick={() => startCheckout(plan.id)}
                   disabled={isBusy || isCurrent || !plan.configured}
                   className={cn(
-                    "w-full py-3 rounded-xl text-[10px] uppercase tracking-[0.28em] font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-premium-button",
+                    "w-full py-3 rounded-md text-[10px] uppercase tracking-[0.28em] font-medium shadow-premium-button",
                     isCurrent
-                      ? "bg-white/5 border border-white/10 text-muted"
-                      : "border border-white/20 hover:border-white/40 text-ink bg-white/5 hover:bg-white/10 hover-premium-glow",
+                      ? "bg-white/5 border-white/10 text-muted"
+                      : "border-white/20 hover:border-white/40 text-ink bg-white/5 hover:bg-white/10 hover-premium-glow",
                   )}
                   style={!isCurrent && !isBusy ? { borderColor: `${accent}50` } : {}}
                 >
@@ -388,7 +392,7 @@ export default function StripeBillingCard() {
                       {hasActive ? "Switch" : "Subscribe"} <ArrowRight className="w-3 h-3" />
                     </>
                   )}
-                </button>
+                </ShadButton>
                 {!plan.configured && (
                   <p className="text-[9px] uppercase tracking-[0.28em] text-muted/70 text-center leading-relaxed">
                     Available soon — contact us to start on this tier
@@ -461,7 +465,7 @@ function ActiveSubCard({
               };
 
   return (
-    <div className="rounded-2xl glass border border-white/12 p-8 md:p-10 relative overflow-hidden">
+    <div className="rounded-md wl-panel border border-white/12 p-8 md:p-10 relative overflow-hidden">
       <div
         className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-15 blur-3xl pointer-events-none"
         style={{ background: accent }}
@@ -469,7 +473,7 @@ function ActiveSubCard({
       <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
         <div className="flex items-center gap-5">
           <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0"
+            className="w-16 h-16 rounded-md flex items-center justify-center shrink-0"
             style={{ background: `${accent}18`, border: `1px solid ${accent}40` }}
           >
             <Icon className="w-8 h-8" style={{ color: accent }} />
@@ -514,10 +518,13 @@ function ActiveSubCard({
             </p>
           </div>
         </div>
-        <button
+        <ShadButton
+          type="button"
+          disableAnimations
+          variant="outline"
           onClick={onPortal}
           disabled={busy}
-          className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl border text-[11px] uppercase tracking-[0.28em] transition-all disabled:opacity-50 hover-premium-glow shadow-premium-button"
+          className="inline-flex gap-2.5 px-6 py-3.5 rounded-md text-[11px] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button"
           style={{
             background: `${accent}12`,
             borderColor: `${accent}40`,
@@ -530,7 +537,7 @@ function ActiveSubCard({
             <ExternalLink className="w-4 h-4" />
           )}
           Manage subscription
-        </button>
+        </ShadButton>
       </div>
     </div>
   );

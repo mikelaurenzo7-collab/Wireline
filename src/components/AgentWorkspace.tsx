@@ -1,5 +1,8 @@
 /**
- * AgentWorkspace — the self-contained surface for one owned agent.
+ * AgentWorkspace — legacy per-agent chat surface.
+ *
+ * @deprecated Use `/chat` with Director Coach mode (`?agent=<id>`). Kept for
+ * internal/founder tooling until fully removed.
  *
  * Redesigned Claude-style:
  * - Massive chat area with spacious message bubbles
@@ -52,6 +55,7 @@ import IntegrationActivityCard, {
 import { Skeleton } from "./ui/shadcn/Skeleton";
 import { Checkbox } from "./ui/shadcn/Checkbox";
 import { Input } from "./ui/shadcn/Input";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 import { EmptyState } from "./ui/EmptyState";
 import { AgentActivityIndicator } from "./ui/AgentActivityIndicator";
 import { useStreamingChat } from "../hooks/useStreamingChat";
@@ -144,19 +148,19 @@ interface AgentWorkspaceProps {
 
 const TONE_CLASSES: Record<string, string> = {
   brand: "border-brand/25 bg-brand/[0.04]",
-  emerald: "border-emerald-500/25 bg-emerald-500/[0.04]",
-  amber: "border-amber-500/30 bg-amber-500/[0.05]",
+  success: "border-brand/25 bg-brand/[0.04]",
+  caution: "border-rose-500/25 bg-rose-500/[0.04]",
 };
 
 const TONE_ICON_CLASSES: Record<string, string> = {
   brand: "bg-brand/10 text-brand",
-  emerald: "bg-emerald-500/12 text-emerald-600",
-  amber: "bg-amber-500/12 text-amber-600",
+  success: "bg-brand/10 text-brand",
+  caution: "bg-rose-500/12 text-rose-600",
 };
 
 interface ProposalCardProps {
   icon: React.ReactNode;
-  tone: "brand" | "emerald" | "amber";
+  tone: "brand" | "success" | "caution";
   title: string;
   detail?: string;
   state?: "done" | "dismissed";
@@ -192,7 +196,7 @@ function ProposalCard({
       }
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
       className={cn(
-        "rounded-xl border px-3 py-2.5 text-ink transition-all duration-200",
+        "rounded-md border px-3 py-2.5 text-ink transition-all duration-200",
         state === "dismissed" ? "border-black/8 bg-black/3" : TONE_CLASSES[tone],
         !state && "hover:shadow-md cursor-default",
       )}
@@ -200,7 +204,7 @@ function ProposalCard({
       <div className="flex items-start gap-2.5">
         <span
           className={cn(
-            "mt-0.5 shrink-0 flex w-6 h-6 items-center justify-center rounded-lg",
+            "mt-0.5 shrink-0 flex w-6 h-6 items-center justify-center rounded-md",
             state === "dismissed" ? "bg-black/5 text-muted/60" : TONE_ICON_CLASSES[tone],
           )}
         >
@@ -235,7 +239,7 @@ function ProposalCard({
           animate={{ opacity: 1, y: 0 }}
           className={cn(
             "mt-2 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em]",
-            state === "done" ? "text-emerald-600" : "text-muted/70",
+            state === "done" ? "text-brand" : "text-muted/70",
           )}
         >
           {state === "done" ? (
@@ -262,10 +266,14 @@ function ProposalCard({
             </label>
           )}
           <div className="mt-2.5 flex items-center gap-2">
-            <button
+            <ShadButton
+              type="button"
+              variant="editorial"
+              size="sm"
+              disableAnimations
               onClick={onApprove}
               disabled={approveDisabled}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[11px] font-medium shadow-sm shadow-brand/20 hover:opacity-95 active:scale-95 transition-all duration-200 disabled:opacity-40 disabled:shadow-none"
+              className="rounded-md text-[11px]"
             >
               {busy ? (
                 <>
@@ -278,15 +286,19 @@ function ProposalCard({
                   {approveLabel}
                 </>
               )}
-            </button>
-            <button
+            </ShadButton>
+            <ShadButton
+              type="button"
+              variant="ghost"
+              size="sm"
+              disableAnimations
               onClick={onDismiss}
               disabled={busy}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] text-muted hover:text-ink hover:bg-black/5 transition-colors disabled:opacity-40"
+              className="rounded-md text-[11px]"
             >
               <X className="w-3 h-3" />
               Dismiss
-            </button>
+            </ShadButton>
           </div>
         </>
       )}
@@ -818,15 +830,15 @@ export default function AgentWorkspace({
       <div className="shrink-0 border-b border-black/8">
         <div className="flex items-center justify-between px-4 py-2.5">
           <div className="flex items-center gap-3">
-            <span className="shrink-0 flex w-8 h-8 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[12px] font-semibold shadow-sm shadow-brand/25">
+            <span className="shrink-0 flex w-8 h-8 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[12px] font-semibold shadow-sm shadow-brand/25">
               {agentName.slice(0, 1).toUpperCase()}
             </span>
             <div>
               <p className="text-[13px] font-semibold text-ink leading-tight">{agentName}</p>
               <p className="flex items-center gap-1.5 text-[10px] text-muted leading-tight">
                 <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500/60" />
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-brand" />
                 </span>
                 Your agent
               </p>
@@ -834,13 +846,17 @@ export default function AgentWorkspace({
           </div>
 
           {messages.length > 0 && (
-            <button
+            <ShadButton
+              type="button"
+              variant="ghost"
+              size="sm"
+              disableAnimations
               onClick={clearThread}
-              className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.18em] text-muted hover:text-rose-600 hover:bg-rose-500/8 transition-colors cursor-pointer"
+              className="shrink-0 rounded-md text-[10px] uppercase tracking-[0.18em] text-muted hover:text-rose-600 hover:bg-rose-500/8"
             >
               <Trash2 className="w-3 h-3" />
               <span>Clear</span>
-            </button>
+            </ShadButton>
           )}
         </div>
 
@@ -849,11 +865,15 @@ export default function AgentWorkspace({
           {WORKSPACE_TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
-              <button
+              <ShadButton
                 key={tab.id}
+                type="button"
+                variant="ghost"
+                size="sm"
+                disableAnimations
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer",
+                  "shrink-0 rounded-md text-[11px] font-medium",
                   isActive
                     ? "bg-brand/10 text-brand border border-brand/30"
                     : "text-muted hover:text-ink hover:bg-black/5 border border-transparent",
@@ -864,7 +884,7 @@ export default function AgentWorkspace({
                 {tab.id === "connectors" && enabledTools.length > 0 && (
                   <span className="text-[9px] text-muted/70">{enabledTools.length}</span>
                 )}
-              </button>
+              </ShadButton>
             );
           })}
         </div>
@@ -878,10 +898,10 @@ export default function AgentWorkspace({
             {isLoading && messages.length === 0 ? (
               <div className="space-y-4 py-8">
                 <div className="flex justify-end">
-                  <Skeleton className="h-12 w-64 rounded-2xl bg-brand/10" />
+                  <Skeleton className="h-12 w-64 rounded-md bg-brand/10" />
                 </div>
                 <div className="flex justify-start">
-                  <Skeleton className="h-24 w-full max-w-lg rounded-2xl" />
+                  <Skeleton className="h-24 w-full max-w-lg rounded-md" />
                 </div>
               </div>
             ) : messages.length === 0 ? (
@@ -894,7 +914,7 @@ export default function AgentWorkspace({
                 {/* Hero avatar */}
                 <div className="relative mb-5">
                   <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-brand/20 to-brand/5 blur-2xl scale-125" />
-                  <span className="flex w-14 h-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand text-xl font-semibold shadow-lg shadow-brand/25 aurora-ring">
+                  <span className="flex w-14 h-14 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand text-xl font-semibold shadow-lg shadow-brand/25">
                     {agentName.slice(0, 1).toUpperCase()}
                   </span>
                 </div>
@@ -925,7 +945,7 @@ export default function AgentWorkspace({
                     {/* Agent avatar */}
                     {m.role === "agent" && (
                       <div className="flex items-center gap-2 mb-2 ml-1">
-                        <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15 text-[10px] font-semibold">
+                        <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15 text-[10px] font-semibold">
                           {agentName.slice(0, 1).toUpperCase()}
                         </span>
                         <span className="text-[10px] text-muted uppercase tracking-[0.14em] font-medium">
@@ -937,7 +957,7 @@ export default function AgentWorkspace({
                     {/* Message bubble */}
                     <div
                       className={cn(
-                        "max-w-[78%] min-w-[180px] rounded-2xl px-5 py-4 whitespace-pre-wrap break-words relative",
+                        "max-w-[78%] min-w-[180px] rounded-md px-5 py-4 whitespace-pre-wrap break-words relative",
                         m.role === "operator"
                           ? "bg-gradient-to-br from-brand to-brand-deep text-white rounded-br-sm shadow-lg shadow-brand/25"
                           : "bg-paper/95 dark:bg-black/40 backdrop-blur-sm border border-brand/10 text-ink dark:text-foreground rounded-bl-sm shadow-sm",
@@ -984,7 +1004,7 @@ export default function AgentWorkspace({
                               <ProposalCard
                                 key={key}
                                 icon={<Power className="w-3.5 h-3.5" />}
-                                tone="emerald"
+                                tone="success"
                                 title={`${t.enable ? "Turn on" : "Turn off"} ${t.label}`}
                                 detail={t.reason}
                                 state={state}
@@ -1020,7 +1040,7 @@ export default function AgentWorkspace({
                               <ProposalCard
                                 key={key}
                                 icon={aIcon}
-                                tone="amber"
+                                tone="caution"
                                 title={a.label}
                                 detail={detail}
                                 state={state}
@@ -1055,14 +1075,14 @@ export default function AgentWorkspace({
                     className="flex flex-col items-start"
                   >
                     <div className="flex items-center gap-2 mb-2 ml-1">
-                      <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15 text-[10px] font-semibold">
+                      <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15 text-[10px] font-semibold">
                         {agentName.slice(0, 1).toUpperCase()}
                       </span>
                       <span className="text-[10px] text-muted uppercase tracking-[0.14em] font-medium">
                         {agentName}
                       </span>
                     </div>
-                    <div className="bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm border border-brand/12 rounded-2xl rounded-bl-md px-5 py-4 shadow-sm">
+                    <div className="bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm border border-brand/12 rounded-md rounded-bl-md px-5 py-4 shadow-sm">
                       <div className="flex items-center gap-2.5 mb-2">
                         <AgentActivityIndicator active size={24} pose="on-call" />
                         <LiveThinkingIndicator isDeep={false} />
@@ -1102,11 +1122,11 @@ export default function AgentWorkspace({
                             }}
                             exit={{ opacity: 0, y: -8 }}
                             className={cn(
-                              "mt-2.5 rounded-xl border px-4 py-3 text-xs transition-all",
+                              "mt-2.5 rounded-md border px-4 py-3 text-xs transition-all",
                               step.status === "active"
                                 ? "border-brand/40 bg-brand/5 shadow-sm"
                                 : step.status === "done"
-                                  ? "border-emerald-400/30 bg-emerald-50/70"
+                                  ? "border-brand/30 bg-brand/5"
                                   : "border-black/5 bg-white/60",
                             )}
                           >
@@ -1117,7 +1137,7 @@ export default function AgentWorkspace({
                                   step.status === "active"
                                     ? "text-brand"
                                     : step.status === "done"
-                                      ? "text-emerald-500"
+                                      ? "text-brand"
                                       : "text-muted",
                                 )}
                               >
@@ -1130,7 +1150,7 @@ export default function AgentWorkspace({
                                     <div className="h-1 w-1 rounded-full bg-brand animate-ping" />
                                   )}
                                   {step.status === "done" && (
-                                    <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                    <Check className="w-3.5 h-3.5 text-brand" />
                                   )}
                                 </div>
                                 <div className="text-[10px] text-muted leading-tight mt-0.5">
@@ -1180,11 +1200,11 @@ export default function AgentWorkspace({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 4, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute bottom-full left-4 right-4 mb-2 rounded-xl bg-white/95 dark:bg-[#1a1225]/95 backdrop-blur-md border border-brand/15 shadow-xl shadow-brand/10 p-3 z-20"
+                  className="absolute bottom-full left-4 right-4 mb-2 rounded-md bg-popover text-popover-foreground backdrop-blur-md border border-border shadow-2xl p-3 z-20"
                 >
-                  <div className="flex items-center gap-2 px-2 py-2 border-b border-brand/8 mb-2">
-                    <Plug className="w-3.5 h-3.5 text-brand/60" />
-                    <span className="text-[10px] uppercase tracking-[0.16em] text-ink/50 font-medium">
+                  <div className="flex items-center gap-2 px-2 py-2 border-b border-border mb-2">
+                    <Plug className="w-3.5 h-3.5 text-brand" />
+                    <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
                       {enabledTools.length > 0
                         ? `${enabledTools.length} Active Tools`
                         : "No Tools Active"}
@@ -1192,24 +1212,24 @@ export default function AgentWorkspace({
                   </div>
                   <div className="space-y-1">
                     {enabledTools.length === 0 ? (
-                      <p className="text-[11px] text-muted px-2 py-2">
+                      <p className="text-[11px] text-muted-foreground px-2 py-2">
                         No tools enabled yet. The agent will use its default capabilities.
                       </p>
                     ) : (
                       enabledTools.map((tool) => (
                         <div
                           key={tool}
-                          className="flex items-center gap-2 px-2 py-2 rounded-lg bg-brand/5"
+                          className="flex items-center gap-2 px-2 py-2 rounded-md bg-muted/40"
                         >
-                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                          <span className="text-[12px] text-ink font-medium capitalize">
+                          <span className="w-2 h-2 rounded-full bg-brand" />
+                          <span className="text-[12px] text-foreground font-medium capitalize">
                             {tool.replace(/_/g, " ")}
                           </span>
                         </div>
                       ))
                     )}
                   </div>
-                  <div className="mt-2 pt-2 border-t border-brand/8">
+                  <div className="mt-2 pt-2 border-t border-border">
                     <a
                       href="/integrations"
                       className="flex items-center gap-2 px-2 py-2 text-[11px] text-brand hover:text-brand/80 transition-colors"
@@ -1225,7 +1245,7 @@ export default function AgentWorkspace({
 
           {/* Composer - prominent at bottom */}
           <div className="shrink-0 px-4 pb-6 pt-2">
-            <div className="relative rounded-2xl border border-brand/20 bg-white/90 dark:bg-[#1a1225]/80 backdrop-blur-md shadow-lg shadow-brand/5 transition-all duration-300 focus-within:border-brand/40 focus-within:shadow-xl focus-within:shadow-brand/10">
+            <div className="relative rounded-md border border-brand/20 bg-white/90 dark:bg-[#1a1225]/80 backdrop-blur-md shadow-lg shadow-brand/5 transition-all duration-300 focus-within:border-brand/40 focus-within:shadow-xl focus-within:shadow-brand/10">
               <textarea
                 ref={inputRef}
                 value={input}
@@ -1245,11 +1265,14 @@ export default function AgentWorkspace({
               <div className="flex items-center justify-between px-4 pb-3">
                 <div className="flex items-center gap-2">
                   {/* Tools dropdown toggle */}
-                  <button
+                  <ShadButton
                     type="button"
+                    variant="ghost"
+                    size="sm"
+                    disableAnimations
                     onClick={() => setToolsOpen(!toolsOpen)}
                     className={cn(
-                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer",
+                      "rounded-md text-[11px] font-medium",
                       toolsOpen
                         ? "bg-brand/10 text-brand border border-brand/30"
                         : "text-ink/50 hover:text-brand hover:bg-brand/5 border border-transparent",
@@ -1263,7 +1286,7 @@ export default function AgentWorkspace({
                     <ChevronDown
                       className={cn("w-3 h-3 transition-transform", toolsOpen && "rotate-180")}
                     />
-                  </button>
+                  </ShadButton>
 
                   {/* Hidden file input */}
                   <Input
@@ -1275,12 +1298,15 @@ export default function AgentWorkspace({
                   />
                   {/* Attachments dropdown toggle */}
                   <div className="relative" ref={attachmentsRef}>
-                    <button
+                    <ShadButton
                       type="button"
+                      variant="ghost"
+                      size="sm"
+                      disableAnimations
                       onClick={() => setAttachmentsOpen(!attachmentsOpen)}
                       disabled={isUploading || isSending}
                       className={cn(
-                        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer disabled:opacity-40",
+                        "rounded-md text-[11px] font-medium",
                         attachmentsOpen
                           ? "bg-brand/10 text-brand border border-brand/30"
                           : "text-ink/50 hover:text-brand hover:bg-brand/5 border border-transparent",
@@ -1298,7 +1324,7 @@ export default function AgentWorkspace({
                           attachmentsOpen && "rotate-180",
                         )}
                       />
-                    </button>
+                    </ShadButton>
 
                     <AnimatePresence>
                       {attachmentsOpen && (
@@ -1307,51 +1333,62 @@ export default function AgentWorkspace({
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 4, scale: 0.98 }}
                           transition={{ duration: 0.15 }}
-                          className="absolute bottom-full left-0 mb-2 w-48 rounded-xl bg-white/95 dark:bg-[#1a1225]/95 backdrop-blur-md border border-brand/15 shadow-xl shadow-brand/10 p-1 z-20"
+                          className="absolute bottom-full left-0 mb-2 w-48 rounded-md bg-popover text-popover-foreground backdrop-blur-md border border-border shadow-2xl p-1 z-20"
                         >
-                          <button
+                          <ShadButton
+                            type="button"
+                            variant="ghost"
+                            disableAnimations
                             onClick={() => {
                               setAttachmentsOpen(false);
                               fileInputRef.current?.click();
                             }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-left rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                            className="w-full h-auto justify-start gap-2 px-3 py-2 rounded-md hover:bg-muted/50"
                           >
-                            <FileText className="w-4 h-4 text-brand/70" />
-                            <div>
-                              <span className="block text-[11px] font-medium text-ink dark:text-white">
+                            <FileText className="w-4 h-4 text-brand" />
+                            <div className="text-left">
+                              <span className="block text-[11px] font-semibold text-foreground">
                                 Document
                               </span>
-                              <span className="block text-[9px] text-muted">PDFs & files</span>
+                              <span className="block text-[9px] text-muted-foreground">
+                                PDFs & files
+                              </span>
                             </div>
-                          </button>
+                          </ShadButton>
 
-                          <button
+                          <ShadButton
+                            type="button"
+                            variant="ghost"
+                            disableAnimations
                             onClick={() => {
                               setAttachmentsOpen(false);
                               toastSuccess("Added to memory", "Memory panel updated with new fact");
                             }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-left rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                            className="w-full h-auto justify-start gap-2 px-3 py-2 rounded-md hover:bg-muted/50"
                           >
-                            <Brain className="w-4 h-4 text-brand/70" />
-                            <div>
-                              <span className="block text-[11px] font-medium text-ink dark:text-white">
+                            <Brain className="w-4 h-4 text-brand" />
+                            <div className="text-left">
+                              <span className="block text-[11px] font-semibold text-foreground">
                                 Memory
                               </span>
                               <span className="block text-[9px] text-muted">
                                 Add a fact or preference
                               </span>
                             </div>
-                          </button>
+                          </ShadButton>
 
-                          <button
+                          <ShadButton
+                            type="button"
+                            variant="ghost"
+                            disableAnimations
                             onClick={() => {
                               setAttachmentsOpen(false);
                               toastSuccess("Skill learned", "New instruction added to prompt");
                             }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-left rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                            className="w-full h-auto justify-start gap-2 px-3 py-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5"
                           >
                             <GraduationCap className="w-4 h-4 text-brand/70" />
-                            <div>
+                            <div className="text-left">
                               <span className="block text-[11px] font-medium text-ink dark:text-white">
                                 Instruction
                               </span>
@@ -1359,17 +1396,20 @@ export default function AgentWorkspace({
                                 Add a skill to the prompt
                               </span>
                             </div>
-                          </button>
+                          </ShadButton>
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </div>
                 </div>
 
-                <button
+                <ShadButton
+                  type="button"
+                  variant="editorial"
+                  disableAnimations
                   onClick={send}
                   disabled={!input.trim() || isSending || isUploading}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[12px] font-semibold shadow-md shadow-brand/25 disabled:opacity-40 disabled:shadow-none enabled:hover:shadow-lg enabled:hover:shadow-brand/30 enabled:active:scale-95 transition-all duration-200 cursor-pointer"
+                  className="rounded-md text-[12px] font-semibold"
                 >
                   {isSending ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -1377,7 +1417,7 @@ export default function AgentWorkspace({
                     <Send className="w-4 h-4" />
                   )}
                   <span>Send</span>
-                </button>
+                </ShadButton>
               </div>
             </div>
           </div>

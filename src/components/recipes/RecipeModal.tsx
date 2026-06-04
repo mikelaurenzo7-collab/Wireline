@@ -106,9 +106,9 @@ export function RecipeModal({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 24 }}
         transition={{ type: "spring", damping: 26, stiffness: 220 }}
-        className="relative aurora-ring rounded-3xl w-full max-w-3xl max-h-[88vh] flex flex-col"
+        className="relative rounded-md wl-panel-elevated border border-border w-full max-w-3xl max-h-[88vh] flex flex-col overflow-hidden"
       >
-        <div className="relative rounded-3xl glass-strong overflow-hidden flex flex-col flex-1 min-h-0">
+        <div className="relative rounded-md wl-panel-elevated overflow-hidden flex flex-col flex-1 min-h-0">
           <div
             className="absolute -top-32 -right-32 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-25 blur-3xl pointer-events-none"
             style={{ background: `radial-gradient(circle, ${meta.accent}, transparent)` }}
@@ -117,7 +117,7 @@ export function RecipeModal({
           <div className="relative z-10 flex items-center justify-between px-7 py-5 border-b border-white/8">
             <div className="flex items-center gap-4">
               <div
-                className="w-11 h-11 rounded-2xl glass border border-white/10 flex items-center justify-center"
+                className="w-11 h-11 rounded-md wl-panel border border-white/10 flex items-center justify-center"
                 style={{ color: meta.accent }}
               >
                 <meta.icon className="w-5 h-5" />
@@ -137,7 +137,7 @@ export function RecipeModal({
               </div>
             </div>
             <ShadButton
-              variant="glass"
+              variant="outline"
               size="icon"
               onClick={onClose}
               aria-label="Close"

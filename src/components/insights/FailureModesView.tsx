@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { RefreshCw, Sparkles } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { fetchInsight, Spinner, ErrCard, Empty } from "./shared";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 export default function FailureModesView() {
   const [data, setData] = useState<any>(null);
@@ -40,12 +41,16 @@ export default function FailureModesView() {
           )}
           {data.cached ? "Cached" : "Fresh"} · {modes.length} clusters
         </div>
-        <button
+        <ShadButton
+          type="button"
+          disableAnimations
+          variant="outline"
+          size="sm"
           onClick={() => load(true)}
-          className="px-3 py-1.5 rounded-full glass border border-black/10 font-mono text-[10px] uppercase tracking-[0.2em] text-muted hover:text-ink hover:border-brand/25 transition-all flex items-center gap-1.5"
+          className="rounded-full font-mono text-[10px] uppercase tracking-[0.2em] text-muted hover:text-ink hover:border-brand/25"
         >
           <RefreshCw className="w-3 h-3" /> Refresh
-        </button>
+        </ShadButton>
       </div>
       {modes.map((m: any, i: number) => (
         <motion.div
@@ -53,7 +58,7 @@ export default function FailureModesView() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.05 }}
-          className="rounded-2xl glass border border-black/8 p-6 space-y-4"
+          className="rounded-md wl-panel border border-black/8 p-6 space-y-4"
         >
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
@@ -84,7 +89,7 @@ export default function FailureModesView() {
             <div className="font-display italic text-3xl text-aurora">{m.count}</div>
           </div>
           <p className="text-sm text-ink/75 leading-relaxed">{m.description}</p>
-          <div className="rounded-xl bg-brand/10 border border-brand/30 p-4 flex items-start gap-3">
+          <div className="rounded-md bg-brand/10 border border-brand/30 p-4 flex items-start gap-3">
             <Sparkles className="w-4 h-4 text-brand shrink-0 mt-0.5" />
             <div>
               <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-brand mb-1">

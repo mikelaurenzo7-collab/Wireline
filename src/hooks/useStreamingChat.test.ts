@@ -2,9 +2,8 @@
  * useStreamingChat — unit tests for SSE streaming hook logic.
  */
 import { describe, it, expect } from "vitest";
+import { parseSseEvents } from "./useStreamingChat";
 
-// We test the exported types and basic shape since the hook requires
-// a DOM environment with fetch. Integration testing happens in e2e.
 describe("useStreamingChat module", () => {
   it("exports the hook and expected types", async () => {
     const mod = await import("./useStreamingChat");
@@ -12,7 +11,6 @@ describe("useStreamingChat module", () => {
   });
 
   it("StreamPhase type covers expected phases", () => {
-    // Type-level check — this file compiles iff the phases are correct
     const phases: Array<import("./useStreamingChat").StreamPhase> = [
       "idle",
       "connecting",
@@ -22,5 +20,13 @@ describe("useStreamingChat module", () => {
       "error",
     ];
     expect(phases).toHaveLength(6);
+  });
+
+  it("parseSseEvents handles CRLF-framed SSE blocks", () => {
+    const events: Array<{ event: string; data: Record<string, unknown> }> = [];
+    parseSseEvents(["event: done\r", 'data: {"reply":"hello"}\r', "\r"], (event, data) => {
+      events.push({ event, data });
+    });
+    expect(events).toEqual([{ event: "done", data: { reply: "hello" } }]);
   });
 });

@@ -26,10 +26,69 @@ export interface PipelineStep {
 export interface LiveTaskPipelineProps {
   steps: PipelineStep[];
   className?: string;
+  /** timeline = vertical connected rail (Director live session) */
+  variant?: "default" | "timeline";
 }
 
-export function LiveTaskPipeline({ steps, className }: LiveTaskPipelineProps) {
+export function LiveTaskPipeline({ steps, className, variant = "default" }: LiveTaskPipelineProps) {
   if (steps.length === 0) return null;
+
+  if (variant === "timeline") {
+    return (
+      <div className={cn("relative pl-1", className)}>
+        <div
+          className="absolute left-[7px] top-2 bottom-2 w-px bg-gradient-to-b from-brand/30 via-brand/15 to-transparent"
+          aria-hidden
+        />
+        <AnimatePresence>
+          {steps.map((step, i) => (
+            <motion.div
+              key={step.id}
+              initial={{ opacity: 0, x: -6 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.28, delay: i * 0.06 }}
+              className="relative flex items-start gap-3 py-1.5 pl-4"
+            >
+              <span
+                className={cn(
+                  "absolute left-0 top-2.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 bg-[#faf8f5] dark:bg-[#1a1225]",
+                  step.status === "done" && "border-emerald-500/60",
+                  step.status === "active" && "border-brand bg-brand/10",
+                  step.status === "pending" && "border-black/10",
+                )}
+              >
+                {step.status === "done" && <Check className="w-2 h-2 text-emerald-500" />}
+                {step.status === "active" && (
+                  <Loader2 className="w-2 h-2 text-brand animate-spin" />
+                )}
+                {step.status === "pending" && <Circle className="w-1.5 h-1.5 text-muted/40" />}
+              </span>
+              <div className="min-w-0 flex-1 pt-0.5">
+                <p
+                  className={cn(
+                    "text-[11px] leading-tight",
+                    step.status === "active" && "font-semibold text-ink",
+                    step.status === "done" && "text-ink/50",
+                    step.status === "pending" && "text-muted/50",
+                  )}
+                >
+                  {step.label}
+                </p>
+                {step.status === "active" && step.detail && (
+                  <p className="text-[10px] text-muted/65 mt-0.5">{step.detail}</p>
+                )}
+              </div>
+              {step.status === "active" && step.elapsedMs != null && step.elapsedMs > 800 && (
+                <span className="text-[9px] font-mono text-muted/45 tabular-nums shrink-0">
+                  {(step.elapsedMs / 1000).toFixed(1)}s
+                </span>
+              )}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("space-y-1", className)}>

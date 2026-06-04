@@ -22,12 +22,12 @@ import { motion } from "motion/react";
 import { Loader2, Plus, Trash2, BookOpen, AlertTriangle, Save } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
-import { cn } from "../lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { Input } from "./ui/shadcn/Input";
 import { Checkbox } from "./ui/shadcn/Checkbox";
 import { EmptyState } from "./ui/EmptyState";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface DictEntry {
   from: string;
@@ -207,9 +207,9 @@ export default function PronunciationDictionaryPanel() {
       </div>
 
       {!configured && (
-        <div className="rounded-xl border border-amber-500/40 bg-amber-500/8 p-3 flex items-start gap-2.5">
-          <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-          <p className="text-[12px] text-amber-700 leading-relaxed">
+        <div className="rounded-md border border-brand/30 bg-brand/5 p-3 flex items-start gap-2.5">
+          <AlertTriangle className="w-4 h-4 text-brand shrink-0 mt-0.5" />
+          <p className="text-[12px] text-brand/80 leading-relaxed">
             Voice playback isn't connected yet. Pronunciation dictionaries will sync to your agents'
             voices once it's set up.
           </p>
@@ -218,17 +218,20 @@ export default function PronunciationDictionaryPanel() {
 
       {/* Create CTA / form */}
       {!showCreate ? (
-        <button
+        <ShadButton
+          type="button"
+          variant="outline"
+          disableAnimations
           onClick={() => setShowCreate(true)}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand/30 bg-brand/5 hover:bg-brand/8 hover:border-brand/50 py-6 transition-colors"
+          className="w-full h-auto rounded-md border-2 border-dashed border-brand/30 bg-brand/5 hover:bg-brand/8 hover:border-brand/50 py-6 flex-col gap-2"
         >
           <BookOpen className="w-5 h-5 text-brand" />
           <span className="text-[13px] text-brand font-medium">New pronunciation dictionary</span>
-        </button>
+        </ShadButton>
       ) : (
         <form
           onSubmit={createDict}
-          className="rounded-2xl border border-black/10 bg-paper p-5 space-y-4"
+          className="rounded-md border border-border bg-paper p-5 space-y-4"
         >
           <div>
             <h3 className="font-display italic text-lg text-ink">New dictionary</h3>
@@ -253,7 +256,7 @@ export default function PronunciationDictionaryPanel() {
               minLength={1}
               maxLength={80}
               placeholder="e.g. HVAC service terms"
-              className="w-full rounded-lg border border-black/10 bg-paper px-3 py-2.5 text-[13px] text-ink outline-none focus:border-brand/40"
+              className="w-full rounded-md border border-black/10 bg-paper px-3 py-2.5 text-[13px] text-ink outline-none focus:border-brand/40"
             />
           </div>
 
@@ -265,10 +268,12 @@ export default function PronunciationDictionaryPanel() {
           />
 
           <div className="flex items-center gap-2">
-            <button
+            <ShadButton
               type="submit"
+              variant="editorial"
+              disableAnimations
               disabled={creating || newName.trim().length < 1}
-              className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-deep text-on-brand px-4 py-2.5 text-[11px] uppercase tracking-[0.28em] hover:opacity-90 disabled:opacity-30 transition-opacity"
+              className="flex-1 rounded-full text-[11px] uppercase tracking-[0.28em] py-2.5"
             >
               {creating ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -276,19 +281,21 @@ export default function PronunciationDictionaryPanel() {
                 <Save className="w-3.5 h-3.5" />
               )}
               {creating ? "Creating…" : "Create dictionary"}
-            </button>
-            <button
+            </ShadButton>
+            <ShadButton
               type="button"
+              variant="ghost"
+              disableAnimations
               onClick={() => {
                 setShowCreate(false);
                 setNewName("");
                 setNewEntries([blankEntry()]);
               }}
               disabled={creating}
-              className="disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5 rounded-full text-[11px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
+              className="rounded-full text-[11px] uppercase tracking-[0.28em] text-muted"
             >
               Cancel
-            </button>
+            </ShadButton>
           </div>
         </form>
       )}
@@ -316,7 +323,7 @@ export default function PronunciationDictionaryPanel() {
             <motion.div
               key={dict.id}
               layout
-              className="rounded-xl border border-black/10 bg-paper p-4 space-y-3"
+              className="rounded-md border border-black/10 bg-paper p-4 space-y-3"
             >
               <div className="flex items-center gap-3">
                 <div className="flex-1 min-w-0">
@@ -334,14 +341,18 @@ export default function PronunciationDictionaryPanel() {
                   />
                   Active
                 </label>
-                <button
+                <ShadButton
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disableAnimations
                   onClick={() => deleteDict(dict)}
-                  className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-rose-600 hover:bg-rose-500/8 transition-colors"
+                  className="shrink-0 w-8 h-8 rounded-md text-muted hover:text-rose-600 hover:bg-rose-500/8"
                   aria-label={`Delete ${dict.name}`}
                   title="Delete"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                </ShadButton>
               </div>
 
               <EntryEditor
@@ -352,10 +363,14 @@ export default function PronunciationDictionaryPanel() {
               />
 
               <div className="flex items-center gap-2">
-                <button
+                <ShadButton
+                  type="button"
+                  variant="editorial"
+                  size="sm"
+                  disableAnimations
                   onClick={() => saveDict(dict)}
                   disabled={savingId === dict.id}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-deep text-on-brand px-4 py-2 text-[10px] uppercase tracking-[0.28em] hover:opacity-90 disabled:opacity-30 transition-opacity"
+                  className="rounded-full text-[10px] uppercase tracking-[0.28em] py-2"
                 >
                   {savingId === dict.id ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -363,7 +378,7 @@ export default function PronunciationDictionaryPanel() {
                     <Save className="w-3 h-3" />
                   )}
                   {savingId === dict.id ? "Saving…" : "Save rules"}
-                </button>
+                </ShadButton>
               </div>
             </motion.div>
           ))
@@ -400,7 +415,7 @@ function EntryEditor({ entries, onChange, onAddRow, onRemoveRow }: EntryEditorPr
         <span />
       </div>
       {entries.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-black/12 p-3 text-center text-[11px] text-muted">
+        <div className="rounded-md border border-dashed border-black/12 p-3 text-center text-[11px] text-muted">
           No rules yet. Add a row below.
         </div>
       ) : (
@@ -416,7 +431,7 @@ function EntryEditor({ entries, onChange, onAddRow, onRemoveRow }: EntryEditorPr
                 onChange(next);
               }}
               placeholder={entry.kind === "phoneme" ? "ACL" : "HVAC"}
-              className="rounded-lg border border-black/10 bg-paper px-2.5 py-2 text-[12px] text-ink outline-none focus:border-brand/40"
+              className="rounded-md border border-black/10 bg-paper px-2.5 py-2 text-[12px] text-ink outline-none focus:border-brand/40"
             />
             <Input
               type="text"
@@ -428,7 +443,7 @@ function EntryEditor({ entries, onChange, onAddRow, onRemoveRow }: EntryEditorPr
                 onChange(next);
               }}
               placeholder={entry.kind === "phoneme" ? "ˈeɪ siː ɛl" : "H-V-A-C"}
-              className="rounded-lg border border-black/10 bg-paper px-2.5 py-2 text-[12px] text-ink outline-none focus:border-brand/40"
+              className="rounded-md border border-black/10 bg-paper px-2.5 py-2 text-[12px] text-ink outline-none focus:border-brand/40"
             />
             <Select
               value={entry.kind}
@@ -446,7 +461,7 @@ function EntryEditor({ entries, onChange, onAddRow, onRemoveRow }: EntryEditorPr
             >
               <SelectTrigger
                 aria-label="Entry kind"
-                className="rounded-lg border border-black/10 bg-paper px-2 py-2 text-[11px] text-ink h-auto"
+                className="rounded-md border border-black/10 bg-paper px-2 py-2 text-[11px] text-ink h-auto"
               >
                 <SelectValue />
               </SelectTrigger>
@@ -455,28 +470,31 @@ function EntryEditor({ entries, onChange, onAddRow, onRemoveRow }: EntryEditorPr
                 <SelectItem value="phoneme">IPA</SelectItem>
               </SelectContent>
             </Select>
-            <button
+            <ShadButton
               type="button"
+              variant="ghost"
+              size="icon"
+              disableAnimations
               onClick={() => onRemoveRow(idx)}
-              className={cn(
-                "w-7 h-7 rounded-md flex items-center justify-center transition-colors",
-                "text-muted hover:text-rose-600 hover:bg-rose-500/8",
-              )}
+              className="w-7 h-7 rounded-md text-muted hover:text-rose-600 hover:bg-rose-500/8"
               aria-label="Remove rule"
             >
               <Trash2 className="w-3 h-3" />
-            </button>
+            </ShadButton>
           </div>
         ))
       )}
-      <button
+      <ShadButton
         type="button"
+        variant="ghost"
+        size="sm"
+        disableAnimations
         onClick={onAddRow}
-        className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.28em] text-brand hover:opacity-80 transition-opacity"
+        className="h-auto px-0 text-[10px] uppercase tracking-[0.28em] text-brand hover:text-brand"
       >
         <Plus className="w-3 h-3" />
         Add row
-      </button>
+      </ShadButton>
     </div>
   );
 }

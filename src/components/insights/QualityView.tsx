@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import { BarChart3, TrendingUp, Loader2, Star, Play } from "lucide-react";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 import {
   AreaChart,
   Area,
@@ -117,14 +118,18 @@ export default function QualityView({ days }: { days: number }) {
     <div className="space-y-4 pb-6">
       {/* Action bar */}
       <div className="flex items-center justify-end">
-        <button
+        <ShadButton
+          type="button"
+          disableAnimations
+          variant="outline"
+          size="sm"
           onClick={handleScoreAll}
           disabled={scoring}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors disabled:opacity-50"
+          className="rounded-full bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25"
         >
           {scoring ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
           {scoring ? "Scoring…" : "Score All Unscored"}
-        </button>
+        </ShadButton>
       </div>
 
       {/* Hero stats */}
@@ -137,7 +142,7 @@ export default function QualityView({ days }: { days: number }) {
         ].map(({ label, value, accent }) => (
           <div
             key={label}
-            className="relative rounded-2xl glass border border-black/8 p-4 overflow-hidden"
+            className="relative rounded-md wl-panel border border-black/8 p-4 overflow-hidden"
           >
             <div
               className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-25 blur-3xl pointer-events-none"
@@ -155,7 +160,7 @@ export default function QualityView({ days }: { days: number }) {
 
       {/* Distribution + Radar */}
       <div className="grid md:grid-cols-2 gap-4">
-        <div className="rounded-2xl glass border border-black/8 p-5">
+        <div className="rounded-md wl-panel border border-black/8 p-5">
           <h4 className="font-mono text-[9px] uppercase tracking-[0.32em] text-muted mb-4 flex items-center gap-1.5">
             <BarChart3 className="w-3 h-3" /> Score Distribution
           </h4>
@@ -180,7 +185,7 @@ export default function QualityView({ days }: { days: number }) {
           </div>
         </div>
 
-        <div className="rounded-2xl glass border border-black/8 p-5">
+        <div className="rounded-md wl-panel border border-black/8 p-5">
           <h4 className="font-mono text-[9px] uppercase tracking-[0.32em] text-muted mb-2 flex items-center gap-1.5">
             <Star className="w-3 h-3" /> Dimension Averages (% of max)
           </h4>
@@ -208,7 +213,7 @@ export default function QualityView({ days }: { days: number }) {
 
       {/* 7-day trend */}
       {data.trend && data.trend.length > 1 && (
-        <div className="rounded-2xl glass border border-black/8 p-5">
+        <div className="rounded-md wl-panel border border-black/8 p-5">
           <h4 className="font-mono text-[9px] uppercase tracking-[0.32em] text-muted mb-4 flex items-center gap-1.5">
             <TrendingUp className="w-3 h-3" /> QA Score Trend
           </h4>
@@ -260,7 +265,7 @@ export default function QualityView({ days }: { days: number }) {
       )}
 
       {/* Dimension detail table */}
-      <div className="rounded-2xl glass border border-black/8 overflow-hidden">
+      <div className="rounded-md wl-panel border border-black/8 overflow-hidden">
         <div className="px-5 py-3 border-b border-black/8">
           <h4 className="font-mono text-[9px] uppercase tracking-[0.32em] text-muted flex items-center gap-1.5">
             <Star className="w-3 h-3" /> Rubric Dimensions

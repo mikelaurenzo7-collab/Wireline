@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { authFetch } from "../lib/api";
+import { ShadButton } from "./ui/shadcn/ShadButton";
+import { cn } from "../lib/utils";
 
 interface TourStep {
   id: string;
@@ -166,7 +168,7 @@ export default function ProductTour() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed z-[900] pointer-events-none rounded-lg animate-pulse"
+            className="fixed z-[900] pointer-events-none rounded-md animate-pulse"
             style={{
               top: anchorRect.top - 4,
               left: anchorRect.left - 4,
@@ -206,24 +208,21 @@ export default function ProductTour() {
               : "fixed z-[920] bottom-[max(1.5rem,env(safe-area-inset-bottom,0px))] inset-x-4 sm:inset-x-auto sm:right-6 sm:w-80"
           }
         >
-          <div
-            className="glass-elevated rounded-2xl border p-4 shadow-2xl"
-            style={{
-              borderColor: "rgba(26, 22, 20, 0.10)",
-              boxShadow:
-                "0 1px 0 rgba(255,255,255,0.9) inset, 0 22px 54px -24px rgba(26,22,20,0.32), 0 0 0 1px rgba(107, 43, 153 ,0.05)",
-            }}
-          >
+          <div className="wl-panel-elevated rounded-md border border-border p-4 shadow-2xl">
             {/* Header row */}
             <div className="flex items-start justify-between gap-3 mb-3">
               <h3 className="text-sm font-semibold text-ink leading-tight">{step.title}</h3>
-              <button
+              <ShadButton
+                type="button"
+                variant="ghost"
+                size="icon"
+                disableAnimations
                 onClick={dismiss}
                 aria-label="Skip tour"
-                className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-ink/65 hover:text-ink/80 hover:bg-white/8 transition-all"
+                className="shrink-0 min-h-6 w-6 rounded-full"
               >
                 <X className="w-3.5 h-3.5" />
-              </button>
+              </ShadButton>
             </div>
 
             {/* Body */}
@@ -240,13 +239,10 @@ export default function ProductTour() {
                       opacity: i === stepIndex ? 1 : 0.3,
                       scale: i === stepIndex ? 1 : 0.75,
                     }}
-                    className="rounded-full"
-                    style={{
-                      width: i === stepIndex ? 16 : 6,
-                      height: 6,
-                      background: i === stepIndex ? "#8B3FD6" : "rgba(0,0,0,0.15)",
-                      transition: "width 0.3s ease",
-                    }}
+                    className={cn(
+                      "rounded-full h-1.5",
+                      i === stepIndex ? "w-4 bg-brand" : "w-1.5 bg-black/15",
+                    )}
                   />
                 ))}
                 <span className="ml-1 text-[9px] text-muted/70 tabular-nums">
@@ -256,19 +252,26 @@ export default function ProductTour() {
 
               <div className="flex items-center gap-2">
                 {!isLast && stepIndex > 0 && (
-                  <button
+                  <ShadButton
+                    type="button"
+                    variant="ghost"
+                    disableAnimations
                     onClick={dismiss}
-                    className="text-[10px] uppercase tracking-[0.3em] text-ink/65 hover:text-ink/70 transition-all"
+                    className="h-auto p-0 text-[10px] uppercase tracking-[0.3em] text-muted"
                   >
                     Skip
-                  </button>
+                  </ShadButton>
                 )}
-                <button
+                <ShadButton
+                  type="button"
+                  variant="editorial"
+                  size="sm"
+                  disableAnimations
                   onClick={advance}
-                  className="brutal-btn !py-1.5 !px-3 !text-[10px] !tracking-[0.25em] whitespace-nowrap"
+                  className="rounded-full text-[10px] tracking-[0.25em] whitespace-nowrap"
                 >
                   {step.cta}
-                </button>
+                </ShadButton>
               </div>
             </div>
           </div>

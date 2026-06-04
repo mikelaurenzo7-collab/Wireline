@@ -3,7 +3,7 @@
  * props mirror those state shapes (selectedAgent, agentConfig, agentStats,
  * tool callbacks). Until /api/agents and /api/agents/:id/config are modeled
  * in contracts/api-types.ts, the props stay as any | null. */
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ChevronLeft,
   Target,
@@ -22,8 +22,13 @@ import {
   Pencil,
   Trash2,
   Plus,
+  MessageCircle,
+  Video,
+  Workflow,
+  ArrowUpRight,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { Link } from "react-router-dom";
 import { cn } from "../../lib/utils";
 import { authFetch } from "../../lib/api";
 import { useToast } from "../../contexts/ToastContext";
@@ -45,6 +50,75 @@ import {
 } from "../ui/shadcn/Select";
 import { Input } from "../ui/shadcn/Input";
 import { Slider } from "../ui/shadcn/Slider";
+import { ShadButton } from "../ui/shadcn/ShadButton";
+
+type VoiceOption = { id: string; provider?: string; name: string };
+
+function resolveVoiceSelectValue(voiceId: string | null | undefined, catalog: VoiceOption[]) {
+  if (!voiceId) return "inherit";
+  return catalog.some((v) => v.id === voiceId) ? voiceId : "custom";
+}
+
+function VoiceFieldSelect({
+  label,
+  value,
+  catalog,
+  onSelect,
+  allowInherit,
+  showCustomOption,
+  onCustomMode,
+}: {
+  label: string;
+  value: string | null | undefined;
+  catalog: VoiceOption[];
+  onSelect: (voiceId: string | null, provider?: string) => void;
+  allowInherit?: boolean;
+  showCustomOption?: boolean;
+  onCustomMode?: () => void;
+}) {
+  const selectValue = allowInherit && !value ? "inherit" : resolveVoiceSelectValue(value, catalog);
+  return (
+    <div className="space-y-1.5">
+      <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">{label}</label>
+      <Select
+        value={selectValue}
+        onValueChange={(val) => {
+          if (val === "inherit") {
+            onSelect(null);
+            return;
+          }
+          if (val === "custom") {
+            onCustomMode?.();
+            return;
+          }
+          const voiceData = catalog.find((v) => v.id === val);
+          onSelect(val, voiceData?.provider || "11labs");
+        }}
+      >
+        <SelectTrigger
+          aria-label={label}
+          className="w-full text-xs bg-black/5 border border-black/10 rounded-md pl-2.5 py-1.5 text-ink h-auto"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {allowInherit && <SelectItem value="inherit">Same as primary</SelectItem>}
+          <SelectGroup>
+            <SelectLabel>Premium</SelectLabel>
+            {catalog.map((v) => (
+              <SelectItem key={v.id} value={v.id}>
+                {v.name}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+          {!allowInherit && showCustomOption && (
+            <SelectItem value="custom">Custom voice ID</SelectItem>
+          )}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
 
 interface AgentConfigPanelProps {
   selectedAgent: any | null;
@@ -82,6 +156,36 @@ export default function AgentConfigPanel({
   integrationStatus,
 }: AgentConfigPanelProps) {
   const { success: toastSuccess, error: toastError } = useToast();
+  const [clonedVoices, setClonedVoices] = useState<VoiceOption[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    authFetch("/api/voices")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows) => {
+        if (!active || !Array.isArray(rows)) return;
+        setClonedVoices(
+          rows.map((v: { id: string; name?: string; provider?: string }) => ({
+            id: v.id,
+            name: v.name || "Cloned voice",
+            provider: v.provider || "11labs",
+          })),
+        );
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const voiceCatalog = [...clonedVoices, ...PREMIUM_VOICES];
+  const isCustomPrimaryVoice =
+    !!selectedAgent?.voice_id && !voiceCatalog.some((v) => v.id === selectedAgent.voice_id);
+  const [primaryVoiceCustomMode, setPrimaryVoiceCustomMode] = useState(false);
+
+  useEffect(() => {
+    setPrimaryVoiceCustomMode(isCustomPrimaryVoice);
+  }, [selectedAgent?.id, isCustomPrimaryVoice]);
 
   const [editingDirective, setEditingDirective] = useState<{ id: string; content: string } | null>(
     null,
@@ -168,13 +272,17 @@ export default function AgentConfigPanel({
       {/* Mobile-only back button — clears selectedAgent so the list
     reappears. Hidden on md+ where both panes coexist. */}
       {selectedAgent && (
-        <button
+        <ShadButton
+          type="button"
+          variant="outline"
+          size="sm"
+          disableAnimations
           onClick={() => setSelectedAgent(null)}
           aria-label="Back to agent list"
-          className="md:hidden mb-3 inline-flex items-center gap-2 px-3 h-10 rounded-full glass text-[10px] uppercase tracking-[0.28em] text-ink/80 hover:border-brand/40 active:scale-95 transition-all"
+          className="md:hidden mb-3 h-10 rounded-full text-[10px] uppercase tracking-[0.28em] text-ink/80"
         >
           <ChevronLeft className="w-3.5 h-3.5" /> Back to fleet
-        </button>
+        </ShadButton>
       )}
       <AnimatePresence mode="wait">
         {!selectedAgent ? (
@@ -183,7 +291,7 @@ export default function AgentConfigPanel({
             animate={{ opacity: 1, scale: 1 }}
             className="h-full flex flex-col items-center justify-center gap-4 text-center px-6"
           >
-            <div className="w-16 h-16 rounded-2xl glass flex items-center justify-center text-muted">
+            <div className="w-16 h-16 rounded-md wl-panel-elevated border border-border flex items-center justify-center text-muted">
               <Target className="w-7 h-7" />
             </div>
             <div className="space-y-1.5">
@@ -209,15 +317,8 @@ export default function AgentConfigPanel({
               const roleDefaultTools = getRoleToolSet(selectedAgent.role);
               const usingRoleDefaults = !Array.isArray(selectedAgent.enabled_tools);
               return (
-                <header className="rounded-2xl glass p-4 relative overflow-hidden">
-                  <div
-                    className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
-                    style={{
-                      background: "radial-gradient(circle, #8B3FD6, transparent)",
-                    }}
-                  />
-
-                  <div className="relative z-10 flex flex-col lg:flex-row items-start justify-between gap-4">
+                <header className="rounded-md wl-panel-elevated border border-border p-4">
+                  <div className="flex flex-col lg:flex-row items-start justify-between gap-4">
                     <div className="flex-1 w-full space-y-3">
                       <div className="flex items-center gap-2">
                         <span className="w-1 h-8 bg-brand rounded-full" />
@@ -233,7 +334,7 @@ export default function AgentConfigPanel({
                           className={cn(
                             "px-1.5 py-0.5 rounded-full border text-[9px] uppercase tracking-[0.25em] leading-none",
                             selectedAgent.channel === "email"
-                              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500"
+                              ? "bg-brand/10 border-brand/30 text-brand"
                               : "bg-brand/10 border-brand/30 text-brand",
                           )}
                         >
@@ -246,7 +347,7 @@ export default function AgentConfigPanel({
                       </div>
 
                       {/* Role assignment row */}
-                      <div className="rounded-xl glass p-3 flex flex-wrap items-center gap-3">
+                      <div className="rounded-md wl-panel border border-border p-3 flex flex-wrap items-center gap-3">
                         <Briefcase className="w-3.5 h-3.5 text-brand shrink-0" />
                         <div className="flex-1 min-w-[180px] space-y-1">
                           <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
@@ -259,7 +360,7 @@ export default function AgentConfigPanel({
                             >
                               <SelectTrigger
                                 aria-label="Agent role"
-                                className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 py-1.5 text-ink h-auto"
+                                className="w-full text-xs bg-black/5 border border-black/10 rounded-md pl-2.5 py-1.5 text-ink h-auto"
                               >
                                 <SelectValue />
                               </SelectTrigger>
@@ -281,12 +382,16 @@ export default function AgentConfigPanel({
                               )?.description
                             }
                           </p>
-                          <button
+                          <ShadButton
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disableAnimations
                             onClick={() =>
                               applyRoleTemplate(selectedAgent.role || "customer_service")
                             }
                             disabled={isApplyingTemplate}
-                            className="self-start inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full glass text-[10px] uppercase tracking-[0.25em] text-ink/80 hover:border-brand/40 hover:text-brand transition-colors disabled:opacity-50"
+                            className="self-start rounded-full text-[10px] uppercase tracking-[0.25em] text-ink/80"
                           >
                             {isApplyingTemplate ? (
                               <Loader2 className="w-2.5 h-2.5 animate-spin" />
@@ -294,13 +399,13 @@ export default function AgentConfigPanel({
                               <RefreshCw className="w-2.5 h-2.5" />
                             )}
                             Apply template
-                          </button>
+                          </ShadButton>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="relative z-10 mt-3 grid grid-cols-1 md:grid-cols-2 gap-2 pt-3 border-t border-white/8">
+                  <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2 pt-3 border-t border-border">
                     {/* Performance stats */}
                     {agentStats[selectedAgent.id] &&
                       (() => {
@@ -311,7 +416,7 @@ export default function AgentConfigPanel({
                         return (
                           <div className="md:col-span-2 space-y-2 mb-2">
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                              <div className="rounded-lg glass p-2.5">
+                              <div className="rounded-md wl-panel border border-border p-2.5">
                                 <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">
                                   Calls
                                 </div>
@@ -319,7 +424,7 @@ export default function AgentConfigPanel({
                                   {s.callCount}
                                 </div>
                               </div>
-                              <div className="rounded-lg glass p-2.5">
+                              <div className="rounded-md wl-panel border border-border p-2.5">
                                 <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1 flex items-center gap-1">
                                   <Clock className="w-2 h-2" /> Min
                                 </div>
@@ -327,7 +432,7 @@ export default function AgentConfigPanel({
                                   {s.totalMinutes}
                                 </div>
                               </div>
-                              <div className="rounded-lg glass p-2.5">
+                              <div className="rounded-md wl-panel border border-border p-2.5">
                                 <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">
                                   Avg Score
                                 </div>
@@ -339,7 +444,7 @@ export default function AgentConfigPanel({
                                   )}
                                 </div>
                               </div>
-                              <div className="rounded-lg glass p-2.5 relative">
+                              <div className="rounded-md wl-panel border border-border p-2.5 relative">
                                 <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">
                                   Sentiment
                                 </div>
@@ -347,18 +452,23 @@ export default function AgentConfigPanel({
                                   {posPct}%
                                   <span className="text-xs text-muted not-italic ml-1">pos</span>
                                 </div>
-                                <button
+                                <ShadButton
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  disableAnimations
                                   onClick={() => fetchAgentPerformance(selectedAgent.id, true)}
                                   title="Refresh stats"
-                                  className="absolute top-2 right-2 w-5 h-5 flex items-center justify-center rounded-full glass text-ink/40 hover:text-brand transition-colors"
+                                  className="absolute top-2 right-2 w-5 h-5 text-ink/40 hover:text-brand"
+                                  aria-label="Refresh stats"
                                 >
                                   <RefreshCw className="w-2.5 h-2.5" />
-                                </button>
+                                </ShadButton>
                               </div>
                             </div>
                             {/* 7-day activity sparkline */}
                             {s.sparkline && s.sparkline.some((v: number) => v > 0) && (
-                              <div className="rounded-lg glass px-3 py-2 flex items-center gap-3">
+                              <div className="rounded-md wl-panel border border-border px-3 py-2 flex items-center gap-3">
                                 <span className="text-[8px] uppercase tracking-[0.3em] text-ink/40 shrink-0">
                                   7d
                                 </span>
@@ -392,7 +502,7 @@ export default function AgentConfigPanel({
                         value={selectedAgent.website_url || ""}
                         onChange={(e) => updateAgentMeta({ website_url: e.target.value })}
                         placeholder="https://example.com"
-                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40"
+                        className="w-full text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -406,7 +516,7 @@ export default function AgentConfigPanel({
                         value={selectedAgent.transfer_phone || ""}
                         onChange={(e) => updateAgentMeta({ transfer_phone: e.target.value })}
                         placeholder="+1 800 555 0100"
-                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 tabular-nums"
+                        className="w-full text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 tabular-nums"
                       />
                     </div>
                   </div>
@@ -414,7 +524,7 @@ export default function AgentConfigPanel({
                   <div className="relative z-10 mt-3 grid grid-cols-1 gap-3">
                     {/* Voice Node Config */}
                     {selectedAgent.channel !== "email" && (
-                      <div className="rounded-xl glass p-3 space-y-3">
+                      <div className="rounded-md wl-panel border border-border p-3 space-y-3">
                         <div className="flex items-center gap-2 pb-2 border-b border-white/8">
                           <Radio className="w-3.5 h-3.5 text-brand" />
                           <h3 className="font-display italic lowercase text-base text-ink">
@@ -423,46 +533,95 @@ export default function AgentConfigPanel({
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div className="space-y-1.5 md:col-span-3">
+                            <VoiceFieldSelect
+                              label="Primary voice"
+                              value={selectedAgent.voice_id}
+                              catalog={voiceCatalog}
+                              showCustomOption
+                              onCustomMode={() => setPrimaryVoiceCustomMode(true)}
+                              onSelect={(voiceId, provider) => {
+                                if (!voiceId) return;
+                                setPrimaryVoiceCustomMode(false);
+                                updateAgentMeta({
+                                  voice_id: voiceId,
+                                  voice_provider: provider || "11labs",
+                                });
+                              }}
+                            />
+                            {(isCustomPrimaryVoice || primaryVoiceCustomMode) && (
+                              <Input
+                                type="text"
+                                value={selectedAgent.voice_id || ""}
+                                onChange={(e) =>
+                                  updateAgentMeta({
+                                    voice_id: e.target.value.trim(),
+                                    voice_provider: selectedAgent.voice_provider || "11labs",
+                                  })
+                                }
+                                placeholder="ElevenLabs or OpenAI voice ID"
+                                className="w-full text-xs bg-black/5 border border-black/10 rounded-md px-3 py-2 text-ink font-mono"
+                              />
+                            )}
+                          </div>
+
+                          <VoiceFieldSelect
+                            label="Inbound voice"
+                            value={selectedAgent.voice_id_inbound}
+                            catalog={voiceCatalog}
+                            allowInherit
+                            onSelect={(voiceId, provider) =>
+                              updateAgentMeta({
+                                voice_id_inbound: voiceId,
+                                ...(voiceId && provider ? { voice_provider: provider } : {}),
+                              })
+                            }
+                          />
+                          <VoiceFieldSelect
+                            label="Outbound voice"
+                            value={selectedAgent.voice_id_outbound}
+                            catalog={voiceCatalog}
+                            allowInherit
+                            onSelect={(voiceId, provider) =>
+                              updateAgentMeta({
+                                voice_id_outbound: voiceId,
+                                ...(voiceId && provider ? { voice_provider: provider } : {}),
+                              })
+                            }
+                          />
+
                           <div className="space-y-1.5">
                             <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
-                              Voice signature
+                              Silence timeout
                             </label>
-                            <div className="relative">
-                              <Select
-                                value={
-                                  PREMIUM_VOICES.find((v) => v.id === selectedAgent.voice_id)
-                                    ? selectedAgent.voice_id
-                                    : "custom"
-                                }
-                                onValueChange={(val) => {
-                                  if (val !== "custom") {
-                                    const voiceData = PREMIUM_VOICES.find((v) => v.id === val);
-                                    updateAgentMeta({
-                                      voice_id: val,
-                                      voice_provider: voiceData?.provider || "11labs",
-                                    });
-                                  }
-                                }}
+                            <Select
+                              value={
+                                selectedAgent.silence_timeout_seconds == null
+                                  ? "default"
+                                  : String(selectedAgent.silence_timeout_seconds)
+                              }
+                              onValueChange={(val) =>
+                                updateAgentMeta({
+                                  silence_timeout_seconds:
+                                    val === "default" ? null : Number.parseInt(val, 10),
+                                })
+                              }
+                            >
+                              <SelectTrigger
+                                aria-label="Silence timeout"
+                                className="w-full text-xs bg-black/5 border border-black/10 rounded-md pl-2.5 py-1.5 text-ink h-auto"
                               >
-                                <SelectTrigger
-                                  aria-label="Voice signature"
-                                  className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 py-1.5 text-ink h-auto"
-                                >
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectGroup>
-                                    <SelectLabel>Premium</SelectLabel>
-                                    {PREMIUM_VOICES.map((v) => (
-                                      <SelectItem key={v.id} value={v.id}>
-                                        {v.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectGroup>
-                                  <SelectItem value="custom">Custom override</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="default">Archetype default</SelectItem>
+                                {[3, 4, 5, 6, 7, 8, 10].map((sec) => (
+                                  <SelectItem key={sec} value={String(sec)}>
+                                    {sec}s before re-prompt
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
 
                           <div className="space-y-1.5">
@@ -476,7 +635,7 @@ export default function AgentConfigPanel({
                               >
                                 <SelectTrigger
                                   aria-label="Archetype"
-                                  className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 py-1.5 text-ink h-auto"
+                                  className="w-full text-xs bg-black/5 border border-black/10 rounded-md pl-2.5 py-1.5 text-ink h-auto"
                                 >
                                   <SelectValue />
                                 </SelectTrigger>
@@ -506,19 +665,22 @@ export default function AgentConfigPanel({
                                   authoritative: "Crisp",
                                 };
                                 return (
-                                  <button
+                                  <ShadButton
                                     key={v}
                                     type="button"
+                                    variant={isActive ? "secondary" : "outline"}
+                                    size="sm"
+                                    disableAnimations
                                     onClick={() => updateAgentMeta({ personality_vibe: v })}
                                     className={cn(
-                                      "px-2 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.2em] font-medium transition-all",
+                                      "h-auto px-2 py-1.5 rounded-md text-[10px] uppercase tracking-[0.2em] font-medium",
                                       isActive
-                                        ? "bg-brand/15 border border-brand/40 text-brand"
-                                        : "bg-black/5 border border-black/10 text-muted hover:text-ink hover:border-brand/20",
+                                        ? "bg-brand/15 border-brand/40 text-brand"
+                                        : "text-muted hover:text-ink hover:border-brand/20",
                                     )}
                                   >
                                     {labels[v]}
-                                  </button>
+                                  </ShadButton>
                                 );
                               })}
                             </div>
@@ -539,7 +701,7 @@ export default function AgentConfigPanel({
                               >
                                 <SelectTrigger
                                   aria-label="Ambient atmosphere"
-                                  className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 py-1.5 text-ink h-auto"
+                                  className="w-full text-xs bg-black/5 border border-black/10 rounded-md pl-2.5 py-1.5 text-ink h-auto"
                                 >
                                   <SelectValue />
                                 </SelectTrigger>
@@ -598,8 +760,34 @@ export default function AgentConfigPanel({
                             type="text"
                             value={selectedAgent.first_message || ""}
                             onChange={(e) => updateAgentMeta({ first_message: e.target.value })}
-                            className="w-full text-base bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 font-display italic"
+                            className="w-full text-base bg-black/5 border border-black/10 rounded-md px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 font-display italic"
                           />
+                        </div>
+
+                        <div className="flex items-center justify-between gap-3 rounded-md border border-black/8 dark:border-white/8 bg-black/[0.02] dark:bg-white/3 px-3 py-2.5">
+                          <div className="min-w-0">
+                            <p className="text-[10px] uppercase tracking-[0.25em] text-brand/70 flex items-center gap-1.5">
+                              <Workflow className="w-3 h-3" /> Conversation flow
+                            </p>
+                            <p className="text-[10px] text-ink/45 mt-1 leading-relaxed">
+                              Stage scripts and handoffs for live calls.
+                            </p>
+                          </div>
+                          <ShadButton
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disableAnimations
+                            asChild
+                            className="shrink-0 rounded-full text-[10px] uppercase tracking-[0.2em]"
+                          >
+                            <Link
+                              to={`/training?agent=${encodeURIComponent(selectedAgent.id)}&tab=flow`}
+                            >
+                              Edit flow
+                              <ArrowUpRight className="w-3 h-3" />
+                            </Link>
+                          </ShadButton>
                         </div>
                       </div>
                     )}
@@ -608,9 +796,9 @@ export default function AgentConfigPanel({
                     {(selectedAgent.channel === "email" ||
                       selectedAgent.channel === "omnichannel" ||
                       !selectedAgent.channel) && (
-                      <div className="rounded-xl glass p-3 space-y-3">
+                      <div className="rounded-md wl-panel border border-border p-3 space-y-3">
                         <div className="flex items-center gap-2 pb-2 border-b border-white/8">
-                          <Mail className="w-3.5 h-3.5 text-emerald-500" />
+                          <Mail className="w-3.5 h-3.5 text-brand" />
                           <h3 className="font-display italic lowercase text-base text-ink">
                             email relay heuristics
                           </h3>
@@ -618,25 +806,30 @@ export default function AgentConfigPanel({
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div className="space-y-2">
-                            <div className="rounded-lg glass p-3 flex items-center justify-between gap-3">
+                            <div className="rounded-md wl-panel border border-border p-3 flex items-center justify-between gap-3">
                               <div className="space-y-0.5 min-w-0">
                                 <h4 className="text-sm text-ink">Auto-respond</h4>
                                 <p className="text-[10px] text-ink/40 leading-relaxed">
                                   Autonomous reply on incoming threads.
                                 </p>
                               </div>
-                              <button
+                              <ShadButton
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                disableAnimations
                                 onClick={() =>
                                   updateAgentMeta({
                                     email_auto_respond: !selectedAgent.email_auto_respond,
                                   })
                                 }
                                 className={cn(
-                                  "shrink-0 w-10 h-5 rounded-full border transition-colors flex items-center px-0.5 cursor-pointer",
+                                  "shrink-0 w-10 h-5 rounded-full border p-0 min-w-10",
                                   selectedAgent.email_auto_respond
-                                    ? "bg-emerald-500/30 border-emerald-500/50"
-                                    : "bg-white/5 border-white/15",
+                                    ? "bg-brand/30 border-brand/50"
+                                    : "bg-muted/10 border-border",
                                 )}
+                                aria-label="Toggle email auto-respond"
                               >
                                 <motion.div
                                   animate={{
@@ -644,12 +837,10 @@ export default function AgentConfigPanel({
                                   }}
                                   className={cn(
                                     "w-4 h-4 rounded-full",
-                                    selectedAgent.email_auto_respond
-                                      ? "bg-emerald-500"
-                                      : "bg-muted/60",
+                                    selectedAgent.email_auto_respond ? "bg-brand" : "bg-muted/60",
                                   )}
                                 />
-                              </button>
+                              </ShadButton>
                             </div>
                           </div>
 
@@ -665,7 +856,7 @@ export default function AgentConfigPanel({
                                 >
                                   <SelectTrigger
                                     aria-label="Relay tone"
-                                    className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 py-1.5 text-ink h-auto"
+                                    className="w-full text-xs bg-black/5 border border-black/10 rounded-md pl-2.5 py-1.5 text-ink h-auto"
                                   >
                                     <SelectValue />
                                   </SelectTrigger>
@@ -689,7 +880,7 @@ export default function AgentConfigPanel({
                                   updateAgentMeta({ email_signature: e.target.value })
                                 }
                                 placeholder="— Best, Agent"
-                                className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-emerald-400/50 text-ink placeholder:text-ink/40"
+                                className="w-full text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40"
                               />
                             </div>
                           </div>
@@ -708,7 +899,7 @@ export default function AgentConfigPanel({
                           : "";
                       const usingAutoComposed = !overrideValue.trim();
                       return (
-                        <div className="rounded-xl glass p-3 space-y-3">
+                        <div className="rounded-md wl-panel border border-border p-3 space-y-3">
                           <div className="flex items-center justify-between gap-2 pb-2 border-b border-white/8">
                             <div className="flex items-center gap-2">
                               <FileText className="w-3.5 h-3.5 text-brand" />
@@ -716,7 +907,11 @@ export default function AgentConfigPanel({
                                 system prompt
                               </h3>
                             </div>
-                            <button
+                            <ShadButton
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disableAnimations
                               onClick={() => {
                                 setSelectedAgent({
                                   ...selectedAgent,
@@ -725,11 +920,11 @@ export default function AgentConfigPanel({
                                 void updateAgentMeta({ system_prompt_override: null });
                               }}
                               disabled={usingAutoComposed}
-                              className="shrink-0 inline-flex items-center gap-1.5 h-11 sm:h-8 px-3 rounded-full glass text-[10px] uppercase tracking-[0.25em] text-ink/80 hover:border-brand/40 hover:text-brand transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="shrink-0 rounded-full text-[10px] uppercase tracking-[0.25em] text-ink/80"
                             >
                               <RefreshCw className="w-2.5 h-2.5" />
                               Use auto-composed prompt
-                            </button>
+                            </ShadButton>
                           </div>
                           <p className="text-[10px] text-ink/40 leading-relaxed">
                             Override the auto-composed identity prompt. Caller context, knowledge,
@@ -754,7 +949,7 @@ export default function AgentConfigPanel({
                                   : null,
                               })
                             }
-                            className="w-full h-48 px-4 py-3 rounded-xl bg-black/5 border border-black/10 text-ink outline-none focus:border-brand/50 transition-all resize-none text-sm leading-relaxed placeholder:text-ink/40"
+                            className="w-full h-48 px-4 py-3 rounded-md bg-black/5 border border-black/10 text-ink outline-none focus:border-brand/50 transition-all resize-none text-sm leading-relaxed placeholder:text-ink/40"
                             placeholder="Leave blank to use the auto-composed prompt. Type here to define the agent's full identity, tone, and behavior — this replaces the generated base prompt."
                           />
                           <div className="flex items-center justify-between text-[9px] text-ink/40">
@@ -781,8 +976,8 @@ export default function AgentConfigPanel({
                       onResetToDefaults={resetAgentToolsToRoleDefaults}
                     />
 
-                    <div className="rounded-xl glass p-3 space-y-3">
-                      <div className="rounded-lg border border-black/8 dark:border-white/8 bg-black/[0.02] dark:bg-white/3 p-3 space-y-3">
+                    <div className="rounded-md wl-panel border border-border p-3 space-y-3">
+                      <div className="rounded-md border border-black/8 dark:border-white/8 bg-black/[0.02] dark:bg-white/3 p-3 space-y-3">
                         <div className="text-[9px] uppercase tracking-[0.3em] text-brand/70">
                           Channels
                         </div>
@@ -791,9 +986,12 @@ export default function AgentConfigPanel({
                             const channels: string[] = selectedAgent.channels || ["voice"];
                             const active = channels.includes(ch);
                             return (
-                              <button
+                              <ShadButton
                                 key={ch}
                                 type="button"
+                                variant={active ? "secondary" : "outline"}
+                                size="sm"
+                                disableAnimations
                                 onClick={() => {
                                   const next = active
                                     ? channels.filter((c) => c !== ch)
@@ -802,14 +1000,14 @@ export default function AgentConfigPanel({
                                   updateAgentMeta({ channels: next });
                                 }}
                                 className={cn(
-                                  "px-3 py-1.5 rounded-full text-[10px] font-medium border transition-all capitalize",
+                                  "rounded-full text-[10px] font-medium capitalize",
                                   active
                                     ? "bg-brand/15 border-brand/40 text-brand"
-                                    : "bg-white/5 border-white/10 text-muted hover:border-white/20",
+                                    : "text-muted hover:border-brand/20",
                                 )}
                               >
                                 {ch}
-                              </button>
+                              </ShadButton>
                             );
                           })}
                         </div>
@@ -828,19 +1026,22 @@ export default function AgentConfigPanel({
                           ).map(({ val, label }) => {
                             const current = selectedAgent.autonomy_level || "inherit";
                             return (
-                              <button
+                              <ShadButton
                                 key={val}
                                 type="button"
+                                variant={current === val ? "secondary" : "outline"}
+                                size="sm"
+                                disableAnimations
                                 onClick={() => updateAgentMeta({ autonomy_level: val })}
                                 className={cn(
-                                  "px-3 py-1.5 rounded-full text-[10px] font-medium border transition-all",
+                                  "rounded-full text-[10px] font-medium",
                                   current === val
                                     ? "bg-brand/15 border-brand/40 text-brand"
-                                    : "bg-white/5 border-white/10 text-muted hover:border-white/20",
+                                    : "text-muted hover:border-brand/20",
                                 )}
                               >
                                 {label}
-                              </button>
+                              </ShadButton>
                             );
                           })}
                         </div>
@@ -849,6 +1050,59 @@ export default function AgentConfigPanel({
                           immediately. Supervised queues for approval on high-risk actions. Draft
                           Only always requires operator sign-off.
                         </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-black/8 dark:border-white/8">
+                          <div className="space-y-1.5">
+                            <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
+                              <MessageCircle className="w-2.5 h-2.5 text-brand" /> Slack channel
+                            </label>
+                            <Input
+                              type="text"
+                              value={selectedAgent.slack_channel_id || ""}
+                              onChange={(e) =>
+                                updateAgentMeta({ slack_channel_id: e.target.value.trim() || null })
+                              }
+                              placeholder="#fleet-alerts"
+                              className="w-full text-xs bg-black/5 border border-black/10 rounded-md px-3 py-2 text-ink font-mono"
+                            />
+                          </div>
+                          <div className="rounded-md border border-black/8 dark:border-white/8 bg-black/[0.02] dark:bg-white/3 p-3 flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-[10px] uppercase tracking-[0.25em] text-brand/70 flex items-center gap-1.5">
+                                <Video className="w-3 h-3" /> Auto Zoom link
+                              </p>
+                              <p className="text-[10px] text-ink/45 mt-1">
+                                Attach meeting links when scheduling.
+                              </p>
+                            </div>
+                            <ShadButton
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              disableAnimations
+                              onClick={() =>
+                                updateAgentMeta({
+                                  auto_zoom_link: !selectedAgent.auto_zoom_link,
+                                })
+                              }
+                              className={cn(
+                                "shrink-0 w-10 h-5 rounded-full border p-0 min-w-10",
+                                selectedAgent.auto_zoom_link
+                                  ? "bg-brand/30 border-brand/50"
+                                  : "bg-muted/10 border-border",
+                              )}
+                              aria-label="Toggle auto Zoom link"
+                            >
+                              <motion.div
+                                animate={{ x: selectedAgent.auto_zoom_link ? 18 : 0 }}
+                                className={cn(
+                                  "w-4 h-4 rounded-full",
+                                  selectedAgent.auto_zoom_link ? "bg-brand" : "bg-muted/60",
+                                )}
+                              />
+                            </ShadButton>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -870,14 +1124,8 @@ export default function AgentConfigPanel({
             ) : (
               <div className="space-y-3">
                 {/* Personality Matrix */}
-                <section className="rounded-2xl glass p-4 relative overflow-hidden">
-                  <div
-                    className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
-                    style={{
-                      background: "radial-gradient(circle, #8B3FD6, transparent)",
-                    }}
-                  />
-                  <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
+                <section className="rounded-md wl-panel-elevated border border-border p-4">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
                     <div className="flex items-center gap-2">
                       <Settings2 className="w-4 h-4 text-brand" />
                       <div>
@@ -894,13 +1142,17 @@ export default function AgentConfigPanel({
                         agentId={selectedAgent.id}
                         agentName={selectedAgent.name}
                       />
-                      <button
+                      <ShadButton
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disableAnimations
                         onClick={() => updatePersonality(agentConfig.personality)}
-                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-all"
+                        className="rounded-full text-[10px] uppercase tracking-[0.25em] text-brand"
                       >
                         <Save className="w-3.5 h-3.5" />
                         Save
-                      </button>
+                      </ShadButton>
                     </div>
                   </div>
                   <textarea
@@ -908,7 +1160,7 @@ export default function AgentConfigPanel({
                     onChange={(e) =>
                       setAgentConfig({ ...agentConfig, personality: e.target.value })
                     }
-                    className="relative z-10 w-full h-48 px-4 py-3 rounded-xl bg-black/5 border border-black/10 text-ink outline-none focus:border-brand/50 transition-all resize-none text-sm leading-relaxed placeholder:text-ink/40"
+                    className="relative z-10 w-full h-48 px-4 py-3 rounded-md bg-black/5 border border-black/10 text-ink outline-none focus:border-brand/50 transition-all resize-none text-sm leading-relaxed placeholder:text-ink/40"
                     placeholder="Define the agent's identity, tone, and behavioral patterns…"
                   />
                 </section>
@@ -941,7 +1193,7 @@ export default function AgentConfigPanel({
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                   {/* Directives */}
-                  <section className="rounded-2xl glass p-3 flex flex-col min-h-[560px] md:h-[400px] max-h-[70vh]">
+                  <section className="rounded-md wl-panel-elevated border border-border p-3 flex flex-col min-h-[560px] md:h-[400px] max-h-[70vh]">
                     <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-white/8">
                       <div>
                         <h3 className="font-display italic lowercase text-lg text-ink leading-none">
@@ -968,7 +1220,7 @@ export default function AgentConfigPanel({
                               initial={{ opacity: 0, x: -6 }}
                               animate={{ opacity: 1, x: 0 }}
                               key={d.id}
-                              className="rounded-xl bg-rose-500/8 border border-rose-500/20 p-3 group"
+                              className="rounded-md bg-rose-500/8 border border-rose-500/20 p-3 group"
                             >
                               {editingDirective && editingDirective.id === d.id ? (
                                 <div className="space-y-2">
@@ -980,16 +1232,24 @@ export default function AgentConfigPanel({
                                         content: e.target.value,
                                       })
                                     }
-                                    className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink min-h-[80px] resize-none"
+                                    className="w-full text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-rose-400/50 text-ink min-h-[80px] resize-none"
                                   />
                                   <div className="flex justify-end gap-1.5">
-                                    <button
+                                    <ShadButton
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      disableAnimations
                                       onClick={() => setEditingDirective(null)}
-                                      className="px-2.5 py-1 rounded-full glass text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink"
+                                      className="rounded-full text-[10px] uppercase tracking-[0.25em] text-muted"
                                     >
                                       Cancel
-                                    </button>
-                                    <button
+                                    </ShadButton>
+                                    <ShadButton
+                                      type="button"
+                                      variant="secondary"
+                                      size="sm"
+                                      disableAnimations
                                       onClick={() =>
                                         saveManualEntry(
                                           "directive",
@@ -998,10 +1258,10 @@ export default function AgentConfigPanel({
                                         )
                                       }
                                       disabled={isSavingEntry}
-                                      className="px-2.5 py-1 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 disabled:opacity-50"
+                                      className="rounded-full text-[10px] uppercase tracking-[0.25em] text-brand"
                                     >
                                       {isSavingEntry ? "Saving…" : "Save"}
-                                    </button>
+                                    </ShadButton>
                                   </div>
                                 </div>
                               ) : (
@@ -1009,8 +1269,12 @@ export default function AgentConfigPanel({
                                   <div className="flex-1 text-sm text-ink/90 leading-relaxed">
                                     {d.content}
                                   </div>
-                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-                                    <button
+                                  <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+                                    <ShadButton
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      disableAnimations
                                       onClick={() =>
                                         setEditingDirective({
                                           id: d.id,
@@ -1019,18 +1283,22 @@ export default function AgentConfigPanel({
                                       }
                                       aria-label="Edit directive"
                                       title="Edit directive"
-                                      className="w-6 h-6 rounded-full glass flex items-center justify-center text-muted hover:text-ink hover:border-white/30"
+                                      className="w-6 h-6 text-muted hover:text-ink"
                                     >
                                       <Pencil className="w-3 h-3" />
-                                    </button>
-                                    <button
+                                    </ShadButton>
+                                    <ShadButton
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      disableAnimations
                                       onClick={() => deleteRule("directive", d.id)}
                                       aria-label="Delete directive"
                                       title="Delete directive"
-                                      className="w-6 h-6 rounded-full glass flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30"
+                                      className="w-6 h-6 text-muted hover:text-destructive"
                                     >
                                       <Trash2 className="w-3 h-3" />
-                                    </button>
+                                    </ShadButton>
                                   </div>
                                 </div>
                               )}
@@ -1052,22 +1320,26 @@ export default function AgentConfigPanel({
                             e.key === "Enter" && saveManualEntry("directive", newDirective)
                           }
                           placeholder="e.g. Always verify date of birth…"
-                          className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-ink/40"
+                          className="flex-1 text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-ink/40"
                         />
-                        <button
+                        <ShadButton
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          disableAnimations
                           onClick={() => saveManualEntry("directive", newDirective)}
                           disabled={!newDirective || isSavingEntry}
                           aria-label="Add directive"
-                          className="w-9 h-9 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-500 flex items-center justify-center hover:bg-rose-500/25 disabled:opacity-50"
+                          className="w-9 h-9 rounded-full"
                         >
                           <Plus className="w-3.5 h-3.5" />
-                        </button>
+                        </ShadButton>
                       </div>
                     </div>
                   </section>
 
                   {/* Knowledge Base */}
-                  <section className="rounded-2xl glass p-3 flex flex-col min-h-[560px] md:h-[400px] max-h-[70vh]">
+                  <section className="rounded-md wl-panel-elevated border border-border p-3 flex flex-col min-h-[560px] md:h-[400px] max-h-[70vh]">
                     <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-white/8">
                       <div>
                         <h3 className="font-display italic lowercase text-lg text-ink leading-none">
@@ -1077,7 +1349,7 @@ export default function AgentConfigPanel({
                           Knowledge base
                         </p>
                       </div>
-                      <span className="px-1.5 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-600 text-[9px] uppercase tracking-[0.25em] leading-none">
+                      <span className="px-1.5 py-0.5 rounded-full bg-brand/15 border border-brand/30 text-brand text-[9px] uppercase tracking-[0.25em] leading-none">
                         Factual
                       </span>
                     </header>
@@ -1092,7 +1364,7 @@ export default function AgentConfigPanel({
                               initial={{ opacity: 0, x: 6 }}
                               animate={{ opacity: 1, x: 0 }}
                               key={k.id}
-                              className="rounded-xl bg-blue-500/8 border border-blue-500/20 p-3 group"
+                              className="rounded-md bg-brand/8 border border-brand/20 p-3 group"
                             >
                               {editingKnowledge && editingKnowledge.id === k.id ? (
                                 <div className="space-y-2">
@@ -1104,16 +1376,24 @@ export default function AgentConfigPanel({
                                         content: e.target.value,
                                       })
                                     }
-                                    className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink min-h-[80px] resize-none"
+                                    className="w-full text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink min-h-[80px] resize-none"
                                   />
                                   <div className="flex justify-end gap-1.5">
-                                    <button
+                                    <ShadButton
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      disableAnimations
                                       onClick={() => setEditingKnowledge(null)}
-                                      className="px-2.5 py-1 rounded-full glass text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink"
+                                      className="rounded-full text-[10px] uppercase tracking-[0.25em] text-muted"
                                     >
                                       Cancel
-                                    </button>
-                                    <button
+                                    </ShadButton>
+                                    <ShadButton
+                                      type="button"
+                                      variant="secondary"
+                                      size="sm"
+                                      disableAnimations
                                       onClick={() =>
                                         saveManualEntry(
                                           "knowledge",
@@ -1122,10 +1402,10 @@ export default function AgentConfigPanel({
                                         )
                                       }
                                       disabled={isSavingEntry}
-                                      className="px-2.5 py-1 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 disabled:opacity-50"
+                                      className="rounded-full text-[10px] uppercase tracking-[0.25em] text-brand"
                                     >
                                       {isSavingEntry ? "Saving…" : "Save"}
-                                    </button>
+                                    </ShadButton>
                                   </div>
                                 </div>
                               ) : (
@@ -1133,8 +1413,12 @@ export default function AgentConfigPanel({
                                   <div className="flex-1 text-sm text-ink/90 leading-relaxed">
                                     {k.content}
                                   </div>
-                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-                                    <button
+                                  <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+                                    <ShadButton
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      disableAnimations
                                       onClick={() =>
                                         setEditingKnowledge({
                                           id: k.id,
@@ -1143,18 +1427,22 @@ export default function AgentConfigPanel({
                                       }
                                       aria-label="Edit knowledge fact"
                                       title="Edit knowledge fact"
-                                      className="w-6 h-6 rounded-full glass flex items-center justify-center text-muted hover:text-ink hover:border-white/30"
+                                      className="w-6 h-6 text-muted hover:text-ink"
                                     >
                                       <Pencil className="w-3 h-3" />
-                                    </button>
-                                    <button
+                                    </ShadButton>
+                                    <ShadButton
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      disableAnimations
                                       onClick={() => deleteRule("knowledge", k.id)}
                                       aria-label="Delete knowledge fact"
                                       title="Delete knowledge fact"
-                                      className="w-6 h-6 rounded-full glass flex items-center justify-center text-muted hover:text-blue-400 hover:border-blue-500/30"
+                                      className="w-6 h-6 text-muted hover:text-brand"
                                     >
                                       <Trash2 className="w-3 h-3" />
-                                    </button>
+                                    </ShadButton>
                                   </div>
                                 </div>
                               )}
@@ -1176,16 +1464,20 @@ export default function AgentConfigPanel({
                             e.key === "Enter" && saveManualEntry("knowledge", newKnowledge)
                           }
                           placeholder="e.g. Office closes at 5pm…"
-                          className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-ink/40"
+                          className="flex-1 text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40"
                         />
-                        <button
+                        <ShadButton
+                          type="button"
+                          variant="secondary"
+                          size="icon"
+                          disableAnimations
                           onClick={() => saveManualEntry("knowledge", newKnowledge)}
                           disabled={!newKnowledge || isSavingEntry}
                           aria-label="Add knowledge fact"
-                          className="w-9 h-9 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center hover:bg-blue-500/25 disabled:opacity-50"
+                          className="w-9 h-9 rounded-full text-brand"
                         >
                           <Plus className="w-3.5 h-3.5" />
-                        </button>
+                        </ShadButton>
                       </div>
                     </div>
                   </section>

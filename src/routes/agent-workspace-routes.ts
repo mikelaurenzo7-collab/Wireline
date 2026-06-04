@@ -1,22 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 /**
- * Agent Workspace — per-agent operator chat.
+ * Agent Workspace — per-agent operator chat (legacy surface).
  *
- * Each agent the operator owns has its own persistent chat thread.
- * Distinct from /train (configuration) and from call logs (caller-facing).
- * Think of this as the private DM channel the operator has with each
- * AI agent: ongoing direction, coaching, "how did calls go this week?",
- * context the operator wants the agent to know about.
+ * @deprecated Merchants use `/chat` + Director Coach mode. Routes kept for
+ * PDF → agent knowledge ingest, founder broadcast, and API compatibility.
  *
- * Memory model:
- *   - The thread itself IS the memory — Claude reads the full message
- *     history each call.
- *   - PLUS we inject context: agent name/role/archetype, current flow
- *     stage names, recent (last 5) call summaries with intent + sentiment.
- *   - Operators can tell the agent "be warmer on price objections" and
- *     the next call will reflect it (lessons sync is separate but
- *     connected — chat-derived directives can be turned into formal
- *     lessons via a follow-up button).
+ * Memory model: thread history + recent call summaries injected each turn.
  */
 import express, { type Response } from "express";
 import { and, desc, eq, gte, sql } from "drizzle-orm";

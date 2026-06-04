@@ -9,6 +9,7 @@ import {
   getActiveTasksForIntegration,
 } from "../lib/integration-playbooks";
 import { Checkbox } from "./ui/shadcn/Checkbox";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 export interface IntegrationCapabilityPanelProps {
   integration: ToolIntegration;
@@ -69,7 +70,7 @@ export default function IntegrationCapabilityPanel({
             <div
               key={task.id}
               className={cn(
-                "rounded-lg border bg-paper/80",
+                "rounded-md border bg-paper/80",
                 compact ? "px-2.5 py-2 border-black/8" : "px-3 py-2.5 border-black/10",
               )}
             >
@@ -138,12 +139,14 @@ export default function IntegrationCapabilityPanel({
       )}
 
       {!compact && onToggleTool && integrationTools.length > 0 && (
-        <div className="rounded-lg border border-white/10 overflow-hidden">
+        <div className="rounded-md border border-white/10 overflow-hidden">
           <div className="flex items-center gap-2 px-3 py-2 border-b border-white/8">
-            <button
+            <ShadButton
               type="button"
+              variant="ghost"
+              disableAnimations
               onClick={() => setToolsOpen((o) => !o)}
-              className="flex-1 flex items-center justify-between gap-2 text-left hover:opacity-90 transition-opacity"
+              className="flex-1 h-auto justify-between gap-2 px-0 py-0 hover:bg-transparent"
             >
               <span className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.28em] text-muted/80">
                 <Wrench className="w-3 h-3" />
@@ -159,23 +162,29 @@ export default function IntegrationCapabilityPanel({
                   toolsOpen && "rotate-180",
                 )}
               />
-            </button>
+            </ShadButton>
             {onToggleIntegrationGroup && (
               <div className="flex gap-1 shrink-0">
-                <button
+                <ShadButton
                   type="button"
+                  variant="outline"
+                  size="sm"
+                  disableAnimations
                   onClick={() => onToggleIntegrationGroup(integration, true)}
-                  className="px-2 py-0.5 rounded text-[8px] uppercase tracking-[0.2em] border border-white/12 text-muted/80 hover:text-ink hover:border-white/25"
+                  className="px-2 py-0.5 h-auto rounded text-[8px] uppercase tracking-[0.2em]"
                 >
                   All on
-                </button>
-                <button
+                </ShadButton>
+                <ShadButton
                   type="button"
+                  variant="outline"
+                  size="sm"
+                  disableAnimations
                   onClick={() => onToggleIntegrationGroup(integration, false)}
-                  className="px-2 py-0.5 rounded text-[8px] uppercase tracking-[0.2em] border border-white/12 text-muted/80 hover:text-ink hover:border-white/25"
+                  className="px-2 py-0.5 h-auto rounded text-[8px] uppercase tracking-[0.2em]"
                 >
                   All off
-                </button>
+                </ShadButton>
               </div>
             )}
           </div>

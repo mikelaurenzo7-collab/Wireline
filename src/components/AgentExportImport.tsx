@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { Input } from "./ui/shadcn/Input";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface Props {
   agentId: string;
@@ -89,10 +90,14 @@ export default function AgentExportImport({ agentId, agentName }: Props) {
   return (
     <div className="flex items-center gap-2">
       {/* Export */}
-      <button
+      <ShadButton
+        type="button"
+        variant="outline"
+        size="sm"
+        disableAnimations
         onClick={handleExport}
         disabled={isExporting}
-        className="h-8 px-3 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/70 hover:text-brand hover:border-brand/30 transition-all flex items-center gap-1.5 disabled:opacity-40"
+        className="h-8 rounded-full border-white/10 px-3 text-[10px] uppercase tracking-[0.25em] text-ink/70 hover:border-brand/30 hover:text-brand disabled:opacity-40"
         title="Export agent config as JSON"
       >
         {isExporting ? (
@@ -101,14 +106,18 @@ export default function AgentExportImport({ agentId, agentName }: Props) {
           <Download className="w-3 h-3" />
         )}
         Export
-      </button>
+      </ShadButton>
 
       {/* Import */}
       <Input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
-      <button
+      <ShadButton
+        type="button"
+        variant="outline"
+        size="sm"
+        disableAnimations
         onClick={() => fileRef.current?.click()}
         disabled={isImporting}
-        className="h-8 px-3 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/70 hover:text-brand hover:border-brand/30 transition-all flex items-center gap-1.5 disabled:opacity-40"
+        className="h-8 rounded-full border-white/10 px-3 text-[10px] uppercase tracking-[0.25em] text-ink/70 hover:border-brand/30 hover:text-brand disabled:opacity-40"
         title="Import agent config from JSON"
       >
         {isImporting ? (
@@ -117,7 +126,7 @@ export default function AgentExportImport({ agentId, agentName }: Props) {
           <Upload className="w-3 h-3" />
         )}
         Import
-      </button>
+      </ShadButton>
 
       {/* Success flash */}
       <AnimatePresence>
@@ -126,7 +135,7 @@ export default function AgentExportImport({ agentId, agentName }: Props) {
             initial={{ opacity: 0, x: -6 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0 }}
-            className="flex items-center gap-1.5 text-emerald-600 text-[9px] uppercase tracking-[0.25em]"
+            className="flex items-center gap-1.5 text-brand text-[9px] uppercase tracking-[0.25em]"
           >
             <CheckCircle2 className="w-3 h-3" />
             Merged

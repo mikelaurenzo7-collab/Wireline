@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ArrowRight, Check, Hammer, Loader2 } from "lucide-react";
 import { authFetch } from "../../../lib/api";
 import { FormShell, Field, TextInput, TextArea, RunButton, ResultCard, ErrCard } from "../shared";
+import { ShadButton } from "../../ui/shadcn/ShadButton";
 
 export function AgentForgeForm({ initial, disabled }: { initial?: any; disabled: boolean }) {
   const [goal, setGoal] = useState(initial?.goal ?? "");
@@ -97,12 +98,12 @@ export function AgentForgeForm({ initial, disabled }: { initial?: any; disabled:
       {design && (
         <div className="space-y-4 pt-3">
           {createdAgentId && (
-            <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-4 text-emerald-500 text-sm flex items-center gap-3">
+            <div className="rounded-md bg-emerald-500/10 border border-emerald-500/30 p-4 text-emerald-500 text-sm flex items-center gap-3">
               <Check className="w-4 h-4" />
               Agent created. Open Fleet Topology to assign a phone number and voice.
             </div>
           )}
-          <div className="rounded-2xl glass-strong border border-white/12 p-6 space-y-3">
+          <div className="rounded-md wl-panel-elevated border border-white/12 p-6 space-y-3">
             <div className="flex items-baseline justify-between">
               <h3 className="font-display italic text-4xl text-aurora leading-none">
                 {design.name}
@@ -156,10 +157,13 @@ export function AgentForgeForm({ initial, disabled }: { initial?: any; disabled:
           )}
 
           {!createdAgentId && (
-            <button
+            <ShadButton
+              type="button"
+              disableAnimations
+              variant="editorial"
               onClick={create}
               disabled={creating}
-              className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
+              className="w-full !py-4 !text-[12px] !tracking-[0.32em]"
             >
               {creating ? (
                 <>
@@ -170,7 +174,7 @@ export function AgentForgeForm({ initial, disabled }: { initial?: any; disabled:
                   <Hammer className="w-4 h-4" /> Forge & Deploy <ArrowRight className="w-4 h-4" />
                 </>
               )}
-            </button>
+            </ShadButton>
           )}
         </div>
       )}

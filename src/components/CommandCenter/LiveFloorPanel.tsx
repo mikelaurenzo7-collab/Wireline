@@ -21,6 +21,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { getFreshAccessToken } from "../../lib/api";
 import { Link } from "react-router-dom";
 import { Input } from "../ui/shadcn/Input";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 import { InlineEmpty } from "../ui/InlineEmpty";
 import { AgentActivityIndicator } from "../ui/AgentActivityIndicator";
 
@@ -192,8 +193,8 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
         <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2 min-w-0">
             <span className="relative flex h-2 w-2 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500/60" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-brand" />
             </span>
             <h2 className="font-display italic text-lg sm:text-xl text-ink truncate">
               {calls.length === 0
@@ -210,7 +211,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-16 wl-panel rounded-2xl">
+          <div className="flex items-center justify-center py-16 wl-panel rounded-md">
             <Loader2 className="w-6 h-6 animate-spin text-brand" />
           </div>
         ) : calls.length === 0 ? (
@@ -229,7 +230,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.98 }}
                     className={cn(
-                      "rounded-2xl p-4 border transition-all duration-300",
+                      "rounded-md p-4 border transition-all duration-300",
                       escalated
                         ? "border-rose-500/40 bg-rose-500/[0.04] shadow-[0_0_24px_rgba(244,63,94,0.12)]"
                         : "wl-panel hover:border-brand/25",
@@ -238,7 +239,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                     <div className="flex items-start gap-3 mb-3">
                       <div
                         className={cn(
-                          "w-11 h-11 rounded-xl flex items-center justify-center shrink-0",
+                          "w-11 h-11 rounded-md flex items-center justify-center shrink-0",
                           escalated
                             ? "bg-rose-500/10 text-rose-600 border border-rose-500/20"
                             : "bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20",
@@ -264,7 +265,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                     </div>
 
                     {call.thought && (
-                      <div className="mb-3 p-3 rounded-xl wl-panel">
+                      <div className="mb-3 p-3 rounded-md wl-panel">
                         <div className="flex items-center gap-1.5 mb-1">
                           <Sparkles className="w-3 h-3 text-brand" />
                           <span className="wl-label text-muted">Live reasoning</span>
@@ -297,7 +298,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                     </div>
 
                     {listeningCallId === call.id && (
-                      <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-brand/5 border border-brand/20">
+                      <div className="flex items-center gap-2 mb-3 p-2 rounded-md bg-brand/5 border border-brand/20">
                         <span className="text-[10px] font-mono text-brand animate-pulse">LIVE</span>
                         <div className="flex items-end gap-0.5 h-4 flex-1 justify-end">
                           {[140, 200, 160, 230].map((mult, i) => (
@@ -315,62 +316,77 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
 
                     <div className="grid grid-cols-2 gap-2">
                       {listeningCallId === call.id ? (
-                        <button
+                        <ShadButton
                           type="button"
+                          variant="outline"
+                          size="sm"
+                          disableAnimations
                           onClick={stopListening}
-                          className="touch-press min-h-[40px] text-[10px] uppercase tracking-[0.18em] px-2 py-2 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-600 flex items-center justify-center gap-1.5"
+                          className="touch-press min-h-[40px] rounded-md text-[10px] uppercase tracking-[0.18em] border-rose-500/30 text-rose-600 hover:bg-rose-500/10"
                         >
                           <Radio className="w-3.5 h-3.5" />
                           Stop
-                        </button>
+                        </ShadButton>
                       ) : (
-                        <button
+                        <ShadButton
                           type="button"
+                          variant="outline"
+                          size="sm"
+                          disableAnimations
                           onClick={() => startListening(call.id)}
-                          className="touch-press min-h-[40px] text-[10px] uppercase tracking-[0.18em] px-2 py-2 rounded-xl wl-panel text-muted hover:text-brand hover:border-brand/30 flex items-center justify-center gap-1.5"
+                          className="touch-press min-h-[40px] rounded-md text-[10px] uppercase tracking-[0.18em]"
                         >
                           <Headphones className="w-3.5 h-3.5" />
                           Listen
-                        </button>
+                        </ShadButton>
                       )}
                       {whisperingCallId === call.id ? (
-                        <button
+                        <ShadButton
                           type="button"
+                          variant="outline"
+                          size="sm"
+                          disableAnimations
                           onClick={stopWhispering}
-                          className="touch-press min-h-[40px] text-[10px] uppercase tracking-[0.18em] px-2 py-2 rounded-xl bg-violet-500/15 border border-violet-500/30 text-violet-700 flex items-center justify-center gap-1.5"
+                          className="touch-press min-h-[40px] rounded-md text-[10px] uppercase tracking-[0.18em] border-brand/30 text-brand hover:bg-brand/10"
                         >
                           Close coach
-                        </button>
+                        </ShadButton>
                       ) : (
-                        <button
+                        <ShadButton
                           type="button"
+                          variant="outline"
+                          size="sm"
+                          disableAnimations
                           onClick={() => startWhispering(call.id)}
-                          className="touch-press min-h-[40px] text-[10px] uppercase tracking-[0.18em] px-2 py-2 rounded-xl wl-panel text-muted hover:text-violet-700 hover:border-violet-500/30 flex items-center justify-center gap-1.5"
+                          className="touch-press min-h-[40px] rounded-md text-[10px] uppercase tracking-[0.18em]"
                         >
                           <Activity className="w-3.5 h-3.5" />
                           Coach
-                        </button>
+                        </ShadButton>
                       )}
                     </div>
 
                     {whisperingCallId === call.id && (
-                      <div className="mt-3 p-3 rounded-xl border border-violet-500/25 bg-violet-500/[0.04] space-y-2">
+                      <div className="mt-3 p-3 rounded-md border border-brand/25 bg-brand/[0.04] space-y-2">
                         <div className="flex gap-2">
                           <Input
                             type="text"
                             value={whisperText}
                             onChange={(e) => setWhisperText(e.target.value)}
                             placeholder="Whisper to agent…"
-                            className="flex-1 min-h-[40px] text-sm px-3 rounded-lg bg-paper border border-black/10 focus:border-violet-500/40 outline-none"
+                            className="flex-1 min-h-[40px] text-sm px-3 rounded-md bg-paper border border-black/10 focus:border-brand/40 outline-none"
                             onKeyDown={(e) => e.key === "Enter" && sendWhisper()}
                           />
-                          <button
+                          <ShadButton
                             type="button"
+                            variant="editorial"
+                            size="sm"
+                            disableAnimations
                             onClick={sendWhisper}
-                            className="shrink-0 min-h-[40px] px-3 rounded-lg bg-violet-600 text-white text-[11px] font-semibold uppercase tracking-wider"
+                            className="shrink-0 min-h-[40px] rounded-md text-[11px] uppercase tracking-wider"
                           >
                             Send
-                          </button>
+                          </ShadButton>
                         </div>
                         {whisperLogs.length > 0 && (
                           <div className="max-h-20 overflow-y-auto font-mono text-[10px] text-muted space-y-0.5">
@@ -393,7 +409,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
 
       {/* Agent rail — stacks below on mobile/tablet, sidebar on xl+ */}
       <aside className="xl:col-span-4 flex flex-col gap-3 min-h-0">
-        <div className="wl-panel rounded-2xl p-4">
+        <div className="wl-panel rounded-md p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="wl-label flex items-center gap-2">
               <Users className="w-3.5 h-3.5 text-brand" />
@@ -426,7 +442,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                       <span
                         className={cn(
                           "w-1.5 h-1.5 rounded-full",
-                          busy ? "bg-brand" : "bg-emerald-500",
+                          busy ? "bg-brand" : "bg-brand/40",
                         )}
                       />
                       {a.name}
@@ -441,7 +457,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                     <div
                       key={a.id}
                       className={cn(
-                        "flex items-center justify-between rounded-lg px-3 py-2 border text-sm",
+                        "flex items-center justify-between rounded-md px-3 py-2 border text-sm",
                         busy ? "bg-brand/8 border-brand/25" : "bg-paper/60 border-black/6",
                       )}
                     >
@@ -457,7 +473,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
           )}
         </div>
 
-        <div className="wl-panel rounded-2xl p-4">
+        <div className="wl-panel rounded-md p-4">
           <h3 className="wl-label flex items-center gap-2 mb-3">
             <ShieldAlert className="w-3.5 h-3.5 text-rose-500" />
             Escalations
@@ -469,7 +485,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
           ) : (
             <div className="space-y-2">
               {escalations.map((e) => (
-                <div key={e.id} className="rounded-xl p-3 bg-rose-500/8 border border-rose-500/25">
+                <div key={e.id} className="rounded-md p-3 bg-rose-500/8 border border-rose-500/25">
                   <p className="font-mono text-sm text-ink">{e.customer_number}</p>
                   <p className="text-[11px] text-rose-600 mt-1">{e.sentiment_label}</p>
                 </div>
@@ -478,7 +494,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
           )}
         </div>
 
-        <div className="wl-panel rounded-2xl p-4 grid grid-cols-2 gap-3 text-[11px]">
+        <div className="wl-panel rounded-md p-4 grid grid-cols-2 gap-3 text-[11px]">
           <div>
             <p className="wl-label text-muted">On call</p>
             <p className="font-display italic text-2xl text-ink tabular-nums">

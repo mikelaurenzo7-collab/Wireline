@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { MoreHorizontal, X } from "lucide-react";
 import { cn } from "../lib/utils";
 import { resolveBrandAccent } from "../lib/brand-token";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 /* ──────────────────────────────────────────────────────────────────────────
    PageShell — viewport-fit page primitive.
@@ -25,7 +26,7 @@ import { resolveBrandAccent } from "../lib/brand-token";
        title="Voice Archive"
        subtitle="Carrier signal threads"
        eyebrow="Signal · Archive"
-       actions={<button>…</button>}
+       actions={<ShadButton>…</ShadButton>}
        tabs={[
          { id: "live",  label: "Live",     content: <LivePanel /> },
          { id: "past",  label: "Archive",  content: <ArchivePanel /> },
@@ -74,7 +75,7 @@ export default function PageShell({
   const tabSwipe = useRef<{ x: number; y: number } | null>(null);
   // Ref for focus trap inside the bottom sheet dialog.
   const sheetRef = useRef<HTMLDivElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const activeTab = tabs?.find((t) => t.id === activeId) ?? tabs?.[0];
 
   // M4 — Escape key closes the bottom sheet.
@@ -153,13 +154,17 @@ export default function PageShell({
             <div className="flex flex-wrap items-center justify-center gap-2 shrink-0 mt-2">
               <div className="hidden md:flex items-center gap-2">{actions}</div>
               {!tabs?.length && (
-                <button
+                <ShadButton
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  disableAnimations
                   onClick={() => setMobileActionsOpen(true)}
                   aria-label="Page actions"
-                  className="touch-press md:hidden w-9 h-9 flex items-center justify-center text-muted wl-panel"
+                  className="touch-press md:hidden w-9 h-9 text-muted wl-panel"
                 >
                   <MoreHorizontal className="w-5 h-5" />
-                </button>
+                </ShadButton>
               )}
             </div>
           )}
@@ -171,13 +176,17 @@ export default function PageShell({
         <div className="shrink-0 mb-2 md:mb-3 flex flex-wrap items-center justify-end gap-2">
           <div className="hidden md:flex items-center gap-2">{actions}</div>
           {!tabs?.length && (
-            <button
+            <ShadButton
+              type="button"
+              variant="outline"
+              size="icon"
+              disableAnimations
               onClick={() => setMobileActionsOpen(true)}
               aria-label="Page actions"
-              className="touch-press md:hidden w-9 h-9 flex items-center justify-center text-muted wl-panel"
+              className="touch-press md:hidden w-9 h-9 text-muted wl-panel"
             >
               <MoreHorizontal className="w-5 h-5" />
-            </button>
+            </ShadButton>
           )}
         </div>
       )}
@@ -194,8 +203,11 @@ export default function PageShell({
               const Icon = tab.icon;
               const active = tab.id === activeId;
               return (
-                <button
+                <ShadButton
                   key={tab.id}
+                  type="button"
+                  variant="ghost"
+                  disableAnimations
                   role="tab"
                   id={`pageshell-tab-${tab.id}`}
                   aria-selected={active}
@@ -210,7 +222,7 @@ export default function PageShell({
                     else if (e.key === "End") setActiveId(tabs[tabs.length - 1].id);
                   }}
                   className={cn(
-                    "touch-press relative shrink-0 inline-flex min-h-9 sm:min-h-10 items-center gap-1.5 px-3 py-1.5 transition-all text-[11px] uppercase tracking-[0.1em] font-medium",
+                    "touch-press relative shrink-0 inline-flex min-h-9 sm:min-h-10 h-auto items-center gap-1.5 px-3 py-1.5 transition-all text-[11px] uppercase tracking-[0.1em] font-medium rounded-none",
                     active ? "app-tab-active" : "text-muted hover:text-ink hover:bg-black/4",
                   )}
                 >
@@ -235,7 +247,7 @@ export default function PageShell({
                       </span>
                     )}
                   </span>
-                </button>
+                </ShadButton>
               );
             })}
           </div>
@@ -253,8 +265,11 @@ export default function PageShell({
               const Icon = tab.icon;
               const active = tab.id === activeId;
               return (
-                <button
+                <ShadButton
                   key={tab.id}
+                  type="button"
+                  variant="ghost"
+                  disableAnimations
                   role="tab"
                   aria-selected={active}
                   aria-controls={`pageshell-panel-${tab.id}`}
@@ -268,7 +283,7 @@ export default function PageShell({
                     else if (e.key === "End") setActiveId(tabs[tabs.length - 1].id);
                   }}
                   className={cn(
-                    "touch-press relative shrink-0 inline-flex min-h-9 items-center gap-1.5 px-2.5 py-1.5 transition-all text-[10px] uppercase tracking-[0.1em] font-medium whitespace-nowrap",
+                    "touch-press relative shrink-0 inline-flex min-h-9 h-auto items-center gap-1.5 px-2.5 py-1.5 transition-all text-[10px] uppercase tracking-[0.1em] font-medium whitespace-nowrap rounded-none",
                     active ? "app-tab-active" : "text-muted",
                   )}
                 >
@@ -293,19 +308,23 @@ export default function PageShell({
                       </span>
                     )}
                   </span>
-                </button>
+                </ShadButton>
               );
             })}
           </div>
           {actions && (
-            <button
+            <ShadButton
+              type="button"
+              variant="outline"
+              size="icon"
+              disableAnimations
               onClick={() => setMobileActionsOpen(true)}
               aria-label="Page actions"
               data-no-min-touch
-              className="touch-press shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-muted wl-panel"
+              className="touch-press shrink-0 w-9 h-9 rounded-md text-muted wl-panel"
             >
               <MoreHorizontal className="w-5 h-5" />
-            </button>
+            </ShadButton>
           )}
         </div>
       )}
@@ -376,7 +395,7 @@ export default function PageShell({
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 360, damping: 32 }}
-              className="fixed bottom-0 left-0 right-0 z-[201] glass-elevated border-t border-black/10 md:hidden select-none"
+              className="fixed bottom-0 left-0 right-0 z-[201] wl-panel-elevated border-t border-black/10 md:hidden select-none"
               style={{
                 paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
                 boxShadow:
@@ -399,14 +418,18 @@ export default function PageShell({
               {/* Header */}
               <div className="flex items-center justify-between px-4 pb-3">
                 <p className="text-eyebrow">Actions</p>
-                <button
+                <ShadButton
                   ref={closeButtonRef}
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disableAnimations
                   onClick={() => setMobileActionsOpen(false)}
-                  className="w-11 h-11 rounded-lg flex items-center justify-center text-ink/65 hover:text-ink hover:bg-black/5 transition-colors"
+                  className="w-11 h-11 text-ink/65 hover:text-ink"
                   aria-label="Close actions"
                 >
                   <X className="w-4 h-4" />
-                </button>
+                </ShadButton>
               </div>
               {/* Actions content — stacks vertically in sheet */}
               <div className="px-4 pb-2 flex flex-col gap-2">{actions}</div>
@@ -455,7 +478,7 @@ export function Panel({
   return (
     <section
       className={cn(
-        "relative glass border border-black/8 flex flex-col h-full min-h-0 overflow-hidden",
+        "relative wl-panel border border-black/8 flex flex-col h-full min-h-0 overflow-hidden",
         "panel-mobile-surface",
         className,
       )}
@@ -542,7 +565,7 @@ export function StatTile({
   const resolvedAccent = resolveBrandAccent(accent);
   const trendPositive = trend && trend.value >= 0;
   return (
-    <div className="stat-tile-mobile relative glass border border-black/8 p-4 max-md:p-5 overflow-hidden card-interactive">
+    <div className="stat-tile-mobile relative wl-panel border border-black/8 p-4 max-md:p-5 overflow-hidden card-interactive">
       {/* Ambient glow */}
       <div
         className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"

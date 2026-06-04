@@ -53,7 +53,7 @@ export const VAPI_TRANSCRIBER_CONFIG = {
 };
 
 /** Buffer before shipping LLM tokens to TTS (prevents micro speed-ups on dense strings). */
-export const VAPI_INPUT_MIN_CHARACTERS = 30;
+export const VAPI_INPUT_MIN_CHARACTERS = 24;
 
 /** STT + turn-taking strategy. Flux integrates EOT; Nova uses LiveKit on top. */
 export type VapiTranscriberMode = "nova-livekit" | "flux-eot";
@@ -63,17 +63,17 @@ export type VapiTranscriberMode = "nova-livekit" | "flux-eot";
  * Do NOT pair with smartEndpointingPlan (Vapi uses Flux EOT events directly).
  *
  * Tuning rationale for Wireline employee A/B (Liam):
- *   eotThreshold 0.62 — balanced-slightly-snappy; avoids 0.55 interrupting
- *     mid-thought pauses ("let me check…") while beating Nova+LiveKit latency.
- *   eotTimeoutMs 3200 — hard cap below the 5s default; room for calendar/email
- *     dictation without the old linear 5s dead air.
+ *   eotThreshold 0.64 — slightly snappier turn-close vs 0.62; still avoids
+ *     0.55 interrupting mid-thought pauses ("let me check…").
+ *   eotTimeoutMs 2800 — hard cap below the 5s default; trims dead air on
+ *     short acknowledgments while leaving room for email/phone dictation.
  */
 export const VAPI_TRANSCRIBER_FLUX_CONFIG = {
   provider: "deepgram" as const,
   model: "flux-general-en",
   language: "en",
-  eotThreshold: 0.62,
-  eotTimeoutMs: 3200,
+  eotThreshold: 0.64,
+  eotTimeoutMs: 2800,
 };
 
 /** Flux path: minimal startSpeakingPlan — Flux owns turn boundaries. */
@@ -149,9 +149,9 @@ export function getVoiceLatencyProfile(input: {
     // the agent off naturally ("wait, actually…") without false-trigger
     // interruptions from one-word backchannels ("yeah", "mm-hmm").
     numWordsToInterruptAssistant: 2,
-    // Level 2 is the sweet spot: perceptibly fast first-audio-out
-    // without the jarring speed shifts that levels 3-4 produce when
-    // ElevenLabs over-compresses to chase latency. Applied uniformly.
-    optimizeStreamingLatency: 2,
+    // Level 3 — faster first-audio-out on showcase + tenant agents.
+    // Level 4 (showcase-only override) trades a hair of prosody for
+    // ~30ms TTFA; tenant default stays at 3 to avoid cadence swings.
+    optimizeStreamingLatency: 3,
   };
 }

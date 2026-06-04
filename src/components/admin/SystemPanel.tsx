@@ -27,9 +27,9 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
       case "critical":
         return "text-rose-500 bg-rose-500/10 border-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.15)]";
       case "warn":
-        return "text-amber-500 bg-amber-500/10 border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.15)]";
+        return "text-rose-500 bg-rose-500/10 border-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.15)]";
       default:
-        return "text-emerald-500 bg-emerald-500/10 border-emerald-500/20 shadow-[0_0_15px_rgba(79,30,123,0.15)]";
+        return "text-brand bg-brand/10 border-brand/20 shadow-[0_0_15px_rgba(79,30,123,0.15)]";
     }
   };
 
@@ -38,9 +38,9 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
       case "critical":
         return "bg-rose-500";
       case "warn":
-        return "bg-amber-500";
+        return "bg-rose-500";
       default:
-        return "bg-emerald-500";
+        return "bg-brand";
     }
   };
 
@@ -51,33 +51,33 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
           <div className="space-y-8">
             {/* Real-time Status Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-4 rounded-2xl glass border border-brand/20 bg-brand/5 space-y-3">
+              <div className="p-4 rounded-md wl-panel border border-brand/20 bg-brand/5 space-y-3">
                 <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted font-bold">
                   <Cpu className="w-3 h-3 text-brand" /> Core Engine
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-display text-ink">ACTIVE</span>
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-brand animate-pulse" />
                 </div>
                 <p className="text-[9px] text-muted leading-relaxed">
                   System uptime 99.98% over last 30 days.
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl glass border border-brand-3/20 bg-brand-3/5 space-y-3">
+              <div className="p-4 rounded-md wl-panel border border-brand/20 bg-brand/5 space-y-3">
                 <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted font-bold">
-                  <HardDrive className="w-3 h-3 text-brand-3" /> Postgres RLS
+                  <HardDrive className="w-3 h-3 text-brand" /> Postgres RLS
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-display text-ink">SECURE</span>
-                  <ShieldCheck className="w-3.5 h-3.5 text-brand-3" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-brand" />
                 </div>
                 <p className="text-[9px] text-muted leading-relaxed">
                   Isolation verified for {operationalSlos?.window_hours || 24}h window.
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl glass border border-white/10 bg-white/5 space-y-3">
+              <div className="p-4 rounded-md wl-panel border border-white/10 bg-white/5 space-y-3">
                 <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted font-bold">
                   <Network className="w-3 h-3 text-muted" /> Edge Ingress
                 </div>
@@ -90,7 +90,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl glass border border-brand/20 bg-brand/5 space-y-3">
+              <div className="p-4 rounded-md wl-panel border border-brand/20 bg-brand/5 space-y-3">
                 <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted font-bold">
                   <Gauge className="w-3 h-3 text-brand" /> Throughput
                 </div>
@@ -112,7 +112,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
             </div>
 
             {/* Production Launch Day Readiness Checklist */}
-            <div className="p-5 rounded-2xl border border-brand/20 bg-brand/5 space-y-4">
+            <div className="p-5 rounded-md border border-brand/20 bg-brand/5 space-y-4">
               <div className="flex items-center justify-between border-b border-white/5 pb-2">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-brand" />
@@ -120,7 +120,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                     Launch Day Production Readiness Checklist
                   </h5>
                 </div>
-                <span className="text-[9px] font-mono text-emerald-500 uppercase tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                <span className="text-[9px] font-mono text-brand uppercase tracking-widest px-2 py-0.5 rounded-full bg-brand/10 border border-brand/20">
                   Ready to launch &amp; accept clients
                 </span>
               </div>
@@ -128,8 +128,8 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div className="space-y-3">
                   <div className="flex items-start gap-2.5">
-                    <div className="w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center shrink-0 mt-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <div className="w-4 h-4 rounded-full bg-brand/20 border border-brand/50 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                     </div>
                     <div>
                       <p className="text-[11px] font-bold text-ink leading-tight">
@@ -142,8 +142,8 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                   </div>
 
                   <div className="flex items-start gap-2.5">
-                    <div className="w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center shrink-0 mt-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <div className="w-4 h-4 rounded-full bg-brand/20 border border-brand/50 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                     </div>
                     <div>
                       <p className="text-[11px] font-bold text-ink leading-tight">
@@ -156,8 +156,8 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                   </div>
 
                   <div className="flex items-start gap-2.5">
-                    <div className="w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center shrink-0 mt-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <div className="w-4 h-4 rounded-full bg-brand/20 border border-brand/50 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                     </div>
                     <div>
                       <p className="text-[11px] font-bold text-ink leading-tight">
@@ -172,8 +172,8 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
 
                 <div className="space-y-3">
                   <div className="flex items-start gap-2.5">
-                    <div className="w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center shrink-0 mt-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <div className="w-4 h-4 rounded-full bg-brand/20 border border-brand/50 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                     </div>
                     <div>
                       <p className="text-[11px] font-bold text-ink leading-tight">
@@ -187,8 +187,8 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                   </div>
 
                   <div className="flex items-start gap-2.5">
-                    <div className="w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center shrink-0 mt-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <div className="w-4 h-4 rounded-full bg-brand/20 border border-brand/50 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                     </div>
                     <div>
                       <p className="text-[11px] font-bold text-ink leading-tight">
@@ -201,8 +201,8 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                   </div>
 
                   <div className="flex items-start gap-2.5">
-                    <div className="w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center shrink-0 mt-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <div className="w-4 h-4 rounded-full bg-brand/20 border border-brand/50 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                     </div>
                     <div>
                       <p className="text-[11px] font-bold text-ink leading-tight">
@@ -238,7 +238,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                     <div
                       key={key}
                       className={cn(
-                        "p-5 rounded-2xl border transition-all duration-500",
+                        "p-5 rounded-md border transition-all duration-500",
                         getSloStatusColor(health),
                       )}
                     >
@@ -358,27 +358,27 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <div className="p-3 rounded-xl glass border border-white/5 flex items-center justify-between group hover:border-brand/30 transition-all">
+                <div className="p-3 rounded-md wl-panel border border-white/5 flex items-center justify-between group hover:border-brand/30 transition-all">
                   <div className="flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(79,30,123,0.5)]" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-brand shadow-[0_0_8px_rgba(79,30,123,0.5)]" />
                     <div className="space-y-0.5">
                       <p className="text-[11px] font-bold text-ink">LLM Mesh</p>
                       <p className="text-[9px] text-muted truncate">Cognitive Routing Active</p>
                     </div>
                   </div>
                 </div>
-                <div className="p-3 rounded-xl glass border border-white/5 flex items-center justify-between group hover:border-brand/30 transition-all">
+                <div className="p-3 rounded-md wl-panel border border-white/5 flex items-center justify-between group hover:border-brand/30 transition-all">
                   <div className="flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(79,30,123,0.5)]" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-brand shadow-[0_0_8px_rgba(79,30,123,0.5)]" />
                     <div className="space-y-0.5">
                       <p className="text-[11px] font-bold text-ink">Carrier Bridge</p>
                       <p className="text-[9px] text-muted truncate">Voice + SMS Synchronized</p>
                     </div>
                   </div>
                 </div>
-                <div className="p-3 rounded-xl glass border border-white/5 flex items-center justify-between group hover:border-brand/30 transition-all">
+                <div className="p-3 rounded-md wl-panel border border-white/5 flex items-center justify-between group hover:border-brand/30 transition-all">
                   <div className="flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(79,30,123,0.5)]" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-brand shadow-[0_0_8px_rgba(79,30,123,0.5)]" />
                     <div className="space-y-0.5">
                       <p className="text-[11px] font-bold text-ink">Data Vault</p>
                       <p className="text-[9px] text-muted truncate">Postgres RLS Verified</p>

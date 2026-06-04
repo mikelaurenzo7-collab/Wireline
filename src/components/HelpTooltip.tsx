@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface HelpTooltipProps {
   content: string;
@@ -58,13 +59,16 @@ export function HelpTooltip({ content, title, placement = "top", children }: Hel
       onBlur={() => setVisible(false)}
     >
       {children ?? (
-        <button
+        <ShadButton
           type="button"
+          disableAnimations
+          variant="outline"
+          size="icon"
           aria-label="Help"
-          className="w-4 h-4 rounded-full border border-white/20 text-muted text-[9px] flex items-center justify-center hover:border-brand/40 hover:text-brand transition-all focus:outline-none focus:border-brand/60"
+          className="w-4 h-4 min-h-0 min-w-0 h-4 rounded-full text-[9px] text-muted border-white/20 hover:border-brand/40 hover:text-brand after:hidden"
         >
           ?
-        </button>
+        </ShadButton>
       )}
 
       <AnimatePresence>
@@ -78,7 +82,7 @@ export function HelpTooltip({ content, title, placement = "top", children }: Hel
             className={`absolute z-[200] max-w-xs pointer-events-none ${PLACEMENT_CLASSES[effectivePlacement]}`}
           >
             <div
-              className="glass-elevated rounded-lg border px-3 py-2 shadow-xl"
+              className="wl-panel-elevated rounded-md border px-3 py-2 shadow-xl"
               style={{
                 borderColor: "rgba(107, 43, 153 , 0.20)",
                 boxShadow:

@@ -22,6 +22,7 @@ import PageShell, { Panel } from "./PageShell";
 import { PanelSkeleton } from "./Skeleton";
 import EmptyState from "./EmptyState";
 import { useToast } from "../contexts/ToastContext";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 export default function EmailInbox({ embedded = false }: { embedded?: boolean }) {
   const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
@@ -259,10 +260,14 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
   };
 
   const syncAction = (
-    <button
+    <ShadButton
+      type="button"
+      variant="outline"
+      size="sm"
+      disableAnimations
       onClick={syncInbox}
       disabled={syncing}
-      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full wl-panel text-ink text-[11px] uppercase tracking-[0.22em] hover:border-brand/40 transition-colors disabled:opacity-60"
+      className="rounded-full text-[11px] uppercase tracking-[0.22em]"
     >
       {syncing ? (
         <Loader2 className="w-3 h-3 animate-spin text-brand" />
@@ -270,7 +275,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
         <RotateCw className="w-3 h-3 text-brand" />
       )}
       Sync inbox
-    </button>
+    </ShadButton>
   );
 
   return (
@@ -353,7 +358,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                               {/* Avatar */}
                               <div
                                 className={cn(
-                                  "w-9 h-9 rounded-xl flex items-center justify-center font-display italic text-base shrink-0 border transition-all",
+                                  "w-9 h-9 rounded-md flex items-center justify-center font-display italic text-base shrink-0 border transition-all",
                                   active
                                     ? "border-brand/30 bg-brand/10 text-brand"
                                     : "border-white/10 bg-white/4 text-ink/70 group-hover:text-ink",
@@ -417,18 +422,20 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                       {/* Subject header */}
                       <div className="shrink-0 px-3 sm:px-4 py-3 border-b border-white/8 flex items-center justify-between gap-2 sm:gap-3">
                         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                          <button
-                            // 44x44 hit area meets the WCAG 2.5.5 / Apple HIG touch
-                            // target minimum on mobile; the visible icon stays small.
-                            className="lg:hidden w-11 h-11 rounded-lg wl-panel flex items-center justify-center text-ink shrink-0 active:scale-95 transition-transform"
+                          <ShadButton
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            disableAnimations
+                            className="lg:hidden min-h-11 w-11 rounded-md shrink-0"
                             onClick={() => setSelectedThread(null)}
                             aria-label="Back to thread list"
                           >
                             <ChevronRight className="w-4 h-4 rotate-180" />
-                          </button>
+                          </ShadButton>
                           <div
                             className={cn(
-                              "shrink-0 w-12 h-12 rounded-xl wl-panel border flex flex-col items-center justify-center",
+                              "shrink-0 w-12 h-12 rounded-md wl-panel border flex flex-col items-center justify-center",
                               (selectedThread.lead_score || 0) >= 80
                                 ? "border-rose-500/40 text-rose-500"
                                 : (selectedThread.lead_score || 0) >= 50
@@ -459,14 +466,18 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                             threadId={selectedThread.id}
                             label="Summarize"
                           />
-                          <button
+                          <ShadButton
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disableAnimations
                             onClick={() => handlePhoneHandoff(selectedThread)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full wl-panel text-ink text-[10px] uppercase tracking-[0.25em] hover:border-brand/40 transition-colors"
+                            className="rounded-full text-[10px] uppercase tracking-[0.25em]"
                             title="Route this thread to a voice fleet agent"
                           >
                             <Phone className="w-3 h-3 text-brand" />
                             Voice handoff
-                          </button>
+                          </ShadButton>
                         </div>
                       </div>
 
@@ -485,9 +496,9 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                             >
                               <div
                                 className={cn(
-                                  "rounded-2xl border p-4 leading-relaxed",
+                                  "rounded-md border p-4 leading-relaxed",
                                   msg.role === "ai"
-                                    ? "glass border-brand/30 text-ink"
+                                    ? "wl-panel border-brand/30 text-ink"
                                     : "bg-white/5 border-white/10 text-ink",
                                 )}
                               >
@@ -540,20 +551,24 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                                     />
                                   ))
                                 : quickReplies.map((r, i) => (
-                                    <button
+                                    <ShadButton
                                       key={i}
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      disableAnimations
                                       onClick={() => setReplyText(r.body)}
                                       title={r.body}
-                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full wl-panel text-ink/70 text-[10px] tracking-wide hover:border-brand/40 hover:text-ink hover:bg-brand/5 transition-all"
+                                      className="rounded-full text-[10px] tracking-wide"
                                     >
                                       <span>{r.label}</span>
-                                    </button>
+                                    </ShadButton>
                                   ))}
                             </div>
                           </div>
                         )}
 
-                        <div className="rounded-xl wl-panel focus-within:border-brand/35 transition-colors overflow-hidden">
+                        <div className="rounded-md wl-panel focus-within:border-brand/35 transition-colors overflow-hidden">
                           <div className="px-3 pt-2.5 pb-1 flex items-center gap-2 text-ink/40">
                             <Terminal className="w-3 h-3" />
                             <span className="text-[9px] uppercase tracking-[0.35em]">
@@ -573,10 +588,14 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                             context.
                           </p>
                           <div className="flex items-center gap-2">
-                            <button
+                            <ShadButton
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disableAnimations
                               onClick={fetchQuickReplies}
                               disabled={isLoadingQuickReplies}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full wl-panel text-ink text-[10px] uppercase tracking-[0.25em] hover:border-brand/35 transition-colors disabled:opacity-50"
+                              className="rounded-full text-[10px] uppercase tracking-[0.25em]"
                               title="Generate 3 quick-reply options"
                             >
                               {isLoadingQuickReplies ? (
@@ -585,11 +604,15 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                                 <Zap className="w-3 h-3 text-brand" />
                               )}
                               Quick
-                            </button>
-                            <button
+                            </ShadButton>
+                            <ShadButton
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disableAnimations
                               onClick={handleDraftAI}
                               disabled={isDrafting}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full wl-panel text-ink text-[10px] uppercase tracking-[0.25em] hover:border-brand/35 transition-colors disabled:opacity-50"
+                              className="rounded-full text-[10px] uppercase tracking-[0.25em]"
                             >
                               {isDrafting ? (
                                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -597,13 +620,17 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                                 <Bot className="w-3 h-3 text-brand" />
                               )}
                               AI draft
-                            </button>
-                            <button
+                            </ShadButton>
+                            <ShadButton
+                              type="button"
+                              variant="editorial"
+                              size="sm"
+                              disableAnimations
                               onClick={sendReply}
-                              className="brutal-btn !py-2 !px-4 !text-[10px] !tracking-[0.25em]"
+                              className="rounded-full text-[10px] tracking-[0.25em]"
                             >
                               <Send className="w-3 h-3" /> Send
-                            </button>
+                            </ShadButton>
                           </div>
                         </div>
                       </div>
@@ -614,7 +641,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                       animate={{ opacity: 1, scale: 1 }}
                       className="h-full flex flex-col items-center justify-center gap-4 px-6 text-center"
                     >
-                      <div className="w-16 h-16 rounded-2xl wl-panel flex items-center justify-center text-muted">
+                      <div className="w-16 h-16 rounded-md wl-panel flex items-center justify-center text-muted">
                         <Mail className="w-7 h-7" />
                       </div>
                       <div className="space-y-1.5">

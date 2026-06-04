@@ -40,7 +40,7 @@ export default function HubTabs({ tabs, label, className, layoutIdPrefix }: HubT
         className,
       )}
     >
-      <div className="app-tab-strip flex items-center gap-0.5 p-0.5 glass border border-black/8">
+      <div className="app-tab-strip flex items-center gap-0.5 p-0.5 wl-panel border border-black/8">
         {tabs.map((t) => {
           const Icon = t.icon;
           const active = pathname === t.path || pathname.startsWith(`${t.path}/`);

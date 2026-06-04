@@ -60,17 +60,17 @@ const STATUS_META: Record<
   },
   Confirmed: {
     label: "Confirmed",
-    color: "text-emerald-600",
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/30",
-    dot: "bg-emerald-500",
+    color: "text-brand",
+    bg: "bg-brand/10",
+    border: "border-brand/30",
+    dot: "bg-brand",
   },
   Completed: {
     label: "Completed",
-    color: "text-violet-600",
-    bg: "bg-violet-500/10",
-    border: "border-violet-500/30",
-    dot: "bg-violet-500",
+    color: "text-brand/80",
+    bg: "bg-brand/8",
+    border: "border-brand/25",
+    dot: "bg-brand/70",
   },
   Cancelled: {
     label: "Cancelled",
@@ -81,10 +81,10 @@ const STATUS_META: Record<
   },
   Rescheduled: {
     label: "Rescheduled",
-    color: "text-amber-600",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/30",
-    dot: "bg-amber-500",
+    color: "text-muted",
+    bg: "bg-black/5",
+    border: "border-border",
+    dot: "bg-muted",
   },
 };
 
@@ -172,7 +172,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
   };
 
   const inputCls =
-    "w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 transition-all";
+    "w-full text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 transition-all";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -188,7 +188,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.96, opacity: 0, y: 16 }}
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-lg rounded-2xl glass-strong border border-black/15 shadow-2xl overflow-hidden"
+        className="relative w-full max-w-lg rounded-md wl-panel-elevated border border-border shadow-2xl overflow-hidden"
       >
         <header className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
           <div>
@@ -200,7 +200,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
           <ShadButton
             onClick={onClose}
             aria-label="Close"
-            variant="glass"
+            variant="ghost"
             size="icon"
             className="w-9 h-9 sm:w-8 sm:h-8"
           >
@@ -302,7 +302,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
           {err && (
             <div
               role="alert"
-              className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-md bg-rose-500/10 border border-rose-500/30"
             >
               <AlertOctagon className="w-3.5 h-3.5 text-rose-500 shrink-0" />
               <p className="text-[11px] text-rose-600 leading-snug">{err}</p>
@@ -420,7 +420,7 @@ function CalendarGrid({
             })
           }
           aria-label="Previous month"
-          variant="glass"
+          variant="outline"
           size="icon"
           className="w-9 h-9 sm:w-8 sm:h-8"
         >
@@ -437,7 +437,7 @@ function CalendarGrid({
             })
           }
           aria-label="Next month"
-          variant="glass"
+          variant="outline"
           size="icon"
           className="w-9 h-9 sm:w-8 sm:h-8"
         >
@@ -488,17 +488,20 @@ function CalendarGrid({
                       {dayAppts.slice(0, 3).map((a) => {
                         const m = STATUS_META[a.status] ?? STATUS_META["Scheduled"];
                         return (
-                          <button
+                          <ShadButton
                             key={a.id}
+                            type="button"
+                            variant="ghost"
+                            disableAnimations
                             onClick={() => onSelect(a)}
                             className={cn(
-                              "w-full text-left px-1.5 py-0.5 rounded text-[9px] truncate transition-colors hover:opacity-80",
+                              "w-full h-auto justify-start px-1.5 py-0.5 rounded text-[9px] truncate",
                               m.bg,
                               m.color,
                             )}
                           >
                             {a.time} {a.customer_name}
-                          </button>
+                          </ShadButton>
                         );
                       })}
                       {dayAppts.length > 3 && (
@@ -830,7 +833,7 @@ function AppointmentRow({
       className="px-4 py-3.5 hover:bg-white/3 transition-colors group"
     >
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-xl wl-panel flex items-center justify-center text-brand shrink-0 mt-0.5">
+        <div className="w-9 h-9 rounded-md wl-panel flex items-center justify-center text-brand shrink-0 mt-0.5">
           <User className="w-4 h-4" />
         </div>
 
@@ -883,7 +886,7 @@ function AppointmentRow({
             <ShadButton
               onClick={() => setShowStatusMenu((v) => !v)}
               title="Change status"
-              variant="glass"
+              variant="ghost"
               size="icon"
               className="w-7 h-7 hover:text-brand hover:border-brand/30"
             >
@@ -902,20 +905,23 @@ function AppointmentRow({
                   // menu on the bottom row gets cut off mid-list. Open
                   // up and the menu always renders inside the scroll
                   // viewport regardless of row position.
-                  className="absolute right-0 bottom-full mb-1 z-20 w-36 rounded-xl glass-strong border border-black/15 shadow-2xl overflow-hidden"
+                  className="absolute right-0 bottom-full mb-1 z-20 w-36 rounded-md wl-panel-elevated border border-border shadow-2xl overflow-hidden"
                 >
                   {Object.keys(STATUS_META).map((s) => (
-                    <button
+                    <ShadButton
                       key={s}
+                      type="button"
+                      variant="ghost"
+                      disableAnimations
                       onClick={() => {
                         onStatusChange(s);
                         setShowStatusMenu(false);
                       }}
-                      className="w-full text-left px-3 py-2 text-[10px] text-ink hover:bg-white/5 transition-colors flex items-center gap-2"
+                      className="w-full h-auto justify-start rounded-none px-3 py-2 text-[10px] text-ink hover:bg-white/5"
                     >
                       <span className={cn("w-1.5 h-1.5 rounded-full", STATUS_META[s].dot)} />
                       {s}
-                    </button>
+                    </ShadButton>
                   ))}
                 </motion.div>
               )}
@@ -925,7 +931,7 @@ function AppointmentRow({
             onClick={onEdit}
             title="Edit"
             aria-label="Edit appointment"
-            variant="glass"
+            variant="ghost"
             size="icon"
             className="w-7 h-7 hover:text-ink hover:border-white/25"
           >
@@ -936,7 +942,7 @@ function AppointmentRow({
             disabled={deleting}
             title="Remove"
             aria-label="Remove appointment"
-            variant="glass"
+            variant="ghost"
             size="icon"
             className="w-7 h-7 hover:text-rose-500 hover:border-rose-500/30"
           >

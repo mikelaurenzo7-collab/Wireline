@@ -234,7 +234,7 @@ export default function ContactProfile() {
           />
         </div>
 
-        <section className="glass border border-black/8 rounded-2xl sm:rounded-3xl overflow-hidden">
+        <section className="wl-panel border border-black/8 rounded-md sm:rounded-md overflow-hidden">
           <div className="px-4 sm:px-6 py-4 border-b border-black/6 flex items-center justify-between gap-3">
             <h2 className="font-display italic text-xl sm:text-2xl flex items-center gap-2 text-ink">
               <Activity className="w-5 h-5 text-brand shrink-0" />
@@ -284,7 +284,7 @@ function StatCard({
   gradientId: string;
 }) {
   return (
-    <div className="relative rounded-xl sm:rounded-2xl glass border border-black/8 p-4 sm:p-5 overflow-hidden">
+    <div className="relative rounded-md sm:rounded-md wl-panel border border-black/8 p-4 sm:p-5 overflow-hidden">
       <div
         className="absolute -top-10 -right-10 w-28 h-28 rounded-full opacity-15 blur-3xl pointer-events-none"
         style={{ background: `radial-gradient(circle, ${accent}, transparent)` }}
@@ -338,7 +338,7 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
       <div className="flex items-start gap-3 sm:gap-4">
         <div
           className={cn(
-            "shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-xl border flex items-center justify-center transition-all",
+            "shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-md border flex items-center justify-center transition-all",
             event.type === "call_in" && "border-brand/30 bg-brand/8 text-brand",
             event.type === "call_out" && "border-brand-2/30 bg-brand-2/8 text-brand-deep",
             event.type === "appointment" &&

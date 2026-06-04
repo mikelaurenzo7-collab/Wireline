@@ -78,11 +78,11 @@ export function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled:
       {err && <ErrCard error={err} />}
       {enrichment && (
         <div className="space-y-4 pt-3">
-          <div className="rounded-2xl glass-strong border border-white/12 p-5 space-y-3">
+          <div className="rounded-md wl-panel-elevated border border-white/12 p-5 space-y-3">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2">
                 <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center"
+                  className="w-9 h-9 rounded-md flex items-center justify-center"
                   style={{
                     background: `linear-gradient(135deg, ${confidenceAccent}, ${confidenceAccent}aa)`,
                   }}
@@ -144,7 +144,7 @@ export function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled:
           )}
 
           {enrichment.sources?.length > 0 && (
-            <div className="rounded-2xl glass border border-white/10 p-4">
+            <div className="rounded-md wl-panel border border-white/10 p-4">
               <div className="app-section-title mb-2">Sources</div>
               <ul className="space-y-1 text-xs">
                 {enrichment.sources.map((s: string, i: number) => (

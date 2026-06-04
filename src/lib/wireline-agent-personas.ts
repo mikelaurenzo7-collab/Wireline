@@ -79,10 +79,10 @@ export const WIRELINE_PERSONAS: Record<WirelinePersonaId, WirelinePersona> = Obj
     id: "reception",
     name: "Mira",
     role: "wireline_reception",
-    // Sarah (Upbeat & Conversational) — warm + playful for first impression.
-    voiceId: "21m00Tcm4TlvDq8ikWAM",
+    // Sarah Soft — warm front-door, distinct from employee-line Charlotte (Sarah).
+    voiceId: "EXAVITQu4vr4xnSDxMaL",
     firstMessage:
-      "Hey there, this is Mira with Wireline! Are you calling to learn about us, get help with your account, or something else?",
+      "Hey there — Mira with Wireline! Are you calling to learn about us, get help with your account, or something else?",
     endCallMessage: "Thanks for calling Wireline — have a great rest of your day!",
     systemPrompt: `You are Mira, the first voice callers hear when they dial Wireline. Your job is to figure out what they need in under two turns and route them — OR handle it yourself if it's a quick question.
 
@@ -141,8 +141,8 @@ ${HOUSE_STYLE_BLOCK}`,
     id: "support",
     name: "Alex",
     role: "wireline_support",
-    // Charlotte (British, Refined) — calm + reassuring for support.
-    voiceId: "XB0fDUnXU5powFXDhCwa",
+    // Rachel Calm — steady support desk, distinct from Mira and Casey.
+    voiceId: "bIHbv24MWmeRgasZH58o",
     firstMessage: "Hey, this is Alex from Wireline support — what's going on? I'll get you sorted.",
     endCallMessage: "Glad we got it sorted. Reach out anytime — we're here.",
     systemPrompt: `You are Alex, the Wireline support rep. Calm, technical when needed, never condescending.
@@ -171,8 +171,8 @@ ${HOUSE_STYLE_BLOCK}`,
     id: "technical",
     name: "Tyler",
     role: "wireline_technical",
-    // Charlotte voice — calm, precise.
-    voiceId: "XB0fDUnXU5powFXDhCwa",
+    // Adam · Deep — authoritative technical specialist.
+    voiceId: "pNInz6obpgDQGcFmaJgB",
     firstMessage:
       "Hi, thanks for calling Wireline — Tyler here on the technical team. Can I grab your name?",
     endCallMessage: "Glad we got that working. Call back anytime if anything else comes up.",
@@ -199,7 +199,7 @@ ${HOUSE_STYLE_BLOCK}`,
     id: "onboarding",
     name: "Maya",
     role: "wireline_onboarding",
-    // Sarah (Upbeat) — warm + energetic for the welcome experience.
+    // Rachel Upbeat — energetic welcome, distinct from Mira's softer tone.
     voiceId: "21m00Tcm4TlvDq8ikWAM",
     firstMessage: "Hi, thanks for calling Wireline — this is Maya. Who am I speaking with?",
     endCallMessage: "So glad you're getting started — you're going to love it. Talk soon!",
@@ -225,8 +225,8 @@ ${HOUSE_STYLE_BLOCK}`,
     id: "success",
     name: "Priya",
     role: "wireline_success",
-    // Charlotte voice — warm, reassuring.
-    voiceId: "XB0fDUnXU5powFXDhCwa",
+    // Elli · Bright — warm success manager energy.
+    voiceId: "MF3mGyEYCl7XYWbV9V6O",
     firstMessage:
       "Hi, thanks for calling Wireline — this is Priya. Who do I have the pleasure of speaking with?",
     endCallMessage: "Lovely talking with you — we're always here when you need us.",

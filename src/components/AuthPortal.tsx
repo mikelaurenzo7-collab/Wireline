@@ -28,6 +28,8 @@ import {
 import { getPasswordPolicyError } from "../lib/password-policy";
 import { Checkbox } from "./ui/shadcn/Checkbox";
 import { Input } from "./ui/shadcn/Input";
+import { ShadButton } from "./ui/shadcn/ShadButton";
+import { BRAND } from "../constants/brand-colors";
 
 function extractServerErrorMessage(payload: unknown): string | null {
   if (!payload || typeof payload !== "object") return null;
@@ -187,17 +189,19 @@ function OAuthSignInButtons({
     <div className="space-y-3 mb-5">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
         {providers.map((p) => (
-          <button
+          <ShadButton
             key={p.id}
             type="button"
+            variant="outline"
+            disableAnimations
             onClick={() => start(p.id)}
             disabled={disabled || !!pending}
             aria-label={`Continue with ${p.label}`}
-            className="oauth-btn min-h-[52px] py-2.5 inline-flex flex-col items-center justify-center gap-1 border border-ink/[0.08] bg-paper/70 text-ink text-[11px] font-semibold disabled:opacity-50"
+            className="oauth-btn min-h-[52px] py-2.5 h-auto flex-col gap-1 border-ink/[0.08] bg-paper/70 text-ink text-[11px] font-semibold"
           >
             {pending === p.id ? <Loader2 className="w-5 h-5 animate-spin" /> : p.icon}
             <span>{p.label}</span>
-          </button>
+          </ShadButton>
         ))}
       </div>
       <div className="flex items-center gap-3" aria-hidden="true">
@@ -221,11 +225,11 @@ function getPasswordStrength(pw: string): PasswordStrength {
   if (/[^A-Za-z0-9]/.test(pw)) score++;
   const clamped = Math.min(score, 4) as 0 | 1 | 2 | 3 | 4;
   const meta: Record<number, { label: string; color: string }> = {
-    0: { label: "Too short", color: "#FF6B6B" },
-    1: { label: "Weak", color: "#FF9A5C" },
-    2: { label: "Fair", color: "#FFD166" },
-    3: { label: "Good", color: "#4DFFC4" },
-    4: { label: "Strong", color: "#8B3FD6" },
+    0: { label: "Too short", color: BRAND.rose },
+    1: { label: "Weak", color: BRAND.rose },
+    2: { label: "Fair", color: BRAND.purpleMuted },
+    3: { label: "Good", color: BRAND.purple },
+    4: { label: "Strong", color: BRAND.purple },
   };
   return { score: clamped, ...meta[clamped] };
 }
@@ -442,17 +446,19 @@ export default function AuthPortal() {
                         { label: "Sign in", value: false },
                         { label: "Sign up", value: true },
                       ].map((opt) => (
-                        <button
+                        <ShadButton
                           key={String(opt.value)}
                           type="button"
+                          variant="ghost"
+                          disableAnimations
                           onClick={() => setIsSignUp(opt.value)}
                           className={cn(
-                            "relative z-10 flex-1 py-2.5 text-sm font-semibold transition-colors",
+                            "relative z-10 flex-1 h-auto py-2.5 text-sm font-semibold rounded-none",
                             isSignUp === opt.value ? "text-ink" : "text-muted hover:text-ink",
                           )}
                         >
                           {opt.label}
-                        </button>
+                        </ShadButton>
                       ))}
                     </div>
                   </div>
@@ -493,16 +499,18 @@ export default function AuthPortal() {
                           Password
                         </label>
                         {!isSignUp && (
-                          <button
+                          <ShadButton
                             type="button"
+                            variant="link"
+                            disableAnimations
                             onClick={() => {
                               setMode("reset");
                               setError(null);
                             }}
-                            className="text-caption font-medium text-brand hover:underline"
+                            className="text-caption font-medium text-brand h-auto p-0"
                           >
                             Forgot?
-                          </button>
+                          </ShadButton>
                         )}
                       </div>
                       <div className="relative">
@@ -517,10 +525,13 @@ export default function AuthPortal() {
                           className="auth-input pr-11"
                           placeholder="••••••••••••"
                         />
-                        <button
+                        <ShadButton
                           type="button"
+                          variant="ghost"
+                          size="icon"
+                          disableAnimations
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
+                          className="absolute right-1 top-1/2 -translate-y-1/2 text-muted hover:text-ink h-8 w-8"
                           aria-label={showPassword ? "Hide password" : "Show password"}
                           tabIndex={-1}
                         >
@@ -529,7 +540,7 @@ export default function AuthPortal() {
                           ) : (
                             <Eye className="w-4 h-4" />
                           )}
-                        </button>
+                        </ShadButton>
                       </div>
                       {isSignUp && password.length > 0 && pwStrength && (
                         <>
@@ -538,7 +549,7 @@ export default function AuthPortal() {
                               className="pw-strength-fill"
                               style={{
                                 width: `${(pwStrength.score / 4) * 100}%`,
-                                background: `linear-gradient(90deg, ${pwStrength.color}, ${pwStrength.score >= 3 ? "#8B3FD6" : pwStrength.color})`,
+                                background: `linear-gradient(90deg, ${pwStrength.color}, ${pwStrength.score >= 3 ? BRAND.purple : pwStrength.color})`,
                               }}
                             />
                           </div>
@@ -570,16 +581,18 @@ export default function AuthPortal() {
                   )}
 
                   {isReset && (
-                    <button
+                    <ShadButton
                       type="button"
+                      variant="link"
+                      disableAnimations
                       onClick={() => {
                         setMode("signin");
                         setError(null);
                       }}
-                      className="text-caption font-medium text-brand hover:underline"
+                      className="text-caption font-medium text-brand h-auto p-0 justify-start"
                     >
                       ← Back to sign in
-                    </button>
+                    </ShadButton>
                   )}
 
                   <AnimatePresence mode="wait">
@@ -589,7 +602,7 @@ export default function AuthPortal() {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="flex gap-2 p-3 bg-rose-500/10 border border-rose-500/25 text-rose-700 text-sm"
+                        className="flex gap-2 p-3 bg-destructive/10 border border-destructive/25 text-destructive text-sm"
                       >
                         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                         <span>{error}</span>
@@ -600,7 +613,7 @@ export default function AuthPortal() {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="flex gap-2 p-3 bg-emerald-500/10 border border-emerald-500/25 text-emerald-800 text-sm"
+                        className="flex gap-2 p-3 bg-brand/10 border border-brand/25 text-brand text-sm"
                       >
                         <Check className="w-4 h-4 shrink-0 mt-0.5" />
                         <span>{message}</span>
@@ -630,10 +643,12 @@ export default function AuthPortal() {
                     </label>
                   )}
 
-                  <button
+                  <ShadButton
                     type="submit"
+                    variant="editorial"
+                    disableAnimations
                     disabled={loading || (isSignUp && !agreedToTerms)}
-                    className="w-full flex items-center justify-center gap-2 min-h-[48px] py-3.5 text-sm font-semibold text-white bg-brand hover:bg-[#8B3FD6] transition-all disabled:opacity-50"
+                    className="w-full min-h-[48px] py-3.5 text-sm font-semibold"
                   >
                     {loading ? (
                       <>
@@ -653,7 +668,7 @@ export default function AuthPortal() {
                         <LogIn className="w-4 h-4" /> Sign in <ArrowRight className="w-4 h-4" />
                       </>
                     )}
-                  </button>
+                  </ShadButton>
                 </form>
               </div>
             </div>

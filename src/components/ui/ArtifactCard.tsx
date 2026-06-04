@@ -6,6 +6,7 @@
  * PDF (icon + metadata), Code (syntax-highlighted block), CSV/JSON (table preview).
  */
 import React, { useState } from "react";
+import { ShadButton } from "./shadcn/ShadButton";
 import { motion } from "motion/react";
 import {
   Download,
@@ -100,14 +101,14 @@ export function ArtifactCard({
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
       className={cn(
-        "rounded-xl border border-brand/15 bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm",
+        "rounded-md border border-brand/15 bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm",
         "p-3 shadow-sm hover:shadow-md transition-shadow",
         className,
       )}
     >
       {/* Header row */}
       <div className="flex items-center gap-2.5">
-        <span className="flex-shrink-0 flex w-8 h-8 items-center justify-center rounded-lg bg-brand/8 text-brand">
+        <span className="flex-shrink-0 flex w-8 h-8 items-center justify-center rounded-md bg-brand/8 text-brand">
           <Icon className="w-4 h-4" />
         </span>
         <div className="flex-1 min-w-0">
@@ -119,14 +120,17 @@ export function ArtifactCard({
         </div>
         <div className="flex items-center gap-1">
           {previewData && (
-            <button
+            <ShadButton
               type="button"
+              disableAnimations
+              variant="ghost"
+              size="icon"
               onClick={() => setShowPreview(!showPreview)}
-              className="p-1.5 rounded-md hover:bg-brand/8 text-muted hover:text-brand transition-colors"
+              className="h-8 w-8 hover:bg-brand/8 text-muted hover:text-brand after:hidden"
               title="Preview"
             >
               <Eye className="w-3.5 h-3.5" />
-            </button>
+            </ShadButton>
           )}
           {downloadUrl && (
             <a

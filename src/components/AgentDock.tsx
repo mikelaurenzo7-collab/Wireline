@@ -36,6 +36,7 @@ import {
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { AGENT_TOOL_CATALOG, type AgentToolCatalogEntry } from "../lib/agent-capabilities";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface Pulse {
   calls: number;
@@ -126,9 +127,9 @@ const GROUP_ORDER: ReadonlyArray<AgentToolCatalogEntry["group"]> = [
 
 function sentimentTone(sentiment: string | null): string {
   const s = (sentiment || "").toLowerCase();
-  if (s.includes("pos")) return "bg-emerald-500";
+  if (s.includes("pos")) return "bg-brand";
   if (s.includes("neg")) return "bg-rose-500";
-  return "bg-amber-400";
+  return "bg-muted";
 }
 
 function relativeTime(iso: string | null): string {
@@ -199,11 +200,11 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
   ];
 
   return (
-    <div className="flex flex-col h-full min-h-0 rounded-2xl border border-black/8 glass overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 rounded-md border border-black/8 wl-panel overflow-hidden">
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-black/8">
         <div className="flex items-center gap-2.5 min-w-0">
-          <span className="shrink-0 flex w-8 h-8 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25">
+          <span className="shrink-0 flex w-8 h-8 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25">
             <Activity className="w-4 h-4" />
           </span>
           <div className="min-w-0">
@@ -212,21 +213,25 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
             </p>
             <p className="flex items-center gap-1.5 text-[10px] text-muted leading-tight">
               <span className="relative flex h-1.5 w-1.5 shrink-0" aria-hidden="true">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500/60" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-brand" />
               </span>
               <span className="truncate">{agentName} · live</span>
             </p>
           </div>
         </div>
-        <button
+        <ShadButton
+          type="button"
+          variant="ghost"
+          size="icon"
+          disableAnimations
           onClick={() => load("refresh")}
-          className="shrink-0 min-w-[44px] min-h-[44px] w-7 h-7 rounded-lg flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors"
+          className="shrink-0 min-w-[44px] min-h-[44px] w-7 h-7 rounded-md text-muted hover:text-ink hover:bg-black/5"
           title="Refresh"
           aria-label="Refresh dock"
         >
           <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
-        </button>
+        </ShadButton>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-5 scrollbar-hide">
@@ -239,7 +244,7 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
             {stats.map((s) => (
               <div
                 key={s.label}
-                className="rounded-xl border border-black/8 bg-paper/50 px-1.5 py-2 flex flex-col items-center text-center"
+                className="rounded-md border border-black/8 bg-paper/50 px-1.5 py-2 flex flex-col items-center text-center"
               >
                 <s.icon className="w-3.5 h-3.5 text-brand/80 mb-1" />
                 <span className="text-[15px] font-display leading-none text-ink tabular-nums">
@@ -264,14 +269,17 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
           </p>
           <div className="grid grid-cols-2 gap-1.5 stagger-children">
             {QUICK_ACTIONS.map((a) => (
-              <button
+              <ShadButton
                 key={a.label}
+                type="button"
+                variant="outline"
+                disableAnimations
                 onClick={() => onLaunch(a.text)}
-                className="group flex items-center gap-2 rounded-xl border border-black/8 glass px-2.5 py-2 text-left hover:border-brand/40 hover:bg-brand/[0.04] hover:-translate-y-px transition-all duration-300"
+                className="group h-auto w-full justify-start gap-2 rounded-md border border-black/8 wl-panel px-2.5 py-2 text-left hover:border-brand/40 hover:bg-brand/[0.04] hover:-translate-y-px transition-all duration-300"
               >
                 <a.icon className="w-3.5 h-3.5 text-brand shrink-0" />
                 <span className="text-[11px] font-medium text-ink truncate">{a.label}</span>
-              </button>
+              </ShadButton>
             ))}
           </div>
           <p className="mt-2 text-[9px] text-ink/40 leading-relaxed">
@@ -308,8 +316,12 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
                     {items.map((t) => {
                       const on = enabled.has(t.name);
                       return (
-                        <button
+                        <ShadButton
                           key={t.name}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disableAnimations
                           title={
                             on
                               ? t.description
@@ -320,15 +332,15 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
                           }
                           disabled={on}
                           className={cn(
-                            "inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] border transition-colors",
+                            "inline-flex h-auto items-center gap-1 rounded-full px-2 py-1 text-[10px] border transition-colors",
                             on
-                              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 cursor-default"
+                              ? "bg-brand/10 border-brand/30 text-brand cursor-default"
                               : "bg-black/3 border-black/8 text-ink/50 hover:border-brand/40 hover:text-ink",
                           )}
                         >
                           {on ? <Check className="w-2.5 h-2.5" /> : <Zap className="w-2.5 h-2.5" />}
                           {t.label}
-                        </button>
+                        </ShadButton>
                       );
                     })}
                   </div>
@@ -355,7 +367,7 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.15, delay: i * 0.03 }}
-                  className="rounded-xl border border-black/8 bg-paper/40 px-2.5 py-2"
+                  className="rounded-md border border-black/8 bg-paper/40 px-2.5 py-2"
                 >
                   <div className="flex items-center gap-1.5 mb-0.5">
                     <span

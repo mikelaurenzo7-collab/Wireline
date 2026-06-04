@@ -29,6 +29,7 @@ import { cn } from "../lib/utils";
 import { formatDateTime } from "../lib/safe-date";
 import type { AuditEvent, AuditSeverity } from "../types/audit";
 import { Input } from "./ui/shadcn/Input";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface AuditStats {
   total: number;
@@ -65,14 +66,14 @@ const EVENT_CATEGORIES = {
 
 function SeverityIcon({ severity }: { severity: AuditSeverity }) {
   const config = {
-    info: { Icon: Info, color: "text-blue-600", bg: "bg-blue-500/10" },
-    warning: { Icon: AlertTriangle, color: "text-yellow-600", bg: "bg-yellow-500/10" },
-    error: { Icon: AlertCircle, color: "text-orange-600", bg: "bg-orange-500/10" },
-    critical: { Icon: XCircle, color: "text-rose-500", bg: "bg-rose-500/10" },
+    info: { Icon: Info, color: "text-brand", bg: "bg-brand/10" },
+    warning: { Icon: AlertTriangle, color: "text-brand", bg: "bg-brand/10" },
+    error: { Icon: AlertCircle, color: "text-rose-600", bg: "bg-rose-500/10" },
+    critical: { Icon: XCircle, color: "text-rose-600", bg: "bg-rose-500/10" },
   };
   const { Icon, color, bg } = config[severity];
   return (
-    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", bg)}>
+    <div className={cn("w-8 h-8 rounded-md flex items-center justify-center shrink-0", bg)}>
       <Icon className={cn("w-4 h-4", color)} />
     </div>
   );
@@ -90,7 +91,7 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="relative glass rounded-xl p-4 border border-black/10 overflow-hidden">
+    <div className="relative wl-panel rounded-md p-4 border border-border overflow-hidden">
       <div
         className={cn("absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20 blur-3xl", color)}
       />
@@ -129,7 +130,7 @@ const EventRow = React.memo(
         tabIndex={0}
         aria-expanded={expanded}
         aria-label={`${event.event_type || event.action} event details`}
-        className="relative glass border border-black/8 rounded-xl overflow-hidden hover:border-brand/25 transition-all cursor-pointer outline-none focus:ring-2 focus:ring-brand/50"
+        className="relative wl-panel border border-border rounded-md overflow-hidden hover:border-brand/25 transition-all cursor-pointer outline-none focus:ring-2 focus:ring-brand/50"
         onClick={onToggle}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -223,7 +224,7 @@ const EventRow = React.memo(
                 {event.metadata && Object.keys(event.metadata).length > 0 && (
                   <div>
                     <p className="text-muted text-xs mb-2">Metadata</p>
-                    <pre className="text-xs text-ink/80 bg-black/20 rounded-lg p-3 overflow-x-auto max-h-48 overflow-y-auto scrollbar-hide">
+                    <pre className="text-xs text-ink/80 bg-black/20 rounded-md p-3 overflow-x-auto max-h-48 overflow-y-auto scrollbar-hide">
                       {JSON.stringify(event.metadata, null, 2)}
                     </pre>
                   </div>
@@ -385,11 +386,14 @@ export default function AuditLog() {
         eyebrow=""
         subtitle=""
         actions={
-          <button
+          <ShadButton
+            type="button"
+            variant="outline"
+            disableAnimations
             onClick={handleExport}
             disabled={exporting || events.length === 0}
             aria-label={`Export ${events.length} events as CSV`}
-            className="px-4 py-2.5 rounded-full glass border border-black/10 text-[11px] uppercase tracking-[0.3em] text-ink/80 hover:text-brand hover:border-brand/40 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-full text-[11px] uppercase tracking-[0.3em]"
           >
             {exporting ? (
               <>
@@ -407,7 +411,7 @@ export default function AuditLog() {
                 export
               </>
             )}
-          </button>
+          </ShadButton>
         }
       >
         <div className="h-full flex flex-col gap-4 p-4 overflow-y-auto scrollbar-hide">
@@ -417,25 +421,25 @@ export default function AuditLog() {
               label="Total Events"
               value={stats?.total.toLocaleString() || "—"}
               icon={Activity}
-              color="bg-cyan-400"
+              color="bg-brand/30"
             />
             <StatCard
               label="API Calls"
               value={stats?.api_calls.toLocaleString() || "—"}
               icon={Cpu}
-              color="bg-purple-400"
+              color="bg-brand/20"
             />
             <StatCard
               label="Total Cost"
               value={stats ? `$${stats.total_cost.toFixed(2)}` : "—"}
               icon={DollarSign}
-              color="bg-emerald-400"
+              color="bg-brand/25"
             />
             <StatCard
               label="Critical Events"
               value={stats?.critical_count || 0}
               icon={Shield}
-              color="bg-rose-400"
+              color="bg-rose-400/40"
             />
           </div>
 
@@ -454,7 +458,7 @@ export default function AuditLog() {
                     // Trigger search (already handled by useMemo)
                   }
                 }}
-                className="w-full pl-11 pr-4 py-3 rounded-xl glass border border-black/10 text-sm text-ink placeholder:text-muted/70 focus:outline-none focus:border-brand/40 transition-all"
+                className="w-full pl-11 pr-4 py-3 rounded-md wl-panel border border-border text-sm text-ink placeholder:text-muted/70 focus:outline-none focus:border-brand/40 transition-all"
               />
             </div>
             <div className="relative">
@@ -464,7 +468,7 @@ export default function AuditLog() {
               >
                 <SelectTrigger
                   aria-label="Time range"
-                  className="pl-4 pr-3 py-3 rounded-xl glass border border-black/10 text-sm text-ink bg-transparent h-auto"
+                  className="pl-4 pr-3 py-3 rounded-md wl-panel border border-border text-sm text-ink bg-transparent h-auto"
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -476,15 +480,18 @@ export default function AuditLog() {
                 </SelectContent>
               </Select>
             </div>
-            <button
+            <ShadButton
+              type="button"
+              variant="outline"
+              disableAnimations
               onClick={() => setFiltersExpanded(!filtersExpanded)}
               aria-label={filtersExpanded ? "Hide filters" : "Show filters"}
               aria-expanded={filtersExpanded}
               className={cn(
-                "px-4 py-3 rounded-xl glass border transition-all flex items-center gap-2 text-sm",
+                "h-auto px-4 py-3 rounded-md text-sm",
                 filtersExpanded
                   ? "border-brand/40 text-brand"
-                  : "border-black/10 text-ink/80 hover:border-brand/25",
+                  : "text-ink/80 hover:border-brand/25",
               )}
             >
               <Filter className="w-4 h-4" />
@@ -495,7 +502,7 @@ export default function AuditLog() {
               >
                 <ChevronDown className="w-4 h-4" />
               </motion.div>
-            </button>
+            </ShadButton>
           </div>
 
           {/* Filters Panel */}
@@ -508,23 +515,22 @@ export default function AuditLog() {
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                 className="overflow-hidden"
               >
-                <div className="glass rounded-xl border border-black/10 p-4 space-y-4">
+                <div className="wl-panel rounded-md border border-border p-4 space-y-4">
                   <div>
                     <h4 className="text-xs uppercase tracking-[0.3em] text-muted mb-3">Severity</h4>
                     <div className="flex flex-wrap gap-2">
                       {SEVERITY_OPTIONS.map((severity) => (
-                        <button
+                        <ShadButton
                           key={severity}
+                          type="button"
+                          variant={selectedSeverities.includes(severity) ? "default" : "outline"}
+                          size="sm"
+                          disableAnimations
                           onClick={() => toggleSeverity(severity)}
-                          className={cn(
-                            "px-3 py-1.5 rounded-full text-xs uppercase tracking-wider transition-all border",
-                            selectedSeverities.includes(severity)
-                              ? "border-brand/40 bg-brand/10 text-brand"
-                              : "border-black/10 bg-black/[0.03] text-muted hover:text-ink hover:border-brand/20",
-                          )}
+                          className="rounded-full text-xs uppercase tracking-wider h-auto px-3 py-1.5"
                         >
                           {severity}
-                        </button>
+                        </ShadButton>
                       ))}
                     </div>
                   </div>
@@ -534,18 +540,17 @@ export default function AuditLog() {
                     </h4>
                     <div className="flex flex-wrap gap-2">
                       {Object.entries(EVENT_CATEGORIES).map(([key, label]) => (
-                        <button
+                        <ShadButton
                           key={key}
+                          type="button"
+                          variant={selectedCategories.includes(key) ? "default" : "outline"}
+                          size="sm"
+                          disableAnimations
                           onClick={() => toggleCategory(key)}
-                          className={cn(
-                            "px-3 py-1.5 rounded-full text-xs uppercase tracking-wider transition-all border",
-                            selectedCategories.includes(key)
-                              ? "border-brand/40 bg-brand/10 text-brand"
-                              : "border-black/10 bg-black/[0.03] text-muted hover:text-ink hover:border-brand/20",
-                          )}
+                          className="rounded-full text-xs uppercase tracking-wider h-auto px-3 py-1.5"
                         >
                           {label}
-                        </button>
+                        </ShadButton>
                       ))}
                     </div>
                   </div>
@@ -571,7 +576,6 @@ export default function AuditLog() {
                   icon={Shield}
                   title="No matches"
                   description="Try a different search term or widen the time range filter."
-                  accent="#8B3FD6"
                   actions={[
                     { label: "Clear search", onClick: () => setSearchQuery(""), primary: true },
                   ]}
@@ -581,7 +585,6 @@ export default function AuditLog() {
                   icon={Shield}
                   title="Audit trail is quiet"
                   description="Every agent action, escalation, and policy check writes here. Deploy an agent to start the feed."
-                  accent="#8B3FD6"
                   actions={[{ label: "Deploy an agent", to: "/agents", primary: true }]}
                 />
               )

@@ -30,6 +30,7 @@ import { Link } from "react-router-dom";
 import { Panel } from "../PageShell";
 import EmptyState from "../EmptyState";
 import ClientRouteLoading from "../layout/ClientRouteLoading";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 import { formatDate } from "../../lib/safe-date";
 import { CAMPAIGN_STATUS } from "./shared";
 
@@ -89,12 +90,16 @@ export default function CampaignsTab({
           scroll
           flush
           actions={
-            <button
+            <ShadButton
+              type="button"
+              variant="outline"
+              size="sm"
+              disableAnimations
               onClick={() => setShowCampaignModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors"
+              className="rounded-full bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25"
             >
               <Plus className="w-3 h-3" /> New
-            </button>
+            </ShadButton>
           }
         >
           {campaignLoading ? (
@@ -121,7 +126,7 @@ export default function CampaignsTab({
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     className={cn(
-                      "px-4 py-3.5 cursor-pointer glass border border-black/8 hover:border-brand/30 hover:-translate-y-px transition-all duration-300 group",
+                      "px-4 py-3.5 cursor-pointer wl-panel border border-border hover:border-brand/30 hover:-translate-y-px transition-all duration-300 group",
                       isSelected && "bg-brand/8 ring-1 ring-inset ring-brand/30",
                     )}
                     onClick={() => handleSelectCampaign(c)}
@@ -129,7 +134,7 @@ export default function CampaignsTab({
                     <div className="flex items-start gap-3">
                       <div
                         className={cn(
-                          "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25",
+                          "w-9 h-9 rounded-md flex items-center justify-center shrink-0 mt-0.5 bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25",
                         )}
                       >
                         <Megaphone className="w-4 h-4" />
@@ -163,7 +168,7 @@ export default function CampaignsTab({
                             {c.dialed_count} dialed
                           </span>
                           <span className="inline-flex items-center gap-1">
-                            <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
+                            <CheckCircle2 className="w-2.5 h-2.5 text-brand" />
                             {c.connected_count} connected
                           </span>
                         </div>
@@ -190,27 +195,34 @@ export default function CampaignsTab({
             actions={
               <div className="flex flex-wrap items-center gap-1.5">
                 {/* Analytics button */}
-                <button
+                <ShadButton
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disableAnimations
                   onClick={() => {
                     if (!showAnalytics) fetchCampaignAnalytics(selectedCampaign.id);
                     setShowAnalytics((p) => !p);
                   }}
                   className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] uppercase tracking-[0.25em] transition-colors",
+                    "rounded-full border text-[10px] uppercase tracking-[0.25em]",
                     showAnalytics
-                      ? "bg-brand/20 border-brand/50 text-brand"
-                      : "glass border-white/10 text-muted hover:text-brand hover:border-brand/40",
+                      ? "bg-brand/20 border-brand/50 text-brand hover:bg-brand/20"
+                      : "wl-panel border-border text-muted hover:text-brand hover:border-brand/40",
                   )}
                 >
                   <TrendingUp className="w-3 h-3" /> Analytics
-                </button>
-                {/* Launch button — dials all queued leads via server fire-and-forget */}
+                </ShadButton>
                 {selectedCampaign.status !== "running" &&
                   selectedCampaign.status !== "completed" && (
-                    <button
+                    <ShadButton
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disableAnimations
                       onClick={() => launchCampaign(selectedCampaign.id, selectedCampaign.name)}
                       disabled={launchingCampaignId === selectedCampaign.id}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors disabled:opacity-50"
+                      className="rounded-full bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25"
                     >
                       {launchingCampaignId === selectedCampaign.id ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
@@ -218,14 +230,17 @@ export default function CampaignsTab({
                         <Rocket className="w-3 h-3" />
                       )}
                       Launch
-                    </button>
+                    </ShadButton>
                   )}
-                {/* Stop button — halts a running campaign after the current lead finishes */}
                 {selectedCampaign.status === "running" && (
-                  <button
+                  <ShadButton
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    disableAnimations
                     onClick={() => stopCampaign(selectedCampaign.id)}
                     disabled={stoppingCampaignId === selectedCampaign.id}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/15 border border-rose-500/40 text-rose-500 text-[10px] uppercase tracking-[0.25em] hover:bg-rose-500/25 transition-colors disabled:opacity-50"
+                    className="rounded-full bg-rose-500/15 border-rose-500/40 text-rose-500 text-[10px] uppercase tracking-[0.25em] hover:bg-rose-500/25 shadow-none"
                   >
                     {stoppingCampaignId === selectedCampaign.id ? (
                       <Loader2 className="w-3 h-3 animate-spin" />
@@ -233,55 +248,75 @@ export default function CampaignsTab({
                       <Pause className="w-3 h-3" />
                     )}
                     Stop
-                  </button>
+                  </ShadButton>
                 )}
                 {selectedCampaign.status === "draft" && (
-                  <button
+                  <ShadButton
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disableAnimations
                     onClick={() => setCampaignStatus(selectedCampaign.id, "active")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-600 text-[10px] uppercase tracking-[0.25em] hover:bg-emerald-500/25 transition-colors"
+                    className="rounded-full bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25"
                   >
                     <Play className="w-3 h-3" /> Activate
-                  </button>
+                  </ShadButton>
                 )}
                 {selectedCampaign.status === "active" && (
-                  <button
+                  <ShadButton
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disableAnimations
                     onClick={() => setCampaignStatus(selectedCampaign.id, "paused")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-600 text-[10px] uppercase tracking-[0.25em] hover:bg-amber-500/25 transition-colors"
+                    className="rounded-full wl-panel border-border text-muted text-[10px] uppercase tracking-[0.25em] hover:text-brand hover:border-brand/40"
                   >
                     <Pause className="w-3 h-3" /> Pause
-                  </button>
+                  </ShadButton>
                 )}
                 {selectedCampaign.status === "paused" && (
-                  <button
+                  <ShadButton
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disableAnimations
                     onClick={() => setCampaignStatus(selectedCampaign.id, "active")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors"
+                    className="rounded-full bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25"
                   >
                     <Play className="w-3 h-3" /> Resume
-                  </button>
+                  </ShadButton>
                 )}
                 {["active", "paused"].includes(selectedCampaign.status) && (
-                  <button
+                  <ShadButton
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disableAnimations
                     onClick={() => setCampaignStatus(selectedCampaign.id, "completed")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-violet-500/15 border border-violet-500/40 text-violet-600 text-[10px] uppercase tracking-[0.25em] hover:bg-violet-500/25 transition-colors"
+                    className="rounded-full bg-brand/10 border-brand/30 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/20"
                   >
                     <CheckCircle2 className="w-3 h-3" /> Complete
-                  </button>
+                  </ShadButton>
                 )}
-                <button
+                <ShadButton
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  disableAnimations
                   onClick={() => deleteCampaign(selectedCampaign.id)}
                   aria-label="Delete campaign"
                   title="Delete campaign"
-                  className="w-8 h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all"
+                  className="w-8 h-8 rounded-md text-muted hover:text-rose-500 hover:border-rose-500/30"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                </ShadButton>
               </div>
             }
           >
             {/* Live progress bar when running */}
             {selectedCampaign.status === "running" && selectedCampaign.leads_count > 0 && (
               <div className="px-4 pt-3 pb-0">
-                <div className="rounded-xl bg-brand/8 border border-brand/20 p-3">
+                <div className="rounded-md bg-brand/8 border border-brand/20 p-3">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="relative flex h-2 w-2">
@@ -367,7 +402,10 @@ export default function CampaignsTab({
                               accent: "#8B3FD6",
                             },
                           ].map(({ label, value, icon: Icon, accent }) => (
-                            <div key={label} className="rounded-xl glass border border-white/8 p-3">
+                            <div
+                              key={label}
+                              className="rounded-md wl-panel border border-border p-3"
+                            >
                               <div className="flex items-center gap-1.5 mb-1.5">
                                 <Icon className="w-3 h-3 shrink-0" style={{ color: accent }} />
                                 <span className="text-[8px] uppercase tracking-[0.28em] text-muted">
@@ -385,7 +423,7 @@ export default function CampaignsTab({
                         </div>
                         {/* Outcome breakdown */}
                         {(campaignAnalytics.outcomes ?? []).length > 0 && (
-                          <div className="rounded-xl glass border border-white/8 p-3">
+                          <div className="rounded-md wl-panel border border-border p-3">
                             <h5 className="text-[8px] uppercase tracking-[0.3em] text-muted mb-2.5 flex items-center gap-1.5">
                               <BarChart3 className="w-3 h-3" /> Lead Outcomes
                             </h5>
@@ -446,7 +484,7 @@ export default function CampaignsTab({
                   accent: "#8B3FD6",
                 },
               ].map((s) => (
-                <div key={s.label} className="rounded-lg glass border border-white/8 p-2.5">
+                <div key={s.label} className="rounded-md wl-panel border border-border p-2.5">
                   <div
                     className="text-[8px] uppercase tracking-[0.3em] mb-1"
                     style={{ color: s.accent }}
@@ -483,7 +521,7 @@ export default function CampaignsTab({
               <>
                 {/* Retry failed banner */}
                 {campaignLeads.some((l) => l.status === "Failed") && (
-                  <div className="mx-4 mt-3 rounded-xl bg-rose-500/10 border border-rose-500/30 p-3 flex items-center gap-3">
+                  <div className="mx-4 mt-3 rounded-md bg-rose-500/10 border border-rose-500/30 p-3 flex items-center gap-3">
                     <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] text-rose-500 uppercase tracking-[0.25em]">
@@ -491,12 +529,16 @@ export default function CampaignsTab({
                         {campaignLeads.filter((l) => l.status === "Failed").length > 1 ? "s" : ""}
                       </p>
                     </div>
-                    <button
+                    <ShadButton
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      disableAnimations
                       onClick={() => retryFailedLeads(selectedCampaign.id)}
-                      className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-500 text-[9px] uppercase tracking-[0.25em] hover:bg-rose-500/30 transition-colors"
+                      className="shrink-0 rounded-full bg-rose-500/20 border-rose-500/40 text-rose-500 text-[9px] uppercase tracking-[0.25em] hover:bg-rose-500/30 shadow-none"
                     >
                       <Activity className="w-3 h-3" /> Retry Failed
-                    </button>
+                    </ShadButton>
                   </div>
                 )}
                 <div className="divide-y divide-white/5 mt-2">
@@ -514,14 +556,14 @@ export default function CampaignsTab({
                             className={cn(
                               "px-1.5 py-0 rounded-full border text-[8px] uppercase tracking-[0.25em] leading-tight",
                               lead.status === "Completed"
-                                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500"
+                                ? "bg-brand/10 border-brand/30 text-brand"
                                 : lead.status === "Queued"
                                   ? "bg-brand/15 border-brand/40 text-brand"
                                   : lead.status === "Failed"
                                     ? "bg-rose-500/10 border-rose-500/30 text-rose-500"
                                     : lead.status === "Dialing"
-                                      ? "bg-amber-500/10 border-amber-500/30 text-amber-500"
-                                      : "bg-white/5 border-white/10 text-muted",
+                                      ? "bg-brand/8 border-brand/25 text-brand/80"
+                                      : "bg-black/[0.04] border-border text-muted",
                             )}
                           >
                             {lead.status}

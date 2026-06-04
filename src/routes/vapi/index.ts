@@ -24,14 +24,8 @@ import { handleEndOfCallReport } from "../../lib/vapi-handlers";
 import { shouldQueueWebhook } from "../../lib/vapi-webhook-queue";
 import { resolveVapiWebhookAgent } from "../../lib/vapi-webhook-agent";
 
-import { handleCalendarToolCall } from "./tool-handlers-calendar";
-import { handleCoreToolCall } from "./tool-handlers-core";
-import { handleEnrichmentToolCall } from "./tool-handlers-enrichment";
-import { handleNotificationToolCall } from "./tool-handlers-notifications";
-import { handleShopifyToolCall } from "./tool-handlers-shopify";
-import { handleSquareToolCall } from "./tool-handlers-square";
-import { handleWorkflowToolCall } from "./tool-handlers-workflow";
 import { handleShowcaseToolCalls } from "./showcase-handlers";
+import { dispatchAgentToolCall } from "../../lib/agent-tool-dispatch";
 import type { ToolCallContext, ToolCallResult } from "./types";
 
 const router = express.Router();
@@ -42,25 +36,7 @@ async function dispatchToolCall(
   args: any,
   context: ToolCallContext,
 ): Promise<ToolCallResult> {
-  const handlers = [
-    handleCoreToolCall,
-    handleCalendarToolCall,
-    handleEnrichmentToolCall,
-    handleNotificationToolCall,
-    handleWorkflowToolCall,
-    handleShopifyToolCall,
-    handleSquareToolCall,
-  ];
-
-  for (const handler of handlers) {
-    const result = await handler(fn, args, context);
-    if (result) return result;
-  }
-
-  return {
-    toolCallId: context.toolCallId,
-    result: "That action isn't available on this line right now. Help the caller another way.",
-  };
+  return dispatchAgentToolCall(fn, args, context);
 }
 
 router.post("/api/vapi-webhook", async (req: express.Request, res: express.Response) => {

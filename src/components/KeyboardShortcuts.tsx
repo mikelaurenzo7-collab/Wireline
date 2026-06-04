@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Keyboard } from "lucide-react";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface KeyboardShortcutsProps {
   open: boolean;
@@ -116,12 +117,12 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
             aria-modal="true"
             aria-label="Keyboard shortcuts"
           >
-            <div className="glass-strong rounded-t-2xl sm:rounded-2xl border border-white/12 overflow-hidden max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-1rem)] overflow-y-auto overscroll-contain">
+            <div className="wl-panel-elevated rounded-t-md sm:rounded-md border border-white/12 overflow-hidden max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-1rem)] overflow-y-auto overscroll-contain">
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center"
+                    className="w-8 h-8 rounded-md flex items-center justify-center"
                     style={{ background: "linear-gradient(135deg, #8B3FD622, #8B3FD622)" }}
                   >
                     <Keyboard className="w-4 h-4 text-brand" />
@@ -133,14 +134,18 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
                     </p>
                   </div>
                 </div>
-                <button
+                <ShadButton
                   ref={closeRef}
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disableAnimations
                   onClick={onClose}
                   aria-label="Close keyboard shortcuts"
-                  className="w-11 h-11 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-ink/70 hover:text-ink hover:bg-white/8 border border-white/8 hover:border-white/20 transition-all"
+                  className="w-11 h-11 sm:w-8 sm:h-8 border border-white/8 hover:border-white/20"
                 >
                   <X className="w-3.5 h-3.5" />
-                </button>
+                </ShadButton>
               </div>
 
               {/* Shortcut grid */}

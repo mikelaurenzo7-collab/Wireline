@@ -5,6 +5,7 @@ import { useToast, type Toast } from "../contexts/ToastContext";
 import { useAuth } from "../contexts/AuthContext";
 import { isMarketingStickyCtaRoute, MARKETING_STICKY_CTA_BOTTOM } from "../lib/marketing-mobile";
 import { cn } from "../lib/utils";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 const META = {
   success: {
@@ -40,7 +41,7 @@ function ToastItem({ toast }: { toast: Toast }) {
       className={cn(
         // Full-width on mobile (parent strip already handles padding);
         // fixed-width on sm+ to keep the desktop stack tidy.
-        "relative w-full sm:w-80 max-w-full sm:max-w-[92vw] rounded-2xl glass-1 elev-2 border overflow-hidden toast-enter",
+        "relative w-full sm:w-80 max-w-full sm:max-w-[92vw] rounded-md wl-panel elev-2 border overflow-hidden toast-enter",
         m.border,
       )}
     >
@@ -53,7 +54,7 @@ function ToastItem({ toast }: { toast: Toast }) {
       <div className="flex items-start gap-3 px-4 py-3.5 pl-5">
         <div
           className={cn(
-            "shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5",
+            "shrink-0 w-7 h-7 rounded-md flex items-center justify-center mt-0.5",
             m.bg,
           )}
         >
@@ -65,14 +66,17 @@ function ToastItem({ toast }: { toast: Toast }) {
             <p className="text-caption leading-snug mt-0.5 line-clamp-2">{toast.message}</p>
           )}
         </div>
-        <button
+        <ShadButton
+          type="button"
+          variant="ghost"
+          size="icon"
           onClick={() => dismiss(toast.id)}
           aria-label="Dismiss notification"
-          // Larger hit area on touch devices; visible icon stays small.
-          className="shrink-0 w-9 h-9 sm:w-6 sm:h-6 -m-1.5 sm:m-0 sm:mt-0.5 flex items-center justify-center rounded-lg text-muted hover:text-ink hover:bg-white/8 transition-all"
+          disableAnimations
+          className="shrink-0 w-9 h-9 sm:w-6 sm:h-6 -m-1.5 sm:m-0 sm:mt-0.5 text-muted hover:text-ink"
         >
           <X className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
-        </button>
+        </ShadButton>
       </div>
     </motion.div>
   );

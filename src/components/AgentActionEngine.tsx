@@ -5,6 +5,7 @@ import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { AGENT_TOOL_CATALOG, type AgentToolName, getRoleToolSet } from "../lib/agent-capabilities";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface AgentActionEngineProps {
   agentId: string;
@@ -121,7 +122,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
 
   return (
     <div className="h-full flex flex-col p-4 md:p-6 overflow-hidden max-w-[1400px] mx-auto w-full">
-      <div className="glass rounded-2xl p-5 md:p-6 shrink-0 flex items-center justify-between mb-6 sticky top-0 z-10 bg-paper/80 backdrop-blur-xl">
+      <div className="wl-panel rounded-md p-5 md:p-6 shrink-0 flex items-center justify-between mb-6 sticky top-0 z-10 bg-paper/80 backdrop-blur-xl">
         <div>
           <h3 className="font-display italic text-2xl text-ink flex items-center gap-3">
             <Blocks className="w-6 h-6 text-brand" />
@@ -133,20 +134,23 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
           </p>
         </div>
 
-        <button
+        <ShadButton
+          type="button"
+          disableAnimations
+          variant="outline"
           onClick={handleSave}
           disabled={isSaving}
-          className="disabled:opacity-50 disabled:cursor-not-allowed h-10 px-6 rounded-full bg-brand/15 border border-brand/40 text-brand text-[11px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-all flex items-center gap-2"
+          className="h-10 px-6 rounded-full bg-brand/15 border-brand/40 text-brand text-[11px] uppercase tracking-[0.25em] hover:bg-brand/25"
         >
           {isSaving ? (
             <div className="w-4 h-4 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />
           ) : saveSuccess ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <CheckCircle2 className="w-4 h-4 text-brand" />
           ) : (
             <Save className="w-4 h-4" />
           )}
           {saveSuccess ? "Saved" : "Save permissions"}
-        </button>
+        </ShadButton>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide space-y-8 pb-12">
@@ -170,10 +174,10 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                   <div
                     key={tool.name}
                     className={cn(
-                      "relative p-5 rounded-2xl border transition-all cursor-pointer overflow-hidden group",
+                      "relative p-5 rounded-md border transition-all cursor-pointer overflow-hidden group",
                       isEnabled && !isMissingIntegration
                         ? "bg-brand/5 border-brand/30 shadow-[0_4px_24px_rgba(139,63,214,0.08)] hover:-translate-y-px"
-                        : "glass hover:border-brand/30 hover:-translate-y-px",
+                        : "wl-panel hover:border-brand/30 hover:-translate-y-px",
                       isMissingIntegration && "opacity-75 cursor-not-allowed grayscale",
                     )}
                     onClick={() => {
@@ -210,7 +214,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                               className={cn(
                                 "text-[8px] uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border",
                                 isMissingIntegration
-                                  ? "border-amber-500/30 text-amber-600 bg-amber-500/10"
+                                  ? "border-rose-500/30 text-rose-600 bg-rose-500/10"
                                   : "border-brand/20 text-brand bg-brand/10",
                               )}
                             >
@@ -222,7 +226,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                         <p className="text-caption leading-relaxed">{tool.description}</p>
 
                         {isMissingIntegration && (
-                          <div className="mt-3 flex items-center gap-1.5 text-amber-600 text-[10px] bg-amber-500/5 py-1.5 px-2 rounded-md border border-amber-500/20">
+                          <div className="mt-3 flex items-center gap-1.5 text-rose-600 text-[10px] bg-rose-500/5 py-1.5 px-2 rounded-md border border-rose-500/20">
                             <AlertCircle className="w-3 h-3 shrink-0" />
                             <span>Requires global integration configuration.</span>
                           </div>

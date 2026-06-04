@@ -39,7 +39,7 @@ export default function TriggerIntelligenceFeed({ activity }: { activity: Activi
                 background: "radial-gradient(circle, rgba(107, 43, 153 ,0.5), transparent)",
               }}
             />
-            <div className="absolute inset-0 rounded-full glass border border-brand/30 flex items-center justify-center">
+            <div className="absolute inset-0 rounded-full wl-panel border border-brand/30 flex items-center justify-center">
               <Waves className="w-5 h-5 text-brand/60" />
             </div>
           </div>
@@ -65,7 +65,7 @@ export default function TriggerIntelligenceFeed({ activity }: { activity: Activi
                   {/* Icon ring */}
                   <div
                     className={cn(
-                      "shrink-0 w-8 h-8 rounded-xl glass border flex items-center justify-center mt-0.5",
+                      "shrink-0 w-8 h-8 rounded-md wl-panel border flex items-center justify-center mt-0.5",
                       ringCls,
                     )}
                   >

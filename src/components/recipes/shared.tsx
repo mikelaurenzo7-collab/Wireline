@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/shadcn/Select";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 export function FormShell({ children }: { children: ReactNode }) {
   return <div className="p-7 space-y-6">{children}</div>;
@@ -50,7 +51,7 @@ export function TextInput({ value, onChange, placeholder }: any) {
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full h-12 px-4 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 outline-none text-ink dark:text-foreground text-sm placeholder:text-muted/70 focus:border-brand/60 focus:bg-black/10 dark:focus:bg-white/10 transition-all"
+      className="w-full h-12 px-4 rounded-md bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 outline-none text-ink dark:text-foreground text-sm placeholder:text-muted/70 focus:border-brand/60 focus:bg-black/10 dark:focus:bg-white/10 transition-all"
     />
   );
 }
@@ -62,7 +63,7 @@ export function TextArea({ value, onChange, placeholder, rows = 5 }: any) {
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       rows={rows}
-      className="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 outline-none text-ink dark:text-foreground text-sm placeholder:text-muted/70 focus:border-brand/60 focus:bg-black/10 dark:focus:bg-white/10 transition-all resize-none leading-relaxed font-sans"
+      className="w-full px-4 py-3 rounded-md bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 outline-none text-ink dark:text-foreground text-sm placeholder:text-muted/70 focus:border-brand/60 focus:bg-black/10 dark:focus:bg-white/10 transition-all resize-none leading-relaxed font-sans"
     />
   );
 }
@@ -80,7 +81,7 @@ export function Select({
     <ShadSelect value={value} onValueChange={onChange}>
       <SelectTrigger
         aria-label="Recipe option"
-        className="w-full h-12 px-4 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-ink dark:text-foreground text-sm"
+        className="w-full h-12 px-4 rounded-md bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-ink dark:text-foreground text-sm"
       >
         <SelectValue />
       </SelectTrigger>
@@ -97,10 +98,13 @@ export function Select({
 
 export function RunButton({ onClick, loading, disabled, label = "Generate" }: any) {
   return (
-    <button
+    <ShadButton
+      type="button"
+      variant="editorial"
+      disableAnimations
       onClick={onClick}
       disabled={loading || disabled}
-      className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
+      className="w-full min-h-12 py-4 text-[12px] tracking-[0.32em] uppercase"
     >
       {loading ? (
         <>
@@ -111,7 +115,7 @@ export function RunButton({ onClick, loading, disabled, label = "Generate" }: an
           <Sparkles className="w-4 h-4" /> {label} <ArrowRight className="w-4 h-4" />
         </>
       )}
-    </button>
+    </ShadButton>
   );
 }
 
@@ -122,17 +126,21 @@ export const ResultCard: React.FC<{ title: string; copyText?: string; children?:
 }) => {
   const [copied, setCopied] = useState(false);
   return (
-    <div className="rounded-2xl glass border border-white/10 p-5 space-y-3 relative">
+    <div className="rounded-md wl-panel border border-white/10 p-5 space-y-3 relative">
       <div className="flex items-center justify-between">
         <h4 className="text-[10px] uppercase tracking-[0.4em] text-brand">{title}</h4>
         {copyText && (
-          <button
+          <ShadButton
+            type="button"
+            variant="ghost"
+            size="sm"
+            disableAnimations
             onClick={async () => {
               await navigator.clipboard.writeText(copyText);
               setCopied(true);
               setTimeout(() => setCopied(false), 1500);
             }}
-            className="text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand flex items-center gap-1.5 transition-colors"
+            className="h-auto px-0 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand gap-1.5"
           >
             {copied ? (
               <>
@@ -143,7 +151,7 @@ export const ResultCard: React.FC<{ title: string; copyText?: string; children?:
                 <Copy className="w-3 h-3" /> Copy
               </>
             )}
-          </button>
+          </ShadButton>
         )}
       </div>
       <div className="text-sm text-ink/85 leading-relaxed space-y-2">{children}</div>
@@ -156,7 +164,7 @@ export function ErrCard({ error }: { error: string }) {
     <div
       role="alert"
       className={cn(
-        "rounded-xl bg-rose-500/10 border border-rose-500/30 p-4 text-rose-500 text-sm",
+        "rounded-md bg-rose-500/10 border border-rose-500/30 p-4 text-rose-500 text-sm",
         "flex items-start gap-3",
       )}
     >
@@ -181,8 +189,8 @@ export function NoKeyInline() {
   // problem to fix on the backend (alerted via Vercel logs +
   // /api/health/integrations). UI just shows a soft "warming up" state.
   return (
-    <div className="px-7 py-4 bg-amber-500/10 border-y border-amber-500/30 flex items-center gap-3">
-      <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+    <div className="px-7 py-4 bg-rose-500/10 border-y border-rose-500/30 flex items-center gap-3">
+      <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
       <p className="text-xs text-ink/80 leading-relaxed">
         Wireline AI is warming up — try again in a moment. If this persists, our team is on it.
       </p>

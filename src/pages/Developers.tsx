@@ -61,7 +61,7 @@ export default function Developers() {
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 px-3 py-1.5 glass border border-white/8 mb-4"
+          className="inline-flex items-center gap-2 px-3 py-1.5 wl-panel border border-white/8 mb-4"
         >
           <Code2 className="w-3.5 h-3.5 text-brand" />
           <span className="text-eyebrow">Developer Portal</span>
@@ -116,7 +116,7 @@ export default function Developers() {
 
       {/* Authentication */}
       <section className="relative z-10 px-4 sm:px-6 lg:px-10 max-w-5xl mx-auto pb-12">
-        <div className="glass border border-white/8 p-6 sm:p-8">
+        <div className="wl-panel border border-white/8 p-6 sm:p-8">
           <div className="flex items-center gap-2 mb-4">
             <ShieldCheck className="w-5 h-5 text-brand" />
             <h2 className="font-display italic text-2xl text-ink">Authentication</h2>
@@ -142,7 +142,7 @@ export default function Developers() {
           {GETTING_STARTED.map((step) => {
             const Icon = step.icon;
             return (
-              <div key={step.title} className="glass border border-white/8 p-5">
+              <div key={step.title} className="wl-panel border border-white/8 p-5">
                 <Icon className="w-6 h-6 text-brand mb-3" />
                 <h3 className="font-display italic text-lg text-ink mb-2">{step.title}</h3>
                 <p className="text-[12px] text-muted/85 leading-relaxed">{step.description}</p>
@@ -155,7 +155,7 @@ export default function Developers() {
       {/* Endpoint Reference */}
       <section className="relative z-10 px-4 sm:px-6 lg:px-10 max-w-5xl mx-auto pb-16">
         <h2 className="font-display italic text-2xl text-ink mb-6 text-center">Key Endpoints</h2>
-        <div className="glass border border-white/8 divide-y divide-white/5">
+        <div className="wl-panel border border-white/8 divide-y divide-white/5">
           {ENDPOINTS.map((ep) => (
             <div
               key={ep.path}
@@ -184,7 +184,7 @@ export default function Developers() {
 
       {/* CTA */}
       <section className="relative z-10 px-4 sm:px-6 lg:px-10 max-w-5xl mx-auto pb-20 text-center">
-        <div className="glass border border-white/8 p-8">
+        <div className="wl-panel border border-white/8 p-8">
           <h2 className="font-display italic text-2xl text-ink mb-3">Ready to integrate?</h2>
           <p className="text-muted/80 text-sm mb-6 max-w-md mx-auto">
             Sign in to generate your API key, or explore the spec in Swagger UI to plan your

@@ -31,6 +31,7 @@ import EmptyState from "../EmptyState";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
 import { Checkbox } from "../ui/shadcn/Checkbox";
 import { Input } from "../ui/shadcn/Input";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 const DISPATCH_UNSET = "__unset__";
 
@@ -143,18 +144,24 @@ export default function DispatchTab({
               <div className="space-y-4">
                 {/* Mode toggle */}
                 <div className="flex items-center gap-2">
-                  <div className="flex p-1 rounded-full glass border border-white/10">
+                  <div className="flex p-1 rounded-full wl-panel border border-border">
                     {(["single", "bulk"] as const).map((m) => (
-                      <button
+                      <ShadButton
                         key={m}
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disableAnimations
                         onClick={() => setMode(m)}
                         className={cn(
-                          "px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.25em] transition-colors",
-                          mode === m ? "bg-brand/20 text-brand" : "text-muted hover:text-ink",
+                          "h-auto px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.25em]",
+                          mode === m
+                            ? "bg-brand/20 text-brand hover:bg-brand/20 hover:text-brand"
+                            : "text-muted hover:text-ink",
                         )}
                       >
                         {m === "single" ? "Single" : "Bulk"}
-                      </button>
+                      </ShadButton>
                     ))}
                   </div>
                 </div>
@@ -170,7 +177,7 @@ export default function DispatchTab({
                     >
                       <SelectTrigger
                         aria-label="Select agent to dial with"
-                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg pl-3 py-2 text-ink h-auto"
+                        className="w-full text-sm bg-black/5 border border-black/10 rounded-md pl-3 py-2 text-ink h-auto"
                       >
                         <SelectValue
                           placeholder={
@@ -223,10 +230,10 @@ export default function DispatchTab({
                           onChange={(e) => setCustomerNumber(e.target.value)}
                           placeholder="+1 555 000 0000"
                           className={cn(
-                            "w-full text-sm bg-black/5 border rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 tabular-nums",
+                            "w-full text-sm bg-black/5 border rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 tabular-nums",
                             customerNumber.length > 0
                               ? /^\+?[\d\s\-()]{7,15}$/.test(customerNumber)
-                                ? "border-emerald-500/50"
+                                ? "border-brand/50"
                                 : "border-rose-500/40"
                               : "border-black/10",
                           )}
@@ -239,7 +246,7 @@ export default function DispatchTab({
                           )}
                         {customerNumber.length > 0 &&
                           /^\+?[\d\s\-()]{7,15}$/.test(customerNumber) && (
-                            <p className="text-[10px] text-emerald-600 mt-0.5 flex items-center gap-1">
+                            <p className="text-[10px] text-brand mt-0.5 flex items-center gap-1">
                               <CheckCircle2 className="w-3 h-3" /> Valid number
                             </p>
                           )}
@@ -252,7 +259,7 @@ export default function DispatchTab({
                           value={customerName}
                           onChange={(e) => setCustomerName(e.target.value)}
                           placeholder="Optional"
-                          className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40"
+                          className="w-full text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40"
                         />
                       </div>
 
@@ -263,11 +270,11 @@ export default function DispatchTab({
                           onChange={(e) => setContext(e.target.value)}
                           rows={4}
                           placeholder="What should the agent say?"
-                          className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 resize-none leading-relaxed"
+                          className="w-full text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 resize-none leading-relaxed"
                         />
                       </div>
 
-                      <label className="rounded-lg glass border border-brand/20 p-3 flex items-start gap-2 cursor-pointer">
+                      <label className="rounded-md wl-panel border border-brand/20 p-3 flex items-start gap-2 cursor-pointer">
                         <Checkbox
                           checked={hasOutboundConsent}
                           onChange={(e) => setHasOutboundConsent(e.target.checked)}
@@ -280,7 +287,7 @@ export default function DispatchTab({
                       </label>
 
                       {isDncBlocked && (
-                        <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 flex items-start gap-2 text-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]">
+                        <div className="rounded-md border border-rose-500/30 bg-rose-500/10 px-3 py-2 flex items-start gap-2 text-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]">
                           <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                           <div className="text-[10px] leading-snug">
                             <strong className="font-bold">Blocked by DNC Policy:</strong> This
@@ -291,7 +298,7 @@ export default function DispatchTab({
                       )}
 
                       {quotaExhausted && (
-                        <div className="rounded-lg border border-rose-500/30 bg-rose-500/5 px-3 py-2 flex items-start gap-2">
+                        <div className="rounded-md border border-rose-500/30 bg-rose-500/5 px-3 py-2 flex items-start gap-2">
                           <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
                           <p className="text-[10px] text-rose-500/90 leading-snug">
                             Daily voice-minute limit reached. Resets at midnight UTC.
@@ -299,14 +306,17 @@ export default function DispatchTab({
                         </div>
                       )}
                       {quotaNearLimit && (
-                        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 flex items-start gap-2">
-                          <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-                          <p className="text-[10px] text-amber-500/90 leading-snug">
+                        <div className="rounded-md border border-brand/30 bg-brand/5 px-3 py-2 flex items-start gap-2">
+                          <AlertTriangle className="w-3.5 h-3.5 text-brand shrink-0 mt-0.5" />
+                          <p className="text-[10px] text-brand/90 leading-snug">
                             Near daily limit — {quotaUsed} of {quotaLimit} minutes used.
                           </p>
                         </div>
                       )}
-                      <button
+                      <ShadButton
+                        type="button"
+                        variant="editorial"
+                        disableAnimations
                         onClick={dispatchCall}
                         disabled={
                           isDialing ||
@@ -315,7 +325,7 @@ export default function DispatchTab({
                           !!quotaExhausted ||
                           isDncBlocked
                         }
-                        className="brutal-btn w-full !py-3 !text-[11px] !tracking-[0.3em] disabled:opacity-50"
+                        className="w-full rounded-md !py-3 text-[11px] tracking-[0.3em]"
                       >
                         {isDialing ? (
                           <>
@@ -326,7 +336,7 @@ export default function DispatchTab({
                             <Search className="w-4 h-4" /> Initiate call
                           </>
                         )}
-                      </button>
+                      </ShadButton>
                     </motion.div>
                   ) : (
                     <motion.div
@@ -336,7 +346,7 @@ export default function DispatchTab({
                       exit={{ opacity: 0, x: 8 }}
                       className="space-y-3"
                     >
-                      <div className="rounded-lg glass border border-white/10 p-3">
+                      <div className="rounded-md wl-panel border border-border p-3">
                         <div className="flex items-center gap-1.5 mb-2 text-brand">
                           <Terminal className="w-3 h-3" />
                           <span className="text-[9px] uppercase tracking-[0.3em]">CSV format</span>
@@ -369,7 +379,7 @@ export default function DispatchTab({
                             >
                               <SelectTrigger
                                 aria-label="Assign to campaign"
-                                className="w-full text-sm bg-black/5 border border-black/10 rounded-lg pl-3 py-2 text-ink h-auto"
+                                className="w-full text-sm bg-black/5 border border-black/10 rounded-md pl-3 py-2 text-ink h-auto"
                               >
                                 <SelectValue placeholder="No campaign" />
                               </SelectTrigger>
@@ -386,7 +396,7 @@ export default function DispatchTab({
                         </div>
                       )}
 
-                      <label className="rounded-lg glass border border-brand/20 p-3 flex items-start gap-2 cursor-pointer">
+                      <label className="rounded-md wl-panel border border-brand/20 p-3 flex items-start gap-2 cursor-pointer">
                         <Checkbox
                           checked={hasOutboundConsent}
                           onChange={(e) => setHasOutboundConsent(e.target.checked)}
@@ -398,11 +408,13 @@ export default function DispatchTab({
                         </span>
                       </label>
 
-                      <button
+                      <ShadButton
                         type="button"
+                        variant="outline"
+                        disableAnimations
                         onClick={triggerUploadCsv}
                         disabled={!hasOutboundConsent}
-                        className="w-full rounded-xl glass border border-dashed border-black/10 hover:border-brand/30 hover:-translate-y-px transition-all duration-300 py-8 flex flex-col items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full h-auto rounded-md border border-dashed border-border hover:border-brand/30 py-8 flex flex-col items-center justify-center gap-2 group"
                       >
                         {isUploading ? (
                           <Loader2 className="w-7 h-7 text-brand animate-spin" />
@@ -413,9 +425,9 @@ export default function DispatchTab({
                           upload manifest
                         </span>
                         <span className="app-section-title">Drag CSV or click to browse</span>
-                      </button>
+                      </ShadButton>
 
-                      <div className="rounded-lg glass border border-brand/20 p-3 flex items-start gap-2">
+                      <div className="rounded-md wl-panel border border-brand/20 p-3 flex items-start gap-2">
                         <Shield className="w-3.5 h-3.5 text-brand shrink-0 mt-0.5" />
                         <p className="text-[10px] text-muted/80 leading-relaxed">
                           Bulk data is scrubbed and encrypted before dispatch.
@@ -434,13 +446,13 @@ export default function DispatchTab({
                       className="space-y-2"
                     >
                       {dialError && (
-                        <div className="rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-500 px-3 py-2 text-xs flex items-center gap-2">
+                        <div className="rounded-md bg-rose-500/10 border border-rose-500/30 text-rose-500 px-3 py-2 text-xs flex items-center gap-2">
                           <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                           <span className="leading-relaxed">{dialError}</span>
                         </div>
                       )}
                       {uploadStats && (
-                        <div className="rounded-lg bg-brand/10 border border-brand/30 text-brand px-3 py-2 text-xs flex items-center gap-2">
+                        <div className="rounded-md bg-brand/10 border border-brand/30 text-brand px-3 py-2 text-xs flex items-center gap-2">
                           <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                           <span className="leading-relaxed">{uploadStats}</span>
                         </div>
@@ -462,7 +474,11 @@ export default function DispatchTab({
               flush
               actions={
                 queuedCount > 0 ? (
-                  <button
+                  <ShadButton
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disableAnimations
                     onClick={launchQueue}
                     disabled={isDialing || !hasOutboundConsent}
                     title={
@@ -470,7 +486,7 @@ export default function DispatchTab({
                         ? "Dispatch queued calls"
                         : "Confirm outbound consent before dispatching queued calls"
                     }
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/20 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/30 transition-colors disabled:opacity-50"
+                    className="rounded-full bg-brand/20 border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/30"
                   >
                     {isDialing ? (
                       <Loader2 className="w-3 h-3 animate-spin" />
@@ -478,7 +494,7 @@ export default function DispatchTab({
                       <Radar className="w-3 h-3" />
                     )}
                     Dispatch {queuedCount}
-                  </button>
+                  </ShadButton>
                 ) : null
               }
             >
@@ -527,7 +543,7 @@ export default function DispatchTab({
                               className={cn(
                                 "px-1.5 py-0.5 rounded-full border text-[9px] uppercase tracking-[0.25em] leading-none inline-flex items-center gap-1",
                                 lead.status === "Completed"
-                                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500"
+                                  ? "bg-brand/10 border-brand/30 text-brand"
                                   : lead.status === "Queued"
                                     ? "bg-brand/15 border-brand/40 text-brand"
                                     : "bg-rose-500/10 border-rose-500/30 text-rose-500",
@@ -537,7 +553,7 @@ export default function DispatchTab({
                             </span>
                             <Link
                               to={`/contact/${encodeURIComponent(lead.phone_number || lead.customer_number || "unknown")}`}
-                              className="px-2 py-0.5 rounded-full glass border border-brand/30 hover:bg-brand/10 hover:border-brand/60 transition-all text-[10px] text-brand font-mono tabular-nums"
+                              className="px-2 py-0.5 rounded-full wl-panel border border-brand/30 hover:bg-brand/10 hover:border-brand/60 text-[10px] text-brand font-mono tabular-nums"
                             >
                               {lead.phone_number || lead.customer_number}
                             </Link>
@@ -566,19 +582,23 @@ export default function DispatchTab({
                             }}
                             label="Brief"
                           />
-                          <button
+                          <ShadButton
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            disableAnimations
                             onClick={() => deleteLead(lead.id)}
                             disabled={isDeletingLead === lead.id}
                             aria-label="Remove lead"
                             title="Remove lead"
-                            className="w-7 h-7 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 disabled:opacity-40 transition-all"
+                            className="w-7 h-7 rounded-full text-muted hover:text-rose-500 hover:border-rose-500/30"
                           >
                             {isDeletingLead === lead.id ? (
                               <Loader2 className="w-3 h-3 animate-spin" />
                             ) : (
                               <Trash2 className="w-3 h-3" />
                             )}
-                          </button>
+                          </ShadButton>
                         </div>
                       </motion.div>
                     ))}
@@ -588,10 +608,14 @@ export default function DispatchTab({
 
               {leadsHasMore && (
                 <div className="px-4 py-3 flex justify-center border-t border-white/6">
-                  <button
+                  <ShadButton
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disableAnimations
                     onClick={loadMoreLeads}
                     disabled={isLoadingMore}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full glass border border-white/10 text-ink text-[10px] uppercase tracking-[0.25em] hover:border-brand/40 transition-colors disabled:opacity-50"
+                    className="rounded-full border-border text-[10px] uppercase tracking-[0.25em] hover:border-brand/40"
                   >
                     {isLoadingMore ? (
                       <Loader2 className="w-3 h-3 animate-spin" />
@@ -599,7 +623,7 @@ export default function DispatchTab({
                       <Plus className="w-3 h-3" />
                     )}
                     Load {leadsTotal - leads.length} more
-                  </button>
+                  </ShadButton>
                 </div>
               )}
             </Panel>

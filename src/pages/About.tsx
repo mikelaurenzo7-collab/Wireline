@@ -72,7 +72,7 @@ export default function About() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="glass card-shimmer border border-brand/20 p-5 sm:p-8 flex flex-col sm:flex-row items-start gap-4 sm:gap-6"
+            className="wl-panel card-shimmer border border-brand/20 p-5 sm:p-8 flex flex-col sm:flex-row items-start gap-4 sm:gap-6"
           >
             <div
               className="w-14 h-14 sm:w-20 sm:h-20 flex items-center justify-center shrink-0"
@@ -124,7 +124,7 @@ export default function About() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.08 }}
-                className="glass card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30 hover:shadow-[0_12px_48px_rgba(139,63,214,0.06)]"
+                className="wl-panel card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30 hover:shadow-[0_12px_48px_rgba(139,63,214,0.06)]"
               >
                 <div
                   className="w-8 h-8 flex items-center justify-center mb-3"
@@ -149,7 +149,7 @@ export default function About() {
             Wireline is built on the strongest infra layer money can buy. Every paying customer
             inherits the reliability + capability of these platforms at no incremental cost.
           </p>
-          <div className="glass border border-ink/[0.08] p-5 sm:p-6">
+          <div className="wl-panel border border-ink/[0.08] p-5 sm:p-6">
             <IntegrationLogos />
           </div>
         </section>

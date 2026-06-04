@@ -71,7 +71,7 @@ export default function CreateCampaignModal({
 
   return (
     <Dialog open={true} onOpenChange={(open: boolean) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md border border-white/10 dark:border-white/5 shadow-2xl p-0 bg-black/85 dark:bg-[#120f1a]/95 backdrop-blur-xl rounded-2xl overflow-hidden">
+      <DialogContent className="sm:max-w-md border border-white/10 dark:border-white/5 shadow-2xl p-0 bg-black/85 dark:bg-[#120f1a]/95 backdrop-blur-xl rounded-md overflow-hidden">
         <DialogHeader className="px-5 py-4 border-b border-white/10 dark:border-white/5 flex flex-col space-y-0 text-left">
           <DialogDescription className="text-[9px] uppercase tracking-[0.4em] text-brand mb-0.5 font-bold">
             Signal · Campaigns
@@ -164,7 +164,7 @@ export default function CreateCampaignModal({
           {err && (
             <div
               role="alert"
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/30"
+              className="flex items-center gap-2 px-3 py-2 rounded-md bg-rose-500/10 border border-rose-500/30"
             >
               <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
               <p className="text-[11px] text-rose-500">{err}</p>
@@ -176,14 +176,14 @@ export default function CreateCampaignModal({
           <ShadButton
             variant="outline"
             onClick={onClose}
-            className="rounded-xl h-9 border-white/10 dark:border-white/10 hover:bg-white/5 dark:hover:bg-white/10 uppercase tracking-[0.2em] text-[10px] font-bold text-muted hover:text-ink dark:text-foreground"
+            className="rounded-md h-9 border-white/10 dark:border-white/10 hover:bg-white/5 dark:hover:bg-white/10 uppercase tracking-[0.2em] text-[10px] font-bold text-muted hover:text-ink dark:text-foreground"
           >
             Cancel
           </ShadButton>
           <ShadButton
             onClick={save}
             disabled={saving}
-            className="rounded-xl h-9 bg-brand/15 hover:bg-brand/25 border border-brand/50 text-brand uppercase tracking-[0.2em] text-[10px] font-bold flex items-center justify-center gap-1.5 disabled:opacity-50"
+            className="rounded-md h-9 bg-brand/15 hover:bg-brand/25 border border-brand/50 text-brand uppercase tracking-[0.2em] text-[10px] font-bold flex items-center justify-center gap-1.5 disabled:opacity-50"
           >
             {saving ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />

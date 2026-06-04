@@ -129,7 +129,7 @@ export default function BlogPost() {
         </article>
 
         <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-24">
-          <div className="glass border border-white/10 p-6 sm:p-8">
+          <div className="wl-panel border border-white/10 p-6 sm:p-8">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.35em] text-brand/80 mb-2">

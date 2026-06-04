@@ -58,7 +58,7 @@ function reasonLabel(r: string | null) {
 }
 
 function sourceColor(source: string) {
-  if (source === "csv") return "text-violet-600 border-violet-500/25 bg-violet-500/10";
+  if (source === "csv") return "text-brand border-brand/25 bg-brand/10";
   if (source === "opt-out") return "text-rose-500 border-rose-500/25 bg-rose-500/10";
   return "text-brand border-brand/25 bg-brand/10";
 }
@@ -213,10 +213,14 @@ export default function DncManager() {
         subtitle=""
         actions={
           <div className="flex items-center gap-2">
-            <button
+            <ShadButton
+              type="button"
+              variant="outline"
+              size="sm"
+              disableAnimations
               onClick={refresh}
               disabled={loading}
-              className="h-9 px-3 rounded-full glass border border-black/10 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
+              className="h-9 rounded-full text-[10px] uppercase tracking-[0.28em] text-muted"
             >
               {loading ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -224,7 +228,7 @@ export default function DncManager() {
                 <RefreshCw className="w-3 h-3" />
               )}
               Refresh
-            </button>
+            </ShadButton>
             <Input
               ref={fileRef}
               type="file"
@@ -232,10 +236,14 @@ export default function DncManager() {
               className="hidden"
               onChange={(e) => e.target.files?.[0] && handleCsvImport(e.target.files[0])}
             />
-            <button
+            <ShadButton
+              type="button"
+              variant="outline"
+              size="sm"
+              disableAnimations
               onClick={() => fileRef.current?.click()}
               disabled={importing}
-              className="h-9 px-4 rounded-full glass border border-black/10 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
+              className="h-9 rounded-full text-[10px] uppercase tracking-[0.28em] text-muted"
             >
               {importing ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -243,14 +251,18 @@ export default function DncManager() {
                 <Upload className="w-3 h-3" />
               )}
               Import CSV
-            </button>
-            <button
+            </ShadButton>
+            <ShadButton
+              type="button"
+              variant="destructive"
+              size="sm"
+              disableAnimations
               onClick={() => setShowAdd(true)}
-              className="h-9 px-4 rounded-full flex items-center gap-2 text-[10px] uppercase tracking-[0.28em] transition-all bg-rose-500/15 border border-rose-500/40 text-rose-500 hover:bg-rose-500/25"
+              className="h-9 rounded-full bg-rose-500/15 border-rose-500/40 text-rose-500 text-[10px] uppercase tracking-[0.28em] hover:bg-rose-500/25 shadow-none"
             >
               <Plus className="w-3.5 h-3.5" />
               Add Number
-            </button>
+            </ShadButton>
           </div>
         }
       >
@@ -258,22 +270,18 @@ export default function DncManager() {
           {/* Stat bar */}
           <div className="col-span-12 grid grid-cols-2 sm:grid-cols-4 gap-3 h-fit">
             {[
-              { label: "Total Blocked", value: stats.total, accent: "#8B3FD6", icon: Shield },
-              { label: "Manual Entries", value: stats.manual, accent: "#8B3FD6", icon: Plus },
-              { label: "CSV Imported", value: stats.csv, accent: "#8B3FD6", icon: FileText },
-              { label: "Opt-Out", value: stats.optOut, accent: "#8B3FD6", icon: CheckCircle2 },
-            ].map(({ label, value, accent, icon: Icon }) => (
+              { label: "Total Blocked", value: stats.total, icon: Shield },
+              { label: "Manual Entries", value: stats.manual, icon: Plus },
+              { label: "CSV Imported", value: stats.csv, icon: FileText },
+              { label: "Opt-Out", value: stats.optOut, icon: CheckCircle2 },
+            ].map(({ label, value, icon: Icon }) => (
               <div
                 key={label}
-                className="relative rounded-xl glass border border-black/10 p-4 overflow-hidden"
+                className="relative rounded-md wl-panel border border-border p-4 overflow-hidden"
               >
-                <div
-                  className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-25 blur-3xl pointer-events-none"
-                  style={{ background: `radial-gradient(circle,${accent},transparent)` }}
-                />
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-[9px] uppercase tracking-[0.32em] text-muted">{label}</p>
-                  <Icon className="w-3.5 h-3.5" style={{ color: accent }} />
+                  <Icon className="w-3.5 h-3.5 text-brand" />
                 </div>
                 <p className="font-display italic text-3xl text-ink leading-none">{value}</p>
               </div>
@@ -296,7 +304,7 @@ export default function DncManager() {
                     placeholder="Search numbers…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="h-8 w-44 pl-8 pr-3 rounded-full glass border border-black/10 text-[11px] text-ink placeholder:text-ink/40 focus:border-brand/40 focus:outline-none transition-all"
+                    className="h-8 w-44 pl-8 pr-3 rounded-full wl-panel border border-border text-[11px] text-ink placeholder:text-ink/40 focus:border-brand/40 focus:outline-none"
                   />
                 </div>
               }
@@ -336,16 +344,10 @@ export default function DncManager() {
                       key={entry.id}
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="group flex items-center justify-between py-3 px-2 gap-3 hover:bg-white/3 transition-all rounded-lg"
+                      className="group flex items-center justify-between py-3 px-2 gap-3 hover:bg-white/3 transition-all rounded-md"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div
-                          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                          style={{
-                            background: "rgba(107, 43, 153 ,0.10)",
-                            border: "1px solid rgba(107, 43, 153 ,0.20)",
-                          }}
-                        >
+                        <div className="w-9 h-9 rounded-md bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">
                           <Phone className="w-3.5 h-3.5 text-rose-500" />
                         </div>
                         <div className="min-w-0">
@@ -363,7 +365,7 @@ export default function DncManager() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-2 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                         <span
                           className={cn(
                             "text-[8px] uppercase tracking-[0.22em] px-2 py-0.5 rounded-full border",
@@ -375,10 +377,14 @@ export default function DncManager() {
                         {confirmId === entry.id ? (
                           <div className="flex items-center gap-1.5">
                             <span className="text-[9px] text-rose-500">Remove?</span>
-                            <button
+                            <ShadButton
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              disableAnimations
                               onClick={() => handleDelete(entry.id)}
                               disabled={deletingId === entry.id}
-                              className="disabled:opacity-50 disabled:cursor-not-allowed h-7 px-2.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-500 text-[9px] uppercase tracking-[0.22em] hover:bg-rose-500/30 transition-all flex items-center gap-1"
+                              className="h-7 px-2.5 rounded-full bg-rose-500/20 border-rose-500/40 text-rose-500 text-[9px] uppercase tracking-[0.22em] hover:bg-rose-500/30 shadow-none"
                             >
                               {deletingId === entry.id ? (
                                 <Loader2 className="w-2.5 h-2.5 animate-spin" />
@@ -386,23 +392,31 @@ export default function DncManager() {
                                 <CheckCircle2 className="w-2.5 h-2.5" />
                               )}
                               Confirm
-                            </button>
-                            <button
+                            </ShadButton>
+                            <ShadButton
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              disableAnimations
                               onClick={() => setConfirmId(null)}
                               aria-label="Cancel delete"
-                              className="h-7 w-7 rounded-full glass border border-black/10 text-muted hover:text-ink transition-all flex items-center justify-center"
+                              className="h-7 w-7 rounded-full"
                             >
                               <X className="w-3 h-3" />
-                            </button>
+                            </ShadButton>
                           </div>
                         ) : (
-                          <button
+                          <ShadButton
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            disableAnimations
                             onClick={() => setConfirmId(entry.id)}
                             aria-label={`Remove ${entry.phone_raw || entry.phone} from DNC list`}
-                            className="h-7 w-7 rounded-full glass border border-black/10 text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100"
+                            className="h-7 w-7 rounded-full text-muted hover:text-rose-500 hover:border-rose-500/30"
                           >
                             <Trash2 className="w-3 h-3" />
-                          </button>
+                          </ShadButton>
                         )}
                       </div>
                     </motion.div>
@@ -415,9 +429,9 @@ export default function DncManager() {
 
         {/* Add number modal */}
         <Dialog open={showAdd} onOpenChange={setShowAdd}>
-          <DialogContent className="sm:max-w-md border border-white/10 shadow-2xl p-6 bg-black/85 backdrop-blur-xl rounded-2xl">
+          <DialogContent className="sm:max-w-md border border-white/10 shadow-2xl p-6 bg-black/85 backdrop-blur-xl rounded-md">
             <DialogHeader className="flex flex-row items-center gap-3 space-y-0 pb-4 border-b border-white/5">
-              <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-md bg-rose-500/10 border border-rose-500/30 flex items-center justify-center">
                 <Shield className="w-4.5 h-4.5 text-rose-500" />
               </div>
               <div className="text-left">
@@ -473,9 +487,9 @@ export default function DncManager() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-500/5 border border-amber-500/15">
-                <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-                <p className="text-[10px] text-amber-500/80 leading-snug">
+              <div className="flex items-center gap-2.5 p-3 rounded-md bg-brand/5 border border-brand/15">
+                <AlertTriangle className="w-4 h-4 text-brand shrink-0" />
+                <p className="text-[10px] text-brand/80 leading-snug">
                   This number will immediately be blocked from all outbound calls and campaigns.
                 </p>
               </div>
@@ -485,14 +499,14 @@ export default function DncManager() {
               <ShadButton
                 variant="outline"
                 onClick={() => setShowAdd(false)}
-                className="flex-1 rounded-xl h-10 border-white/10 hover:bg-white/5 uppercase tracking-[0.2em] text-[10px] font-bold text-muted hover:text-ink"
+                className="flex-1 rounded-md h-10 border-white/10 hover:bg-white/5 uppercase tracking-[0.2em] text-[10px] font-bold text-muted hover:text-ink"
               >
                 Cancel
               </ShadButton>
               <ShadButton
                 onClick={handleAdd}
                 disabled={adding || !addPhone.trim()}
-                className="flex-1 rounded-xl h-10 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-500 uppercase tracking-[0.2em] text-[10px] font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+                className="flex-1 rounded-md h-10 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-500 uppercase tracking-[0.2em] text-[10px] font-bold flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {adding ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />

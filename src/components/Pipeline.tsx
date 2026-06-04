@@ -99,7 +99,7 @@ export default function Pipeline() {
         actions={
           <>
             {totalLeads > 0 && (
-              <span className="hidden sm:inline-flex items-center px-3 py-2 rounded-xl glass border border-input text-[11px] uppercase tracking-[0.18em] text-muted">
+              <span className="hidden sm:inline-flex items-center px-3 py-2 rounded-md wl-panel border border-input text-[11px] uppercase tracking-[0.18em] text-muted">
                 Win rate{" "}
                 <span className="ml-1.5 text-brand font-semibold tabular-nums">
                   {conversionRate}%
@@ -110,7 +110,7 @@ export default function Pipeline() {
               onClick={load}
               disabled={loading}
               variant="outline"
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl glass border border-input text-[11px] uppercase tracking-[0.22em] text-ink/80 hover:text-ink hover:border-brand/25 transition-colors disabled:opacity-60 h-auto"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-panel border border-input text-[11px] uppercase tracking-[0.22em] text-ink/80 hover:text-ink hover:border-brand/25 transition-colors disabled:opacity-60 h-auto"
             >
               {loading ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -194,7 +194,7 @@ export default function Pipeline() {
                               e.dataTransfer.setData("text/plain", String(lead.id));
                             }}
                             onDragEnd={() => setDraggingId(null)}
-                            className={`group relative rounded-xl p-3 cursor-grab active:cursor-grabbing border card-interactive-premium transition-all duration-300 overflow-hidden ${
+                            className={`group relative rounded-md p-3 cursor-grab active:cursor-grabbing border card-interactive-premium transition-all duration-300 overflow-hidden ${
                               draggingId === String(lead.id)
                                 ? "border-brand/60 opacity-40 shadow-xl shadow-brand/10 scale-95"
                                 : "border-input hover:border-brand/20 hover:shadow-lg hover:shadow-brand/5"
@@ -205,7 +205,7 @@ export default function Pipeline() {
                           >
                             {/* Attempts-based left urgency strip */}
                             <div
-                              className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-xl"
+                              className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-md"
                               style={{
                                 background:
                                   !lead.attempts || lead.attempts === 0
@@ -263,7 +263,7 @@ export default function Pipeline() {
                                           {lead.lastContactSummary}
                                         </p>
                                       </TooltipTrigger>
-                                      <TooltipContent className="bg-popover border border-input p-2.5 max-w-xs text-xs text-ink rounded-lg shadow-xl">
+                                      <TooltipContent className="bg-popover border border-input p-2.5 max-w-xs text-xs text-ink rounded-md shadow-xl">
                                         {lead.lastContactSummary}
                                       </TooltipContent>
                                     </Tooltip>

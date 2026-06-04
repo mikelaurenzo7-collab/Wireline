@@ -26,6 +26,7 @@ import GoalsView from "../GoalsView";
 import PageShell from "../PageShell";
 import WidgetBoundary from "../WidgetBoundary";
 import ClientRouteViewport from "../layout/ClientRouteViewport";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 // Domain sub-views — one file per tab.
 import FunnelView from "./FunnelView";
@@ -57,21 +58,25 @@ export default function InsightsView() {
         subtitle=""
         actions={
           <>
-            <div className="flex items-center gap-px p-1 rounded-full glass border border-black/8">
+            <div className="flex items-center gap-px p-1 rounded-full border border-black/8 bg-black/[0.03]">
               {DAY_OPTIONS.map((d) => (
-                <button
+                <ShadButton
                   key={d}
+                  type="button"
+                  disableAnimations
+                  variant={days === d ? "default" : "ghost"}
+                  size="sm"
                   onClick={() => setDays(d)}
                   data-testid={`insights-days-${d}`}
                   className={cn(
-                    "app-segment-btn h-9 sm:h-7 px-3 rounded-full text-xs sm:text-[11px] font-medium tracking-wide transition-all duration-200 active:scale-95",
+                    "app-segment-btn h-9 sm:h-7 px-3 rounded-full text-xs sm:text-[11px] font-medium tracking-wide",
                     days === d
                       ? "bg-brand text-on-brand shadow-sm shadow-brand/25"
                       : "text-muted hover:text-ink",
                   )}
                 >
                   {d}d
-                </button>
+                </ShadButton>
               ))}
             </div>
             <CsvExportButton type="calls" label="CSV" />

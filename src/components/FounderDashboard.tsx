@@ -16,10 +16,21 @@ import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { useAuth } from "../contexts/AuthContext";
-import AgentWorkspace from "./AgentWorkspace";
+import DirectorWorkspace from "./DirectorWorkspace";
 import ClientRouteViewport from "./layout/ClientRouteViewport";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { WL_APP_CLASSES } from "../lib/wireline-director-design";
+
+/** Purple/cream-only roster accents — no cross-hue decorative gradients */
+const STAFF_PANEL_ACCENTS = [
+  "from-brand/10 to-brand-deep/8",
+  "from-brand/12 to-brand-deep/6",
+  "from-brand/15 to-brand-deep/10",
+  "from-brand-deep/12 to-brand/8",
+  "from-brand/8 to-brand-deep/12",
+  "from-brand-deep/10 to-brand/10",
+] as const;
 
 /**
  * Founder's Dashboard — Mike's command surface for his staff of 6
@@ -66,7 +77,7 @@ const STAFF: StaffMember[] = [
     title: "Reception",
     blurb: "First voice callers hear. Greets, identifies intent, routes to the right teammate.",
     icon: Headphones,
-    accent: "from-rose-500/15 to-brand/10",
+    accent: STAFF_PANEL_ACCENTS[0],
   },
   {
     role: "sales",
@@ -75,7 +86,7 @@ const STAFF: StaffMember[] = [
     title: "Sales",
     blurb: "Pricing, plan fit, demos, objection handling. Can offer up to 10% off + book demos.",
     icon: Sparkles,
-    accent: "from-brand/15 to-emerald-500/10",
+    accent: STAFF_PANEL_ACCENTS[1],
   },
   {
     role: "support",
@@ -84,7 +95,7 @@ const STAFF: StaffMember[] = [
     title: "Support",
     blurb: "Account help, billing, troubleshooting. Auto-issues refunds up to $50.",
     icon: MessageSquare,
-    accent: "from-brand/15 to-brand-deep/10",
+    accent: STAFF_PANEL_ACCENTS[2],
   },
   {
     role: "technical",
@@ -93,7 +104,7 @@ const STAFF: StaffMember[] = [
     title: "Technical",
     blurb: "Integrations, webhooks, API, voice quality, CRM sync — the developer-mindset calls.",
     icon: Wrench,
-    accent: "from-violet-500/15 to-brand/10",
+    accent: STAFF_PANEL_ACCENTS[3],
   },
   {
     role: "onboarding",
@@ -102,7 +113,7 @@ const STAFF: StaffMember[] = [
     title: "Onboarding",
     blurb: "Gets new customers to their first working agent fast. Books white-glove sessions.",
     icon: Rocket,
-    accent: "from-amber-500/15 to-brand/10",
+    accent: STAFF_PANEL_ACCENTS[4],
   },
   {
     role: "success",
@@ -111,26 +122,22 @@ const STAFF: StaffMember[] = [
     title: "Customer Success",
     blurb: "Usage reviews, best-practice coaching, expansion, churn saves for existing accounts.",
     icon: HeartHandshake,
-    accent: "from-pink-500/15 to-brand/10",
+    accent: STAFF_PANEL_ACCENTS[5],
   },
 ];
 
 const STAT_CARD_CLASSES: Record<string, string> = {
   brand: "border-brand/20 hover:border-brand/50 hover:shadow-[0_0_15px_rgba(79,30,123,0.12)]",
   ink: "border-black/10 hover:border-black/20 hover:shadow-[0_0_15px_rgba(79,30,123,0.06)]",
-  emerald:
-    "border-emerald-500/20 hover:border-emerald-500/50 hover:shadow-[0_0_15px_rgba(79,30,123,0.12)]",
-  rose: "border-rose-500/20 hover:border-rose-500/50 hover:shadow-[0_0_15px_rgba(244,63,94,0.12)]",
-  amber:
-    "border-amber-500/20 hover:border-amber-500/50 hover:shadow-[0_0_15px_rgba(245,158,11,0.12)]",
+  rose: "border-destructive/25 hover:border-destructive/45 hover:shadow-[0_0_15px_rgba(232,70,106,0.12)]",
+  muted: "border-border hover:border-brand/25",
 };
 
 const STAT_TEXT_COLORS: Record<string, string> = {
   brand: "text-brand",
   ink: "text-ink",
-  emerald: "text-emerald-500",
-  rose: "text-rose-500",
-  amber: "text-amber-500",
+  rose: "text-destructive",
+  muted: "text-muted-foreground",
 };
 
 function StatTile({
@@ -145,7 +152,7 @@ function StatTile({
   return (
     <div
       className={cn(
-        "flex-1 min-w-[115px] rounded-xl glass border px-3 py-2.5 transition-all duration-300 hover:-translate-y-0.5",
+        "flex-1 min-w-[115px] rounded-md wl-panel border px-3 py-2.5 transition-colors duration-300",
         STAT_CARD_CLASSES[tone],
       )}
     >
@@ -248,7 +255,10 @@ export default function FounderDashboard() {
             </span>
           </div>
           <div className="flex-1 min-h-0">
-            <AgentWorkspace agentId={selected.agentId} agentName={selected.name} />
+            <DirectorWorkspace
+              focusAgentId={selected.agentId}
+              onFocusAgentChange={() => undefined}
+            />
           </div>
         </div>
       </ClientRouteViewport>
@@ -261,9 +271,7 @@ export default function FounderDashboard() {
         <div className="max-w-[1100px] mx-auto w-full px-4 md:px-6 py-6">
           {/* Header */}
           <div className="mb-6">
-            <div className="text-[10px] uppercase tracking-[0.45em] text-brand/80 mb-1">
-              Founder · Command
-            </div>
+            <p className="app-section-title mb-1">Founder · Command</p>
             <h1 className="font-display italic lowercase text-3xl md:text-4xl text-ink leading-none">
               <span className="text-aurora">your wireline staff</span>
             </h1>
@@ -276,24 +284,22 @@ export default function FounderDashboard() {
           {/* Platform stats */}
           {stats && (
             <div className="mb-6">
-              <div className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mb-2">
-                Platform · live
-              </div>
+              <p className="app-section-title mb-2">Platform · live</p>
               <div className="flex flex-wrap gap-2.5">
                 <StatTile label="Paying" value={stats.users.paying} tone="brand" />
                 <StatTile label="Trialing" value={stats.users.trialing} tone="brand" />
                 <StatTile label="Total users" value={stats.users.total} tone="ink" />
-                <StatTile label="New (7d)" value={stats.users.new_last_7d} tone="emerald" />
+                <StatTile label="New (7d)" value={stats.users.new_last_7d} tone="brand" />
                 <StatTile label="Calls today" value={stats.calls.today} tone="ink" />
                 <StatTile
                   label="Errors (24h)"
                   value={stats.health.errors_24h}
-                  tone={stats.health.errors_24h > 0 ? "rose" : "emerald"}
+                  tone={stats.health.errors_24h > 0 ? "rose" : "muted"}
                 />
                 <StatTile
                   label="Warnings (24h)"
                   value={stats.health.warnings_24h}
-                  tone={stats.health.warnings_24h > 0 ? "amber" : "emerald"}
+                  tone={stats.health.warnings_24h > 0 ? "brand" : "muted"}
                 />
               </div>
               <div className="mt-2 text-[10px] text-muted/70">
@@ -306,7 +312,7 @@ export default function FounderDashboard() {
 
           {/* Provisioning banner */}
           {provisionedIds !== null && !allProvisioned && (
-            <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/8 p-3 text-[12px] text-ink/80">
+            <div className="mb-5 rounded-md border border-brand/30 bg-brand/5 p-3 text-[12px] text-ink/80">
               Some staff agents aren't provisioned yet. Run
               <code className="font-mono mx-1 text-[11px] bg-black/10 px-1.5 py-0.5 rounded">
                 POST /api/admin/provision-wireline-agents
@@ -316,12 +322,10 @@ export default function FounderDashboard() {
           )}
 
           {/* Team broadcast */}
-          <div className="mb-6 rounded-2xl glass border border-black/10 p-4 shadow-[0_12px_40px_-28px_rgba(79,30,123,0.35)]">
+          <div className={cn(WL_APP_CLASSES.settingsPanel, "mt-0 mb-6")}>
             <div className="flex items-center gap-2 mb-2.5">
               <Users2 className="w-4 h-4 text-brand" />
-              <span className="text-[11px] uppercase tracking-[0.25em] text-ink font-medium">
-                Team meeting — broadcast a directive
-              </span>
+              <span className="app-section-title">Team meeting — broadcast a directive</span>
             </div>
             <div className="flex items-center gap-2">
               <Input
@@ -330,7 +334,7 @@ export default function FounderDashboard() {
                 onChange={(e) => setBroadcast(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && sendBroadcast()}
                 placeholder="e.g. From today, always confirm the caller's email by spelling it back."
-                className="flex-1 bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 text-sm text-ink outline-none focus:border-brand/40 transition-colors placeholder:text-muted/70"
+                className="flex-1 bg-black/5 border border-black/10 rounded-md px-3 py-2.5 text-sm text-ink outline-none focus:border-brand/40 transition-colors placeholder:text-muted/70"
               />
               <ShadButton
                 onClick={sendBroadcast}
@@ -352,21 +356,23 @@ export default function FounderDashboard() {
             {STAFF.map((s) => {
               const exists = provisionedIds === null || provisionedIds.has(s.agentId);
               return (
-                <button
+                <ShadButton
                   key={s.role}
+                  type="button"
+                  variant="ghost"
+                  disableAnimations
                   onClick={() => exists && setSelected(s)}
                   disabled={!exists}
                   className={cn(
-                    "disabled:opacity-50 disabled:cursor-not-allowed",
-                    "text-left rounded-2xl border p-4 transition-all bg-gradient-to-br",
+                    "h-auto text-left rounded-md border p-4 bg-gradient-to-br whitespace-normal justify-start",
                     s.accent,
                     exists
-                      ? "border-black/8 hover:border-brand/30 hover:shadow-md cursor-pointer"
-                      : "border-black/8 opacity-50 cursor-not-allowed",
+                      ? "border-border hover:border-brand/30 hover:bg-accent/30"
+                      : "border-border opacity-50 cursor-not-allowed",
                   )}
                 >
                   <div className="flex items-center gap-2.5 mb-2">
-                    <div className="w-9 h-9 rounded-xl bg-paper flex items-center justify-center text-brand shrink-0">
+                    <div className="w-9 h-9 rounded-md bg-paper flex items-center justify-center text-brand shrink-0">
                       <s.icon className="w-4.5 h-4.5" />
                     </div>
                     <div>
@@ -382,7 +388,7 @@ export default function FounderDashboard() {
                     {exists ? "Open chat" : "Not provisioned"}
                     {exists && <ArrowUpRight className="w-3 h-3" />}
                   </div>
-                </button>
+                </ShadButton>
               );
             })}
           </div>
@@ -397,7 +403,7 @@ export default function FounderDashboard() {
               <a
                 key={l.href}
                 href={l.href}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl glass border border-black/10 text-[11px] text-ink hover:border-brand/30 transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-md wl-panel border border-border text-[11px] text-ink hover:border-brand/30 transition-colors"
               >
                 <l.icon className="w-3.5 h-3.5 text-brand" />
                 {l.label}

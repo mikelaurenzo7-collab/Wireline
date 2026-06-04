@@ -21,6 +21,7 @@ import { cn } from "../../lib/utils";
 import { NAV_GROUPS, PAGE_TITLES, type NavItem } from "../../constants/navigation";
 import { useBranding } from "../../contexts/BrandingContext";
 import { useTheme } from "../../contexts/ThemeContext";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 interface Props {
   onShowShortcuts: () => void;
@@ -126,7 +127,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
         aria-label={`Go to ${item.label}`}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "group relative flex items-center gap-1.5 px-2.5 lg:px-3 rounded-lg transition-all text-[11px] sm:text-[12px] font-medium shrink-0",
+          "group relative flex items-center gap-1.5 px-2.5 lg:px-3 rounded-md transition-all text-[11px] sm:text-[12px] font-medium shrink-0",
           isDrawer ? "min-h-11" : "h-8",
           isDrawer
             ? active
@@ -141,7 +142,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
         {active && (
           <motion.div
             layoutId={isDrawer ? "drawernav-active" : "topnav-active"}
-            className="absolute inset-0 rounded-lg"
+            className="absolute inset-0 rounded-md"
             transition={{ type: "spring", stiffness: 420, damping: 36 }}
             style={{
               background: activeBg,
@@ -200,7 +201,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
       <header
         aria-label="Main navigation"
         className={cn(
-          "shell-sticky-glass shrink-0 sticky top-0 z-50 border-b lg:hidden transition-all duration-300 glass-2 elev-1",
+          "shrink-0 sticky top-0 z-50 border-b lg:hidden transition-all duration-300 wl-panel-elevated elev-1",
           theme === "light"
             ? "border-[#8B3FD6]/10 text-ink animate-fade-in"
             : "border-[#8B3FD6]/20 text-white animate-fade-in",
@@ -224,7 +225,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
               whileHover={{ rotate: 6, scale: 1.05 }}
               whileTap={{ scale: 0.97 }}
               transition={{ type: "spring", stiffness: 380, damping: 26 }}
-              className="relative w-7 h-7 rounded-lg flex items-center justify-center overflow-hidden shrink-0 elev-1"
+              className="relative w-7 h-7 rounded-md flex items-center justify-center overflow-hidden shrink-0 elev-1"
               style={{
                 background: "#EFE9DC",
                 boxShadow:
@@ -298,23 +299,29 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
           {/* Right cluster */}
           <div className="flex items-center gap-2 shrink-0">
             {/* Global search — visible on mobile + desktop */}
-            <button
+            <ShadButton
+              type="button"
+              variant="chrome"
+              size="icon"
+              disableAnimations
               onClick={() => {
-                // CommandBar is lazy-loaded in AppShell; we dispatch a custom event it listens to
                 window.dispatchEvent(new CustomEvent("wireline:open-command-bar"));
               }}
-              className="flex items-center justify-center w-9 h-9 md:w-auto md:h-7 md:px-2 rounded-lg chrome-muted hover:text-[#EFE9DC] hover:bg-white/10 transition-colors"
+              className="md:w-auto md:h-7 md:px-2 rounded-md chrome-muted hover:text-[#EFE9DC] hover:bg-white/10"
               aria-label="Open command bar"
               title="Search ( / )"
             >
               <Search className="w-4 h-4" />
               <span className="hidden md:inline ml-1.5 text-[11px] chrome-subtle">/</span>
-            </button>
+            </ShadButton>
 
-            {/* Keyboard shortcut hint — desktop only */}
-            <button
+            <ShadButton
+              type="button"
+              variant="chrome"
+              size="sm"
+              disableAnimations
               onClick={onShowShortcuts}
-              className="hidden md:flex items-center gap-1.5 h-7 px-2 rounded-lg chrome-muted hover:text-[#EFE9DC] hover:bg-white/10 transition-colors"
+              className="hidden md:flex h-7 px-2 rounded-md chrome-muted hover:text-[#EFE9DC] hover:bg-white/10"
               aria-label="Show keyboard shortcuts"
               title="Keyboard shortcuts"
             >
@@ -322,7 +329,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
               <kbd className="text-[10px] bg-white/10 border border-white/15 px-1.5 py-0.5 rounded font-mono chrome-muted">
                 ?
               </kbd>
-            </button>
+            </ShadButton>
 
             {/* Theme toggle — cycles light/dark/system, persists in
                 localStorage, toggles the `.dark` class on <html> so the
@@ -334,9 +341,12 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 drawer; tap the avatar to access Billing, Settings, Sign out.
                 Taller py-2 (mobile) / py-1 (desktop) for iOS 44pt target. */}
             <div ref={userMenuRef} className="relative">
-              <button
+              <ShadButton
+                type="button"
+                variant="chrome"
+                disableAnimations
                 onClick={() => setUserMenuOpen((v) => !v)}
-                className="touch-press flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-colors px-1.5 py-2.5 md:py-1 min-h-[44px]"
+                className="touch-press flex items-center gap-1.5 rounded-md border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 px-1.5 py-2.5 md:py-1 min-h-[44px] h-auto"
                 aria-label="Account menu"
                 aria-expanded={userMenuOpen}
                 aria-haspopup="menu"
@@ -355,7 +365,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                     userMenuOpen && "rotate-180",
                   )}
                 />
-              </button>
+              </ShadButton>
               <AnimatePresence>
                 {userMenuOpen && (
                   <motion.div
@@ -365,7 +375,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                     transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
                     role="menu"
                     aria-label="Account menu"
-                    className="absolute right-0 top-full mt-2 min-w-[240px] w-64 md:w-72 max-w-[90vw] rounded-xl wl-panel-elevated shadow-2xl shadow-brand/8 overflow-hidden z-50"
+                    className="absolute right-0 top-full mt-2 min-w-[240px] w-64 md:w-72 max-w-[90vw] rounded-md wl-panel-elevated shadow-2xl shadow-brand/8 overflow-hidden z-50"
                   >
                     {/* Account header — brand-tinted */}
                     <div className="relative px-4 py-3.5 border-b border-black/8 overflow-hidden">
@@ -428,17 +438,20 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                       )}
                     </div>
                     <div className="border-t border-black/8 py-1">
-                      <button
+                      <ShadButton
+                        type="button"
+                        variant="ghost"
+                        disableAnimations
                         onClick={() => {
                           setUserMenuOpen(false);
                           signOut();
                         }}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 md:py-2 text-[12px] font-medium text-rose-600 hover:bg-rose-500/[0.06] transition-colors group"
+                        className="w-full justify-start gap-2.5 px-4 py-2.5 md:py-2 h-auto text-[12px] font-medium text-rose-600 hover:bg-rose-500/[0.06] hover:text-rose-600"
                         role="menuitem"
                       >
                         <LogOut className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                         Sign out
-                      </button>
+                      </ShadButton>
                     </div>
                   </motion.div>
                 )}
@@ -450,13 +463,17 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 destination (the bottom tab bar was removed to match how
                 top SaaS render on mobile web). On desktop (lg+) the Aurora
                 rail carries the nav instead. */}
-            <button
+            <ShadButton
+              type="button"
+              variant="ghost"
+              size="icon"
+              disableAnimations
               onClick={() => onDrawerChange(true)}
-              className="flex lg:hidden w-10 h-10 rounded-lg items-center justify-center hover:bg-brand/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+              className="flex lg:hidden w-10 h-10 rounded-md hover:bg-brand/5 dark:hover:bg-white/5"
               aria-label="Open navigation"
             >
               <Menu className="w-5 h-5 text-brand dark:text-[#EFE9DC]" />
-            </button>
+            </ShadButton>
           </div>
         </div>
       </header>
@@ -478,7 +495,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", stiffness: 340, damping: 30 }}
-              className="fixed top-0 bottom-0 left-0 w-[min(21rem,calc(100vw-0.75rem))] z-[85] glass-2 elev-2 border-r border-black/8 flex flex-col p-4 lg:hidden"
+              className="fixed top-0 bottom-0 left-0 w-[min(21rem,calc(100vw-0.75rem))] z-[85] wl-panel-elevated elev-2 border-r border-black/8 flex flex-col p-4 lg:hidden"
               style={{
                 paddingTop: "max(1rem, env(safe-area-inset-top))",
                 paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
@@ -492,7 +509,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                   onClick={() => onDrawerChange(false)}
                   className="flex items-center gap-2.5"
                 >
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-brand">
+                  <div className="w-9 h-9 rounded-md flex items-center justify-center bg-brand">
                     <WirelineMark className="w-4 h-4 text-[#EFE9DC]" strokeWidth={130} />
                   </div>
                   <span className="brand-wordmark text-[16px] leading-none">
@@ -500,13 +517,17 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                   </span>
                 </Link>
                 {/* 44pt close button */}
-                <button
+                <ShadButton
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disableAnimations
                   onClick={() => onDrawerChange(false)}
-                  className="touch-press w-11 h-11 rounded-lg flex items-center justify-center text-ink/70 hover:text-ink hover:bg-black/5 transition-colors"
+                  className="touch-press w-11 h-11 rounded-md text-ink/70 hover:text-ink"
                   aria-label="Close navigation"
                 >
                   <X className="w-4 h-4" />
-                </button>
+                </ShadButton>
               </div>
 
               <nav className="flex-1 min-h-0 scroll-viewport space-y-3">
@@ -527,7 +548,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
               </nav>
 
               <div className="pt-3 mt-3 aurora-divider space-y-2">
-                <div className="flex items-center gap-2 rounded-lg wl-panel px-2 py-2">
+                <div className="flex items-center gap-2 rounded-md wl-panel px-2 py-2">
                   <div className="avatar-ring w-8 h-8 rounded-full flex items-center justify-center text-on-brand font-medium text-sm shrink-0 bg-brand">
                     {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
                   </div>
@@ -537,13 +558,17 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                     </p>
                     <p className="wl-label text-muted truncate">{user?.email?.split("@")[1]}</p>
                   </div>
-                  <button
+                  <ShadButton
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    disableAnimations
                     onClick={() => signOut()}
                     aria-label="Sign out"
-                    className="touch-press w-11 h-11 rounded-md flex items-center justify-center text-ink/65 hover:text-rose-600 hover:bg-rose-500/8 wl-panel hover:border-rose-500/35 transition-colors"
+                    className="touch-press w-11 h-11 rounded-md text-ink/65 hover:text-rose-600 hover:bg-rose-500/8"
                   >
                     <LogOut className="w-3.5 h-3.5" />
-                  </button>
+                  </ShadButton>
                 </div>
               </div>
             </motion.aside>

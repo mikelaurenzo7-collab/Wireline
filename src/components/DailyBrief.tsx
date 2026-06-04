@@ -96,12 +96,9 @@ export default function DailyBrief() {
 
   if (needsKey)
     return (
-      <div className="relative aurora-ring rounded-3xl">
-        <div className="relative p-7 rounded-3xl glass overflow-hidden flex items-center gap-5">
-          <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center"
-            style={{ background: "#8B3FD6" }}
-          >
+      <div className="relative rounded-md wl-panel-elevated border border-border overflow-hidden">
+        <div className="relative p-7 flex items-center gap-5">
+          <div className="w-14 h-14 rounded-md bg-brand flex items-center justify-center">
             <Brain className="w-7 h-7 text-on-brand" />
           </div>
           <div className="flex-1">
@@ -118,7 +115,7 @@ export default function DailyBrief() {
 
   if (loading && !data)
     return (
-      <div className="rounded-3xl glass border border-white/10 p-8 flex items-center gap-4">
+      <div className="rounded-md wl-panel border border-border p-8 flex items-center gap-4">
         <Loader2 className="w-5 h-5 animate-spin text-brand" />
         <span className="text-[11px] uppercase tracking-[0.4em] text-muted">
           Wireline is analyzing your day…
@@ -130,7 +127,7 @@ export default function DailyBrief() {
     return (
       <div
         role="alert"
-        className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-5 flex items-start gap-3"
+        className="rounded-md bg-rose-500/10 border border-rose-500/30 p-5 flex items-start gap-3"
       >
         <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
         <span className="text-sm text-rose-500">{err}</span>
@@ -165,7 +162,11 @@ export default function DailyBrief() {
   };
 
   const moodAccent =
-    brief.mood === "green" ? "#8B3FD6" : brief.mood === "yellow" ? "#C4B5A0" : "#8B3FD6";
+    brief.mood === "green"
+      ? "var(--color-brand)"
+      : brief.mood === "yellow"
+        ? "#C4B5A0"
+        : "var(--color-brand)";
   const moodLabel =
     brief.mood === "green"
       ? "All systems go"
@@ -177,25 +178,20 @@ export default function DailyBrief() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative aurora-ring rounded-3xl"
+      className="relative rounded-md wl-panel-elevated border border-border overflow-hidden"
     >
-      <div className="relative rounded-3xl glass-strong overflow-hidden">
-        <div
-          className="absolute -top-32 -right-32 w-96 h-96 rounded-full max-w-[60vw] max-h-[60vw] sm:max-w-none sm:max-h-none opacity-30 blur-3xl pointer-events-none"
-          style={{ background: `radial-gradient(circle, ${moodAccent}, transparent)` }}
-        />
-        <div
-          className="absolute -bottom-32 -left-32 w-72 h-72 rounded-full opacity-25 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
-        />
-
-        <div className="relative z-10 px-7 py-5 border-b border-white/8 flex items-center justify-between flex-wrap gap-3">
+      <div className="relative">
+        <div className="relative z-10 px-7 py-5 border-b border-border flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <div
-              className="w-10 h-10 rounded-2xl flex items-center justify-center"
-              style={{ background: `linear-gradient(135deg, ${moodAccent}, ${moodAccent}aa)` }}
+              className={cn(
+                "w-10 h-10 rounded-md flex items-center justify-center",
+                brief.mood === "yellow" ? "bg-black/8" : "bg-brand",
+              )}
             >
-              <Sun className="w-5 h-5 text-paper" />
+              <Sun
+                className={cn("w-5 h-5", brief.mood === "yellow" ? "text-ink" : "text-on-brand")}
+              />
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-[0.4em] text-brand flex items-center gap-2">
@@ -225,8 +221,8 @@ export default function DailyBrief() {
               className={cn(
                 "px-3 py-1.5 h-auto rounded-full text-[10px] uppercase tracking-[0.3em] transition-all",
                 showSchedule
-                  ? "bg-brand-2/15 border-brand-2/40 text-brand-2"
-                  : "glass border-white/10 text-muted hover:text-brand-2 hover:border-brand-2/40",
+                  ? "bg-brand/15 border-brand/40 text-brand"
+                  : "wl-panel border-border text-muted hover:text-brand hover:border-brand/40",
               )}
             >
               <Mail className="w-3 h-3" /> Email Schedule
@@ -235,7 +231,7 @@ export default function DailyBrief() {
               onClick={() => load(true)}
               disabled={loading}
               variant="outline"
-              className="px-3 py-1.5 h-auto rounded-full glass border-white/10 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40"
+              className="px-3 py-1.5 h-auto rounded-full wl-panel border-border text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40"
             >
               {loading ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -287,14 +283,14 @@ export default function DailyBrief() {
           {/* Highlights & Concerns */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {brief.highlights.length > 0 && (
-              <Section title="Highlights" icon={Sparkles} accent="#8B3FD6">
+              <Section title="Highlights" icon={Sparkles}>
                 {brief.highlights.map((h, i) => (
                   <li key={i}>{h}</li>
                 ))}
               </Section>
             )}
             {brief.concerns.length > 0 && (
-              <Section title="Concerns" icon={AlertTriangle} accent="#8B3FD6">
+              <Section title="Concerns" icon={AlertTriangle}>
                 {brief.concerns.map((c, i) => (
                   <li key={i}>{c}</li>
                 ))}
@@ -312,7 +308,7 @@ export default function DailyBrief() {
                 {brief.action_items.map((a, i) => (
                   <div
                     key={i}
-                    className="rounded-xl glass border border-white/10 p-4 flex items-start gap-3"
+                    className="rounded-md wl-panel border border-border p-4 flex items-start gap-3"
                   >
                     <span
                       className={cn(
@@ -335,7 +331,7 @@ export default function DailyBrief() {
 
           <Link
             to="/triage"
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-full glass border border-brand/30 hover:bg-brand/10 transition-all text-[11px] uppercase tracking-[0.3em] text-brand"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-full wl-panel border border-brand/30 hover:bg-brand/10 transition-all text-[11px] uppercase tracking-[0.3em] text-brand"
           >
             Open Triage Inbox <ChevronRight className="w-3.5 h-3.5" />
           </Link>
@@ -361,7 +357,7 @@ function Quick({
   // For "spend", going up is bad — invert the color sense.
   const isGood = invertDelta ? !isUp : isUp;
   return (
-    <div className="rounded-2xl glass border border-white/10 p-4">
+    <div className="rounded-md wl-panel border border-border p-4">
       <div className="text-[10px] uppercase tracking-[0.3em] text-muted mb-2">{label}</div>
       <div className="flex items-baseline justify-between gap-2">
         <span className="font-display italic text-3xl text-ink">{value}</span>
@@ -369,7 +365,7 @@ function Quick({
           <span
             className={cn(
               "text-[10px] uppercase tracking-[0.2em] flex items-center gap-1",
-              isGood ? "text-emerald-500" : "text-rose-500",
+              isGood ? "text-brand" : "text-rose-500",
             )}
           >
             {isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
@@ -384,20 +380,15 @@ function Quick({
 function Section({
   title,
   icon: Icon,
-  accent,
   children,
 }: {
   title: string;
-  icon: any;
-  accent: string;
+  icon: React.ComponentType<{ className?: string }>;
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl glass border border-white/10 p-5">
-      <h4
-        className="text-[10px] uppercase tracking-[0.4em] mb-3 flex items-center gap-2"
-        style={{ color: accent }}
-      >
+    <div className="rounded-md wl-panel border border-border p-5">
+      <h4 className="text-[10px] uppercase tracking-[0.4em] mb-3 flex items-center gap-2 text-brand">
         <Icon className="w-3 h-3" /> {title}
       </h4>
       <ul className="space-y-1.5 text-sm text-ink/85 list-disc list-inside marker:text-brand/50">
@@ -486,15 +477,17 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
   return (
     <div className="px-7 py-5 border-b border-white/8 bg-black/20 space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-brand-2">
+        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-brand">
           <Mail className="w-3 h-3" /> Email this brief on a schedule
         </div>
         <ShadButton
-          variant="glass"
+          type="button"
+          variant="ghost"
           size="icon"
+          disableAnimations
           onClick={onClose}
           aria-label="Close"
-          className="w-9 h-9 rounded-full hover:border-white/30"
+          className="w-9 h-9 rounded-full"
         >
           <XIcon className="w-4 h-4" />
         </ShadButton>
@@ -507,7 +500,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
       ) : (
         <>
           {!gmailConnected && (
-            <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-amber-600 text-xs flex items-center gap-2">
+            <div className="rounded-md bg-rose-500/8 border border-rose-500/25 px-3 py-2 text-rose-700 text-xs flex items-center gap-2">
               <AlertTriangle className="w-3.5 h-3.5" />
               Connect a Gmail account in{" "}
               <Link to="/integrations" className="underline">
@@ -517,26 +510,25 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          <button
+          <ShadButton
             type="button"
+            variant="ghost"
+            disableAnimations
             onClick={() => setEnabled((e) => !e)}
             disabled={!gmailConnected}
             className={cn(
-              "disabled:opacity-50 disabled:cursor-not-allowed",
-              "w-full px-4 py-3 rounded-xl border flex items-start gap-3 text-left transition-all",
+              "w-full h-auto px-4 py-3 rounded-md border flex items-start gap-3 text-left justify-start",
               !gmailConnected
-                ? "bg-black/20 border-white/5 text-muted/70 cursor-not-allowed"
+                ? "bg-black/20 border-border text-muted/70 cursor-not-allowed"
                 : enabled
-                  ? "bg-brand-2/15 border-brand-2/40 text-brand-2"
+                  ? "bg-brand/15 border-brand/40 text-brand"
                   : "bg-black/5 border-black/10 text-ink/80 hover:border-black/20",
             )}
           >
             <div
               className={cn(
                 "shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center mt-0.5",
-                enabled && gmailConnected
-                  ? "bg-brand-2 border-brand-2 text-on-brand"
-                  : "border-white/30",
+                enabled && gmailConnected ? "bg-brand border-brand text-on-brand" : "border-border",
               )}
             >
               {enabled && gmailConnected && <Check className="w-2.5 h-2.5" strokeWidth={4} />}
@@ -555,7 +547,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 .
               </div>
             </div>
-          </button>
+          </ShadButton>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <label className="space-y-1.5">
@@ -566,7 +558,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 type="time"
                 value={sendAt}
                 onChange={(e) => setSendAt(e.target.value)}
-                className="w-full h-11 px-4 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
+                className="w-full h-11 px-4 rounded-md bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
               />
               <span className="text-[10px] text-ink/65 leading-snug">
                 13:00 UTC ≈ 9 AM ET / 6 AM PT. Convert your local time before saving.
@@ -584,13 +576,13 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 onChange={(e) => setRecipient(e.target.value.trimStart())}
                 onBlur={(e) => setRecipient(e.target.value.trim())}
                 placeholder="you@example.com"
-                className="w-full h-11 px-4 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
+                className="w-full h-11 px-4 rounded-md bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
               />
             </label>
           </div>
 
           {lastSentAt && (
-            <div className="text-[10px] uppercase tracking-[0.3em] text-emerald-500/70">
+            <div className="text-[10px] uppercase tracking-[0.3em] text-brand/70">
               Last sent {formatDateTime(lastSentAt, undefined, "—")}
             </div>
           )}
@@ -606,7 +598,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
               onClick={sendNow}
               disabled={sending || !gmailConnected || !recipient}
               variant="outline"
-              className="h-10 px-4 border-brand-2/30 text-brand-2 hover:bg-brand-2/10 text-[11px] uppercase tracking-[0.25em]"
+              className="h-10 px-4 border-brand/30 text-brand hover:bg-brand/10 text-[11px] uppercase tracking-[0.25em]"
             >
               {sending ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -620,7 +612,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 <span
                   className={cn(
                     "text-[11px]",
-                    feedback.kind === "ok" ? "text-emerald-500" : "text-rose-500",
+                    feedback.kind === "ok" ? "text-brand" : "text-rose-500",
                   )}
                 >
                   {feedback.text}

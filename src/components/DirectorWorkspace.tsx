@@ -19,7 +19,7 @@ import {
   Loader2,
   Trash2,
   Plus,
-  MessagesSquare,
+  Bot,
   Activity,
   GraduationCap,
   BarChart3,
@@ -41,22 +41,51 @@ import {
   Grid3X3,
   Megaphone,
   Table,
+  SlidersHorizontal,
+  Power,
+  Mail,
+  Wrench,
+  Search as SearchIcon,
 } from "lucide-react";
-import { authFetch } from "../lib/api";
+import { authFetch, readApiJson } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { cn } from "../lib/utils";
-import { ThinkingDisplay, LiveThinkingIndicator } from "./ui/ThinkingDisplay";
-import { LiveTaskPipeline, type PipelineStep } from "./ui/LiveTaskPipeline";
+import { ThinkingDisplay } from "./ui/ThinkingDisplay";
+import type { PipelineStep } from "./ui/LiveTaskPipeline";
 import { ArtifactCard, type ArtifactType } from "./ui/ArtifactCard";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { Input } from "./ui/shadcn/Input";
+import { Textarea } from "./ui/shadcn/Textarea";
 import { useStreamingChat } from "../hooks/useStreamingChat";
+import ProposalCard from "./chat/ProposalCard";
+import { AGENT_TOOL_CATALOG } from "../lib/agent-capabilities";
+import type { ProposedAction, ProposedChange, ProposedToolToggle } from "../lib/workspace-planner";
+import type { DirectorIntegrationJob, DirectorProposedAction } from "../lib/director-fleet-plan";
+import DirectorLiveSession, {
+  advanceLiveStepsForPhase,
+  buildDirectorLiveSteps,
+  type DirectorLiveStep,
+} from "./director/DirectorLiveSession";
+import {
+  planIntegrationLiveScript,
+  startIntegrationLiveSequence,
+  buildLiveActionsFromProposals,
+  type IntegrationLiveAction,
+} from "../lib/integration-live-scripts";
+import { DirectorMessageBody } from "./director/DirectorMessageBody";
+import { INTEGRATION_STYLES } from "../lib/integration-activities";
+import type { ToolIntegration } from "../lib/agent-capabilities";
+import {
+  DIRECTOR_EMPTY_HERO,
+  DIRECTOR_STARTER_PROMPTS,
+  WL_DIRECTOR_CLASSES,
+} from "../lib/wireline-director-design";
 
 type SuggestionKind =
   | "create_agent"
-  | "open_agent_chat"
+  | "focus_agent"
   | "view_ops"
   | "open_training"
   | "open_insights";
@@ -104,24 +133,33 @@ interface DirectorMessage {
   suggestions?: DirectorSuggestion[];
   approvals?: DirectorApproval[];
   previews?: DirectorPreview[];
+  clarifyingQuestions?: string[];
+  researchSources?: { title?: string; uri?: string }[];
   reasoning?: string;
   thinkingDurationMs?: number;
   model?: "sonnet" | "opus";
+  coachAgentId?: string;
+  coachAgentName?: string;
+  proposals?: {
+    changes: ProposedChange[];
+    toolToggles: ProposedToolToggle[];
+    actions: (ProposedAction | DirectorProposedAction)[];
+    integrationJobs: DirectorIntegrationJob[];
+  };
+}
+
+export interface DirectorWorkspaceProps {
+  focusAgentId?: string | null;
+  onFocusAgentChange?: (agentId: string | null) => void;
 }
 
 const SUGGESTION_ICON: Record<SuggestionKind, React.ElementType> = {
   create_agent: Plus,
-  open_agent_chat: MessagesSquare,
+  focus_agent: Bot,
   view_ops: Activity,
   open_training: GraduationCap,
   open_insights: BarChart3,
 };
-
-const STARTER_PROMPTS = [
-  "What kind of agent should I hire first?",
-  "Help me set up a sales agent for my business.",
-  "Audit my fleet and tell me what to improve.",
-] as const;
 
 const CONNECTOR_CATALOG = [
   { icon: Phone, id: "twilio", label: "Twilio", desc: "Voice & SMS" },
@@ -131,7 +169,6 @@ const CONNECTOR_CATALOG = [
   { icon: Video, id: "zoom", label: "Zoom", desc: "Meeting links" },
   { icon: FileSignature, id: "docusign", label: "DocuSign", desc: "Contracts" },
   { icon: Search, id: "apollo", label: "Apollo", desc: "Lead enrichment" },
-  { icon: Search, id: "gemini", label: "Gemini", desc: "Web grounding" },
   { icon: ShoppingBag, id: "shopify", label: "Shopify", desc: "E-commerce" },
   { icon: Grid3X3, id: "square", label: "Square", desc: "Payments & POS" },
   { icon: MessageCircle, id: "microsoft_teams", label: "MS Teams", desc: "Team notifications" },
@@ -140,16 +177,29 @@ const CONNECTOR_CATALOG = [
   { icon: Megaphone, id: "meta", label: "Meta CAPI", desc: "Lead attribution" },
 ] as const;
 
-export default function DirectorWorkspace() {
+export default function DirectorWorkspace({
+  focusAgentId = null,
+  onFocusAgentChange,
+}: DirectorWorkspaceProps) {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { agents } = useAgents();
+  const focusedAgent = focusAgentId ? agents.find((a) => a.id === focusAgentId) : undefined;
   const { error: toastError, success: toastSuccess } = useToast();
   const [messages, setMessages] = useState<DirectorMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [connectorsOpen, setConnectorsOpen] = useState(false);
+  const [coachOpen, setCoachOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const [enabledTools, setEnabledTools] = useState<string[]>([]);
+  const [resolved, setResolved] = useState<Record<string, "done" | "dismissed">>({});
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [busyLabel, setBusyLabel] = useState<string | undefined>();
+  const [callConsent, setCallConsent] = useState<Record<string, boolean>>({});
+  const [integrationLiveActions, setIntegrationLiveActions] = useState<IntegrationLiveAction[]>([]);
+  const [liveSteps, setLiveSteps] = useState<DirectorLiveStep[]>([]);
   const [attachmentsOpen, setAttachmentsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [artifacts, setArtifacts] = useState<DirectorArtifact[]>([]);
@@ -161,17 +211,32 @@ export default function DirectorWorkspace() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const connectorsRef = useRef<HTMLDivElement | null>(null);
+  const coachRef = useRef<HTMLDivElement | null>(null);
+  const toolsRef = useRef<HTMLDivElement | null>(null);
   const attachmentsRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pendingSendRef = useRef<{ trimmed: string; optimisticId?: string } | null>(null);
+  const liveSequenceKeyRef = useRef<string | null>(null);
+  const sendNonStreamingRef = useRef<
+    ((trimmed: string, optimisticId?: string) => Promise<void>) | null
+  >(null);
 
-  // Streaming chat integration
-  const {
-    state: streamState,
-    send: streamSend,
-    reset: streamReset,
-    isStreaming,
-  } = useStreamingChat("/api/director/messages/stream", {
-    onComplete: (data) => {
+  const appendDirectorReply = useCallback(
+    (data: Record<string, unknown>) => {
+      const changes = Array.isArray(data.changes) ? (data.changes as ProposedChange[]) : [];
+      const toolToggles = Array.isArray(data.toolToggles)
+        ? (data.toolToggles as ProposedToolToggle[])
+        : [];
+      const actions = Array.isArray(data.actions) ? (data.actions as DirectorProposedAction[]) : [];
+      const integrationJobs = Array.isArray(data.integrationJobs)
+        ? (data.integrationJobs as DirectorIntegrationJob[])
+        : [];
+      const hasProposals =
+        changes.length > 0 ||
+        toolToggles.length > 0 ||
+        actions.length > 0 ||
+        integrationJobs.length > 0;
+
       const reply: DirectorMessage = {
         id: `director-${Date.now()}`,
         role: "director",
@@ -180,51 +245,28 @@ export default function DirectorWorkspace() {
         suggestions: Array.isArray(data.suggestions)
           ? (data.suggestions as DirectorSuggestion[])
           : undefined,
+        approvals: Array.isArray(data.approvals)
+          ? (data.approvals as DirectorApproval[])
+          : undefined,
+        previews: Array.isArray(data.previews) ? (data.previews as DirectorPreview[]) : undefined,
+        clarifyingQuestions: Array.isArray(data.clarifyingQuestions)
+          ? (data.clarifyingQuestions as string[])
+          : undefined,
+        researchSources: Array.isArray(data.researchSources)
+          ? (data.researchSources as { title?: string; uri?: string }[])
+          : undefined,
         reasoning: (data.reasoning as string) || undefined,
         thinkingDurationMs: (data.thinkingDurationMs as number) || undefined,
         model: (data.model as "sonnet" | "opus") || undefined,
+        coachAgentId: (data.focusAgentId as string) || focusAgentId || undefined,
+        coachAgentName: (data.focusAgentName as string) || focusedAgent?.name || undefined,
+        proposals: hasProposals ? { changes, toolToggles, actions, integrationJobs } : undefined,
       };
       setMessages((prev) => [...prev, reply]);
       if (Array.isArray(data.artifacts)) setArtifacts(data.artifacts as DirectorArtifact[]);
-      setIsSending(false);
-      streamReset();
-      inputRef.current?.focus();
     },
-    onError: (msg) => {
-      toastError("Stream failed", msg);
-      setIsSending(false);
-      streamReset();
-    },
-  });
-
-  // Pipeline steps derived from streaming state
-  const streamPipeline: PipelineStep[] = (() => {
-    if (!isStreaming && streamState.phase === "idle") return [];
-    const steps: PipelineStep[] = [];
-    const phase = streamState.phase;
-
-    steps.push({
-      id: "connect",
-      label: "Connecting to Director",
-      status: phase === "connecting" ? "active" : "done",
-    });
-    if (phase === "thinking" || phase === "replying" || phase === "done") {
-      steps.push({
-        id: "thinking",
-        label: streamState.isDeep ? "Deep analysis (Opus)" : "Reasoning",
-        status: phase === "thinking" ? "active" : "done",
-        elapsedMs: phase === "thinking" ? undefined : streamState.thinkingDurationMs,
-      });
-    }
-    if (phase === "replying" || phase === "done") {
-      steps.push({
-        id: "reply",
-        label: "Composing reply",
-        status: phase === "replying" ? "active" : "done",
-      });
-    }
-    return steps;
-  })();
+    [focusAgentId, focusedAgent?.name],
+  );
 
   const loadMessages = useCallback(async () => {
     if (authLoading) return;
@@ -238,7 +280,8 @@ export default function DirectorWorkspace() {
       const r = await authFetch("/api/director/messages");
       if (!r.ok) {
         if (r.status === 401 || r.status === 403) return;
-        throw new Error("Failed to load messages");
+        const parsed = await readApiJson(r);
+        throw new Error(!parsed.ok ? parsed.error : "Failed to load messages");
       }
       const data = await r.json();
       setMessages(Array.isArray(data.messages) ? data.messages : []);
@@ -257,6 +300,108 @@ export default function DirectorWorkspace() {
     }
   }, [authLoading, toastError, user]);
 
+  // Streaming chat integration
+  const {
+    state: streamState,
+    send: streamSend,
+    reset: streamReset,
+    isStreaming,
+  } = useStreamingChat("/api/director/messages/stream", {
+    onComplete: (data) => {
+      const integrationJobs = Array.isArray(data.integrationJobs)
+        ? (data.integrationJobs as DirectorIntegrationJob[])
+        : [];
+      const actions = Array.isArray(data.actions) ? (data.actions as DirectorProposedAction[]) : [];
+      if (integrationJobs.length > 0 || actions.length > 0) {
+        setIntegrationLiveActions(buildLiveActionsFromProposals({ integrationJobs, actions }));
+      }
+      appendDirectorReply(data);
+      setIsSending(false);
+      streamReset();
+      pendingSendRef.current = null;
+      inputRef.current?.focus();
+    },
+    onError: (msg, { streamEstablished }) => {
+      const pending = pendingSendRef.current;
+      if (!streamEstablished && pending?.trimmed) {
+        void sendNonStreamingRef.current?.(pending.trimmed, pending.optimisticId);
+        return;
+      }
+      if (pending?.optimisticId) {
+        setMessages((prev) => prev.filter((m) => m.id !== pending.optimisticId));
+      }
+      void loadMessages();
+      toastError("Stream interrupted", msg);
+      setIsSending(false);
+      streamReset();
+      pendingSendRef.current = null;
+      inputRef.current?.focus();
+    },
+  });
+
+  const sendNonStreaming = useCallback(
+    async (trimmed: string, optimisticId?: string) => {
+      try {
+        const r = await authFetch("/api/director/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: trimmed,
+            ...(focusAgentId ? { focusAgentId } : {}),
+          }),
+        });
+        const parsed = await readApiJson<Record<string, unknown>>(r);
+        if (!parsed.ok) throw new Error(parsed.error);
+        appendDirectorReply(parsed.data);
+      } catch {
+        if (optimisticId) {
+          setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+        }
+        setInput(trimmed);
+        toastError("Couldn't send", "Try again in a moment");
+      } finally {
+        setIsSending(false);
+        streamReset();
+        pendingSendRef.current = null;
+        inputRef.current?.focus();
+      }
+    },
+    [appendDirectorReply, streamReset, toastError, focusAgentId],
+  );
+  sendNonStreamingRef.current = sendNonStreaming;
+
+  // Pipeline steps derived from streaming state
+  const streamPipeline: PipelineStep[] = (() => {
+    if (!isStreaming && streamState.phase === "idle") return [];
+    const steps: PipelineStep[] = [];
+    const phase = streamState.phase;
+
+    steps.push({
+      id: "connect",
+      label: "Connecting to Director",
+      status: phase === "connecting" ? "active" : "done",
+    });
+    if (phase === "thinking" || phase === "replying" || phase === "done") {
+      steps.push({
+        id: "thinking",
+        label: streamState.isDeep ? "Deep analysis (Opus)" : "Reasoning",
+        status: phase === "thinking" ? "active" : "done",
+        detail:
+          phase === "thinking" && streamState.thinkingText ? "Live reasoning stream" : undefined,
+        elapsedMs: phase === "thinking" ? undefined : streamState.thinkingDurationMs,
+      });
+    }
+    if (phase === "replying" || phase === "done") {
+      steps.push({
+        id: "reply",
+        label: "Composing reply",
+        status: phase === "replying" ? "active" : "done",
+        detail: phase === "replying" ? "Structuring output & proposals" : undefined,
+      });
+    }
+    return steps;
+  })();
+
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
@@ -270,12 +415,38 @@ export default function DirectorWorkspace() {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [
+    messages,
+    isSending,
+    streamState.thinkingText,
+    streamState.reply,
+    streamState.phase,
+    integrationLiveActions.length,
+  ]);
+
+  useEffect(() => {
+    if (!focusAgentId) {
+      setEnabledTools([]);
+      return;
+    }
+    void authFetch(`/api/agents/${encodeURIComponent(focusAgentId)}/workspace/messages`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.agent?.enabledTools) setEnabledTools(data.agent.enabledTools);
+      })
+      .catch(() => undefined);
+  }, [focusAgentId]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (connectorsRef.current && !connectorsRef.current.contains(e.target as Node)) {
         setConnectorsOpen(false);
+      }
+      if (coachRef.current && !coachRef.current.contains(e.target as Node)) {
+        setCoachOpen(false);
+      }
+      if (toolsRef.current && !toolsRef.current.contains(e.target as Node)) {
+        setToolsOpen(false);
       }
       if (attachmentsRef.current && !attachmentsRef.current.contains(e.target as Node)) {
         setAttachmentsOpen(false);
@@ -291,15 +462,15 @@ export default function DirectorWorkspace() {
         case "create_agent":
           navigate("/agents");
           break;
-        case "open_agent_chat":
-          if (s.agentId) navigate(`/chat/${s.agentId}`);
+        case "focus_agent":
+          if (s.agentId) onFocusAgentChange?.(s.agentId);
           break;
         case "view_ops":
           navigate("/ops");
           break;
         case "open_training": {
-          const target = s.agentId || agents[0]?.id;
-          navigate(target ? `/chat/${target}?tab=training` : "/agents");
+          const target = s.agentId || focusAgentId || agents[0]?.id;
+          navigate(target ? `/training?agent=${encodeURIComponent(target)}` : "/training");
           break;
         }
         case "open_insights":
@@ -307,7 +478,7 @@ export default function DirectorWorkspace() {
           break;
       }
     },
-    [navigate, agents],
+    [navigate, onFocusAgentChange, focusAgentId, agents],
   );
 
   const send = useCallback(
@@ -326,10 +497,18 @@ export default function DirectorWorkspace() {
       if (trimmed) setInput("");
       setIsSending(true);
       setConnectorsOpen(false);
+      setCoachOpen(false);
+
+      const payload = {
+        content: trimmed,
+        ...(focusAgentId ? { focusAgentId } : {}),
+        ...(opts?.approval ? { approval: opts.approval } : {}),
+      };
 
       // Use streaming for regular messages (no approvals — those stay non-streaming)
       if (!opts?.approval) {
-        streamSend({ content: trimmed });
+        pendingSendRef.current = { trimmed, optimisticId: optimistic?.id };
+        streamSend(payload);
         return;
       }
 
@@ -338,7 +517,7 @@ export default function DirectorWorkspace() {
         const r = await authFetch("/api/director/messages", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: trimmed, approval: opts?.approval }),
+          body: JSON.stringify(payload),
         });
         if (!r.ok) throw new Error("Send failed");
         const data = await r.json();
@@ -365,7 +544,182 @@ export default function DirectorWorkspace() {
         inputRef.current?.focus();
       }
     },
-    [isSending, toastError, streamSend],
+    [isSending, toastError, streamSend, focusAgentId],
+  );
+
+  const markResolved = (key: string, state: "done" | "dismissed") =>
+    setResolved((prev) => ({ ...prev, [key]: state }));
+
+  const resolveCoachAgentId = (message: DirectorMessage) =>
+    message.coachAgentId || focusAgentId || null;
+
+  const resolveActionAgentId = (
+    action: ProposedAction | DirectorProposedAction,
+    message: DirectorMessage,
+  ) =>
+    ("agentId" in action && action.agentId) ||
+    message.coachAgentId ||
+    focusAgentId ||
+    agents[0]?.id ||
+    null;
+
+  useEffect(() => {
+    if (!isSending && !isStreaming) {
+      liveSequenceKeyRef.current = null;
+      setIntegrationLiveActions([]);
+      return;
+    }
+
+    const message = pendingSendRef.current?.trimmed ?? "";
+    const sequenceKey = `${message}::${enabledTools.join(",")}`;
+    if (liveSequenceKeyRef.current === sequenceKey) return;
+    liveSequenceKeyRef.current = sequenceKey;
+
+    const script = planIntegrationLiveScript({ message, enabledTools });
+    return startIntegrationLiveSequence(script, setIntegrationLiveActions);
+  }, [isSending, isStreaming, enabledTools]);
+
+  useEffect(() => {
+    if (!isSending && !isStreaming) {
+      setLiveSteps([]);
+      return;
+    }
+    const base = buildDirectorLiveSteps({
+      hasIntegrations: enabledTools.some((t) =>
+        AGENT_TOOL_CATALOG.some((c) => c.name === t && c.integration),
+      ),
+      coachAgentName: focusedAgent?.name,
+      fleetSize: agents.length,
+    });
+    setLiveSteps(advanceLiveStepsForPhase(base, streamState.phase));
+  }, [streamState.phase, isSending, isStreaming, enabledTools, focusedAgent?.name, agents.length]);
+
+  const approveChange = useCallback(
+    async (key: string, change: ProposedChange, agentId: string) => {
+      setBusyKey(key);
+      setBusyLabel("Applying configuration…");
+      try {
+        const r = await authFetch(
+          `/api/agents/${encodeURIComponent(agentId)}/workspace/apply-change`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ field: change.field, value: change.value }),
+          },
+        );
+        if (!r.ok) throw new Error("Apply failed");
+        markResolved(key, "done");
+        toastSuccess("Updated", `${change.label} saved`);
+      } catch {
+        toastError("Couldn't apply change", "Try again in a moment");
+      } finally {
+        setBusyKey(null);
+      }
+    },
+    [toastSuccess, toastError],
+  );
+
+  const approveToggle = useCallback(
+    async (key: string, toggle: ProposedToolToggle, agentId: string) => {
+      setBusyKey(key);
+      setBusyLabel(toggle.enable ? "Connecting capability…" : "Disconnecting…");
+      try {
+        const r = await authFetch(
+          `/api/agents/${encodeURIComponent(agentId)}/workspace/toggle-tool`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tool: toggle.tool, enable: toggle.enable }),
+          },
+        );
+        if (!r.ok) throw new Error("Toggle failed");
+        const data = await r.json();
+        if (agentId === focusAgentId && Array.isArray(data.enabledTools)) {
+          setEnabledTools(data.enabledTools);
+        }
+        markResolved(key, "done");
+        toastSuccess(toggle.enable ? "Capability on" : "Capability off", toggle.label);
+      } catch {
+        toastError("Couldn't update capability", "Try again in a moment");
+      } finally {
+        setBusyKey(null);
+      }
+    },
+    [focusAgentId, toastSuccess, toastError],
+  );
+
+  const approveAction = useCallback(
+    async (key: string, action: ProposedAction | DirectorProposedAction, agentId: string) => {
+      setBusyKey(key);
+      setBusyLabel(
+        action.kind === "make_call"
+          ? "Connecting call…"
+          : action.kind === "send_text_message"
+            ? "Sending text…"
+            : "Sending email…",
+      );
+      try {
+        const fleetAction: DirectorProposedAction = {
+          ...action,
+          agentId: ("agentId" in action && action.agentId) || agentId,
+        };
+        const r = await authFetch("/api/director/execute", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            kind: "comms",
+            action: fleetAction,
+            hasExpressWrittenConsent: !!callConsent[key],
+          }),
+        });
+        const parsed = await readApiJson<{ output?: string; error?: string }>(r);
+        if (!parsed.ok) throw new Error(parsed.error);
+        markResolved(key, "done");
+        toastSuccess("Done", parsed.data.output || action.label);
+      } catch (err) {
+        toastError("Couldn't run action", err instanceof Error ? err.message : "Try again");
+      } finally {
+        setBusyKey(null);
+      }
+    },
+    [callConsent, toastSuccess, toastError],
+  );
+
+  const approveIntegration = useCallback(
+    async (key: string, job: DirectorIntegrationJob, agentId?: string | null) => {
+      setBusyKey(key);
+      setBusyLabel("Running integration…");
+      try {
+        const r = await authFetch("/api/director/execute", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            kind: "integration",
+            job: { ...job, agentId: job.agentId || agentId || undefined },
+          }),
+        });
+        const parsed = await readApiJson<{ output?: string; error?: string }>(r);
+        if (!parsed.ok) throw new Error(parsed.error);
+        markResolved(key, "done");
+        if (parsed.data.output) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `director-${Date.now()}`,
+              role: "director",
+              content: parsed.data.output || "",
+              createdAt: new Date().toISOString(),
+            },
+          ]);
+        }
+        toastSuccess("Integration complete", job.label);
+      } catch (err) {
+        toastError("Integration failed", err instanceof Error ? err.message : "Try again");
+      } finally {
+        setBusyKey(null);
+      }
+    },
+    [toastSuccess, toastError],
   );
 
   const clearThread = useCallback(async () => {
@@ -402,15 +756,52 @@ export default function DirectorWorkspace() {
     }
     setIsUploading(true);
     try {
-      // Simulate upload for now in Director
-      setTimeout(() => {
-        setIsUploading(false);
-        toastSuccess("File attached", "Ready for analysis");
-      }, 1500);
-    } catch {
-      setIsUploading(false);
-      toastError("Upload failed");
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          const comma = result.indexOf(",");
+          resolve(comma >= 0 ? result.slice(comma + 1) : result);
+        };
+        reader.onerror = () => reject(new Error("Read failed"));
+        reader.readAsDataURL(file);
+      });
+
+      const endpoint = focusAgentId
+        ? `/api/agents/${encodeURIComponent(focusAgentId)}/workspace/files`
+        : "/api/director/files";
+
+      const r = await authFetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pdfBase64: base64, fileName: file.name }),
+      });
+      const parsed = await readApiJson<{ reply?: string; inserted?: number; error?: string }>(r);
+      if (!parsed.ok) throw new Error(parsed.error);
+
+      if (parsed.data.reply) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `director-${Date.now()}`,
+            role: "director",
+            content: parsed.data.reply || "",
+            createdAt: new Date().toISOString(),
+            coachAgentId: focusAgentId || undefined,
+            coachAgentName: focusedAgent?.name,
+          },
+        ]);
+      }
+      toastSuccess(
+        "Document ingested",
+        focusAgentId
+          ? `${parsed.data.inserted ?? 0} knowledge items added for ${focusedAgent?.name || "agent"}`
+          : `${parsed.data.inserted ?? 0} items extracted — ask me to summarize or apply`,
+      );
+    } catch (err) {
+      toastError("Upload failed", err instanceof Error ? err.message : "Try again");
     } finally {
+      setIsUploading(false);
       e.target.value = "";
     }
   };
@@ -428,7 +819,12 @@ export default function DirectorWorkspace() {
     <div className="flex flex-col h-full min-h-0 bg-transparent">
       {/* Minimal header - just identity */}
       {messages.length > 0 && (
-        <div className="shrink-0 flex items-center justify-between px-6 py-3 border-b border-brand/6">
+        <div
+          className={cn(
+            "shrink-0 flex items-center justify-between px-6 py-3 border-b border-brand/6",
+            WL_DIRECTOR_CLASSES.threadHeader,
+          )}
+        >
           <div className="flex items-center gap-2.5">
             <span className="wl-orbit" data-active={isSending}>
               <span className="shrink-0 flex w-9 h-9 items-center justify-center rounded-full bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/20 relative overflow-hidden">
@@ -440,17 +836,39 @@ export default function DirectorWorkspace() {
               <p className="text-[13px] font-semibold text-ink leading-tight tracking-[-0.01em]">
                 Director
               </p>
-              <p className="wl-label text-muted leading-tight">Always-on fleet manager</p>
+              <p className="wl-label text-muted leading-tight">
+                {isSending ? (
+                  <span className="inline-flex items-center gap-1.5 text-brand/80">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/50" />
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-brand" />
+                    </span>
+                    {streamState.isDeep
+                      ? "Deep analysis running"
+                      : streamState.phase === "replying"
+                        ? "Drafting response"
+                        : "Mission control active"}
+                  </span>
+                ) : focusedAgent ? (
+                  `Coaching ${focusedAgent.name}`
+                ) : (
+                  "Always-on fleet manager"
+                )}
+              </p>
             </div>
           </div>
-          <button
+          <ShadButton
+            type="button"
+            variant="ghost"
+            size="sm"
+            disableAnimations
             onClick={clearThread}
-            className="touch-press shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] uppercase tracking-[0.18em] text-muted hover:text-rose-600 hover:bg-rose-500/8 transition-colors cursor-pointer"
+            className="touch-press shrink-0 text-[10px] uppercase tracking-[0.18em] text-muted hover:text-rose-600 hover:bg-rose-500/8 h-auto px-2.5 py-1.5"
             aria-label="Clear thread"
           >
             <Trash2 className="w-3 h-3" />
             <span>Clear</span>
-          </button>
+          </ShadButton>
         </div>
       )}
 
@@ -458,7 +876,7 @@ export default function DirectorWorkspace() {
       <div ref={scrollRef} className="flex-1 min-h-0 scroll-viewport px-4 py-8 space-y-6">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-brand/20 to-brand/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-md bg-gradient-to-br from-brand/20 to-brand/10 flex items-center justify-center">
               <Loader2 className="w-5 h-5 animate-spin text-brand" />
             </div>
             <p className="text-[11px] text-muted uppercase tracking-[0.2em]">Loading thread</p>
@@ -471,36 +889,53 @@ export default function DirectorWorkspace() {
             className="flex flex-col items-center text-center pt-8 pb-4 max-w-lg mx-auto"
           >
             {/* Hero identity */}
-            <div className="relative mb-6">
+            <div className={cn("relative mb-6", WL_DIRECTOR_CLASSES.heroOrb)}>
               <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-brand/20 to-brand/5 blur-2xl scale-125" />
-              <span className="flex w-16 h-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-xl shadow-brand/30 relative overflow-hidden">
+              <span className="flex w-16 h-16 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-xl shadow-brand/30 relative overflow-hidden">
                 <Compass className="w-8 h-8 relative z-10" />
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/25 to-transparent" />
               </span>
             </div>
 
+            <p className="text-[10px] uppercase tracking-[0.22em] text-brand/70 font-semibold mb-2">
+              {DIRECTOR_EMPTY_HERO.eyebrow}
+            </p>
+            <h2 className="text-[22px] sm:text-[26px] font-bold text-ink tracking-[-0.03em] leading-tight mb-2">
+              {DIRECTOR_EMPTY_HERO.title}{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand to-brand-deep">
+                {DIRECTOR_EMPTY_HERO.titleAccent}
+              </span>
+            </h2>
+
             {agents.length > 0 ? (
-              <p className="text-[12px] text-muted mb-4">
-                {agents.length} agent{agents.length === 1 ? "" : "s"} active — ask me anything about
-                your fleet.
+              <p className="text-[13px] text-muted mb-5 leading-relaxed max-w-md">
+                {DIRECTOR_EMPTY_HERO.subtitleWithFleet(agents.length)}
               </p>
             ) : (
-              <p className="text-[12px] text-ink/50 mb-4">
-                Plan your fleet, hire agents, coach performance, and analyze results.
+              <p className="text-[13px] text-muted mb-5 leading-relaxed max-w-md">
+                {DIRECTOR_EMPTY_HERO.subtitleNoFleet}
               </p>
             )}
 
             {/* Starter prompts */}
             <div className="flex flex-wrap justify-center gap-2 w-full">
-              {STARTER_PROMPTS.map((p) => (
-                <button
-                  key={p}
-                  onClick={() => send(p)}
-                  className="touch-press group inline-flex items-center gap-2 text-left text-[11px] text-ink/80 rounded-full border border-brand/15 bg-white/50 dark:bg-black/10 px-3 py-2 hover:border-brand/35 hover:bg-white/70 dark:hover:bg-black/20 transition-all cursor-pointer"
+              {DIRECTOR_STARTER_PROMPTS.map((p) => (
+                <ShadButton
+                  key={p.id}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disableAnimations
+                  title={p.intent}
+                  onClick={() => send(p.label)}
+                  className={cn(
+                    "touch-press group h-auto text-left text-[11px] text-ink/80 px-3 py-2 gap-2",
+                    WL_DIRECTOR_CLASSES.starterChip,
+                  )}
                 >
-                  <span className="min-w-0">{p}</span>
+                  <span className="min-w-0">{p.label}</span>
                   <ArrowUpRight className="w-3 h-3 shrink-0 text-brand/50 group-hover:text-brand transition-colors" />
-                </button>
+                </ShadButton>
               ))}
             </div>
           </motion.div>
@@ -516,11 +951,17 @@ export default function DirectorWorkspace() {
               {/* Director avatar for assistant */}
               {m.role === "director" && (
                 <div className="flex items-center gap-2 mb-2 ml-1">
-                  <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15">
+                  <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15">
                     <Compass className="w-3.5 h-3.5" />
                   </span>
                   <span className="text-[10px] text-muted uppercase tracking-[0.14em] font-medium">
                     Director
+                    {m.coachAgentName ? (
+                      <span className="text-brand/70 normal-case tracking-normal">
+                        {" "}
+                        · coaching {m.coachAgentName}
+                      </span>
+                    ) : null}
                   </span>
                 </div>
               )}
@@ -528,10 +969,13 @@ export default function DirectorWorkspace() {
               {/* Message bubble */}
               <div
                 className={cn(
-                  "max-w-[75%] min-w-[200px] rounded-2xl px-5 py-4 whitespace-pre-wrap break-words relative",
+                  "max-w-[75%] min-w-[200px] rounded-md px-5 py-4 whitespace-pre-wrap break-words relative",
                   m.role === "operator"
-                    ? "bg-gradient-to-br from-brand to-brand-deep text-white rounded-br-sm shadow-lg shadow-brand/25"
-                    : "bg-paper/95 dark:bg-black/40 backdrop-blur-sm border border-brand/10 text-ink dark:text-foreground rounded-bl-sm shadow-sm",
+                    ? cn(WL_DIRECTOR_CLASSES.operatorBubble, "text-white rounded-br-sm")
+                    : cn(
+                        WL_DIRECTOR_CLASSES.directorBubble,
+                        "text-ink dark:text-foreground rounded-bl-sm",
+                      ),
                 )}
               >
                 {/* Reasoning display - Claude style */}
@@ -544,7 +988,154 @@ export default function DirectorWorkspace() {
                   />
                 )}
 
-                <p className="text-[14px] leading-relaxed">{m.content}</p>
+                {m.role === "director" ? (
+                  <DirectorMessageBody content={m.content} />
+                ) : (
+                  <p className="text-[14px] leading-relaxed">{m.content}</p>
+                )}
+
+                {m.role === "director" && m.proposals && (
+                  <div className="mt-3 pt-3 border-t border-black/5 space-y-2">
+                    {(() => {
+                      const workflowTotal =
+                        m.proposals.actions.length + m.proposals.integrationJobs.length;
+                      const stepLabelFor = (step?: number) =>
+                        step && workflowTotal > 1 ? `Step ${step} of ${workflowTotal}` : undefined;
+                      return (
+                        <>
+                          {resolveCoachAgentId(m) &&
+                            m.proposals.changes.map((c, i) => {
+                              const key = `${m.id}:change:${i}`;
+                              const agentId = resolveCoachAgentId(m)!;
+                              return (
+                                <ProposalCard
+                                  key={key}
+                                  icon={<SlidersHorizontal className="w-3.5 h-3.5" />}
+                                  tone="brand"
+                                  title={c.label}
+                                  detail={c.summary || c.value}
+                                  state={resolved[key]}
+                                  busy={busyKey === key}
+                                  busyLabel={busyKey === key ? busyLabel : undefined}
+                                  approveLabel="Apply"
+                                  onApprove={() => approveChange(key, c, agentId)}
+                                  onDismiss={() => markResolved(key, "dismissed")}
+                                />
+                              );
+                            })}
+                          {resolveCoachAgentId(m) &&
+                            m.proposals.toolToggles.map((t, i) => {
+                              const key = `${m.id}:toggle:${i}`;
+                              const agentId = resolveCoachAgentId(m)!;
+                              return (
+                                <ProposalCard
+                                  key={key}
+                                  icon={<Power className="w-3.5 h-3.5" />}
+                                  tone="emerald"
+                                  title={`${t.enable ? "Turn on" : "Turn off"} ${t.label}`}
+                                  detail={t.reason}
+                                  state={resolved[key]}
+                                  busy={busyKey === key}
+                                  busyLabel={busyKey === key ? busyLabel : undefined}
+                                  approveLabel={t.enable ? "Enable" : "Disable"}
+                                  onApprove={() => approveToggle(key, t, agentId)}
+                                  onDismiss={() => markResolved(key, "dismissed")}
+                                />
+                              );
+                            })}
+                          {m.proposals.actions.map((a, i) => {
+                            const key = `${m.id}:action:${i}`;
+                            const agentId = resolveActionAgentId(a, m);
+                            if (!agentId) return null;
+                            const aIcon =
+                              a.kind === "make_call" ? (
+                                <Phone className="w-3.5 h-3.5" />
+                              ) : a.kind === "send_text_message" ? (
+                                <MessageCircle className="w-3.5 h-3.5" />
+                              ) : (
+                                <Mail className="w-3.5 h-3.5" />
+                              );
+                            const detail = [
+                              a.to
+                                ? `To: ${a.customerName ? `${a.customerName} · ` : ""}${a.to}`
+                                : "",
+                              a.subject ? `Subject: ${a.subject}` : "",
+                              a.body || a.context || "",
+                            ]
+                              .filter(Boolean)
+                              .join("\n");
+                            return (
+                              <ProposalCard
+                                key={key}
+                                icon={aIcon}
+                                tone="amber"
+                                title={a.label}
+                                detail={detail}
+                                stepLabel={stepLabelFor(a.step)}
+                                state={resolved[key]}
+                                busy={busyKey === key}
+                                busyLabel={busyKey === key ? busyLabel : undefined}
+                                approveLabel={
+                                  a.kind === "make_call"
+                                    ? "Place call"
+                                    : a.kind === "send_text_message"
+                                      ? "Send text"
+                                      : "Send email"
+                                }
+                                consent={
+                                  a.kind === "make_call"
+                                    ? {
+                                        checked: !!callConsent[key],
+                                        onChange: (v) =>
+                                          setCallConsent((prev) => ({ ...prev, [key]: v })),
+                                      }
+                                    : undefined
+                                }
+                                onApprove={() => approveAction(key, a, agentId)}
+                                onDismiss={() => markResolved(key, "dismissed")}
+                              />
+                            );
+                          })}
+                          {m.proposals.integrationJobs.map((job, i) => {
+                            const key = `${m.id}:integration:${i}`;
+                            const catalogEntry = AGENT_TOOL_CATALOG.find(
+                              (c) => c.name === job.tool,
+                            );
+                            const integrationKey = catalogEntry?.integration as
+                              | ToolIntegration
+                              | undefined;
+                            const jobIcon = integrationKey ? (
+                              (INTEGRATION_STYLES[integrationKey]?.icon ?? (
+                                <SearchIcon className="w-3.5 h-3.5" />
+                              ))
+                            ) : (
+                              <SearchIcon className="w-3.5 h-3.5" />
+                            );
+                            const agentId = job.agentId || resolveCoachAgentId(m) || focusAgentId;
+                            return (
+                              <ProposalCard
+                                key={key}
+                                icon={jobIcon}
+                                tone="brand"
+                                title={job.label}
+                                detail={[job.summary, job.query ? `Query: ${job.query}` : ""]
+                                  .filter(Boolean)
+                                  .join("\n")}
+                                stepLabel={stepLabelFor(job.step)}
+                                state={resolved[key]}
+                                busy={busyKey === key}
+                                busyLabel={busyKey === key ? busyLabel : undefined}
+                                approveLabel="Run"
+                                onApprove={() => approveIntegration(key, job, agentId)}
+                                onDismiss={() => markResolved(key, "dismissed")}
+                              />
+                            );
+                          })}
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
 
                 {/* Timestamp */}
                 {m.createdAt && (
@@ -571,17 +1162,70 @@ export default function DirectorWorkspace() {
                   {m.suggestions.map((s, i) => {
                     const Icon = SUGGESTION_ICON[s.kind];
                     return (
-                      <button
+                      <ShadButton
                         key={`${s.kind}-${i}`}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disableAnimations
                         onClick={() => runSuggestion(s)}
-                        className="group inline-flex items-center gap-1.5 text-[11px] font-medium text-brand rounded-full border border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10 hover:border-brand/40 hover:-translate-y-px active:scale-95 transition-all duration-300 cursor-pointer"
+                        className="group h-auto text-[11px] font-medium text-brand rounded-full border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10 hover:border-brand/40"
                       >
                         <Icon className="w-3 h-3" />
                         {s.label}
                         <ArrowUpRight className="w-2.5 h-2.5 opacity-0 -ml-1 group-hover:opacity-100 group-hover:ml-0 transition-all duration-200" />
-                      </button>
+                      </ShadButton>
                     );
                   })}
+                </div>
+              )}
+
+              {m.researchSources && m.researchSources.length > 0 && (
+                <div className="mt-3 ml-1 flex flex-wrap gap-2 max-w-[560px]">
+                  <span className="text-[10px] uppercase tracking-[0.25em] text-muted w-full">
+                    Web sources
+                  </span>
+                  {m.researchSources.map((s, i) =>
+                    s.uri ? (
+                      <a
+                        key={`${s.uri}-${i}`}
+                        href={s.uri}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] rounded-full border border-brand/20 bg-brand/[0.04] px-3 py-1 text-brand hover:bg-brand/10"
+                      >
+                        {s.title || "Source"}
+                      </a>
+                    ) : (
+                      <span
+                        key={`${s.title}-${i}`}
+                        className="text-[11px] rounded-full border border-black/10 px-3 py-1 text-muted"
+                      >
+                        {s.title || "Source"}
+                      </span>
+                    ),
+                  )}
+                </div>
+              )}
+
+              {m.clarifyingQuestions && m.clarifyingQuestions.length > 0 && (
+                <div className="mt-3 ml-1 flex flex-wrap gap-2 max-w-[560px]">
+                  {m.clarifyingQuestions.map((q) => (
+                    <ShadButton
+                      key={q}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disableAnimations
+                      onClick={() => {
+                        setInput(q.replace(/\?$/, "") + " — ");
+                        inputRef.current?.focus();
+                      }}
+                      className="h-auto text-[11px] text-left rounded-full border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10"
+                    >
+                      {q}
+                    </ShadButton>
+                  ))}
                 </div>
               )}
 
@@ -702,36 +1346,22 @@ export default function DirectorWorkspace() {
           ))
         )}
 
-        {/* Live streaming indicator — shows pipeline + thinking */}
+        {/* Live streaming — mission control panel */}
         {isSending && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-start"
-          >
-            <div className="flex items-center gap-2 mb-2 ml-1">
-              <span className="wl-orbit" data-active="true">
-                <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-full bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15">
-                  <Compass className="w-3.5 h-3.5" />
-                </span>
-              </span>
-              <span className="wl-label text-muted">Director</span>
-            </div>
-            <div className="wl-panel rounded-2xl rounded-bl-md px-5 py-4 space-y-3">
-              {/* Pipeline visualization */}
-              {streamPipeline.length > 0 && <LiveTaskPipeline steps={streamPipeline} />}
-              {/* Live thinking text */}
-              {streamState.phase === "thinking" && streamState.thinkingText && (
-                <div className="text-[11px] text-muted/70 leading-relaxed max-h-32 overflow-y-auto border-t border-brand/8 pt-2 mt-2">
-                  <p className="whitespace-pre-wrap line-clamp-6">
-                    {streamState.thinkingText.slice(-500)}
-                  </p>
-                </div>
-              )}
-              {/* Fallback pulsing indicator */}
-              {streamPipeline.length === 0 && <LiveThinkingIndicator isDeep={false} />}
-            </div>
-          </motion.div>
+          <DirectorLiveSession
+            phase={streamState.phase === "idle" ? "connecting" : streamState.phase}
+            isDeep={streamState.isDeep}
+            model={streamState.model}
+            coachAgentName={focusedAgent?.name}
+            thinkingText={streamState.thinkingText}
+            thinkingDurationMs={streamState.thinkingDurationMs}
+            replyPreview={
+              typeof streamState.reply?.reply === "string" ? streamState.reply.reply : undefined
+            }
+            pipelineSteps={streamPipeline}
+            integrationActions={integrationLiveActions}
+            liveSteps={liveSteps}
+          />
         )}
       </div>
 
@@ -772,11 +1402,11 @@ export default function DirectorWorkspace() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 4, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute bottom-full left-0 right-0 mb-2 rounded-xl bg-white/95 dark:bg-[#1a1225]/95 backdrop-blur-md border border-brand/15 shadow-xl shadow-brand/10 p-2 z-20"
+                  className="absolute bottom-full left-0 right-0 mb-2 rounded-md bg-popover text-popover-foreground backdrop-blur-md border border-border shadow-2xl p-2 z-20"
                 >
-                  <div className="flex items-center gap-2 px-3 py-2 border-b border-brand/8 mb-1">
-                    <Plug className="w-3.5 h-3.5 text-brand/60" />
-                    <span className="text-[10px] uppercase tracking-[0.16em] text-ink/50 font-medium">
+                  <div className="flex items-center gap-2 px-3 py-2 border-b border-border mb-1">
+                    <Plug className="w-3.5 h-3.5 text-brand" />
+                    <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
                       Connectors
                     </span>
                   </div>
@@ -784,19 +1414,21 @@ export default function DirectorWorkspace() {
                     {CONNECTOR_CATALOG.map((c) => (
                       <div
                         key={c.id}
-                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg group"
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-md hover:bg-muted/40 group"
                       >
-                        <span className="w-7 h-7 rounded-lg bg-brand/10 flex items-center justify-center shrink-0">
+                        <span className="w-7 h-7 rounded-md bg-brand/15 flex items-center justify-center shrink-0">
                           <c.icon className="w-3.5 h-3.5 text-brand" />
                         </span>
                         <div className="min-w-0">
-                          <p className="text-[11px] font-medium text-ink truncate">{c.label}</p>
-                          <p className="text-[9px] text-ink/40 truncate">{c.desc}</p>
+                          <p className="text-[11px] font-semibold text-foreground truncate">
+                            {c.label}
+                          </p>
+                          <p className="text-[9px] text-muted-foreground truncate">{c.desc}</p>
                         </div>
                       </div>
                     ))}
                   </div>
-                  <div className="mt-1 pt-1.5 border-t border-brand/8">
+                  <div className="mt-1 pt-1.5 border-t border-border">
                     <a
                       href="/integrations"
                       className="flex items-center gap-2 px-3 py-2 text-[11px] font-medium text-brand hover:text-brand/80 transition-colors"
@@ -811,29 +1443,53 @@ export default function DirectorWorkspace() {
           </div>
 
           {/* Main composer — specular depth treatment */}
-          <div className="relative wl-panel-elevated transition-all duration-300 focus-within:shadow-[0_12px_48px_rgba(139,63,214,0.08),inset_0_1px_0_rgba(255,255,255,0.9)]">
-            <textarea
+          <div
+            className={cn(
+              "relative transition-all duration-300",
+              WL_DIRECTOR_CLASSES.composerDock,
+              isSending && "ring-1 ring-brand/20",
+            )}
+          >
+            {isSending && (
+              <div className="absolute inset-x-0 top-0 h-0.5 overflow-hidden rounded-t-[inherit]">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-brand/20 via-brand to-brand/20"
+                  initial={{ x: "-100%" }}
+                  animate={{ x: "100%" }}
+                  transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+                />
+              </div>
+            )}
+            <Textarea
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={onKeyDown}
               rows={3}
-              placeholder="Message Director…"
-              className="w-full resize-none bg-transparent text-[14px] text-ink dark:text-foreground placeholder:text-muted/50 outline-none px-5 py-4 leading-relaxed"
+              disabled={isSending}
+              placeholder={
+                isSending
+                  ? "Director is working…"
+                  : focusedAgent
+                    ? `Coach ${focusedAgent.name} via Director…`
+                    : "Message Director…"
+              }
+              className="w-full resize-none border-0 bg-transparent shadow-none text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none px-5 py-4 leading-relaxed disabled:opacity-60 focus-visible:ring-0"
             />
 
             {/* Bottom bar with actions */}
             <div className="flex items-center justify-between px-4 pb-3">
               <div className="flex items-center gap-2">
                 {/* Left side - connectors toggle */}
-                <button
+                <ShadButton
                   type="button"
+                  variant="outline"
+                  size="sm"
+                  disableAnimations
                   onClick={() => setConnectorsOpen(!connectorsOpen)}
                   className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer",
-                    connectorsOpen
-                      ? "bg-brand/10 text-brand border border-brand/30"
-                      : "text-ink/50 hover:text-brand hover:bg-brand/5 border border-transparent",
+                    "h-auto gap-1.5 px-3 py-1.5 rounded-md text-[11px]",
+                    connectorsOpen && "bg-brand/10 text-brand border-brand/30",
                   )}
                 >
                   <Plug className="w-3.5 h-3.5" />
@@ -841,7 +1497,147 @@ export default function DirectorWorkspace() {
                   <ChevronDown
                     className={cn("w-3 h-3 transition-transform", connectorsOpen && "rotate-180")}
                   />
-                </button>
+                </ShadButton>
+
+                {/* Coach — select agent to configure */}
+                <div className="relative" ref={coachRef}>
+                  <ShadButton
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disableAnimations
+                    onClick={() => setCoachOpen(!coachOpen)}
+                    className={cn(
+                      "h-auto gap-1.5 px-3 py-1.5 rounded-md text-[11px]",
+                      (coachOpen || focusAgentId) && "bg-brand/10 text-brand border-brand/30",
+                    )}
+                  >
+                    <Bot className="w-3.5 h-3.5" />
+                    <span>{focusedAgent ? focusedAgent.name : "Coach"}</span>
+                    <ChevronDown
+                      className={cn("w-3 h-3 transition-transform", coachOpen && "rotate-180")}
+                    />
+                  </ShadButton>
+                  <AnimatePresence>
+                    {coachOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 4, scale: 0.98 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute bottom-full left-0 mb-2 w-56 rounded-md bg-popover text-popover-foreground backdrop-blur-md border border-border shadow-2xl p-1 z-20 max-h-[40vh] overflow-y-auto"
+                      >
+                        <ShadButton
+                          type="button"
+                          variant="ghost"
+                          disableAnimations
+                          onClick={() => {
+                            onFocusAgentChange?.(null);
+                            setCoachOpen(false);
+                          }}
+                          className={cn(
+                            "w-full justify-start gap-2 px-3 py-2 h-auto text-[11px] rounded-md",
+                            !focusAgentId && "bg-brand/8 text-brand font-medium",
+                          )}
+                        >
+                          Fleet only
+                        </ShadButton>
+                        {agents.map((a) => (
+                          <ShadButton
+                            key={a.id}
+                            type="button"
+                            variant="ghost"
+                            disableAnimations
+                            onClick={() => {
+                              onFocusAgentChange?.(a.id);
+                              setCoachOpen(false);
+                            }}
+                            className={cn(
+                              "w-full justify-start gap-2 px-3 py-2 h-auto rounded-md",
+                              focusAgentId === a.id && "bg-brand/8",
+                            )}
+                          >
+                            <span className="w-6 h-6 rounded-full bg-brand/10 text-brand text-[10px] font-bold flex items-center justify-center shrink-0">
+                              {a.name.slice(0, 1).toUpperCase()}
+                            </span>
+                            <span className="min-w-0">
+                              <span className="block text-[11px] font-semibold truncate">
+                                {a.name}
+                              </span>
+                              <span className="block text-[9px] text-muted-foreground truncate">
+                                {a.role?.replace(/_/g, " ") || "Agent"}
+                              </span>
+                            </span>
+                          </ShadButton>
+                        ))}
+                        {agents.length === 0 && (
+                          <p className="px-3 py-2 text-[10px] text-muted-foreground">
+                            Deploy an agent first
+                          </p>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {focusAgentId && (
+                  <div className="relative" ref={toolsRef}>
+                    <ShadButton
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disableAnimations
+                      onClick={() => setToolsOpen(!toolsOpen)}
+                      className={cn(
+                        "h-auto gap-1.5 px-3 py-1.5 rounded-md text-[11px]",
+                        toolsOpen && "bg-brand/10 text-brand border-brand/30",
+                      )}
+                    >
+                      <Wrench className="w-3.5 h-3.5" />
+                      <span>Abilities</span>
+                      {enabledTools.length > 0 && (
+                        <span className="text-[9px] opacity-70">({enabledTools.length})</span>
+                      )}
+                      <ChevronDown
+                        className={cn("w-3 h-3 transition-transform", toolsOpen && "rotate-180")}
+                      />
+                    </ShadButton>
+                    <AnimatePresence>
+                      {toolsOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 4, scale: 0.98 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute bottom-full left-0 mb-2 w-64 rounded-md bg-popover text-popover-foreground backdrop-blur-md border border-border shadow-2xl p-2 z-20 max-h-[40vh] overflow-y-auto"
+                        >
+                          <p className="px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+                            {enabledTools.length > 0
+                              ? `${enabledTools.length} active for ${focusedAgent?.name || "agent"}`
+                              : "No abilities enabled"}
+                          </p>
+                          {enabledTools.length === 0 ? (
+                            <p className="px-2 py-2 text-[11px] text-muted-foreground">
+                              Ask the Director to turn on capabilities.
+                            </p>
+                          ) : (
+                            enabledTools.map((tool) => {
+                              const meta = AGENT_TOOL_CATALOG.find((t) => t.name === tool);
+                              return (
+                                <div
+                                  key={tool}
+                                  className="px-2 py-1.5 text-[11px] text-foreground rounded-md"
+                                >
+                                  {meta?.label || tool}
+                                </div>
+                              );
+                            })
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
 
                 {/* Hidden file input */}
                 <Input
@@ -854,15 +1650,16 @@ export default function DirectorWorkspace() {
 
                 {/* Attachments dropdown toggle */}
                 <div className="relative" ref={attachmentsRef}>
-                  <button
+                  <ShadButton
                     type="button"
+                    variant="outline"
+                    size="sm"
+                    disableAnimations
                     onClick={() => setAttachmentsOpen(!attachmentsOpen)}
                     disabled={isUploading || isSending}
                     className={cn(
-                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer disabled:opacity-40",
-                      attachmentsOpen
-                        ? "bg-brand/10 text-brand border border-brand/30"
-                        : "text-ink/50 hover:text-brand hover:bg-brand/5 border border-transparent",
+                      "h-auto gap-1.5 px-3 py-1.5 rounded-md text-[11px]",
+                      attachmentsOpen && "bg-brand/10 text-brand border-brand/30",
                     )}
                   >
                     {isUploading ? (
@@ -877,7 +1674,7 @@ export default function DirectorWorkspace() {
                         attachmentsOpen && "rotate-180",
                       )}
                     />
-                  </button>
+                  </ShadButton>
 
                   <AnimatePresence>
                     {attachmentsOpen && (
@@ -886,55 +1683,70 @@ export default function DirectorWorkspace() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 4, scale: 0.98 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute bottom-full left-0 mb-2 w-48 rounded-xl bg-white/95 dark:bg-[#1a1225]/95 backdrop-blur-md border border-brand/15 shadow-xl shadow-brand/10 p-1 z-20"
+                        className="absolute bottom-full left-0 mb-2 w-48 rounded-md bg-popover text-popover-foreground backdrop-blur-md border border-border shadow-2xl p-1 z-20"
                       >
-                        <button
+                        <ShadButton
+                          type="button"
+                          variant="ghost"
+                          disableAnimations
                           onClick={() => {
                             setAttachmentsOpen(false);
                             fileInputRef.current?.click();
                           }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-left rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                          className="w-full justify-start gap-2 px-3 py-2 h-auto rounded-md"
                         >
-                          <FileText className="w-4 h-4 text-brand/70" />
+                          <FileText className="w-4 h-4 text-brand" />
                           <div>
-                            <span className="block text-[11px] font-medium text-ink dark:text-white">
+                            <span className="block text-[11px] font-semibold text-foreground">
                               Document
                             </span>
-                            <span className="block text-[9px] text-muted">PDFs & files</span>
+                            <span className="block text-[9px] text-muted-foreground">
+                              PDFs & files
+                            </span>
                           </div>
-                        </button>
+                        </ShadButton>
 
-                        <button
+                        <ShadButton
+                          type="button"
+                          variant="ghost"
+                          disableAnimations
                           onClick={() => {
                             setAttachmentsOpen(false);
                             toastSuccess("Added to knowledge", "Global context updated");
                           }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-left rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                          className="w-full justify-start gap-2 px-3 py-2 h-auto rounded-md"
                         >
-                          <Brain className="w-4 h-4 text-brand/70" />
+                          <Brain className="w-4 h-4 text-brand" />
                           <div>
-                            <span className="block text-[11px] font-medium text-ink dark:text-white">
+                            <span className="block text-[11px] font-semibold text-foreground">
                               Context
                             </span>
-                            <span className="block text-[9px] text-muted">Add a global rule</span>
+                            <span className="block text-[9px] text-muted-foreground">
+                              Add a global rule
+                            </span>
                           </div>
-                        </button>
+                        </ShadButton>
 
-                        <button
+                        <ShadButton
+                          type="button"
+                          variant="ghost"
+                          disableAnimations
                           onClick={() => {
                             setAttachmentsOpen(false);
                             toastSuccess("Skill learned", "New ability registered");
                           }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-left rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                          className="w-full justify-start gap-2 px-3 py-2 h-auto rounded-md"
                         >
-                          <GraduationCap className="w-4 h-4 text-brand/70" />
+                          <GraduationCap className="w-4 h-4 text-brand" />
                           <div>
-                            <span className="block text-[11px] font-medium text-ink dark:text-white">
+                            <span className="block text-[11px] font-semibold text-foreground">
                               Instruction
                             </span>
-                            <span className="block text-[9px] text-muted">Add a playbook</span>
+                            <span className="block text-[9px] text-muted-foreground">
+                              Add a playbook
+                            </span>
                           </div>
-                        </button>
+                        </ShadButton>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -944,11 +1756,14 @@ export default function DirectorWorkspace() {
               {/* Right side - send */}
 
               <div className="flex items-center gap-2">
-                <button
+                <ShadButton
+                  type="button"
+                  size="sm"
+                  disableAnimations
                   onClick={() => send(input)}
                   disabled={!input.trim() || isSending}
-                  className="touch-press inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[12px] font-semibold shadow-md shadow-brand/25 disabled:opacity-40 disabled:shadow-none enabled:hover:shadow-lg enabled:hover:shadow-brand/30 transition-all duration-200 cursor-pointer"
                   aria-label="Send message"
+                  className="touch-press gap-2 px-4 py-2 h-auto text-[12px] font-semibold shadow-md shadow-brand/25"
                 >
                   {isSending ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -956,7 +1771,7 @@ export default function DirectorWorkspace() {
                     <Send className="w-4 h-4" />
                   )}
                   <span>Send</span>
-                </button>
+                </ShadButton>
               </div>
             </div>
           </div>

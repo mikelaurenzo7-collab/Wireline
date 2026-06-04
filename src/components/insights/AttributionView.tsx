@@ -66,7 +66,7 @@ export default function AttributionView({ days }: { days: number }) {
           accent="#8B3FD6"
         />
       </div>
-      <div className="rounded-2xl glass border border-black/8 overflow-hidden app-table-scroll">
+      <div className="rounded-md wl-panel border border-black/8 overflow-hidden app-table-scroll">
         <table className="w-full text-sm">
           <thead className="bg-black/3">
             <tr className="text-left font-mono text-[10px] uppercase tracking-[0.2em] text-muted">

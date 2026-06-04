@@ -28,6 +28,7 @@ import { useState } from "react";
 import { Sliders, RefreshCw, Info } from "lucide-react";
 import { cn } from "../lib/utils";
 import { Slider } from "./ui/shadcn/Slider";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 const DEFAULTS = {
   voice_stability: 0.5,
@@ -168,15 +169,17 @@ export default function VoiceFineTuningPanel({
   };
 
   return (
-    <div className="rounded-lg border border-white/8 bg-black/[0.02]">
+    <div className="rounded-md border border-white/8 bg-black/[0.02]">
       {/* Header — click to expand. Stays compact when closed; the
           "modified" pip surfaces a small visual cue when the operator
           has tuned away from defaults without forcing them to open
           the panel. */}
-      <button
+      <ShadButton
         type="button"
+        variant="ghost"
+        disableAnimations
         onClick={() => setAdvancedOpen((o) => !o)}
-        className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left"
+        className="w-full h-auto justify-between gap-2 px-3 py-2 rounded-none hover:bg-white/4"
         aria-expanded={advancedOpen}
       >
         <span className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.3em] text-ink/40">
@@ -193,7 +196,7 @@ export default function VoiceFineTuningPanel({
         <span className="text-[9px] uppercase tracking-[0.25em] text-ink/40">
           {advancedOpen ? "Hide advanced" : "Show advanced"}
         </span>
-      </button>
+      </ShadButton>
 
       {advancedOpen && (
         <div className="px-3 pb-3 pt-1 space-y-3 border-t border-white/8">
@@ -240,15 +243,18 @@ export default function VoiceFineTuningPanel({
                 Lifts loudness and presence. Turn off for soft, intimate voices.
               </p>
             </div>
-            <button
+            <ShadButton
               type="button"
+              variant="ghost"
+              size="icon"
+              disableAnimations
               onClick={() => {
                 const next = !speakerBoost;
                 onLocalChange({ voice_speaker_boost: next });
                 onCommit({ voice_speaker_boost: next });
               }}
               className={cn(
-                "shrink-0 w-10 h-5 rounded-full border transition-colors flex items-center px-0.5 cursor-pointer",
+                "shrink-0 w-10 h-5 rounded-full border p-0.5",
                 speakerBoost ? "bg-brand/30 border-brand/50" : "bg-white/5 border-white/15",
               )}
               aria-pressed={speakerBoost}
@@ -256,11 +262,11 @@ export default function VoiceFineTuningPanel({
             >
               <span
                 className={cn(
-                  "w-4 h-4 rounded-full transition-transform",
+                  "block w-4 h-4 rounded-full transition-transform",
                   speakerBoost ? "translate-x-[18px] bg-brand" : "translate-x-0 bg-muted/60",
                 )}
               />
-            </button>
+            </ShadButton>
           </div>
 
           {/* Reset link — sits below the controls so it's discoverable
@@ -268,21 +274,18 @@ export default function VoiceFineTuningPanel({
               Disabled when already at defaults — the brand-pip in the
               header is the user's signal that anything is dirty. */}
           <div className="flex items-center justify-end pt-1">
-            <button
+            <ShadButton
               type="button"
+              variant="ghost"
+              size="sm"
+              disableAnimations
               onClick={resetToDefaults}
               disabled={atDefaults}
-              className={cn(
-                "disabled:opacity-50 disabled:cursor-not-allowed",
-                "inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.25em] transition-colors",
-                atDefaults
-                  ? "text-ink/40 cursor-not-allowed"
-                  : "text-muted/80 hover:text-brand cursor-pointer",
-              )}
+              className="h-auto px-0 text-[10px] uppercase tracking-[0.25em] text-muted/80 hover:text-brand disabled:text-ink/40"
             >
               <RefreshCw className="w-2.5 h-2.5" />
               Reset to defaults
-            </button>
+            </ShadButton>
           </div>
         </div>
       )}

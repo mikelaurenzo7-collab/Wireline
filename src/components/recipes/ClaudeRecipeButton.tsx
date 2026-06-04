@@ -10,6 +10,7 @@ import { useState } from "react";
 import { AnimatePresence } from "motion/react";
 import { Sparkles } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 import { RECIPE_META, type Recipe } from "./types";
 import { RecipeModal } from "./RecipeModal";
 
@@ -37,23 +38,26 @@ export function ClaudeRecipeButton({
 
   const buttonStyles = {
     default:
-      "px-4 py-2.5 rounded-full glass border border-brand/30 text-[11px] uppercase tracking-[0.3em] text-brand hover:bg-brand/10 hover:border-brand/60 transition-all flex items-center gap-2",
+      "rounded-full border-brand/30 text-[11px] uppercase tracking-[0.3em] text-brand hover:bg-brand/10 hover:border-brand/60",
     ghost:
-      "px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors flex items-center gap-1.5",
-    compact:
-      "w-9 h-9 rounded-full glass border border-brand/30 flex items-center justify-center text-brand hover:bg-brand/10 transition-all",
+      "rounded-full text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand h-auto px-3 py-1.5",
+    compact: "w-9 h-9 rounded-full border-brand/30 text-brand hover:bg-brand/10 after:hidden",
   };
 
   return (
     <>
-      <button
+      <ShadButton
+        type="button"
+        disableAnimations
+        variant={variant === "ghost" ? "ghost" : "outline"}
+        size={variant === "compact" ? "icon" : "sm"}
         onClick={() => setOpen(true)}
         className={cn(buttonStyles[variant], className)}
         title={meta.title}
       >
         <Sparkles className="w-3.5 h-3.5" />
         {variant !== "compact" && (label ?? meta.title)}
-      </button>
+      </ShadButton>
       <AnimatePresence>
         {open && (
           <RecipeModal

@@ -90,7 +90,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
     <div className="space-y-4">
       {/* Voice Observability Section */}
       {hasVoiceMetrics && (
-        <div className="rounded-2xl glass border border-black/8 p-5">
+        <div className="rounded-md wl-panel border border-black/8 p-5">
           <div className="flex items-center gap-2 mb-4">
             <Activity className="w-4 h-4 text-brand" />
             <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
@@ -134,7 +134,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
               <div
                 key={tile.label}
                 className={cn(
-                  "rounded-xl border p-4",
+                  "rounded-md border p-4",
                   tile.healthy
                     ? "bg-emerald-50/50 border-emerald-200/50"
                     : "bg-amber-50/50 border-amber-200/50",
@@ -187,7 +187,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
           )}
 
           {!ttftHealthy && (
-            <div className="flex items-center gap-2 mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
+            <div className="flex items-center gap-2 mt-4 p-3 rounded-md bg-amber-50 border border-amber-200">
               <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
               <p className="text-xs text-amber-800">
                 TTFT p95 exceeds 1.2s alert threshold. Voice pipeline may be degraded — check
@@ -215,7 +215,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
         ].map((tile) => (
           <div
             key={tile.label}
-            className="stat-tile-mobile rounded-2xl glass border border-black/8 p-5"
+            className="stat-tile-mobile rounded-md wl-panel border border-black/8 p-5"
           >
             <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted mb-2">
               {tile.label}
@@ -227,7 +227,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-2xl glass border border-black/8 p-5">
+        <div className="rounded-md wl-panel border border-black/8 p-5">
           <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70 mb-4">
             Live-call guards (Wireline defaults)
           </p>
@@ -252,7 +252,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
           </p>
         </div>
 
-        <div className="rounded-2xl glass border border-black/8 p-5">
+        <div className="rounded-md wl-panel border border-black/8 p-5">
           <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70 mb-4">
             Slowest actions
           </p>

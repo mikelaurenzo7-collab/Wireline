@@ -55,13 +55,13 @@ describe("normalizeDirectorPlan — suggestions", () => {
     expect(plan.suggestions.map((s) => s.kind)).toEqual(["create_agent", "view_ops"]);
   });
 
-  it("only keeps open_agent_chat for agents the operator owns", () => {
+  it("only keeps focus_agent for agents the operator owns", () => {
     const plan = normalizeDirectorPlan(
       {
-        reply: "Open Ava.",
+        reply: "Coach Ava.",
         suggestions: [
-          { kind: "open_agent_chat", label: "Open Ava", agentId: "agent-1" },
-          { kind: "open_agent_chat", label: "Ghost", agentId: "does-not-exist" },
+          { kind: "focus_agent", label: "Coach Ava", agentId: "agent-1" },
+          { kind: "focus_agent", label: "Ghost", agentId: "does-not-exist" },
         ],
       },
       FLEET,

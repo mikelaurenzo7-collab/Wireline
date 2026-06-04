@@ -23,8 +23,8 @@ describe("resolveVapiSpeechPipeline", () => {
     const pipeline = resolveVapiSpeechPipeline("flux-eot");
     expect(pipeline.transcriber).toEqual(VAPI_TRANSCRIBER_FLUX_CONFIG);
     expect(pipeline.startSpeakingPlan).not.toHaveProperty("smartEndpointingPlan");
-    expect(pipeline.transcriber.eotThreshold).toBe(0.62);
-    expect(pipeline.transcriber.eotTimeoutMs).toBe(3200);
+    expect(pipeline.transcriber.eotThreshold).toBe(0.64);
+    expect(pipeline.transcriber.eotTimeoutMs).toBe(2800);
   });
 });
 

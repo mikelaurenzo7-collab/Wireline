@@ -9,6 +9,7 @@
 import { Moon, Sun, Monitor } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 import { cn } from "../lib/utils";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface Props {
   className?: string;
@@ -27,24 +28,25 @@ export default function ThemeToggle({ className, variant = "inverse" }: Props) {
         ? "Theme: dark. Switch to system."
         : "Theme: light. Switch to dark.";
 
-  const base =
-    "inline-flex items-center justify-center w-9 h-9 md:w-auto md:h-7 md:px-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
-
-  const palette =
-    variant === "inverse"
-      ? "chrome-muted hover:text-[#EFE9DC] hover:bg-white/10 focus-visible:ring-offset-transparent"
-      : "text-muted-foreground hover:text-foreground hover:bg-accent";
-
   return (
-    <button
+    <ShadButton
       type="button"
+      variant="chrome"
+      size="icon"
       onClick={toggleTheme}
       aria-label={label}
       title={label}
       data-testid="theme-toggle"
-      className={cn(base, palette, className)}
+      disableAnimations
+      className={cn(
+        "md:w-auto md:h-7 md:px-2 md:[&_svg]:size-4",
+        variant === "inverse"
+          ? "chrome-muted hover:text-[#EFE9DC] hover:bg-white/10 focus-visible:ring-offset-transparent"
+          : "text-muted-foreground hover:text-foreground hover:bg-accent",
+        className,
+      )}
     >
       <Icon className="w-4 h-4" aria-hidden />
-    </button>
+    </ShadButton>
   );
 }

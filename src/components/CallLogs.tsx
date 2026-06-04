@@ -43,6 +43,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { useToast } from "../contexts/ToastContext";
 import type { CallLog } from "../types/api";
 import { Input } from "./ui/shadcn/Input";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
   const { error: toastError } = useToast();
@@ -170,11 +171,15 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
             flush
             actions={
               hasMore && (
-                <button
+                <ShadButton
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disableAnimations
                   onClick={loadMore}
                   disabled={loadingMore}
                   aria-label="Load more calls"
-                  className="disabled:opacity-50 disabled:cursor-not-allowed text-[9px] uppercase tracking-[0.3em] text-muted hover:text-ink transition-colors flex items-center gap-1"
+                  className="h-auto px-0 text-[9px] uppercase tracking-[0.3em] text-muted hover:text-ink"
                 >
                   {loadingMore ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -182,7 +187,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                     <Signal className="w-3 h-3" />
                   )}
                   More
-                </button>
+                </ShadButton>
               )
             }
           >
@@ -203,12 +208,17 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
               <ul className="divide-y divide-white/5">
                 {filteredCalls.map((call) => (
                   <li key={call.id}>
-                    <button
+                    <ShadButton
+                      type="button"
+                      variant="ghost"
+                      disableAnimations
                       onClick={() => setSelectedCall(call)}
                       aria-label={`Open signal from ${call.customer_number || "Sim Test"}: ${call.summary || "no summary"}`}
                       className={cn(
-                        "group w-full text-left flex items-center gap-3 px-3 py-3 transition-all relative active:scale-[0.99] active:bg-white/5 duration-100",
-                        selectedCall?.id === call.id ? "bg-brand/8" : "hover:bg-white/3",
+                        "group w-full h-auto justify-start text-left flex items-center gap-3 px-3 py-3 relative active:scale-[0.99] duration-100 rounded-none",
+                        selectedCall?.id === call.id
+                          ? "bg-brand/8 hover:bg-brand/8"
+                          : "hover:bg-white/3",
                       )}
                     >
                       {/* Active indicator bar */}
@@ -222,7 +232,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                       {/* Direction icon */}
                       <div
                         className={cn(
-                          "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border transition-all",
+                          "w-9 h-9 rounded-md flex items-center justify-center shrink-0 border transition-all",
                           call.direction === "inbound"
                             ? "bg-brand/8 border-brand/25 text-brand"
                             : "bg-brand-2/8 border-brand-2/25 text-brand-2",
@@ -247,9 +257,9 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                             className={cn(
                               "shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight border",
                               (call.lead_score || 0) >= 80
-                                ? "bg-emerald-500/12 text-emerald-600 border-emerald-500/20"
+                                ? "bg-brand/12 text-brand border-brand/20"
                                 : (call.lead_score || 0) >= 50
-                                  ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                                  ? "bg-brand/8 text-brand/80 border-brand/15"
                                   : "bg-black/[0.06] text-ink/40 border-transparent",
                             )}
                           >
@@ -261,9 +271,9 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                               className={cn(
                                 "shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight border",
                                 call.qa_score >= 75
-                                  ? "bg-emerald-500/8 text-emerald-600 border-emerald-500/20"
+                                  ? "bg-brand/8 text-brand border-brand/20"
                                   : call.qa_score >= 50
-                                    ? "bg-amber-500/8 text-amber-600 border-amber-500/20"
+                                    ? "bg-brand/5 text-brand/70 border-brand/15"
                                     : "bg-rose-500/8 text-rose-500 border-rose-500/20",
                               )}
                             >
@@ -286,7 +296,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                           {formatTime(call.created_at, { hour: "2-digit", minute: "2-digit" })}
                         </div>
                       </div>
-                    </button>
+                    </ShadButton>
                   </li>
                 ))}
               </ul>
@@ -311,7 +321,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
           ) : (
             <Panel title="Call Detail" hint="Select a call" icon={FileText}>
               <div className="h-full flex flex-col items-center justify-center gap-4 text-center">
-                <div className="w-16 h-16 rounded-2xl wl-panel flex items-center justify-center">
+                <div className="w-16 h-16 rounded-md wl-panel flex items-center justify-center">
                   <FileText className="w-8 h-8 text-ink/40" />
                 </div>
                 <div>
@@ -344,9 +354,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
 function SentimentDot({ sentiment }: { sentiment?: string | null }) {
   const s = (sentiment || "neutral").toLowerCase();
   if (s === "positive")
-    return (
-      <SmilePlus className="w-3 h-3 text-emerald-400 shrink-0" aria-label="Positive sentiment" />
-    );
+    return <SmilePlus className="w-3 h-3 text-brand shrink-0" aria-label="Positive sentiment" />;
   if (s === "negative")
     return <Frown className="w-3 h-3 text-rose-400 shrink-0" aria-label="Negative sentiment" />;
   return <Meh className="w-3 h-3 text-ink/40 shrink-0" aria-label="Neutral sentiment" />;
@@ -439,23 +447,30 @@ function CallDetail({
       actions={
         <div className="flex items-center gap-1 flex-wrap justify-end">
           {onBack && (
-            <button
+            <ShadButton
+              type="button"
+              variant="outline"
+              size="sm"
+              disableAnimations
               onClick={onBack}
               aria-label="Back to call list"
-              className="lg:hidden h-7 px-2 rounded-full border glass border-black/8 dark:border-white/10 text-muted hover:text-ink hover:border-black/30 dark:hover:border-white/30 transition-all flex items-center gap-1 shrink-0 text-[9px] uppercase tracking-[0.22em]"
+              className="lg:hidden h-7 px-2 rounded-full text-[9px] uppercase tracking-[0.22em] text-muted"
             >
               <ArrowLeft className="w-2.5 h-2.5" /> Back
-            </button>
+            </ShadButton>
           )}
-          <button
+          <ShadButton
+            type="button"
+            variant={qaScore !== null ? "outline" : "default"}
+            size="sm"
+            disableAnimations
             onClick={handleScoreQa}
             disabled={scoring}
             title="Run AI quality scoring"
             className={cn(
-              "disabled:opacity-50 disabled:cursor-not-allowed",
-              "h-7 px-2.5 rounded-full border text-[9px] uppercase tracking-[0.22em] transition-all flex items-center gap-1 shrink-0",
+              "h-7 px-2.5 rounded-full text-[9px] uppercase tracking-[0.22em]",
               qaScore !== null
-                ? "glass border-black/8 dark:border-white/10 text-muted hover:text-brand hover:border-brand/30"
+                ? "text-muted hover:text-brand hover:border-brand/30"
                 : "bg-brand/10 border-brand/30 text-brand hover:bg-brand/20",
             )}
           >
@@ -465,7 +480,7 @@ function CallDetail({
               <Star className="w-2.5 h-2.5" />
             )}
             {qaScore !== null ? `QA ${qaScore}` : "Score QA"}
-          </button>
+          </ShadButton>
           <ClaudeRecipeButton recipe="coach" callId={call.id} label="Coach" />
           <ClaudeRecipeButton recipe="qualify" callId={call.id} label="Qualify" />
         </div>
@@ -486,22 +501,26 @@ function CallDetail({
           ).map((t) => {
             const active = t.id === tab;
             return (
-              <button
+              <ShadButton
                 key={t.id}
+                type="button"
+                variant="ghost"
+                size="sm"
+                disableAnimations
                 role="tab"
                 aria-selected={active}
                 aria-controls={`call-panel-${t.id}`}
                 onClick={() => setTab(t.id)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] uppercase tracking-[0.22em] transition-all",
+                  "h-auto px-2.5 py-1 rounded-full border text-[10px] uppercase tracking-[0.22em]",
                   active
-                    ? "bg-black/[0.06] border-brand/40 text-ink"
+                    ? "bg-black/[0.06] border-brand/40 text-ink hover:bg-black/[0.06]"
                     : "border-black/8 text-muted hover:text-ink",
                 )}
               >
                 <t.icon className={cn("w-3 h-3", active ? "text-brand" : "")} />
                 {t.label}
-              </button>
+              </ShadButton>
             );
           })}
           <div className="ml-auto flex items-center gap-2 text-[9px] uppercase tracking-[0.3em] text-muted">
@@ -527,7 +546,7 @@ function CallDetail({
                 transition={{ duration: 0.18 }}
                 className="h-full scroll-viewport scrollbar-hide p-4 space-y-3"
               >
-                <div className="rounded-xl wl-panel p-4">
+                <div className="rounded-md wl-panel p-4">
                   <div className="text-[9px] uppercase tracking-[0.3em] text-brand mb-2 flex items-center gap-1.5">
                     <FileText className="w-3 h-3" /> Mission summary
                   </div>
@@ -550,7 +569,7 @@ function CallDetail({
                         className={cn(
                           "capitalize text-base",
                           (call.sentiment || "neutral") === "positive"
-                            ? "text-emerald-600"
+                            ? "text-brand"
                             : (call.sentiment || "neutral") === "negative"
                               ? "text-rose-500"
                               : "text-ink/40",
@@ -563,7 +582,7 @@ function CallDetail({
                   />
                 </div>
                 {call.coaching_note && (
-                  <div className="rounded-xl glass border border-brand/20 p-4">
+                  <div className="rounded-md wl-panel border border-brand/20 p-4">
                     <div className="text-[9px] uppercase tracking-[0.3em] text-brand mb-2 flex items-center gap-1.5">
                       <MessageSquare className="w-3 h-3" /> AI coaching note
                     </div>
@@ -572,7 +591,7 @@ function CallDetail({
                 )}
                 {/* QA Scorecard */}
                 {qaScore !== null && qaBreakdown ? (
-                  <div className="rounded-xl wl-panel p-4">
+                  <div className="rounded-md wl-panel p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div
                         className="text-[9px] uppercase tracking-[0.3em] flex items-center gap-1.5"
@@ -620,12 +639,15 @@ function CallDetail({
                     )}
                   </div>
                 ) : (
-                  <button
+                  <ShadButton
+                    type="button"
+                    variant="outline"
+                    disableAnimations
                     onClick={handleScoreQa}
                     disabled={scoring}
-                    className="disabled:opacity-50 disabled:cursor-not-allowed w-full rounded-xl glass border border-brand/20 hover:border-brand/40 p-3 flex items-center gap-3 transition-all group"
+                    className="w-full h-auto rounded-md border border-brand/20 hover:border-brand/40 p-3 justify-start gap-3"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-md bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">
                       {scoring ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin text-brand" />
                       ) : (
@@ -640,7 +662,7 @@ function CallDetail({
                         Wireline AI evaluates this call across 5 quality dimensions
                       </p>
                     </div>
-                  </button>
+                  </ShadButton>
                 )}
               </motion.div>
             )}
@@ -696,7 +718,7 @@ function CallDetail({
                       <div
                         key={i}
                         className={cn(
-                          "p-3 rounded-xl border text-[12px] leading-snug max-w-[85%]",
+                          "p-3 rounded-md border text-[12px] leading-snug max-w-[85%]",
                           isAI
                             ? "bg-black/[0.03] border-black/8 text-ink mr-auto"
                             : isUser
@@ -764,7 +786,7 @@ function Stat({
 }) {
   const resolvedAccent = resolveBrandAccent(accent);
   return (
-    <div className="rounded-lg wl-panel p-2.5">
+    <div className="rounded-md wl-panel p-2.5">
       <div
         className="text-[8px] uppercase tracking-[0.28em] text-muted mb-1 flex items-center gap-1"
         style={{ color: resolvedAccent }}
@@ -834,7 +856,7 @@ function RecordingPlayer({ url }: { url: string }) {
 
   if (loadError) {
     return (
-      <div className="rounded-xl glass border border-rose-500/20 p-4 text-center space-y-2">
+      <div className="rounded-md wl-panel border border-rose-500/20 p-4 text-center space-y-2">
         <Activity className="w-5 h-5 text-rose-400 mx-auto" />
         <p className="text-[10px] text-rose-400">
           Recording could not be loaded. It may have expired.
@@ -852,7 +874,7 @@ function RecordingPlayer({ url }: { url: string }) {
   }
 
   return (
-    <div className="rounded-xl wl-panel p-4 space-y-4">
+    <div className="rounded-md wl-panel p-4 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="text-[9px] uppercase tracking-[0.3em] text-brand flex items-center gap-1.5">
@@ -919,32 +941,41 @@ function RecordingPlayer({ url }: { url: string }) {
       {/* Controls row */}
       <div className="flex items-center gap-2">
         {/* Skip back 10s */}
-        <button
+        <ShadButton
+          type="button"
+          variant="outline"
+          size="icon"
+          disableAnimations
           onClick={() => skip(-10)}
           aria-label="Rewind 10 seconds"
-          className="w-7 h-7 rounded-full wl-panel flex items-center justify-center text-muted hover:text-ink hover:border-black/20 transition-all"
+          className="w-7 h-7 rounded-full text-muted hover:text-ink"
         >
           <SkipForward className="w-3 h-3 rotate-180" />
-        </button>
+        </ShadButton>
 
-        {/* Play/Pause */}
-        <button
+        <ShadButton
+          type="button"
+          variant="default"
+          size="icon"
+          disableAnimations
           onClick={togglePlay}
           aria-label={playing ? "Pause" : "Play"}
-          className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-lg"
-          style={{ background: "linear-gradient(135deg, var(--color-brand), #7B3FA0)" }}
+          className="w-10 h-10 rounded-full bg-brand text-on-brand hover:bg-brand/90 shadow-lg hover:scale-105 active:scale-95"
         >
           {playing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
-        </button>
+        </ShadButton>
 
-        {/* Skip forward 10s */}
-        <button
+        <ShadButton
+          type="button"
+          variant="outline"
+          size="icon"
+          disableAnimations
           onClick={() => skip(10)}
           aria-label="Forward 10 seconds"
-          className="w-7 h-7 rounded-full wl-panel flex items-center justify-center text-muted hover:text-ink hover:border-black/20 transition-all"
+          className="w-7 h-7 rounded-full text-muted hover:text-ink"
         >
           <SkipForward className="w-3 h-3" />
-        </button>
+        </ShadButton>
 
         {/* Time */}
         <span className="text-[10px] font-mono text-muted tabular-nums ml-1">
@@ -957,13 +988,17 @@ function RecordingPlayer({ url }: { url: string }) {
         <div className="flex-1" />
 
         {/* Speed toggle */}
-        <button
+        <ShadButton
+          type="button"
+          variant="outline"
+          size="sm"
+          disableAnimations
           onClick={cycleSpeed}
           aria-label={`Playback speed: ${SPEEDS[speedIdx]}x`}
-          className="h-6 px-2 rounded-full wl-panel text-[9px] font-mono text-muted hover:text-ink hover:border-black/20 transition-all"
+          className="h-6 px-2 rounded-full text-[9px] font-mono text-muted hover:text-ink"
         >
           {SPEEDS[speedIdx]}x
-        </button>
+        </ShadButton>
       </div>
     </div>
   );

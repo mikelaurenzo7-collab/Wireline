@@ -232,7 +232,7 @@ export default function FleetSettings() {
       setNewAgentId("");
       toastSuccess("Agent deployed", agentName);
       await fetchAgents();
-      navigate(`/chat/${encodeURIComponent(agentId)}`);
+      navigate(`/chat?agent=${encodeURIComponent(agentId)}`);
     } catch {
       toastError("Deployment failed", "Could not reach the server. Please try again.");
     }

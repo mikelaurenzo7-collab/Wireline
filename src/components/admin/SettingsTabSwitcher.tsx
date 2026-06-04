@@ -76,7 +76,7 @@ export default function SettingsTabSwitcher() {
       role="tablist"
       aria-label="Settings sub-navigation"
     >
-      <div className="settings-tab-strip flex items-center gap-0.5 p-0.5 glass border border-black/8 max-w-full overflow-x-auto scrollbar-hide">
+      <div className="settings-tab-strip flex items-center gap-0.5 p-0.5 wl-panel border border-black/8 max-w-full overflow-x-auto scrollbar-hide">
         {TAB_GROUPS.map((group, gi) => (
           <React.Fragment key={gi}>
             {gi > 0 && (

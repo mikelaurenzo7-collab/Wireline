@@ -17,7 +17,9 @@ import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { Mail, Loader2, Check, AlertTriangle } from "lucide-react";
 import { authFetch } from "../../lib/api";
+import { cn } from "../../lib/utils";
 import { useToast } from "../../contexts/ToastContext";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 type SendOutcome = "idle" | "pending" | "sent" | "no-transport" | "error";
 
@@ -142,14 +144,17 @@ export default function EmailVerifyBanner() {
           )}
         </span>
       </div>
-      <button
+      <ShadButton
         type="button"
+        variant={outcome === "sent" ? "secondary" : "default"}
+        size="sm"
+        disableAnimations
         onClick={resend}
         disabled={buttonDisabled}
-        className={`shrink-0 px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] transition-all ${buttonCls} disabled:opacity-60 disabled:cursor-not-allowed`}
+        className={cn("shrink-0 rounded-full text-[10px] uppercase tracking-[0.3em]", buttonCls)}
       >
         {buttonLabel}
-      </button>
+      </ShadButton>
     </motion.div>
   );
 }

@@ -159,7 +159,7 @@ function NextStepCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 + delay * 0.1, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       onClick={onClick}
-      className={`group w-full text-left p-4 rounded-2xl border transition-all duration-300 ${
+      className={`group w-full text-left p-4 rounded-md border transition-all duration-300 ${
         primary
           ? "bg-gradient-to-br from-brand/10 to-brand/5 border-brand/30 hover:border-brand/50 hover:shadow-lg hover:shadow-brand/10"
           : "bg-white/50 border-black/10 hover:border-black/20 hover:bg-white/70"
@@ -167,7 +167,7 @@ function NextStepCard({
     >
       <div className="flex items-start gap-3">
         <div
-          className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+          className={`w-10 h-10 rounded-md flex items-center justify-center shrink-0 ${
             primary
               ? "bg-brand/20 text-brand"
               : "bg-black/5 text-ink/60 group-hover:text-brand transition-colors"
@@ -288,7 +288,7 @@ export default function YoureLiveModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
-      <DialogContent className="sm:max-w-lg border border-white/10 shadow-2xl p-0 bg-black/85 backdrop-blur-xl rounded-3xl overflow-hidden max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg border border-white/10 shadow-2xl p-0 bg-black/85 backdrop-blur-xl rounded-md overflow-hidden max-h-[90vh] overflow-y-auto">
         <ConfettiExplosion active={showConfetti} />
 
         {/* Hero Section */}

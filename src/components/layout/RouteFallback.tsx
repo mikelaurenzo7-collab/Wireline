@@ -45,7 +45,7 @@ export default function RouteFallback() {
         {[0, 1, 2, 3, 4, 5].map((i) => (
           <div
             key={i}
-            className="wl-panel rounded-2xl h-32 overflow-hidden relative p-4 flex flex-col justify-between"
+            className="wl-panel rounded-md h-32 overflow-hidden relative p-4 flex flex-col justify-between"
             style={{
               opacity: 0,
               animation: "appear-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards",
@@ -60,7 +60,7 @@ export default function RouteFallback() {
               style={{ animationDelay: `${i * 140}ms` }}
             />
             <div className="relative flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand/20 to-brand-deep/10" />
+              <div className="w-8 h-8 rounded-md bg-gradient-to-br from-brand/20 to-brand-deep/10" />
               <div className="space-y-1.5">
                 <div className="h-2 w-20 rounded-full bg-black/8 dark:bg-white/[0.07]" />
                 <div className="h-1.5 w-12 rounded-full bg-black/5 dark:bg-white/[0.05]" />

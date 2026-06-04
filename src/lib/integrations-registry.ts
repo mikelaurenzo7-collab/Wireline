@@ -86,10 +86,11 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
   },
   {
     id: "gemini",
-    label: "Google Gemini",
-    description: "Fast fallback for Anthropic voice outages plus grounded-search legacy paths.",
+    label: "Google Gemini (internal)",
+    description:
+      "Platform backup LLM for voice outages and post-call enrichment — not a merchant integration. Operators connect Shopify, CRM, etc.; Gemini is infrastructure.",
     group: "ai",
-    required: true,
+    required: false,
     envVars: ["GEMINI_API_KEY"],
     docsUrl: "https://aistudio.google.com/app/apikey",
   },

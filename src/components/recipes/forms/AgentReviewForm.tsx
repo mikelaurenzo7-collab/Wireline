@@ -4,6 +4,7 @@ import { Check, Loader2, Plus, Sparkles } from "lucide-react";
 import { authFetch } from "../../../lib/api";
 import { cn } from "../../../lib/utils";
 import { FormShell, Field, Select, RunButton, ResultCard, ErrCard } from "../shared";
+import { ShadButton } from "../../ui/shadcn/ShadButton";
 import type { AgentLite } from "../types";
 
 export function AgentReviewForm({
@@ -90,7 +91,7 @@ export function AgentReviewForm({
       {err && <ErrCard error={err} />}
       {review && (
         <div className="space-y-4 pt-3">
-          <div className="rounded-2xl glass-strong border border-white/12 p-6 flex items-center justify-between">
+          <div className="rounded-md wl-panel-elevated border border-white/12 p-6 flex items-center justify-between">
             <div>
               <div className="app-section-title mb-2">Overall Grade</div>
               <div className="font-display italic text-7xl text-aurora leading-none">
@@ -125,7 +126,7 @@ export function AgentReviewForm({
             {review.suggested_directives.map((d: any, i: number) => (
               <div
                 key={i}
-                className="rounded-2xl glass border border-white/10 p-4 flex items-start gap-3"
+                className="rounded-md wl-panel border border-white/10 p-4 flex items-start gap-3"
               >
                 <div
                   className={cn(
@@ -144,14 +145,18 @@ export function AgentReviewForm({
                   <p className="text-sm text-ink/90">{d.directive}</p>
                   <p className="text-xs text-ink/65 italic">{d.rationale}</p>
                 </div>
-                <button
+                <ShadButton
+                  type="button"
+                  disableAnimations
+                  variant="outline"
+                  size="sm"
                   onClick={() => apply(i, d)}
                   disabled={applying === i || appliedSet.has(i)}
                   className={cn(
-                    "shrink-0 px-3 py-2 rounded-full glass border text-[10px] uppercase tracking-[0.3em] transition-all flex items-center gap-1.5",
+                    "shrink-0 rounded-full text-[10px] uppercase tracking-[0.3em]",
                     appliedSet.has(i)
                       ? "border-emerald-500/30 text-emerald-500"
-                      : "border-brand/30 text-brand hover:bg-brand/10 disabled:opacity-50",
+                      : "border-brand/30 text-brand hover:bg-brand/10",
                   )}
                 >
                   {applying === i ? (
@@ -162,7 +167,7 @@ export function AgentReviewForm({
                     <Plus className="w-3 h-3" />
                   )}
                   {appliedSet.has(i) ? "Applied" : "Apply"}
-                </button>
+                </ShadButton>
               </div>
             ))}
           </div>

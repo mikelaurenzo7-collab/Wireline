@@ -19,6 +19,8 @@ import { useToast } from "../contexts/ToastContext";
 import { useApiError } from "../hooks/useApiError";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { Input } from "./ui/shadcn/Input";
+import { ShadButton } from "./ui/shadcn/ShadButton";
+import { cn } from "../lib/utils";
 
 type StepType = "call" | "sms" | "email";
 type Step = { type: StepType; delayHours: number; template?: string };
@@ -99,10 +101,8 @@ function stepIcon(t: StepType) {
   if (t === "sms") return <MessageSquare className="w-3 h-3" />;
   return <Mail className="w-3 h-3" />;
 }
-function stepTint(t: StepType) {
-  if (t === "call") return "#8B3FD6";
-  if (t === "sms") return "#8B3FD6";
-  return "#8B3FD6";
+function stepBadgeClass(_t: StepType) {
+  return "text-brand border-brand/40";
 }
 
 export default function Cadences() {
@@ -243,17 +243,20 @@ export default function Cadences() {
             /pipeline or the API. The job-worker ticks each step automatically.
           </p>
         </div>
-        <button
+        <ShadButton
+          type="button"
+          variant="editorial"
+          disableAnimations
           onClick={() => setShowBuilder(true)}
-          className="touch-press inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-brand to-brand-deep text-on-brand text-[11px] uppercase tracking-[0.28em] hover:opacity-90 transition-colors"
+          className="touch-press rounded-full text-[11px] uppercase tracking-[0.28em]"
         >
           <Plus className="w-3.5 h-3.5" />
           New sequence
-        </button>
+        </ShadButton>
       </div>
 
       {!showBuilder && cadences.length === 0 && !loading && (
-        <div className="rounded-2xl glass border border-white/8 p-6">
+        <div className="rounded-md wl-panel-elevated border border-border p-6">
           <p className="text-[11px] uppercase tracking-[0.32em] text-brand mb-2">
             Start from a template
           </p>
@@ -262,10 +265,13 @@ export default function Cadences() {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {STARTER_TEMPLATES.map((t) => (
-              <button
+              <ShadButton
                 key={t.name}
+                type="button"
+                variant="outline"
+                disableAnimations
                 onClick={() => loadTemplate(t)}
-                className="text-left rounded-xl border border-white/12 hover:border-white/30 p-4 transition-colors group"
+                className="h-auto w-full justify-start text-left rounded-md border-border hover:border-brand/30 p-4 group"
               >
                 <p className="text-[12px] font-semibold text-ink mb-1">{t.name}</p>
                 <p className="text-[10px] text-ink/40 mb-3">{t.description}</p>
@@ -273,14 +279,16 @@ export default function Cadences() {
                   {t.steps.map((s, i) => (
                     <span
                       key={i}
-                      className="text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded border border-white/10 inline-flex items-center gap-1"
-                      style={{ color: stepTint(s.type), borderColor: `${stepTint(s.type)}40` }}
+                      className={cn(
+                        "text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded border inline-flex items-center gap-1",
+                        stepBadgeClass(s.type),
+                      )}
                     >
                       {stepIcon(s.type)} {s.type}
                     </span>
                   ))}
                 </div>
-              </button>
+              </ShadButton>
             ))}
           </div>
         </div>
@@ -291,13 +299,13 @@ export default function Cadences() {
           {cadences.map((c) => (
             <div
               key={c.id}
-              className="rounded-2xl glass border border-white/8 p-4 flex items-center gap-4 flex-wrap"
+              className="rounded-md wl-panel border border-border p-4 flex items-center gap-4 flex-wrap"
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <h4 className="text-[13px] font-semibold text-ink">{c.name}</h4>
                   {c.active ? (
-                    <span className="text-[9px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">
+                    <span className="text-[9px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded bg-brand/15 text-brand border border-brand/30">
                       Active
                     </span>
                   ) : (
@@ -316,8 +324,10 @@ export default function Cadences() {
                   {c.steps.map((s, i) => (
                     <span
                       key={i}
-                      className="text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded border inline-flex items-center gap-1"
-                      style={{ color: stepTint(s.type), borderColor: `${stepTint(s.type)}40` }}
+                      className={cn(
+                        "text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded border inline-flex items-center gap-1",
+                        stepBadgeClass(s.type),
+                      )}
                     >
                       {stepIcon(s.type)} {s.type}
                       {s.delayHours > 0 && (
@@ -328,24 +338,32 @@ export default function Cadences() {
                 </div>
               </div>
               <div className="flex items-center gap-1.5">
-                <button
+                <ShadButton
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disableAnimations
                   onClick={() => togglePause(c)}
-                  className="p-1.5 rounded-lg hover:bg-white/8 text-muted hover:text-ink transition-colors"
                   title={c.active ? "Pause" : "Resume"}
+                  className="w-8 h-8 rounded-md text-muted hover:text-ink"
                 >
                   {c.active ? (
                     <Pause className="w-3.5 h-3.5" />
                   ) : (
                     <PlayCircle className="w-3.5 h-3.5" />
                   )}
-                </button>
-                <button
+                </ShadButton>
+                <ShadButton
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disableAnimations
                   onClick={() => remove(c)}
-                  className="p-1.5 rounded-lg hover:bg-rose-500/10 text-muted hover:text-rose-500 transition-colors"
                   title="Delete"
+                  className="w-8 h-8 rounded-md text-muted hover:text-rose-500 hover:bg-rose-500/10"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                </ShadButton>
               </div>
             </div>
           ))}
@@ -358,16 +376,20 @@ export default function Cadences() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
-            className="rounded-2xl glass-strong border border-brand/40 p-5"
+            className="rounded-md wl-panel-elevated border border-brand/40 p-5"
           >
             <div className="flex items-center justify-between mb-4">
               <h4 className="font-display italic text-lg text-ink">Build a sequence</h4>
-              <button
+              <ShadButton
+                type="button"
+                variant="ghost"
+                size="icon"
+                disableAnimations
                 onClick={() => setShowBuilder(false)}
-                className="p-1 rounded hover:bg-white/8"
+                className="w-8 h-8 rounded-md text-muted"
               >
-                <X className="w-4 h-4 text-muted" />
-              </button>
+                <X className="w-4 h-4" />
+              </ShadButton>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
@@ -379,7 +401,7 @@ export default function Cadences() {
                   value={draftName}
                   onChange={(e) => setDraftName(e.target.value)}
                   placeholder="e.g. Standard 3-touch"
-                  className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-ink text-[12px] focus:outline-none focus:border-brand/50"
+                  className="w-full px-3 py-2 rounded-md bg-white/5 border border-white/10 text-ink text-[12px] focus:outline-none focus:border-brand/50"
                 />
               </div>
               <div>
@@ -390,7 +412,7 @@ export default function Cadences() {
                   value={draftDescription}
                   onChange={(e) => setDraftDescription(e.target.value)}
                   placeholder="One-line summary"
-                  className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-ink text-[12px] focus:outline-none focus:border-brand/50"
+                  className="w-full px-3 py-2 rounded-md bg-white/5 border border-white/10 text-ink text-[12px] focus:outline-none focus:border-brand/50"
                 />
               </div>
             </div>
@@ -399,11 +421,13 @@ export default function Cadences() {
               {draftSteps.map((s, i) => (
                 <div
                   key={i}
-                  className="flex items-start gap-2 rounded-xl bg-white/3 border border-white/8 p-3"
+                  className="flex items-start gap-2 rounded-md bg-white/3 border border-white/8 p-3"
                 >
                   <span
-                    className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold border"
-                    style={{ color: stepTint(s.type), borderColor: `${stepTint(s.type)}40` }}
+                    className={cn(
+                      "shrink-0 w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-bold border",
+                      stepBadgeClass(s.type),
+                    )}
                   >
                     {i + 1}
                   </span>
@@ -451,35 +475,50 @@ export default function Cadences() {
                       />
                     )}
                   </div>
-                  <button
+                  <ShadButton
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    disableAnimations
                     onClick={() => removeStep(i)}
-                    className="p-1 rounded hover:bg-rose-500/10 text-muted hover:text-rose-500 transition-colors"
                     title="Remove step"
+                    className="w-8 h-8 text-muted hover:text-rose-500 hover:bg-rose-500/10"
                   >
                     <X className="w-3.5 h-3.5" />
-                  </button>
+                  </ShadButton>
                 </div>
               ))}
-              <button
+              <ShadButton
+                type="button"
+                variant="ghost"
+                size="sm"
+                disableAnimations
                 onClick={addStep}
-                className="text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand transition-colors inline-flex items-center gap-1.5"
+                className="h-auto px-0 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand"
               >
                 <Plus className="w-3 h-3" />
                 Add step
-              </button>
+              </ShadButton>
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/8">
-              <button
+              <ShadButton
+                type="button"
+                variant="ghost"
+                size="sm"
+                disableAnimations
                 onClick={() => setShowBuilder(false)}
-                className="px-3 py-2 rounded-lg text-[11px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
+                className="text-[11px] uppercase tracking-[0.28em] text-muted"
               >
                 Cancel
-              </button>
-              <button
+              </ShadButton>
+              <ShadButton
+                type="button"
+                variant="editorial"
+                disableAnimations
                 onClick={save}
                 disabled={saving}
-                className="touch-press inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-brand to-brand-deep text-on-brand text-[11px] uppercase tracking-[0.28em] hover:opacity-90 transition-colors disabled:opacity-60"
+                className="touch-press rounded-md text-[11px] uppercase tracking-[0.28em]"
               >
                 {saving ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -487,7 +526,7 @@ export default function Cadences() {
                   <Zap className="w-3.5 h-3.5" />
                 )}
                 Save sequence
-              </button>
+              </ShadButton>
             </div>
           </motion.div>
         )}

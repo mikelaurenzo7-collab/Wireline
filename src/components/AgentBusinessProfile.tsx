@@ -24,6 +24,7 @@ import { cn } from "../lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { Input } from "./ui/shadcn/Input";
 import { Checkbox } from "./ui/shadcn/Checkbox";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 // ── Types (kept in lockstep with src/lib/agent-runtime.ts) ─────────────
 
@@ -287,7 +288,6 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
       <Section
         icon={Clock}
         title="Business hours"
-        accent="#8B3FD6"
         hint="When this agent should engage. Outbound dials outside these hours are refused; inbound calls hear the out-of-hours message."
       >
         <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -304,24 +304,27 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
             return (
               <div
                 key={d.key}
-                className="grid grid-cols-[5.5rem,_auto,_1fr] sm:grid-cols-[6rem,_auto,_1fr,_1fr] items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/3 transition-colors"
+                className="grid grid-cols-[5.5rem,_auto,_1fr] sm:grid-cols-[6rem,_auto,_1fr,_1fr] items-center gap-2 px-2 py-1.5 rounded-md hover:bg-white/3 transition-colors"
               >
                 <label className="text-[11px] text-ink/80 truncate">{d.label}</label>
-                <button
+                <ShadButton
                   type="button"
+                  variant={closed ? "destructive" : "outline"}
+                  size="sm"
+                  disableAnimations
                   onClick={() =>
                     setDay(d.key, closed ? { open: "09:00", close: "17:00" } : { closed: true })
                   }
                   aria-pressed={!closed}
                   className={cn(
-                    "h-7 px-2.5 rounded-full text-[9px] uppercase tracking-[0.25em] transition-colors border",
+                    "h-7 px-2.5 rounded-full text-[9px] uppercase tracking-[0.25em]",
                     closed
-                      ? "border-rose-500/30 text-rose-500 bg-rose-500/8"
-                      : "border-emerald-500/30 text-emerald-600 bg-emerald-500/8",
+                      ? "border-rose-500/30 text-rose-500 bg-rose-500/8 shadow-none"
+                      : "border-brand/30 text-brand bg-brand/8",
                   )}
                 >
                   {closed ? "Closed" : "Open"}
-                </button>
+                </ShadButton>
                 <Input
                   type="time"
                   value={cfg.open ?? ""}
@@ -374,34 +377,33 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
       <Section
         icon={ShieldCheck}
         title="Compliance preset"
-        accent="#8B3FD6"
         hint="Auto-injects required disclosures into the agent's system prompt. Pick the regime your business is regulated under."
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {COMPLIANCE_OPTIONS.map((opt) => {
             const active = (value.compliance_mode ?? "none") === opt.value;
             return (
-              <button
+              <ShadButton
                 key={opt.value}
                 type="button"
+                variant="ghost"
+                disableAnimations
                 onClick={() => setField("compliance_mode", opt.value)}
                 className={cn(
-                  "text-left rounded-xl border px-3 py-2.5 transition-all",
+                  "h-auto w-full justify-start text-left rounded-md border px-3 py-2.5",
                   active
-                    ? "border-brand-2/40 bg-brand-2/8"
-                    : "border-white/8 bg-white/0 hover:border-white/18 hover:bg-white/3",
+                    ? "border-brand/40 bg-brand/8"
+                    : "border-border hover:border-brand/25 hover:bg-black/[0.02]",
                 )}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-ink text-[12px]">{opt.label}</span>
                   {active && (
-                    <span className="text-[8px] uppercase tracking-[0.3em] text-brand-2">
-                      Active
-                    </span>
+                    <span className="text-[8px] uppercase tracking-[0.3em] text-brand">Active</span>
                   )}
                 </div>
                 <p className="text-[10px] text-muted/80 leading-relaxed mt-1">{opt.hint}</p>
-              </button>
+              </ShadButton>
             );
           })}
         </div>
@@ -411,34 +413,33 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
       <Section
         icon={Target}
         title="Optimization target"
-        accent="#8B3FD6"
         hint="Subtle nudge to bias the agent toward the outcome that matters for this surface."
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
           {KPI_OPTIONS.map((opt) => {
             const active = (value.kpi_focus ?? "general") === opt.value;
             return (
-              <button
+              <ShadButton
                 key={opt.value}
                 type="button"
+                variant="ghost"
+                disableAnimations
                 onClick={() => setField("kpi_focus", opt.value)}
                 className={cn(
-                  "text-left rounded-xl border px-3 py-2.5 transition-all",
+                  "h-auto w-full justify-start text-left rounded-md border px-3 py-2.5",
                   active
-                    ? "border-brand-3/40 bg-brand-3/8"
-                    : "border-white/8 hover:border-white/18 hover:bg-white/3",
+                    ? "border-brand/40 bg-brand/8"
+                    : "border-border hover:border-brand/25 hover:bg-black/[0.02]",
                 )}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-ink text-[12px]">{opt.label}</span>
                   {active && (
-                    <span className="text-[8px] uppercase tracking-[0.3em] text-brand-3">
-                      Active
-                    </span>
+                    <span className="text-[8px] uppercase tracking-[0.3em] text-brand">Active</span>
                   )}
                 </div>
                 <p className="text-[10px] text-muted/80 leading-relaxed mt-1">{opt.hint}</p>
-              </button>
+              </ShadButton>
             );
           })}
         </div>
@@ -448,7 +449,6 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
       <Section
         icon={MessageSquareWarning}
         title="Do-not-discuss topics"
-        accent="#FF6B6B"
         hint="The agent refuses or redirects when these come up. Up to 24."
       >
         <ChipList chips={value.disallowed_topics ?? []} onRemove={removeTopic} tone="rose" />
@@ -465,10 +465,9 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
       <Section
         icon={AlertOctagon}
         title="Immediate-escalation triggers"
-        accent="#C4B5A0"
         hint="Phrases that force a human handoff regardless of normal escalation logic. Up to 24."
       >
-        <ChipList chips={value.escalation_keywords ?? []} onRemove={removeKeyword} tone="amber" />
+        <ChipList chips={value.escalation_keywords ?? []} onRemove={removeKeyword} tone="brand" />
         <ChipDraftInput
           value={keywordDraft}
           onChange={setKeywordDraft}
@@ -488,7 +487,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
           <p className="text-eyebrow/65 font-semibold mb-1">Route alerts to (this agent only)</p>
           <p className="text-[10px] text-ink/40 mb-3 leading-relaxed">
             Both optional. Leave blank to use the tenant-wide Manager Alert Number from{" "}
-            <a href="/admin?tab=carrier" className="text-[#8B3FD6] hover:underline">
+            <a href="/admin?tab=carrier" className="text-brand hover:underline">
               Settings → Carrier
             </a>
             .
@@ -508,7 +507,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 }
                 placeholder="+1 555 123 4567"
                 aria-label="Per-agent escalation phone number"
-                className="w-full h-9 px-3 rounded-lg border border-black/12 bg-paper text-[12px] focus:outline-none focus:border-[#8B3FD6]/40 focus:ring-2 focus:ring-[#8B3FD6]/12 transition-all"
+                className="w-full h-9 px-3 rounded-md border border-border bg-paper text-[12px] focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/12 transition-all"
                 data-testid="escalation-phone-input"
               />
             </label>
@@ -526,7 +525,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 }
                 placeholder="lead@yourcompany.com"
                 aria-label="Per-agent escalation email"
-                className="w-full h-9 px-3 rounded-lg border border-black/12 bg-paper text-[12px] focus:outline-none focus:border-[#8B3FD6]/40 focus:ring-2 focus:ring-[#8B3FD6]/12 transition-all"
+                className="w-full h-9 px-3 rounded-md border border-border bg-paper text-[12px] focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/12 transition-all"
                 data-testid="escalation-email-input"
               />
             </label>
@@ -542,17 +541,17 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               no transfer (dead air → angry caller). */}
           <label
             className={
-              "mt-3 flex items-start gap-3 p-3 rounded-lg border transition-all cursor-pointer " +
+              "mt-3 flex items-start gap-3 p-3 rounded-md border transition-all cursor-pointer " +
               (value.escalation_handoff_enabled && value.escalation_phone
-                ? "border-emerald-500/30 bg-emerald-500/[0.04]"
-                : "border-black/10 bg-paper hover:border-black/20")
+                ? "border-brand/30 bg-brand/[0.04]"
+                : "border-border bg-paper hover:border-brand/20")
             }
           >
             <Checkbox
               checked={value.escalation_handoff_enabled === true}
               disabled={!value.escalation_phone}
               onChange={(e) => onChange({ ...value, escalation_handoff_enabled: e.target.checked })}
-              className="mt-0.5 w-4 h-4 accent-emerald-600 shrink-0"
+              className="mt-0.5 w-4 h-4 accent-brand shrink-0"
               aria-label="Warm-transfer live caller to escalation phone"
               data-testid="escalation-handoff-toggle"
             />
@@ -566,8 +565,8 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                   : "Set an escalation phone above to enable warm-transfer. Without one, the caller has nowhere to be routed."}
               </p>
               {value.escalation_handoff_enabled && value.escalation_phone && (
-                <p className="mt-1.5 text-[9.5px] uppercase tracking-[0.22em] text-emerald-700 font-semibold">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 align-middle" />
+                <p className="mt-1.5 text-[9.5px] uppercase tracking-[0.22em] text-brand font-semibold">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-brand mr-1 align-middle" />
                   Live transfer enabled
                 </p>
               )}
@@ -580,7 +579,6 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
       <Section
         icon={Type}
         title="Business variables"
-        accent="#8B3FD6"
         hint="Reusable {placeholders} for personality / directives / knowledge / messages. Set once, reference anywhere."
       >
         <div className="space-y-1.5">
@@ -608,14 +606,17 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 className="input-base flex-1"
                 aria-label={`Value for ${k}`}
               />
-              <button
+              <ShadButton
                 type="button"
+                variant="ghost"
+                size="icon"
+                disableAnimations
                 onClick={() => removeVariable(k)}
                 aria-label={`Remove ${k}`}
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-ink/40 hover:text-rose-500 hover:bg-rose-500/8 transition-colors shrink-0"
+                className="w-9 h-9 rounded-md text-ink/40 hover:text-rose-500 hover:bg-rose-500/8 shrink-0"
               >
                 <X className="w-3.5 h-3.5" />
-              </button>
+              </ShadButton>
             </div>
           ))}
         </div>
@@ -645,14 +646,17 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
             className="input-base flex-1"
             aria-label="New variable value"
           />
-          <button
+          <ShadButton
             type="button"
+            variant="outline"
+            size="sm"
+            disableAnimations
             onClick={commitDraftVar}
             disabled={!draftVarKey.trim() || !/^[a-zA-Z_][a-zA-Z0-9_]{0,40}$/.test(draftVarKey)}
-            className="h-9 px-3 rounded-lg bg-emerald-500/15 border border-emerald-500/35 text-emerald-600 text-[10px] uppercase tracking-[0.25em] hover:bg-emerald-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+            className="h-9 px-3 rounded-md bg-brand/15 border-brand/35 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25"
           >
             <Plus className="w-3 h-3" /> Add
-          </button>
+          </ShadButton>
         </div>
       </Section>
     </div>
@@ -665,33 +669,22 @@ function Section({
   icon: Icon,
   title,
   hint,
-  accent,
   children,
 }: {
   icon: any;
   title: string;
   hint?: string;
-  accent: string;
+  accent?: string;
   children: React.ReactNode;
 }) {
   return (
     <motion.section
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative rounded-2xl glass border border-white/8 p-4 overflow-hidden"
+      className="relative rounded-md wl-panel-elevated border border-border p-4 overflow-hidden"
     >
-      <div
-        className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
-        style={{ background: `radial-gradient(circle, ${accent}, transparent)` }}
-      />
       <header className="relative flex items-start gap-3 mb-3">
-        <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border border-white/10"
-          style={{
-            background: `linear-gradient(135deg, ${accent}25, ${accent}06)`,
-            color: accent,
-          }}
-        >
+        <div className="w-9 h-9 rounded-md wl-panel border border-brand/25 flex items-center justify-center shrink-0 text-brand">
           <Icon className="w-4 h-4" />
         </div>
         <div className="min-w-0">
@@ -706,13 +699,16 @@ function Section({
 
 function PresetButton({ onClick, label }: { onClick: () => void; label: string }) {
   return (
-    <button
+    <ShadButton
       type="button"
+      variant="outline"
+      size="sm"
+      disableAnimations
       onClick={onClick}
-      className="h-7 px-2.5 rounded-full glass border border-white/10 text-[9px] uppercase tracking-[0.25em] text-muted/80 hover:text-ink hover:border-white/30 transition-all"
+      className="h-7 px-2.5 rounded-full text-[9px] uppercase tracking-[0.25em] text-muted/80"
     >
       {label}
-    </button>
+    </ShadButton>
   );
 }
 
@@ -736,7 +732,7 @@ function Field({
 
 function CharCount({ value, max }: { value: string; max: number }) {
   const len = value.length;
-  const tone = len > max * 0.9 ? "text-amber-600" : "text-ink/40";
+  const tone = len > max * 0.9 ? "text-brand" : "text-ink/40";
   return (
     <p className={cn("text-[9px] tabular-nums text-right", tone)}>
       {len}/{max}
@@ -751,7 +747,7 @@ function ChipList({
 }: {
   chips: string[];
   onRemove: (i: number) => void;
-  tone: "rose" | "amber";
+  tone: "rose" | "brand";
 }) {
   if (chips.length === 0) {
     return <p className="text-[11px] text-ink/40 italic px-1 py-1">None yet.</p>;
@@ -759,7 +755,7 @@ function ChipList({
   const toneClass =
     tone === "rose"
       ? "bg-rose-500/8 border-rose-500/25 text-rose-600"
-      : "bg-amber-500/8 border-amber-500/30 text-amber-600";
+      : "bg-brand/8 border-brand/30 text-brand";
   return (
     <ul className="flex flex-wrap gap-1.5 mb-2">
       {chips.map((c, i) => (
@@ -773,14 +769,17 @@ function ChipList({
           <span className="truncate max-w-[14rem]" title={c}>
             {c}
           </span>
-          <button
+          <ShadButton
             type="button"
+            variant="ghost"
+            size="icon"
+            disableAnimations
             onClick={() => onRemove(i)}
             aria-label={`Remove ${c}`}
-            className="w-4 h-4 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
+            className="w-4 h-4 rounded-full hover:bg-black/5"
           >
             <X className="w-2.5 h-2.5" />
-          </button>
+          </ShadButton>
         </li>
       ))}
     </ul>
@@ -817,14 +816,17 @@ function ChipDraftInput({
         maxLength={120}
         className="input-base flex-1 disabled:opacity-50"
       />
-      <button
+      <ShadButton
         type="button"
+        variant="outline"
+        size="sm"
+        disableAnimations
         disabled={disabled || !value.trim()}
         onClick={() => onCommit(value)}
-        className="h-9 px-3 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink hover:border-white/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+        className="h-9 px-3 rounded-md text-[10px] uppercase tracking-[0.25em] text-muted"
       >
         <Plus className="w-3 h-3" /> Add
-      </button>
+      </ShadButton>
     </div>
   );
 }
@@ -847,16 +849,19 @@ function TzSelect({ value, onChange }: { value: string; onChange: (v: string) =>
           className="input-base flex-1 font-mono"
           aria-label="Custom timezone"
         />
-        <button
+        <ShadButton
           type="button"
+          variant="outline"
+          size="sm"
+          disableAnimations
           onClick={() => {
             setCustom(false);
             onChange("America/New_York");
           }}
-          className="h-9 px-3 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink transition-colors"
+          className="h-9 px-3 rounded-md text-[10px] uppercase tracking-[0.25em] text-muted"
         >
           Common
-        </button>
+        </ShadButton>
       </div>
     );
   }
@@ -876,13 +881,16 @@ function TzSelect({ value, onChange }: { value: string; onChange: (v: string) =>
           </SelectContent>
         </Select>
       </div>
-      <button
+      <ShadButton
         type="button"
+        variant="outline"
+        size="sm"
+        disableAnimations
         onClick={() => setCustom(true)}
-        className="h-9 px-3 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink transition-colors"
+        className="h-9 px-3 rounded-md text-[10px] uppercase tracking-[0.25em] text-muted"
       >
         Custom
-      </button>
+      </ShadButton>
     </div>
   );
 }

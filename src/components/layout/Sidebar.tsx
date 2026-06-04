@@ -35,6 +35,7 @@ import { useLivePresence } from "../../hooks/useLivePresence";
 import { cn } from "../../lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/shadcn/Tooltip";
 import { ScrollArea } from "../ui/shadcn/ScrollArea";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 const RAIL_COLLAPSED = 56;
 const RAIL_EXPANDED = 216;
@@ -132,7 +133,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
             whileHover={{ rotate: 6, scale: 1.05 }}
             whileTap={{ scale: 0.97 }}
             transition={{ type: "spring", stiffness: 360, damping: 26 }}
-            className="relative w-8 h-8 shrink-0 rounded-lg flex items-center justify-center overflow-hidden elev-1"
+            className="relative w-8 h-8 shrink-0 rounded-md flex items-center justify-center overflow-hidden elev-1"
             style={{
               background: "#EFE9DC",
               boxShadow: "0 4px 14px -4px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.22) inset",
@@ -157,13 +158,13 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         </Link>
 
         {/* Search */}
-        <button
+        <ShadButton
           type="button"
+          variant="chrome"
+          disableAnimations
           onClick={() => window.dispatchEvent(new CustomEvent("wireline:open-command-bar"))}
           className={cn(
-            "shrink-0 mx-2 mb-1.5 h-8 flex items-center gap-2 rounded-md transition-all group " +
-              "border border-white/20 bg-white/[0.08] hover:bg-white/[0.15] hover:border-white/30 " +
-              "dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:hover:border-white/20",
+            "shrink-0 mx-2 mb-1.5 h-8 w-full justify-start gap-2 rounded-md border border-white/20 bg-white/[0.08] hover:bg-white/[0.15] hover:border-white/30 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:hover:border-white/20",
             effective ? "px-3" : "px-2 justify-center",
           )}
           aria-label="Open search ( / )"
@@ -182,7 +183,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
               </kbd>
             </>
           )}
-        </button>
+        </ShadButton>
 
         {/* Nav items */}
         <ScrollArea className="flex-1 min-h-0">
@@ -271,10 +272,12 @@ export default function Sidebar({ navBadges }: SidebarProps) {
 
           {(() => {
             const themeToggleBtn = (
-              <button
+              <ShadButton
                 type="button"
+                variant="ghost"
+                disableAnimations
                 onClick={toggleTheme}
-                className="w-full group h-9 flex items-center gap-2.5 px-2 rounded-md text-white/60 hover:text-white hover:bg-white/[0.08] dark:text-white/55 dark:hover:text-white/90 dark:hover:bg-white/8 transition-all cursor-pointer"
+                className="w-full group h-9 justify-start gap-2.5 px-2 rounded-md text-white/60 hover:text-white hover:bg-white/[0.08] dark:text-white/55 dark:hover:text-white/90 dark:hover:bg-white/8"
                 aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
               >
                 {theme === "light" ? (
@@ -293,7 +296,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                     {theme === "light" ? "Dark Mode" : "Light Mode"}
                   </span>
                 )}
-              </button>
+              </ShadButton>
             );
 
             if (!effective) {
@@ -309,19 +312,24 @@ export default function Sidebar({ navBadges }: SidebarProps) {
             return themeToggleBtn;
           })()}
 
-          <button
+          <ShadButton
+            type="button"
+            variant="ghost"
+            disableAnimations
             onClick={() => signOut()}
-            className="w-full group h-9 flex items-center gap-2.5 px-2 rounded-md text-white/60 hover:text-rose-300 hover:bg-rose-500/15 dark:text-white/50 dark:hover:text-white/90 dark:hover:bg-white/8 transition-all"
+            className="w-full group h-9 justify-start gap-2.5 px-2 rounded-md text-white/60 hover:text-rose-300 hover:bg-rose-500/15 dark:text-white/50 dark:hover:text-white/90 dark:hover:bg-white/8"
             aria-label="Sign out"
           >
             <LogOut className="w-4 h-4 shrink-0" strokeWidth={1.75} />
             {effective && <span className="text-[12px] font-medium truncate">Sign out</span>}
-          </button>
+          </ShadButton>
 
-          <button
+          <ShadButton
             type="button"
+            variant="ghost"
+            disableAnimations
             onClick={() => setUserOverride(!expanded)}
-            className="w-full h-7 mt-0.5 flex items-center justify-center gap-2 px-2 rounded-md text-white/40 hover:text-white/80 hover:bg-white/[0.08] dark:text-white/30 dark:hover:text-white/70 dark:hover:bg-white/6 transition-all"
+            className="w-full h-7 mt-0.5 justify-center gap-2 px-2 rounded-md text-white/40 hover:text-white/80 hover:bg-white/[0.08] dark:text-white/30 dark:hover:text-white/70 dark:hover:bg-white/6"
             aria-label={expanded ? "Collapse navigation" : "Expand navigation"}
             aria-pressed={expanded}
           >
@@ -333,7 +341,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
             ) : (
               <ChevronsRight className="w-3.5 h-3.5" />
             )}
-          </button>
+          </ShadButton>
         </div>
       </aside>
     </TooltipProvider>

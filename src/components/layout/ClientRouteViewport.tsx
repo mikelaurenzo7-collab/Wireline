@@ -11,7 +11,7 @@ type ClientRouteViewportProps = {
   className?: string;
   /** When true, the outer shell scrolls (long-form pages like Help, Founder). */
   scroll?: boolean;
-  /** Route-tinted ambient glow (default on). */
+  /** Route-tinted ambient glow (off by default — solid cream canvas). */
   ambience?: boolean;
 };
 
@@ -19,7 +19,7 @@ export default function ClientRouteViewport({
   children,
   className,
   scroll = false,
-  ambience = true,
+  ambience = false,
 }: ClientRouteViewportProps) {
   return (
     <div

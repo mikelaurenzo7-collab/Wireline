@@ -9,6 +9,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Sparkles, ChevronDown, Brain, Clock } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { ShadButton } from "./shadcn/ShadButton";
 
 export interface ThinkingDisplayProps {
   /** The full reasoning text from Claude's adaptive thinking. */
@@ -86,11 +87,13 @@ export function ThinkingDisplay({
   return (
     <div className="mb-3 pb-3 border-b border-brand/10">
       {/* Header — clickable to expand/collapse */}
-      <button
+      <ShadButton
         type="button"
+        disableAnimations
+        variant="ghost"
         onClick={handleToggle}
         className={cn(
-          "w-full flex items-center gap-2 group transition-colors rounded-md -mx-1 px-1 py-0.5",
+          "w-full h-auto justify-start gap-2 group rounded-md -mx-1 px-1 py-0.5",
           "hover:bg-brand/5 active:bg-brand/8",
         )}
       >
@@ -132,7 +135,7 @@ export function ThinkingDisplay({
             isExpanded && "rotate-180",
           )}
         />
-      </button>
+      </ShadButton>
 
       {/* Expanded content — step-by-step timeline */}
       <AnimatePresence>

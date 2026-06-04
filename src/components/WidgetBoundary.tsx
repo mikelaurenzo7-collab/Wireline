@@ -8,6 +8,7 @@
 import { Component, ErrorInfo, ReactNode } from "react";
 import { AlertOctagon, RefreshCw } from "lucide-react";
 import { captureException } from "../lib/sentry";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface Props {
   children: ReactNode;
@@ -48,7 +49,7 @@ export default class WidgetBoundary extends Component<Props, State> {
 
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3 p-6 text-center">
-        <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-rose-500/12 border border-rose-500/30">
+        <div className="w-10 h-10 rounded-md flex items-center justify-center bg-rose-500/12 border border-rose-500/30">
           <AlertOctagon className="w-5 h-5 text-rose-400" />
         </div>
         <div className="space-y-0.5">
@@ -60,13 +61,16 @@ export default class WidgetBoundary extends Component<Props, State> {
             The rest of the page is fine. We've logged the error.
           </p>
         </div>
-        <button
+        <ShadButton
           type="button"
+          disableAnimations
+          variant="outline"
+          size="sm"
           onClick={this.reset}
-          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full glass border border-black/10 text-[10px] uppercase tracking-[0.28em] text-ink/70 hover:text-ink hover:border-brand/25 transition-colors"
+          className="rounded-full text-[10px] uppercase tracking-[0.28em] text-ink/70 hover:text-ink hover:border-brand/25"
         >
           <RefreshCw className="w-3 h-3" /> Retry
-        </button>
+        </ShadButton>
       </div>
     );
   }

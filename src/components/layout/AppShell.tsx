@@ -202,7 +202,6 @@ export default function AppShell() {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center p-12 text-center relative overflow-hidden">
         <AuroraBackdrop />
-        <div className="scanline" />
         <div className="relative w-44 h-44 mb-12 animate-spin-slow">
           <div
             className="absolute inset-0 rounded-full"
@@ -212,7 +211,7 @@ export default function AppShell() {
             }}
           />
           <div className="absolute inset-2 rounded-full bg-paper" />
-          <div className="absolute inset-4 rounded-full glass flex items-center justify-center">
+          <div className="absolute inset-4 rounded-full wl-panel flex items-center justify-center">
             <div className="animate-pulse">
               <WirelineMark className="w-16 h-16 text-brand" strokeWidth={90} />
             </div>
@@ -248,7 +247,6 @@ export default function AppShell() {
         Skip to main content
       </a>
       <AuroraBackdrop />
-      <div className="scanline" />
 
       <ErrorBoundary fallback={null}>
         <Suspense fallback={null}>

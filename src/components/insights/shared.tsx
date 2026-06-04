@@ -9,6 +9,8 @@
 import React from "react";
 import { BarChart3, CheckCircle2 as CheckCircle2Icon, AlertOctagon } from "lucide-react";
 import { authFetch, readApiJson } from "../../lib/api";
+import { WIRELINE_DIRECTOR_BRAND, WL_APP_CLASSES } from "../../lib/wireline-director-design";
+import { BRAND } from "../../constants/brand-colors";
 
 /* ── Data fetching ──────────────────────────────────────────────── */
 
@@ -29,18 +31,18 @@ export function Spinner() {
         <div
           className="absolute inset-0 rounded-full opacity-40"
           style={{
-            background: "conic-gradient(from 0deg, #8B3FD6, #8B3FD6, #8B3FD6, #8B3FD6, #8B3FD6)",
+            background: `conic-gradient(from 0deg, ${WIRELINE_DIRECTOR_BRAND.violet}, ${WIRELINE_DIRECTOR_BRAND.violet}, ${WIRELINE_DIRECTOR_BRAND.violet}, ${WIRELINE_DIRECTOR_BRAND.violet}, ${WIRELINE_DIRECTOR_BRAND.violet})`,
             filter: "blur(1px)",
             animation: "spin 2s linear infinite",
           }}
         />
         <div className="absolute inset-1.5 rounded-full bg-paper" />
-        <div className="absolute inset-3 rounded-full glass flex items-center justify-center">
+        <div className="absolute inset-3 rounded-full wl-panel flex items-center justify-center">
           <div
             className="w-3 h-3 rounded-full"
             style={{
-              background: "#8B3FD6",
-              boxShadow: "0 0 10px #8B3FD6",
+              background: WIRELINE_DIRECTOR_BRAND.violet,
+              boxShadow: `0 0 10px ${WIRELINE_DIRECTOR_BRAND.violet}`,
             }}
           />
         </div>
@@ -58,7 +60,13 @@ import { InlineEmpty } from "../ui/InlineEmpty";
 
 export function Empty({ label, green }: { label: string; green?: boolean }) {
   const Icon = green ? CheckCircle2Icon : BarChart3;
-  return <InlineEmpty icon={Icon} label={label} accent={green ? "#10B981" : undefined} />;
+  return (
+    <InlineEmpty
+      icon={Icon}
+      label={label}
+      accent={green ? WIRELINE_DIRECTOR_BRAND.violet : undefined}
+    />
+  );
 }
 
 /* ── Error card ─────────────────────────────────────────────────── */
@@ -67,7 +75,7 @@ export function ErrCard({ error }: { error: string }) {
   return (
     <div
       role="alert"
-      className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-6 text-rose-500 text-sm flex items-start gap-3"
+      className="rounded-md bg-rose-500/10 border border-rose-500/30 p-6 text-rose-500 text-sm flex items-start gap-3"
     >
       <AlertOctagon className="w-5 h-5 shrink-0 mt-0.5" />
       <span>{error}</span>
@@ -105,19 +113,17 @@ export function SpendStat({
   accent: string;
 }) {
   return (
-    <div className="relative aurora-ring rounded-2xl">
-      <div className="relative rounded-2xl glass border border-black/8 p-5 overflow-hidden">
-        <div
-          className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"
-          style={{ background: `radial-gradient(circle, ${accent}, transparent)` }}
-        />
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-3">
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">{label}</p>
-            <Icon className="w-4 h-4" style={{ color: accent }} />
-          </div>
-          <p className="font-display italic text-3xl text-ink leading-none">{value}</p>
+    <div className={WL_APP_CLASSES.insightStatCard + " p-5"}>
+      <div
+        className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"
+        style={{ background: `radial-gradient(circle, ${accent}, transparent)` }}
+      />
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-3">
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">{label}</p>
+          <Icon className="w-4 h-4" style={{ color: accent }} />
         </div>
+        <p className="font-display italic text-3xl text-ink leading-none">{value}</p>
       </div>
     </div>
   );
@@ -126,9 +132,9 @@ export function SpendStat({
 /* ── QA colour helper ───────────────────────────────────────────── */
 
 export function qaColor(score: number) {
-  if (score >= 90) return "#8B3FD6";
-  if (score >= 75) return "#8B3FD6";
-  if (score >= 60) return "#FFD166";
-  if (score >= 40) return "#FF9A5C";
-  return "#8B3FD6";
+  if (score >= 90) return WIRELINE_DIRECTOR_BRAND.violet;
+  if (score >= 75) return WIRELINE_DIRECTOR_BRAND.violet;
+  if (score >= 60) return BRAND.purpleMuted;
+  if (score >= 40) return BRAND.rose;
+  return BRAND.rose;
 }

@@ -22,6 +22,7 @@ import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { Checkbox } from "./ui/shadcn/Checkbox";
 import { Input } from "./ui/shadcn/Input";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 // Linear step definition for the agent flow
 export interface FlowStep {
@@ -545,27 +546,37 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
           are visible side-by-side). Sticky tab pill that switches
           between the Steps list and the Editor. Highlights the
           active panel + shows the step count for context. */}
-      <div className="xl:hidden flex items-center gap-1 p-1 rounded-xl glass border border-white/10 self-start">
-        <button
+      <div className="xl:hidden flex items-center gap-1 p-1 rounded-md wl-panel border border-border self-start">
+        <ShadButton
           type="button"
+          variant="ghost"
+          size="sm"
+          disableAnimations
           onClick={() => setMobilePanel("steps")}
           className={cn(
-            "px-3 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.2em] font-medium transition-all",
-            mobilePanel === "steps" ? "bg-brand text-on-brand" : "text-muted hover:text-ink",
+            "h-auto px-3 py-1.5 rounded-md text-[10px] uppercase tracking-[0.2em] font-medium",
+            mobilePanel === "steps"
+              ? "bg-brand text-on-brand hover:bg-brand hover:text-on-brand"
+              : "text-muted hover:text-ink",
           )}
         >
           Steps · {steps.length}
-        </button>
-        <button
+        </ShadButton>
+        <ShadButton
           type="button"
+          variant="ghost"
+          size="sm"
+          disableAnimations
           onClick={() => setMobilePanel("editor")}
           className={cn(
-            "px-3 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.2em] font-medium transition-all",
-            mobilePanel === "editor" ? "bg-brand text-on-brand" : "text-muted hover:text-ink",
+            "h-auto px-3 py-1.5 rounded-md text-[10px] uppercase tracking-[0.2em] font-medium",
+            mobilePanel === "editor"
+              ? "bg-brand text-on-brand hover:bg-brand hover:text-on-brand"
+              : "text-muted hover:text-ink",
           )}
         >
           Editor
-        </button>
+        </ShadButton>
       </div>
 
       {/* Left Column: Linear Visualizer / List */}
@@ -576,7 +587,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
           mobilePanel === "editor" ? "hidden xl:flex" : "flex",
         )}
       >
-        <div className="glass border border-white/10 rounded-2xl p-4 shrink-0 space-y-3">
+        <div className="wl-panel border border-border rounded-md p-4 shrink-0 space-y-3">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-display italic text-xl text-ink flex items-center gap-2">
@@ -587,13 +598,17 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                 Linear stage progression
               </p>
             </div>
-            <button
+            <ShadButton
+              type="button"
+              variant="outline"
+              size="icon"
+              disableAnimations
               onClick={handleAddStep}
               aria-label="Add stage"
-              className="w-9 h-9 rounded-full glass border border-brand/30 text-brand flex items-center justify-center hover:bg-brand/10 transition-colors"
+              className="w-9 h-9 rounded-full border-brand/30 text-brand hover:bg-brand/10"
             >
               <Plus className="w-4 h-4" />
-            </button>
+            </ShadButton>
           </div>
 
           {/* Template picker — operators rarely want a blank slate.
@@ -605,15 +620,18 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
             </div>
             <div className="grid grid-cols-2 gap-1.5">
               {(Object.keys(FLOW_TEMPLATES) as TemplateKey[]).map((key) => (
-                <button
+                <ShadButton
                   key={key}
                   type="button"
+                  variant="outline"
+                  size="sm"
+                  disableAnimations
                   onClick={() => handleApplyTemplate(key)}
                   title={FLOW_TEMPLATES[key].description}
-                  className="text-left rounded-lg glass border border-white/10 px-2.5 py-1.5 text-[10px] text-ink/85 hover:border-brand/40 hover:text-brand transition-colors truncate"
+                  className="h-auto w-full justify-start text-left rounded-md border-border px-2.5 py-1.5 text-[10px] text-ink/85 hover:border-brand/40 hover:text-brand truncate"
                 >
                   {FLOW_TEMPLATES[key].label}
-                </button>
+                </ShadButton>
               ))}
             </div>
           </div>
@@ -624,32 +642,37 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
               Groups by category so operators can scan for the pattern
               they need. */}
           <div className="pt-3 border-t border-white/8 space-y-2">
-            <button
+            <ShadButton
               type="button"
+              variant="ghost"
+              disableAnimations
               onClick={() => setShowSnippets((v) => !v)}
-              className="w-full flex items-center justify-between gap-2 text-[9px] uppercase tracking-[0.32em] text-ink/40 hover:text-ink transition-colors"
+              className="w-full h-auto justify-between gap-2 text-[9px] uppercase tracking-[0.32em] text-ink/40 hover:text-ink px-0"
             >
               <span className="flex items-center gap-1.5">
                 <Sparkles className="w-3 h-3 text-brand" />
                 Insert a snippet
               </span>
               <span className="text-ink/40">{showSnippets ? "−" : "+"}</span>
-            </button>
+            </ShadButton>
             {showSnippets && (
               <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                 {Array.from(new Set(FLOW_SNIPPETS.map((s) => s.category))).map((cat) => (
                   <div key={cat} className="space-y-1">
                     <div className="text-[8px] uppercase tracking-[0.4em] text-brand/70">{cat}</div>
                     {FLOW_SNIPPETS.filter((s) => s.category === cat).map((snip) => (
-                      <button
+                      <ShadButton
                         key={snip.id}
                         type="button"
+                        variant="outline"
+                        size="sm"
+                        disableAnimations
                         onClick={() => insertSnippet(snip.text)}
                         title={snip.text}
-                        className="w-full text-left rounded-lg glass border border-white/8 px-2.5 py-1.5 text-[10px] text-ink/85 hover:border-brand/40 hover:text-brand transition-colors"
+                        className="h-auto w-full justify-start text-left rounded-md border-border px-2.5 py-1.5 text-[10px] text-ink/85 hover:border-brand/40 hover:text-brand"
                       >
                         {snip.label}
-                      </button>
+                      </ShadButton>
                     ))}
                   </div>
                 ))}
@@ -665,15 +688,15 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
         {/* Validation banner — non-blocking. Shows operators what's
           incomplete without preventing them from saving a draft. */}
         {validationIssues.length > 0 && (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 space-y-1.5 shrink-0">
-            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.28em] text-amber-600">
+          <div className="rounded-md border border-brand/30 bg-brand/5 p-3 space-y-1.5 shrink-0">
+            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.28em] text-brand">
               <AlertTriangle className="w-3 h-3" />
               {validationIssues.length} item{validationIssues.length === 1 ? "" : "s"} to finish
             </div>
             <ul className="text-[11px] text-ink/70 leading-snug space-y-0.5 max-h-24 overflow-y-auto">
               {validationIssues.slice(0, 6).map((v, i) => (
                 <li key={i} className="flex items-start gap-1.5">
-                  <span className="text-amber-500 shrink-0">·</span>
+                  <span className="text-brand shrink-0">·</span>
                   <span>{v.message}</span>
                 </li>
               ))}
@@ -684,7 +707,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
           </div>
         )}
 
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide rounded-2xl border border-white/5 bg-black/10 p-2">
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide rounded-md border border-white/5 bg-black/10 p-2">
           {steps.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center opacity-50 p-6 text-center">
               <Workflow className="w-8 h-8 text-muted mb-3" />
@@ -710,10 +733,10 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                         setMobilePanel("editor");
                       }}
                       className={cn(
-                        "relative z-10 flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer group",
+                        "relative z-10 flex items-center gap-3 p-3 rounded-md border transition-all cursor-pointer group",
                         activeStepId === step.id
                           ? "bg-brand/10 border-brand/40 shadow-[0_0_15px_rgba(107, 43, 153 ,0.1)]"
-                          : "glass border-white/10 hover:border-white/30",
+                          : "wl-panel border-border hover:border-brand/30",
                       )}
                     >
                       <div className="cursor-grab active:cursor-grabbing text-ink/40 hover:text-ink/70 transition-colors shrink-0">
@@ -747,22 +770,30 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                         )}
                       </div>
 
-                      <button
+                      <ShadButton
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        disableAnimations
                         onClick={(e) => handleDuplicateStep(step.id, e)}
                         aria-label="Duplicate stage"
                         title="Duplicate stage"
-                        className="w-7 h-7 rounded-md flex items-center justify-center text-ink/40 hover:text-brand hover:bg-brand/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                        className="w-7 h-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 text-ink/40 hover:text-brand hover:bg-brand/10"
                       >
                         <Copy className="w-3.5 h-3.5" />
-                      </button>
-                      <button
+                      </ShadButton>
+                      <ShadButton
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        disableAnimations
                         onClick={(e) => handleRemoveStep(step.id, e)}
                         aria-label="Delete stage"
                         title="Delete stage"
-                        className="w-7 h-7 rounded-md flex items-center justify-center text-ink/40 hover:text-rose-500 hover:bg-rose-500/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                        className="w-7 h-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 text-ink/40 hover:text-rose-500 hover:bg-rose-500/10"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      </ShadButton>
                     </div>
                   </Reorder.Item>
                 ))}
@@ -780,12 +811,12 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
           mobilePanel === "steps" ? "hidden xl:flex" : "flex",
         )}
       >
-        <div className="flex-1 glass border border-white/10 rounded-2xl flex flex-col overflow-hidden">
+        <div className="flex-1 wl-panel border border-border rounded-md flex flex-col overflow-hidden">
           {activeStep ? (
             <div className="flex-1 flex flex-col h-full overflow-y-auto scrollbar-hide">
               <div className="p-5 md:p-6 border-b border-white/10 flex flex-wrap items-center justify-between gap-4 sticky top-0 bg-paper/80 backdrop-blur-xl z-20">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-brand/10 border border-brand/30 flex items-center justify-center text-brand font-display italic text-xl shrink-0">
+                  <div className="w-10 h-10 rounded-md bg-brand/10 border border-brand/30 flex items-center justify-center text-brand font-display italic text-xl shrink-0">
                     {activeStepIndex + 1}
                   </div>
                   <div>
@@ -816,7 +847,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                         "w-4 h-4 rounded border flex items-center justify-center transition-colors",
                         activeStep.isEndNode
                           ? "bg-rose-500 border-rose-500"
-                          : "glass border-white/20 group-hover:border-rose-500/50",
+                          : "wl-panel border-border group-hover:border-rose-500/50",
                       )}
                     >
                       {activeStep.isEndNode && <CheckCircle2 className="w-3 h-3 text-white" />}
@@ -840,25 +871,29 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       Saving
                     </span>
                   ) : isDirty ? (
-                    <span className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.25em] text-amber-600">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    <span className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.25em] text-brand">
+                      <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                       Unsaved
                     </span>
                   ) : null}
-                  <button
+                  <ShadButton
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disableAnimations
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="disabled:opacity-50 disabled:cursor-not-allowed h-9 px-4 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-all flex items-center gap-2 ml-2"
+                    className="h-9 px-4 rounded-full bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 ml-2"
                   >
                     {isSaving ? (
                       <div className="w-3.5 h-3.5 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />
                     ) : saveSuccess ? (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-brand" />
                     ) : (
                       <Save className="w-3.5 h-3.5" />
                     )}
                     {saveSuccess ? "Saved" : "Save Flow"}
-                  </button>
+                  </ShadButton>
                 </div>
               </div>
 
@@ -879,7 +914,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       handleUpdateStep(activeStep.id, "instructions", e.target.value)
                     }
                     placeholder="e.g. You are now qualifying the lead. Ask about their budget and timeline. Do not mention specific pricing yet."
-                    className="w-full h-40 bg-black/10 border border-white/10 rounded-xl p-4 text-sm text-ink leading-relaxed resize-none focus:outline-none focus:border-brand/40 transition-colors placeholder:text-ink/40"
+                    className="w-full h-40 bg-black/10 border border-white/10 rounded-md p-4 text-sm text-ink leading-relaxed resize-none focus:outline-none focus:border-brand/40 transition-colors placeholder:text-ink/40"
                   />
                   {/* Pacing / length hints — operators tend to write
                       either too terse ("be friendly") or too verbose
@@ -900,9 +935,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     const tooShort = words > 0 && words < 8;
                     return (
                       <div className="flex items-center justify-between text-[10px] text-ink/40 -mt-1 px-1">
-                        <span
-                          className={cn(tooLong && "text-amber-500", tooShort && "text-rose-500")}
-                        >
+                        <span className={cn(tooLong && "text-brand", tooShort && "text-rose-500")}>
                           {words === 0
                             ? "Write what the agent should say in this stage"
                             : `${words} word${words === 1 ? "" : "s"} · ~${seconds}s read-aloud`}
@@ -919,8 +952,11 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       cases / transition / tone / suggested rewrite.
                       Result is cached per stepId until next save. */}
                   <div className="space-y-2 pt-2">
-                    <button
+                    <ShadButton
                       type="button"
+                      variant="outline"
+                      size="sm"
+                      disableAnimations
                       disabled={
                         coachingStepId === activeStep.id ||
                         activeStep.instructions.trim().length < 10
@@ -956,7 +992,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                           setCoachingStepId(null);
                         }
                       }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full glass border border-brand/30 text-[10px] uppercase tracking-[0.22em] text-brand hover:bg-brand/8 transition-all disabled:opacity-40"
+                      className="rounded-full border-brand/30 text-[10px] uppercase tracking-[0.22em] text-brand hover:bg-brand/8"
                     >
                       {coachingStepId === activeStep.id ? (
                         <>
@@ -971,9 +1007,9 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                             : "Ask Wireline AI to coach this stage"}
                         </>
                       )}
-                    </button>
+                    </ShadButton>
                     {stepCritiques[activeStep.id] && (
-                      <div className="rounded-xl glass border border-brand/15 p-3 text-[12px] text-ink/85 leading-relaxed whitespace-pre-wrap">
+                      <div className="rounded-md wl-panel border border-brand/15 p-3 text-[12px] text-ink/85 leading-relaxed whitespace-pre-wrap">
                         {stepCritiques[activeStep.id]}
                       </div>
                     )}
@@ -985,7 +1021,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                 {/* Transition Condition */}
                 {!activeStep.isEndNode ? (
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-emerald-500">
+                    <div className="flex items-center gap-2 text-brand">
                       <ArrowRight className="w-4 h-4" />
                       <h4 className="text-[11px] uppercase tracking-[0.3em]">
                         Transition Condition
@@ -996,14 +1032,14 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       this condition continuously.
                     </p>
                     <div className="relative">
-                      <div className="absolute left-4 top-4 text-emerald-500/50">IF:</div>
+                      <div className="absolute left-4 top-4 text-brand/50">IF:</div>
                       <textarea
                         value={activeStep.transitionCondition}
                         onChange={(e) =>
                           handleUpdateStep(activeStep.id, "transitionCondition", e.target.value)
                         }
                         placeholder="e.g. The user has provided their email address and expressed interest in a demo."
-                        className="w-full h-24 bg-black/10 border border-emerald-500/20 rounded-xl pl-12 pr-4 py-4 text-sm text-ink leading-relaxed resize-none focus:outline-none focus:border-emerald-500/50 transition-colors placeholder:text-ink/40"
+                        className="w-full h-24 bg-black/10 border border-brand/20 rounded-md pl-12 pr-4 py-4 text-sm text-ink leading-relaxed resize-none focus:outline-none focus:border-brand/50 transition-colors placeholder:text-ink/40"
                       />
                     </div>
 
@@ -1022,7 +1058,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     )}
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-6 text-center">
+                  <div className="rounded-md border border-rose-500/20 bg-rose-500/5 p-6 text-center">
                     <div className="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center mx-auto mb-3">
                       <CheckCircle2 className="w-6 h-6 text-rose-500" />
                     </div>
@@ -1037,7 +1073,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
             </div>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-              <div className="w-16 h-16 rounded-2xl glass border border-white/10 flex items-center justify-center mb-4">
+              <div className="w-16 h-16 rounded-md wl-panel border border-border flex items-center justify-center mb-4">
                 <Workflow className="w-8 h-8 text-ink/40" />
               </div>
               <h3 className="font-display italic text-2xl text-ink/80 mb-2">Select a Stage</h3>

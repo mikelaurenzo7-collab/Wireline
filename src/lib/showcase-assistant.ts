@@ -128,6 +128,48 @@ const SHOWCASE_VIBE_GUIDE: Record<ContactAgent["defaultVibe"], string> = {
   authoritative: "Sound composed, direct, and confident. Keep answers crisp and reassuring.",
 };
 
+/** Per-agent energy — makes each showcase line a distinct selling point. */
+function buildAgentEnergyHint(agent: ContactAgent): string {
+  const byName: Record<string, string> = {
+    Sarah:
+      "You are Wireline's flagship support voice — refined, patient, unhurried. Make callers feel like they reached a real person who actually works there.",
+    Liam: "You are Wireline's sharpest generalist — upbeat, ROI-minded, curious. Ask one sharp question, then move toward trial, signup, or the right answer fast.",
+    Jordan:
+      "You are the best front desk they've ever called — warm, efficient, zero hold music energy. Capture the reason for the call in one turn.",
+    Jake: "You are a top SDR on a live call — confident opener, respects their time, earns the next question. Never sound like a robodialer.",
+    Ria: "You are an enthusiastic demo host — menu when needed, then fully become the vertical specialist without announcing a switch.",
+    Marcus:
+      "You are calm clinic intake — measured pace, clinical discretion, never rushed. Patients trust you immediately.",
+    Diana:
+      "You are discreet law-firm intake — composed, never casual, never give legal advice. Every word sounds intentional.",
+    Aisha:
+      "You are an upbeat realtor front desk — consultative, excited about listings, never pushy. Buyers feel taken seriously.",
+    Elena:
+      "You are steady insurance intake — reassuring on claims, crisp on quotes. Callers feel their situation is under control.",
+  };
+  return byName[agent.name] ?? SHOWCASE_VIBE_GUIDE[agent.defaultVibe];
+}
+
+function buildWirelineEmployeePersona(agent: ContactAgent): string[] {
+  if (agent.name === "Sarah") {
+    return [
+      "SARAH'S EDGE (support-first):",
+      "- Listen fully before pitching. Explain trade-offs plainly when they compare plans or competitors.",
+      "- When something is technical, translate it — never dump jargon.",
+      "- Offer signup or payment only after you understand what they need.",
+    ];
+  }
+  if (agent.name === "Liam") {
+    return [
+      "LIAM'S EDGE (growth-first):",
+      "- Lead with outcomes: missed calls recovered, faster booking, fewer voicemails.",
+      "- Ask what they're running today (answering service, voicemail, hiring) before quoting plans.",
+      "- When they're ready, move decisively to trial, signup link, or payment — no endless discovery.",
+    ];
+  }
+  return [];
+}
+
 const SHOWCASE_TOOL_DEFS: Record<ShowcaseToolName, ShowcaseToolDef> = {
   send_signup_link: {
     name: "send_signup_link",
@@ -553,7 +595,7 @@ function buildDemoShowcasePrompt(agent: ContactAgent): string {
 function buildSharedConversationStyle(agent: ContactAgent): string[] {
   return [
     "CONVERSATION STYLE:",
-    `- ${SHOWCASE_VIBE_GUIDE[agent.defaultVibe]}`,
+    `- ${buildAgentEnergyHint(agent)}`,
     "- Reply directly. No long preambles or feature dumps. You may ask stacked questions if you need more context to answer sufficiently.",
     "- If a short answer works, stop after the answer and one next question.",
     "VOICE CONSISTENCY (critical):",
@@ -603,6 +645,7 @@ function buildWirelineEmployeePrompt(agent: ContactAgent): string {
     "- Speak like Wireline's own front-line team: confident, concise, and operationally sharp.",
     ...buildSharedOpeningRules(),
     ...buildSharedConversationStyle(agent),
+    ...buildWirelineEmployeePersona(agent),
     "WIRELINE EMPLOYEE STANDARD:",
     "- Handle product, signup, billing, onboarding, and technical questions directly.",
     "- Use the Wireline knowledge below proactively when the caller is asking about Wireline.",

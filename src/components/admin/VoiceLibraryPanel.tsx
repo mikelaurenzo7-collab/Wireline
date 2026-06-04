@@ -19,6 +19,7 @@ import { useToast } from "../../contexts/ToastContext";
 import { cn } from "../../lib/utils";
 import { Checkbox } from "../ui/shadcn/Checkbox";
 import { Input } from "../ui/shadcn/Input";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 interface ClonedVoice {
   voice_id: string;
@@ -165,9 +166,9 @@ export default function VoiceLibraryPanel() {
       </div>
 
       {!configured && (
-        <div className="rounded-xl border border-amber-500/40 bg-amber-500/8 p-3 flex items-start gap-2.5">
-          <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-          <p className="text-[12px] text-amber-700 leading-relaxed">
+        <div className="rounded-md border border-brand/30 bg-brand/5 p-3 flex items-start gap-2.5">
+          <AlertTriangle className="w-4 h-4 text-brand shrink-0 mt-0.5" />
+          <p className="text-[12px] text-brand/80 leading-relaxed">
             Voice cloning isn't configured yet. The owner needs to set ELEVENLABS_API_KEY in
             environment variables. Once set, you can clone voices here.
           </p>
@@ -176,18 +177,21 @@ export default function VoiceLibraryPanel() {
 
       {/* Clone CTA / form */}
       {!showCloneForm ? (
-        <button
+        <ShadButton
+          type="button"
+          variant="outline"
+          disableAnimations
           onClick={() => setShowCloneForm(true)}
           disabled={!configured}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand/30 bg-brand/5 hover:bg-brand/8 hover:border-brand/50 py-6 transition-colors disabled:opacity-40"
+          className="w-full h-auto rounded-md border-2 border-dashed border-brand/30 bg-brand/5 hover:bg-brand/8 hover:border-brand/50 py-6 flex-col gap-2 disabled:opacity-40"
         >
           <Mic className="w-5 h-5 text-brand" />
           <span className="text-[13px] text-brand font-medium">Clone a new voice</span>
-        </button>
+        </ShadButton>
       ) : (
         <form
           onSubmit={startClone}
-          className="rounded-2xl border border-black/10 bg-paper p-5 space-y-4"
+          className="rounded-md border border-border bg-paper p-5 space-y-4"
         >
           <div>
             <h3 className="font-display italic text-lg text-ink">Clone a voice</h3>
@@ -213,7 +217,7 @@ export default function VoiceLibraryPanel() {
               minLength={2}
               maxLength={80}
               placeholder="e.g. Mike L. — Founder voice"
-              className="w-full rounded-lg border border-black/10 bg-paper px-3 py-2.5 text-[13px] text-ink outline-none focus:border-brand/40"
+              className="w-full rounded-md border border-black/10 bg-paper px-3 py-2.5 text-[13px] text-ink outline-none focus:border-brand/40"
             />
           </div>
 
@@ -230,7 +234,7 @@ export default function VoiceLibraryPanel() {
               accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/m4a,audio/ogg,.mp3,.wav,.m4a,.ogg"
               onChange={(e) => setCloneFile(e.target.files?.[0] || null)}
               required
-              className="w-full text-[12px] text-ink file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border-0 file:bg-brand/10 file:text-brand file:text-[11px] file:cursor-pointer"
+              className="w-full text-[12px] text-ink file:mr-3 file:px-3 file:py-2 file:rounded-md file:border-0 file:bg-brand/10 file:text-brand file:text-[11px] file:cursor-pointer"
             />
             {cloneFile && (
               <p className="text-[10px] text-muted mt-1">
@@ -252,10 +256,12 @@ export default function VoiceLibraryPanel() {
           </label>
 
           <div className="flex items-center gap-2">
-            <button
+            <ShadButton
               type="submit"
+              variant="editorial"
+              disableAnimations
               disabled={cloning || !consent || !cloneFile || cloneName.trim().length < 2}
-              className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-deep text-on-brand px-4 py-2.5 text-[11px] uppercase tracking-[0.28em] hover:opacity-90 disabled:opacity-30 transition-opacity"
+              className="flex-1 rounded-full text-[11px] uppercase tracking-[0.28em] py-2.5"
             >
               {cloning ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -263,9 +269,11 @@ export default function VoiceLibraryPanel() {
                 <UploadCloud className="w-3.5 h-3.5" />
               )}
               {cloning ? "Cloning…" : "Clone voice"}
-            </button>
-            <button
+            </ShadButton>
+            <ShadButton
               type="button"
+              variant="ghost"
+              disableAnimations
               onClick={() => {
                 setShowCloneForm(false);
                 setCloneName("");
@@ -273,10 +281,10 @@ export default function VoiceLibraryPanel() {
                 setConsent(false);
               }}
               disabled={cloning}
-              className="disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5 rounded-full text-[11px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
+              className="rounded-full text-[11px] uppercase tracking-[0.28em] text-muted"
             >
               Cancel
-            </button>
+            </ShadButton>
           </div>
         </form>
       )}
@@ -287,11 +295,11 @@ export default function VoiceLibraryPanel() {
           Your cloned voices · {ownedVoices.length}
         </p>
         {loading ? (
-          <div className="rounded-xl border border-black/8 p-4 flex items-center gap-2 text-muted text-[12px]">
+          <div className="rounded-md border border-black/8 p-4 flex items-center gap-2 text-muted text-[12px]">
             <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…
           </div>
         ) : ownedVoices.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-black/15 p-6 text-center text-[12px] text-muted">
+          <div className="rounded-md border border-dashed border-black/15 p-6 text-center text-[12px] text-muted">
             No cloned voices yet. Clone your first one above.
           </div>
         ) : (
@@ -299,17 +307,20 @@ export default function VoiceLibraryPanel() {
             <motion.div
               key={v.voice_id}
               layout
-              className="rounded-xl border border-black/10 bg-paper p-3 flex items-center gap-3"
+              className="rounded-md border border-black/10 bg-paper p-3 flex items-center gap-3"
             >
-              <button
+              <ShadButton
+                type="button"
+                variant="outline"
+                size="icon"
+                disableAnimations
                 onClick={() => playPreview(v)}
                 disabled={!v.preview_url}
                 className={cn(
-                  "disabled:opacity-50 disabled:cursor-not-allowed",
-                  "shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all",
+                  "shrink-0 w-9 h-9 rounded-full",
                   v.preview_url
-                    ? "bg-brand/10 text-brand hover:bg-brand/20"
-                    : "bg-black/5 text-muted/70 cursor-not-allowed",
+                    ? "bg-brand/10 text-brand hover:bg-brand/20 border-brand/20"
+                    : "bg-black/5 text-muted/70",
                 )}
                 aria-label={`Play preview of ${v.name}`}
               >
@@ -318,19 +329,23 @@ export default function VoiceLibraryPanel() {
                 ) : (
                   <Play className="w-4 h-4 ml-0.5" />
                 )}
-              </button>
+              </ShadButton>
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-medium text-ink truncate">{v.name}</p>
                 <p className="text-[9px] uppercase tracking-[0.22em] text-muted/70">Cloned voice</p>
               </div>
-              <button
+              <ShadButton
+                type="button"
+                variant="ghost"
+                size="icon"
+                disableAnimations
                 onClick={() => deleteClone(v)}
-                className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-rose-600 hover:bg-rose-500/8 transition-colors"
+                className="shrink-0 w-8 h-8 rounded-md text-muted hover:text-rose-600 hover:bg-rose-500/8"
                 aria-label={`Delete ${v.name}`}
                 title="Delete"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              </ShadButton>
             </motion.div>
           ))
         )}

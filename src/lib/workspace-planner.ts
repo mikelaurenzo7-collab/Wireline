@@ -27,6 +27,8 @@ import {
   resolveAgentTools,
   type AgentToolName,
 } from "./agent-capabilities";
+import { DIRECTOR_INTEGRATION_TOOLS } from "./director-integration-tools";
+import type { DirectorIntegrationJob } from "./director-fleet-plan";
 
 /** Personality vibes the chat may set — mirrors the Vapi factory. */
 export const WORKSPACE_VIBE_OPTIONS = ["warm", "playful", "authoritative"] as const;
@@ -205,6 +207,8 @@ export interface ProposedAction {
   subject?: string;
   body?: string;
   context?: string;
+  /** 1-based workflow step when multiple approvals ship in one turn. */
+  step?: number;
 }
 
 export interface WorkspacePlan {
@@ -212,6 +216,7 @@ export interface WorkspacePlan {
   changes: ProposedChange[];
   toolToggles: ProposedToolToggle[];
   actions: ProposedAction[];
+  integrationJobs: DirectorIntegrationJob[];
   /** Claude's adaptive thinking reasoning (when deep thinking is enabled). */
   reasoning?: string;
   /** Approximate thinking duration in ms (for UI badge). */
@@ -240,6 +245,12 @@ export interface PlanWorkspaceInput {
     sentiment?: string | null;
     intent?: string | null;
   }>;
+  /** When true, the Director (not the agent) speaks and coaches via approval cards. */
+  coachAsDirector?: boolean;
+  /** Connected OAuth integrations — shown in coach/Director prompts. */
+  integrationPrompt?: string;
+  /** Pre-fetched live web research block (Director coach mode). */
+  researchBlock?: string;
 }
 
 const DIRECT_AGENT_TOOL: ToolSchema = {
@@ -322,8 +333,37 @@ const DIRECT_AGENT_TOOL: ToolSchema = {
   },
 };
 
+const COACH_DIRECTOR_WORKSPACE_TOOL: ToolSchema = {
+  ...DIRECT_AGENT_TOOL,
+  description:
+    "Reply as the Director coaching this agent. Propose config changes, capability toggles, " +
+    "comms actions, and integration jobs for one-click operator approval.",
+  input_schema: {
+    ...DIRECT_AGENT_TOOL.input_schema,
+    properties: {
+      ...DIRECT_AGENT_TOOL.input_schema.properties,
+      integration_jobs: {
+        type: "array",
+        description:
+          "Integration-backed work for this agent on approval — CRM, Shopify, Slack, calendar, etc.",
+        items: {
+          type: "object",
+          properties: {
+            tool: { type: "string", enum: [...DIRECTOR_INTEGRATION_TOOLS] },
+            label: { type: "string" },
+            summary: { type: "string" },
+            query: { type: "string" },
+          },
+          required: ["tool", "label", "summary"],
+          additionalProperties: false,
+        },
+      },
+    },
+  },
+};
+
 function buildSystemPrompt(input: PlanWorkspaceInput): string {
-  const { agent, recentCalls } = input;
+  const { agent, recentCalls, coachAsDirector } = input;
   const name = agent.name || "the agent";
   const role = agent.role || "AI receptionist";
   const archetype = agent.archetype || "warm professional";
@@ -353,14 +393,26 @@ function buildSystemPrompt(input: PlanWorkspaceInput): string {
           )
           .join("\n");
 
-  return `You are ${name}, a Wireline AI ${role} (archetype: ${archetype}). You're in a private chat with your operator — the person who owns and manages you. This chat is their PRIMARY control surface: instead of hunting through settings tabs, they direct you in plain language and you do the work for them.
+  const persona = coachAsDirector
+    ? `You are the Director — the operator's AI manager inside Wireline. The operator selected **${name}** (${role}, archetype: ${archetype}) in the Coach menu. You're coaching them on how to improve this agent — speak as the Director ("I'll update ${name}'s greeting…"), not in ${name}'s first person voice.`
+    : `You are ${name}, a Wireline AI ${role} (archetype: ${archetype}). You're in a private chat with your operator — the person who owns and manages you.`;
+
+  return `${persona} This chat is their PRIMARY control surface: instead of hunting through settings tabs, they direct you in plain language and you do the work for them.
 
 Your job each turn:
-1. Reply in first person, in character as ${name} — warm, concise, never salesy.
-2. If they ask to change how you behave, FILL OUT the exact change in config_changes with the final value (don't tell them to go edit a tab — prepare it for one-click approval). Only the allowlisted fields below can be changed this way.
+1. Reply ${coachAsDirector ? "as the Director" : "in first person, in character as " + name} — warm, concise, never salesy.
+2. If they ask to change how ${coachAsDirector ? "this agent behaves" : "you behave"}, FILL OUT the exact change in config_changes with the final value (don't tell them to go edit a tab — prepare it for one-click approval). Only the allowlisted fields below can be changed this way.
 3. If they ask to gain/lose a capability ("turn on SMS", "stop booking appointments"), add it to tool_toggles.
 4. If they explicitly ask you to contact someone (email/text/call), add it to actions with a clear draft.
-5. If nothing actionable was asked, just reply — leave the arrays empty.
+5. If they ask to run connected integration work (CRM lookup, Shopify order, Slack alert, calendar, DocuSign), add integration_jobs with a clear query.
+6. If nothing actionable was asked, just reply — leave the arrays empty.
+
+Creative collaborator mode (chat-only, no extra tools required):
+- You CAN draft full deliverables in your reply: business plans, GTM one-pagers, marketing copy, email sequences, SOPs, objection playbooks, meeting agendas, and logo/brand briefs.
+- Structure long outputs with clear headings. Be specific to the operator's business when context exists.
+- Live web research may appear above the operator message — use it for market/competitor/regulatory answers; cite sources when present.
+- For production logo SVGs or downloadable brand ZIPs, outline concepts here; the Director can export artifacts when no agent is selected.
+- When a deliverable implies config changes (new greeting, tone, tools), also populate config_changes / tool_toggles so the operator can approve in one click.
 
 Rules:
 - Never invent fields, tools, or recipients. Use only the allowlisted fields and listed capabilities.
@@ -374,8 +426,9 @@ ${currentConfig}
 Your capabilities (toggle state):
 ${capabilityLines}
 
-Recent calls (last ${recentCalls.length}):
-${callsSummary}`;
+Recent calls for ${name} (last ${recentCalls.length}):
+${callsSummary}
+${coachAsDirector && input.integrationPrompt ? `\nConnected integrations (via integration_jobs):\n${input.integrationPrompt}\n` : ""}`;
 }
 
 function buildUserContent(input: PlanWorkspaceInput): string {
@@ -384,7 +437,8 @@ function buildUserContent(input: PlanWorkspaceInput): string {
     .map((m) => `${m.role === "operator" ? "Operator" : "You"}: ${m.content}`)
     .join("\n");
   const prefix = transcript ? `Conversation so far:\n${transcript}\n\n` : "";
-  return `${prefix}Operator's new message:\n${input.operatorMessage}`;
+  const base = `${prefix}Operator's new message:\n${input.operatorMessage}`;
+  return input.researchBlock ? `${input.researchBlock}\n\n${base}` : base;
 }
 
 interface RawDirectAgent {
@@ -392,6 +446,7 @@ interface RawDirectAgent {
   config_changes?: unknown;
   tool_toggles?: unknown;
   actions?: unknown;
+  integration_jobs?: unknown;
 }
 
 function clampString(value: unknown, maxLen: number): string | null {
@@ -424,7 +479,7 @@ function validateFieldValue(field: WorkspaceFieldKey, raw: unknown): string | nu
  * Anything malformed, out-of-allowlist, or no-op is silently dropped so the
  * UI only ever sees actionable, executable proposals.
  */
-export function normalizePlan(raw: RawDirectAgent): WorkspacePlan {
+export function normalizePlan(raw: RawDirectAgent, opts?: { agentId?: string }): WorkspacePlan {
   const reply =
     clampString(raw.reply, 2000) || "Got it — let me know what you'd like me to adjust.";
 
@@ -491,7 +546,44 @@ export function normalizePlan(raw: RawDirectAgent): WorkspacePlan {
     }
   }
 
-  return { reply, changes, toolToggles, actions };
+  const integrationJobs: DirectorIntegrationJob[] = [];
+  const seenJobKeys = new Set<string>();
+  if (Array.isArray(raw.integration_jobs)) {
+    for (const j of raw.integration_jobs) {
+      if (!j || typeof j !== "object") continue;
+      const rec = j as Record<string, unknown>;
+      const tool = rec.tool;
+      if (
+        typeof tool !== "string" ||
+        !isAgentToolName(tool) ||
+        !(DIRECTOR_INTEGRATION_TOOLS as readonly string[]).includes(tool)
+      ) {
+        continue;
+      }
+      const query = clampString(rec.query, 2000) || undefined;
+      const summary = clampString(rec.summary, 500) || "";
+      const dedupeKey = `${tool}:${query || summary}`;
+      if (seenJobKeys.has(dedupeKey)) continue;
+      seenJobKeys.add(dedupeKey);
+      integrationJobs.push({
+        tool,
+        label: clampString(rec.label, 120) || tool,
+        summary,
+        agentId: opts?.agentId,
+        query,
+      });
+    }
+  }
+
+  let step = 1;
+  for (const a of actions) {
+    a.step = step++;
+  }
+  for (const j of integrationJobs) {
+    j.step = step++;
+  }
+
+  return { reply, changes, toolToggles, actions, integrationJobs };
 }
 
 /**
@@ -517,4 +609,13 @@ export async function planWorkspace(input: PlanWorkspaceInput): Promise<Workspac
   });
   const plan = normalizePlan(raw);
   return { ...plan, reasoning: thinking, thinkingDurationMs };
+}
+
+/** Prompt bundle for SSE streaming (Director coach mode + agent workspace). */
+export function buildWorkspaceStreamContext(input: PlanWorkspaceInput) {
+  return {
+    system: buildSystemPrompt(input),
+    user: buildUserContent(input),
+    tool: input.coachAsDirector ? COACH_DIRECTOR_WORKSPACE_TOOL : DIRECT_AGENT_TOOL,
+  };
 }

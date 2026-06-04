@@ -274,18 +274,15 @@ export default function AgentTraining({
         {/* AI assists — collapsed by default to declutter; expand to see recipe
             shortcuts. Each is scoped to this agent. */}
         <details className="max-w-[1400px] mx-auto w-full group">
-          <summary className="cursor-pointer list-none flex items-center gap-2 px-3 py-1.5 rounded-xl glass border border-white/10 hover:border-brand/30 transition-colors">
-            <div
-              className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
-              style={{ background: "#8B3FD6" }}
-            >
+          <summary className="cursor-pointer list-none flex items-center gap-2 px-3 py-1.5 rounded-md wl-panel border border-border hover:border-brand/30 transition-colors">
+            <div className="w-6 h-6 rounded-md bg-brand flex items-center justify-center shrink-0">
               <Sparkles className="w-3 h-3 text-on-brand" strokeWidth={2.5} />
             </div>
             <span className="text-[10px] uppercase tracking-[0.14em] text-brand">AI assists</span>
             <span className="text-[11px] text-ink/70">— one-click recipes</span>
             <ChevronDown className="ml-auto w-3.5 h-3.5 text-muted transition-transform group-open:rotate-180" />
           </summary>
-          <div className="mt-2 p-3 rounded-xl glass border border-white/10 flex flex-wrap items-center gap-1.5">
+          <div className="mt-2 p-3 rounded-md wl-panel border border-border flex flex-wrap items-center gap-1.5">
             <ClaudeRecipeButton
               variant="ghost"
               recipe="agent-review"
@@ -368,17 +365,20 @@ export default function AgentTraining({
               help: "Define linear conversation stages and transitions (advanced — most agents work great without this).",
             },
           ].map((tab) => (
-            <button
+            <ShadButton
               key={tab.id}
+              type="button"
+              variant="ghost"
+              disableAnimations
               role="tab"
               aria-selected={activeTab === tab.id}
               aria-controls={`training-panel-${tab.id}`}
               onClick={() => setActiveTab(tab.id as TrainingTab)}
               className={cn(
-                "px-2.5 py-1.5 rounded-lg border text-[10px] uppercase tracking-[0.12em] flex items-center gap-1.5 transition-colors",
+                "h-auto px-2.5 py-1.5 rounded-md border text-[10px] uppercase tracking-[0.12em] gap-1.5",
                 activeTab === tab.id
-                  ? "bg-brand/15 border-brand/40 text-brand"
-                  : "glass border-black/10 text-muted hover:border-brand/25 hover:text-ink",
+                  ? "bg-brand/15 border-brand/40 text-brand hover:bg-brand/15 hover:text-brand"
+                  : "wl-panel border-border text-muted hover:border-brand/25 hover:text-ink",
               )}
             >
               <tab.icon className="w-3 h-3" />
@@ -388,7 +388,7 @@ export default function AgentTraining({
                   ?
                 </span>
               </HelpTooltip>
-            </button>
+            </ShadButton>
           ))}
         </nav>
       </header>
@@ -411,10 +411,10 @@ export default function AgentTraining({
               )}
 
               {/* Analysis Engine */}
-              <section className="rounded-2xl glass border border-white/10 p-4">
+              <section className="rounded-md wl-panel-elevated border border-border p-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl glass border border-brand/30 text-brand flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-md wl-panel border border-brand/30 text-brand flex items-center justify-center shrink-0">
                       <Zap className="w-4 h-4" />
                     </div>
                     <div>
@@ -426,10 +426,14 @@ export default function AgentTraining({
                       </p>
                     </div>
                   </div>
-                  <button
+                  <ShadButton
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disableAnimations
                     onClick={handleOptimize}
                     disabled={isOptimizing}
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-brand/40 bg-brand/8 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/15 transition-all disabled:opacity-50"
+                    className="h-8 rounded-md border-brand/40 bg-brand/8 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/15"
                   >
                     {isOptimizing ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -437,7 +441,7 @@ export default function AgentTraining({
                       <Activity className="w-3.5 h-3.5" />
                     )}
                     {isOptimizing ? "Analyzing…" : "Analyze calls"}
-                  </button>
+                  </ShadButton>
                 </div>
                 {optSuggestions && (
                   <motion.div
@@ -446,7 +450,7 @@ export default function AgentTraining({
                     animate={{ opacity: 1, scale: 1 }}
                     className="space-y-3"
                   >
-                    <div className="rounded-xl bg-black/20 border border-white/8 p-4">
+                    <div className="rounded-md bg-black/20 border border-white/8 p-4">
                       <h4 className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mb-2">
                         Analysis
                       </h4>
@@ -461,15 +465,19 @@ export default function AgentTraining({
                             <motion.div
                               key={idx}
                               exit={{ opacity: 0, scale: 0.9 }}
-                              className="rounded-xl glass border border-white/10 p-3 flex flex-col justify-between gap-3"
+                              className="rounded-md wl-panel border border-border p-3 flex flex-col justify-between gap-3"
                             >
                               <p className="text-sm text-ink/90 leading-relaxed">"{s}"</p>
-                              <button
+                              <ShadButton
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disableAnimations
                                 onClick={() => applySuggestion(s)}
-                                className="w-full h-8 rounded-lg bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25 transition-all"
+                                className="w-full h-8 rounded-md bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25"
                               >
                                 Apply
-                              </button>
+                              </ShadButton>
                             </motion.div>
                           ))
                         ) : (
@@ -484,14 +492,10 @@ export default function AgentTraining({
               </section>
 
               {/* Neural Identity */}
-              <section className="rounded-2xl glass border border-white/10 p-4 relative overflow-hidden">
-                <div
-                  className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
-                  style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
-                />
-                <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+              <section className="rounded-md wl-panel-elevated border border-border p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl glass border border-brand-3/30 text-brand-3 flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-md wl-panel border border-brand/30 text-brand flex items-center justify-center shrink-0">
                       <Target className="w-4 h-4" />
                     </div>
                     <div>
@@ -505,41 +509,53 @@ export default function AgentTraining({
                   </div>
                   {editingPersonality ? (
                     <div className="flex gap-2">
-                      <button
+                      <ShadButton
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disableAnimations
                         onClick={() => {
                           setEditingPersonality(false);
                           setPersonalityDraft(personality);
                         }}
-                        className="h-8 px-3 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.12em] text-muted hover:text-ink transition-colors"
+                        className="h-8 rounded-md text-[10px] uppercase tracking-[0.12em] text-muted"
                       >
                         Cancel
-                      </button>
-                      <button
+                      </ShadButton>
+                      <ShadButton
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disableAnimations
                         onClick={() => saveManualEntry("personality", personalityDraft)}
-                        className="h-8 px-3 rounded-lg bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25 transition-all"
+                        className="h-8 rounded-md bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25"
                       >
                         Save
-                      </button>
+                      </ShadButton>
                     </div>
                   ) : (
-                    <button
+                    <ShadButton
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disableAnimations
                       onClick={() => setEditingPersonality(true)}
-                      className="h-8 px-3 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.12em] text-muted/80 hover:text-ink flex items-center gap-1.5 transition-all"
+                      className="h-8 rounded-md text-[10px] uppercase tracking-[0.12em] text-muted/80"
                     >
                       <Pencil className="w-3 h-3" /> Edit
-                    </button>
+                    </ShadButton>
                   )}
                 </div>
-                <div className="relative z-10">
+                <div>
                   {editingPersonality ? (
                     <textarea
                       value={personalityDraft}
                       onChange={(e) => setPersonalityDraft(e.target.value)}
-                      className="w-full min-h-[180px] p-3 rounded-xl bg-black/5 border border-black/10 text-sm text-ink outline-none focus:border-brand/50 resize-none leading-relaxed placeholder:text-ink/40"
+                      className="w-full min-h-[180px] p-3 rounded-md bg-black/5 border border-black/10 text-sm text-ink outline-none focus:border-brand/50 resize-none leading-relaxed placeholder:text-ink/40"
                       placeholder="Define the core identity heuristics…"
                     />
                   ) : (
-                    <div className="p-4 rounded-xl bg-black/20 border border-white/8">
+                    <div className="p-4 rounded-md bg-black/20 border border-white/8">
                       <p className="font-display italic text-xl md:text-2xl text-ink leading-snug">
                         {personality ? (
                           `"${personality}"`
@@ -558,7 +574,7 @@ export default function AgentTraining({
               {/* Directives + Knowledge */}
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 {/* Rules */}
-                <section className="rounded-2xl glass border border-white/10 p-3 flex flex-col">
+                <section className="rounded-md wl-panel-elevated border border-border p-3 flex flex-col">
                   <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-white/8">
                     <div>
                       <h3 className="font-display italic lowercase text-lg text-ink leading-none">
@@ -586,7 +602,7 @@ export default function AgentTraining({
                             initial={{ opacity: 0, x: -6 }}
                             animate={{ opacity: 1, x: 0 }}
                             key={d.id}
-                            className="rounded-xl bg-rose-500/8 border border-rose-500/20 p-3 group"
+                            className="rounded-md bg-rose-500/8 border border-rose-500/20 p-3 group"
                           >
                             {editingDirective && editingDirective.id === d.id ? (
                               <div className="space-y-2">
@@ -598,24 +614,32 @@ export default function AgentTraining({
                                       content: e.target.value,
                                     })
                                   }
-                                  className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink min-h-[80px] resize-none"
+                                  className="w-full text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-rose-400/50 text-ink min-h-[80px] resize-none"
                                 />
                                 <div className="flex justify-end gap-1.5">
-                                  <button
+                                  <ShadButton
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    disableAnimations
                                     onClick={() => setEditingDirective(null)}
-                                    className="px-2.5 py-1 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.12em] text-muted hover:text-ink"
+                                    className="h-7 px-2.5 text-[10px] uppercase tracking-[0.12em] text-muted"
                                   >
                                     Cancel
-                                  </button>
-                                  <button
+                                  </ShadButton>
+                                  <ShadButton
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    disableAnimations
                                     onClick={() =>
                                       saveManualEntry("directive", editingDirective!.content, d.id)
                                     }
                                     disabled={isSavingEntry}
-                                    className="px-2.5 py-1 rounded-lg bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25 disabled:opacity-50"
+                                    className="h-7 px-2.5 bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25"
                                   >
                                     {isSavingEntry ? "Saving…" : "Save"}
-                                  </button>
+                                  </ShadButton>
                                 </div>
                               </div>
                             ) : (
@@ -628,8 +652,8 @@ export default function AgentTraining({
                                         d.priority <= 2
                                           ? "bg-rose-500/10 border-rose-500/30 text-rose-600"
                                           : d.priority <= 4
-                                            ? "bg-amber-400/10 border-amber-400/30 text-amber-600"
-                                            : "bg-emerald-500/10 border-emerald-500/30 text-emerald-700",
+                                            ? "bg-brand/10 border-brand/30 text-brand"
+                                            : "bg-black/[0.04] border-border text-muted",
                                       )}
                                     >
                                       <span
@@ -638,8 +662,8 @@ export default function AgentTraining({
                                           d.priority <= 2
                                             ? "bg-rose-500"
                                             : d.priority <= 4
-                                              ? "bg-amber-400"
-                                              : "bg-emerald-500",
+                                              ? "bg-brand"
+                                              : "bg-muted",
                                         )}
                                       />
                                       P{d.priority}
@@ -649,20 +673,22 @@ export default function AgentTraining({
                                     {d.content}
                                   </div>
                                 </div>
-                                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 shrink-0">
+                                <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex gap-1 shrink-0">
                                   <ShadButton
-                                    variant="glass"
+                                    variant="outline"
                                     size="icon"
+                                    disableAnimations
                                     onClick={() =>
                                       setEditingDirective({ id: d.id, content: d.content })
                                     }
-                                    className="w-6 h-6 rounded-full hover:border-white/30"
+                                    className="w-6 h-6 rounded-full"
                                   >
                                     <Pencil className="w-3 h-3" />
                                   </ShadButton>
                                   <ShadButton
-                                    variant="glass"
+                                    variant="outline"
                                     size="icon"
+                                    disableAnimations
                                     onClick={() => deleteItem(d.id, "directive")}
                                     className="w-6 h-6 rounded-full hover:text-rose-500 hover:border-rose-500/30"
                                   >
@@ -689,21 +715,25 @@ export default function AgentTraining({
                           e.key === "Enter" && saveManualEntry("directive", newDirective)
                         }
                         placeholder="e.g. Never discuss competitor pricing"
-                        className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-ink/40"
+                        className="flex-1 text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-ink/40"
                       />
-                      <button
+                      <ShadButton
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        disableAnimations
                         onClick={() => saveManualEntry("directive", newDirective)}
                         disabled={!newDirective || isSavingEntry}
-                        className="w-9 h-9 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-500 flex items-center justify-center hover:bg-rose-500/25 disabled:opacity-50 transition-all"
+                        className="w-9 h-9 rounded-full bg-rose-500/15 border-rose-500/30 text-rose-500 hover:bg-rose-500/25"
                       >
                         <Plus className="w-3.5 h-3.5" />
-                      </button>
+                      </ShadButton>
                     </div>
                   </div>
                 </section>
 
                 {/* Fact Archive */}
-                <section className="rounded-2xl glass border border-white/10 p-3 flex flex-col">
+                <section className="rounded-md wl-panel-elevated border border-border p-3 flex flex-col">
                   <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-white/8">
                     <div>
                       <h3 className="font-display italic lowercase text-lg text-ink leading-none">
@@ -713,7 +743,7 @@ export default function AgentTraining({
                         Knowledge base
                       </p>
                     </div>
-                    <span className="px-1.5 py-0.5 rounded-md bg-blue-500/15 border border-blue-500/30 text-blue-600 text-[9px] uppercase tracking-[0.12em] leading-none">
+                    <span className="px-1.5 py-0.5 rounded-md bg-brand/15 border border-brand/30 text-brand text-[9px] uppercase tracking-[0.12em] leading-none">
                       Factual
                     </span>
                   </header>
@@ -726,7 +756,7 @@ export default function AgentTraining({
                               aria-hidden="true"
                               className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
                             />
-                            <span className="relative flex w-11 h-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25">
+                            <span className="relative flex w-11 h-11 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25">
                               <BookOpen className="w-5 h-5" />
                             </span>
                           </div>
@@ -748,7 +778,7 @@ export default function AgentTraining({
                             initial={{ opacity: 0, x: 6 }}
                             animate={{ opacity: 1, x: 0 }}
                             key={k.id}
-                            className="rounded-xl bg-blue-500/8 border border-blue-500/20 p-3 group"
+                            className="rounded-md bg-brand/8 border border-brand/20 p-3 group"
                           >
                             {editingKnowledge && editingKnowledge.id === k.id ? (
                               <div className="space-y-2">
@@ -760,24 +790,32 @@ export default function AgentTraining({
                                       content: e.target.value,
                                     })
                                   }
-                                  className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink min-h-[80px] resize-none"
+                                  className="w-full text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink min-h-[80px] resize-none"
                                 />
                                 <div className="flex justify-end gap-1.5">
-                                  <button
+                                  <ShadButton
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    disableAnimations
                                     onClick={() => setEditingKnowledge(null)}
-                                    className="px-2.5 py-1 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.12em] text-muted hover:text-ink"
+                                    className="h-7 px-2.5 text-[10px] uppercase tracking-[0.12em] text-muted"
                                   >
                                     Cancel
-                                  </button>
-                                  <button
+                                  </ShadButton>
+                                  <ShadButton
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    disableAnimations
                                     onClick={() =>
                                       saveManualEntry("knowledge", editingKnowledge!.content, k.id)
                                     }
                                     disabled={isSavingEntry}
-                                    className="px-2.5 py-1 rounded-lg bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25 disabled:opacity-50"
+                                    className="h-7 px-2.5 bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25"
                                   >
                                     {isSavingEntry ? "Saving…" : "Save"}
-                                  </button>
+                                  </ShadButton>
                                 </div>
                               </div>
                             ) : (
@@ -785,22 +823,24 @@ export default function AgentTraining({
                                 <div className="flex-1 text-sm text-ink/90 leading-relaxed">
                                   {k.content}
                                 </div>
-                                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 shrink-0">
+                                <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex gap-1 shrink-0">
                                   <ShadButton
-                                    variant="glass"
+                                    variant="outline"
                                     size="icon"
+                                    disableAnimations
                                     onClick={() =>
                                       setEditingKnowledge({ id: k.id, content: k.content })
                                     }
-                                    className="w-6 h-6 rounded-full hover:border-white/30"
+                                    className="w-6 h-6 rounded-full"
                                   >
                                     <Pencil className="w-3 h-3" />
                                   </ShadButton>
                                   <ShadButton
-                                    variant="glass"
+                                    variant="outline"
                                     size="icon"
+                                    disableAnimations
                                     onClick={() => deleteItem(k.id, "knowledge")}
-                                    className="w-6 h-6 rounded-full hover:text-blue-600 hover:border-blue-500/30"
+                                    className="w-6 h-6 rounded-full hover:text-brand hover:border-brand/30"
                                   >
                                     <Trash2 className="w-3 h-3" />
                                   </ShadButton>
@@ -825,15 +865,19 @@ export default function AgentTraining({
                           e.key === "Enter" && saveManualEntry("knowledge", newKnowledge)
                         }
                         placeholder="e.g. Our return policy is 30 days, no questions"
-                        className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-ink/40"
+                        className="flex-1 text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40"
                       />
-                      <button
+                      <ShadButton
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        disableAnimations
                         onClick={() => saveManualEntry("knowledge", newKnowledge)}
                         disabled={!newKnowledge || isSavingEntry}
-                        className="w-9 h-9 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-600 flex items-center justify-center hover:bg-blue-500/25 disabled:opacity-50 transition-all"
+                        className="w-9 h-9 rounded-full bg-brand/15 border-brand/30 text-brand hover:bg-brand/25"
                       >
                         <Plus className="w-3.5 h-3.5" />
-                      </button>
+                      </ShadButton>
                     </div>
                   </div>
                 </section>
@@ -844,20 +888,17 @@ export default function AgentTraining({
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="rounded-2xl glass border border-white/10 p-4"
+                  className="rounded-md wl-panel-elevated border border-border p-4"
                 >
                   <div className="flex items-center gap-2.5 mb-4">
-                    <div
-                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                      style={{ background: "#8B3FD6" }}
-                    >
+                    <div className="w-7 h-7 rounded-md bg-brand flex items-center justify-center shrink-0">
                       <Sparkles className="w-3.5 h-3.5 text-on-brand" strokeWidth={2.5} />
                     </div>
                     <div>
                       <h3 className="font-display italic lowercase text-lg text-ink leading-none">
                         ai auto-calibration
                       </h3>
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-emerald-500">
+                      <p className="text-[10px] uppercase tracking-[0.3em] text-brand">
                         Synthetic learning engine active
                       </p>
                     </div>
@@ -866,9 +907,9 @@ export default function AgentTraining({
                     {lessons.map((lesson) => (
                       <div
                         key={lesson.id}
-                        className="rounded-xl bg-emerald-500/8 border border-emerald-500/20 p-3"
+                        className="rounded-md bg-brand/8 border border-brand/20 p-3"
                       >
-                        <div className="text-[9px] uppercase tracking-[0.3em] text-emerald-500 mb-2 flex items-center gap-1.5">
+                        <div className="text-[9px] uppercase tracking-[0.3em] text-brand mb-2 flex items-center gap-1.5">
                           <Sparkles className="w-3 h-3" /> Pattern learned from calls
                         </div>
                         <p className="text-sm text-ink/90 leading-relaxed">{lesson.lesson}</p>
@@ -944,12 +985,8 @@ export default function AgentTraining({
             >
               <div className="min-h-full flex items-center justify-center p-6">
                 <div className="max-w-[560px] w-full text-center space-y-6">
-                  <div className="relative w-20 h-20 rounded-2xl glass border border-white/10 flex items-center justify-center mx-auto">
-                    <div
-                      className="absolute inset-0 rounded-2xl opacity-20 blur-xl"
-                      style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
-                    />
-                    <PlayCircle className="w-10 h-10 text-brand relative z-10" strokeWidth={1.25} />
+                  <div className="relative w-20 h-20 rounded-md wl-panel-elevated border border-border flex items-center justify-center mx-auto">
+                    <PlayCircle className="w-10 h-10 text-brand" strokeWidth={1.25} />
                   </div>
                   <div>
                     <h2 className="font-display italic lowercase text-4xl text-ink mb-2">
@@ -960,7 +997,7 @@ export default function AgentTraining({
                       calls.
                     </p>
                   </div>
-                  <div className="rounded-xl glass border border-white/10 p-5 text-left space-y-4 max-w-sm mx-auto w-full">
+                  <div className="rounded-md wl-panel border border-border p-5 text-left space-y-4 max-w-sm mx-auto w-full">
                     <div className="flex items-center gap-2">
                       <Phone className="w-4 h-4 text-brand" />
                       <h4 className="font-display italic lowercase text-base text-ink">
@@ -971,15 +1008,16 @@ export default function AgentTraining({
                       Speak directly with your agent through your browser microphone. Tests the
                       exact voice and persona your callers will hear.
                     </p>
-                    <button
+                    <ShadButton
                       type="button"
+                      variant={simConnected ? "destructive" : "editorial"}
+                      disableAnimations
                       onClick={startTestCall}
                       disabled={simConnecting}
                       className={cn(
-                        "w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-[11px] uppercase tracking-[0.3em] transition-all disabled:opacity-50",
-                        simConnected
-                          ? "bg-rose-500/15 border border-rose-500/40 text-rose-500 hover:bg-rose-500/25"
-                          : "bg-brand/15 border border-brand/40 text-brand hover:bg-brand/25",
+                        "w-full h-auto rounded-full text-[11px] uppercase tracking-[0.3em] py-2.5",
+                        simConnected &&
+                          "bg-rose-500/15 border border-rose-500/40 text-rose-500 hover:bg-rose-500/25 shadow-none",
                       )}
                     >
                       {simConnecting ? (
@@ -994,10 +1032,10 @@ export default function AgentTraining({
                         : simConnected
                           ? "End call"
                           : "Start voice test"}
-                    </button>
+                    </ShadButton>
                     {simConnected && (
-                      <div className="flex items-center justify-center gap-1.5 text-[9px] uppercase tracking-[0.3em] text-emerald-500">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <div className="flex items-center justify-center gap-1.5 text-[9px] uppercase tracking-[0.3em] text-brand">
+                        <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
                         Live — speak now
                       </div>
                     )}

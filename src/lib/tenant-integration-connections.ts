@@ -22,6 +22,14 @@ export interface TenantIntegrationConnections {
   salesforce: boolean;
   hubspot: boolean;
   zoom: boolean;
+  /** Google Calendar OAuth (calendarAccounts). */
+  google_calendar: boolean;
+  /** Microsoft 365 Calendar OAuth. */
+  microsoft_calendar: boolean;
+  /** Gmail / Google mail OAuth (emailAccounts). */
+  google_mail: boolean;
+  /** Microsoft Outlook mail OAuth. */
+  microsoft_mail: boolean;
 }
 
 const SHOPIFY_SET = new Set<string>(SHOPIFY_TOOL_NAMES);
@@ -31,12 +39,27 @@ const SQUARE_SET = new Set<string>(SQUARE_TOOL_NAMES);
 export async function loadTenantIntegrationConnections(
   userId: string,
 ): Promise<TenantIntegrationConnections> {
-  const rows = await drizzle
-    .select({ provider: schema.crmConnections.provider })
-    .from(schema.crmConnections)
-    .where(eq(schema.crmConnections.userId, userId));
+  const [crmRows, calendarRows, emailRows] = await Promise.all([
+    drizzle
+      .select({ provider: schema.crmConnections.provider })
+      .from(schema.crmConnections)
+      .where(eq(schema.crmConnections.userId, userId)),
+    drizzle
+      .select({ provider: schema.calendarAccounts.provider })
+      .from(schema.calendarAccounts)
+      .where(eq(schema.calendarAccounts.userId, userId)),
+    drizzle
+      .select({ provider: schema.emailAccounts.provider })
+      .from(schema.emailAccounts)
+      .where(eq(schema.emailAccounts.userId, userId)),
+  ]);
 
-  const providers = new Set(rows.map((r) => r.provider));
+  const providers = new Set(crmRows.map((r) => r.provider));
+  const calendarProviders = new Set(
+    calendarRows.map((r) => (r.provider || "google").toLowerCase()),
+  );
+  const mailProviders = new Set(emailRows.map((r) => (r.provider || "google").toLowerCase()));
+
   return {
     shopify: providers.has("shopify"),
     square: providers.has("square"),
@@ -46,6 +69,10 @@ export async function loadTenantIntegrationConnections(
     salesforce: providers.has("salesforce"),
     hubspot: providers.has("hubspot"),
     zoom: providers.has("zoom"),
+    google_calendar: calendarProviders.has("google"),
+    microsoft_calendar: calendarProviders.has("microsoft") || calendarProviders.has("microsoft365"),
+    google_mail: mailProviders.has("google"),
+    microsoft_mail: mailProviders.has("microsoft") || mailProviders.has("microsoft365"),
   };
 }
 
@@ -61,6 +88,9 @@ export function filterToolsByTenantConnections(
     if (name === "send_teams_message") return conn.microsoft_teams;
     if (name === "log_to_excel") return conn.microsoft_excel;
     if (name === "generate_zoom_link") return conn.zoom;
+    if (name === "check_calendar_availability" || name === "book_appointment") {
+      return conn.google_calendar || conn.microsoft_calendar;
+    }
     if (CRM_TOOL_NAMES.has(name)) return conn.salesforce || conn.hubspot;
     if (name === "enrich_lead") return platform.apollo;
     if (name === "send_contract") return platform.docusign;

@@ -101,7 +101,7 @@ export function CallPlaybookForm({
             <ResultCard title="Objection Handlers">
               <div className="space-y-4">
                 {playbook.objection_handlers.map((o: any, i: number) => (
-                  <div key={i} className="rounded-xl bg-white/5 p-4 space-y-2">
+                  <div key={i} className="rounded-md bg-white/5 p-4 space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-ink/70 text-xs italic">"{o.objection}"</p>
                       <span className="shrink-0 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.25em] bg-amber-500/15 text-amber-500 border border-amber-500/30">

@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { AlertTriangle } from "lucide-react";
 import { authFetch, TRIAL_GATE_EVENT, type TrialGateBlockDetail } from "../../lib/api";
 import { safeDate } from "../../lib/safe-date";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 interface TrialState {
   daysLeft: number | null;
@@ -125,13 +126,16 @@ export default function TrialBanner() {
         <AlertTriangle className={`w-3.5 h-3.5 shrink-0 ${iconCls}`} />
         <span>{message}</span>
       </div>
-      <button
+      <ShadButton
         type="button"
+        disableAnimations
+        variant="outline"
+        size="sm"
         onClick={openUpgrade}
-        className={`shrink-0 px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] transition-all ${buttonCls}`}
+        className={`shrink-0 rounded-full text-[10px] uppercase tracking-[0.3em] ${buttonCls}`}
       >
         Upgrade now
-      </button>
+      </ShadButton>
     </motion.div>
   );
 }

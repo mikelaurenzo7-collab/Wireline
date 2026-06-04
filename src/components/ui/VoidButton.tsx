@@ -19,11 +19,15 @@
  */
 import React, { useId } from "react";
 import { cn } from "../../lib/utils";
+import { ShadButton } from "./shadcn/ShadButton";
 
 type VoidSize = "sm" | "md" | "lg";
 type VoidVariant = "primary" | "secondary";
 
-interface VoidButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface VoidButtonProps extends Omit<
+  React.ComponentProps<typeof ShadButton>,
+  "variant" | "size" | "disableAnimations"
+> {
   children: React.ReactNode;
   /** Size preset. Default "md". */
   size?: VoidSize;
@@ -51,9 +55,12 @@ export function VoidButton({
   const uid = useId().replace(/:/g, "");
 
   return (
-    <button
+    <ShadButton
+      type="button"
+      variant="ghost"
+      disableAnimations
       className={cn(
-        "group relative inline-flex items-center justify-center font-semibold uppercase tracking-[0.12em] transition-all cursor-pointer overflow-hidden void-button",
+        "group relative inline-flex items-center justify-center font-semibold uppercase tracking-[0.12em] transition-all cursor-pointer overflow-hidden void-button h-auto rounded-none hover:bg-transparent",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-paper",
         "disabled:opacity-40 disabled:pointer-events-none disabled:grayscale",
         SIZE_CLASSES[size],
@@ -145,6 +152,6 @@ export function VoidButton({
           }
         }
       `}</style>
-    </button>
+    </ShadButton>
   );
 }

@@ -31,6 +31,7 @@ import { cn } from "../lib/utils";
 import { useToast } from "../contexts/ToastContext";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { Input } from "./ui/shadcn/Input";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 // ────────────────────────────────────────────────────────────────────────────
 // Template definitions
@@ -371,8 +372,8 @@ function TemplateCard({
       exit={{ opacity: 0, scale: 0.96 }}
       whileHover={{ y: -4, scale: 1.01 }}
       className={cn(
-        "relative rounded-2xl glass transition-all duration-300 flex flex-col group overflow-hidden card-interactive-premium",
-        hovered ? "aurora-ring border-transparent shadow-xl shadow-brand/10" : "shadow-sm",
+        "relative rounded-md wl-panel transition-all duration-300 flex flex-col group overflow-hidden card-interactive-premium",
+        hovered ? "border-brand/25 shadow-xl shadow-brand/10" : "shadow-sm",
       )}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -387,7 +388,7 @@ function TemplateCard({
         {/* Header row */}
         <div className="flex items-start justify-between gap-2">
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            className="w-10 h-10 rounded-md flex items-center justify-center shrink-0"
             style={{ background: `${template.accent}18`, border: `1px solid ${template.accent}40` }}
           >
             <Icon className="w-5 h-5" style={{ color: template.accent }} />
@@ -439,7 +440,7 @@ function TemplateCard({
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 4 }}
-              className="rounded-xl p-3 border text-[11px] text-ink/80 leading-relaxed italic relative"
+              className="rounded-md p-3 border text-[11px] text-ink/80 leading-relaxed italic relative"
               style={{
                 background: `${template.accent}0D`,
                 borderColor: `${template.accent}30`,
@@ -457,14 +458,17 @@ function TemplateCard({
 
       {/* Deploy button */}
       <div className="relative z-10 px-4 pb-4">
-        <button
+        <ShadButton
+          type="button"
+          disableAnimations
+          variant="editorial"
           onClick={() => onDeploy(template)}
           disabled={deploying}
-          className="brutal-btn w-full !py-2 !text-[11px] !tracking-[0.3em] disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full !py-2 !text-[11px] !tracking-[0.3em] flex items-center justify-center gap-2"
         >
           {deploying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
           {alreadyDeployed ? "Deploy Another" : "Deploy Agent"}
-        </button>
+        </ShadButton>
       </div>
     </motion.div>
   );
@@ -480,9 +484,9 @@ function CustomAgentCard() {
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-brand/25 dark:border-white/10 border-dashed flex flex-col items-center justify-center gap-3 p-6 text-center min-h-[240px]"
+      className="rounded-md border border-brand/25 dark:border-white/10 border-dashed flex flex-col items-center justify-center gap-3 p-6 text-center min-h-[240px]"
     >
-      <div className="w-12 h-12 rounded-2xl wl-panel flex items-center justify-center">
+      <div className="w-12 h-12 rounded-md wl-panel flex items-center justify-center">
         <Sparkles className="w-5 h-5 text-brand" />
       </div>
       <div className="space-y-1">
@@ -606,7 +610,7 @@ export default function AgentTemplates() {
         typeof data === "object" && data && "id" in data && typeof data.id === "string"
           ? data.id
           : uniqueId;
-      navigate(`/chat/${encodeURIComponent(createdId)}`);
+      navigate(`/chat?agent=${encodeURIComponent(createdId)}`);
     } catch {
       toastError("Deployment failed", "Could not reach the server. Please try again.");
       setDeploying(null);
@@ -627,25 +631,29 @@ export default function AgentTemplates() {
             placeholder="Search templates…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm bg-black/5 border border-black/10 rounded-xl outline-none focus:border-brand/50 text-ink placeholder:text-muted/70"
+            className="w-full pl-9 pr-4 py-2 text-sm bg-black/5 border border-black/10 rounded-md outline-none focus:border-brand/50 text-ink placeholder:text-muted/70"
           />
         </div>
 
         {/* Category tabs */}
         <div className="flex gap-1.5 flex-wrap">
           {CATEGORIES.map((cat) => (
-            <button
+            <ShadButton
               key={cat}
+              type="button"
+              disableAnimations
+              variant={activeCategory === cat ? "secondary" : "outline"}
+              size="sm"
               onClick={() => setActiveCategory(cat)}
               className={cn(
-                "px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.25em] transition-all border",
+                "rounded-full text-[10px] uppercase tracking-[0.25em]",
                 activeCategory === cat
                   ? "bg-brand/15 border-brand/40 text-brand"
-                  : "glass text-muted hover:text-ink hover:border-brand/25",
+                  : "text-muted hover:text-ink hover:border-brand/25",
               )}
             >
               {cat}
-            </button>
+            </ShadButton>
           ))}
         </div>
       </div>

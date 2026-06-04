@@ -75,7 +75,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
   if (compact) {
     return (
       <div
-        className="flex items-center gap-2 py-1.5 px-3.5 rounded-full premium-glass border border-white/8 text-[10px] font-mono shadow-sm hover:shadow-brand/10 hover:border-brand/30 transition-all duration-300 cursor-help"
+        className="flex items-center gap-2 py-1.5 px-3.5 rounded-full wl-panel-elevated border border-white/8 text-[10px] font-mono shadow-sm hover:shadow-brand/10 hover:border-brand/30 transition-all duration-300 cursor-help"
         title={`${used} of ${included} voice minutes used this month — resets ${resetLabel}`}
       >
         <span
@@ -95,12 +95,12 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className="rounded-2xl premium-glass card-interactive-premium p-5 space-y-4"
+      className="rounded-md wl-panel-elevated card-interactive-premium p-5 space-y-4"
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg"
+            className="w-9 h-9 rounded-md flex items-center justify-center shadow-lg"
             style={{
               background: `${barAccent}1a`,
               border: `1px solid ${barAccent}33`,
@@ -148,7 +148,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
 
       {isOver && (
         <div
-          className="flex items-start gap-2.5 p-3.5 rounded-xl shadow-lg"
+          className="flex items-start gap-2.5 p-3.5 rounded-md shadow-lg"
           style={{
             background: "rgba(244,63,94,0.08)",
             border: "1px solid rgba(244,63,94,0.25)",
@@ -177,7 +177,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
       )}
 
       {isWarn && !isOver && (
-        <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-500/8 border border-amber-500/20 text-[11px] text-amber-500 font-medium">
+        <div className="flex items-center gap-2 p-2.5 rounded-md bg-amber-500/8 border border-amber-500/20 text-[11px] text-amber-500 font-medium">
           <TrendingUp className="w-3.5 h-3.5" />
           <span>
             Approaching plan limit — overage rate kicks in at {included.toLocaleString()} min.

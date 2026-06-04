@@ -56,7 +56,6 @@ export type ToolIntegration =
   | "docusign"
   | "apollo"
   | "meta"
-  | "gemini"
   | "shopify"
   | "square"
   | "microsoft_teams"
@@ -231,11 +230,10 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   },
   {
     name: "gemini_ground",
-    label: "Grounded web search (Gemini)",
+    label: "Grounded web search",
     description:
-      "Looks up fresh public info via Gemini's grounded search — pricing pages, news, hours, regulations — when the answer isn't in the agent's knowledge base.",
+      "Looks up fresh public info when the answer is not in the agent's knowledge base — pricing, hours, regulations, news. Platform capability; not a merchant OAuth integration.",
     group: "core",
-    integration: "gemini",
   },
   // E-commerce — Shopify
   {
@@ -448,8 +446,8 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "generate_zoom_link",
     "send_contract",
     "enrich_lead",
-    "meta_submit_lead",
     "gemini_ground",
+    "meta_submit_lead",
     "log_to_excel",
     "log_to_google_sheets",
   ],
@@ -490,9 +488,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "log_to_excel",
     "log_to_google_sheets",
   ],
-  // E-commerce support agents — handle online-store customer calls and
-  // emails: order status, inventory, returns, address fixes. Shopify
-  // and Square tools are the core of this role.
+  // E-commerce support agents — order status, inventory, returns, address fixes.
   ecommerce: [
     "view_recent_interactions",
     "escalate_to_human",
@@ -611,8 +607,8 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "send_teams_message",
     "generate_zoom_link",
     "enrich_lead",
-    "meta_submit_lead",
     "gemini_ground",
+    "meta_submit_lead",
     "log_to_excel",
     "log_to_google_sheets",
   ],
@@ -633,8 +629,8 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "send_slack_notification",
     "send_teams_message",
     "generate_zoom_link",
-    "crm_search_contacts",
     "gemini_ground",
+    "crm_search_contacts",
   ],
   marketing: [
     "view_recent_interactions",
@@ -655,7 +651,6 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "send_teams_message",
     "enrich_lead",
     "meta_submit_lead",
-    "gemini_ground",
     "crm_search_contacts",
     "crm_log_call",
     "crm_create_contact",
@@ -757,7 +752,18 @@ export function getRoleToolSet(role?: string): AgentToolName[] {
   return [...toolSet];
 }
 
-export function resolveAgentTools(role?: string, enabledTools?: unknown): AgentToolName[] {
+/** Full integration toolbox every purchased agent ships with by default. */
+export function getDefaultAgentTools(): AgentToolName[] {
+  return applyPlanToolUnlocks([...AGENT_TOOL_NAME_VALUES]);
+}
+
+/**
+ * Resolve which tools an agent may use. When the operator has not narrowed
+ * enabled_tools, every agent gets the full product catalog — plans differ on
+ * headroom (agent count, minutes), not which integrations exist in chat/voice.
+ * Role-based subsets remain available via getRoleToolSet for explicit UI resets.
+ */
+export function resolveAgentTools(_role?: string, enabledTools?: unknown): AgentToolName[] {
   const normalized = normalizeEnabledTools(enabledTools);
-  return normalized !== null ? normalized : getRoleToolSet(role);
+  return normalized !== null ? normalized : getDefaultAgentTools();
 }

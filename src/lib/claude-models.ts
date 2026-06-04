@@ -263,8 +263,8 @@ export const DEFAULT_MODEL = CLAUDE_MODEL_DEFAULT;
  *   • Voice Runtime    → Claude Sonnet 4.6  (smartest model in voice's
  *                                            latency class; TTFT 300–500 ms)
  *   • Voice Fallback   → Gemini 3.5 Flash   (speed-only backup for outages)
- *   • Reasoning Layer  → Claude Opus 4.7    (briefs, coaching, post-call —
- *                                            non-realtime, depth pays off)
+ *   • Reasoning Layer  → Claude Opus 4.7    (briefs, coaching, post-call,
+ *                                            daily brief — async, depth pays off)
  *   • Simple Tasks     → Claude Haiku 4.5   (classification, extraction)
  *   • Grounded Search  → Gemini 2.5 Flash   (native googleSearchRetrieval)
  *
@@ -288,6 +288,7 @@ export const DEFAULT_MODEL = CLAUDE_MODEL_DEFAULT;
  *   Voice Runtime        : Claude Sonnet 4.6  (VAPI_TENANT_DEFAULT_MODEL)
  *   Voice Fallback       : Gemini 3.5 Flash   (VAPI_VOICE_FALLBACK_MODEL)
  *   Reasoning (default)  : Claude Opus 4.7    (CLAUDE_MODEL_DEFAULT)
+ *   Post-call / daily    : Claude Opus 4.7    (complexity: "complex")
  *   Reasoning (simple)   : Claude Haiku 4.5   (selectModelForTask("simple"))
  *   Grounded Search      : Gemini 2.5 Flash   (native googleSearchRetrieval)
  *

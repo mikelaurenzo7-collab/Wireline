@@ -51,7 +51,7 @@ export function QualifyForm({
       {err && <ErrCard error={err} />}
       {q && (
         <div className="space-y-4 pt-3">
-          <div className="rounded-2xl p-6 glass-strong border border-white/12 flex items-center justify-between">
+          <div className="rounded-md p-6 wl-panel-elevated border border-white/12 flex items-center justify-between">
             <div>
               <div className="app-section-title mb-2">Aggregate</div>
               <div className="font-display italic text-6xl text-aurora leading-none">

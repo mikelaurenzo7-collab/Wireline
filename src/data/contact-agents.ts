@@ -14,6 +14,10 @@
  *   3. /api/admin/sync-vapi-knowledge — PATCHes each Vapi assistant prompt
  *
  * Employee lines can escalate via `escalate_to_human`. Demo lines cannot.
+ *
+ * Voice design: every agent gets a unique ElevenLabs voice + tuned settings
+ * so prospects hear a varied, role-authentic fleet — not the same Rachel on
+ * every line. Sync via POST /api/admin/sync-vapi-knowledge after edits.
  */
 
 export type ContactAgent = {
@@ -24,6 +28,8 @@ export type ContactAgent = {
   firstMessage: string;
   /** Public showcase lines are pinned to a specific ElevenLabs voice so syncs cannot drift. */
   voiceId?: string;
+  /** Human label for marketing cards / sync logs — not sent to Vapi. */
+  voiceLabel?: string;
   /** Optional ElevenLabs fine-tuning overrides (defaults in showcase-assistant.ts). */
   voiceSettings?: {
     stability?: number;
@@ -40,11 +46,6 @@ export type ContactAgent = {
    * Default personality vibe for this showcase agent. Used by
    * /api/admin/sync-vapi-knowledge when pushing the system prompt
    * to each Vapi assistant — the right vibe per agent role.
-   * "warm" for general CS / billing / success / tech (trustworthy
-   * default), "playful" for sales / onboarding / outbound /
-   * customer-facing-retail (memorable, differentiating),
-   * "authoritative" for healthcare / insurance / legal-style
-   * intake (gravity when it matters).
    */
   defaultVibe: "warm" | "playful" | "authoritative";
   /**
@@ -70,7 +71,7 @@ const ALL_ENCOMPASSING_SCOPE =
   "CRM sync), onboarding, and customer success. Can email a sign-up link, email " +
   "a payment/checkout link, AND create a Wireline account for the caller right " +
   "on the call if they want to sign up by phone. Never says 'let me transfer you " +
-  "to the right department' — every employee can do everything.";
+  "to the right department' — every employee can do it all.";
 
 const ALL_ENCOMPASSING_HANDLES =
   "general, how-to, account, pricing, plans, demo, billing, invoice, refund, " +
@@ -82,14 +83,14 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     name: "Sarah",
     role: "Wireline Specialist",
     scope: ALL_ENCOMPASSING_SCOPE,
-    firstMessage: "Hi, this is Sarah with Wireline. Who am I speaking with?",
-    // Rachel · Warm — flagship Wireline CS voice.
-    voiceId: "21m00Tcm4TlvDq8ikWAM",
+    firstMessage: "Hey — Sarah with Wireline. Who do I have the pleasure of speaking with today?",
+    voiceLabel: "Charlotte · Refined & Warm",
+    voiceId: "XB0fDUnXU5powFXDhCwa",
     voiceSettings: {
-      stability: 0.58,
-      style: 0.2,
-      similarityBoost: 0.9,
-      speed: 0.95,
+      stability: 0.52,
+      style: 0.24,
+      similarityBoost: 0.86,
+      speed: 0.96,
     },
     handles: ALL_ENCOMPASSING_HANDLES,
     tel: "+16306425661",
@@ -101,15 +102,21 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     name: "Liam",
     role: "Wireline Specialist",
     scope: ALL_ENCOMPASSING_SCOPE,
-    firstMessage: "Hey, this is Liam with Wireline. Who am I speaking with?",
+    firstMessage:
+      "Hey — Liam with Wireline. I can walk you through plans, setup, or anything technical. Who am I speaking with?",
+    voiceLabel: "Liam · Confident & Energetic",
+    voiceId: "TX3LPaxmHKxFdv7VOQHJ",
+    voiceSettings: {
+      stability: 0.5,
+      style: 0.22,
+      similarityBoost: 0.87,
+      speed: 1.0,
+    },
     handles: ALL_ENCOMPASSING_HANDLES,
     tel: "+16305811834",
     display: "(630) 581-1834",
     tint: "#8B3FD6",
     defaultVibe: "playful",
-    // Liam · Confident & Energetic — matches the agent name.
-    voiceId: "TX3LPaxmHKxFdv7VOQHJ",
-    voiceSettings: { stability: 0.55, style: 0.15, similarityBoost: 0.88, speed: 0.98 },
   },
 ];
 
@@ -125,14 +132,15 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
       "Role-plays a small-business front desk — captures why the caller reached out, " +
       "schedules service or callback windows, answers common FAQs, and takes clean messages. " +
       "Home-services / general inbound CS showcase; never pages a human owner.",
-    firstMessage: "Hi, Jordan here for the Wireline demo. Who am I speaking with?",
-    // Sarah Soft · Warm & Approachable — friendly front-desk, distinct from Sarah's Rachel.
+    firstMessage:
+      "Hi — Jordan on the Wireline inbound demo. I'll answer as your front desk — what's your name?",
+    voiceLabel: "Sarah Soft · Warm Front Desk",
     voiceId: "EXAVITQu4vr4xnSDxMaL",
     voiceSettings: {
-      stability: 0.62,
-      style: 0.08,
+      stability: 0.58,
+      style: 0.14,
       similarityBoost: 0.88,
-      speed: 0.95,
+      speed: 0.97,
     },
     handles:
       "customer service, inbound, front desk, scheduling, FAQ, message taking, home services, after hours",
@@ -147,10 +155,10 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     scope:
       "Asks which Wireline demo the caller wants to hear, then role-plays that agent live: home services, medical, legal, real estate, insurance, restaurant, or outbound sales.",
     firstMessage:
-      "Hi, I'm Ria. What demo would you like to hear: medical, legal, real estate, home services, insurance, or sales?",
-    // Josh · Upbeat — energetic concierge who routes callers to vertical demos.
+      "Hey, Ria here — I can demo medical, legal, home services, insurance, real estate, or outbound sales. Which one sounds fun?",
+    voiceLabel: "Josh · Upbeat Concierge",
     voiceId: "TxGEqnHWrfWFTfGW9XjX",
-    voiceSettings: { stability: 0.5, style: 0.25, similarityBoost: 0.85, speed: 1.0 },
+    voiceSettings: { stability: 0.48, style: 0.28, similarityBoost: 0.85, speed: 1.02 },
     handles:
       "demo concierge, choose demo, home services, HVAC, plumbing, electrical, medical, legal, real estate, insurance, restaurant, outbound, SDR",
     tel: "+15642389455",
@@ -163,10 +171,11 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     role: "Medical Practice Demo",
     scope:
       "Role-plays a clinic front desk — greets patients, captures reason for visit, schedules appointments, handles insurance pre-check. Healthcare-style demo; not currently HIPAA-certified (BAA available on the Enterprise roadmap).",
-    firstMessage: "Hi, Marcus with the Wireline Medical demo. What's your name?",
-    // Brian · Deep & Narrative — calm clinical gravitas.
+    firstMessage:
+      "Good afternoon — Marcus on the Wireline medical demo. May I have your name, please?",
+    voiceLabel: "Brian · Calm Clinical",
     voiceId: "nPczCjzI2devNBz1zQrb",
-    voiceSettings: { stability: 0.72, style: 0.05, similarityBoost: 0.9, speed: 0.92 },
+    voiceSettings: { stability: 0.74, style: 0.04, similarityBoost: 0.91, speed: 0.91 },
     handles: "medical, healthcare, clinic, patient intake, appointment",
     tel: "+16173134469",
     display: "(617) 313-4469",
@@ -178,10 +187,10 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     role: "Law Firm Demo",
     scope:
       "Role-plays a law-firm intake line — runs the conflict check, captures matter type and urgency, books the consultation, takes a clean intake for the attorney.",
-    firstMessage: "Diana here, Wireline Legal demo. May I have your name?",
-    // Charlotte · British, Refined — perfect law-firm intake tone.
-    voiceId: "XB0fDUnXU5powFXDhCwa",
-    voiceSettings: { stability: 0.68, style: 0.08, similarityBoost: 0.92, speed: 0.94 },
+    firstMessage: "Diana here — Wireline legal intake demo. May I have your full name?",
+    voiceLabel: "Rachel · Steady & Discreet",
+    voiceId: "bIHbv24MWmeRgasZH58o",
+    voiceSettings: { stability: 0.7, style: 0.06, similarityBoost: 0.92, speed: 0.93 },
     handles: "legal, law firm, intake, conflict check, consultation",
     tel: "+15727269365",
     display: "(572) 726-9365",
@@ -193,10 +202,11 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     role: "Real Estate Demo",
     scope:
       "Role-plays a real-estate front desk — answers listing inquiries, qualifies buyer budget + timeline, books showings, captures seller leads.",
-    firstMessage: "Aisha here, Wireline Realty demo. Who am I speaking with?",
-    // Elli · Bright & Youthful — upbeat realtor energy.
+    firstMessage:
+      "Aisha here — Wireline real estate demo. Are you calling about a listing or looking to buy?",
+    voiceLabel: "Elli · Bright Realtor",
     voiceId: "MF3mGyEYCl7XYWbV9V6O",
-    voiceSettings: { stability: 0.52, style: 0.22, similarityBoost: 0.86, speed: 1.02 },
+    voiceSettings: { stability: 0.5, style: 0.26, similarityBoost: 0.85, speed: 1.03 },
     handles: "real estate, realtor, listing, showing, buyer, seller lead",
     tel: "+19733638874",
     display: "(973) 363-8874",
@@ -208,10 +218,11 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     role: "Insurance Demo",
     scope:
       "Role-plays an insurance line — handles quote intake, walks claimants through first-notice-of-loss, captures incident detail, opens the case file.",
-    firstMessage: "Elena here with the Insurance demo. Can I get your name?",
-    // Rachel · Calm & Professional — steady claims-line composure.
-    voiceId: "bIHbv24MWmeRgasZH58o",
-    voiceSettings: { stability: 0.7, style: 0.06, similarityBoost: 0.9, speed: 0.93 },
+    firstMessage:
+      "Elena with the Wireline insurance demo — are you starting a quote or reporting a claim?",
+    voiceLabel: "Rachel · Composed Claims",
+    voiceId: "21m00Tcm4TlvDq8ikWAM",
+    voiceSettings: { stability: 0.68, style: 0.08, similarityBoost: 0.9, speed: 0.94 },
     handles: "insurance, claim, loss, FNOL, quote, policy",
     tel: "+19044601596",
     display: "(904) 460-1596",
@@ -223,10 +234,11 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     role: "Outbound Sales Demo",
     scope:
       "Role-plays a cold-call SDR — calls a lead from a CSV, qualifies fit with a BANT pass, books discovery calls with closers, logs results to CRM.",
-    firstMessage: "Hey, Jake here with the Wireline sales demo. What's your name?",
-    // Sam · Young & Casual — high-energy SDR cold-call vibe.
+    firstMessage:
+      "Hey — Jake on the Wireline outbound sales demo. You're hearing a live SDR open — who's this?",
+    voiceLabel: "Sam · High-Energy SDR",
     voiceId: "yoZ06aMxZJJ28mfd3POQ",
-    voiceSettings: { stability: 0.48, style: 0.28, similarityBoost: 0.84, speed: 1.05 },
+    voiceSettings: { stability: 0.46, style: 0.3, similarityBoost: 0.83, speed: 1.06 },
     handles: "outbound, cold call, SDR, prospecting, qualification, BANT",
     tel: "+14692571581",
     display: "(469) 257-1581",
@@ -242,4 +254,10 @@ export const WIRELINE_FEATURED_TEAM_AGENT = WIRELINE_CONTACT_AGENTS[0]!;
 export const LANDING_PUBLIC_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
   WIRELINE_DEMO_AGENTS.find((a) => a.name === "Jordan")!,
   WIRELINE_DEMO_AGENTS.find((a) => a.name === "Jake")!,
+];
+
+/** All public lines — employees + demos. Used for catalog invariants. */
+export const ALL_SHOWCASE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
+  ...WIRELINE_CONTACT_AGENTS,
+  ...WIRELINE_DEMO_AGENTS,
 ];

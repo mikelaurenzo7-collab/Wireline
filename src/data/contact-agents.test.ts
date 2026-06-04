@@ -5,13 +5,14 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  ALL_SHOWCASE_CONTACT_AGENTS,
   LANDING_PUBLIC_DEMO_AGENTS,
   WIRELINE_CONTACT_AGENTS,
   WIRELINE_DEMO_AGENTS,
   type ContactAgent,
 } from "./contact-agents";
 
-const ALL_SHOWCASE_AGENTS: ContactAgent[] = [...WIRELINE_CONTACT_AGENTS, ...WIRELINE_DEMO_AGENTS];
+const ALL_SHOWCASE_AGENTS: ContactAgent[] = ALL_SHOWCASE_CONTACT_AGENTS;
 
 const E164 = /^\+[1-9]\d{6,14}$/;
 
@@ -40,6 +41,17 @@ describe("showcase agent catalog", () => {
     expect(new Set(voiceIds).size).toBe(voiceIds.length);
   });
 
+  it("every public showcase line uses a unique voice (employees + demos)", () => {
+    const voiceIds = ALL_SHOWCASE_CONTACT_AGENTS.map((a) => a.voiceId);
+    expect(new Set(voiceIds).size).toBe(voiceIds.length);
+  });
+
+  it("every agent has a voiceLabel for marketing and sync logs", () => {
+    for (const agent of ALL_SHOWCASE_CONTACT_AGENTS) {
+      expect(agent.voiceLabel, `${agent.name} missing voiceLabel`).toMatch(/\S/);
+    }
+  });
+
   it("landing CTAs expose Jordan (inbound CS) and Jake (outbound sales) only", () => {
     expect(LANDING_PUBLIC_DEMO_AGENTS.map((a) => a.name)).toEqual(["Jordan", "Jake"]);
     expect(LANDING_PUBLIC_DEMO_AGENTS.every((a) => WIRELINE_DEMO_AGENTS.includes(a))).toBe(true);
@@ -55,7 +67,7 @@ describe("showcase agent catalog", () => {
   it("Jordan and Jake first messages frame Wireline demos (not employee lines)", () => {
     const jordan = WIRELINE_DEMO_AGENTS.find((a) => a.name === "Jordan")!;
     const jake = WIRELINE_DEMO_AGENTS.find((a) => a.name === "Jake")!;
-    expect(jordan.firstMessage).toMatch(/Wireline demo/i);
+    expect(jordan.firstMessage).toMatch(/Wireline inbound demo/i);
     expect(jake.firstMessage).toMatch(/sales demo/i);
     expect(jordan.firstMessage).not.toMatch(/^Hi, thanks for calling Wireline — this is Sarah/);
   });

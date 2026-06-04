@@ -31,6 +31,7 @@ import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { PREMIUM_VOICES, DEFAULT_VOICE_BY_GENDER } from "./FleetSettings";
 import { Input } from "./ui/shadcn/Input";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -361,33 +362,37 @@ export default function FastStartWizard({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-3xl glass-strong border border-white/10 shadow-2xl"
+        className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-md wl-panel-elevated border border-border shadow-2xl"
       >
         {/* Header */}
         <div className="relative px-6 py-4 border-b border-white/8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#8B3FD6] to-[#8B3FD6] flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-md bg-brand flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-on-brand" />
               </div>
               <div>
                 <h2 className="font-display italic text-xl text-ink">Fast Start</h2>
                 <p className="text-[10px] text-muted">{estimatedTimeText} to your first AI agent</p>
               </div>
             </div>
-            <button
+            <ShadButton
+              type="button"
+              variant="ghost"
+              size="icon"
+              disableAnimations
               onClick={onClose}
               disabled={isSubmitting}
-              className="p-2 rounded-full hover:bg-black/5 text-muted hover:text-ink transition-colors disabled:opacity-50"
+              className="rounded-full"
             >
               <X className="w-5 h-5" />
-            </button>
+            </ShadButton>
           </div>
 
           {/* Progress bar */}
           <div className="mt-4 h-1 bg-black/10 rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-[#8B3FD6] to-[#8B3FD6] rounded-full"
+              className="h-full bg-brand rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
@@ -407,8 +412,8 @@ export default function FastStartWizard({
             >
               {/* Step icon and title */}
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#8B3FD6]/20 to-[#8B3FD6]/5 border border-[#8B3FD6]/20 flex items-center justify-center">
-                  <currentStep.icon className="w-6 h-6 text-[#8B3FD6]" />
+                <div className="w-12 h-12 rounded-md bg-brand/10 border border-brand/20 flex items-center justify-center">
+                  <currentStep.icon className="w-6 h-6 text-brand" />
                 </div>
                 <div>
                   <p className="text-[9px] uppercase tracking-[0.4em] text-brand">
@@ -425,18 +430,21 @@ export default function FastStartWizard({
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3"
+                  className="mb-6 p-4 rounded-md bg-rose-500/8 border border-rose-500/25 flex items-start gap-3"
                 >
-                  <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                  <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm text-amber-800">{error}</p>
+                    <p className="text-sm text-rose-800">{error}</p>
                     {currentStep.skippable && (
-                      <button
+                      <ShadButton
+                        type="button"
+                        variant="link"
+                        disableAnimations
                         onClick={handleSkip}
-                        className="mt-2 text-xs text-amber-700 underline hover:text-amber-900"
+                        className="mt-2 h-auto p-0 text-xs text-rose-700"
                       >
                         Skip this step for now →
-                      </button>
+                      </ShadButton>
                     )}
                   </div>
                 </motion.div>
@@ -454,7 +462,7 @@ export default function FastStartWizard({
                         value={businessDescription}
                         onChange={(e) => setBusinessDescription(e.target.value)}
                         placeholder="e.g., We're a family-owned plumbing company in Chicago that handles emergency repairs, drain cleaning, and bathroom remodels..."
-                        className="w-full h-32 p-4 rounded-xl bg-white/50 border border-black/10 focus:border-brand/50 focus:ring-2 focus:ring-brand/10 outline-none resize-none text-sm placeholder:text-muted/50"
+                        className="w-full h-32 p-4 rounded-md bg-white/50 border border-black/10 focus:border-brand/50 focus:ring-2 focus:ring-brand/10 outline-none resize-none text-sm placeholder:text-muted/50"
                         autoFocus
                       />
                     </label>
@@ -467,13 +475,17 @@ export default function FastStartWizard({
                         "Home services",
                         "SaaS startup",
                       ].map((example) => (
-                        <button
+                        <ShadButton
                           key={example}
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disableAnimations
                           onClick={() => setBusinessDescription(`I'm a ${example} that...`)}
-                          className="text-[10px] px-2 py-1 rounded-full bg-black/5 hover:bg-black/10 text-muted transition-colors"
+                          className="rounded-full text-[10px] px-2 py-1 h-auto min-h-0"
                         >
                           {example}
-                        </button>
+                        </ShadButton>
                       ))}
                     </div>
                   </div>
@@ -490,11 +502,11 @@ export default function FastStartWizard({
                         value={websiteUrl}
                         onChange={(e) => setWebsiteUrl(e.target.value)}
                         placeholder="https://yourbusiness.com"
-                        className="w-full p-4 rounded-xl bg-white/50 border border-black/10 focus:border-brand/50 focus:ring-2 focus:ring-brand/10 outline-none text-sm placeholder:text-muted/50"
+                        className="w-full p-4 rounded-md bg-white/50 border border-black/10 focus:border-brand/50 focus:ring-2 focus:ring-brand/10 outline-none text-sm placeholder:text-muted/50"
                         autoFocus
                       />
                     </label>
-                    <div className="flex items-center gap-2 text-xs text-emerald-600">
+                    <div className="flex items-center gap-2 text-xs text-brand">
                       <Wand2 className="w-4 h-4" />
                       <span>We'll auto-extract: services, hours, pricing, policies</span>
                     </div>
@@ -508,10 +520,13 @@ export default function FastStartWizard({
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {PREMIUM_VOICES.slice(0, 4).map((voice) => (
-                        <button
+                        <ShadButton
                           key={voice.id}
+                          type="button"
+                          variant="ghost"
+                          disableAnimations
                           onClick={() => setSelectedVoiceId(voice.id)}
-                          className={`p-4 rounded-xl border text-left transition-all ${
+                          className={`p-4 h-auto rounded-md border text-left transition-all w-full justify-start flex-col items-start ${
                             selectedVoiceId === voice.id
                               ? "border-brand bg-brand/5"
                               : "border-black/10 hover:border-black/20"
@@ -525,7 +540,7 @@ export default function FastStartWizard({
                           </div>
                           <p className="text-xs text-muted capitalize">{voice.gender}</p>
                           <p className="text-[10px] text-brand mt-2">{voice.provider}</p>
-                        </button>
+                        </ShadButton>
                       ))}
                     </div>
                   </div>
@@ -542,11 +557,11 @@ export default function FastStartWizard({
                         value={areaCode}
                         onChange={(e) => setAreaCode(e.target.value.replace(/\D/g, "").slice(0, 3))}
                         placeholder="212"
-                        className="w-32 p-4 rounded-xl bg-white/50 border border-black/10 focus:border-brand/50 focus:ring-2 focus:ring-brand/10 outline-none text-sm placeholder:text-muted/50 text-center tracking-widest"
+                        className="w-32 p-4 rounded-md bg-white/50 border border-black/10 focus:border-brand/50 focus:ring-2 focus:ring-brand/10 outline-none text-sm placeholder:text-muted/50 text-center tracking-widest"
                         autoFocus
                       />
                     </label>
-                    <div className="p-4 rounded-xl bg-brand/5 border border-brand/20">
+                    <div className="p-4 rounded-md bg-brand/5 border border-brand/20">
                       <p className="text-xs text-ink/80">
                         <strong>Don't worry if we can't get this exact area code.</strong> You'll
                         get a working number regardless, and you can always port in your existing
@@ -558,7 +573,7 @@ export default function FastStartWizard({
 
                 {currentStep.id === "review" && (
                   <div className="space-y-4">
-                    <div className="p-4 rounded-xl bg-white/50 border border-black/10 space-y-3">
+                    <div className="p-4 rounded-md bg-white/50 border border-black/10 space-y-3">
                       <div className="flex items-start gap-3">
                         <Building2 className="w-5 h-5 text-brand shrink-0 mt-0.5" />
                         <div>
@@ -595,7 +610,7 @@ export default function FastStartWizard({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 text-xs text-emerald-600">
+                    <div className="flex items-center gap-2 text-xs text-brand">
                       <Sparkles className="w-4 h-4" />
                       <span>Our AI will generate: name, personality, and conversation script</span>
                     </div>
@@ -611,30 +626,39 @@ export default function FastStartWizard({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {!isFirstStep && (
-                <button
+                <ShadButton
+                  type="button"
+                  variant="outline"
+                  disableAnimations
                   onClick={handleBack}
                   disabled={isSubmitting}
-                  className="px-4 py-2.5 rounded-full glass border border-black/10 text-[11px] uppercase tracking-[0.24em] text-ink hover:bg-black/5 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  className="rounded-full text-[11px] uppercase tracking-[0.24em]"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   Back
-                </button>
+                </ShadButton>
               )}
               {currentStep.skippable && (
-                <button
+                <ShadButton
+                  type="button"
+                  variant="ghost"
+                  disableAnimations
                   onClick={handleSkip}
                   disabled={isSubmitting}
-                  className="px-4 py-2.5 rounded-full text-[11px] uppercase tracking-[0.24em] text-muted hover:text-ink transition-colors disabled:opacity-50"
+                  className="rounded-full text-[11px] uppercase tracking-[0.24em]"
                 >
                   Skip
-                </button>
+                </ShadButton>
               )}
             </div>
 
-            <button
+            <ShadButton
+              type="button"
+              variant="editorial"
+              disableAnimations
               onClick={handleNext}
               disabled={isSubmitting}
-              className="px-6 py-2.5 rounded-full bg-brand text-white text-[11px] uppercase tracking-[0.24em] hover:bg-brand/90 transition-all disabled:opacity-70 flex items-center gap-2"
+              className="rounded-full text-[11px] uppercase tracking-[0.24em]"
             >
               {isSubmitting ? (
                 <>
@@ -652,7 +676,7 @@ export default function FastStartWizard({
                   <ChevronRight className="w-4 h-4" />
                 </>
               )}
-            </button>
+            </ShadButton>
           </div>
         </div>
       </motion.div>

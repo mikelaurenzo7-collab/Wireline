@@ -212,7 +212,7 @@ export default function Compare() {
             Pan to compare
             <span aria-hidden="true">→</span>
           </p>
-          <div className="overflow-x-auto glass border border-ink/[0.1] snap-x snap-mandatory scroll-smooth scrollbar-hide">
+          <div className="overflow-x-auto wl-panel border border-ink/[0.1] snap-x snap-mandatory scroll-smooth scrollbar-hide">
             <table className="w-full min-w-[720px]" aria-describedby="compare-legend">
               <caption className="sr-only">
                 Feature comparison of Wireline versus Air, Synthflow, Bland, and Retell
@@ -368,7 +368,7 @@ export default function Compare() {
             When a competitor is the better pick.
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 stagger-children">
-            <div className="glass card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
+            <div className="wl-panel card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-600 mb-2">
                 Pick Air if
               </p>
@@ -378,7 +378,7 @@ export default function Compare() {
                 supervisor coaching, Air's pricing wins.
               </p>
             </div>
-            <div className="glass card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
+            <div className="wl-panel card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-600 mb-2">
                 Pick Bland if
               </p>
@@ -389,7 +389,7 @@ export default function Compare() {
                 supervisor take-over.
               </p>
             </div>
-            <div className="glass card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
+            <div className="wl-panel card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-600 mb-2">
                 Pick Retell if
               </p>

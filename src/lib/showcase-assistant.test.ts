@@ -108,7 +108,8 @@ describe("buildShowcaseAssistantPayload — Flux transcriber", () => {
   it("Liam uses Deepgram Flux EOT by default", () => {
     const payload = buildShowcaseAssistantPayload(liam, "cs");
     expect(payload.transcriber.model).toBe("flux-general-en");
-    expect(payload.transcriber.eotThreshold).toBe(0.62);
+    expect(payload.transcriber.eotThreshold).toBe(0.64);
+    expect(payload.transcriber.eotTimeoutMs).toBe(2800);
     expect(payload.startSpeakingPlan).not.toHaveProperty("smartEndpointingPlan");
     expect(payload.metadata.wireline_transcriber_mode).toBe("flux-eot");
   });
@@ -127,17 +128,48 @@ describe("buildShowcaseAssistantPayload — Flux transcriber", () => {
     expect(payload.name).toBe("Jordan — Inbound CS Demo");
     expect(payload.transcriber.model).toBe("flux-general-en");
     expect(payload.metadata.wireline_transcriber_mode).toBe("flux-eot");
-    expect(payload.firstMessage).toMatch(/Wireline demo/i);
+    expect(payload.firstMessage).toMatch(/Wireline inbound demo/i);
     expect(payload.voice?.voiceId).toBe("EXAVITQu4vr4xnSDxMaL");
   });
 
-  it("Sarah uses Rachel voice with warmer ElevenLabs tuning", () => {
+  it("Sarah uses Charlotte voice with expressive ElevenLabs tuning", () => {
     const payload = buildShowcaseAssistantPayload(sarah, "cs");
     expect(payload.name).toBe("Sarah — Wireline Customer Support");
-    expect(payload.voice?.voiceId).toBe("21m00Tcm4TlvDq8ikWAM");
-    expect(payload.voice?.stability).toBe(0.58);
-    expect(payload.voice?.style).toBe(0.2);
-    expect(payload.voice?.similarityBoost).toBe(0.9);
+    expect(payload.voice?.voiceId).toBe("XB0fDUnXU5powFXDhCwa");
+    expect(payload.voice?.stability).toBe(0.52);
+    expect(payload.voice?.style).toBe(0.24);
+    expect(payload.voice?.similarityBoost).toBe(0.86);
+  });
+
+  it("Liam uses energetic Liam voice tuning", () => {
+    const payload = buildShowcaseAssistantPayload(liam, "cs");
+    expect(payload.voice?.voiceId).toBe("TX3LPaxmHKxFdv7VOQHJ");
+    expect(payload.voice?.style).toBe(0.22);
+    expect(payload.firstMessage).toMatch(/Liam with Wireline/i);
+  });
+
+  it("Diana uses discreet Rachel voice (distinct from Sarah's Charlotte)", () => {
+    const diana = WIRELINE_DEMO_AGENTS.find((a) => a.name === "Diana")!;
+    const payload = buildShowcaseAssistantPayload(diana, "demo");
+    expect(payload.voice?.voiceId).toBe("bIHbv24MWmeRgasZH58o");
+    expect(payload.voice?.voiceId).not.toBe(sarah.voiceId);
+  });
+});
+
+describe("buildShowcaseSystemPrompt — employee personas", () => {
+  const sarah = WIRELINE_CONTACT_AGENTS.find((a) => a.name === "Sarah")!;
+  const liam = WIRELINE_CONTACT_AGENTS.find((a) => a.name === "Liam")!;
+
+  it("Sarah prompt includes support-first employee edge", () => {
+    const prompt = buildShowcaseSystemPrompt(sarah, "cs");
+    expect(prompt).toMatch(/SARAH'S EDGE/i);
+    expect(prompt).toMatch(/flagship support voice/i);
+  });
+
+  it("Liam prompt includes growth-first employee edge", () => {
+    const prompt = buildShowcaseSystemPrompt(liam, "cs");
+    expect(prompt).toMatch(/LIAM'S EDGE/i);
+    expect(prompt).toMatch(/ROI-minded/i);
   });
 });
 
@@ -160,6 +192,7 @@ describe("buildShowcaseSystemPrompt — demo personalization", () => {
     expect(prompt).toMatch(/company or brand you should represent/i);
     expect(prompt).toMatch(/ROLE-PLAY STANDARD — Outbound sales/i);
     expect(prompt).toMatch(/BANT-style qualification/i);
+    expect(prompt).toMatch(/top SDR on a live call/i);
   });
 
   it("Marcus prompt includes medical intake role-play and HIPAA guardrails", () => {

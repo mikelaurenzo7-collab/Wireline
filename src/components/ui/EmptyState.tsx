@@ -4,6 +4,7 @@ import { cn } from "../../lib/utils";
 import { Medallion } from "./Medallion";
 import { SectionHeader } from "./SectionHeader";
 import { ShadButton } from "./shadcn/ShadButton";
+import { WL_APP_CLASSES } from "../../lib/wireline-director-design";
 
 interface Action {
   label: string;
@@ -26,8 +27,7 @@ interface EmptyStateProps {
   accent?: string;
   /**
    * Wrap the empty state in the canonical premium panel chrome
-   * (aurora-ring + glass-strong) so insights / dashboard panels share
-   * a single primitive instead of re-creating the gem frame ad-hoc.
+   * (wl-panel-elevated) so insights / dashboard panels share a single primitive.
    */
   framed?: boolean;
 }
@@ -97,7 +97,7 @@ export function EmptyState({
                 <ShadButton
                   key={index}
                   asChild
-                  variant={isPrimary ? "default" : "glass"}
+                  variant={isPrimary ? "default" : "outline"}
                   className={sharedClasses}
                 >
                   <a href={action.to}>{action.label}</a>
@@ -109,7 +109,7 @@ export function EmptyState({
               <ShadButton
                 key={index}
                 onClick={action.onClick}
-                variant={isPrimary ? "default" : "glass"}
+                variant={isPrimary ? "default" : "outline"}
                 className={sharedClasses}
               >
                 {action.label}
@@ -124,10 +124,13 @@ export function EmptyState({
   if (!framed) return body;
 
   return (
-    <div className="relative aurora-ring rounded-3xl">
-      <div className="relative rounded-3xl glass-strong border border-black/8 overflow-hidden p-10 md:p-14 flex flex-col items-center text-center">
-        {body}
-      </div>
+    <div
+      className={cn(
+        WL_APP_CLASSES.panelFrame,
+        "p-10 md:p-14 flex flex-col items-center text-center",
+      )}
+    >
+      {body}
     </div>
   );
 }

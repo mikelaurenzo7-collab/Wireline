@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Vapi from "@vapi-ai/web";
 import { PhoneOff, Mic, Loader2, AlertCircle, Volume2 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 // Retrieve Vapi public key safely from Vite environment
 const VAPI_PUBLIC_KEY = import.meta.env.VITE_VAPI_PUBLIC_KEY || "";
@@ -128,15 +129,18 @@ export default function BrowserCallWidget({
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <button
+      <ShadButton
+        type="button"
+        disableAnimations
+        variant={callActive ? "destructive" : "outline"}
         onClick={handleToggleCall}
         disabled={connecting || !vapi}
         aria-label={callActive ? "End conversation" : "Talk to agent"}
         className={cn(
-          "relative h-12 px-6 rounded-full font-mono text-[11px] uppercase tracking-[0.2em] font-semibold transition-all duration-300 active:scale-95 flex items-center justify-center gap-2.5 z-10 select-none shadow-md",
+          "relative h-12 px-6 rounded-full font-mono text-[11px] uppercase tracking-[0.2em] font-semibold z-10 select-none shadow-md",
           callActive
-            ? "bg-rose-500 text-white hover:bg-rose-600 shadow-rose-500/20"
-            : "bg-[#1A1614] text-[#EFE9DC] hover:text-white border border-[#EFE9DC]/10 hover:border-[#EFE9DC]/30 hover:shadow-lg",
+            ? "shadow-rose-500/20"
+            : "bg-[#1A1614] text-[#EFE9DC] hover:text-white border-[#EFE9DC]/10 hover:border-[#EFE9DC]/30 hover:shadow-lg",
         )}
       >
         {connecting ? (
@@ -163,7 +167,7 @@ export default function BrowserCallWidget({
             style={{ backgroundColor: activeColor }}
           />
         )}
-      </button>
+      </ShadButton>
 
       {/* Real-time speaking/volume animation bars */}
       {callActive && (
@@ -197,7 +201,7 @@ export default function BrowserCallWidget({
 
       {/* Soft Error Message Banner */}
       {error && (
-        <div className="flex items-center gap-2 text-rose-500 font-mono text-[9px] uppercase tracking-wider bg-rose-500/5 px-3 py-1 rounded-lg border border-rose-500/10">
+        <div className="flex items-center gap-2 text-rose-500 font-mono text-[9px] uppercase tracking-wider bg-rose-500/5 px-3 py-1 rounded-md border border-rose-500/10">
           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
           <span>{error}</span>
         </div>

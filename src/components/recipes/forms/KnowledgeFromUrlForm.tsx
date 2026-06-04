@@ -5,6 +5,7 @@ import { authFetch } from "../../../lib/api";
 import { cn } from "../../../lib/utils";
 import { FormShell, Field, TextInput, Select, RunButton, ResultCard, ErrCard } from "../shared";
 import type { AgentLite } from "../types";
+import { ShadButton } from "../../ui/shadcn/ShadButton";
 
 export function KnowledgeFromUrlForm({
   agents,
@@ -99,7 +100,7 @@ export function KnowledgeFromUrlForm({
       </Field>
 
       {/* Crawl mode toggle */}
-      <div className="rounded-2xl glass border border-white/10 p-4 space-y-3">
+      <div className="rounded-md wl-panel border border-white/10 p-4 space-y-3">
         <label className="flex items-center justify-between cursor-pointer">
           <div className="flex items-center gap-3">
             <Globe className="w-4 h-4 text-brand" />
@@ -110,11 +111,14 @@ export function KnowledgeFromUrlForm({
               </div>
             </div>
           </div>
-          <button
+          <ShadButton
             type="button"
+            variant="ghost"
+            disableAnimations
             onClick={() => setCrawl(!crawl)}
+            aria-pressed={crawl}
             className={cn(
-              "relative w-11 h-6 rounded-full transition-all",
+              "relative w-11 h-6 min-h-0 p-0 rounded-full shrink-0 hover:bg-transparent",
               crawl ? "bg-brand" : "bg-white/10",
             )}
           >
@@ -124,7 +128,7 @@ export function KnowledgeFromUrlForm({
                 crawl ? "left-[22px]" : "left-0.5",
               )}
             />
-          </button>
+          </ShadButton>
         </label>
         {crawl && (
           <div className="flex items-center gap-3 pt-1">
@@ -133,19 +137,22 @@ export function KnowledgeFromUrlForm({
             </span>
             <div className="flex gap-2">
               {[5, 8, 12, 20, 25].map((n) => (
-                <button
+                <ShadButton
                   key={n}
                   type="button"
+                  variant="ghost"
+                  size="sm"
+                  disableAnimations
                   onClick={() => setMaxPages(n)}
                   className={cn(
-                    "px-3 py-1.5 rounded-full text-[11px] uppercase tracking-[0.25em] transition-all",
+                    "h-auto px-3 py-1.5 rounded-full text-[11px] uppercase tracking-[0.25em]",
                     maxPages === n
                       ? "bg-brand/20 text-brand border border-brand/40"
-                      : "glass border border-white/10 text-muted hover:text-ink",
+                      : "wl-panel border border-white/10 text-muted hover:text-ink",
                   )}
                 >
                   {n}
-                </button>
+                </ShadButton>
               ))}
             </div>
           </div>
@@ -175,24 +182,31 @@ export function KnowledgeFromUrlForm({
           <ResultCard title="Page Summary">
             <p>{result.page_summary}</p>
           </ResultCard>
-          <div className="rounded-2xl glass border border-white/10 p-5 space-y-3">
+          <div className="rounded-md wl-panel border border-white/10 p-5 space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-[10px] uppercase tracking-[0.4em] text-brand">
                 Extracted · {selected.size}/{result.entries.length} selected
               </h4>
-              <button
+              <ShadButton
+                type="button"
+                variant="ghost"
+                size="sm"
+                disableAnimations
                 onClick={toggleAll}
-                className="text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors"
+                className="h-auto px-0 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand"
               >
                 {selected.size === result.entries.length ? "Deselect All" : "Select All"}
-              </button>
+              </ShadButton>
             </div>
             <div className="space-y-2 max-h-[400px] overflow-y-auto scrollbar-hide">
               {result.entries.map((e: any, i: number) => {
                 const isSel = selected.has(i);
                 return (
-                  <button
+                  <ShadButton
                     key={i}
+                    type="button"
+                    variant="ghost"
+                    disableAnimations
                     onClick={() =>
                       setSelected((s) => {
                         const ns = new Set(s);
@@ -202,7 +216,7 @@ export function KnowledgeFromUrlForm({
                       })
                     }
                     className={cn(
-                      "w-full text-left rounded-xl p-3 flex items-start gap-3 border transition-all",
+                      "w-full h-auto justify-start text-left rounded-md p-3 flex items-start gap-3 border",
                       isSel
                         ? "bg-brand/10 border-brand/40"
                         : "bg-black/20 border-white/8 hover:border-white/20",
@@ -222,7 +236,7 @@ export function KnowledgeFromUrlForm({
                         {e.category}
                       </div>
                     </div>
-                  </button>
+                  </ShadButton>
                 );
               })}
             </div>
@@ -234,10 +248,13 @@ export function KnowledgeFromUrlForm({
               options={agents.map((a) => ({ value: a.id, label: a.name }))}
             />
           </Field>
-          <button
+          <ShadButton
+            type="button"
+            variant="editorial"
+            disableAnimations
             onClick={apply}
             disabled={!agentId || applying || selected.size === 0}
-            className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
+            className="w-full min-h-12 py-4 text-[12px] tracking-[0.32em] uppercase"
           >
             {applying ? (
               <>
@@ -253,7 +270,7 @@ export function KnowledgeFromUrlForm({
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
-          </button>
+          </ShadButton>
         </div>
       )}
     </FormShell>

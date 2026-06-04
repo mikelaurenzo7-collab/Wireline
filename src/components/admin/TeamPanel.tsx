@@ -27,7 +27,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
 
   const roles = [
     { id: "owner", label: "Owner", icon: Shield, color: "text-brand", bg: "bg-brand/10" },
-    { id: "admin", label: "Admin", icon: Shield, color: "text-brand-3", bg: "bg-brand-3/10" },
+    { id: "admin", label: "Admin", icon: Shield, color: "text-brand", bg: "bg-brand/10" },
     { id: "member", label: "Member", icon: User, color: "text-ink", bg: "bg-black/5" },
     { id: "auditor", label: "Auditor", icon: KeyRound, color: "text-muted", bg: "bg-black/5" },
   ];
@@ -45,7 +45,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
       <div className="xl:col-span-2 space-y-3">
         <Panel title="Team Management" hint="ACCESS CONTROL" icon={KeyRound} scroll>
           <div className="space-y-6">
-            <div className="flex flex-col md:flex-row gap-3 p-4 rounded-2xl glass border border-input bg-brand/5">
+            <div className="flex flex-col md:flex-row gap-3 p-4 rounded-md wl-panel border border-input bg-brand/5">
               <div className="flex-1 space-y-1.5">
                 <label className="text-[10px] uppercase tracking-[0.3em] text-muted font-bold ml-1">
                   Invite New Member
@@ -60,7 +60,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                       spellCheck={false}
                       inputMode="email"
                       placeholder="colleague@business.com"
-                      className="w-full pl-9 pr-4 py-2.5 bg-white/50 border border-input rounded-xl outline-none focus-visible:ring-brand/40 text-sm transition-all h-auto"
+                      className="w-full pl-9 pr-4 py-2.5 bg-white/50 border border-input rounded-md outline-none focus-visible:ring-brand/40 text-sm transition-all h-auto"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
                     />
@@ -68,7 +68,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                   <Select value={inviteRole} onValueChange={setInviteRole}>
                     <SelectTrigger
                       aria-label="Role"
-                      className="w-32 px-3 py-2.5 bg-white/50 border border-input rounded-xl text-xs cursor-pointer h-auto"
+                      className="w-32 px-3 py-2.5 bg-white/50 border border-input rounded-md text-xs cursor-pointer h-auto"
                     >
                       <SelectValue />
                     </SelectTrigger>
@@ -104,7 +104,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
 
               <div className="grid grid-cols-1 gap-2">
                 {members.length === 0 ? (
-                  <div className="py-20 text-center glass border border-dashed border-input rounded-2xl">
+                  <div className="py-20 text-center wl-panel border border-dashed border-input rounded-md">
                     <User className="w-8 h-8 text-muted/70 mx-auto mb-3" />
                     <p className="text-xs text-muted uppercase tracking-widest font-medium">
                       No team members found
@@ -119,11 +119,11 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                     return (
                       <div
                         key={m.id}
-                        className="group flex items-center gap-4 p-4 rounded-2xl glass border border-input hover:border-brand/20 transition-all hover:bg-white/5"
+                        className="group flex items-center gap-4 p-4 rounded-md wl-panel border border-input hover:border-brand/20 transition-all hover:bg-white/5"
                       >
                         <div
                           className={cn(
-                            "w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold uppercase shrink-0 transition-transform group-hover:scale-105",
+                            "w-10 h-10 rounded-md flex items-center justify-center text-xs font-bold uppercase shrink-0 transition-transform group-hover:scale-105",
                             roleInfo.bg,
                             roleInfo.color,
                           )}
@@ -135,12 +135,12 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                             <p className="text-sm font-semibold text-ink truncate">{m.email}</p>
                             {m.user_id ? (
                               <span
-                                className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"
+                                className="w-1.5 h-1.5 rounded-full bg-brand shadow-[0_0_8px_rgba(79,30,123,0.5)]"
                                 title="Active Session"
                               />
                             ) : (
                               <span
-                                className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"
+                                className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"
                                 title="Pending Invite"
                               />
                             )}
@@ -157,7 +157,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                             <p
                               className={cn(
                                 "text-[9px] uppercase tracking-widest font-black mb-0.5",
-                                m.user_id ? "text-emerald-600" : "text-amber-600",
+                                m.user_id ? "text-brand" : "text-rose-500",
                               )}
                             >
                               {m.user_id ? "Authenticated" : "Pending Invite"}
@@ -169,7 +169,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                           <ShadButton
                             onClick={() => onRemove(m.id)}
                             variant="outline"
-                            className="w-9 h-9 rounded-xl glass border border-input flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all p-0"
+                            className="w-9 h-9 rounded-md border border-input flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all p-0"
                             title="Revoke Access"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -199,7 +199,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                 label: "Admin",
                 role: "Operational Lead",
                 desc: "Can manage agents, carriers, and view all telemetry.",
-                color: "text-brand-3",
+                color: "text-brand",
               },
               {
                 label: "Member",
@@ -216,7 +216,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
             ].map((p) => (
               <div
                 key={p.label}
-                className="p-4 rounded-2xl glass border border-white/8 space-y-1.5"
+                className="p-4 rounded-md wl-panel border border-white/8 space-y-1.5"
               >
                 <div className="flex items-center justify-between">
                   <span
@@ -233,14 +233,14 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
           </div>
         </Panel>
 
-        <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10">
+        <div className="p-4 rounded-md bg-rose-500/5 border border-rose-500/10">
           <div className="flex gap-3">
-            <KeyRound className="w-4 h-4 text-amber-600 shrink-0" />
+            <KeyRound className="w-4 h-4 text-rose-600 shrink-0" />
             <div className="space-y-1">
-              <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">
+              <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">
                 Security Notice
               </p>
-              <p className="text-[10px] text-amber-700/70 leading-relaxed">
+              <p className="text-[10px] text-rose-600/70 leading-relaxed">
                 Revoking access is immediate. All active sessions for the user will be terminated
                 across the Wireline network.
               </p>

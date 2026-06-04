@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { MoreHorizontal, X } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 interface AppPageIntroProps {
   eyebrow?: string;
@@ -63,14 +64,17 @@ export default function AppPageIntro({
         {actions && (
           <div className="flex flex-wrap items-center justify-center gap-2 shrink-0">
             <div className="hidden md:flex flex-wrap items-center gap-2">{actions}</div>
-            <button
+            <ShadButton
               type="button"
+              disableAnimations
+              variant="outline"
+              size="icon"
               onClick={() => setMobileActionsOpen(true)}
               aria-label="Page actions"
-              className="touch-press md:hidden w-9 h-9 rounded-xl flex items-center justify-center text-muted wl-panel"
+              className="touch-press md:hidden rounded-md text-muted wl-panel after:hidden"
             >
               <MoreHorizontal className="w-5 h-5" />
-            </button>
+            </ShadButton>
           </div>
         )}
       </div>
@@ -92,7 +96,7 @@ export default function AppPageIntro({
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 360, damping: 32 }}
-              className="fixed bottom-0 left-0 right-0 z-[201] glass-elevated rounded-t-[1.35rem] border-t border-black/10 md:hidden"
+              className="fixed bottom-0 left-0 right-0 z-[201] wl-panel-elevated rounded-t-[1.35rem] border-t border-black/10 md:hidden"
               style={{
                 paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
                 boxShadow:
@@ -107,15 +111,18 @@ export default function AppPageIntro({
               </div>
               <div className="flex items-center justify-between px-4 pb-3">
                 <p className="text-eyebrow">Actions</p>
-                <button
+                <ShadButton
                   ref={closeButtonRef}
                   type="button"
+                  disableAnimations
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setMobileActionsOpen(false)}
-                  className="w-11 h-11 rounded-lg flex items-center justify-center text-ink/70 hover:text-ink hover:bg-black/5"
+                  className="w-11 h-11 rounded-md text-ink/70 hover:text-ink hover:bg-black/5 after:hidden"
                   aria-label="Close actions"
                 >
                   <X className="w-4 h-4" />
-                </button>
+                </ShadButton>
               </div>
               <div className="px-4 pb-4 flex flex-col gap-2 [&_button]:min-h-[48px] [&_a]:min-h-[48px]">
                 {actions}

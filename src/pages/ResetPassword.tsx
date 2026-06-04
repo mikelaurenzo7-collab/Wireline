@@ -8,6 +8,7 @@ import { getPasswordPolicyError } from "../lib/password-policy";
 import { PageMeta } from "../lib/page-meta";
 import MarketingChrome from "../components/marketing/MarketingChrome";
 import { Input } from "../components/ui/shadcn/Input";
+import { ShadButton } from "../components/ui/shadcn/ShadButton";
 
 /**
  * /reset-password?token=<raw>
@@ -105,7 +106,7 @@ export default function ResetPassword() {
         noIndex
       />
       <div className="flex flex-1 items-center justify-center px-4 py-8">
-        <div className="w-full max-w-md rounded-2xl border border-black/8 bg-[#FAF8F5] p-6 sm:p-8">
+        <div className="w-full max-w-md rounded-md border border-black/8 bg-[#FAF8F5] p-6 sm:p-8">
           <div className="mb-6">
             <h1 className="font-display italic text-2xl sm:text-3xl text-ink leading-tight">
               Reset password
@@ -114,14 +115,14 @@ export default function ResetPassword() {
           </div>
 
           {success ? (
-            <div className="space-y-4 p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/30">
+            <div className="space-y-4 p-6 rounded-md bg-emerald-500/10 border border-emerald-500/30">
               <div className="flex items-center gap-3 text-emerald-500">
                 <Check className="w-5 h-5" />
                 <span className="text-sm font-medium">Password updated. Signing you in…</span>
               </div>
             </div>
           ) : !token ? (
-            <div className="space-y-4 p-6 rounded-2xl bg-rose-500/10 border border-rose-500/30">
+            <div className="space-y-4 p-6 rounded-md bg-rose-500/10 border border-rose-500/30">
               <div className="flex items-start gap-3 text-rose-500">
                 <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
                 <span className="text-sm leading-relaxed">
@@ -177,24 +178,22 @@ export default function ResetPassword() {
               {error && (
                 <div
                   role="alert"
-                  className="flex items-start gap-3 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs"
+                  className="flex items-start gap-3 p-4 rounded-md bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs"
                 >
                   <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                   <span className="leading-relaxed">{error}</span>
                 </div>
               )}
 
-              <button
+              <ShadButton
                 type="submit"
+                disableAnimations
+                variant="editorial"
                 disabled={loading || !password || password !== confirm}
-                className="w-full px-5 py-3.5 min-h-[48px] rounded-xl text-sm font-medium text-paper transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.99]"
-                style={{
-                  background: "#8B3FD6",
-                  boxShadow: "0 8px 24px -8px rgba(107, 43, 153 ,0.50)",
-                }}
+                className="w-full px-5 py-3.5 min-h-[48px] rounded-md text-sm font-medium"
               >
                 {loading ? "Updating…" : "Reset password"}
-              </button>
+              </ShadButton>
 
               <div className="text-center pt-2">
                 <Link to="/signin" className="text-caption font-medium text-brand hover:underline">

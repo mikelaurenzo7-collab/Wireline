@@ -1,6 +1,9 @@
 import { Component, ErrorInfo, ReactNode } from "react";
 import { AlertOctagon, RefreshCw, Home } from "lucide-react";
 import { captureException } from "../lib/sentry";
+import { cn } from "../lib/utils";
+import { WL_APP_CLASSES } from "../lib/wireline-director-design";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface Props {
   children: ReactNode;
@@ -46,14 +49,14 @@ export default class ErrorBoundary extends Component<Props, State> {
 
     return (
       <div className="min-h-[70svh] flex items-center justify-center p-6">
-        <div className="relative aurora-ring rounded-3xl max-w-xl w-full">
-          <div className="relative rounded-3xl glass-strong overflow-hidden p-8 md:p-10 space-y-6">
+        <div className={cn(WL_APP_CLASSES.panelFrame, "max-w-xl w-full")}>
+          <div className="relative p-8 md:p-10 space-y-6">
             <div
               className="absolute -top-20 -right-20 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-30 blur-3xl pointer-events-none"
               style={{ background: "radial-gradient(circle, #E8466A, transparent)" }}
             />
             <div className="relative z-10 flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-rose-500/15 border border-rose-500/30">
+              <div className="w-14 h-14 rounded-md flex items-center justify-center bg-rose-500/15 border border-rose-500/30">
                 <AlertOctagon className="w-7 h-7 text-rose-500" />
               </div>
               <div>
@@ -69,25 +72,31 @@ export default class ErrorBoundary extends Component<Props, State> {
               The rest of the app is fine — only this view failed. Reload the page or head back to
               the dashboard.
             </p>
-            <details className="relative z-10 rounded-xl bg-ink/[0.03] border border-black/8 dark:bg-white/[0.04] dark:border-white/[0.08] p-4 text-xs text-ink/70 font-mono overflow-x-auto">
+            <details className="relative z-10 rounded-md bg-ink/[0.03] border border-black/8 dark:bg-white/[0.04] dark:border-white/[0.08] p-4 text-xs text-ink/70 font-mono overflow-x-auto">
               <summary className="cursor-pointer text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink transition-colors">
                 Error details
               </summary>
               <pre className="mt-3 whitespace-pre-wrap break-words">{this.state.error.message}</pre>
             </details>
             <div className="relative z-10 flex flex-wrap gap-3">
-              <button
+              <ShadButton
+                variant="editorial"
                 onClick={this.reset}
-                className="brutal-btn !py-3 !px-6 !text-[11px] !tracking-[0.3em]"
+                disableAnimations
+                className="!py-3 !px-6 !text-[11px] !tracking-[0.3em]"
               >
                 <RefreshCw className="w-3.5 h-3.5" /> Try Again
-              </button>
-              <a
-                href="/"
-                className="px-5 py-3 rounded-full glass border border-black/8 dark:border-white/[0.08] text-[11px] uppercase tracking-[0.3em] text-ink/80 hover:border-brand/40 hover:text-brand transition-all flex items-center gap-2"
+              </ShadButton>
+              <ShadButton
+                variant="outline"
+                asChild
+                disableAnimations
+                className="!text-[11px] !tracking-[0.3em] uppercase"
               >
-                <Home className="w-3.5 h-3.5" /> Back to Dashboard
-              </a>
+                <a href="/" className="flex items-center gap-2">
+                  <Home className="w-3.5 h-3.5" /> Back to Dashboard
+                </a>
+              </ShadButton>
             </div>
           </div>
         </div>

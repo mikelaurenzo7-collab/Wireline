@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Cookie, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 import { isMarketingStickyCtaRoute, MARKETING_STICKY_CTA_BOTTOM } from "../lib/marketing-mobile";
 
 const STORAGE_KEY = "wireline_cookie_consent";
@@ -63,12 +64,12 @@ export default function CookieConsent() {
           {/* Compact contained card — bottom-left, never spans the screen or
               overlaps a centered CTA. */}
           <div
-            className="rounded-2xl border border-black/10 backdrop-blur-xl shadow-lg shadow-black/5 px-3.5 py-3 flex items-start gap-2.5"
+            className="rounded-md border border-black/10 backdrop-blur-xl shadow-lg shadow-black/5 px-3.5 py-3 flex items-start gap-2.5"
             style={{ background: "rgba(245,240,232,0.94)" }}
           >
             {/* Icon */}
             <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+              className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5"
               style={{
                 background: "rgba(107, 43, 153 ,0.12)",
                 border: "1px solid rgba(107, 43, 153 ,0.22)",
@@ -98,14 +99,17 @@ export default function CookieConsent() {
             </p>
 
             {/* Dismiss */}
-            <button
+            <ShadButton
               type="button"
+              variant="ghost"
+              size="icon"
+              disableAnimations
               onClick={dismiss}
               aria-label="Dismiss cookie notice"
-              className="shrink-0 w-9 h-9 -mt-1 -mr-1.5 rounded-lg flex items-center justify-center hover:bg-black/8 transition-colors text-muted hover:text-ink"
+              className="shrink-0 w-9 h-9 -mt-1 -mr-1.5 text-muted hover:text-ink"
             >
               <X className="w-4 h-4" />
-            </button>
+            </ShadButton>
           </div>
         </motion.div>
       )}

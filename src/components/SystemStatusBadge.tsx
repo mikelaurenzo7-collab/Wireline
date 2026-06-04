@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, Wifi, WifiOff } from "lucide-react";
 import { cn } from "../lib/utils";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 type CapabilityKey = "claude" | "vapi" | "drizzle";
 
@@ -61,18 +62,21 @@ export default function SystemStatusBadge() {
 
   const dotCls =
     overall === "ok"
-      ? "bg-emerald-400"
+      ? "bg-brand"
       : overall === "degraded"
-        ? "bg-amber-400"
+        ? "bg-rose-400"
         : overall === "error"
           ? "bg-rose-500"
           : "bg-white/30";
 
   return (
     <div className="relative">
-      <button
+      <ShadButton
+        type="button"
+        variant="outline"
+        disableAnimations
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 h-9 px-2.5 rounded-lg glass border border-white/8 hover:border-white/20 transition-all whitespace-nowrap"
+        className="flex h-9 items-center gap-2 whitespace-nowrap rounded-md wl-panel border border-border px-2.5 hover:border-brand/30"
         title={`System status: ${
           overall === "ok"
             ? "Live"
@@ -103,18 +107,23 @@ export default function SystemStatusBadge() {
                 ? "Offline"
                 : "…"}
         </span>
-      </button>
+      </ShadButton>
 
       {open && health && (
-        <div className="absolute bottom-full left-0 mb-2 w-64 rounded-2xl glass-strong border border-white/10 p-4 space-y-3 z-50 shadow-2xl">
+        <div className="absolute bottom-full left-0 z-50 mb-2 w-64 space-y-3 rounded-md wl-panel-elevated border border-border p-4 shadow-2xl">
           <div className="flex items-center justify-between">
             <span className="app-section-title">System Health</span>
-            <button
+            <ShadButton
+              type="button"
+              variant="ghost"
+              size="sm"
+              disableAnimations
               onClick={() => setOpen(false)}
-              className="text-ink/65 hover:text-ink transition-colors text-xs"
+              className="h-auto px-1 py-0 text-xs text-ink/65 hover:text-ink"
+              aria-label="Close system health panel"
             >
               ✕
-            </button>
+            </ShadButton>
           </div>
 
           {/* DB row */}
@@ -134,20 +143,24 @@ export default function SystemStatusBadge() {
             <span className="text-[9px] text-ink/65 uppercase tracking-wider">
               {health.status === "ok" ? "Nominal" : "Degraded"}
             </span>
-            <button
+            <ShadButton
+              type="button"
+              variant="ghost"
+              size="sm"
+              disableAnimations
               onClick={() => {
                 poll();
               }}
-              className="text-[9px] text-brand/70 hover:text-brand uppercase tracking-wider flex items-center gap-1"
+              className="h-auto gap-1 px-0 py-0 text-[9px] uppercase tracking-wider text-brand/70 hover:text-brand"
             >
               <Wifi className="w-2.5 h-2.5" /> Refresh
-            </button>
+            </ShadButton>
           </div>
         </div>
       )}
 
       {open && error && (
-        <div className="absolute bottom-full left-0 mb-2 w-56 rounded-2xl glass-strong border border-white/10 p-4 space-y-2 z-50">
+        <div className="absolute bottom-full left-0 mb-2 w-56 rounded-md wl-panel-elevated border border-white/10 p-4 space-y-2 z-50">
           <div className="flex items-center gap-2 text-rose-500">
             <WifiOff className="w-4 h-4" />
             <span className="text-xs">Server unreachable</span>
@@ -163,13 +176,13 @@ function StatusRow({ label, ok, detail }: { label: string; ok: boolean; detail: 
     <div className="flex items-center justify-between gap-3">
       <div className="flex items-center gap-2">
         {ok ? (
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+          <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-brand" />
         ) : (
-          <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
         )}
         <span className="text-[11px] text-ink/80">{label}</span>
       </div>
-      <span className={cn("text-[10px]", ok ? "text-ink/65" : "text-amber-400/80")}>{detail}</span>
+      <span className={cn("text-[10px]", ok ? "text-ink/65" : "text-rose-400/80")}>{detail}</span>
     </div>
   );
 }

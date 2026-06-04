@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X, ArrowRight } from "lucide-react";
 import WirelineMark from "../WirelineMark";
 import { cn } from "../../lib/utils";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 export type PublicNavActive = "signin" | "signup" | "home";
 
@@ -131,9 +132,12 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
             )}
 
             {/* Mobile hamburger */}
-            <button
+            <ShadButton
               type="button"
-              className="md:hidden inline-flex items-center justify-center w-10 h-10 text-ink"
+              disableAnimations
+              variant="ghost"
+              size="icon"
+              className="md:hidden text-ink after:hidden"
               aria-expanded={menuOpen}
               aria-controls="public-mobile-nav"
               onClick={() => setMenuOpen((v) => !v)}
@@ -141,7 +145,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
             >
               <span className="sr-only">{menuOpen ? "Close menu" : "Open menu"}</span>
               {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
+            </ShadButton>
           </div>
         </div>
       </header>
@@ -155,9 +159,11 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
           aria-modal="true"
           aria-label="Site navigation"
         >
-          <button
+          <ShadButton
             type="button"
-            className="absolute inset-0 bg-ink/20 backdrop-blur-sm"
+            disableAnimations
+            variant="ghost"
+            className="absolute inset-0 h-full w-full rounded-none bg-ink/20 backdrop-blur-sm hover:bg-ink/20 after:hidden"
             aria-label="Close menu"
             onClick={() => setMenuOpen(false)}
           />

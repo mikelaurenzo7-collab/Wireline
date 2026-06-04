@@ -9,6 +9,7 @@ import PageShell, { Panel } from "./PageShell";
 import { useToast } from "../contexts/ToastContext";
 import EmptyState from "./EmptyState";
 import { Input } from "./ui/shadcn/Input";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface SmsThread {
   id: string;
@@ -141,10 +142,14 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
               : "Two-way text conversations with customers — outbound from your agents, inbound replies routed here."
           }
           actions={
-            <button
+            <ShadButton
+              type="button"
+              variant="outline"
+              size="sm"
+              disableAnimations
               onClick={fetchThreads}
               disabled={loading}
-              className="h-11 px-3.5 rounded-full wl-panel text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
+              className="h-11 rounded-full text-[10px] uppercase tracking-[0.28em]"
             >
               {loading ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -152,7 +157,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                 <RefreshCw className="w-3 h-3" />
               )}
               Refresh
-            </button>
+            </ShadButton>
           }
         >
           <Panel title="Inbox" hint="SMS · THREADS & REPLIES" icon={Inbox} flush className="h-full">
@@ -194,7 +199,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                             animate={{ opacity: 1, y: 0 }}
                             onClick={() => setActiveId(t.id)}
                             className={cn(
-                              "w-full text-left rounded-xl p-3 border transition-all",
+                              "w-full text-left rounded-md p-3 border transition-all",
                               activeId === t.id
                                 ? "bg-brand/8 border-brand/30"
                                 : "bg-white/[0.02] border-white/10 hover:border-white/20",
@@ -250,13 +255,17 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                       </span>
                       <span className="text-eyebrow opacity-70 ml-auto">Two-way</span>
                     </div>
-                    <button
+                    <ShadButton
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disableAnimations
                       onClick={() => setActiveId(null)}
                       aria-label="Back to threads"
-                      className="lg:hidden self-start inline-flex items-center gap-1 px-2 py-1 mb-2 rounded-md text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink transition-colors"
+                      className="lg:hidden self-start h-auto p-1 mb-2 text-[10px] uppercase tracking-[0.3em] text-muted"
                     >
                       <ArrowLeft className="w-2.5 h-2.5" /> Back
-                    </button>
+                    </ShadButton>
                     <div className="flex-1 min-h-0 scroll-viewport space-y-2 pb-3">
                       {messagesLoading ? (
                         <div className="flex items-center justify-center py-12">
@@ -267,7 +276,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                           <div
                             key={m.id}
                             className={cn(
-                              "max-w-[78%] rounded-2xl px-3.5 py-2.5 border",
+                              "max-w-[78%] rounded-md px-3.5 py-2.5 border",
                               m.direction === "out"
                                 ? "ml-auto bg-brand/12 border-brand/30 text-ink"
                                 : "mr-auto bg-white/[0.04] border-white/10 text-ink",
@@ -305,20 +314,24 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                           }}
                           placeholder="Type a reply…"
                           disabled={sending}
-                          className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 disabled:opacity-50"
+                          className="flex-1 text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 disabled:opacity-50"
                         />
-                        <button
+                        <ShadButton
+                          type="button"
+                          variant="editorial"
+                          size="icon"
+                          disableAnimations
                           onClick={handleSend}
                           disabled={sending || !reply.trim()}
                           aria-label="Send SMS reply"
-                          className="touch-press shrink-0 w-11 h-11 rounded-lg bg-gradient-to-r from-brand to-brand-deep text-on-brand hover:opacity-90 transition-colors flex items-center justify-center disabled:opacity-40"
+                          className="touch-press shrink-0 min-h-11 w-11 rounded-md"
                         >
                           {sending ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
                           ) : (
                             <Send className="w-4 h-4" />
                           )}
-                        </button>
+                        </ShadButton>
                       </div>
                       <p className="text-[10px] text-ink/40 mt-1.5 leading-relaxed">
                         Sent from your Twilio sender · TCPA opt-out applies · STOP keyword

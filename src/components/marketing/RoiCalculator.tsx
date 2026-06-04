@@ -36,6 +36,7 @@ import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { Calculator, TrendingUp, Clock } from "lucide-react";
 import { Slider } from "../ui/shadcn/Slider";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 const WIRELINE_PRO_MONTHLY_USD = 499;
 const WIRELINE_PRO_ANNUAL_USD = WIRELINE_PRO_MONTHLY_USD * 12;
@@ -139,7 +140,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
         className="mt-0 shrink-0"
         aria-label="ROI snapshot"
       >
-        <div className="rounded-2xl border border-brand/15 bg-[#FAF8F5]/70 p-3 shadow-[0_8px_28px_-18px_rgba(107,43,153,0.22)]">
+        <div className="rounded-md border border-brand/15 bg-[#FAF8F5]/70 p-3 shadow-[0_8px_28px_-18px_rgba(107,43,153,0.22)]">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-eyebrow !text-brand">ROI snapshot</p>
@@ -174,7 +175,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
       aria-labelledby="roi-heading"
       data-testid="roi-calculator"
     >
-      <div className="rounded-2xl border border-[#8B3FD6]/12 bg-gradient-to-br from-[#FAF8F5] via-[#FAF8F5] to-[#FAF8F5] p-4 sm:p-5 shadow-[0_8px_32px_-12px_rgba(107,43,153,0.12)]">
+      <div className="rounded-md border border-[#8B3FD6]/12 bg-gradient-to-br from-[#FAF8F5] via-[#FAF8F5] to-[#FAF8F5] p-4 sm:p-5 shadow-[0_8px_32px_-12px_rgba(107,43,153,0.12)]">
         <div className="flex items-center gap-2 mb-3">
           <span className="hero-accent-line" style={{ background: "#8B3FD6" }} />
           <h2
@@ -197,19 +198,22 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
           {PRESETS.map((p) => {
             const active = activePreset === p.id;
             return (
-              <button
+              <ShadButton
                 key={p.id}
                 type="button"
+                disableAnimations
+                variant={active ? "default" : "outline"}
+                size="sm"
                 onClick={() => applyPreset(p.id)}
                 className={
-                  "text-[10px] uppercase tracking-[0.22em] font-medium px-2.5 py-1 rounded-full border transition-all " +
+                  "text-[10px] uppercase tracking-[0.22em] font-medium px-2.5 py-1 rounded-full " +
                   (active
                     ? "bg-[#8B3FD6] text-paper border-[#8B3FD6]"
                     : "bg-[#FAF8F5] text-muted/75 border-black/10 hover:border-[#8B3FD6]/30 hover:text-ink")
                 }
               >
                 {p.label}
-              </button>
+              </ShadButton>
             );
           })}
         </div>
@@ -251,7 +255,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
           </div>
 
           {/* Output column */}
-          <div className="rounded-xl border border-[#8B3FD6]/15 bg-[#FAF8F5] p-4 flex flex-col">
+          <div className="rounded-md border border-[#8B3FD6]/15 bg-[#FAF8F5] p-4 flex flex-col">
             <div className="grid grid-cols-2 gap-3 mb-3">
               <Stat
                 label="Revenue recovered"
@@ -262,7 +266,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
             </div>
             <div
               className={
-                "rounded-lg px-3 py-2.5 mb-3 border " +
+                "rounded-md px-3 py-2.5 mb-3 border " +
                 (results.worthIt
                   ? "border-emerald-500/25 bg-emerald-500/8"
                   : "border-amber-500/25 bg-amber-500/8")

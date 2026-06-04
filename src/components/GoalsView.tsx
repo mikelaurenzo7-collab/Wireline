@@ -4,6 +4,7 @@ import { Target, Plus, Pencil, Trash2, Check, X, Loader2 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { Input } from "./ui/shadcn/Input";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 /* ──────────────────────────────────────────────────────────────────────────
    GoalsView — the Insights → Goals tab.
@@ -123,10 +124,10 @@ function GoalEditor({
   const valid = Number.isFinite(parsed) && parsed >= 1;
 
   return (
-    <div className="relative rounded-2xl glass border border-black/8 p-5 flex flex-col gap-3 h-full">
+    <div className="relative rounded-md wl-panel border border-border p-5 flex flex-col gap-3 h-full">
       <div className="flex items-center gap-2">
         <span
-          className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+          className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
           style={{ background: `${metric.accent}1a`, color: metric.accent }}
         >
           <Target className="w-3.5 h-3.5" />
@@ -150,7 +151,7 @@ function GoalEditor({
             if (e.key === "Enter" && valid && !saving) onSave(Math.round(parsed), label);
             if (e.key === "Escape") onCancel();
           }}
-          className="mt-1 w-full h-11 px-3 rounded-lg glass border border-black/10 text-ink text-sm tabular-nums focus:outline-none focus:border-brand/40"
+          className="mt-1 w-full h-11 px-3 rounded-md wl-panel border border-border text-ink text-sm tabular-nums focus:outline-none focus:border-brand/40"
         />
       </label>
 
@@ -166,7 +167,7 @@ function GoalEditor({
             if (e.key === "Enter" && valid && !saving) onSave(Math.round(parsed), label);
             if (e.key === "Escape") onCancel();
           }}
-          className="mt-1 w-full h-11 px-3 rounded-lg glass border border-black/10 text-ink text-sm focus:outline-none focus:border-brand/40"
+          className="mt-1 w-full h-11 px-3 rounded-md wl-panel border border-border text-ink text-sm focus:outline-none focus:border-brand/40"
         />
       </label>
 
@@ -175,11 +176,13 @@ function GoalEditor({
       </p>
 
       <div className="mt-auto flex items-center gap-2 pt-1">
-        <button
+        <ShadButton
+          type="button"
+          variant="editorial"
+          disableAnimations
           onClick={() => valid && onSave(Math.round(parsed), label)}
           disabled={!valid || saving}
-          className="flex-1 h-11 rounded-lg text-on-brand text-[11px] uppercase tracking-[0.14em] font-medium flex items-center justify-center gap-1.5 disabled:opacity-40 transition-opacity"
-          style={{ background: "#8B3FD6" }}
+          className="flex-1 min-h-11 rounded-md text-[11px] uppercase tracking-[0.14em]"
         >
           {saving ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -187,14 +190,17 @@ function GoalEditor({
             <Check className="w-3.5 h-3.5" />
           )}
           Save goal
-        </button>
-        <button
+        </ShadButton>
+        <ShadButton
+          type="button"
+          variant="outline"
+          disableAnimations
           onClick={onCancel}
           disabled={saving}
-          className="disabled:opacity-50 disabled:cursor-not-allowed h-11 px-3 rounded-lg glass border border-black/10 text-muted text-[11px] uppercase tracking-[0.14em] hover:text-ink transition-colors"
+          className="min-h-11 px-3 rounded-md text-[11px] uppercase tracking-[0.14em]"
         >
           Cancel
-        </button>
+        </ShadButton>
       </div>
     </div>
   );
@@ -217,7 +223,7 @@ function GoalCard({
   const status = STATUS_META[goal.status];
 
   return (
-    <div className="relative rounded-2xl glass border border-black/8 p-5 flex flex-col gap-4 h-full overflow-hidden">
+    <div className="relative rounded-md wl-panel border border-border p-5 flex flex-col gap-4 h-full overflow-hidden">
       <div
         className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
         style={{ background: `radial-gradient(circle, ${goal.accent}, transparent)` }}
@@ -258,7 +264,7 @@ function GoalCard({
           <span className="text-[9px] uppercase tracking-[0.18em] text-muted">{goal.unit}</span>
           <div className="mt-1 text-[11px] text-ink/70 leading-relaxed">
             {goal.status === "achieved" ? (
-              <span className="text-emerald-600 font-medium">Target reached — nice work.</span>
+              <span className="text-brand font-medium">Target reached — nice work.</span>
             ) : (
               <>
                 <span className="tabular-nums">{num(goal.remaining)}</span> to go ·{" "}
@@ -276,19 +282,27 @@ function GoalCard({
       </div>
 
       <div className="relative mt-auto flex items-center gap-2 pt-1">
-        <button
+        <ShadButton
+          type="button"
+          variant="outline"
+          size="sm"
+          disableAnimations
           onClick={onEdit}
-          className="flex-1 h-8 rounded-lg glass border border-black/10 text-muted text-[10px] uppercase tracking-[0.14em] flex items-center justify-center gap-1.5 hover:text-ink transition-colors"
+          className="flex-1 min-h-8 rounded-md text-[10px] uppercase tracking-[0.14em]"
         >
           <Pencil className="w-3 h-3" />
           Edit
-        </button>
+        </ShadButton>
         {confirm ? (
           <>
-            <button
+            <ShadButton
+              type="button"
+              variant="destructive"
+              size="sm"
+              disableAnimations
               onClick={onDelete}
               disabled={deleting}
-              className="disabled:opacity-50 disabled:cursor-not-allowed h-8 px-3 rounded-lg text-[10px] uppercase tracking-[0.14em] font-medium flex items-center justify-center gap-1.5 bg-rose-500/12 text-rose-600 hover:bg-rose-500/20 transition-colors"
+              className="min-h-8 px-3 rounded-md text-[10px] uppercase tracking-[0.14em]"
             >
               {deleting ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -296,24 +310,32 @@ function GoalCard({
                 <Check className="w-3 h-3" />
               )}
               Confirm
-            </button>
-            <button
+            </ShadButton>
+            <ShadButton
+              type="button"
+              variant="outline"
+              size="icon"
+              disableAnimations
               onClick={() => setConfirm(false)}
               disabled={deleting}
-              className="disabled:opacity-50 disabled:cursor-not-allowed h-8 w-8 rounded-lg glass border border-black/10 text-muted flex items-center justify-center hover:text-ink transition-colors"
+              className="min-h-8 w-8 rounded-md"
               aria-label="Cancel delete"
             >
               <X className="w-3.5 h-3.5" />
-            </button>
+            </ShadButton>
           </>
         ) : (
-          <button
+          <ShadButton
+            type="button"
+            variant="outline"
+            size="icon"
+            disableAnimations
             onClick={() => setConfirm(true)}
-            className="h-8 w-8 rounded-lg glass border border-black/10 text-muted flex items-center justify-center hover:text-rose-600 transition-colors"
+            className="min-h-8 w-8 rounded-md hover:text-rose-600"
             aria-label="Delete goal"
           >
             <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          </ShadButton>
         )}
       </div>
     </div>
@@ -332,10 +354,10 @@ function EmptyMetricCard({
   onCreate: () => void;
 }) {
   return (
-    <div className="relative rounded-2xl glass border border-dashed border-black/12 p-5 flex flex-col gap-3 h-full">
+    <div className="relative rounded-md wl-panel border border-dashed border-border p-5 flex flex-col gap-3 h-full">
       <div className="flex items-center gap-2">
         <span
-          className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+          className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
           style={{ background: `${metric.accent}14`, color: metric.accent }}
         >
           <Target className="w-3.5 h-3.5" />
@@ -347,13 +369,16 @@ function EmptyMetricCard({
         <span className="font-display italic text-xl text-ink/75">{num(current)}</span>{" "}
         {metric.unit} so far this month
       </p>
-      <button
+      <ShadButton
+        type="button"
+        variant="outline"
+        disableAnimations
         onClick={onCreate}
-        className="mt-auto h-11 rounded-lg glass border border-black/10 text-brand text-[11px] uppercase tracking-[0.14em] font-medium flex items-center justify-center gap-1.5 hover:bg-brand/5 transition-colors"
+        className="mt-auto min-h-11 w-full rounded-md text-brand text-[11px] uppercase tracking-[0.14em] hover:bg-brand/5"
       >
         <Plus className="w-3.5 h-3.5" />
         Set a target
-      </button>
+      </ShadButton>
     </div>
   );
 }
@@ -439,7 +464,7 @@ export default function GoalsView() {
 
   if (err || !data) {
     return (
-      <div className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-6 text-rose-600 text-sm">
+      <div className="rounded-md bg-rose-500/10 border border-rose-500/30 p-6 text-rose-600 text-sm">
         {err || "Goals unavailable."}
       </div>
     );
@@ -454,26 +479,21 @@ export default function GoalsView() {
   return (
     <div className="space-y-4">
       {/* Header strip */}
-      <div className="relative aurora-ring rounded-3xl">
-        <div className="relative rounded-3xl glass-strong overflow-hidden p-6 md:p-7 flex flex-wrap items-center justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-eyebrow text-brand mb-1">Monthly targets · {data.period_label}</p>
-            <h2 className="font-display italic text-2xl md:text-3xl text-ink leading-tight">
-              {activeGoals === 0
-                ? "Set your first fleet goal"
-                : `${onPace} of ${activeGoals} ${activeGoals === 1 ? "goal" : "goals"} on pace`}
-            </h2>
-            <p className="mt-1 text-caption max-w-md leading-relaxed">
-              Goals measure live fleet activity against an even daily run-rate for the current
-              calendar month.
-            </p>
-          </div>
-          <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-            style={{ background: "linear-gradient(135deg, #8B3FD622, #8B3FD60a)" }}
-          >
-            <Target className="w-7 h-7 text-brand" />
-          </div>
+      <div className="relative rounded-md wl-panel-elevated border border-border overflow-hidden p-6 md:p-7 flex flex-wrap items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-eyebrow text-brand mb-1">Monthly targets · {data.period_label}</p>
+          <h2 className="font-display italic text-2xl md:text-3xl text-ink leading-tight">
+            {activeGoals === 0
+              ? "Set your first fleet goal"
+              : `${onPace} of ${activeGoals} ${activeGoals === 1 ? "goal" : "goals"} on pace`}
+          </h2>
+          <p className="mt-1 text-caption max-w-md leading-relaxed">
+            Goals measure live fleet activity against an even daily run-rate for the current
+            calendar month.
+          </p>
+        </div>
+        <div className="w-14 h-14 rounded-md bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">
+          <Target className="w-7 h-7 text-brand" />
         </div>
       </div>
 

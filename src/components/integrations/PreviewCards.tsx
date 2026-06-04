@@ -35,7 +35,7 @@ export function CRMPreviewCard() {
   const stages = ["New", "Qualified", "Proposal", "Won"];
 
   return (
-    <div className="rounded-xl overflow-hidden border border-white/8 text-left">
+    <div className="rounded-md overflow-hidden border border-white/8 text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
         style={{ background: "#FF7A59" }}
@@ -101,7 +101,7 @@ export function SlackPreviewCard() {
   }, []);
 
   return (
-    <div className="rounded-xl overflow-hidden border border-white/8 text-left">
+    <div className="rounded-md overflow-hidden border border-white/8 text-left">
       <div
         className="flex items-center gap-2 px-3 py-2 text-[10px] font-semibold"
         style={{ background: "#1A1D21", color: "#E8E8E8" }}
@@ -117,7 +117,7 @@ export function SlackPreviewCard() {
           }}
         >
           <div
-            className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center text-[9px] font-bold text-white mt-0.5"
+            className="w-7 h-7 rounded-md shrink-0 flex items-center justify-center text-[9px] font-bold text-white mt-0.5"
             style={{ background: "#8B3FD6" }}
           >
             W
@@ -171,7 +171,7 @@ export function SMSPreviewCard() {
   }, []);
 
   return (
-    <div className="rounded-xl overflow-hidden border border-white/8 text-left">
+    <div className="rounded-md overflow-hidden border border-white/8 text-left">
       <div
         className="flex items-center justify-center py-2 text-[10px] font-medium"
         style={{ background: "#1C1C1E", color: "rgba(255,255,255,0.5)" }}
@@ -183,7 +183,7 @@ export function SMSPreviewCard() {
         {phase === "typing" && (
           <div className="flex justify-end">
             <div
-              className="flex gap-1 items-center px-3.5 py-2.5 rounded-2xl rounded-tr-sm"
+              className="flex gap-1 items-center px-3.5 py-2.5 rounded-md rounded-tr-sm"
               style={{ background: "#007AFF" }}
             >
               {[0, 1, 2].map((i) => (
@@ -201,7 +201,7 @@ export function SMSPreviewCard() {
         {(phase === "sent" || phase === "replied") && (
           <div className="flex justify-end" style={{ animation: "appear-up 0.28s ease-out" }}>
             <div
-              className="max-w-[80%] px-3 py-2 rounded-2xl rounded-tr-sm text-[11px] text-white leading-relaxed"
+              className="max-w-[80%] px-3 py-2 rounded-md rounded-tr-sm text-[11px] text-white leading-relaxed"
               style={{ background: "#007AFF" }}
             >
               Thanks for calling! Here's your booking confirmation: trywireline.com/b/4x9z
@@ -223,7 +223,7 @@ export function SMSPreviewCard() {
         {phase === "replied" && (
           <div className="flex justify-start" style={{ animation: "appear-up 0.28s ease-out" }}>
             <div
-              className="max-w-[75%] px-3 py-2 rounded-2xl rounded-tl-sm text-[11px] leading-relaxed"
+              className="max-w-[75%] px-3 py-2 rounded-md rounded-tl-sm text-[11px] leading-relaxed"
               style={{ background: "#E5E5EA", color: "#1C1C1E" }}
             >
               Got it, thanks! 👍
@@ -237,7 +237,7 @@ export function SMSPreviewCard() {
 
 export function ZoomPreviewCard() {
   return (
-    <div className="rounded-xl overflow-hidden border border-white/8 text-left">
+    <div className="rounded-md overflow-hidden border border-white/8 text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
         style={{ background: "#2D8CFF" }}
@@ -250,7 +250,7 @@ export function ZoomPreviewCard() {
           Tomorrow, 2:00 PM CST · 45 min
         </div>
         <div
-          className="flex items-center gap-2 px-2.5 py-2 rounded-lg border text-[10px]"
+          className="flex items-center gap-2 px-2.5 py-2 rounded-md border text-[10px]"
           style={{ border: "1px solid rgba(45,140,255,0.3)", background: "rgba(45,140,255,0.1)" }}
         >
           <Video size={12} style={{ color: "#2D8CFF" }} />
@@ -273,7 +273,7 @@ export function CalendarPreviewCard() {
   }, []);
 
   return (
-    <div className="rounded-xl overflow-hidden border border-white/8 text-left">
+    <div className="rounded-md overflow-hidden border border-white/8 text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
         style={{ background: "#34A853" }}
@@ -283,7 +283,7 @@ export function CalendarPreviewCard() {
       <div className="p-3 space-y-2" style={{ background: "#1C0F33" }}>
         <div className="flex items-center gap-2">
           <div
-            className="w-10 h-10 rounded-xl flex flex-col items-center justify-center shrink-0 transition-all duration-500"
+            className="w-10 h-10 rounded-md flex flex-col items-center justify-center shrink-0 transition-all duration-500"
             style={{
               background: confirmed ? "rgba(52,168,83,0.2)" : "rgba(52,168,83,0.1)",
               border: `1px solid ${confirmed ? "rgba(52,168,83,0.5)" : "rgba(52,168,83,0.25)"}`,
@@ -328,7 +328,7 @@ export function ShopifyPreviewCard() {
   }, []);
 
   return (
-    <div className="rounded-xl overflow-hidden border border-white/8 text-left">
+    <div className="rounded-md overflow-hidden border border-white/8 text-left">
       <div
         className="flex items-center justify-between px-3 py-2 text-[10px] font-semibold"
         style={{ background: "#1A1A1A", color: "#96BF48" }}
@@ -346,7 +346,7 @@ export function ShopifyPreviewCard() {
       <div className="p-3 space-y-2" style={{ background: "#1C0F33" }}>
         <div className="flex items-center gap-2">
           <div
-            className="w-10 h-10 rounded-lg shrink-0"
+            className="w-10 h-10 rounded-md shrink-0"
             style={{ background: "rgba(150,191,72,0.1)", border: "1px solid rgba(150,191,72,0.2)" }}
           />
           <div>
@@ -407,7 +407,7 @@ export function SquarePreviewCard() {
   }, []);
 
   return (
-    <div className="rounded-xl overflow-hidden border border-white/8 text-left">
+    <div className="rounded-md overflow-hidden border border-white/8 text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
         style={{ background: "#3E4348" }}
@@ -430,7 +430,7 @@ export function SquarePreviewCard() {
           </div>
         </div>
         <div
-          className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[10px] font-medium transition-all duration-500"
+          className="flex items-center gap-2 px-2.5 py-2 rounded-md text-[10px] font-medium transition-all duration-500"
           style={{
             background: sent ? "#00A2E8" : "rgba(0,162,232,0.2)",
             color: "#fff",
@@ -455,7 +455,7 @@ export function DocuSignPreviewCard() {
   const fields = ["Signature", "Date", "Initials"];
 
   return (
-    <div className="rounded-xl overflow-hidden border border-white/8 text-left">
+    <div className="rounded-md overflow-hidden border border-white/8 text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold"
         style={{ background: "#FFC720", color: "#1a1a1a" }}
@@ -535,7 +535,7 @@ export function MetaPreviewCard() {
   }, []);
 
   return (
-    <div className="rounded-xl overflow-hidden border border-white/8 text-left">
+    <div className="rounded-md overflow-hidden border border-white/8 text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
         style={{ background: "#1877F2" }}
@@ -608,7 +608,7 @@ export function ApolloPreviewCard() {
   ];
 
   return (
-    <div className="rounded-xl overflow-hidden border border-white/8 text-left">
+    <div className="rounded-md overflow-hidden border border-white/8 text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
         style={{ background: "#8B5CF6" }}
@@ -668,7 +668,7 @@ export function GeminiPreviewCard() {
   ];
 
   return (
-    <div className="rounded-xl overflow-hidden border border-white/8 text-left">
+    <div className="rounded-md overflow-hidden border border-white/8 text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
         style={{ background: "linear-gradient(90deg, #4285F4, #9B72CB)" }}
@@ -677,7 +677,7 @@ export function GeminiPreviewCard() {
       </div>
       <div className="p-3 space-y-2" style={{ background: "#1C0F33" }}>
         <div
-          className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[10px]"
+          className="flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[10px]"
           style={{
             background: "rgba(255,255,255,0.06)",
             border: "1px solid rgba(255,255,255,0.08)",
@@ -729,7 +729,7 @@ export function TeamsPreviewCard() {
   }, []);
 
   return (
-    <div className="rounded-xl overflow-hidden border border-white/8 text-left">
+    <div className="rounded-md overflow-hidden border border-white/8 text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
         style={{ background: "#6264A7" }}
@@ -798,7 +798,7 @@ export function ExcelPreviewCard() {
   ];
 
   return (
-    <div className="rounded-xl overflow-hidden border border-white/8 text-left">
+    <div className="rounded-md overflow-hidden border border-white/8 text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
         style={{ background: "#217346" }}
@@ -873,7 +873,7 @@ export function SheetsPreviewCard() {
   ];
 
   return (
-    <div className="rounded-xl overflow-hidden border border-white/8 text-left">
+    <div className="rounded-md overflow-hidden border border-white/8 text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
         style={{ background: "#0F9D58" }}
@@ -1027,14 +1027,6 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
     PreviewCard: ApolloPreviewCard,
   },
   {
-    key: "gemini",
-    label: "Gemini",
-    color: "#4285F4",
-    Icon: Sparkles,
-    tagline: "Look up fresh web data — pricing, hours, regulations — live on calls",
-    PreviewCard: GeminiPreviewCard,
-  },
-  {
     key: "microsoft_teams",
     label: "Teams",
     color: "#6264A7",
@@ -1105,10 +1097,6 @@ export const ACTIVITY_LOG: Partial<Record<ToolIntegration, Array<{ text: string;
       { text: "Enriched: Jennifer Park — VP Ops, $40M+", time: "3 calls ago" },
       { text: "Enriched: Mike Torres — Director, 500–1K", time: "5 calls ago" },
     ],
-    gemini: [
-      { text: 'Web search: "Acme Corp pricing 2025"', time: "3 calls ago" },
-      { text: 'Web search: "OSHA regulations Illinois"', time: "6 calls ago" },
-    ],
     microsoft_teams: [
       { text: "#sales-alerts: Compliance flag raised", time: "3 calls ago" },
       { text: "#hot-leads: Enterprise lead — $12K ARR", time: "Yesterday" },
@@ -1130,7 +1118,7 @@ export function resolveConnected(
   status: Record<string, { connected: boolean }> | null,
 ): boolean {
   if (!status) return false;
-  if (key === "twilio" || key === "gemini") return true;
+  if (key === "twilio") return true;
   if (key === "calendar") return !!(status.google?.connected || status.microsoft?.connected);
   if (key === "crm") return !!(status.hubspot?.connected || status.salesforce?.connected);
   if (key === "microsoft_teams" || key === "microsoft_excel") return !!status.microsoft?.connected;

@@ -2,6 +2,8 @@ export interface DirectorFeatureFlags {
   toolExecution: boolean;
   creativeTools: boolean;
   artifactsPanel: boolean;
+  /** Live Gemini grounded web search injected into Director turns */
+  webResearch: boolean;
 }
 
 function envEnabled(name: string, defaultValue: boolean): boolean {
@@ -11,9 +13,11 @@ function envEnabled(name: string, defaultValue: boolean): boolean {
 }
 
 export function loadDirectorFeatureFlags(): DirectorFeatureFlags {
+  const webResearchDefault = Boolean(process.env.GEMINI_API_KEY?.trim());
   return {
     toolExecution: envEnabled("DIRECTOR_TOOL_EXECUTION_ENABLED", true),
     creativeTools: envEnabled("DIRECTOR_CREATIVE_TOOLS_ENABLED", true),
     artifactsPanel: envEnabled("DIRECTOR_ARTIFACTS_PANEL_ENABLED", true),
+    webResearch: envEnabled("DIRECTOR_WEB_RESEARCH_ENABLED", webResearchDefault),
   };
 }

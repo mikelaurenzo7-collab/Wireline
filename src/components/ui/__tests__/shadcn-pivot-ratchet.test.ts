@@ -65,18 +65,16 @@ function countOccurrences(pattern: RegExp): number {
  * earned it (e.g. replacing raw `<button>` with `Button`, or `glass`
  * with `Card`).
  *
- * glassUtility: 467 → not all .glass usage is equivalent.
- *   ~16 occurrences are permanently shell-exempt (TopBar, Sidebar, PageShell, CommandBar)
- *   and will never migrate to <Card>. The remaining ~451 are card-context and
- *   should migrate. The single counter tracks total; exempt surfaces are noted in-file.
+ * glassUtility: migrated to wl-panel / wl-panel-elevated in feature code (baseline 0).
+ *   Legacy .glass CSS remains in index.css for backwards compat only.
  */
 const BASELINE = {
-  rawButton: 347, // <button> outside ui/shadcn/*; DncManager + outbound CampaignsTab inline buttons removed via canonical EmptyState actions 2026-05-31
-  rawInput: 0, //  <input> outside ui/shadcn/*; fully migrated to shadcn Input/Checkbox/Slider. Stays at 0 forever.
-  rawSelect: 0, // <select> outside ui/shadcn/*; fully migrated to shadcn Select. Stays at 0 forever.
-  rawDialog: 0, //  <dialog>; we never use the native element. Stays at 0 forever.
-  glassUtility: 371, // removed glass-2 from Sidebar in favor of solid dark background for text contrast 2026-06-03
-  largeRadius: 767, // scroll-viewport migration removed overflow-y-auto patterns that co-located with rounded corners; marketing buttons cleaned 2026-06-01
+  rawButton: 0, // Full ShadButton migration — feature/page code 2026-06-03
+  rawInput: 0,
+  rawSelect: 0,
+  rawDialog: 0,
+  glassUtility: 0, // Full wl-panel migration — feature/page code 2026-06-03
+  largeRadius: 0, // Full rounded-md migration — feature/page code 2026-06-03
 } as const;
 
 function assertRatchet(actual: number, baseline: number, metric: string) {
@@ -120,5 +118,13 @@ describe("shadcn pivot ratchet", () => {
       BASELINE.largeRadius,
       "large border-radius",
     );
+  });
+
+  it("registers Textarea, Label, and Popover in the shadcn barrel", () => {
+    const indexPath = path.resolve(__dirname, "../shadcn/index.ts");
+    const indexSource = fs.readFileSync(indexPath, "utf8");
+    expect(indexSource).toContain('export * from "./Textarea"');
+    expect(indexSource).toContain('export * from "./Label"');
+    expect(indexSource).toContain('export * from "./Popover"');
   });
 });

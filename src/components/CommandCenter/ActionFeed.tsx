@@ -26,6 +26,7 @@ import { clsx } from "clsx";
 import { authFetch } from "../../lib/api";
 import { useToast } from "../../contexts/ToastContext";
 import { InlineEmpty } from "../ui/InlineEmpty";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 import type { ActionType } from "../../lib/action-types";
 
 interface ActionItem {
@@ -41,25 +42,16 @@ interface ActionItem {
 
 const ACTION_DISPLAY_CONFIG: Record<ActionType, { icon: React.ElementType; styles: string }> = {
   send_email: { icon: Mail, styles: "bg-brand/10 border-brand/20 text-brand" },
-  send_text_message: {
-    icon: MessageSquare,
-    styles: "bg-violet-500/10 border-violet-500/20 text-violet-600",
-  },
-  schedule_calendar: { icon: Calendar, styles: "bg-brand-2/10 border-brand-2/20 text-brand-2" },
-  update_crm_lead: {
-    icon: UserPlus,
-    styles: "bg-emerald-500/10 border-emerald-500/20 text-emerald-600",
-  },
+  send_text_message: { icon: MessageSquare, styles: "bg-brand/10 border-brand/20 text-brand" },
+  schedule_calendar: { icon: Calendar, styles: "bg-brand/10 border-brand/20 text-brand" },
+  update_crm_lead: { icon: UserPlus, styles: "bg-brand/10 border-brand/20 text-brand" },
   create_internal_task: { icon: ListTodo, styles: "bg-muted/10 border-muted/20 text-muted" },
-  send_contract: { icon: FileText, styles: "bg-amber-500/10 border-amber-500/20 text-amber-600" },
-  prospect_leads: { icon: Users, styles: "bg-blue-500/10 border-blue-500/20 text-blue-600" },
-  notify_slack: { icon: Hash, styles: "bg-fuchsia-500/10 border-fuchsia-500/20 text-fuchsia-600" },
-  create_payment_link: {
-    icon: Link,
-    styles: "bg-indigo-500/10 border-indigo-500/20 text-indigo-600",
-  },
-  send_invoice: { icon: Receipt, styles: "bg-teal-500/10 border-teal-500/20 text-teal-600" },
-  check_inventory: { icon: Package, styles: "bg-slate-500/10 border-slate-500/20 text-slate-600" },
+  send_contract: { icon: FileText, styles: "bg-brand/10 border-brand/20 text-brand" },
+  prospect_leads: { icon: Users, styles: "bg-brand/10 border-brand/20 text-brand" },
+  notify_slack: { icon: Hash, styles: "bg-brand/10 border-brand/20 text-brand" },
+  create_payment_link: { icon: Link, styles: "bg-brand/10 border-brand/20 text-brand" },
+  send_invoice: { icon: Receipt, styles: "bg-brand/10 border-brand/20 text-brand" },
+  check_inventory: { icon: Package, styles: "bg-muted/10 border-muted/20 text-muted" },
 };
 
 export function ActionFeed({
@@ -149,7 +141,7 @@ export function ActionFeed({
                 layout
                 key={action.id}
                 className={clsx(
-                  "relative group rounded-2xl border transition-all duration-300 overflow-hidden",
+                  "relative group rounded-md border transition-all duration-300 overflow-hidden",
                   action.status === "pending"
                     ? "wl-panel hover:border-brand/30"
                     : "bg-black/[0.02] border-black/4 opacity-60",
@@ -157,7 +149,6 @@ export function ActionFeed({
                 )}
                 onClick={() => setExpandedId(isExpanded ? null : action.id)}
               >
-                {/* Status indicator bar */}
                 <div
                   className={clsx(
                     "absolute left-0 top-0 bottom-0 w-1",
@@ -174,7 +165,7 @@ export function ActionFeed({
                     <div className="flex items-center gap-3 min-w-0">
                       <div
                         className={clsx(
-                          "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border transition-all",
+                          "w-9 h-9 rounded-md flex items-center justify-center shrink-0 border transition-all",
                           displayConfig.styles,
                         )}
                       >
@@ -207,29 +198,37 @@ export function ActionFeed({
 
                     <div className="flex flex-col items-end gap-2 shrink-0">
                       {action.status === "completed" ? (
-                        <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <div className="w-6 h-6 rounded-full bg-brand/20 flex items-center justify-center">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-brand" />
                         </div>
                       ) : action.status === "pending" ? (
                         <div className="flex items-center gap-1">
                           {isProcessing ? (
                             <Clock className="w-4 h-4 text-brand animate-spin" />
                           ) : (
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
+                            <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                              <ShadButton
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                disableAnimations
                                 onClick={(e) => handleReject(action.id, e)}
-                                className="hit-area-44 w-7 h-7 rounded-lg bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 flex items-center justify-center transition-colors relative"
+                                className="hit-area-44 min-h-7 w-7 rounded-md text-rose-600 hover:bg-rose-500/10"
                                 title="Reject"
                               >
                                 <X className="w-3.5 h-3.5" />
-                              </button>
-                              <button
+                              </ShadButton>
+                              <ShadButton
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                disableAnimations
                                 onClick={(e) => handleApprove(action.id, e)}
-                                className="hit-area-44 w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 flex items-center justify-center transition-colors relative"
+                                className="hit-area-44 min-h-7 w-7 rounded-md text-brand hover:bg-brand/10"
                                 title="Approve"
                               >
                                 <Check className="w-3.5 h-3.5" />
-                              </button>
+                              </ShadButton>
                             </div>
                           )}
                           {isExpanded ? (
@@ -254,7 +253,6 @@ export function ActionFeed({
                       className="overflow-hidden bg-black/[0.03] border-t border-black/5"
                     >
                       <div className="p-5 space-y-4">
-                        {/* Reasoning section */}
                         {action.reasoning && (
                           <div className="space-y-1.5">
                             <h4 className="wl-label text-brand font-bold flex items-center gap-1.5">
@@ -266,10 +264,9 @@ export function ActionFeed({
                           </div>
                         )}
 
-                        {/* Payload Preview */}
                         <div className="space-y-2">
                           <h4 className="wl-label text-muted font-bold">Drafted Content</h4>
-                          <div className="rounded-xl bg-white/80 border border-black/5 p-4 overflow-hidden">
+                          <div className="rounded-md bg-white/80 border border-black/5 p-4 overflow-hidden">
                             {action.type === "send_email" ? (
                               <div className="space-y-3">
                                 <div className="flex items-center gap-2 pb-2 border-bottom border-black/5">
@@ -329,20 +326,25 @@ export function ActionFeed({
                           </div>
                         </div>
 
-                        {/* Direct action footer */}
                         {action.status === "pending" && (
                           <div className="flex items-center gap-3 pt-2">
-                            <button
+                            <ShadButton
+                              type="button"
+                              variant="outline"
+                              disableAnimations
                               disabled={isProcessing}
                               onClick={(e) => handleReject(action.id, e)}
-                              className="hit-area-44 touch-press flex-1 h-9 rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-600 text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-rose-500/10 transition-all disabled:opacity-50 relative"
+                              className="hit-area-44 touch-press flex-1 min-h-9 rounded-md border-rose-500/20 text-rose-600 text-[10px] uppercase tracking-[0.2em] hover:bg-rose-500/10"
                             >
                               Dismiss Action
-                            </button>
-                            <button
+                            </ShadButton>
+                            <ShadButton
+                              type="button"
+                              variant="editorial"
+                              disableAnimations
                               disabled={isProcessing}
                               onClick={(e) => handleApprove(action.id, e)}
-                              className="hit-area-44 touch-press disabled:opacity-50 disabled:cursor-not-allowed flex-[2] h-9 rounded-xl brutal-btn !py-0 !text-[10px] !tracking-[0.2em] !font-bold flex items-center justify-center gap-2 relative"
+                              className="hit-area-44 touch-press flex-[2] min-h-9 rounded-md text-[10px] uppercase tracking-[0.2em]"
                             >
                               {isProcessing ? (
                                 <Clock className="w-3.5 h-3.5 animate-spin" />
@@ -350,7 +352,7 @@ export function ActionFeed({
                                 <Check className="w-3.5 h-3.5" />
                               )}
                               Execute Now
-                            </button>
+                            </ShadButton>
                           </div>
                         )}
                       </div>

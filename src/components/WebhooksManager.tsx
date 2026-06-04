@@ -24,6 +24,8 @@ import { formatDateTime, formatTime } from "../lib/safe-date";
 import { PanelSkeleton } from "./Skeleton";
 import { Input } from "./ui/shadcn/Input";
 import { EmptyState } from "./ui/EmptyState";
+import { ShadButton } from "./ui/shadcn/ShadButton";
+import { WL_APP_CLASSES } from "../lib/wireline-director-design";
 
 interface WebhookRow {
   id: string;
@@ -84,77 +86,69 @@ export default function WebhooksManager() {
   }, []);
 
   return (
-    <div className="relative aurora-ring rounded-2xl mt-8">
-      <div className="relative rounded-2xl glass border border-white/10 p-6 space-y-5 overflow-hidden">
-        <div
-          className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-25 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
-        />
-
-        <div className="relative z-10 flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #8B3FD6, #8B3FD6)" }}
-            >
-              <Webhook className="w-5 h-5 text-paper" />
-            </div>
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.4em] text-brand">
-                Outbound Webhooks
-              </div>
-              <h4 className="font-display italic text-2xl text-ink leading-tight mt-1">
-                Push events anywhere
-              </h4>
-              <p className="text-[11px] text-ink/65 mt-1">
-                Connect Wireline to Slack, Discord, your CRM, Zapier, n8n, or any HTTPS endpoint.
-                Signed with HMAC-SHA256.
-              </p>
-            </div>
+    <div className={WL_APP_CLASSES.settingsPanel}>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <div className={WL_APP_CLASSES.settingsIcon}>
+            <Webhook className="w-5 h-5" />
           </div>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="brutal-btn !py-2.5 !px-5 !text-[11px] !tracking-[0.3em]"
+          <div>
+            <p className="app-section-title">Outbound Webhooks</p>
+            <h4 className="font-display italic text-2xl text-ink leading-tight mt-1">
+              Push events anywhere
+            </h4>
+            <p className="text-[11px] text-muted mt-1">
+              Connect Wireline to Slack, Discord, your CRM, Zapier, n8n, or any HTTPS endpoint.
+              Signed with HMAC-SHA256.
+            </p>
+          </div>
+        </div>
+        <ShadButton
+          type="button"
+          variant={showForm ? "outline" : "editorial"}
+          size="sm"
+          disableAnimations
+          onClick={() => setShowForm(!showForm)}
+          className="!py-2.5 !px-5 !text-[11px] !tracking-[0.3em] uppercase"
+        >
+          {showForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+          {showForm ? "Cancel" : "Add Webhook"}
+        </ShadButton>
+      </div>
+
+      <AnimatePresence>
+        {showForm && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
           >
-            {showForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-            {showForm ? "Cancel" : "Add Webhook"}
-          </button>
-        </div>
-
-        <AnimatePresence>
-          {showForm && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="relative z-10 overflow-hidden"
-            >
-              <CreateForm
-                events={availableEvents}
-                onCreated={() => {
-                  setShowForm(false);
-                  refresh();
-                }}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <div className="relative z-10 space-y-2">
-          {loading ? (
-            <PanelSkeleton rows={3} />
-          ) : hooks.length === 0 ? (
-            <EmptyState
-              icon={Webhook}
-              eyebrow="Webhooks"
-              title="No webhooks configured"
-              description="Add a webhook to push events to Slack, CRM, or Zapier."
-              actions={[{ label: "Add webhook", onClick: () => setShowForm(true), primary: true }]}
+            <CreateForm
+              events={availableEvents}
+              onCreated={() => {
+                setShowForm(false);
+                refresh();
+              }}
             />
-          ) : (
-            hooks.map((h) => <HookRow key={h.id} hook={h} onChanged={refresh} />)
-          )}
-        </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="space-y-2">
+        {loading ? (
+          <PanelSkeleton rows={3} />
+        ) : hooks.length === 0 ? (
+          <EmptyState
+            icon={Webhook}
+            eyebrow="Webhooks"
+            title="No webhooks configured"
+            description="Add a webhook to push events to Slack, CRM, or Zapier."
+            actions={[{ label: "Add webhook", onClick: () => setShowForm(true), primary: true }]}
+          />
+        ) : (
+          hooks.map((h) => <HookRow key={h.id} hook={h} onChanged={refresh} />)
+        )}
       </div>
     </div>
   );
@@ -192,7 +186,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
   };
 
   return (
-    <div className="rounded-xl bg-black/5 border border-black/10 p-5 space-y-4 mt-4">
+    <div className="rounded-md bg-black/5 border border-black/10 p-5 space-y-4 mt-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <label className="app-section-title">Name</label>
@@ -200,7 +194,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Slack #sales channel"
-            className="w-full h-11 px-3 rounded-lg bg-black/5 border border-black/10 text-ink text-sm outline-none focus:border-brand/60"
+            className="w-full h-11 px-3 rounded-md bg-black/5 border border-black/10 text-ink text-sm outline-none focus:border-brand/60"
           />
         </div>
         <div className="space-y-1.5">
@@ -209,7 +203,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://hooks.slack.com/services/..."
-            className="w-full h-11 px-3 rounded-lg bg-black/5 border border-black/10 text-ink text-sm font-mono outline-none focus:border-brand/60"
+            className="w-full h-11 px-3 rounded-md bg-black/5 border border-black/10 text-ink text-sm font-mono outline-none focus:border-brand/60"
           />
         </div>
       </div>
@@ -220,9 +214,11 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
           {events.map((e) => {
             const on = picked.has(e);
             return (
-              <button
+              <ShadButton
                 key={e}
                 type="button"
+                variant={on ? "default" : "outline"}
+                disableAnimations
                 onClick={() =>
                   setPicked((s) => {
                     const ns = new Set(s);
@@ -232,7 +228,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
                   })
                 }
                 className={cn(
-                  "text-left rounded-lg p-2.5 border transition-all flex items-start gap-2",
+                  "h-auto w-full text-left rounded-md p-2.5 flex items-start gap-2 whitespace-normal",
                   on
                     ? "bg-brand/10 border-brand/40"
                     : "bg-black/20 border-white/8 hover:border-white/20",
@@ -252,7 +248,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
                     {EVENT_DESCRIPTIONS[e]}
                   </div>
                 </div>
-              </button>
+              </ShadButton>
             );
           })}
         </div>
@@ -269,23 +265,26 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
           value={secret}
           onChange={(e) => setSecret(e.target.value)}
           placeholder="long-random-string-only-you-and-the-receiver-know"
-          className="w-full h-11 px-3 rounded-lg bg-black/5 border border-black/10 text-ink text-sm font-mono outline-none focus:border-brand/60"
+          className="w-full h-11 px-3 rounded-md bg-black/5 border border-black/10 text-ink text-sm font-mono outline-none focus:border-brand/60"
         />
       </div>
 
       {err && (
         <div
           role="alert"
-          className="rounded-lg bg-rose-500/10 border border-rose-500/30 p-3 text-rose-500 text-xs flex items-center gap-2"
+          className="rounded-md bg-rose-500/10 border border-rose-500/30 p-3 text-rose-500 text-xs flex items-center gap-2"
         >
           <AlertTriangle className="w-3.5 h-3.5" />
           {err}
         </div>
       )}
-      <button
+      <ShadButton
+        type="button"
+        variant="editorial"
+        disableAnimations
         onClick={submit}
         disabled={busy || !name || !url || picked.size === 0}
-        className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn w-full !py-3 !text-[11px] !tracking-[0.3em]"
+        className="w-full !py-3 !text-[11px] !tracking-[0.3em] uppercase"
       >
         {busy ? (
           <>
@@ -296,7 +295,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
             <Sparkles className="w-3.5 h-3.5" /> Create Webhook
           </>
         )}
-      </button>
+      </ShadButton>
     </div>
   );
 }
@@ -389,34 +388,31 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
   };
 
   return (
-    <div
-      className={cn(
-        "rounded-xl glass border p-4 transition-all",
-        hook.active ? "border-white/10" : "border-white/5 opacity-60",
-      )}
-    >
+    <div className={cn(WL_APP_CLASSES.settingsRow, hook.active ? "opacity-100" : "opacity-60")}>
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-0.5 flex-wrap">
             <span className="font-medium text-ink">{hook.name}</span>
-            <button
+            <ShadButton
+              type="button"
+              variant="ghost"
+              size="sm"
+              disableAnimations
               onClick={toggleActive}
               className={cn(
-                "px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] border",
-                hook.active
-                  ? "bg-emerald-500/15 text-emerald-500 border-emerald-500/30"
-                  : "bg-zinc-500/15 text-zinc-300 border-zinc-500/30",
+                "h-auto px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] border",
+                hook.active ? WL_APP_CLASSES.statusActive : "bg-muted/15 text-muted border-border",
               )}
             >
               {hook.active ? "Active" : "Paused"}
-            </button>
+            </ShadButton>
             {hook.last_status !== null && (
               <span
                 className={cn(
                   "px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] border flex items-center gap-1",
                   hook.last_status >= 200 && hook.last_status < 300
-                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                    : "bg-rose-500/10 text-rose-500 border-rose-500/20",
+                    ? WL_APP_CLASSES.statusOk
+                    : "bg-destructive/10 text-destructive border-destructive/20",
                 )}
               >
                 {hook.last_status >= 200 && hook.last_status < 300 ? (
@@ -460,24 +456,30 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
           )}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <button
+          <ShadButton
+            type="button"
+            variant={showDeliveries ? "secondary" : "outline"}
+            size="sm"
+            disableAnimations
             onClick={toggleDeliveries}
             className={cn(
-              "px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] flex items-center gap-1.5 transition-all",
-              showDeliveries
-                ? "bg-brand-2/15 border border-brand-2/40 text-brand-2"
-                : "glass border border-white/10 hover:border-brand-2/40 hover:text-brand-2",
+              "rounded-full text-[10px] uppercase tracking-[0.3em]",
+              showDeliveries && "bg-brand/15 border-brand/40 text-brand",
             )}
           >
             <History className="w-3 h-3" /> Deliveries
             <ChevronDown
               className={cn("w-3 h-3 transition-transform", showDeliveries && "rotate-180")}
             />
-          </button>
-          <button
+          </ShadButton>
+          <ShadButton
+            type="button"
+            variant="outline"
+            size="sm"
+            disableAnimations
             onClick={test}
             disabled={busy !== null}
-            className="px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] glass border border-white/10 hover:border-brand/40 hover:text-brand transition-all flex items-center gap-1.5 disabled:opacity-50"
+            className="rounded-full text-[10px] uppercase tracking-[0.3em] hover:border-brand/40 hover:text-brand"
           >
             {busy === "test" ? (
               <Loader2 className="w-3 h-3 animate-spin" />
@@ -485,30 +487,43 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
               <Send className="w-3 h-3" />
             )}
             Test
-          </button>
+          </ShadButton>
           {confirmDelete ? (
             <>
-              <button
+              <ShadButton
+                type="button"
+                variant="destructive"
+                size="sm"
+                disableAnimations
                 onClick={remove}
                 disabled={busy !== null}
-                className="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] bg-rose-500 text-on-brand hover:bg-rose-500/80 transition-all"
+                className="rounded-full text-[10px] uppercase tracking-[0.3em]"
               >
                 {busy === "delete" ? <Loader2 className="w-3 h-3 animate-spin" /> : "Confirm"}
-              </button>
-              <button
+              </ShadButton>
+              <ShadButton
+                type="button"
+                variant="outline"
+                size="sm"
+                disableAnimations
                 onClick={() => setConfirmDelete(false)}
-                className="px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] glass border border-white/10 hover:text-ink transition-all"
+                className="rounded-full text-[10px] uppercase tracking-[0.3em]"
               >
                 Cancel
-              </button>
+              </ShadButton>
             </>
           ) : (
-            <button
+            <ShadButton
+              type="button"
+              variant="outline"
+              size="icon"
+              disableAnimations
               onClick={() => setConfirmDelete(true)}
-              className="w-8 h-8 rounded-full glass border border-white/10 hover:border-rose-500/40 hover:text-rose-500 flex items-center justify-center transition-all"
+              className="w-8 h-8 rounded-full hover:border-rose-500/40 hover:text-rose-500"
+              aria-label="Delete webhook"
             >
               <Trash2 className="w-3.5 h-3.5" />
-            </button>
+            </ShadButton>
           )}
         </div>
       </div>
@@ -526,10 +541,14 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                 <div className="text-[10px] uppercase tracking-[0.3em] text-muted">
                   Recent deliveries
                 </div>
-                <button
+                <ShadButton
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disableAnimations
                   onClick={loadDeliveries}
                   disabled={loadingDeliveries}
-                  className="disabled:opacity-50 disabled:cursor-not-allowed text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink flex items-center gap-1.5"
+                  className="text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink"
                 >
                   {loadingDeliveries ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -537,7 +556,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                     <RotateCcw className="w-3 h-3" />
                   )}
                   Refresh
-                </button>
+                </ShadButton>
               </div>
               {loadingDeliveries && !deliveries && (
                 <div className="text-[10px] text-muted italic py-3">Loading deliveries…</div>
@@ -552,14 +571,14 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                   const isSuccess = d.status === "success";
                   const isDead = d.status === "dead";
                   const pillClass = isSuccess
-                    ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                    ? WL_APP_CLASSES.statusOk
                     : isDead
-                      ? "bg-rose-500/15 text-rose-400 border-rose-500/30"
-                      : "bg-amber-500/15 text-amber-400 border-amber-500/30";
+                      ? WL_APP_CLASSES.statusDead
+                      : WL_APP_CLASSES.statusPending;
                   return (
                     <div
                       key={d.id}
-                      className="rounded-lg bg-black/20 border border-white/5 px-3 py-2 flex items-center gap-3 flex-wrap text-[11px]"
+                      className="rounded-md bg-black/20 border border-white/5 px-3 py-2 flex items-center gap-3 flex-wrap text-[11px]"
                     >
                       <span
                         className={cn(
@@ -599,10 +618,14 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                       )}
                       <div className="ml-auto flex items-center gap-1">
                         {!isSuccess && (
-                          <button
+                          <ShadButton
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disableAnimations
                             onClick={() => retryDelivery(d.id)}
                             disabled={deliveryBusy === d.id}
-                            className="px-2 py-0.5 rounded text-[9px] uppercase tracking-[0.25em] bg-brand/15 border border-brand/40 text-brand hover:bg-brand/25 flex items-center gap-1 disabled:opacity-50"
+                            className="h-auto px-2 py-0.5 rounded text-[9px] uppercase tracking-[0.25em] bg-brand/15 border-brand/40 text-brand hover:bg-brand/25"
                           >
                             {deliveryBusy === d.id ? (
                               <Loader2 className="w-2.5 h-2.5 animate-spin" />
@@ -610,16 +633,21 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                               <RotateCcw className="w-2.5 h-2.5" />
                             )}
                             Retry
-                          </button>
+                          </ShadButton>
                         )}
-                        <button
+                        <ShadButton
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          disableAnimations
                           onClick={() => discardDelivery(d.id)}
                           disabled={deliveryBusy === d.id}
-                          className="disabled:opacity-50 disabled:cursor-not-allowed w-6 h-6 rounded glass border border-white/10 hover:border-rose-500/40 hover:text-rose-400 flex items-center justify-center"
+                          className="w-6 h-6 hover:border-rose-500/40 hover:text-rose-400"
                           title="Discard"
+                          aria-label="Discard delivery"
                         >
                           <Trash2 className="w-2.5 h-2.5" />
-                        </button>
+                        </ShadButton>
                       </div>
                     </div>
                   );

@@ -6,6 +6,7 @@ import { cn } from "../../../lib/utils";
 import { FormShell, Field, TextInput, Select, RunButton, ResultCard, ErrCard } from "../shared";
 import type { AgentLite } from "../types";
 import { Input } from "../../ui/shadcn/Input";
+import { ShadButton } from "../../ui/shadcn/ShadButton";
 
 export function KnowledgeFromDocumentForm({
   agents,
@@ -128,7 +129,7 @@ export function KnowledgeFromDocumentForm({
             <label
               onDragOver={(e) => e.preventDefault()}
               onDrop={onDrop}
-              className="relative flex flex-col items-center justify-center gap-3 px-6 py-10 rounded-2xl glass border-2 border-dashed border-white/15 hover:border-brand/40 transition-all cursor-pointer text-center"
+              className="relative flex flex-col items-center justify-center gap-3 px-6 py-10 rounded-md wl-panel border-2 border-dashed border-white/15 hover:border-brand/40 transition-all cursor-pointer text-center"
             >
               <Input
                 type="file"
@@ -138,7 +139,7 @@ export function KnowledgeFromDocumentForm({
               />
               {file ? (
                 <>
-                  <div className="w-12 h-12 rounded-2xl wl-panel border border-brand/30 flex items-center justify-center text-brand">
+                  <div className="w-12 h-12 rounded-md wl-panel border border-brand/30 flex items-center justify-center text-brand">
                     <FileText className="w-5 h-5" />
                   </div>
                   <div className="space-y-1">
@@ -147,22 +148,25 @@ export function KnowledgeFromDocumentForm({
                       {(file.size / 1024 / 1024).toFixed(2)} MB · ready
                     </p>
                   </div>
-                  <button
+                  <ShadButton
                     type="button"
+                    variant="ghost"
+                    size="sm"
+                    disableAnimations
                     onClick={(e) => {
                       e.preventDefault();
                       setFile(null);
                       setResult(null);
                       setApplied(null);
                     }}
-                    className="relative z-10 text-[10px] uppercase tracking-[0.3em] text-rose-500 hover:text-rose-400 transition-colors flex items-center gap-1.5"
+                    className="relative z-10 h-auto px-0 text-[10px] uppercase tracking-[0.3em] text-rose-500 hover:text-rose-400"
                   >
                     <Trash2 className="w-3 h-3" /> Remove
-                  </button>
+                  </ShadButton>
                 </>
               ) : (
                 <>
-                  <div className="w-12 h-12 rounded-2xl wl-panel border border-white/10 flex items-center justify-center text-brand">
+                  <div className="w-12 h-12 rounded-md wl-panel border border-white/10 flex items-center justify-center text-brand">
                     <FileUp className="w-5 h-5" />
                   </div>
                   <div className="space-y-1">
@@ -194,15 +198,19 @@ export function KnowledgeFromDocumentForm({
         </>
       ) : (
         <div className="flex items-center justify-between mb-2">
-          <button
+          <ShadButton
+            type="button"
+            variant="ghost"
+            size="sm"
+            disableAnimations
             onClick={() => {
               setResult(null);
               setApplied(null);
             }}
-            className="text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors flex items-center gap-1.5"
+            className="h-auto px-0 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand"
           >
             ← Back to Upload
-          </button>
+          </ShadButton>
         </div>
       )}
 
@@ -212,24 +220,31 @@ export function KnowledgeFromDocumentForm({
           <ResultCard title="Document Summary">
             <p>{result.page_summary}</p>
           </ResultCard>
-          <div className="rounded-2xl glass border border-white/10 p-5 space-y-3">
+          <div className="rounded-md wl-panel border border-white/10 p-5 space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-[10px] uppercase tracking-[0.4em] text-brand">
                 Extracted · {selected.size}/{result.entries.length} selected
               </h4>
-              <button
+              <ShadButton
+                type="button"
+                variant="ghost"
+                size="sm"
+                disableAnimations
                 onClick={toggleAll}
-                className="text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors"
+                className="h-auto px-0 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand"
               >
                 {selected.size === result.entries.length ? "Deselect All" : "Select All"}
-              </button>
+              </ShadButton>
             </div>
             <div className="space-y-2 max-h-[400px] overflow-y-auto scrollbar-hide">
               {result.entries.map((e: any, i: number) => {
                 const isSel = selected.has(i);
                 return (
-                  <button
+                  <ShadButton
                     key={i}
+                    type="button"
+                    variant="ghost"
+                    disableAnimations
                     onClick={() =>
                       setSelected((s) => {
                         const ns = new Set(s);
@@ -239,7 +254,7 @@ export function KnowledgeFromDocumentForm({
                       })
                     }
                     className={cn(
-                      "w-full text-left rounded-xl p-3 flex items-start gap-3 border transition-all",
+                      "w-full h-auto justify-start text-left rounded-md p-3 flex items-start gap-3 border",
                       isSel
                         ? "bg-brand/10 border-brand/40"
                         : "bg-black/20 border-white/8 hover:border-white/20",
@@ -259,7 +274,7 @@ export function KnowledgeFromDocumentForm({
                         {e.category}
                       </div>
                     </div>
-                  </button>
+                  </ShadButton>
                 );
               })}
             </div>
@@ -271,10 +286,13 @@ export function KnowledgeFromDocumentForm({
               options={agents.map((a) => ({ value: a.id, label: a.name }))}
             />
           </Field>
-          <button
+          <ShadButton
+            type="button"
+            variant="editorial"
+            disableAnimations
             onClick={apply}
             disabled={!agentId || applying || selected.size === 0}
-            className="disabled:opacity-50 disabled:cursor-not-allowed brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
+            className="w-full min-h-12 py-4 text-[12px] tracking-[0.32em] uppercase"
           >
             {applying ? (
               <>
@@ -290,7 +308,7 @@ export function KnowledgeFromDocumentForm({
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
-          </button>
+          </ShadButton>
         </div>
       )}
     </FormShell>

@@ -5,6 +5,7 @@ import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { AnimatedCounter } from "../components/ui/AnimatedCounter";
 import { Check, ArrowRight, Phone, Zap, ShieldCheck, Sparkles } from "lucide-react";
+import { ShadButton } from "../components/ui/shadcn/ShadButton";
 
 type Tier = {
   id: string;
@@ -355,29 +356,33 @@ export default function Pricing() {
       {/* Billing interval toggle */}
       <section className="relative z-10 px-4 sm:px-6 lg:px-10 max-w-7xl mx-auto pb-6">
         <div className="flex items-center justify-center gap-3">
-          <button
+          <ShadButton
+            type="button"
+            disableAnimations
+            variant={billingInterval === "month" ? "default" : "outline"}
+            size="sm"
             onClick={() => setBillingInterval("month")}
-            className={`px-4 py-2 font-mono text-[11px] uppercase tracking-[0.28em] font-medium transition-all duration-300 ${
-              billingInterval === "month"
-                ? "billing-toggle-active border"
-                : "border border-ink/15 text-ink/65 hover:text-ink hover:border-ink/30"
+            className={`px-4 py-2 font-mono text-[11px] uppercase tracking-[0.28em] font-medium ${
+              billingInterval === "month" ? "billing-toggle-active border" : ""
             }`}
           >
             Monthly
-          </button>
-          <button
+          </ShadButton>
+          <ShadButton
+            type="button"
+            disableAnimations
+            variant={billingInterval === "year" ? "default" : "outline"}
+            size="sm"
             onClick={() => setBillingInterval("year")}
-            className={`px-4 py-2 font-mono text-[11px] uppercase tracking-[0.28em] font-medium transition-all duration-300 relative ${
-              billingInterval === "year"
-                ? "billing-toggle-active border"
-                : "border border-ink/15 text-ink/65 hover:text-ink hover:border-ink/30"
+            className={`px-4 py-2 font-mono text-[11px] uppercase tracking-[0.28em] font-medium relative ${
+              billingInterval === "year" ? "billing-toggle-active border" : ""
             }`}
           >
             Annual
             <span className="ml-2 inline-flex items-center px-1.5 py-0.5 text-[9px] uppercase tracking-[0.2em] font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-500">
               Save 20%
             </span>
-          </button>
+          </ShadButton>
         </div>
       </section>
 
@@ -401,8 +406,8 @@ export default function Pricing() {
               <div
                 className={`relative transition-all duration-300 ${
                   tier.highlight
-                    ? "glass-strong border-2 border-brand/40"
-                    : "glass border border-ink/[0.08] hover:border-brand/30"
+                    ? "wl-panel-elevated border-2 border-brand/40"
+                    : "wl-panel border border-ink/[0.08] hover:border-brand/30"
                 } p-5 flex flex-col flex-1 overflow-hidden`}
                 style={
                   tier.highlight
@@ -500,7 +505,7 @@ export default function Pricing() {
           {VALUE_BULLETS.map(({ icon: Icon, text }) => (
             <div
               key={text}
-              className="glass border border-ink/[0.08] p-4 flex items-start gap-3 transition-all duration-300 hover:border-brand/30"
+              className="wl-panel border border-ink/[0.08] p-4 flex items-start gap-3 transition-all duration-300 hover:border-brand/30"
             >
               <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-brand/15 bg-brand/[0.06]">
                 <Icon className="w-4 h-4 text-brand" strokeWidth={2.2} />
@@ -563,7 +568,7 @@ export default function Pricing() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.95 + i * 0.06, duration: 0.5 }}
-                  className="glass border border-ink/[0.08] p-5 relative overflow-hidden transition-all duration-300 hover:border-brand/30"
+                  className="wl-panel border border-ink/[0.08] p-5 relative overflow-hidden transition-all duration-300 hover:border-brand/30"
                 >
                   <div
                     className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-20 blur-3xl pointer-events-none"

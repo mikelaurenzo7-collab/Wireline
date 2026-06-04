@@ -27,7 +27,7 @@ function AgentCard({
     <a
       href={`tel:${agent.tel}`}
       className={
-        "group relative block rounded-2xl p-4 overflow-hidden hover:scale-[1.015] transition-all duration-200 " +
+        "group relative block rounded-md p-4 overflow-hidden hover:scale-[1.015] transition-all duration-200 " +
         (isDemo
           ? "border-2 border-dashed border-amber-500/40 hover:border-amber-500/70"
           : "border border-black/10 hover:border-brand/30")
@@ -47,7 +47,7 @@ function AgentCard({
       )}
       <div className="flex items-start gap-3">
         <div
-          className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+          className="w-11 h-11 rounded-md flex items-center justify-center shrink-0"
           style={{
             background: `linear-gradient(135deg, ${agent.tint}, ${agent.tint}cc)`,
             boxShadow: `0 6px 14px -4px ${agent.tint}aa`,
@@ -93,14 +93,14 @@ export default function HelpCenter() {
               href={WIRELINE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl glass border border-black/10 text-[11px] uppercase tracking-[0.22em] text-ink/80 hover:text-ink hover:border-brand/25 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-panel border border-black/10 text-[11px] uppercase tracking-[0.22em] text-ink/80 hover:text-ink hover:border-brand/25 transition-colors"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               trywireline.com
             </a>
             <a
               href={`mailto:${WIRELINE_SUPPORT_EMAIL}`}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl glass border border-black/10 text-[11px] uppercase tracking-[0.22em] text-ink/80 hover:text-ink hover:border-brand/25 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-panel border border-black/10 text-[11px] uppercase tracking-[0.22em] text-ink/80 hover:text-ink hover:border-brand/25 transition-colors"
             >
               <MessageCircle className="w-3.5 h-3.5" />
               Email Mike

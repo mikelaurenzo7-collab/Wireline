@@ -7,6 +7,7 @@ import { cn } from "../lib/utils";
 import { PREMIUM_VOICES, DEFAULT_VOICE_BY_GENDER } from "./FleetSettings";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { Input } from "./ui/shadcn/Input";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 /**
  * Inline voice preview button — fetches /api/voices/:id/preview
@@ -58,11 +59,13 @@ function VoicePreviewButton({ voiceId, voiceName }: { voiceId: string; voiceName
   }
 
   return (
-    <button
+    <ShadButton
       type="button"
+      variant="link"
+      disableAnimations
       onClick={toggle}
       disabled={loading}
-      className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] text-brand hover:text-brand/80 transition-colors disabled:opacity-50"
+      className="inline-flex items-center gap-1.5 h-auto p-0 text-[10px] uppercase tracking-[0.22em] text-brand"
     >
       {loading ? (
         <Loader2 className="w-3 h-3 animate-spin" />
@@ -72,7 +75,7 @@ function VoicePreviewButton({ voiceId, voiceName }: { voiceId: string; voiceName
         <Play className="w-3 h-3" />
       )}
       {playing ? "Stop preview" : "Hear this voice"}
-    </button>
+    </ShadButton>
   );
 }
 
@@ -248,20 +251,9 @@ export default function DeployAgentModal({
             // picker expanded, etc.) never overflows off-screen. Rendered via a
             // portal to document.body so `position: fixed` resolves against the
             // viewport — not the route's transformed PageTransition box.
-            className="relative z-10 w-full sm:w-[min(540px,calc(100vw-32px))] max-h-[calc(100dvh-1rem)] overflow-y-auto overscroll-contain rounded-t-3xl sm:rounded-3xl"
+            className="relative z-10 w-full sm:w-[min(540px,calc(100vw-32px))] max-h-[calc(100dvh-1rem)] overflow-y-auto overscroll-contain rounded-t-md sm:rounded-md"
           >
-            <div className="relative rounded-t-3xl sm:rounded-3xl overflow-hidden glass-strong border border-white/12 shadow-2xl">
-              {/* Aurora glow */}
-              <div
-                aria-hidden="true"
-                className="absolute -top-16 -right-16 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none blur-3xl opacity-30 pointer-events-none"
-                style={{
-                  background:
-                    "radial-gradient(circle, rgba(107, 43, 153 ,0.35), rgba(107, 43, 153 ,0.18) 60%, transparent)",
-                }}
-              />
-
-              {/* Header */}
+            <div className="relative rounded-t-md sm:rounded-md overflow-hidden wl-panel-elevated border border-border shadow-2xl">
               <div className="relative z-10 flex items-start justify-between gap-4 px-7 pt-6 pb-3 border-b border-white/8">
                 <div className="space-y-1.5 min-w-0">
                   <p className="text-[9px] uppercase tracking-[0.42em] text-ink/40">
@@ -272,15 +264,18 @@ export default function DeployAgentModal({
                   </h2>
                   <p className="text-[12px] text-ink/65 leading-relaxed">{template.description}</p>
                 </div>
-                <button
+                <ShadButton
                   type="button"
+                  variant="ghost"
+                  size="icon"
+                  disableAnimations
                   onClick={() => !deploying && onClose()}
                   disabled={deploying}
                   aria-label="Close"
-                  className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-ink/65 hover:text-ink hover:bg-white/5 transition-colors disabled:opacity-40"
+                  className="shrink-0 min-h-9 w-9 rounded-md"
                 >
                   <X className="w-4 h-4" />
-                </button>
+                </ShadButton>
               </div>
 
               {/* Body */}
@@ -304,7 +299,7 @@ export default function DeployAgentModal({
                     }}
                     maxLength={80}
                     placeholder="e.g. Sarah, Front Desk, Closer #2"
-                    className="w-full bg-black/5 border border-black/10 rounded-xl px-4 py-3 text-[15px] text-ink placeholder:text-ink/40 outline-none focus:border-brand/50 focus:bg-white/40 transition-colors"
+                    className="w-full bg-black/5 border border-black/10 rounded-md px-4 py-3 text-[15px] text-ink placeholder:text-ink/40 outline-none focus:border-brand/50 focus:bg-white/40 transition-colors"
                   />
                   <p className="text-[10px] text-ink/40">
                     What callers and your team will see. You can change this any time in /agents.
@@ -318,13 +313,15 @@ export default function DeployAgentModal({
                       <label className="text-[10px] uppercase tracking-[0.36em] text-muted/80">
                         Voice
                       </label>
-                      <button
+                      <ShadButton
                         type="button"
+                        variant="link"
+                        disableAnimations
                         onClick={() => setShowVoiceList((v) => !v)}
-                        className="text-[10px] uppercase tracking-[0.32em] text-ink/40 hover:text-brand transition-colors"
+                        className="h-auto p-0 text-[10px] uppercase tracking-[0.32em] text-muted hover:text-brand"
                       >
                         {showVoiceList ? "Hide options" : "Pick a specific voice"}
-                      </button>
+                      </ShadButton>
                     </div>
 
                     {/* Female / Male toggle */}
@@ -369,12 +366,14 @@ export default function DeployAgentModal({
                           {voicesForGender.map((v) => {
                             const isSelected = v.id === voiceId;
                             return (
-                              <button
+                              <ShadButton
                                 type="button"
                                 key={v.id}
+                                variant="ghost"
+                                disableAnimations
                                 onClick={() => setVoiceId(v.id)}
                                 className={cn(
-                                  "w-full text-left rounded-xl px-3 py-2.5 text-[12px] flex items-center justify-between gap-3 transition-colors border",
+                                  "w-full h-auto justify-between rounded-md px-3 py-2.5 text-[12px] border",
                                   isSelected
                                     ? "bg-brand/12 border-brand/35 text-ink"
                                     : "bg-black/5 border-black/8 text-ink/75 hover:bg-black/8 hover:text-ink",
@@ -384,7 +383,7 @@ export default function DeployAgentModal({
                                 <span className="text-[9px] uppercase tracking-[0.32em] text-ink/40 shrink-0">
                                   {v.provider}
                                 </span>
-                              </button>
+                              </ShadButton>
                             );
                           })}
                         </motion.div>
@@ -410,7 +409,7 @@ export default function DeployAgentModal({
                     )}
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-white/10 bg-black/5 px-4 py-3 text-[12px] text-ink/65">
+                  <div className="rounded-md border border-white/10 bg-black/5 px-4 py-3 text-[12px] text-ink/65">
                     Email agent — no voice picker. The agent's writing tone is configured in{" "}
                     <span className="text-ink/80">/agents → Personality</span> after deploy.
                   </div>
@@ -419,26 +418,23 @@ export default function DeployAgentModal({
 
               {/* Footer */}
               <div className="relative z-10 px-7 pb-6 pt-2 flex items-center justify-between gap-3 border-t border-white/8">
-                <button
+                <ShadButton
                   type="button"
+                  variant="ghost"
+                  disableAnimations
                   onClick={() => !deploying && onClose()}
                   disabled={deploying}
-                  className="text-[11px] uppercase tracking-[0.32em] text-ink/40 hover:text-ink transition-colors disabled:opacity-40"
+                  className="text-[11px] uppercase tracking-[0.32em]"
                 >
                   Cancel
-                </button>
-                <button
+                </ShadButton>
+                <ShadButton
                   type="button"
+                  variant="editorial"
+                  disableAnimations
                   onClick={handleSubmit}
                   disabled={!canSubmit}
-                  className={cn(
-                    "disabled:opacity-50 disabled:cursor-not-allowed",
-                    "group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] uppercase tracking-[0.32em] font-semibold transition-all",
-                    canSubmit
-                      ? "text-paper shadow-lg shadow-brand/30 hover:shadow-brand/40 active:scale-[0.98]"
-                      : "text-ink/40 bg-black/8 cursor-not-allowed",
-                  )}
-                  style={canSubmit ? { background: "#8B3FD6" } : undefined}
+                  className="rounded-md text-[11px] uppercase tracking-[0.32em] disabled:opacity-50"
                 >
                   {deploying ? (
                     <>
@@ -451,7 +447,7 @@ export default function DeployAgentModal({
                       <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
                     </>
                   )}
-                </button>
+                </ShadButton>
               </div>
             </div>
           </motion.div>
@@ -477,11 +473,13 @@ function GenderTile({
   onClick: () => void;
 }) {
   return (
-    <button
+    <ShadButton
       type="button"
+      variant="ghost"
+      disableAnimations
       onClick={onClick}
       className={cn(
-        "relative rounded-xl border px-3 py-3 text-left transition-all overflow-hidden",
+        "relative h-auto rounded-md border px-3 py-3 text-left overflow-hidden justify-start",
         active
           ? "border-brand/40 bg-brand/8 text-ink"
           : "border-black/10 bg-black/4 text-ink/70 hover:bg-black/8 hover:text-ink",
@@ -491,7 +489,7 @@ function GenderTile({
         <motion.div
           layoutId="gender-active"
           aria-hidden="true"
-          className="absolute inset-0 rounded-xl pointer-events-none"
+          className="absolute inset-0 rounded-md pointer-events-none"
           style={{
             background:
               "linear-gradient(135deg, rgba(107, 43, 153 ,0.16), rgba(107, 43, 153 ,0.10))",
@@ -502,7 +500,7 @@ function GenderTile({
       <div className="relative z-10 flex items-center gap-2.5">
         <div
           className={cn(
-            "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border",
+            "w-8 h-8 rounded-md flex items-center justify-center shrink-0 border",
             active ? "border-brand/40 bg-brand/15" : "border-black/8 bg-white/40",
           )}
         >
@@ -513,6 +511,6 @@ function GenderTile({
           <p className="text-[10px] text-ink/40 truncate">{sublabel}</p>
         </div>
       </div>
-    </button>
+    </ShadButton>
   );
 }

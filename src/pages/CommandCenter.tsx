@@ -15,6 +15,7 @@ import ClientSubTabs from "../components/layout/ClientSubTabs";
 import { clsx } from "clsx";
 import { motion } from "motion/react";
 import { Radio, Zap, Globe, Activity, ListTodo } from "lucide-react";
+import { ShadButton } from "../components/ui/shadcn/ShadButton";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -399,15 +400,19 @@ export default function LiveOps() {
                   aria-label="Live Ops sections"
                   className="mb-0 md:mb-0 flex-1 min-w-0"
                 />
-                <button
+                <ShadButton
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  disableAnimations
                   onClick={refresh}
                   disabled={isRefreshing || loading}
-                  className="touch-press shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-muted hover:text-ink wl-panel disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="touch-press shrink-0 w-9 rounded-md text-muted hover:text-ink wl-panel disabled:cursor-not-allowed"
                   aria-label="Refresh"
                   title="Refresh"
                 >
                   <RefreshCw className={clsx("w-4 h-4", isRefreshing && "animate-spin")} />
-                </button>
+                </ShadButton>
               </div>
 
               {activeTab === "floor" && (
@@ -448,13 +453,13 @@ export default function LiveOps() {
                       </div>
 
                       {sentimentData.length === 0 ? (
-                        <div className="h-48 flex flex-col items-center justify-center gap-3 text-center border border-dashed border-brand/15 rounded-2xl bg-brand/[0.01] px-6">
+                        <div className="h-48 flex flex-col items-center justify-center gap-3 text-center border border-dashed border-brand/15 rounded-md bg-brand/[0.01] px-6">
                           <div className="relative">
                             <span
                               aria-hidden
                               className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
                             />
-                            <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25 flex items-center justify-center">
+                            <div className="relative w-11 h-11 rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25 flex items-center justify-center">
                               <Activity className="w-5 h-5" />
                             </div>
                           </div>
@@ -543,7 +548,7 @@ export default function LiveOps() {
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 stagger-children">
-                        <div className="p-4 rounded-2xl wl-panel relative overflow-hidden group hover:-translate-y-px transition-transform">
+                        <div className="p-4 rounded-md wl-panel relative overflow-hidden group hover:-translate-y-px transition-transform">
                           <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-brand/8 blur-xl -translate-y-4 translate-x-4" />
                           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand/40 to-transparent" />
                           <span className="wl-label block mb-1 relative z-10">Cost / Min</span>
@@ -551,7 +556,7 @@ export default function LiveOps() {
                             ${stats?.unitEconomics?.costPerMinute ?? "0.00"}
                           </span>
                         </div>
-                        <div className="p-4 rounded-2xl wl-panel relative overflow-hidden group hover:-translate-y-px transition-transform">
+                        <div className="p-4 rounded-md wl-panel relative overflow-hidden group hover:-translate-y-px transition-transform">
                           <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-brand-deep/8 blur-xl -translate-y-4 translate-x-4" />
                           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand-deep/40 to-transparent" />
                           <span className="wl-label block mb-1 relative z-10">Cost / Lead</span>
@@ -561,7 +566,7 @@ export default function LiveOps() {
                         </div>
                       </div>
 
-                      <div className="mt-4 p-4 rounded-2xl bg-brand/5 border border-brand/10">
+                      <div className="mt-4 p-4 rounded-md bg-brand/5 border border-brand/10">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-eyebrow text-brand">Fleet ROI Projection</span>
                           <span className="text-caption font-mono font-semibold text-brand">
@@ -585,7 +590,7 @@ export default function LiveOps() {
             {/* Right Pane (Ops Intelligence Sidebar) */}
             <div className="lg:col-span-4 xl:col-span-3 space-y-3">
               {/* Telemetry Heartbeat Card */}
-              <div className="wl-panel-elevated p-3.5 relative overflow-hidden rounded-2xl">
+              <div className="wl-panel-elevated p-3.5 relative overflow-hidden rounded-md">
                 <div className="flex items-center justify-between mb-2.5">
                   <h3 className="wl-label text-brand font-bold flex items-center gap-2">
                     <span className="relative flex h-1.5 w-1.5">
@@ -626,7 +631,7 @@ export default function LiveOps() {
               </div>
 
               {/* Growth Action Card */}
-              <div className="wl-panel-elevated p-3.5 rounded-2xl space-y-2.5">
+              <div className="wl-panel-elevated p-3.5 rounded-md space-y-2.5">
                 <div>
                   <h4 className="font-display italic text-[15px] leading-tight text-foreground">
                     Lead Generation
@@ -637,7 +642,9 @@ export default function LiveOps() {
                 </div>
 
                 {(stats?.agents?.length ?? 0) > 0 ? (
-                  <button
+                  <ShadButton
+                    type="button"
+                    disableAnimations
                     onClick={async () => {
                       if (activatingGrowth) return;
                       setActivatingGrowth(true);
@@ -672,7 +679,7 @@ export default function LiveOps() {
                       }
                     }}
                     disabled={activatingGrowth}
-                    className="touch-press w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-br from-brand to-brand-deep text-on-brand rounded-lg shadow-sm shadow-brand/20 transition-all duration-200 disabled:opacity-60 disabled:cursor-wait cursor-pointer"
+                    className="touch-press w-full gap-2 rounded-md bg-gradient-to-br from-brand to-brand-deep py-2.5 text-on-brand shadow-sm shadow-brand/20 disabled:cursor-wait"
                   >
                     <Zap
                       className={clsx(
@@ -683,16 +690,19 @@ export default function LiveOps() {
                     <span className="text-[11px] font-black uppercase tracking-widest">
                       {activatingGrowth ? "Activating…" : "Activate Growth"}
                     </span>
-                  </button>
+                  </ShadButton>
                 ) : (
-                  <button
+                  <ShadButton
+                    type="button"
+                    variant="outline"
+                    disableAnimations
                     onClick={() => navigate("/agents")}
                     title="Create an agent first"
-                    className="touch-press w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-brand/20 bg-brand/[0.02] text-brand hover:border-brand/45 transition-colors cursor-pointer"
+                    className="touch-press w-full gap-2 rounded-md border-brand/20 bg-brand/[0.02] py-2.5 text-brand hover:border-brand/45"
                   >
                     <Zap className="w-3.5 h-3.5" />
                     <span className="text-[11px] font-semibold">Deploy Agent First</span>
-                  </button>
+                  </ShadButton>
                 )}
               </div>
 

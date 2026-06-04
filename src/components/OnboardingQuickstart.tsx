@@ -28,6 +28,7 @@ import { Skeleton } from "./Skeleton";
 import { getSignupWedgeRecommendation } from "../lib/signup-intent";
 import FastStartWizard from "./FastStartWizard";
 import YoureLiveModal from "./YoureLiveModal";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface ProgressData {
   agents: number;
@@ -192,24 +193,13 @@ export default function OnboardingQuickstart({
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative aurora-ring rounded-3xl"
+        className="relative rounded-md wl-panel-elevated border border-border overflow-hidden"
       >
-        <div className="relative rounded-3xl glass-strong overflow-hidden p-6 md:p-8">
-          <div
-            className="absolute -top-32 -right-32 w-96 h-96 rounded-full max-w-[60vw] max-h-[60vw] sm:max-w-none sm:max-h-none opacity-30 blur-3xl pointer-events-none"
-            style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
-          />
-          <div
-            className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full max-w-[60vw] max-h-[60vw] sm:max-w-none sm:max-h-none opacity-25 blur-3xl pointer-events-none"
-            style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
-          />
+        <div className="relative p-6 md:p-8">
           <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
             <div className="flex items-start gap-4 flex-1 min-w-0">
-              <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: "linear-gradient(135deg, #8B3FD6, #8B3FD6, #8B3FD6)" }}
-              >
-                <Sparkles className="w-5 h-5 text-paper" strokeWidth={2.5} />
+              <div className="w-11 h-11 rounded-md bg-brand flex items-center justify-center shrink-0">
+                <Sparkles className="w-5 h-5 text-on-brand" strokeWidth={2.5} />
               </div>
               <div className="min-w-0">
                 <div className="text-[10px] uppercase tracking-[0.4em] text-brand flex items-center gap-1.5 mb-1">
@@ -260,7 +250,7 @@ export default function OnboardingQuickstart({
           <div key={i} className="flex items-center gap-3">
             <Skeleton className="w-6 h-6 rounded-full shrink-0" accent="violet" />
             <Skeleton
-              className="h-4 rounded-lg"
+              className="h-4 rounded-md"
               style={{ width: `${60 + i * 10}%` }}
               accent="violet"
             />
@@ -325,18 +315,9 @@ export default function OnboardingQuickstart({
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative aurora-ring rounded-3xl"
+      className="relative rounded-md wl-panel-elevated border border-border overflow-hidden"
     >
-      <div className="relative rounded-3xl glass-strong overflow-hidden">
-        <div
-          className="absolute -top-32 -right-32 w-96 h-96 rounded-full max-w-[60vw] max-h-[60vw] sm:max-w-none sm:max-h-none opacity-30 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
-        />
-        <div
-          className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full max-w-[60vw] max-h-[60vw] sm:max-w-none sm:max-h-none opacity-25 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
-        />
-
+      <div className="relative">
         {/* Header — tightened so the 4 step cards land above the fold
             even at 900px viewport heights. Previously px-7 + pt-8 + pb-6
             + 12x12 logo + text-4xl heading pushed the steps down ~150px;
@@ -344,11 +325,8 @@ export default function OnboardingQuickstart({
         <div className="relative z-10 px-4 md:px-5 pt-4 pb-3 border-b border-white/8">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, #8B3FD6, #8B3FD6, #8B3FD6)" }}
-              >
-                <WirelineMark className="w-4 h-4 text-paper" strokeWidth={130} />
+              <div className="w-9 h-9 rounded-md bg-brand flex items-center justify-center">
+                <WirelineMark className="w-4 h-4 text-on-brand" strokeWidth={130} />
               </div>
               <div>
                 <div className="text-[9px] uppercase tracking-[0.4em] text-brand flex items-center gap-1.5">
@@ -368,8 +346,7 @@ export default function OnboardingQuickstart({
                   initial={{ width: 0 }}
                   animate={{ width: `${completionPct}%` }}
                   transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-                  className="h-full rounded-full"
-                  style={{ background: "linear-gradient(90deg, #8B3FD6, #8B3FD6, #8B3FD6)" }}
+                  className="h-full rounded-full bg-brand"
                 />
               </div>
             </div>
@@ -379,9 +356,9 @@ export default function OnboardingQuickstart({
         {/* Fast Start CTA — one-shot wizard for <8min time-to-first-call */}
         {completedCount < 2 && (
           <div className="relative z-10 px-3 md:px-4 pt-3">
-            <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 to-brand/5 p-3 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="rounded-md border border-brand/30 bg-brand/5 p-3 flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex-1 min-w-0">
-                <p className="text-[9px] uppercase tracking-[0.34em] text-emerald-600 mb-1 flex items-center gap-1.5">
+                <p className="text-[9px] uppercase tracking-[0.34em] text-brand mb-1 flex items-center gap-1.5">
                   <Rocket className="w-3 h-3" /> Fastest path to live
                 </p>
                 <p className="text-xs text-ink/70 leading-relaxed">
@@ -389,21 +366,24 @@ export default function OnboardingQuickstart({
                   knowledge, voice, and phone number into one streamlined flow — under 3 minutes.
                 </p>
               </div>
-              <button
+              <ShadButton
+                type="button"
+                variant="editorial"
+                disableAnimations
                 onClick={() => setShowFastStart(true)}
-                className="shrink-0 px-4 py-2.5 rounded-full bg-gradient-to-r from-emerald-500 to-brand text-white text-[10px] uppercase tracking-[0.28em] hover:shadow-lg hover:shadow-brand/20 transition-all inline-flex items-center justify-center gap-1.5"
+                className="shrink-0 rounded-full text-[10px] uppercase tracking-[0.28em]"
               >
                 <Rocket className="w-3.5 h-3.5" />
                 Fast Start Wizard
                 <ArrowRight className="w-3 h-3" />
-              </button>
+              </ShadButton>
             </div>
           </div>
         )}
 
         {wedgeRecommendation && !completion.agent && (
           <div className="relative z-10 px-3 md:px-4 pt-3">
-            <div className="rounded-2xl border border-brand/20 bg-brand/5 p-3 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="rounded-md border border-brand/20 bg-brand/5 p-3 flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex-1 min-w-0">
                 <p className="text-[9px] uppercase tracking-[0.34em] text-brand mb-1">
                   Matched setup · {wedgeRecommendation.label}
@@ -443,7 +423,7 @@ export default function OnboardingQuickstart({
         {/* Demo call CTA strip */}
         {!completion.call && completion.agent && (
           <div className="relative z-10 px-7 md:px-10 pb-7 pt-0">
-            <div className="rounded-2xl border border-brand/20 bg-brand/5 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="rounded-md border border-brand/20 bg-brand/5 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex items-center gap-3 flex-1">
                 <PhoneCall className="w-5 h-5 text-brand shrink-0" />
                 <div>
@@ -458,7 +438,7 @@ export default function OnboardingQuickstart({
               </div>
               <Link
                 to="/"
-                className="shrink-0 px-4 py-2.5 rounded-full glass border border-brand/40 text-[11px] uppercase tracking-[0.3em] text-brand hover:bg-brand/10 hover:border-brand/60 transition-all flex items-center gap-2"
+                className="shrink-0 px-4 py-2.5 rounded-full wl-panel border border-brand/40 text-[11px] uppercase tracking-[0.3em] text-brand hover:bg-brand/10 hover:border-brand/60 transition-all flex items-center gap-2"
               >
                 <PlayCircle className="w-3.5 h-3.5" />
                 Open Dashboard
@@ -571,12 +551,12 @@ const Step: React.FC<{
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4, scale: 1.02 }}
       transition={{ delay: 0.05 * index }}
-      className="relative aurora-ring rounded-2xl"
+      className="relative rounded-md"
     >
       <div
-        className={`relative rounded-xl glass border p-3.5 overflow-hidden h-full flex flex-col gap-2.5 transition-all duration-300 ${
+        className={`relative rounded-md wl-panel border p-3.5 overflow-hidden h-full flex flex-col gap-2.5 transition-all duration-300 ${
           done
-            ? "border-emerald-500/40 shadow-sm shadow-emerald-500/5 bg-emerald-500/[0.02]"
+            ? "border-brand/40 shadow-sm shadow-brand/5 bg-brand/[0.02]"
             : isActive
               ? "border-brand/40 shadow-md shadow-brand/10 bg-brand/[0.01] active-neon-card"
               : "border-black/5 hover:border-black/15 hover:bg-black/[0.01]"
@@ -588,9 +568,9 @@ const Step: React.FC<{
         />
         <div className="relative z-10 flex items-start justify-between">
           <div
-            className={`w-9 h-9 rounded-xl glass border flex items-center justify-center transition-all duration-300 ${
+            className={`w-9 h-9 rounded-md wl-panel border flex items-center justify-center transition-all duration-300 ${
               done
-                ? "border-emerald-500/40 text-emerald-500 shadow-sm shadow-emerald-500/10"
+                ? "border-brand/40 text-brand shadow-sm shadow-brand/10"
                 : isActive
                   ? "border-brand/40 text-brand shadow-sm shadow-brand/10"
                   : "border-black/10 text-muted"
@@ -624,7 +604,7 @@ const Step: React.FC<{
         </div>
         <div className="relative z-10 flex items-center gap-2 mt-auto">
           {done ? (
-            <div className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-[9px] uppercase tracking-[0.3em] flex items-center gap-1">
+            <div className="px-3 py-1.5 rounded-full bg-brand/10 border border-brand/30 text-brand text-[9px] uppercase tracking-[0.3em] flex items-center gap-1">
               <Check className="w-3 h-3" /> Complete
             </div>
           ) : (
@@ -674,7 +654,7 @@ function CTAButton({ to, label, icon }: { to: string; label: string; icon?: Reac
   return (
     <Link
       to={to}
-      className="px-4 py-2.5 rounded-full glass border border-brand/30 text-[11px] uppercase tracking-[0.3em] text-brand hover:bg-brand/10 hover:border-brand/60 transition-all flex items-center gap-2"
+      className="px-4 py-2.5 rounded-full wl-panel border border-brand/30 text-[11px] uppercase tracking-[0.3em] text-brand hover:bg-brand/10 hover:border-brand/60 transition-all flex items-center gap-2"
     >
       {icon ?? <Sparkles className="w-3.5 h-3.5" />}
       {label}
@@ -699,14 +679,14 @@ function PowerUpCard({
   return (
     <Link
       to={to}
-      className="rounded-xl wl-panel p-4 card-interactive group overflow-hidden relative"
+      className="rounded-md wl-panel p-4 card-interactive group overflow-hidden relative"
     >
       <div
         className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-15 blur-2xl pointer-events-none"
         style={{ background: accent }}
       />
       <div
-        className="w-7 h-7 rounded-lg flex items-center justify-center mb-2.5 border border-black/8 shrink-0"
+        className="w-7 h-7 rounded-md flex items-center justify-center mb-2.5 border border-black/8 shrink-0"
         style={{ background: `linear-gradient(135deg, ${accent}18, ${accent}06)`, color: accent }}
       >
         <Icon className="w-3.5 h-3.5" />
@@ -739,46 +719,28 @@ function AllSetCard({
       initial={{ opacity: 0, scale: 0.97 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="relative aurora-ring rounded-3xl"
+      className="relative rounded-md wl-panel-elevated border border-border overflow-hidden"
     >
-      <div className="relative rounded-3xl glass-strong overflow-hidden p-6 md:p-8 flex flex-col h-full">
-        {/* Dismiss button */}
-        <button
+      <div className="relative p-6 md:p-8 flex flex-col h-full">
+        <ShadButton
+          type="button"
+          variant="ghost"
+          disableAnimations
           onClick={onDismiss}
-          className="absolute top-4 right-4 text-[10px] uppercase tracking-[0.2em] text-muted hover:text-ink transition-colors"
+          className="absolute top-4 right-4 h-auto p-0 text-[10px] uppercase tracking-[0.2em] text-muted hover:text-ink"
           aria-label="Dismiss onboarding"
         >
           Dismiss
-        </button>
-        {/* Aurora glow */}
-        <div
-          className="absolute -top-20 -right-20 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-20 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
-        />
-        <div
-          className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-15 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
-        />
+        </ShadButton>
 
         {/* Hero row */}
         <div className="relative z-10 flex flex-col items-center text-center gap-4 pb-5">
-          {/* Animated checkmark ring */}
-          <div className="relative w-16 h-16">
-            <motion.div
-              className="absolute inset-0 rounded-full"
-              style={{
-                background: "conic-gradient(from 0deg, #8B3FD6, #8B3FD6, #8B3FD6, #8B3FD6)",
-              }}
-              animate={{ rotate: 360 }}
-              transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-            />
-            <div className="absolute inset-[2px] rounded-full glass flex items-center justify-center">
-              <Check className="w-7 h-7 text-emerald-400" strokeWidth={2.5} />
-            </div>
+          <div className="relative w-16 h-16 rounded-full bg-brand/10 border border-brand/30 flex items-center justify-center">
+            <Check className="w-7 h-7 text-brand" strokeWidth={2.5} />
           </div>
 
           <div>
-            <p className="text-[9px] uppercase tracking-[0.45em] text-emerald-600 mb-1.5 font-medium">
+            <p className="text-[9px] uppercase tracking-[0.45em] text-brand mb-1.5 font-medium">
               Setup complete
             </p>
             <h3 className="font-display italic text-3xl text-ink leading-tight">
@@ -790,13 +752,16 @@ function AllSetCard({
 
             {/* Celebrate button */}
             {onCelebrate && (
-              <button
+              <ShadButton
+                type="button"
+                variant="editorial"
+                disableAnimations
                 onClick={onCelebrate}
-                className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand text-white text-[11px] uppercase tracking-[0.24em] hover:bg-brand/90 transition-all"
+                className="mt-4 rounded-full text-[11px] uppercase tracking-[0.24em]"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 View Your Achievement
-              </button>
+              </ShadButton>
             )}
           </div>
         </div>
@@ -807,9 +772,9 @@ function AllSetCard({
             <Link
               key={to}
               to={to}
-              className="group flex items-center gap-3 h-11 rounded-xl wl-panel px-3.5 hover:border-white/20 hover:bg-white/4 transition-all"
+              className="group flex items-center gap-3 h-11 rounded-md wl-panel px-3.5 hover:border-white/20 hover:bg-white/4 transition-all"
             >
-              <div className="w-7 h-7 rounded-lg bg-brand/12 border border-brand/20 flex items-center justify-center shrink-0 text-brand">
+              <div className="w-7 h-7 rounded-md bg-brand/12 border border-brand/20 flex items-center justify-center shrink-0 text-brand">
                 <Icon className="w-3.5 h-3.5" />
               </div>
               <div className="flex-1 min-w-0">

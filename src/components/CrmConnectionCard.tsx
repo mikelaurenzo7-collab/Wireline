@@ -47,59 +47,14 @@ interface IntegrationState {
 
 type ProviderKey = keyof IntegrationState;
 
-/** Tailwind cannot compile dynamic `border-${color}-500` — explicit maps only. */
-const PROVIDER_STYLES: Record<
-  string,
-  { card: string; icon: string; check: string; connect: string }
-> = {
-  sky: {
-    card: "border-sky-500/30 bg-sky-500/5",
-    icon: "bg-sky-500/15 border-sky-500/30 text-sky-700",
-    check: "text-sky-600",
-    connect: "bg-sky-500/15 border-sky-500/30 text-sky-700 hover:bg-sky-500/20",
-  },
-  orange: {
-    card: "border-orange-500/30 bg-orange-500/5",
-    icon: "bg-orange-500/15 border-orange-500/30 text-orange-700",
-    check: "text-orange-600",
-    connect: "bg-orange-500/15 border-orange-500/30 text-orange-700 hover:bg-orange-500/20",
-  },
-  purple: {
-    card: "border-violet-500/30 bg-violet-500/5",
-    icon: "bg-violet-500/15 border-violet-500/30 text-violet-700",
-    check: "text-violet-600",
-    connect: "bg-violet-500/15 border-violet-500/30 text-violet-700 hover:bg-violet-500/20",
-  },
-  blue: {
-    card: "border-blue-500/30 bg-blue-500/5",
-    icon: "bg-blue-500/15 border-blue-500/30 text-blue-700",
-    check: "text-blue-600",
-    connect: "bg-blue-500/15 border-blue-500/30 text-blue-700 hover:bg-blue-500/20",
-  },
-  indigo: {
-    card: "border-indigo-500/30 bg-indigo-500/5",
-    icon: "bg-indigo-500/15 border-indigo-500/30 text-indigo-700",
-    check: "text-indigo-600",
-    connect: "bg-indigo-500/15 border-indigo-500/30 text-indigo-700 hover:bg-indigo-500/20",
-  },
-  fuchsia: {
-    card: "border-fuchsia-500/30 bg-fuchsia-500/5",
-    icon: "bg-fuchsia-500/15 border-fuchsia-500/30 text-fuchsia-700",
-    check: "text-fuchsia-600",
-    connect: "bg-fuchsia-500/15 border-fuchsia-500/30 text-fuchsia-700 hover:bg-fuchsia-500/20",
-  },
-  emerald: {
-    card: "border-emerald-500/30 bg-emerald-500/5",
-    icon: "bg-emerald-500/15 border-emerald-500/30 text-emerald-700",
-    check: "text-emerald-600",
-    connect: "bg-emerald-500/15 border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/20",
-  },
-  amber: {
-    card: "border-amber-500/30 bg-amber-500/5",
-    icon: "bg-amber-500/15 border-amber-500/30 text-amber-700",
-    check: "text-amber-600",
-    connect: "bg-amber-500/15 border-amber-500/30 text-amber-700 hover:bg-amber-500/20",
-  },
+import { ShadButton } from "./ui/shadcn/ShadButton";
+
+/** Unified connected-state styling — purple + cream palette only. */
+const CONNECTED_STYLES = {
+  card: "border-brand/30 bg-brand/5",
+  icon: "bg-brand/15 border-brand/30 text-brand",
+  check: "text-brand",
+  connect: "bg-brand/15 border-brand/30 text-brand hover:bg-brand/20",
 };
 
 const PROVIDERS: {
@@ -344,7 +299,7 @@ export default function CrmConnectionCard() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl glass border border-black/8 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div className="rounded-md wl-panel border border-black/8 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-[9px] uppercase tracking-[0.35em] text-brand font-semibold">
             Connected stack
@@ -359,18 +314,21 @@ export default function CrmConnectionCard() {
           <span className="text-[9px] uppercase tracking-[0.28em] text-ink/40">
             {PROVIDERS.length - connectedCount} available
           </span>
-          <button
+          <ShadButton
             type="button"
+            variant="outline"
+            size="sm"
+            disableAnimations
             onClick={() => {
               setLoading(true);
               void fetchStatus();
             }}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-black/10 text-[9px] uppercase tracking-[0.26em] text-muted hover:text-ink hover:border-brand/30 transition-colors"
+            className="rounded-full text-[9px] uppercase tracking-[0.26em]"
             aria-label="Refresh integration status"
           >
             <Loader2 className="w-3 h-3" />
             Refresh
-          </button>
+          </ShadButton>
         </div>
       </div>
 
@@ -383,15 +341,15 @@ export default function CrmConnectionCard() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
               <AnimatePresence mode="popLayout">
-                {groupProviders.map(({ key, label, color, logo, beta }) => {
-                  const styles = PROVIDER_STYLES[color] ?? PROVIDER_STYLES.indigo;
+                {groupProviders.map(({ key, label, logo, beta }) => {
+                  const styles = CONNECTED_STYLES;
                   const s = state[key];
                   if (!s) return null;
                   const isConnecting = connecting === key;
                   const detail = s.email || s.team || "";
                   const betaPill = beta ? (
                     <span
-                      className="ml-1 text-[8px] uppercase tracking-[0.22em] px-1.5 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/40 text-amber-600 leading-none"
+                      className="ml-1 text-[8px] uppercase tracking-[0.22em] px-1.5 py-0.5 rounded-md bg-brand/15 border border-brand/40 text-brand leading-none"
                       title="OAuth is live; agent actions (auto-log calls, push deals) are in active development."
                     >
                       Beta
@@ -411,14 +369,14 @@ export default function CrmConnectionCard() {
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       className={cn(
-                        "rounded-xl glass border p-4 h-full flex flex-col",
+                        "rounded-md wl-panel border p-4 h-full flex flex-col",
                         s.connected ? styles.card : "border-black/8",
                       )}
                     >
                       <div className="flex items-start gap-3 flex-1">
                         <div
                           className={cn(
-                            "w-9 h-9 rounded-lg flex items-center justify-center p-1.5 border shrink-0",
+                            "w-9 h-9 rounded-md flex items-center justify-center p-1.5 border shrink-0",
                             s.connected ? styles.icon : "bg-black/4 border-black/10 text-muted/50",
                           )}
                         >
@@ -460,28 +418,35 @@ export default function CrmConnectionCard() {
                                   href={s.instance_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="p-1.5 rounded-lg hover:bg-white/10 text-muted hover:text-ink transition-colors"
+                                  className="p-1.5 rounded-md hover:bg-white/10 text-muted hover:text-ink transition-colors"
                                   title={`Open ${label}`}
                                 >
                                   <ExternalLink className="w-3.5 h-3.5" />
                                 </a>
                               )}
-                              <button
+                              <ShadButton
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                disableAnimations
                                 onClick={disconnect(key)}
-                                className="p-1.5 rounded-lg hover:bg-rose-500/10 text-muted hover:text-rose-500 transition-colors"
+                                className="h-8 w-8 rounded-md text-muted hover:text-rose-500 hover:bg-rose-500/10"
                                 title="Disconnect"
                               >
                                 <Unlink className="w-3.5 h-3.5" />
-                              </button>
+                              </ShadButton>
                             </div>
                           ) : platformReady && oauthConnectAvailable ? (
-                            <button
+                            <ShadButton
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disableAnimations
                               onClick={connect(key)}
                               disabled={isConnecting}
                               className={cn(
-                                "disabled:opacity-50 disabled:cursor-not-allowed",
-                                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-medium transition-all",
-                                "bg-brand/15 border border-brand/30 text-brand hover:bg-brand/25 hover-premium-glow shadow-premium-button",
+                                "rounded-md text-[10px] font-medium",
+                                CONNECTED_STYLES.connect,
                                 isConnecting && "opacity-60 pointer-events-none",
                               )}
                             >
@@ -491,7 +456,7 @@ export default function CrmConnectionCard() {
                                 <Link2 className="w-3 h-3" />
                               )}
                               Connect
-                            </button>
+                            </ShadButton>
                           ) : (
                             <span className="text-[9px] text-muted px-2">Unavailable</span>
                           )}
@@ -529,7 +494,7 @@ export default function CrmConnectionCard() {
                             placeholder="your-store.myshopify.com"
                             spellCheck={false}
                             autoCapitalize="off"
-                            className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink placeholder:text-ink/40 outline-none focus:border-emerald-500/40"
+                            className="w-full text-[10px] rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-ink placeholder:text-ink/40 outline-none focus:border-brand/40"
                           />
                           {shopError ? (
                             <p className="text-[9px] text-rose-500 leading-snug">{shopError}</p>
@@ -564,7 +529,7 @@ export default function CrmConnectionCard() {
                             >
                               <SelectTrigger
                                 aria-label="Default Slack channel"
-                                className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink h-auto"
+                                className="w-full text-[10px] rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-ink h-auto"
                               >
                                 <SelectValue placeholder="Select channel…" />
                               </SelectTrigger>
@@ -622,7 +587,7 @@ export default function CrmConnectionCard() {
                             >
                               <SelectTrigger
                                 aria-label="Default Teams team and channel"
-                                className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink h-auto"
+                                className="w-full text-[10px] rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-ink h-auto"
                               >
                                 <SelectValue placeholder="Select team channel…" />
                               </SelectTrigger>

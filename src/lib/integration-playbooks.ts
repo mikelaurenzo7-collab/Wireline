@@ -236,21 +236,6 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
       },
     ],
   },
-  gemini: {
-    integration: "gemini",
-    label: "Gemini",
-    headline: "Live facts when the answer is not in your knowledge base.",
-    orbitHint: "Grounded web lookup",
-    connectPath: "/integrations",
-    tasks: [
-      {
-        id: "gemini-ground",
-        callerMoment: '"What are your hours today?" / regulation / competitor pricing',
-        agentAction: "Runs a grounded web search and answers with fresh public data.",
-        tools: ["gemini_ground"],
-      },
-    ],
-  },
   microsoft_teams: {
     integration: "microsoft_teams",
     label: "Microsoft Teams",

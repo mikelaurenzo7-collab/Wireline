@@ -15,6 +15,7 @@ import { motion } from "motion/react";
 import { Check, Loader2, Clock, ExternalLink } from "lucide-react";
 import { cn } from "../lib/utils";
 import { AgentActivityIndicator } from "./ui/AgentActivityIndicator";
+import { BRAND } from "../constants/brand-colors";
 
 export type IntegrationStatus = "pending" | "active" | "success" | "waiting";
 
@@ -45,23 +46,23 @@ const STATUS_CONFIG = {
   },
   active: {
     icon: Loader2,
-    iconClass: "text-blue-500 animate-spin",
-    borderClass: "border-blue-400/30",
-    bgClass: "bg-blue-50/70",
+    iconClass: "text-brand animate-spin",
+    borderClass: "border-brand/30",
+    bgClass: "bg-brand/5",
     label: "Processing",
   },
   success: {
     icon: Check,
-    iconClass: "text-emerald-500",
-    borderClass: "border-emerald-400/30",
-    bgClass: "bg-emerald-50/70",
+    iconClass: "text-brand",
+    borderClass: "border-brand/30",
+    bgClass: "bg-brand/5",
     label: "Complete",
   },
   waiting: {
     icon: Clock,
-    iconClass: "text-amber-500",
-    borderClass: "border-amber-400/30",
-    bgClass: "bg-amber-50/70",
+    iconClass: "text-muted",
+    borderClass: "border-black/10",
+    bgClass: "bg-black/[0.02]",
     label: "Waiting",
   },
 } as const;
@@ -88,7 +89,7 @@ export default function IntegrationActivityCard({
         ease: [0.23, 1.0, 0.32, 1.0],
       }}
       className={cn(
-        "rounded-2xl border px-4 py-3 text-xs transition-all",
+        "rounded-md border px-4 py-3 text-xs transition-all",
         config.borderClass,
         config.bgClass,
       )}
@@ -97,11 +98,11 @@ export default function IntegrationActivityCard({
       <div className="flex items-start gap-3 mb-2">
         {/* Integration icon with brand color accent */}
         <div
-          className="shrink-0 flex h-7 w-7 items-center justify-center rounded-lg text-white shadow-sm"
+          className="shrink-0 flex h-7 w-7 items-center justify-center rounded-md text-white shadow-sm"
           style={{
             background: brandColor
               ? `linear-gradient(135deg, ${brandColor}, ${brandColor}dd)`
-              : "linear-gradient(135deg, #8B3FD6, #8B3FD6)",
+              : `linear-gradient(135deg, ${BRAND.purple}, ${BRAND.purple})`,
           }}
         >
           {icon}

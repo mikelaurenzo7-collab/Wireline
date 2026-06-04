@@ -26,7 +26,7 @@ import { computeAgentPerformance, emptyAgentPerformance } from "../lib/agent-per
 import { computeScorecard, type CallLogRow } from "../lib/agent-scorecard";
 import { enforceTrialAgentCap } from "../lib/trial-gate";
 import { SentryEvents } from "../lib/sentry-events";
-import { normalizeEnabledTools } from "../lib/agent-capabilities";
+import { getDefaultAgentTools, normalizeEnabledTools } from "../lib/agent-capabilities";
 import { claudeErr } from "../lib/claude-response-helpers";
 import { isOwnerEmail } from "../lib/auth-service";
 import { agentCapHit, resolveAgentEntitlement } from "../lib/agent-entitlements";
@@ -816,6 +816,7 @@ router.post(
         voiceId: rest.voice_id || rotatedVoice,
         channel: rest.channel || "voice",
         role: agentRole,
+        enabledTools: getDefaultAgentTools(),
       };
       // Remove any fields that don't belong in the agents table
       delete (agentValues as any).personality;

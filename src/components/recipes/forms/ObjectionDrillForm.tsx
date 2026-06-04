@@ -64,7 +64,7 @@ export function ObjectionDrillForm({
       {result?.scenarios && (
         <div className="space-y-3 pt-3">
           {result.scenarios.map((s: any, i: number) => (
-            <div key={i} className="rounded-2xl glass border border-white/10 p-5 space-y-3">
+            <div key={i} className="rounded-md wl-panel border border-white/10 p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="font-display italic text-xl">{s.title}</h4>
                 <span
