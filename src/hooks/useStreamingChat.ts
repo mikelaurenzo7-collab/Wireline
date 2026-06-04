@@ -12,7 +12,7 @@
  * manual SSE parsing since EventSource only supports GET).
  */
 import { useCallback, useRef, useState } from "react";
-import { getFreshAccessToken } from "../lib/api";
+import { refreshSessionIfNeeded } from "../lib/api";
 
 export type StreamPhase = "idle" | "connecting" | "thinking" | "replying" | "done" | "error";
 
@@ -132,14 +132,14 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
       streamEstablishedRef.current = false;
       setState({ phase: "connecting", thinkingText: "", isDeep: false, streamEstablished: false });
 
-      const token = await getFreshAccessToken();
+      await refreshSessionIfNeeded();
       try {
         const res = await fetch(endpoint, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            ...(token ? { Authorization: "Bearer " + token } : {}),
           },
+          credentials: "include",
           body: JSON.stringify(body),
           signal: controller.signal,
         });

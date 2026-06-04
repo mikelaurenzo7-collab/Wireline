@@ -32,6 +32,7 @@ import { isOwnerEmail } from "../lib/auth-service";
 import { agentCapHit, resolveAgentEntitlement } from "../lib/agent-entitlements";
 import { invalidateDashboard } from "../lib/dashboard-cache";
 import { listAgentsForUser } from "../lib/agents-store";
+import { findOwnedAgentId } from "../lib/agent-ownership";
 
 const router = Router();
 
@@ -161,7 +162,9 @@ router.get(
         drizzle
           .select({ content: schema.personality.content })
           .from(schema.personality)
-          .where(eq(schema.personality.agentId, agentId))
+          .where(
+            and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)),
+          )
           .limit(1),
         drizzle
           .select({ content: schema.directives.content, priority: schema.directives.priority })
@@ -176,7 +179,7 @@ router.get(
       ]);
 
       const agentData = agentRes[0];
-      if (!agentData) return res.status(404).json({ error: "Agent not found" });
+      if (!agentData) return res.status(404).json({ error: "Agent not found." });
 
       const exportData = {
         wireline_export_version: 1,
@@ -250,7 +253,7 @@ router.post(
           .values({ agentId, userId, content: personality })
           .onConflictDoUpdate({
             target: schema.personality.agentId,
-            set: { content: personality },
+            set: { content: personality, userId },
           });
       }
 
@@ -314,6 +317,9 @@ router.get(
       const agentId = req.params.id;
       const userId = req.user.id;
 
+      const ownedId = await findOwnedAgentId(agentId, userId);
+      if (!ownedId) return res.status(404).json({ error: "Agent not found." });
+
       const [agentRow, personalityRow, directivesList, knowledgeList] = await Promise.all([
         drizzle
           .select({ flowConfig: schema.agents.flowConfig })
@@ -323,7 +329,9 @@ router.get(
         drizzle
           .select({ content: schema.personality.content })
           .from(schema.personality)
-          .where(eq(schema.personality.agentId, agentId))
+          .where(
+            and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)),
+          )
           .limit(1),
         drizzle
           .select()
@@ -375,7 +383,7 @@ router.post(
           .values({ agentId, content, userId })
           .onConflictDoUpdate({
             target: schema.personality.agentId,
-            set: { content },
+            set: { content, userId },
           });
       } else if (type === "directive") {
         if (overrideId) {
@@ -454,9 +462,14 @@ router.post(
   "/api/train/extract",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
-    const { message, agentId = "default-agent" } = req.body;
+    const { message, agentId: rawAgentId } = req.body;
+    const agentId = typeof rawAgentId === "string" && rawAgentId.trim() ? rawAgentId.trim() : "";
     const userId = req.user.id;
     if (!message?.trim()) return res.status(400).json({ error: "message is required" });
+    if (!agentId) return res.status(400).json({ error: "agentId is required" });
+    if (!(await findOwnedAgentId(agentId, userId))) {
+      return res.status(404).json({ error: "Agent not found." });
+    }
 
     let parsed: {
       directives: Array<{ content: string; priority?: number }>;
@@ -623,7 +636,7 @@ Respond ONLY in strict, valid JSON format (no markdown):
           })
           .onConflictDoUpdate({
             target: schema.personality.agentId,
-            set: { content: parsed.personality },
+            set: { content: parsed.personality, userId },
           });
       }
     } catch (err) {
@@ -662,8 +675,14 @@ router.post(
   "/api/train/save",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
-    const { extracted, agentId = "default-agent" } = req.body;
+    const { extracted, agentId: rawAgentId } = req.body;
+    const agentId = typeof rawAgentId === "string" && rawAgentId.trim() ? rawAgentId.trim() : "";
     const userId = req.user.id;
+
+    if (!agentId) return res.status(400).json({ error: "agentId is required" });
+    if (!(await findOwnedAgentId(agentId, userId))) {
+      return res.status(404).json({ error: "Agent not found." });
+    }
 
     try {
       const parsed = extracted || {};
@@ -911,6 +930,17 @@ router.put(
         return res.status(400).json({ error: "Validation failed", errors: validation.errors });
       }
 
+      const agentId = req.params.id;
+      const [owned] = await drizzle
+        .select({ id: schema.agents.id })
+        .from(schema.agents)
+        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+        .limit(1);
+
+      if (!owned) {
+        return res.status(404).json({ error: "Agent not found." });
+      }
+
       const update = mapObjectToCamel(req.body);
       delete update.id;
       delete update.userId;
@@ -923,7 +953,7 @@ router.put(
       await drizzle
         .update(schema.agents)
         .set(update)
-        .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
+        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)));
 
       // Audit log: agent update (sanitize sensitive fields)
       void auditLogger

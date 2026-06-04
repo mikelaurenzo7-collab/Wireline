@@ -34,6 +34,7 @@ import * as schema from "../db/schema";
 import { eq, lt } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { generateToken, isOwnerEmail } from "../lib/auth-service";
+import { authSuccessBody, setSessionCookie } from "../lib/session-cookie";
 import { scheduleFounderBootstrap } from "../lib/founder-bootstrap";
 import { generateOAuthState, verifyOAuthState } from "../lib/oauth-helpers";
 import { oauthRateLimiter } from "../middleware/rate-limit-middleware";
@@ -550,8 +551,14 @@ router.post("/api/auth/oauth/exchange", oauthRateLimiter, async (req: Request, r
   if (!entry) {
     return res.status(400).json({ error: "Invalid or expired code" });
   }
+  setSessionCookie(res, entry.token);
   return res.json({
-    token: entry.token,
+    ...authSuccessBody({
+      id: entry.user.id,
+      email: entry.user.email,
+      full_name: entry.user.fullName,
+      is_owner: entry.isOwner,
+    }),
     user_id: entry.user.id,
     email: entry.user.email,
     name: entry.user.fullName ?? "",

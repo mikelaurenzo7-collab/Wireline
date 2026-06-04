@@ -140,7 +140,13 @@ All migrations use `IF NOT EXISTS` — safe to re-run.
 
 ### Auth
 
-****** in `Authorization` header. No cookies, no CSRF surface.
+Sessions use an **httpOnly** `wireline_session` cookie (`SameSite=Lax`, `Secure` in production). The client calls APIs with `credentials: "include"`. Bearer tokens in `Authorization` are still accepted for scripts and legacy flows; they are not stored in `localStorage`.
+
+`POST /api/auth/migrate-session` is rate-limited and rotates the JWT when moving off legacy `localStorage` — do not return tokens in JSON bodies.
+
+### CSRF posture
+
+SameSite=Lax blocks most cross-site cookie sends on `POST`. For defense in depth, `assertSameOrigin` (in `server.ts`) rejects `POST`/`PUT`/`PATCH`/`DELETE` on `/api/*` when `Origin` or `Referer` is present and not in `APP_URL` / `CORS_ORIGINS`. Vendor webhooks under `/api/webhooks/*`, Stripe, Twilio, and intake are excluded.
 
 ```typescript
 import { authenticateUser } from "../middleware/auth";

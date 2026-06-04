@@ -169,7 +169,9 @@ vi.mock("../middleware/auth", () => ({
     _res: Response,
     next: NextFunction,
   ) => {
-    req.user = { id: "user-1", email: "owner@example.com" };
+    const testUser = req.headers["x-test-user"] as string | undefined;
+    const id = testUser || "user-1";
+    req.user = { id, email: `${id}@example.com` };
     next();
   },
 }));
@@ -281,6 +283,7 @@ describe("agent routes integration", () => {
 
   it("loads an agent configuration from agent, personality, directives, and knowledge rows", async () => {
     h.state.selectResults = [
+      [{ id: "agent-1" }],
       [{ flowConfig: { nodes: [{ id: "start" }] } }],
       [{ content: "Warm and concise" }],
       [{ id: 2, content: "Always confirm the phone number", priority: 8 }],
@@ -298,28 +301,24 @@ describe("agent routes integration", () => {
     });
     expect(h.state.selectCalls.map((call) => call.table)).toEqual([
       "agents",
+      "agents",
       "personality",
       "directives",
       "knowledge",
     ]);
   });
 
-  it("returns empty defaults when an agent configuration has no rows", async () => {
-    h.state.selectResults = [[], [], [], []];
+  it("returns 404 when loading configuration for an agent the user does not own", async () => {
+    h.state.selectResults = [[]];
 
     const response = await request(await buildApp()).get("/api/agent-config/missing-agent");
 
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual({
-      flowConfig: null,
-      personality: "",
-      directives: [],
-      knowledge: [],
-    });
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({ error: "Agent not found." });
   });
 
   it("returns a 500 when loading agent configuration fails", async () => {
-    h.state.selectResults = [new Error("config query failed"), [], [], []];
+    h.state.selectResults = [[{ id: "agent-1" }], new Error("config query failed"), [], [], []];
 
     const response = await request(await buildApp()).get("/api/agent-config/agent-1");
 
@@ -368,6 +367,56 @@ describe("agent routes integration", () => {
         table: "personality",
         value: { agentId: "agent-1", userId: "user-1", content: response.body.content },
         conflict: expect.objectContaining({ set: { content: response.body.content } }),
+      }),
+    ]);
+  });
+
+  it("returns 404 when saving training data for an agent the user does not own", async () => {
+    h.state.selectResults = [[]];
+
+    const response = await request(await buildApp())
+      .post("/api/train/save")
+      .set("x-test-user", "user-a")
+      .send({
+        agentId: "agent-1",
+        extracted: {
+          directives: [{ content: "bad", priority: 5 }],
+          knowledge: [],
+          personality: "",
+        },
+      });
+
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({ error: "Agent not found." });
+    expect(h.state.inserts).toEqual([]);
+  });
+
+  it("returns 404 when updating an agent the user does not own", async () => {
+    h.state.selectResults = [[]];
+
+    const response = await request(await buildApp())
+      .put("/api/agents/agent-1")
+      .set("x-test-user", "user-a")
+      .send({ name: "Hijacked", role: "sales" });
+
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({ error: "Agent not found." });
+    expect(h.state.updates).toEqual([]);
+  });
+
+  it("updates an owned agent after ownership check", async () => {
+    h.state.selectResults = [[{ id: "agent-1" }]];
+
+    const response = await request(await buildApp())
+      .put("/api/agents/agent-1")
+      .send({ name: "Renamed", role: "sales" });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ success: true });
+    expect(h.state.updates).toEqual([
+      expect.objectContaining({
+        table: "agents",
+        values: expect.objectContaining({ name: "Renamed" }),
       }),
     ]);
   });

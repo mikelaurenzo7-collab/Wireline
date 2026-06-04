@@ -33,7 +33,7 @@ const SECTIONS = [
       "TLS 1.3 enforced on every public endpoint. HSTS preload-eligible.",
       "Passwords hashed with scrypt (N=16384, r=8, p=1) + per-user salt. Never stored in plaintext, never logged.",
       "Password-reset + email-verification tokens stored as SHA-256 hashes; plaintext exists only inside the email link.",
-      "JWT sessions signed HS256 with a 256-bit rotated secret. Short TTL; no cookies → no CSRF surface.",
+      "Session JWTs signed HS256 with a 256-bit rotated secret, delivered in an httpOnly SameSite=Lax cookie (2h TTL). Mutating API calls are Origin-checked; cross-site form posts cannot ride the session.",
     ],
   },
   {

@@ -25,6 +25,8 @@ export type EnvVarConfig = {
   name: string;
   group: EnvGroup;
   required: boolean;
+  /** When true, missing var fails validation in production / Vercel. */
+  requiredInProd?: boolean;
   description: string;
   validate?: (value: string) => boolean;
   formatHint?: string;
@@ -170,6 +172,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "UPSTASH_REDIS_REST_URL",
     group: "infrastructure",
     required: false,
+    requiredInProd: true,
     description: "Upstash Redis REST URL for distributed rate limiting",
     validate: (v) => !v || isUrl(v),
     formatHint: "https://... .upstash.io",
@@ -178,6 +181,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "UPSTASH_REDIS_REST_TOKEN",
     group: "infrastructure",
     required: false,
+    requiredInProd: true,
     description: "Upstash Redis REST token",
   },
   {
@@ -295,14 +299,19 @@ export function validateEnv(): EnvValidationResult {
     const group = result.byGroup[config.group];
     group.total++;
 
-    // Check required vars
-    if (config.required && !hasValue) {
+    const mustHave = config.required || (isProd && config.requiredInProd);
+
+    // Check required vars (always) and prod-only vars
+    if (mustHave && !hasValue) {
       result.valid = false;
       group.invalid++;
       result.errors.push({
         var: config.name,
         group: config.group,
-        message: `Required environment variable ${config.name} is missing`,
+        message:
+          isProd && config.requiredInProd && !config.required
+            ? `Required in production: ${config.name} is missing`
+            : `Required environment variable ${config.name} is missing`,
         formatHint: config.formatHint,
       });
       continue;

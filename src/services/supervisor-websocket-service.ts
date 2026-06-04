@@ -11,6 +11,7 @@ import { IncomingMessage } from "node:http";
 import { log, drizzle } from "../lib/server-context";
 import { verifyInternalJwt } from "../lib/auth-utils";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
+import { parseCookieHeader, SESSION_COOKIE_NAME } from "../lib/session-cookie";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 
@@ -60,8 +61,9 @@ export function initSupervisorWebSocketServer(server: any) {
       bearerIdx >= 0 && bearerIdx + 1 < protoTokens.length ? protoTokens[bearerIdx + 1] : "";
 
     const queryToken = typeof urlObj.query.token === "string" ? urlObj.query.token : "";
-    const token = headerToken || subprotocolToken || queryToken;
-    if (token && token === queryToken && !headerToken && !subprotocolToken) {
+    const cookieToken = parseCookieHeader(request.headers.cookie)[SESSION_COOKIE_NAME];
+    const token = headerToken || subprotocolToken || queryToken || cookieToken;
+    if (token && token === queryToken && !headerToken && !subprotocolToken && !cookieToken) {
       log.warn("Supervisor WebSocket: deprecated ?token= auth (migrate to header)", {
         callId,
         mode,
@@ -89,16 +91,18 @@ export function initSupervisorWebSocketServer(server: any) {
 
     log.info("Supervisor WebSocket connected", { callId, mode, userId });
 
+    const verifyCallOwnership = async (): Promise<boolean> => {
+      const [callRow] = await drizzle
+        .select({ userId: schema.callLogs.userId })
+        .from(schema.callLogs)
+        .where(eq(schema.callLogs.vapiCallId, callId))
+        .limit(1);
+      return !!callRow && callRow.userId === userId;
+    };
+
     if (mode === "listen") {
       try {
-        // Check if the call exists and belongs to the user
-        const [callRow] = await drizzle
-          .select()
-          .from(schema.callLogs)
-          .where(eq(schema.callLogs.vapiCallId, callId))
-          .limit(1);
-
-        if (!callRow || callRow.userId !== userId) {
+        if (!(await verifyCallOwnership())) {
           ws.close(4004, "Call not found");
           return;
         }
@@ -143,17 +147,30 @@ export function initSupervisorWebSocketServer(server: any) {
         ws.close(5000, "Internal Server Error");
       }
     } else if (mode === "whisper") {
+      const whisperAllowed = await verifyCallOwnership();
+      if (!whisperAllowed) {
+        ws.close(4004, "Call not found");
+        return;
+      }
+
       ws.on("message", async (data: string) => {
         try {
           const payload = JSON.parse(data);
           if (payload.type === "whisper" && payload.text) {
             const text = payload.text;
 
+            if (!(await verifyCallOwnership())) {
+              ws.close(4004, "Call not found");
+              return;
+            }
+
             // Log in DB (update call logs and/or subscription notes)
             await drizzle
               .update(schema.callLogs)
               .set({ coachingNote: text })
-              .where(eq(schema.callLogs.vapiCallId, callId));
+              .where(
+                and(eq(schema.callLogs.vapiCallId, callId), eq(schema.callLogs.userId, userId)),
+              );
 
             await drizzle
               .update(schema.supervisorSubscriptions)

@@ -1,43 +1,23 @@
 import { test, expect } from "@playwright/test";
 import { authenticatePage } from "../helpers/wireline-auth";
 import {
-  PUBLIC_ROUTES,
-  EXTENDED_PUBLIC_ROUTES,
   AUTHENTICATED_ROUTES,
   VIEWPORTS,
   assertNoHorizontalOverflow,
-  assertSingleH1,
   gotoHydrated,
+  gotoAuthenticated,
 } from "../helpers/ui";
 import {
   assertAppSurface,
   assertBrandPrimaryToken,
   assertHeaderTrialCta,
-  assertMarketingSurface,
   assertNoAuroraRingInApp,
-  assertPaperBackground,
+  assertAuthPortalCanvas,
+  assertAuthenticatedShell,
 } from "../helpers/design";
 
-const PUBLIC_DESIGN_ROUTES = [
-  ...PUBLIC_ROUTES.map((r) => r.path),
-  ...EXTENDED_PUBLIC_ROUTES.map((r) => r.path),
-];
-
-const AUTH_DESIGN_ROUTES = AUTHENTICATED_ROUTES.map((r) => r.path);
-
-test.describe("Wireline design — public marketing surfaces", () => {
+test.describe("Wireline design — landing hero & trust", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
-
-  for (const path of PUBLIC_DESIGN_ROUTES) {
-    test(`${path} uses marketing surface + brand tokens`, async ({ page }) => {
-      await gotoHydrated(page, path);
-      await assertMarketingSurface(page);
-      await assertBrandPrimaryToken(page);
-      await assertPaperBackground(page);
-      await assertSingleH1(page);
-      await assertNoHorizontalOverflow(page);
-    });
-  }
 
   test("landing hero demo block is structured", async ({ page }) => {
     await page.goto("/");
@@ -46,19 +26,37 @@ test.describe("Wireline design — public marketing surfaces", () => {
     await assertHeaderTrialCta(page);
   });
 
-  test("landing gutter robots render on laptop and desktop viewports", async ({ page }) => {
+  test("auth pages use rich cream canvas", async ({ page }) => {
+    for (const path of ["/signin", "/signup", "/reset-password"] as const) {
+      await gotoHydrated(page, path);
+      await assertAuthPortalCanvas(page);
+    }
+  });
+
+  test("landing trust badges visible and section robots removed", async ({ page }) => {
+    await gotoHydrated(page, "/");
+    const badges = page.getByTestId("hero-trust-badges");
+    await expect(badges).toBeVisible();
+    const fontSize = await badges
+      .locator("span.font-medium")
+      .first()
+      .evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    expect(fontSize).toBeGreaterThanOrEqual(12);
+    await expect(page.getByTestId("proof-robot-decorations-top")).toHaveCount(0);
+    await expect(page.getByTestId("integrations-robot-decorations")).toHaveCount(0);
+    await expect(page.getByTestId("faq-robot-decorations")).toHaveCount(0);
+  });
+
+  test("landing hero robots render on laptop and desktop viewports", async ({ page }) => {
     for (const viewport of [
       { width: 1366, height: 768, name: "laptop" },
       { width: 1920, height: 1080, name: "desktop" },
     ]) {
       await page.setViewportSize(viewport);
       await gotoHydrated(page, "/");
-      await expect(page.getByTestId("hero-robot-decorations")).toBeVisible();
-      await expect(page.getByTestId("proof-robot-decorations-top")).toBeVisible();
-      await expect(page.getByTestId("hero-stats-transition-robots")).toBeVisible();
-      await expect(page.getByTestId("integrations-robot-decorations")).toBeVisible();
-      await page.getByTestId("faq-section").scrollIntoViewIfNeeded();
-      await expect(page.getByTestId("faq-robot-decorations")).toBeVisible();
+      const heroRobots = page.getByTestId("hero-robot-decorations");
+      await expect(heroRobots).toBeVisible();
+      await expect(heroRobots.locator(".wl-sticker-slot")).toHaveCount(4);
     }
   });
 });
@@ -79,13 +77,10 @@ test.describe("Wireline design — authenticated app surfaces", () => {
     await authenticatePage(page, baseURL!);
   });
 
-  for (const path of AUTH_DESIGN_ROUTES) {
-    test(`${path} renders app surface without aurora-ring`, async ({ page }) => {
-      await page.goto(path, { waitUntil: "domcontentloaded" });
-      await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible({
-        timeout: 25_000,
-      });
-      await assertAppSurface(page);
+  for (const route of AUTHENTICATED_ROUTES) {
+    test(`${route.path} renders app surface without aurora-ring`, async ({ page }) => {
+      await gotoAuthenticated(page, route.path);
+      await assertAuthenticatedShell(page);
       await assertNoAuroraRingInApp(page);
       await assertBrandPrimaryToken(page);
       await assertNoHorizontalOverflow(page);

@@ -5,7 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { log } from "../lib/server-logger";
-import { authFetch, getFreshAccessToken } from "../lib/api";
+import { authFetch, refreshSessionIfNeeded } from "../lib/api";
 import { LiveFloorPanel, type FloorAgent } from "../components/CommandCenter/LiveFloorPanel";
 import { ActionFeed } from "../components/CommandCenter/ActionFeed";
 import OnboardingQuickstart from "../components/OnboardingQuickstart";
@@ -16,6 +16,8 @@ import { clsx } from "clsx";
 import { motion } from "motion/react";
 import { Radio, Zap, Globe, Activity, ListTodo } from "lucide-react";
 import { ShadButton } from "../components/ui/shadcn/ShadButton";
+import { BRAND } from "../constants/brand-colors";
+import { WIRELINE_DIRECTOR_BRAND } from "../lib/wireline-director-design";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -99,9 +101,9 @@ type TaskPayload = {
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const SENTIMENT_COLORS = {
-  positive: "#10b981", // emerald-500
-  neutral: "#6366f1", // indigo-500
-  negative: "#f43f5e", // rose-500
+  positive: WIRELINE_DIRECTOR_BRAND.signal,
+  neutral: BRAND.purple,
+  negative: BRAND.rose,
 };
 
 // ─── Main Component ────────────────────────────────────────────────────────────
@@ -279,9 +281,9 @@ export default function LiveOps() {
       if (!user) return;
 
       try {
-        const token = await getFreshAccessToken();
-        if (!token) return;
-        const streamUrl = `${window.location.origin}/api/fleet/presence/stream?token=${encodeURIComponent(token)}`;
+        const ok = await refreshSessionIfNeeded();
+        if (!ok) return;
+        const streamUrl = `${window.location.origin}/api/fleet/presence/stream`;
         eventSource = new EventSource(streamUrl, { withCredentials: true });
 
         eventSource.onmessage = (event) => {

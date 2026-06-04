@@ -21,6 +21,9 @@ const AXE_SCAN_ROUTES = Array.from(
     "/status",
     "/changelog",
     "/security",
+    "/signin",
+    "/signup",
+    "/reset-password",
   ]),
 );
 

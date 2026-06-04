@@ -29,13 +29,27 @@ const required = [
     "HMAC secret for OAuth CSRF state tokens — required in prod; dev falls back to STRIPE_WEBHOOK_SECRET",
     process.env.OAUTH_STATE_SECRET,
   ],
+  [
+    "UPSTASH_REDIS_REST_URL",
+    "Distributed rate-limit store — required for global abuse protection on Vercel",
+    process.env.UPSTASH_REDIS_REST_URL,
+  ],
+  [
+    "UPSTASH_REDIS_REST_TOKEN",
+    "Upstash Redis token",
+    process.env.UPSTASH_REDIS_REST_TOKEN,
+  ],
+  [
+    "VAPI_WEBHOOK_SECRET",
+    "Vapi webhook HMAC — voice observability rejects unsigned callbacks in prod when unset",
+    process.env.VAPI_WEBHOOK_SECRET,
+  ],
 ];
 
 const recommended = [
   ["ANTHROPIC_API_KEY", "Claude — required for /api/claude/* recipes"],
   ["VITE_VAPI_PUBLIC_KEY", "Vapi — required for browser-side test calls from the dashboard"],
   ["VAPI_PRIVATE_KEY", "Vapi — required for outbound/inbound voice agents"],
-  ["VAPI_WEBHOOK_SECRET", "Vapi webhook auth — REJECTS webhooks in prod when unset"],
   ["APP_URL", "Canonical URL — required for OAuth redirects + email links"],
   ["CORS_ORIGINS", "CORS allowlist — required in prod or browser API calls fail"],
   ["STRIPE_SECRET_KEY", "Stripe — billing endpoints return 503 when unset"],
@@ -70,11 +84,6 @@ const recommended = [
     "AES-256-GCM key for encrypting webhook secrets at rest — webhooks with signing secrets fail when unset",
   ],
   ["CRON_SECRET", "Bearer token for cron job authentication — scheduled jobs fail when unset"],
-  [
-    "UPSTASH_REDIS_REST_URL",
-    "Distributed rate-limit store — required for global abuse protection on Vercel",
-  ],
-  ["UPSTASH_REDIS_REST_TOKEN", "Upstash Redis token"],
 ];
 
 const optional = [

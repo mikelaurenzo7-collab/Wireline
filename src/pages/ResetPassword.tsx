@@ -82,12 +82,12 @@ export default function ResetPassword() {
 
       setSuccess(true);
 
-      if (data.token && data.user) {
-        // Backend returns a fresh JWT — sign the user straight in and
+      if (data.user) {
+        // Session cookie is set by the server — hydrate client state and
         // route to the dashboard. The brief "Password updated"
         // confirmation animates for ~1s before the redirect so the
         // success state isn't ambiguous.
-        signIn({ access_token: data.token, user: data.user });
+        signIn({ user: data.user });
         setTimeout(() => navigate("/", { replace: true }), 900);
       }
     } catch (err: any) {
@@ -98,7 +98,7 @@ export default function ResetPassword() {
   };
 
   return (
-    <MarketingChrome stickyCta={false} footer={false}>
+    <MarketingChrome stickyCta={false} footer={false} authCanvas>
       <PageMeta
         title="Reset Password"
         description="Reset your Wireline account password."

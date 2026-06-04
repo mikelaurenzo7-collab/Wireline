@@ -45,20 +45,18 @@ export default function OAuthComplete() {
           return;
         }
         const data = await res.json();
-        if (!data.token || !data.user_id || !data.email) {
+        const user = data.user ?? {
+          id: data.user_id,
+          email: data.email,
+          full_name: data.name || undefined,
+          is_owner: data.is_owner === "1",
+        };
+        if (!user?.id || !user?.email) {
           setError("Sign-in response was incomplete. Please try again.");
           return;
         }
-        await syncSignupIntent(getStoredSignupIntent(), data.token).catch(() => {});
-        signIn({
-          access_token: data.token,
-          user: {
-            id: data.user_id,
-            email: data.email,
-            full_name: data.name || undefined,
-            is_owner: data.is_owner === "1",
-          },
-        });
+        await syncSignupIntent(getStoredSignupIntent()).catch(() => {});
+        signIn({ user });
         navigate("/chat", { replace: true });
       } catch {
         setError("Sign-in failed. Please try again.");

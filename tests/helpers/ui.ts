@@ -47,6 +47,27 @@ export const EXTENDED_PUBLIC_ROUTES = [
   { path: "/developers", name: "developers", title: /Wireline/i },
 ] as const;
 
+/** Auth-adjacent public routes (not in PUBLIC_ROUTES). */
+export const AUTH_PUBLIC_ROUTES = [
+  { path: "/reset-password", name: "reset-password", title: /Wireline/i },
+  { path: "/login", name: "login", title: /Wireline/i },
+] as const;
+
+/** Legal, docs, and error surfaces. */
+export const LEGAL_AND_DOCS_ROUTES = [
+  { path: "/legal/data-deletion", name: "data-deletion", title: /Wireline/i },
+  { path: "/docs/zoom", name: "zoom-docs", title: /Wireline/i },
+  { path: "/not-found", name: "not-found", title: /Wireline/i },
+] as const;
+
+/** Every public path the design suite should sweep. */
+export const ALL_PUBLIC_MARKETING_PATHS = [
+  ...PUBLIC_ROUTES.map((r) => r.path),
+  ...EXTENDED_PUBLIC_ROUTES.map((r) => r.path),
+  ...AUTH_PUBLIC_ROUTES.map((r) => r.path),
+  ...LEGAL_AND_DOCS_ROUTES.map((r) => r.path),
+] as const;
+
 /** All authenticated routes that must redirect to signin when unauthenticated. */
 export const AUTHENTICATED_ROUTES = [
   { path: "/chat", name: "chat" },
@@ -69,6 +90,64 @@ export const AUTHENTICATED_ROUTES = [
   { path: "/help", name: "help" },
   { path: "/pipeline", name: "pipeline" },
   { path: "/founder", name: "founder" },
+] as const;
+
+/**
+ * Authenticated routes with URL-driven sub-tabs (ClientSubTabs or SettingsTabSwitcher).
+ * `tablist` is the aria-label on the tablist; `tabs` are visible tab labels.
+ */
+export const AUTHENTICATED_SUBTAB_SURFACES = [
+  {
+    path: "/phone",
+    tablist: "Phone sections",
+    tabs: ["Call History", "Outbound", "Appointments"] as const,
+  },
+  {
+    path: "/ops",
+    tablist: "Live Ops sections",
+    tabs: ["Live floor", "Actions", "Analytics"] as const,
+  },
+  {
+    path: "/training",
+    tablist: "Training modules",
+    tabs: ["Knowledge", "Voices", "Pronunciation", "Simulator", "Flow"] as const,
+  },
+  {
+    path: "/admin",
+    tablist: "Settings sub-navigation",
+    tabs: [
+      "Billing",
+      "Team",
+      "Branding",
+      "Carrier",
+      "Growth",
+      "System",
+      "Activity",
+      "DNC",
+      "Audit",
+    ] as const,
+  },
+] as const;
+
+/** Deep-link tab URLs used by legacy redirects and bookmarks. */
+export const AUTHENTICATED_TAB_DEEP_LINKS = [
+  "/phone?tab=outbound",
+  "/phone?tab=appointments",
+  "/ops?tab=intel",
+  "/ops?tab=analytics",
+  "/ops?tab=floor",
+  "/admin?tab=subscription",
+  "/admin?tab=team",
+  "/admin?tab=branding",
+  "/admin?tab=carrier",
+  "/admin?tab=flywheel",
+  "/admin?tab=system",
+  "/admin?tab=activity",
+  "/training?tab=database",
+  "/training?tab=voices",
+  "/training?tab=pronunciation",
+  "/training?tab=simulator",
+  "/training?tab=flow",
 ] as const;
 
 /** Legacy redirects that must forward to new paths. */
@@ -108,6 +187,13 @@ export async function gotoHydrated(page: Page, path: string) {
   await page.goto(path);
   await expect(page.getByTestId("site-header")).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible({ timeout: 20_000 });
+}
+
+/** Authenticated shell: wait for sidebar rail and primary heading. */
+export async function gotoAuthenticated(page: Page, path: string) {
+  await page.goto(path, { waitUntil: "domcontentloaded" });
+  await expect(page.getByTestId("aurora-rail")).toBeVisible({ timeout: 25_000 });
+  await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible({ timeout: 25_000 });
 }
 
 /**

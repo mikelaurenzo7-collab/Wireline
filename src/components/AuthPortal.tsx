@@ -356,11 +356,11 @@ export default function AuthPortal() {
           );
         }
 
-        await syncSignupIntent(signupIntent, data.token).catch(() => {});
-        signIn({
-          access_token: data.token,
-          user: data.user,
-        });
+        await syncSignupIntent(signupIntent).catch(() => {});
+        if (!data.user?.id) {
+          throw new Error("Authentication succeeded but user payload was missing.");
+        }
+        signIn({ user: data.user });
       }
     } catch (err: unknown) {
       setError(cleanThrownMessage(err) || "Authentication failed. Please try again.");
@@ -381,19 +381,7 @@ export default function AuthPortal() {
         path={isSignUp ? "/signup" : "/signin"}
         noIndex
       />
-      <div className="marketing-surface min-h-dvh lg:h-dvh lg:max-h-dvh flex flex-col lg:overflow-hidden bg-paper relative">
-        <div className="auth-aurora-bg" aria-hidden="true" />
-        <div
-          className="pointer-events-none absolute inset-0 z-0"
-          aria-hidden
-          style={{
-            background:
-              "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(107,43,153,0.06), transparent 55%)",
-          }}
-        />
-        <div className="auth-aurora-a" aria-hidden="true" />
-        <div className="auth-aurora-b" aria-hidden="true" />
-
+      <div className="marketing-surface auth-portal-canvas min-h-dvh lg:h-dvh lg:max-h-dvh flex flex-col lg:overflow-hidden relative">
         <PublicSiteHeader active={isSignUp ? "signup" : "signin"} />
 
         <div

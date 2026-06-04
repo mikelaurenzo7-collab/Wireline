@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import express, { type Request, type Response } from "express";
 
 /**
  * Multi-Tenant Isolation Adversarial Tests
@@ -10,6 +9,11 @@ import express, { type Request, type Response } from "express";
  *
  * Owner-grade security: These tests fail if any isolation boundary
  * can be bypassed.
+ *
+ * Note: This suite simulates tenant boundaries in-memory. Route-level
+ * ownership checks are covered in `src/routes/agent-routes.test.ts`.
+ * Live Postgres + cookie sessions: `agent-tenant-isolation.integration.test.ts`
+ * (runs when `POSTGRES_URL` is set in CI).
  *
  * Attack vectors tested:
  * 1. Direct ID enumeration (guessing other tenants' agent IDs)
@@ -43,14 +47,30 @@ function createTestDB(): TenantData {
   // Tenant A's data
   db.agents.set("agent-a-1", { id: "agent-a-1", userId: TENANT_A, name: "Tenant A Sales Agent" });
   db.agents.set("agent-a-2", { id: "agent-a-2", userId: TENANT_A, name: "Tenant A Support Agent" });
-  db.knowledge.set("kb-a-1", { id: "kb-a-1", userId: TENANT_A, content: "Tenant A secret pricing" });
-  db.webhooks.set("wh-a-1", { id: "wh-a-1", userId: TENANT_A, url: "https://tenant-a.com/webhook" });
+  db.knowledge.set("kb-a-1", {
+    id: "kb-a-1",
+    userId: TENANT_A,
+    content: "Tenant A secret pricing",
+  });
+  db.webhooks.set("wh-a-1", {
+    id: "wh-a-1",
+    userId: TENANT_A,
+    url: "https://tenant-a.com/webhook",
+  });
 
   // Tenant B's data
   db.agents.set("agent-b-1", { id: "agent-b-1", userId: TENANT_B, name: "Tenant B Sales Agent" });
   db.agents.set("agent-b-2", { id: "agent-b-2", userId: TENANT_B, name: "Tenant B VIP Agent" });
-  db.knowledge.set("kb-b-1", { id: "kb-b-1", userId: TENANT_B, content: "Tenant B confidential leads" });
-  db.webhooks.set("wh-b-1", { id: "wh-b-1", userId: TENANT_B, url: "https://tenant-b.com/webhook" });
+  db.knowledge.set("kb-b-1", {
+    id: "kb-b-1",
+    userId: TENANT_B,
+    content: "Tenant B confidential leads",
+  });
+  db.webhooks.set("wh-b-1", {
+    id: "wh-b-1",
+    userId: TENANT_B,
+    url: "https://tenant-b.com/webhook",
+  });
 
   // Tenant C's data (minimal)
   db.agents.set("agent-c-1", { id: "agent-c-1", userId: TENANT_C, name: "Tenant C Agent" });
@@ -74,7 +94,7 @@ function updateAgentForTenant(
   db: TenantData,
   agentId: string,
   userId: string,
-  updates: Partial<{ name: string }>
+  updates: Partial<{ name: string }>,
 ) {
   const agent = db.agents.get(agentId);
   // CRITICAL ISOLATION CHECK: Must verify ownership before update
@@ -176,7 +196,6 @@ describe("Multi-Tenant Isolation — Adversarial Attack Suite", () => {
 
   describe("Attack Vector 3: Path Parameter Injection", () => {
     it("URL path /agents/agent-b-1 should 404 or 403 for Tenant A", () => {
-      const requestPath = "/agents/agent-b-1";
       const requestingUserId = TENANT_A;
       const requestedAgentId = "agent-b-1";
 
@@ -197,7 +216,7 @@ describe("Multi-Tenant Isolation — Adversarial Attack Suite", () => {
       for (const path of maliciousPaths) {
         // Path should be normalized and agent lookup should fail
         const normalizedPath = path.replace(/\.\.\//g, "").replace(/\/+/g, "/");
-        const agentIdMatch = normalizedPath.match(/\/agents\/([^\/]+)/);
+        const agentIdMatch = normalizedPath.match(/\/agents\/([^/]+)/);
         const agentId = agentIdMatch?.[1];
 
         if (agentId && agentId !== "admin" && agentId !== "etc") {
@@ -214,7 +233,6 @@ describe("Multi-Tenant Isolation — Adversarial Attack Suite", () => {
   describe("Attack Vector 4: Query Parameter Injection", () => {
     it("Query filter injection should not bypass userId isolation", () => {
       // Attempt: ?userId=tenant-b (trying to override the filter)
-      const maliciousQuery = { userId: TENANT_B };
       const actualUserId = TENANT_A;
 
       // Server should ignore query userId and use JWT-derived userId
@@ -229,7 +247,7 @@ describe("Multi-Tenant Isolation — Adversarial Attack Suite", () => {
         "agent-a-1' OR '1'='1",
         "agent-a-1' UNION SELECT * FROM agents --",
         "{$ne: null}",
-        "{\"$gt\": \"\"}",
+        '{"$gt": ""}',
       ];
 
       for (const attempt of injectionAttempts) {
@@ -322,10 +340,10 @@ describe("Multi-Tenant Isolation — Adversarial Attack Suite", () => {
 
       // Raw DB access would succeed (this is the vulnerability!)
       expect(knowledge).toBeDefined();
+      expect(knowledge?.userId).toBe(victimId);
 
       // But with proper isolation check (userId filter)
-      const authorizedKnowledge =
-        knowledge?.userId === competitorId ? knowledge : null;
+      const authorizedKnowledge = knowledge?.userId === competitorId ? knowledge : null;
 
       // Should be null — competitor not authorized
       expect(authorizedKnowledge).toBeNull();

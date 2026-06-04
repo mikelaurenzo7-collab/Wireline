@@ -939,7 +939,7 @@ export default function DirectorWorkspace({
   const lastDirectorMessageId = [...messages].reverse().find((m) => m.role === "director")?.id;
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-transparent">
+    <div data-testid="director-workspace" className="flex flex-col h-full min-h-0 bg-transparent">
       {/* Minimal header - just identity */}
       {messages.length > 0 && (
         <div

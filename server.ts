@@ -41,6 +41,7 @@ import { claudeRateLimiter } from "./src/middleware/api-rate-limits";
 import { initJobWorker } from "./src/lib/job-worker";
 import { performanceMonitoring } from "./src/middleware/performance";
 import { timeoutMiddleware } from "./src/middleware/timeout";
+import { assertSameOrigin } from "./src/middleware/same-origin";
 
 // Routers
 import oauthRouter from "./src/routes/oauth";
@@ -165,6 +166,8 @@ installWebhookBodyParsers(app);
 app.use("/api/claude/knowledge-from-document", express.json({ limit: "50mb" }));
 app.use("/api/outbound/bulk", express.json({ limit: "16mb" }));
 app.use(express.json({ limit: "1mb" }));
+
+app.use(assertSameOrigin);
 
 // Request correlation IDs
 app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {

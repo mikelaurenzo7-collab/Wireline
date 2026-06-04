@@ -20,6 +20,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { safeSvgPreviewDataUrl } from "../../lib/sanitize-svg-preview";
 
 export type ArtifactType =
   | "svg"
@@ -97,7 +98,10 @@ export function ArtifactCard({
   const Icon = TYPE_ICONS[type] ?? FileText;
 
   const isImageType = type === "image" || type === "svg";
-  const effectivePreview = previewData || (isImageType && downloadUrl ? downloadUrl : undefined);
+  const svgPreviewSrc = type === "svg" && previewData ? safeSvgPreviewDataUrl(previewData) : null;
+  const effectivePreview =
+    (type === "svg" ? svgPreviewSrc : previewData) ||
+    (isImageType && downloadUrl ? downloadUrl : undefined);
   const [showPreview, setShowPreview] = useState(isImageType && !!effectivePreview);
 
   return (
@@ -114,19 +118,12 @@ export function ArtifactCard({
       {/* Auto-show image preview at top */}
       {isImageType && effectivePreview && (
         <div className="relative bg-[repeating-conic-gradient(#f0f0f0_0%_25%,#ffffff_0%_50%)] dark:bg-[repeating-conic-gradient(#1a1a2e_0%_25%,#0f0c17_0%_50%)] bg-[length:12px_12px]">
-          {type === "svg" && previewData ? (
-            <div
-              className="max-h-44 overflow-hidden p-3"
-              dangerouslySetInnerHTML={{ __html: previewData }}
-            />
-          ) : (
-            <img
-              src={effectivePreview}
-              alt={name}
-              className="w-full max-h-44 object-contain p-3"
-              loading="lazy"
-            />
-          )}
+          <img
+            src={effectivePreview}
+            alt={name}
+            className="w-full max-h-44 object-contain p-3"
+            loading="lazy"
+          />
           {/* Hover download overlay */}
           {downloadUrl && (
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">

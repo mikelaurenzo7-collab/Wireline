@@ -205,14 +205,14 @@ export function signupHrefForWedge(wedge: SignupWedgeKey, planId?: SignupPlanId)
   return `/signup?wedge=${encodeURIComponent(wedge)}&plan=${encodeURIComponent(plan)}`;
 }
 
-export async function syncSignupIntent(intent: SignupIntent | null, token: string): Promise<void> {
+export async function syncSignupIntent(intent: SignupIntent | null): Promise<void> {
   if (!hasSignupIntent(intent)) return;
   const response = await fetch("/api/auth/signup-intent", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
     },
+    credentials: "include",
     body: JSON.stringify(intent),
   });
   if (!response.ok) {

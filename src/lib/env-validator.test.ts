@@ -52,3 +52,30 @@ describe("OWNER_EMAIL validation", () => {
     expect(errors).toHaveLength(1);
   });
 });
+
+describe("UPSTASH required in production", () => {
+  const saved = {
+    NODE_ENV: process.env.NODE_ENV,
+    VERCEL: process.env.VERCEL,
+    UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+    UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
+  };
+
+  afterEach(() => {
+    process.env.NODE_ENV = saved.NODE_ENV;
+    process.env.VERCEL = saved.VERCEL;
+    process.env.UPSTASH_REDIS_REST_URL = saved.UPSTASH_REDIS_REST_URL;
+    process.env.UPSTASH_REDIS_REST_TOKEN = saved.UPSTASH_REDIS_REST_TOKEN;
+  });
+
+  it("errors when Upstash is missing in production", () => {
+    process.env.NODE_ENV = "production";
+    delete process.env.VERCEL;
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    const errors = validateEnv().errors.map((e) => e.var);
+    expect(errors).toContain("UPSTASH_REDIS_REST_URL");
+    expect(errors).toContain("UPSTASH_REDIS_REST_TOKEN");
+  });
+});

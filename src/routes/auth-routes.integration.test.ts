@@ -332,7 +332,7 @@ describe("auth routes integration", () => {
     });
   });
 
-  it("signs in with valid credentials and returns a JWT", async () => {
+  it("signs in with valid credentials and sets an httpOnly session cookie", async () => {
     const response = await request(buildApp()).post("/api/auth/signin").send({
       email: "person@example.com",
       password: "correct-password",
@@ -346,7 +346,10 @@ describe("auth routes integration", () => {
         full_name: "Pat Person",
       }),
     );
-    expect(response.body.token).toMatch(/^[^.]+\.[^.]+\.[^.]+$/);
+    expect(response.body.token).toBeUndefined();
+    const setCookie = response.headers["set-cookie"];
+    const cookies = Array.isArray(setCookie) ? setCookie : setCookie ? [setCookie] : [];
+    expect(cookies.some((c) => String(c).startsWith("wireline_session="))).toBe(true);
   });
 
   it("rejects bad passwords with 401", async () => {
@@ -373,13 +376,16 @@ describe("auth routes integration", () => {
     });
   });
 
-  it("refreshes a valid authenticated session with a new JWT", async () => {
+  it("refreshes a valid authenticated session and rotates the session cookie", async () => {
     const response = await request(buildApp())
       .post("/api/auth/refresh")
       .set("Authorization", ["Bearer", "valid-session-token"].join(" "));
 
     expect(response.status).toBe(200);
-    expect(response.body.token).toMatch(/^[^.]+\.[^.]+\.[^.]+$/);
+    expect(response.body.token).toBeUndefined();
+    const setCookie = response.headers["set-cookie"];
+    const cookies = Array.isArray(setCookie) ? setCookie : setCookie ? [setCookie] : [];
+    expect(cookies.some((c) => String(c).startsWith("wireline_session="))).toBe(true);
     expect(h.verifyInternalJwt).toHaveBeenCalledWith(
       "valid-session-token",
       "super-secret-jwt-key-that-is-long-enough",
@@ -411,7 +417,10 @@ describe("auth routes integration", () => {
     expect(completeReset.body.user).toEqual(
       expect.objectContaining({ id: "user-1", email: "person@example.com" }),
     );
-    expect(completeReset.body.token).toMatch(/^[^.]+\.[^.]+\.[^.]+$/);
+    expect(completeReset.body.token).toBeUndefined();
+    const setCookie = completeReset.headers["set-cookie"];
+    const cookies = Array.isArray(setCookie) ? setCookie : setCookie ? [setCookie] : [];
+    expect(cookies.some((c) => String(c).startsWith("wireline_session="))).toBe(true);
     expect([...h.state.passwordResetTokens.values()][0]?.usedAt).toBeInstanceOf(Date);
     expect(h.state.users.get("user-1")?.passwordHash).not.toBe(
       `salt1:${deriveHash("correct-password", "salt1")}`,

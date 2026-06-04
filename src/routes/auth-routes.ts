@@ -1,6 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 import { Router, Request, Response } from "express";
-import { authService, AuthConfigurationError, generateToken } from "../lib/auth-service";
+import {
+  authService,
+  AuthConfigurationError,
+  generateToken,
+  isOwnerEmail,
+} from "../lib/auth-service";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
@@ -10,6 +15,7 @@ import {
   forgotPasswordRateLimiter,
   resendVerificationRateLimiter,
   resetPasswordRateLimiter,
+  migrateSessionRateLimiter,
 } from "../middleware/rate-limit-middleware";
 import { sendPasswordResetEmail } from "../lib/email-service";
 import { authenticateUser } from "../middleware/auth";
@@ -24,8 +30,19 @@ import {
 } from "../lib/api-validation";
 import { getPostgresErrorCode } from "../lib/pg-errors";
 import { bootstrapFounderFleetIfEmpty, scheduleFounderBootstrap } from "../lib/founder-bootstrap";
-
+import { authSuccessBody, clearSessionCookie, setSessionCookie } from "../lib/session-cookie";
+import { verifyInternalJwt } from "../lib/auth-utils";
+import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 const router = Router();
+
+function sendAuthSuccess(
+  res: Response,
+  user: { id: string; email: string; full_name?: string | null; is_owner?: boolean },
+  token: string,
+) {
+  setSessionCookie(res, token);
+  return res.json(authSuccessBody(user));
+}
 
 /**
  * POST /api/auth/signin
@@ -48,7 +65,7 @@ router.post(
 
       scheduleFounderBootstrap(result.user.id, result.user.email);
 
-      res.json(result);
+      return sendAuthSuccess(res, result.user, result.token);
     } catch (error) {
       if (error instanceof AuthConfigurationError) {
         log.error("Auth: Sign in unavailable — JWT secret missing", { error });
@@ -152,7 +169,7 @@ router.post(
         });
       }
 
-      res.json(result);
+      return sendAuthSuccess(res, result.user, result.token);
     } catch (error: any) {
       if (error instanceof AuthConfigurationError) {
         log.error("Auth: Sign up unavailable — JWT secret missing", { error });
@@ -299,9 +316,66 @@ router.post(
   "/api/auth/refresh",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
+    const token = generateToken({ id: req.user.id, email: req.user.email });
+    setSessionCookie(res, token);
+    return res.json({ ok: true });
+  },
+);
+
+/**
+ * GET /api/auth/session — hydrate client user from httpOnly cookie.
+ */
+router.get(
+  "/api/auth/session",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const [row] = await drizzle
+      .select({ fullName: schema.users.fullName, email: schema.users.email })
+      .from(schema.users)
+      .where(eq(schema.users.id, req.user.id))
+      .limit(1);
     return res.json({
-      token: generateToken({ id: req.user.id, email: req.user.email }),
+      user: {
+        id: req.user.id,
+        email: row?.email ?? req.user.email,
+        full_name: row?.fullName ?? undefined,
+        is_owner: isOwnerEmail(req.user.email),
+      },
     });
+  },
+);
+
+/**
+ * POST /api/auth/migrate-session — one-time move from legacy localStorage JWT.
+ */
+router.post(
+  "/api/auth/migrate-session",
+  migrateSessionRateLimiter,
+  async (req: Request, res: Response) => {
+    const authHeader =
+      typeof req.headers.authorization === "string" ? req.headers.authorization : "";
+    const bearer = authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : "";
+    const bodyToken = typeof req.body?.token === "string" ? req.body.token.trim() : "";
+    const token = bearer || bodyToken;
+    if (!token) return res.status(400).json({ error: "Missing token" });
+    try {
+      const secret = requireInternalJwtSecret();
+      const payload = await verifyInternalJwt(token, secret);
+      if (!payload?.sub || !payload.email) {
+        return res.status(401).json({ error: "Invalid or expired session" });
+      }
+      const rotated = generateToken({ id: payload.sub, email: payload.email });
+      setSessionCookie(res, rotated);
+      return res.json({
+        user: {
+          id: payload.sub,
+          email: payload.email,
+          is_owner: isOwnerEmail(payload.email),
+        },
+      });
+    } catch {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
   },
 );
 
@@ -309,6 +383,7 @@ router.post(
  * POST /api/auth/signout
  */
 router.post("/api/auth/signout", async (_req: Request, res: Response) => {
+  clearSessionCookie(res);
   res.json({ success: true });
 });
 
@@ -442,7 +517,7 @@ router.post(
       if (!result) {
         return res.status(400).json({ error: "Invalid or expired reset link" });
       }
-      return res.json(result);
+      return sendAuthSuccess(res, result.user, result.token);
     } catch (error) {
       log.error("Auth: reset-password complete failed", { error });
       return res.status(500).json({ error: "Internal server error" });

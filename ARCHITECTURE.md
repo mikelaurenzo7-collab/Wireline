@@ -197,7 +197,8 @@ on the production system-prompt size.
 
 - Content-Security-Policy (strict, no `unsafe-eval`; allowlisted vendors only)
 - HSTS, COOP, CORP, Referrer-Policy, Permissions-Policy
-- JWT sessions (no cookies → no CSRF surface)
+- httpOnly `wireline_session` cookie (`SameSite=Lax`, `Secure` in prod) plus optional `Authorization: Bearer` for scripts
+- Origin/Referer checks on mutating `/api/*` routes (defense in depth with SameSite cookies)
 - RLS on all Supabase tables (verify per environment via `npm run db:health`)
 - Webhook signature validation (Vapi, Stripe, Twilio, ElevenLabs — all HMAC + `timingSafeEqual`)
 - Rate limiting (Upstash Redis in production, in-mem LRU fallback for local dev)

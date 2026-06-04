@@ -11,6 +11,8 @@ type Props = {
   /** Reserve space for the mobile sticky CTA bar */
   stickyCta?: boolean;
   footer?: boolean;
+  /** Rich cream canvas (sign-in, reset password) — matches AuthPortal */
+  authCanvas?: boolean;
   className?: string;
 };
 
@@ -23,11 +25,18 @@ export default function MarketingChrome({
   active,
   stickyCta = true,
   footer = true,
+  authCanvas = false,
   className,
 }: Props) {
   return (
-    <div className={cn("marketing-surface min-h-dvh flex flex-col bg-paper text-ink", className)}>
-      <MarketingAuroraBackdrop />
+    <div
+      className={cn(
+        "marketing-surface min-h-dvh flex flex-col text-ink",
+        authCanvas ? "auth-portal-canvas" : "bg-paper",
+        className,
+      )}
+    >
+      {!authCanvas && <MarketingAuroraBackdrop />}
       <PublicSiteHeader active={active} />
       <div
         className={cn(

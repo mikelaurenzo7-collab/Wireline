@@ -4,6 +4,7 @@ import { log, auditLogger, tenantStore } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { verifyInternalJwt } from "../lib/auth-utils";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
+import { getSessionTokenFromRequest } from "../lib/session-cookie";
 
 /**
  * Express Request with an attached sovereign User.
@@ -25,12 +26,7 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
       return tenantStore.getStore() ? next() : tenantStore.run(authedReq.user.id, () => next());
     }
 
-    // Bearer-in-Authorization-header only — Wireline intentionally has no
-    // cookie sessions (see README). Accepting a cookie-borne token would add
-    // a CSRF surface with no functional benefit (cookie-parser is never wired,
-    // so any cookie path was dead code regardless).
-    const authHeader = req.headers.authorization;
-    const token = authHeader?.split(" ")[1];
+    const token = getSessionTokenFromRequest(req);
 
     if (!token) {
       return res.status(401).json({ error: "No authorization token provided" });
@@ -115,9 +111,9 @@ export async function authenticateEventStream(req: Request, res: Response, next:
       return tenantStore.getStore() ? next() : tenantStore.run(authedReq.user.id, () => next());
     }
 
-    const headerToken = req.headers.authorization?.split(" ")[1];
-    const queryToken = typeof req.query.token === "string" ? req.query.token : undefined;
-    const token = headerToken || queryToken;
+    const token =
+      getSessionTokenFromRequest(req) ||
+      (typeof req.query.token === "string" ? req.query.token : undefined);
 
     if (!token) {
       return res.status(401).json({ error: "No authorization token provided" });

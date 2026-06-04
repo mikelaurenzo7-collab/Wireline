@@ -1,7 +1,5 @@
 /**
- * HeroDecorations — six gutter robots (3 left, 3 right). Hero uses vivid treatment;
- * lower sections use LandingSectionDecorations (ghost tier).
- *
+ * HeroDecorations — four top gutter robots (2 left, 2 right). Hero uses vivid treatment.
  * Vertical slots avoid the live-demo block (roughly 38–72% of hero height on desktop).
  */
 import { SectionStickers, type SectionStickerSlot } from "./SectionStickers";
@@ -38,17 +36,6 @@ export const HERO_STICKER_SLOTS: SectionStickerSlot[] = [
     floatMs: 5400,
   },
   {
-    variant: 3,
-    pose: "texting",
-    size: 62,
-    opacity: 0.9,
-    side: "left",
-    bottom: "16%",
-    contentHalfRem: HERO_CORRIDOR_HALF,
-    delayMs: 220,
-    floatMs: 5100,
-  },
-  {
     variant: 2,
     pose: "phone",
     size: 66,
@@ -69,17 +56,6 @@ export const HERO_STICKER_SLOTS: SectionStickerSlot[] = [
     contentHalfRem: HERO_CORRIDOR_HALF,
     delayMs: 180,
     floatMs: 5700,
-  },
-  {
-    variant: 4,
-    pose: "phone",
-    size: 64,
-    opacity: 0.9,
-    side: "right",
-    bottom: "14%",
-    contentHalfRem: HERO_CORRIDOR_HALF,
-    delayMs: 260,
-    floatMs: 5200,
   },
 ];
 

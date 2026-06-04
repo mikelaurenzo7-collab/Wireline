@@ -13,15 +13,31 @@ export default function CookieConsent() {
   const [hasSession, setHasSession] = useState(false);
 
   useEffect(() => {
-    // Only show if not already acknowledged
-    if (!localStorage.getItem(STORAGE_KEY)) {
-      const sessionPresent = !!localStorage.getItem("wireline_session");
-      setHasSession(sessionPresent);
-      if (sessionPresent) return;
-      // Small delay so it doesn't compete with page load
-      const t = setTimeout(() => setVisible(true), 1200);
-      return () => clearTimeout(t);
-    }
+    if (localStorage.getItem(STORAGE_KEY)) return;
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    void (async () => {
+      try {
+        const sessionRes = await fetch("/api/auth/session", { credentials: "include" });
+        if (cancelled) return;
+        const sessionPresent = sessionRes.ok;
+        setHasSession(sessionPresent);
+        if (sessionPresent) return;
+        timeoutId = setTimeout(() => {
+          if (!cancelled) setVisible(true);
+        }, 1200);
+      } catch {
+        if (!cancelled) {
+          timeoutId = setTimeout(() => setVisible(true), 1200);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, []);
 
   const clearMarketingSticky = !hasSession && isMarketingStickyCtaRoute(location.pathname);

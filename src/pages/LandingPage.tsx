@@ -5,9 +5,6 @@ import { ArrowUpRight, Plus } from "lucide-react";
 import PublicSiteHeader from "../components/marketing/PublicSiteHeader";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import { HeroDecorations } from "../components/marketing/HeroDecorations";
-import { LandingSectionDecorations } from "../components/marketing/LandingSectionDecorations";
-import { LandingStatsGutterDecorations } from "../components/marketing/LandingStatsGutterDecorations";
-import { LandingHeroStatsTransition } from "../components/marketing/LandingHeroStatsTransition";
 import { PageMeta } from "../lib/page-meta";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
@@ -116,11 +113,8 @@ export default function LandingPage() {
         {/* ─── Hero ───────────────────────────────────────────────── */}
         <section
           data-testid="hero-section"
-          className="relative min-h-[85svh] flex flex-col justify-center px-6 lg:px-12 pt-24 pb-20 lg:pt-28 lg:pb-28 overflow-hidden"
+          className="relative px-6 lg:px-12 pt-24 pb-10 lg:pt-28 lg:pb-12 overflow-hidden"
         >
-          <div className="hero-aurora-orb" aria-hidden="true" />
-          <div className="hero-aurora-orb-warm" aria-hidden="true" />
-
           <HeroDecorations />
           <div className="relative z-10 max-w-7xl mx-auto w-full">
             <motion.div
@@ -218,17 +212,23 @@ export default function LandingPage() {
                 </div>
 
                 <div
-                  className="wl-reveal-stagger mt-8 pt-5 border-t border-ink/[0.06] flex flex-wrap items-center justify-center gap-x-3 gap-y-1"
+                  data-testid="hero-trust-badges"
+                  className="wl-reveal-stagger mt-6 pt-4 border-t border-ink/10 flex flex-wrap items-center justify-center gap-x-2.5 sm:gap-x-4 gap-y-2"
                   aria-label="Security and compliance"
                 >
                   {TRUST_BADGES.map((badge, i) => (
-                    <span key={badge} className="inline-flex items-center gap-3">
+                    <span key={badge} className="inline-flex items-center gap-2.5 sm:gap-4">
                       {i > 0 && (
-                        <span className="text-ink/20 hidden sm:inline" aria-hidden="true">
+                        <span
+                          className="text-ink/35 hidden sm:inline font-mono text-[13px] leading-none"
+                          aria-hidden="true"
+                        >
                           ·
                         </span>
                       )}
-                      <span className="text-[11px] text-ink/45 tracking-wide">{badge}</span>
+                      <span className="font-mono text-[12px] sm:text-[13px] uppercase tracking-[0.16em] text-ink/78 font-medium">
+                        {badge}
+                      </span>
                     </span>
                   ))}
                 </div>
@@ -237,14 +237,11 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <LandingHeroStatsTransition />
-
         {/* ─── Proof ──────────────────────────────────────────────── */}
         <section
           data-testid="proof-section"
-          className="landing-section landing-section--band px-6 lg:px-12"
+          className="landing-section landing-section--band landing-section--band-after-hero px-6 lg:px-12"
         >
-          <LandingStatsGutterDecorations />
           <div className="landing-section-inner max-w-7xl">
             <div className="wl-reveal-stagger grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08]">
               {STATS.map((stat, i) => (
@@ -273,7 +270,6 @@ export default function LandingPage() {
 
         {/* ─── Integrations ───────────────────────────────────────── */}
         <section data-testid="integrations-section" className="landing-section px-6 lg:px-12">
-          <LandingSectionDecorations section="integrations" />
           <div className="landing-section-inner max-w-5xl">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
@@ -295,7 +291,6 @@ export default function LandingPage() {
 
         {/* ─── FAQ ────────────────────────────────────────────────── */}
         <section data-testid="faq-section" className="landing-section px-6 lg:px-12">
-          <LandingSectionDecorations section="faq" />
           <div className="landing-section-inner max-w-3xl">
             <motion.div
               initial={{ opacity: 0, y: 16 }}

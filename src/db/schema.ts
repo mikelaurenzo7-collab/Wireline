@@ -420,7 +420,7 @@ export const personality = pgTable("wireline_personality", {
   agentId: text("agent_id")
     .primaryKey()
     .references(() => agents.id, { onDelete: "cascade" }),
-  userId: uuid("user_id"),
+  userId: uuid("user_id").notNull(),
   content: text("content").notNull(),
 });
 

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { LEGACY_STORAGE_KEY } from "../lib/session-cookie";
 
 export interface User {
   id: string;
@@ -10,8 +11,9 @@ export interface User {
 }
 
 export interface Session {
-  access_token: string;
   user: User;
+  /** @deprecated Tokens live in httpOnly cookies; not persisted client-side. */
+  access_token?: string;
 }
 
 interface AuthContextType {
@@ -30,38 +32,72 @@ const AuthContext = createContext<AuthContextType>({
   signIn: () => {},
 });
 
+async function fetchSessionUser(): Promise<User | null> {
+  const res = await fetch("/api/auth/session", { credentials: "include" });
+  if (!res.ok) return null;
+  const data = (await res.json()) as { user?: User };
+  return data.user ?? null;
+}
+
+async function migrateLegacyLocalStorage(): Promise<void> {
+  const stored = localStorage.getItem(LEGACY_STORAGE_KEY);
+  if (!stored) return;
+  try {
+    const parsed = JSON.parse(stored) as { access_token?: string };
+    if (!parsed.access_token) {
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
+      return;
+    }
+    await fetch("/api/auth/migrate-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ token: parsed.access_token }),
+    });
+  } catch {
+    /* ignore — session hydrate will fail cleanly */
+  } finally {
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
+  }
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Initial load from local storage
-    const stored = localStorage.getItem("wireline_session");
-    if (stored) {
+    let cancelled = false;
+    (async () => {
       try {
-        const parsed = JSON.parse(stored) as Session;
-        setSession(parsed);
-        setUser(parsed.user);
-      } catch {
-        localStorage.removeItem("wireline_session");
+        await migrateLegacyLocalStorage();
+        const hydrated = await fetchSessionUser();
+        if (!cancelled && hydrated) {
+          setUser(hydrated);
+          setSession({ user: hydrated });
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    }
-    setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // Stable references — without useCallback these are recreated every
-  // render, which re-fires any effect that depends on them (notably
-  // the OAuth bridge page). Empty deps: setters are referentially
-  // stable, so these never need to change.
   const signIn = useCallback((newSession: Session) => {
-    localStorage.setItem("wireline_session", JSON.stringify(newSession));
-    setSession(newSession);
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    setSession({ user: newSession.user });
     setUser(newSession.user);
   }, []);
 
   const signOut = useCallback(async () => {
-    localStorage.removeItem("wireline_session");
+    try {
+      await fetch("/api/auth/signout", { method: "POST", credentials: "include" });
+    } catch {
+      /* still clear local state */
+    }
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
     setSession(null);
     setUser(null);
   }, []);

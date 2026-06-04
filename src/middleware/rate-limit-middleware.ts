@@ -32,6 +32,8 @@ const RESEND_VERIFICATION_RATE_WINDOW_MS = 15 * 60_000;
 const RESEND_VERIFICATION_RATE_MAX = 3;
 const RESET_PASSWORD_RATE_WINDOW_MS = 15 * 60_000;
 const RESET_PASSWORD_RATE_MAX = 5;
+const MIGRATE_SESSION_RATE_WINDOW_MS = 15 * 60_000;
+const MIGRATE_SESSION_RATE_MAX = 10;
 
 export async function emailRateLimiter(req: any, res: any, next: any) {
   const userId = req.user?.id;
@@ -215,6 +217,34 @@ export async function resendVerificationRateLimiter(req: any, res: any, next: an
     return res.status(429).json({
       error: "Too many verification email requests. Wait 15 minutes and try again.",
       code: "RESEND_VERIFICATION_RATE_LIMIT",
+    });
+  }
+  next();
+}
+
+/**
+ * Legacy localStorage → httpOnly cookie migration. Keyed by IP to limit
+ * token-exchange abuse if a bearer leaks via XSS or logs.
+ */
+export async function migrateSessionRateLimiter(req: any, res: any, next: any) {
+  const ip = req.ip || "anon";
+  const key = `migrate_session:${ip}`;
+  const result = await rateLimit(key, {
+    bucket: "migrate_session",
+    windowMs: MIGRATE_SESSION_RATE_WINDOW_MS,
+    max: MIGRATE_SESSION_RATE_MAX,
+  });
+  if (!result.allowed) {
+    void auditLogger
+      .logSecurity("rate_limit_exceeded", {
+        resource: "auth_migrate_session",
+        ip: req.ip,
+      })
+      .catch((e: unknown) => log.warn("audit log failed", { error: String(e) }));
+    res.setHeader("Retry-After", Math.ceil(MIGRATE_SESSION_RATE_WINDOW_MS / 1000));
+    return res.status(429).json({
+      error: "Too many session migration attempts. Wait 15 minutes and try again.",
+      code: "MIGRATE_SESSION_RATE_LIMIT",
     });
   }
   next();

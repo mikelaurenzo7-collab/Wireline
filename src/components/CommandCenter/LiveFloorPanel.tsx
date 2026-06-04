@@ -18,7 +18,7 @@ import {
 import { cn } from "../../lib/utils";
 import { useToast } from "../../contexts/ToastContext";
 import { useAuth } from "../../contexts/AuthContext";
-import { getFreshAccessToken } from "../../lib/api";
+import { refreshSessionIfNeeded } from "../../lib/api";
 import { Link } from "react-router-dom";
 import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
@@ -77,8 +77,8 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
     if (!user?.id) return;
     stopListening();
     try {
-      const token = await getFreshAccessToken();
-      if (!token) return;
+      const ok = await refreshSessionIfNeeded();
+      if (!ok) return;
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       const ctx = new AudioCtx();
       audioContextRef.current = ctx;
@@ -90,7 +90,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
 
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const ws = new WebSocket(
-        `${protocol}//${window.location.host}/api/supervisor/stream?callId=${callId}&mode=listen&token=${token}`,
+        `${protocol}//${window.location.host}/api/supervisor/stream?callId=${callId}&mode=listen`,
       );
       ws.binaryType = "arraybuffer";
       audioWsRef.current = ws;
@@ -138,11 +138,11 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
   const startWhispering = async (callId: string) => {
     if (!user?.id) return;
     stopWhispering();
-    const token = await getFreshAccessToken();
-    if (!token) return;
+    const ok = await refreshSessionIfNeeded();
+    if (!ok) return;
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const ws = new WebSocket(
-      `${protocol}//${window.location.host}/api/supervisor/stream?callId=${callId}&mode=whisper&token=${token}`,
+      `${protocol}//${window.location.host}/api/supervisor/stream?callId=${callId}&mode=whisper`,
     );
     whisperWsRef.current = ws;
     ws.onopen = () => {

@@ -207,123 +207,63 @@ async function maybeDispatchTrialGateEvent(response: Response): Promise<void> {
   }
 }
 
-function parseJwtExp(token: string): number | null {
-  try {
-    const [, payloadB64] = token.split(".");
-    if (!payloadB64) return null;
-    const payload = JSON.parse(atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/")));
-    return typeof payload.exp === "number" ? payload.exp : null;
-  } catch {
-    return null;
-  }
-}
+let refreshInFlight: Promise<boolean> | null = null;
 
-let refreshInFlight: Promise<string | null> | null = null;
-
-async function maybeRefreshToken(token: string): Promise<string> {
-  const exp = parseJwtExp(token);
-  if (!exp) return token;
-  const remainingSec = exp - Math.floor(Date.now() / 1000);
-  if (remainingSec > 15 * 60) return token;
-
-  if (refreshInFlight) {
-    const result = await refreshInFlight;
-    return result ?? token;
-  }
-
+/** Rotate the httpOnly session cookie before long-lived streams. */
+export async function refreshSessionIfNeeded(): Promise<boolean> {
+  if (refreshInFlight) return refreshInFlight;
   refreshInFlight = (async () => {
     try {
       const res = await fetch("/api/auth/refresh", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
       });
-      if (!res.ok) return null;
-      const body = await res.json();
-      if (!body?.token) return null;
-      const sessionJson = localStorage.getItem("wireline_session");
-      if (sessionJson) {
-        try {
-          const session = JSON.parse(sessionJson);
-          session.access_token = body.token;
-          localStorage.setItem("wireline_session", JSON.stringify(session));
-        } catch {
-          /* keep existing session */
-        }
-      }
-      return body.token as string;
+      return res.ok;
     } catch {
-      return null;
+      return false;
     } finally {
       refreshInFlight = null;
     }
   })();
-
-  const result = await refreshInFlight;
-  return result ?? token;
+  return refreshInFlight;
 }
 
 /**
- * Read the current access token from local storage without triggering a refresh.
- * Used by EventSource consumers, which cannot send an Authorization header and
- * must pass the bearer token as a `?token=` query parameter instead.
+ * @deprecated JWTs are httpOnly cookies. Use `credentials: "include"` or
+ * `refreshSessionIfNeeded()` before EventSource/WebSocket connections.
  */
 export function getAccessToken(): string | null {
-  const sessionJson = localStorage.getItem("wireline_session");
-  if (!sessionJson) return null;
-  try {
-    const session = JSON.parse(sessionJson);
-    return session?.access_token || null;
-  } catch {
-    return null;
-  }
+  return null;
 }
 
-/**
- * Return a valid access token, refreshing transparently if the current one
- * is expired or close to expiry. Streaming endpoints should use this instead
- * of `getAccessToken()` so long-lived pages don't send stale JWTs.
- */
+/** @deprecated Use `refreshSessionIfNeeded()` — returns null for compatibility. */
 export async function getFreshAccessToken(): Promise<string | null> {
-  const token = getAccessToken();
-  if (!token) return null;
-  return maybeRefreshToken(token);
+  await refreshSessionIfNeeded();
+  return null;
 }
 
 export async function authFetch(url: string, options: RequestInit = {}) {
-  const sessionJson = localStorage.getItem("wireline_session");
-  let token: string | null = null;
-  if (sessionJson) {
-    try {
-      const session = JSON.parse(sessionJson);
-      token = session?.access_token || null;
-    } catch {
-      token = null;
-    }
-  }
-
-  if (token && !url.includes("/api/auth/refresh")) {
-    token = await maybeRefreshToken(token);
+  if (!url.includes("/api/auth/refresh")) {
+    await refreshSessionIfNeeded();
   }
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...((options.headers as Record<string, string>) || {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
-  // Always install the deadline. If the caller supplied a signal we
-  // compose both so caller-driven cancellation still works while a
-  // hung backend can't leave the UI waiting past DEFAULT_TIMEOUT_MS.
   const timeoutCtrl = new AbortController();
   const timer = setTimeout(() => timeoutCtrl.abort(), DEFAULT_TIMEOUT_MS);
   const signal = options.signal
     ? combineSignals(options.signal, timeoutCtrl.signal)
     : timeoutCtrl.signal;
   try {
-    const response = await fetch(url, { ...options, headers, signal });
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      credentials: "include",
+      signal,
+    });
     // Fire-and-forget global trial-gate detection. Never await — the
     // caller's contract is "I get a Response back immediately." The
     // modal listener handles whatever the event carries.
