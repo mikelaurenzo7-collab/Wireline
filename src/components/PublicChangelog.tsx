@@ -45,6 +45,30 @@ const TAG_META: Record<EntryTag, { label: string; tone: string; icon: typeof Spa
 
 const ENTRIES: ChangelogEntry[] = [
   {
+    date: "Jun 4, 2026",
+    tag: "security",
+    title: "OAuth sign-in store sealed off from the data API",
+    body: "A security audit found the short-lived OAuth bridge table — which briefly holds a pre-minted session token mid-sign-in — was readable by any signed-in account through the database's auto-generated data API, even though our own code never exposed it. We enabled row-level security and revoked direct API access so the table is invisible outside the sign-in callback that owns it. The same pass tuned five row-level-security policies to evaluate once per query instead of once per row.",
+  },
+  {
+    date: "Jun 4, 2026",
+    tag: "polish",
+    title: "Every console page fills the screen, top to bottom",
+    body: "On larger monitors several authenticated pages — Insights, Live Ops and others — left content stranded in the upper half with dead space below. The page shell now stretches content to the full viewport height: empty states center, dashboards fill, and chat anchors its composer to the bottom. No more “cut off in the middle” on big screens.",
+  },
+  {
+    date: "Jun 4, 2026",
+    tag: "polish",
+    title: "Sidebar spacing is even at every screen size",
+    body: "On tall desktop monitors the left navigation rail floated its items in the vertical middle, leaving an awkward gap under Search. Items now anchor directly beneath Search with a consistent rhythm and clean group separators, scaling identically from a 13-inch laptop to a 27-inch display.",
+  },
+  {
+    date: "Jun 4, 2026",
+    tag: "polish",
+    title: "Design-system consistency locked in repo-wide",
+    body: "Every interactive control now routes through one canonical Button — proper focus rings, a 44px touch target, and consistent press feedback everywhere. The razor-edged flat-corner aesthetic is enforced by an automated guard so it can’t quietly drift back. The result is a tighter, more uniform surface on every screen.",
+  },
+  {
     date: "Jan 28, 2026",
     tag: "feature",
     title: "Warm-transfer escalation",

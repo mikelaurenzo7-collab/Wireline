@@ -108,6 +108,17 @@ async function main() {
         };
         const dw = q('[data-testid="director-workspace"]');
         const dwBox = dw ? { top: Math.round(dw.getBoundingClientRect().top), bottom: Math.round(dw.getBoundingClientRect().bottom), h: Math.round(dw.getBoundingClientRect().height), parentH: Math.round(dw.parentElement.getBoundingClientRect().height), gpH: Math.round(dw.parentElement.parentElement.getBoundingClientRect().height) } : null;
+        const tg = q('[data-testid="triage-grid"]');
+        let tgChain = null;
+        if (tg) {
+          tgChain = [];
+          let el = tg;
+          for (let i = 0; i < 6 && el; i++) {
+            const b = el.getBoundingClientRect();
+            tgChain.push(`${el.tagName}.${(el.className ? el.className.toString().slice(0, 16) : "")}=${Math.round(b.height)}`);
+            el = el.parentElement;
+          }
+        }
         const main = q("#main-content");
         const stage = q(".client-console__stage");
         const surface = q(".app-surface");
@@ -128,6 +139,7 @@ async function main() {
           contentBottom: Math.round(contentBottom),
           bottomGap: surface ? Math.round(vh - contentBottom) : null,
           dw: dwBox,
+          tgChain,
         };
       });
       entry.diag = diag;
