@@ -1021,7 +1021,27 @@ export default function DirectorWorkspace({
                 )}
 
                 {m.role === "director" ? (
-                  <DirectorMessageBody content={m.content} />
+                  <>
+                    <DirectorMessageBody content={m.content} />
+                    {/trouble responding|can't respond right now/i.test(m.content) &&
+                      (() => {
+                        const idx = messages.findIndex((msg) => msg.id === m.id);
+                        const prior = idx > 0 ? messages[idx - 1] : null;
+                        if (prior?.role !== "operator") return null;
+                        return (
+                          <ShadButton
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="mt-3 h-8 px-3 text-[11px] uppercase tracking-[0.12em] border border-brand/25 text-brand hover:bg-brand/8"
+                            disabled={isSending}
+                            onClick={() => void send(prior.content)}
+                          >
+                            Retry message
+                          </ShadButton>
+                        );
+                      })()}
+                  </>
                 ) : (
                   <p className="text-[14px] leading-relaxed">{m.content}</p>
                 )}

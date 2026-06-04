@@ -63,6 +63,7 @@ async function loadBusinessContext(userId: string): Promise<DirectorBusinessCont
   const [row] = await drizzle
     .select({
       businessName: schema.settings.businessName,
+      brandName: schema.settings.brandName,
       businessType: schema.settings.businessType,
       primaryProduct: schema.settings.primaryProduct,
       businessHours: schema.settings.businessHours,
@@ -72,10 +73,15 @@ async function loadBusinessContext(userId: string): Promise<DirectorBusinessCont
     .limit(1);
   if (!row) return undefined;
   return {
-    businessName: row.businessName,
+    businessName: row.businessName ?? row.brandName,
     businessType: row.businessType,
     primaryProduct: row.primaryProduct,
-    operatingHours: row.businessHours,
+    operatingHours:
+      typeof row.businessHours === "string"
+        ? row.businessHours
+        : row.businessHours != null
+          ? JSON.stringify(row.businessHours)
+          : null,
   };
 }
 

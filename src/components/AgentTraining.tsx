@@ -328,69 +328,71 @@ export default function AgentTraining({
           </div>
         </details>
 
-        <nav
-          role="tablist"
-          aria-label="Training views"
-          className="flex flex-wrap gap-1.5 max-w-[1400px] mx-auto w-full mt-2"
-        >
-          {[
-            {
-              id: "database",
-              label: "Knowledge",
-              icon: Database,
-              help: "View and edit everything this agent has learned: personality, directives, knowledge entries, and uploaded files.",
-            },
-            {
-              id: "voices",
-              label: "Voices",
-              icon: Mic,
-              help: "Voice library + cloning. Every agent's identity starts with the voice they speak in.",
-            },
-            {
-              id: "pronunciation",
-              label: "Pronunciation",
-              icon: BookOpen,
-              help: "Teach the voice engine how to pronounce industry jargon, brand names, and abbreviations correctly.",
-            },
-            {
-              id: "simulator",
-              label: "Test call",
-              icon: PlayCircle,
-              help: "Run simulated conversations to see how your agent will respond before customers call.",
-            },
-            {
-              id: "flow",
-              label: "Conversation flow",
-              icon: Workflow,
-              help: "Define linear conversation stages and transitions (advanced — most agents work great without this).",
-            },
-          ].map((tab) => (
-            <ShadButton
-              key={tab.id}
-              type="button"
-              variant="ghost"
-              disableAnimations
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              aria-controls={`training-panel-${tab.id}`}
-              onClick={() => setActiveTab(tab.id as TrainingTab)}
-              className={cn(
-                "h-auto px-2.5 py-1.5 rounded-md border text-[10px] uppercase tracking-[0.12em] gap-1.5",
-                activeTab === tab.id
-                  ? "bg-brand/15 border-brand/40 text-brand hover:bg-brand/15 hover:text-brand"
-                  : "wl-panel border-border text-muted hover:border-brand/25 hover:text-ink",
-              )}
-            >
-              <tab.icon className="w-3 h-3" />
-              <span>{tab.label}</span>
-              <HelpTooltip content={tab.help} placement="top">
-                <span className="w-4 h-4 rounded-full border border-current/30 text-[8px] flex items-center justify-center opacity-70 hover:opacity-100">
-                  ?
-                </span>
-              </HelpTooltip>
-            </ShadButton>
-          ))}
-        </nav>
+        {!onSubTabChange && (
+          <nav
+            role="tablist"
+            aria-label="Training views"
+            className="flex flex-wrap gap-1.5 max-w-[1400px] mx-auto w-full mt-2"
+          >
+            {[
+              {
+                id: "database",
+                label: "Knowledge",
+                icon: Database,
+                help: "View and edit everything this agent has learned: personality, directives, knowledge entries, and uploaded files.",
+              },
+              {
+                id: "voices",
+                label: "Voices",
+                icon: Mic,
+                help: "Voice library + cloning. Every agent's identity starts with the voice they speak in.",
+              },
+              {
+                id: "pronunciation",
+                label: "Pronunciation",
+                icon: BookOpen,
+                help: "Teach the voice engine how to pronounce industry jargon, brand names, and abbreviations correctly.",
+              },
+              {
+                id: "simulator",
+                label: "Test call",
+                icon: PlayCircle,
+                help: "Run simulated conversations to see how your agent will respond before customers call.",
+              },
+              {
+                id: "flow",
+                label: "Conversation flow",
+                icon: Workflow,
+                help: "Define linear conversation stages and transitions (advanced — most agents work great without this).",
+              },
+            ].map((tab) => (
+              <ShadButton
+                key={tab.id}
+                type="button"
+                variant="ghost"
+                disableAnimations
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                aria-controls={`training-panel-${tab.id}`}
+                onClick={() => setActiveTab(tab.id as TrainingTab)}
+                className={cn(
+                  "h-auto px-2.5 py-1.5 rounded-md border text-[10px] uppercase tracking-[0.12em] gap-1.5",
+                  activeTab === tab.id
+                    ? "bg-brand/15 border-brand/40 text-brand hover:bg-brand/15 hover:text-brand"
+                    : "wl-panel border-border text-muted hover:border-brand/25 hover:text-ink",
+                )}
+              >
+                <tab.icon className="w-3 h-3" />
+                <span>{tab.label}</span>
+                <HelpTooltip content={tab.help} placement="top">
+                  <span className="w-4 h-4 rounded-full border border-current/30 text-[8px] flex items-center justify-center opacity-70 hover:opacity-100">
+                    ?
+                  </span>
+                </HelpTooltip>
+              </ShadButton>
+            ))}
+          </nav>
+        )}
       </header>
 
       <main className="flex-1 min-h-0 relative">

@@ -119,6 +119,12 @@ export const settings = pgTable("wireline_settings", {
   dailyBriefLastSentAt: timestamp("daily_brief_last_sent_at", { withTimezone: true }),
   dailyBriefLastError: text("daily_brief_last_error"),
   businessName: text("business_name"),
+  /** Industry / vertical label for template overlays and Director context. */
+  businessType: text("business_type"),
+  /** Primary offer or product line — surfaced in Director fleet planning. */
+  primaryProduct: text("primary_product"),
+  /** Tenant-wide operating hours (JSON) for template {{operatingHours}} substitution. */
+  businessHours: jsonb("business_hours"),
   crmType: text("crm_type"),
   twilioMessagingEnabled: boolean("twilio_messaging_enabled").default(false),
   twilioLookupEnabled: boolean("twilio_lookup_enabled").default(false),
