@@ -36,7 +36,35 @@
 > **Migration note — `glassUtility` ratchet:** The `shadcn-pivot-ratchet` tracks `.glass` usage and only allows it to decrease over time. Card bodies that currently carry `.glass` should be migrated to `<Card>` from `src/components/ui/shadcn/`. `<Card>` consumes the `--card` design token, adapts to dark-mode automatically, and is the canonical card surface going forward. Shell surfaces (TopBar, Sidebar, modals, popovers, sticky headers) are permanently exempt — those keep `.glass`/`.glass-strong`/`.glass-elevated`/`.shell-sticky-glass`.
 
 ### Radius
-- **Zero radius** is the default (`--radius: 0`). Rounded corners are used only for medallions and pills.
+- **Zero radius** is the default. A global `border-radius: 0 !important` reset in
+  `index.css` (`@layer base`) makes every element razor-edged; Tailwind's
+  `--radius-{sm..3xl}` tokens are all overridden to `0`. The only exceptions are
+  inherently circular elements (`.dot-*`, `.live-ring`, `[data-circular]`,
+  scrollbar thumbs) which opt back in to `9999px`.
+- Because the reset flattens everything, **`rounded-lg` / `rounded-xl` / `rounded-2xl` /
+  `rounded-3xl` are visually identical to `rounded-md` — i.e. they're misleading dead
+  classes.** Use `rounded-md` as the one allowed radius literal; it signals "yes, this
+  is intentionally flat." The `shadcn-pivot-ratchet` test enforces this (see below).
+
+### Anti-pattern ratchets (`shadcn-pivot-ratchet`)
+`src/components/ui/__tests__/shadcn-pivot-ratchet.test.ts` counts known
+anti-patterns in feature/page code (`src/components`, `src/pages`, excluding the
+`shadcn/` primitive layer) and **fails CI if any count rises above its baseline**.
+All baselines are currently **0** — the migrations are complete, so the win is
+locked in and may only ever stay at 0:
+
+| Metric | Baseline | Rule |
+|--------|----------|------|
+| `rawButton` | 0 | No raw `<button>`. Use `ShadButton` (see §3). For a fully custom tile, use `<ShadButton variant="ghost" disableAnimations className="h-auto justify-start … your-wl-class">` — `cn()` is `twMerge`-backed so your overrides win, and unlayered `.wl-*` CSS beats Tailwind's layered utilities. Example: the `wl-console-map-item` tiles in `YoureLiveModal`. |
+| `rawInput` | 0 | No raw `<input>`. Use `Input` / `Checkbox` / `Slider`. |
+| `rawSelect` | 0 | No raw `<select>`. Use `Select`. |
+| `rawDialog` | 0 | Never use the native `<dialog>`. Use `Dialog` / `Sheet`. |
+| `glassUtility` | 0 | No `.glass` in feature code — migrate to `<Card>` / `wl-panel`. Shell surfaces are exempt (see note above). |
+| `largeRadius` | 0 | No `rounded-{lg\|xl\|2xl\|3xl}` literals — use `rounded-md`. |
+
+When you legitimately migrate code away from an anti-pattern the count can only go
+down; the test then tells you to **lower the baseline in the same PR** so the gain is
+permanent. Raising a baseline is reserved for a deliberate, explained exception.
 
 ---
 

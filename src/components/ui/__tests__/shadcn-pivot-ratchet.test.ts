@@ -69,18 +69,12 @@ function countOccurrences(pattern: RegExp): number {
  *   Legacy .glass CSS remains in index.css for backwards compat only.
  */
 const BASELINE = {
-  // One intentional raw <button>: the YoureLiveModal console-map nav grid item
-  // carries bespoke `wl-console-map-item` styling that the ShadButton variants
-  // don't model. Accepted 2026-06-04 design pass.
-  rawButton: 1,
+  rawButton: 0, // Full ShadButton migration — feature/page code 2026-06-04
   rawInput: 0,
   rawSelect: 0,
   rawDialog: 0,
   glassUtility: 0, // Full wl-panel migration — feature/page code 2026-06-03
-  // Director surface polish (2026-06-04) uses rounded-lg/xl on chat bubbles,
-  // artifact cards, and message bodies where the soft radius is part of the
-  // conversational design language rather than a migration miss.
-  largeRadius: 10,
+  largeRadius: 0, // Full rounded-md migration — feature/page code 2026-06-04
 } as const;
 
 function assertRatchet(actual: number, baseline: number, metric: string) {

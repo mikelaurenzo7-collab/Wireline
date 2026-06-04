@@ -192,6 +192,66 @@ USING (user_id = auth.uid());
 \d+ wireline_call_logs
 ```
 
+### How tenant isolation actually works here (read this before touching RLS)
+
+The snippets above are illustrative. The **real** model — implemented in
+`src/lib/server-context.ts` — does **not** use Supabase Auth or `auth.uid()`.
+Wireline runs its own auth and talks to Postgres over a `pg` Pool (`POSTGRES_URL`),
+so tenant scoping is done with a session GUC:
+
+- **Authenticated request path:** before a tenant-scoped query, the pool opens a
+  transaction and runs `SET LOCAL ROLE authenticated` +
+  `set_config('app.current_user_id', <uuid>, true)`. Every `tenant_isolation`
+  policy is `USING (user_id = (SELECT NULLIF(current_setting('app.current_user_id', true), '')::uuid))`.
+- **System / unauthenticated path** (login, OAuth callback, webhooks): no tenant is
+  set, so the query runs as the **base `postgres` role**, which **owns the tables and
+  therefore bypasses RLS**. This is why login can read `wireline_users` (RLS-enabled)
+  before a session exists.
+
+Two consequences every future migration must respect:
+
+1. **`authenticated` needs `SELECT` (and write) grants on tenant tables** — RLS, not
+   the absence of grants, is what isolates tenants. The advisor's
+   `pg_graphql_authenticated_table_exposed` warnings on `wireline_*` tables are
+   **expected and required**; do not revoke those grants.
+2. **Wrap GUC reads in a scalar subselect** — `(SELECT current_setting(...))`, not a
+   bare `current_setting(...)`. This makes Postgres evaluate it once per query
+   (InitPlan) instead of per row, and clears advisor lint `0003_auth_rls_initplan`.
+   See migration `0036_rls_initplan_perf.sql`.
+
+### Locking down a table that the `authenticated` role must NOT read
+
+If a table is only ever touched by the **base/owner role** (e.g. a pre-session token
+store written by an unauthenticated callback) and contains sensitive data, do **not**
+leave it readable through Supabase's auto-generated Data API. Enable RLS *and* revoke
+the direct grants — the owner role still bypasses RLS, so the app is unaffected:
+
+```sql
+-- Pattern from migration 0035_oauth_pending_codes_lockdown.sql
+ALTER TABLE <table> ENABLE ROW LEVEL SECURITY;        -- owner (postgres) bypasses; anon/authenticated get 0 rows
+REVOKE ALL ON <table> FROM anon, authenticated;       -- removes it from PostgREST/GraphQL entirely
+```
+
+`wireline_oauth_pending_codes` was the live example: its `token` column held a
+pre-minted session JWT and `authenticated` could read every pending row via the Data
+API — a cross-account-takeover vector that never touched our nonce-protected
+`/exchange` endpoint. RLS + grant revocation closed it.
+
+### Running the security & performance advisors
+
+After **any** DDL change, re-run the Supabase advisors and treat `ERROR`-level
+security findings as release blockers:
+
+```
+# Via the Supabase MCP tools used in CI/agent sessions:
+get_advisors(type="security")     # RLS gaps, sensitive-column exposure, SECURITY DEFINER reach
+get_advisors(type="performance")  # auth_rls_initplan, unused indexes, missing PKs
+```
+
+Advisor results are cached for a few minutes — a cleared finding may linger one cycle
+after the fix lands. Verify the underlying object directly (`pg_policies`,
+`has_table_privilege(...)`) if you need immediate confirmation.
+
 ---
 
 ## Backup & Recovery

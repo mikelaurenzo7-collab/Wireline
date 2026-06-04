@@ -421,10 +421,12 @@ export default function YoureLiveModal({
             {CONSOLE_MAP.items.map((item) => {
               const Icon = CONSOLE_MAP_ICONS[item.id as keyof typeof CONSOLE_MAP_ICONS];
               return (
-                <button
+                <ShadButton
                   key={item.id}
                   type="button"
-                  className="wl-console-map-item touch-press"
+                  variant="ghost"
+                  disableAnimations
+                  className="wl-console-map-item touch-press flex h-auto w-full items-start justify-start gap-2.5 px-[0.65rem] py-[0.55rem] text-left font-normal"
                   onClick={() => {
                     onClose();
                     navigate(item.path);
@@ -441,7 +443,7 @@ export default function YoureLiveModal({
                       {item.detail}
                     </span>
                   </span>
-                </button>
+                </ShadButton>
               );
             })}
           </div>
