@@ -19,8 +19,7 @@ import {
 } from "recharts";
 import { authFetch, readApiJson } from "../../lib/api";
 import { useToast } from "../../contexts/ToastContext";
-import { fetchInsight, Spinner, qaColor } from "./shared";
-import { EmptyState } from "../ui/EmptyState";
+import { fetchInsight, Spinner, qaColor, InsightEmpty } from "./shared";
 
 export default function QualityView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
@@ -82,13 +81,10 @@ export default function QualityView({ days }: { days: number }) {
   if (!data || data.count === 0) {
     return (
       <div className="space-y-4">
-        <EmptyState
-          framed
+        <InsightEmpty
+          configKey="quality"
           icon={Star}
-          eyebrow="Call Quality"
-          title="No QA scores yet"
-          description="Score an individual call in Call Logs, or use Score All Unscored to batch-evaluate up to 20 calls at once."
-          actions={[
+          actionsOverride={[
             {
               label: scoring ? "Scoring…" : "Score All Unscored",
               onClick: () => {
@@ -96,6 +92,7 @@ export default function QualityView({ days }: { days: number }) {
               },
               primary: true,
             },
+            { label: "View call history", to: "/phone" },
           ]}
         />
       </div>

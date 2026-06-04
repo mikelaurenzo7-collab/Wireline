@@ -6,6 +6,9 @@ import {
   OPS_PULSE_METRICS,
   OPS_CHANNEL_EMPTY,
   OPS_TRIAGE_EMPTY,
+  OPS_HELP,
+  OPS_SUPPORT_EMPTY,
+  OPS_INSIGHTS_EMPTY,
 } from "./wireline-ops-design";
 import { WIRELINE_DIRECTOR_BRAND } from "./wireline-director-design";
 import { BRAND } from "../constants/brand-colors";
@@ -58,5 +61,15 @@ describe("Wireline Live Ops design contract", () => {
     expect(OPS_CHANNEL_EMPTY.integrations.title.toLowerCase()).toContain("carrier");
     expect(OPS_CHANNEL_EMPTY.audit.actions.some((a) => a.to === "/agents")).toBe(true);
     expect(OPS_CHANNEL_EMPTY.campaigns.actions.some((a) => a.to.includes("outbound"))).toBe(true);
+  });
+
+  it("defines help, support, and insights empty copy with route CTAs", () => {
+    expect(OPS_HELP.quickLinks.some((l) => l.to === "/chat")).toBe(true);
+    expect(OPS_SUPPORT_EMPTY.dnc.title.toLowerCase()).toContain("blocked");
+    expect(OPS_INSIGHTS_EMPTY.funnel.actions?.some((a) => a.to.includes("outbound"))).toBe(true);
+    expect(OPS_INSIGHTS_EMPTY.attribution.actions?.some((a) => a.to.includes("carrier"))).toBe(
+      true,
+    );
+    expect(OPS_INSIGHTS_EMPTY.quality.description.toLowerCase()).toContain("score");
   });
 });

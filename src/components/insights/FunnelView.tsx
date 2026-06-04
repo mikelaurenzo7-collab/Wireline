@@ -2,8 +2,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { TrendingUp } from "lucide-react";
-import { fetchInsight, Spinner, ErrCard } from "./shared";
-import { InlineEmpty } from "../ui/InlineEmpty";
+import { fetchInsight, Spinner, ErrCard, InsightEmpty } from "./shared";
 import { cn } from "../../lib/utils";
 import { WL_APP_CLASSES } from "../../lib/wireline-director-design";
 
@@ -39,12 +38,7 @@ export default function FunnelView({ days }: { days: number }) {
   const max = Math.max(1, ...stages.map((s: any) => s.count));
 
   if (stages.length === 0 || stages.every((s: any) => s.count === 0)) {
-    return (
-      <InlineEmpty
-        icon={TrendingUp}
-        label="No calls yet — your funnel populates as agents handle calls."
-      />
-    );
+    return <InsightEmpty configKey="funnel" icon={TrendingUp} />;
   }
 
   return (

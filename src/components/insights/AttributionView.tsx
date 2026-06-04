@@ -2,8 +2,7 @@
 import { useEffect, useState } from "react";
 import { Megaphone } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { fetchInsight, Spinner, ErrCard, Stat } from "./shared";
-import { EmptyState } from "../ui/EmptyState";
+import { fetchInsight, Spinner, ErrCard, Stat, InsightEmpty } from "./shared";
 
 export default function AttributionView({ days }: { days: number }) {
   const [rows, setRows] = useState<any[]>([]);
@@ -36,18 +35,7 @@ export default function AttributionView({ days }: { days: number }) {
   const totalBooked = rows.reduce((s, r) => s + (Number(r.booked) || 0), 0);
 
   if (totalCalls === 0) {
-    return (
-      <EmptyState
-        framed
-        icon={Megaphone}
-        eyebrow="Campaign Attribution"
-        title="No tagged calls yet"
-        description={
-          "Tag your phone numbers with a campaign label in Admin → Carrier (e.g. \u201CGoogle Ads · Spring '26\u201D). Every call to that number gets the tag and shows up here."
-        }
-        actions={[{ label: "Open Admin → Carrier", to: "/admin", primary: false }]}
-      />
-    );
+    return <InsightEmpty configKey="attribution" icon={Megaphone} />;
   }
 
   return (

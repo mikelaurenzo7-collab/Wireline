@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { RefreshCw } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { fetchInsight, Spinner, ErrCard, Empty } from "./shared";
+import { fetchInsight, Spinner, ErrCard, InsightEmpty } from "./shared";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { WL_APP_CLASSES } from "../../lib/wireline-director-design";
 
@@ -27,7 +27,8 @@ export default function TopicsView() {
   if (loading && !data) return <Spinner />;
   if (err) return <ErrCard error={err} />;
   if (!data) return null;
-  if (data.message) return <Empty label={data.message} />;
+  if (data.message)
+    return <InsightEmpty configKey="topics" icon={RefreshCw} descriptionOverride={data.message} />;
 
   const topics = data.topics || [];
   const max = Math.max(1, ...topics.map((t: any) => t.count));

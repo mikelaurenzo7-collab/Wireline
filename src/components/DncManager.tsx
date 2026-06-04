@@ -19,6 +19,8 @@ import Papa from "papaparse";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatDate } from "../lib/safe-date";
+import { OPS_SUPPORT_EMPTY } from "../lib/wireline-ops-design";
+import { BRAND } from "../constants/brand-colors";
 import PageShell, { Panel } from "./PageShell";
 import { useToast } from "../contexts/ToastContext";
 import AdminHubViewport from "./layout/AdminHubViewport";
@@ -318,12 +320,17 @@ export default function DncManager() {
               ) : filtered.length === 0 ? (
                 <EmptyState
                   icon={Shield}
-                  eyebrow={entries.length === 0 ? "Do-Not-Call" : "No matches"}
-                  title={entries.length === 0 ? "No numbers blocked" : "No matches"}
+                  eyebrow={
+                    (entries.length === 0 ? OPS_SUPPORT_EMPTY.dnc : OPS_SUPPORT_EMPTY.dncNoMatch)
+                      .eyebrow
+                  }
+                  title={
+                    (entries.length === 0 ? OPS_SUPPORT_EMPTY.dnc : OPS_SUPPORT_EMPTY.dncNoMatch)
+                      .title
+                  }
                   description={
-                    entries.length === 0
-                      ? "Add numbers manually or import a CSV to prevent them from being dialed by any agent."
-                      : "Try a different search."
+                    (entries.length === 0 ? OPS_SUPPORT_EMPTY.dnc : OPS_SUPPORT_EMPTY.dncNoMatch)
+                      .description
                   }
                   actions={
                     entries.length === 0
@@ -333,10 +340,14 @@ export default function DncManager() {
                             onClick: () => setShowAdd(true),
                             primary: true,
                           },
+                          {
+                            label: "Import CSV",
+                            onClick: () => fileRef.current?.click(),
+                          },
                         ]
                       : []
                   }
-                  accent="#e11d48"
+                  accent={BRAND.rose}
                 />
               ) : (
                 <div className="divide-y divide-white/5">

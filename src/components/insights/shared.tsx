@@ -56,14 +56,56 @@ export function Spinner() {
 
 /* ── Empty state ────────────────────────────────────────────────── */
 
-import { InlineEmpty } from "../ui/InlineEmpty";
+import type { LucideIcon } from "lucide-react";
+import { EmptyState } from "../ui/EmptyState";
+import { OPS_INSIGHTS_EMPTY } from "../../lib/wireline-ops-design";
 
+type InsightEmptyKey = keyof typeof OPS_INSIGHTS_EMPTY;
+
+export function InsightEmpty({
+  configKey,
+  icon,
+  descriptionOverride,
+  actionsOverride,
+  success,
+}: {
+  configKey: InsightEmptyKey;
+  icon: LucideIcon;
+  descriptionOverride?: string;
+  actionsOverride?: Array<{
+    label: string;
+    to?: string;
+    onClick?: () => void;
+    primary?: boolean;
+  }>;
+  success?: boolean;
+}) {
+  const config = OPS_INSIGHTS_EMPTY[configKey];
+  return (
+    <EmptyState
+      framed
+      density="compact"
+      icon={icon}
+      eyebrow={config.eyebrow}
+      title={config.title}
+      description={descriptionOverride ?? config.description}
+      actions={actionsOverride ?? config.actions ?? []}
+      accent={success ? WIRELINE_DIRECTOR_BRAND.violet : undefined}
+    />
+  );
+}
+
+/** @deprecated Prefer InsightEmpty with OPS_INSIGHTS_EMPTY keys */
 export function Empty({ label, green }: { label: string; green?: boolean }) {
   const Icon = green ? CheckCircle2Icon : BarChart3;
   return (
-    <InlineEmpty
+    <EmptyState
+      framed
+      density="compact"
       icon={Icon}
-      label={label}
+      eyebrow={green ? "All clear" : "Insights"}
+      title={green ? "Looking good" : "No data yet"}
+      description={label}
       accent={green ? WIRELINE_DIRECTOR_BRAND.violet : undefined}
     />
   );

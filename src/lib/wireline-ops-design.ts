@@ -209,3 +209,103 @@ export const OPS_TRIAGE_EMPTY = {
     actions: [{ label: "Live floor", to: "/ops" }],
   },
 } as const;
+
+/** In-app help route — quick paths + page chrome */
+export const OPS_HELP = {
+  title: "Help & demos",
+  eyebrow: "Support",
+  subtitle: "Live team lines, role-play demos, and quick paths back into the product.",
+  quickLinks: [
+    { label: "Director · Chat", to: "/chat", hint: "Deploy agents & ask questions" },
+    { label: "Integrations", to: "/integrations", hint: "Gmail, Outlook, Yahoo" },
+    { label: "Training", to: "/training", hint: "Knowledge, voice, flows" },
+    { label: "System status", to: "/status", hint: "Public uptime feed" },
+  ],
+} as const;
+
+/** Compliance & admin empty states */
+export const OPS_SUPPORT_EMPTY = {
+  dnc: {
+    eyebrow: "Do-Not-Call",
+    title: "No numbers blocked",
+    description:
+      "Add numbers manually or import a CSV to prevent them from being dialed by any agent.",
+  },
+  dncNoMatch: {
+    eyebrow: "Do-Not-Call",
+    title: "No matches",
+    description: "Try a different search term or clear the filter.",
+  },
+} as const;
+
+/** Insights tab empty states — data-driven panels with route CTAs */
+export const OPS_INSIGHTS_EMPTY = {
+  funnel: {
+    eyebrow: "Conversion",
+    title: "No funnel data yet",
+    description: "Your funnel populates as agents handle calls — try a test call or outbound dial.",
+    actions: [
+      { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
+      { label: "Live Ops", to: "/ops" },
+    ],
+  },
+  leaderboard: {
+    eyebrow: "Leaderboard",
+    title: "No ranked agents yet",
+    description: "Agents appear here once they run calls in the selected window.",
+    actions: [
+      { label: "Deploy agent", to: "/agents", primary: true },
+      { label: "View call history", to: "/phone" },
+    ],
+  },
+  latency: {
+    eyebrow: "Voice latency",
+    title: "No latency samples yet",
+    description: "Run live calls to populate TTFT, tool timing, and voice health metrics.",
+    actions: [
+      { label: "Live Ops", to: "/ops", primary: true },
+      { label: "Call history", to: "/phone" },
+    ],
+  },
+  spend: {
+    eyebrow: "AI spend",
+    title: "No AI usage in this window",
+    description:
+      "Try a longer date range, or run Director recipes and live calls to accumulate usage.",
+    actions: [
+      { label: "Ask Director", to: "/chat", primary: true },
+      { label: "Live Ops", to: "/ops" },
+    ],
+  },
+  attribution: {
+    eyebrow: "Campaign attribution",
+    title: "No tagged calls yet",
+    description:
+      "Tag phone numbers with a campaign label in Admin → Carrier. Every call to that number gets the tag and shows up here.",
+    actions: [
+      { label: "Open Admin → Carrier", to: "/admin?tab=carrier", primary: true },
+      { label: "Start outbound", to: "/phone?tab=outbound" },
+    ],
+  },
+  quality: {
+    eyebrow: "Call quality",
+    title: "No QA scores yet",
+    description:
+      "Score an individual call in Call Logs, or batch-evaluate up to 20 unscored calls at once.",
+  },
+  topics: {
+    eyebrow: "Topics",
+    title: "Not enough call data",
+    description: "Topic clusters need analyzed conversations. Run calls, then refresh this tab.",
+    actions: [
+      { label: "View call history", to: "/phone", primary: true },
+      { label: "Open training", to: "/training" },
+    ],
+  },
+  failureModesOk: {
+    eyebrow: "Failure modes",
+    title: "No failure clusters",
+    description: "When agents stumble, patterns cluster here with recommended fixes.",
+    actions: [{ label: "Monitor floor", to: "/ops", primary: true }],
+  },
+} as const;

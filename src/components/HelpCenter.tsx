@@ -1,4 +1,5 @@
-import { Phone, ArrowRight, MessageCircle, BookOpen, ExternalLink } from "lucide-react";
+import { Phone, ArrowRight, MessageCircle, BookOpen, ExternalLink, Compass } from "lucide-react";
+import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import ClientRouteViewport from "./layout/ClientRouteViewport";
 import PageShell, { Panel } from "./PageShell";
@@ -13,6 +14,7 @@ import {
   WIRELINE_FEATURES,
   WIRELINE_INTEGRATIONS,
 } from "../data/wireline-knowledge";
+import { OPS_HELP } from "../lib/wireline-ops-design";
 
 function AgentCard({
   agent,
@@ -85,9 +87,9 @@ export default function HelpCenter() {
     <ClientRouteViewport scroll>
       <PageShell
         scrollable
-        title=""
-        eyebrow=""
-        subtitle=""
+        title={OPS_HELP.title}
+        eyebrow={OPS_HELP.eyebrow}
+        subtitle={OPS_HELP.subtitle}
         actions={
           <>
             <a
@@ -149,6 +151,26 @@ export default function HelpCenter() {
           </div>
 
           <div className="space-y-4">
+            <Panel title="Quick paths" hint="Back into the product" icon={Compass}>
+              <div className="space-y-2">
+                {OPS_HELP.quickLinks.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className="group flex items-center justify-between gap-3 rounded-md border border-black/8 bg-brand/[0.03] px-3 py-2.5 hover:border-brand/25 hover:bg-brand/[0.06] transition-colors"
+                  >
+                    <div className="min-w-0 text-left">
+                      <p className="text-[11px] uppercase tracking-[0.22em] text-ink/90">
+                        {link.label}
+                      </p>
+                      <p className="text-[11px] text-muted/75 mt-0.5 leading-snug">{link.hint}</p>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-muted group-hover:text-brand group-hover:translate-x-0.5 transition-all shrink-0" />
+                  </Link>
+                ))}
+              </div>
+            </Panel>
+
             <Panel title="What Wireline does" hint="Quick reference" icon={BookOpen}>
               <div className="space-y-3">
                 {WIRELINE_FEATURES.map((f) => (

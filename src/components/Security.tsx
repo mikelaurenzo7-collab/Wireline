@@ -10,6 +10,7 @@
  * controls implemented" until BAA + audit are signed.
  */
 import { motion } from "motion/react";
+import { Link } from "react-router-dom";
 import {
   Lock,
   ShieldCheck,
@@ -195,11 +196,18 @@ export default function Security() {
             </ul>
           </div>
 
-          <div className="mt-10 text-caption text-center">
-            Questions?{" "}
-            <a href="mailto:security@trywireline.com" className="text-[#8B3FD6] hover:underline">
-              security@trywireline.com
-            </a>
+          <div className="mt-10 text-caption text-center space-y-2">
+            <p>
+              Questions?{" "}
+              <a href="mailto:security@trywireline.com" className="text-[#8B3FD6] hover:underline">
+                security@trywireline.com
+              </a>
+            </p>
+            <p>
+              <Link to="/status" className="text-[#8B3FD6] hover:underline">
+                Live system status
+              </Link>
+            </p>
           </div>
         </div>
       </MarketingChrome>

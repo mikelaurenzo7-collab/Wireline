@@ -15,7 +15,7 @@ import {
 import { authFetch, readApiJson } from "../../lib/api";
 import { formatMoney, safeFixed } from "../../lib/safe-number";
 import { cn } from "../../lib/utils";
-import { fetchInsight, Spinner, ErrCard, Empty, SpendStat } from "./shared";
+import { fetchInsight, Spinner, ErrCard, InsightEmpty, SpendStat } from "./shared";
 import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { WL_APP_CLASSES } from "../../lib/wireline-director-design";
@@ -310,9 +310,7 @@ export default function AISpendView({ days }: { days: number }) {
     <div className="space-y-5">
       <SpendBudgetCard />
 
-      {!callsHaveHappened && (
-        <Empty label="No AI usage in this window — try a longer range or run a recipe." />
-      )}
+      {!callsHaveHappened && <InsightEmpty configKey="spend" icon={Brain} />}
 
       {callsHaveHappened && (
         <>

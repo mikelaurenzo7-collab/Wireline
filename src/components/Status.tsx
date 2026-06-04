@@ -17,6 +17,7 @@
  * Mobile-first: single-column stack under sm, 3-column at md+.
  */
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import {
   PhoneCall,
@@ -269,6 +270,10 @@ export default function Status() {
               <span>Probe interval · 60s</span>
               <span className="text-muted/70">·</span>
               <span>Public cache · 60s</span>
+              <span className="text-muted/70">·</span>
+              <Link to="/security" className="hover:text-ink transition-colors">
+                Security practices
+              </Link>
               <span className="text-muted/70">·</span>
               <a
                 href="https://twitter.com/intent/tweet?text=%40trywireline+status"

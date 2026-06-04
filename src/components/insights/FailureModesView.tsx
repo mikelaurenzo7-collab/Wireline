@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { RefreshCw, Sparkles } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { fetchInsight, Spinner, ErrCard, Empty } from "./shared";
+import { fetchInsight, Spinner, ErrCard, InsightEmpty } from "./shared";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
 export default function FailureModesView() {
@@ -26,7 +26,15 @@ export default function FailureModesView() {
   if (loading && !data) return <Spinner />;
   if (err) return <ErrCard error={err} />;
   if (!data) return null;
-  if (data.message) return <Empty label={data.message} green />;
+  if (data.message)
+    return (
+      <InsightEmpty
+        configKey="failureModesOk"
+        icon={Sparkles}
+        descriptionOverride={data.message}
+        success
+      />
+    );
 
   const modes = data.modes || [];
   return (

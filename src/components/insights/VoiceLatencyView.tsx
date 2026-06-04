@@ -6,8 +6,7 @@ import {
   MAX_VAPI_TOOL_RESULT_CHARS,
   VAPI_TOOL_TIMEOUT_MS,
 } from "../../lib/vapi-tool-results";
-import { fetchInsight, Spinner, ErrCard } from "./shared";
-import { InlineEmpty } from "../ui/InlineEmpty";
+import { fetchInsight, Spinner, ErrCard, InsightEmpty } from "./shared";
 
 interface VoiceTrend {
   date: string;
@@ -73,9 +72,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
   const errorRateHealthy = latestTrend == null || latestTrend.errorRate <= 5;
 
   if (latency.sample_count === 0 && !hasVoiceMetrics) {
-    return (
-      <InlineEmpty icon={Gauge} label="No latency samples yet — run live calls to populate." />
-    );
+    return <InsightEmpty configKey="latency" icon={Gauge} />;
   }
 
   const guards = [
