@@ -174,9 +174,12 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           )}
         </ShadButton>
 
-        {/* Nav — single flat list; section labels live in page context only */}
+        {/* Nav — single flat list; section labels live in page context only.
+            justify-start anchors the items directly under Search with an even
+            rhythm at every viewport height (justify-center left them floating
+            mid-rail with a large gap under Search on tall screens). */}
         <nav
-          className="flex-1 min-h-0 flex flex-col justify-center overflow-x-hidden px-1.5 py-0.5 wl-rail-nav"
+          className="flex-1 min-h-0 flex flex-col justify-start overflow-x-hidden px-1.5 py-0.5 wl-rail-nav"
           aria-label="Console pages"
         >
           <div className="space-y-px">

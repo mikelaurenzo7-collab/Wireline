@@ -42,8 +42,9 @@ async function main() {
     headless: true,
     args: ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
   });
+  const [vw, vh] = (process.env.QA_VIEWPORT || "1440x900").split("x").map(Number);
   const context = await browser.newContext({
-    viewport: { width: 1440, height: 900 },
+    viewport: { width: vw, height: vh },
     deviceScaleFactor: 1,
     colorScheme: "light",
   });
@@ -53,6 +54,8 @@ async function main() {
     try {
       localStorage.setItem("wireline_post_signup_dismissed", "true");
       localStorage.setItem("wireline_onboarding_celebrated", "true");
+      // Force the expanded (labeled) sidebar rail for QA.
+      localStorage.setItem("wireline_rail_expanded", "true");
     } catch {
       /* ignore */
     }
