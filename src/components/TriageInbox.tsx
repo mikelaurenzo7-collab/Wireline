@@ -234,7 +234,11 @@ export default function TriageInbox() {
             "h-full min-h-0 overflow-y-auto lg:overflow-hidden stagger-children",
             "grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
             "lg:[grid-template-rows:minmax(0,1.15fr)_minmax(0,1fr)]",
-            "auto-rows-fr",
+            // Dense flow packs the row-span-2 escalations tower + 4 cards into
+            // exactly the two explicit rows; without it the tower leaves a gap
+            // that spills a card into an implicit (auto-rows-fr) 3rd row, leaving
+            // dead space at the bottom of the grid on tall screens.
+            "auto-rows-fr lg:grid-flow-row-dense",
           )}
           data-testid="triage-grid"
         >
