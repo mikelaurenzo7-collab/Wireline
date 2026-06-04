@@ -16,9 +16,10 @@ import {
   Phone,
 } from "lucide-react";
 import Papa from "papaparse";
-import { authFetch } from "../lib/api";
+import { authFetch, readApiJson } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatDate } from "../lib/safe-date";
+import { DNC_IMPORT_MAX_ENTRIES, dncImportLimitError } from "../lib/compliance";
 import { OPS_SUPPORT_EMPTY } from "../lib/wireline-ops-design";
 import { BRAND } from "../constants/brand-colors";
 import PageShell, { Panel } from "./PageShell";
@@ -87,10 +88,12 @@ export default function DncManager() {
     setLoading(true);
     try {
       const r = await authFetch("/api/dnc");
-      const d = await r.json();
-      setEntries(d.entries || []);
-    } catch {
-      toastError("Failed to load DNC list", "Please try again.");
+      const out = await readApiJson<{ entries?: DncEntry[] }>(r);
+      if (out.ok === false) throw new Error(out.error);
+      setEntries(out.data.entries ?? []);
+    } catch (e: unknown) {
+      toastError("Failed to load DNC list", e instanceof Error ? e.message : "Please try again.");
+      setEntries([]);
     } finally {
       setLoading(false);
     }
@@ -117,8 +120,8 @@ export default function DncManager() {
           entries: [{ phone: addPhone.trim(), reason: addReason, source: "manual" }],
         }),
       });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error || "Failed");
+      const out = await readApiJson<{ error?: string }>(r);
+      if (out.ok === false) throw new Error(out.error);
       toastSuccess("Number added to DNC list", `${addPhone.trim()} will no longer be dialed.`);
       setAddPhone("");
       setAddReason("opt-out");
@@ -135,7 +138,8 @@ export default function DncManager() {
     setDeletingId(id);
     try {
       const r = await authFetch(`/api/dnc/${id}`, { method: "DELETE" });
-      if (!r.ok) throw new Error("Failed to remove entry.");
+      const out = await readApiJson<{ error?: string }>(r);
+      if (out.ok === false) throw new Error(out.error);
       setEntries((prev) => prev.filter((e) => e.id !== id));
       toastSuccess("Entry removed", "Number has been removed from the DNC list.");
     } catch (e: any) {
@@ -171,14 +175,23 @@ export default function DncManager() {
             return;
           }
 
+          const limitErr = dncImportLimitError(rows.length);
+          if (limitErr) {
+            toastError("Import too large", limitErr);
+            return;
+          }
+
+          const batch = rows.slice(0, DNC_IMPORT_MAX_ENTRIES);
+
           const r = await authFetch("/api/dnc", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ entries: rows }),
+            body: JSON.stringify({ entries: batch }),
           });
-          const d = await r.json();
-          if (!r.ok) throw new Error(d.error || "Import failed");
-          toastSuccess("CSV imported", `${d.added ?? rows.length} numbers added to DNC list.`);
+          const out = await readApiJson<{ added?: number; error?: string }>(r);
+          if (out.ok === false) throw new Error(out.error);
+          const added = out.data.added ?? batch.length;
+          toastSuccess("CSV imported", `${added} numbers added to DNC list.`);
           await refresh();
         } catch (e: any) {
           toastError("Import failed", e.message);

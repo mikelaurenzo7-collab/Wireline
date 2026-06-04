@@ -31,6 +31,10 @@ export default function TopicsView() {
     return <InsightEmpty configKey="topics" icon={RefreshCw} descriptionOverride={data.message} />;
 
   const topics = data.topics || [];
+  if (topics.length === 0) {
+    return <InsightEmpty configKey="topics" icon={RefreshCw} />;
+  }
+
   const max = Math.max(1, ...topics.map((t: any) => t.count));
 
   return (

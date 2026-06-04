@@ -76,10 +76,11 @@ test.describe("Public pages — status and changelog", () => {
   test("/status renders system health indicator", async ({ page }) => {
     await gotoHydrated(page, "/status");
 
+    await expect(page.getByTestId("status-overall")).toBeVisible();
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    // Status page should show operational state or system indicators
+    await expect(page.getByTestId("status-component-voice_runtime")).toBeVisible();
     const content = await page.textContent("main, [role='main'], #main-content, body");
-    expect(content?.toLowerCase()).toMatch(/status|operational|system|uptime/);
+    expect(content?.toLowerCase()).toMatch(/status|operational|system|uptime|checking/);
   });
 
   test("/changelog shows shipping history", async ({ page }) => {

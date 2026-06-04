@@ -8,6 +8,14 @@ import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 
+/** Max numbers per DNC POST (manual + CSV). Enforced client- and server-side. */
+export const DNC_IMPORT_MAX_ENTRIES = 5000;
+
+export function dncImportLimitError(count: number): string | null {
+  if (count <= DNC_IMPORT_MAX_ENTRIES) return null;
+  return `Maximum ${DNC_IMPORT_MAX_ENTRIES.toLocaleString()} numbers per import. Split large CSVs into smaller files.`;
+}
+
 // Normalize a phone number to digits only for consistent matching.
 export function normalizeDncPhone(raw: string): string {
   return raw.replace(/\D/g, "");

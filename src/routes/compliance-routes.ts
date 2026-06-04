@@ -10,7 +10,7 @@ import {
   getConsentRuleForPhone,
   CONSENT_RULE_VERSION,
 } from "../lib/tcpa-consent";
-import { normalizeDncPhone } from "../lib/compliance";
+import { DNC_IMPORT_MAX_ENTRIES, dncImportLimitError, normalizeDncPhone } from "../lib/compliance";
 import { getErrorMessage } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -67,6 +67,10 @@ router.post("/dnc", authenticateUser, async (req: AuthenticatedRequest, res: Res
     if (!entries || entries.length === 0) {
       return res.status(400).json({ error: "entries array is required." });
     }
+    const limitErr = dncImportLimitError(entries.length);
+    if (limitErr) {
+      return res.status(400).json({ error: limitErr, max: DNC_IMPORT_MAX_ENTRIES });
+    }
     const rows = entries
       .filter((e: DncEntry) => e.phone)
       .map((e: DncEntry) => ({
@@ -121,9 +125,14 @@ router.post("/dnc", authenticateUser, async (req: AuthenticatedRequest, res: Res
 // Remove a number from DNC list
 router.delete("/dnc/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    await drizzle
+    const removed = await drizzle
       .delete(schema.dncList)
-      .where(and(eq(schema.dncList.id, req.params.id), eq(schema.dncList.userId, req.user.id)));
+      .where(and(eq(schema.dncList.id, req.params.id), eq(schema.dncList.userId, req.user.id)))
+      .returning({ id: schema.dncList.id });
+
+    if (!removed.length) {
+      return res.status(404).json({ error: "DNC entry not found." });
+    }
 
     void auditLogger
       .logDnc("removed", {

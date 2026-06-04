@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 import { LucideIcon } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Medallion } from "./Medallion";
@@ -104,6 +105,7 @@ export function EmptyState({
             );
 
             if (action.to) {
+              const internal = action.to.startsWith("/") && !action.to.startsWith("//");
               return (
                 <ShadButton
                   key={index}
@@ -111,7 +113,11 @@ export function EmptyState({
                   variant={isPrimary ? "default" : "outline"}
                   className={sharedClasses}
                 >
-                  <a href={action.to}>{action.label}</a>
+                  {internal ? (
+                    <Link to={action.to}>{action.label}</Link>
+                  ) : (
+                    <a href={action.to}>{action.label}</a>
+                  )}
                 </ShadButton>
               );
             }

@@ -37,6 +37,10 @@ export default function FailureModesView() {
     );
 
   const modes = data.modes || [];
+  if (modes.length === 0) {
+    return <InsightEmpty configKey="failureModesOk" icon={Sparkles} success />;
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">

@@ -298,7 +298,15 @@ export default function AISpendView({ days }: { days: number }) {
 
   if (loading) return <Spinner />;
   if (err) return <ErrCard error={err} />;
-  if (!data || !data.totals) return null;
+
+  if (!data || !data.totals) {
+    return (
+      <div className="space-y-5">
+        <SpendBudgetCard />
+        <InsightEmpty configKey="spend" icon={Brain} />
+      </div>
+    );
+  }
 
   const { totals, by_day = [], by_action = [], by_model = [] } = data;
   const callsHaveHappened = totals.calls > 0;

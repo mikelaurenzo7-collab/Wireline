@@ -137,7 +137,8 @@ export default function Status() {
     };
   }, []);
 
-  const overall: OverallState = data?.overall ?? (error ? "unknown" : "operational");
+  const overall: OverallState =
+    loading && !data ? "unknown" : (data?.overall ?? (error ? "unknown" : "operational"));
   const OverallIcon = STATE_META[overall].icon;
 
   return (

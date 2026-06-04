@@ -19,24 +19,31 @@ import {
 } from "recharts";
 import { authFetch, readApiJson } from "../../lib/api";
 import { useToast } from "../../contexts/ToastContext";
-import { fetchInsight, Spinner, qaColor, InsightEmpty } from "./shared";
+import { fetchInsight, Spinner, ErrCard, qaColor, InsightEmpty } from "./shared";
 
 export default function QualityView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
   const [scoring, setScoring] = useState(false);
   const { success: toastSuccess, error: toastError, warning: toastWarning } = useToast();
 
   const fetchStats = useCallback(() => {
     setLoading(true);
+    setErr(null);
     fetchInsight(`/api/qa/stats?days=${days}`)
-      .then(setData)
+      .then((d) => {
+        setData(d);
+        setErr(null);
+      })
       .catch((e: unknown) => {
-        if ((e as any)?.name !== "AbortError")
-          toastError("QA stats unavailable", "Could not load quality data. Please refresh.");
+        if ((e as any)?.name === "AbortError") return;
+        const message = e instanceof Error ? e.message : "Request failed";
+        setErr(message);
+        setData(null);
       })
       .finally(() => setLoading(false));
-  }, [days, toastError]);
+  }, [days]);
 
   useEffect(() => {
     fetchStats();
@@ -77,6 +84,7 @@ export default function QualityView({ days }: { days: number }) {
   };
 
   if (loading) return <Spinner />;
+  if (err) return <ErrCard error={err} />;
 
   if (!data || data.count === 0) {
     return (

@@ -175,7 +175,7 @@ export function SpendStat({
 
 export function qaColor(score: number) {
   if (score >= 90) return WIRELINE_DIRECTOR_BRAND.violet;
-  if (score >= 75) return WIRELINE_DIRECTOR_BRAND.violet;
+  if (score >= 75) return BRAND.purple;
   if (score >= 60) return BRAND.purpleMuted;
   if (score >= 40) return BRAND.rose;
   return BRAND.rose;

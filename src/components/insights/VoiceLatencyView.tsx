@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
-import { Gauge, Mic, Volume2, Activity, AlertTriangle } from "lucide-react";
+import { Gauge, Activity, AlertTriangle } from "lucide-react";
 import {
   MAX_VAPI_PARALLEL_TOOL_CALLS,
   MAX_VAPI_TOOL_RESULT_CHARS,
   VAPI_TOOL_TIMEOUT_MS,
 } from "../../lib/vapi-tool-results";
+import { cn } from "../../lib/utils";
 import { fetchInsight, Spinner, ErrCard, InsightEmpty } from "./shared";
 
 interface VoiceTrend {
@@ -95,7 +96,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
             {[
               {
                 icon: Gauge,
@@ -112,19 +113,11 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                 healthy: ttftHealthy,
               },
               {
-                icon: Mic,
-                label: "STT health",
+                icon: Activity,
+                label: "Pipeline errors",
                 value:
                   latestTrend?.errorRate != null ? `${latestTrend.errorRate.toFixed(1)}%` : "—",
-                sub: "error rate",
-                healthy: errorRateHealthy,
-              },
-              {
-                icon: Volume2,
-                label: "TTS health",
-                value:
-                  latestTrend?.errorRate != null ? `${latestTrend.errorRate.toFixed(1)}%` : "—",
-                sub: "error rate",
+                sub: "calls with STT, TTS, or pipeline failures",
                 healthy: errorRateHealthy,
               },
             ].map((tile) => (
@@ -274,9 +267,4 @@ export default function VoiceLatencyView({ days }: { days: number }) {
       </div>
     </div>
   );
-}
-
-// Utility for cleaner tailwind classes
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(" ");
 }
