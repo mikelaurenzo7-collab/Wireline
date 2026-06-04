@@ -104,7 +104,7 @@ export default function ConfirmModal({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 100 }}
             transition={{ type: "spring", damping: 30, stiffness: 280 }}
-            className="relative w-full max-w-md sm:max-w-sm rounded-t-md sm:rounded-md z-10 max-h-[calc(100dvh-1rem)] overflow-y-auto overscroll-contain border border-border shadow-2xl"
+            className="relative w-full max-w-md sm:max-w-sm rounded-t-md sm:rounded-md z-10 max-h-[calc(100dvh-1rem)] overflow-y-auto overscroll-contain border border-border wl-panel elev-glow"
           >
             <div className="relative rounded-t-md sm:rounded-md wl-panel-elevated p-6 overflow-hidden">
               <div className="sm:hidden flex justify-center -mt-1 mb-3">
