@@ -161,84 +161,80 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-8 lg:mt-10 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4"
+                className="mt-10 lg:mt-12 max-w-2xl mx-auto"
               >
-                {csDemo && (
-                  <div className="flex flex-col items-center gap-1.5 border border-ink/10 p-3 bg-white/20 backdrop-blur-md shadow-sm">
-                    <BrowserCallWidget
-                      agentName={csDemo.name}
-                      buttonLabel={`Talk to ${csDemo.name} (CS)`}
-                    />
-                    <span className="text-[9px] sm:text-[10px] text-ink/50 font-mono tracking-wider">
-                      Or dial:{" "}
+                <p className="font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.22em] text-ink/50 mb-4">
+                  Live demo — no signup
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 rounded-md border border-ink/10 bg-white/25 backdrop-blur-sm p-4 sm:p-5 shadow-sm">
+                  {csDemo && (
+                    <div className="flex flex-col items-center gap-2 text-center">
+                      <p className="text-[11px] font-medium text-ink/70">
+                        Jordan · inbound support
+                      </p>
+                      <BrowserCallWidget
+                        agentName={csDemo.name}
+                        buttonLabel={`Talk to ${csDemo.name}`}
+                      />
                       <a
                         href={`tel:${csDemo.tel}`}
-                        className="text-brand hover:underline font-semibold"
+                        className="text-[11px] font-mono text-ink/50 hover:text-brand transition-colors"
                       >
                         {csDemo.display}
                       </a>
-                    </span>
-                  </div>
-                )}
-                {salesDemo && (
-                  <div className="flex flex-col items-center gap-1.5 border border-ink/10 p-3 bg-white/20 backdrop-blur-md shadow-sm">
-                    <BrowserCallWidget
-                      agentName={salesDemo.name}
-                      buttonLabel={`Talk to ${salesDemo.name} (Sales)`}
-                    />
-                    <span className="text-[9px] sm:text-[10px] text-ink/50 font-mono tracking-wider">
-                      Or dial:{" "}
+                    </div>
+                  )}
+                  {salesDemo && (
+                    <div className="flex flex-col items-center gap-2 text-center sm:border-l sm:border-ink/[0.08] sm:pl-4">
+                      <p className="text-[11px] font-medium text-ink/70">Jake · outbound sales</p>
+                      <BrowserCallWidget
+                        agentName={salesDemo.name}
+                        buttonLabel={`Talk to ${salesDemo.name}`}
+                      />
                       <a
                         href={`tel:${salesDemo.tel}`}
-                        className="text-brand hover:underline font-semibold"
+                        className="text-[11px] font-mono text-ink/50 hover:text-brand transition-colors"
                       >
                         {salesDemo.display}
                       </a>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[13px] leading-snug text-ink/60">
+                  <Link
+                    to="/showcase"
+                    data-testid="hero-showcase-link"
+                    className="inline-flex items-center gap-1 text-ink/70 hover:text-brand transition-colors"
+                  >
+                    Hear medical, legal, real estate &amp; more
+                    <ArrowUpRight className="w-3.5 h-3.5 shrink-0" />
+                  </Link>
+                  <span className="hidden sm:inline text-ink/25" aria-hidden="true">
+                    ·
+                  </span>
+                  <p className="text-center sm:text-left">
+                    14-day trial from the header · no card required
+                  </p>
+                </div>
+
+                <div
+                  className="mt-8 pt-5 border-t border-ink/[0.06] flex flex-wrap items-center justify-center gap-x-3 gap-y-1"
+                  aria-label="Security and compliance"
+                >
+                  {TRUST_BADGES.map((badge, i) => (
+                    <span key={badge} className="inline-flex items-center gap-3">
+                      {i > 0 && (
+                        <span className="text-ink/20 hidden sm:inline" aria-hidden="true">
+                          ·
+                        </span>
+                      )}
+                      <span className="text-[11px] text-ink/45 tracking-wide">{badge}</span>
                     </span>
-                  </div>
-                )}
+                  ))}
+                </div>
               </motion.div>
-
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1.05, duration: 0.5 }}
-                className="mt-5 font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.18em] text-ink/50"
-              >
-                14-day free trial · No card · Start from the header
-              </motion.p>
-
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1.1, duration: 0.5 }}
-                className="mt-4"
-              >
-                <Link
-                  to="/showcase"
-                  data-testid="hero-showcase-link"
-                  className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-ink/55 hover:text-brand transition-colors"
-                >
-                  Medical, legal, real estate &amp; more — hear a live demo
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                </Link>
-              </motion.div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.2, duration: 0.8 }}
-              className="mt-12 lg:mt-16 flex flex-wrap items-center justify-center gap-x-5 gap-y-2"
-            >
-              {TRUST_BADGES.map((badge) => (
-                <span
-                  key={badge}
-                  className="font-mono text-[10px] sm:text-[11px] tracking-[0.12em] text-ink/65"
-                >
-                  {badge}
-                </span>
-              ))}
             </motion.div>
           </div>
         </section>
