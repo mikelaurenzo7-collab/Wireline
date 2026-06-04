@@ -158,7 +158,7 @@ const FLOW_TEMPLATES: Record<
       {
         name: "Identify & Triage",
         instructions:
-          "Classify the issue internally: billing / outage / how-to / refund / escalation. Ask ONE clarifying question if intent is unclear, no more. Confirm understanding back to the caller.",
+          "Classify the issue internally: billing / outage / how-to / refund / escalation. Ask ONE clarifying question if intent is unclear by default, but you may ask multiple questions at once if you need more context to answer sufficiently. Confirm understanding back to the caller.",
         transitionCondition: "You've classified the bucket and confirmed back to the caller.",
       },
       {
