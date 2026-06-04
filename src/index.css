@@ -191,6 +191,39 @@ html, body, .marketing-surface, .app-surface {
   background: rgba(155, 92, 224, 0.4);
 }
 
+/* ── ROUTE SCROLL CONTRACT ──
+ * Long-form authenticated pages (Integrations, Help, Audit, Ops analytics).
+ * ClientRouteViewport owns the sole scroll axis; children grow naturally. */
+.route-shell-scroll {
+  scroll-padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+}
+.route-scroll-inner {
+  flex: 0 0 auto;
+  min-height: min-content;
+}
+.route-scroll-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+.scroll-pb-safe {
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+}
+
+@media (min-width: 768px) {
+  /* PageShell inside scroll routes must not re-clip to viewport height */
+  .route-shell-scroll [data-page-shell-scrollable="true"] {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+  .route-shell-scroll [data-page-shell-scrollable="true"] > div:last-child {
+    flex: none;
+    overflow: visible;
+  }
+}
+
 /* ── WIRELINE ORBITAL INDICATOR ──
  * Unique identity: circular activity ring that shows agent state.
  * The orbit path pulses with brand luminosity when active. */

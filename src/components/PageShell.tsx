@@ -128,6 +128,7 @@ export default function PageShell({
 
   return (
     <div
+      data-page-shell-scrollable={scrollable ? "true" : undefined}
       className={cn(
         "w-full flex flex-col",
         scrollable
@@ -461,6 +462,8 @@ interface PanelProps {
   icon?: React.ComponentType<{ className?: string }>;
   /** Whether the body should permit internal scroll (lists). Default false. */
   scroll?: boolean;
+  /** Size to content instead of filling the viewport (long-form scroll pages). */
+  autoHeight?: boolean;
   children?: ReactNode;
   className?: string;
   bodyClassName?: string;
@@ -476,6 +479,7 @@ export function Panel({
   actions,
   icon: Icon,
   scroll = false,
+  autoHeight = false,
   children,
   className,
   bodyClassName,
@@ -486,7 +490,8 @@ export function Panel({
   return (
     <section
       className={cn(
-        "relative wl-panel border border-black/8 flex flex-col h-full min-h-0 overflow-hidden",
+        "relative wl-panel border border-black/8 flex flex-col min-h-0 overflow-hidden",
+        autoHeight ? "h-auto" : "h-full",
         "panel-mobile-surface",
         className,
       )}
@@ -540,10 +545,12 @@ export function Panel({
 
       <div
         className={cn(
-          "flex-1 min-h-0",
+          autoHeight && !scroll ? "flex-none" : "flex-1 min-h-0",
           scroll
             ? "scroll-viewport overscroll-contain scroll-pb-6 panel-scroll"
-            : "overflow-hidden",
+            : autoHeight
+              ? "overflow-visible"
+              : "overflow-hidden",
           !flush && "p-3 max-md:p-4",
           bodyClassName,
         )}

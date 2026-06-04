@@ -380,11 +380,12 @@ export default function AuditLog() {
   }, []);
 
   return (
-    <AdminHubViewport>
+    <AdminHubViewport scroll>
       <PageShell
         title=""
         eyebrow=""
         subtitle=""
+        scrollable
         actions={
           <ShadButton
             type="button"
@@ -414,7 +415,7 @@ export default function AuditLog() {
           </ShadButton>
         }
       >
-        <div className="h-full min-h-0 flex flex-col gap-4 p-4 scroll-viewport">
+        <div className="flex flex-col gap-4 p-4 md:p-0">
           {/* Stats Overview */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard

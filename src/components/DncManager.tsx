@@ -266,9 +266,9 @@ export default function DncManager() {
           </div>
         }
       >
-        <div className="h-full grid grid-cols-12 gap-3">
+        <div className="flex flex-col flex-1 min-h-0 gap-3 h-full">
           {/* Stat bar */}
-          <div className="col-span-12 grid grid-cols-2 sm:grid-cols-4 gap-3 h-fit">
+          <div className="shrink-0 grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { label: "Total Blocked", value: stats.total, icon: Shield },
               { label: "Manual Entries", value: stats.manual, icon: Plus },
@@ -289,12 +289,13 @@ export default function DncManager() {
           </div>
 
           {/* Main list */}
-          <div className="col-span-12 min-h-0" style={{ height: "calc(100% - 120px)" }}>
+          <div className="flex-1 min-h-0">
             <Panel
               title="Blocked Numbers"
               hint={`${filtered.length} entries`}
               icon={Shield}
               scroll
+              className="h-full"
               actions={
                 <div className="relative">
                   <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />

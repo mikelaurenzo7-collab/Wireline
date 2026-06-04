@@ -381,7 +381,7 @@ export default function AdminSettings() {
               health={integrationHealth}
               onOpenIntegrations={() => navigate("/admin?tab=system")}
             />
-            <div className="flex-1 min-h-0 scroll-viewport">
+            <div className="flex-1 min-h-0 scroll-viewport scroll-pb-safe">
               {isLoading ? (
                 <ClientRouteLoading
                   icon={<Loader2 className="w-7 h-7 animate-spin" aria-hidden />}

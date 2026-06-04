@@ -393,12 +393,7 @@ export default function LiveOps() {
   return (
     <PageTransition>
       <ClientRouteViewport scroll>
-        <div
-          className={clsx(
-            "max-w-[1600px] mx-auto pb-4 w-full lg:flex-1 lg:flex lg:flex-col lg:min-h-0",
-            WL_OPS_CLASSES.canvas,
-          )}
-        >
+        <div className={clsx("max-w-[1600px] mx-auto pb-6 w-full", WL_OPS_CLASSES.canvas)}>
           <OpsPulseStrip
             liveCalls={calls.length}
             pendingActions={pendingActions}

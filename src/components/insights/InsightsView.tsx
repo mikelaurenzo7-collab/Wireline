@@ -44,12 +44,7 @@ export default function InsightsView() {
 
   const wrap = (label: string, node: React.ReactNode) => (
     <WidgetBoundary label={label}>
-      {/* flex column + m-auto child: short/empty tab content centers in the
-          viewport, while tall content collapses the auto margins to zero and
-          scrolls from the top. Kills the "cut off near the middle" dead space. */}
-      <div className="h-full min-h-0 w-full scroll-viewport pr-1 flex flex-col">
-        <div className="m-auto w-full">{node}</div>
-      </div>
+      <div className="flex-1 min-h-0 w-full scroll-viewport scroll-pb-safe pr-1 pb-4">{node}</div>
     </WidgetBoundary>
   );
 

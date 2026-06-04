@@ -10,7 +10,7 @@ import ClientRouteAmbience from "./ClientRouteAmbience";
 type ClientRouteViewportProps = {
   children: ReactNode;
   className?: string;
-  /** When true, the outer shell scrolls (long-form pages like Help, Founder). */
+  /** When true, the outer shell scrolls (long-form pages like Help, Integrations). */
   scroll?: boolean;
   /** Route-tinted ambient glow (off by default — solid cream canvas). */
   ambience?: boolean;
@@ -25,13 +25,22 @@ export default function ClientRouteViewport({
   return (
     <div
       className={cn(
-        "relative flex flex-col flex-1 min-h-0 w-full",
-        scroll ? "scroll-viewport" : "overflow-hidden",
+        "relative flex flex-col w-full",
+        scroll
+          ? "route-shell-scroll scroll-viewport flex-1 min-h-0"
+          : "flex-1 min-h-0 overflow-hidden",
         className,
       )}
     >
       {ambience && <ClientRouteAmbience />}
-      <div className="relative z-[1] flex flex-col flex-1 min-h-0 max-md:min-h-0">{children}</div>
+      <div
+        className={cn(
+          "relative z-[1] flex flex-col",
+          scroll ? "route-scroll-inner" : "flex-1 min-h-0",
+        )}
+      >
+        {children}
+      </div>
     </div>
   );
 }

@@ -20,7 +20,7 @@ const CLOSED_CONFIRM: ConfirmState = { open: false, onConfirm: () => {} };
 const PROVIDER_META: Record<string, { label: string; color: string; logoName: string }> = {
   google: { label: "Google Workspace", color: "text-brand", logoName: "Google" },
   microsoft: { label: "Microsoft / Outlook", color: "text-brand", logoName: "Microsoft" },
-  yahoo: { label: "Yahoo Mail", color: "text-purple-600", logoName: "Yahoo" },
+  yahoo: { label: "Yahoo Mail", color: "text-brand-deep", logoName: "Yahoo" },
 };
 
 export default function Integrations() {
@@ -229,18 +229,14 @@ export default function Integrations() {
   return (
     <>
       <AdminHubViewport scroll>
-        <PageShell title="" eyebrow="" subtitle="" actions={syncAction}>
-          {/* Scroll container — the page (email panel + CRM/Shopify
-            connectors) is taller than the viewport; PageShell's body
-            doesn't scroll, so this wrapper owns the scroll. */}
-          <div className="flex-1 min-h-0 scroll-viewport flex flex-col gap-3 pb-4 max-md:pb-6">
+        <PageShell title="" eyebrow="" subtitle="" scrollable actions={syncAction}>
+          <div className="flex flex-col gap-3">
             <Panel
               title="Email carriers"
               hint="GMAIL · OUTLOOK"
               icon={Mail}
-              scroll
+              autoHeight
               flush
-              className="shrink-0 !h-auto max-h-[55vh]"
               actions={
                 <div className="flex items-center gap-2">
                   <ShadButton
@@ -262,7 +258,7 @@ export default function Integrations() {
                   <ShadButton
                     onClick={handleConnectYahoo}
                     variant="outline"
-                    className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-500 text-[10px] uppercase tracking-[0.25em] hover:bg-purple-500/20 transition-colors"
+                    className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-brand/10 border border-brand/30 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/20 transition-colors"
                   >
                     <Plus className="w-3 h-3" />
                     Yahoo
@@ -284,9 +280,7 @@ export default function Integrations() {
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <h3 className="font-display italic lowercase text-2xl text-ink">
-                      no carriers linked
-                    </h3>
+                    <h3 className="font-display italic text-2xl text-ink">No carriers linked</h3>
                     <p className="text-[12px] text-ink/50 max-w-sm">
                       Connect Gmail, Outlook, or Yahoo — agents triage and reply from caller moments
                       below.
@@ -326,7 +320,7 @@ export default function Integrations() {
                     <ShadButton
                       onClick={handleConnectYahoo}
                       variant="outline"
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-500 text-[10px] uppercase tracking-[0.25em] hover:bg-purple-500/20 transition-colors"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand/10 border border-brand/30 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/20 transition-colors"
                     >
                       <span className="w-4 h-4">{getIntegrationLogo("Yahoo")}</span> Connect Yahoo
                     </ShadButton>
@@ -446,11 +440,7 @@ export default function Integrations() {
               )}
             </Panel>
 
-            {/* CRM & messaging — HubSpot, Salesforce, Slack, Shopify.
-              Available on every plan: integrations make the agent more
-              capable for everyone, and they don't cannibalize the real
-              paid levers (agents / minutes / numbers). */}
-            <div className="mt-3">
+            <div>
               <CrmConnectionCard />
             </div>
           </div>
