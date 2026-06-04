@@ -774,13 +774,13 @@ router.post(
         maxEntries: 12,
       });
 
-      const entries: Array<{ content: string }> = Array.isArray(
+      const entries: Array<{ fact?: string; content?: string }> = Array.isArray(
         (result as { entries?: unknown }).entries,
       )
-        ? (result as { entries: Array<{ content: string }> }).entries
+        ? (result as { entries: Array<{ fact?: string; content?: string }> }).entries
         : [];
       const snippets = entries
-        .map((e) => e?.content?.trim())
+        .map((e) => (e.content ?? e.fact)?.trim())
         .filter(Boolean)
         .slice(0, 6);
 

@@ -35,7 +35,7 @@ const AGENT_LIST_FALLBACK_SELECT = {
 export async function listAgentsForUser(userId: string, limit = 500): Promise<AgentListRow[]> {
   try {
     return await drizzle
-      .select()
+      .select(AGENT_LIST_FALLBACK_SELECT)
       .from(schema.agents)
       .where(eq(schema.agents.userId, userId))
       .orderBy(desc(schema.agents.createdAt))

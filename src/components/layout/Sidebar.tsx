@@ -130,7 +130,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           >
             <WirelineMark
               className="w-4 h-4 relative z-10"
-              style={{ color: BRAND.purpleDeep }}
+              stroke={BRAND.purpleDeep}
               strokeWidth={130}
             />
             <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent" />

@@ -333,6 +333,14 @@ const DIRECT_AGENT_TOOL: ToolSchema = {
   },
 };
 
+const directAgentToolProperties = (): Record<string, unknown> => {
+  const schema = DIRECT_AGENT_TOOL.input_schema;
+  if (schema.type !== "object" || !("properties" in schema) || !schema.properties) {
+    return {};
+  }
+  return schema.properties as Record<string, unknown>;
+};
+
 const COACH_DIRECTOR_WORKSPACE_TOOL: ToolSchema = {
   ...DIRECT_AGENT_TOOL,
   description:
@@ -341,7 +349,7 @@ const COACH_DIRECTOR_WORKSPACE_TOOL: ToolSchema = {
   input_schema: {
     ...DIRECT_AGENT_TOOL.input_schema,
     properties: {
-      ...DIRECT_AGENT_TOOL.input_schema.properties,
+      ...directAgentToolProperties(),
       integration_jobs: {
         type: "array",
         description:

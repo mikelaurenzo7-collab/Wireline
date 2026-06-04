@@ -164,7 +164,15 @@ export async function loadDirectorMessages(
   await ensureDirectorSchema();
   try {
     const messages = await drizzle
-      .select()
+      .select({
+        id: schema.directorConversationMessages.id,
+        userId: schema.directorConversationMessages.userId,
+        role: schema.directorConversationMessages.role,
+        content: schema.directorConversationMessages.content,
+        reasoning: schema.directorConversationMessages.reasoning,
+        metadata: schema.directorConversationMessages.metadata,
+        createdAt: schema.directorConversationMessages.createdAt,
+      })
       .from(schema.directorConversationMessages)
       .where(eq(schema.directorConversationMessages.userId, userId))
       .orderBy(desc(schema.directorConversationMessages.createdAt))

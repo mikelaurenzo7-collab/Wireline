@@ -284,7 +284,12 @@ export default function DirectorWorkspace({
   const pendingSendRef = useRef<{ trimmed: string; optimisticId?: string } | null>(null);
   const liveSequenceKeyRef = useRef<string | null>(null);
   const sendNonStreamingRef = useRef<
-    ((trimmed: string, optimisticId?: string) => Promise<void>) | null
+    | ((
+        trimmed: string,
+        optimisticId?: string,
+        opts?: { skipOperatorPersist?: boolean },
+      ) => Promise<void>)
+    | null
   >(null);
 
   const appendDirectorReply = useCallback(
