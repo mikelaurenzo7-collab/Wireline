@@ -38,12 +38,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const toast = useCallback(
     (opts: Omit<Toast, "id">): string => {
       const duration = opts.duration ?? 4500;
-      let existingId: string | null = null;
+      const id =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-      // Dedupe — if an identical toast (same type + title + message)
-      // is already showing, bump its timer instead of stacking a
-      // duplicate. Prevents the "fetch retry fired 5 times → 5
-      // identical errors visible" UX failure mode.
+      let resolvedId = id;
+
       setToasts((prev) => {
         const dup = prev.find(
           (t) =>
@@ -52,38 +53,27 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             (t.message ?? "") === (opts.message ?? ""),
         );
         if (dup) {
-          existingId = dup.id;
+          resolvedId = dup.id;
+          const prevTimer = timers.current.get(dup.id);
+          if (prevTimer) clearTimeout(prevTimer);
+          if (duration > 0) {
+            timers.current.set(
+              dup.id,
+              setTimeout(() => dismiss(dup.id), duration),
+            );
+          }
           return prev;
         }
-        return prev;
-      });
-
-      if (existingId) {
-        // Reset the dismiss timer on the existing toast so re-firing
-        // an error keeps the message visible for the full duration
-        // rather than letting the original time out.
-        const prevTimer = timers.current.get(existingId);
-        if (prevTimer) clearTimeout(prevTimer);
         if (duration > 0) {
-          const id = existingId;
           timers.current.set(
             id,
             setTimeout(() => dismiss(id), duration),
           );
         }
-        return existingId;
-      }
+        return [...prev, { ...opts, id }];
+      });
 
-      const id =
-        typeof crypto !== "undefined" && crypto.randomUUID
-          ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      setToasts((prev) => [...prev, { ...opts, id }]);
-      if (duration > 0) {
-        const t = setTimeout(() => dismiss(id), duration);
-        timers.current.set(id, t);
-      }
-      return id;
+      return resolvedId;
     },
     [dismiss],
   );

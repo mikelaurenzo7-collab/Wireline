@@ -1,6 +1,6 @@
 import * as React from "react";
 import { motion, HTMLMotionProps } from "motion/react";
-import { cn } from "@/src/lib/utils";
+import { cn } from "../../../lib/utils";
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Elevation level — uses the new editorial shadow system */

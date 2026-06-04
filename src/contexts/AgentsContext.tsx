@@ -51,28 +51,34 @@ export const AGENTS_CHANGED_EVENT = "wireline:agents-changed";
 /** Hydrate roster from Director fleet when /api/agents is temporarily empty. */
 export const AGENTS_HYDRATE_EVENT = "wireline:agents-hydrate";
 
+function isAgentLike(a: unknown): a is { id: string; name?: string | null; role?: string | null } {
+  return (
+    typeof a === "object" &&
+    a !== null &&
+    "id" in a &&
+    typeof (a as Record<string, unknown>).id === "string" &&
+    (a as Record<string, unknown>).id !== ""
+  );
+}
+
+function toAgentSummary(a: {
+  id: string;
+  name?: string | null;
+  role?: string | null;
+}): WorkspaceAgentSummary {
+  return { id: a.id, name: a.name || "Untitled agent", role: a.role ?? null };
+}
+
 function parseAgentsPayload(data: unknown): WorkspaceAgentSummary[] {
-  const list = Array.isArray((data as { agents?: unknown[] })?.agents)
-    ? (data as { agents: unknown[] }).agents
+  const list = Array.isArray((data as Record<string, unknown>)?.agents)
+    ? ((data as Record<string, unknown>).agents as unknown[])
     : [];
-  return list
-    .filter((a: { id?: unknown }) => typeof a?.id === "string" && a.id)
-    .map((a: { id: string; name?: string; role?: string }) => ({
-      id: a.id,
-      name: a.name || "Untitled agent",
-      role: a.role ?? null,
-    }));
+  return list.filter(isAgentLike).map(toAgentSummary);
 }
 
 function parseFleetPayload(fleet: unknown): WorkspaceAgentSummary[] {
   if (!Array.isArray(fleet)) return [];
-  return fleet
-    .filter((a: { id?: unknown }) => typeof a?.id === "string" && a.id)
-    .map((a: { id: string; name?: string | null; role?: string | null }) => ({
-      id: a.id,
-      name: a.name || "Untitled agent",
-      role: a.role ?? null,
-    }));
+  return fleet.filter(isAgentLike).map(toAgentSummary);
 }
 
 async function fetchAgentsWithRetry(attempts = 2): Promise<{

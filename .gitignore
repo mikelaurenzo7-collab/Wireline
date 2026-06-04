@@ -36,3 +36,6 @@ credentials.json
 *.key
 .credentials
 .local/
+
+# Bundle visualizer output
+stats.html

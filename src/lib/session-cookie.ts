@@ -15,12 +15,18 @@ export function isProductionRuntime(): boolean {
   return process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
 }
 
-export function sessionCookieOptions(): CookieOptions {
+export function baseCookieOptions(): Omit<CookieOptions, "maxAge"> {
   return {
     httpOnly: true,
     secure: isProductionRuntime(),
     sameSite: "lax",
     path: "/",
+  };
+}
+
+export function sessionCookieOptions(): CookieOptions {
+  return {
+    ...baseCookieOptions(),
     maxAge: SESSION_MAX_AGE_SEC * 1000,
   };
 }
@@ -30,12 +36,7 @@ export function setSessionCookie(res: Response, token: string): void {
 }
 
 export function clearSessionCookie(res: Response): void {
-  res.clearCookie(SESSION_COOKIE_NAME, {
-    httpOnly: true,
-    secure: isProductionRuntime(),
-    sameSite: "lax",
-    path: "/",
-  });
+  res.clearCookie(SESSION_COOKIE_NAME, baseCookieOptions());
 }
 
 export function parseCookieHeader(header: string | undefined): Record<string, string> {
