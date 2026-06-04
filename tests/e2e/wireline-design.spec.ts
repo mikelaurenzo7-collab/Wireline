@@ -46,14 +46,20 @@ test.describe("Wireline design — public marketing surfaces", () => {
     await assertHeaderTrialCta(page);
   });
 
-  test("landing gutter robots render on xl viewports", async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await gotoHydrated(page, "/");
-    await expect(page.getByTestId("hero-robot-decorations")).toBeVisible();
-    await expect(page.getByTestId("proof-robot-decorations")).toBeVisible();
-    await expect(page.getByTestId("integrations-robot-decorations")).toBeVisible();
-    await page.getByTestId("faq-section").scrollIntoViewIfNeeded();
-    await expect(page.getByTestId("faq-robot-decorations")).toBeVisible();
+  test("landing gutter robots render on laptop and desktop viewports", async ({ page }) => {
+    for (const viewport of [
+      { width: 1366, height: 768, name: "laptop" },
+      { width: 1920, height: 1080, name: "desktop" },
+    ]) {
+      await page.setViewportSize(viewport);
+      await gotoHydrated(page, "/");
+      await expect(page.getByTestId("hero-robot-decorations")).toBeVisible();
+      await expect(page.getByTestId("proof-robot-decorations-top")).toBeVisible();
+      await expect(page.getByTestId("hero-stats-transition-robots")).toBeVisible();
+      await expect(page.getByTestId("integrations-robot-decorations")).toBeVisible();
+      await page.getByTestId("faq-section").scrollIntoViewIfNeeded();
+      await expect(page.getByTestId("faq-robot-decorations")).toBeVisible();
+    }
   });
 });
 

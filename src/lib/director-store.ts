@@ -53,6 +53,8 @@ async function probeArtifactsSchema(): Promise<boolean> {
 }
 
 export function isPostgresMissingColumn(error: unknown, column = "reasoning"): boolean {
+  const code = (error as { code?: string })?.code;
+  if (code === "42703") return true;
   const msg = getErrorMessage(error).toLowerCase();
   return (
     msg.includes("42703") ||
@@ -74,6 +76,16 @@ export async function ensureDirectorSchema(): Promise<void> {
   const artifactsReady = await probeArtifactsSchema();
   if (messagesReady && artifactsReady) {
     directorSchemaEnsured = true;
+    return;
+  }
+
+  const allowRuntimeDdl =
+    process.env.DIRECTOR_ALLOW_RUNTIME_DDL === "1" || process.env.NODE_ENV !== "production";
+  if (!allowRuntimeDdl) {
+    log.warn("director schema incomplete; runtime DDL disabled in production", {
+      messagesReady,
+      artifactsReady,
+    });
     return;
   }
 

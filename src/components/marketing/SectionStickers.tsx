@@ -2,7 +2,11 @@
  * SectionStickers — gutter-placed robot stickers with editorial motion.
  */
 import { RobotHead, type RobotPose } from "./RobotHead";
-import { stickerGutterInset, stickerGutterInsetNarrow } from "./sticker-gutter";
+import {
+  stickerGutterInset,
+  stickerGutterInsetNarrow,
+  stickerCorridorMaskStyle,
+} from "./sticker-gutter";
 
 export type SectionStickerSlot = {
   variant: 1 | 2 | 3 | 4 | 5 | 6;
@@ -25,6 +29,12 @@ type SectionStickersProps = {
   testId?: string;
   /** Hero treatment: paper halo + full saturation (no ghost-tier opacity). */
   vivid?: boolean;
+  /** `overlay` = absolute inset-0 on a section; `fill` = relative box (padding gutters). */
+  layout?: "overlay" | "fill";
+  /** Minimum viewport width to show stickers (Tailwind breakpoint name). */
+  minBreakpoint?: "lg" | "xl";
+  /** Content corridor half-width — robots are masked outside this zone. */
+  corridorHalfRem?: string;
 };
 
 export function SectionStickers({
@@ -32,7 +42,16 @@ export function SectionStickers({
   className = "",
   testId,
   vivid = false,
+  layout = "overlay",
+  minBreakpoint = "lg",
+  corridorHalfRem = "28rem",
 }: SectionStickersProps) {
+  const visibilityClass = minBreakpoint === "xl" ? "hidden xl:block" : "hidden lg:block";
+  const layoutClass =
+    layout === "fill"
+      ? "pointer-events-none relative h-full w-full wl-sticker-gutter-mask"
+      : "pointer-events-none absolute inset-0 z-[1] wl-sticker-gutter-mask";
+
   return (
     <>
       <style>{`
@@ -98,15 +117,17 @@ export function SectionStickers({
         }
       `}</style>
       <div
-        className={`pointer-events-none absolute inset-0 z-[1] hidden xl:block ${className}`}
+        className={`${layoutClass} ${visibilityClass} ${className}`}
+        style={stickerCorridorMaskStyle(corridorHalfRem)}
         aria-hidden="true"
         data-testid={testId}
       >
         {slots.map((slot, index) => {
           const isCenter = slot.top === "50%";
+          const pose = slot.pose ?? "phone";
           const gutter = slot.narrow
-            ? stickerGutterInsetNarrow(slot.side, slot.size)
-            : stickerGutterInset(slot.side, slot.size, slot.contentHalfRem);
+            ? stickerGutterInsetNarrow(slot.side, slot.size, pose)
+            : stickerGutterInset(slot.side, slot.size, slot.contentHalfRem, pose);
 
           const enterDelay = slot.delayMs ?? index * 90;
           const floatMs = slot.floatMs ?? 5200 + index * 680;
@@ -140,7 +161,7 @@ export function SectionStickers({
                 >
                   <RobotHead
                     variant={slot.variant}
-                    pose={slot.pose ?? "phone"}
+                    pose={pose}
                     size={slot.size}
                     animated
                     vivid={vivid}

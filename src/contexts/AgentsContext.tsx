@@ -122,8 +122,24 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
   const [nonce, setNonce] = useState(0);
   const hasLoadedOnceRef = useRef(false);
   const bootstrapRanRef = useRef(false);
+  const bootstrapAttemptsRef = useRef(0);
+  const focusDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const refresh = useCallback(() => setNonce((n) => n + 1), []);
+
+  const runBootstrap = useCallback(() => {
+    void authFetch("/api/auth/bootstrap")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.founderSeeded) refresh();
+      })
+      .catch(() => {
+        if (bootstrapAttemptsRef.current < 2) {
+          bootstrapAttemptsRef.current += 1;
+          window.setTimeout(runBootstrap, 2000);
+        }
+      });
+  }, [refresh]);
 
   useEffect(() => {
     if (!user) {
@@ -132,17 +148,13 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
       hasLoadedOnceRef.current = false;
       bootstrapRanRef.current = false;
+      bootstrapAttemptsRef.current = 0;
       return;
     }
 
     if (!bootstrapRanRef.current) {
       bootstrapRanRef.current = true;
-      void authFetch("/api/auth/bootstrap")
-        .then((r) => (r.ok ? r.json() : null))
-        .then((data) => {
-          if (data?.founderSeeded) refresh();
-        })
-        .catch(() => undefined);
+      runBootstrap();
     }
 
     let cancelled = false;
@@ -169,12 +181,15 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [user, nonce, refresh]);
+  }, [user, nonce, refresh, runBootstrap]);
 
   useEffect(() => {
     if (!user) return;
     const onChanged = () => refresh();
-    const onFocus = () => refresh();
+    const onFocus = () => {
+      if (focusDebounceRef.current) clearTimeout(focusDebounceRef.current);
+      focusDebounceRef.current = setTimeout(() => refresh(), 1500);
+    };
     const onHydrate = (event: Event) => {
       const fleet = parseFleetPayload((event as CustomEvent<unknown>).detail);
       if (fleet.length === 0) return;
@@ -188,6 +203,7 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener(AGENTS_CHANGED_EVENT, onChanged);
       window.removeEventListener("focus", onFocus);
       window.removeEventListener(AGENTS_HYDRATE_EVENT, onHydrate);
+      if (focusDebounceRef.current) clearTimeout(focusDebounceRef.current);
     };
   }, [user, refresh]);
 

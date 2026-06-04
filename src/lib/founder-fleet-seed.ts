@@ -208,20 +208,70 @@ export interface FounderFleetSeedReport {
   agentIds: string[];
 }
 
+/** Tenant-scoped agent lookup — never match global template ids across users. */
+export function founderFleetAgentScope(agentId: string, userId: string) {
+  return and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId));
+}
+
+/** When canonical template ids are already owned by another tenant, namespace per user. */
+export function namespacedFleetAgentId(templateId: string, userId: string): string {
+  return `${userId.slice(0, 8)}-${templateId}`;
+}
+
+export async function resolveFleetAgentId(templateId: string, userId: string): Promise<string> {
+  const [ownedCanonical] = await drizzle
+    .select({ id: schema.agents.id })
+    .from(schema.agents)
+    .where(founderFleetAgentScope(templateId, userId))
+    .limit(1);
+  if (ownedCanonical) return templateId;
+
+  const namespaced = namespacedFleetAgentId(templateId, userId);
+  const [ownedNamespaced] = await drizzle
+    .select({ id: schema.agents.id })
+    .from(schema.agents)
+    .where(founderFleetAgentScope(namespaced, userId))
+    .limit(1);
+  if (ownedNamespaced) return namespaced;
+
+  const [collision] = await drizzle
+    .select({ userId: schema.agents.userId })
+    .from(schema.agents)
+    .where(eq(schema.agents.id, templateId))
+    .limit(1);
+  if (collision && collision.userId !== userId) return namespaced;
+
+  return templateId;
+}
+
 async function upsertPersonality(agentId: string, userId: string, content: string): Promise<void> {
   const [existing] = await drizzle
     .select({ agentId: schema.personality.agentId })
     .from(schema.personality)
-    .where(eq(schema.personality.agentId, agentId))
+    .where(and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)))
     .limit(1);
   if (existing) {
     await drizzle
       .update(schema.personality)
-      .set({ content, userId })
-      .where(eq(schema.personality.agentId, agentId));
-  } else {
-    await drizzle.insert(schema.personality).values({ agentId, userId, content });
+      .set({ content })
+      .where(and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)));
+    return;
   }
+
+  const [foreign] = await drizzle
+    .select({ agentId: schema.personality.agentId })
+    .from(schema.personality)
+    .where(eq(schema.personality.agentId, agentId))
+    .limit(1);
+  if (foreign) {
+    log.warn("founder fleet seed: personality row owned by another tenant, skipping", {
+      agentId,
+      userId,
+    });
+    return;
+  }
+
+  await drizzle.insert(schema.personality).values({ agentId, userId, content });
 }
 
 async function seedTrainingArtifacts(
@@ -293,10 +343,12 @@ async function upsertAgent(
   report: FounderFleetSeedReport,
 ): Promise<string> {
   const toolsJson = ALL_AGENT_TOOLS;
+  const agentId = await resolveFleetAgentId(template.id, userId);
+  const tenantScope = founderFleetAgentScope(agentId, userId);
   const [existing] = await drizzle
     .select({ id: schema.agents.id })
     .from(schema.agents)
-    .where(eq(schema.agents.id, template.id))
+    .where(tenantScope)
     .limit(1);
 
   const businessVariables = template.wirelinePersonaId
@@ -332,17 +384,17 @@ async function upsertAgent(
         ...values,
         enabledTools: toolsJson,
       })
-      .where(eq(schema.agents.id, template.id));
+      .where(tenantScope);
     report.agentsUpdated++;
   } else {
-    await drizzle.insert(schema.agents).values({ id: template.id, ...values });
+    await drizzle.insert(schema.agents).values({ id: agentId, ...values });
     report.agentsCreated++;
   }
 
-  await upsertPersonality(template.id, userId, personalityForRole(template.role));
-  await seedTrainingArtifacts(template.id, userId, template.role, report);
-  report.agentIds.push(template.id);
-  return template.id;
+  await upsertPersonality(agentId, userId, personalityForRole(template.role));
+  await seedTrainingArtifacts(agentId, userId, template.role, report);
+  report.agentIds.push(agentId);
+  return agentId;
 }
 
 /**

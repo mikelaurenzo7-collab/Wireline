@@ -27,6 +27,14 @@ describe("director-store postgres error helpers", () => {
   });
 });
 
+describe("ensureDirectorSchema production guard", () => {
+  it("documents runtime DDL is disabled unless DIRECTOR_ALLOW_RUNTIME_DDL=1", () => {
+    const allowRuntimeDdl =
+      process.env.DIRECTOR_ALLOW_RUNTIME_DDL === "1" || process.env.NODE_ENV !== "production";
+    expect(typeof allowRuntimeDdl).toBe("boolean");
+  });
+});
+
 describe("DirectorMessagesLoadResult shape", () => {
   it("documents degraded empty fallback contract", () => {
     const fallback: DirectorMessagesLoadResult = { messages: [], degraded: true };

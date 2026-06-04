@@ -14,11 +14,16 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("./server-context", () => ({
   drizzle: {
-    select: vi.fn(() => ({
-      from: vi.fn(() => ({
-        where: vi.fn(async () => mocks.selectResult),
-      })),
-    })),
+    transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
+      fn({
+        execute: vi.fn(),
+        select: vi.fn(() => ({
+          from: vi.fn(() => ({
+            where: vi.fn(async () => mocks.selectResult),
+          })),
+        })),
+      }),
+    ),
   },
   log: { info: vi.fn(), warn: vi.fn() },
 }));

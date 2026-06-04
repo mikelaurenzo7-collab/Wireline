@@ -16,6 +16,10 @@ export interface FounderBootstrapResult {
   skipped: boolean;
 }
 
+/**
+ * Serialize founder bootstrap across concurrent serverless instances.
+ * Uses a transaction-scoped advisory lock so only one seed runs at a time.
+ */
 export async function bootstrapFounderFleetIfEmpty(
   userId: string,
   email: string | null | undefined,
@@ -29,17 +33,23 @@ export async function bootstrapFounderFleetIfEmpty(
 
   bootstrapInFlight.add(userId);
   try {
-    const [row] = await drizzle
-      .select({ n: sql<number>`count(*)::int` })
-      .from(schema.agents)
-      .where(eq(schema.agents.userId, userId));
-    if ((row?.n ?? 0) > 0) {
-      return { seeded: false, skipped: true };
-    }
+    return await drizzle.transaction(async (tx) => {
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(hashtext('founder-bootstrap'), hashtext(${userId}))`,
+      );
 
-    await seedFounderFleet(userId);
-    log.info("founder fleet bootstrap completed", { userId });
-    return { seeded: true, skipped: false };
+      const agentCount = await tx
+        .select({ n: sql<number>`count(*)::int` })
+        .from(schema.agents)
+        .where(eq(schema.agents.userId, userId));
+      if ((agentCount[0]?.n ?? 0) > 0) {
+        return { seeded: false, skipped: true };
+      }
+
+      await seedFounderFleet(userId);
+      log.info("founder fleet bootstrap completed", { userId });
+      return { seeded: true, skipped: false };
+    });
   } catch (e) {
     log.warn("founder fleet bootstrap failed", { userId, error: getErrorMessage(e) });
     return { seeded: false, skipped: false };

@@ -31,17 +31,13 @@ import { claudeErr } from "../lib/claude-response-helpers";
 import { isOwnerEmail } from "../lib/auth-service";
 import { agentCapHit, resolveAgentEntitlement } from "../lib/agent-entitlements";
 import { invalidateDashboard } from "../lib/dashboard-cache";
+import { listAgentsForUser } from "../lib/agents-store";
 
 const router = Router();
 
 router.get("/api/agents", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const agentsList = await drizzle
-      .select()
-      .from(schema.agents)
-      .where(eq(schema.agents.userId, req.user.id))
-      .orderBy(desc(schema.agents.createdAt))
-      .limit(500);
+    const agentsList = await listAgentsForUser(req.user.id);
 
     // SPA reads snake_case (agent.voice_id, agent.first_message, agent.user_id).
     // Drizzle returns camelCase. Normalize so FleetSettings and downstream

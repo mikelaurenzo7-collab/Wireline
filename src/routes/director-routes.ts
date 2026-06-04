@@ -3,7 +3,8 @@
  */
 import express, { type Response } from "express";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, eq, gte, sql } from "drizzle-orm";
+import { listAgentSummariesForUser } from "../lib/agents-store";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser, authenticateEventStream } from "../middleware/auth";
 import { claudeRateLimiter } from "../middleware/api-rate-limits";
@@ -56,12 +57,7 @@ const MAX_THREAD_LENGTH = 200;
 const CLAUDE_CONTEXT_WINDOW = 40;
 
 async function loadFleet(userId: string): Promise<DirectorFleetAgent[]> {
-  const rows = await drizzle
-    .select({ id: schema.agents.id, name: schema.agents.name, role: schema.agents.role })
-    .from(schema.agents)
-    .where(eq(schema.agents.userId, userId))
-    .orderBy(desc(schema.agents.createdAt));
-  return rows.map((r) => ({ id: r.id, name: r.name ?? null, role: r.role ?? null }));
+  return listAgentSummariesForUser(userId);
 }
 
 async function loadFleetSafe(userId: string): Promise<DirectorFleetAgent[]> {

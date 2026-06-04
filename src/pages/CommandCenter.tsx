@@ -256,9 +256,13 @@ export default function LiveOps() {
 
     let eventSource: EventSource | null = null;
     let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+    let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+    let lastPresenceAt = Date.now();
     let failCount = 0;
     const BACKOFF_MS = [2_000, 4_000, 8_000, 16_000, 30_000];
     const MAX_FAILS = 10;
+    /** Serverless has no LISTEN/NOTIFY — poll if SSE goes quiet. */
+    const PRESENCE_HEARTBEAT_MS = 15_000;
 
     const scheduleFallbackPoll = () => {
       if (!mountedRef.current || failCount >= MAX_FAILS) return;
@@ -285,6 +289,7 @@ export default function LiveOps() {
             const payload = JSON.parse(event.data);
             if (payload.type === "presence" && mountedRef.current) {
               failCount = 0; // reset backoff on successful message
+              lastPresenceAt = Date.now();
               const signals = payload.signals || [];
               setCalls(
                 signals.map((s: SignalPayload) => ({
@@ -340,6 +345,14 @@ export default function LiveOps() {
 
     setupPresenceStream();
 
+    heartbeatTimer = setInterval(() => {
+      if (!mountedRef.current) return;
+      if (Date.now() - lastPresenceAt >= PRESENCE_HEARTBEAT_MS) {
+        fetchPresence();
+        lastPresenceAt = Date.now();
+      }
+    }, PRESENCE_HEARTBEAT_MS);
+
     // Standard polling for stats (60s)
     const slowTimer = setInterval(fetchAll, 60_000);
 
@@ -347,6 +360,7 @@ export default function LiveOps() {
       mountedRef.current = false;
       if (eventSource) eventSource.close();
       if (fallbackTimer !== null) clearTimeout(fallbackTimer);
+      if (heartbeatTimer !== null) clearInterval(heartbeatTimer);
       clearInterval(slowTimer);
     };
   }, [fetchAll, fetchPresence, user]);

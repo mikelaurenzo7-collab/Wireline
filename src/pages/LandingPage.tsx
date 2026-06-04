@@ -6,6 +6,8 @@ import PublicSiteHeader from "../components/marketing/PublicSiteHeader";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import { HeroDecorations } from "../components/marketing/HeroDecorations";
 import { LandingSectionDecorations } from "../components/marketing/LandingSectionDecorations";
+import { LandingStatsGutterDecorations } from "../components/marketing/LandingStatsGutterDecorations";
+import { LandingHeroStatsTransition } from "../components/marketing/LandingHeroStatsTransition";
 import { PageMeta } from "../lib/page-meta";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
@@ -235,12 +237,14 @@ export default function LandingPage() {
           </div>
         </section>
 
+        <LandingHeroStatsTransition />
+
         {/* ─── Proof ──────────────────────────────────────────────── */}
         <section
           data-testid="proof-section"
           className="landing-section landing-section--band px-6 lg:px-12"
         >
-          <LandingSectionDecorations section="proof" />
+          <LandingStatsGutterDecorations />
           <div className="landing-section-inner max-w-7xl">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08]">
               {STATS.map((stat, i) => (
