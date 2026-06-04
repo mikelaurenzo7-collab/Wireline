@@ -79,7 +79,10 @@ export async function initPresenceDbListener() {
     // 1. Create SQL notify trigger function
     await drizzle.execute(sql`
       CREATE OR REPLACE FUNCTION notify_presence_change()
-      RETURNS TRIGGER AS $$
+      RETURNS TRIGGER
+      LANGUAGE plpgsql
+      SET search_path = public
+      AS $$
       BEGIN
         PERFORM pg_notify(
           'presence_change',
@@ -88,9 +91,9 @@ export async function initPresenceDbListener() {
             'action', TG_OP
           )::text
         );
-        RETURN NEW;
+        RETURN COALESCE(NEW, OLD);
       END;
-      $$ LANGUAGE plpgsql;
+      $$;
     `);
 
     // 2. Drop existing and bind new trigger on the wireline_signal_presence table
