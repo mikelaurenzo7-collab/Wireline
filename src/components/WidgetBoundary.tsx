@@ -34,7 +34,9 @@ export default class WidgetBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, info: ErrorInfo) {
     // Send to Sentry with the widget label so we can group failures
     // by surface in the dashboard.
-    console.error("WidgetBoundary caught:", this.props.label ?? "(unlabeled)", error, info);
+    if (import.meta.env.DEV) {
+      console.error("WidgetBoundary caught:", this.props.label ?? "(unlabeled)", error, info);
+    }
     captureException(error, {
       widget: this.props.label ?? "(unlabeled)",
       componentStack: info.componentStack,

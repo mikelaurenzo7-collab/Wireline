@@ -22,8 +22,6 @@ import {
   Pencil,
   Trash2,
   Plus,
-  MessageCircle,
-  Video,
   Workflow,
   ArrowUpRight,
 } from "lucide-react";
@@ -39,86 +37,12 @@ import VoiceFineTuningPanel from "../VoiceFineTuningPanel";
 import AgentIntegrationCanvas from "../AgentIntegrationCanvas";
 import { Sparkline, RoleBadge, PREMIUM_VOICES, AGENT_ROLES } from "../fleet/helpers";
 import { resolveAgentTools, getRoleToolSet } from "../../lib/agent-capabilities";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/shadcn/Select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
 import { Input } from "../ui/shadcn/Input";
 import { Slider } from "../ui/shadcn/Slider";
 import { ShadButton } from "../ui/shadcn/ShadButton";
-
-type VoiceOption = { id: string; provider?: string; name: string };
-
-function resolveVoiceSelectValue(voiceId: string | null | undefined, catalog: VoiceOption[]) {
-  if (!voiceId) return "inherit";
-  return catalog.some((v) => v.id === voiceId) ? voiceId : "custom";
-}
-
-function VoiceFieldSelect({
-  label,
-  value,
-  catalog,
-  onSelect,
-  allowInherit,
-  showCustomOption,
-  onCustomMode,
-}: {
-  label: string;
-  value: string | null | undefined;
-  catalog: VoiceOption[];
-  onSelect: (voiceId: string | null, provider?: string) => void;
-  allowInherit?: boolean;
-  showCustomOption?: boolean;
-  onCustomMode?: () => void;
-}) {
-  const selectValue = allowInherit && !value ? "inherit" : resolveVoiceSelectValue(value, catalog);
-  return (
-    <div className="space-y-1.5">
-      <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">{label}</label>
-      <Select
-        value={selectValue}
-        onValueChange={(val) => {
-          if (val === "inherit") {
-            onSelect(null);
-            return;
-          }
-          if (val === "custom") {
-            onCustomMode?.();
-            return;
-          }
-          const voiceData = catalog.find((v) => v.id === val);
-          onSelect(val, voiceData?.provider || "11labs");
-        }}
-      >
-        <SelectTrigger
-          aria-label={label}
-          className="w-full text-xs bg-black/5 border border-black/10 rounded-md pl-2.5 py-1.5 text-ink h-auto"
-        >
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {allowInherit && <SelectItem value="inherit">Same as primary</SelectItem>}
-          <SelectGroup>
-            <SelectLabel>Premium</SelectLabel>
-            {catalog.map((v) => (
-              <SelectItem key={v.id} value={v.id}>
-                {v.name}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-          {!allowInherit && showCustomOption && (
-            <SelectItem value="custom">Custom voice ID</SelectItem>
-          )}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-}
+import { VoiceFieldSelect, type VoiceOption } from "./VoiceSelector";
+import ToolTogglePanel from "./ToolTogglePanel";
 
 interface AgentConfigPanelProps {
   selectedAgent: any | null;
@@ -976,135 +900,10 @@ export default function AgentConfigPanel({
                       onResetToDefaults={resetAgentToolsToRoleDefaults}
                     />
 
-                    <div className="rounded-md wl-panel border border-border p-3 space-y-3">
-                      <div className="rounded-md border border-black/8 dark:border-white/8 bg-black/[0.02] dark:bg-white/3 p-3 space-y-3">
-                        <div className="text-[9px] uppercase tracking-[0.3em] text-brand/70">
-                          Channels
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {(["voice", "email", "sms"] as const).map((ch) => {
-                            const channels: string[] = selectedAgent.channels || ["voice"];
-                            const active = channels.includes(ch);
-                            return (
-                              <ShadButton
-                                key={ch}
-                                type="button"
-                                variant={active ? "secondary" : "outline"}
-                                size="sm"
-                                disableAnimations
-                                onClick={() => {
-                                  const next = active
-                                    ? channels.filter((c) => c !== ch)
-                                    : [...channels, ch];
-                                  if (next.length === 0) return;
-                                  updateAgentMeta({ channels: next });
-                                }}
-                                className={cn(
-                                  "rounded-full text-[10px] font-medium capitalize",
-                                  active
-                                    ? "bg-brand/15 border-brand/40 text-brand"
-                                    : "text-muted hover:border-brand/20",
-                                )}
-                              >
-                                {ch}
-                              </ShadButton>
-                            );
-                          })}
-                        </div>
-
-                        <div className="text-[9px] uppercase tracking-[0.3em] text-brand/70 pt-2">
-                          Autonomy Level
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {(
-                            [
-                              { val: "inherit", label: "Inherit" },
-                              { val: "auto", label: "Full Auto" },
-                              { val: "supervised", label: "Supervised" },
-                              { val: "draft", label: "Draft Only" },
-                            ] as const
-                          ).map(({ val, label }) => {
-                            const current = selectedAgent.autonomy_level || "inherit";
-                            return (
-                              <ShadButton
-                                key={val}
-                                type="button"
-                                variant={current === val ? "secondary" : "outline"}
-                                size="sm"
-                                disableAnimations
-                                onClick={() => updateAgentMeta({ autonomy_level: val })}
-                                className={cn(
-                                  "rounded-full text-[10px] font-medium",
-                                  current === val
-                                    ? "bg-brand/15 border-brand/40 text-brand"
-                                    : "text-muted hover:border-brand/20",
-                                )}
-                              >
-                                {label}
-                              </ShadButton>
-                            );
-                          })}
-                        </div>
-                        <p className="text-[9px] text-ink/40 leading-relaxed">
-                          Inherit uses the tenant-wide setting. Full Auto executes actions
-                          immediately. Supervised queues for approval on high-risk actions. Draft
-                          Only always requires operator sign-off.
-                        </p>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-black/8 dark:border-white/8">
-                          <div className="space-y-1.5">
-                            <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
-                              <MessageCircle className="w-2.5 h-2.5 text-brand" /> Slack channel
-                            </label>
-                            <Input
-                              type="text"
-                              value={selectedAgent.slack_channel_id || ""}
-                              onChange={(e) =>
-                                updateAgentMeta({ slack_channel_id: e.target.value.trim() || null })
-                              }
-                              placeholder="#fleet-alerts"
-                              className="w-full text-xs bg-black/5 border border-black/10 rounded-md px-3 py-2 text-ink font-mono"
-                            />
-                          </div>
-                          <div className="rounded-md border border-black/8 dark:border-white/8 bg-black/[0.02] dark:bg-white/3 p-3 flex items-center justify-between gap-3">
-                            <div className="min-w-0">
-                              <p className="text-[10px] uppercase tracking-[0.25em] text-brand/70 flex items-center gap-1.5">
-                                <Video className="w-3 h-3" /> Auto Zoom link
-                              </p>
-                              <p className="text-[10px] text-ink/45 mt-1">
-                                Attach meeting links when scheduling.
-                              </p>
-                            </div>
-                            <ShadButton
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              disableAnimations
-                              onClick={() =>
-                                updateAgentMeta({
-                                  auto_zoom_link: !selectedAgent.auto_zoom_link,
-                                })
-                              }
-                              className={cn(
-                                "shrink-0 w-10 h-5 rounded-full border p-0 min-w-10",
-                                selectedAgent.auto_zoom_link
-                                  ? "bg-brand/30 border-brand/50"
-                                  : "bg-muted/10 border-border",
-                              )}
-                              aria-label="Toggle auto Zoom link"
-                            >
-                              <motion.div
-                                animate={{ x: selectedAgent.auto_zoom_link ? 18 : 0 }}
-                                className={cn(
-                                  "w-4 h-4 rounded-full",
-                                  selectedAgent.auto_zoom_link ? "bg-brand" : "bg-muted/60",
-                                )}
-                              />
-                            </ShadButton>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <ToolTogglePanel
+                      selectedAgent={selectedAgent}
+                      updateAgentMeta={updateAgentMeta}
+                    />
                   </div>
                 </header>
               );

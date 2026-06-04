@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import type { CookieOptions, Request, Response } from "express";
-import { parseCookieHeader } from "./session-cookie";
+import { baseCookieOptions, parseCookieHeader } from "./session-cookie";
 
 export const OAUTH_BRIDGE_STATE_COOKIE = "oauth_bridge_state";
 const BRIDGE_STATE_MAX_AGE_MS = 10 * 60 * 1000;
@@ -11,10 +11,7 @@ export function createOAuthBridgeState(): string {
 
 export function oauthBridgeStateCookieOptions(): CookieOptions {
   return {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production" || process.env.VERCEL === "1",
-    sameSite: "lax",
-    path: "/",
+    ...baseCookieOptions(),
     maxAge: BRIDGE_STATE_MAX_AGE_MS,
   };
 }
