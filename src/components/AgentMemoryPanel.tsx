@@ -113,7 +113,7 @@ export default function AgentMemoryPanel({
               <h3 className="font-display italic lowercase text-xl text-ink leading-tight">
                 what {agentName} remembers
               </h3>
-              <p className="text-[10px] uppercase tracking-[0.28em] text-muted/70">
+              <p className="text-[10px] uppercase tracking-[0.28em] text-ink/40">
                 Carried between every call
               </p>
             </div>
@@ -132,7 +132,7 @@ export default function AgentMemoryPanel({
               <h4 className="font-display italic lowercase text-lg text-ink leading-none">
                 persistent thread
               </h4>
-              <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mt-0.5">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mt-0.5">
                 {messageCount} message{messageCount === 1 ? "" : "s"} · the thread is the memory
               </p>
             </div>
@@ -164,13 +164,13 @@ export default function AgentMemoryPanel({
             <h4 className="font-display italic lowercase text-lg text-ink leading-none">
               recent calls it recalls
             </h4>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mt-0.5">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mt-0.5">
               Last {recentCalls.length || "few"} conversations
             </p>
           </div>
         </div>
         {recentCalls.length === 0 ? (
-          <p className="py-6 text-center text-muted/70 text-[11px] leading-relaxed">
+          <p className="py-6 text-center text-ink/40 text-[11px] leading-relaxed">
             No calls yet — once {agentName} takes calls, their summaries appear here as recall
             context.
           </p>
@@ -257,7 +257,7 @@ export default function AgentMemoryPanel({
               <h4 className="font-display italic lowercase text-lg text-ink leading-none">
                 rules, facts &amp; personality
               </h4>
-              <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mt-0.5">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mt-0.5">
                 {directives.length} rule{directives.length === 1 ? "" : "s"} · {knowledge.length}{" "}
                 fact{knowledge.length === 1 ? "" : "s"}
               </p>

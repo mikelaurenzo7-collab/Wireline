@@ -151,9 +151,9 @@ export default function CampaignsTab({
                           </span>
                         </div>
                         {c.goal && (
-                          <p className="text-[10px] text-muted/70 truncate mb-1">{c.goal}</p>
+                          <p className="text-[10px] text-ink/40 truncate mb-1">{c.goal}</p>
                         )}
-                        <div className="flex items-center gap-3 text-[9px] text-muted/70">
+                        <div className="flex items-center gap-3 text-[9px] text-ink/40">
                           <span className="inline-flex items-center gap-1">
                             <Users className="w-2.5 h-2.5" />
                             {c.leads_count} leads
@@ -168,7 +168,7 @@ export default function CampaignsTab({
                           </span>
                         </div>
                       </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-muted/70 shrink-0 mt-1" />
+                      <ChevronRight className="w-3.5 h-3.5 text-ink/40 shrink-0 mt-1" />
                     </div>
                   </motion.div>
                 );
@@ -308,10 +308,10 @@ export default function CampaignsTab({
                   </div>
                   <div className="flex items-center gap-1 mt-1.5">
                     <RefreshCw
-                      className="w-2.5 h-2.5 text-muted/70 animate-spin"
+                      className="w-2.5 h-2.5 text-ink/40 animate-spin"
                       style={{ animationDuration: "3s" }}
                     />
-                    <span className="text-[8px] text-muted/70">Refreshing every 10s</span>
+                    <span className="text-[8px] text-ink/40">Refreshing every 10s</span>
                   </div>
                 </div>
               </div>
@@ -418,7 +418,7 @@ export default function CampaignsTab({
                                     <span className="text-[9px] font-mono text-ink/70 w-8 text-right shrink-0 tabular-nums">
                                       {o.count}
                                     </span>
-                                    <span className="text-[8px] text-muted/70 w-7 text-right shrink-0 tabular-nums">
+                                    <span className="text-[8px] text-ink/40 w-7 text-right shrink-0 tabular-nums">
                                       {o.pct}%
                                     </span>
                                   </div>
@@ -534,7 +534,7 @@ export default function CampaignsTab({
                           {lead.phone_number || lead.customer_number}
                         </Link>
                       </div>
-                      <div className="text-[9px] text-muted/70 tabular-nums shrink-0">
+                      <div className="text-[9px] text-ink/40 tabular-nums shrink-0">
                         {formatDate(lead.created_at)}
                       </div>
                     </div>

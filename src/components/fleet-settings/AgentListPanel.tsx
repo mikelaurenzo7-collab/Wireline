@@ -58,7 +58,7 @@ export default function AgentListPanel({
             your agents
           </h2>
         </div>
-        <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70 tabular-nums shrink-0">
+        <span className="text-[9px] uppercase tracking-[0.3em] text-ink/40 tabular-nums shrink-0">
           {agents.length}
         </span>
       </div>
@@ -134,11 +134,11 @@ export default function AgentListPanel({
                     </div>
                     <div className="flex items-center flex-wrap gap-1.5 mt-1">
                       <RoleBadge role={agent.role} size="xs" />
-                      <span className="text-[8px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded-full bg-white/5 border border-white/8 text-muted/70 leading-none">
+                      <span className="text-[8px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded-full bg-white/5 border border-white/8 text-ink/40 leading-none">
                         {agent.channel}
                       </span>
                       {agentStats[agent.id] && (
-                        <span className="text-[8px] font-mono px-1.5 py-0.5 rounded-full bg-white/5 border border-white/8 text-muted/70 leading-none">
+                        <span className="text-[8px] font-mono px-1.5 py-0.5 rounded-full bg-white/5 border border-white/8 text-ink/40 leading-none">
                           {agentStats[agent.id].callCount} calls
                         </span>
                       )}
@@ -153,7 +153,7 @@ export default function AgentListPanel({
                   disabled={isDeletingAgent === agent.id}
                   title="Delete agent"
                   aria-label={`Delete agent ${agent.name}`}
-                  className="mr-2 shrink-0 w-7 h-7 rounded-lg glass flex items-center justify-center text-muted/70 hover:text-rose-500 hover:border-rose-500/30 hover:bg-rose-500/8 disabled:opacity-40 transition-all"
+                  className="mr-2 shrink-0 w-7 h-7 rounded-lg glass flex items-center justify-center text-ink/40 hover:text-rose-500 hover:border-rose-500/30 hover:bg-rose-500/8 disabled:opacity-40 transition-all"
                 >
                   {isDeletingAgent === agent.id ? (
                     <Loader2 className="w-3 h-3 animate-spin" />

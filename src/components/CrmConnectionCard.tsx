@@ -356,7 +356,7 @@ export default function CrmConnectionCard() {
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
           <span className="chip-brand">{connectedCount} live</span>
-          <span className="text-[9px] uppercase tracking-[0.28em] text-muted/70">
+          <span className="text-[9px] uppercase tracking-[0.28em] text-ink/40">
             {PROVIDERS.length - connectedCount} available
           </span>
           <button
@@ -529,12 +529,12 @@ export default function CrmConnectionCard() {
                             placeholder="your-store.myshopify.com"
                             spellCheck={false}
                             autoCapitalize="off"
-                            className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink placeholder:text-muted/70 outline-none focus:border-emerald-500/40"
+                            className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink placeholder:text-ink/40 outline-none focus:border-emerald-500/40"
                           />
                           {shopError ? (
                             <p className="text-[9px] text-rose-500 leading-snug">{shopError}</p>
                           ) : (
-                            <p className="text-[9px] text-muted/70 leading-snug">
+                            <p className="text-[9px] text-ink/40 leading-snug">
                               Enter your myshopify.com domain, then click Connect to authorize.
                             </p>
                           )}
@@ -579,7 +579,7 @@ export default function CrmConnectionCard() {
                               </SelectContent>
                             </Select>
                           )}
-                          <p className="text-[9px] text-muted/70 leading-snug">
+                          <p className="text-[9px] text-ink/40 leading-snug">
                             After OAuth we auto-pick #general when possible. Agents post bookings
                             and alerts here — change anytime.
                           </p>
@@ -642,11 +642,11 @@ export default function CrmConnectionCard() {
                             </Select>
                           )}
                           {s.team_name && s.channel_name ? (
-                            <p className="text-[9px] text-muted/70 leading-snug">
+                            <p className="text-[9px] text-ink/40 leading-snug">
                               Current: {s.team_name} → {s.channel_name}
                             </p>
                           ) : (
-                            <p className="text-[9px] text-muted/70 leading-snug">
+                            <p className="text-[9px] text-ink/40 leading-snug">
                               Pick where call alerts post. Without a selection we use your first
                               team channel.
                             </p>

@@ -172,7 +172,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
   };
 
   const inputCls =
-    "w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 transition-all";
+    "w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 transition-all";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -348,7 +348,7 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
+      <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
         {Icon && <Icon className="w-2.5 h-2.5 text-brand" />}
         {label}
       </label>
@@ -449,7 +449,7 @@ function CalendarGrid({
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div
             key={d}
-            className="py-2 text-center text-[9px] uppercase tracking-[0.3em] text-muted/70"
+            className="py-2 text-center text-[9px] uppercase tracking-[0.3em] text-ink/40"
           >
             {d}
           </div>
@@ -479,7 +479,7 @@ function CalendarGrid({
                     <div
                       className={cn(
                         "w-6 h-6 rounded-full flex items-center justify-center mb-1 text-[11px] ml-auto",
-                        isToday ? "bg-brand text-on-brand font-bold" : "text-muted/70",
+                        isToday ? "bg-brand text-on-brand font-bold" : "text-ink/40",
                       )}
                     >
                       {cell.day}
@@ -502,7 +502,7 @@ function CalendarGrid({
                         );
                       })}
                       {dayAppts.length > 3 && (
-                        <div className="text-[8px] text-muted/70 pl-1">
+                        <div className="text-[8px] text-ink/40 pl-1">
                           +{dayAppts.length - 3} more
                         </div>
                       )}
@@ -746,7 +746,7 @@ export default function AppointmentsView({ embedded = false }: { embedded?: bool
                         animate={{ opacity: 1 }}
                         className="h-full min-h-[200px] flex items-center justify-center"
                       >
-                        <p className="text-[9px] uppercase tracking-[0.5em] text-muted/70">
+                        <p className="text-[9px] uppercase tracking-[0.5em] text-ink/40">
                           No completed appointments yet
                         </p>
                       </motion.div>
@@ -842,7 +842,7 @@ function AppointmentRow({
             <StatusBadge status={appt.status} />
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap text-[10px] text-muted/70">
+          <div className="flex items-center gap-3 flex-wrap text-[10px] text-ink/40">
             <span className="inline-flex items-center gap-1">
               <Wrench className="w-3 h-3 text-brand" />
               {appt.service_type}
@@ -871,8 +871,8 @@ function AppointmentRow({
 
           {appt.notes && (
             <div className="flex items-start gap-1.5 mt-1">
-              <StickyNote className="w-3 h-3 text-muted/70 shrink-0 mt-0.5" />
-              <p className="text-[10px] text-muted/70 leading-snug line-clamp-2">{appt.notes}</p>
+              <StickyNote className="w-3 h-3 text-ink/40 shrink-0 mt-0.5" />
+              <p className="text-[10px] text-ink/40 leading-snug line-clamp-2">{appt.notes}</p>
             </div>
           )}
         </div>

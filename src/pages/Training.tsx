@@ -151,7 +151,7 @@ export default function Training() {
                       {agent.name}
                     </p>
                     {agent.role && (
-                      <p className="text-[10px] text-muted/70 truncate capitalize mt-0.5">
+                      <p className="text-[10px] text-ink/40 truncate capitalize mt-0.5">
                         {agent.role.replace(/_/g, " ")}
                       </p>
                     )}

@@ -79,7 +79,7 @@ export default function CreateAgentSection({
 
       <div className="space-y-3">
         <div className="space-y-1.5">
-          <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
+          <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
             <Briefcase className="w-2.5 h-2.5 text-brand" /> Business role
           </label>
           <div className="relative">
@@ -99,29 +99,27 @@ export default function CreateAgentSection({
               </SelectContent>
             </Select>
           </div>
-          <p className="text-[10px] text-muted/70 leading-relaxed">
+          <p className="text-[10px] text-ink/40 leading-relaxed">
             {AGENT_ROLES.find((r) => r.value === newAgentRole)?.description}
           </p>
         </div>
         <div className="space-y-1.5">
-          <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
+          <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
             Agent ID{" "}
-            <span className="text-muted/70 normal-case tracking-normal">
-              (lowercase, no spaces)
-            </span>
+            <span className="text-ink/40 normal-case tracking-normal">(lowercase, no spaces)</span>
           </label>
           <Input
             type="text"
             placeholder="e.g. sales-bot-1"
             value={newAgentId}
             onChange={(e) => setNewAgentId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-            className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 font-mono"
+            className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 font-mono"
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
+          <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
             Agent name{" "}
-            <span className="text-muted/70 normal-case tracking-normal">
+            <span className="text-ink/40 normal-case tracking-normal">
               (what callers will hear)
             </span>
           </label>
@@ -130,7 +128,7 @@ export default function CreateAgentSection({
             placeholder="e.g. Sophie"
             value={newAgentName}
             onChange={(e) => setNewAgentName(e.target.value)}
-            className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70"
+            className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40"
           />
         </div>
       </div>

@@ -240,7 +240,7 @@ export default function AgentConfigPanel({
                           {selectedAgent.channel}
                         </span>
                         <RoleBadge role={selectedAgent.role} size="sm" />
-                        <div className="text-[9px] uppercase tracking-[0.25em] text-muted/70 inline-flex items-center gap-1.5">
+                        <div className="text-[9px] uppercase tracking-[0.25em] text-ink/40 inline-flex items-center gap-1.5">
                           ID: <span className="font-mono text-ink/80">{selectedAgent.id}</span>
                         </div>
                       </div>
@@ -249,7 +249,7 @@ export default function AgentConfigPanel({
                       <div className="rounded-xl glass p-3 flex flex-wrap items-center gap-3">
                         <Briefcase className="w-3.5 h-3.5 text-brand shrink-0" />
                         <div className="flex-1 min-w-[180px] space-y-1">
-                          <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
+                          <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
                             Agent role
                           </label>
                           <div className="relative">
@@ -274,7 +274,7 @@ export default function AgentConfigPanel({
                           </div>
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <p className="text-[10px] text-muted/70 leading-relaxed max-w-[280px]">
+                          <p className="text-[10px] text-ink/40 leading-relaxed max-w-[280px]">
                             {
                               AGENT_ROLES.find(
                                 (r) => r.value === (selectedAgent.role || "customer_service"),
@@ -335,7 +335,7 @@ export default function AgentConfigPanel({
                                   {s.avgScore > 0 ? (
                                     s.avgScore
                                   ) : (
-                                    <span className="text-muted/70 text-sm not-italic">—</span>
+                                    <span className="text-ink/40 text-sm not-italic">—</span>
                                   )}
                                 </div>
                               </div>
@@ -350,7 +350,7 @@ export default function AgentConfigPanel({
                                 <button
                                   onClick={() => fetchAgentPerformance(selectedAgent.id, true)}
                                   title="Refresh stats"
-                                  className="absolute top-2 right-2 w-5 h-5 flex items-center justify-center rounded-full glass text-muted/70 hover:text-brand transition-colors"
+                                  className="absolute top-2 right-2 w-5 h-5 flex items-center justify-center rounded-full glass text-ink/40 hover:text-brand transition-colors"
                                 >
                                   <RefreshCw className="w-2.5 h-2.5" />
                                 </button>
@@ -359,7 +359,7 @@ export default function AgentConfigPanel({
                             {/* 7-day activity sparkline */}
                             {s.sparkline && s.sparkline.some((v: number) => v > 0) && (
                               <div className="rounded-lg glass px-3 py-2 flex items-center gap-3">
-                                <span className="text-[8px] uppercase tracking-[0.3em] text-muted/70 shrink-0">
+                                <span className="text-[8px] uppercase tracking-[0.3em] text-ink/40 shrink-0">
                                   7d
                                 </span>
                                 <div className="flex-1 min-w-0">
@@ -369,7 +369,7 @@ export default function AgentConfigPanel({
                                   {s.sparkline.map((v: number, i: number) => (
                                     <span
                                       key={`day-${i}`}
-                                      className="text-[8px] font-mono tabular-nums text-muted/70"
+                                      className="text-[8px] font-mono tabular-nums text-ink/40"
                                       title={`${v} call${v !== 1 ? "s" : ""}`}
                                     >
                                       {v}
@@ -382,7 +382,7 @@ export default function AgentConfigPanel({
                         );
                       })()}
                     <div className="space-y-1.5">
-                      <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
+                      <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
                         <LinkIcon className="w-2.5 h-2.5 text-brand" /> Knowledge URL
                       </label>
                       <Input
@@ -392,11 +392,11 @@ export default function AgentConfigPanel({
                         value={selectedAgent.website_url || ""}
                         onChange={(e) => updateAgentMeta({ website_url: e.target.value })}
                         placeholder="https://example.com"
-                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70"
+                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
+                      <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
                         <Phone className="w-2.5 h-2.5 text-brand" /> Transfer phone
                       </label>
                       <Input
@@ -406,7 +406,7 @@ export default function AgentConfigPanel({
                         value={selectedAgent.transfer_phone || ""}
                         onChange={(e) => updateAgentMeta({ transfer_phone: e.target.value })}
                         placeholder="+1 800 555 0100"
-                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 tabular-nums"
+                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 tabular-nums"
                       />
                     </div>
                   </div>
@@ -424,7 +424,7 @@ export default function AgentConfigPanel({
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                           <div className="space-y-1.5">
-                            <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
+                            <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
                               Voice signature
                             </label>
                             <div className="relative">
@@ -466,7 +466,7 @@ export default function AgentConfigPanel({
                           </div>
 
                           <div className="space-y-1.5">
-                            <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
+                            <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
                               Archetype
                             </label>
                             <div className="relative">
@@ -493,7 +493,7 @@ export default function AgentConfigPanel({
                           </div>
 
                           <div className="space-y-1.5">
-                            <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
+                            <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
                               Personality vibe
                             </label>
                             <div className="grid grid-cols-3 gap-1.5">
@@ -522,14 +522,14 @@ export default function AgentConfigPanel({
                                 );
                               })}
                             </div>
-                            <p className="text-[9px] text-muted/70 leading-relaxed">
+                            <p className="text-[9px] text-ink/40 leading-relaxed">
                               Pick once. The agent keeps this one personality, voice, and cadence
                               for the whole call — it never switches tone mid-conversation.
                             </p>
                           </div>
 
                           <div className="space-y-1.5">
-                            <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
+                            <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
                               Ambient atmosphere
                             </label>
                             <div className="relative">
@@ -553,7 +553,7 @@ export default function AgentConfigPanel({
 
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
+                              <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
                                 Speaking rate
                               </label>
                               <span className="text-[10px] font-medium tabular-nums text-ink">
@@ -573,7 +573,7 @@ export default function AgentConfigPanel({
                               className="w-full accent-brand cursor-pointer"
                               aria-label="ElevenLabs speaking rate"
                             />
-                            <p className="text-[9px] text-muted/70 leading-relaxed">
+                            <p className="text-[9px] text-ink/40 leading-relaxed">
                               0.7 = slower (elderly callers). 1.2 = faster (impatient callers).
                               ElevenLabs voices only.
                             </p>
@@ -590,7 +590,7 @@ export default function AgentConfigPanel({
 
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between">
-                            <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
+                            <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
                               <Zap className="w-2.5 h-2.5 text-brand" /> Initial greeting
                             </label>
                           </div>
@@ -598,7 +598,7 @@ export default function AgentConfigPanel({
                             type="text"
                             value={selectedAgent.first_message || ""}
                             onChange={(e) => updateAgentMeta({ first_message: e.target.value })}
-                            className="w-full text-base bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-muted/70 font-display italic"
+                            className="w-full text-base bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 font-display italic"
                           />
                         </div>
                       </div>
@@ -621,7 +621,7 @@ export default function AgentConfigPanel({
                             <div className="rounded-lg glass p-3 flex items-center justify-between gap-3">
                               <div className="space-y-0.5 min-w-0">
                                 <h4 className="text-sm text-ink">Auto-respond</h4>
-                                <p className="text-[10px] text-muted/70 leading-relaxed">
+                                <p className="text-[10px] text-ink/40 leading-relaxed">
                                   Autonomous reply on incoming threads.
                                 </p>
                               </div>
@@ -655,7 +655,7 @@ export default function AgentConfigPanel({
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div className="space-y-1.5">
-                              <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
+                              <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
                                 Relay tone
                               </label>
                               <div className="relative">
@@ -679,7 +679,7 @@ export default function AgentConfigPanel({
                             </div>
 
                             <div className="space-y-1.5">
-                              <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
+                              <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
                                 Signature
                               </label>
                               <Input
@@ -689,7 +689,7 @@ export default function AgentConfigPanel({
                                   updateAgentMeta({ email_signature: e.target.value })
                                 }
                                 placeholder="— Best, Agent"
-                                className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-emerald-400/50 text-ink placeholder:text-muted/70"
+                                className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-emerald-400/50 text-ink placeholder:text-ink/40"
                               />
                             </div>
                           </div>
@@ -731,7 +731,7 @@ export default function AgentConfigPanel({
                               Use auto-composed prompt
                             </button>
                           </div>
-                          <p className="text-[10px] text-muted/70 leading-relaxed">
+                          <p className="text-[10px] text-ink/40 leading-relaxed">
                             Override the auto-composed identity prompt. Caller context, knowledge,
                             directives and the compliance / escalation guardrails are still appended
                             automatically on every call. Leave blank to use the auto-composed
@@ -754,10 +754,10 @@ export default function AgentConfigPanel({
                                   : null,
                               })
                             }
-                            className="w-full h-48 px-4 py-3 rounded-xl bg-black/5 border border-black/10 text-ink outline-none focus:border-brand/50 transition-all resize-none text-sm leading-relaxed placeholder:text-muted/70"
+                            className="w-full h-48 px-4 py-3 rounded-xl bg-black/5 border border-black/10 text-ink outline-none focus:border-brand/50 transition-all resize-none text-sm leading-relaxed placeholder:text-ink/40"
                             placeholder="Leave blank to use the auto-composed prompt. Type here to define the agent's full identity, tone, and behavior — this replaces the generated base prompt."
                           />
-                          <div className="flex items-center justify-between text-[9px] text-muted/70">
+                          <div className="flex items-center justify-between text-[9px] text-ink/40">
                             <span>
                               {usingAutoComposed
                                 ? "Using auto-composed prompt"
@@ -844,7 +844,7 @@ export default function AgentConfigPanel({
                             );
                           })}
                         </div>
-                        <p className="text-[9px] text-muted/70 leading-relaxed">
+                        <p className="text-[9px] text-ink/40 leading-relaxed">
                           Inherit uses the tenant-wide setting. Full Auto executes actions
                           immediately. Supervised queues for approval on high-risk actions. Draft
                           Only always requires operator sign-off.
@@ -884,7 +884,7 @@ export default function AgentConfigPanel({
                         <h3 className="font-display italic lowercase text-xl text-ink leading-none">
                           behavioral engine
                         </h3>
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mt-1">
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mt-1">
                           Base heuristic instructions
                         </p>
                       </div>
@@ -908,7 +908,7 @@ export default function AgentConfigPanel({
                     onChange={(e) =>
                       setAgentConfig({ ...agentConfig, personality: e.target.value })
                     }
-                    className="relative z-10 w-full h-48 px-4 py-3 rounded-xl bg-black/5 border border-black/10 text-ink outline-none focus:border-brand/50 transition-all resize-none text-sm leading-relaxed placeholder:text-muted/70"
+                    className="relative z-10 w-full h-48 px-4 py-3 rounded-xl bg-black/5 border border-black/10 text-ink outline-none focus:border-brand/50 transition-all resize-none text-sm leading-relaxed placeholder:text-ink/40"
                     placeholder="Define the agent's identity, tone, and behavioral patterns…"
                   />
                 </section>
@@ -947,7 +947,7 @@ export default function AgentConfigPanel({
                         <h3 className="font-display italic lowercase text-lg text-ink leading-none">
                           tactical logic
                         </h3>
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mt-0.5">
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mt-0.5">
                           Hard constraints
                         </p>
                       </div>
@@ -1040,7 +1040,7 @@ export default function AgentConfigPanel({
                       </AnimatePresence>
                     </div>
                     <div className="mt-3 pt-3 border-t border-white/8 space-y-1.5">
-                      <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
+                      <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
                         Add directive
                       </label>
                       <div className="flex gap-1.5">
@@ -1052,7 +1052,7 @@ export default function AgentConfigPanel({
                             e.key === "Enter" && saveManualEntry("directive", newDirective)
                           }
                           placeholder="e.g. Always verify date of birth…"
-                          className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-muted/70"
+                          className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-ink/40"
                         />
                         <button
                           onClick={() => saveManualEntry("directive", newDirective)}
@@ -1073,7 +1073,7 @@ export default function AgentConfigPanel({
                         <h3 className="font-display italic lowercase text-lg text-ink leading-none">
                           knowledge base
                         </h3>
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mt-0.5">
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mt-0.5">
                           Knowledge base
                         </p>
                       </div>
@@ -1164,7 +1164,7 @@ export default function AgentConfigPanel({
                       </AnimatePresence>
                     </div>
                     <div className="mt-3 pt-3 border-t border-white/8 space-y-1.5">
-                      <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
+                      <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
                         Add fact
                       </label>
                       <div className="flex gap-1.5">
@@ -1176,7 +1176,7 @@ export default function AgentConfigPanel({
                             e.key === "Enter" && saveManualEntry("knowledge", newKnowledge)
                           }
                           placeholder="e.g. Office closes at 5pm…"
-                          className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-muted/70"
+                          className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-ink/40"
                         />
                         <button
                           onClick={() => saveManualEntry("knowledge", newKnowledge)}

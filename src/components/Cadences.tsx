@@ -238,7 +238,7 @@ export default function Cadences() {
           <h3 className="font-display italic text-xl text-ink leading-none">
             Multi-touch cadences
           </h3>
-          <p className="text-[11px] text-muted/70 mt-1.5 max-w-xl leading-relaxed">
+          <p className="text-[11px] text-ink/40 mt-1.5 max-w-xl leading-relaxed">
             Define a sequence of call → SMS → email steps with delays. Enroll any lead from
             /pipeline or the API. The job-worker ticks each step automatically.
           </p>
@@ -268,7 +268,7 @@ export default function Cadences() {
                 className="text-left rounded-xl border border-white/12 hover:border-white/30 p-4 transition-colors group"
               >
                 <p className="text-[12px] font-semibold text-ink mb-1">{t.name}</p>
-                <p className="text-[10px] text-muted/70 mb-3">{t.description}</p>
+                <p className="text-[10px] text-ink/40 mb-3">{t.description}</p>
                 <div className="flex items-center gap-1">
                   {t.steps.map((s, i) => (
                     <span
@@ -311,7 +311,7 @@ export default function Cadences() {
                     </span>
                   )}
                 </div>
-                {c.description && <p className="text-[11px] text-muted/70 mb-2">{c.description}</p>}
+                {c.description && <p className="text-[11px] text-ink/40 mb-2">{c.description}</p>}
                 <div className="flex items-center gap-1 flex-wrap">
                   {c.steps.map((s, i) => (
                     <span
@@ -321,7 +321,7 @@ export default function Cadences() {
                     >
                       {stepIcon(s.type)} {s.type}
                       {s.delayHours > 0 && (
-                        <span className="text-muted/70 normal-case">+{s.delayHours}h</span>
+                        <span className="text-ink/40 normal-case">+{s.delayHours}h</span>
                       )}
                     </span>
                   ))}
@@ -427,7 +427,7 @@ export default function Cadences() {
                       </Select>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Clock className="w-3 h-3 text-muted/70" />
+                      <Clock className="w-3 h-3 text-ink/40" />
                       <Input
                         type="number"
                         inputMode="numeric"
@@ -436,7 +436,7 @@ export default function Cadences() {
                         onChange={(e) => updateStep(i, { delayHours: Number(e.target.value) || 0 })}
                         className="w-20 px-2 py-1.5 rounded-md bg-white/5 border border-white/10 text-ink text-[11px]"
                       />
-                      <span className="text-[10px] text-muted/70">hours delay</span>
+                      <span className="text-[10px] text-ink/40">hours delay</span>
                     </div>
                     {s.type !== "call" && (
                       <Input

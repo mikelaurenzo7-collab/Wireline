@@ -818,7 +818,7 @@ function AllSetCard({
                 </div>
                 <div className="text-[8px] uppercase tracking-[0.24em] text-muted">{hint}</div>
               </div>
-              <ArrowRight className="w-3.5 h-3.5 text-muted/70 group-hover:text-brand transition-colors shrink-0" />
+              <ArrowRight className="w-3.5 h-3.5 text-ink/40 group-hover:text-brand transition-colors shrink-0" />
             </Link>
           ))}
         </div>

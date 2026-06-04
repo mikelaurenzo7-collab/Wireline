@@ -496,13 +496,13 @@ export function Panel({
         </header>
       )}
 
-      {/* Header separator */}
+      {/* Header separator — edge-to-edge gradient */}
       {(title || actions || hint || Icon) && (
         <div
-          className="shrink-0 mx-4 h-px"
+          className="shrink-0 h-px"
           style={{
             background:
-              "linear-gradient(90deg, rgba(0,0,0,0.04), rgba(0,0,0,0.07) 40%, rgba(0,0,0,0.03))",
+              "linear-gradient(90deg, transparent, rgba(0,0,0,0.07) 25%, rgba(0,0,0,0.09) 50%, rgba(0,0,0,0.07) 75%, transparent)",
           }}
         />
       )}

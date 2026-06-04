@@ -69,7 +69,7 @@ export function SubscriptionPanel({
                     "py-3 rounded-lg border text-[10px] uppercase tracking-[0.25em] transition-all flex items-center justify-center gap-1.5",
                     settings.subscription_status === "active"
                       ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-500"
-                      : "bg-white/5 border-white/10 text-muted/70 hover:border-white/20",
+                      : "bg-white/5 border-white/10 text-ink/40 hover:border-white/20",
                   )}
                 >
                   {settings.subscription_status === "active" && (
@@ -83,7 +83,7 @@ export function SubscriptionPanel({
                     "py-3 rounded-lg border text-[10px] uppercase tracking-[0.25em] transition-all flex items-center justify-center gap-1.5",
                     settings.subscription_status === "past_due"
                       ? "bg-rose-500/15 border-rose-500/40 text-rose-500"
-                      : "bg-white/5 border-white/10 text-muted/70 hover:border-white/20",
+                      : "bg-white/5 border-white/10 text-ink/40 hover:border-white/20",
                   )}
                 >
                   {settings.subscription_status === "past_due" && (
@@ -98,7 +98,7 @@ export function SubscriptionPanel({
             </div>
 
             <div className="rounded-xl glass border border-white/10 p-3 space-y-3">
-              <label className="text-[10px] uppercase tracking-[0.3em] text-muted/70">
+              <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
                 Max agents
               </label>
               <div className="flex items-center gap-3">
@@ -141,11 +141,11 @@ export function SubscriptionPanel({
             </div>
             <div className="space-y-2 text-[11px] font-mono">
               <div className="flex items-center justify-between py-1 border-b border-white/5">
-                <span className="text-muted/70 uppercase tracking-[0.2em] text-[9px]">Core</span>
+                <span className="text-ink/40 uppercase tracking-[0.2em] text-[9px]">Core</span>
                 <span className="text-ink">v2.0.4</span>
               </div>
               <div className="flex items-center justify-between py-1 border-b border-white/5">
-                <span className="text-muted/70 uppercase tracking-[0.2em] text-[9px]">State</span>
+                <span className="text-ink/40 uppercase tracking-[0.2em] text-[9px]">State</span>
                 <span
                   className={cn(
                     "px-1.5 py-0.5 rounded-full border text-[9px] uppercase tracking-[0.25em] leading-none",
@@ -158,11 +158,11 @@ export function SubscriptionPanel({
                 </span>
               </div>
               <div className="flex items-center justify-between py-1 border-b border-white/5">
-                <span className="text-muted/70 uppercase tracking-[0.2em] text-[9px]">Agents</span>
+                <span className="text-ink/40 uppercase tracking-[0.2em] text-[9px]">Agents</span>
                 <span className="text-ink tabular-nums">{agents.length} deployed</span>
               </div>
               <div className="flex items-center justify-between py-1">
-                <span className="text-muted/70 uppercase tracking-[0.2em] text-[9px]">Quota</span>
+                <span className="text-ink/40 uppercase tracking-[0.2em] text-[9px]">Quota</span>
                 <span className="text-brand tabular-nums">
                   {Math.max(0, settings.max_agents - agents.length)} free
                 </span>
@@ -209,7 +209,7 @@ export function SubscriptionPanel({
               </ShadButton>
             </div>
           </div>
-          <div className="flex items-center gap-3 text-[10px] text-muted/70 border-t border-white/5 pt-3">
+          <div className="flex items-center gap-3 text-[10px] text-ink/40 border-t border-white/5 pt-3">
             <Link to="/privacy" className="hover:text-muted">
               Privacy Policy
             </Link>

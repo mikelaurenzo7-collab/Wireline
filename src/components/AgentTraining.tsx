@@ -421,7 +421,7 @@ export default function AgentTraining({
                       <h3 className="font-display italic lowercase text-xl text-ink">
                         analysis engine
                       </h3>
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70">
+                      <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
                         Find improvement opportunities from your calls
                       </p>
                     </div>
@@ -447,7 +447,7 @@ export default function AgentTraining({
                     className="space-y-3"
                   >
                     <div className="rounded-xl bg-black/20 border border-white/8 p-4">
-                      <h4 className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mb-2">
+                      <h4 className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mb-2">
                         Analysis
                       </h4>
                       <p className="font-display italic text-lg text-ink leading-snug">
@@ -498,7 +498,7 @@ export default function AgentTraining({
                       <h3 className="font-display italic lowercase text-xl text-ink">
                         personality
                       </h3>
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70">
+                      <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
                         Base behavioral heuristics and tone
                       </p>
                     </div>
@@ -535,7 +535,7 @@ export default function AgentTraining({
                     <textarea
                       value={personalityDraft}
                       onChange={(e) => setPersonalityDraft(e.target.value)}
-                      className="w-full min-h-[180px] p-3 rounded-xl bg-black/5 border border-black/10 text-sm text-ink outline-none focus:border-brand/50 resize-none leading-relaxed placeholder:text-muted/70"
+                      className="w-full min-h-[180px] p-3 rounded-xl bg-black/5 border border-black/10 text-sm text-ink outline-none focus:border-brand/50 resize-none leading-relaxed placeholder:text-ink/40"
                       placeholder="Define the core identity heuristics…"
                     />
                   ) : (
@@ -544,7 +544,7 @@ export default function AgentTraining({
                         {personality ? (
                           `"${personality}"`
                         ) : (
-                          <span className="text-muted/70 not-italic text-base">
+                          <span className="text-ink/40 not-italic text-base">
                             No personality set yet — click Edit to describe how your agent should
                             speak and behave.
                           </span>
@@ -564,7 +564,7 @@ export default function AgentTraining({
                       <h3 className="font-display italic lowercase text-lg text-ink leading-none">
                         rules
                       </h3>
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mt-0.5">
+                      <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mt-0.5">
                         Lines your agent never crosses
                       </p>
                     </div>
@@ -575,7 +575,7 @@ export default function AgentTraining({
                   <div className="space-y-2 mb-3">
                     <AnimatePresence mode="popLayout">
                       {directives.length === 0 ? (
-                        <div className="py-8 text-center text-muted/70 text-[11px] leading-relaxed px-4">
+                        <div className="py-8 text-center text-ink/40 text-[11px] leading-relaxed px-4">
                           No rules yet — add one below to set hard limits your agent always
                           respects.
                         </div>
@@ -677,7 +677,7 @@ export default function AgentTraining({
                     </AnimatePresence>
                   </div>
                   <div className="mt-auto pt-3 border-t border-white/8 space-y-1.5">
-                    <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
+                    <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
                       Add directive
                     </label>
                     <div className="flex gap-1.5">
@@ -689,7 +689,7 @@ export default function AgentTraining({
                           e.key === "Enter" && saveManualEntry("directive", newDirective)
                         }
                         placeholder="e.g. Never discuss competitor pricing"
-                        className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-muted/70"
+                        className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-ink/40"
                       />
                       <button
                         onClick={() => saveManualEntry("directive", newDirective)}
@@ -709,7 +709,7 @@ export default function AgentTraining({
                       <h3 className="font-display italic lowercase text-lg text-ink leading-none">
                         fact archive
                       </h3>
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mt-0.5">
+                      <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mt-0.5">
                         Knowledge base
                       </p>
                     </div>
@@ -813,7 +813,7 @@ export default function AgentTraining({
                     </AnimatePresence>
                   </div>
                   <div className="mt-auto pt-3 border-t border-white/8 space-y-1.5">
-                    <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
+                    <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
                       Add fact
                     </label>
                     <div className="flex gap-1.5">
@@ -825,7 +825,7 @@ export default function AgentTraining({
                           e.key === "Enter" && saveManualEntry("knowledge", newKnowledge)
                         }
                         placeholder="e.g. Our return policy is 30 days, no questions"
-                        className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-muted/70"
+                        className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-ink/40"
                       />
                       <button
                         onClick={() => saveManualEntry("knowledge", newKnowledge)}
@@ -873,8 +873,8 @@ export default function AgentTraining({
                         </div>
                         <p className="text-sm text-ink/90 leading-relaxed">{lesson.lesson}</p>
                         <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/8">
-                          <Clock className="w-3 h-3 text-muted/70" />
-                          <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
+                          <Clock className="w-3 h-3 text-ink/40" />
+                          <span className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
                             {formatDate(lesson.created_at)}
                           </span>
                         </div>
@@ -955,7 +955,7 @@ export default function AgentTraining({
                     <h2 className="font-display italic lowercase text-4xl text-ink mb-2">
                       test call
                     </h2>
-                    <p className="text-muted/70 text-sm leading-relaxed max-w-md mx-auto">
+                    <p className="text-ink/40 text-sm leading-relaxed max-w-md mx-auto">
                       Test how your agent responds in a safe practice run before it takes real
                       calls.
                     </p>
@@ -967,7 +967,7 @@ export default function AgentTraining({
                         voice call
                       </h4>
                     </div>
-                    <p className="text-[11px] text-muted/70 leading-relaxed">
+                    <p className="text-[11px] text-ink/40 leading-relaxed">
                       Speak directly with your agent through your browser microphone. Tests the
                       exact voice and persona your callers will hear.
                     </p>
