@@ -202,10 +202,10 @@ export const AGENT_ROLES = [
     description: "Screens and scores inbound prospects",
     color: "orange",
     tw: {
-      bg: "bg-orange-500/10",
-      text: "text-orange-600",
-      border: "border-orange-500/25",
-      dot: "bg-orange-500",
+      bg: "bg-amber-500/10",
+      text: "text-amber-600",
+      border: "border-amber-500/25",
+      dot: "bg-amber-500",
     },
   },
   {

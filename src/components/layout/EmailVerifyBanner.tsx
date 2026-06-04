@@ -89,7 +89,7 @@ export default function EmailVerifyBanner() {
     }
   }
 
-  // Color always amber here — verification is informational, not
+  // Color always orange here — verification is informational, not
   // urgent. Trial-expiry gets the rose treatment in TrialBanner.
   const containerCls = "bg-amber-500/10 border-b border-amber-500/30";
   const textCls = "text-amber-700";

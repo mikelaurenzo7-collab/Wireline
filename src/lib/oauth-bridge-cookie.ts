@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
-import type { CookieOptions, Request, Response } from "express";
+import type { Request, Response } from "express";
+import type { CookieOptions } from "express-serve-static-core";
 import { parseCookieHeader } from "./session-cookie";
 
 export const OAUTH_BRIDGE_STATE_COOKIE = "oauth_bridge_state";

@@ -777,7 +777,7 @@ router.post(
       const entries: Array<{ content: string }> = Array.isArray(
         (result as { entries?: unknown }).entries,
       )
-        ? (result as { entries: Array<{ content: string }> }).entries
+        ? ((result as { entries: unknown[] }).entries as Array<{ content: string }>)
         : [];
       const snippets = entries
         .map((e) => e?.content?.trim())

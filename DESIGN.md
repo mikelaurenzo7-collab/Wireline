@@ -101,7 +101,7 @@
 - Mark purely decorative elements with `aria-hidden`.
 - **Decouple visual size from hit targets.** Keep visual elements compact (36px inputs, 32px secondary buttons, 20px utility icons). Expand interactive hit areas to 44–48px minimum using invisible `::after` pseudo-elements, transparent outer padding, or container bounds — never by inflating the visual container.
 - Use sharp 14px body typography, high-contrast dark surfaces, and thin ambient-luminosity borders for information density.
-- Use `.wl-panel` and `.wl-panel-elevated` for specular depth surfaces instead of flat `border border-black/8` patterns.
+- Use `.wl-panel` and `.wl-panel-elevated` for high-fidelity specular depth surfaces. Do not flatten surfaces with `border border-black/8` patterns. `wl-panel-elevated` now utilizes heavy gradient + blur depth logic representing true luxury UI design.
 - Apply `.touch-press` to all small interactive elements (buttons, pills) for zero-latency GPU-driven feedback.
 - Use `.wl-orbit` with `data-active` for orbital activity indicators around agent avatars.
 - Use `.scroll-viewport` on any container that needs isolated inner scrolling (overscroll containment).
@@ -132,7 +132,8 @@ The app shell uses a **strict locked viewport** pattern:
 | Class | Purpose |
 |-------|---------|
 | `.wl-panel` | Specular depth surface (ambient blur + inset highlight) |
-| `.wl-panel-elevated` | Primary workspace container (deeper blur + aurora glow) |
+| `.wl-panel-elevated` | Primary workspace container (deeper blur + aurora glow + specular highlights + precise shadow depths) |
+| `.card-interactive` | Standard interactive card tile (translates up, border hover state, active bounce) |
 | `.touch-press` | Zero-latency GPU-driven scale(0.97) on :active |
 | `.touch-press-deep` | Deeper press for larger surfaces (scale 0.95 + opacity) |
 | `.wl-orbit` | Orbital activity ring around agent avatars |

@@ -56,12 +56,17 @@ function parseAgentsPayload(data: unknown): WorkspaceAgentSummary[] {
     ? (data as { agents: unknown[] }).agents
     : [];
   return list
-    .filter((a: { id?: unknown }) => typeof a?.id === "string" && a.id)
-    .map((a: { id: string; name?: string; role?: string }) => ({
-      id: a.id,
-      name: a.name || "Untitled agent",
-      role: a.role ?? null,
-    }));
+    .filter(
+      (a: unknown) => typeof (a as { id?: unknown })?.id === "string" && (a as { id: string }).id,
+    )
+    .map((a: unknown) => {
+      const typed = a as { id: string; name?: string; role?: string };
+      return {
+        id: typed.id,
+        name: typed.name || "Untitled agent",
+        role: typed.role ?? null,
+      };
+    });
 }
 
 function parseFleetPayload(fleet: unknown): WorkspaceAgentSummary[] {

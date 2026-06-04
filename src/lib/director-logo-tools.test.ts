@@ -33,6 +33,7 @@ describe("director-logo-tools", () => {
         },
       ],
     );
+    expect(brief.prompt).toMatch(/modern logo for Wireline/i);
     expect(brief.style).toMatch(/minimal|geometric/i);
     expect(brief.colors).toMatch(/#1a3a5c/i);
     expect(brief.usage).toMatch(/website header|app icon/i);
