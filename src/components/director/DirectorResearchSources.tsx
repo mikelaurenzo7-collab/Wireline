@@ -2,7 +2,8 @@
  * Grounded web research citations on Director replies.
  */
 import { ExternalLink, Globe } from "lucide-react";
-import { LIVE_FEED_LABELS } from "../../lib/wireline-director-design";
+import { LIVE_FEED_LABELS, WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
+import { cn } from "../../lib/utils";
 import { safeExternalHref } from "../../lib/safe-external-url";
 
 export interface ResearchSource {
@@ -14,7 +15,12 @@ export function DirectorResearchSources({ sources }: { sources: ResearchSource[]
   if (!sources.length) return null;
 
   return (
-    <div className="mt-2 w-full rounded-md border border-brand/12 bg-brand/[0.03] px-2.5 py-2 space-y-1.5">
+    <div
+      className={cn(
+        "mt-2 w-full rounded-md border px-2.5 py-2 space-y-1.5",
+        WL_DIRECTOR_CLASSES.researchSources,
+      )}
+    >
       <div className="flex items-center gap-2">
         <Globe className="w-3.5 h-3.5 text-brand shrink-0" />
         <span className="text-[10px] uppercase tracking-[0.2em] text-brand/80 font-semibold">

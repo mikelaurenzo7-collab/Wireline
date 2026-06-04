@@ -3,7 +3,7 @@
  * Runway progress · spotlight card · queue/cleared ticket strips · status ticker.
  */
 import React, { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { Check, Compass, Loader2, Radio } from "lucide-react";
 import { cn } from "../../lib/utils";
 import type { IntegrationLiveAction } from "../../lib/integration-live-scripts";
@@ -150,6 +150,7 @@ export default function DirectorLiveOrchestra({
   liveSteps = [],
   className,
 }: DirectorLiveOrchestraProps) {
+  const reduceMotion = useReducedMotion();
   const [tickerIndex, setTickerIndex] = useState(0);
 
   const active = actions.find((a) => a.status === "active");
@@ -158,31 +159,42 @@ export default function DirectorLiveOrchestra({
   const isProposal = actions.some((a) => a.source === "proposal");
 
   const tickerLines = useMemo(() => {
+    const live = actions.find((a) => a.status === "active");
+    const pending = actions.filter((a) => a.status === "pending");
+    const done = actions.filter((a) => a.status === "success");
     const lines: string[] = [];
-    if (active) lines.push(`${resolveShortName(active.integration)} · ${active.title}`);
-    for (const q of queued.slice(0, 3)) {
+    if (live) lines.push(`${resolveShortName(live.integration)} · ${live.title}`);
+    for (const q of pending.slice(0, 3)) {
       lines.push(`${LIVE_ORCHESTRA_COPY.queuedPrefix} ${q.title}`);
     }
-    if (cleared.length > 0) {
-      lines.push(LIVE_ORCHESTRA_COPY.clearedSummary(cleared.length));
+    if (done.length > 0) {
+      lines.push(LIVE_ORCHESTRA_COPY.clearedSummary(done.length));
     }
     return lines.length > 0 ? lines : [LIVE_ORCHESTRA_COPY.armSequence];
-  }, [active, queued, cleared.length]);
+  }, [actions]);
 
   useEffect(() => {
-    if (tickerLines.length <= 1) return;
+    setTickerIndex(0);
+  }, [tickerLines.length, active?.id]);
+
+  useEffect(() => {
+    if (reduceMotion || tickerLines.length <= 1) return;
     const id = window.setInterval(() => {
       setTickerIndex((i) => (i + 1) % tickerLines.length);
     }, 2800);
     return () => window.clearInterval(id);
-  }, [tickerLines.length]);
+  }, [reduceMotion, tickerLines.length]);
 
   const activeLiveStep = liveSteps.find((s) => s.status === "active");
 
   if (actions.length === 0) return null;
 
   return (
-    <div className={cn("wl-live-orchestra relative", className)} aria-live="polite">
+    <div
+      className={cn("wl-live-orchestra relative", className)}
+      aria-live="polite"
+      aria-label="Director fleet channel activity"
+    >
       <div className="flex items-start justify-between gap-3 mb-3 px-0.5">
         <div className="min-w-0">
           <div className="flex items-center gap-2">

@@ -31,7 +31,7 @@ export function DirectorStarterPrompts({
   return (
     <div className={cn("wl-director-empty-section w-full", className)}>
       <p className="wl-label text-brand/60 mb-2.5">{DIRECTOR_EMPTY_HERO.starterEyebrow}</p>
-      <div className="stagger-children flex flex-wrap justify-center gap-2">
+      <div className="stagger-children grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
         {featured.map((p) => (
           <StarterChip
             key={p.id}
@@ -90,7 +90,7 @@ function StarterChip({
       title={intent}
       onClick={onSelect}
       className={cn(
-        "touch-press group h-auto text-left text-[11px] text-ink/80 px-3 py-2 gap-2",
+        "touch-press group h-auto w-full justify-between text-left text-[11px] text-ink/80 px-3 py-2.5 gap-2",
         WL_DIRECTOR_CLASSES.starterChip,
       )}
     >

@@ -578,6 +578,20 @@ html, body, .marketing-surface, .app-surface {
   width: 100%;
   max-width: 32rem;
   margin-inline: auto;
+  padding: 0.5rem 0.25rem 0.25rem;
+}
+.wl-director-empty-hero::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: -12% -8% auto;
+  height: 55%;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse 80% 70% at 50% 0%,
+    color-mix(in srgb, var(--color-brand, #8b3fd6) 10%, transparent),
+    transparent 72%
+  );
 }
 .wl-director-composer-toolbar {
   display: flex;
@@ -620,6 +634,22 @@ html, body, .marketing-surface, .app-surface {
 }
 .dark .wl-scroll-to-bottom-btn {
   background: color-mix(in srgb, var(--background) 88%, #1a1225);
+}
+
+.wl-director-artifacts-panel {
+  border-color: color-mix(in srgb, var(--color-brand, #8b3fd6) 14%, transparent);
+  background: color-mix(in srgb, var(--paper, #f5f0e6) 94%, white);
+}
+.dark .wl-director-artifacts-panel {
+  background: color-mix(in srgb, var(--background) 82%, #0f0c17);
+}
+
+.wl-director-research-sources {
+  border-color: color-mix(in srgb, var(--color-brand, #8b3fd6) 12%, transparent);
+  background: color-mix(in srgb, var(--color-brand, #8b3fd6) 4%, var(--paper, #f5f0e6));
+}
+.dark .wl-director-research-sources {
+  background: color-mix(in srgb, var(--color-brand, #8b3fd6) 6%, var(--background));
 }
 
 .wl-director-opus-badge {

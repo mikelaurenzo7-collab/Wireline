@@ -290,8 +290,8 @@ export default function DirectorLiveSession({
           </div>
         )}
 
-        {/* SSE pipeline timeline */}
-        {pipelineSteps.length > 0 && (
+        {/* SSE pipeline — hide when fleet channel is showing live actions */}
+        {pipelineSteps.length > 0 && integrationActions.length === 0 && (
           <div className="relative rounded-md border border-brand/8 bg-white/50 dark:bg-black/20 px-3 py-2.5">
             <LiveTaskPipeline steps={pipelineSteps} variant="timeline" />
           </div>

@@ -49,7 +49,6 @@ import {
   Palette,
   Download,
   Sparkles,
-  Image as ImageIcon,
 } from "lucide-react";
 import { authFetch, readApiJson } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
@@ -59,7 +58,6 @@ import { cn } from "../lib/utils";
 import FleetSetupNudge from "./FleetSetupNudge";
 import { ThinkingDisplay } from "./ui/ThinkingDisplay";
 import type { PipelineStep } from "./ui/LiveTaskPipeline";
-import { ArtifactCard, type ArtifactType } from "./ui/ArtifactCard";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { Input } from "./ui/shadcn/Input";
 import { Textarea } from "./ui/shadcn/Textarea";
@@ -83,6 +81,7 @@ import { DirectorMessageBody } from "./director/DirectorMessageBody";
 import { DirectorCapabilityCatalog } from "./director/DirectorCapabilityCatalog";
 import { DirectorResearchSources } from "./director/DirectorResearchSources";
 import { DirectorStarterPrompts } from "./director/DirectorStarterPrompts";
+import DirectorArtifactsPanel, { type DirectorArtifact } from "./director/DirectorArtifactsPanel";
 import { INTEGRATION_STYLES } from "../lib/integration-activities";
 import type { ToolIntegration } from "../lib/agent-capabilities";
 import {
@@ -129,18 +128,6 @@ interface DirectorPreview {
   rationale: string;
   previewDataUrl: string;
   svg?: string;
-}
-
-interface DirectorArtifact {
-  id: string;
-  name: string;
-  toolName: string;
-  artifactType: string;
-  mimeType: string;
-  sizeBytes: number;
-  createdAt: string;
-  metadata?: Record<string, unknown>;
-  downloadUrl: string;
 }
 
 interface DirectorMessage {
@@ -239,6 +226,7 @@ export default function DirectorWorkspace({
     artifactsPanel: true,
   });
   const [loadDegraded, setLoadDegraded] = useState(false);
+  const [pinnedToBottom, setPinnedToBottom] = useState(true);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const connectorsRef = useRef<HTMLDivElement | null>(null);
@@ -474,9 +462,20 @@ export default function DirectorWorkspace({
   }, [authLoading, loadMessages, user]);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+      setPinnedToBottom(distance < 96);
+    };
+    onScroll();
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [isLoading, messages.length]);
+
+  useEffect(() => {
+    if (!pinnedToBottom || !scrollRef.current) return;
+    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [
     messages,
     isSending,
@@ -484,7 +483,15 @@ export default function DirectorWorkspace({
     streamState.reply,
     streamState.phase,
     integrationLiveActions.length,
+    pinnedToBottom,
   ]);
+
+  const scrollToLatest = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: reduceMotion ? "auto" : "smooth" });
+    setPinnedToBottom(true);
+  }, [reduceMotion]);
 
   useEffect(() => {
     if (!focusAgentId) {
@@ -945,6 +952,8 @@ export default function DirectorWorkspace({
                   </span>
                 ) : focusedAgent ? (
                   `Coaching ${focusedAgent.name}`
+                ) : integrationLiveActions.length > 0 && isSending ? (
+                  `Fleet channel · ${integrationLiveActions.filter((a) => a.status === "success").length}/${integrationLiveActions.length}`
                 ) : (
                   "Always-on fleet manager"
                 )}
@@ -967,778 +976,701 @@ export default function DirectorWorkspace({
       )}
 
       {/* Messages - isolated scroll viewport */}
-      <div
-        ref={scrollRef}
-        className="flex-1 min-h-0 scroll-viewport wl-scroll-edge px-3 sm:px-4 py-5"
-      >
-        {loadDegraded && !isLoading && (
-          <p className="rounded-md border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-[11px] text-amber-900/80 dark:text-amber-100/80">
-            Some Director data could not be loaded. Your thread may be incomplete — refresh to
-            retry.
-          </p>
-        )}
-        {isLoading ? (
-          <div className="wl-director-loading" role="status" aria-live="polite">
-            <div className="wl-director-loading-orb">
-              <LoadingDots />
-            </div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink/80">
-              {DIRECTOR_LOADING_COPY.headline}
+      <div className="relative flex-1 min-h-0 flex flex-col">
+        <div
+          ref={scrollRef}
+          className="flex-1 min-h-0 scroll-viewport wl-scroll-edge px-3 sm:px-4 py-5"
+        >
+          {loadDegraded && !isLoading && (
+            <p className="rounded-md border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-[11px] text-amber-900/80 dark:text-amber-100/80">
+              Some Director data could not be loaded. Your thread may be incomplete — refresh to
+              retry.
             </p>
-            <p className="text-[11px] text-muted">{DIRECTOR_LOADING_COPY.sub}</p>
-          </div>
-        ) : messages.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col items-center text-center pt-8 pb-4 max-w-lg mx-auto"
-          >
-            {/* Hero identity */}
-            <div className={cn("relative mb-6", WL_DIRECTOR_CLASSES.heroOrb)}>
-              <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-brand/20 to-brand/5 blur-2xl scale-125" />
-              <motion.span
-                animate={reduceMotion ? undefined : { rotate: [0, 4, -4, 0] }}
-                transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
-                className="flex w-16 h-16 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-xl shadow-brand/30 relative overflow-hidden"
-              >
-                <Compass className="w-8 h-8 relative z-10" />
-                <div className="absolute inset-0 bg-gradient-to-tr from-white/25 to-transparent" />
-              </motion.span>
+          )}
+          {isLoading ? (
+            <div className="wl-director-loading" role="status" aria-live="polite">
+              <div className="wl-director-loading-orb">
+                <LoadingDots />
+              </div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink/80">
+                {DIRECTOR_LOADING_COPY.headline}
+              </p>
+              <p className="text-[11px] text-muted">{DIRECTOR_LOADING_COPY.sub}</p>
             </div>
-
-            <p className="text-[10px] uppercase tracking-[0.22em] text-brand/70 font-semibold mb-2">
-              {DIRECTOR_EMPTY_HERO.eyebrow}
-            </p>
-            <h2 className="text-[22px] sm:text-[26px] font-bold text-ink tracking-[-0.03em] leading-tight mb-2">
-              {DIRECTOR_EMPTY_HERO.title}{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand to-brand-deep">
-                {DIRECTOR_EMPTY_HERO.titleAccent}
-              </span>
-            </h2>
-
-            {agents.length > 0 ? (
-              <p className="text-[13px] text-muted mb-5 leading-relaxed max-w-md">
-                {DIRECTOR_EMPTY_HERO.subtitleWithFleet(agents.length)}
-              </p>
-            ) : (
-              <p className="text-[13px] text-muted mb-5 leading-relaxed max-w-md">
-                {DIRECTOR_EMPTY_HERO.subtitleNoFleet}
-              </p>
-            )}
-
-            <p className="wl-label text-brand/60 mb-2.5">{DIRECTOR_EMPTY_HERO.capabilityEyebrow}</p>
-            <div className="flex flex-wrap justify-center gap-1.5 mb-6 max-w-md">
-              {DIRECTOR_CAPABILITY_PILLS.map((pill, i) => (
+          ) : messages.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className={cn(
+                "flex flex-col items-center text-center pt-6 sm:pt-8 pb-4",
+                WL_DIRECTOR_CLASSES.emptyHero,
+              )}
+            >
+              {/* Hero identity */}
+              <div className={cn("relative mb-6", WL_DIRECTOR_CLASSES.heroOrb)}>
+                <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-brand/20 to-brand/5 blur-2xl scale-125" />
                 <motion.span
-                  key={pill.id}
-                  initial={{ opacity: 0, scale: 0.92 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.35 + i * 0.05, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                  className="wl-capability-pill"
+                  animate={reduceMotion ? undefined : { rotate: [0, 4, -4, 0] }}
+                  transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
+                  className="flex w-16 h-16 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-xl shadow-brand/30 relative overflow-hidden"
                 >
-                  {pill.label}
+                  <Compass className="w-8 h-8 relative z-10" />
+                  <div className="absolute inset-0 bg-gradient-to-tr from-white/25 to-transparent" />
                 </motion.span>
-              ))}
-            </div>
+              </div>
 
-            {agents.length === 0 ? (
-              <FleetSetupNudge className="wl-director-empty-section mb-6 max-w-md w-full" />
-            ) : null}
+              <p className="wl-label text-brand/70 mb-2">{DIRECTOR_EMPTY_HERO.eyebrow}</p>
+              <h2 className="text-[22px] sm:text-[28px] font-bold text-ink tracking-[-0.03em] leading-[1.12] mb-2">
+                {DIRECTOR_EMPTY_HERO.title}{" "}
+                <span className="font-display italic text-transparent bg-clip-text bg-gradient-to-r from-brand via-brand to-brand-deep">
+                  {DIRECTOR_EMPTY_HERO.titleAccent}
+                </span>
+              </h2>
 
-            <DirectorStarterPrompts onSelect={(label) => void send(label)} className="mb-6" />
+              {agents.length > 0 ? (
+                <p className="text-[13px] text-muted mb-5 leading-relaxed max-w-md">
+                  {DIRECTOR_EMPTY_HERO.subtitleWithFleet(agents.length)}
+                </p>
+              ) : (
+                <p className="text-[13px] text-muted mb-5 leading-relaxed max-w-md">
+                  {DIRECTOR_EMPTY_HERO.subtitleNoFleet}
+                </p>
+              )}
 
-            <div className="wl-director-empty-section w-full mb-6">
-              <p className="wl-label text-brand/60 mb-2.5">{DIRECTOR_EMPTY_HERO.discoverEyebrow}</p>
-              <DirectorCapabilityCatalog
-                variant="empty"
-                onPickExample={(text) => {
-                  pickCapabilityExample(text);
-                }}
-              />
-            </div>
+              <p className="wl-label text-brand/60 mb-2.5">
+                {DIRECTOR_EMPTY_HERO.capabilityEyebrow}
+              </p>
+              <div className="flex flex-wrap justify-center gap-1.5 mb-6 max-w-md">
+                {DIRECTOR_CAPABILITY_PILLS.map((pill, i) => (
+                  <motion.span
+                    key={pill.id}
+                    initial={{ opacity: 0, scale: 0.92 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.35 + i * 0.05, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                    className="wl-capability-pill"
+                  >
+                    {pill.label}
+                  </motion.span>
+                ))}
+              </div>
 
-            {agents.length > 0 ? (
-              <FleetSetupNudge className="wl-director-empty-section max-w-md w-full" />
-            ) : null}
-          </motion.div>
-        ) : (
-          <div className={cn(WL_DIRECTOR_CLASSES.threadColumn, "space-y-4")}>
-            {messages.map((m) => {
-              const scene =
-                m.role === "director"
-                  ? detectDirectorMessageScene(m.content, m.previews, m.proposals)
-                  : "general";
-              const sceneKey =
-                scene !== "general" ? (scene as Exclude<DirectorMessageScene, "general">) : null;
-              const sceneBadge = sceneKey ? DIRECTOR_SCENE_BADGES[sceneKey] : null;
-              const SceneIcon = sceneKey ? SCENE_ICONS[sceneKey] : null;
-              return (
-                <motion.div
-                  key={m.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                  className={cn(
-                    "flex flex-col w-full",
-                    m.role === "operator" ? "items-end" : "items-start",
-                  )}
-                >
-                  <div
+              {agents.length === 0 ? (
+                <FleetSetupNudge className="wl-director-empty-section mb-6 max-w-md w-full" />
+              ) : null}
+
+              <DirectorStarterPrompts onSelect={(label) => void send(label)} className="mb-6" />
+
+              <div className="wl-director-empty-section w-full mb-6">
+                <p className="wl-label text-brand/60 mb-2.5">
+                  {DIRECTOR_EMPTY_HERO.discoverEyebrow}
+                </p>
+                <DirectorCapabilityCatalog
+                  variant="empty"
+                  onPickExample={(text) => {
+                    pickCapabilityExample(text);
+                  }}
+                />
+              </div>
+
+              {agents.length > 0 ? (
+                <FleetSetupNudge className="wl-director-empty-section max-w-md w-full" />
+              ) : null}
+            </motion.div>
+          ) : (
+            <div className={cn(WL_DIRECTOR_CLASSES.threadColumn, "space-y-4")}>
+              {messages.map((m) => {
+                const scene =
+                  m.role === "director"
+                    ? detectDirectorMessageScene(m.content, m.previews, m.proposals)
+                    : "general";
+                const sceneKey =
+                  scene !== "general" ? (scene as Exclude<DirectorMessageScene, "general">) : null;
+                const sceneBadge = sceneKey ? DIRECTOR_SCENE_BADGES[sceneKey] : null;
+                const SceneIcon = sceneKey ? SCENE_ICONS[sceneKey] : null;
+                return (
+                  <motion.div
+                    key={m.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
                     className={cn(
-                      m.role === "operator"
-                        ? WL_DIRECTOR_CLASSES.operatorMessageStack
-                        : WL_DIRECTOR_CLASSES.messageStack,
+                      "flex flex-col w-full",
+                      m.role === "operator" ? "items-end" : "items-start",
                     )}
                   >
-                    {/* Director avatar + scene badge */}
-                    {m.role === "director" && (
-                      <div className="flex items-center gap-1.5 mb-1 ml-0.5">
-                        <span className="shrink-0 flex w-6 h-6 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/15">
-                          <Compass className="w-3 h-3" />
-                        </span>
-                        <span className="text-[9px] text-muted uppercase tracking-[0.12em] font-medium">
-                          Director
-                          {m.coachAgentName ? (
-                            <span className="text-brand/70 normal-case tracking-normal">
-                              {" "}
-                              · coaching {m.coachAgentName}
-                            </span>
-                          ) : null}
-                        </span>
-                        {sceneBadge && SceneIcon && (
-                          <motion.span
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className={cn(
-                              "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[7px] uppercase tracking-[0.12em] font-bold transition-colors wl-scene-pulse",
-                              sceneBadge.bg,
-                              sceneBadge.color,
-                            )}
-                          >
-                            <SceneIcon className="w-2 h-2" />
-                            {sceneBadge.label}
-                          </motion.span>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Message bubble */}
                     <div
                       className={cn(
-                        WL_DIRECTOR_CLASSES.messageBubble,
-                        "rounded-md whitespace-pre-wrap break-words relative",
                         m.role === "operator"
-                          ? cn(
-                              "wl-director-message--operator",
-                              WL_DIRECTOR_CLASSES.operatorBubble,
-                              "text-white rounded-br-sm",
-                            )
-                          : cn(
-                              WL_DIRECTOR_CLASSES.directorBubble,
-                              "text-ink dark:text-foreground rounded-bl-sm",
-                            ),
+                          ? WL_DIRECTOR_CLASSES.operatorMessageStack
+                          : WL_DIRECTOR_CLASSES.messageStack,
                       )}
                     >
-                      {/* Reasoning display - Claude style */}
-                      {m.role === "director" && m.reasoning && (
-                        <ThinkingDisplay
-                          reasoning={m.reasoning}
-                          thinkingDurationMs={m.thinkingDurationMs}
-                          isDeep={m.model === "opus"}
-                          animate={false}
-                        />
-                      )}
-
-                      {m.role === "director" ? (
-                        <>
-                          <DirectorMessageBody content={m.content} />
-                          {/trouble responding|can't respond right now/i.test(m.content) &&
-                            (() => {
-                              const idx = messages.findIndex((msg) => msg.id === m.id);
-                              const prior = idx > 0 ? messages[idx - 1] : null;
-                              if (prior?.role !== "operator") return null;
-                              return (
-                                <ShadButton
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="mt-3 h-8 px-3 text-[11px] uppercase tracking-[0.12em] border border-brand/25 text-brand hover:bg-brand/8"
-                                  disabled={isSending}
-                                  onClick={() => void send(prior.content)}
-                                >
-                                  Retry message
-                                </ShadButton>
-                              );
-                            })()}
-                        </>
-                      ) : (
-                        <p className="text-[13px] leading-normal">{m.content}</p>
-                      )}
-
-                      {m.role === "director" && m.proposals && (
-                        <div className="mt-2 pt-2 border-t border-black/5 space-y-1.5">
-                          {(() => {
-                            const workflowTotal =
-                              m.proposals.actions.length + m.proposals.integrationJobs.length;
-                            const coachTotal =
-                              m.proposals.changes.length + m.proposals.toolToggles.length;
-                            const pendingTotal = workflowTotal + coachTotal;
-                            return pendingTotal > 0 ? (
-                              <div className="rounded-md border border-brand/15 bg-brand/[0.04] px-3 py-2 mb-1">
-                                <p className="text-[10px] uppercase tracking-[0.16em] text-brand font-semibold">
-                                  {workflowTotal > 0
-                                    ? LIVE_FEED_LABELS.proposal
-                                    : "Proposed agent updates"}
-                                </p>
-                                <p className="text-[10px] text-muted mt-0.5 leading-relaxed">
-                                  {LIVE_FEED_LABELS.proposalCount(pendingTotal)} ·{" "}
-                                  {LIVE_FEED_LABELS.proposalHint}
-                                </p>
-                              </div>
-                            ) : null;
-                          })()}
-                          {(() => {
-                            const workflowTotal =
-                              m.proposals.actions.length + m.proposals.integrationJobs.length;
-                            const stepLabelFor = (step?: number) =>
-                              step && workflowTotal > 1
-                                ? `Step ${step} of ${workflowTotal}`
-                                : undefined;
-                            return (
-                              <>
-                                {resolveCoachAgentId(m) &&
-                                  m.proposals.changes.map((c, i) => {
-                                    const key = `${m.id}:change:${i}`;
-                                    const agentId = resolveCoachAgentId(m)!;
-                                    return (
-                                      <ProposalCard
-                                        key={key}
-                                        icon={<SlidersHorizontal className="w-3.5 h-3.5" />}
-                                        tone="brand"
-                                        title={c.label}
-                                        detail={c.summary || c.value}
-                                        state={resolved[key]}
-                                        busy={busyKey === key}
-                                        busyLabel={busyKey === key ? busyLabel : undefined}
-                                        approveLabel="Apply"
-                                        onApprove={() => approveChange(key, c, agentId)}
-                                        onDismiss={() => markResolved(key, "dismissed")}
-                                      />
-                                    );
-                                  })}
-                                {resolveCoachAgentId(m) &&
-                                  m.proposals.toolToggles.map((t, i) => {
-                                    const key = `${m.id}:toggle:${i}`;
-                                    const agentId = resolveCoachAgentId(m)!;
-                                    return (
-                                      <ProposalCard
-                                        key={key}
-                                        icon={<Power className="w-3.5 h-3.5" />}
-                                        tone="brand"
-                                        title={`${t.enable ? "Turn on" : "Turn off"} ${t.label}`}
-                                        detail={t.reason}
-                                        state={resolved[key]}
-                                        busy={busyKey === key}
-                                        busyLabel={busyKey === key ? busyLabel : undefined}
-                                        approveLabel={t.enable ? "Enable" : "Disable"}
-                                        onApprove={() => approveToggle(key, t, agentId)}
-                                        onDismiss={() => markResolved(key, "dismissed")}
-                                      />
-                                    );
-                                  })}
-                                {m.proposals.actions.map((a, i) => {
-                                  const key = `${m.id}:action:${i}`;
-                                  const agentId = resolveActionAgentId(a, m);
-                                  if (!agentId) return null;
-                                  const aIcon =
-                                    a.kind === "make_call" ? (
-                                      <Phone className="w-3.5 h-3.5" />
-                                    ) : a.kind === "send_text_message" ? (
-                                      <MessageCircle className="w-3.5 h-3.5" />
-                                    ) : (
-                                      <Mail className="w-3.5 h-3.5" />
-                                    );
-                                  const detail = [
-                                    a.to
-                                      ? `To: ${a.customerName ? `${a.customerName} · ` : ""}${a.to}`
-                                      : "",
-                                    a.subject ? `Subject: ${a.subject}` : "",
-                                    a.body || a.context || "",
-                                  ]
-                                    .filter(Boolean)
-                                    .join("\n");
-                                  return (
-                                    <ProposalCard
-                                      key={key}
-                                      icon={aIcon}
-                                      tone="amber"
-                                      title={a.label}
-                                      detail={detail}
-                                      stepLabel={stepLabelFor(a.step)}
-                                      state={resolved[key]}
-                                      busy={busyKey === key}
-                                      busyLabel={busyKey === key ? busyLabel : undefined}
-                                      approveLabel={
-                                        a.kind === "make_call"
-                                          ? "Place call"
-                                          : a.kind === "send_text_message"
-                                            ? "Send text"
-                                            : "Send email"
-                                      }
-                                      consent={
-                                        a.kind === "make_call"
-                                          ? {
-                                              checked: !!callConsent[key],
-                                              onChange: (v) =>
-                                                setCallConsent((prev) => ({ ...prev, [key]: v })),
-                                            }
-                                          : undefined
-                                      }
-                                      onApprove={() => approveAction(key, a, agentId)}
-                                      onDismiss={() => markResolved(key, "dismissed")}
-                                    />
-                                  );
-                                })}
-                                {m.proposals.integrationJobs.map((job, i) => {
-                                  const key = `${m.id}:integration:${i}`;
-                                  const catalogEntry = AGENT_TOOL_CATALOG.find(
-                                    (c) => c.name === job.tool,
-                                  );
-                                  const integrationKey = catalogEntry?.integration as
-                                    | ToolIntegration
-                                    | undefined;
-                                  const jobIcon = integrationKey ? (
-                                    (INTEGRATION_STYLES[integrationKey]?.icon ?? (
-                                      <SearchIcon className="w-3.5 h-3.5" />
-                                    ))
-                                  ) : (
-                                    <SearchIcon className="w-3.5 h-3.5" />
-                                  );
-                                  const agentId =
-                                    job.agentId || resolveCoachAgentId(m) || focusAgentId;
-                                  return (
-                                    <ProposalCard
-                                      key={key}
-                                      icon={jobIcon}
-                                      tone="brand"
-                                      title={job.label}
-                                      detail={[job.summary, job.query ? `Query: ${job.query}` : ""]
-                                        .filter(Boolean)
-                                        .join("\n")}
-                                      stepLabel={stepLabelFor(job.step)}
-                                      state={resolved[key]}
-                                      busy={busyKey === key}
-                                      busyLabel={busyKey === key ? busyLabel : undefined}
-                                      approveLabel="Run"
-                                      onApprove={() => approveIntegration(key, job, agentId)}
-                                      onDismiss={() => markResolved(key, "dismissed")}
-                                    />
-                                  );
-                                })}
-                              </>
-                            );
-                          })()}
+                      {/* Director avatar + scene badge */}
+                      {m.role === "director" && (
+                        <div className="flex items-center gap-1.5 mb-1 ml-0.5">
+                          <span className="shrink-0 flex w-6 h-6 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/15">
+                            <Compass className="w-3 h-3" />
+                          </span>
+                          <span className="text-[9px] text-muted uppercase tracking-[0.12em] font-medium">
+                            Director
+                            {m.coachAgentName ? (
+                              <span className="text-brand/70 normal-case tracking-normal">
+                                {" "}
+                                · coaching {m.coachAgentName}
+                              </span>
+                            ) : null}
+                          </span>
+                          {sceneBadge && SceneIcon && (
+                            <motion.span
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              className={cn(
+                                "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[7px] uppercase tracking-[0.12em] font-bold transition-colors wl-scene-pulse",
+                                sceneBadge.bg,
+                                sceneBadge.color,
+                              )}
+                            >
+                              <SceneIcon className="w-2 h-2" />
+                              {sceneBadge.label}
+                            </motion.span>
+                          )}
                         </div>
                       )}
 
-                      {/* Timestamp */}
-                      {m.createdAt && (
-                        <div className="mt-1.5 pt-1 border-t border-black/5 flex justify-end">
-                          <time
-                            dateTime={m.createdAt}
+                      {/* Message bubble */}
+                      <div
+                        className={cn(
+                          WL_DIRECTOR_CLASSES.messageBubble,
+                          "rounded-md whitespace-pre-wrap break-words relative",
+                          m.role === "operator"
+                            ? cn(
+                                "wl-director-message--operator",
+                                WL_DIRECTOR_CLASSES.operatorBubble,
+                                "text-white rounded-br-sm",
+                              )
+                            : cn(
+                                WL_DIRECTOR_CLASSES.directorBubble,
+                                "text-ink dark:text-foreground rounded-bl-sm",
+                              ),
+                        )}
+                      >
+                        {/* Reasoning display - Claude style */}
+                        {m.role === "director" && m.reasoning && (
+                          <ThinkingDisplay
+                            reasoning={m.reasoning}
+                            thinkingDurationMs={m.thinkingDurationMs}
+                            isDeep={m.model === "opus"}
+                            animate={false}
+                          />
+                        )}
+
+                        {m.role === "director" ? (
+                          <>
+                            <DirectorMessageBody content={m.content} />
+                            {/trouble responding|can't respond right now/i.test(m.content) &&
+                              (() => {
+                                const idx = messages.findIndex((msg) => msg.id === m.id);
+                                const prior = idx > 0 ? messages[idx - 1] : null;
+                                if (prior?.role !== "operator") return null;
+                                return (
+                                  <ShadButton
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="mt-3 h-8 px-3 text-[11px] uppercase tracking-[0.12em] border border-brand/25 text-brand hover:bg-brand/8"
+                                    disabled={isSending}
+                                    onClick={() => void send(prior.content)}
+                                  >
+                                    Retry message
+                                  </ShadButton>
+                                );
+                              })()}
+                          </>
+                        ) : (
+                          <p className="text-[13px] leading-normal">{m.content}</p>
+                        )}
+
+                        {m.role === "director" && m.proposals && (
+                          <div className="mt-2 pt-2 border-t border-black/5 space-y-1.5">
+                            {(() => {
+                              const workflowTotal =
+                                m.proposals.actions.length + m.proposals.integrationJobs.length;
+                              const coachTotal =
+                                m.proposals.changes.length + m.proposals.toolToggles.length;
+                              const pendingTotal = workflowTotal + coachTotal;
+                              return pendingTotal > 0 ? (
+                                <div className="rounded-md border border-brand/15 bg-brand/[0.04] px-3 py-2 mb-1">
+                                  <p className="text-[10px] uppercase tracking-[0.16em] text-brand font-semibold">
+                                    {workflowTotal > 0
+                                      ? LIVE_FEED_LABELS.proposal
+                                      : "Proposed agent updates"}
+                                  </p>
+                                  <p className="text-[10px] text-muted mt-0.5 leading-relaxed">
+                                    {LIVE_FEED_LABELS.proposalCount(pendingTotal)} ·{" "}
+                                    {LIVE_FEED_LABELS.proposalHint}
+                                  </p>
+                                </div>
+                              ) : null;
+                            })()}
+                            {(() => {
+                              const workflowTotal =
+                                m.proposals.actions.length + m.proposals.integrationJobs.length;
+                              const stepLabelFor = (step?: number) =>
+                                step && workflowTotal > 1
+                                  ? `Step ${step} of ${workflowTotal}`
+                                  : undefined;
+                              return (
+                                <>
+                                  {resolveCoachAgentId(m) &&
+                                    m.proposals.changes.map((c, i) => {
+                                      const key = `${m.id}:change:${i}`;
+                                      const agentId = resolveCoachAgentId(m)!;
+                                      return (
+                                        <ProposalCard
+                                          key={key}
+                                          icon={<SlidersHorizontal className="w-3.5 h-3.5" />}
+                                          tone="brand"
+                                          title={c.label}
+                                          detail={c.summary || c.value}
+                                          state={resolved[key]}
+                                          busy={busyKey === key}
+                                          busyLabel={busyKey === key ? busyLabel : undefined}
+                                          approveLabel="Apply"
+                                          onApprove={() => approveChange(key, c, agentId)}
+                                          onDismiss={() => markResolved(key, "dismissed")}
+                                        />
+                                      );
+                                    })}
+                                  {resolveCoachAgentId(m) &&
+                                    m.proposals.toolToggles.map((t, i) => {
+                                      const key = `${m.id}:toggle:${i}`;
+                                      const agentId = resolveCoachAgentId(m)!;
+                                      return (
+                                        <ProposalCard
+                                          key={key}
+                                          icon={<Power className="w-3.5 h-3.5" />}
+                                          tone="brand"
+                                          title={`${t.enable ? "Turn on" : "Turn off"} ${t.label}`}
+                                          detail={t.reason}
+                                          state={resolved[key]}
+                                          busy={busyKey === key}
+                                          busyLabel={busyKey === key ? busyLabel : undefined}
+                                          approveLabel={t.enable ? "Enable" : "Disable"}
+                                          onApprove={() => approveToggle(key, t, agentId)}
+                                          onDismiss={() => markResolved(key, "dismissed")}
+                                        />
+                                      );
+                                    })}
+                                  {m.proposals.actions.map((a, i) => {
+                                    const key = `${m.id}:action:${i}`;
+                                    const agentId = resolveActionAgentId(a, m);
+                                    if (!agentId) return null;
+                                    const aIcon =
+                                      a.kind === "make_call" ? (
+                                        <Phone className="w-3.5 h-3.5" />
+                                      ) : a.kind === "send_text_message" ? (
+                                        <MessageCircle className="w-3.5 h-3.5" />
+                                      ) : (
+                                        <Mail className="w-3.5 h-3.5" />
+                                      );
+                                    const detail = [
+                                      a.to
+                                        ? `To: ${a.customerName ? `${a.customerName} · ` : ""}${a.to}`
+                                        : "",
+                                      a.subject ? `Subject: ${a.subject}` : "",
+                                      a.body || a.context || "",
+                                    ]
+                                      .filter(Boolean)
+                                      .join("\n");
+                                    return (
+                                      <ProposalCard
+                                        key={key}
+                                        icon={aIcon}
+                                        tone="amber"
+                                        title={a.label}
+                                        detail={detail}
+                                        stepLabel={stepLabelFor(a.step)}
+                                        state={resolved[key]}
+                                        busy={busyKey === key}
+                                        busyLabel={busyKey === key ? busyLabel : undefined}
+                                        approveLabel={
+                                          a.kind === "make_call"
+                                            ? "Place call"
+                                            : a.kind === "send_text_message"
+                                              ? "Send text"
+                                              : "Send email"
+                                        }
+                                        consent={
+                                          a.kind === "make_call"
+                                            ? {
+                                                checked: !!callConsent[key],
+                                                onChange: (v) =>
+                                                  setCallConsent((prev) => ({ ...prev, [key]: v })),
+                                              }
+                                            : undefined
+                                        }
+                                        onApprove={() => approveAction(key, a, agentId)}
+                                        onDismiss={() => markResolved(key, "dismissed")}
+                                      />
+                                    );
+                                  })}
+                                  {m.proposals.integrationJobs.map((job, i) => {
+                                    const key = `${m.id}:integration:${i}`;
+                                    const catalogEntry = AGENT_TOOL_CATALOG.find(
+                                      (c) => c.name === job.tool,
+                                    );
+                                    const integrationKey = catalogEntry?.integration as
+                                      | ToolIntegration
+                                      | undefined;
+                                    const jobIcon = integrationKey ? (
+                                      (INTEGRATION_STYLES[integrationKey]?.icon ?? (
+                                        <SearchIcon className="w-3.5 h-3.5" />
+                                      ))
+                                    ) : (
+                                      <SearchIcon className="w-3.5 h-3.5" />
+                                    );
+                                    const agentId =
+                                      job.agentId || resolveCoachAgentId(m) || focusAgentId;
+                                    return (
+                                      <ProposalCard
+                                        key={key}
+                                        icon={jobIcon}
+                                        tone="brand"
+                                        title={job.label}
+                                        detail={[
+                                          job.summary,
+                                          job.query ? `Query: ${job.query}` : "",
+                                        ]
+                                          .filter(Boolean)
+                                          .join("\n")}
+                                        stepLabel={stepLabelFor(job.step)}
+                                        state={resolved[key]}
+                                        busy={busyKey === key}
+                                        busyLabel={busyKey === key ? busyLabel : undefined}
+                                        approveLabel="Run"
+                                        onApprove={() => approveIntegration(key, job, agentId)}
+                                        onDismiss={() => markResolved(key, "dismissed")}
+                                      />
+                                    );
+                                  })}
+                                </>
+                              );
+                            })()}
+                          </div>
+                        )}
+
+                        {/* Timestamp */}
+                        {m.createdAt && (
+                          <div className="mt-1.5 pt-1 border-t border-black/5 flex justify-end">
+                            <time
+                              dateTime={m.createdAt}
+                              className={cn(
+                                "text-[9px] font-mono tabular-nums",
+                                m.role === "operator" ? "text-white/50" : "text-muted/50",
+                              )}
+                            >
+                              {new Date(m.createdAt).toLocaleTimeString([], {
+                                hour: "numeric",
+                                minute: "2-digit",
+                              })}
+                            </time>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Suggestions */}
+                      {m.suggestions && m.suggestions.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {m.suggestions.map((s, i) => {
+                            const Icon = SUGGESTION_ICON[s.kind];
+                            return (
+                              <ShadButton
+                                key={`${s.kind}-${i}`}
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disableAnimations
+                                onClick={() => runSuggestion(s)}
+                                className="group h-auto text-[11px] font-medium text-brand rounded-full border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10 hover:border-brand/40"
+                              >
+                                <Icon className="w-3 h-3" />
+                                {s.label}
+                                <ArrowUpRight className="w-2.5 h-2.5 opacity-0 -ml-1 group-hover:opacity-100 group-hover:ml-0 transition-all duration-200" />
+                              </ShadButton>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {m.researchSources && m.researchSources.length > 0 && (
+                        <DirectorResearchSources sources={m.researchSources} />
+                      )}
+
+                      {m.role === "director" &&
+                        m.id === lastDirectorMessageId &&
+                        m.clarifyingQuestions &&
+                        m.clarifyingQuestions.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {m.clarifyingQuestions.map((q) => (
+                              <ShadButton
+                                key={q}
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disableAnimations
+                                onClick={() => {
+                                  setInput(q.replace(/\?$/, "") + " — ");
+                                  inputRef.current?.focus();
+                                }}
+                                className="h-auto text-[11px] text-left rounded-full border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10"
+                              >
+                                {q}
+                              </ShadButton>
+                            ))}
+                          </div>
+                        )}
+
+                      {m.approvals && m.approvals.length > 0 && (
+                        <div className="space-y-1.5 w-full">
+                          {m.approvals.map((a) => (
+                            <div
+                              key={a.callId}
+                              className="rounded-[12px] border border-brand/20 bg-brand/[0.04] px-3 py-2"
+                            >
+                              <p className="text-[11px] text-muted mb-2">{a.label}</p>
+                              <div className="flex items-center gap-2">
+                                <ShadButton
+                                  onClick={() => respondToApproval(a, true)}
+                                  className="px-3 py-1.5 rounded-[10px] text-[11px] font-semibold bg-brand text-white"
+                                  disabled={isSending}
+                                >
+                                  Approve
+                                </ShadButton>
+                                <ShadButton
+                                  onClick={() => respondToApproval(a, false)}
+                                  className="px-3 py-1.5 rounded-[10px] text-[11px] font-semibold border border-brand/20 text-muted"
+                                  disabled={isSending}
+                                >
+                                  Decline
+                                </ShadButton>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {m.previews && m.previews.length > 0 && (
+                        <div className="w-full">
+                          {/* Gallery header */}
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-brand/10 to-brand-deep/10 border border-brand/25">
+                              <Sparkles className="w-3 h-3 text-brand" />
+                              <span className="text-[9px] uppercase tracking-[0.12em] font-bold text-brand">
+                                {m.previews.length} concept{m.previews.length !== 1 ? "s" : ""}{" "}
+                                generated
+                              </span>
+                            </span>
+                          </div>
+
+                          <div
                             className={cn(
-                              "text-[9px] font-mono tabular-nums",
-                              m.role === "operator" ? "text-white/50" : "text-muted/50",
+                              "grid gap-2",
+                              m.previews.length === 1 ? "grid-cols-1" : "grid-cols-2",
                             )}
                           >
-                            {new Date(m.createdAt).toLocaleTimeString([], {
-                              hour: "numeric",
-                              minute: "2-digit",
-                            })}
-                          </time>
+                            {m.previews.map((p) => (
+                              <motion.div
+                                key={p.conceptId}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="group relative rounded-md border border-brand/12 bg-paper/95 dark:bg-[#1a1225]/60 overflow-hidden shadow-sm hover:shadow-xl hover:border-brand/25 transition-all duration-300"
+                              >
+                                {/* Image canvas with hover overlay */}
+                                <div className="relative overflow-hidden wl-checkerboard bg-[length:16px_16px]">
+                                  {p.previewDataUrl ? (
+                                    <>
+                                      <img
+                                        src={p.previewDataUrl}
+                                        alt={p.title || "Logo concept"}
+                                        className="w-full aspect-square object-contain p-3 transition-transform duration-500 group-hover:scale-[1.03]"
+                                      />
+                                      {/* Glassmorphic download overlay */}
+                                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/5 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-end pb-5 gap-2">
+                                        <a
+                                          href={p.previewDataUrl}
+                                          download={`${p.title || "concept"}.png`}
+                                          className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-paper/95 backdrop-blur-sm text-[11px] font-semibold text-ink shadow-xl hover:bg-paper transition-colors"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <Download className="w-3.5 h-3.5" />
+                                          Download PNG
+                                        </a>
+                                        {p.svg && (
+                                          <a
+                                            href={`data:image/svg+xml;base64,${btoa(p.svg)}`}
+                                            download={`${p.title || "concept"}.svg`}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-paper/85 backdrop-blur-sm text-[10px] font-medium text-ink/80 hover:bg-paper/95 transition-colors"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            <Download className="w-3 h-3" />
+                                            SVG
+                                          </a>
+                                        )}
+                                      </div>
+                                      {/* Format badge */}
+                                      <div className="absolute top-2.5 right-2.5 flex gap-1">
+                                        {p.svg && (
+                                          <span className="px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-[8px] font-mono text-white/90 uppercase font-bold">
+                                            SVG
+                                          </span>
+                                        )}
+                                        <span className="px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-[8px] font-mono text-white/90 uppercase font-bold">
+                                          PNG
+                                        </span>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <div className="w-full aspect-square flex items-center justify-center bg-gradient-to-br from-brand/5 to-brand-deep/5">
+                                      <div className="text-center space-y-2">
+                                        <Palette className="w-10 h-10 text-brand/20 mx-auto" />
+                                        <p className="text-[10px] text-muted/60">
+                                          Generating preview…
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Info & quick actions */}
+                                <div className="px-3.5 py-3 space-y-2.5 border-t border-brand/8">
+                                  <div>
+                                    <p className="text-[12px] font-semibold text-ink leading-tight">
+                                      {p.title}
+                                    </p>
+                                    <p className="text-[10px] text-muted/70 line-clamp-2 mt-0.5 leading-relaxed">
+                                      {p.rationale}
+                                    </p>
+                                  </div>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {p.svg && (
+                                      <ShadButton
+                                        onClick={() =>
+                                          respondToApproval(
+                                            {
+                                              callId: `vectorize-${p.conceptId}`,
+                                              name: "vectorize_logo",
+                                              label: "Vectorize concept",
+                                              requiresApproval: true,
+                                              input: { concept_id: p.conceptId, svg: p.svg },
+                                            },
+                                            true,
+                                          )
+                                        }
+                                        className="px-2.5 py-1 rounded-md text-[10px] font-semibold border border-brand/25 bg-brand/5 text-brand hover:bg-brand/10"
+                                      >
+                                        <Sparkles className="w-2.5 h-2.5" />
+                                        Vectorize
+                                      </ShadButton>
+                                    )}
+                                    {p.svg && (
+                                      <ShadButton
+                                        onClick={() =>
+                                          respondToApproval(
+                                            {
+                                              callId: `pack-${p.conceptId}`,
+                                              name: "brand_pack_export",
+                                              label: "Export brand pack",
+                                              requiresApproval: true,
+                                              input: {
+                                                concept_id: p.conceptId,
+                                                concept_name: p.title,
+                                                svg: p.svg,
+                                              },
+                                            },
+                                            true,
+                                          )
+                                        }
+                                        className="px-2.5 py-1 rounded-md text-[10px] font-semibold border border-brand/20 bg-brand/5 text-brand hover:bg-brand/10"
+                                      >
+                                        <Download className="w-2.5 h-2.5" />
+                                        Export pack
+                                      </ShadButton>
+                                    )}
+                                    <ShadButton
+                                      onClick={() =>
+                                        setInput(
+                                          `Refine concept ${p.title}: keep the core shape but adjust typography.`,
+                                        )
+                                      }
+                                      className="px-2.5 py-1 rounded-md text-[10px] border border-black/10 hover:border-brand/20 hover:bg-brand/5"
+                                    >
+                                      Edit
+                                    </ShadButton>
+                                    <ShadButton
+                                      onClick={() =>
+                                        setInput(
+                                          `Regenerate 3 new options from ${p.title} with stronger contrast.`,
+                                        )
+                                      }
+                                      className="px-2.5 py-1 rounded-md text-[10px] border border-black/10 hover:border-brand/20 hover:bg-brand/5"
+                                    >
+                                      Regenerate
+                                    </ShadButton>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
 
-                    {/* Suggestions */}
-                    {m.suggestions && m.suggestions.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {m.suggestions.map((s, i) => {
-                          const Icon = SUGGESTION_ICON[s.kind];
-                          return (
-                            <ShadButton
-                              key={`${s.kind}-${i}`}
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              disableAnimations
-                              onClick={() => runSuggestion(s)}
-                              className="group h-auto text-[11px] font-medium text-brand rounded-full border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10 hover:border-brand/40"
-                            >
-                              <Icon className="w-3 h-3" />
-                              {s.label}
-                              <ArrowUpRight className="w-2.5 h-2.5 opacity-0 -ml-1 group-hover:opacity-100 group-hover:ml-0 transition-all duration-200" />
-                            </ShadButton>
-                          );
-                        })}
-                      </div>
-                    )}
+          {/* Live streaming — mission control panel */}
+          {isSending && (
+            <div className={WL_DIRECTOR_CLASSES.threadColumn}>
+              <DirectorLiveSession
+                phase={streamState.phase === "idle" ? "connecting" : streamState.phase}
+                isDeep={streamState.isDeep}
+                model={streamState.model}
+                coachAgentName={focusedAgent?.name}
+                thinkingText={streamState.thinkingText}
+                thinkingDurationMs={streamState.thinkingDurationMs}
+                replyPreview={
+                  typeof streamState.reply?.reply === "string" ? streamState.reply.reply : undefined
+                }
+                pipelineSteps={streamPipeline}
+                integrationActions={integrationLiveActions}
+                liveSteps={liveSteps}
+              />
+            </div>
+          )}
+        </div>
 
-                    {m.researchSources && m.researchSources.length > 0 && (
-                      <DirectorResearchSources sources={m.researchSources} />
-                    )}
-
-                    {m.role === "director" &&
-                      m.id === lastDirectorMessageId &&
-                      m.clarifyingQuestions &&
-                      m.clarifyingQuestions.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {m.clarifyingQuestions.map((q) => (
-                            <ShadButton
-                              key={q}
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              disableAnimations
-                              onClick={() => {
-                                setInput(q.replace(/\?$/, "") + " — ");
-                                inputRef.current?.focus();
-                              }}
-                              className="h-auto text-[11px] text-left rounded-full border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10"
-                            >
-                              {q}
-                            </ShadButton>
-                          ))}
-                        </div>
-                      )}
-
-                    {m.approvals && m.approvals.length > 0 && (
-                      <div className="space-y-1.5 w-full">
-                        {m.approvals.map((a) => (
-                          <div
-                            key={a.callId}
-                            className="rounded-[12px] border border-brand/20 bg-brand/[0.04] px-3 py-2"
-                          >
-                            <p className="text-[11px] text-muted mb-2">{a.label}</p>
-                            <div className="flex items-center gap-2">
-                              <ShadButton
-                                onClick={() => respondToApproval(a, true)}
-                                className="px-3 py-1.5 rounded-[10px] text-[11px] font-semibold bg-brand text-white"
-                                disabled={isSending}
-                              >
-                                Approve
-                              </ShadButton>
-                              <ShadButton
-                                onClick={() => respondToApproval(a, false)}
-                                className="px-3 py-1.5 rounded-[10px] text-[11px] font-semibold border border-brand/20 text-muted"
-                                disabled={isSending}
-                              >
-                                Decline
-                              </ShadButton>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {m.previews && m.previews.length > 0 && (
-                      <div className="w-full">
-                        {/* Gallery header */}
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-brand/10 to-brand-deep/10 border border-brand/25">
-                            <Sparkles className="w-3 h-3 text-brand" />
-                            <span className="text-[9px] uppercase tracking-[0.12em] font-bold text-brand">
-                              {m.previews.length} concept{m.previews.length !== 1 ? "s" : ""}{" "}
-                              generated
-                            </span>
-                          </span>
-                        </div>
-
-                        <div
-                          className={cn(
-                            "grid gap-2",
-                            m.previews.length === 1 ? "grid-cols-1" : "grid-cols-2",
-                          )}
-                        >
-                          {m.previews.map((p) => (
-                            <motion.div
-                              key={p.conceptId}
-                              initial={{ opacity: 0, scale: 0.95 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              className="group relative rounded-md border border-brand/12 bg-paper/95 dark:bg-[#1a1225]/60 overflow-hidden shadow-sm hover:shadow-xl hover:border-brand/25 transition-all duration-300"
-                            >
-                              {/* Image canvas with hover overlay */}
-                              <div className="relative overflow-hidden wl-checkerboard bg-[length:16px_16px]">
-                                {p.previewDataUrl ? (
-                                  <>
-                                    <img
-                                      src={p.previewDataUrl}
-                                      alt={p.title || "Logo concept"}
-                                      className="w-full aspect-square object-contain p-3 transition-transform duration-500 group-hover:scale-[1.03]"
-                                    />
-                                    {/* Glassmorphic download overlay */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/5 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-end pb-5 gap-2">
-                                      <a
-                                        href={p.previewDataUrl}
-                                        download={`${p.title || "concept"}.png`}
-                                        className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-paper/95 backdrop-blur-sm text-[11px] font-semibold text-ink shadow-xl hover:bg-paper transition-colors"
-                                        onClick={(e) => e.stopPropagation()}
-                                      >
-                                        <Download className="w-3.5 h-3.5" />
-                                        Download PNG
-                                      </a>
-                                      {p.svg && (
-                                        <a
-                                          href={`data:image/svg+xml;base64,${btoa(p.svg)}`}
-                                          download={`${p.title || "concept"}.svg`}
-                                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-paper/85 backdrop-blur-sm text-[10px] font-medium text-ink/80 hover:bg-paper/95 transition-colors"
-                                          onClick={(e) => e.stopPropagation()}
-                                        >
-                                          <Download className="w-3 h-3" />
-                                          SVG
-                                        </a>
-                                      )}
-                                    </div>
-                                    {/* Format badge */}
-                                    <div className="absolute top-2.5 right-2.5 flex gap-1">
-                                      {p.svg && (
-                                        <span className="px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-[8px] font-mono text-white/90 uppercase font-bold">
-                                          SVG
-                                        </span>
-                                      )}
-                                      <span className="px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-[8px] font-mono text-white/90 uppercase font-bold">
-                                        PNG
-                                      </span>
-                                    </div>
-                                  </>
-                                ) : (
-                                  <div className="w-full aspect-square flex items-center justify-center bg-gradient-to-br from-brand/5 to-brand-deep/5">
-                                    <div className="text-center space-y-2">
-                                      <Palette className="w-10 h-10 text-brand/20 mx-auto" />
-                                      <p className="text-[10px] text-muted/60">
-                                        Generating preview…
-                                      </p>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Info & quick actions */}
-                              <div className="px-3.5 py-3 space-y-2.5 border-t border-brand/8">
-                                <div>
-                                  <p className="text-[12px] font-semibold text-ink leading-tight">
-                                    {p.title}
-                                  </p>
-                                  <p className="text-[10px] text-muted/70 line-clamp-2 mt-0.5 leading-relaxed">
-                                    {p.rationale}
-                                  </p>
-                                </div>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {p.svg && (
-                                    <ShadButton
-                                      onClick={() =>
-                                        respondToApproval(
-                                          {
-                                            callId: `vectorize-${p.conceptId}`,
-                                            name: "vectorize_logo",
-                                            label: "Vectorize concept",
-                                            requiresApproval: true,
-                                            input: { concept_id: p.conceptId, svg: p.svg },
-                                          },
-                                          true,
-                                        )
-                                      }
-                                      className="px-2.5 py-1 rounded-md text-[10px] font-semibold border border-brand/25 bg-brand/5 text-brand hover:bg-brand/10"
-                                    >
-                                      <Sparkles className="w-2.5 h-2.5" />
-                                      Vectorize
-                                    </ShadButton>
-                                  )}
-                                  {p.svg && (
-                                    <ShadButton
-                                      onClick={() =>
-                                        respondToApproval(
-                                          {
-                                            callId: `pack-${p.conceptId}`,
-                                            name: "brand_pack_export",
-                                            label: "Export brand pack",
-                                            requiresApproval: true,
-                                            input: {
-                                              concept_id: p.conceptId,
-                                              concept_name: p.title,
-                                              svg: p.svg,
-                                            },
-                                          },
-                                          true,
-                                        )
-                                      }
-                                      className="px-2.5 py-1 rounded-md text-[10px] font-semibold border border-brand/20 bg-brand/5 text-brand hover:bg-brand/10"
-                                    >
-                                      <Download className="w-2.5 h-2.5" />
-                                      Export pack
-                                    </ShadButton>
-                                  )}
-                                  <ShadButton
-                                    onClick={() =>
-                                      setInput(
-                                        `Refine concept ${p.title}: keep the core shape but adjust typography.`,
-                                      )
-                                    }
-                                    className="px-2.5 py-1 rounded-md text-[10px] border border-black/10 hover:border-brand/20 hover:bg-brand/5"
-                                  >
-                                    Edit
-                                  </ShadButton>
-                                  <ShadButton
-                                    onClick={() =>
-                                      setInput(
-                                        `Regenerate 3 new options from ${p.title} with stronger contrast.`,
-                                      )
-                                    }
-                                    className="px-2.5 py-1 rounded-md text-[10px] border border-black/10 hover:border-brand/20 hover:bg-brand/5"
-                                  >
-                                    Regenerate
-                                  </ShadButton>
-                                </div>
-                              </div>
-                            </motion.div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Live streaming — mission control panel */}
-        {isSending && (
-          <div className={WL_DIRECTOR_CLASSES.threadColumn}>
-            <DirectorLiveSession
-              phase={streamState.phase === "idle" ? "connecting" : streamState.phase}
-              isDeep={streamState.isDeep}
-              model={streamState.model}
-              coachAgentName={focusedAgent?.name}
-              thinkingText={streamState.thinkingText}
-              thinkingDurationMs={streamState.thinkingDurationMs}
-              replyPreview={
-                typeof streamState.reply?.reply === "string" ? streamState.reply.reply : undefined
-              }
-              pipelineSteps={streamPipeline}
-              integrationActions={integrationLiveActions}
-              liveSteps={liveSteps}
-            />
-          </div>
+        {!pinnedToBottom && messages.length > 0 && (
+          <ShadButton
+            type="button"
+            variant="ghost"
+            size="sm"
+            disableAnimations
+            onClick={scrollToLatest}
+            className={cn(WL_DIRECTOR_CLASSES.scrollToBottom, "touch-press")}
+            aria-label="Jump to latest messages"
+          >
+            <ChevronDown className="w-3.5 h-3.5" aria-hidden />
+            Latest
+          </ShadButton>
         )}
       </div>
 
-      {featureFlags.artifactsPanel &&
-        artifacts.length > 0 &&
-        (() => {
-          const imageArts = artifacts.filter(
-            (a) =>
-              a.mimeType?.startsWith("image/") ||
-              a.artifactType === "svg" ||
-              a.artifactType === "image",
-          );
-          const fileArts = artifacts.filter(
-            (a) =>
-              !a.mimeType?.startsWith("image/") &&
-              a.artifactType !== "svg" &&
-              a.artifactType !== "image",
-          );
-          return (
-            <div className="shrink-0 px-4 pb-2">
-              <div className="max-w-3xl mx-auto rounded-md border border-brand/15 bg-paper/90 dark:bg-black/15 backdrop-blur-sm p-3 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-muted font-semibold">
-                      <FileText className="w-3 h-3 text-brand/60" />
-                      Generated artifacts
-                    </span>
-                    <span className="text-[10px] text-muted/50 font-mono tabular-nums">
-                      {artifacts.length} file{artifacts.length !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Image artifact thumbnails — the actual logos/visuals */}
-                {imageArts.length > 0 && (
-                  <div>
-                    <p className="text-[9px] uppercase tracking-[0.16em] text-brand/70 font-semibold mb-2 flex items-center gap-1.5">
-                      <ImageIcon className="w-3 h-3" />
-                      Media · {imageArts.length} image{imageArts.length !== 1 ? "s" : ""}
-                    </p>
-                    <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
-                      {imageArts.slice(0, 12).map((a) => (
-                        <div
-                          key={a.id}
-                          className="group relative rounded-md border border-brand/10 overflow-hidden wl-checkerboard aspect-square"
-                        >
-                          <img
-                            src={a.downloadUrl}
-                            alt={a.name}
-                            className="w-full h-full object-contain p-2 transition-transform duration-300 group-hover:scale-105"
-                            loading="lazy"
-                          />
-                          {/* Hover overlay with download */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-200 flex flex-col items-center justify-end pb-2">
-                            <a
-                              href={a.downloadUrl}
-                              download={a.name}
-                              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-paper/95 backdrop-blur-sm text-[9px] font-semibold text-ink shadow-lg hover:bg-white transition-colors"
-                            >
-                              <Download className="w-2.5 h-2.5" />
-                              Download
-                            </a>
-                          </div>
-                          {/* File info strip */}
-                          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/50 to-transparent px-2 pt-3 pb-1.5 opacity-100 group-hover:opacity-0 transition-opacity">
-                            <p className="text-[8px] text-white/90 font-medium truncate leading-tight">
-                              {a.name}
-                            </p>
-                          </div>
-                          {/* Format badge */}
-                          <div className="absolute top-1.5 right-1.5 px-1 py-0.5 rounded bg-black/40 backdrop-blur-sm text-[7px] font-mono text-white/80 uppercase font-bold">
-                            {a.mimeType?.split("/")[1]?.replace("+xml", "") || a.artifactType}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Non-image artifacts */}
-                {fileArts.length > 0 && (
-                  <div className={cn(imageArts.length > 0 && "pt-2 border-t border-brand/8")}>
-                    {imageArts.length > 0 && (
-                      <p className="text-[9px] uppercase tracking-[0.16em] text-muted/60 font-semibold mb-2 flex items-center gap-1.5">
-                        <FileText className="w-3 h-3" />
-                        Files · {fileArts.length}
-                      </p>
-                    )}
-                    <div className="grid gap-2 max-h-48 overflow-auto sm:grid-cols-2">
-                      {fileArts.slice(0, 12).map((a) => (
-                        <ArtifactCard
-                          key={a.id}
-                          name={a.name}
-                          type={a.artifactType as ArtifactType}
-                          mimeType={a.mimeType}
-                          sizeBytes={a.sizeBytes}
-                          downloadUrl={a.downloadUrl}
-                          metadata={a.metadata}
-                          className="w-full"
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })()}
+      {featureFlags.artifactsPanel && artifacts.length > 0 && (
+        <DirectorArtifactsPanel artifacts={artifacts} />
+      )}
 
       {/* Composer - prominent at bottom, Claude-style */}
       <div className="shrink-0 px-4 pb-6 pt-2">
@@ -1828,22 +1760,22 @@ export default function DirectorWorkspace({
             />
 
             {/* Bottom bar with actions */}
-            <div className="flex items-center justify-between px-4 pb-3">
-              <div className="flex items-center gap-2">
-                {/* Left side - connectors toggle */}
+            <div className="flex items-center justify-between gap-2 px-4 pb-3">
+              <div className={WL_DIRECTOR_CLASSES.composerToolbar}>
                 <ShadButton
                   type="button"
                   variant="outline"
                   size="sm"
                   disableAnimations
                   onClick={() => setConnectorsOpen(!connectorsOpen)}
+                  aria-label="Connectors"
                   className={cn(
-                    "h-auto gap-1.5 px-3 py-1.5 rounded-md text-[11px]",
+                    "h-auto gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-[11px]",
                     connectorsOpen && "bg-brand/10 text-brand border-brand/30",
                   )}
                 >
                   <Plug className="w-3.5 h-3.5" />
-                  <span>Connectors</span>
+                  <span className="hidden sm:inline">Connectors</span>
                   <ChevronDown
                     className={cn("w-3 h-3 transition-transform", connectorsOpen && "rotate-180")}
                   />
@@ -1863,13 +1795,14 @@ export default function DirectorWorkspace({
                       setCapabilitiesOpen(!capabilitiesOpen);
                       setConnectorsOpen(false);
                     }}
+                    aria-label="Capabilities"
                     className={cn(
-                      "h-auto gap-1.5 px-3 py-1.5 rounded-md text-[11px]",
+                      "h-auto gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-[11px]",
                       capabilitiesOpen && "bg-brand/10 text-brand border-brand/30",
                     )}
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>Capabilities</span>
+                    <span className="hidden sm:inline">Capabilities</span>
                     <ChevronDown
                       className={cn(
                         "w-3 h-3 transition-transform",
@@ -1908,13 +1841,16 @@ export default function DirectorWorkspace({
                     size="sm"
                     disableAnimations
                     onClick={() => setCoachOpen(!coachOpen)}
+                    aria-label={focusedAgent ? `Coach ${focusedAgent.name}` : "Coach agent"}
                     className={cn(
-                      "h-auto gap-1.5 px-3 py-1.5 rounded-md text-[11px]",
+                      "h-auto gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-[11px] max-w-[9rem] sm:max-w-none",
                       (coachOpen || focusAgentId) && "bg-brand/10 text-brand border-brand/30",
                     )}
                   >
-                    <Bot className="w-3.5 h-3.5" />
-                    <span>{focusedAgent ? focusedAgent.name : "Coach"}</span>
+                    <Bot className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate max-w-[5.5rem] sm:max-w-none">
+                      {focusedAgent ? focusedAgent.name : "Coach"}
+                    </span>
                     <ChevronDown
                       className={cn("w-3 h-3 transition-transform", coachOpen && "rotate-180")}
                     />
@@ -1989,13 +1925,14 @@ export default function DirectorWorkspace({
                       size="sm"
                       disableAnimations
                       onClick={() => setToolsOpen(!toolsOpen)}
+                      aria-label="Agent abilities"
                       className={cn(
-                        "h-auto gap-1.5 px-3 py-1.5 rounded-md text-[11px]",
+                        "h-auto gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-[11px]",
                         toolsOpen && "bg-brand/10 text-brand border-brand/30",
                       )}
                     >
                       <Wrench className="w-3.5 h-3.5" />
-                      <span>Abilities</span>
+                      <span className="hidden sm:inline">Abilities</span>
                       {enabledTools.length > 0 && (
                         <span className="text-[9px] opacity-70">({enabledTools.length})</span>
                       )}
@@ -2058,8 +1995,9 @@ export default function DirectorWorkspace({
                     disableAnimations
                     onClick={() => setAttachmentsOpen(!attachmentsOpen)}
                     disabled={isUploading || isSending}
+                    aria-label="Attach file"
                     className={cn(
-                      "h-auto gap-1.5 px-3 py-1.5 rounded-md text-[11px]",
+                      "h-auto gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-[11px]",
                       attachmentsOpen && "bg-brand/10 text-brand border-brand/30",
                     )}
                   >
@@ -2068,7 +2006,7 @@ export default function DirectorWorkspace({
                     ) : (
                       <Paperclip className="w-3.5 h-3.5" />
                     )}
-                    <span>Attach</span>
+                    <span className="hidden sm:inline">Attach</span>
                     <ChevronDown
                       className={cn(
                         "w-3 h-3 transition-transform",
@@ -2113,7 +2051,8 @@ export default function DirectorWorkspace({
                           disableAnimations
                           onClick={() => {
                             setAttachmentsOpen(false);
-                            toastSuccess("Added to knowledge", "Global context updated");
+                            setInput("Add this standing rule to my fleet context: ");
+                            inputRef.current?.focus();
                           }}
                           className="w-full justify-start gap-2 px-3 py-2 h-auto rounded-md"
                         >
@@ -2134,7 +2073,8 @@ export default function DirectorWorkspace({
                           disableAnimations
                           onClick={() => {
                             setAttachmentsOpen(false);
-                            toastSuccess("Skill learned", "New ability registered");
+                            setInput("Coach my agents on this playbook: ");
+                            inputRef.current?.focus();
                           }}
                           className="w-full justify-start gap-2 px-3 py-2 h-auto rounded-md"
                         >
