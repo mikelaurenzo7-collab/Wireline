@@ -82,12 +82,12 @@ import {
 import { DirectorMessageBody } from "./director/DirectorMessageBody";
 import { DirectorCapabilityCatalog } from "./director/DirectorCapabilityCatalog";
 import { DirectorResearchSources } from "./director/DirectorResearchSources";
+import { DirectorStarterPrompts } from "./director/DirectorStarterPrompts";
 import { INTEGRATION_STYLES } from "../lib/integration-activities";
 import type { ToolIntegration } from "../lib/agent-capabilities";
 import {
   DIRECTOR_EMPTY_HERO,
   DIRECTOR_SCENE_BADGES,
-  DIRECTOR_STARTER_PROMPTS,
   DIRECTOR_CAPABILITY_PILLS,
   DIRECTOR_LOADING_COPY,
   DIRECTOR_COMPOSER_HINTS,
@@ -1028,7 +1028,7 @@ export default function DirectorWorkspace({
             )}
 
             <p className="wl-label text-brand/60 mb-2.5">{DIRECTOR_EMPTY_HERO.capabilityEyebrow}</p>
-            <div className="flex flex-wrap justify-center gap-1.5 mb-5 max-w-md">
+            <div className="flex flex-wrap justify-center gap-1.5 mb-6 max-w-md">
               {DIRECTOR_CAPABILITY_PILLS.map((pill, i) => (
                 <motion.span
                   key={pill.id}
@@ -1042,37 +1042,25 @@ export default function DirectorWorkspace({
               ))}
             </div>
 
-            <DirectorCapabilityCatalog
-              variant="empty"
-              onPickExample={(text) => {
-                pickCapabilityExample(text);
-              }}
-              className="mb-5"
-            />
+            {agents.length === 0 ? (
+              <FleetSetupNudge className="wl-director-empty-section mb-6 max-w-md w-full" />
+            ) : null}
 
-            <FleetSetupNudge className="mb-5 max-w-md" />
+            <DirectorStarterPrompts onSelect={(label) => void send(label)} className="mb-6" />
 
-            {/* Starter prompts */}
-            <div className="stagger-children flex flex-wrap justify-center gap-2 w-full">
-              {DIRECTOR_STARTER_PROMPTS.map((p) => (
-                <ShadButton
-                  key={p.id}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disableAnimations
-                  title={p.intent}
-                  onClick={() => send(p.label)}
-                  className={cn(
-                    "touch-press group h-auto text-left text-[11px] text-ink/80 px-3 py-2 gap-2",
-                    WL_DIRECTOR_CLASSES.starterChip,
-                  )}
-                >
-                  <span className="min-w-0">{p.label}</span>
-                  <ArrowUpRight className="w-3 h-3 shrink-0 text-brand/50 group-hover:text-brand transition-colors" />
-                </ShadButton>
-              ))}
+            <div className="wl-director-empty-section w-full mb-6">
+              <p className="wl-label text-brand/60 mb-2.5">{DIRECTOR_EMPTY_HERO.discoverEyebrow}</p>
+              <DirectorCapabilityCatalog
+                variant="empty"
+                onPickExample={(text) => {
+                  pickCapabilityExample(text);
+                }}
+              />
             </div>
+
+            {agents.length > 0 ? (
+              <FleetSetupNudge className="wl-director-empty-section max-w-md w-full" />
+            ) : null}
           </motion.div>
         ) : (
           <div className={cn(WL_DIRECTOR_CLASSES.threadColumn, "space-y-4")}>

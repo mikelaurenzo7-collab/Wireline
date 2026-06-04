@@ -47,6 +47,10 @@ import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
 import { AGENT_TOOL_CATALOG, type AgentToolCatalogEntry } from "../lib/agent-capabilities";
 import { INTEGRATION_STYLES } from "../lib/integration-activities";
+import {
+  AGENT_WORKSPACE_STARTER_PROMPTS,
+  WL_DIRECTOR_CLASSES,
+} from "../lib/wireline-director-design";
 import { ThinkingDisplay, LiveThinkingIndicator } from "./ui/ThinkingDisplay";
 import { LiveTaskPipeline, type PipelineStep } from "./ui/LiveTaskPipeline";
 import IntegrationActivityCard, {
@@ -925,9 +929,30 @@ export default function AgentWorkspace({
                 <h3 className="font-display italic text-2xl text-ink mb-2">
                   Chat with {agentName}
                 </h3>
-                <p className="text-[12px] text-muted leading-relaxed max-w-xs">
+                <p className="text-[12px] text-muted leading-relaxed max-w-xs mb-5">
                   Coach it, give context, ask how calls went, or direct changes in plain language.
                 </p>
+                <div className="flex flex-wrap justify-center gap-2 max-w-sm">
+                  {AGENT_WORKSPACE_STARTER_PROMPTS.map((p) => (
+                    <ShadButton
+                      key={p.id}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disableAnimations
+                      title={p.intent}
+                      onClick={() => triggerCommand(p.label)}
+                      disabled={isSending}
+                      className={cn(
+                        "touch-press group h-auto text-left text-[11px] text-ink/80 px-3 py-2 gap-2",
+                        WL_DIRECTOR_CLASSES.starterChip,
+                      )}
+                    >
+                      <span className="min-w-0">{p.label}</span>
+                      <ArrowUpRight className="w-3 h-3 shrink-0 text-brand/50 group-hover:text-brand transition-colors" />
+                    </ShadButton>
+                  ))}
+                </div>
               </motion.div>
             ) : (
               <AnimatePresence initial={false}>
@@ -1409,6 +1434,7 @@ export default function AgentWorkspace({
                   disableAnimations
                   onClick={send}
                   disabled={!input.trim() || isSending || isUploading}
+                  aria-label="Send message"
                   className="rounded-md text-[12px] font-semibold"
                 >
                   {isSending ? (

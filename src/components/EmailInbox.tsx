@@ -21,6 +21,7 @@ import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import PageShell, { Panel } from "./PageShell";
 import { PanelSkeleton } from "./Skeleton";
 import { EmptyState } from "./ui/EmptyState";
+import { OPS_CHANNEL_EMPTY } from "../lib/wireline-ops-design";
 import { useToast } from "../contexts/ToastContext";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
@@ -319,9 +320,10 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                     ) : threads.length === 0 ? (
                       <EmptyState
                         icon={Mail}
-                        title="No threads yet"
-                        description="Connect a Gmail or Outlook account in Carrier Bridge so agents can receive and reply to emails."
-                        actions={[{ label: "Connect Email", to: "/integrations", primary: true }]}
+                        eyebrow={OPS_CHANNEL_EMPTY.email.eyebrow}
+                        title={OPS_CHANNEL_EMPTY.email.title}
+                        description={OPS_CHANNEL_EMPTY.email.description}
+                        actions={[...OPS_CHANNEL_EMPTY.email.actions]}
                         className="h-full py-10"
                       />
                     ) : (

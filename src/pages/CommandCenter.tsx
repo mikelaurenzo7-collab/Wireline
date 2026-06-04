@@ -483,8 +483,8 @@ export default function LiveOps() {
                           </div>
                           <p className="text-caption leading-relaxed">
                             {OPS_COPY.sentimentEmptyHint}{" "}
-                            <a href="tel:+16306425661" className="text-brand hover:underline">
-                              (630) 642-5661
+                            <a href={OPS_COPY.testCallHref} className="text-brand hover:underline">
+                              {OPS_COPY.testCallNumber}
                             </a>
                           </p>
                         </div>

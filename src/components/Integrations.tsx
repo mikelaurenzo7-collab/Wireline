@@ -13,6 +13,7 @@ import { getIntegrationLogo } from "./layout/IntegrationLogos";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { Label } from "./ui/shadcn/Label";
+import { EmptyState } from "./ui/EmptyState";
 
 type ConfirmState = { open: boolean; onConfirm: () => void };
 const CLOSED_CONFIRM: ConfirmState = { open: false, onConfirm: () => {} };
@@ -277,21 +278,23 @@ export default function Integrations() {
                   <span className="app-section-title/70">Loading integrations</span>
                 </div>
               ) : accounts.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center gap-4 py-8 text-center px-6 stagger-children">
-                  <div className="relative">
-                    <div className="absolute inset-0 rounded-md bg-brand/15 blur-xl scale-125" />
-                    <div className="relative w-14 h-14 rounded-md bg-brand/10 border border-brand/20 flex items-center justify-center text-brand">
-                      <Mail className="w-6 h-6" />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <h3 className="font-display italic text-2xl text-ink">No carriers linked</h3>
-                    <p className="text-[12px] text-ink/50 max-w-sm">
-                      Connect Gmail, Outlook, or Yahoo — agents triage and reply from caller moments
-                      below.
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg text-left stagger-children">
+                <EmptyState
+                  icon={Mail}
+                  eyebrow="Email carriers"
+                  title="No carriers linked"
+                  description="Connect Gmail, Outlook, or Yahoo — agents triage and reply from caller moments below."
+                  className="py-8"
+                  actions={[
+                    {
+                      label: "Connect Gmail",
+                      onClick: handleConnectGmail,
+                      primary: true,
+                    },
+                    { label: "Connect Outlook", onClick: handleConnectOutlook },
+                    { label: "Connect Yahoo", onClick: handleConnectYahoo },
+                  ]}
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left stagger-children">
                     {EMAIL_INBOUND_TASKS.map((task) => (
                       <div
                         key={task.id}
@@ -306,31 +309,7 @@ export default function Integrations() {
                       </div>
                     ))}
                   </div>
-                  <div className="flex items-center gap-3 flex-wrap justify-center">
-                    <ShadButton
-                      onClick={handleConnectGmail}
-                      variant="outline"
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors"
-                    >
-                      <span className="w-4 h-4">{getIntegrationLogo("Google")}</span> Connect Gmail
-                    </ShadButton>
-                    <ShadButton
-                      onClick={handleConnectOutlook}
-                      variant="outline"
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand/10 border border-brand/30 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/20 transition-colors"
-                    >
-                      <span className="w-4 h-4">{getIntegrationLogo("Microsoft")}</span> Connect
-                      Outlook
-                    </ShadButton>
-                    <ShadButton
-                      onClick={handleConnectYahoo}
-                      variant="outline"
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand/10 border border-brand/30 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/20 transition-colors"
-                    >
-                      <span className="w-4 h-4">{getIntegrationLogo("Yahoo")}</span> Connect Yahoo
-                    </ShadButton>
-                  </div>
-                </div>
+                </EmptyState>
               ) : (
                 <>
                   <div className="px-4 py-3 border-b border-black/6 bg-brand/5">

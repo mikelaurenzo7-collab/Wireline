@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { Phone, Mail, ChevronRight, Loader2, RefreshCw, Kanban } from "lucide-react";
 import PageShell, { Panel } from "./PageShell";
 import EmptyState from "./EmptyState";
+import { OPS_CHANNEL_EMPTY } from "../lib/wireline-ops-design";
 import ClientRouteViewport from "./layout/ClientRouteViewport";
 import { authFetch } from "../lib/api";
 import { logFetchError } from "../lib/utils";
@@ -125,13 +126,10 @@ export default function Pipeline() {
         {totalLeads === 0 && !loading && (
           <EmptyState
             icon={Kanban}
-            title="No leads in the pipeline"
-            description="Pipeline tracks every outbound lead through Cold → Contacted → Qualified → Demo → Won/Lost. Add leads via the Outbound tab — upload a CSV or capture them from an inbound call."
-            accent="#8B3FD6"
-            actions={[
-              { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
-              { label: "Connect a webhook", to: "/integrations" },
-            ]}
+            eyebrow={OPS_CHANNEL_EMPTY.pipeline.eyebrow}
+            title={OPS_CHANNEL_EMPTY.pipeline.title}
+            description={OPS_CHANNEL_EMPTY.pipeline.description}
+            actions={[...OPS_CHANNEL_EMPTY.pipeline.actions]}
             className="h-full py-10"
           />
         )}

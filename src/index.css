@@ -484,6 +484,12 @@ html, body, .marketing-surface, .app-surface {
   background: rgba(15, 12, 23, 0.65);
 }
 
+.wl-director-empty-section {
+  width: 100%;
+  padding-top: 0.25rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-brand, #8b3fd6) 8%, transparent);
+}
+
 .wl-integration-live-card[data-proposal="true"] {
   border-style: dashed;
   border-color: rgba(139, 63, 214, 0.22);

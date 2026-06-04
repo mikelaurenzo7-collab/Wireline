@@ -1,7 +1,7 @@
 /**
  * Training — agent knowledge, voice, pronunciation, simulator, and flow.
  */
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   GraduationCap,
@@ -19,6 +19,7 @@ import ClientRouteViewport from "../components/layout/ClientRouteViewport";
 import ClientRouteLoading from "../components/layout/ClientRouteLoading";
 import ClientSubTabs from "../components/layout/ClientSubTabs";
 import { EmptyState } from "../components/ui/EmptyState";
+import { OPS_CHANNEL_EMPTY } from "../lib/wireline-ops-design";
 import { cn } from "../lib/utils";
 import { ShadButton } from "../components/ui/shadcn/ShadButton";
 
@@ -31,7 +32,6 @@ const SUB_TABS = [
 ] as const;
 
 export default function Training() {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { agents, loading, degraded, refresh } = useAgents();
 
@@ -83,9 +83,10 @@ export default function Training() {
         <div className="flex flex-1 items-center justify-center min-h-[50vh] px-4">
           <EmptyState
             icon={GraduationCap}
-            title="No agents to train yet"
-            description="Create your first agent in Chat, then return here to teach knowledge, voice, pronunciation, and conversational flow."
-            actions={[{ label: "Go to Chat", onClick: () => navigate("/chat"), primary: true }]}
+            eyebrow={OPS_CHANNEL_EMPTY.training.eyebrow}
+            title={OPS_CHANNEL_EMPTY.training.title}
+            description={OPS_CHANNEL_EMPTY.training.description}
+            actions={[...OPS_CHANNEL_EMPTY.training.actions]}
           />
         </div>
       </ClientRouteViewport>

@@ -14,6 +14,8 @@ import {
   DIRECTOR_LIVE_STEP_COPY,
   DIRECTOR_COMPOSER_HINTS,
   LIVE_FEED_LABELS,
+  DIRECTOR_STARTER_PROMPTS_FEATURED_COUNT,
+  AGENT_WORKSPACE_STARTER_PROMPTS,
   directorPhaseCopy,
   directorCapabilitiesByCategory,
 } from "./wireline-director-design";
@@ -87,6 +89,20 @@ describe("Wireline Director design contract", () => {
     expect(DIRECTOR_EMPTY_HERO.subtitleWithFleet(2)).toContain("2 agents");
     expect(DIRECTOR_EMPTY_HERO.subtitleNoFleet.toLowerCase()).toContain("fleet");
     expect(DIRECTOR_EMPTY_HERO.capabilityEyebrow).toBeTruthy();
+    expect(DIRECTOR_EMPTY_HERO.starterEyebrow).toBe("Start here");
+    expect(DIRECTOR_EMPTY_HERO.discoverEyebrow).toBeTruthy();
+  });
+
+  it("featured starter count keeps empty state scannable", () => {
+    expect(DIRECTOR_STARTER_PROMPTS_FEATURED_COUNT).toBeGreaterThanOrEqual(3);
+    expect(DIRECTOR_STARTER_PROMPTS_FEATURED_COUNT).toBeLessThan(DIRECTOR_STARTER_PROMPTS.length);
+  });
+
+  it("agent workspace starters cover coaching paths", () => {
+    expect(AGENT_WORKSPACE_STARTER_PROMPTS.length).toBeGreaterThanOrEqual(3);
+    expect(
+      AGENT_WORKSPACE_STARTER_PROMPTS.some((p) => p.label.toLowerCase().includes("call")),
+    ).toBe(true);
   });
 
   it("capability pills cover channels, documents, research, and creative", () => {

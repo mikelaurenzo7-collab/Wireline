@@ -39,6 +39,7 @@ import PageShell, { Panel } from "./PageShell";
 import HubTabs, { CHANNELS_HUB } from "./HubTabs";
 import { PanelSkeleton } from "./Skeleton";
 import EmptyState from "./EmptyState";
+import { OPS_CHANNEL_EMPTY } from "../lib/wireline-ops-design";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { useToast } from "../contexts/ToastContext";
 import type { CallLog } from "../types/api";
@@ -196,12 +197,10 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
             ) : filteredCalls.length === 0 ? (
               <EmptyState
                 icon={Phone}
-                title="No calls yet"
-                description="When your agents handle calls, transcripts and analytics will appear here. Wire a phone number in Settings to go live."
-                actions={[
-                  { label: "Go to Settings", to: "/admin", primary: true },
-                  { label: "Start Outbound", to: "/outbound" },
-                ]}
+                eyebrow={OPS_CHANNEL_EMPTY.phone.eyebrow}
+                title={OPS_CHANNEL_EMPTY.phone.title}
+                description={OPS_CHANNEL_EMPTY.phone.description}
+                actions={[...OPS_CHANNEL_EMPTY.phone.actions]}
                 className="h-full py-10"
               />
             ) : (

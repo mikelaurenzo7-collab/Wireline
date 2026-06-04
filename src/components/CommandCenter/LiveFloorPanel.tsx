@@ -19,12 +19,11 @@ import { cn } from "../../lib/utils";
 import { useToast } from "../../contexts/ToastContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { refreshSessionIfNeeded } from "../../lib/api";
-import { Link } from "react-router-dom";
 import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
-import { InlineEmpty } from "../ui/InlineEmpty";
+import { EmptyState } from "../ui/EmptyState";
 import { AgentActivityIndicator } from "../ui/AgentActivityIndicator";
-import { WL_OPS_CLASSES, OPS_COPY } from "../../lib/wireline-ops-design";
+import { WL_OPS_CLASSES, OPS_COPY, OPS_CHANNEL_EMPTY } from "../../lib/wireline-ops-design";
 
 export type FloorCall = {
   id: string;
@@ -214,8 +213,17 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
             <Loader2 className="w-6 h-6 animate-spin text-brand" />
           </div>
         ) : calls.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center min-h-[200px]">
-            <InlineEmpty icon={Phone} label={OPS_COPY.floorQuiet} />
+          <div className="flex-1 flex items-center justify-center min-h-[220px] wl-panel rounded-md">
+            <EmptyState
+              icon={Radio}
+              eyebrow={OPS_CHANNEL_EMPTY.floor.eyebrow}
+              title={OPS_CHANNEL_EMPTY.floor.title}
+              description={OPS_CHANNEL_EMPTY.floor.description}
+              actions={[...OPS_CHANNEL_EMPTY.floor.actions]}
+              density="compact"
+              withHalo={false}
+              className="py-6"
+            />
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
@@ -417,12 +425,16 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
             <span className="text-[10px] font-mono text-muted">{agents.length} agents</span>
           </div>
           {agents.length === 0 ? (
-            <p className="text-sm text-muted">
-              No agents yet.{" "}
-              <Link to="/agents" className="text-brand hover:underline">
-                Deploy one →
-              </Link>
-            </p>
+            <EmptyState
+              icon={Users}
+              eyebrow={OPS_CHANNEL_EMPTY.fleetRail.eyebrow}
+              title={OPS_CHANNEL_EMPTY.fleetRail.title}
+              description={OPS_CHANNEL_EMPTY.fleetRail.description}
+              actions={[...OPS_CHANNEL_EMPTY.fleetRail.actions]}
+              density="compact"
+              withHalo={false}
+              className="py-4"
+            />
           ) : (
             <>
               <div className="flex xl:hidden gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">

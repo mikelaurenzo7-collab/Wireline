@@ -389,6 +389,9 @@ export const DIRECTOR_STARTER_PROMPTS: readonly DirectorStarterPrompt[] = [
   },
 ] as const;
 
+/** Featured count on Director empty state — rest collapse behind "More prompts" */
+export const DIRECTOR_STARTER_PROMPTS_FEATURED_COUNT = 4;
+
 export const DIRECTOR_CAPABILITY_PILLS = [
   { id: "voice", label: "Voice" },
   { id: "email", label: "Email" },
@@ -414,7 +417,30 @@ export const DIRECTOR_EMPTY_HERO = {
   subtitleNoFleet:
     "Plan your fleet, research your market, coach agents, and run CRM work — before agent #1 goes live.",
   capabilityEyebrow: "One console for",
+  starterEyebrow: "Start here",
+  discoverEyebrow: "Explore capabilities",
+  morePromptsLabel: "More prompts",
+  fewerPromptsLabel: "Show fewer",
 } as const;
+
+/** Agent workspace empty-state chips — parity with Director discovery */
+export const AGENT_WORKSPACE_STARTER_PROMPTS: readonly DirectorStarterPrompt[] = [
+  {
+    id: "review-calls",
+    label: "Review my last few calls",
+    intent: "Call history coaching",
+  },
+  {
+    id: "objection",
+    label: "Help me handle price objections",
+    intent: "Objection handling",
+  },
+  {
+    id: "opening-script",
+    label: "Tighten my opening script",
+    intent: "Script refinement",
+  },
+] as const;
 
 export const DIRECTOR_LIVE_STEP_COPY = {
   contextCoach: (name: string) => `Loading ${name} coaching context`,

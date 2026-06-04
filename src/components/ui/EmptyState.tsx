@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from "motion/react";
+import type { ReactNode } from "react";
 import { LucideIcon } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Medallion } from "./Medallion";
@@ -30,6 +31,10 @@ interface EmptyStateProps {
    * (wl-panel-elevated) so insights / dashboard panels share a single primitive.
    */
   framed?: boolean;
+  /** compact = embedded panels with less vertical padding */
+  density?: "default" | "compact";
+  /** Optional slot between description and action buttons (task grids, hints). */
+  children?: ReactNode;
 }
 
 /**
@@ -50,8 +55,11 @@ export function EmptyState({
   eyebrow = "No data yet",
   accent,
   framed = false,
+  density = "default",
+  children,
 }: EmptyStateProps) {
   const reduceMotion = useReducedMotion();
+  const compact = density === "compact";
 
   const body = (
     <motion.div
@@ -59,18 +67,19 @@ export function EmptyState({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
-        "wl-empty-state flex flex-col items-center justify-center py-12 text-center px-6",
+        "wl-empty-state flex flex-col items-center justify-center text-center px-6",
+        compact ? "py-8" : "py-12",
         framed && "py-0",
         className,
       )}
     >
       <motion.div
-        animate={reduceMotion ? undefined : { y: [0, -4, 0] }}
+        animate={reduceMotion || compact ? undefined : { y: [0, -4, 0] }}
         transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-        className="mb-5"
+        className={compact ? "mb-4" : "mb-5"}
       >
-        <Medallion withHalo={withHalo} size="md" accent={accent}>
-          <Icon className="w-6 h-6" />
+        <Medallion withHalo={withHalo} size={compact ? "sm" : "md"} accent={accent}>
+          <Icon className={compact ? "w-5 h-5" : "w-6 h-6"} />
         </Medallion>
       </motion.div>
 
@@ -81,8 +90,10 @@ export function EmptyState({
         className="max-w-sm"
       />
 
+      {children ? <div className="mt-6 w-full max-w-lg">{children}</div> : null}
+
       {actions.length > 0 && (
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
+        <div className={cn("flex flex-wrap justify-center gap-2", compact ? "mt-4" : "mt-6")}>
           {actions.map((action, index) => {
             const isPrimary = !!action.primary;
             const sharedClasses = cn(

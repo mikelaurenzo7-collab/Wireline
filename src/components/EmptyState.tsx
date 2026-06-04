@@ -17,6 +17,7 @@ interface Props {
   className?: string;
   /** Eyebrow label above the title. Defaults to the canonical "No data yet". */
   eyebrow?: string;
+  density?: "default" | "compact";
 }
 
 /**
@@ -33,6 +34,7 @@ export default function EmptyState({
   accent,
   className,
   eyebrow,
+  density,
 }: Props) {
   return (
     <UiEmptyState
@@ -43,6 +45,7 @@ export default function EmptyState({
       accent={accent}
       className={className}
       eyebrow={eyebrow}
+      density={density}
     />
   );
 }

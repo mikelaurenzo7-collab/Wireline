@@ -8,6 +8,7 @@ import { formatDate } from "../lib/safe-date";
 import PageShell, { Panel } from "./PageShell";
 import { useToast } from "../contexts/ToastContext";
 import EmptyState from "./EmptyState";
+import { OPS_CHANNEL_EMPTY } from "../lib/wireline-ops-design";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
@@ -182,12 +183,10 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                   ) : threads.length === 0 ? (
                     <EmptyState
                       icon={MessageSquare}
-                      title="No SMS yet"
-                      description="Conversations land here when an agent sends a text or a customer replies to your number. Configure your Twilio sender in Settings, then trigger SMS from outbound campaigns."
-                      actions={[
-                        { label: "Configure SMS sender", to: "/admin?tab=carrier", primary: true },
-                        { label: "Set up outbound", to: "/outbound" },
-                      ]}
+                      eyebrow={OPS_CHANNEL_EMPTY.sms.eyebrow}
+                      title={OPS_CHANNEL_EMPTY.sms.title}
+                      description={OPS_CHANNEL_EMPTY.sms.description}
+                      actions={[...OPS_CHANNEL_EMPTY.sms.actions]}
                     />
                   ) : (
                     <div className="space-y-1.5">
