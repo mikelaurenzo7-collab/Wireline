@@ -193,7 +193,7 @@ function OAuthSignInButtons({
             onClick={() => start(p.id)}
             disabled={disabled || !!pending}
             aria-label={`Continue with ${p.label}`}
-            className="min-h-[52px] py-2.5 inline-flex flex-col items-center justify-center gap-1 border border-ink/[0.08] bg-paper/70 text-ink text-[11px] font-semibold hover:border-brand/30 hover:bg-paper disabled:opacity-50 transition-all"
+            className="oauth-btn min-h-[52px] py-2.5 inline-flex flex-col items-center justify-center gap-1 border border-ink/[0.08] bg-paper/70 text-ink text-[11px] font-semibold disabled:opacity-50"
           >
             {pending === p.id ? <Loader2 className="w-5 h-5 animate-spin" /> : p.icon}
             <span>{p.label}</span>
@@ -388,6 +388,8 @@ export default function AuthPortal() {
               "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(107,43,153,0.06), transparent 55%)",
           }}
         />
+        <div className="auth-aurora-a" aria-hidden="true" />
+        <div className="auth-aurora-b" aria-hidden="true" />
 
         <PublicSiteHeader active={isSignUp ? "signup" : "signin"} />
 
@@ -530,9 +532,20 @@ export default function AuthPortal() {
                         </button>
                       </div>
                       {isSignUp && password.length > 0 && pwStrength && (
-                        <p className="text-caption" style={{ color: pwStrength.color }}>
-                          {pwStrength.label}
-                        </p>
+                        <>
+                          <div className="pw-strength-bar mt-1.5">
+                            <div
+                              className="pw-strength-fill"
+                              style={{
+                                width: `${(pwStrength.score / 4) * 100}%`,
+                                background: `linear-gradient(90deg, ${pwStrength.color}, ${pwStrength.score >= 3 ? "#8B3FD6" : pwStrength.color})`,
+                              }}
+                            />
+                          </div>
+                          <p className="text-caption" style={{ color: pwStrength.color }}>
+                            {pwStrength.label}
+                          </p>
+                        </>
                       )}
                       {isSignUp && (
                         <ul

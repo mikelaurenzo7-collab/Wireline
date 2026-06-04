@@ -343,7 +343,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 title={user?.email || "Account"}
               >
                 <div
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-[#3B154C] font-medium text-[10px] shrink-0"
+                  className="avatar-ring w-6 h-6 rounded-full flex items-center justify-center text-[#3B154C] font-medium text-[10px] shrink-0"
                   style={{ background: "#EFE9DC" }}
                   aria-hidden="true"
                 >
@@ -524,7 +524,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
 
               <div className="pt-3 mt-3 aurora-divider space-y-2">
                 <div className="flex items-center gap-2 rounded-lg wl-panel px-2 py-2">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-on-brand font-medium text-sm shrink-0 bg-brand">
+                  <div className="avatar-ring w-8 h-8 rounded-full flex items-center justify-center text-on-brand font-medium text-sm shrink-0 bg-brand">
                     {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
                   </div>
                   <div className="min-w-0 flex-1">

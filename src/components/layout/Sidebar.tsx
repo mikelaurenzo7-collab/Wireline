@@ -120,6 +120,8 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           background: "linear-gradient(180deg, #3B154C 0%, #2D1040 55%, #1F0C30 100%)",
         }}
       >
+        {/* Animated edge light — subtle gradient seam on the right edge */}
+        <div className="sidebar-edge-light" aria-hidden="true" />
         {/* Logo */}
         <Link
           to="/"
@@ -213,7 +215,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
               aria-label="Account & billing"
               title={user.email}
             >
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[#3B154C] bg-[#EFE9DC] dark:text-[#3B154C] dark:bg-[#EFE9DC] font-semibold text-[11px] shrink-0">
+              <div className="avatar-ring w-7 h-7 rounded-full flex items-center justify-center text-[#3B154C] bg-[#EFE9DC] dark:text-[#3B154C] dark:bg-[#EFE9DC] font-semibold text-[11px] shrink-0">
                 {user.email?.slice(0, 1).toUpperCase() ?? "?"}
               </div>
               <div className="min-w-0 flex-1">
@@ -231,7 +233,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
               aria-label="Account"
               title={user.email}
             >
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[#3B154C] bg-[#EFE9DC] dark:text-[#3B154C] dark:bg-[#EFE9DC] font-semibold text-[11px]">
+              <div className="avatar-ring w-7 h-7 rounded-full flex items-center justify-center text-[#3B154C] bg-[#EFE9DC] dark:text-[#3B154C] dark:bg-[#EFE9DC] font-semibold text-[11px]">
                 {user.email?.slice(0, 1).toUpperCase() ?? "?"}
               </div>
             </Link>

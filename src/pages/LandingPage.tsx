@@ -110,7 +110,7 @@ function AgentCard({
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.6, delay, ease: [0.16, 1, 0.3, 1] }}
       data-testid={`agent-card-${agent.name.toLowerCase()}`}
-      className="card-shimmer group block border border-white/5 hover:border-brand/20 bg-white/[0.03] backdrop-blur-md transition-all duration-500 overflow-hidden hover:shadow-[0_12px_48px_rgba(139,63,214,0.08)] hover:-translate-y-1"
+      className="card-shimmer agent-card-ambient group block border border-white/5 bg-white/[0.03] backdrop-blur-md overflow-hidden"
     >
       <div
         className={
@@ -218,7 +218,7 @@ export default function LandingPage() {
                 </span>
               </motion.span>
 
-              <h1 className="hero-word-reveal font-display italic text-[clamp(2.2rem,7vw,5.5rem)] leading-[0.95] tracking-tight text-ink max-w-4xl mx-auto">
+              <h1 className="hero-word-reveal hero-headline-glow font-display italic text-[clamp(2.2rem,7vw,5.5rem)] leading-[0.95] tracking-tight text-ink max-w-4xl mx-auto">
                 <span>Every </span>
                 <span>conversation, </span>
                 <span className="text-brand">answered </span>
@@ -402,7 +402,7 @@ export default function LandingPage() {
                   whileInView={{ opacity: 1, y: 0, scale: 1 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.15, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                  className="bg-paper p-8 md:p-10 lg:p-12 group"
+                  className="bg-paper p-8 md:p-10 lg:p-12 group stat-shimmer"
                 >
                   <p
                     className="stat-value-flip font-display italic text-[clamp(2.2rem,5vw,4rem)] leading-none text-ink tracking-tight"
@@ -472,7 +472,7 @@ export default function LandingPage() {
         {/* ─── Footer — Inverse ───────────────────────────────────── */}
         <footer
           data-testid="landing-footer"
-          className="bg-ink text-paper"
+          className="footer-brand-glow bg-ink text-paper"
           style={{ background: "#1A1614" }}
         >
           <div className="max-w-7xl mx-auto px-6 lg:px-12 py-16 lg:py-20">

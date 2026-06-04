@@ -357,9 +357,9 @@ export default function Pricing() {
         <div className="flex items-center justify-center gap-3">
           <button
             onClick={() => setBillingInterval("month")}
-            className={`px-4 py-2 font-mono text-[11px] uppercase tracking-[0.28em] font-medium transition-all ${
+            className={`px-4 py-2 font-mono text-[11px] uppercase tracking-[0.28em] font-medium transition-all duration-300 ${
               billingInterval === "month"
-                ? "bg-brand/15 border border-brand/40 text-brand"
+                ? "billing-toggle-active border"
                 : "border border-ink/15 text-ink/65 hover:text-ink hover:border-ink/30"
             }`}
           >
@@ -367,9 +367,9 @@ export default function Pricing() {
           </button>
           <button
             onClick={() => setBillingInterval("year")}
-            className={`px-4 py-2 font-mono text-[11px] uppercase tracking-[0.28em] font-medium transition-all relative ${
+            className={`px-4 py-2 font-mono text-[11px] uppercase tracking-[0.28em] font-medium transition-all duration-300 relative ${
               billingInterval === "year"
-                ? "bg-brand/15 border border-brand/40 text-brand"
+                ? "billing-toggle-active border"
                 : "border border-ink/15 text-ink/65 hover:text-ink hover:border-ink/30"
             }`}
           >
@@ -395,7 +395,7 @@ export default function Pricing() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + i * 0.08, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
               className={`relative p-4 lg:p-5 flex flex-col ${
-                tier.highlight ? "aurora-ring md:scale-[1.02] md:-my-1 md:z-10" : ""
+                tier.highlight ? "aurora-ring tier-spotlight md:scale-[1.02] md:-my-1 md:z-10" : ""
               }`}
             >
               <div

@@ -437,7 +437,7 @@ export default function LiveOps() {
               {activeTab === "analytics" && (
                 <section className="space-y-4 pt-1">
                   <span className="app-section-title block">Fleet analytics</span>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 stagger-children">
                     {/* Analytics: Sentiment */}
                     <div className="wl-panel-elevated rounded-[2rem] p-5 hover:border-brand/35 hover:-translate-y-px hover:shadow-lg hover:shadow-brand/5 transition-all duration-300">
                       <div className="flex items-center justify-between mb-4">
