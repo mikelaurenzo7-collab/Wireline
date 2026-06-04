@@ -120,11 +120,20 @@ describe("shadcn pivot ratchet", () => {
     );
   });
 
-  it("registers Textarea, Label, and Popover in the shadcn barrel", () => {
+  it("registers Textarea, Label, Popover, and AlertDialog in the shadcn barrel", () => {
     const indexPath = path.resolve(__dirname, "../shadcn/index.ts");
     const indexSource = fs.readFileSync(indexPath, "utf8");
     expect(indexSource).toContain('export * from "./Textarea"');
     expect(indexSource).toContain('export * from "./Label"');
     expect(indexSource).toContain('export * from "./Popover"');
+    expect(indexSource).toContain('export * from "./AlertDialog"');
+  });
+
+  it("registers AlertDialog primitives for destructive confirmation flows", () => {
+    const alertDialogPath = path.resolve(__dirname, "../shadcn/AlertDialog.tsx");
+    const source = fs.readFileSync(alertDialogPath, "utf8");
+    expect(source).toContain("AlertDialogAction");
+    expect(source).toContain("AlertDialogCancel");
+    expect(source).toContain("@radix-ui/react-alert-dialog");
   });
 });

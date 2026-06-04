@@ -29,6 +29,8 @@ import {
 import { getPasswordPolicyError } from "../lib/password-policy";
 import { Checkbox } from "./ui/shadcn/Checkbox";
 import { Input } from "./ui/shadcn/Input";
+import { Label } from "./ui/shadcn/Label";
+import { Alert, AlertDescription } from "./ui/shadcn/Alert";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { BRAND } from "../constants/brand-colors";
 import { markFreshSignupSession } from "../lib/post-signup-onboarding";
@@ -477,13 +479,13 @@ export default function AuthPortal() {
 
                       <form onSubmit={handleAuth} className="space-y-4">
                         <div className="space-y-1.5">
-                          <label
+                          <Label
                             htmlFor="auth-email"
                             className="text-eyebrow flex items-center gap-1.5"
                           >
                             <Mail className="w-3.5 h-3.5 text-brand" />
                             Email
-                          </label>
+                          </Label>
                           <Input
                             id="auth-email"
                             type="email"
@@ -501,13 +503,13 @@ export default function AuthPortal() {
                         {!isReset && (
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <label
+                              <Label
                                 htmlFor="auth-password"
                                 className="text-eyebrow flex items-center gap-1.5"
                               >
                                 <Lock className="w-3.5 h-3.5 text-brand" />
                                 Password
-                              </label>
+                              </Label>
                               {!isSignUp && (
                                 <ShadButton
                                   type="button"
@@ -608,14 +610,17 @@ export default function AuthPortal() {
                         <AnimatePresence mode="wait">
                           {error && (
                             <motion.div
-                              role="alert"
                               initial={{ opacity: 0, height: 0 }}
                               animate={{ opacity: 1, height: "auto" }}
                               exit={{ opacity: 0, height: 0 }}
-                              className="flex gap-2 p-3 bg-destructive/10 border border-destructive/25 text-destructive text-sm"
                             >
-                              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                              <span>{error}</span>
+                              <Alert
+                                variant="destructive"
+                                className="flex items-start gap-2 p-3 [&>svg]:static [&>svg+div]:translate-y-0 [&>svg~*]:pl-0"
+                              >
+                                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                                <AlertDescription>{error}</AlertDescription>
+                              </Alert>
                             </motion.div>
                           )}
                           {message && (
@@ -623,10 +628,13 @@ export default function AuthPortal() {
                               initial={{ opacity: 0, height: 0 }}
                               animate={{ opacity: 1, height: "auto" }}
                               exit={{ opacity: 0, height: 0 }}
-                              className="flex gap-2 p-3 bg-brand/10 border border-brand/25 text-brand text-sm"
                             >
-                              <Check className="w-4 h-4 shrink-0 mt-0.5" />
-                              <span>{message}</span>
+                              <Alert className="flex items-start gap-2 p-3 border-brand/25 bg-brand/10 text-brand [&>svg]:static [&>svg]:text-brand [&>svg+div]:translate-y-0 [&>svg~*]:pl-0">
+                                <Check className="w-4 h-4 shrink-0 mt-0.5" />
+                                <AlertDescription className="text-brand">
+                                  {message}
+                                </AlertDescription>
+                              </Alert>
                             </motion.div>
                           )}
                         </AnimatePresence>

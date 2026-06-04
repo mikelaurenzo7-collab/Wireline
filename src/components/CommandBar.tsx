@@ -33,6 +33,7 @@ import { cn } from "../lib/utils";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { useAuth } from "../contexts/AuthContext";
 import { Input } from "./ui/shadcn/Input";
+import { ScrollArea } from "./ui/shadcn/ScrollArea";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface CommandItem {
@@ -368,108 +369,110 @@ export default function CommandBar() {
             </div>
 
             {/* Results */}
-            <div className="relative z-10 wl-panel-elevated rounded-b-md max-h-[60dvh] sm:max-h-[420px] overflow-y-auto">
-              {filteredCommands.length > 0 ? (
-                <div className="py-2">
-                  {["Navigation", "Actions"].map((category) => {
-                    const catCmds = filteredCommands.filter((c) => c.category === category);
-                    if (catCmds.length === 0) return null;
-                    return (
-                      <div key={category} className="mb-1 last:mb-0">
-                        <div className="px-5 pt-3 pb-1.5 text-[8px] uppercase tracking-[0.4em] text-ink/40 flex items-center gap-2">
-                          <span className="h-px flex-1 bg-white/8" />
-                          {category}
-                          <span className="h-px flex-1 bg-white/8" />
-                        </div>
-                        <div className="px-2 space-y-0.5">
-                          {catCmds.map((cmd) => {
-                            const globalIndex = filteredCommands.indexOf(cmd);
-                            const isSelected = globalIndex === selectedIndex;
-                            return (
-                              <ShadButton
-                                key={cmd.id}
-                                type="button"
-                                variant="ghost"
-                                disableAnimations
-                                onClick={() => handleAction(cmd)}
-                                onMouseEnter={() => setSelectedIndex(globalIndex)}
-                                className={cn(
-                                  "group w-full h-auto rounded-md px-3 py-2.5 flex items-center gap-3 text-left justify-start",
-                                  isSelected
-                                    ? "bg-white/8 border border-brand/25"
-                                    : "border border-transparent hover:bg-white/5",
-                                )}
-                              >
-                                {/* Icon */}
-                                <div
+            <div className="relative z-10 wl-panel-elevated rounded-b-md max-h-[60dvh] sm:max-h-[420px] flex flex-col min-h-0">
+              <ScrollArea className="flex-1 min-h-0 max-h-[calc(60dvh-2.75rem)] sm:max-h-[calc(420px-2.75rem)]">
+                {filteredCommands.length > 0 ? (
+                  <div className="py-2">
+                    {["Navigation", "Actions"].map((category) => {
+                      const catCmds = filteredCommands.filter((c) => c.category === category);
+                      if (catCmds.length === 0) return null;
+                      return (
+                        <div key={category} className="mb-1 last:mb-0">
+                          <div className="px-5 pt-3 pb-1.5 text-[8px] uppercase tracking-[0.4em] text-ink/40 flex items-center gap-2">
+                            <span className="h-px flex-1 bg-white/8" />
+                            {category}
+                            <span className="h-px flex-1 bg-white/8" />
+                          </div>
+                          <div className="px-2 space-y-0.5">
+                            {catCmds.map((cmd) => {
+                              const globalIndex = filteredCommands.indexOf(cmd);
+                              const isSelected = globalIndex === selectedIndex;
+                              return (
+                                <ShadButton
+                                  key={cmd.id}
+                                  type="button"
+                                  variant="ghost"
+                                  disableAnimations
+                                  onClick={() => handleAction(cmd)}
+                                  onMouseEnter={() => setSelectedIndex(globalIndex)}
                                   className={cn(
-                                    "w-8 h-8 rounded-md flex items-center justify-center shrink-0 transition-all",
+                                    "group w-full h-auto rounded-md px-3 py-2.5 flex items-center gap-3 text-left justify-start",
                                     isSelected
-                                      ? "bg-brand/15 border border-brand/30 text-brand"
-                                      : "wl-panel border border-white/10 text-muted",
+                                      ? "bg-white/8 border border-brand/25"
+                                      : "border border-transparent hover:bg-white/5",
                                   )}
                                 >
-                                  <cmd.icon className="w-3.5 h-3.5" />
-                                </div>
-
-                                {/* Label + description */}
-                                <div className="flex-1 min-w-0">
+                                  {/* Icon */}
                                   <div
                                     className={cn(
-                                      "text-[13px] leading-none mb-0.5 transition-colors",
-                                      isSelected ? "text-ink" : "text-ink/80",
+                                      "w-8 h-8 rounded-md flex items-center justify-center shrink-0 transition-all",
+                                      isSelected
+                                        ? "bg-brand/15 border border-brand/30 text-brand"
+                                        : "wl-panel border border-white/10 text-muted",
                                     )}
                                   >
-                                    {cmd.label}
+                                    <cmd.icon className="w-3.5 h-3.5" />
                                   </div>
-                                  <div className="text-[10px] text-ink/40 truncate leading-none">
-                                    {cmd.description}
-                                  </div>
-                                </div>
 
-                                {/* Shortcut or chevron */}
-                                <div className="shrink-0 flex items-center gap-2">
-                                  {cmd.shortcut && (
-                                    <kbd
+                                  {/* Label + description */}
+                                  <div className="flex-1 min-w-0">
+                                    <div
                                       className={cn(
-                                        "hidden sm:flex items-center px-1.5 py-0.5 rounded-md border text-[9px] leading-none uppercase tracking-[0.2em] transition-all",
-                                        isSelected
-                                          ? "bg-brand/15 border-brand/30 text-brand"
-                                          : "wl-panel border-white/15 text-ink/40",
+                                        "text-[13px] leading-none mb-0.5 transition-colors",
+                                        isSelected ? "text-ink" : "text-ink/80",
                                       )}
                                     >
-                                      {cmd.shortcut}
-                                    </kbd>
-                                  )}
-                                  <ChevronRight
-                                    className={cn(
-                                      "w-3.5 h-3.5 transition-all",
-                                      isSelected
-                                        ? "text-brand opacity-100"
-                                        : "text-ink/40 opacity-0 group-hover:opacity-100",
+                                      {cmd.label}
+                                    </div>
+                                    <div className="text-[10px] text-ink/40 truncate leading-none">
+                                      {cmd.description}
+                                    </div>
+                                  </div>
+
+                                  {/* Shortcut or chevron */}
+                                  <div className="shrink-0 flex items-center gap-2">
+                                    {cmd.shortcut && (
+                                      <kbd
+                                        className={cn(
+                                          "hidden sm:flex items-center px-1.5 py-0.5 rounded-md border text-[9px] leading-none uppercase tracking-[0.2em] transition-all",
+                                          isSelected
+                                            ? "bg-brand/15 border-brand/30 text-brand"
+                                            : "wl-panel border-white/15 text-ink/40",
+                                        )}
+                                      >
+                                        {cmd.shortcut}
+                                      </kbd>
                                     )}
-                                  />
-                                </div>
-                              </ShadButton>
-                            );
-                          })}
+                                    <ChevronRight
+                                      className={cn(
+                                        "w-3.5 h-3.5 transition-all",
+                                        isSelected
+                                          ? "text-brand opacity-100"
+                                          : "text-ink/40 opacity-0 group-hover:opacity-100",
+                                      )}
+                                    />
+                                  </div>
+                                </ShadButton>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="py-16 flex flex-col items-center justify-center gap-3">
-                  <div className="w-12 h-12 rounded-md wl-panel flex items-center justify-center border border-brand/15">
-                    <Terminal className="w-5 h-5 text-brand/60" />
+                      );
+                    })}
                   </div>
-                  <p className="wl-label text-muted">No matching commands</p>
-                  <p className="text-[11px] text-muted/70">Try “ops”, “agents”, or “insights”</p>
-                </div>
-              )}
+                ) : (
+                  <div className="py-16 flex flex-col items-center justify-center gap-3">
+                    <div className="w-12 h-12 rounded-md wl-panel flex items-center justify-center border border-brand/15">
+                      <Terminal className="w-5 h-5 text-brand/60" />
+                    </div>
+                    <p className="wl-label text-muted">No matching commands</p>
+                    <p className="text-[11px] text-muted/70">Try “ops”, “agents”, or “insights”</p>
+                  </div>
+                )}
+              </ScrollArea>
 
               {/* Footer */}
-              <div className="sticky bottom-0 px-5 py-2.5 border-t border-white/8 flex items-center justify-between bg-paper/60 backdrop-blur-sm">
+              <div className="shrink-0 px-5 py-2.5 border-t border-white/8 flex items-center justify-between bg-paper/60 backdrop-blur-sm">
                 <div className="flex items-center gap-3 text-[8px] uppercase tracking-[0.28em] text-ink/40">
                   <span className="flex items-center gap-1">
                     <kbd

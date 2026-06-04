@@ -12,6 +12,7 @@ import { EMAIL_INBOUND_TASKS } from "../lib/integration-playbooks";
 import { getIntegrationLogo } from "./layout/IntegrationLogos";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
+import { Label } from "./ui/shadcn/Label";
 
 type ConfirmState = { open: boolean; onConfirm: () => void };
 const CLOSED_CONFIRM: ConfirmState = { open: false, onConfirm: () => {} };
@@ -398,9 +399,9 @@ export default function Integrations() {
                           </div>
 
                           <div className="flex items-center gap-2 shrink-0">
-                            <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40 inline-flex items-center gap-1.5">
+                            <Label className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground inline-flex items-center gap-1.5">
                               <Bot className="w-3 h-3 text-brand" /> Route to
-                            </label>
+                            </Label>
                             <div className="relative">
                               <Select
                                 value={acc.agent_id || "none"}
