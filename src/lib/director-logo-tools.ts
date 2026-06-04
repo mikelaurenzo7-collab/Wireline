@@ -107,10 +107,14 @@ export function parseCreativeBriefFromText(
       "");
 
   if (!style) {
-    const styleMatch = text.match(
+    const styleKeyword =
+      /\b(minimal(?:ist)?|modern|geometric|bold|playful|professional|clean|abstract|retro|vintage|flat)\b/i;
+    const fromMessage = message.match(styleKeyword);
+    const fromThread = text.match(
       /\b(minimal(?:ist)?|modern|geometric|bold|playful|professional|clean|abstract|retro|vintage|flat)\b[^.\n]*/i,
     );
-    if (styleMatch) style = styleMatch[0].trim();
+    if (fromMessage) style = fromMessage[0].trim();
+    else if (fromThread) style = fromThread[0].trim();
   }
 
   if (!colors) {
