@@ -342,7 +342,7 @@ function buildSharedOpeningRules(): string[] {
     "- If they give their name AND a question or request in the same breath (e.g. 'this is Michael and can you tell me about Wireline'), handle BOTH: greet them by name in a few words, then go straight to answering or acting on what they asked. Never drop the second half of what they said.",
     "- Never ask 'what can I help you with' when the caller has already told you what they need — just help with it.",
     "- Do not change persona, energy, accent, or sentence style after the opener.",
-    "- Ask one question per turn.",
+    "- Ask one question per turn by default, but you may ask multiple questions at once if you need more context to answer sufficiently.",
     "- Keep the first three turns under 25 words when possible.",
   ];
 }
@@ -418,11 +418,11 @@ function buildDemoOpeningRules(agent: ContactAgent): string[] {
       "DEMO OPENING FLOW (concierge):",
       "- Turn 1 is your firstMessage — caller picks a vertical: home services, medical, legal, real estate, insurance, restaurant, or outbound sales.",
       "- Once they choose a vertical, ask their name and what business name to use for that scenario.",
-      `- Then ask ONE open question tailored to that vertical: ${extraAsk}.`,
+      "- Then ask ONE open question tailored to that vertical: ${extraAsk}, but you may ask multiple questions at once if you need more context to answer sufficiently.",
       "- Immediately role-play AS that vertical's front desk or agent using their business name — same energy as the specialist demos (Marcus, Diana, Jake, etc.).",
       "- If they give vertical + name + company + scenario in one reply, skip redundant questions and start role-play.",
       "- If they only want a generic demo, pick a sensible default scenario for the vertical they chose.",
-      "- Ask one question per turn. Keep intake under 25 words when possible.",
+      "- Ask one question per turn by default, but you may ask multiple questions at once if you need more context to answer sufficiently. Keep intake under 25 words when possible.",
     ];
   }
 
@@ -430,12 +430,12 @@ function buildDemoOpeningRules(agent: ContactAgent): string[] {
     "DEMO OPENING FLOW:",
     "- Turn 1 is your scripted firstMessage — Wireline demo frame + ask for their name.",
     `- When they answer with ONLY a name: greet them briefly, then ask what ${businessAsk}.`,
-    `- Next, ask ONE open question tailored to your role: ${extraAsk}.`,
+    `- Next, ask ONE open question tailored to your role: ${extraAsk}, but you may ask multiple questions at once if you need more context to answer sufficiently.`,
     "- If they give name + company + details in one reply, skip redundant questions and start the role-play immediately.",
     "- If they only want a generic demo, use the business name 'your business' and your role's default scenario (see ROLE-PLAY STANDARD below).",
     "- After demo context is set, begin role-play — do not keep interviewing.",
     "- If they ask about Wireline mid-intake, answer briefly in your voice, then resume collecting demo context.",
-    "- Ask one question per turn. Keep intake turns under 25 words when possible.",
+    "- Ask one question per turn by default, but you may ask multiple questions at once if you need more context to answer sufficiently. Keep intake turns under 25 words when possible.",
     "- Do not change persona, energy, or sentence style once role-play starts.",
   ];
 }
@@ -554,7 +554,7 @@ function buildSharedConversationStyle(agent: ContactAgent): string[] {
   return [
     "CONVERSATION STYLE:",
     `- ${SHOWCASE_VIBE_GUIDE[agent.defaultVibe]}`,
-    "- Reply directly. No long preambles, feature dumps, or stacked questions.",
+    "- Reply directly. No long preambles or feature dumps. You may ask stacked questions if you need more context to answer sufficiently.",
     "- If a short answer works, stop after the answer and one next question.",
     "VOICE CONSISTENCY (critical):",
     "- Speak in the SAME voice for the entire call — same warmth, same cadence, same word choice — no matter what topic the caller raises.",

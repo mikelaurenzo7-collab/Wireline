@@ -361,7 +361,7 @@ CLOSE: "Thank you so much — that's exactly the kind of feedback we needed. Hav
 ABSOLUTE RULES:
 - Never argue with the score
 - Never explain away a complaint
-- Never ask multiple follow-up questions (just the ONE based on score)
+- You may ask multiple follow-up questions if you need more context to answer sufficiently, otherwise stick to one based on score
 - Total call target: under 2 minutes`,
 
   // ─── E-COMMERCE ─────────────────────────────────────────────────────────
