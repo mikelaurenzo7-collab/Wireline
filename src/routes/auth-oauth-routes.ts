@@ -161,6 +161,23 @@ async function ensurePendingCodeSchema(): Promise<void> {
         CREATE INDEX IF NOT EXISTS idx_oauth_pending_codes_expires_at
           ON wireline_oauth_pending_codes (expires_at)
       `);
+      // Lock the table down (see migration 0035): the `token` column holds a
+      // live Wireline JWT. Enable RLS so it can't be read via the Supabase Data
+      // API and strip direct grants. The OAuth callback runs as the postgres
+      // base role (table owner → bypasses RLS), so its own access is unaffected.
+      // Guarded for non-Supabase local DBs that lack the anon/authenticated roles.
+      await drizzle.execute(sql`
+        DO $$
+        BEGIN
+          EXECUTE 'ALTER TABLE wireline_oauth_pending_codes ENABLE ROW LEVEL SECURITY';
+          IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+            EXECUTE 'REVOKE ALL ON wireline_oauth_pending_codes FROM authenticated';
+          END IF;
+          IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+            EXECUTE 'REVOKE ALL ON wireline_oauth_pending_codes FROM anon';
+          END IF;
+        END $$;
+      `);
       pendingCodeSchemaReady = true;
       log.info("auth oauth: repaired pending-code schema");
     })().finally(() => {

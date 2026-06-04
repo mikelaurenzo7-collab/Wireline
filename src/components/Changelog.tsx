@@ -35,6 +35,18 @@ const TAG_META: Record<Tag, { label: string; color: string; bg: string }> = {
 
 const ENTRIES: Entry[] = [
   {
+    date: "Jun 4, 2026",
+    tag: "infra",
+    title: "OAuth sign-in store sealed off from the database API",
+    body: "A security audit found the short-lived OAuth bridge table — which briefly holds a pre-minted session token mid-sign-in — was readable by any signed-in account through Supabase's auto-generated data API, even though our own code never exposes it. We enabled row-level security and revoked direct API access so the table is now invisible outside the sign-in callback that owns it. Same audit also tuned five row-level-security policies to evaluate once per query instead of once per row.",
+  },
+  {
+    date: "Jun 4, 2026",
+    tag: "polish",
+    title: "Design-system consistency locked in repo-wide",
+    body: "Every interactive control now routes through the one canonical Button — proper focus rings, a 44px touch target, and consistent press feedback everywhere, including the \"You're live\" console map. The razor-edged flat-corner aesthetic is now enforced by an automated guard so it can't quietly drift back to soft corners. Customer-visible result: a tighter, more uniform surface on every screen.",
+  },
+  {
     date: "Jan 27, 2026",
     tag: "infra",
     title: "Voice tiering rebalanced — Sonnet 4.6 live, Opus 4.7 brain",

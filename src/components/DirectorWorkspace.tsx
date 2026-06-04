@@ -1441,7 +1441,7 @@ export default function DirectorWorkspace({
                           key={p.conceptId}
                           initial={{ opacity: 0, scale: 0.95 }}
                           animate={{ opacity: 1, scale: 1 }}
-                          className="group relative rounded-xl border border-brand/12 bg-paper/95 dark:bg-[#1a1225]/60 overflow-hidden shadow-sm hover:shadow-xl hover:border-brand/25 transition-all duration-300"
+                          className="group relative rounded-md border border-brand/12 bg-paper/95 dark:bg-[#1a1225]/60 overflow-hidden shadow-sm hover:shadow-xl hover:border-brand/25 transition-all duration-300"
                         >
                           {/* Image canvas with hover overlay */}
                           <div className="relative overflow-hidden wl-checkerboard bg-[length:16px_16px]">
@@ -1522,7 +1522,7 @@ export default function DirectorWorkspace({
                                       true,
                                     )
                                   }
-                                  className="px-2.5 py-1 rounded-lg text-[10px] font-semibold border border-brand/25 bg-brand/5 text-brand hover:bg-brand/10"
+                                  className="px-2.5 py-1 rounded-md text-[10px] font-semibold border border-brand/25 bg-brand/5 text-brand hover:bg-brand/10"
                                 >
                                   <Sparkles className="w-2.5 h-2.5" />
                                   Vectorize
@@ -1546,7 +1546,7 @@ export default function DirectorWorkspace({
                                       true,
                                     )
                                   }
-                                  className="px-2.5 py-1 rounded-lg text-[10px] font-semibold border border-brand/20 bg-brand/5 text-brand hover:bg-brand/10"
+                                  className="px-2.5 py-1 rounded-md text-[10px] font-semibold border border-brand/20 bg-brand/5 text-brand hover:bg-brand/10"
                                 >
                                   <Download className="w-2.5 h-2.5" />
                                   Export pack
@@ -1558,7 +1558,7 @@ export default function DirectorWorkspace({
                                     `Refine concept ${p.title}: keep the core shape but adjust typography.`,
                                   )
                                 }
-                                className="px-2.5 py-1 rounded-lg text-[10px] border border-black/10 hover:border-brand/20 hover:bg-brand/5"
+                                className="px-2.5 py-1 rounded-md text-[10px] border border-black/10 hover:border-brand/20 hover:bg-brand/5"
                               >
                                 Edit
                               </ShadButton>
@@ -1568,7 +1568,7 @@ export default function DirectorWorkspace({
                                     `Regenerate 3 new options from ${p.title} with stronger contrast.`,
                                   )
                                 }
-                                className="px-2.5 py-1 rounded-lg text-[10px] border border-black/10 hover:border-brand/20 hover:bg-brand/5"
+                                className="px-2.5 py-1 rounded-md text-[10px] border border-black/10 hover:border-brand/20 hover:bg-brand/5"
                               >
                                 Regenerate
                               </ShadButton>
@@ -1620,7 +1620,7 @@ export default function DirectorWorkspace({
           );
           return (
             <div className="shrink-0 px-4 pb-2">
-              <div className="max-w-3xl mx-auto rounded-xl border border-brand/15 bg-paper/90 dark:bg-black/15 backdrop-blur-sm p-3 space-y-3">
+              <div className="max-w-3xl mx-auto rounded-md border border-brand/15 bg-paper/90 dark:bg-black/15 backdrop-blur-sm p-3 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-muted font-semibold">
@@ -1644,7 +1644,7 @@ export default function DirectorWorkspace({
                       {imageArts.slice(0, 12).map((a) => (
                         <div
                           key={a.id}
-                          className="group relative rounded-lg border border-brand/10 overflow-hidden wl-checkerboard aspect-square"
+                          className="group relative rounded-md border border-brand/10 overflow-hidden wl-checkerboard aspect-square"
                         >
                           <img
                             src={a.downloadUrl}

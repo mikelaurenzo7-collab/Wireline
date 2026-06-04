@@ -38,7 +38,7 @@ export default function DirectorArtifactsPanel({ artifacts }: DirectorArtifactsP
 
   return (
     <div className="shrink-0 px-4 pb-2">
-      <div className="max-w-3xl mx-auto rounded-xl border border-brand/15 bg-paper/90 dark:bg-black/15 backdrop-blur-sm p-3 space-y-3">
+      <div className="max-w-3xl mx-auto rounded-md border border-brand/15 bg-paper/90 dark:bg-black/15 backdrop-blur-sm p-3 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-muted font-semibold">
@@ -62,7 +62,7 @@ export default function DirectorArtifactsPanel({ artifacts }: DirectorArtifactsP
               {imageArts.slice(0, 12).map((a) => (
                 <div
                   key={a.id}
-                  className="group relative rounded-lg border border-brand/10 overflow-hidden bg-[repeating-conic-gradient(#f0f0f0_0%_25%,#ffffff_0%_50%)] dark:bg-[repeating-conic-gradient(#1a1a2e_0%_25%,#0f0c17_0%_50%)] bg-[length:12px_12px] aspect-square"
+                  className="group relative rounded-md border border-brand/10 overflow-hidden bg-[repeating-conic-gradient(#f0f0f0_0%_25%,#ffffff_0%_50%)] dark:bg-[repeating-conic-gradient(#1a1a2e_0%_25%,#0f0c17_0%_50%)] bg-[length:12px_12px] aspect-square"
                 >
                   <img
                     src={a.downloadUrl}

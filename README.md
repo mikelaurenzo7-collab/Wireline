@@ -26,9 +26,9 @@ Wireline has been rigorously audited and hardened for production deployment. Fro
 
 - **Shadcn UI & Design System:** A complete visual pivot to Shadcn UI ensures a premium, cohesive aesthetic across all client-facing and authenticated pages. The signature "Cream & Purple" aesthetic is standardized with full Dark Mode support.
 - **Agent Extensibility & Integrations:** The autonomous Action Engine seamlessly orchestrates CRM, calendar, and email syncs with strict data isolation. Extensibility is baked in for any custom agent logic.
-- **Optimized Performance:** Zero-latency skeletal app shells, PWA caching (`sw.js`), and Vite's aggressive tree-shaking guarantee lightning-fast load times.
-- **Ironclad Security:** AES-256-GCM envelope encryption protects all tenant secrets at rest. Complete with CSP hardening and Supabase Row Level Security (RLS).
-- **Scalability:** 15 custom database indexes enable O(1) query lookups on critical paths, backed by active Supabase connection pooling for serverless edge scaling.
+- **Optimized Performance:** Skeleton app shells, PWA caching (`sw.js`), and Vite's per-route code-splitting + tree-shaking keep load times fast and the main bundle lean.
+- **Ironclad Security:** AES-256-GCM envelope encryption protects all tenant secrets at rest. Complete with CSP hardening and Postgres Row Level Security (RLS) — tenant isolation enforced at the database via a per-request `app.current_user_id` GUC, audited against the Supabase security advisor.
+- **Scalability:** Composite B-tree indexes on the hot `(user_id, created_at)` query paths, backed by Supabase transaction-pooled connections for serverless edge scaling.
 - **Marketing & SEO:** Fully populated semantic meta tags and OpenGraph integration ready the site for search indexers and social sharing.
 
 ---
@@ -82,7 +82,7 @@ npm run build && npm run start
 | **Frontend** | React 19 + Vite + TypeScript | Fast HMR, tree-shaken bundles, every route lazy-loaded |
 | **Styling** | Tailwind CSS 4 + Shadcn UI | Atomic utility classes combined with accessible, unstyled component primitives |
 | **API** | Express on Vercel serverless functions | One handler tree, deployed as one function |
-| **Database** | Postgres on Supabase, Drizzle ORM | Type-safe queries, idempotent migrations, O(1) indexed |
+| **Database** | Postgres on Supabase, Drizzle ORM | Type-safe queries, idempotent migrations, B-tree indexed hot paths |
 | **Voice runtime** | Vapi + ElevenLabs Flash v2.5 | Live latency under 250 ms |
 | **LLM** | Claude Sonnet 4.6 & Opus 4.7 | Quality-first tiering |
 
