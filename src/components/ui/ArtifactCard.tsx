@@ -92,24 +92,75 @@ export function ArtifactCard({
   previewData,
   className,
 }: ArtifactCardProps) {
-  const [showPreview, setShowPreview] = useState(false);
   const type: ArtifactType =
     explicitType && explicitType in TYPE_ICONS ? explicitType : inferType(mimeType, name);
   const Icon = TYPE_ICONS[type] ?? FileText;
+
+  const isImageType = type === "image" || type === "svg";
+  const effectivePreview = previewData || (isImageType && downloadUrl ? downloadUrl : undefined);
+  const [showPreview, setShowPreview] = useState(isImageType && !!effectivePreview);
 
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
       className={cn(
-        "rounded-md border border-brand/15 bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm",
-        "p-3 shadow-sm hover:shadow-md transition-shadow",
+        "group rounded-md border border-brand/15 bg-white/80 dark:bg-[#1a1225]/60 backdrop-blur-sm",
+        "shadow-sm hover:shadow-md transition-all duration-200",
+        isImageType ? "overflow-hidden" : "p-3",
         className,
       )}
     >
+      {/* Auto-show image preview at top */}
+      {isImageType && effectivePreview && (
+        <div className="relative bg-[repeating-conic-gradient(#f0f0f0_0%_25%,#ffffff_0%_50%)] dark:bg-[repeating-conic-gradient(#1a1a2e_0%_25%,#0f0c17_0%_50%)] bg-[length:12px_12px]">
+          {type === "svg" && previewData ? (
+            <div
+              className="max-h-44 overflow-hidden p-3"
+              dangerouslySetInnerHTML={{ __html: previewData }}
+            />
+          ) : (
+            <img
+              src={effectivePreview}
+              alt={name}
+              className="w-full max-h-44 object-contain p-3"
+              loading="lazy"
+            />
+          )}
+          {/* Hover download overlay */}
+          {downloadUrl && (
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+              <a
+                href={downloadUrl}
+                download={name}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm text-[10px] font-semibold text-ink shadow-lg hover:bg-white transition-colors"
+                title="Download"
+              >
+                <Download className="w-3 h-3" />
+                Download
+              </a>
+              <a
+                href={downloadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/70 backdrop-blur-sm text-[10px] font-medium text-ink/80 hover:bg-white/90 transition-colors"
+                title="Open"
+              >
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Header row */}
-      <div className="flex items-center gap-2.5">
-        <span className="flex-shrink-0 flex w-8 h-8 items-center justify-center rounded-md bg-brand/8 text-brand">
+      <div className={cn("flex items-center gap-2.5", isImageType && "px-3 py-2.5")}>
+        <span
+          className={cn(
+            "flex-shrink-0 flex w-8 h-8 items-center justify-center rounded-md",
+            isImageType ? "bg-fuchsia-500/10 text-fuchsia-500" : "bg-brand/8 text-brand",
+          )}
+        >
           <Icon className="w-4 h-4" />
         </span>
         <div className="flex-1 min-w-0">
@@ -120,7 +171,7 @@ export function ArtifactCard({
           </p>
         </div>
         <div className="flex items-center gap-1">
-          {previewData && (
+          {effectivePreview && !isImageType && (
             <ShadButton
               type="button"
               disableAnimations
@@ -133,7 +184,7 @@ export function ArtifactCard({
               <Eye className="w-3.5 h-3.5" />
             </ShadButton>
           )}
-          {downloadUrl && (
+          {downloadUrl && !isImageType && (
             <a
               href={downloadUrl}
               download={name}
@@ -143,7 +194,7 @@ export function ArtifactCard({
               <Download className="w-3.5 h-3.5" />
             </a>
           )}
-          {downloadUrl && (
+          {downloadUrl && !isImageType && (
             <a
               href={downloadUrl}
               target="_blank"
@@ -157,35 +208,22 @@ export function ArtifactCard({
         </div>
       </div>
 
-      {/* Inline preview */}
-      {showPreview && previewData && (
+      {/* Inline preview for non-image types */}
+      {showPreview && effectivePreview && !isImageType && (
         <motion.div
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: "auto", opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
           className="mt-2 pt-2 border-t border-brand/10 overflow-hidden"
         >
-          {type === "svg" && (
-            <div
-              className="max-h-48 overflow-auto rounded-md bg-white p-2"
-              dangerouslySetInnerHTML={{ __html: previewData }}
-            />
-          )}
-          {type === "image" && (
-            <img
-              src={previewData}
-              alt={name}
-              className="max-h-48 rounded-md object-contain mx-auto"
-            />
-          )}
           {type === "audio" && (
-            <audio controls className="w-full" src={previewData}>
+            <audio controls className="w-full" src={effectivePreview}>
               Your browser doesn&apos;t support audio.
             </audio>
           )}
           {(type === "code" || type === "json" || type === "markdown") && (
             <pre className="text-[10px] font-mono text-muted max-h-48 overflow-auto p-2 rounded-md bg-black/5">
-              {previewData}
+              {effectivePreview}
             </pre>
           )}
         </motion.div>

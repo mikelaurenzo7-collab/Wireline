@@ -218,7 +218,7 @@ export default function LandingPage() {
                 </div>
 
                 <div
-                  className="mt-8 pt-5 border-t border-ink/[0.06] flex flex-wrap items-center justify-center gap-x-3 gap-y-1"
+                  className="wl-reveal-stagger mt-8 pt-5 border-t border-ink/[0.06] flex flex-wrap items-center justify-center gap-x-3 gap-y-1"
                   aria-label="Security and compliance"
                 >
                   {TRUST_BADGES.map((badge, i) => (
@@ -246,7 +246,7 @@ export default function LandingPage() {
         >
           <LandingStatsGutterDecorations />
           <div className="landing-section-inner max-w-7xl">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08]">
+            <div className="wl-reveal-stagger grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08]">
               {STATS.map((stat, i) => (
                 <motion.div
                   key={stat.label}
@@ -254,7 +254,7 @@ export default function LandingPage() {
                   whileInView={{ opacity: 1, y: 0, scale: 1 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.12, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                  className="bg-paper p-8 md:p-10 lg:p-12 group stat-shimmer"
+                  className="wl-stat-glow bg-paper p-8 md:p-10 lg:p-12 group stat-shimmer"
                 >
                   <p
                     className="stat-value-flip font-display italic text-[clamp(2.2rem,5vw,4rem)] leading-none text-ink tracking-tight"
@@ -320,8 +320,16 @@ export default function LandingPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: Math.min(i * 0.04, 0.2) }}
-                  className="faq-details group border-b border-ink/[0.12]"
+                  className="wl-faq-item faq-details group border-b border-ink/[0.12]"
                   data-testid={`faq-item-${i}`}
+                  onToggle={(e: React.ToggleEvent<HTMLDetailsElement>) => {
+                    const el = e.currentTarget;
+                    if (el.open) {
+                      el.setAttribute("data-open", "true");
+                    } else {
+                      el.removeAttribute("data-open");
+                    }
+                  }}
                 >
                   <summary className="flex items-start justify-between gap-4 py-5 lg:py-6 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
                     <span className="font-display italic text-base sm:text-lg lg:text-xl text-ink leading-snug">
@@ -348,7 +356,7 @@ export default function LandingPage() {
           style={{ background: "#1A1614" }}
         >
           <div className="max-w-7xl mx-auto px-6 lg:px-12 py-16 lg:py-20">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12 mb-16">
+            <div className="wl-reveal-stagger grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12 mb-16">
               <div className="col-span-2 md:col-span-1">
                 <p className="font-display italic text-2xl text-paper/90 mb-3">Wireline</p>
                 <p className="text-[13px] text-paper/55 leading-relaxed max-w-xs">

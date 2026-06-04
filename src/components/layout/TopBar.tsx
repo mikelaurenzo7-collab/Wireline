@@ -375,7 +375,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                     transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
                     role="menu"
                     aria-label="Account menu"
-                    className="absolute right-0 top-full mt-2 min-w-[240px] w-64 md:w-72 max-w-[90vw] rounded-md wl-panel-elevated shadow-2xl shadow-brand/8 overflow-hidden z-50"
+                    className="absolute right-0 top-full mt-2 min-w-[240px] w-64 md:w-72 max-w-[90vw] rounded-md wl-panel-elevated wl-card-shine shadow-2xl shadow-brand/8 overflow-hidden z-50"
                   >
                     {/* Account header — brand-tinted */}
                     <div className="relative px-4 py-3.5 border-b border-black/8 overflow-hidden">
@@ -530,14 +530,20 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                 </ShadButton>
               </div>
 
-              <nav className="flex-1 min-h-0 scroll-viewport space-y-3">
-                {NAV_GROUPS.map((group) => {
+              <nav className="flex-1 min-h-0 scroll-viewport space-y-1">
+                {NAV_GROUPS.map((group, gi) => {
                   const visibleItems = group.items.filter(
                     (item) => !item.ownerOnly || user?.is_owner === true,
                   );
                   if (visibleItems.length === 0) return null;
                   return (
                     <div key={group.label}>
+                      {gi > 0 && (
+                        <div
+                          className="h-px my-2 mx-2 bg-gradient-to-r from-brand/10 via-brand/5 to-transparent"
+                          aria-hidden="true"
+                        />
+                      )}
                       <div className="px-2 mb-1 text-eyebrow">{group.label}</div>
                       <div className="space-y-0.5">
                         {visibleItems.map((item) => renderNavItem(item, { variant: "drawer" }))}

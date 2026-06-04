@@ -125,7 +125,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
               <Link
                 to="/signup"
                 data-testid="header-cta"
-                className="hidden sm:inline-flex items-center gap-2 bg-gradient-to-r from-brand to-brand-deep text-white text-[13px] font-medium px-5 py-2 hover:opacity-90 transition-colors duration-300"
+                className="hidden sm:inline-flex items-center gap-2 bg-gradient-to-r from-brand to-brand-deep text-white text-[13px] font-medium px-5 py-2 hover:opacity-90 transition-all duration-300 hover:shadow-lg hover:shadow-brand/25 hover:-translate-y-px"
               >
                 Start trial
               </Link>

@@ -46,6 +46,10 @@ import {
   Mail,
   Wrench,
   Search as SearchIcon,
+  Palette,
+  Download,
+  Sparkles,
+  Image as ImageIcon,
 } from "lucide-react";
 import { authFetch, readApiJson } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
@@ -176,6 +180,97 @@ const CONNECTOR_CATALOG = [
   { icon: Table, id: "google_sheets", label: "Google Sheets", desc: "Call logging" },
   { icon: Megaphone, id: "meta", label: "Meta CAPI", desc: "Lead attribution" },
 ] as const;
+
+type MessageScene =
+  | "creative"
+  | "analysis"
+  | "integration"
+  | "training"
+  | "comms"
+  | "fleet"
+  | "general";
+
+const SCENE_PATTERNS: Array<{ scene: MessageScene; re: RegExp }> = [
+  {
+    scene: "creative",
+    re: /\b(logo|brand.?pack|design|illustration|image|video|visual|color.?palette|generat.*image|creat.*visual|render|mockup|artwork|icon.?set|banner|thumbnail|svg|vectorize|brand.?kit|creative)\b/i,
+  },
+  {
+    scene: "analysis",
+    re: /\b(audit|research|competitor|analyz|metrics|report|insight|benchmark|forecast|trend|breakdown|assess|evaluat|pricing|market)\b/i,
+  },
+  {
+    scene: "integration",
+    re: /\b(shopify|crm|hubspot|salesforce|slack|twilio|square|calendar|docusign|zoom|excel|sheets|api|webhook|integration)\b/i,
+  },
+  {
+    scene: "training",
+    re: /\b(train|knowledge|playbook|instruction|learn|teach|script|guide|onboard|curriculum|module|lesson|practice)\b/i,
+  },
+  {
+    scene: "comms",
+    re: /\b(call|sms|outreach|follow.?up|campaign|broadcast|sequence|dial|ring)\b/i,
+  },
+  {
+    scene: "fleet",
+    re: /\b(agent|deploy|hire|configure|fleet|workforce|capability)\b/i,
+  },
+];
+
+function detectMessageScene(
+  content: string,
+  previews?: DirectorPreview[],
+  proposals?: DirectorMessage["proposals"],
+): MessageScene {
+  if (previews && previews.length > 0) return "creative";
+  if (proposals?.integrationJobs && proposals.integrationJobs.length > 0) return "integration";
+  for (const { scene, re } of SCENE_PATTERNS) {
+    if (re.test(content)) return scene;
+  }
+  return "general";
+}
+
+const SCENE_META: Record<
+  Exclude<MessageScene, "general">,
+  { icon: React.ElementType; label: string; color: string; bg: string }
+> = {
+  creative: {
+    icon: Palette,
+    label: "Creative",
+    color: "text-fuchsia-500",
+    bg: "bg-fuchsia-500/8 border-fuchsia-500/20",
+  },
+  analysis: {
+    icon: BarChart3,
+    label: "Analysis",
+    color: "text-blue-500",
+    bg: "bg-blue-500/8 border-blue-500/20",
+  },
+  integration: {
+    icon: Plug,
+    label: "Integration",
+    color: "text-emerald-500",
+    bg: "bg-emerald-500/8 border-emerald-500/20",
+  },
+  training: {
+    icon: GraduationCap,
+    label: "Training",
+    color: "text-amber-500",
+    bg: "bg-amber-500/8 border-amber-500/20",
+  },
+  comms: {
+    icon: MessageCircle,
+    label: "Comms",
+    color: "text-sky-500",
+    bg: "bg-sky-500/8 border-sky-500/20",
+  },
+  fleet: {
+    icon: Bot,
+    label: "Fleet Ops",
+    color: "text-brand",
+    bg: "bg-brand/8 border-brand/20",
+  },
+};
 
 export default function DirectorWorkspace({
   focusAgentId = null,
@@ -974,439 +1069,534 @@ export default function DirectorWorkspace({
             </div>
           </motion.div>
         ) : (
-          messages.map((m) => (
-            <motion.div
-              key={m.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className={cn("flex flex-col", m.role === "operator" ? "items-end" : "items-start")}
-            >
-              {/* Director avatar for assistant */}
-              {m.role === "director" && (
-                <div className="flex items-center gap-2 mb-2 ml-1">
-                  <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15">
-                    <Compass className="w-3.5 h-3.5" />
-                  </span>
-                  <span className="text-[10px] text-muted uppercase tracking-[0.14em] font-medium">
-                    Director
-                    {m.coachAgentName ? (
-                      <span className="text-brand/70 normal-case tracking-normal">
-                        {" "}
-                        · coaching {m.coachAgentName}
-                      </span>
-                    ) : null}
-                  </span>
-                </div>
-              )}
-
-              {/* Message bubble */}
-              <div
-                className={cn(
-                  "max-w-[75%] min-w-[200px] rounded-md px-5 py-4 whitespace-pre-wrap break-words relative",
-                  m.role === "operator"
-                    ? cn(WL_DIRECTOR_CLASSES.operatorBubble, "text-white rounded-br-sm")
-                    : cn(
-                        WL_DIRECTOR_CLASSES.directorBubble,
-                        "text-ink dark:text-foreground rounded-bl-sm",
-                      ),
-                )}
+          messages.map((m) => {
+            const scene =
+              m.role === "director"
+                ? detectMessageScene(m.content, m.previews, m.proposals)
+                : "general";
+            const sceneMeta =
+              scene !== "general" ? SCENE_META[scene as Exclude<MessageScene, "general">] : null;
+            return (
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                className={cn("flex flex-col", m.role === "operator" ? "items-end" : "items-start")}
               >
-                {/* Reasoning display - Claude style */}
-                {m.role === "director" && m.reasoning && (
-                  <ThinkingDisplay
-                    reasoning={m.reasoning}
-                    thinkingDurationMs={m.thinkingDurationMs}
-                    isDeep={m.model === "opus"}
-                    animate={false}
-                  />
+                {/* Director avatar + scene badge */}
+                {m.role === "director" && (
+                  <div className="flex items-center gap-2 mb-2 ml-1">
+                    <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15">
+                      <Compass className="w-3.5 h-3.5" />
+                    </span>
+                    <span className="text-[10px] text-muted uppercase tracking-[0.14em] font-medium">
+                      Director
+                      {m.coachAgentName ? (
+                        <span className="text-brand/70 normal-case tracking-normal">
+                          {" "}
+                          · coaching {m.coachAgentName}
+                        </span>
+                      ) : null}
+                    </span>
+                    {sceneMeta && (
+                      <motion.span
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className={cn(
+                          "inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[8px] uppercase tracking-[0.14em] font-bold transition-colors",
+                          sceneMeta.bg,
+                          sceneMeta.color,
+                        )}
+                      >
+                        <sceneMeta.icon className="w-2.5 h-2.5" />
+                        {sceneMeta.label}
+                      </motion.span>
+                    )}
+                  </div>
                 )}
 
-                {m.role === "director" ? (
-                  <>
-                    <DirectorMessageBody content={m.content} />
-                    {/trouble responding|can't respond right now/i.test(m.content) &&
-                      (() => {
-                        const idx = messages.findIndex((msg) => msg.id === m.id);
-                        const prior = idx > 0 ? messages[idx - 1] : null;
-                        if (prior?.role !== "operator") return null;
+                {/* Message bubble */}
+                <div
+                  className={cn(
+                    "max-w-[75%] min-w-[200px] rounded-md px-5 py-4 whitespace-pre-wrap break-words relative",
+                    m.role === "operator"
+                      ? cn(WL_DIRECTOR_CLASSES.operatorBubble, "text-white rounded-br-sm")
+                      : cn(
+                          WL_DIRECTOR_CLASSES.directorBubble,
+                          "text-ink dark:text-foreground rounded-bl-sm",
+                        ),
+                  )}
+                >
+                  {/* Reasoning display - Claude style */}
+                  {m.role === "director" && m.reasoning && (
+                    <ThinkingDisplay
+                      reasoning={m.reasoning}
+                      thinkingDurationMs={m.thinkingDurationMs}
+                      isDeep={m.model === "opus"}
+                      animate={false}
+                    />
+                  )}
+
+                  {m.role === "director" ? (
+                    <>
+                      <DirectorMessageBody content={m.content} />
+                      {/trouble responding|can't respond right now/i.test(m.content) &&
+                        (() => {
+                          const idx = messages.findIndex((msg) => msg.id === m.id);
+                          const prior = idx > 0 ? messages[idx - 1] : null;
+                          if (prior?.role !== "operator") return null;
+                          return (
+                            <ShadButton
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="mt-3 h-8 px-3 text-[11px] uppercase tracking-[0.12em] border border-brand/25 text-brand hover:bg-brand/8"
+                              disabled={isSending}
+                              onClick={() => void send(prior.content)}
+                            >
+                              Retry message
+                            </ShadButton>
+                          );
+                        })()}
+                    </>
+                  ) : (
+                    <p className="text-[14px] leading-relaxed">{m.content}</p>
+                  )}
+
+                  {m.role === "director" && m.proposals && (
+                    <div className="mt-3 pt-3 border-t border-black/5 space-y-2">
+                      {(() => {
+                        const workflowTotal =
+                          m.proposals.actions.length + m.proposals.integrationJobs.length;
+                        const stepLabelFor = (step?: number) =>
+                          step && workflowTotal > 1
+                            ? `Step ${step} of ${workflowTotal}`
+                            : undefined;
                         return (
-                          <ShadButton
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="mt-3 h-8 px-3 text-[11px] uppercase tracking-[0.12em] border border-brand/25 text-brand hover:bg-brand/8"
-                            disabled={isSending}
-                            onClick={() => void send(prior.content)}
-                          >
-                            Retry message
-                          </ShadButton>
+                          <>
+                            {resolveCoachAgentId(m) &&
+                              m.proposals.changes.map((c, i) => {
+                                const key = `${m.id}:change:${i}`;
+                                const agentId = resolveCoachAgentId(m)!;
+                                return (
+                                  <ProposalCard
+                                    key={key}
+                                    icon={<SlidersHorizontal className="w-3.5 h-3.5" />}
+                                    tone="brand"
+                                    title={c.label}
+                                    detail={c.summary || c.value}
+                                    state={resolved[key]}
+                                    busy={busyKey === key}
+                                    busyLabel={busyKey === key ? busyLabel : undefined}
+                                    approveLabel="Apply"
+                                    onApprove={() => approveChange(key, c, agentId)}
+                                    onDismiss={() => markResolved(key, "dismissed")}
+                                  />
+                                );
+                              })}
+                            {resolveCoachAgentId(m) &&
+                              m.proposals.toolToggles.map((t, i) => {
+                                const key = `${m.id}:toggle:${i}`;
+                                const agentId = resolveCoachAgentId(m)!;
+                                return (
+                                  <ProposalCard
+                                    key={key}
+                                    icon={<Power className="w-3.5 h-3.5" />}
+                                    tone="emerald"
+                                    title={`${t.enable ? "Turn on" : "Turn off"} ${t.label}`}
+                                    detail={t.reason}
+                                    state={resolved[key]}
+                                    busy={busyKey === key}
+                                    busyLabel={busyKey === key ? busyLabel : undefined}
+                                    approveLabel={t.enable ? "Enable" : "Disable"}
+                                    onApprove={() => approveToggle(key, t, agentId)}
+                                    onDismiss={() => markResolved(key, "dismissed")}
+                                  />
+                                );
+                              })}
+                            {m.proposals.actions.map((a, i) => {
+                              const key = `${m.id}:action:${i}`;
+                              const agentId = resolveActionAgentId(a, m);
+                              if (!agentId) return null;
+                              const aIcon =
+                                a.kind === "make_call" ? (
+                                  <Phone className="w-3.5 h-3.5" />
+                                ) : a.kind === "send_text_message" ? (
+                                  <MessageCircle className="w-3.5 h-3.5" />
+                                ) : (
+                                  <Mail className="w-3.5 h-3.5" />
+                                );
+                              const detail = [
+                                a.to
+                                  ? `To: ${a.customerName ? `${a.customerName} · ` : ""}${a.to}`
+                                  : "",
+                                a.subject ? `Subject: ${a.subject}` : "",
+                                a.body || a.context || "",
+                              ]
+                                .filter(Boolean)
+                                .join("\n");
+                              return (
+                                <ProposalCard
+                                  key={key}
+                                  icon={aIcon}
+                                  tone="amber"
+                                  title={a.label}
+                                  detail={detail}
+                                  stepLabel={stepLabelFor(a.step)}
+                                  state={resolved[key]}
+                                  busy={busyKey === key}
+                                  busyLabel={busyKey === key ? busyLabel : undefined}
+                                  approveLabel={
+                                    a.kind === "make_call"
+                                      ? "Place call"
+                                      : a.kind === "send_text_message"
+                                        ? "Send text"
+                                        : "Send email"
+                                  }
+                                  consent={
+                                    a.kind === "make_call"
+                                      ? {
+                                          checked: !!callConsent[key],
+                                          onChange: (v) =>
+                                            setCallConsent((prev) => ({ ...prev, [key]: v })),
+                                        }
+                                      : undefined
+                                  }
+                                  onApprove={() => approveAction(key, a, agentId)}
+                                  onDismiss={() => markResolved(key, "dismissed")}
+                                />
+                              );
+                            })}
+                            {m.proposals.integrationJobs.map((job, i) => {
+                              const key = `${m.id}:integration:${i}`;
+                              const catalogEntry = AGENT_TOOL_CATALOG.find(
+                                (c) => c.name === job.tool,
+                              );
+                              const integrationKey = catalogEntry?.integration as
+                                | ToolIntegration
+                                | undefined;
+                              const jobIcon = integrationKey ? (
+                                (INTEGRATION_STYLES[integrationKey]?.icon ?? (
+                                  <SearchIcon className="w-3.5 h-3.5" />
+                                ))
+                              ) : (
+                                <SearchIcon className="w-3.5 h-3.5" />
+                              );
+                              const agentId = job.agentId || resolveCoachAgentId(m) || focusAgentId;
+                              return (
+                                <ProposalCard
+                                  key={key}
+                                  icon={jobIcon}
+                                  tone="brand"
+                                  title={job.label}
+                                  detail={[job.summary, job.query ? `Query: ${job.query}` : ""]
+                                    .filter(Boolean)
+                                    .join("\n")}
+                                  stepLabel={stepLabelFor(job.step)}
+                                  state={resolved[key]}
+                                  busy={busyKey === key}
+                                  busyLabel={busyKey === key ? busyLabel : undefined}
+                                  approveLabel="Run"
+                                  onApprove={() => approveIntegration(key, job, agentId)}
+                                  onDismiss={() => markResolved(key, "dismissed")}
+                                />
+                              );
+                            })}
+                          </>
                         );
                       })()}
-                  </>
-                ) : (
-                  <p className="text-[14px] leading-relaxed">{m.content}</p>
-                )}
+                    </div>
+                  )}
 
-                {m.role === "director" && m.proposals && (
-                  <div className="mt-3 pt-3 border-t border-black/5 space-y-2">
-                    {(() => {
-                      const workflowTotal =
-                        m.proposals.actions.length + m.proposals.integrationJobs.length;
-                      const stepLabelFor = (step?: number) =>
-                        step && workflowTotal > 1 ? `Step ${step} of ${workflowTotal}` : undefined;
-                      return (
-                        <>
-                          {resolveCoachAgentId(m) &&
-                            m.proposals.changes.map((c, i) => {
-                              const key = `${m.id}:change:${i}`;
-                              const agentId = resolveCoachAgentId(m)!;
-                              return (
-                                <ProposalCard
-                                  key={key}
-                                  icon={<SlidersHorizontal className="w-3.5 h-3.5" />}
-                                  tone="brand"
-                                  title={c.label}
-                                  detail={c.summary || c.value}
-                                  state={resolved[key]}
-                                  busy={busyKey === key}
-                                  busyLabel={busyKey === key ? busyLabel : undefined}
-                                  approveLabel="Apply"
-                                  onApprove={() => approveChange(key, c, agentId)}
-                                  onDismiss={() => markResolved(key, "dismissed")}
-                                />
-                              );
-                            })}
-                          {resolveCoachAgentId(m) &&
-                            m.proposals.toolToggles.map((t, i) => {
-                              const key = `${m.id}:toggle:${i}`;
-                              const agentId = resolveCoachAgentId(m)!;
-                              return (
-                                <ProposalCard
-                                  key={key}
-                                  icon={<Power className="w-3.5 h-3.5" />}
-                                  tone="emerald"
-                                  title={`${t.enable ? "Turn on" : "Turn off"} ${t.label}`}
-                                  detail={t.reason}
-                                  state={resolved[key]}
-                                  busy={busyKey === key}
-                                  busyLabel={busyKey === key ? busyLabel : undefined}
-                                  approveLabel={t.enable ? "Enable" : "Disable"}
-                                  onApprove={() => approveToggle(key, t, agentId)}
-                                  onDismiss={() => markResolved(key, "dismissed")}
-                                />
-                              );
-                            })}
-                          {m.proposals.actions.map((a, i) => {
-                            const key = `${m.id}:action:${i}`;
-                            const agentId = resolveActionAgentId(a, m);
-                            if (!agentId) return null;
-                            const aIcon =
-                              a.kind === "make_call" ? (
-                                <Phone className="w-3.5 h-3.5" />
-                              ) : a.kind === "send_text_message" ? (
-                                <MessageCircle className="w-3.5 h-3.5" />
-                              ) : (
-                                <Mail className="w-3.5 h-3.5" />
-                              );
-                            const detail = [
-                              a.to
-                                ? `To: ${a.customerName ? `${a.customerName} · ` : ""}${a.to}`
-                                : "",
-                              a.subject ? `Subject: ${a.subject}` : "",
-                              a.body || a.context || "",
-                            ]
-                              .filter(Boolean)
-                              .join("\n");
-                            return (
-                              <ProposalCard
-                                key={key}
-                                icon={aIcon}
-                                tone="amber"
-                                title={a.label}
-                                detail={detail}
-                                stepLabel={stepLabelFor(a.step)}
-                                state={resolved[key]}
-                                busy={busyKey === key}
-                                busyLabel={busyKey === key ? busyLabel : undefined}
-                                approveLabel={
-                                  a.kind === "make_call"
-                                    ? "Place call"
-                                    : a.kind === "send_text_message"
-                                      ? "Send text"
-                                      : "Send email"
-                                }
-                                consent={
-                                  a.kind === "make_call"
-                                    ? {
-                                        checked: !!callConsent[key],
-                                        onChange: (v) =>
-                                          setCallConsent((prev) => ({ ...prev, [key]: v })),
-                                      }
-                                    : undefined
-                                }
-                                onApprove={() => approveAction(key, a, agentId)}
-                                onDismiss={() => markResolved(key, "dismissed")}
-                              />
-                            );
-                          })}
-                          {m.proposals.integrationJobs.map((job, i) => {
-                            const key = `${m.id}:integration:${i}`;
-                            const catalogEntry = AGENT_TOOL_CATALOG.find(
-                              (c) => c.name === job.tool,
-                            );
-                            const integrationKey = catalogEntry?.integration as
-                              | ToolIntegration
-                              | undefined;
-                            const jobIcon = integrationKey ? (
-                              (INTEGRATION_STYLES[integrationKey]?.icon ?? (
-                                <SearchIcon className="w-3.5 h-3.5" />
-                              ))
-                            ) : (
-                              <SearchIcon className="w-3.5 h-3.5" />
-                            );
-                            const agentId = job.agentId || resolveCoachAgentId(m) || focusAgentId;
-                            return (
-                              <ProposalCard
-                                key={key}
-                                icon={jobIcon}
-                                tone="brand"
-                                title={job.label}
-                                detail={[job.summary, job.query ? `Query: ${job.query}` : ""]
-                                  .filter(Boolean)
-                                  .join("\n")}
-                                stepLabel={stepLabelFor(job.step)}
-                                state={resolved[key]}
-                                busy={busyKey === key}
-                                busyLabel={busyKey === key ? busyLabel : undefined}
-                                approveLabel="Run"
-                                onApprove={() => approveIntegration(key, job, agentId)}
-                                onDismiss={() => markResolved(key, "dismissed")}
-                              />
-                            );
-                          })}
-                        </>
-                      );
-                    })()}
-                  </div>
-                )}
-
-                {/* Timestamp */}
-                {m.createdAt && (
-                  <div className="mt-2 pt-1 border-t border-black/5 flex justify-end">
-                    <time
-                      dateTime={m.createdAt}
-                      className={cn(
-                        "text-[9px] font-mono tabular-nums",
-                        m.role === "operator" ? "text-white/50" : "text-muted/50",
-                      )}
-                    >
-                      {new Date(m.createdAt).toLocaleTimeString([], {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}
-                    </time>
-                  </div>
-                )}
-              </div>
-
-              {/* Suggestions */}
-              {m.suggestions && m.suggestions.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2 ml-1">
-                  {m.suggestions.map((s, i) => {
-                    const Icon = SUGGESTION_ICON[s.kind];
-                    return (
-                      <ShadButton
-                        key={`${s.kind}-${i}`}
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disableAnimations
-                        onClick={() => runSuggestion(s)}
-                        className="group h-auto text-[11px] font-medium text-brand rounded-full border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10 hover:border-brand/40"
+                  {/* Timestamp */}
+                  {m.createdAt && (
+                    <div className="mt-2 pt-1 border-t border-black/5 flex justify-end">
+                      <time
+                        dateTime={m.createdAt}
+                        className={cn(
+                          "text-[9px] font-mono tabular-nums",
+                          m.role === "operator" ? "text-white/50" : "text-muted/50",
+                        )}
                       >
-                        <Icon className="w-3 h-3" />
-                        {s.label}
-                        <ArrowUpRight className="w-2.5 h-2.5 opacity-0 -ml-1 group-hover:opacity-100 group-hover:ml-0 transition-all duration-200" />
-                      </ShadButton>
-                    );
-                  })}
-                </div>
-              )}
-
-              {m.researchSources && m.researchSources.length > 0 && (
-                <div className="mt-3 ml-1 flex flex-wrap gap-2 max-w-[560px]">
-                  <span className="text-[10px] uppercase tracking-[0.25em] text-muted w-full">
-                    Web sources
-                  </span>
-                  {m.researchSources.map((s, i) =>
-                    s.uri ? (
-                      <a
-                        key={`${s.uri}-${i}`}
-                        href={s.uri}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] rounded-full border border-brand/20 bg-brand/[0.04] px-3 py-1 text-brand hover:bg-brand/10"
-                      >
-                        {s.title || "Source"}
-                      </a>
-                    ) : (
-                      <span
-                        key={`${s.title}-${i}`}
-                        className="text-[11px] rounded-full border border-black/10 px-3 py-1 text-muted"
-                      >
-                        {s.title || "Source"}
-                      </span>
-                    ),
+                        {new Date(m.createdAt).toLocaleTimeString([], {
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </time>
+                    </div>
                   )}
                 </div>
-              )}
 
-              {m.role === "director" &&
-                m.id === lastDirectorMessageId &&
-                m.clarifyingQuestions &&
-                m.clarifyingQuestions.length > 0 && (
+                {/* Suggestions */}
+                {m.suggestions && m.suggestions.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2 ml-1">
+                    {m.suggestions.map((s, i) => {
+                      const Icon = SUGGESTION_ICON[s.kind];
+                      return (
+                        <ShadButton
+                          key={`${s.kind}-${i}`}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disableAnimations
+                          onClick={() => runSuggestion(s)}
+                          className="group h-auto text-[11px] font-medium text-brand rounded-full border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10 hover:border-brand/40"
+                        >
+                          <Icon className="w-3 h-3" />
+                          {s.label}
+                          <ArrowUpRight className="w-2.5 h-2.5 opacity-0 -ml-1 group-hover:opacity-100 group-hover:ml-0 transition-all duration-200" />
+                        </ShadButton>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {m.researchSources && m.researchSources.length > 0 && (
                   <div className="mt-3 ml-1 flex flex-wrap gap-2 max-w-[560px]">
-                    {m.clarifyingQuestions.map((q) => (
-                      <ShadButton
-                        key={q}
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disableAnimations
-                        onClick={() => {
-                          setInput(q.replace(/\?$/, "") + " — ");
-                          inputRef.current?.focus();
-                        }}
-                        className="h-auto text-[11px] text-left rounded-full border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10"
+                    <span className="text-[10px] uppercase tracking-[0.25em] text-muted w-full">
+                      Web sources
+                    </span>
+                    {m.researchSources.map((s, i) =>
+                      s.uri ? (
+                        <a
+                          key={`${s.uri}-${i}`}
+                          href={s.uri}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] rounded-full border border-brand/20 bg-brand/[0.04] px-3 py-1 text-brand hover:bg-brand/10"
+                        >
+                          {s.title || "Source"}
+                        </a>
+                      ) : (
+                        <span
+                          key={`${s.title}-${i}`}
+                          className="text-[11px] rounded-full border border-black/10 px-3 py-1 text-muted"
+                        >
+                          {s.title || "Source"}
+                        </span>
+                      ),
+                    )}
+                  </div>
+                )}
+
+                {m.role === "director" &&
+                  m.id === lastDirectorMessageId &&
+                  m.clarifyingQuestions &&
+                  m.clarifyingQuestions.length > 0 && (
+                    <div className="mt-3 ml-1 flex flex-wrap gap-2 max-w-[560px]">
+                      {m.clarifyingQuestions.map((q) => (
+                        <ShadButton
+                          key={q}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disableAnimations
+                          onClick={() => {
+                            setInput(q.replace(/\?$/, "") + " — ");
+                            inputRef.current?.focus();
+                          }}
+                          className="h-auto text-[11px] text-left rounded-full border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10"
+                        >
+                          {q}
+                        </ShadButton>
+                      ))}
+                    </div>
+                  )}
+
+                {m.approvals && m.approvals.length > 0 && (
+                  <div className="mt-3 ml-1 space-y-2 w-full max-w-[560px]">
+                    {m.approvals.map((a) => (
+                      <div
+                        key={a.callId}
+                        className="rounded-[12px] border border-brand/20 bg-brand/[0.04] px-3 py-2"
                       >
-                        {q}
-                      </ShadButton>
+                        <p className="text-[11px] text-muted mb-2">{a.label}</p>
+                        <div className="flex items-center gap-2">
+                          <ShadButton
+                            onClick={() => respondToApproval(a, true)}
+                            className="px-3 py-1.5 rounded-[10px] text-[11px] font-semibold bg-brand text-white"
+                            disabled={isSending}
+                          >
+                            Approve
+                          </ShadButton>
+                          <ShadButton
+                            onClick={() => respondToApproval(a, false)}
+                            className="px-3 py-1.5 rounded-[10px] text-[11px] font-semibold border border-brand/20 text-muted"
+                            disabled={isSending}
+                          >
+                            Decline
+                          </ShadButton>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
 
-              {m.approvals && m.approvals.length > 0 && (
-                <div className="mt-3 ml-1 space-y-2 w-full max-w-[560px]">
-                  {m.approvals.map((a) => (
-                    <div
-                      key={a.callId}
-                      className="rounded-[12px] border border-brand/20 bg-brand/[0.04] px-3 py-2"
-                    >
-                      <p className="text-[11px] text-muted mb-2">{a.label}</p>
-                      <div className="flex items-center gap-2">
-                        <ShadButton
-                          onClick={() => respondToApproval(a, true)}
-                          className="px-3 py-1.5 rounded-[10px] text-[11px] font-semibold bg-brand text-white"
-                          disabled={isSending}
-                        >
-                          Approve
-                        </ShadButton>
-                        <ShadButton
-                          onClick={() => respondToApproval(a, false)}
-                          className="px-3 py-1.5 rounded-[10px] text-[11px] font-semibold border border-brand/20 text-muted"
-                          disabled={isSending}
-                        >
-                          Decline
-                        </ShadButton>
-                      </div>
+                {m.previews && m.previews.length > 0 && (
+                  <div className="mt-4 ml-1 w-full max-w-[720px]">
+                    {/* Gallery header */}
+                    <div className="flex items-center gap-2.5 mb-3">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-fuchsia-500/10 to-violet-500/10 border border-fuchsia-500/20">
+                        <Sparkles className="w-3 h-3 text-fuchsia-500" />
+                        <span className="text-[9px] uppercase tracking-[0.12em] font-bold text-fuchsia-600 dark:text-fuchsia-400">
+                          {m.previews.length} concept{m.previews.length !== 1 ? "s" : ""} generated
+                        </span>
+                      </span>
                     </div>
-                  ))}
-                </div>
-              )}
 
-              {m.previews && m.previews.length > 0 && (
-                <div className="mt-3 ml-1 grid gap-2 sm:grid-cols-2 w-full max-w-[680px]">
-                  {m.previews.map((p) => (
                     <div
-                      key={p.conceptId}
-                      className="rounded-[12px] border border-brand/15 bg-white/75 dark:bg-black/10 p-2 space-y-2"
-                    >
-                      {p.previewDataUrl ? (
-                        <img
-                          src={p.previewDataUrl}
-                          alt={p.title || "Logo concept"}
-                          className="w-full rounded-[10px] border border-brand/10 bg-white"
-                        />
-                      ) : (
-                        <div className="w-full aspect-video rounded-[10px] border border-brand/10 bg-brand/5 flex items-center justify-center text-[10px] text-muted">
-                          Preview unavailable
-                        </div>
+                      className={cn(
+                        "grid gap-3",
+                        m.previews.length === 1 ? "grid-cols-1 max-w-[420px]" : "sm:grid-cols-2",
                       )}
-                      <div>
-                        <p className="text-[11px] font-semibold text-ink">{p.title}</p>
-                        <p className="text-[10px] text-muted line-clamp-2">{p.rationale}</p>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {p.svg && (
-                          <ShadButton
-                            onClick={() =>
-                              respondToApproval(
-                                {
-                                  callId: `vectorize-${p.conceptId}`,
-                                  name: "vectorize_logo",
-                                  label: "Vectorize concept",
-                                  requiresApproval: true,
-                                  input: { concept_id: p.conceptId, svg: p.svg },
-                                },
-                                true,
-                              )
-                            }
-                            className="px-2 py-1 rounded-[8px] text-[10px] border border-brand/20"
-                          >
-                            Vectorize
-                          </ShadButton>
-                        )}
-                        {p.svg && (
-                          <ShadButton
-                            onClick={() =>
-                              respondToApproval(
-                                {
-                                  callId: `pack-${p.conceptId}`,
-                                  name: "brand_pack_export",
-                                  label: "Export brand pack",
-                                  requiresApproval: true,
-                                  input: {
-                                    concept_id: p.conceptId,
-                                    concept_name: p.title,
-                                    svg: p.svg,
-                                  },
-                                },
-                                true,
-                              )
-                            }
-                            className="px-2 py-1 rounded-[8px] text-[10px] border border-brand/20"
-                          >
-                            Export pack
-                          </ShadButton>
-                        )}
-                        <ShadButton
-                          onClick={() =>
-                            setInput(
-                              `Refine concept ${p.title}: keep the core shape but adjust typography.`,
-                            )
-                          }
-                          className="px-2 py-1 rounded-[8px] text-[10px] border border-brand/20"
+                    >
+                      {m.previews.map((p) => (
+                        <motion.div
+                          key={p.conceptId}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="group relative rounded-xl border border-brand/12 bg-white/90 dark:bg-[#1a1225]/60 overflow-hidden shadow-sm hover:shadow-xl hover:border-brand/25 transition-all duration-300"
                         >
-                          Edit
-                        </ShadButton>
-                        <ShadButton
-                          onClick={() =>
-                            setInput(
-                              `Regenerate 3 new options from ${p.title} with stronger contrast.`,
-                            )
-                          }
-                          className="px-2 py-1 rounded-[8px] text-[10px] border border-brand/20"
-                        >
-                          Regenerate
-                        </ShadButton>
-                      </div>
+                          {/* Image canvas with hover overlay */}
+                          <div className="relative overflow-hidden bg-[repeating-conic-gradient(#f0f0f0_0%_25%,#ffffff_0%_50%)] dark:bg-[repeating-conic-gradient(#1a1a2e_0%_25%,#0f0c17_0%_50%)] bg-[length:16px_16px]">
+                            {p.previewDataUrl ? (
+                              <>
+                                <img
+                                  src={p.previewDataUrl}
+                                  alt={p.title || "Logo concept"}
+                                  className="w-full aspect-square object-contain p-6 transition-transform duration-500 group-hover:scale-[1.03]"
+                                />
+                                {/* Glassmorphic download overlay */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/5 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-end pb-5 gap-2">
+                                  <a
+                                    href={p.previewDataUrl}
+                                    download={`${p.title || "concept"}.png`}
+                                    className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/95 backdrop-blur-sm text-[11px] font-semibold text-ink shadow-xl hover:bg-white transition-colors"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Download className="w-3.5 h-3.5" />
+                                    Download PNG
+                                  </a>
+                                  {p.svg && (
+                                    <a
+                                      href={`data:image/svg+xml;base64,${btoa(p.svg)}`}
+                                      download={`${p.title || "concept"}.svg`}
+                                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/70 backdrop-blur-sm text-[10px] font-medium text-ink/80 hover:bg-white/90 transition-colors"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <Download className="w-3 h-3" />
+                                      SVG
+                                    </a>
+                                  )}
+                                </div>
+                                {/* Format badge */}
+                                <div className="absolute top-2.5 right-2.5 flex gap-1">
+                                  {p.svg && (
+                                    <span className="px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-[8px] font-mono text-white/90 uppercase font-bold">
+                                      SVG
+                                    </span>
+                                  )}
+                                  <span className="px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-[8px] font-mono text-white/90 uppercase font-bold">
+                                    PNG
+                                  </span>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="w-full aspect-square flex items-center justify-center bg-gradient-to-br from-brand/5 to-fuchsia-500/5">
+                                <div className="text-center space-y-2">
+                                  <Palette className="w-10 h-10 text-brand/20 mx-auto" />
+                                  <p className="text-[10px] text-muted/60">Generating preview…</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Info & quick actions */}
+                          <div className="px-3.5 py-3 space-y-2.5 border-t border-brand/8">
+                            <div>
+                              <p className="text-[12px] font-semibold text-ink leading-tight">
+                                {p.title}
+                              </p>
+                              <p className="text-[10px] text-muted/70 line-clamp-2 mt-0.5 leading-relaxed">
+                                {p.rationale}
+                              </p>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {p.svg && (
+                                <ShadButton
+                                  onClick={() =>
+                                    respondToApproval(
+                                      {
+                                        callId: `vectorize-${p.conceptId}`,
+                                        name: "vectorize_logo",
+                                        label: "Vectorize concept",
+                                        requiresApproval: true,
+                                        input: { concept_id: p.conceptId, svg: p.svg },
+                                      },
+                                      true,
+                                    )
+                                  }
+                                  className="px-2.5 py-1 rounded-lg text-[10px] font-semibold border border-fuchsia-500/25 bg-fuchsia-500/5 text-fuchsia-600 hover:bg-fuchsia-500/10"
+                                >
+                                  <Sparkles className="w-2.5 h-2.5" />
+                                  Vectorize
+                                </ShadButton>
+                              )}
+                              {p.svg && (
+                                <ShadButton
+                                  onClick={() =>
+                                    respondToApproval(
+                                      {
+                                        callId: `pack-${p.conceptId}`,
+                                        name: "brand_pack_export",
+                                        label: "Export brand pack",
+                                        requiresApproval: true,
+                                        input: {
+                                          concept_id: p.conceptId,
+                                          concept_name: p.title,
+                                          svg: p.svg,
+                                        },
+                                      },
+                                      true,
+                                    )
+                                  }
+                                  className="px-2.5 py-1 rounded-lg text-[10px] font-semibold border border-brand/20 bg-brand/5 text-brand hover:bg-brand/10"
+                                >
+                                  <Download className="w-2.5 h-2.5" />
+                                  Export pack
+                                </ShadButton>
+                              )}
+                              <ShadButton
+                                onClick={() =>
+                                  setInput(
+                                    `Refine concept ${p.title}: keep the core shape but adjust typography.`,
+                                  )
+                                }
+                                className="px-2.5 py-1 rounded-lg text-[10px] border border-black/10 hover:border-brand/20 hover:bg-brand/5"
+                              >
+                                Edit
+                              </ShadButton>
+                              <ShadButton
+                                onClick={() =>
+                                  setInput(
+                                    `Regenerate 3 new options from ${p.title} with stronger contrast.`,
+                                  )
+                                }
+                                className="px-2.5 py-1 rounded-lg text-[10px] border border-black/10 hover:border-brand/20 hover:bg-brand/5"
+                              >
+                                Regenerate
+                              </ShadButton>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          ))
+                  </div>
+                )}
+              </motion.div>
+            );
+          })
         )}
 
         {/* Live streaming — mission control panel */}
@@ -1428,30 +1618,111 @@ export default function DirectorWorkspace({
         )}
       </div>
 
-      {featureFlags.artifactsPanel && artifacts.length > 0 && (
-        <div className="shrink-0 px-4 pb-2">
-          <div className="max-w-3xl mx-auto rounded-[12px] border border-brand/15 bg-white/75 dark:bg-black/10 p-3">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-muted">Artifacts</p>
-              <p className="text-[10px] text-muted">{artifacts.length} files</p>
+      {featureFlags.artifactsPanel &&
+        artifacts.length > 0 &&
+        (() => {
+          const imageArts = artifacts.filter(
+            (a) =>
+              a.mimeType?.startsWith("image/") ||
+              a.artifactType === "svg" ||
+              a.artifactType === "image",
+          );
+          const fileArts = artifacts.filter(
+            (a) =>
+              !a.mimeType?.startsWith("image/") &&
+              a.artifactType !== "svg" &&
+              a.artifactType !== "image",
+          );
+          return (
+            <div className="shrink-0 px-4 pb-2">
+              <div className="max-w-3xl mx-auto rounded-xl border border-brand/15 bg-white/80 dark:bg-black/15 backdrop-blur-sm p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-muted font-semibold">
+                      <FileText className="w-3 h-3 text-brand/60" />
+                      Generated artifacts
+                    </span>
+                    <span className="text-[10px] text-muted/50 font-mono tabular-nums">
+                      {artifacts.length} file{artifacts.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Image artifact thumbnails — the actual logos/visuals */}
+                {imageArts.length > 0 && (
+                  <div>
+                    <p className="text-[9px] uppercase tracking-[0.16em] text-fuchsia-500/70 font-semibold mb-2 flex items-center gap-1.5">
+                      <ImageIcon className="w-3 h-3" />
+                      Media · {imageArts.length} image{imageArts.length !== 1 ? "s" : ""}
+                    </p>
+                    <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
+                      {imageArts.slice(0, 12).map((a) => (
+                        <div
+                          key={a.id}
+                          className="group relative rounded-lg border border-brand/10 overflow-hidden bg-[repeating-conic-gradient(#f0f0f0_0%_25%,#ffffff_0%_50%)] dark:bg-[repeating-conic-gradient(#1a1a2e_0%_25%,#0f0c17_0%_50%)] bg-[length:12px_12px] aspect-square"
+                        >
+                          <img
+                            src={a.downloadUrl}
+                            alt={a.name}
+                            className="w-full h-full object-contain p-2 transition-transform duration-300 group-hover:scale-105"
+                            loading="lazy"
+                          />
+                          {/* Hover overlay with download */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-200 flex flex-col items-center justify-end pb-2">
+                            <a
+                              href={a.downloadUrl}
+                              download={a.name}
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm text-[9px] font-semibold text-ink shadow-lg hover:bg-white transition-colors"
+                            >
+                              <Download className="w-2.5 h-2.5" />
+                              Download
+                            </a>
+                          </div>
+                          {/* File info strip */}
+                          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/50 to-transparent px-2 pt-3 pb-1.5 opacity-100 group-hover:opacity-0 transition-opacity">
+                            <p className="text-[8px] text-white/90 font-medium truncate leading-tight">
+                              {a.name}
+                            </p>
+                          </div>
+                          {/* Format badge */}
+                          <div className="absolute top-1.5 right-1.5 px-1 py-0.5 rounded bg-black/40 backdrop-blur-sm text-[7px] font-mono text-white/80 uppercase font-bold">
+                            {a.mimeType?.split("/")[1]?.replace("+xml", "") || a.artifactType}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Non-image artifacts */}
+                {fileArts.length > 0 && (
+                  <div className={cn(imageArts.length > 0 && "pt-2 border-t border-brand/8")}>
+                    {imageArts.length > 0 && (
+                      <p className="text-[9px] uppercase tracking-[0.16em] text-muted/60 font-semibold mb-2 flex items-center gap-1.5">
+                        <FileText className="w-3 h-3" />
+                        Files · {fileArts.length}
+                      </p>
+                    )}
+                    <div className="grid gap-2 max-h-48 overflow-auto sm:grid-cols-2">
+                      {fileArts.slice(0, 12).map((a) => (
+                        <ArtifactCard
+                          key={a.id}
+                          name={a.name}
+                          type={a.artifactType as ArtifactType}
+                          mimeType={a.mimeType}
+                          sizeBytes={a.sizeBytes}
+                          downloadUrl={a.downloadUrl}
+                          metadata={a.metadata}
+                          className="w-full"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="grid gap-2 max-h-48 overflow-auto sm:grid-cols-2">
-              {artifacts.slice(0, 20).map((a) => (
-                <ArtifactCard
-                  key={a.id}
-                  name={a.name}
-                  type={a.artifactType as ArtifactType}
-                  mimeType={a.mimeType}
-                  sizeBytes={a.sizeBytes}
-                  downloadUrl={a.downloadUrl}
-                  metadata={a.metadata}
-                  className="w-full"
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+          );
+        })()}
 
       {/* Composer - prominent at bottom, Claude-style */}
       <div className="shrink-0 px-4 pb-6 pt-2">
