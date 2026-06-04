@@ -93,8 +93,9 @@ export function ArtifactCard({
   className,
 }: ArtifactCardProps) {
   const [showPreview, setShowPreview] = useState(false);
-  const type = explicitType || inferType(mimeType, name);
-  const Icon = TYPE_ICONS[type];
+  const type: ArtifactType =
+    explicitType && explicitType in TYPE_ICONS ? explicitType : inferType(mimeType, name);
+  const Icon = TYPE_ICONS[type] ?? FileText;
 
   return (
     <motion.div

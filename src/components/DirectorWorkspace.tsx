@@ -1322,11 +1322,17 @@ export default function DirectorWorkspace({
                       key={p.conceptId}
                       className="rounded-[12px] border border-brand/15 bg-white/75 dark:bg-black/10 p-2 space-y-2"
                     >
-                      <img
-                        src={p.previewDataUrl}
-                        alt={p.title}
-                        className="w-full rounded-[10px] border border-brand/10 bg-white"
-                      />
+                      {p.previewDataUrl ? (
+                        <img
+                          src={p.previewDataUrl}
+                          alt={p.title || "Logo concept"}
+                          className="w-full rounded-[10px] border border-brand/10 bg-white"
+                        />
+                      ) : (
+                        <div className="w-full aspect-video rounded-[10px] border border-brand/10 bg-brand/5 flex items-center justify-center text-[10px] text-muted">
+                          Preview unavailable
+                        </div>
+                      )}
                       <div>
                         <p className="text-[11px] font-semibold text-ink">{p.title}</p>
                         <p className="text-[10px] text-muted line-clamp-2">{p.rationale}</p>
