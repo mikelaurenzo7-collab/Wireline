@@ -14,7 +14,7 @@ import {
 import type { StreamPhase } from "../../hooks/useStreamingChat";
 import { LiveTaskPipeline, type PipelineStep } from "../ui/LiveTaskPipeline";
 import { LiveThinkingIndicator } from "../ui/ThinkingDisplay";
-import IntegrationLiveFeed from "../integrations/live/IntegrationLiveFeed";
+import DirectorLiveOrchestra from "./DirectorLiveOrchestra";
 import type { IntegrationLiveAction } from "../../lib/integration-live-scripts";
 
 export interface DirectorLiveStep {
@@ -214,7 +214,7 @@ export default function DirectorLiveSession({
       exit={{ opacity: 0, y: -6 }}
       className={cn(
         "flex flex-col items-start w-full min-w-[280px]",
-        integrationActions.length > 0 ? "max-w-[85%]" : "max-w-[75%]",
+        integrationActions.length > 0 ? "max-w-[92%] sm:max-w-[88%]" : "max-w-[75%]",
         className,
       )}
     >
@@ -232,7 +232,7 @@ export default function DirectorLiveSession({
               className={cn(
                 "text-[8px] uppercase tracking-[0.14em] px-1.5 py-0.5 rounded-full font-semibold",
                 isDeep
-                  ? "bg-amber-500/12 text-amber-700 dark:text-amber-400 border border-amber-500/20"
+                  ? WL_DIRECTOR_CLASSES.opusBadge
                   : "bg-brand/10 text-brand/80 border border-brand/15",
               )}
             >
@@ -297,10 +297,16 @@ export default function DirectorLiveSession({
           </div>
         )}
 
-        {/* Integration live-action feed — boxes drop in per action */}
-        {integrationActions.length > 0 && <IntegrationLiveFeed actions={integrationActions} />}
+        {/* Fleet channel — runway, spotlight, ticket strips */}
+        {integrationActions.length > 0 && (
+          <DirectorLiveOrchestra
+            actions={integrationActions}
+            liveSteps={liveSteps}
+            className={WL_DIRECTOR_CLASSES.liveOrchestra}
+          />
+        )}
 
-        {/* Orchestration steps — hide when integration feed is active to reduce noise */}
+        {/* Orchestration steps — full list when no integration runway */}
         {liveSteps.length > 0 && integrationActions.length === 0 && (
           <div className="space-y-2">
             {liveSteps.map((step, i) => (

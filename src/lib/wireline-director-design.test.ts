@@ -14,6 +14,7 @@ import {
   DIRECTOR_LIVE_STEP_COPY,
   DIRECTOR_COMPOSER_HINTS,
   LIVE_FEED_LABELS,
+  LIVE_ORCHESTRA_COPY,
   DIRECTOR_STARTER_PROMPTS_FEATURED_COUNT,
   AGENT_WORKSPACE_STARTER_PROMPTS,
   directorPhaseCopy,
@@ -35,6 +36,15 @@ describe("Wireline Director design contract", () => {
     expect(WL_DIRECTOR_CLASSES.orchestrationStep).toBe("wl-orchestration-step");
     expect(WL_DIRECTOR_CLASSES.threadColumn).toBe("wl-director-thread");
     expect(WL_DIRECTOR_CLASSES.messageStack).toContain("wl-director-message-stack");
+    expect(WL_DIRECTOR_CLASSES.emptyHero).toBe("wl-director-empty-hero");
+    expect(WL_DIRECTOR_CLASSES.composerToolbar).toBe("wl-director-composer-toolbar");
+    expect(WL_DIRECTOR_CLASSES.scrollToBottom).toBe("wl-scroll-to-bottom-btn");
+    expect(WL_DIRECTOR_CLASSES.liveOrchestra).toBe("wl-live-orchestra");
+  });
+
+  it("live orchestra copy stays operator-native", () => {
+    expect(LIVE_ORCHESTRA_COPY.eyebrow.toLowerCase()).toContain("fleet");
+    expect(LIVE_ORCHESTRA_COPY.clearedSummary(2)).toContain("2 actions");
   });
 
   it("exposes framed panel classes without aurora chrome", () => {

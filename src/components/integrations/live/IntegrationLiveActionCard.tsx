@@ -23,9 +23,12 @@ function resolveBrand(integration: IntegrationLiveAction["integration"]) {
 export default function IntegrationLiveActionCard({
   action,
   index,
+  variant = "default",
 }: {
   action: IntegrationLiveAction;
   index: number;
+  /** Hero treatment inside DirectorLiveOrchestra spotlight */
+  variant?: "default" | "spotlight";
 }) {
   const brand = resolveBrand(action.integration);
   const isActive = action.status === "active";
@@ -36,18 +39,33 @@ export default function IntegrationLiveActionCard({
     <motion.div
       layout
       data-proposal={isProposal ? "true" : undefined}
-      initial={{ opacity: 0, y: -28, scale: 0.94, filter: "blur(4px)" }}
-      animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+      data-active={isActive ? "true" : undefined}
+      initial={
+        variant === "spotlight"
+          ? { opacity: 0, y: 12, scale: 0.98 }
+          : { opacity: 0, y: -28, scale: 0.94, filter: "blur(4px)" }
+      }
+      animate={
+        variant === "spotlight"
+          ? { opacity: 1, y: 0, scale: 1 }
+          : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }
+      }
       exit={{ opacity: 0, y: 8, scale: 0.98 }}
       transition={{
         type: "spring",
-        stiffness: 420,
+        stiffness: variant === "spotlight" ? 360 : 420,
         damping: 32,
-        delay: index * 0.02,
+        delay: variant === "spotlight" ? 0 : index * 0.02,
       }}
       className={cn(
         "wl-integration-live-card relative overflow-hidden rounded-md border bg-card shadow-sm",
-        isActive && "border-brand/25 shadow-lg shadow-brand/10 ring-1 ring-brand/12",
+        variant === "spotlight" &&
+          isActive &&
+          "border-brand/30 shadow-xl shadow-brand/15 ring-2 ring-brand/20",
+        variant !== "spotlight" &&
+          isActive &&
+          "border-brand/25 shadow-lg shadow-brand/10 ring-1 ring-brand/12",
+        variant === "spotlight" && !isActive && "ring-1 ring-brand/10",
         isSuccess &&
           "border-[color-mix(in_srgb,var(--wl-signal)_30%,transparent)] shadow-sm shadow-[color-mix(in_srgb,var(--wl-signal)_8%,transparent)]",
         isProposal && !isActive && !isSuccess && "bg-brand/[0.02] border-dashed",

@@ -35,6 +35,13 @@ export const WL_DIRECTOR_CLASSES = {
   messageStack: "wl-director-message-stack",
   messageBubble: "wl-director-message",
   operatorMessageStack: "wl-director-message-stack wl-director-message-stack--operator",
+  emptyHero: "wl-director-empty-hero",
+  composerToolbar: "wl-director-composer-toolbar",
+  scrollToBottom: "wl-scroll-to-bottom-btn",
+  artifactsPanel: "wl-director-artifacts-panel",
+  researchSources: "wl-director-research-sources",
+  opusBadge: "wl-director-opus-badge",
+  liveOrchestra: "wl-live-orchestra",
 } as const;
 
 /** Reusable app surfaces outside Director (settings, integrations, ops panels) */
@@ -465,6 +472,22 @@ export const LIVE_FEED_LABELS = {
   proposalCount: (n: number) =>
     n === 1 ? "1 action awaiting approval" : `${n} actions awaiting approval`,
   researchEyebrow: "Grounded web sources",
+} as const;
+
+/** Copy for DirectorLiveOrchestra — fleet channel / runway / spotlight */
+export const LIVE_ORCHESTRA_COPY = {
+  eyebrow: "Fleet channel",
+  armSequence: "Arming integration sequence…",
+  armNext: "Next on the runway",
+  queuedPrefix: "Queued:",
+  clearedSummary: (n: number) =>
+    n === 1 ? "1 action cleared · packaging reply" : `${n} actions cleared · packaging reply`,
+  liveNow: "Live",
+  spotlightLive: "Executing now",
+  spotlightLast: "Last signal",
+  spotlightNext: "On deck",
+  queueLabel: "Up next",
+  clearedLabel: "Cleared",
 } as const;
 
 /** Group catalog items by category for UI accordions */
