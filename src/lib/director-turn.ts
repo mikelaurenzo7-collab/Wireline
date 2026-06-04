@@ -14,6 +14,11 @@ import {
   type DirectorBusinessContext,
 } from "./director-planner";
 import type { DirectorIntegrationJob, DirectorProposedAction } from "./director-fleet-plan";
+import {
+  buildDirectorFleetSystemPrompt,
+  DIRECTOR_FLEET_TOOL,
+  normalizeDirectorFleetPlan,
+} from "./director-fleet-plan";
 import { formatDirectorIntegrationPrompt } from "./director-integration-prompt";
 import { loadTenantIntegrationConnections } from "./tenant-integration-connections";
 import {
