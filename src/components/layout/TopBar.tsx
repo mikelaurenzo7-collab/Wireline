@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 import {
   Menu,
   X,
-  Keyboard,
   LogOut,
   Settings,
   CreditCard,
@@ -28,6 +27,7 @@ import {
 import { useBranding } from "../../contexts/BrandingContext";
 import { BRAND } from "../../constants/brand-colors";
 import { useTheme } from "../../contexts/ThemeContext";
+import { shouldShowTopBarThemeToggle } from "../../lib/wireline-app-chrome";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
 interface Props {
@@ -39,7 +39,12 @@ interface Props {
   navBadges: Record<string, number>;
 }
 
-export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, navBadges }: Props) {
+export default function TopBar({
+  onShowShortcuts: _onShowShortcuts,
+  drawerOpen,
+  onDrawerChange,
+  navBadges,
+}: Props) {
   const location = useLocation();
   const { theme } = useTheme();
   const { user, signOut } = useAuth();
@@ -76,6 +81,8 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
   // Derive a contextual breadcrumb from the current path. PAGE_TITLES is
   // the single source of truth — every nav destination is keyed there.
   // Falls back gracefully for routes we haven't titled yet.
+  const showTopBarTheme = shouldShowTopBarThemeToggle(location.pathname);
+
   const breadcrumb: { eyebrow?: string; title: string } | null = (() => {
     // Exact match wins.
     if (PAGE_TITLES[location.pathname]) {
@@ -312,26 +319,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
               <span className="hidden md:inline ml-1.5 text-[11px] chrome-subtle">/</span>
             </ShadButton>
 
-            <ShadButton
-              type="button"
-              variant="chrome"
-              size="sm"
-              disableAnimations
-              onClick={onShowShortcuts}
-              className="hidden md:flex h-7 px-2 rounded-md chrome-muted hover:text-[#EFE9DC] hover:bg-white/10"
-              aria-label="Show keyboard shortcuts"
-              title="Keyboard shortcuts"
-            >
-              <Keyboard className="w-4 h-4" />
-              <kbd className="text-[10px] bg-white/10 border border-white/15 px-1.5 py-0.5 rounded font-mono chrome-muted">
-                ?
-              </kbd>
-            </ShadButton>
-
-            {/* Theme toggle — cycles light/dark/system, persists in
-                localStorage, toggles the `.dark` class on <html> so the
-                shadcn token system reflows the entire app. */}
-            <ThemeToggle />
+            {showTopBarTheme && <ThemeToggle />}
 
             {/* Avatar / account dropdown — visible on ALL viewports now.
                 On mobile this replaces the sign-out that was buried in the

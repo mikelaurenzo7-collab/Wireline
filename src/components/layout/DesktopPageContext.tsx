@@ -26,7 +26,9 @@ export default function DesktopPageContext({
   if (!title && !subtitle) return null;
 
   return (
-    <header className={cn("hidden lg:block shrink-0", WL_APP_CLASSES.pageContext, className)}>
+    <header
+      className={cn("hidden lg:block shrink-0 px-1 sm:px-2", WL_APP_CLASSES.pageContext, className)}
+    >
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0 flex-1">
           {eyebrow && <p className="wl-label text-brand/70 mb-1">{eyebrow}</p>}

@@ -108,7 +108,7 @@ export default function PostSignupOnboarding() {
         <DialogContent
           className={cn(
             "max-w-lg border-border p-0 overflow-hidden gap-0",
-            "wl-panel-elevated wl-onboarding-welcome rounded-md [&>button.absolute]:hidden",
+            "wl-modal-surface wl-onboarding-welcome rounded-md [&>button.absolute]:hidden",
           )}
         >
           <div className="relative px-6 pt-6 pb-5 border-b border-border/80">

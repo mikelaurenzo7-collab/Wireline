@@ -1444,7 +1444,7 @@ export default function DirectorWorkspace({
                           className="group relative rounded-xl border border-brand/12 bg-paper/95 dark:bg-[#1a1225]/60 overflow-hidden shadow-sm hover:shadow-xl hover:border-brand/25 transition-all duration-300"
                         >
                           {/* Image canvas with hover overlay */}
-                          <div className="relative overflow-hidden bg-[repeating-conic-gradient(#f0f0f0_0%_25%,#ffffff_0%_50%)] dark:bg-[repeating-conic-gradient(#1a1a2e_0%_25%,#0f0c17_0%_50%)] bg-[length:16px_16px]">
+                          <div className="relative overflow-hidden wl-checkerboard bg-[length:16px_16px]">
                             {p.previewDataUrl ? (
                               <>
                                 <img
@@ -1644,7 +1644,7 @@ export default function DirectorWorkspace({
                       {imageArts.slice(0, 12).map((a) => (
                         <div
                           key={a.id}
-                          className="group relative rounded-lg border border-brand/10 overflow-hidden bg-[repeating-conic-gradient(#f0f0f0_0%_25%,#ffffff_0%_50%)] dark:bg-[repeating-conic-gradient(#1a1a2e_0%_25%,#0f0c17_0%_50%)] bg-[length:12px_12px] aspect-square"
+                          className="group relative rounded-lg border border-brand/10 overflow-hidden wl-checkerboard aspect-square"
                         >
                           <img
                             src={a.downloadUrl}

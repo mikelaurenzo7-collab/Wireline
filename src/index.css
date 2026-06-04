@@ -2202,6 +2202,23 @@ html, body, .marketing-surface, .app-surface {
   background: color-mix(in srgb, var(--background) 92%, transparent);
 }
 
+/** Transparency grid for image / logo previews (brand neutrals only). */
+.wl-checkerboard {
+  background-color: color-mix(in srgb, var(--paper) 92%, white);
+  background-image: repeating-conic-gradient(
+    color-mix(in srgb, var(--color-ink) 4%, transparent) 0% 25%,
+    transparent 0% 50%
+  );
+  background-size: 12px 12px;
+}
+.dark .wl-checkerboard {
+  background-color: color-mix(in srgb, var(--background) 88%, #0f0c17);
+  background-image: repeating-conic-gradient(
+    color-mix(in srgb, white 6%, transparent) 0% 25%,
+    transparent 0% 50%
+  );
+}
+
 /* Director / primary chat canvas */
 .wl-mission-canvas {
   position: relative;

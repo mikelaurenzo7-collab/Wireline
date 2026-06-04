@@ -117,7 +117,7 @@ export function ArtifactCard({
     >
       {/* Auto-show image preview at top */}
       {isImageType && effectivePreview && (
-        <div className="relative bg-[repeating-conic-gradient(#f0f0f0_0%_25%,#ffffff_0%_50%)] dark:bg-[repeating-conic-gradient(#1a1a2e_0%_25%,#0f0c17_0%_50%)] bg-[length:12px_12px]">
+        <div className="relative wl-checkerboard">
           <img
             src={effectivePreview}
             alt={name}

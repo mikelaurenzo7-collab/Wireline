@@ -12,3 +12,8 @@ export function isFullBleedAppRoute(pathname: string): boolean {
 export function shouldShowAppPageContext(pathname: string): boolean {
   return !isFullBleedAppRoute(pathname);
 }
+
+/** TopBar theme lives on full-bleed routes only; contextual routes use AppShell chrome toolbar. */
+export function shouldShowTopBarThemeToggle(pathname: string): boolean {
+  return isFullBleedAppRoute(pathname);
+}

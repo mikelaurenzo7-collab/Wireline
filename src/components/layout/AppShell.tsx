@@ -342,7 +342,12 @@ export default function AppShell() {
 
         {/* Mobile/tablet route context — title strip + tools (theme moved off sidebar). */}
         {showPageContext && (
-          <div className={cn("lg:hidden shrink-0 px-3 py-2", WL_APP_CLASSES.mobileContextBar)}>
+          <div
+            className={cn(
+              "lg:hidden shrink-0 px-3 sm:px-4 py-2.5",
+              WL_APP_CLASSES.mobileContextBar,
+            )}
+          >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 min-w-0">
