@@ -119,8 +119,13 @@ describe("supervisor websocket service", () => {
     vi.clearAllMocks();
   });
 
-  async function openWhisper(callUserId: string | null): Promise<MockWs> {
+  async function openWhisper(
+    callUserId: string | null,
+    reqOverrides?: Partial<IncomingMessage> & { url?: string },
+  ): Promise<MockWs> {
     h.state.callUserId = callUserId;
+    const prevNodeEnv = process.env.NODE_ENV;
+    const prevVercel = process.env.VERCEL;
     const { initSupervisorWebSocketServer } = await import("./supervisor-websocket-service");
     const server = new EventEmitter();
     initSupervisorWebSocketServer(server);
@@ -128,13 +133,27 @@ describe("supervisor websocket service", () => {
     const req = {
       url: "/api/supervisor/stream?callId=call-abc&mode=whisper",
       headers: { cookie: "wireline_session=tok" },
+      ...reqOverrides,
     } as IncomingMessage;
 
     server.emit("upgrade", req, {}, Buffer.alloc(0));
     await new Promise((r) => setTimeout(r, 30));
     if (!h.state.lastWs) throw new Error("WebSocket connection was not opened");
+    process.env.NODE_ENV = prevNodeEnv;
+    if (prevVercel !== undefined) process.env.VERCEL = prevVercel;
     return h.state.lastWs;
   }
+
+  it("rejects ?token= query auth in production", async () => {
+    process.env.NODE_ENV = "production";
+    process.env.VERCEL = "1";
+    const ws = await openWhisper("owner-user", {
+      url: "/api/supervisor/stream?callId=call-abc&mode=whisper&token=legacy-jwt",
+      headers: {},
+    });
+    expect(ws.close).toHaveBeenCalledWith(4001, expect.stringContaining("Query token"));
+    expect(h.state.updateCalls).toEqual([]);
+  });
 
   it("closes whisper connections when the call belongs to another user", async () => {
     const ws = await openWhisper("other-tenant");

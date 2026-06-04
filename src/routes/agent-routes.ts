@@ -393,6 +393,7 @@ router.post(
             .where(
               and(
                 eq(schema.directives.id, BigInt(overrideId)),
+                eq(schema.directives.agentId, agentId),
                 eq(schema.directives.userId, userId),
               ),
             );
@@ -405,7 +406,11 @@ router.post(
             .update(schema.knowledge)
             .set({ content })
             .where(
-              and(eq(schema.knowledge.id, BigInt(overrideId)), eq(schema.knowledge.userId, userId)),
+              and(
+                eq(schema.knowledge.id, BigInt(overrideId)),
+                eq(schema.knowledge.agentId, agentId),
+                eq(schema.knowledge.userId, userId),
+              ),
             );
         } else {
           await drizzle.insert(schema.knowledge).values({ agentId, content, userId });
@@ -434,18 +439,31 @@ router.delete(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { type, rowId } = req.params;
+      const { type, rowId, id: agentId } = req.params;
       const userId = req.user.id;
+      if (!(await findOwnedAgentId(agentId, userId))) {
+        return res.status(404).json({ error: "Agent not found." });
+      }
       if (type === "directive")
         await drizzle
           .delete(schema.directives)
           .where(
-            and(eq(schema.directives.id, BigInt(rowId)), eq(schema.directives.userId, userId)),
+            and(
+              eq(schema.directives.id, BigInt(rowId)),
+              eq(schema.directives.agentId, agentId),
+              eq(schema.directives.userId, userId),
+            ),
           );
       if (type === "knowledge")
         await drizzle
           .delete(schema.knowledge)
-          .where(and(eq(schema.knowledge.id, BigInt(rowId)), eq(schema.knowledge.userId, userId)));
+          .where(
+            and(
+              eq(schema.knowledge.id, BigInt(rowId)),
+              eq(schema.knowledge.agentId, agentId),
+              eq(schema.knowledge.userId, userId),
+            ),
+          );
       res.json({ success: true });
     } catch (e) {
       log.error("Agent row delete failed", { type: req.params.type, error: getErrorMessage(e) });
@@ -1063,6 +1081,9 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id } = req.params;
+      if (!(await findOwnedAgentId(id, req.user.id))) {
+        return res.status(404).json({ error: "Agent not found." });
+      }
       const logs = await drizzle
         .select({
           summary: schema.callLogs.summary,
@@ -1162,6 +1183,9 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const agentId = req.params.id;
+      if (!(await findOwnedAgentId(agentId, req.user.id))) {
+        return res.status(404).json({ error: "Agent not found." });
+      }
       const logs = await drizzle
         .select({
           id: schema.callLogs.id,
@@ -1290,12 +1314,16 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const agentId = req.params.id;
+      if (!(await findOwnedAgentId(agentId, req.user.id))) {
+        return res.status(404).json({ error: "Agent not found" });
+      }
       const lessons = await drizzle
         .select()
         .from(schema.agentLessons)
         .where(
           and(
-            eq(schema.agentLessons.agentId, req.params.id),
+            eq(schema.agentLessons.agentId, agentId),
             eq(schema.agentLessons.userId, req.user.id),
           ),
         )
@@ -1391,11 +1419,16 @@ router.delete(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const agentId = req.params.id;
+      if (!(await findOwnedAgentId(agentId, req.user.id))) {
+        return res.status(404).json({ error: "Agent not found" });
+      }
       await drizzle
         .delete(schema.agentLessons)
         .where(
           and(
             eq(schema.agentLessons.id, BigInt(req.params.lessonId)),
+            eq(schema.agentLessons.agentId, agentId),
             eq(schema.agentLessons.userId, req.user.id),
           ),
         );
@@ -1433,6 +1466,9 @@ router.post(
         )
         .limit(1);
       if (!lesson) return res.status(404).json({ error: "Lesson not found." });
+      if (!lesson.agentId || !(await findOwnedAgentId(lesson.agentId, req.user.id))) {
+        return res.status(404).json({ error: "Agent not found." });
+      }
 
       const content =
         customContent?.trim() || lesson.lesson.replace(/^\[KNOWLEDGE GAP\]\s*/, "").trim();

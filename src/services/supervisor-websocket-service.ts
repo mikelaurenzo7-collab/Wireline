@@ -11,7 +11,7 @@ import { IncomingMessage } from "node:http";
 import { log, drizzle } from "../lib/server-context";
 import { verifyInternalJwt } from "../lib/auth-utils";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
-import { parseCookieHeader, SESSION_COOKIE_NAME } from "../lib/session-cookie";
+import { parseCookieHeader, SESSION_COOKIE_NAME, isProductionRuntime } from "../lib/session-cookie";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 
@@ -40,9 +40,8 @@ export function initSupervisorWebSocketServer(server: any) {
     //   2. `Sec-WebSocket-Protocol: bearer, <jwt>` — what browsers use,
     //      since the WebSocket constructor cannot set arbitrary headers but
     //      it CAN advertise subprotocols.
-    //   3. `?token=<jwt>` — legacy fallback retained so existing supervisor
-    //      consoles keep working through this PR; remove once clients are
-    //      migrated. Deprecation is logged once per connection.
+    //   3. httpOnly session cookie — same-origin browser clients (Live Ops).
+    //   4. `?token=<jwt>` — dev-only fallback; rejected in production.
     const authHeader =
       typeof request.headers.authorization === "string" ? request.headers.authorization : "";
     const headerToken = authHeader.toLowerCase().startsWith("bearer ")
@@ -61,13 +60,15 @@ export function initSupervisorWebSocketServer(server: any) {
       bearerIdx >= 0 && bearerIdx + 1 < protoTokens.length ? protoTokens[bearerIdx + 1] : "";
 
     const queryToken = typeof urlObj.query.token === "string" ? urlObj.query.token : "";
+    if (isProductionRuntime() && queryToken) {
+      ws.close(4001, "Query token authentication is not supported. Use session cookies.");
+      return;
+    }
+
     const cookieToken = parseCookieHeader(request.headers.cookie)[SESSION_COOKIE_NAME];
-    const token = headerToken || subprotocolToken || queryToken || cookieToken;
+    const token = cookieToken || headerToken || subprotocolToken || queryToken || undefined;
     if (token && token === queryToken && !headerToken && !subprotocolToken && !cookieToken) {
-      log.warn("Supervisor WebSocket: deprecated ?token= auth (migrate to header)", {
-        callId,
-        mode,
-      });
+      log.warn("Supervisor WebSocket: deprecated ?token= auth (dev only)", { callId, mode });
     }
 
     if (!callId || !mode || !token) {

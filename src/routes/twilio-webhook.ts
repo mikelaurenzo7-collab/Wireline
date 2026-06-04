@@ -375,6 +375,12 @@ router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Resp
 });
 
 router.post("/api/twilio-webhook/voicemail-complete", (req: Request, res: Response) => {
+  if (!verifyTwilioSignature(req)) {
+    log.warn("Twilio webhook signature verification failed", { path: req.path });
+    return res
+      .status(403)
+      .send(`<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>`);
+  }
   log.info("Voicemail recorded during Vapi failover", { url: req.body?.RecordingUrl });
   res.setHeader("Content-Type", "text/xml");
   return res
@@ -413,6 +419,10 @@ router.post("/api/twilio-webhook/voicemail-complete", (req: Request, res: Respon
  * silence — Twilio numbers are real money + real customers.
  */
 router.post("/api/twilio-webhook/singing-receptionist", (req: Request, res: Response) => {
+  if (!verifyTwilioSignature(req)) {
+    log.warn("Twilio webhook signature verification failed", { path: req.path });
+    return res.status(403).send(twimlEmpty());
+  }
   const from = (req.body?.From as string | undefined) || "";
   log.info("Singing receptionist demo line hit", { from: from.slice(0, 16) });
 
