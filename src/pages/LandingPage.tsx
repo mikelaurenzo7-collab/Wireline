@@ -113,7 +113,7 @@ export default function LandingPage() {
         {/* ─── Hero ───────────────────────────────────────────────── */}
         <section
           data-testid="hero-section"
-          className="relative px-6 lg:px-12 pt-24 pb-10 lg:pt-28 lg:pb-12 overflow-hidden"
+          className="relative px-6 lg:px-12 pt-24 pb-10 lg:pt-28 lg:pb-12 overflow-x-hidden"
         >
           <HeroDecorations />
           <div className="relative z-10 max-w-7xl mx-auto w-full">
@@ -134,9 +134,11 @@ export default function LandingPage() {
                 </span>
               </motion.span>
 
-              <h1 className="hero-word-reveal hero-headline-glow font-display italic text-[clamp(2.2rem,7vw,5.5rem)] leading-[0.95] tracking-tight text-ink max-w-4xl mx-auto">
-                <span className="block">Every conversation,</span>
-                <span className="block text-brand mt-1 sm:mt-2">answered like your best rep.</span>
+              <h1 className="hero-word-reveal hero-headline hero-headline-glow text-ink max-w-4xl mx-auto">
+                <span>Every conversation,</span>
+                <span className="text-brand hero-headline-accent">
+                  answered like your best rep.
+                </span>
               </h1>
 
               <motion.p

@@ -4163,7 +4163,7 @@ select:focus {
   animation: stat-flip-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* ── HEADLINE WORD REVEAL — cinematic stagger ──────────────────────────── */
+/* ── HEADLINE WORD REVEAL — cinematic stagger (no overflow clip on descenders) ─ */
 @keyframes word-reveal {
   0% {
     opacity: 0;
@@ -4176,13 +4176,41 @@ select:focus {
     filter: blur(0);
   }
 }
-
+.hero-headline {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 7vw, 5.5rem);
+  font-weight: 500;
+  font-style: italic;
+  line-height: 1.14;
+  letter-spacing: -0.015em;
+  font-variation-settings: "SOFT" 100, "WONK" 0;
+  overflow: visible;
+  padding-bottom: 0.12em;
+}
+.hero-headline > span {
+  display: block;
+  padding-bottom: 0.1em;
+}
+.hero-headline > span + span {
+  margin-top: 0.12em;
+}
+/* Payoff line: upright Fraunces reads cleaner at display size than full italic */
+.hero-headline-accent {
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variation-settings: "SOFT" 100, "WONK" 0, "opsz" 72;
+}
+.hero-word-reveal {
+  overflow: visible;
+}
 .hero-word-reveal > span {
   display: block;
   animation: word-reveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .hero-word-reveal > span:nth-child(1) { animation-delay: 0.1s; }
 .hero-word-reveal > span:nth-child(2) { animation-delay: 0.35s; }
+.hero-word-reveal > span:nth-child(3) { animation-delay: 0.5s; }
 
 /* ── FAQ EXPAND — smooth height reveal with content fade ───────────────── */
 .faq-details[open] > p {
@@ -4710,34 +4738,6 @@ select:focus {
   color: rgba(139, 63, 214, 0.8);
   font-weight: 600;
   letter-spacing: 0.04em;
-}
-
-/* ── HERO WORD REVEAL ──
- * Staggered character reveal for hero headlines. */
-@keyframes wl-word-slide {
-  from {
-    opacity: 0;
-    transform: translateY(100%);
-    filter: blur(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-  }
-}
-.hero-word-reveal {
-  overflow: hidden;
-}
-.hero-word-reveal > span {
-  display: inline-block;
-  animation: wl-word-slide 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.hero-word-reveal > span:nth-child(2) {
-  animation-delay: 0.15s;
-}
-.hero-word-reveal > span:nth-child(3) {
-  animation-delay: 0.3s;
 }
 
 /* ── HERO HEADLINE GLOW ──
