@@ -25,7 +25,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
             transition: { type: "spring", stiffness: 380, damping: 28 },
           }}
           className={cn(
-            "rounded-lg border bg-card text-card-foreground cursor-pointer transition-all duration-200",
+            "rounded-lg border bg-card text-card-foreground cursor-pointer transition-all duration-200 wl-card-shine",
             elevClass,
             className,
           )}

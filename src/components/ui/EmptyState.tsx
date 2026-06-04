@@ -59,7 +59,7 @@ export function EmptyState({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
-        "flex flex-col items-center justify-center py-12 text-center px-6",
+        "wl-empty-state flex flex-col items-center justify-center py-12 text-center px-6",
         framed && "py-0",
         className,
       )}

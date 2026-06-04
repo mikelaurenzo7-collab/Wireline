@@ -41,14 +41,6 @@ const RAIL_COLLAPSED = 56;
 const RAIL_EXPANDED = 216;
 const AUTO_EXPAND_WIDTH = 1680;
 
-const GROUP_ACCENTS = NAV_GROUP_ACCENTS;
-
-const NAV_ITEMS: (NavItem & { accent: string })[] = NAV_GROUPS.filter(
-  (g) => g.label !== "Admin",
-).flatMap((g) =>
-  g.items.map((item) => ({ ...item, accent: GROUP_ACCENTS[g.label] || BRAND.purple })),
-);
-
 const SHORTCUTS = NAV_SHORTCUT_HINTS;
 
 interface SidebarProps {
@@ -187,17 +179,31 @@ export default function Sidebar({ navBadges }: SidebarProps) {
 
         {/* Nav items */}
         <ScrollArea className="flex-1 min-h-0">
-          <nav className="py-2 px-2 space-y-0.5">
-            {NAV_ITEMS.filter((item) => !item.ownerOnly || user?.is_owner === true).map((item) => (
-              <RailItem
-                key={item.path}
-                item={item}
-                active={isActive(item)}
-                badge={resolveBadge(item, navBadges)}
-                expanded={effective}
-                accent={item.accent}
-                shortcut={SHORTCUTS[item.path]}
-              />
+          <nav className="py-2 px-2">
+            {NAV_GROUPS.filter((g) => g.label !== "Admin").map((group, gi) => (
+              <div key={group.label}>
+                {gi > 0 && <div className="wl-nav-divider" aria-hidden="true" />}
+                {effective && (
+                  <p className="px-2 pt-1.5 pb-1 text-[9px] font-semibold uppercase tracking-[0.25em] text-white/35 dark:text-white/25 select-none">
+                    {group.label}
+                  </p>
+                )}
+                <div className="space-y-0.5">
+                  {group.items
+                    .filter((item) => !item.ownerOnly || user?.is_owner === true)
+                    .map((item) => (
+                      <RailItem
+                        key={item.path}
+                        item={item}
+                        active={isActive(item)}
+                        badge={resolveBadge(item, navBadges)}
+                        expanded={effective}
+                        accent={NAV_GROUP_ACCENTS[group.label] || BRAND.purple}
+                        shortcut={SHORTCUTS[item.path]}
+                      />
+                    ))}
+                </div>
+              </div>
             ))}
           </nav>
         </ScrollArea>
@@ -475,7 +481,7 @@ function LivePulse({ count, expanded }: { count: number; expanded: boolean }) {
     <div
       className={cn(
         "flex items-center gap-2 h-8 px-2 rounded-md",
-        live ? "bg-purple-500/10" : "bg-white/[0.03]",
+        live ? "bg-purple-500/10 wl-ambient-glow" : "bg-white/[0.03]",
       )}
       title={live ? `${count} live call${count === 1 ? "" : "s"}` : "Floor is quiet"}
     >

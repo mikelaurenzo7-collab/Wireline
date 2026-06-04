@@ -202,34 +202,30 @@ export default function AppShell() {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center p-12 text-center relative overflow-hidden">
         <AuroraBackdrop />
-        <div className="relative w-44 h-44 mb-12 animate-spin-slow">
+        <div className="relative w-36 h-36 md:w-44 md:h-44 mb-10 md:mb-12 animate-spin-slow">
           <div
             className="absolute inset-0 rounded-full"
             style={{
               background: `conic-gradient(from 0deg, ${BRAND.purple}, ${BRAND.purpleDeep}, ${BRAND.purpleLight}, ${BRAND.purpleDeep}, ${BRAND.purple})`,
-              filter: "blur(2px)",
+              filter: "blur(3px)",
             }}
           />
           <div className="absolute inset-2 rounded-full bg-paper" />
           <div className="absolute inset-4 rounded-full wl-panel flex items-center justify-center">
             <div className="animate-pulse">
-              <WirelineMark className="w-16 h-16 text-brand" strokeWidth={90} />
+              <WirelineMark className="w-14 h-14 md:w-16 md:h-16 text-brand" strokeWidth={90} />
             </div>
           </div>
         </div>
         <div className="space-y-4 relative z-10">
-          <h1 className="brand-wordmark text-5xl md:text-7xl leading-[0.85]">
+          <h1 className="brand-wordmark text-4xl md:text-6xl lg:text-7xl leading-[0.85] hero-headline-glow">
             {branding.brand_name.toUpperCase()}
           </h1>
-          <p className="text-eyebrow tracking-[0.4em]">Growth Engine Initializing</p>
-          <div className="flex items-center justify-center gap-1.5 pt-4">
-            {[0, 1, 2].map((i) => (
-              <span
-                key={i}
-                className="w-1.5 h-1.5 rounded-full bg-brand animate-bounce"
-                style={{ animationDelay: `${i * 0.2}s` }}
-              />
-            ))}
+          <p className="text-eyebrow tracking-[0.4em] text-muted/60">Growth Engine Initializing</p>
+          <div className="wl-loading-dots justify-center pt-4">
+            <span />
+            <span />
+            <span />
           </div>
         </div>
       </div>

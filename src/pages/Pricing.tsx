@@ -339,7 +339,7 @@ export default function Pricing() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 + i * 0.06, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="bg-paper p-6 lg:p-7"
+              className="bg-paper p-6 lg:p-7 wl-card-shine"
             >
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand mb-2.5">
                 Why Wireline
@@ -404,7 +404,7 @@ export default function Pricing() {
               }`}
             >
               <div
-                className={`relative transition-all duration-300 ${
+                className={`relative transition-all duration-300 wl-card-shine ${
                   tier.highlight
                     ? "wl-panel-elevated border-2 border-brand/40"
                     : "wl-panel border border-ink/[0.08] hover:border-brand/30"
@@ -500,7 +500,7 @@ export default function Pricing() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7, duration: 0.6 }}
-          className="mt-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto"
+          className="mt-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto wl-reveal-stagger"
         >
           {VALUE_BULLETS.map(({ icon: Icon, text }) => (
             <div
