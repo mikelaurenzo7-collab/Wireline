@@ -1,5 +1,4 @@
 import { Compass } from "lucide-react";
-import { BRAND } from "../../constants/brand-colors";
 import { Medallion } from "../ui/Medallion";
 import { SignalOrbFrame } from "../ui/SignalOrbFrame";
 
@@ -21,13 +20,7 @@ export default function RouteFallback() {
   return (
     <div className="h-full w-full flex flex-col" aria-live="polite" aria-busy="true">
       <div className="shrink-0 h-px relative overflow-hidden mb-5" aria-hidden="true">
-        <div
-          className="absolute inset-y-0 -left-1/3 w-1/3 rounded-full"
-          style={{
-            background: `linear-gradient(90deg, transparent, ${BRAND.purple}f2 40%, ${BRAND.purpleDeep}bf 60%, transparent)`,
-            animation: "route-progress-sweep 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite",
-          }}
-        />
+        <div className="route-progress-sweep-bar absolute inset-y-0 -left-1/3 w-1/3 rounded-full" />
       </div>
 
       <div className="shrink-0 flex items-center gap-3 mb-6" aria-hidden="true">
@@ -48,12 +41,8 @@ export default function RouteFallback() {
         {[0, 1, 2, 3, 4, 5].map((i) => (
           <div
             key={i}
-            className="wl-panel rounded-md h-32 overflow-hidden relative p-4 flex flex-col justify-between"
-            style={{
-              opacity: 0,
-              animation: "appear-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards",
-              animationDelay: `${i * 80}ms`,
-            }}
+            className="route-fallback-tile wl-panel rounded-md h-32 overflow-hidden relative p-4 flex flex-col justify-between"
+            style={{ animationDelay: `${i * 80}ms` }}
             aria-hidden="true"
           >
             {/* Travelling specular sweep, staggered per tile so the grid

@@ -126,7 +126,7 @@ export default function Developers() {
             <code className="text-ink/90 bg-white/5 px-1.5 py-0.5 text-xs">Authorization</code>{" "}
             header. Tokens are created in your dashboard under Settings → API Access.
           </p>
-          <div className="bg-black/30 border border-white/8 p-4 font-mono text-xs text-emerald-400 overflow-x-auto">
+          <div className="bg-black/30 border border-white/8 p-4 font-mono text-xs text-brand/75 overflow-x-auto">
             <code>
               curl -X GET &apos;{appOrigin}/api/agents&apos; \<br />
               {"  "}-H &apos;Authorization: ******;

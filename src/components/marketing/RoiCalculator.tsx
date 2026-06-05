@@ -149,7 +149,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
                 <span className="ml-1 text-caption font-sans not-italic">/yr recovered</span>
               </p>
             </div>
-            <div className="shrink-0 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
+            <div className="shrink-0 rounded-full border border-brand/25 bg-brand/10 px-2.5 py-1 text-[11px] font-semibold wl-text-success">
               {results.paybackDays}d payback
             </div>
           </div>
@@ -260,7 +260,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
               <Stat
                 label="Revenue recovered"
                 value={fmtUsd(results.revenueRecovered)}
-                tone="emerald"
+                tone="success"
               />
               <Stat label="Labor saved" value={fmtUsd(results.laborSaved)} tone="brand" />
             </div>
@@ -268,11 +268,11 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
               className={
                 "rounded-md px-3 py-2.5 mb-3 border " +
                 (results.worthIt
-                  ? "border-emerald-500/25 bg-emerald-500/8"
-                  : "border-amber-500/25 bg-amber-500/8")
+                  ? "border-brand/25 bg-brand/8 wl-status-success"
+                  : "border-destructive/25 bg-destructive/8")
               }
             >
-              <p className="text-[8.5px] uppercase tracking-[0.3em] text-muted/70 leading-none mb-1">
+              <p className="wl-label-muted leading-none mb-1">
                 Net annual savings (after Wireline Pro)
               </p>
               <p className="font-display italic text-3xl leading-none text-ink">
@@ -356,13 +356,11 @@ function SliderRow({
   );
 }
 
-function Stat({ label, value, tone }: { label: string; value: string; tone: "emerald" | "brand" }) {
-  const toneClass = tone === "emerald" ? "text-emerald-700" : "text-[#8B3FD6]";
+function Stat({ label, value, tone }: { label: string; value: string; tone: "success" | "brand" }) {
+  const toneClass = tone === "success" ? "wl-text-success" : "text-brand";
   return (
     <div>
-      <p className="text-[8.5px] uppercase tracking-[0.3em] text-muted/70 leading-none mb-1">
-        {label}
-      </p>
+      <p className="wl-label-muted leading-none mb-1">{label}</p>
       <p className={`font-display italic text-lg leading-none ${toneClass}`}>{value}</p>
     </div>
   );

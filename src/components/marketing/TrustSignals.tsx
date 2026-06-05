@@ -89,18 +89,18 @@ const BADGES = [
 
 const STATE_TONES = {
   live: {
-    pill: "bg-emerald-500/10 text-emerald-700 border-emerald-500/25",
-    dot: "bg-emerald-500",
+    pill: "wl-status-success border",
+    dot: "dot-online",
     label: "Live",
   },
   ready: {
-    pill: "bg-[#8B3FD6]/8 text-[#8B3FD6] border-[#8B3FD6]/20",
-    dot: "bg-[#8B3FD6]",
+    pill: "bg-brand/8 text-brand border-brand/20",
+    dot: "bg-brand",
     label: "Ready",
   },
   progress: {
-    pill: "bg-amber-500/10 text-amber-700 border-amber-500/25",
-    dot: "bg-amber-500",
+    pill: "bg-brand/5 text-brand/80 border-brand/15",
+    dot: "bg-brand/60",
     label: "In progress",
   },
 } as const;
@@ -182,7 +182,7 @@ export default function TrustSignals() {
           href="/status"
           className="inline-flex items-center gap-1.5 hover:text-ink transition-colors"
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dot-online" />
+          <span className="w-1.5 h-1.5 rounded-full dot-online" />
           System status
         </a>
         <span className="text-muted/30">·</span>

@@ -33,6 +33,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const isAuth = active === "signin" || active === "signup";
 
   useEffect(() => {
     setMenuOpen(false);
@@ -86,8 +87,12 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
             </span>
           </Link>
 
-          {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1" aria-label="Site">
+          {/* Desktop nav — hidden on auth to keep the funnel focused and avoid
+              collision with the split-layout showcase column on wide screens. */}
+          <nav
+            className={cn("hidden md:flex items-center gap-1 shrink-0", isAuth && "md:hidden")}
+            aria-label="Site"
+          >
             {NAV_LINKS.map((link) => {
               const isActive =
                 location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);

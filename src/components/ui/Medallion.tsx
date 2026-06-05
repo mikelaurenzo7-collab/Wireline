@@ -61,7 +61,7 @@ export function Medallion({
       )}
       <div
         className={cn(
-          "group relative overflow-hidden rounded-md bg-gradient-to-br from-brand via-[#9B5CE0] to-brand-deep text-on-brand flex items-center justify-center ring-1 ring-white/12",
+          "group relative overflow-hidden rounded-md bg-gradient-to-br from-brand via-brand/85 to-brand-deep text-on-brand flex items-center justify-center ring-1 ring-white/12",
           signature ? "shadow-sm shadow-brand/25" : "shadow-[0_1px_2px_rgba(26,22,20,0.08)]",
           showSweep && "medallion-glint",
           !signature && "medallion-instrument",
@@ -69,19 +69,14 @@ export function Medallion({
         )}
         style={accentStyle}
       >
-        <span
-          aria-hidden
-          className="absolute inset-0 pointer-events-none medallion-specular"
-        />
+        <span aria-hidden className="absolute inset-0 pointer-events-none medallion-specular" />
         {showSweep && (
           <span
             aria-hidden
             className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none medallion-facet-hover"
           />
         )}
-        <span className="relative z-[1] inline-flex items-center justify-center">
-          {children}
-        </span>
+        <span className="relative z-[1] inline-flex items-center justify-center">{children}</span>
       </div>
     </div>
   );

@@ -37,7 +37,7 @@ export function SectionHeader({
       {eyebrow && (
         <p
           className={cn(
-            editorial ? "app-section-title text-brand/70 mb-1" : WL_APP_CLASSES.proEyebrow,
+            editorial ? "app-section-title text-brand/70" : WL_APP_CLASSES.proEyebrow,
             "mb-1",
           )}
         >

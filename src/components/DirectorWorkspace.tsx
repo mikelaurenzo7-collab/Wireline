@@ -84,7 +84,7 @@ import {
   WL_DIRECTOR_CLASSES,
   type ComposerAccessoryKind,
 } from "../lib/wireline-director-design";
-import LoadingDots from "./LoadingDots";
+import LoadingDots from "./ui/LoadingDots";
 import {
   detectDirectorMessageScene,
   type DirectorMessageScene,

@@ -61,7 +61,7 @@ export function EmptyState({
 }: EmptyStateProps) {
   const reduceMotion = useReducedMotion();
   const compact = density === "compact";
-  const showConstellation = withConstellation ?? !compact;
+  const showConstellation = withConstellation ?? framed;
 
   const body = (
     <motion.div
@@ -83,7 +83,12 @@ export function EmptyState({
           withBloom={withHalo}
           refined
         >
-          <Medallion variant="instrument" withHalo={false} size={compact ? "sm" : "md"} accent={accent}>
+          <Medallion
+            variant="instrument"
+            withHalo={false}
+            size={compact ? "sm" : "md"}
+            accent={accent}
+          >
             <Icon className={compact ? "w-5 h-5" : "w-6 h-6"} strokeWidth={1.75} />
           </Medallion>
         </SignalOrbFrame>

@@ -152,8 +152,8 @@ const ROWS: Row[] = [
 ];
 
 function CellGlyph({ value }: { value: Cell }) {
-  if (value === true) return <Check className="w-4 h-4 text-emerald-500" strokeWidth={2.6} />;
-  if (value === "partial") return <Minus className="w-4 h-4 text-amber-500" strokeWidth={2.6} />;
+  if (value === true) return <Check className="w-4 h-4 text-brand" strokeWidth={2.6} />;
+  if (value === "partial") return <Minus className="w-4 h-4 text-brand/50" strokeWidth={2.6} />;
   return <X className="w-4 h-4 text-rose-400/70" strokeWidth={2.4} />;
 }
 
@@ -311,10 +311,10 @@ export default function Compare() {
             </table>
           </div>
           <p id="compare-legend" className="text-[10px] text-ink/55 mt-3 leading-relaxed">
-            <Check className="w-3 h-3 text-emerald-500 inline-block mr-1" aria-hidden="true" />{" "}
-            fully shipped &nbsp;·&nbsp;
-            <Minus className="w-3 h-3 text-amber-500 inline-block mr-1" aria-hidden="true" />{" "}
-            partial / limited &nbsp;·&nbsp;
+            <Check className="w-3 h-3 text-brand inline-block mr-1" aria-hidden="true" /> fully
+            shipped &nbsp;·&nbsp;
+            <Minus className="w-3 h-3 text-brand/50 inline-block mr-1" aria-hidden="true" /> partial
+            / limited &nbsp;·&nbsp;
             <X className="w-3 h-3 text-rose-400/70 inline-block mr-1" aria-hidden="true" /> not
             available. Scoring reflects publicly-available product as of May 2026. Competitors'
             product surfaces change frequently — corrections welcome at trywireline@yahoo.com.
@@ -332,7 +332,7 @@ export default function Compare() {
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08] text-left stagger-children">
             <div className="bg-paper p-6 stat-shimmer">
-              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-emerald-600 mb-1.5">
+              <p className="font-mono text-[10px] uppercase tracking-[0.25em] wl-text-success mb-1.5">
                 Included
               </p>
               <p className="text-xl font-display italic text-ink mb-2">Dedicated Numbers</p>
@@ -369,7 +369,7 @@ export default function Compare() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 stagger-children">
             <div className="wl-panel card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
-              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-600 mb-2">
+              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand/70 mb-2">
                 Pick Air if
               </p>
               <p className="text-sm text-ink/80 leading-relaxed">
@@ -379,7 +379,7 @@ export default function Compare() {
               </p>
             </div>
             <div className="wl-panel card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
-              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-600 mb-2">
+              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand/70 mb-2">
                 Pick Bland if
               </p>
               <p className="text-sm text-ink/80 leading-relaxed">
@@ -390,7 +390,7 @@ export default function Compare() {
               </p>
             </div>
             <div className="wl-panel card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
-              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-600 mb-2">
+              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand/70 mb-2">
                 Pick Retell if
               </p>
               <p className="text-sm text-ink/80 leading-relaxed">

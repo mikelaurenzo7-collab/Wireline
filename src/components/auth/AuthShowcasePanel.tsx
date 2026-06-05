@@ -1,4 +1,4 @@
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { Compass, Radio, Rocket } from "lucide-react";
 import { AUTH_PORTAL_SHOWCASE } from "../../lib/wireline-onboarding-copy";
 
@@ -9,12 +9,18 @@ const FEATURE_ICONS = {
 } as const;
 
 export default function AuthShowcasePanel() {
+  const reduceMotion = useReducedMotion();
+
   return (
     <motion.aside
-      initial={{ opacity: 0, x: -16 }}
+      initial={reduceMotion ? false : { opacity: 0, x: -16 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1], delay: 0.08 }}
-      className="wl-auth-showcase hidden lg:flex flex-col pr-10"
+      transition={{
+        duration: reduceMotion ? 0 : 0.55,
+        ease: [0.16, 1, 0.3, 1],
+        delay: reduceMotion ? 0 : 0.08,
+      }}
+      className="wl-auth-showcase hidden lg:flex flex-col pr-10 min-w-0"
       aria-label="Wireline product overview"
     >
       <div>
@@ -36,18 +42,20 @@ export default function AuthShowcasePanel() {
           return (
             <motion.li
               key={feature.id}
-              initial={{ opacity: 0, y: 10 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 + i * 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              transition={{
+                delay: reduceMotion ? 0 : 0.15 + i * 0.08,
+                duration: reduceMotion ? 0 : 0.4,
+                ease: [0.16, 1, 0.3, 1],
+              }}
               className="wl-auth-showcase-feature"
             >
               <span className="wl-auth-showcase-icon" aria-hidden="true">
                 <Icon className="w-4 h-4" strokeWidth={1.75} />
               </span>
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink">
-                  {feature.label}
-                </p>
+                <p className="wl-label text-ink">{feature.label}</p>
                 <p className="text-[12px] text-muted leading-relaxed mt-0.5">{feature.detail}</p>
               </div>
             </motion.li>

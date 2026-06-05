@@ -379,7 +379,7 @@ export default function Pricing() {
             }`}
           >
             Annual
-            <span className="ml-2 inline-flex items-center px-1.5 py-0.5 text-[9px] uppercase tracking-[0.2em] font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-500">
+            <span className="ml-2 inline-flex items-center px-1.5 py-0.5 text-[10px] uppercase tracking-[0.2em] font-bold bg-brand/12 border border-brand/30 text-brand">
               Save 20%
             </span>
           </ShadButton>
@@ -436,7 +436,7 @@ export default function Pricing() {
 
                 {tier.cta === "Start free trial" && (
                   <p
-                    className="mb-2 text-[9px] uppercase tracking-[0.30em] font-medium inline-flex items-center gap-1.5 self-start px-2 py-1 bg-emerald-500/12 border border-emerald-500/30 text-emerald-600"
+                    className="mb-2 wl-label text-brand inline-flex items-center gap-1.5 self-start px-2 py-1 bg-brand/12 border border-brand/30"
                     title="No credit card required"
                   >
                     <Check className="w-3 h-3" strokeWidth={2.8} />
@@ -476,10 +476,7 @@ export default function Pricing() {
                 <ul className="space-y-2.5 text-[12px] text-ink/80 flex-1">
                   {tier.features.map((f) => (
                     <li key={f} className="flex items-start gap-2">
-                      <Check
-                        className="w-3.5 h-3.5 mt-0.5 shrink-0 text-emerald-500"
-                        strokeWidth={2.6}
-                      />
+                      <Check className="w-3.5 h-3.5 mt-0.5 shrink-0 text-brand" strokeWidth={2.6} />
                       <span>{f}</span>
                     </li>
                   ))}
@@ -594,12 +591,12 @@ export default function Pricing() {
                     </div>
                   </div>
                   <div className="pt-3 border-t border-ink/10 flex items-baseline justify-between">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-emerald-600">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.25em] wl-text-success">
                       You save
                     </span>
-                    <span className="font-display italic text-2xl text-emerald-600 tabular-nums">
+                    <span className="font-display italic text-2xl wl-text-success tabular-nums">
                       <AnimatedCounter value={savings} prefix="$" />
-                      <span className="text-[11px] text-emerald-600/70 ml-1">/yr ({pct}%)</span>
+                      <span className="text-[11px] text-brand/70 ml-1">/yr ({pct}%)</span>
                     </span>
                   </div>
                 </motion.div>

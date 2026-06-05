@@ -18,27 +18,27 @@ interface ChangelogEntry {
 const TAG_META: Record<EntryTag, { label: string; tone: string; icon: typeof Sparkles }> = {
   launch: {
     label: "Launch",
-    tone: "bg-[#8B3FD6]/10 text-[#8B3FD6] border-[#8B3FD6]/25",
+    tone: "bg-brand/10 text-brand border-brand/25",
     icon: Rocket,
   },
   feature: {
     label: "Feature",
-    tone: "bg-emerald-500/10 text-emerald-700 border-emerald-500/25",
+    tone: "bg-brand/8 text-brand-deep border-brand/20",
     icon: Sparkles,
   },
   infra: {
     label: "Infra",
-    tone: "bg-amber-500/10 text-amber-700 border-amber-500/25",
+    tone: "bg-brand/6 text-brand border-brand/15",
     icon: Zap,
   },
   polish: {
     label: "Polish",
-    tone: "bg-cyan-500/10 text-cyan-700 border-cyan-500/25",
+    tone: "bg-ink/5 text-ink/70 border-ink/10",
     icon: Wrench,
   },
   security: {
     label: "Security",
-    tone: "bg-rose-500/10 text-rose-700 border-rose-500/25",
+    tone: "bg-destructive/10 text-destructive border-destructive/25",
     icon: Shield,
   },
 };

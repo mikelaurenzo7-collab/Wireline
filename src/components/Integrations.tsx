@@ -296,6 +296,7 @@ export default function Integrations() {
                 {accounts.length === 0 ? (
                   <EmptyState
                     icon={Mail}
+                    withConstellation
                     eyebrow={OPS_CHANNEL_EMPTY.integrations.eyebrow}
                     title={OPS_CHANNEL_EMPTY.integrations.title}
                     description={OPS_CHANNEL_EMPTY.integrations.description}
@@ -337,9 +338,7 @@ export default function Integrations() {
                 ) : (
                   <>
                     <div className="px-4 py-3 border-b border-black/6 bg-brand/5">
-                      <p className="text-[9px] uppercase tracking-[0.32em] text-brand font-medium mb-2">
-                        When email arrives
-                      </p>
+                      <p className="wl-label text-brand mb-2">When email arrives</p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         {EMAIL_INBOUND_TASKS.map((task) => (
                           <div
@@ -362,7 +361,7 @@ export default function Integrations() {
                         ))}
                       </div>
                     </div>
-                    <div className="divide-y divide-white/6 stagger-children">
+                    <div className="divide-y divide-border stagger-children">
                       {accounts.map((acc) => {
                         const meta = PROVIDER_META[acc.provider] || PROVIDER_META.google;
                         return (

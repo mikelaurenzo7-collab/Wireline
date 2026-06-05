@@ -115,8 +115,8 @@ export default function ResetPassword() {
           </div>
 
           {success ? (
-            <div className="space-y-4 p-6 rounded-md bg-emerald-500/10 border border-emerald-500/30">
-              <div className="flex items-center gap-3 text-emerald-500">
+            <div className="space-y-4 p-6 rounded-md wl-status-success border">
+              <div className="flex items-center gap-3 wl-text-success">
                 <Check className="w-5 h-5" />
                 <span className="text-sm font-medium">Password updated. Signing you in…</span>
               </div>

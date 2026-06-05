@@ -363,7 +363,7 @@ export default function CommandBar() {
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={onKeyDown}
               />
-              <kbd className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded-md wl-panel border border-white/15 text-[9px] text-ink/40 uppercase tracking-[0.2em] leading-none shrink-0">
+              <kbd className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded-md wl-panel border border-white/15 text-[10px] text-ink/40 uppercase tracking-[0.2em] leading-none shrink-0">
                 ESC
               </kbd>
             </div>
@@ -378,7 +378,7 @@ export default function CommandBar() {
                       if (catCmds.length === 0) return null;
                       return (
                         <div key={category} className="mb-1 last:mb-0">
-                          <div className="px-5 pt-3 pb-1.5 text-[8px] uppercase tracking-[0.4em] text-ink/40 flex items-center gap-2">
+                          <div className="px-5 pt-3 pb-1.5 wl-label text-ink/40 flex items-center gap-2">
                             <span className="h-px flex-1 bg-white/8" />
                             {category}
                             <span className="h-px flex-1 bg-white/8" />
@@ -434,7 +434,7 @@ export default function CommandBar() {
                                     {cmd.shortcut && (
                                       <kbd
                                         className={cn(
-                                          "hidden sm:flex items-center px-1.5 py-0.5 rounded-md border text-[9px] leading-none uppercase tracking-[0.2em] transition-all",
+                                          "hidden sm:flex items-center px-1.5 py-0.5 rounded-md border text-[10px] leading-none uppercase tracking-[0.2em] transition-all",
                                           isSelected
                                             ? "bg-brand/15 border-brand/30 text-brand"
                                             : "wl-panel border-white/15 text-ink/40",
@@ -473,10 +473,10 @@ export default function CommandBar() {
 
               {/* Footer */}
               <div className="shrink-0 px-5 py-2.5 border-t border-white/8 flex items-center justify-between bg-paper/60 backdrop-blur-sm">
-                <div className="flex items-center gap-3 text-[8px] uppercase tracking-[0.28em] text-ink/40">
+                <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.22em] text-ink/40">
                   <span className="flex items-center gap-1">
                     <kbd
-                      className="px-1 py-0.5 rounded wl-panel border border-white/12 text-[7px]"
+                      className="px-1.5 py-0.5 rounded wl-panel border border-white/12 text-[10px] font-mono leading-none"
                       aria-label="Arrow keys to navigate"
                     >
                       ↑↓
@@ -485,7 +485,7 @@ export default function CommandBar() {
                   </span>
                   <span className="flex items-center gap-1">
                     <kbd
-                      className="px-1 py-0.5 rounded wl-panel border border-white/12 text-[7px]"
+                      className="px-1.5 py-0.5 rounded wl-panel border border-white/12 text-[10px] font-mono leading-none"
                       aria-label="Enter key to execute"
                     >
                       ↵
@@ -494,7 +494,7 @@ export default function CommandBar() {
                   </span>
                   <span className="flex items-center gap-1">
                     <kbd
-                      className="px-1 py-0.5 rounded wl-panel border border-white/12 text-[7px]"
+                      className="px-1.5 py-0.5 rounded wl-panel border border-white/12 text-[10px] font-mono leading-none"
                       aria-label="Escape key to close"
                     >
                       ESC
@@ -502,7 +502,7 @@ export default function CommandBar() {
                     Close
                   </span>
                 </div>
-                <span className="text-[8px] uppercase tracking-[0.4em] text-ink/40">WIRELINE</span>
+                <span className="wl-label text-ink/40">WIRELINE</span>
               </div>
             </div>
           </motion.div>

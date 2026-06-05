@@ -134,7 +134,7 @@ function StatTile({
       <div className={cn("text-xl font-display tabular-nums leading-none", STAT_TEXT_COLORS[tone])}>
         {value.toLocaleString()}
       </div>
-      <div className="text-[9px] uppercase tracking-[0.18em] text-muted/70 mt-1.5">{label}</div>
+      <div className="wl-label-muted mt-1.5">{label}</div>
     </div>
   );
 }

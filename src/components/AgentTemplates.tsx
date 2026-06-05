@@ -399,7 +399,7 @@ function TemplateCard({
             {/* Deployed-in-fleet badge */}
             {alreadyDeployed && (
               <span
-                className="px-1.5 py-0.5 rounded-full border text-[9px] uppercase tracking-[0.22em] leading-none flex items-center gap-1 wl-status-success border wl-text-success"
+                className="px-1.5 py-0.5 rounded-full border text-[10px] uppercase tracking-[0.22em] leading-none flex items-center gap-1 wl-status-success border wl-text-success"
                 title={
                   deployedCount === 1 ? "Already in your fleet" : `${deployedCount} in your fleet`
                 }
@@ -411,7 +411,7 @@ function TemplateCard({
             {/* Channel badge */}
             <span
               className={cn(
-                "px-1.5 py-0.5 rounded-full border text-[9px] uppercase tracking-[0.22em] leading-none",
+                "px-1.5 py-0.5 rounded-full border text-[10px] uppercase tracking-[0.22em] leading-none",
                 template.channel === "email"
                   ? "wl-status-success border wl-text-success"
                   : "bg-brand/10 border-brand/30 text-brand",
@@ -421,7 +421,7 @@ function TemplateCard({
             </span>
             {/* Extra badge */}
             {template.badge && (
-              <span className="px-1.5 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/8 border border-black/10 dark:border-white/15 text-[9px] uppercase tracking-[0.18em] leading-none text-ink/70">
+              <span className="px-1.5 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/8 border border-black/10 dark:border-white/15 text-[10px] uppercase tracking-[0.18em] leading-none text-ink/70">
                 {template.badge}
               </span>
             )}

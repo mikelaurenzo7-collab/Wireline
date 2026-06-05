@@ -17,7 +17,7 @@ import {
 import AuthShowcasePanel from "./auth/AuthShowcasePanel";
 import PublicSiteHeader from "./marketing/PublicSiteHeader";
 import { cn } from "../lib/utils";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
 import { PageMeta } from "../lib/page-meta";
 import {
@@ -259,6 +259,7 @@ export default function AuthPortal() {
   const isReset = mode === "reset";
   const pwStrength = isSignUp ? getPasswordStrength(password) : null;
   const intentLabel = signupIntentLabel(signupIntent);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     setSignupIntent(captureSignupIntentFromLocation());
@@ -386,19 +387,22 @@ export default function AuthPortal() {
         path={isSignUp ? "/signup" : "/signin"}
         noIndex
       />
-      <div className="marketing-surface auth-portal-canvas min-h-dvh lg:h-dvh lg:max-h-dvh flex flex-col lg:overflow-hidden relative">
-        <PublicSiteHeader active={isSignUp ? "signup" : "signin"} />
+      <div className="marketing-surface auth-portal-canvas min-h-dvh flex flex-col relative">
+        <PublicSiteHeader
+          active={isSignUp ? "signup" : "signin"}
+          className="bg-paper/92 backdrop-blur-xl border-b border-ink/[0.06]"
+        />
 
         <div
-          className="relative z-10 flex-1 flex items-center justify-center px-4 py-6 pt-20 min-h-0 scroll-viewport"
-          style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))" }}
+          className="relative z-10 flex-1 min-h-0 scroll-viewport px-4 sm:px-6 py-8 pt-24 lg:pt-28"
+          style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom, 0px))" }}
         >
-          <div className="w-full max-w-[960px] lg:grid lg:grid-cols-[1fr,min(420px,100%)] lg:gap-12 xl:gap-16 lg:items-center">
+          <div className="w-full max-w-[960px] mx-auto lg:grid lg:grid-cols-[1fr,min(420px,100%)] lg:gap-12 xl:gap-16 lg:items-start">
             <AuthShowcasePanel />
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: reduceMotion ? 0 : 0.45, ease: [0.16, 1, 0.3, 1] }}
               className="w-full max-w-[420px] lg:max-w-none mx-auto"
             >
               <div
@@ -412,10 +416,10 @@ export default function AuthPortal() {
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={mode}
-                      initial={{ opacity: 0, y: 8 }}
+                      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                      exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
+                      transition={{ duration: reduceMotion ? 0 : 0.25, ease: [0.16, 1, 0.3, 1] }}
                     >
                       <div className="mb-6">
                         <h1 className="font-display italic text-2xl sm:text-3xl text-ink leading-tight">

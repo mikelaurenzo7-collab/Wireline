@@ -48,9 +48,7 @@ export function Spinner() {
           />
         </div>
       </div>
-      <p className={cn(WL_OPS_CLASSES.insightLabel, "text-[9px] tracking-[0.5em] animate-pulse")}>
-        Computing…
-      </p>
+      <p className={cn(WL_OPS_CLASSES.insightLabel, "animate-pulse")}>Computing…</p>
     </div>
   );
 }
