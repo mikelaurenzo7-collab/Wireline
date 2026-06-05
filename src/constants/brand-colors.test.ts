@@ -4,6 +4,8 @@ import { BRAND, NAV_GROUP_ACCENTS, ROUTE_ACCENTS } from "./brand-colors";
 const ALLOWED = new Set([
   BRAND.purple,
   BRAND.purpleDeep,
+  BRAND.purpleMid,
+  BRAND.purpleRim,
   BRAND.purpleLight,
   BRAND.purpleMuted,
   BRAND.creamWarm,

@@ -33,7 +33,7 @@ import { OPS_CHANNEL_EMPTY } from "../../lib/wireline-ops-design";
 import ClientRouteLoading from "../layout/ClientRouteLoading";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { formatDate } from "../../lib/safe-date";
-import { CAMPAIGN_STATUS } from "./shared";
+import { CAMPAIGN_STATUS, campaignOutcomeBarClass } from "./shared";
 
 interface CampaignsTabProps {
   campaigns: any[];
@@ -128,7 +128,7 @@ export default function CampaignsTab({
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     className={cn(
-                      "px-4 py-3.5 cursor-pointer wl-panel border border-border hover:border-brand/30 hover:-translate-y-px transition-all duration-300 group",
+                      "px-4 py-3.5 cursor-pointer wl-panel border border-border hover:border-brand/30 hover:-translate-y-px transition-all duration-300 group touch-press",
                       isSelected && "bg-brand/8 ring-1 ring-inset ring-brand/30",
                     )}
                     onClick={() => handleSelectCampaign(c)}
@@ -337,8 +337,7 @@ export default function CampaignsTab({
                         width: `${selectedCampaign.leads_count > 0 ? Math.round(((selectedCampaign.dialed_count ?? 0) / selectedCampaign.leads_count) * 100) : 0}%`,
                       }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
-                      className="h-full rounded-full"
-                      style={{ background: "linear-gradient(90deg,#8B3FD6,#8B3FD6)" }}
+                      className="h-full rounded-full bg-brand"
                     />
                   </div>
                   <div className="flex items-center gap-1 mt-1.5">
@@ -378,19 +377,16 @@ export default function CampaignsTab({
                               label: "Answered",
                               value: campaignAnalytics.call_stats?.answered ?? 0,
                               icon: Phone,
-                              accent: "#8B3FD6",
                             },
                             {
                               label: "Avg Duration",
                               value: `${campaignAnalytics.call_stats?.avg_duration_sec ?? 0}s`,
                               icon: Clock,
-                              accent: "#8B3FD6",
                             },
                             {
                               label: "Total Cost",
                               value: `$${(campaignAnalytics.call_stats?.total_cost_usd ?? 0).toFixed(3)}`,
                               icon: DollarSign,
-                              accent: "#8B3FD6",
                             },
                             {
                               label: "Avg Score",
@@ -399,23 +395,19 @@ export default function CampaignsTab({
                                   ? campaignAnalytics.call_stats.avg_lead_score
                                   : "—",
                               icon: Award,
-                              accent: "#8B3FD6",
                             },
-                          ].map(({ label, value, icon: Icon, accent }) => (
+                          ].map(({ label, value, icon: Icon }) => (
                             <div
                               key={label}
                               className="rounded-md wl-panel border border-border p-3"
                             >
                               <div className="flex items-center gap-1.5 mb-1.5">
-                                <Icon className="w-3 h-3 shrink-0" style={{ color: accent }} />
+                                <Icon className="w-3 h-3 shrink-0 text-brand" />
                                 <span className="text-[8px] uppercase tracking-[0.28em] text-muted">
                                   {label}
                                 </span>
                               </div>
-                              <div
-                                className="font-display italic text-lg leading-none tabular-nums"
-                                style={{ color: accent }}
-                              >
+                              <div className="font-display italic text-lg leading-none tabular-nums text-brand">
                                 {value}
                               </div>
                             </div>
@@ -428,40 +420,30 @@ export default function CampaignsTab({
                               <BarChart3 className="w-3 h-3" /> Lead Outcomes
                             </h5>
                             <div className="space-y-1.5">
-                              {campaignAnalytics.outcomes.map((o: any) => {
-                                const color =
-                                  o.status === "Completed"
-                                    ? "#8B3FD6"
-                                    : o.status === "Failed" || o.status?.includes("Fail")
-                                      ? "#8B3FD6"
-                                      : o.status === "Queued"
-                                        ? "#8B3FD6"
-                                        : o.status?.includes("Blocked")
-                                          ? "#FF9A5C"
-                                          : "#7C7469";
-                                return (
-                                  <div key={o.status} className="flex items-center gap-2.5">
-                                    <span className="text-[9px] text-muted w-28 shrink-0">
-                                      {o.status}
-                                    </span>
-                                    <div className="flex-1 h-1.5 rounded-full bg-black/10 overflow-hidden">
-                                      <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${o.pct}%` }}
-                                        transition={{ duration: 0.6 }}
-                                        className="h-full rounded-full"
-                                        style={{ background: color }}
-                                      />
-                                    </div>
-                                    <span className="text-[9px] font-mono text-ink/70 w-8 text-right shrink-0 tabular-nums">
-                                      {o.count}
-                                    </span>
-                                    <span className="text-[8px] text-ink/40 w-7 text-right shrink-0 tabular-nums">
-                                      {o.pct}%
-                                    </span>
+                              {campaignAnalytics.outcomes.map((o: any) => (
+                                <div key={o.status} className="flex items-center gap-2.5">
+                                  <span className="text-[9px] text-muted w-28 shrink-0">
+                                    {o.status}
+                                  </span>
+                                  <div className="flex-1 h-1.5 rounded-full bg-black/10 overflow-hidden">
+                                    <motion.div
+                                      initial={{ width: 0 }}
+                                      animate={{ width: `${o.pct}%` }}
+                                      transition={{ duration: 0.6 }}
+                                      className={cn(
+                                        "h-full rounded-full",
+                                        campaignOutcomeBarClass(o.status),
+                                      )}
+                                    />
                                   </div>
-                                );
-                              })}
+                                  <span className="text-[9px] font-mono text-ink/70 w-8 text-right shrink-0 tabular-nums">
+                                    {o.count}
+                                  </span>
+                                  <span className="text-[8px] text-ink/40 w-7 text-right shrink-0 tabular-nums">
+                                    {o.pct}%
+                                  </span>
+                                </div>
+                              ))}
                             </div>
                           </div>
                         )}
@@ -475,20 +457,16 @@ export default function CampaignsTab({
             {/* Stats row */}
             <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-2 border-b border-black/8">
               {[
-                { label: "Leads", value: selectedCampaign.leads_count, accent: "#8B3FD6" },
-                { label: "Dialed", value: selectedCampaign.dialed_count, accent: "#8B3FD6" },
-                { label: "Connected", value: selectedCampaign.connected_count, accent: "#8B3FD6" },
+                { label: "Leads", value: selectedCampaign.leads_count },
+                { label: "Dialed", value: selectedCampaign.dialed_count },
+                { label: "Connected", value: selectedCampaign.connected_count },
                 {
                   label: "Window",
                   value: `${selectedCampaign.call_window_start}–${selectedCampaign.call_window_end}`,
-                  accent: "#8B3FD6",
                 },
               ].map((s) => (
                 <div key={s.label} className="rounded-md wl-panel border border-border p-2.5">
-                  <div
-                    className="text-[8px] uppercase tracking-[0.3em] mb-1"
-                    style={{ color: s.accent }}
-                  >
+                  <div className="text-[8px] uppercase tracking-[0.3em] mb-1 text-brand">
                     {s.label}
                   </div>
                   <div className="font-display italic text-xl text-ink leading-none">{s.value}</div>
@@ -506,9 +484,11 @@ export default function CampaignsTab({
             ) : campaignLeads.length === 0 ? (
               <EmptyState
                 icon={Megaphone}
-                title="No leads in campaign"
-                description="Upload a CSV from the Bulk tab and pick this campaign in the dropdown — assigned leads land here."
-                accent="#8B3FD6"
+                eyebrow={OPS_CHANNEL_EMPTY.campaignLeads.eyebrow}
+                title={OPS_CHANNEL_EMPTY.campaignLeads.title}
+                description={OPS_CHANNEL_EMPTY.campaignLeads.description}
+                density="compact"
+                withHalo={false}
                 actions={[
                   {
                     label: "Upload CSV",
@@ -545,7 +525,7 @@ export default function CampaignsTab({
                   {campaignLeads.map((lead) => (
                     <div
                       key={lead.id}
-                      className="px-4 py-3 flex items-center gap-3 hover:bg-black/3 transition-colors"
+                      className="px-4 py-3 flex items-center gap-3 hover:bg-black/3 transition-colors touch-press"
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5 flex-wrap">

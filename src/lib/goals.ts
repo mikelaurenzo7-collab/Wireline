@@ -13,6 +13,8 @@
 //  Date-based windowing the insights routes already use.
 // ────────────────────────────────────────────────────────────────────────
 
+import { BRAND } from "../constants/brand-colors";
+
 /**
  * Lead score at or above which a call counts as a qualified lead. Mirrors
  * the "Qualified" funnel stage threshold in insights-routes.ts so the Goals
@@ -57,28 +59,28 @@ export const GOAL_METRICS: readonly GoalMetricDef[] = [
     label: "Calls handled",
     unit: "calls",
     description: "Total inbound and outbound calls your fleet completes this month.",
-    accent: "#8B3FD6",
+    accent: BRAND.purple,
   },
   {
     id: "appointments_booked",
     label: "Appointments booked",
     unit: "appointments",
     description: "Appointments your agents schedule this month.",
-    accent: "#8B3FD6",
+    accent: BRAND.purple,
   },
   {
     id: "qualified_leads",
     label: "Qualified leads",
     unit: "leads",
     description: `Calls that scored ${QUALIFIED_LEAD_SCORE} or higher on lead intent this month.`,
-    accent: "#8B3FD6",
+    accent: BRAND.purple,
   },
   {
     id: "voice_minutes",
     label: "Voice minutes",
     unit: "minutes",
     description: "Total connected talk time across the fleet this month.",
-    accent: "#8B6FA8",
+    accent: BRAND.purpleMuted,
   },
 ];
 

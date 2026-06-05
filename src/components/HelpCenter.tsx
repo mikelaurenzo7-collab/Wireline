@@ -32,7 +32,7 @@ function AgentCard({
       href={`tel:${agent.tel}`}
       data-demo={isDemo ? "true" : undefined}
       className={cn(
-        "group relative block rounded-md p-4 transition-colors",
+        "group relative block rounded-md p-4 transition-colors touch-press",
         WL_ADMIN_CLASSES.helpCard,
         isDemo && "border-dashed",
       )}
@@ -80,14 +80,14 @@ const helpActions = (
       href={WIRELINE_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-panel border border-black/10 text-[11px] uppercase tracking-[0.22em] text-ink/80 hover:text-ink hover:border-brand/25 transition-colors"
+      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-panel border border-black/10 text-[11px] uppercase tracking-[0.22em] text-ink/80 hover:text-ink hover:border-brand/25 transition-colors touch-press"
     >
       <ExternalLink className="w-3.5 h-3.5" />
       trywireline.com
     </a>
     <a
       href={`mailto:${WIRELINE_SUPPORT_EMAIL}`}
-      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-panel border border-black/10 text-[11px] uppercase tracking-[0.22em] text-ink/80 hover:text-ink hover:border-brand/25 transition-colors"
+      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-panel border border-black/10 text-[11px] uppercase tracking-[0.22em] text-ink/80 hover:text-ink hover:border-brand/25 transition-colors touch-press"
     >
       <MessageCircle className="w-3.5 h-3.5" />
       Email Mike

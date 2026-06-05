@@ -29,6 +29,7 @@ import { getSignupWedgeRecommendation } from "../lib/signup-intent";
 import FastStartWizard from "./FastStartWizard";
 import YoureLiveModal from "./YoureLiveModal";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { BRAND } from "../constants/brand-colors";
 
 interface ProgressData {
   agents: number;
@@ -43,7 +44,7 @@ const STEPS = [
     title: "Create your first agent",
     body: "Describe what your agent should do in one sentence. We'll generate the name, personality, instructions, and starter knowledge for you.",
     icon: Hammer,
-    accent: "#8B3FD6",
+    accent: BRAND.purple,
     badge: "~30 seconds",
   },
   {
@@ -51,7 +52,7 @@ const STEPS = [
     title: "Teach it about your business",
     body: "Paste your website URL and we'll pull in your services, pricing, hours, and policies automatically — ready in one click.",
     icon: Globe,
-    accent: "#8B3FD6",
+    accent: BRAND.purple,
     badge: "Instant",
   },
   {
@@ -59,7 +60,7 @@ const STEPS = [
     title: "Wire up a phone number",
     body: "Every Wireline plan includes a dedicated voice number — no Twilio bill, no separate setup. Provision yours in Integrations and route inbound calls to your agent.",
     icon: Phone,
-    accent: "#8B3FD6",
+    accent: BRAND.purple,
     badge: "1 click",
   },
   {
@@ -67,7 +68,7 @@ const STEPS = [
     title: "Run a live test call",
     body: "Talk to your agent live from your browser — no phone needed. Make sure it sounds the way you want.",
     icon: Mic,
-    accent: "#8B3FD6",
+    accent: BRAND.purple,
     badge: "Try it now",
   },
 ] as const;
@@ -460,21 +461,21 @@ export default function OnboardingQuickstart({
                 label="Connect Email"
                 desc="Link Gmail or Outlook for email agents."
                 to="/admin"
-                accent="#8B3FD6"
+                accent={BRAND.purple}
               />
               <PowerUpCard
                 icon={BarChart3}
                 label="Connect CRM"
                 desc="Salesforce or HubSpot — sync calls and deals."
                 to="/admin"
-                accent="#8B3FD6"
+                accent={BRAND.purple}
               />
               <PowerUpCard
                 icon={Waves}
                 label="Webhooks & SLOs"
                 desc="Push events to Slack, CRM, or Zapier."
                 to="/admin"
-                accent="#8B3FD6"
+                accent={BRAND.purple}
               />
             </div>
           </div>

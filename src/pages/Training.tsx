@@ -53,6 +53,8 @@ export default function Training() {
             icon={GraduationCap}
             title="Couldn't load your agents"
             description="The server returned a partial response. Check your connection and try again."
+            density="compact"
+            withHalo={false}
             actions={[{ label: "Retry", onClick: () => refresh(), primary: true }]}
           />
         </div>
@@ -69,6 +71,8 @@ export default function Training() {
             eyebrow={OPS_CHANNEL_EMPTY.training.eyebrow}
             title={OPS_CHANNEL_EMPTY.training.title}
             description={OPS_CHANNEL_EMPTY.training.description}
+            density="compact"
+            withHalo={false}
             actions={[...OPS_CHANNEL_EMPTY.training.actions]}
           />
         </div>

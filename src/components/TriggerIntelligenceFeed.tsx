@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Activity, Zap, Cpu, Signal, Radio, Waves } from "lucide-react";
 import { cn } from "../lib/utils";
 import { formatTime } from "../lib/safe-date";
+import { BRAND } from "../constants/brand-colors";
 
 type ActivityItem = {
   id: string;
@@ -14,10 +15,10 @@ type ActivityItem = {
 };
 
 const TYPE_META: Record<string, { icon: typeof Signal; color: string }> = {
-  SIGNAL_ANALYZED: { icon: Signal, color: "#8B3FD6" },
-  MISSION_INJECTED: { icon: Zap, color: "#8B3FD6" },
-  NEURAL_OPTIMIZATION: { icon: Cpu, color: "#8B3FD6" },
-  DIGITAL_RELAY: { icon: Radio, color: "#8B3FD6" },
+  SIGNAL_ANALYZED: { icon: Signal, color: BRAND.purple },
+  MISSION_INJECTED: { icon: Zap, color: BRAND.purple },
+  NEURAL_OPTIMIZATION: { icon: Cpu, color: BRAND.purple },
+  DIGITAL_RELAY: { icon: Radio, color: BRAND.purple },
 };
 
 const IMPORTANCE_RING: Record<string, string> = {

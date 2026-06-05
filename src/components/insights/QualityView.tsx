@@ -21,6 +21,9 @@ import { authFetch, readApiJson } from "../../lib/api";
 import { useToast } from "../../contexts/ToastContext";
 import { OPS_INSIGHTS_EMPTY } from "../../lib/wireline-ops-design";
 import { fetchInsight, Spinner, ErrCard, qaColor, InsightEmpty } from "./shared";
+import { WIRELINE_DIRECTOR_BRAND } from "../../lib/wireline-director-design";
+
+const QA_BRAND = WIRELINE_DIRECTOR_BRAND.violet;
 
 export default function QualityView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
@@ -131,7 +134,7 @@ export default function QualityView({ days }: { days: number }) {
           size="sm"
           onClick={handleScoreAll}
           disabled={scoring}
-          className="rounded-full bg-brand/15 border-brand/40 text-brand wl-ops-chip hover:bg-brand/25"
+          className="rounded-full bg-brand/15 border-brand/40 text-brand wl-ops-chip hover:bg-brand/25 touch-press"
         >
           {scoring ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
           {scoring ? "Scoring…" : "Score All Unscored"}
@@ -141,10 +144,10 @@ export default function QualityView({ days }: { days: number }) {
       {/* Hero stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Scored Calls", value: data.count, accent: "#8B3FD6" },
+          { label: "Scored Calls", value: data.count, accent: QA_BRAND },
           { label: "Average Score", value: `${data.avgScore}/100`, accent: qaColor(data.avgScore) },
-          { label: "Opening", value: `${dims.greeting ?? 0}/20`, accent: "#8B3FD6" },
-          { label: "Closing", value: `${dims.closing ?? 0}/20`, accent: "#8B3FD6" },
+          { label: "Opening", value: `${dims.greeting ?? 0}/20`, accent: QA_BRAND },
+          { label: "Closing", value: `${dims.closing ?? 0}/20`, accent: QA_BRAND },
         ].map(({ label, value, accent }) => (
           <div
             key={label}
@@ -178,7 +181,7 @@ export default function QualityView({ days }: { days: number }) {
                     animate={{ width: `${(bucket.count / maxDist) * 100}%` }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
                     className="h-full rounded-full"
-                    style={{ background: bucket.color || "#8B3FD6" }}
+                    style={{ background: bucket.color || QA_BRAND }}
                   />
                 </div>
                 <span className="text-[9px] font-mono text-ink w-6 text-right shrink-0">
@@ -204,8 +207,8 @@ export default function QualityView({ days }: { days: number }) {
                 <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
                 <Radar
                   dataKey="score"
-                  stroke="#8B3FD6"
-                  fill="#8B3FD6"
+                  stroke={QA_BRAND}
+                  fill={QA_BRAND}
                   fillOpacity={0.15}
                   strokeWidth={1.5}
                 />
@@ -226,8 +229,8 @@ export default function QualityView({ days }: { days: number }) {
               <AreaChart data={data.trend} margin={{ top: 4, right: 0, left: -28, bottom: 0 }}>
                 <defs>
                   <linearGradient id="qaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8B3FD6" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#8B3FD6" stopOpacity={0} />
+                    <stop offset="5%" stopColor={QA_BRAND} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={QA_BRAND} stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
@@ -252,12 +255,12 @@ export default function QualityView({ days }: { days: number }) {
                     fontSize: "11px",
                   }}
                   labelStyle={{ color: "#7C7469", fontWeight: "bold" }}
-                  itemStyle={{ color: "#8B3FD6" }}
+                  itemStyle={{ color: QA_BRAND }}
                 />
                 <Area
                   type="monotone"
                   dataKey="avg"
-                  stroke="#8B3FD6"
+                  stroke={QA_BRAND}
                   strokeWidth={1.5}
                   fill="url(#qaGrad)"
                   name="Avg QA Score"

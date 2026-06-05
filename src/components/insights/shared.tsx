@@ -84,6 +84,7 @@ export function InsightEmpty({
     <EmptyState
       framed
       density="compact"
+      withHalo={false}
       icon={icon}
       eyebrow={config.eyebrow}
       title={config.title}
@@ -101,6 +102,7 @@ export function Empty({ label, green }: { label: string; green?: boolean }) {
     <EmptyState
       framed
       density="compact"
+      withHalo={false}
       icon={Icon}
       eyebrow={green ? "All clear" : "Insights"}
       title={green ? "Looking good" : "No data yet"}
@@ -131,8 +133,8 @@ export function Stat({ label, value, accent }: { label: string; value: any; acce
     <div>
       <div className={WL_OPS_CLASSES.insightLabel}>{label}</div>
       <div
-        className="font-display italic text-xl text-ink mt-1"
-        style={accent ? { color: accent } : {}}
+        className={cn("font-display italic text-xl mt-1", accent ? undefined : "text-brand")}
+        style={accent ? { color: accent } : undefined}
       >
         {value}
       </div>

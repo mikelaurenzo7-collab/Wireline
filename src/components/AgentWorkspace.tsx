@@ -45,6 +45,7 @@ import {
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
+import { BRAND } from "../constants/brand-colors";
 import { AGENT_TOOL_CATALOG, type AgentToolCatalogEntry } from "../lib/agent-capabilities";
 import { INTEGRATION_STYLES } from "../lib/integration-activities";
 import {
@@ -558,7 +559,7 @@ export default function AgentWorkspace({
       uniqueIntegrations.forEach((integrationId, i) => {
         const style = INTEGRATION_STYLES[integrationId as keyof typeof INTEGRATION_STYLES] || {
           name: integrationId,
-          color: "#8B3FD6",
+          color: BRAND.purple,
           icon: <Plug className="w-4 h-4" />,
         };
 

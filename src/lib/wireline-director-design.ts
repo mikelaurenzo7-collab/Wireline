@@ -45,7 +45,11 @@ export const WL_DIRECTOR_CLASSES = {
   composerToolChipActive: "wl-composer-tool-chip--active",
   composerToolChipEngaged: "wl-composer-tool-chip--engaged",
   composerContextStrip: "wl-composer-context-strip",
+  composerContextPill: "wl-composer-context-pill",
   composerSendRow: "wl-composer-send-row",
+  composerSendBtn: "wl-composer-send-btn",
+  composerInput: "wl-composer-input",
+  composerToolbarScroll: "wl-composer-toolbar-scroll",
   assistantMessage: "wl-director-message--assistant",
   messageMeta: "wl-director-message-meta",
   capabilityCatPill: "wl-director-cap-pill",
@@ -368,6 +372,8 @@ export const DIRECTOR_COMPOSER_CONTEXT = {
   coachingPrefix: "Coaching",
   clearCoachLabel: "Return to fleet-only mode",
   closePanelLabel: "Close composer panel",
+  sendHint: "Enter to send · Shift+Enter for new line",
+  toolbarLabel: "Composer tools",
 } as const;
 
 export const WL_APP_CLASSES = {
@@ -401,6 +407,10 @@ export const WL_APP_CLASSES = {
   chromeToolbar: "wl-chrome-toolbar",
   /** Compact mobile route strip under TopBar */
   mobileContextBar: "wl-mobile-context-bar",
+  /** Editorial left rail on mobile page context */
+  mobileContextAccent: "wl-mobile-context-accent",
+  /** Segmented control track (day range, channel pickers) */
+  segmentStrip: "app-segment-strip",
   /** System banners (trial, verify email) */
   banner: "wl-banner",
   bannerInfo: "wl-banner wl-banner--info",

@@ -15,6 +15,9 @@
  */
 import React, { useId } from "react";
 import { cn } from "../../lib/utils";
+import { BRAND_FALLBACK } from "../../lib/brand-token";
+
+const PRIMARY_FALLBACK = `var(--primary, ${BRAND_FALLBACK})`;
 
 type WaveIntensity = "subtle" | "medium" | "strong";
 
@@ -107,13 +110,9 @@ export function AuroraWave({
               x2="100%"
               y2="0%"
             >
-              <stop offset="0%" stopColor="var(--primary, #8B3FD6)" stopOpacity={layer.opacity} />
-              <stop
-                offset="50%"
-                stopColor="var(--primary, #8B3FD6)"
-                stopOpacity={layer.opacity * 1.5}
-              />
-              <stop offset="100%" stopColor="var(--primary, #8B3FD6)" stopOpacity={layer.opacity} />
+              <stop offset="0%" stopColor={PRIMARY_FALLBACK} stopOpacity={layer.opacity} />
+              <stop offset="50%" stopColor={PRIMARY_FALLBACK} stopOpacity={layer.opacity * 1.5} />
+              <stop offset="100%" stopColor={PRIMARY_FALLBACK} stopOpacity={layer.opacity} />
             </linearGradient>
           ))}
         </defs>

@@ -8,6 +8,7 @@ import IntegrationCapabilityPanel from "./IntegrationCapabilityPanel";
 import { getIntegrationLogo } from "./layout/IntegrationLogos";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { Input } from "./ui/shadcn/Input";
+import { BRAND } from "../constants/brand-colors";
 
 const CRM_SELECT_UNSET = "__unset__";
 
@@ -471,7 +472,7 @@ export default function CrmConnectionCard() {
                             <div className="mt-3 pt-3 border-t border-black/8">
                               <IntegrationCapabilityPanel
                                 integration={toolInt}
-                                accentColor={PROVIDER_ACCENT[key] ?? "#8B3FD6"}
+                                accentColor={PROVIDER_ACCENT[key] ?? BRAND.purple}
                                 connected
                                 enabledTools={[]}
                                 compact

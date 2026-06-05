@@ -12,7 +12,6 @@ import Papa from "papaparse";
 import { logFetchError } from "../../lib/utils";
 import { authFetch } from "../../lib/api";
 import PageShell, { Panel } from "../PageShell";
-import HubTabs, { CHANNELS_HUB } from "../HubTabs";
 import CsvExportButton from "../CsvExportButton";
 import { useToast } from "../../contexts/ToastContext";
 import ConfirmModal from "../ConfirmModal";
@@ -564,6 +563,120 @@ export default function OutboundDialer({ embedded = false }: { embedded?: boolea
 
   const queuedCount = leads.filter((l) => l.status === "Queued").length;
 
+  const exportAction = <CsvExportButton type="leads" label={OPS_CHANNEL_TOOLBAR.outbound.export} />;
+
+  const dialerShell = (
+    <PageShell
+      title={embedded ? "" : "Outbound"}
+      eyebrow={embedded ? undefined : "Communications · Outbound"}
+      subtitle={
+        embedded
+          ? undefined
+          : "Run outbound calling campaigns for lead qualification and follow-up."
+      }
+      tabs={[
+        {
+          id: "dispatch",
+          label: "Dispatch",
+          icon: Zap,
+          content: (
+            <DispatchTab
+              isLoading={isLoading}
+              agents={agents}
+              selectedAgentId={selectedAgentId}
+              setSelectedAgentId={setSelectedAgentId}
+              customerNumber={customerNumber}
+              setCustomerNumber={setCustomerNumber}
+              customerName={customerName}
+              setCustomerName={setCustomerName}
+              context={context}
+              setContext={setContext}
+              hasOutboundConsent={hasOutboundConsent}
+              setHasOutboundConsent={setHasOutboundConsent}
+              isDialing={isDialing}
+              isUploading={isUploading}
+              dialError={dialError}
+              uploadStats={uploadStats}
+              dispatchCall={dispatchCall}
+              campaigns={campaigns}
+              bulkCampaignId={bulkCampaignId}
+              setBulkCampaignId={setBulkCampaignId}
+              triggerUploadCsv={() => fileInputRef.current?.click()}
+              leads={leads}
+              leadsTotal={leadsTotal}
+              queuedCount={queuedCount}
+              launchQueue={launchQueue}
+              deleteLead={deleteLead}
+              isDeletingLead={isDeletingLead}
+              loadMoreLeads={loadMoreLeads}
+              leadsHasMore={leadsHasMore}
+              isLoadingMore={isLoadingMore}
+              quotaUsed={quotaUsed}
+              quotaLimit={quotaLimit}
+              dncEntries={dncEntries}
+              isNumberOnDncList={isNumberOnDncList}
+            />
+          ),
+        },
+        {
+          id: "campaigns",
+          label: "Campaigns",
+          icon: Megaphone,
+          badge: campaigns.length || undefined,
+          content: (
+            <CampaignsTab
+              campaigns={campaigns}
+              campaignLoading={campaignLoading}
+              setShowCampaignModal={setShowCampaignModal}
+              selectedCampaign={selectedCampaign}
+              handleSelectCampaign={handleSelectCampaign}
+              showAnalytics={showAnalytics}
+              setShowAnalytics={setShowAnalytics}
+              fetchCampaignAnalytics={fetchCampaignAnalytics}
+              analyticsLoading={analyticsLoading}
+              campaignAnalytics={campaignAnalytics}
+              launchCampaign={launchCampaign}
+              launchingCampaignId={launchingCampaignId}
+              stopCampaign={stopCampaign}
+              stoppingCampaignId={stoppingCampaignId}
+              setCampaignStatus={setCampaignStatus}
+              deleteCampaign={deleteCampaign}
+              campaignLeadsLoading={campaignLeadsLoading}
+              campaignLeads={campaignLeads}
+              triggerUploadCsv={() => fileInputRef.current?.click()}
+              retryFailedLeads={retryFailedLeads}
+            />
+          ),
+        },
+        {
+          id: "sequences",
+          label: "Sequences",
+          icon: Repeat,
+          content: (
+            <Panel icon={Repeat} hint="Multi-touch cadences" title="" scroll>
+              <Cadences />
+            </Panel>
+          ),
+        },
+        {
+          id: "callbacks",
+          label: "Callbacks",
+          icon: CalendarClock,
+          badge: callbacks.length || undefined,
+          content: (
+            <Panel icon={CalendarClock} hint="Scheduled" title="" scroll>
+              <CallbacksList
+                callbacks={callbacks}
+                loading={callbacksLoading}
+                onRefresh={fetchCallbacks}
+              />
+            </Panel>
+          ),
+        },
+      ]}
+    />
+  );
+
   return (
     <>
       {/* Always-mounted file input — both EmptyState CTAs (single-mode queue
@@ -578,135 +691,17 @@ export default function OutboundDialer({ embedded = false }: { embedded?: boolea
         onChange={handleFileUpload}
       />
       <div className="h-full flex flex-col min-h-0">
-        {!embedded && <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />}
-        {embedded && (
-          <ClientToolbar
-            left={
-              <span className="app-toolbar-stat">
-                {isLoading
-                  ? OPS_CHANNEL_TOOLBAR.outbound.loading
-                  : OPS_CHANNEL_TOOLBAR.outbound.stat(queuedCount, leadsTotal)}
-              </span>
-            }
-            actions={<CsvExportButton type="leads" label={OPS_CHANNEL_TOOLBAR.outbound.export} />}
-          />
-        )}
-        <div className="flex-1 min-h-0">
-          <PageShell
-            title={embedded ? "" : "Outbound"}
-            eyebrow={embedded ? undefined : "Communications · Outbound"}
-            subtitle={
-              embedded
-                ? undefined
-                : "Run outbound calling campaigns for lead qualification and follow-up."
-            }
-            actions={
-              embedded ? undefined : (
-                <CsvExportButton type="leads" label={OPS_CHANNEL_TOOLBAR.outbound.export} />
-              )
-            }
-            tabs={[
-              {
-                id: "dispatch",
-                label: "Dispatch",
-                icon: Zap,
-                content: (
-                  <DispatchTab
-                    isLoading={isLoading}
-                    agents={agents}
-                    selectedAgentId={selectedAgentId}
-                    setSelectedAgentId={setSelectedAgentId}
-                    customerNumber={customerNumber}
-                    setCustomerNumber={setCustomerNumber}
-                    customerName={customerName}
-                    setCustomerName={setCustomerName}
-                    context={context}
-                    setContext={setContext}
-                    hasOutboundConsent={hasOutboundConsent}
-                    setHasOutboundConsent={setHasOutboundConsent}
-                    isDialing={isDialing}
-                    isUploading={isUploading}
-                    dialError={dialError}
-                    uploadStats={uploadStats}
-                    dispatchCall={dispatchCall}
-                    campaigns={campaigns}
-                    bulkCampaignId={bulkCampaignId}
-                    setBulkCampaignId={setBulkCampaignId}
-                    triggerUploadCsv={() => fileInputRef.current?.click()}
-                    leads={leads}
-                    leadsTotal={leadsTotal}
-                    queuedCount={queuedCount}
-                    launchQueue={launchQueue}
-                    deleteLead={deleteLead}
-                    isDeletingLead={isDeletingLead}
-                    loadMoreLeads={loadMoreLeads}
-                    leadsHasMore={leadsHasMore}
-                    isLoadingMore={isLoadingMore}
-                    quotaUsed={quotaUsed}
-                    quotaLimit={quotaLimit}
-                    dncEntries={dncEntries}
-                    isNumberOnDncList={isNumberOnDncList}
-                  />
-                ),
-              },
-              {
-                id: "campaigns",
-                label: "Campaigns",
-                icon: Megaphone,
-                badge: campaigns.length || undefined,
-                content: (
-                  <CampaignsTab
-                    campaigns={campaigns}
-                    campaignLoading={campaignLoading}
-                    setShowCampaignModal={setShowCampaignModal}
-                    selectedCampaign={selectedCampaign}
-                    handleSelectCampaign={handleSelectCampaign}
-                    showAnalytics={showAnalytics}
-                    setShowAnalytics={setShowAnalytics}
-                    fetchCampaignAnalytics={fetchCampaignAnalytics}
-                    analyticsLoading={analyticsLoading}
-                    campaignAnalytics={campaignAnalytics}
-                    launchCampaign={launchCampaign}
-                    launchingCampaignId={launchingCampaignId}
-                    stopCampaign={stopCampaign}
-                    stoppingCampaignId={stoppingCampaignId}
-                    setCampaignStatus={setCampaignStatus}
-                    deleteCampaign={deleteCampaign}
-                    campaignLeadsLoading={campaignLeadsLoading}
-                    campaignLeads={campaignLeads}
-                    triggerUploadCsv={() => fileInputRef.current?.click()}
-                    retryFailedLeads={retryFailedLeads}
-                  />
-                ),
-              },
-              {
-                id: "sequences",
-                label: "Sequences",
-                icon: Repeat,
-                content: (
-                  <Panel icon={Repeat} hint="Multi-touch cadences" title="" scroll>
-                    <Cadences />
-                  </Panel>
-                ),
-              },
-              {
-                id: "callbacks",
-                label: "Callbacks",
-                icon: CalendarClock,
-                badge: callbacks.length || undefined,
-                content: (
-                  <Panel icon={CalendarClock} hint="Scheduled" title="" scroll>
-                    <CallbacksList
-                      callbacks={callbacks}
-                      loading={callbacksLoading}
-                      onRefresh={fetchCallbacks}
-                    />
-                  </Panel>
-                ),
-              },
-            ]}
-          />
-        </div>
+        <ClientToolbar
+          left={
+            <span className="app-toolbar-stat">
+              {isLoading
+                ? OPS_CHANNEL_TOOLBAR.outbound.loading
+                : OPS_CHANNEL_TOOLBAR.outbound.stat(queuedCount, leadsTotal)}
+            </span>
+          }
+          actions={exportAction}
+        />
+        <div className="flex-1 min-h-0">{dialerShell}</div>
       </div>
       <AnimatePresence>
         {showCampaignModal && (

@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { Phone, Mail, ChevronRight, Loader2, RefreshCw, Kanban, GripVertical } from "lucide-react";
 import PageShell, { Panel } from "./PageShell";
 import { EmptyState } from "./ui/EmptyState";
+import { InlineEmpty } from "./ui/InlineEmpty";
 import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR, OPS_PIPELINE } from "../lib/wireline-ops-design";
 import ClientRouteViewport from "./layout/ClientRouteViewport";
 import ClientToolbar from "./layout/ClientToolbar";
@@ -192,6 +193,8 @@ export default function Pipeline() {
               title={OPS_CHANNEL_EMPTY.pipeline.title}
               description={OPS_CHANNEL_EMPTY.pipeline.description}
               actions={[...OPS_CHANNEL_EMPTY.pipeline.actions]}
+              density="compact"
+              withHalo={false}
               className="h-full py-10"
             />
           )}
@@ -243,11 +246,9 @@ export default function Pipeline() {
                       >
                         <div className="space-y-2">
                           {leads.length === 0 && !loading && (
-                            <div className="px-2 py-6 text-center border border-dashed border-brand/15 rounded-md bg-brand/[0.03]">
-                              <p className="text-[10px] wl-label-muted uppercase tracking-[0.22em]">
-                                {OPS_PIPELINE.emptyColumn}
-                              </p>
-                              <p className="text-[10px] text-ink/40 mt-1">
+                            <div className="border border-dashed border-brand/15 rounded-md bg-brand/[0.03] py-1">
+                              <InlineEmpty label={OPS_PIPELINE.emptyColumn} className="py-3" />
+                              <p className="text-[10px] text-ink/40 text-center pb-3 px-2">
                                 {OPS_PIPELINE.dragHint}
                               </p>
                             </div>

@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
 import { ChevronRight, Home, Phone, MessageSquare, Compass, LayoutGrid } from "lucide-react";
+import { BRAND } from "../../constants/brand-colors";
 
 /**
  * NotFound — context-aware 404. Detects whether the visitor is signed-in
@@ -84,7 +85,13 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
       >
         {isPublic ? (
           <>
-            <NotFoundCard to="/" icon={Home} label="Home" hint="Back to landing" accent="#8B3FD6" />
+            <NotFoundCard
+              to="/"
+              icon={Home}
+              label="Home"
+              hint="Back to landing"
+              accent={BRAND.purple}
+            />
             <a
               href="tel:+16305811834"
               className="group relative flex items-center gap-3 p-4 rounded-md wl-panel border border-black/10 hover:border-black/20 transition-colors"
@@ -93,7 +100,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               <div
                 className="w-9 h-9 rounded-md flex items-center justify-center shrink-0"
                 style={{
-                  background: "#8B3FD6",
+                  background: BRAND.purple,
                   boxShadow: "0 4px 12px -4px rgba(107, 43, 153 ,0.55)",
                 }}
               >
@@ -109,7 +116,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               icon={Compass}
               label="Pricing"
               hint="4 plans, free trial"
-              accent="#8B3FD6"
+              accent={BRAND.purple}
             />
           </>
         ) : (
@@ -119,28 +126,28 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               icon={Home}
               label="Live Ops"
               hint="Mission control"
-              accent="#8B3FD6"
+              accent={BRAND.purple}
             />
             <NotFoundCard
               to="/chat"
               icon={LayoutGrid}
               label="Chat"
               hint="Director & agents"
-              accent="#8B3FD6"
+              accent={BRAND.purple}
             />
             <NotFoundCard
               to="/agents"
               icon={MessageSquare}
               label="Agents"
               hint="Manage fleet"
-              accent="#8B3FD6"
+              accent={BRAND.purple}
             />
             <NotFoundCard
               to="/phone"
               icon={Phone}
               label="Phone"
               hint="History & outbound"
-              accent="#8B3FD6"
+              accent={BRAND.purple}
             />
           </>
         )}

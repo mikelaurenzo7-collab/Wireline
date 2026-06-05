@@ -13,6 +13,9 @@ import { TrendingUp, TrendingDown, Loader2, Target, Sparkles, AlertTriangle } fr
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatPercent, safeFixed, formatInt } from "../lib/safe-number";
+import { BRAND } from "../constants/brand-colors";
+
+const SCORECARD_BRAND = BRAND.purple;
 
 type MetricFormat = "percent" | "number" | "seconds" | "score";
 
@@ -105,7 +108,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
       <div
         aria-hidden="true"
         className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-20 blur-3xl pointer-events-none"
-        style={{ background: "radial-gradient(circle, #8B3FD6, transparent)" }}
+        style={{ background: `radial-gradient(circle, ${SCORECARD_BRAND}, transparent)` }}
       />
 
       <header className="relative flex items-start gap-3 mb-4">
@@ -114,7 +117,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
           style={{
             background:
               "linear-gradient(135deg, rgba(107, 43, 153 ,0.20), rgba(107, 43, 153 ,0.05))",
-            color: "#8B3FD6",
+            color: SCORECARD_BRAND,
           }}
         >
           <Target className="w-4.5 h-4.5" />
@@ -223,12 +226,12 @@ function Sparkline({ values }: { values: number[] }) {
       >
         <defs>
           <linearGradient id="sparkfill" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#8B3FD6" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#8B3FD6" stopOpacity="0" />
+            <stop offset="0%" stopColor={SCORECARD_BRAND} stopOpacity="0.25" />
+            <stop offset="100%" stopColor={SCORECARD_BRAND} stopOpacity="0" />
           </linearGradient>
           <linearGradient id="sparkstroke" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0%" stopColor="#8B3FD6" />
-            <stop offset="100%" stopColor="#8B3FD6" />
+            <stop offset="0%" stopColor={SCORECARD_BRAND} />
+            <stop offset="100%" stopColor={SCORECARD_BRAND} />
           </linearGradient>
         </defs>
         <polyline

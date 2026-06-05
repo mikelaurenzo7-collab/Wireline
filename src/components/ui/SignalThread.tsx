@@ -18,6 +18,7 @@
  */
 import React, { useId, useMemo } from "react";
 import { cn } from "../../lib/utils";
+import { BRAND } from "../../constants/brand-colors";
 
 type ThreadDirection = "left-to-right" | "right-to-left" | "top-to-bottom" | "bottom-to-top";
 type ThreadColor = "brand" | "emerald" | "rose" | "muted";
@@ -43,13 +44,13 @@ interface SignalThreadProps {
 const COLOR_MAP: Record<ThreadColor, { stroke: string; pulse: string; glow: string }> = {
   brand: {
     stroke: "rgba(139, 63, 214, 0.2)",
-    pulse: "#8B3FD6",
+    pulse: BRAND.purple,
     glow: "rgba(139, 63, 214, 0.6)",
   },
   emerald: {
-    stroke: "rgba(16, 185, 129, 0.2)",
-    pulse: "#10b981",
-    glow: "rgba(16, 185, 129, 0.6)",
+    stroke: "rgba(139, 111, 168, 0.2)",
+    pulse: BRAND.purpleMuted,
+    glow: "rgba(139, 111, 168, 0.5)",
   },
   rose: {
     stroke: "rgba(232, 70, 106, 0.2)",

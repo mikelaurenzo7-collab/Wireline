@@ -140,7 +140,7 @@ export default function Security() {
             className="mb-10"
           >
             <div className="flex items-center gap-2 mb-3">
-              <span className="hero-accent-line" style={{ background: "#8B3FD6" }} />
+              <span className="hero-accent-line bg-brand" />
               <span className="text-eyebrow">Security · Compliance · Honesty</span>
             </div>
             <h1 className="marketing-hero-title mb-3">
@@ -165,7 +165,7 @@ export default function Security() {
                 transition={{ duration: 0.4, delay: Math.min(idx * 0.04, 0.4) }}
               >
                 <div className="flex items-center gap-2.5 mb-2">
-                  <Icon className="w-4 h-4 text-[#8B3FD6]" strokeWidth={1.8} />
+                  <Icon className="w-4 h-4 text-brand" strokeWidth={1.8} />
                   <h2 className="font-display italic text-lg text-ink leading-tight">{title}</h2>
                 </div>
                 <ul className="space-y-1.5 marketing-body">
@@ -173,7 +173,7 @@ export default function Security() {
                     <li key={i} className="pl-5 relative">
                       <span
                         aria-hidden="true"
-                        className="absolute left-0 top-2 w-1.5 h-1.5 rounded-full bg-[#8B3FD6]/55"
+                        className="absolute left-0 top-2 w-1.5 h-1.5 rounded-full bg-brand/55"
                       />
                       {line}
                     </li>
@@ -199,12 +199,12 @@ export default function Security() {
           <div className="mt-10 text-caption text-center space-y-2">
             <p>
               Questions?{" "}
-              <a href="mailto:security@trywireline.com" className="text-[#8B3FD6] hover:underline">
+              <a href="mailto:security@trywireline.com" className="text-brand hover:underline">
                 security@trywireline.com
               </a>
             </p>
             <p>
-              <Link to="/status" className="text-[#8B3FD6] hover:underline">
+              <Link to="/status" className="text-brand hover:underline">
                 Live system status
               </Link>
             </p>

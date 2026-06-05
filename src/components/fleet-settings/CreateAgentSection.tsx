@@ -6,12 +6,12 @@
 import { useState } from "react";
 import { Plus, Loader2, Sparkles, Briefcase } from "lucide-react";
 import { motion } from "motion/react";
-import { cn } from "../../lib/utils";
 import { AGENT_ROLES, type RoleValue } from "../fleet/helpers";
 import { ClaudeRecipeButton } from "../ClaudeRecipes";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { Input } from "../ui/shadcn/Input";
+import { SegmentStrip } from "../ui/SegmentStrip";
 
 interface Props {
   isCreating: boolean;
@@ -59,34 +59,18 @@ export default function CreateAgentSection({
         </div>
       </div>
 
-      <div className="flex p-1 rounded-full wl-panel border border-black/10">
-        <ShadButton
-          type="button"
-          variant="ghost"
-          disableAnimations
-          aria-pressed={newAgentChannel === "voice"}
-          onClick={() => setNewAgentChannel("voice")}
-          className={cn(
-            "flex-1 h-auto py-1 rounded-full app-segment-btn text-[11px]",
-            newAgentChannel === "voice" ? "bg-brand/15 text-brand" : "text-muted hover:text-ink",
-          )}
-        >
-          Voice
-        </ShadButton>
-        <ShadButton
-          type="button"
-          variant="ghost"
-          disableAnimations
-          aria-pressed={newAgentChannel === "email"}
-          onClick={() => setNewAgentChannel("email")}
-          className={cn(
-            "flex-1 h-auto py-1 rounded-full app-segment-btn text-[11px]",
-            newAgentChannel === "email" ? "bg-brand/15 text-brand" : "text-muted hover:text-ink",
-          )}
-        >
-          Email
-        </ShadButton>
-      </div>
+      <SegmentStrip
+        aria-label="Agent channel"
+        variant="soft"
+        fullWidth
+        className="w-full wl-panel border border-black/10"
+        options={[
+          { value: "voice", label: "Voice" },
+          { value: "email", label: "Email" },
+        ]}
+        value={newAgentChannel}
+        onChange={setNewAgentChannel}
+      />
 
       <div className="space-y-3">
         <div className="space-y-1.5">

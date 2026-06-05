@@ -23,6 +23,8 @@ import { Loader2, Plus, Trash2, BookOpen, AlertTriangle, Save } from "lucide-rea
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
+import { InlineEmpty } from "./ui/InlineEmpty";
+import { OPS_TRAINING_PANEL } from "../lib/wireline-ops-design";
 import { Input } from "./ui/shadcn/Input";
 import { Checkbox } from "./ui/shadcn/Checkbox";
 import { EmptyState } from "./ui/EmptyState";
@@ -415,9 +417,10 @@ function EntryEditor({ entries, onChange, onAddRow, onRemoveRow }: EntryEditorPr
         <span />
       </div>
       {entries.length === 0 ? (
-        <div className="rounded-md border border-dashed border-black/12 p-3 text-center text-[11px] text-muted">
-          No rules yet. Add a row below.
-        </div>
+        <InlineEmpty
+          label={OPS_TRAINING_PANEL.pronunciation}
+          className="rounded-md border border-dashed border-black/12 py-3"
+        />
       ) : (
         entries.map((entry, idx) => (
           <div key={idx} className="grid grid-cols-[1fr_1fr_84px_28px] gap-2 items-center">

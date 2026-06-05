@@ -5,6 +5,7 @@ import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { BRAND } from "../constants/brand-colors";
 
 /* ──────────────────────────────────────────────────────────────────────────
    GoalsView — the Insights → Goals tab.
@@ -52,10 +53,10 @@ interface GoalsData {
 }
 
 const STATUS_META: Record<GoalStatus, { label: string; color: string }> = {
-  achieved: { label: "Achieved", color: "#8B3FD6" },
-  ahead: { label: "Ahead of pace", color: "#8B3FD6" },
-  on_track: { label: "On track", color: "#8B3FD6" },
-  behind: { label: "Behind pace", color: "#8B6FA8" },
+  achieved: { label: "Achieved", color: BRAND.purple },
+  ahead: { label: "Ahead of pace", color: BRAND.purple },
+  on_track: { label: "On track", color: BRAND.purple },
+  behind: { label: "Behind pace", color: BRAND.purpleMuted },
 };
 
 const num = (n: number) => n.toLocaleString();

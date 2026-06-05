@@ -12,6 +12,7 @@ import {
   Stat,
 } from "../shared";
 import { useRecipeAsync } from "../useRecipeAsync";
+import { BRAND } from "../../constants/brand-colors";
 
 export function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled: boolean }) {
   const [name, setName] = useState(initial?.customerName ?? "");
@@ -30,10 +31,10 @@ export function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled:
 
   const confidenceAccent =
     enrichment?.research_confidence === "high"
-      ? "#8B3FD6"
+      ? BRAND.purple
       : enrichment?.research_confidence === "medium"
-        ? "#C4B5A0"
-        : "#8B3FD6";
+        ? BRAND.creamDeep
+        : BRAND.purple;
 
   return (
     <FormShell>

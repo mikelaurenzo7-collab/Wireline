@@ -17,6 +17,7 @@ import {
   Check,
   Trash2,
   type LucideIcon,
+  CheckCircle2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { authFetch } from "../lib/api";
@@ -34,11 +35,12 @@ import { Badge } from "./ui/shadcn/Badge";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "./ui/shadcn/Tooltip";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { EmptyState } from "./ui/EmptyState";
-import { WL_DIRECTOR_CLASSES } from "../lib/wireline-director-design";
+import { WL_DIRECTOR_CLASSES, WL_APP_CLASSES } from "../lib/wireline-director-design";
 import {
   OPS_TRIAGE_EMPTY,
   OPS_TRIAGE_ACCENTS,
   OPS_CHANNEL_TOOLBAR,
+  OPS_TRIAGE_COPY,
   WL_OPS_CLASSES,
 } from "../lib/wireline-ops-design";
 import { BRAND } from "../constants/brand-colors";
@@ -199,7 +201,15 @@ export default function TriageInbox() {
       <ClientToolbar
         left={
           <span className="app-toolbar-stat">
-            <span className="w-2 h-2 rounded-full bg-brand animate-pulse" aria-hidden />
+            <span
+              className={cn(
+                "w-2 h-2 rounded-full",
+                !loading && data && totalAttention === 0
+                  ? "bg-[var(--wl-signal)]"
+                  : "bg-brand animate-pulse",
+              )}
+              aria-hidden
+            />
             {loading && !data
               ? OPS_CHANNEL_TOOLBAR.triage.loading
               : OPS_CHANNEL_TOOLBAR.triage.stat(totalAttention)}
@@ -216,7 +226,7 @@ export default function TriageInbox() {
               size="sm"
               disableAnimations
               className={cn(
-                "h-9 rounded-full text-muted hover:text-brand hover:border-brand/40",
+                "h-9 rounded-full text-muted hover:text-brand hover:border-brand/40 touch-press",
                 WL_OPS_CLASSES.filterChip,
               )}
             >
@@ -231,6 +241,28 @@ export default function TriageInbox() {
         }
       />
       <PageShell title="" eyebrow="" subtitle="">
+        {!loading && data && !fetchErr && totalAttention === 0 && (
+          <div
+            role="status"
+            className={cn(
+              "mb-3 rounded-md border px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-2",
+              WL_APP_CLASSES.statusSuccess,
+            )}
+          >
+            <div className="flex items-start gap-3 flex-1 min-w-[12rem] text-left">
+              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 wl-text-success" aria-hidden />
+              <div>
+                <p className="font-display italic text-sm text-ink">
+                  {OPS_TRIAGE_COPY.allClearBannerTitle}
+                </p>
+                <p className="text-xs text-muted mt-0.5">{OPS_TRIAGE_COPY.allClearBannerBody}</p>
+              </div>
+            </div>
+            <Link to="/ops" className="app-micro-cta touch-press shrink-0">
+              {OPS_TRIAGE_COPY.allClearBannerCta}
+            </Link>
+          </div>
+        )}
         {/* ────────────────────────────────────────────────────────────
           Dense triage grid — five buckets visible simultaneously.
           Replaces the tabbed layout (which buried 4 of 5 buckets and
@@ -346,7 +378,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
     <ul className="p-2 space-y-2 list-none stagger-children">
       {items.map((c) => (
         <li key={c.id} className="relative list-none group">
-          <Card className="wl-panel border-black/8 hover:border-brand/25 transition-all p-3 flex items-center gap-3 rounded-md relative">
+          <Card className="wl-panel border-black/8 hover:border-brand/25 transition-all p-3 flex items-center gap-3 rounded-md relative touch-press">
             {/* Absolute overlay link covering the entire row target */}
             <Link
               to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
@@ -449,7 +481,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
               <ShadButton
                 variant="outline"
                 size="icon"
-                className="w-8 h-8 rounded-md bg-background/50 border border-input flex items-center justify-center text-ink/70 transition-all hover:border-brand/25 hover:text-brand p-0"
+                className="w-8 h-8 rounded-md bg-background/50 border border-input flex items-center justify-center text-ink/70 transition-all hover:border-brand/25 hover:text-brand p-0 touch-press"
               >
                 <ChevronRight className="w-3.5 h-3.5" />
               </ShadButton>
@@ -472,7 +504,7 @@ function ComplianceList({ items }: { items: FleetTask[] }) {
         <li key={t.id} className="relative list-none">
           <Card
             className={cn(
-              "p-3 flex items-start gap-3 rounded-md transition-all wl-panel",
+              "p-3 flex items-start gap-3 rounded-md transition-all wl-panel touch-press",
               t.priority === "high"
                 ? "bg-destructive/8 border-destructive/25 hover:border-destructive/40"
                 : t.priority === "medium"
@@ -604,7 +636,7 @@ const KnowledgeGapRow: React.FC<{
       transition={{ duration: 0.18 }}
       className="mb-2 list-none"
     >
-      <Card className="wl-panel border-black/8 hover:border-brand/25 transition-all p-3 flex items-start gap-3 rounded-md">
+      <Card className="wl-panel border-black/8 hover:border-brand/25 transition-all p-3 flex items-start gap-3 rounded-md touch-press">
         <div className="flex items-start gap-3 w-full">
           <BookOpen className="w-4 h-4 text-brand shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0 text-left">
@@ -734,7 +766,7 @@ const OpenTaskRow: React.FC<{
       transition={{ duration: 0.18 }}
       className="mb-2 list-none"
     >
-      <Card className="wl-panel border-black/8 hover:border-brand/25 transition-all p-3 flex items-start gap-3 rounded-md">
+      <Card className="wl-panel border-black/8 hover:border-brand/25 transition-all p-3 flex items-start gap-3 rounded-md touch-press">
         <ShadButton
           variant="outline"
           size="icon"
@@ -800,7 +832,7 @@ function Escalations({ items }: { items: EscalationCall[] }) {
     <ul className="p-2 space-y-2 list-none">
       {items.map((c) => (
         <li key={c.id} className="relative list-none group">
-          <Card className="bg-destructive/6 border-destructive/15 hover:border-destructive/30 transition-all p-3 flex items-start gap-3 rounded-md relative wl-panel">
+          <Card className="bg-destructive/6 border-destructive/15 hover:border-destructive/30 transition-all p-3 flex items-start gap-3 rounded-md relative wl-panel touch-press">
             {/* Absolute overlay link covering the entire row target */}
             <Link
               to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}

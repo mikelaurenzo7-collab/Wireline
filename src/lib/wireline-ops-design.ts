@@ -86,6 +86,23 @@ export const OPS_CHANNEL_EMPTY = {
     description: "Deploy an agent to see availability and assignments on the live floor.",
     actions: [{ label: "Deploy agent", to: "/agents", primary: true }],
   },
+  fleetAgents: {
+    eyebrow: "Fleet",
+    title: "No agents yet",
+    description:
+      "Create your first AI agent below — it will answer calls, book appointments, and follow up for you.",
+  },
+  agentRecall: {
+    eyebrow: "Recall",
+    title: "No calls yet",
+    description:
+      "Once this agent takes calls, conversation summaries appear here as recall context.",
+  },
+  agentDockCalls: {
+    eyebrow: "Latest calls",
+    title: "No calls yet",
+    description: "When this agent starts taking calls, the latest outcomes show here.",
+  },
   phone: {
     eyebrow: "Call history",
     title: "No calls yet",
@@ -95,6 +112,11 @@ export const OPS_CHANNEL_EMPTY = {
       { label: "Wire a number", to: "/admin", primary: true },
       { label: "Start outbound", to: "/phone?tab=outbound" },
     ],
+  },
+  phoneNoMatch: {
+    eyebrow: "Call history",
+    title: "No matching calls",
+    description: "Try a different search term or switch the direction filter to All.",
   },
   sms: {
     eyebrow: "SMS",
@@ -115,6 +137,11 @@ export const OPS_CHANNEL_EMPTY = {
       { label: "Connect email", to: "/integrations", primary: true },
       { label: "Ask Director", to: "/chat" },
     ],
+  },
+  inboxDetail: {
+    eyebrow: "Conversation",
+    title: "Select a thread",
+    description: "Pick a conversation from the list to monitor or reply.",
   },
   pipeline: {
     eyebrow: "Pipeline",
@@ -157,6 +184,22 @@ export const OPS_CHANNEL_EMPTY = {
     title: "No matches",
     description: "Try a different search term or widen the time range filter.",
   },
+  intel: {
+    eyebrow: "Action queue",
+    title: "All clear",
+    description:
+      "No operator approvals waiting. Autonomous actions land here when agents need your sign-off.",
+    actions: [
+      { label: "Open live floor", to: "/ops?tab=floor", primary: true },
+      { label: "Coach in Chat", to: "/chat" },
+    ],
+  },
+  sentiment: {
+    eyebrow: "Fleet analytics",
+    title: "No conversations yet",
+    description: "Run a test call to populate sentiment and unit economics.",
+    actions: [{ label: "Call test line", to: "tel:+16306425661", primary: true }],
+  },
   campaigns: {
     eyebrow: "Campaigns",
     title: "No campaigns yet",
@@ -166,6 +209,40 @@ export const OPS_CHANNEL_EMPTY = {
       { label: "Create campaign", to: "/phone?tab=outbound", primary: true },
       { label: "Import leads", to: "/pipeline" },
     ],
+  },
+  outboundQueue: {
+    eyebrow: "Outbound queue",
+    title: "Queue is idle",
+    description:
+      "Upload a CSV of contacts and your agent will dial through them with full call notes saved to the CRM.",
+  },
+  campaignLeads: {
+    eyebrow: "Campaign leads",
+    title: "No leads in campaign",
+    description:
+      "Upload a CSV from Dispatch (Bulk mode) and assign this campaign — leads land here.",
+  },
+  callbacks: {
+    eyebrow: "Callbacks",
+    title: "No scheduled callbacks",
+    description:
+      "When agents use the schedule_callback tool during a call, those contacts appear here and are auto-dialed at the promised time.",
+  },
+  cadences: {
+    eyebrow: "Sequences",
+    title: "No sequences yet",
+    description:
+      "Define call → SMS → email steps with delays. Enroll leads from Pipeline or the API — the job worker runs each step automatically.",
+  },
+  appointmentsUpcoming: {
+    eyebrow: "Appointments",
+    title: "No active commitments",
+    description: "Book manually or let agents schedule during calls.",
+  },
+  appointmentsHistory: {
+    eyebrow: "History",
+    title: "No completed appointments yet",
+    description: "Completed and cancelled commitments appear here for follow-up.",
   },
   contactNotFound: {
     eyebrow: "Contact",
@@ -181,6 +258,20 @@ export const OPS_CHANNEL_EMPTY = {
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
       { label: "View call history", to: "/phone" },
     ],
+  },
+} as const;
+
+/** Dense training / fleet editor panel empties (nested sections, not route-level) */
+export const OPS_TRAINING_PANEL = {
+  rules: "No rules yet — add one below to set hard limits your agent always respects.",
+  directives: "No directives yet — add tactical constraints below.",
+  facts: "No facts yet — add knowledge entries below.",
+  pronunciation: "No rules yet. Add a row below.",
+  knowledge: {
+    eyebrow: "Knowledge base",
+    title: "No entries yet",
+    description:
+      "Upload a PDF, paste a policy, or add a FAQ below so this agent answers consistently.",
   },
 } as const;
 
@@ -229,6 +320,15 @@ export const OPS_TRIAGE_EMPTY = {
   },
 } as const;
 
+/** Triage page-level copy — toolbar + all-clear banner */
+export const OPS_TRIAGE_COPY = {
+  allClearStat: "All clear",
+  allClearBannerTitle: "Nothing needs attention",
+  allClearBannerBody:
+    "Hot leads, tasks, compliance flags, and escalations will surface here as your fleet runs.",
+  allClearBannerCta: "Monitor live floor",
+} as const;
+
 /** In-app help route — quick paths + page chrome */
 export const OPS_HELP = {
   title: "Help & demos",
@@ -272,8 +372,14 @@ export const OPS_CHANNEL_TOOLBAR = {
   },
   triage: {
     loading: "Scanning triage",
-    stat: (n: number) => `${n} need attention`,
+    stat: (n: number) => (n === 0 ? OPS_TRIAGE_COPY.allClearStat : `${n} need attention`),
     refresh: "Refresh",
+  },
+  ops: {
+    loading: "Syncing live ops",
+    floor: (n: number) => `${n} live caller${n === 1 ? "" : "s"}`,
+    intel: (n: number) => `${n} pending action${n === 1 ? "" : "s"}`,
+    analytics: "Fleet analytics",
   },
   insights: {
     stat: (days: number) => `${days}-day window`,
@@ -294,6 +400,9 @@ export const OPS_CHANNEL_TOOLBAR = {
       total > 0 ? `${queued} queued · ${total} leads` : "Queue idle",
     export: "Export",
   },
+  cadences: {
+    loading: "Loading sequences",
+  },
   contact: {
     loading: "Loading contact",
     stat: (events: number) => `${events} event${events === 1 ? "" : "s"}`,
@@ -306,6 +415,13 @@ export const OPS_CHANNEL_TOOLBAR = {
     loading: "Loading integrations",
     stat: (n: number) => `${n} carrier${n === 1 ? "" : "s"}`,
     sync: "Sync all",
+  },
+  dnc: {
+    loading: "Loading DNC list",
+    stat: (n: number) => `${n} blocked`,
+    refresh: "Refresh",
+    import: "Import CSV",
+    add: "Add number",
   },
 } as const;
 
@@ -361,7 +477,7 @@ export const OPS_FOUNDER = {
 
 /** Fleet / founder roster row class hooks (shared with AgentListPanel) */
 export const WL_FLEET_CLASSES = {
-  agentRow: "wl-fleet-agent-row",
+  agentRow: "wl-fleet-agent-row touch-press",
   agentRowActive: "wl-fleet-agent-row--active",
   agentRowList: "wl-fleet-agent-row--list",
   agentAvatar: "wl-fleet-agent-avatar",
@@ -387,7 +503,7 @@ export const WL_CHANNEL_CLASSES = {
   listColHeader:
     "hidden sm:grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_4.5rem] gap-2 px-3 py-2 border-b border-black/6 bg-black/[0.02]",
   threadRow:
-    "w-full text-left rounded-md p-3 border border-border bg-paper/40 transition-all hover:border-brand/25",
+    "w-full text-left rounded-md p-3 border border-border bg-paper/40 transition-all hover:border-brand/25 touch-press",
   threadRowActive: "bg-brand/8 border-brand/30",
 } as const;
 

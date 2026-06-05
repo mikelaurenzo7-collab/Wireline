@@ -5,6 +5,7 @@ import {
   OPS_COPY,
   OPS_PULSE_METRICS,
   OPS_CHANNEL_EMPTY,
+  OPS_TRAINING_PANEL,
   OPS_TRIAGE_EMPTY,
   OPS_HELP,
   OPS_SUPPORT_EMPTY,
@@ -73,6 +74,12 @@ describe("Wireline Live Ops design contract", () => {
     expect(OPS_TRIAGE_EMPTY.openTasks.actions?.some((a) => a.to.includes("intel"))).toBe(true);
   });
 
+  it("defines training panel nested empty copy", () => {
+    expect(OPS_TRAINING_PANEL.knowledge.title.toLowerCase()).toContain("entries");
+    expect(OPS_TRAINING_PANEL.rules.toLowerCase()).toContain("rules");
+    expect(OPS_TRAINING_PANEL.directives.toLowerCase()).toContain("directives");
+  });
+
   it("defines integrations and audit empty copy", () => {
     expect(OPS_CHANNEL_EMPTY.integrations.title.toLowerCase()).toContain("carrier");
     expect(OPS_CHANNEL_EMPTY.audit.actions.some((a) => a.to === "/agents")).toBe(true);
@@ -103,12 +110,14 @@ describe("Wireline Live Ops design contract", () => {
     expect(OPS_TRIAGE_ACCENTS.escalations).toBe(BRAND.rose);
     expect(OPS_INSIGHTS_GROUPS).toHaveLength(3);
     expect(OPS_CHANNEL_TOOLBAR.triage.stat(4)).toBe("4 need attention");
+    expect(OPS_CHANNEL_TOOLBAR.triage.stat(0)).toBe("All clear");
     expect(OPS_CHANNEL_TOOLBAR.insights.stat(30)).toBe("30-day window");
     expect(WL_CHANNEL_CLASSES.inboxGrid).toContain("wl-channel-inbox-grid");
     expect(OPS_CHANNEL_TOOLBAR.outbound.stat(2, 10)).toBe("2 queued · 10 leads");
     expect(OPS_CHANNEL_TOOLBAR.contact.stat(3)).toBe("3 events");
     expect(OPS_CHANNEL_TOOLBAR.fleet.agentsStat(2)).toBe("2 agents");
     expect(OPS_CHANNEL_TOOLBAR.integrations.stat(1)).toBe("1 carrier");
+    expect(OPS_CHANNEL_TOOLBAR.dnc.stat(12)).toBe("12 blocked");
     expect(OPS_PIPELINE.emptyColumn.toLowerCase()).toContain("drop");
     expect(WL_INTEGRATION_CLASSES.previewCard).toBe("wl-integration-preview-card");
     expect(WL_INTEGRATION_CLASSES.liveCard).toBe("wl-integration-live-card");
@@ -116,7 +125,7 @@ describe("Wireline Live Ops design contract", () => {
     expect(OPS_ADMIN.saveLabels.growth).toBe("Save growth settings");
     expect(WL_ADMIN_CLASSES.panel).toBe("wl-admin-panel");
     expect(OPS_FOUNDER.stat(6)).toBe("6 staff agents");
-    expect(WL_FLEET_CLASSES.agentRow).toBe("wl-fleet-agent-row");
+    expect(WL_FLEET_CLASSES.agentRow).toBe("wl-fleet-agent-row touch-press");
     expect(WL_FLEET_CLASSES.agentRowList).toBe("wl-fleet-agent-row--list");
     expect(WL_CHROME_CLASSES.drawerSection).toBe("wl-drawer-section-label");
   });

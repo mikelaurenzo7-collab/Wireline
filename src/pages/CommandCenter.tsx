@@ -16,7 +16,14 @@ import { clsx } from "clsx";
 import { motion } from "motion/react";
 import { Zap, Globe, Activity } from "lucide-react";
 import { ShadButton } from "../components/ui/shadcn/ShadButton";
-import { WL_OPS_CLASSES, OPS_SENTIMENT_COLORS, OPS_COPY } from "../lib/wireline-ops-design";
+import { EmptyState } from "../components/ui/EmptyState";
+import {
+  WL_OPS_CLASSES,
+  OPS_SENTIMENT_COLORS,
+  OPS_COPY,
+  OPS_CHANNEL_TOOLBAR,
+  OPS_CHANNEL_EMPTY,
+} from "../lib/wireline-ops-design";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -396,6 +403,17 @@ export default function LiveOps() {
 
           <ClientToolbar
             className="shrink-0 px-2 sm:px-3"
+            left={
+              <span className="app-toolbar-stat">
+                {loading || presenceLoading
+                  ? OPS_CHANNEL_TOOLBAR.ops.loading
+                  : activeTab === "floor"
+                    ? OPS_CHANNEL_TOOLBAR.ops.floor(calls.length)
+                    : activeTab === "intel"
+                      ? OPS_CHANNEL_TOOLBAR.ops.intel(pendingActions)
+                      : OPS_CHANNEL_TOOLBAR.ops.analytics}
+              </span>
+            }
             actions={
               <ShadButton
                 type="button"
@@ -461,29 +479,16 @@ export default function LiveOps() {
                       </div>
 
                       {sentimentData.length === 0 ? (
-                        <div className="h-48 flex flex-col items-center justify-center gap-3 text-center border border-dashed border-brand/15 rounded-md bg-brand/[0.01] px-6">
-                          <div className="relative">
-                            <span
-                              aria-hidden
-                              className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
-                            />
-                            <div className="relative w-11 h-11 rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25 flex items-center justify-center">
-                              <Activity className="w-5 h-5" />
-                            </div>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="chrome-eyebrow text-brand/70">Awaiting signal</p>
-                            <p className="font-display italic text-lg text-ink leading-tight">
-                              {OPS_COPY.sentimentEmptyTitle}
-                            </p>
-                          </div>
-                          <p className="text-caption leading-relaxed">
-                            {OPS_COPY.sentimentEmptyHint}{" "}
-                            <a href={OPS_COPY.testCallHref} className="text-brand hover:underline">
-                              {OPS_COPY.testCallNumber}
-                            </a>
-                          </p>
-                        </div>
+                        <EmptyState
+                          icon={Activity}
+                          eyebrow={OPS_CHANNEL_EMPTY.sentiment.eyebrow}
+                          title={OPS_CHANNEL_EMPTY.sentiment.title}
+                          description={OPS_CHANNEL_EMPTY.sentiment.description}
+                          actions={[...OPS_CHANNEL_EMPTY.sentiment.actions]}
+                          density="compact"
+                          withHalo={false}
+                          className="py-8"
+                        />
                       ) : (
                         <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8">
                           <div className="w-full sm:w-1/2 h-[150px] min-w-0">

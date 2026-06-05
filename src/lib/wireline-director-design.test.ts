@@ -50,6 +50,8 @@ describe("Wireline Director design contract", () => {
     expect(DIRECTOR_COMPOSER_CONTEXT.coachingPrefix).toBe("Coaching");
     expect(DIRECTOR_COMPOSER_CONTEXT.closePanelLabel).toContain("Close");
     expect(WL_DIRECTOR_CLASSES.composerSendRow).toBe("wl-composer-send-row");
+    expect(WL_DIRECTOR_CLASSES.composerContextPill).toBe("wl-composer-context-pill");
+    expect(WL_DIRECTOR_CLASSES.composerSendBtn).toBe("wl-composer-send-btn");
     expect(WL_DIRECTOR_CLASSES.scrollToBottom).toBe("wl-scroll-to-bottom-btn");
     expect(WL_DIRECTOR_CLASSES.liveOrchestra).toBe("wl-live-orchestra");
     expect(WL_DIRECTOR_CLASSES.microLabel).toBe("wl-director-micro");
@@ -186,5 +188,10 @@ describe("Wireline Director design contract", () => {
       expect(DIRECTOR_COMPOSER_ACCESSORY_HINTS[kind].length).toBeGreaterThan(8);
     }
     expect(Object.keys(DIRECTOR_COMPOSER_ACCESSORY_HINTS)).toHaveLength(kinds.length);
+  });
+
+  it("composer context copy includes send hint and toolbar label", () => {
+    expect(DIRECTOR_COMPOSER_CONTEXT.sendHint).toMatch(/Enter/i);
+    expect(DIRECTOR_COMPOSER_CONTEXT.toolbarLabel).toBeTruthy();
   });
 });

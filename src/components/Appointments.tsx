@@ -15,8 +15,6 @@ import {
   Phone,
   StickyNote,
   Bot,
-  LayoutList,
-  LayoutGrid,
   AlertOctagon,
 } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -24,14 +22,14 @@ import { motion, AnimatePresence } from "motion/react";
 import { authFetch } from "../lib/api";
 import { cn, logFetchError } from "../lib/utils";
 import PageShell, { Panel } from "./PageShell";
-import HubTabs, { CHANNELS_HUB } from "./HubTabs";
 import ClientToolbar from "./layout/ClientToolbar";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
 import { ChannelListColHeader } from "./layout/ChannelInbox";
-import { OPS_CHANNEL_TOOLBAR } from "../lib/wireline-ops-design";
+import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR } from "../lib/wireline-ops-design";
 import { useToast } from "../contexts/ToastContext";
 import ConfirmModal from "./ConfirmModal";
 import { EmptyState } from "./ui/EmptyState";
+import { SegmentStrip } from "./ui/SegmentStrip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { Input } from "./ui/shadcn/Input";
@@ -499,7 +497,7 @@ function CalendarGrid({
                             disableAnimations
                             onClick={() => onSelect(a)}
                             className={cn(
-                              "w-full h-auto justify-start px-1.5 py-0.5 rounded text-[9px] truncate",
+                              "w-full h-auto justify-start px-1.5 py-0.5 rounded text-[9px] truncate touch-press",
                               m.bg,
                               m.color,
                             )}
@@ -617,194 +615,186 @@ export default function AppointmentsView({ embedded = false }: { embedded?: bool
 
   const actions = (
     <div className="flex items-center gap-2">
-      <div className="flex p-1 rounded-full wl-panel">
-        <ShadButton
-          aria-label="List view"
-          onClick={() => setViewMode("list")}
-          variant="ghost"
-          size="icon"
-          className={cn(
-            "w-8 h-8 rounded-full",
-            viewMode === "list" ? "bg-brand/20 text-brand" : "text-muted hover:text-ink",
-          )}
-        >
-          <LayoutList className="w-3.5 h-3.5" />
-        </ShadButton>
-        <ShadButton
-          aria-label="Calendar view"
-          onClick={() => setViewMode("calendar")}
-          variant="ghost"
-          size="icon"
-          className={cn(
-            "w-8 h-8 rounded-full",
-            viewMode === "calendar" ? "bg-brand/20 text-brand" : "text-muted hover:text-ink",
-          )}
-        >
-          <LayoutGrid className="w-3.5 h-3.5" />
-        </ShadButton>
-      </div>
+      <SegmentStrip
+        variant="soft"
+        aria-label="Appointments view"
+        testIdPrefix="appointments-view"
+        value={viewMode}
+        onChange={setViewMode}
+        options={[
+          { value: "list", label: "List" },
+          { value: "calendar", label: "Calendar" },
+        ]}
+      />
       <ShadButton
         onClick={() => {
           setEditTarget(null);
           setShowModal(true);
         }}
         variant="default"
-        className="h-9 px-4 rounded-full text-[10px] uppercase tracking-[0.28em]"
+        className="h-9 px-4 rounded-full text-[10px] uppercase tracking-[0.28em] touch-press"
       >
-        <Plus className="w-3.5 h-3.5" /> Book
+        <Plus className="w-3.5 h-3.5" /> {OPS_CHANNEL_TOOLBAR.appointments.book}
       </ShadButton>
     </div>
+  );
+
+  const appointmentsShell = (
+    <PageShell
+      title={embedded ? "" : "Appointments"}
+      eyebrow={embedded ? undefined : "Operations · Schedule"}
+      subtitle={embedded ? undefined : "Appointments scheduled and managed by your agents."}
+    >
+      {isLoading ? (
+        <ClientRouteLoading
+          icon={<CalendarIcon className="w-6 h-6" />}
+          label={OPS_CHANNEL_TOOLBAR.appointments.loading}
+          className="h-full min-h-[280px]"
+        />
+      ) : viewMode === "calendar" ? (
+        <Panel title="Calendar" hint="Monthly view" icon={CalendarIcon} flush>
+          <CalendarGrid
+            appointments={appointments}
+            onSelect={(a) => {
+              setEditTarget(a);
+              setShowModal(true);
+            }}
+          />
+        </Panel>
+      ) : (
+        <div className="h-full grid grid-cols-1 xl:grid-cols-2 gap-3 overflow-hidden">
+          {/* Active */}
+          <Panel
+            title="Upcoming"
+            hint={`${scheduled.length} scheduled`}
+            icon={CalendarIcon}
+            scroll
+            flush
+          >
+            <AnimatePresence mode="popLayout">
+              {scheduled.length === 0 ? (
+                <motion.div
+                  key="empty-active"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="h-full min-h-[200px]"
+                >
+                  <EmptyState
+                    icon={CalendarIcon}
+                    eyebrow={OPS_CHANNEL_EMPTY.appointmentsUpcoming.eyebrow}
+                    title={OPS_CHANNEL_EMPTY.appointmentsUpcoming.title}
+                    description={OPS_CHANNEL_EMPTY.appointmentsUpcoming.description}
+                    density="compact"
+                    withHalo={false}
+                    actions={[
+                      {
+                        label: OPS_CHANNEL_TOOLBAR.appointments.book,
+                        onClick: () => {
+                          setEditTarget(null);
+                          setShowModal(true);
+                        },
+                        primary: true,
+                      },
+                    ]}
+                    className="h-full py-8"
+                  />
+                </motion.div>
+              ) : (
+                <>
+                  <ChannelListColHeader
+                    columns={[
+                      { label: "Customer" },
+                      { label: "When" },
+                      { label: "Status", className: "text-right" },
+                    ]}
+                    className="grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_5rem]"
+                  />
+                  <div className="divide-y divide-black/6">
+                    {scheduled.map((appt) => (
+                      <AppointmentRow
+                        key={appt.id}
+                        appt={appt}
+                        agents={agents}
+                        deleting={deletingId === appt.id}
+                        onEdit={() => {
+                          setEditTarget(appt);
+                          setShowModal(true);
+                        }}
+                        onDelete={() => handleDelete(appt.id)}
+                        onStatusChange={(s) => handleStatusChange(appt.id, s)}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </AnimatePresence>
+          </Panel>
+
+          {/* Completed/Cancelled */}
+          <Panel
+            title="History"
+            hint={`${completed.length} records`}
+            icon={CheckCircle2}
+            scroll
+            flush
+          >
+            <AnimatePresence mode="popLayout">
+              {completed.length === 0 ? (
+                <motion.div
+                  key="empty-hist"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="h-full min-h-[200px]"
+                >
+                  <EmptyState
+                    icon={CheckCircle2}
+                    eyebrow={OPS_CHANNEL_EMPTY.appointmentsHistory.eyebrow}
+                    title={OPS_CHANNEL_EMPTY.appointmentsHistory.title}
+                    description={OPS_CHANNEL_EMPTY.appointmentsHistory.description}
+                    density="compact"
+                    withHalo={false}
+                    className="h-full py-8"
+                  />
+                </motion.div>
+              ) : (
+                <div className="divide-y divide-black/6">
+                  {completed.map((appt) => (
+                    <AppointmentRow
+                      key={appt.id}
+                      appt={appt}
+                      agents={agents}
+                      deleting={deletingId === appt.id}
+                      onEdit={() => {
+                        setEditTarget(appt);
+                        setShowModal(true);
+                      }}
+                      onDelete={() => handleDelete(appt.id)}
+                      onStatusChange={(s) => handleStatusChange(appt.id, s)}
+                    />
+                  ))}
+                </div>
+              )}
+            </AnimatePresence>
+          </Panel>
+        </div>
+      )}
+    </PageShell>
   );
 
   return (
     <>
       <div className="h-full flex flex-col min-h-0">
-        {!embedded && <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />}
-        {embedded && (
-          <ClientToolbar
-            left={
-              <span className="app-toolbar-stat">
-                {isLoading
-                  ? OPS_CHANNEL_TOOLBAR.appointments.loading
-                  : OPS_CHANNEL_TOOLBAR.appointments.stat(scheduled.length)}
-              </span>
-            }
-            actions={actions}
-          />
-        )}
-        <div className="flex-1 min-h-0">
-          <PageShell
-            title={embedded ? "" : "Appointments"}
-            eyebrow={embedded ? undefined : "Operations · Schedule"}
-            subtitle={embedded ? undefined : "Appointments scheduled and managed by your agents."}
-            actions={embedded ? undefined : actions}
-          >
-            {isLoading ? (
-              <ClientRouteLoading
-                icon={<CalendarIcon className="w-6 h-6" />}
-                label={OPS_CHANNEL_TOOLBAR.appointments.loading}
-                className="h-full min-h-[280px]"
-              />
-            ) : viewMode === "calendar" ? (
-              <Panel title="Calendar" hint="Monthly view" icon={CalendarIcon} flush>
-                <CalendarGrid
-                  appointments={appointments}
-                  onSelect={(a) => {
-                    setEditTarget(a);
-                    setShowModal(true);
-                  }}
-                />
-              </Panel>
-            ) : (
-              <div className="h-full grid grid-cols-1 xl:grid-cols-2 gap-3 overflow-hidden">
-                {/* Active */}
-                <Panel
-                  title="Upcoming"
-                  hint={`${scheduled.length} scheduled`}
-                  icon={CalendarIcon}
-                  scroll
-                  flush
-                >
-                  <AnimatePresence mode="popLayout">
-                    {scheduled.length === 0 ? (
-                      <motion.div
-                        key="empty-active"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="h-full min-h-[200px]"
-                      >
-                        <EmptyState
-                          icon={CalendarIcon}
-                          title="No active commitments"
-                          description="Book a commitment manually or let agents schedule during calls."
-                          actions={[
-                            {
-                              label: "Book appointment",
-                              onClick: () => {
-                                setEditTarget(null);
-                                setShowModal(true);
-                              },
-                              primary: true,
-                            },
-                          ]}
-                          className="h-full py-8"
-                        />
-                      </motion.div>
-                    ) : (
-                      <>
-                        <ChannelListColHeader
-                          columns={[
-                            { label: "Customer" },
-                            { label: "When" },
-                            { label: "Status", className: "text-right" },
-                          ]}
-                          className="grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_5rem]"
-                        />
-                        <div className="divide-y divide-black/6">
-                          {scheduled.map((appt) => (
-                            <AppointmentRow
-                              key={appt.id}
-                              appt={appt}
-                              agents={agents}
-                              deleting={deletingId === appt.id}
-                              onEdit={() => {
-                                setEditTarget(appt);
-                                setShowModal(true);
-                              }}
-                              onDelete={() => handleDelete(appt.id)}
-                              onStatusChange={(s) => handleStatusChange(appt.id, s)}
-                            />
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </AnimatePresence>
-                </Panel>
-
-                {/* Completed/Cancelled */}
-                <Panel
-                  title="History"
-                  hint={`${completed.length} records`}
-                  icon={CheckCircle2}
-                  scroll
-                  flush
-                >
-                  <AnimatePresence mode="popLayout">
-                    {completed.length === 0 ? (
-                      <motion.div
-                        key="empty-hist"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="h-full min-h-[200px] flex items-center justify-center"
-                      >
-                        <p className="text-[9px] uppercase tracking-[0.5em] text-ink/40">
-                          No completed appointments yet
-                        </p>
-                      </motion.div>
-                    ) : (
-                      <div className="divide-y divide-black/6">
-                        {completed.map((appt) => (
-                          <AppointmentRow
-                            key={appt.id}
-                            appt={appt}
-                            agents={agents}
-                            deleting={deletingId === appt.id}
-                            onEdit={() => {
-                              setEditTarget(appt);
-                              setShowModal(true);
-                            }}
-                            onDelete={() => handleDelete(appt.id)}
-                            onStatusChange={(s) => handleStatusChange(appt.id, s)}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </AnimatePresence>
-                </Panel>
-              </div>
-            )}
-          </PageShell>
-        </div>
+        <ClientToolbar
+          left={
+            <span className="app-toolbar-stat">
+              {isLoading
+                ? OPS_CHANNEL_TOOLBAR.appointments.loading
+                : OPS_CHANNEL_TOOLBAR.appointments.stat(scheduled.length)}
+            </span>
+          }
+          actions={actions}
+        />
+        <div className="flex-1 min-h-0">{appointmentsShell}</div>
       </div>
 
       <AnimatePresence>
@@ -859,7 +849,7 @@ function AppointmentRow({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 8 }}
       transition={{ duration: 0.18 }}
-      className="px-4 py-3.5 hover:bg-black/3 transition-colors group"
+      className="px-4 py-3.5 hover:bg-black/3 transition-colors group touch-press"
     >
       <div className="flex items-start gap-3">
         <div className="w-9 h-9 rounded-md wl-panel flex items-center justify-center text-brand shrink-0 mt-0.5">

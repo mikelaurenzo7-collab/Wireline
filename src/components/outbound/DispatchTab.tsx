@@ -28,7 +28,8 @@ import { Link } from "react-router-dom";
 import { ClaudeRecipeButton } from "../ClaudeRecipes";
 import { Panel } from "../PageShell";
 import { EmptyState } from "../ui/EmptyState";
-import { BRAND } from "../../constants/brand-colors";
+import { SegmentStrip } from "../ui/SegmentStrip";
+import { OPS_CHANNEL_EMPTY } from "../../lib/wireline-ops-design";
 import { ChannelListColHeader } from "../layout/ChannelInbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
 import { Checkbox } from "../ui/shadcn/Checkbox";
@@ -145,28 +146,17 @@ export default function DispatchTab({
             >
               <div className="space-y-4">
                 {/* Mode toggle */}
-                <div className="flex items-center gap-2">
-                  <div className="flex p-1 rounded-full wl-panel border border-border">
-                    {(["single", "bulk"] as const).map((m) => (
-                      <ShadButton
-                        key={m}
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        disableAnimations
-                        onClick={() => setMode(m)}
-                        className={cn(
-                          "h-auto px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.25em]",
-                          mode === m
-                            ? "bg-brand/20 text-brand hover:bg-brand/20 hover:text-brand"
-                            : "text-muted hover:text-ink",
-                        )}
-                      >
-                        {m === "single" ? "Single" : "Bulk"}
-                      </ShadButton>
-                    ))}
-                  </div>
-                </div>
+                <SegmentStrip
+                  variant="soft"
+                  aria-label="Dispatch mode"
+                  testIdPrefix="dispatch-mode"
+                  value={mode}
+                  onChange={setMode}
+                  options={[
+                    { value: "single", label: "Single" },
+                    { value: "bulk", label: "Bulk" },
+                  ]}
+                />
 
                 <div className="space-y-1.5">
                   <label className="app-section-title flex items-center gap-1.5">
@@ -504,9 +494,11 @@ export default function DispatchTab({
                 {leads.length === 0 ? (
                   <EmptyState
                     icon={UploadCloud}
-                    title="Queue is idle"
-                    description="Upload a CSV of contacts and your agent will dial through them with full call notes saved to the CRM."
-                    accent={BRAND.purple}
+                    eyebrow={OPS_CHANNEL_EMPTY.outboundQueue.eyebrow}
+                    title={OPS_CHANNEL_EMPTY.outboundQueue.title}
+                    description={OPS_CHANNEL_EMPTY.outboundQueue.description}
+                    density="compact"
+                    withHalo={false}
                     actions={[
                       {
                         label: "Upload CSV",
@@ -534,7 +526,7 @@ export default function DispatchTab({
                           animate={{ opacity: 1, y: 0 }}
                           key={lead.id || idx}
                           className={cn(
-                            "px-4 py-3 flex flex-col sm:flex-row gap-3 transition-colors items-start sm:items-center",
+                            "px-4 py-3 flex flex-col sm:flex-row gap-3 transition-colors items-start sm:items-center touch-press",
                             lead.status === "Queued" ? "bg-brand/5" : "hover:bg-black/3",
                           )}
                         >

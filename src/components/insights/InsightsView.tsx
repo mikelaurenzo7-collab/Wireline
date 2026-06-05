@@ -19,14 +19,13 @@ import {
   Megaphone,
   Target,
 } from "lucide-react";
-import { cn } from "../../lib/utils";
 import CsvExportButton from "../CsvExportButton";
 import GoalsView from "../GoalsView";
 import PageShell from "../PageShell";
 import WidgetBoundary from "../WidgetBoundary";
 import ClientRouteViewport from "../layout/ClientRouteViewport";
 import ClientToolbar from "../layout/ClientToolbar";
-import { ShadButton } from "../ui/shadcn/ShadButton";
+import { SegmentStrip } from "../ui/SegmentStrip";
 import { OPS_CHANNEL_TOOLBAR, OPS_INSIGHTS_GROUPS } from "../../lib/wireline-ops-design";
 import { resolveAppPageSubTabId, resolveAppPageSubTabRoute } from "../../lib/page-sub-tabs";
 
@@ -127,27 +126,13 @@ export default function InsightsView() {
   const visibleTabs = allTabs.filter((tab) => (groupTabIds as readonly string[]).includes(tab.id));
 
   const dayPicker = (
-    <div className="flex items-center gap-px p-1 rounded-full border border-black/8 bg-black/[0.03]">
-      {DAY_OPTIONS.map((d) => (
-        <ShadButton
-          key={d}
-          type="button"
-          disableAnimations
-          variant={days === d ? "default" : "ghost"}
-          size="sm"
-          onClick={() => setDays(d)}
-          data-testid={`insights-days-${d}`}
-          className={cn(
-            "app-segment-btn h-9 sm:h-7 px-3 rounded-full text-xs sm:text-[11px] font-medium tracking-wide",
-            days === d
-              ? "bg-brand text-on-brand shadow-sm shadow-brand/25"
-              : "text-muted hover:text-ink",
-          )}
-        >
-          {d}d
-        </ShadButton>
-      ))}
-    </div>
+    <SegmentStrip
+      aria-label="Insights date range"
+      testIdPrefix="insights-days"
+      options={DAY_OPTIONS.map((d) => ({ value: String(d), label: `${d}d` }))}
+      value={String(days)}
+      onChange={(v) => setDays(Number(v) as (typeof DAY_OPTIONS)[number])}
+    />
   );
 
   return (

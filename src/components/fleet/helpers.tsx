@@ -18,6 +18,7 @@
  * No behavior change. ~230 LOC moved.
  */
 import { cn } from "../../lib/utils";
+import { BRAND } from "../../constants/brand-colors";
 
 /** Tiny SVG sparkline — renders a 7-value array as a smooth path. */
 export function Sparkline({
@@ -47,8 +48,8 @@ export function Sparkline({
     >
       <defs>
         <linearGradient id="sp-grad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#8B3FD6" stopOpacity="0.8" />
-          <stop offset="100%" stopColor="#8B3FD6" stopOpacity="0.8" />
+          <stop offset="0%" stopColor={BRAND.purple} stopOpacity="0.8" />
+          <stop offset="100%" stopColor={BRAND.purple} stopOpacity="0.8" />
         </linearGradient>
       </defs>
       <path

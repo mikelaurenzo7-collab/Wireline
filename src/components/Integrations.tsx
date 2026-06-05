@@ -229,7 +229,7 @@ export default function Integrations() {
       onClick={syncAll}
       disabled={syncing}
       variant="outline"
-      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full wl-panel border border-input text-ink text-[11px] uppercase tracking-[0.22em] hover:border-brand/40 transition-colors disabled:opacity-50"
+      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full wl-panel border border-input text-ink text-[11px] uppercase tracking-[0.22em] hover:border-brand/40 transition-colors disabled:opacity-50 touch-press"
     >
       <RotateCw className={`w-3 h-3 text-brand ${syncing ? "animate-spin" : ""}`} />
       {syncing ? "Syncing…" : OPS_CHANNEL_TOOLBAR.integrations.sync}
@@ -296,7 +296,8 @@ export default function Integrations() {
                 {accounts.length === 0 ? (
                   <EmptyState
                     icon={Mail}
-                    withConstellation
+                    density="compact"
+                    withHalo={false}
                     eyebrow={OPS_CHANNEL_EMPTY.integrations.eyebrow}
                     title={OPS_CHANNEL_EMPTY.integrations.title}
                     description={OPS_CHANNEL_EMPTY.integrations.description}
@@ -370,7 +371,7 @@ export default function Integrations() {
                             initial={{ opacity: 0, y: 4 }}
                             animate={{ opacity: 1, y: 0 }}
                             key={acc.id}
-                            className="px-3 py-2 flex flex-col xl:flex-row xl:items-center gap-3 hover:bg-brand/[0.025] transition-colors group"
+                            className="px-3 py-2 flex flex-col xl:flex-row xl:items-center gap-3 hover:bg-brand/[0.025] transition-colors group touch-press"
                           >
                             <div className="flex items-center gap-3 min-w-0 flex-1">
                               <div

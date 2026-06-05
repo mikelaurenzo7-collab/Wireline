@@ -37,6 +37,8 @@ import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { AGENT_TOOL_CATALOG, type AgentToolCatalogEntry } from "../lib/agent-capabilities";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { EmptyState } from "./ui/EmptyState";
+import { OPS_CHANNEL_EMPTY } from "../lib/wireline-ops-design";
 
 interface Pulse {
   calls: number;
@@ -356,9 +358,18 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
             Latest calls
           </p>
           {overview && overview.recentCalls.length === 0 ? (
-            <p className="text-[11px] text-ink/40 leading-relaxed">
-              No calls yet. When {agentName} starts taking calls, the latest outcomes show here.
-            </p>
+            <EmptyState
+              icon={Phone}
+              eyebrow={OPS_CHANNEL_EMPTY.agentDockCalls.eyebrow}
+              title={OPS_CHANNEL_EMPTY.agentDockCalls.title}
+              description={OPS_CHANNEL_EMPTY.agentDockCalls.description.replace(
+                "this agent",
+                agentName,
+              )}
+              density="compact"
+              withHalo={false}
+              className="py-2"
+            />
           ) : (
             <div className="space-y-1.5">
               {(overview?.recentCalls ?? []).map((c, i) => (

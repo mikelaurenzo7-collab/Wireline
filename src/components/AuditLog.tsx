@@ -128,7 +128,7 @@ const EventRow = React.memo(
         tabIndex={0}
         aria-expanded={expanded}
         aria-label={`${event.event_type || event.action} event details`}
-        className="relative wl-panel border border-border rounded-md overflow-hidden hover:border-brand/25 transition-all cursor-pointer outline-none focus:ring-2 focus:ring-brand/50"
+        className="relative wl-panel border border-border rounded-md overflow-hidden hover:border-brand/25 transition-all cursor-pointer outline-none focus:ring-2 focus:ring-brand/50 touch-press"
         onClick={onToggle}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -415,7 +415,7 @@ export default function AuditLog() {
                   aria-label={filtersExpanded ? "Hide filters" : "Show filters"}
                   aria-expanded={filtersExpanded}
                   className={cn(
-                    "h-9 rounded-full wl-ops-chip",
+                    "h-9 rounded-full wl-ops-chip touch-press",
                     filtersExpanded && "border-brand/40 text-brand",
                   )}
                 >
@@ -429,7 +429,7 @@ export default function AuditLog() {
                   disableAnimations
                   onClick={fetchAudit}
                   disabled={loading}
-                  className="h-9 rounded-full wl-ops-chip text-muted"
+                  className="h-9 rounded-full wl-ops-chip text-muted touch-press"
                 >
                   {loading ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -446,7 +446,7 @@ export default function AuditLog() {
                   onClick={handleExport}
                   disabled={exporting || events.length === 0}
                   aria-label={`Export ${events.length} events as CSV`}
-                  className="h-9 rounded-full bg-brand/15 border-brand/40 text-brand wl-ops-chip hover:bg-brand/25 shadow-none"
+                  className="h-9 rounded-full bg-brand/15 border-brand/40 text-brand wl-ops-chip hover:bg-brand/25 shadow-none touch-press"
                 >
                   {exporting ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -590,6 +590,8 @@ export default function AuditLog() {
                     eyebrow={OPS_CHANNEL_EMPTY.auditNoMatch.eyebrow}
                     title={OPS_CHANNEL_EMPTY.auditNoMatch.title}
                     description={OPS_CHANNEL_EMPTY.auditNoMatch.description}
+                    density="compact"
+                    withHalo={false}
                     actions={[
                       { label: "Clear search", onClick: () => setSearchQuery(""), primary: true },
                     ]}
@@ -601,6 +603,8 @@ export default function AuditLog() {
                     title={OPS_CHANNEL_EMPTY.audit.title}
                     description={OPS_CHANNEL_EMPTY.audit.description}
                     actions={[...OPS_CHANNEL_EMPTY.audit.actions]}
+                    density="compact"
+                    withHalo={false}
                   />
                 )
               ) : (

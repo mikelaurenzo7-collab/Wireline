@@ -19,6 +19,15 @@ export const CLOSED_CONFIRM: ConfirmState = {
   onConfirm: () => {},
 };
 
+/** Analytics outcome bar fill — brand/signal/destructive tokens only */
+export function campaignOutcomeBarClass(status: string): string {
+  if (status?.includes("Blocked")) return "bg-amber-500";
+  if (status === "Failed" || status?.includes("Fail")) return "bg-destructive";
+  if (status === "Completed") return "bg-[var(--wl-signal)]";
+  if (status === "Queued") return "bg-brand/60";
+  return "bg-muted-foreground/35";
+}
+
 export const CAMPAIGN_STATUS: Record<
   string,
   { text: string; bg: string; border: string; iconBorder: string }

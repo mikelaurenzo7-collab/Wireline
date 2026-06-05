@@ -426,6 +426,72 @@ html, body, .marketing-surface, .app-surface {
   align-items: flex-end;
   justify-content: space-between;
   gap: 0.5rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-brand, #8b3fd6) 8%, transparent);
+  padding-top: 0.625rem;
+  margin-top: 0.125rem;
+}
+.wl-composer-toolbar-scroll {
+  position: relative;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+.wl-composer-toolbar-scroll::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 1.25rem;
+  pointer-events: none;
+  background: linear-gradient(
+    to left,
+    color-mix(in srgb, var(--paper, #f5f0e6) 92%, white),
+    transparent
+  );
+}
+.dark .wl-composer-toolbar-scroll::after {
+  background: linear-gradient(
+    to left,
+    color-mix(in srgb, var(--background) 92%, #1a1225),
+    transparent
+  );
+}
+.wl-composer-send-btn {
+  min-height: 2.5rem;
+  min-width: 2.5rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.wl-composer-input {
+  min-height: 3.25rem;
+  max-height: 14rem;
+}
+.wl-composer-context-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.2rem 0.2rem 0.45rem;
+  border-radius: 9999px;
+  border: 1px dashed color-mix(in srgb, var(--color-brand, #8b3fd6) 28%, transparent);
+  background: color-mix(in srgb, var(--color-brand, #8b3fd6) 6%, transparent);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--color-brand, #8b3fd6);
+}
+.wl-composer-context-clear {
+  min-height: 2rem;
+  min-width: 2rem;
+}
+@media (pointer: coarse) {
+  .wl-composer-context-clear {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
 }
 .wl-director-thread-scroll {
   scroll-padding-bottom: 1.5rem;
@@ -528,6 +594,17 @@ html, body, .marketing-surface, .app-surface {
   border-color: color-mix(in srgb, var(--color-brand, #8b3fd6) 28%, transparent);
   color: var(--color-brand, #8b3fd6);
 }
+.wl-composer-tool-chip--engaged::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: var(--color-brand, #8b3fd6);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--paper, #f5f0e6) 80%, white);
+}
 .wl-composer-tool-chip--active {
   border-color: color-mix(in srgb, var(--color-brand, #8b3fd6) 38%, transparent);
   background: color-mix(in srgb, var(--color-brand, #8b3fd6) 10%, var(--paper, #f5f0e6));
@@ -605,6 +682,14 @@ html, body, .marketing-surface, .app-surface {
 .wl-proposal-card {
   position: relative;
   overflow: hidden;
+}
+.wl-proposal-card[data-proposal="true"]:not([data-resolved="true"]) {
+  border-style: dashed;
+  border-color: rgba(139, 63, 214, 0.22);
+  background: color-mix(in srgb, var(--color-brand) 2%, var(--paper, #f5f0e6));
+}
+.dark .wl-proposal-card[data-proposal="true"]:not([data-resolved="true"]) {
+  background: color-mix(in srgb, var(--color-brand) 4%, transparent);
 }
 .wl-proposal-rail::before {
   content: "";
@@ -901,6 +986,60 @@ html, body, .marketing-surface, .app-surface {
 .wl-integration-live-card[data-proposal="true"] {
   border-style: dashed;
   border-color: rgba(139, 63, 214, 0.22);
+}
+.wl-integration-live-card[data-proposal="true"]:not([data-active="true"]):not([data-success="true"]) {
+  animation: wl-proposal-pulse 3.2s ease-in-out infinite;
+}
+@keyframes wl-proposal-pulse {
+  0%, 100% { border-color: rgba(139, 63, 214, 0.18); }
+  50% { border-color: rgba(139, 63, 214, 0.32); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wl-integration-live-card[data-proposal="true"] {
+    animation: none;
+  }
+}
+
+.wl-integration-live-card__brand-bar {
+  height: 4px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--wl-integration-accent, var(--color-brand)),
+    color-mix(in srgb, var(--wl-integration-accent, var(--color-brand)) 55%, transparent),
+    transparent
+  );
+}
+
+.wl-integration-live-card__wash {
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at top left,
+    var(--wl-integration-accent, var(--color-brand)),
+    transparent 70%
+  );
+}
+
+.wl-integration-live-card__icon {
+  background: linear-gradient(
+    135deg,
+    var(--wl-integration-accent, var(--color-brand)),
+    color-mix(in srgb, var(--wl-integration-accent, var(--color-brand)) 80%, #120f1a)
+  );
+}
+.wl-integration-live-card__icon--success {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--wl-signal) 20%, transparent);
+}
+
+.wl-integration-live-card__progress {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--wl-integration-accent, var(--color-brand)) 40%, transparent),
+    var(--wl-integration-accent, var(--color-brand))
+  );
 }
 
 /* Third-party demo thumbnails — isolated from app chrome; brand border only */
@@ -1424,6 +1563,24 @@ html, body, .marketing-surface, .app-surface {
   text-transform: uppercase;
   color: var(--color-muted);
   line-height: 1.3;
+}
+
+/* Segmented control track — Insights day range, channel pickers, compact toggles */
+.app-segment-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 0.25rem;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--color-ink) 8%, transparent);
+  background: color-mix(in srgb, var(--color-ink) 3%, transparent);
+}
+.dark .app-segment-strip {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+.app-segment-strip.wl-panel {
+  background: color-mix(in srgb, var(--paper, #f5f0e6) 90%, white);
 }
 
 /* Filter triggers and compact selects on channel pages */
@@ -6104,6 +6261,27 @@ html {
     transparent
   );
   opacity: 0.5;
+}
+
+/* Mobile route context — shorter editorial rail under TopBar */
+.wl-mobile-context-accent {
+  position: relative;
+  padding-left: 0.7rem;
+}
+.wl-mobile-context-accent::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.2rem;
+  bottom: 0.35rem;
+  width: 2px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-brand) 48%, transparent),
+    transparent
+  );
+  opacity: 0.45;
 }
 
 /* ── AUTH SHOWCASE PANEL ──

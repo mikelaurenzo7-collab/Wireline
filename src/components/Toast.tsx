@@ -5,6 +5,7 @@ import { useToast, type Toast } from "../contexts/ToastContext";
 import { useAuth } from "../contexts/AuthContext";
 import { isMarketingStickyCtaRoute, MARKETING_STICKY_CTA_BOTTOM } from "../lib/marketing-mobile";
 import { cn } from "../lib/utils";
+import { BRAND } from "../constants/brand-colors";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
 const META = {
@@ -17,11 +18,11 @@ const META = {
   error: { icon: XCircle, color: "#f43f5e", border: "border-rose-500/30", bg: "bg-rose-500/10" },
   warning: {
     icon: AlertTriangle,
-    color: "#8B3FD6",
+    color: BRAND.purple,
     border: "border-amber-500/30",
     bg: "bg-amber-500/10",
   },
-  info: { icon: Info, color: "#8B3FD6", border: "border-brand/30", bg: "bg-brand/10" },
+  info: { icon: Info, color: BRAND.purple, border: "border-brand/30", bg: "bg-brand/10" },
 };
 
 function ToastItem({ toast }: { toast: Toast }) {

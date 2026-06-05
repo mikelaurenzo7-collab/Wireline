@@ -24,7 +24,11 @@ export default function IntegrationLiveFeed({
   const isProposalFeed = actions.some((a) => a.source === "proposal");
 
   return (
-    <div className={cn("relative", className)}>
+    <div
+      className={cn("relative", className)}
+      aria-live={activeCount > 0 ? "polite" : undefined}
+      aria-label={isProposalFeed ? "Proposed integration actions" : "Integration actions"}
+    >
       <div className="flex items-center justify-between mb-2 px-0.5">
         <div className="flex items-center gap-1.5">
           <Plug className="w-3 h-3 text-brand/60" />

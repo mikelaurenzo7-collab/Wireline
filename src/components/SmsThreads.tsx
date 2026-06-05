@@ -181,7 +181,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
     </ShadButton>
   );
 
-  const showInitialLoad = embedded && loading && threads.length === 0;
+  const showInitialLoad = loading && threads.length === 0;
 
   const inboxBody = (
     <div className="flex-1 min-h-0">
@@ -193,7 +193,6 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
             ? undefined
             : "Two-way text conversations with customers — outbound from your agents, inbound replies routed here."
         }
-        actions={embedded ? undefined : refreshAction}
       >
         <Panel title="Inbox" hint="SMS · THREADS & REPLIES" icon={Inbox} flush className="h-full">
           <ChannelInboxGrid>
@@ -215,6 +214,8 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                   title={OPS_CHANNEL_EMPTY.sms.title}
                   description={OPS_CHANNEL_EMPTY.sms.description}
                   actions={[...OPS_CHANNEL_EMPTY.sms.actions]}
+                  density="compact"
+                  withHalo={false}
                 />
               ) : (
                 <div className="space-y-1.5">
@@ -273,8 +274,11 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
               {!activeThread ? (
                 <EmptyState
                   icon={MessageSquare}
-                  title="Pick a conversation"
-                  description="Select a thread on the left to see the full SMS history and reply."
+                  eyebrow={OPS_CHANNEL_EMPTY.inboxDetail.eyebrow}
+                  title={OPS_CHANNEL_EMPTY.inboxDetail.title}
+                  description={OPS_CHANNEL_EMPTY.inboxDetail.description}
+                  density="compact"
+                  withHalo={false}
                   className="h-full py-12"
                 />
               ) : (
@@ -380,18 +384,16 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
 
   return (
     <div className="h-full flex flex-col min-h-0">
-      {embedded && (
-        <ClientToolbar
-          left={
-            <span className="app-toolbar-stat">
-              {showInitialLoad
-                ? OPS_CHANNEL_TOOLBAR.sms.loading
-                : OPS_CHANNEL_TOOLBAR.sms.stat(threads.length)}
-            </span>
-          }
-          actions={refreshAction}
-        />
-      )}
+      <ClientToolbar
+        left={
+          <span className="app-toolbar-stat">
+            {showInitialLoad
+              ? OPS_CHANNEL_TOOLBAR.sms.loading
+              : OPS_CHANNEL_TOOLBAR.sms.stat(threads.length)}
+          </span>
+        }
+        actions={refreshAction}
+      />
       {showInitialLoad ? (
         <ClientRouteLoading
           icon={<MessageSquare className="w-7 h-7" />}

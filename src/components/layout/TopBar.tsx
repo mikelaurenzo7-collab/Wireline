@@ -216,8 +216,8 @@ export default function TopBar({
         className={cn(
           "shrink-0 sticky top-0 z-50 border-b lg:hidden transition-all duration-300 wl-panel-elevated elev-1",
           theme === "light"
-            ? "border-[#8B3FD6]/10 text-ink animate-fade-in"
-            : "border-[#8B3FD6]/20 text-white animate-fade-in",
+            ? "border-brand/10 text-ink animate-fade-in"
+            : "border-brand/20 text-white animate-fade-in",
         )}
         style={{
           paddingTop: "max(0px, env(safe-area-inset-top, 0))",

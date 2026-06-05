@@ -79,6 +79,7 @@ import {
   DIRECTOR_CAPABILITY_PILLS,
   DIRECTOR_LOADING_COPY,
   DIRECTOR_COMPOSER_HINTS,
+  DIRECTOR_COMPOSER_CONTEXT,
   LIVE_FEED_LABELS,
   WL_APP_CLASSES,
   WL_DIRECTOR_CLASSES,
@@ -1703,6 +1704,7 @@ export default function DirectorWorkspace({
               onKeyDown={onKeyDown}
               rows={2}
               disabled={isSending}
+              aria-describedby="director-composer-send-hint"
               placeholder={
                 isSending
                   ? "Director is working…"
@@ -1710,7 +1712,10 @@ export default function DirectorWorkspace({
                     ? `Coach ${focusedAgent.name} via Director…`
                     : DIRECTOR_COMPOSER_HINTS[composerHintIndex]
               }
-              className="w-full resize-none border-0 bg-transparent shadow-none text-[13px] text-foreground placeholder:text-muted-foreground/50 outline-none px-4 py-3 leading-normal disabled:opacity-60 focus-visible:ring-0"
+              className={cn(
+                WL_DIRECTOR_CLASSES.composerInput,
+                "w-full resize-none border-0 bg-transparent shadow-none text-[13px] text-foreground placeholder:text-muted-foreground/50 outline-none px-4 py-3 leading-normal disabled:opacity-60 focus-visible:ring-0",
+              )}
             />
 
             <DirectorComposerAccessory
@@ -1765,27 +1770,38 @@ export default function DirectorWorkspace({
                 className="hidden"
               />
 
-              <ShadButton
-                type="button"
-                size="sm"
-                disableAnimations
-                onClick={() => send(input)}
-                disabled={!input.trim() || isSending}
-                aria-label="Send message"
-                className="touch-press gap-2 px-4 py-2 h-auto text-[12px] font-semibold shadow-md shadow-brand/25 shrink-0"
-              >
-                {isSending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-                <span className="hidden sm:inline">Send</span>
-              </ShadButton>
+              <div className="flex items-center gap-2 shrink-0">
+                <span
+                  id="director-composer-send-hint"
+                  className="hidden lg:inline chrome-subtle whitespace-nowrap"
+                >
+                  {DIRECTOR_COMPOSER_CONTEXT.sendHint}
+                </span>
+                <ShadButton
+                  type="button"
+                  size="sm"
+                  disableAnimations
+                  onClick={() => send(input)}
+                  disabled={!input.trim() || isSending}
+                  aria-label="Send message"
+                  className={cn(
+                    WL_DIRECTOR_CLASSES.composerSendBtn,
+                    "touch-press app-primary-action gap-2 px-4 shadow-md shadow-brand/25",
+                  )}
+                >
+                  {isSending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  <span className="hidden sm:inline">Send</span>
+                </ShadButton>
+              </div>
             </div>
           </div>
 
-          <p className="text-center text-[9px] text-muted/60 mt-2 uppercase tracking-[0.12em]">
-            Enter to send · Shift+Enter for new line
+          <p className="text-center text-[9px] text-muted/60 mt-2 uppercase tracking-[0.12em] lg:hidden">
+            {DIRECTOR_COMPOSER_CONTEXT.sendHint}
           </p>
         </div>
       </div>

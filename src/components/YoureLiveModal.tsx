@@ -37,6 +37,7 @@ import {
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { CONSOLE_MAP, YOURE_LIVE_COPY } from "../lib/wireline-onboarding-copy";
 import { WIRELINE_DIRECTOR_BRAND } from "../lib/wireline-director-design";
+import { BRAND } from "../constants/brand-colors";
 import { cn } from "../lib/utils";
 
 const CONSOLE_MAP_ICONS = {
@@ -75,7 +76,14 @@ interface ConfettiPiece {
   delay: number;
 }
 
-const CONFETTI_COLORS = ["#8B3FD6", "#8B3FD6", "#8B6FA8", "#3B154C", "#C4B5A0", "#D4C9B8"];
+const CONFETTI_COLORS = [
+  BRAND.purple,
+  BRAND.purple,
+  BRAND.purpleMuted,
+  BRAND.purpleDeep,
+  BRAND.creamDeep,
+  BRAND.creamWarm,
+];
 
 function ConfettiExplosion({ active }: { active: boolean }) {
   const [pieces, setPieces] = useState<ConfettiPiece[]>([]);

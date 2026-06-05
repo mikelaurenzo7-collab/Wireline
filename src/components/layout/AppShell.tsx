@@ -359,7 +359,12 @@ export default function AppShell() {
               WL_APP_CLASSES.mobileContextBar,
             )}
           >
-            <div className="flex items-start justify-between gap-2">
+            <div
+              className={cn(
+                "flex items-start justify-between gap-2",
+                WL_APP_CLASSES.mobileContextAccent,
+              )}
+            >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 min-w-0">
                   {pageCtx.eyebrow && (

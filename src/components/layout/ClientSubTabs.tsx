@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import { useCallback, type ComponentType, type KeyboardEvent } from "react";
 import { motion } from "motion/react";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "../ui/shadcn/ShadButton";
@@ -30,10 +30,52 @@ export default function ClientSubTabs({
   "aria-label": ariaLabel = "Page sections",
   layoutIdPrefix = "client-subtab",
 }: ClientSubTabsProps) {
+  const focusTab = useCallback(
+    (index: number) => {
+      const tab = tabs[index];
+      if (!tab) return;
+      onChange(tab.id);
+      document.getElementById(`${layoutIdPrefix}-tab-${tab.id}`)?.focus();
+    },
+    [tabs, onChange, layoutIdPrefix],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLDivElement>) => {
+      const currentIndex = tabs.findIndex((t) => t.id === activeId);
+      if (currentIndex < 0) return;
+
+      let nextIndex: number | null = null;
+      switch (e.key) {
+        case "ArrowRight":
+        case "ArrowDown":
+          nextIndex = (currentIndex + 1) % tabs.length;
+          break;
+        case "ArrowLeft":
+        case "ArrowUp":
+          nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+          break;
+        case "Home":
+          nextIndex = 0;
+          break;
+        case "End":
+          nextIndex = tabs.length - 1;
+          break;
+        default:
+          return;
+      }
+
+      e.preventDefault();
+      focusTab(nextIndex);
+    },
+    [tabs, activeId, focusTab],
+  );
+
   return (
     <div
       role="tablist"
       aria-label={ariaLabel}
+      onKeyDown={handleKeyDown}
       className={cn(
         "shrink-0 flex items-center justify-center gap-1 overflow-x-auto scroll-viewport mb-2 md:mb-3 pb-0.5",
         className,
@@ -46,11 +88,13 @@ export default function ClientSubTabs({
           return (
             <ShadButton
               key={tab.id}
+              id={`${layoutIdPrefix}-tab-${tab.id}`}
               type="button"
               variant="ghost"
               disableAnimations
               role="tab"
               aria-selected={active}
+              tabIndex={active ? 0 : -1}
               onClick={() => onChange(tab.id)}
               className={cn(
                 "touch-press relative shrink-0 inline-flex min-h-9 sm:min-h-10 h-auto items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 transition-colors text-[10px] sm:text-[11px] uppercase tracking-[0.1em] font-medium whitespace-nowrap rounded-none",

@@ -20,6 +20,7 @@
 import React, { useId } from "react";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "./shadcn/ShadButton";
+import { BRAND } from "../../constants/brand-colors";
 
 type VoidSize = "sm" | "md" | "lg";
 type VoidVariant = "primary" | "secondary";
@@ -77,7 +78,7 @@ export function VoidButton({
           className="absolute inset-0 void-bg"
           aria-hidden="true"
           style={{
-            background: `radial-gradient(ellipse 120% 100% at 50% 110%, #3B154C 0%, #8B3FD6 45%, #6B2B99 100%)`,
+            background: `radial-gradient(ellipse 120% 100% at 50% 110%, ${BRAND.purpleDeep} 0%, ${BRAND.purple} 45%, ${BRAND.purpleMid} 100%)`,
             transition: "transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease",
           }}
         />

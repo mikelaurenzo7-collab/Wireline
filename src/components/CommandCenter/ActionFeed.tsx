@@ -25,10 +25,10 @@ import { motion, AnimatePresence } from "motion/react";
 import { clsx } from "clsx";
 import { authFetch } from "../../lib/api";
 import { useToast } from "../../contexts/ToastContext";
-import { InlineEmpty } from "../ui/InlineEmpty";
+import { EmptyState } from "../ui/EmptyState";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import type { ActionType } from "../../lib/action-types";
-import { OPS_COPY, WL_OPS_CLASSES } from "../../lib/wireline-ops-design";
+import { OPS_COPY, OPS_CHANNEL_EMPTY, WL_OPS_CLASSES } from "../../lib/wireline-ops-design";
 
 interface ActionItem {
   id: string;
@@ -121,7 +121,18 @@ export function ActionFeed({
 
       <div className="flex-1 scroll-viewport pr-2 -mr-2 space-y-3 custom-scrollbar">
         {actions.length === 0 ? (
-          <InlineEmpty icon={Sparkles} label={OPS_COPY.intelEmpty} className="h-64" />
+          <div className="min-h-[220px] flex items-center justify-center wl-panel rounded-md">
+            <EmptyState
+              icon={Sparkles}
+              eyebrow={OPS_CHANNEL_EMPTY.intel.eyebrow}
+              title={OPS_CHANNEL_EMPTY.intel.title}
+              description={OPS_CHANNEL_EMPTY.intel.description}
+              actions={[...OPS_CHANNEL_EMPTY.intel.actions]}
+              density="compact"
+              withHalo={false}
+              className="py-6"
+            />
+          </div>
         ) : (
           actions.map((action) => {
             const isExpanded = expandedId === action.id;

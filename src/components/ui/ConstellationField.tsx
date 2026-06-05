@@ -14,6 +14,9 @@
  */
 import React, { useId, useMemo } from "react";
 import { cn } from "../../lib/utils";
+import { BRAND_FALLBACK } from "../../lib/brand-token";
+
+const PRIMARY_FALLBACK = `var(--primary, ${BRAND_FALLBACK})`;
 
 interface Particle {
   id: number;
@@ -136,8 +139,8 @@ export function ConstellationField({
       >
         <defs>
           <radialGradient id={`constellation-node-${uid}`}>
-            <stop offset="0%" stopColor="var(--primary, #8B3FD6)" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="var(--primary, #8B3FD6)" stopOpacity="0" />
+            <stop offset="0%" stopColor={PRIMARY_FALLBACK} stopOpacity="0.9" />
+            <stop offset="100%" stopColor={PRIMARY_FALLBACK} stopOpacity="0" />
           </radialGradient>
         </defs>
 
@@ -151,7 +154,7 @@ export function ConstellationField({
               y1={particles[from].cy}
               x2={particles[to].cx}
               y2={particles[to].cy}
-              stroke="var(--primary, #8B3FD6)"
+              stroke={PRIMARY_FALLBACK}
               strokeWidth="0.15"
               strokeOpacity={opacity}
               className="constellation-filament"
@@ -178,7 +181,7 @@ export function ConstellationField({
               cx={p.cx}
               cy={p.cy}
               r={p.r}
-              fill="var(--primary, #8B3FD6)"
+              fill={PRIMARY_FALLBACK}
               opacity={p.opacity}
               style={{
                 animation: `constellation-drift-${uid} ${p.duration}s ease-in-out ${p.delay}s infinite alternate`,

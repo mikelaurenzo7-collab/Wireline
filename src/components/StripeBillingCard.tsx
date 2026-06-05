@@ -20,6 +20,7 @@ import { safeDate, formatDate } from "../lib/safe-date";
 import UsageMeter from "./UsageMeter";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { getStoredSignupIntent, recommendedPlanFromIntent } from "../lib/signup-intent";
+import { BRAND } from "../constants/brand-colors";
 
 interface Plan {
   id: "personal" | "starter" | "pro" | "business" | "enterprise";
@@ -53,11 +54,11 @@ const PLAN_ICONS: Record<string, any> = {
 };
 
 const PLAN_ACCENTS: Record<string, string> = {
-  personal: "#8B3FD6",
-  starter: "#8B3FD6",
-  pro: "#8B3FD6",
-  business: "#8B3FD6",
-  enterprise: "#C4B5A0",
+  personal: BRAND.purple,
+  starter: BRAND.purple,
+  pro: BRAND.purple,
+  business: BRAND.purple,
+  enterprise: BRAND.creamDeep,
 };
 
 export default function StripeBillingCard() {
@@ -279,7 +280,7 @@ export default function StripeBillingCard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 stagger-children">
           {plans.map((plan) => {
             const Icon = PLAN_ICONS[plan.id] || Building2;
-            const accent = PLAN_ACCENTS[plan.id] || "#8B3FD6";
+            const accent = PLAN_ACCENTS[plan.id] || BRAND.purple;
             const isCurrent = sub?.plan === plan.id && hasActive;
             const isBusy = busy === plan.id;
             const isSignupMatch = !hasActive && signupPlanInterest === plan.id;
@@ -309,7 +310,7 @@ export default function StripeBillingCard() {
                   <div
                     className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em]"
                     style={{
-                      background: "#8B3FD6",
+                      background: BRAND.purple,
                       color: "#fff",
                     }}
                   >
@@ -320,7 +321,7 @@ export default function StripeBillingCard() {
                   <div
                     className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em]"
                     style={{
-                      background: "#8B3FD6",
+                      background: BRAND.purple,
                       color: "#fff",
                     }}
                   >
@@ -443,7 +444,7 @@ function ActiveSubCard({
   busy: boolean;
   onPortal: () => void;
 }) {
-  const accent = PLAN_ACCENTS[sub.plan || ""] || "#8B3FD6";
+  const accent = PLAN_ACCENTS[sub.plan || ""] || BRAND.purple;
   const Icon = PLAN_ICONS[sub.plan || ""] || CreditCard;
   const renews = safeDate(sub.current_period_end);
   const daysLeft = renews

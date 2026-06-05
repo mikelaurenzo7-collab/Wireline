@@ -256,6 +256,9 @@ export default function DirectorLiveSession({
 
       {/* Main live panel */}
       <div
+        aria-live="polite"
+        aria-busy={phase !== "done" && phase !== "idle" && phase !== "error"}
+        aria-label="Director live session"
         className={cn(
           "wl-panel relative w-full rounded-md rounded-bl-md px-4 py-4 space-y-3 overflow-hidden",
           WL_DIRECTOR_CLASSES.missionPanel,
@@ -268,7 +271,7 @@ export default function DirectorLiveSession({
         />
 
         {phaseCopy && (
-          <div className="relative flex items-start gap-3">
+          <div className="relative flex items-start gap-3" role="status">
             <div className="shrink-0 mt-0.5">
               {phase === "replying" || phase === "done" ? (
                 <Zap className="w-4 h-4 text-brand animate-pulse" />

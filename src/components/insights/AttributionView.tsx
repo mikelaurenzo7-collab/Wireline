@@ -41,17 +41,12 @@ export default function AttributionView({ days }: { days: number }) {
   return (
     <div className="p-1 space-y-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-1">
-        <Stat
-          label="Tagged sources"
-          value={rows.filter((r) => r.source !== "(untagged)").length}
-          accent="#8B3FD6"
-        />
-        <Stat label="Total calls" value={totalCalls} accent="#8B3FD6" />
-        <Stat label="Booked" value={totalBooked} accent="#8B3FD6" />
+        <Stat label="Tagged sources" value={rows.filter((r) => r.source !== "(untagged)").length} />
+        <Stat label="Total calls" value={totalCalls} />
+        <Stat label="Booked" value={totalBooked} />
         <Stat
           label="Conv. rate"
           value={`${totalCalls > 0 ? ((totalBooked / totalCalls) * 100).toFixed(1) : "0.0"}%`}
-          accent="#8B3FD6"
         />
       </div>
       <div className="rounded-md wl-panel border border-black/8 overflow-hidden app-table-scroll">

@@ -35,11 +35,17 @@ export default function IntegrationLiveActionCard({
   const isSuccess = action.status === "success";
   const isProposal = action.source === "proposal";
 
+  const accentStyle = {
+    "--wl-integration-accent": isSuccess ? "var(--wl-signal)" : brand.color,
+  } as React.CSSProperties;
+
   return (
     <motion.div
       layout
       data-proposal={isProposal ? "true" : undefined}
       data-active={isActive ? "true" : undefined}
+      data-success={isSuccess ? "true" : undefined}
+      style={accentStyle}
       initial={
         variant === "spotlight"
           ? { opacity: 0, y: 12, scale: 0.98 }
@@ -68,40 +74,21 @@ export default function IntegrationLiveActionCard({
         variant === "spotlight" && !isActive && "ring-1 ring-brand/10",
         isSuccess &&
           "border-[color-mix(in_srgb,var(--wl-signal)_30%,transparent)] shadow-sm shadow-[color-mix(in_srgb,var(--wl-signal)_8%,transparent)]",
-        isProposal && !isActive && !isSuccess && "bg-brand/[0.02] border-dashed",
+        isProposal && !isActive && !isSuccess && "bg-brand/[0.02]",
         !isActive && !isSuccess && !isProposal && "border-border opacity-70",
       )}
     >
-      {/* Brand color bar with gradient */}
-      <div
-        className="h-1 w-full"
-        style={{
-          background: isSuccess
-            ? "linear-gradient(90deg, var(--wl-signal), color-mix(in srgb, var(--wl-signal) 55%, transparent), transparent)"
-            : `linear-gradient(90deg, ${brand.color}, ${brand.color}88, transparent)`,
-        }}
-      />
+      <div className="wl-integration-live-card__brand-bar" aria-hidden="true" />
 
-      {/* Subtle brand wash background */}
-      <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
-        style={{
-          background: `radial-gradient(ellipse at top left, ${brand.color}, transparent 70%)`,
-        }}
-      />
+      <div className="wl-integration-live-card__wash" aria-hidden="true" />
 
       <div className="relative px-3.5 pt-3 pb-3">
         <div className="flex items-start gap-2.5 mb-2.5">
           <div
             className={cn(
-              "shrink-0 flex h-8 w-8 items-center justify-center rounded-md text-primary-foreground shadow-sm transition-all duration-300",
-              isSuccess && "shadow-[color-mix(in_srgb,var(--wl-signal)_20%,transparent)]",
+              "wl-integration-live-card__icon shrink-0 flex h-8 w-8 items-center justify-center rounded-md text-primary-foreground shadow-sm transition-all duration-300",
+              isSuccess && "wl-integration-live-card__icon--success",
             )}
-            style={{
-              background: isSuccess
-                ? "linear-gradient(135deg, var(--wl-signal), color-mix(in srgb, var(--wl-signal) 75%, #120f1a))"
-                : `linear-gradient(135deg, ${brand.color}, ${brand.color}cc)`,
-            }}
           >
             {isSuccess ? (
               <Check className="w-4 h-4" />
@@ -137,11 +124,15 @@ export default function IntegrationLiveActionCard({
           <motion.div
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-2.5 flex items-center gap-1.5 text-[10px] font-medium wl-text-success dark:wl-text-success bg-brand/8 rounded-md px-2.5 py-1.5"
+            className={cn(
+              "mt-2.5 flex items-center gap-1.5 text-[10px] font-medium rounded-md px-2.5 py-1.5 border",
+              WL_APP_CLASSES.statusSuccess,
+              WL_APP_CLASSES.textSuccess,
+            )}
           >
             <span className="relative flex h-2 w-2 shrink-0">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-brand/40 animate-ping" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-brand" />
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[color-mix(in_srgb,var(--wl-signal)_40%,transparent)] animate-ping" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--wl-signal)]" />
             </span>
             {action.resultLine}
           </motion.div>
@@ -150,10 +141,7 @@ export default function IntegrationLiveActionCard({
         {isActive && (
           <div className="mt-2.5 h-1 rounded-full bg-muted/30 overflow-hidden">
             <motion.div
-              className="h-full rounded-full"
-              style={{
-                background: `linear-gradient(90deg, ${brand.color}66, ${brand.color})`,
-              }}
+              className="wl-integration-live-card__progress h-full rounded-full"
               initial={{ width: "5%" }}
               animate={{ width: ["5%", "65%", "85%"] }}
               transition={{ duration: 2.2, ease: "easeInOut" }}

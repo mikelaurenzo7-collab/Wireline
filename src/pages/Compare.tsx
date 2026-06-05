@@ -247,7 +247,7 @@ export default function Compare() {
                 {ROWS.map((row, i) => (
                   <tr
                     key={row.feature}
-                    className={`border-b border-ink/[0.08] transition-colors duration-200 hover:bg-brand/[0.04] ${
+                    className={`border-b border-ink/[0.08] transition-colors duration-200 hover:bg-brand-deep/[0.04] ${
                       i % 2 === 0 ? "bg-ink/[0.02]" : ""
                     }`}
                   >
@@ -415,7 +415,7 @@ export default function Compare() {
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
               to="/signup"
-              className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-[#8B3FD6] transition-colors duration-300"
+              className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-brand-deep transition-colors duration-300"
             >
               Start free trial
               <ArrowRight className="w-4 h-4" />

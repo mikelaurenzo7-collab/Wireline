@@ -7,6 +7,12 @@ import { CalendarClock, Loader2, RefreshCw } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { safeDate } from "../../lib/safe-date";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import { EmptyState } from "../ui/EmptyState";
+import {
+  OPS_CHANNEL_EMPTY,
+  OPS_CHANNEL_TOOLBAR,
+  WL_OPS_CLASSES,
+} from "../../lib/wireline-ops-design";
 
 export default function CallbacksList({
   callbacks,
@@ -28,24 +34,21 @@ export default function CallbacksList({
 
   if (callbacks.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-3 px-6 text-center">
-        <CalendarClock className="w-10 h-10 text-ink/40" />
-        <p className="text-[11px] uppercase tracking-[0.35em] text-muted">No scheduled callbacks</p>
-        <p className="text-[10px] text-ink/40 max-w-xs">
-          When agents use the schedule_callback tool during a call, those contacts appear here and
-          are auto-dialed at the promised time.
-        </p>
-        <ShadButton
-          type="button"
-          disableAnimations
-          variant="outline"
-          size="sm"
-          onClick={onRefresh}
-          className="mt-2 rounded-full text-[9px] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40"
-        >
-          <RefreshCw className="w-3 h-3" /> Refresh
-        </ShadButton>
-      </div>
+      <EmptyState
+        icon={CalendarClock}
+        eyebrow={OPS_CHANNEL_EMPTY.callbacks.eyebrow}
+        title={OPS_CHANNEL_EMPTY.callbacks.title}
+        description={OPS_CHANNEL_EMPTY.callbacks.description}
+        density="compact"
+        withHalo={false}
+        actions={[
+          {
+            label: OPS_CHANNEL_TOOLBAR.triage.refresh,
+            onClick: onRefresh,
+            primary: true,
+          },
+        ]}
+      />
     );
   }
 
@@ -61,9 +64,12 @@ export default function CallbacksList({
           variant="outline"
           size="sm"
           onClick={onRefresh}
-          className="h-7 rounded-full text-[9px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40"
+          className={cn(
+            "h-7 rounded-full text-[9px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 touch-press",
+            WL_OPS_CLASSES.filterChip,
+          )}
         >
-          <RefreshCw className="w-2.5 h-2.5" /> Refresh
+          <RefreshCw className="w-2.5 h-2.5" /> {OPS_CHANNEL_TOOLBAR.triage.refresh}
         </ShadButton>
       </div>
       <ul className="flex-1 overflow-y-auto divide-y divide-white/5 scrollbar-hide">
@@ -90,7 +96,7 @@ export default function CallbacksList({
           return (
             <li
               key={cb.id}
-              className="flex items-start gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors"
+              className="flex items-start gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors touch-press"
             >
               <div
                 className={cn(

@@ -14,6 +14,7 @@
  *   <StatusOrb status="error" />
  */
 import { cn } from "../../lib/utils";
+import { BRAND } from "../../constants/brand-colors";
 
 type OrbStatus = "active" | "idle" | "busy" | "error" | "offline";
 type OrbSize = "sm" | "md" | "lg";
@@ -32,22 +33,22 @@ interface StatusOrbProps {
 
 const STATUS_COLORS: Record<OrbStatus, { core: string; glow: string; ring: string }> = {
   active: {
-    core: "#8B3FD6",
+    core: BRAND.purple,
     glow: "rgba(139, 63, 214, 0.4)",
     ring: "rgba(139, 63, 214, 0.3)",
   },
   idle: {
-    core: "#8B6FA8",
+    core: BRAND.purpleMuted,
     glow: "rgba(139, 111, 168, 0.25)",
     ring: "rgba(139, 111, 168, 0.15)",
   },
   busy: {
-    core: "#D97706",
-    glow: "rgba(217, 119, 6, 0.35)",
-    ring: "rgba(217, 119, 6, 0.25)",
+    core: BRAND.purpleMid,
+    glow: "rgba(107, 43, 153, 0.35)",
+    ring: "rgba(107, 43, 153, 0.25)",
   },
   error: {
-    core: "#E8466A",
+    core: BRAND.rose,
     glow: "rgba(232, 70, 106, 0.4)",
     ring: "rgba(232, 70, 106, 0.3)",
   },

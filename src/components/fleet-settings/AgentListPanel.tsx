@@ -12,7 +12,7 @@ import type { RoleValue } from "../fleet/helpers";
 import { EmptyState } from "../ui/EmptyState";
 import ClientRouteLoading from "../layout/ClientRouteLoading";
 import { ShadButton } from "../ui/shadcn/ShadButton";
-import { WL_FLEET_CLASSES } from "../../lib/wireline-ops-design";
+import { OPS_CHANNEL_EMPTY, WL_FLEET_CLASSES } from "../../lib/wireline-ops-design";
 
 interface Props {
   agents: any[];
@@ -72,9 +72,11 @@ export default function AgentListPanel({
           ) : agents.length === 0 ? (
             <EmptyState
               icon={Bot}
-              eyebrow="Fleet"
-              title="No agents yet"
-              description="Create your first AI agent below — it will answer calls, book appointments, and follow up for you."
+              eyebrow={OPS_CHANNEL_EMPTY.fleetAgents.eyebrow}
+              title={OPS_CHANNEL_EMPTY.fleetAgents.title}
+              description={OPS_CHANNEL_EMPTY.fleetAgents.description}
+              density="compact"
+              withHalo={false}
             />
           ) : (
             agents.map((agent) => (

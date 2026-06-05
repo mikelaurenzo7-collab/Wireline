@@ -142,19 +142,17 @@ export default function LeaderboardView({ days }: { days: number }) {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
                 <Stat label="Calls" value={a.total_calls} />
-                <Stat label="Qualified" value={a.qualified} accent="#8B3FD6" />
+                <Stat label="Qualified" value={a.qualified} />
                 <Stat label="Avg Score" value={a.avg_lead_score} />
                 <Stat label="Bookings" value={a.bookings} />
                 <Stat label="Minutes" value={a.minutes} />
                 <Stat
                   label="$/Qual"
                   value={a.cost_per_qualified ? `$${a.cost_per_qualified}` : "—"}
-                  accent="#8B3FD6"
                 />
                 <Stat
                   label="$/Outcome"
                   value={a.cost_per_outcome ? `$${a.cost_per_outcome}` : "—"}
-                  accent="#8B3FD6"
                 />
                 <Stat label="Total $" value={a.total_cost ? `$${a.total_cost}` : "—"} />
               </div>

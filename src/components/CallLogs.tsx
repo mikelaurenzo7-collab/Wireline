@@ -32,11 +32,11 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { resolveBrandAccent } from "../lib/brand-token";
+import { BRAND } from "../constants/brand-colors";
 import { formatDate, formatTime } from "../lib/safe-date";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
-import HubTabs, { CHANNELS_HUB } from "./HubTabs";
 import ClientToolbar from "./layout/ClientToolbar";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
 import { ChannelListColHeader } from "./layout/ChannelInbox";
@@ -198,14 +198,36 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
             {loading ? (
               <PanelSkeleton rows={8} />
             ) : filteredCalls.length === 0 ? (
-              <EmptyState
-                icon={Phone}
-                eyebrow={OPS_CHANNEL_EMPTY.phone.eyebrow}
-                title={OPS_CHANNEL_EMPTY.phone.title}
-                description={OPS_CHANNEL_EMPTY.phone.description}
-                actions={[...OPS_CHANNEL_EMPTY.phone.actions]}
-                className="h-full py-10"
-              />
+              calls.length === 0 ? (
+                <EmptyState
+                  icon={Phone}
+                  eyebrow={OPS_CHANNEL_EMPTY.phone.eyebrow}
+                  title={OPS_CHANNEL_EMPTY.phone.title}
+                  description={OPS_CHANNEL_EMPTY.phone.description}
+                  actions={[...OPS_CHANNEL_EMPTY.phone.actions]}
+                  density="compact"
+                  withHalo={false}
+                  className="h-full py-10"
+                />
+              ) : (
+                <EmptyState
+                  icon={Search}
+                  eyebrow={OPS_CHANNEL_EMPTY.phoneNoMatch.eyebrow}
+                  title={OPS_CHANNEL_EMPTY.phoneNoMatch.title}
+                  description={OPS_CHANNEL_EMPTY.phoneNoMatch.description}
+                  density="compact"
+                  withHalo={false}
+                  actions={[
+                    ...(search.trim()
+                      ? [{ label: "Clear search", onClick: () => setSearch(""), primary: true }]
+                      : []),
+                    ...(filter !== "all"
+                      ? [{ label: "Show all directions", onClick: () => setFilter("all") }]
+                      : []),
+                  ]}
+                  className="h-full py-10"
+                />
+              )
             ) : (
               <>
                 <ChannelListColHeader
@@ -225,7 +247,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                         onClick={() => setSelectedCall(call)}
                         aria-label={`Open signal from ${call.customer_number || "Sim Test"}: ${call.summary || "no summary"}`}
                         className={cn(
-                          "group w-full h-auto justify-start text-left flex items-center gap-3 px-3 py-3 relative active:scale-[0.99] duration-100 rounded-none",
+                          "group touch-press w-full h-auto justify-start text-left flex items-center gap-3 px-3 py-3 relative rounded-none",
                           selectedCall?.id === call.id
                             ? "bg-brand/8 hover:bg-brand/8"
                             : "hover:bg-black/3",
@@ -350,37 +372,29 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
     </PageShell>
   );
 
-  if (embedded) {
-    const showInitialLoad = loading && calls.length === 0;
-    return (
-      <div className="h-full flex flex-col min-h-0">
-        <ClientToolbar
-          left={
-            <span className="app-toolbar-stat">
-              {showInitialLoad
-                ? OPS_CHANNEL_TOOLBAR.phone.loading
-                : OPS_CHANNEL_TOOLBAR.phone.stat(filteredCalls.length)}
-            </span>
-          }
-          actions={actions}
-        />
-        {showInitialLoad ? (
-          <ClientRouteLoading
-            icon={<Phone className="w-7 h-7" />}
-            label={OPS_CHANNEL_TOOLBAR.phone.loading}
-            className="flex-1 min-h-0"
-          />
-        ) : (
-          body
-        )}
-      </div>
-    );
-  }
+  const showInitialLoad = loading && calls.length === 0;
 
   return (
     <div className="h-full flex flex-col min-h-0">
-      <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />
-      <div className="flex-1 min-h-0">{body}</div>
+      <ClientToolbar
+        left={
+          <span className="app-toolbar-stat">
+            {showInitialLoad
+              ? OPS_CHANNEL_TOOLBAR.phone.loading
+              : OPS_CHANNEL_TOOLBAR.phone.stat(filteredCalls.length)}
+          </span>
+        }
+        actions={actions}
+      />
+      {showInitialLoad ? (
+        <ClientRouteLoading
+          icon={<Phone className="w-7 h-7" />}
+          label={OPS_CHANNEL_TOOLBAR.phone.loading}
+          className="flex-1 min-h-0"
+        />
+      ) : (
+        body
+      )}
     </div>
   );
 }
@@ -444,24 +458,16 @@ function CallDetail({
     { key: "closing", label: "Closing" },
   ];
 
-  const qaDimColor = (val: number) => {
+  const qaDimBarClass = (val: number) => {
     const pct = val / 20;
-    if (pct >= 0.8) return "linear-gradient(90deg, #8B3FD6, #8B6FA8)";
-    if (pct >= 0.6) return "linear-gradient(90deg, #8B6FA8, #FCD34D)";
-    return "linear-gradient(90deg, #E8466A, #F87171)";
+    if (pct >= 0.8) return "bg-brand";
+    if (pct >= 0.6) return "bg-brand/70";
+    return "bg-destructive";
   };
 
   const qaColor = (score: number) => {
     const brand = resolveBrandAccent();
-    return score >= 90
-      ? brand
-      : score >= 75
-        ? "#8B3FD6"
-        : score >= 60
-          ? "#FFD166"
-          : score >= 40
-            ? "#FF9A5C"
-            : brand;
+    return score >= 60 ? brand : score >= 40 ? BRAND.purpleMuted : BRAND.rose;
   };
 
   return (
@@ -612,7 +618,6 @@ function CallDetail({
                         {call.sentiment || "neutral"}
                       </span>
                     }
-                    accent="#8B3FD6"
                   />
                 </div>
                 {call.coaching_note && (
@@ -654,8 +659,7 @@ function CallDetail({
                                 initial={{ width: 0 }}
                                 animate={{ width: `${(val / 20) * 100}%` }}
                                 transition={{ duration: 0.8, ease: "easeOut" }}
-                                className="h-full rounded-full"
-                                style={{ background: qaDimColor(val) }}
+                                className={cn("h-full rounded-full", qaDimBarClass(val))}
                               />
                             </div>
                             <span className="text-[9px] font-mono text-ink w-8 text-right shrink-0">
@@ -810,21 +814,15 @@ function CallDetail({
 function Stat({
   label,
   value,
-  accent,
   icon: Icon,
 }: {
   label: string;
   value: React.ReactNode;
-  accent?: string;
   icon?: React.ComponentType<{ className?: string }>;
 }) {
-  const resolvedAccent = resolveBrandAccent(accent);
   return (
     <div className="rounded-md wl-panel p-2.5">
-      <div
-        className="text-[8px] uppercase tracking-[0.28em] text-muted mb-1 flex items-center gap-1"
-        style={{ color: resolvedAccent }}
-      >
+      <div className="text-[8px] uppercase tracking-[0.28em] text-brand mb-1 flex items-center gap-1">
         {Icon && <Icon className="w-3 h-3" />}
         {label}
       </div>

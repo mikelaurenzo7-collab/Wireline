@@ -28,6 +28,8 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
 import { cn } from "../../lib/utils";
+import { InlineEmpty } from "../ui/InlineEmpty";
+import { OPS_TRAINING_PANEL } from "../../lib/wireline-ops-design";
 import { authFetch } from "../../lib/api";
 import { useToast } from "../../contexts/ToastContext";
 import AgentExportImport from "../AgentExportImport";
@@ -1010,9 +1012,7 @@ export default function AgentConfigPanel({
                     <div className="flex-1 min-h-0 scroll-viewport space-y-2 pr-1">
                       <AnimatePresence mode="popLayout">
                         {agentConfig.directives?.length === 0 ? (
-                          <div className="py-12 text-center app-section-title/60">
-                            No directives yet
-                          </div>
+                          <InlineEmpty label={OPS_TRAINING_PANEL.directives} className="py-12" />
                         ) : (
                           agentConfig.directives?.map((d: any) => (
                             <motion.div
@@ -1020,7 +1020,7 @@ export default function AgentConfigPanel({
                               initial={{ opacity: 0, x: -6 }}
                               animate={{ opacity: 1, x: 0 }}
                               key={d.id}
-                              className="rounded-md bg-destructive/8 border border-destructive/20 p-3 group"
+                              className="rounded-md bg-destructive/8 border border-destructive/20 p-3 group touch-press"
                             >
                               {editingDirective && editingDirective.id === d.id ? (
                                 <div className="space-y-2">
@@ -1156,7 +1156,7 @@ export default function AgentConfigPanel({
                     <div className="flex-1 min-h-0 scroll-viewport space-y-2 pr-1">
                       <AnimatePresence mode="popLayout">
                         {agentConfig.knowledge?.length === 0 ? (
-                          <div className="py-12 text-center app-section-title/60">No facts yet</div>
+                          <InlineEmpty label={OPS_TRAINING_PANEL.facts} className="py-12" />
                         ) : (
                           agentConfig.knowledge?.map((k: any) => (
                             <motion.div
@@ -1164,7 +1164,7 @@ export default function AgentConfigPanel({
                               initial={{ opacity: 0, x: 6 }}
                               animate={{ opacity: 1, x: 0 }}
                               key={k.id}
-                              className="rounded-md bg-brand/8 border border-brand/20 p-3 group"
+                              className="rounded-md bg-brand/8 border border-brand/20 p-3 group touch-press"
                             >
                               {editingKnowledge && editingKnowledge.id === k.id ? (
                                 <div className="space-y-2">

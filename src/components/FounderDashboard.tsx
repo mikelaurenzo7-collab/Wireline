@@ -257,16 +257,25 @@ export default function FounderDashboard() {
     return (
       <ClientRouteViewport>
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-          <div className="shrink-0 px-4 md:px-6 py-3 border-b border-black/8 flex items-center gap-3 glass-1">
+          <div
+            className={cn(
+              "shrink-0 px-4 md:px-6 py-3 flex items-center gap-3 border-b border-black/8",
+              WL_APP_CLASSES.mobileContextBar,
+              WL_APP_CLASSES.mobileContextAccent,
+            )}
+          >
             <ShadButton
               onClick={() => setSelected(null)}
               variant="ghost"
-              className="wl-label-muted hover:text-ink normal-case tracking-normal"
+              className="wl-label-muted hover:text-ink normal-case tracking-normal touch-press"
             >
               ← All staff
             </ShadButton>
-            <span className="text-ink font-medium">
-              {selected.name} · {selected.title}
+            <span className="font-display italic text-sm text-ink truncate">
+              {selected.name}
+              <span className="text-muted not-italic font-sans text-[11px] ml-1.5">
+                · {selected.title}
+              </span>
             </span>
           </div>
           <div className="flex-1 min-h-0">

@@ -117,7 +117,7 @@ export default function TrustSignals() {
       data-testid="trust-signals"
     >
       <div className="flex items-center gap-2 mb-3">
-        <span className="hero-accent-line" style={{ background: "#8B3FD6" }} />
+        <span className="hero-accent-line bg-brand" />
         <h2
           id="trust-heading"
           className="text-[8px] uppercase tracking-[0.5em] text-muted/70 font-semibold"
@@ -133,11 +133,11 @@ export default function TrustSignals() {
         {VERTICALS.map(({ icon: Icon, label }) => (
           <div
             key={label}
-            className="group flex flex-col items-center gap-1.5 rounded-md border border-black/5 bg-[#FAF8F5]/80 py-2.5 px-1 transition-all hover:border-[#8B3FD6]/20 hover:bg-[#FAF8F5] hover:-translate-y-0.5"
+            className="group flex flex-col items-center gap-1.5 rounded-md border border-black/5 bg-[#FAF8F5]/80 py-2.5 px-1 transition-all hover:border-brand/20 hover:bg-[#FAF8F5] hover:-translate-y-0.5"
             title={label}
           >
             <Icon
-              className="w-3.5 h-3.5 text-[#8B3FD6] group-hover:scale-110 transition-transform"
+              className="w-3.5 h-3.5 text-brand group-hover:scale-110 transition-transform"
               strokeWidth={1.8}
             />
             <span className="text-[8px] uppercase tracking-[0.18em] text-muted/70 text-center leading-tight">

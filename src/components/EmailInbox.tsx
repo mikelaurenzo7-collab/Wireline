@@ -310,7 +310,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
       onClick={syncInbox}
       disabled={syncing}
       className={cn(
-        "h-9 rounded-full text-muted hover:text-brand hover:border-brand/40",
+        "h-9 rounded-full text-muted hover:text-brand hover:border-brand/40 touch-press",
         WL_OPS_CLASSES.filterChip,
       )}
     >
@@ -323,7 +323,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
     </ShadButton>
   );
 
-  const showInitialLoad = embedded && loading && threads.length === 0;
+  const showInitialLoad = loading && threads.length === 0;
 
   const inboxBody = (
     <div className="flex-1 min-h-0">
@@ -336,14 +336,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
             : `${threads.length} thread${threads.length === 1 ? "" : "s"} in your inbox.`
         }
       >
-        <Panel
-          title="Inbox"
-          hint="THREADS & REPLIES"
-          icon={Inbox}
-          flush
-          className="h-full"
-          actions={embedded ? undefined : syncAction}
-        >
+        <Panel title="Inbox" hint="THREADS & REPLIES" icon={Inbox} flush className="h-full">
           <ChannelInboxGrid>
             <ChannelInboxListPane
               label="All conversations"
@@ -360,6 +353,8 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                     title={OPS_CHANNEL_EMPTY.email.title}
                     description={OPS_CHANNEL_EMPTY.email.description}
                     actions={[...OPS_CHANNEL_EMPTY.email.actions]}
+                    density="compact"
+                    withHalo={false}
                     className="h-full py-10"
                   />
                 ) : (
@@ -383,7 +378,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           key={thread.id}
                           onClick={() => setSelectedThread(thread)}
                           className={cn(
-                            "group w-full px-4 py-3.5 text-left transition-all flex gap-3 items-start relative active:scale-[0.99] active:bg-black/[0.03] duration-100",
+                            "group w-full px-4 py-3.5 text-left transition-all flex gap-3 items-start relative touch-press",
                             active ? "bg-brand/6" : "hover:bg-black/3",
                           )}
                         >
@@ -660,7 +655,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                             size="sm"
                             disableAnimations
                             onClick={sendReply}
-                            className="rounded-full text-[10px] tracking-[0.25em]"
+                            className="rounded-full text-[10px] tracking-[0.25em] touch-press"
                           >
                             <Send className="w-3 h-3" /> Send
                           </ShadButton>
@@ -669,23 +664,15 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                     </div>
                   </motion.div>
                 ) : (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.96 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="h-full flex flex-col items-center justify-center gap-4 px-6 text-center"
-                  >
-                    <div className="w-16 h-16 rounded-md wl-panel flex items-center justify-center text-muted">
-                      <Mail className="w-7 h-7" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <h3 className="font-display italic lowercase text-2xl text-ink">
-                        select a thread
-                      </h3>
-                      <p className="app-section-title/70 max-w-sm">
-                        Pick a conversation from the list to monitor or reply.
-                      </p>
-                    </div>
-                  </motion.div>
+                  <EmptyState
+                    icon={Mail}
+                    eyebrow={OPS_CHANNEL_EMPTY.inboxDetail.eyebrow}
+                    title={OPS_CHANNEL_EMPTY.inboxDetail.title}
+                    description={OPS_CHANNEL_EMPTY.inboxDetail.description}
+                    density="compact"
+                    withHalo={false}
+                    className="h-full py-12"
+                  />
                 )}
               </AnimatePresence>
             </ChannelInboxDetailPane>
@@ -697,18 +684,16 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
 
   return (
     <div className="h-full flex flex-col min-h-0">
-      {embedded && (
-        <ClientToolbar
-          left={
-            <span className="app-toolbar-stat">
-              {showInitialLoad
-                ? OPS_CHANNEL_TOOLBAR.email.loading
-                : OPS_CHANNEL_TOOLBAR.email.stat(threads.length)}
-            </span>
-          }
-          actions={syncAction}
-        />
-      )}
+      <ClientToolbar
+        left={
+          <span className="app-toolbar-stat">
+            {showInitialLoad
+              ? OPS_CHANNEL_TOOLBAR.email.loading
+              : OPS_CHANNEL_TOOLBAR.email.stat(threads.length)}
+          </span>
+        }
+        actions={syncAction}
+      />
       {showInitialLoad ? (
         <ClientRouteLoading
           icon={<Mail className="w-7 h-7" />}

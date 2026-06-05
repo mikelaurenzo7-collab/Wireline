@@ -220,7 +220,11 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
             />
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3"
+            aria-live="polite"
+            aria-label="Active callers"
+          >
             <AnimatePresence mode="popLayout">
               {calls.map((call) => {
                 const agent = agents.find((a) => a.id === call.agent_id);

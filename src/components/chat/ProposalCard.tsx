@@ -1,4 +1,4 @@
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { Check, Loader2, X } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Checkbox } from "../ui/shadcn/Checkbox";
@@ -46,12 +46,17 @@ export default function ProposalCard({
   onApprove,
   onDismiss,
 }: ProposalCardProps) {
+  const reduceMotion = useReducedMotion();
   const approveDisabled = busy || (!!consent && !consent.checked);
+  const isPending = !state;
+
   return (
     <motion.div
       layout
-      whileHover={!state ? { scale: 1.01 } : {}}
-      whileTap={!state ? { scale: 0.99 } : {}}
+      data-proposal={isPending ? "true" : undefined}
+      data-resolved={state ? "true" : undefined}
+      whileHover={!state && !reduceMotion ? { scale: 1.01 } : {}}
+      whileTap={!state && !reduceMotion ? { scale: 0.99 } : {}}
       animate={
         state ? { scale: 0.98, opacity: state === "dismissed" ? 0.5 : 1 } : { scale: 1, opacity: 1 }
       }
@@ -61,7 +66,7 @@ export default function ProposalCard({
         WL_DIRECTOR_CLASSES.proposalRail,
         "rounded-md border px-3 py-2.5 pl-4 text-ink transition-all duration-200",
         state === "dismissed" ? "border-black/8 bg-black/3" : TONE_CLASSES[tone],
-        !state && "hover:shadow-md cursor-default",
+        isPending && "hover:shadow-md cursor-default",
       )}
     >
       <div className="flex items-start gap-2.5">
@@ -75,7 +80,7 @@ export default function ProposalCard({
         </span>
         <div className="min-w-0 flex-1">
           {stepLabel && (
-            <p className="text-[9px] uppercase tracking-[0.16em] text-brand/70 font-semibold mb-0.5">
+            <p className={cn(WL_DIRECTOR_CLASSES.microLabel, "text-brand/70 mb-0.5")}>
               {stepLabel}
             </p>
           )}
@@ -95,7 +100,7 @@ export default function ProposalCard({
         >
           <motion.div
             className="h-full bg-brand rounded-full"
-            animate={{ x: ["-100%", "100%"] }}
+            animate={reduceMotion ? undefined : { x: ["-100%", "100%"] }}
             transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
             style={{ width: "40%" }}
           />
@@ -140,7 +145,7 @@ export default function ProposalCard({
               onClick={onApprove}
               disabled={approveDisabled}
               disableAnimations
-              className="h-8 text-[11px] gap-1.5"
+              className="touch-press h-8 text-[11px] gap-1.5"
             >
               {busy ? (
                 <>
@@ -161,7 +166,7 @@ export default function ProposalCard({
               onClick={onDismiss}
               disabled={busy}
               disableAnimations
-              className="h-8 text-[11px] text-muted"
+              className="touch-press h-8 text-[11px] text-muted"
             >
               <X className="w-3 h-3" />
               Dismiss

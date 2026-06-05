@@ -9,6 +9,8 @@ import { authFetch } from "../lib/api";
 import { formatDate } from "../lib/safe-date";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { EmptyState } from "./ui/EmptyState";
+import { OPS_CHANNEL_EMPTY } from "../lib/wireline-ops-design";
 
 interface AgentMemoryPanelProps {
   agentId: string;
@@ -151,10 +153,15 @@ export default function AgentMemoryPanel({
           </div>
         </div>
         {recentCalls.length === 0 ? (
-          <p className="py-6 text-center text-ink/40 text-[11px] leading-relaxed">
-            No calls yet — once {agentName} takes calls, their summaries appear here as recall
-            context.
-          </p>
+          <EmptyState
+            icon={Phone}
+            eyebrow={OPS_CHANNEL_EMPTY.agentRecall.eyebrow}
+            title={OPS_CHANNEL_EMPTY.agentRecall.title}
+            description={OPS_CHANNEL_EMPTY.agentRecall.description.replace("this agent", agentName)}
+            density="compact"
+            withHalo={false}
+            className="py-4"
+          />
         ) : (
           <div className="space-y-2">
             {recentCalls.map((c, i) => (

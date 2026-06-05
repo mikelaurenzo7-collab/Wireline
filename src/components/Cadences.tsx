@@ -12,6 +12,7 @@ import {
   X,
   Loader2,
   Zap,
+  Repeat,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { logFetchError } from "../lib/utils";
@@ -20,6 +21,9 @@ import { useApiError } from "../hooks/useApiError";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { EmptyState } from "./ui/EmptyState";
+import ClientRouteLoading from "./layout/ClientRouteLoading";
+import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR } from "../lib/wireline-ops-design";
 import { cn } from "../lib/utils";
 
 type StepType = "call" | "sms" | "email";
@@ -228,6 +232,16 @@ export default function Cadences() {
     return acc;
   }, {});
 
+  if (loading) {
+    return (
+      <ClientRouteLoading
+        icon={<Repeat className="w-6 h-6" />}
+        label={OPS_CHANNEL_TOOLBAR.cadences.loading}
+        className="h-full min-h-[200px]"
+      />
+    );
+  }
+
   return (
     <div className="h-full overflow-y-auto pr-1 space-y-4 pb-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -255,43 +269,50 @@ export default function Cadences() {
         </ShadButton>
       </div>
 
-      {!showBuilder && cadences.length === 0 && !loading && (
-        <div className="rounded-md wl-panel-elevated border border-border p-6">
-          <p className="text-[11px] uppercase tracking-[0.32em] text-brand mb-2">
-            Start from a template
-          </p>
-          <p className="text-[12px] text-muted/80 mb-4 max-w-xl leading-relaxed">
-            No sequences yet. Pick a proven cadence to start with — you can edit it after.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {STARTER_TEMPLATES.map((t) => (
-              <ShadButton
-                key={t.name}
-                type="button"
-                variant="outline"
-                disableAnimations
-                onClick={() => loadTemplate(t)}
-                className="h-auto w-full justify-start text-left rounded-md border-border hover:border-brand/30 p-4 group"
-              >
-                <p className="text-[12px] font-semibold text-ink mb-1">{t.name}</p>
-                <p className="text-[10px] text-ink/40 mb-3">{t.description}</p>
-                <div className="flex items-center gap-1">
-                  {t.steps.map((s, i) => (
-                    <span
-                      key={i}
-                      className={cn(
-                        "text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded border inline-flex items-center gap-1",
-                        stepBadgeClass(s.type),
-                      )}
-                    >
-                      {stepIcon(s.type)} {s.type}
-                    </span>
-                  ))}
-                </div>
-              </ShadButton>
-            ))}
+      {!showBuilder && cadences.length === 0 && (
+        <EmptyState
+          icon={Repeat}
+          eyebrow={OPS_CHANNEL_EMPTY.cadences.eyebrow}
+          title={OPS_CHANNEL_EMPTY.cadences.title}
+          description={OPS_CHANNEL_EMPTY.cadences.description}
+          density="compact"
+          withHalo={false}
+          className="py-6"
+        >
+          <div className="w-full max-w-3xl mt-2 text-left">
+            <p className="text-[11px] uppercase tracking-[0.32em] text-brand mb-3 text-center">
+              Start from a template
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {STARTER_TEMPLATES.map((t) => (
+                <ShadButton
+                  key={t.name}
+                  type="button"
+                  variant="outline"
+                  disableAnimations
+                  onClick={() => loadTemplate(t)}
+                  className="h-auto w-full justify-start text-left rounded-md border-border hover:border-brand/30 p-4 group touch-press"
+                >
+                  <p className="text-[12px] font-semibold text-ink mb-1">{t.name}</p>
+                  <p className="text-[10px] text-ink/40 mb-3">{t.description}</p>
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {t.steps.map((s, i) => (
+                      <span
+                        key={i}
+                        className={cn(
+                          "text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded border inline-flex items-center gap-1",
+                          stepBadgeClass(s.type),
+                        )}
+                      >
+                        {stepIcon(s.type)} {s.type}
+                      </span>
+                    ))}
+                  </div>
+                </ShadButton>
+              ))}
+            </div>
           </div>
-        </div>
+        </EmptyState>
       )}
 
       {cadences.length > 0 && (
@@ -299,7 +320,7 @@ export default function Cadences() {
           {cadences.map((c) => (
             <div
               key={c.id}
-              className="rounded-md wl-panel border border-border p-4 flex items-center gap-4 flex-wrap"
+              className="rounded-md wl-panel border border-border p-4 flex items-center gap-4 flex-wrap touch-press"
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">

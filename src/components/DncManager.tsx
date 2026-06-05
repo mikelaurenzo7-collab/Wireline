@@ -20,8 +20,8 @@ import { authFetch, readApiJson } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatDate } from "../lib/safe-date";
 import { DNC_IMPORT_MAX_ENTRIES, dncImportLimitError } from "../lib/dnc-import-limits";
-import { OPS_SUPPORT_EMPTY } from "../lib/wireline-ops-design";
-import { BRAND } from "../constants/brand-colors";
+import { OPS_SUPPORT_EMPTY, OPS_CHANNEL_TOOLBAR, WL_OPS_CLASSES } from "../lib/wireline-ops-design";
+import ClientToolbar from "./layout/ClientToolbar";
 import PageShell, { Panel } from "./PageShell";
 import { useToast } from "../contexts/ToastContext";
 import AdminHubViewport from "./layout/AdminHubViewport";
@@ -221,67 +221,78 @@ export default function DncManager() {
   };
 
   return (
-    <AdminHubViewport>
-      <PageShell
-        title=""
-        eyebrow=""
-        subtitle=""
-        actions={
-          <div className="flex items-center gap-2">
-            <ShadButton
-              type="button"
-              variant="outline"
-              size="sm"
-              disableAnimations
-              onClick={refresh}
-              disabled={loading}
-              className="h-9 rounded-full text-[10px] uppercase tracking-[0.28em] text-muted"
-            >
-              {loading ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : (
-                <RefreshCw className="w-3 h-3" />
-              )}
-              Refresh
-            </ShadButton>
-            <Input
-              ref={fileRef}
-              type="file"
-              accept=".csv"
-              className="hidden"
-              onChange={(e) => e.target.files?.[0] && handleCsvImport(e.target.files[0])}
-            />
-            <ShadButton
-              type="button"
-              variant="outline"
-              size="sm"
-              disableAnimations
-              onClick={() => fileRef.current?.click()}
-              disabled={importing}
-              className="h-9 rounded-full text-[10px] uppercase tracking-[0.28em] text-muted"
-            >
-              {importing ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : (
-                <Upload className="w-3 h-3" />
-              )}
-              Import CSV
-            </ShadButton>
-            <ShadButton
-              type="button"
-              variant="destructive"
-              size="sm"
-              disableAnimations
-              onClick={() => setShowAdd(true)}
-              className="h-9 rounded-full bg-rose-500/15 border-rose-500/40 text-rose-500 text-[10px] uppercase tracking-[0.28em] hover:bg-rose-500/25 shadow-none"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add Number
-            </ShadButton>
-          </div>
-        }
-      >
+    <AdminHubViewport scroll>
+      <PageShell title="" eyebrow="" subtitle="" scrollable>
         <div className="flex flex-col flex-1 min-h-0 gap-3 h-full">
+          <ClientToolbar
+            left={
+              <span className="app-toolbar-stat">
+                {loading
+                  ? OPS_CHANNEL_TOOLBAR.dnc.loading
+                  : OPS_CHANNEL_TOOLBAR.dnc.stat(entries.length)}
+              </span>
+            }
+            actions={
+              <>
+                <Input
+                  ref={fileRef}
+                  type="file"
+                  accept=".csv"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && handleCsvImport(e.target.files[0])}
+                />
+                <ShadButton
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disableAnimations
+                  onClick={refresh}
+                  disabled={loading}
+                  className={cn(
+                    "h-9 rounded-full text-muted touch-press",
+                    WL_OPS_CLASSES.filterChip,
+                  )}
+                >
+                  {loading ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-3 h-3" />
+                  )}
+                  {OPS_CHANNEL_TOOLBAR.dnc.refresh}
+                </ShadButton>
+                <ShadButton
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disableAnimations
+                  onClick={() => fileRef.current?.click()}
+                  disabled={importing}
+                  className={cn(
+                    "h-9 rounded-full text-muted touch-press",
+                    WL_OPS_CLASSES.filterChip,
+                  )}
+                >
+                  {importing ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Upload className="w-3 h-3" />
+                  )}
+                  {OPS_CHANNEL_TOOLBAR.dnc.import}
+                </ShadButton>
+                <ShadButton
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  disableAnimations
+                  onClick={() => setShowAdd(true)}
+                  className="h-9 rounded-full bg-rose-500/15 border-rose-500/40 text-rose-500 text-[10px] uppercase tracking-[0.28em] hover:bg-rose-500/25 shadow-none touch-press"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  {OPS_CHANNEL_TOOLBAR.dnc.add}
+                </ShadButton>
+              </>
+            }
+          />
           {/* Stat bar */}
           <div className="shrink-0 grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
@@ -328,7 +339,7 @@ export default function DncManager() {
               {loading ? (
                 <ClientRouteLoading
                   icon={<Shield className="w-6 h-6" />}
-                  label="Loading DNC list…"
+                  label={OPS_CHANNEL_TOOLBAR.dnc.loading}
                 />
               ) : filtered.length === 0 ? (
                 <EmptyState
@@ -345,6 +356,8 @@ export default function DncManager() {
                     (entries.length === 0 ? OPS_SUPPORT_EMPTY.dnc : OPS_SUPPORT_EMPTY.dncNoMatch)
                       .description
                   }
+                  density="compact"
+                  withHalo={false}
                   actions={
                     entries.length === 0
                       ? [
@@ -360,7 +373,6 @@ export default function DncManager() {
                         ]
                       : []
                   }
-                  accent={BRAND.rose}
                 />
               ) : (
                 <div className="divide-y divide-white/5">
@@ -369,7 +381,7 @@ export default function DncManager() {
                       key={entry.id}
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="group flex items-center justify-between py-3 px-2 gap-3 hover:bg-white/3 transition-all rounded-md"
+                      className="group flex items-center justify-between py-3 px-2 gap-3 hover:bg-white/3 transition-all rounded-md touch-press"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="w-9 h-9 rounded-md bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">

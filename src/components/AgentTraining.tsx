@@ -33,6 +33,9 @@ import VoiceLibraryPanel from "./admin/VoiceLibraryPanel";
 import PronunciationDictionaryPanel from "./PronunciationDictionaryPanel";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { EmptyState } from "./ui/EmptyState";
+import { InlineEmpty } from "./ui/InlineEmpty";
+import { OPS_TRAINING_PANEL } from "../lib/wireline-ops-design";
 
 type TrainingTab = "database" | "voices" | "pronunciation" | "simulator" | "flow";
 
@@ -593,10 +596,7 @@ export default function AgentTraining({
                   <div className="space-y-2 mb-3">
                     <AnimatePresence mode="popLayout">
                       {directives.length === 0 ? (
-                        <div className="py-8 text-center text-ink/40 text-[11px] leading-relaxed px-4">
-                          No rules yet — add one below to set hard limits your agent always
-                          respects.
-                        </div>
+                        <InlineEmpty label={OPS_TRAINING_PANEL.rules} className="py-8" />
                       ) : (
                         directives.map((d) => (
                           <motion.div
@@ -604,7 +604,7 @@ export default function AgentTraining({
                             initial={{ opacity: 0, x: -6 }}
                             animate={{ opacity: 1, x: 0 }}
                             key={d.id}
-                            className="rounded-md bg-rose-500/8 border border-rose-500/20 p-3 group"
+                            className="rounded-md bg-rose-500/8 border border-rose-500/20 p-3 group touch-press"
                           >
                             {editingDirective && editingDirective.id === d.id ? (
                               <div className="space-y-2">
@@ -752,27 +752,15 @@ export default function AgentTraining({
                   <div className="space-y-2 mb-3">
                     <AnimatePresence mode="popLayout">
                       {knowledge.length === 0 ? (
-                        <div className="py-10 flex flex-col items-center text-center">
-                          <div className="relative mb-4">
-                            <span
-                              aria-hidden="true"
-                              className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
-                            />
-                            <span className="relative flex w-11 h-11 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/25">
-                              <BookOpen className="w-5 h-5" />
-                            </span>
-                          </div>
-                          <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70 mb-1">
-                            Knowledge base
-                          </p>
-                          <p className="font-display italic text-lg text-ink mb-1">
-                            No entries yet
-                          </p>
-                          <p className="text-[12px] text-muted max-w-[260px]">
-                            Upload a PDF, paste a policy, or add a FAQ below so this agent answers
-                            consistently.
-                          </p>
-                        </div>
+                        <EmptyState
+                          icon={BookOpen}
+                          eyebrow={OPS_TRAINING_PANEL.knowledge.eyebrow}
+                          title={OPS_TRAINING_PANEL.knowledge.title}
+                          description={OPS_TRAINING_PANEL.knowledge.description}
+                          density="compact"
+                          withHalo={false}
+                          className="py-6"
+                        />
                       ) : (
                         knowledge.map((k) => (
                           <motion.div
@@ -780,7 +768,7 @@ export default function AgentTraining({
                             initial={{ opacity: 0, x: 6 }}
                             animate={{ opacity: 1, x: 0 }}
                             key={k.id}
-                            className="rounded-md bg-brand/8 border border-brand/20 p-3 group"
+                            className="rounded-md bg-brand/8 border border-brand/20 p-3 group touch-press"
                           >
                             {editingKnowledge && editingKnowledge.id === k.id ? (
                               <div className="space-y-2">
