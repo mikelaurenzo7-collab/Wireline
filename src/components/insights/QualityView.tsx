@@ -275,7 +275,7 @@ export default function QualityView({ days }: { days: number }) {
             <Star className="w-3 h-3" /> Rubric Dimensions
           </h4>
         </div>
-        <div className="divide-y divide-white/5">
+        <div className="divide-y divide-black/6">
           {[
             {
               key: "greeting",

@@ -1,4 +1,5 @@
-import React, { lazy, Suspense } from "react";
+import React, { Suspense } from "react";
+import { lazyRoute } from "../lib/lazy-route";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AnimatePresence } from "motion/react";
 import ErrorBoundary from "../components/ErrorBoundary";
@@ -8,26 +9,26 @@ import NotFound from "../components/layout/NotFound";
 
 import { ActivityRedirect } from "./LegacyRedirects";
 
-const TriageInbox = lazy(() => import("../components/TriageInbox"));
-const ContactProfile = lazy(() => import("../components/ContactProfile"));
-const InsightsView = lazy(() => import("../components/InsightsView"));
-const FleetSettings = lazy(() => import("../components/FleetSettings"));
-const AdminSettings = lazy(() => import("../components/AdminSettings"));
-const Integrations = lazy(() => import("../components/Integrations"));
-const DncManager = lazy(() => import("../components/DncManager"));
-const AuditLog = lazy(() => import("../components/AuditLog"));
-const LiveOps = lazy(() => import("../pages/CommandCenter"));
-const HelpCenter = lazy(() => import("../components/HelpCenter"));
-const Status = lazy(() => import("../components/Status"));
-const PublicChangelog = lazy(() => import("../components/PublicChangelog"));
-const Security = lazy(() => import("../components/Security"));
-const Pipeline = lazy(() => import("../components/Pipeline"));
-const FounderDashboard = lazy(() => import("../components/FounderDashboard"));
-const AgentChat = lazy(() => import("../pages/AgentChat"));
-const Training = lazy(() => import("../pages/Training"));
-const PhonePage = lazy(() => import("../pages/PhonePage"));
-const EmailPage = lazy(() => import("../pages/EmailPage"));
-const SmsPage = lazy(() => import("../pages/SmsPage"));
+const TriageInbox = lazyRoute(() => import("../components/TriageInbox"));
+const ContactProfile = lazyRoute(() => import("../components/ContactProfile"));
+const InsightsView = lazyRoute(() => import("../components/InsightsView"));
+const FleetSettings = lazyRoute(() => import("../components/FleetSettings"));
+const AdminSettings = lazyRoute(() => import("../components/AdminSettings"));
+const Integrations = lazyRoute(() => import("../components/Integrations"));
+const DncManager = lazyRoute(() => import("../components/DncManager"));
+const AuditLog = lazyRoute(() => import("../components/AuditLog"));
+const LiveOps = lazyRoute(() => import("../pages/CommandCenter"));
+const HelpCenter = lazyRoute(() => import("../components/HelpCenter"));
+const Status = lazyRoute(() => import("../components/Status"));
+const PublicChangelog = lazyRoute(() => import("../components/PublicChangelog"));
+const Security = lazyRoute(() => import("../components/Security"));
+const Pipeline = lazyRoute(() => import("../components/Pipeline"));
+const FounderDashboard = lazyRoute(() => import("../components/FounderDashboard"));
+const AgentChat = lazyRoute(() => import("../pages/AgentChat"));
+const Training = lazyRoute(() => import("../pages/Training"));
+const PhonePage = lazyRoute(() => import("../pages/PhonePage"));
+const EmailPage = lazyRoute(() => import("../pages/EmailPage"));
+const SmsPage = lazyRoute(() => import("../pages/SmsPage"));
 
 export default function AppRoutes() {
   return (

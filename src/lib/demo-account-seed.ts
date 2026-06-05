@@ -205,6 +205,76 @@ async function countSeedSmsThreads(userId: string, tx: typeof drizzle = drizzle)
   return Number(row?.c ?? 0);
 }
 
+/** Re-apply varied copy when demo rows already exist (idempotent re-seed / bulk-SQL repair). */
+async function refreshDemoShowcaseCopy(userId: string, tx: typeof drizzle): Promise<void> {
+  const calls = await tx
+    .select({ id: callLogs.id })
+    .from(callLogs)
+    .where(and(eq(callLogs.userId, userId), eq(callLogs.demo, true)))
+    .orderBy(desc(callLogs.createdAt));
+  for (let i = 0; i < calls.length; i++) {
+    const idx = i % SAMPLE_SUMMARIES.length;
+    await tx
+      .update(callLogs)
+      .set({
+        summary: SAMPLE_SUMMARIES[idx],
+        intentLabel: SAMPLE_INTENTS[idx % SAMPLE_INTENTS.length],
+        sentiment: SAMPLE_SENTIMENTS[idx % SAMPLE_SENTIMENTS.length],
+      })
+      .where(eq(callLogs.id, calls[i].id));
+  }
+
+  const seedEmails = await tx
+    .select({ id: emailThreads.id, threadId: emailThreads.threadId })
+    .from(emailThreads)
+    .where(and(eq(emailThreads.userId, userId), like(emailThreads.threadId, "seed-email-%")))
+    .orderBy(emailThreads.threadId);
+  for (const row of seedEmails) {
+    const match = row.threadId?.match(/-(\d+)$/);
+    const i = match ? Number.parseInt(match[1], 10) : 0;
+    const idx = i % SAMPLE_SUMMARIES.length;
+    await tx
+      .update(emailThreads)
+      .set({
+        summary: SAMPLE_SUMMARIES[idx],
+        subject: SAMPLE_EMAIL_SUBJECTS[i % SAMPLE_EMAIL_SUBJECTS.length],
+        intentLabel: SAMPLE_INTENTS[idx % SAMPLE_INTENTS.length],
+      })
+      .where(eq(emailThreads.id, row.id));
+  }
+
+  for (let i = 0; i < DEMO_SMS_NUMBERS.length; i++) {
+    const snippet = SAMPLE_SMS_SNIPPETS[i % SAMPLE_SMS_SNIPPETS.length];
+    await tx
+      .update(smsThreads)
+      .set({ summary: snippet })
+      .where(
+        and(eq(smsThreads.userId, userId), eq(smsThreads.customerNumber, DEMO_SMS_NUMBERS[i])),
+      );
+  }
+
+  const leads = await tx
+    .select({ id: outboundLeads.id })
+    .from(outboundLeads)
+    .where(and(eq(outboundLeads.userId, userId), eq(outboundLeads.demo, true)))
+    .orderBy(desc(outboundLeads.createdAt));
+  for (let i = 0; i < leads.length; i++) {
+    const cust = SAMPLE_CUSTOMERS[i % SAMPLE_CUSTOMERS.length];
+    const idx = i % SAMPLE_SUMMARIES.length;
+    await tx
+      .update(outboundLeads)
+      .set({
+        customerName: cust.name,
+        customerNumber: cust.phone,
+        phoneNumber: cust.phone,
+        email: cust.email,
+        context: SAMPLE_SUMMARIES[(idx + 3) % SAMPLE_SUMMARIES.length],
+        lastContactSummary: SAMPLE_SUMMARIES[idx],
+      })
+      .where(eq(outboundLeads.id, leads[i].id));
+  }
+}
+
 async function backfillTenantDemoRows(userId: string, tx: typeof drizzle = drizzle): Promise<void> {
   const seedPhones = SAMPLE_CUSTOMERS.map((c) => c.phone);
   await tx.transaction(async (nestedTx) => {
@@ -508,6 +578,8 @@ export async function seedDemoAccountData(userId: string): Promise<{
       }
       report.push({ table: "wireline_sms_threads", before, inserted, after: before + inserted });
     }
+
+    await refreshDemoShowcaseCopy(userId, tx);
   });
 
   invalidateDashboard(userId);

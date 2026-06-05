@@ -375,6 +375,8 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                             : "bg-black/4 text-ink/40 border-black/8";
                       return (
                         <motion.button
+                          type="button"
+                          aria-label={`Email thread: ${thread.subject || thread.customer_email}`}
                           layout
                           initial={{ opacity: 0, y: 4 }}
                           animate={{ opacity: 1, y: 0 }}
