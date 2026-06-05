@@ -34,56 +34,60 @@ export default function WorkspaceTopBar({
         className,
       )}
     >
-      <div
-        className={cn(
-          "flex items-center gap-2 lg:gap-2.5 px-3 lg:px-4 py-1",
-          subtitle ? "min-h-[3.25rem]" : "min-h-[2.75rem]",
-        )}
-      >
-        <div
-          className={cn(
-            "min-w-0 shrink-0 flex flex-col justify-center gap-0.5 sm:max-w-[11rem] lg:max-w-[15rem]",
-            WL_APP_CLASSES.pageContextAccent,
-          )}
-        >
-          {eyebrow && (
-            <p className={cn(WL_APP_CLASSES.workspaceEyebrow, "truncate hidden sm:block")}>
-              {eyebrow}
-            </p>
-          )}
-          <h1
+      {/* Desktop: title · tabs · tools in one row. Mobile: title + tools, then full-width tabs (no overlap). */}
+      <div className={cn("px-3 lg:px-4 py-1", subtitle ? "min-h-[3.25rem]" : "min-h-[2.75rem]")}>
+        <div className="flex items-center gap-2 lg:gap-2.5">
+          <div
             className={cn(
-              WL_APP_CLASSES.workspaceTitle,
-              "truncate sm:max-w-none m-0 font-semibold",
+              "min-w-0 flex-1 lg:flex-none flex flex-col justify-center gap-0.5 sm:max-w-[11rem] lg:max-w-[15rem]",
+              WL_APP_CLASSES.pageContextAccent,
             )}
           >
-            {title}
-          </h1>
-        </div>
-        <span aria-hidden="true" className="w-px h-5 bg-black/10 shrink-0 self-center" />
-        <div className="flex-1 min-w-0 self-center overflow-x-auto tab-strip-scroll">
-          <AppChromeSubTabs density="compact" />
-        </div>
-        <div
-          className="flex items-center gap-0.5 shrink-0 self-center"
-          role="toolbar"
-          aria-label="Page tools"
-        >
-          {onShowShortcuts && (
-            <ShadButton
-              type="button"
-              variant="ghost"
-              size="icon"
-              disableAnimations
-              onClick={onShowShortcuts}
-              className="h-8 w-8 rounded-md text-muted hover:text-ink hover:bg-black/[0.04] touch-press"
-              aria-label="Keyboard shortcuts"
-              title="Keyboard shortcuts (?)"
+            {eyebrow && (
+              <p className={cn(WL_APP_CLASSES.workspaceEyebrow, "truncate hidden sm:block")}>
+                {eyebrow}
+              </p>
+            )}
+            <h1
+              className={cn(
+                WL_APP_CLASSES.workspaceTitle,
+                "truncate sm:max-w-none m-0 font-semibold",
+              )}
             >
-              <Keyboard className="w-3.5 h-3.5" strokeWidth={1.75} />
-            </ShadButton>
-          )}
-          <ThemeToggle variant="default" compact className="rounded-md h-8 w-8" />
+              {title}
+            </h1>
+          </div>
+          <span
+            aria-hidden="true"
+            className="hidden lg:block w-px h-5 bg-black/10 shrink-0 self-center"
+          />
+          <div className="hidden lg:flex flex-1 min-w-0 self-center overflow-x-auto tab-strip-scroll">
+            <AppChromeSubTabs density="compact" />
+          </div>
+          <div
+            className="flex items-center gap-0.5 shrink-0 self-center"
+            role="toolbar"
+            aria-label="Page tools"
+          >
+            {onShowShortcuts && (
+              <ShadButton
+                type="button"
+                variant="ghost"
+                size="icon"
+                disableAnimations
+                onClick={onShowShortcuts}
+                className="h-8 w-8 rounded-md text-muted hover:text-ink hover:bg-black/[0.04] touch-press"
+                aria-label="Keyboard shortcuts"
+                title="Keyboard shortcuts (?)"
+              >
+                <Keyboard className="w-3.5 h-3.5" strokeWidth={1.75} />
+              </ShadButton>
+            )}
+            <ThemeToggle variant="default" compact className="rounded-md h-8 w-8" />
+          </div>
+        </div>
+        <div className="lg:hidden mt-1 -mx-1 px-1 overflow-x-auto tab-strip-scroll">
+          <AppChromeSubTabs density="compact" />
         </div>
       </div>
       {subtitle && (

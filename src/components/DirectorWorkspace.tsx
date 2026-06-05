@@ -1456,7 +1456,7 @@ export default function DirectorWorkspace({
                       )}
 
                       {m.suggestions && m.suggestions.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-1.5 w-full min-w-0">
                           {m.suggestions.map((s, i) => {
                             const Icon = SUGGESTION_ICON[s.kind];
                             return (
@@ -1468,10 +1468,12 @@ export default function DirectorWorkspace({
                                 disableAnimations
                                 onClick={() => runSuggestion(s)}
                                 title={s.label}
-                                className="group h-auto max-w-full text-left text-[11px] font-medium text-brand rounded-lg border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10 hover:border-brand/40 whitespace-normal"
+                                className="group !inline-flex h-auto min-h-8 w-full sm:w-auto max-w-full justify-start text-left text-[11px] font-medium text-brand rounded-lg border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10 hover:border-brand/40 !whitespace-normal overflow-visible"
                               >
                                 <Icon className="w-3 h-3 shrink-0" />
-                                <span className="min-w-0 text-pretty leading-snug">{s.label}</span>
+                                <span className="min-w-0 flex-1 text-pretty leading-snug break-words">
+                                  {s.label}
+                                </span>
                                 <ArrowUpRight className="w-2.5 h-2.5 opacity-0 -ml-1 group-hover:opacity-100 group-hover:ml-0 transition-all duration-200" />
                               </ShadButton>
                             );
@@ -1487,7 +1489,7 @@ export default function DirectorWorkspace({
                         m.id === lastDirectorMessageId &&
                         m.clarifyingQuestions &&
                         m.clarifyingQuestions.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5">
+                          <div className="flex flex-wrap gap-1.5 w-full min-w-0">
                             {m.clarifyingQuestions.map((q) => (
                               <ShadButton
                                 key={q}
@@ -1499,9 +1501,11 @@ export default function DirectorWorkspace({
                                   setInput(q.replace(/\?$/, "") + " — ");
                                   inputRef.current?.focus();
                                 }}
-                                className="h-auto max-w-full text-[11px] text-left rounded-lg border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10 whitespace-normal"
+                                className="!inline-flex h-auto min-h-8 w-full sm:w-auto max-w-full justify-start text-[11px] text-left rounded-lg border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10 !whitespace-normal overflow-visible"
                               >
-                                <span className="min-w-0 text-pretty leading-snug">{q}</span>
+                                <span className="min-w-0 flex-1 text-pretty leading-snug break-words">
+                                  {q}
+                                </span>
                               </ShadButton>
                             ))}
                           </div>
