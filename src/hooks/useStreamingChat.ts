@@ -135,6 +135,15 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
       setState({ phase: "connecting", thinkingText: "", isDeep: false, streamEstablished: false });
 
       await refreshSessionIfNeeded();
+
+      const finishWithPartialReply = (): boolean => {
+        if (completionRef.current || !latestReplyRef.current) return false;
+        const payload = latestReplyRef.current;
+        setState((s) => ({ ...s, phase: "done", reply: payload }));
+        finalizeComplete(payload);
+        return true;
+      };
+
       try {
         const res = await fetch(endpoint, {
           method: "POST",
@@ -258,22 +267,26 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
           parseSseEvents(lines, handleEvent);
         }
 
-        if (controller.signal.aborted) return;
+        if (buffer.trim()) {
+          parseSseEvents(buffer.split("\n"), handleEvent);
+          buffer = "";
+        }
+
+        if (controller.signal.aborted) {
+          finishWithPartialReply();
+          return;
+        }
 
         if (completionRef.current) return;
 
-        if (latestReplyRef.current) {
-          const payload = latestReplyRef.current;
-          setState((s) => ({ ...s, phase: "done", reply: payload }));
-          finalizeComplete(payload);
-          return;
-        }
+        if (finishWithPartialReply()) return;
 
         const msg = "Stream ended before the Director finished replying";
         setState({ ...INITIAL_STATE, phase: "error", error: msg });
         finalizeError(msg);
       } catch (e: unknown) {
         if ((e as Error)?.name === "AbortError") {
+          if (finishWithPartialReply()) return;
           if (timedOut) {
             const msg = "Stream timed out before the Director finished";
             setState({ ...INITIAL_STATE, phase: "error", error: msg });
@@ -281,6 +294,7 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
           }
           return;
         }
+        if (finishWithPartialReply()) return;
         const msg = (e as Error)?.message || "Stream connection failed";
         setState({ ...INITIAL_STATE, phase: "error", error: msg });
         finalizeError(msg);

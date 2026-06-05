@@ -22,6 +22,14 @@ describe("useStreamingChat module", () => {
     expect(phases).toHaveLength(6);
   });
 
+  it("parseSseEvents handles trailing buffer without newline", () => {
+    const events: Array<{ event: string; data: Record<string, unknown> }> = [];
+    parseSseEvents(["event: done", 'data: {"reply":"ok"}'], (event, data) => {
+      events.push({ event, data });
+    });
+    expect(events).toEqual([{ event: "done", data: { reply: "ok" } }]);
+  });
+
   it("parseSseEvents handles CRLF-framed SSE blocks", () => {
     const events: Array<{ event: string; data: Record<string, unknown> }> = [];
     parseSseEvents(["event: done\r", 'data: {"reply":"hello"}\r', "\r"], (event, data) => {

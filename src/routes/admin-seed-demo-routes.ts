@@ -15,6 +15,7 @@ import {
   DEMO_SMS_NUMBERS,
   resolveDemoUserId,
   seedDemoAccountData,
+  ensureDemoProSubscription,
 } from "../lib/demo-account-seed";
 import type { AuthenticatedRequest } from "../types/auth";
 import {
@@ -44,6 +45,7 @@ router.post(
     }
 
     try {
+      await ensureDemoProSubscription(userId);
       const { agentId, report } = await seedDemoAccountData(userId);
       return res.json({
         ok: true,

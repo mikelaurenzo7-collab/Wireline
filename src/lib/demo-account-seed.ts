@@ -3,7 +3,7 @@
  * appointments, email + SMS inboxes). Used by POST /api/admin/seed-demo-account
  * and scripts/seed-demo-account.mts.
  */
-import { sql, eq, and, inArray, like } from "drizzle-orm";
+import { sql, eq, and, inArray, like, desc } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
 import { invalidateDashboard } from "./dashboard-cache";
 import * as schema from "../db/schema";
@@ -19,6 +19,7 @@ import {
   emailMessages,
   smsThreads,
   smsMessages,
+  subscriptions,
 } from "../db/schema";
 
 export const DEFAULT_DEMO_EMAIL = "wireline.demo@trywireline.com";
@@ -147,6 +148,30 @@ export async function resolveDemoUserId(email: string): Promise<string | null> {
     .where(sql`lower(trim(${usersTable.email})) = ${normalized}`)
     .limit(1);
   return rows[0]?.id ?? null;
+}
+
+/** Demo / marketing tenants need Pro so Director OpenRouter catalog is exercisable. */
+export async function ensureDemoProSubscription(userId: string): Promise<void> {
+  const currentPeriodEnd = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+  await drizzle
+    .insert(subscriptions)
+    .values({
+      userId,
+      plan: "pro",
+      status: "active",
+      currentPeriodEnd,
+      cancelAtPeriodEnd: false,
+    })
+    .onConflictDoUpdate({
+      target: [subscriptions.userId],
+      set: {
+        plan: "pro",
+        status: "active",
+        currentPeriodEnd,
+        cancelAtPeriodEnd: false,
+        updatedAt: new Date(),
+      },
+    });
 }
 
 async function pickFirstAgentId(userId: string): Promise<string | null> {
@@ -582,6 +607,7 @@ export async function seedDemoAccountData(userId: string): Promise<{
     await refreshDemoShowcaseCopy(userId, tx);
   });
 
+  await ensureDemoProSubscription(userId);
   invalidateDashboard(userId);
   log.info("Demo account seeded", { userId, report });
   return { agentId, report };

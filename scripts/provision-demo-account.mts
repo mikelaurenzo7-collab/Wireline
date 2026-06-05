@@ -13,6 +13,7 @@ import { drizzle } from "../src/lib/server-context";
 import * as schema from "../src/db/schema";
 import { hashPassword } from "../src/lib/auth-service";
 import { seedFounderFleet } from "../src/lib/founder-fleet-seed";
+import { ensureDemoProSubscription } from "../src/lib/demo-account-seed";
 
 const DEMO_EMAIL = (process.env.DEMO_EMAIL || "wireline.demo@trywireline.com").trim().toLowerCase();
 const DEMO_PASSWORD = process.env.DEMO_PASSWORD || "WirelineDemo!2026";
@@ -53,6 +54,7 @@ async function main() {
     console.log(`Created demo user ${DEMO_EMAIL}`);
   }
 
+  await ensureDemoProSubscription(userId);
   const report = await seedFounderFleet(userId);
   console.log(
     JSON.stringify(
