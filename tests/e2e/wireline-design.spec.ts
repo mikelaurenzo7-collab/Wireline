@@ -105,3 +105,26 @@ test.describe("Wireline design — authenticated mobile shell", () => {
     });
   }
 });
+
+// === Cycle 2: Visual Regression for Director Artifacts ===
+test.describe("Wireline design — Director artifacts panel visual regression", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await authenticatePage(page, baseURL!);
+  });
+
+  test("Director artifacts panel renders consistently (visual regression)", async ({ page }) => {
+    await gotoAuthenticated(page, "/director");
+
+    // Wait for the Director workspace and artifacts panel to be ready
+    await expect(page.getByRole("heading", { name: /Director|artifacts/i }).first()).toBeVisible({ timeout: 15000 });
+
+    const artifactsPanel = page.locator(".wl-director-artifacts, [data-testid*='artifact'], .director-artifacts-panel").first();
+
+    // Take visual regression snapshot of the artifacts gallery
+    await expect(artifactsPanel).toHaveScreenshot({
+      name: "director-artifacts-panel.png",
+      threshold: 0.2, // Allow minor anti-aliasing differences
+    });
+  });
+});
