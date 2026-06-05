@@ -80,9 +80,40 @@ node .claude/skills/run-wireline/driver.mjs routes
 - `--route PATH` — route for `screenshot` action (default: `/`)
 - `--out DIR` — screenshot output dir (default: `/tmp/wireline-screenshots`)
 - `--headed` — visible browser (non-headless)
+- `--block-external` — abort all non-base-origin requests (fonts, analytics).
+  Use in network-restricted environments where blocked third-party requests
+  would otherwise stall navigation.
 
 Screenshots land in `/tmp/wireline-screenshots/` as PNG files at 2x retina
 resolution (1440×900 viewport).
+
+The driver waits with `commit` + a poll for the React root to render — **not**
+`networkidle`. The app holds long-lived connections (auth SSE, analytics), so
+`networkidle` never settles and every navigation would time out.
+
+## Network-restricted environments (no outbound internet)
+
+In sandboxes without outbound internet (e.g. Claude Code on the web with a
+locked-down network policy), the **dev server is unusable for the browser**:
+Vite serves modules on demand and its dependency optimizer stalls without
+network, so `npm run dev` navigations hang on `/node_modules/.vite/deps/*`.
+**Production mode (`NODE_ENV=production`) also refuses to boot** — it requires a
+healthy Postgres ("Database connection failed — refusing to start in production
+mode").
+
+Serve the **pre-built static bundle** instead, which needs neither Vite nor a
+DB, and drive it with `--block-external`:
+
+```bash
+npm run build                                   # → dist/ (static SPA + assets)
+npx vite preview --port 4173 --host 127.0.0.1 & # serve dist/ statically
+node .claude/skills/run-wireline/driver.mjs routes \
+  --url http://127.0.0.1:4173 --block-external
+```
+
+API calls 404 against `vite preview` (it's static-only), so this is for
+**frontend / visual QA**; the marketing pages render fully and auth-gated routes
+still redirect to the sign-in gate.
 
 ## Run (human path)
 
@@ -140,8 +171,8 @@ Authenticated routes redirect to the login page at `/auth`.
   integrations, and settings all redirect to `/auth` without a session. The
   driver's `interact` action gracefully detects this.
 - **Vite first-paint latency:** First navigation after cold start can take
-  5–10s while Vite compiles on demand. The driver uses `networkidle` +
-  2s buffer to handle this.
+  5–10s while Vite compiles on demand. The driver waits with `commit` + a poll
+  for the React root to populate (not `networkidle`, which never settles here).
 - **Env stubbing:** Missing Stripe / Vapi / Anthropic keys return 503 with
   actionable JSON — the console still loads for UI work.
 
@@ -154,3 +185,4 @@ Authenticated routes redirect to the login page at `/auth`.
 | Blank screenshot | Wait longer — increase wait in driver or check console errors |
 | DB connection errors in logs | Expected without Postgres; frontend still works on public routes |
 | Driver hits wrong port | Pass `--url http://localhost:3000` (5173 is legacy / Vite-only) |
+| Every navigation times out / pages hang | No outbound internet — see "Network-restricted environments": build + `vite preview` + `--block-external` |
