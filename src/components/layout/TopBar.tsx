@@ -235,9 +235,9 @@ export default function TopBar({
             aria-label={`${branding.brand_name} home`}
           >
             <motion.div
-              whileHover={{ rotate: 6, scale: 1.05 }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 380, damping: 26 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 420, damping: 32 }}
               className="relative w-7 h-7 rounded-md flex items-center justify-center overflow-hidden shrink-0 elev-1"
               style={{
                 background: "#EFE9DC",
@@ -276,7 +276,7 @@ export default function TopBar({
                       </span>
                     </>
                   )}
-                  <h1 className="font-display italic text-[18px] leading-none truncate text-brand dark:text-[color:var(--wl-paper)] lg:sr-only">
+                  <h1 className="text-[15px] font-semibold leading-none tracking-[-0.02em] truncate text-ink dark:text-[color:var(--wl-paper)] lg:sr-only">
                     {breadcrumb.title}
                   </h1>
                 </motion.div>

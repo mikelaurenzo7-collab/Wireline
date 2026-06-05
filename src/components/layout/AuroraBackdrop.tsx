@@ -5,6 +5,7 @@
  * that competed with data UI. Dark mode keeps a restrained velvet base.
  */
 import { BRAND } from "../../constants/brand-colors";
+import { WL_SIGNAL_CLASSES } from "../../lib/wireline-signal-design";
 
 export default function AuroraBackdrop() {
   return (
@@ -42,6 +43,9 @@ export default function AuroraBackdrop() {
           background: `radial-gradient(120% 70% at 50% -8%, color-mix(in srgb, ${BRAND.cream} 35%, white) 0%, transparent 42%)`,
         }}
       />
+
+      {/* Corner dormant nodes — ambient fleet field, never behind dense data */}
+      <div aria-hidden className={WL_SIGNAL_CLASSES.canvasConstellation} />
     </div>
   );
 }

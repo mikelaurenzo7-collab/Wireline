@@ -35,8 +35,8 @@ export default function DesktopPageContext({
     >
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0 flex-1">
-          {eyebrow && <p className="wl-label text-brand/70 mb-1">{eyebrow}</p>}
-          <h1 className="font-display italic text-[1.65rem] leading-[1.05] tracking-[-0.02em] text-ink text-balance">
+          {eyebrow && <p className={cn(WL_APP_CLASSES.proEyebrow, "text-brand/70 mb-1")}>{eyebrow}</p>}
+          <h1 className={cn(WL_APP_CLASSES.proTitle, "text-[1.5rem] sm:text-[1.625rem] text-balance")}>
             {title}
           </h1>
           {subtitle && (

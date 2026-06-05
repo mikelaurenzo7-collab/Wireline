@@ -4,6 +4,7 @@
  */
 
 import { WIRELINE_DIRECTOR_BRAND } from "./wireline-director-design";
+import { WL_SIGNAL_CLASSES } from "./wireline-signal-design";
 import { BRAND } from "../constants/brand-colors";
 
 export const WL_OPS_CLASSES = {
@@ -22,6 +23,8 @@ export const WL_OPS_CLASSES = {
   filterChip: "wl-ops-chip",
   dotSep: "wl-dot-sep",
   divider: "wl-ops-divider",
+  /** Re-export for ops panels that embed signal chrome */
+  emptyStateSignal: WL_SIGNAL_CLASSES.emptyStateSignal,
   /** Insights tab section labels (mono instrument typography) */
   insightLabel: "wl-insight-label",
 } as const;

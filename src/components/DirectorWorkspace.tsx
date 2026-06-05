@@ -64,6 +64,7 @@ import {
 } from "../lib/integration-live-scripts";
 import { DirectorMessageBody } from "./director/DirectorMessageBody";
 import { DirectorCapabilityCatalog } from "./director/DirectorCapabilityCatalog";
+import { SignalOrbFrame } from "./ui/SignalOrbFrame";
 import { DirectorComposerAccessory } from "./director/DirectorComposerAccessory";
 import { DirectorComposerContextStrip } from "./director/DirectorComposerContextStrip";
 import { DirectorComposerToolbar } from "./director/DirectorComposerToolbar";
@@ -954,9 +955,11 @@ export default function DirectorWorkspace({
           )}
           {isLoading ? (
             <div className="wl-director-loading" role="status" aria-live="polite">
-              <div className="wl-director-loading-orb">
-                <LoadingDots />
-              </div>
+              <SignalOrbFrame className="wl-director-loading-orb" size="sm" withBloom>
+                <div className="flex w-12 h-12 items-center justify-center rounded-md border border-brand/20 bg-brand/[0.08]">
+                  <LoadingDots />
+                </div>
+              </SignalOrbFrame>
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink/80">
                 {DIRECTOR_LOADING_COPY.headline}
               </p>
@@ -973,24 +976,32 @@ export default function DirectorWorkspace({
               )}
             >
               {/* Hero identity */}
-              <div className={cn("relative mb-6", WL_DIRECTOR_CLASSES.heroOrb)}>
-                <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-brand/20 to-brand/5 blur-2xl scale-125" />
-                <motion.span
-                  animate={reduceMotion ? undefined : { rotate: [0, 4, -4, 0] }}
-                  transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
-                  className="flex w-16 h-16 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-xl shadow-brand/30 relative overflow-hidden"
-                >
-                  <Compass className="w-8 h-8 relative z-10" />
-                  <div className="absolute inset-0 bg-gradient-to-tr from-white/25 to-transparent" />
-                </motion.span>
-              </div>
-
-              <p className="wl-label text-brand/70 mb-2">{DIRECTOR_EMPTY_HERO.eyebrow}</p>
-              <h2 className="text-[22px] sm:text-[28px] font-bold text-ink tracking-[-0.03em] leading-[1.12] mb-2">
-                {DIRECTOR_EMPTY_HERO.title}{" "}
-                <span className="font-display italic text-transparent bg-clip-text bg-gradient-to-r from-brand via-brand to-brand-deep">
-                  {DIRECTOR_EMPTY_HERO.titleAccent}
+              <SignalOrbFrame
+                className={cn("mb-6", WL_DIRECTOR_CLASSES.heroOrb)}
+                size="lg"
+                withBloom
+                refined
+              >
+                <span className="flex w-16 h-16 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-[0_8px_28px_-10px_rgba(59,21,76,0.35)] ring-1 ring-white/15 relative overflow-hidden">
+                  <Compass className="w-8 h-8 relative z-10" strokeWidth={1.75} />
+                  <span
+                    aria-hidden
+                    className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent"
+                  />
                 </span>
+              </SignalOrbFrame>
+
+              <p className={cn(WL_APP_CLASSES.proEyebrow, "text-brand/75 mb-2")}>
+                {DIRECTOR_EMPTY_HERO.eyebrow}
+              </p>
+              <h2
+                className={cn(
+                  WL_APP_CLASSES.proTitle,
+                  "text-[1.35rem] sm:text-[1.65rem] mb-2 max-w-md text-balance",
+                )}
+              >
+                {DIRECTOR_EMPTY_HERO.title}{" "}
+                <span className="text-brand">{DIRECTOR_EMPTY_HERO.titleAccent}</span>
               </h2>
 
               {agents.length > 0 ? (
@@ -1003,7 +1014,7 @@ export default function DirectorWorkspace({
                 </p>
               )}
 
-              <p className="wl-label text-brand/60 mb-2.5">
+              <p className={cn(WL_APP_CLASSES.proEyebrow, "text-brand/65 mb-2.5")}>
                 {DIRECTOR_EMPTY_HERO.capabilityEyebrow}
               </p>
               <div className="flex flex-wrap justify-center gap-1.5 mb-6 max-w-md">
@@ -1027,7 +1038,7 @@ export default function DirectorWorkspace({
               <DirectorStarterPrompts onSelect={(label) => void send(label)} className="mb-6" />
 
               <div className="wl-director-empty-section w-full mb-6">
-                <p className="wl-label text-brand/60 mb-2.5">
+                <p className={cn(WL_APP_CLASSES.proEyebrow, "text-brand/65 mb-2.5")}>
                   {DIRECTOR_EMPTY_HERO.discoverEyebrow}
                 </p>
                 <DirectorCapabilityCatalog

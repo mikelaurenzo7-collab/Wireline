@@ -39,6 +39,9 @@ describe("Wireline Director design contract", () => {
     expect(WL_DIRECTOR_CLASSES.threadColumn).toBe("wl-director-thread");
     expect(WL_DIRECTOR_CLASSES.messageStack).toContain("wl-director-message-stack");
     expect(WL_DIRECTOR_CLASSES.emptyHero).toBe("wl-director-empty-hero");
+    expect(WL_DIRECTOR_CLASSES.fleetConstellation).toBe("wl-fleet-constellation");
+    expect(WL_APP_CLASSES.proTitle).toBe("wl-pro-title");
+    expect(WL_APP_CLASSES.proEyebrow).toBe("wl-pro-eyebrow");
     expect(WL_DIRECTOR_CLASSES.composerToolbar).toBe("wl-director-composer-toolbar");
     expect(WL_DIRECTOR_CLASSES.composerAccessory).toBe("wl-composer-accessory-panel");
     expect(WL_DIRECTOR_CLASSES.composerToolChip).toBe("wl-composer-tool-chip");
@@ -106,8 +109,8 @@ describe("Wireline Director design contract", () => {
     expect(DIRECTOR_STARTER_PROMPTS.every((p) => p.label.length > 10)).toBe(true);
   });
 
-  it("empty hero copy references wingman and fleet orchestration", () => {
-    expect(DIRECTOR_EMPTY_HERO.titleAccent).toBe("business wingman");
+  it("empty hero copy references fleet orchestration", () => {
+    expect(DIRECTOR_EMPTY_HERO.titleAccent).toBe("one console");
     expect(DIRECTOR_EMPTY_HERO.subtitleWithFleet(2)).toContain("2 agents");
     expect(DIRECTOR_EMPTY_HERO.subtitleNoFleet.toLowerCase()).toContain("fleet");
     expect(DIRECTOR_EMPTY_HERO.capabilityEyebrow).toBeTruthy();

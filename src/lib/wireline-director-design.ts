@@ -6,6 +6,8 @@
  * stay intentional and on-brand.
  */
 
+import { WL_SIGNAL_CLASSES } from "./wireline-signal-design";
+
 export const WIRELINE_DIRECTOR_BRAND = {
   /** Primary aurora violet — matches --color-brand */
   violet: "#8B3FD6",
@@ -27,6 +29,7 @@ export const WL_DIRECTOR_CLASSES = {
   docBody: "wl-director-doc",
   liveFeedHeader: "wl-live-feed-header",
   heroOrb: "wl-director-hero-orb",
+  fleetConstellation: WL_SIGNAL_CLASSES.fleetConstellation,
   starterChip: "wl-starter-chip",
   orchestrationStep: "wl-orchestration-step",
   liveOutput: "wl-live-output",
@@ -317,6 +320,11 @@ export const WL_APP_CLASSES = {
   modalSurface: "wl-modal-surface",
   /** Framed empty / insight stat — elevated panel without aurora chrome */
   panelFrame: "relative rounded-md wl-panel-elevated border border-border overflow-hidden",
+  signalOrbFrame: WL_SIGNAL_CLASSES.signalOrbFrame,
+  signalOrbRefined: WL_SIGNAL_CLASSES.signalOrbRefined,
+  emptyStateSignal: WL_SIGNAL_CLASSES.emptyStateSignal,
+  proTitle: "wl-pro-title",
+  proEyebrow: "wl-pro-eyebrow",
   insightStatCard: "relative rounded-md wl-panel border border-black/8 overflow-hidden",
   /** Grouped icon controls (theme, shortcuts) on cream workspace header */
   chromeToolbar: "wl-chrome-toolbar",
@@ -454,8 +462,8 @@ export const DIRECTOR_LOADING_COPY = {
 
 export const DIRECTOR_EMPTY_HERO = {
   eyebrow: "Mission control",
-  title: "Your always-on",
-  titleAccent: "business wingman",
+  title: "Orchestrate your fleet from",
+  titleAccent: "one console",
   subtitleWithFleet: (n: number) =>
     `${n} agent${n === 1 ? "" : "s"} on deck — orchestrate calls, comms, and integrations from one thread.`,
   subtitleNoFleet:

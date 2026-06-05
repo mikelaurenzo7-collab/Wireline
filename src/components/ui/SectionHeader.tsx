@@ -1,5 +1,6 @@
 import React from "react";
 import { cn } from "../../lib/utils";
+import { WL_APP_CLASSES } from "../../lib/wireline-director-design";
 
 interface SectionHeaderProps {
   eyebrow?: string;
@@ -9,6 +10,11 @@ interface SectionHeaderProps {
   actions?: React.ReactNode;
   /** Renders a delicate hairline divider beneath the header (default true for consistency) */
   divider?: boolean;
+  /**
+   * editorial — Fraunces display (marketing-forward).
+   * instrument — sans semibold (authenticated product surfaces).
+   */
+  tone?: "editorial" | "instrument";
 }
 
 /**
@@ -22,17 +28,37 @@ export function SectionHeader({
   className,
   actions,
   divider = true,
+  tone = "instrument",
 }: SectionHeaderProps) {
+  const editorial = tone === "editorial";
+
   return (
     <div className={cn("flex flex-col", className)}>
-      {eyebrow && <p className="app-section-title text-brand/70 mb-1">{eyebrow}</p>}
+      {eyebrow && (
+        <p
+          className={cn(
+            editorial ? "app-section-title text-brand/70 mb-1" : WL_APP_CLASSES.proEyebrow,
+            "mb-1",
+          )}
+        >
+          {eyebrow}
+        </p>
+      )}
       <div className="flex items-baseline justify-between gap-4">
         <div className="min-w-0">
-          <h3 className="font-display italic text-[21px] leading-[1.05] text-ink tracking-[-0.01em]">
+          <h3
+            className={cn(
+              editorial
+                ? "font-display italic text-[21px] leading-[1.05] text-ink tracking-[-0.01em]"
+                : WL_APP_CLASSES.proTitle,
+            )}
+          >
             {title}
           </h3>
           {description && (
-            <p className="mt-1.5 text-[13px] leading-snug text-muted max-w-prose">{description}</p>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-muted max-w-prose text-pretty">
+              {description}
+            </p>
           )}
         </div>
         {actions && <div className="shrink-0 self-start pt-0.5">{actions}</div>}

@@ -1,6 +1,7 @@
 import { Compass } from "lucide-react";
 import { BRAND } from "../../constants/brand-colors";
 import { Medallion } from "../ui/Medallion";
+import { SignalOrbFrame } from "../ui/SignalOrbFrame";
 
 /**
  * RouteFallback — the lazy-route loading skeleton shown on every authenticated
@@ -30,9 +31,11 @@ export default function RouteFallback() {
       </div>
 
       <div className="shrink-0 flex items-center gap-3 mb-6" aria-hidden="true">
-        <Medallion size="sm" withHalo shimmer className="w-10 h-10">
-          <Compass className="w-5 h-5 animate-pulse" />
-        </Medallion>
+        <SignalOrbFrame size="sm" withBloom refined className="shrink-0">
+          <Medallion size="sm" variant="instrument" withHalo={false} className="w-10 h-10">
+            <Compass className="w-5 h-5 opacity-80" strokeWidth={1.75} />
+          </Medallion>
+        </SignalOrbFrame>
         <div className="space-y-2">
           <div className="h-2.5 w-32 rounded-full bg-brand/10 overflow-hidden relative">
             <div className="absolute inset-0 skeleton-shimmer" />

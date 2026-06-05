@@ -9,10 +9,11 @@ interface MedallionProps {
   /** Size preset — default is the 14x14 used in empty states */
   size?: "sm" | "md" | "lg";
   /**
-   * Render the travelling crystalline glint + specular highlight so the
-   * medallion reads like a cut gemstone catching the light. On by default —
-   * it's the signature "gem" treatment of the Aurora Cream system.
+   * signature — crystalline glint (marketing, celebration moments).
+   * instrument — static specular; no travelling sweep (authenticated app).
    */
+  variant?: "signature" | "instrument";
+  /** @deprecated Prefer `variant="instrument"` — glint sweep off when false */
   shimmer?: boolean;
   /**
    * Optional accent override (hex/rgb). When provided the gradient + halo are
@@ -23,15 +24,15 @@ interface MedallionProps {
 }
 
 /**
- * Medallion — the signature gradient icon container used throughout the Aurora Cream system.
- * Use for empty states, section headers, identity markers, and status indicators.
+ * Medallion — gradient icon container for empty states, headers, and markers.
  */
 export function Medallion({
   children,
   className,
   withHalo = false,
   size = "md",
-  shimmer = true,
+  variant = "instrument",
+  shimmer,
   accent,
 }: MedallionProps) {
   const sizeClasses = {
@@ -39,6 +40,9 @@ export function Medallion({
     md: "w-9 h-9",
     lg: "w-11 h-11",
   }[size];
+
+  const signature = variant === "signature" || shimmer === true;
+  const showSweep = signature && shimmer !== false;
 
   const accentStyle: React.CSSProperties | undefined = accent
     ? {
@@ -51,42 +55,31 @@ export function Medallion({
       {withHalo && (
         <span
           aria-hidden="true"
-          className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150"
-          style={accent ? { backgroundColor: accent, opacity: 0.3 } : undefined}
+          className="absolute inset-0 -z-10 rounded-full bg-brand/20 blur-2xl scale-150"
+          style={accent ? { backgroundColor: accent, opacity: 0.22 } : undefined}
         />
       )}
       <div
         className={cn(
-          "group relative overflow-hidden rounded-md bg-gradient-to-br from-brand via-[#9B5CE0] to-brand-deep text-on-brand flex items-center justify-center shadow-sm shadow-brand/25 ring-1 ring-white/10",
-          shimmer && "medallion-glint",
+          "group relative overflow-hidden rounded-md bg-gradient-to-br from-brand via-[#9B5CE0] to-brand-deep text-on-brand flex items-center justify-center ring-1 ring-white/12",
+          signature ? "shadow-sm shadow-brand/25" : "shadow-[0_1px_2px_rgba(26,22,20,0.08)]",
+          showSweep && "medallion-glint",
+          !signature && "medallion-instrument",
           sizeClasses,
         )}
         style={accentStyle}
       >
-        {/* Ultra-fine inner specular rim — gives true cut-gem depth */}
         <span
           aria-hidden
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "linear-gradient(145deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.06) 28%, transparent 52%, rgba(0,0,0,0.12) 78%)",
-            mixBlendMode: "soft-light",
-          }}
+          className="absolute inset-0 pointer-events-none medallion-specular"
         />
-        {/* Crystalline facet highlight that travels on hover — extremely subtle */}
-        {shimmer && (
+        {showSweep && (
           <span
             aria-hidden
-            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
-            style={{
-              background:
-                "linear-gradient(125deg, transparent 20%, rgba(255,255,255,0.28) 42%, transparent 64%)",
-              transform: "translateX(-30%)",
-              animation: "medallion-facet 2.8s ease-in-out infinite",
-            }}
+            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none medallion-facet-hover"
           />
         )}
-        <span className="relative z-[1] inline-flex items-center justify-center drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]">
+        <span className="relative z-[1] inline-flex items-center justify-center">
           {children}
         </span>
       </div>

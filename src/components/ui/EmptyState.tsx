@@ -7,6 +7,8 @@ import { Medallion } from "./Medallion";
 import { SectionHeader } from "./SectionHeader";
 import { ShadButton } from "./shadcn/ShadButton";
 import { WL_APP_CLASSES } from "../../lib/wireline-director-design";
+import { WL_SIGNAL_CLASSES } from "../../lib/wireline-signal-design";
+import { SignalOrbFrame } from "./SignalOrbFrame";
 
 interface Action {
   label: string;
@@ -21,11 +23,13 @@ interface EmptyStateProps {
   description?: string;
   actions?: Action[];
   className?: string;
-  /** Show the signature brand halo behind the medallion */
+  /** Soft bloom behind the medallion constellation */
   withHalo?: boolean;
+  /** Dormant fleet constellation behind the medallion (off in compact panels) */
+  withConstellation?: boolean;
   /** Eyebrow label above the title. Defaults to the canonical "No data yet". */
   eyebrow?: string;
-  /** Optional accent override (hex/rgb) tinting the medallion + halo. */
+  /** Optional accent override (hex/rgb) tinting the medallion. */
   accent?: string;
   /**
    * Wrap the empty state in the canonical premium panel chrome
@@ -39,12 +43,7 @@ interface EmptyStateProps {
 }
 
 /**
- * EmptyState — the canonical empty / idle / no-data pattern for the Aurora Cream system.
- * Use this everywhere instead of ad-hoc empty states.
- *
- * The medallion floats gently and catches a crystalline glint so every empty
- * surface in the authenticated app shares the same gem-like, high-class aura
- * as the public marketing pages.
+ * EmptyState — canonical empty / idle / no-data pattern for authenticated surfaces.
  */
 export function EmptyState({
   icon: Icon,
@@ -53,6 +52,7 @@ export function EmptyState({
   actions = [],
   className,
   withHalo = true,
+  withConstellation,
   eyebrow = "No data yet",
   accent,
   framed = false,
@@ -61,30 +61,36 @@ export function EmptyState({
 }: EmptyStateProps) {
   const reduceMotion = useReducedMotion();
   const compact = density === "compact";
+  const showConstellation = withConstellation ?? !compact;
 
   const body = (
     <motion.div
-      initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+      initial={reduceMotion ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
         "wl-empty-state flex flex-col items-center justify-center text-center px-6",
+        showConstellation && WL_SIGNAL_CLASSES.emptyStateSignal,
         compact ? "py-8" : "py-12",
         framed && "py-0",
         className,
       )}
     >
-      <motion.div
-        animate={reduceMotion || compact ? undefined : { y: [0, -4, 0] }}
-        transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-        className={compact ? "mb-4" : "mb-5"}
-      >
-        <Medallion withHalo={withHalo} size={compact ? "sm" : "md"} accent={accent}>
-          <Icon className={compact ? "w-5 h-5" : "w-6 h-6"} />
-        </Medallion>
-      </motion.div>
+      <div className={compact ? "mb-4" : "mb-5"}>
+        <SignalOrbFrame
+          size={compact ? "sm" : "md"}
+          withConstellation={showConstellation}
+          withBloom={withHalo}
+          refined
+        >
+          <Medallion variant="instrument" withHalo={false} size={compact ? "sm" : "md"} accent={accent}>
+            <Icon className={compact ? "w-5 h-5" : "w-6 h-6"} strokeWidth={1.75} />
+          </Medallion>
+        </SignalOrbFrame>
+      </div>
 
       <SectionHeader
+        tone="instrument"
         eyebrow={eyebrow}
         title={title}
         description={description}
@@ -98,12 +104,6 @@ export function EmptyState({
         <div className={cn("flex flex-wrap justify-center gap-2", compact ? "mt-4" : "mt-6")}>
           {actions.map((action, index) => {
             const isPrimary = !!action.primary;
-            const sharedClasses = cn(
-              "rounded-full transition-all touch-press",
-              isPrimary
-                ? "bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20 hover:shadow-md hover:shadow-brand/25 hover:-translate-y-px"
-                : "hover:-translate-y-px",
-            );
 
             if (action.to) {
               const internal = action.to.startsWith("/") && !action.to.startsWith("//");
@@ -112,7 +112,11 @@ export function EmptyState({
                   key={index}
                   asChild
                   variant={isPrimary ? "default" : "outline"}
-                  className={sharedClasses}
+                  className={cn(
+                    "rounded-full touch-press",
+                    isPrimary && "app-primary-action",
+                    !isPrimary && "border-brand/20 text-ink/85 hover:bg-brand/[0.04]",
+                  )}
                 >
                   {internal ? (
                     <Link to={action.to}>{action.label}</Link>
@@ -128,7 +132,11 @@ export function EmptyState({
                 key={index}
                 onClick={action.onClick}
                 variant={isPrimary ? "default" : "outline"}
-                className={sharedClasses}
+                className={cn(
+                  "rounded-full touch-press",
+                  isPrimary && "app-primary-action",
+                  !isPrimary && "border-brand/20 text-ink/85 hover:bg-brand/[0.04]",
+                )}
               >
                 {action.label}
               </ShadButton>
