@@ -502,13 +502,13 @@ export default function LiveOps() {
                         />
                       ) : (
                         <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8">
-                          <div className="w-full sm:w-1/2 h-[150px] min-w-0">
+                          <div className="w-full sm:w-1/2 h-44 min-h-44 min-w-0 overflow-visible">
                             <ResponsiveContainer width="100%" height="100%">
-                              <PieChart>
+                              <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
                                 <Pie
                                   data={sentimentData}
-                                  innerRadius={50}
-                                  outerRadius={80}
+                                  innerRadius="58%"
+                                  outerRadius="82%"
                                   paddingAngle={5}
                                   dataKey="value"
                                   stroke="none"
