@@ -168,8 +168,7 @@ export default function PublicChangelog() {
                 >
                   <span
                     aria-hidden="true"
-                    className="absolute left-0 top-6 w-1.5 h-1.5 rounded-full"
-                    className="bg-brand"
+                    className="absolute left-0 top-6 w-1.5 h-1.5 rounded-full bg-brand"
                   />
                   <div className="flex flex-wrap items-center gap-2 mb-1.5">
                     <span className="text-eyebrow !text-[0.625rem]">{entry.date}</span>

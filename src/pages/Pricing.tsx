@@ -568,8 +568,7 @@ export default function Pricing() {
                   className="wl-panel border border-ink/[0.08] p-5 relative overflow-hidden transition-all duration-300 hover:border-brand/30"
                 >
                   <div
-                    className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-20 blur-3xl pointer-events-none"
-                    className="bg-brand"
+                    className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-20 blur-3xl pointer-events-none bg-brand"
                     aria-hidden="true"
                   />
                   <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ink/55 mb-1">

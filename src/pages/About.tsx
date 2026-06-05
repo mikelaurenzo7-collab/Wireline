@@ -128,8 +128,7 @@ export default function About() {
                 className="wl-panel card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30 hover:shadow-[0_12px_48px_rgba(139,63,214,0.06)]"
               >
                 <div
-                  className="w-8 h-8 flex items-center justify-center mb-3"
-                  className="bg-brand"
+                  className="w-8 h-8 flex items-center justify-center mb-3 bg-brand"
                   aria-hidden="true"
                 >
                   <Sparkles className="w-4 h-4 text-white" strokeWidth={2} />

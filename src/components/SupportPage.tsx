@@ -100,10 +100,7 @@ export function SupportPage() {
         </Link>
 
         <div className="flex items-center gap-3 mb-2">
-          <div
-            className="w-10 h-10 rounded-md flex items-center justify-center shrink-0"
-            className="bg-brand"
-          >
+          <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 bg-brand">
             <ShieldCheck className="w-5 h-5 text-on-brand" />
           </div>
           <h1 className="marketing-hero-title text-3xl sm:text-4xl">Support</h1>

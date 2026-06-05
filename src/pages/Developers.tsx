@@ -197,8 +197,7 @@ export default function Developers() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               to="/login"
-              className="inline-flex items-center gap-2 px-5 py-3 text-[11px] uppercase tracking-[0.30em] font-medium text-on-brand"
-              className="bg-brand"
+              className="inline-flex items-center gap-2 px-5 py-3 text-[11px] uppercase tracking-[0.30em] font-medium text-on-brand bg-brand"
             >
               Sign in <ArrowRight className="w-4 h-4" />
             </Link>

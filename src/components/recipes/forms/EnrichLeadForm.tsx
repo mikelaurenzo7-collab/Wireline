@@ -12,7 +12,7 @@ import {
   Stat,
 } from "../shared";
 import { useRecipeAsync } from "../useRecipeAsync";
-import { BRAND } from "../../constants/brand-colors";
+import { BRAND } from "../../../constants/brand-colors";
 
 export function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled: boolean }) {
   const [name, setName] = useState(initial?.customerName ?? "");
