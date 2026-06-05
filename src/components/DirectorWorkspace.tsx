@@ -1,9 +1,6 @@
-  const [isClearing, setIsClearing] = useState(false);
-
   const clearThread = useCallback(async () => {
     if (isClearing) return;
 
-    // Use proper modal in real implementation; keeping confirm for minimal diff
     if (!confirm("Clear your Director conversation and generated artifacts? This cannot be undone.")) {
       return;
     }
@@ -13,7 +10,7 @@
       const r = await authFetch("/api/director/messages", { method: "DELETE" });
       if (!r.ok) throw new Error("Clear failed");
 
-      // Comprehensive local state reset for clean thread
+      // Comprehensive local state reset
       setMessages([]);
       setArtifacts([]);
       setResolved({});
