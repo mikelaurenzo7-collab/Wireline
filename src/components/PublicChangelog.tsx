@@ -133,8 +133,7 @@ export default function PublicChangelog() {
         path="/changelog"
       />
       <MarketingChrome stickyCta={false}>
-        <div className="scanline pointer-events-none fixed inset-0 z-0 opacity-20" aria-hidden />
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+        <div className="relative z-10 max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}

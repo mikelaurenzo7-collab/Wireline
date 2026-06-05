@@ -39,8 +39,12 @@ export default function MarketingChrome({
       {!authCanvas && <MarketingAuroraBackdrop />}
       <PublicSiteHeader active={active} />
       <div
+        id="main-content"
+        tabIndex={-1}
         className={cn(
-          "relative z-10 flex-1 flex flex-col min-h-0 overflow-y-auto",
+          "relative z-10 flex-1 flex flex-col min-h-0 overflow-y-auto scroll-viewport",
+          /* PublicSiteHeader is fixed h-16 — reserve space so hero copy isn't clipped. */
+          !authCanvas && "pt-16 sm:pt-20",
           stickyCta && "marketing-has-sticky-cta",
         )}
       >

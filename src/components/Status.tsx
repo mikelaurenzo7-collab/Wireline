@@ -149,8 +149,7 @@ export default function Status() {
         path="/status"
       />
       <MarketingChrome stickyCta={false}>
-        <div className="scanline pointer-events-none fixed inset-0 z-0 opacity-30" aria-hidden />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+        <div className="relative z-10 max-w-4xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
           {/* Overall status card */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}

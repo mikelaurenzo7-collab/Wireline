@@ -293,8 +293,7 @@ function AppContent() {
       return <Navigate to="/ops" replace />;
     }
     const legacySub = location.pathname.slice("/auth".length);
-    const authTarget =
-      legacySub === "/signup" ? "/signup" : legacySub === "/login" ? "/login" : "/signin";
+    const authTarget = legacySub === "/signup" ? "/signup" : "/signin";
     return <Navigate to={`${authTarget}${location.search}`} replace />;
   }
 
@@ -309,7 +308,10 @@ function AppContent() {
         </Suspense>
       );
     }
-    if (path === "/signup" || path === "/signin" || path === "/login") {
+    if (path === "/login") {
+      return <Navigate to={`/signin${location.search}`} replace />;
+    }
+    if (path === "/signup" || path === "/signin") {
       return (
         <ErrorBoundary>
           <AuthPortal />

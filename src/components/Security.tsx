@@ -12,6 +12,7 @@
 import { motion } from "motion/react";
 import { Link } from "react-router-dom";
 import {
+  ArrowLeft,
   Lock,
   ShieldCheck,
   KeyRound,
@@ -131,21 +132,31 @@ export default function Security() {
         path="/security"
       />
       <MarketingChrome stickyCta={false}>
-        <div className="scanline pointer-events-none fixed inset-0 z-0 opacity-30" aria-hidden />
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+        <div className="relative z-10 max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-caption font-medium text-muted hover:text-ink transition-colors mb-8 -mx-2 px-2 py-2 rounded-md hover:bg-black/[0.03] min-h-[44px]"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Back home
+          </Link>
+
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="mb-10"
           >
-            <div className="flex items-center gap-2 mb-3">
-              <span className="hero-accent-line bg-brand" />
-              <span className="text-eyebrow">Security · Compliance · Honesty</span>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 bg-brand">
+                <ShieldCheck className="w-5 h-5 text-on-brand" />
+              </div>
+              <div>
+                <p className="text-eyebrow">Security · Compliance · Honesty</p>
+                <h1 className="marketing-hero-title text-2xl sm:text-3xl">
+                  How we keep your calls — and your data — safe.
+                </h1>
+              </div>
             </div>
-            <h1 className="marketing-hero-title mb-3">
-              How we keep your calls — and your data — safe.
-            </h1>
             <p className="marketing-hero-lead max-w-prose">
               Wireline runs every call on infrastructure designed for the moments that matter: a
               customer trusting you, a regulator auditing you, a hacker testing you. This page is
