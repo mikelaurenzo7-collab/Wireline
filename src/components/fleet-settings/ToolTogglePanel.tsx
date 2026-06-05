@@ -105,7 +105,9 @@ export default function ToolTogglePanel({ selectedAgent, updateAgentMeta }: Tool
               <p className="text-[10px] uppercase tracking-[0.25em] text-brand/70 flex items-center gap-1.5">
                 <Video className="w-3 h-3" /> Auto Zoom link
               </p>
-              <p className="text-[10px] text-ink/45 mt-1">Attach meeting links when scheduling.</p>
+              <p className="chrome-subtle mt-1 text-pretty">
+                Attach meeting links when scheduling.
+              </p>
             </div>
             <ShadButton
               type="button"

@@ -97,8 +97,8 @@ export default function AttributionView({ days }: { days: number }) {
                         Number(conv) >= 30
                           ? "wl-status-success wl-text-success border"
                           : Number(conv) >= 15
-                            ? "bg-amber-500/12 text-amber-600 border-amber-500/20"
-                            : "bg-rose-500/10 text-rose-500 border-rose-500/20",
+                            ? "bg-brand/10 text-brand border-brand/20"
+                            : "bg-destructive/10 text-destructive border-destructive/20",
                       )}
                     >
                       {conv}%

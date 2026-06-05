@@ -240,7 +240,7 @@ export default function CampaignsTab({
                     disableAnimations
                     onClick={() => stopCampaign(selectedCampaign.id)}
                     disabled={stoppingCampaignId === selectedCampaign.id}
-                    className="rounded-full bg-rose-500/15 border-rose-500/40 text-rose-500 wl-ops-chip hover:bg-rose-500/25 shadow-none"
+                    className="rounded-full bg-destructive/15 border-destructive/40 text-destructive wl-ops-chip hover:bg-destructive/25 shadow-none"
                   >
                     {stoppingCampaignId === selectedCampaign.id ? (
                       <Loader2 className="w-3 h-3 animate-spin" />
@@ -306,7 +306,7 @@ export default function CampaignsTab({
                   onClick={() => deleteCampaign(selectedCampaign.id)}
                   aria-label="Delete campaign"
                   title="Delete campaign"
-                  className="w-8 h-8 rounded-md text-muted hover:text-rose-500 hover:border-rose-500/30"
+                  className="w-8 h-8 rounded-md text-muted hover:text-destructive hover:border-destructive/30"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </ShadButton>
@@ -473,7 +473,7 @@ export default function CampaignsTab({
             </AnimatePresence>
 
             {/* Stats row */}
-            <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-2 border-b border-white/8">
+            <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-2 border-b border-black/8">
               {[
                 { label: "Leads", value: selectedCampaign.leads_count, accent: "#8B3FD6" },
                 { label: "Dialed", value: selectedCampaign.dialed_count, accent: "#8B3FD6" },
@@ -521,10 +521,10 @@ export default function CampaignsTab({
               <>
                 {/* Retry failed banner */}
                 {campaignLeads.some((l) => l.status === "Failed") && (
-                  <div className="mx-4 mt-3 rounded-md bg-rose-500/10 border border-rose-500/30 p-3 flex items-center gap-3">
-                    <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+                  <div className="mx-4 mt-3 rounded-md bg-destructive/10 border border-destructive/30 p-3 flex items-center gap-3">
+                    <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="wl-label text-rose-500">
+                      <p className="wl-label text-destructive">
                         {campaignLeads.filter((l) => l.status === "Failed").length} failed lead
                         {campaignLeads.filter((l) => l.status === "Failed").length > 1 ? "s" : ""}
                       </p>
@@ -535,7 +535,7 @@ export default function CampaignsTab({
                       size="sm"
                       disableAnimations
                       onClick={() => retryFailedLeads(selectedCampaign.id)}
-                      className="shrink-0 rounded-full bg-rose-500/20 border-rose-500/40 text-rose-500 text-[9px] uppercase tracking-[0.25em] hover:bg-rose-500/30 shadow-none"
+                      className="shrink-0 rounded-full bg-destructive/20 border-destructive/40 text-destructive text-[9px] uppercase tracking-[0.25em] hover:bg-destructive/30 shadow-none"
                     >
                       <Activity className="w-3 h-3" /> Retry Failed
                     </ShadButton>
@@ -560,7 +560,7 @@ export default function CampaignsTab({
                                 : lead.status === "Queued"
                                   ? "bg-brand/15 border-brand/40 text-brand"
                                   : lead.status === "Failed"
-                                    ? "bg-rose-500/10 border-rose-500/30 text-rose-500"
+                                    ? "bg-destructive/10 border-destructive/30 text-destructive"
                                     : lead.status === "Dialing"
                                       ? "bg-brand/8 border-brand/25 text-brand/80"
                                       : "bg-black/[0.04] border-border text-muted",

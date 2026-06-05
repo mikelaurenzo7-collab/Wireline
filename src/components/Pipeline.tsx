@@ -60,7 +60,7 @@ const STAGES: { id: Stage; label: string; tint: string; cardBg: string; help: st
     id: "lost",
     label: "Lost",
     tint: BRAND.rose,
-    cardBg: "from-rose-500/8 to-transparent",
+    cardBg: "from-destructive/8 to-transparent",
     help: "Closed-lost",
   },
 ];
@@ -69,7 +69,7 @@ function attemptsUrgencyClass(attempts: number | null | undefined): string {
   if (!attempts || attempts === 0) return "bg-border/40";
   if (attempts <= 2) return "bg-brand";
   if (attempts <= 4) return "bg-brand/60";
-  return "bg-rose-500";
+  return "bg-destructive";
 }
 
 interface Lead {

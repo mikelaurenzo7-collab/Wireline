@@ -46,23 +46,19 @@ export default function AgentListPanel({
   return (
     <aside
       className={cn(
-        "w-full md:w-[350px] lg:w-[420px] border-b md:border-b-0 md:border-r border-white/8 h-auto md:h-full md:min-h-0 flex flex-col shrink-0 overflow-hidden",
+        "w-full md:w-[350px] lg:w-[420px] border-b md:border-b-0 md:border-r border-black/8 h-auto md:h-full md:min-h-0 flex flex-col shrink-0 overflow-hidden bg-paper/40",
         selectedAgent && "hidden md:flex",
       )}
     >
-      <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between gap-3 shrink-0">
+      <div className="px-4 py-3 border-b border-black/8 flex items-center justify-between gap-3 shrink-0">
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-[0.45em] text-brand/80">
-            Fleet · Agents
-          </div>
+          <p className="app-section-title mb-0.5">Fleet · Agents</p>
           <h2 className="font-display italic lowercase text-2xl text-ink leading-none mt-0.5 flex items-center gap-2">
             <Shield className="w-4 h-4 text-brand" />
             your agents
           </h2>
         </div>
-        <span className="text-[9px] uppercase tracking-[0.3em] text-ink/40 tabular-nums shrink-0">
-          {agents.length}
-        </span>
+        <span className="wl-label-muted tabular-nums shrink-0">{agents.length}</span>
       </div>
 
       <div className="px-3 py-3 flex-1 min-h-0 scroll-viewport space-y-2">
@@ -147,7 +143,7 @@ export default function AgentListPanel({
                   disabled={isDeletingAgent === agent.id}
                   title="Delete agent"
                   aria-label={`Delete agent ${agent.name}`}
-                  className="mr-2 h-7 w-7 shrink-0 rounded-md text-ink/40 hover:border-rose-500/30 hover:bg-rose-500/8 hover:text-rose-500 disabled:opacity-40"
+                  className="mr-2 h-7 w-7 shrink-0 rounded-md text-ink/40 hover:border-destructive/30 hover:bg-destructive/8 hover:text-destructive disabled:opacity-40 touch-press"
                 >
                   {isDeletingAgent === agent.id ? (
                     <Loader2 className="w-3 h-3 animate-spin" />

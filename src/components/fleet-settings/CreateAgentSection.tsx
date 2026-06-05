@@ -41,9 +41,9 @@ export default function CreateAgentSection({
   };
 
   return (
-    <motion.div layout className="pt-4 mt-4 border-t border-white/8 border-dashed space-y-3">
+    <motion.div layout className="pt-4 mt-4 border-t border-black/8 border-dashed space-y-3">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h3 className="text-[10px] uppercase tracking-[0.3em] text-ink">Create a new agent</h3>
+        <h3 className="wl-label text-ink normal-case tracking-[0.18em]">Create a new agent</h3>
         <div className="flex items-center gap-1.5">
           <ClaudeRecipeButton recipe="agent-forge" label="Forge" variant="ghost" />
           <ShadButton
@@ -52,14 +52,14 @@ export default function CreateAgentSection({
             size="sm"
             disableAnimations
             onClick={onSeedFleet}
-            className="rounded-full text-[10px] uppercase tracking-[0.25em]"
+            className="rounded-full wl-label normal-case tracking-[0.18em]"
           >
             <Sparkles className="w-3 h-3" /> Seed
           </ShadButton>
         </div>
       </div>
 
-      <div className="flex p-1 rounded-full wl-panel border border-white/10">
+      <div className="flex p-1 rounded-full wl-panel border border-black/10">
         <ShadButton
           type="button"
           variant="ghost"
@@ -67,7 +67,7 @@ export default function CreateAgentSection({
           aria-pressed={newAgentChannel === "voice"}
           onClick={() => setNewAgentChannel("voice")}
           className={cn(
-            "flex-1 h-auto py-1 rounded-full text-[10px] uppercase tracking-[0.25em]",
+            "flex-1 h-auto py-1 rounded-full app-segment-btn text-[11px]",
             newAgentChannel === "voice" ? "bg-brand/15 text-brand" : "text-muted hover:text-ink",
           )}
         >
@@ -80,7 +80,7 @@ export default function CreateAgentSection({
           aria-pressed={newAgentChannel === "email"}
           onClick={() => setNewAgentChannel("email")}
           className={cn(
-            "flex-1 h-auto py-1 rounded-full text-[10px] uppercase tracking-[0.25em]",
+            "flex-1 h-auto py-1 rounded-full app-segment-btn text-[11px]",
             newAgentChannel === "email" ? "bg-brand/15 text-brand" : "text-muted hover:text-ink",
           )}
         >
@@ -90,7 +90,7 @@ export default function CreateAgentSection({
 
       <div className="space-y-3">
         <div className="space-y-1.5">
-          <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
+          <label className="wl-label-muted flex items-center gap-1.5">
             <Briefcase className="w-2.5 h-2.5 text-brand" /> Business role
           </label>
           <div className="relative">
@@ -110,12 +110,12 @@ export default function CreateAgentSection({
               </SelectContent>
             </Select>
           </div>
-          <p className="text-[10px] text-ink/40 leading-relaxed">
+          <p className="chrome-subtle leading-relaxed text-pretty">
             {AGENT_ROLES.find((r) => r.value === newAgentRole)?.description}
           </p>
         </div>
         <div className="space-y-1.5">
-          <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
+          <label className="wl-label-muted">
             Agent ID{" "}
             <span className="text-ink/40 normal-case tracking-normal">(lowercase, no spaces)</span>
           </label>
@@ -128,7 +128,7 @@ export default function CreateAgentSection({
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
+          <label className="wl-label-muted">
             Agent name{" "}
             <span className="text-ink/40 normal-case tracking-normal">
               (what callers will hear)

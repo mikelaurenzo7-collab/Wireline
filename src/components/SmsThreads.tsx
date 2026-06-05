@@ -150,7 +150,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
       disableAnimations
       onClick={fetchThreads}
       disabled={loading}
-      className="h-9 rounded-full text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40"
+      className="h-9 rounded-full wl-label text-muted hover:text-brand hover:border-brand/40 touch-press"
     >
       {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
       {OPS_CHANNEL_TOOLBAR.sms.refresh}
@@ -211,7 +211,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                             <p className="font-mono text-sm text-ink truncate">
                               {t.customer_number}
                             </p>
-                            <p className="text-[10px] text-ink/40 mt-0.5">
+                            <p className="chrome-subtle mt-0.5">
                               {formatDate(
                                 t.last_message_at,
                                 {
@@ -279,7 +279,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                             "max-w-[78%] rounded-md px-3.5 py-2.5 border",
                             m.direction === "out"
                               ? "ml-auto bg-brand/12 border-brand/30 text-ink"
-                              : "mr-auto bg-white/[0.04] border-white/10 text-ink",
+                              : "mr-auto bg-paper/80 border-black/10 text-ink",
                           )}
                         >
                           <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">
@@ -300,7 +300,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                     <div ref={messagesEndRef} />
                   </div>
 
-                  <div className="shrink-0 border-t border-white/8 pt-3">
+                  <div className="shrink-0 border-t border-black/8 pt-3">
                     <div className="flex gap-2">
                       <Input
                         type="text"
@@ -333,7 +333,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                         )}
                       </ShadButton>
                     </div>
-                    <p className="text-[10px] text-ink/40 mt-1.5 leading-relaxed">
+                    <p className="chrome-subtle mt-1.5 leading-relaxed text-pretty">
                       Sent from your Twilio sender · TCPA opt-out applies · STOP keyword
                       auto-honored.
                     </p>

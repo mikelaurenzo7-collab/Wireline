@@ -206,9 +206,9 @@ export default function ContactProfile() {
         />
 
         {highIntent && (
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/25">
-            <Sparkles className="w-3.5 h-3.5 text-rose-600" />
-            <span className="wl-label text-rose-600 font-medium">High intent lead</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand/10 border border-brand/25">
+            <Sparkles className="w-3.5 h-3.5 text-brand" aria-hidden />
+            <span className="wl-label text-brand font-medium">High intent lead</span>
           </div>
         )}
 

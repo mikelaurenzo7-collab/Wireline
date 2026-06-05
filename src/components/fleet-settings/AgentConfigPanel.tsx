@@ -450,7 +450,7 @@ export default function AgentConfigPanel({
                     {/* Voice Node Config */}
                     {selectedAgent.channel !== "email" && (
                       <div className="rounded-md wl-panel border border-border p-3 space-y-3">
-                        <div className="flex items-center gap-2 pb-2 border-b border-white/8">
+                        <div className="flex items-center gap-2 pb-2 border-b border-black/8">
                           <Radio className="w-3.5 h-3.5 text-brand" />
                           <h3 className="font-display italic lowercase text-base text-ink">
                             carrier signal parameters
@@ -689,7 +689,7 @@ export default function AgentConfigPanel({
                           />
                         </div>
 
-                        <div className="flex items-center justify-between gap-3 rounded-md border border-black/8 dark:border-white/8 bg-black/[0.02] dark:bg-white/3 px-3 py-2.5">
+                        <div className="flex items-center justify-between gap-3 rounded-md border border-black/8 dark:border-black/8 bg-black/[0.02] dark:bg-white/3 px-3 py-2.5">
                           <div className="min-w-0">
                             <p className="text-[10px] uppercase tracking-[0.25em] text-brand/70 flex items-center gap-1.5">
                               <Workflow className="w-3 h-3" /> Conversation flow
@@ -722,7 +722,7 @@ export default function AgentConfigPanel({
                       selectedAgent.channel === "omnichannel" ||
                       !selectedAgent.channel) && (
                       <div className="rounded-md wl-panel border border-border p-3 space-y-3">
-                        <div className="flex items-center gap-2 pb-2 border-b border-white/8">
+                        <div className="flex items-center gap-2 pb-2 border-b border-black/8">
                           <Mail className="w-3.5 h-3.5 text-brand" />
                           <h3 className="font-display italic lowercase text-base text-ink">
                             email relay heuristics
@@ -825,7 +825,7 @@ export default function AgentConfigPanel({
                       const usingAutoComposed = !overrideValue.trim();
                       return (
                         <div className="rounded-md wl-panel border border-border p-3 space-y-3">
-                          <div className="flex items-center justify-between gap-2 pb-2 border-b border-white/8">
+                          <div className="flex items-center justify-between gap-2 pb-2 border-b border-black/8">
                             <div className="flex items-center gap-2">
                               <FileText className="w-3.5 h-3.5 text-brand" />
                               <h3 className="font-display italic lowercase text-base text-ink">
@@ -994,7 +994,7 @@ export default function AgentConfigPanel({
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                   {/* Directives */}
                   <section className="rounded-md wl-panel-elevated border border-border p-3 flex flex-col min-h-[560px] md:h-[400px] max-h-[70vh]">
-                    <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-white/8">
+                    <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-black/8">
                       <div>
                         <h3 className="font-display italic lowercase text-lg text-ink leading-none">
                           tactical logic
@@ -1003,7 +1003,7 @@ export default function AgentConfigPanel({
                           Hard constraints
                         </p>
                       </div>
-                      <span className="px-1.5 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-500 text-[9px] uppercase tracking-[0.25em] leading-none">
+                      <span className="px-1.5 py-0.5 rounded-full bg-destructive/15 border border-destructive/30 text-destructive text-[9px] uppercase tracking-[0.25em] leading-none">
                         Inviolable
                       </span>
                     </header>
@@ -1020,7 +1020,7 @@ export default function AgentConfigPanel({
                               initial={{ opacity: 0, x: -6 }}
                               animate={{ opacity: 1, x: 0 }}
                               key={d.id}
-                              className="rounded-md bg-rose-500/8 border border-rose-500/20 p-3 group"
+                              className="rounded-md bg-destructive/8 border border-destructive/20 p-3 group"
                             >
                               {editingDirective && editingDirective.id === d.id ? (
                                 <div className="space-y-2">
@@ -1032,7 +1032,7 @@ export default function AgentConfigPanel({
                                         content: e.target.value,
                                       })
                                     }
-                                    className="w-full text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-rose-400/50 text-ink min-h-[80px] resize-none"
+                                    className="w-full text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-destructive/50 text-ink min-h-[80px] resize-none"
                                   />
                                   <div className="flex justify-end gap-1.5">
                                     <ShadButton
@@ -1107,7 +1107,7 @@ export default function AgentConfigPanel({
                         )}
                       </AnimatePresence>
                     </div>
-                    <div className="mt-3 pt-3 border-t border-white/8 space-y-1.5">
+                    <div className="mt-3 pt-3 border-t border-black/8 space-y-1.5">
                       <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
                         Add directive
                       </label>
@@ -1120,7 +1120,7 @@ export default function AgentConfigPanel({
                             e.key === "Enter" && saveManualEntry("directive", newDirective)
                           }
                           placeholder="e.g. Always verify date of birth…"
-                          className="flex-1 text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-ink/40"
+                          className="flex-1 text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-destructive/50 text-ink placeholder:text-ink/40"
                         />
                         <ShadButton
                           type="button"
@@ -1140,7 +1140,7 @@ export default function AgentConfigPanel({
 
                   {/* Knowledge Base */}
                   <section className="rounded-md wl-panel-elevated border border-border p-3 flex flex-col min-h-[560px] md:h-[400px] max-h-[70vh]">
-                    <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-white/8">
+                    <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-black/8">
                       <div>
                         <h3 className="font-display italic lowercase text-lg text-ink leading-none">
                           knowledge base
@@ -1251,7 +1251,7 @@ export default function AgentConfigPanel({
                         )}
                       </AnimatePresence>
                     </div>
-                    <div className="mt-3 pt-3 border-t border-white/8 space-y-1.5">
+                    <div className="mt-3 pt-3 border-t border-black/8 space-y-1.5">
                       <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
                         Add fact
                       </label>

@@ -257,11 +257,11 @@ export default function FounderDashboard() {
     return (
       <ClientRouteViewport>
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-          <div className="shrink-0 px-4 md:px-6 py-3 border-b border-black/8 flex items-center gap-3 bg-paper/50 backdrop-blur-sm">
+          <div className="shrink-0 px-4 md:px-6 py-3 border-b border-black/8 flex items-center gap-3 glass-1">
             <ShadButton
               onClick={() => setSelected(null)}
               variant="ghost"
-              className="text-[11px] uppercase tracking-[0.2em] text-muted hover:text-ink"
+              className="wl-label-muted hover:text-ink normal-case tracking-normal"
             >
               ← All staff
             </ShadButton>
@@ -323,11 +323,11 @@ export default function FounderDashboard() {
                 tone={stats.health.warnings_24h > 0 ? "brand" : "muted"}
               />
             </div>
-            <div className="mt-2 text-[10px] text-muted/70">
+            <p className="mt-2 chrome-subtle text-pretty">
               {stats.calls.total.toLocaleString()} calls all-time ·{" "}
               {stats.calls.last_7d.toLocaleString()} in the last 7 days ·{" "}
               {stats.agents.total.toLocaleString()} agents across all tenants
-            </div>
+            </p>
           </div>
         )}
 
@@ -365,7 +365,7 @@ export default function FounderDashboard() {
               {OPS_FOUNDER.broadcastSend}
             </ShadButton>
           </div>
-          <p className="text-[10px] text-muted/70 mt-2">
+          <p className="chrome-subtle mt-2 text-pretty">
             Lands in every staff member's chat memory — they'll factor it into future calls.
           </p>
         </div>
@@ -388,7 +388,7 @@ export default function FounderDashboard() {
             <Link
               key={l.href}
               to={l.href}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-md wl-panel border border-border text-[11px] text-ink hover:border-brand/30 transition-colors"
+              className="touch-press inline-flex items-center gap-2 px-3 py-2 rounded-md wl-panel border border-border text-[11px] text-ink hover:border-brand/30 transition-colors min-h-10"
             >
               <l.icon className="w-3.5 h-3.5 text-brand" />
               {l.label}

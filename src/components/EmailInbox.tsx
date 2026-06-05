@@ -335,7 +335,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                       const active = selectedThread?.id === thread.id;
                       const scoreTone =
                         score >= 80
-                          ? "bg-rose-500/12 text-rose-500 border-rose-500/25"
+                          ? "bg-destructive/12 text-destructive border-destructive/25"
                           : score >= 50
                             ? "bg-brand/12 text-brand border-brand/25"
                             : "bg-black/4 text-ink/40 border-black/8";
@@ -347,7 +347,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           key={thread.id}
                           onClick={() => setSelectedThread(thread)}
                           className={cn(
-                            "group w-full px-4 py-3.5 text-left transition-all flex gap-3 items-start relative active:scale-[0.99] active:bg-white/5 duration-100",
+                            "group w-full px-4 py-3.5 text-left transition-all flex gap-3 items-start relative active:scale-[0.99] active:bg-black/[0.03] duration-100",
                             active ? "bg-brand/6" : "hover:bg-white/3",
                           )}
                         >
@@ -365,7 +365,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                               "w-9 h-9 rounded-md flex items-center justify-center font-display italic text-base shrink-0 border transition-all",
                               active
                                 ? "border-brand/30 bg-brand/10 text-brand"
-                                : "border-white/10 bg-white/4 text-ink/70 group-hover:text-ink",
+                                : "border-black/10 bg-paper/80 text-ink/70 group-hover:text-ink",
                             )}
                           >
                             {thread.customer_email?.[0]?.toUpperCase() || "?"}
@@ -385,7 +385,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                               {thread.subject || "(no subject)"}
                             </h4>
                             <div className="flex items-center gap-2">
-                              <p className="text-[10px] text-ink/40 truncate flex-1">
+                              <p className="chrome-subtle truncate flex-1">
                                 {thread.summary || "Pending analysis…"}
                               </p>
                               <span
@@ -417,7 +417,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                     className="h-full flex flex-col min-h-0"
                   >
                     {/* Subject header */}
-                    <div className="shrink-0 px-3 sm:px-4 py-3 border-b border-white/8 flex items-center justify-between gap-2 sm:gap-3">
+                    <div className="shrink-0 px-3 sm:px-4 py-3 border-b border-black/8 flex items-center justify-between gap-2 sm:gap-3">
                       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                         <ShadButton
                           type="button"
@@ -434,10 +434,10 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           className={cn(
                             "shrink-0 w-12 h-12 rounded-md wl-panel border flex flex-col items-center justify-center",
                             (selectedThread.lead_score || 0) >= 80
-                              ? "border-rose-500/40 text-rose-500"
+                              ? "border-destructive/40 text-destructive"
                               : (selectedThread.lead_score || 0) >= 50
                                 ? "border-brand/40 text-brand"
-                                : "border-white/10 text-muted",
+                                : "border-black/10 text-muted",
                           )}
                         >
                           <span className="text-[7px] uppercase tracking-[0.3em] leading-none mb-0.5">
@@ -496,7 +496,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                                 "rounded-md border p-4 leading-relaxed",
                                 msg.role === "ai"
                                   ? "wl-panel border-brand/30 text-ink"
-                                  : "bg-white/5 border-white/10 text-ink",
+                                  : "bg-black/[0.03] border-black/10 text-ink",
                               )}
                             >
                               <div
@@ -580,7 +580,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                         />
                       </div>
                       <div className="flex items-center justify-between gap-3">
-                        <p className="text-[10px] text-ink/40 flex-1 leading-relaxed hidden md:block">
+                        <p className="chrome-subtle flex-1 leading-relaxed hidden md:block text-pretty">
                           Drafts use trained heuristics from this agent's persona and prior thread
                           context.
                         </p>

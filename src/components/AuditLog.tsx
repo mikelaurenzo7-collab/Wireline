@@ -77,8 +77,18 @@ function SeverityIcon({ severity, size = "md" }: { severity: AuditSeverity; size
   const config = {
     info: { Icon: Info, color: "text-brand", bg: "bg-brand/10", label: "Info" },
     warning: { Icon: AlertTriangle, color: "text-brand", bg: "bg-brand/10", label: "Warning" },
-    error: { Icon: AlertCircle, color: "text-rose-600", bg: "bg-rose-500/10", label: "Error" },
-    critical: { Icon: XCircle, color: "text-rose-600", bg: "bg-rose-500/10", label: "Critical" },
+    error: {
+      Icon: AlertCircle,
+      color: "text-destructive",
+      bg: "bg-destructive/10",
+      label: "Error",
+    },
+    critical: {
+      Icon: XCircle,
+      color: "text-destructive",
+      bg: "bg-destructive/10",
+      label: "Critical",
+    },
   };
   const { Icon, color, bg, label } = config[severity];
   const box = size === "sm" ? "w-5 h-5" : "w-8 h-8";

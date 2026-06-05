@@ -78,10 +78,10 @@ const STATUS_META: Record<
   },
   Cancelled: {
     label: "Cancelled",
-    color: "text-rose-500",
-    bg: "bg-rose-500/10",
-    border: "border-rose-500/30",
-    dot: "bg-rose-500",
+    color: "text-destructive",
+    bg: "bg-destructive/10",
+    border: "border-destructive/30",
+    dot: "bg-destructive",
   },
   Rescheduled: {
     label: "Rescheduled",
@@ -194,7 +194,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
         className="relative w-full max-w-lg rounded-md wl-panel-elevated border border-border shadow-2xl overflow-hidden"
       >
-        <header className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+        <header className="px-5 py-4 border-b border-black/10 flex items-center justify-between">
           <div>
             <p className="text-[9px] uppercase tracking-[0.4em] text-brand mb-0.5">Appointments</p>
             <h2 className="font-display italic text-2xl text-ink">
@@ -306,15 +306,15 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
           {err && (
             <div
               role="alert"
-              className="flex items-center gap-2 px-3 py-2.5 rounded-md bg-rose-500/10 border border-rose-500/30"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-md bg-destructive/10 border border-destructive/30"
             >
-              <AlertOctagon className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-              <p className="text-[11px] text-rose-600 leading-snug">{err}</p>
+              <AlertOctagon className="w-3.5 h-3.5 text-destructive shrink-0" />
+              <p className="text-[11px] text-destructive leading-snug">{err}</p>
             </div>
           )}
         </div>
 
-        <footer className="px-5 py-4 border-t border-white/10 flex items-center justify-end gap-2">
+        <footer className="px-5 py-4 border-t border-black/10 flex items-center justify-end gap-2">
           <ShadButton
             onClick={onClose}
             variant="outline"
@@ -474,7 +474,7 @@ function CalendarGrid({
               <div
                 key={idx}
                 className={cn(
-                  "min-h-[50px] sm:min-h-[60px] md:min-h-[80px] border-b border-r border-white/5 p-1.5",
+                  "min-h-[50px] sm:min-h-[60px] md:min-h-[80px] border-b border-r border-black/6 p-1.5",
                   cell.day ? "hover:bg-white/3 cursor-pointer" : "opacity-0 pointer-events-none",
                 )}
               >
@@ -962,7 +962,7 @@ function AppointmentRow({
             aria-label="Edit appointment"
             variant="ghost"
             size="icon"
-            className="w-7 h-7 hover:text-ink hover:border-white/25"
+            className="w-7 h-7 hover:text-ink hover:border-black/20"
           >
             <Pencil className="w-3.5 h-3.5" />
           </ShadButton>
@@ -973,7 +973,7 @@ function AppointmentRow({
             aria-label="Remove appointment"
             variant="ghost"
             size="icon"
-            className="w-7 h-7 hover:text-rose-500 hover:border-rose-500/30"
+            className="w-7 h-7 hover:text-destructive hover:border-destructive/30"
           >
             {deleting ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />

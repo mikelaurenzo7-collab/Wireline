@@ -116,9 +116,9 @@ export function ErrCard({ error }: { error: string }) {
   return (
     <div
       role="alert"
-      className="rounded-md bg-rose-500/10 border border-rose-500/30 p-6 text-rose-500 text-sm flex items-start gap-3"
+      className="rounded-md bg-destructive/10 border border-destructive/30 p-6 text-destructive text-sm flex items-start gap-3"
     >
-      <AlertOctagon className="w-5 h-5 shrink-0 mt-0.5" />
+      <AlertOctagon className="w-5 h-5 shrink-0 mt-0.5" aria-hidden />
       <span>{error}</span>
     </div>
   );

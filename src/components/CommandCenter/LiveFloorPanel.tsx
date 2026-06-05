@@ -193,7 +193,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
             </h2>
           </div>
           {escalations.length > 0 && (
-            <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/25 text-rose-600 wl-label">
+            <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-destructive/10 border border-destructive/25 text-destructive wl-label">
               <ShieldAlert className="w-3 h-3" aria-hidden />
               {escalations.length} escalated
             </span>
@@ -242,7 +242,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                         className={cn(
                           "w-9 h-9 sm:w-11 sm:h-11 rounded-md flex items-center justify-center shrink-0",
                           escalated
-                            ? "bg-rose-500/10 text-rose-600 border border-rose-500/20"
+                            ? "bg-destructive/10 text-destructive border border-destructive/20"
                             : "bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20",
                         )}
                       >
@@ -259,12 +259,12 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                             <AgentActivityIndicator active size={14} pose="on-call" />
                           )}
                           {agent?.name ?? "Agent"} ·{" "}
-                          <span className={escalated ? "text-rose-600" : "text-brand"}>
+                          <span className={escalated ? "text-destructive" : "text-brand"}>
                             {call.sentiment_label}
                           </span>
                         </p>
                       </div>
-                      {escalated && <ShieldAlert className="w-4 h-4 text-rose-500 shrink-0" />}
+                      {escalated && <ShieldAlert className="w-4 h-4 text-destructive shrink-0" />}
                     </div>
 
                     {call.thought && (
@@ -280,7 +280,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                     )}
 
                     <div className="mb-2 sm:mb-3">
-                      <div className="flex justify-between text-[10px] text-muted mb-1">
+                      <div className="flex justify-between chrome-subtle mb-1">
                         <span>Urgency</span>
                         <span className="font-mono font-semibold text-ink">
                           {Math.round(call.urgency * 10)}%
@@ -293,7 +293,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                           className={cn(
                             "h-full rounded-full",
                             call.urgency > 7
-                              ? "bg-rose-500"
+                              ? "bg-destructive"
                               : "bg-gradient-to-r from-brand to-brand-deep",
                           )}
                         />
@@ -302,7 +302,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
 
                     {listeningCallId === call.id && (
                       <div className="flex items-center gap-2 mb-3 p-2 rounded-md bg-brand/5 border border-brand/20">
-                        <span className="text-[10px] font-mono text-brand animate-pulse">LIVE</span>
+                        <span className="wl-label text-brand animate-pulse">LIVE</span>
                         <div className="flex items-end gap-0.5 h-4 flex-1 justify-end">
                           {[140, 200, 160, 230].map((mult, i) => (
                             <div
@@ -325,7 +325,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                           size="sm"
                           disableAnimations
                           onClick={stopListening}
-                          className="touch-press min-h-[36px] sm:min-h-[40px] rounded-md text-[10px] uppercase tracking-[0.18em] border-rose-500/30 text-rose-600 hover:bg-rose-500/10"
+                          className="touch-press min-h-[36px] sm:min-h-[40px] rounded-md wl-label border-brand/30 text-brand hover:bg-brand/10"
                         >
                           <Radio className="w-3.5 h-3.5" />
                           Stop
@@ -337,7 +337,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                           size="sm"
                           disableAnimations
                           onClick={() => startListening(call.id)}
-                          className="touch-press min-h-[36px] sm:min-h-[40px] rounded-md text-[10px] uppercase tracking-[0.18em]"
+                          className="touch-press min-h-[36px] sm:min-h-[40px] rounded-md wl-label"
                         >
                           <Headphones className="w-3.5 h-3.5" />
                           Listen
@@ -350,7 +350,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                           size="sm"
                           disableAnimations
                           onClick={stopWhispering}
-                          className="touch-press min-h-[36px] sm:min-h-[40px] rounded-md text-[10px] uppercase tracking-[0.18em] border-brand/30 text-brand hover:bg-brand/10"
+                          className="touch-press min-h-[36px] sm:min-h-[40px] rounded-md wl-label border-brand/30 text-brand hover:bg-brand/10"
                         >
                           Close coach
                         </ShadButton>
@@ -361,7 +361,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                           size="sm"
                           disableAnimations
                           onClick={() => startWhispering(call.id)}
-                          className="touch-press min-h-[36px] sm:min-h-[40px] rounded-md text-[10px] uppercase tracking-[0.18em]"
+                          className="touch-press min-h-[36px] sm:min-h-[40px] rounded-md wl-label"
                         >
                           <Activity className="w-3.5 h-3.5" />
                           Coach
@@ -418,7 +418,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
               <Users className="w-3.5 h-3.5 text-brand" />
               Fleet
             </h3>
-            <span className="text-[10px] font-mono text-muted">{agents.length} agents</span>
+            <span className="chrome-subtle tabular-nums">{agents.length} agents</span>
           </div>
           {agents.length === 0 ? (
             <EmptyState
@@ -482,7 +482,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
 
         <div className={WL_OPS_CLASSES.railCard}>
           <h3 className="wl-label flex items-center gap-2 mb-3">
-            <ShieldAlert className="w-3.5 h-3.5 text-rose-500" />
+            <ShieldAlert className="w-3.5 h-3.5 text-destructive" />
             Escalations
           </h3>
           {escalations.length === 0 ? (
@@ -492,9 +492,12 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
           ) : (
             <div className="space-y-2">
               {escalations.map((e) => (
-                <div key={e.id} className="rounded-md p-3 bg-rose-500/8 border border-rose-500/25">
+                <div
+                  key={e.id}
+                  className="rounded-md p-3 bg-destructive/8 border border-destructive/25"
+                >
                   <p className="font-mono text-sm text-ink">{e.customer_number}</p>
-                  <p className="text-[11px] text-rose-600 mt-1">{e.sentiment_label}</p>
+                  <p className="text-[11px] text-destructive mt-1">{e.sentiment_label}</p>
                 </div>
               ))}
             </div>

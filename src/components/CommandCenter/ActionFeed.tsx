@@ -150,7 +150,7 @@ export function ActionFeed({
                   className={clsx(
                     "absolute left-0 top-0 bottom-0 w-1",
                     action.priority === "high"
-                      ? "bg-rose-500"
+                      ? "bg-destructive"
                       : action.priority === "medium"
                         ? "bg-brand"
                         : "bg-muted/30",
@@ -177,7 +177,7 @@ export function ActionFeed({
                             className={clsx(
                               "text-[8px] uppercase tracking-[0.2em] font-bold px-1.5 py-0.5 rounded-full border",
                               action.priority === "high"
-                                ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
+                                ? "bg-destructive/10 text-destructive border-destructive/20"
                                 : "bg-black/5 text-muted border-black/10",
                             )}
                           >
@@ -210,7 +210,7 @@ export function ActionFeed({
                                 size="icon"
                                 disableAnimations
                                 onClick={(e) => handleReject(action.id, e)}
-                                className="hit-area-44 min-h-7 w-7 rounded-md text-rose-600 hover:bg-rose-500/10"
+                                className="hit-area-44 min-h-7 w-7 rounded-md text-destructive hover:bg-destructive/10"
                                 title="Reject"
                               >
                                 <X className="w-3.5 h-3.5" />
@@ -332,7 +332,7 @@ export function ActionFeed({
                               disabled={isProcessing}
                               onClick={(e) => handleReject(action.id, e)}
                               className={clsx(
-                                "hit-area-44 touch-press flex-1 min-h-9 rounded-md border-rose-500/20 text-rose-600 hover:bg-rose-500/10",
+                                "hit-area-44 touch-press flex-1 min-h-9 rounded-md border-destructive/20 text-destructive hover:bg-destructive/10",
                                 WL_OPS_CLASSES.filterChip,
                               )}
                             >

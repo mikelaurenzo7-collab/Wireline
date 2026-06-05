@@ -34,9 +34,7 @@ export function OpsIntelligenceRail({
             </span>
             {OPS_COPY.telemetryTitle}
           </h3>
-          <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider">
-            {OPS_COPY.telemetryActive}
-          </span>
+          <span className="wl-label-muted">{OPS_COPY.telemetryActive}</span>
         </div>
 
         <div className="space-y-1">

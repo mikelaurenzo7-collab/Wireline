@@ -147,20 +147,16 @@ export default function TriageInbox() {
           className="py-6"
         />
       ) : fetchErr ? (
-        <div className="h-full flex flex-col items-center justify-center gap-3 px-6 text-center py-6">
-          <p className="wl-label text-rose-500">{fetchErr}</p>
-          <ShadButton
-            onClick={fetchData}
-            variant="outline"
-            size="sm"
-            disableAnimations
-            className={cn(
-              "h-9 rounded-full text-muted hover:text-brand",
-              WL_OPS_CLASSES.filterChip,
-            )}
-          >
-            Retry
-          </ShadButton>
+        <div className="h-full flex items-center justify-center px-4 py-6">
+          <EmptyState
+            icon={AlertOctagon}
+            eyebrow="Triage unavailable"
+            title="Couldn't load inbox"
+            description={fetchErr}
+            density="compact"
+            withHalo={false}
+            actions={[{ label: "Retry", onClick: fetchData, primary: true }]}
+          />
         </div>
       ) : (
         body
@@ -350,7 +346,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
     <ul className="p-2 space-y-2 list-none stagger-children">
       {items.map((c) => (
         <li key={c.id} className="relative list-none group">
-          <Card className="bg-black/10 border-white/5 hover:border-brand/20 transition-all p-3 flex items-center gap-3 rounded-md relative">
+          <Card className="wl-panel border-black/8 hover:border-brand/25 transition-all p-3 flex items-center gap-3 rounded-md relative">
             {/* Absolute overlay link covering the entire row target */}
             <Link
               to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
@@ -365,7 +361,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
                   cx="22"
                   cy="22"
                   fill="none"
-                  stroke="rgba(255,255,255,0.06)"
+                  stroke="rgba(26,22,20,0.08)"
                   strokeWidth="4"
                 />
                 <circle
@@ -378,7 +374,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
                       ? BRAND.purple
                       : c.lead_score >= 60
                         ? BRAND.purpleMuted
-                        : BRAND.rose
+                        : BRAND.purpleMuted
                   }
                   strokeWidth="4"
                   strokeDasharray={`${(c.lead_score / 100) * 100.53} 100.53`}
@@ -418,7 +414,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
               )}
               <div className="flex items-center gap-2 mt-1.5 text-[8px] uppercase tracking-[0.26em] text-muted/70">
                 <span>{formatDate(c.created_at)}</span>
-                <span className="w-1 h-1 rounded-full bg-white/15" />
+                <span className={WL_OPS_CLASSES.dotSep} aria-hidden />
                 <Badge
                   variant="secondary"
                   className="text-[8px] uppercase tracking-[0.26em] text-brand border-brand/20 bg-brand/10 hover:bg-brand/15 leading-none px-1.5 py-0.5 rounded"
@@ -476,33 +472,33 @@ function ComplianceList({ items }: { items: FleetTask[] }) {
         <li key={t.id} className="relative list-none">
           <Card
             className={cn(
-              "p-3 flex items-start gap-3 rounded-md transition-all",
+              "p-3 flex items-start gap-3 rounded-md transition-all wl-panel",
               t.priority === "high"
-                ? "bg-rose-950/15 border-rose-500/20 hover:border-rose-500/40"
+                ? "bg-destructive/8 border-destructive/25 hover:border-destructive/40"
                 : t.priority === "medium"
-                  ? "bg-amber-950/10 border-amber-500/20 hover:border-amber-500/40"
-                  : "bg-black/10 border-white/5 hover:border-white/10",
+                  ? "bg-brand/[0.06] border-brand/20 hover:border-brand/35"
+                  : "border-black/8 hover:border-black/12",
             )}
           >
             <ShieldAlert
               className={cn(
                 "w-4 h-4 shrink-0 mt-0.5",
                 t.priority === "high"
-                  ? "text-rose-500"
+                  ? "text-destructive"
                   : t.priority === "medium"
-                    ? "text-amber-500"
-                    : "text-rose-400",
+                    ? "text-brand"
+                    : "text-muted",
               )}
             />
             <div className="flex-1 min-w-0 text-left">
               <div
                 className={cn(
-                  "text-[8px] uppercase tracking-[0.28em] flex items-center justify-between mb-1.5",
+                  "wl-label flex items-center justify-between mb-1.5",
                   t.priority === "high"
-                    ? "text-rose-500"
+                    ? "text-destructive"
                     : t.priority === "medium"
-                      ? "text-amber-500"
-                      : "text-rose-400",
+                      ? "text-brand"
+                      : "text-muted",
                 )}
               >
                 <span>Compliance · {t.priority}</span>
@@ -608,7 +604,7 @@ const KnowledgeGapRow: React.FC<{
       transition={{ duration: 0.18 }}
       className="mb-2 list-none"
     >
-      <Card className="bg-black/10 border-white/5 hover:border-brand/20 transition-all p-3 flex items-start gap-3 rounded-md">
+      <Card className="wl-panel border-black/8 hover:border-brand/25 transition-all p-3 flex items-start gap-3 rounded-md">
         <div className="flex items-start gap-3 w-full">
           <BookOpen className="w-4 h-4 text-brand shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0 text-left">
@@ -649,7 +645,7 @@ const KnowledgeGapRow: React.FC<{
               size="icon"
               onClick={discard}
               disabled={discarding || busy}
-              className="w-7 h-7 rounded-full text-muted hover:text-rose-400 hover:bg-rose-500/8 transition-all flex items-center justify-center disabled:opacity-40 p-0"
+              className="w-7 h-7 rounded-full text-muted hover:text-destructive hover:bg-destructive/8 transition-all flex items-center justify-center disabled:opacity-40 p-0"
               title="Discard this gap"
               aria-label="Discard knowledge gap"
             >
@@ -738,7 +734,7 @@ const OpenTaskRow: React.FC<{
       transition={{ duration: 0.18 }}
       className="mb-2 list-none"
     >
-      <Card className="bg-black/10 border-white/5 hover:border-brand/20 transition-all p-3 flex items-start gap-3 rounded-md">
+      <Card className="wl-panel border-black/8 hover:border-brand/25 transition-all p-3 flex items-start gap-3 rounded-md">
         <ShadButton
           variant="outline"
           size="icon"
@@ -773,11 +769,11 @@ const OpenTaskRow: React.FC<{
               className={cn(
                 "text-[8px] uppercase tracking-[0.28em] font-normal px-2 py-0.5 rounded leading-none",
                 task.priority === "high" &&
-                  "bg-rose-500/15 text-rose-500 border-rose-500/30 hover:bg-rose-500/20",
+                  "bg-destructive/12 text-destructive border-destructive/30 hover:bg-destructive/18",
                 task.priority === "medium" &&
                   "bg-brand/15 text-brand border-brand/30 hover:bg-brand/20",
                 task.priority === "low" &&
-                  "bg-zinc-500/15 text-zinc-300 border-zinc-500/30 hover:bg-zinc-500/20",
+                  "bg-black/[0.04] text-muted border-black/10 hover:bg-black/[0.06]",
               )}
             >
               {task.priority}
@@ -804,7 +800,7 @@ function Escalations({ items }: { items: EscalationCall[] }) {
     <ul className="p-2 space-y-2 list-none">
       {items.map((c) => (
         <li key={c.id} className="relative list-none group">
-          <Card className="bg-rose-950/10 border-rose-500/10 hover:border-rose-500/30 transition-all p-3 flex items-start gap-3 rounded-md relative">
+          <Card className="bg-destructive/6 border-destructive/15 hover:border-destructive/30 transition-all p-3 flex items-start gap-3 rounded-md relative wl-panel">
             {/* Absolute overlay link covering the entire row target */}
             <Link
               to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
@@ -812,7 +808,7 @@ function Escalations({ items }: { items: EscalationCall[] }) {
               aria-label={`View contact profile for ${c.customer_number || "unknown caller"}`}
             />
 
-            <AlertOctagon className="w-4 h-4 text-rose-500 shrink-0 mt-0.5 relative z-10 pointer-events-none" />
+            <AlertOctagon className="w-4 h-4 text-destructive shrink-0 mt-0.5 relative z-10 pointer-events-none" />
             <div className="flex-1 min-w-0 relative z-10 pointer-events-none text-left">
               <span className="font-display italic text-base text-ink block truncate group-hover:text-brand transition-colors">
                 {c.customer_number || "Unknown caller"}
@@ -825,7 +821,7 @@ function Escalations({ items }: { items: EscalationCall[] }) {
                     <span className={WL_OPS_CLASSES.dotSep} aria-hidden />
                     <Badge
                       variant="outline"
-                      className="text-[7px] tracking-normal border-rose-500/20 text-rose-400 bg-rose-500/5 px-1 py-0 rounded"
+                      className="text-[7px] tracking-normal border-brand/20 text-brand bg-brand/5 px-1 py-0 rounded"
                     >
                       Score: {c.lead_score}
                     </Badge>

@@ -32,7 +32,7 @@ function PulseMetric({
         className={cn(
           WL_OPS_CLASSES.metricValue,
           mono && "wl-ops-metric-value--mono",
-          alert && value > 0 && "text-rose-600",
+          alert && value > 0 && "text-destructive",
         )}
       >
         {value}

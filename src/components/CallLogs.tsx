@@ -284,7 +284,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                                     ? "bg-brand/8 text-brand border-brand/20"
                                     : call.qa_score >= 50
                                       ? "bg-brand/5 text-brand/70 border-brand/15"
-                                      : "bg-rose-500/8 text-rose-500 border-rose-500/20",
+                                      : "bg-destructive/8 text-destructive border-destructive/20",
                                 )}
                               >
                                 ★{call.qa_score}
@@ -390,7 +390,7 @@ function SentimentDot({ sentiment }: { sentiment?: string | null }) {
   if (s === "positive")
     return <SmilePlus className="w-3 h-3 text-brand shrink-0" aria-label="Positive sentiment" />;
   if (s === "negative")
-    return <Frown className="w-3 h-3 text-rose-400 shrink-0" aria-label="Negative sentiment" />;
+    return <Frown className="w-3 h-3 text-destructive shrink-0" aria-label="Negative sentiment" />;
   return <Meh className="w-3 h-3 text-ink/40 shrink-0" aria-label="Neutral sentiment" />;
 }
 
@@ -561,7 +561,7 @@ function CallDetail({
             <Clock className="w-3 h-3" />
             <span>{formatDuration(call.duration_seconds || 0)}</span>
             <span className="w-1 h-1 rounded-full bg-white/15" />
-            <span className="text-rose-500/80">${Number(call.cost ?? 0).toFixed(4)}</span>
+            <span className="text-destructive/80">${Number(call.cost ?? 0).toFixed(4)}</span>
           </div>
         </div>
 
@@ -605,7 +605,7 @@ function CallDetail({
                           (call.sentiment || "neutral") === "positive"
                             ? "text-brand"
                             : (call.sentiment || "neutral") === "negative"
-                              ? "text-rose-500"
+                              ? "text-destructive"
                               : "text-ink/40",
                         )}
                       >
@@ -890,9 +890,9 @@ function RecordingPlayer({ url }: { url: string }) {
 
   if (loadError) {
     return (
-      <div className="rounded-md wl-panel border border-rose-500/20 p-4 text-center space-y-2">
-        <Activity className="w-5 h-5 text-rose-400 mx-auto" />
-        <p className="text-[10px] text-rose-400">
+      <div className="rounded-md wl-panel border border-destructive/20 p-4 text-center space-y-2">
+        <Activity className="w-5 h-5 text-destructive mx-auto" />
+        <p className="text-[10px] text-destructive">
           Recording could not be loaded. It may have expired.
         </p>
         <a

@@ -479,9 +479,7 @@ export default function LiveOps() {
                             </div>
                           </div>
                           <div className="space-y-1">
-                            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
-                              Awaiting signal
-                            </p>
+                            <p className="chrome-eyebrow text-brand/70">Awaiting signal</p>
                             <p className="font-display italic text-lg text-ink leading-tight">
                               {OPS_COPY.sentimentEmptyTitle}
                             </p>

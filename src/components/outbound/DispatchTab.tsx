@@ -236,13 +236,13 @@ export default function DispatchTab({
                             customerNumber.length > 0
                               ? /^\+?[\d\s\-()]{7,15}$/.test(customerNumber)
                                 ? "border-brand/50"
-                                : "border-rose-500/40"
+                                : "border-destructive/40"
                               : "border-black/10",
                           )}
                         />
                         {customerNumber.length > 0 &&
                           !/^\+?[\d\s\-()]{7,15}$/.test(customerNumber) && (
-                            <p className="text-[10px] text-rose-500 mt-0.5">
+                            <p className="text-[10px] text-destructive mt-0.5">
                               Use format: +1 (555) 000-0000
                             </p>
                           )}
@@ -289,7 +289,7 @@ export default function DispatchTab({
                       </label>
 
                       {isDncBlocked && (
-                        <div className="rounded-md border border-rose-500/30 bg-rose-500/10 px-3 py-2 flex items-start gap-2 text-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]">
+                        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 flex items-start gap-2 text-destructive shadow-[0_0_15px_rgba(244,63,94,0.1)]">
                           <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                           <div className="text-[10px] leading-snug">
                             <strong className="font-bold">Blocked by DNC Policy:</strong> This
@@ -300,9 +300,9 @@ export default function DispatchTab({
                       )}
 
                       {quotaExhausted && (
-                        <div className="rounded-md border border-rose-500/30 bg-rose-500/5 px-3 py-2 flex items-start gap-2">
-                          <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
-                          <p className="text-[10px] text-rose-500/90 leading-snug">
+                        <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 flex items-start gap-2">
+                          <AlertTriangle className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
+                          <p className="text-[10px] text-destructive/90 leading-snug">
                             Daily voice-minute limit reached. Resets at midnight UTC.
                           </p>
                         </div>
@@ -448,7 +448,7 @@ export default function DispatchTab({
                       className="space-y-2"
                     >
                       {dialError && (
-                        <div className="rounded-md bg-rose-500/10 border border-rose-500/30 text-rose-500 px-3 py-2 text-xs flex items-center gap-2">
+                        <div className="rounded-md bg-destructive/10 border border-destructive/30 text-destructive px-3 py-2 text-xs flex items-center gap-2">
                           <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                           <span className="leading-relaxed">{dialError}</span>
                         </div>
@@ -557,7 +557,7 @@ export default function DispatchTab({
                                     ? "bg-brand/10 border-brand/30 text-brand"
                                     : lead.status === "Queued"
                                       ? "bg-brand/15 border-brand/40 text-brand"
-                                      : "bg-rose-500/10 border-rose-500/30 text-rose-500",
+                                      : "bg-destructive/10 border-destructive/30 text-destructive",
                                 )}
                               >
                                 <span className="w-1 h-1 rounded-full bg-current" /> {lead.status}
@@ -602,7 +602,7 @@ export default function DispatchTab({
                               disabled={isDeletingLead === lead.id}
                               aria-label="Remove lead"
                               title="Remove lead"
-                              className="w-7 h-7 rounded-full text-muted hover:text-rose-500 hover:border-rose-500/30"
+                              className="w-7 h-7 rounded-full text-muted hover:text-destructive hover:border-destructive/30"
                             >
                               {isDeletingLead === lead.id ? (
                                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -619,7 +619,7 @@ export default function DispatchTab({
               </AnimatePresence>
 
               {leadsHasMore && (
-                <div className="px-4 py-3 flex justify-center border-t border-white/6">
+                <div className="px-4 py-3 flex justify-center border-t border-black/8">
                   <ShadButton
                     type="button"
                     variant="outline"
