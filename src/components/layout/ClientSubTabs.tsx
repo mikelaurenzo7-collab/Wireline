@@ -14,6 +14,7 @@ type ClientSubTabsProps = {
   activeId: string;
   onChange: (id: string) => void;
   className?: string;
+  density?: "default" | "compact";
   "aria-label"?: string;
   layoutIdPrefix?: string;
 };
@@ -27,6 +28,7 @@ export default function ClientSubTabs({
   activeId,
   onChange,
   className,
+  density = "default",
   "aria-label": ariaLabel = "Page sections",
   layoutIdPrefix = "client-subtab",
 }: ClientSubTabsProps) {
@@ -77,11 +79,17 @@ export default function ClientSubTabs({
       aria-label={ariaLabel}
       onKeyDown={handleKeyDown}
       className={cn(
-        "shrink-0 flex items-center justify-center gap-1 overflow-x-auto scroll-viewport mb-2 md:mb-3 pb-0.5",
+        "shrink-0 flex items-center gap-1 overflow-x-auto scroll-viewport pb-0.5",
+        density === "compact" ? "mb-0 justify-start" : "justify-center mb-2 md:mb-3",
         className,
       )}
     >
-      <div className="app-tab-strip wl-subtab-strip flex items-center gap-0.5 p-0.5 wl-panel">
+      <div
+        className={cn(
+          "app-tab-strip wl-subtab-strip flex items-center gap-0.5 wl-panel",
+          density === "compact" ? "p-0.5 border-0 bg-transparent shadow-none" : "p-0.5",
+        )}
+      >
         {tabs.map((tab) => {
           const active = tab.id === activeId;
           const Icon = tab.icon;
@@ -97,7 +105,10 @@ export default function ClientSubTabs({
               tabIndex={active ? 0 : -1}
               onClick={() => onChange(tab.id)}
               className={cn(
-                "touch-press relative shrink-0 inline-flex min-h-9 sm:min-h-10 h-auto items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 transition-colors text-[10px] sm:text-[11px] uppercase tracking-[0.1em] font-medium whitespace-nowrap rounded-none",
+                "touch-press relative shrink-0 inline-flex h-auto items-center gap-1 transition-colors uppercase font-medium whitespace-nowrap rounded-none",
+                density === "compact"
+                  ? "min-h-7 px-2 py-0.5 text-[9px] sm:text-[10px] tracking-[0.08em]"
+                  : "min-h-9 sm:min-h-10 gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-[11px] tracking-[0.1em]",
                 active ? "app-tab-active" : "text-muted hover:text-ink hover:bg-black/4",
               )}
             >
@@ -109,7 +120,14 @@ export default function ClientSubTabs({
                   transition={{ type: "spring", stiffness: 380, damping: 32 }}
                 />
               )}
-              {Icon && <Icon className="relative z-[1] w-3.5 h-3.5" />}
+              {Icon && (
+                <Icon
+                  className={cn(
+                    "relative z-[1]",
+                    density === "compact" ? "w-3 h-3" : "w-3.5 h-3.5",
+                  )}
+                />
+              )}
               <span className="relative z-[1]">{tab.label}</span>
             </ShadButton>
           );

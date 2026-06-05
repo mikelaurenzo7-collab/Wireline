@@ -5,13 +5,14 @@
  * sub-components (DispatchTab, CampaignsTab, CallbacksList). Tightening is
  * tracked alongside the OutboundDialer god-file slicing pass. */
 import React, { useState, useEffect, useRef } from "react";
-import { Megaphone, CalendarClock, Repeat, Zap } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { CalendarClock, Repeat } from "lucide-react";
 import { AnimatePresence } from "motion/react";
 import Cadences from "../Cadences";
 import Papa from "papaparse";
 import { logFetchError } from "../../lib/utils";
 import { authFetch } from "../../lib/api";
-import PageShell, { Panel } from "../PageShell";
+import { Panel } from "../PageShell";
 import CsvExportButton from "../CsvExportButton";
 import { useToast } from "../../contexts/ToastContext";
 import ConfirmModal from "../ConfirmModal";
@@ -26,10 +27,19 @@ import DispatchTab from "./DispatchTab";
 import CampaignsTab from "./CampaignsTab";
 import ClientToolbar from "../layout/ClientToolbar";
 import { OPS_CHANNEL_TOOLBAR } from "../../lib/wireline-ops-design";
+import {
+  resolveAppPageSecondaryRoute,
+  resolveAppPageSecondaryTabId,
+} from "../../lib/page-sub-tabs";
 import { Input } from "../ui/shadcn/Input";
 
-export default function OutboundDialer({ embedded = false }: { embedded?: boolean }) {
+export default function OutboundDialer({ embedded: _embedded = false }: { embedded?: boolean }) {
   const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
+  const [searchParams] = useSearchParams();
+  const outboundSecondary = resolveAppPageSecondaryRoute("/phone", "outbound");
+  const activeView = outboundSecondary
+    ? resolveAppPageSecondaryTabId(outboundSecondary, searchParams.get("view"))
+    : "dispatch";
   const [confirmState, setConfirmState] = useState<ConfirmState>(CLOSED_CONFIRM);
   const [isLoading, setIsLoading] = useState(true);
   const [agents, setAgents] = useState<any[]>([]);
@@ -565,116 +575,96 @@ export default function OutboundDialer({ embedded = false }: { embedded?: boolea
 
   const exportAction = <CsvExportButton type="leads" label={OPS_CHANNEL_TOOLBAR.outbound.export} />;
 
+  const outboundViewContent = (() => {
+    switch (activeView) {
+      case "campaigns":
+        return (
+          <CampaignsTab
+            campaigns={campaigns}
+            campaignLoading={campaignLoading}
+            setShowCampaignModal={setShowCampaignModal}
+            selectedCampaign={selectedCampaign}
+            handleSelectCampaign={handleSelectCampaign}
+            showAnalytics={showAnalytics}
+            setShowAnalytics={setShowAnalytics}
+            fetchCampaignAnalytics={fetchCampaignAnalytics}
+            analyticsLoading={analyticsLoading}
+            campaignAnalytics={campaignAnalytics}
+            launchCampaign={launchCampaign}
+            launchingCampaignId={launchingCampaignId}
+            stopCampaign={stopCampaign}
+            stoppingCampaignId={stoppingCampaignId}
+            setCampaignStatus={setCampaignStatus}
+            deleteCampaign={deleteCampaign}
+            campaignLeadsLoading={campaignLeadsLoading}
+            campaignLeads={campaignLeads}
+            triggerUploadCsv={() => fileInputRef.current?.click()}
+            retryFailedLeads={retryFailedLeads}
+          />
+        );
+      case "sequences":
+        return (
+          <Panel icon={Repeat} hint="Multi-touch cadences" title="" scroll>
+            <Cadences />
+          </Panel>
+        );
+      case "callbacks":
+        return (
+          <Panel icon={CalendarClock} hint="Scheduled" title="" scroll>
+            <CallbacksList
+              callbacks={callbacks}
+              loading={callbacksLoading}
+              onRefresh={fetchCallbacks}
+            />
+          </Panel>
+        );
+      case "dispatch":
+      default:
+        return (
+          <DispatchTab
+            isLoading={isLoading}
+            agents={agents}
+            selectedAgentId={selectedAgentId}
+            setSelectedAgentId={setSelectedAgentId}
+            customerNumber={customerNumber}
+            setCustomerNumber={setCustomerNumber}
+            customerName={customerName}
+            setCustomerName={setCustomerName}
+            context={context}
+            setContext={setContext}
+            hasOutboundConsent={hasOutboundConsent}
+            setHasOutboundConsent={setHasOutboundConsent}
+            isDialing={isDialing}
+            isUploading={isUploading}
+            dialError={dialError}
+            uploadStats={uploadStats}
+            dispatchCall={dispatchCall}
+            campaigns={campaigns}
+            bulkCampaignId={bulkCampaignId}
+            setBulkCampaignId={setBulkCampaignId}
+            triggerUploadCsv={() => fileInputRef.current?.click()}
+            leads={leads}
+            leadsTotal={leadsTotal}
+            queuedCount={queuedCount}
+            launchQueue={launchQueue}
+            deleteLead={deleteLead}
+            isDeletingLead={isDeletingLead}
+            loadMoreLeads={loadMoreLeads}
+            leadsHasMore={leadsHasMore}
+            isLoadingMore={isLoadingMore}
+            quotaUsed={quotaUsed}
+            quotaLimit={quotaLimit}
+            dncEntries={dncEntries}
+            isNumberOnDncList={isNumberOnDncList}
+          />
+        );
+    }
+  })();
+
   const dialerShell = (
-    <PageShell
-      title={embedded ? "" : "Outbound"}
-      eyebrow={embedded ? undefined : "Communications · Outbound"}
-      subtitle={
-        embedded
-          ? undefined
-          : "Run outbound calling campaigns for lead qualification and follow-up."
-      }
-      tabs={[
-        {
-          id: "dispatch",
-          label: "Dispatch",
-          icon: Zap,
-          content: (
-            <DispatchTab
-              isLoading={isLoading}
-              agents={agents}
-              selectedAgentId={selectedAgentId}
-              setSelectedAgentId={setSelectedAgentId}
-              customerNumber={customerNumber}
-              setCustomerNumber={setCustomerNumber}
-              customerName={customerName}
-              setCustomerName={setCustomerName}
-              context={context}
-              setContext={setContext}
-              hasOutboundConsent={hasOutboundConsent}
-              setHasOutboundConsent={setHasOutboundConsent}
-              isDialing={isDialing}
-              isUploading={isUploading}
-              dialError={dialError}
-              uploadStats={uploadStats}
-              dispatchCall={dispatchCall}
-              campaigns={campaigns}
-              bulkCampaignId={bulkCampaignId}
-              setBulkCampaignId={setBulkCampaignId}
-              triggerUploadCsv={() => fileInputRef.current?.click()}
-              leads={leads}
-              leadsTotal={leadsTotal}
-              queuedCount={queuedCount}
-              launchQueue={launchQueue}
-              deleteLead={deleteLead}
-              isDeletingLead={isDeletingLead}
-              loadMoreLeads={loadMoreLeads}
-              leadsHasMore={leadsHasMore}
-              isLoadingMore={isLoadingMore}
-              quotaUsed={quotaUsed}
-              quotaLimit={quotaLimit}
-              dncEntries={dncEntries}
-              isNumberOnDncList={isNumberOnDncList}
-            />
-          ),
-        },
-        {
-          id: "campaigns",
-          label: "Campaigns",
-          icon: Megaphone,
-          badge: campaigns.length || undefined,
-          content: (
-            <CampaignsTab
-              campaigns={campaigns}
-              campaignLoading={campaignLoading}
-              setShowCampaignModal={setShowCampaignModal}
-              selectedCampaign={selectedCampaign}
-              handleSelectCampaign={handleSelectCampaign}
-              showAnalytics={showAnalytics}
-              setShowAnalytics={setShowAnalytics}
-              fetchCampaignAnalytics={fetchCampaignAnalytics}
-              analyticsLoading={analyticsLoading}
-              campaignAnalytics={campaignAnalytics}
-              launchCampaign={launchCampaign}
-              launchingCampaignId={launchingCampaignId}
-              stopCampaign={stopCampaign}
-              stoppingCampaignId={stoppingCampaignId}
-              setCampaignStatus={setCampaignStatus}
-              deleteCampaign={deleteCampaign}
-              campaignLeadsLoading={campaignLeadsLoading}
-              campaignLeads={campaignLeads}
-              triggerUploadCsv={() => fileInputRef.current?.click()}
-              retryFailedLeads={retryFailedLeads}
-            />
-          ),
-        },
-        {
-          id: "sequences",
-          label: "Sequences",
-          icon: Repeat,
-          content: (
-            <Panel icon={Repeat} hint="Multi-touch cadences" title="" scroll>
-              <Cadences />
-            </Panel>
-          ),
-        },
-        {
-          id: "callbacks",
-          label: "Callbacks",
-          icon: CalendarClock,
-          badge: callbacks.length || undefined,
-          content: (
-            <Panel icon={CalendarClock} hint="Scheduled" title="" scroll>
-              <CallbacksList
-                callbacks={callbacks}
-                loading={callbacksLoading}
-                onRefresh={fetchCallbacks}
-              />
-            </Panel>
-          ),
-        },
-      ]}
-    />
+    <div key={activeView} className="flex-1 min-h-0 overflow-hidden flex flex-col">
+      {outboundViewContent}
+    </div>
   );
 
   return (

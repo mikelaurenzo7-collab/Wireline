@@ -46,7 +46,13 @@ const TAB_GROUPS: { tabs: TabDef[] }[] = [
   },
 ];
 
-export default function SettingsTabSwitcher({ className }: { className?: string }) {
+export default function SettingsTabSwitcher({
+  className,
+  density = "default",
+}: {
+  className?: string;
+  density?: "default" | "compact";
+}) {
   const location = useLocation();
 
   const getActiveTab = (): AdminTab => {
@@ -73,13 +79,19 @@ export default function SettingsTabSwitcher({ className }: { className?: string 
   return (
     <div
       className={cn(
-        "shrink-0 flex items-center justify-start gap-1 overflow-x-auto scrollbar-hide mb-2 md:mb-3",
+        "shrink-0 flex items-center justify-start gap-1 overflow-x-auto scrollbar-hide",
+        density === "compact" ? "mb-0" : "mb-2 md:mb-3",
         className,
       )}
       role="tablist"
       aria-label="Settings sub-navigation"
     >
-      <div className="app-tab-strip wl-subtab-strip flex items-center gap-0.5 p-0.5 wl-panel border border-black/8 max-w-full overflow-x-auto scrollbar-hide">
+      <div
+        className={cn(
+          "app-tab-strip wl-subtab-strip flex items-center gap-0.5 wl-panel border border-black/8 max-w-full overflow-x-auto scrollbar-hide",
+          density === "compact" ? "p-0.5 border-0 bg-transparent shadow-none" : "p-0.5",
+        )}
+      >
         {TAB_GROUPS.map((group, gi) => (
           <React.Fragment key={gi}>
             {gi > 0 && (
@@ -97,7 +109,10 @@ export default function SettingsTabSwitcher({ className }: { className?: string 
                   role="tab"
                   aria-selected={active}
                   className={cn(
-                    "touch-press relative shrink-0 inline-flex min-h-9 items-center gap-1.5 px-3 py-1.5 transition-colors text-[10.5px] uppercase tracking-[0.12em] font-semibold whitespace-nowrap rounded-none",
+                    "touch-press relative shrink-0 inline-flex items-center gap-1.5 transition-colors uppercase font-semibold whitespace-nowrap rounded-none",
+                    density === "compact"
+                      ? "min-h-7 px-2 py-0.5 text-[9px] tracking-[0.08em]"
+                      : "min-h-9 px-3 py-1.5 text-[10.5px] tracking-[0.12em]",
                     active ? "app-tab-active" : "text-muted hover:text-ink hover:bg-black/4",
                   )}
                 >

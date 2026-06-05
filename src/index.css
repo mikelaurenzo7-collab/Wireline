@@ -3328,6 +3328,17 @@ html, body, .marketing-surface, .app-surface {
     0 4px 14px -12px rgba(26, 22, 20, 0.08);
 }
 
+/* Sticky workspace top bar — title + section tabs + tools */
+.workspace-top-bar .app-tab-strip,
+.workspace-top-bar .wl-subtab-strip {
+  background: color-mix(in srgb, var(--paper, #f5f0e6) 82%, white) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.55) inset;
+}
+
+.workspace-top-bar .app-tab-active-bg {
+  border-radius: 0.25rem;
+}
+
 /* Desktop route context — editorial hierarchy in cream workspace */
 .wl-page-context {
   padding: 0.35rem 0.25rem 0;

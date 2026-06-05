@@ -1,33 +1,24 @@
 /**
  * InsightsView — Refactored Shell
  *
- * Previously a ~1900 LOC monolith. Each tab-view now lives in its own
- * file under /components/insights/. This shell orchestrates the
- * day-range picker, tab groups, and PageShell tab wiring.
+ * Primary groups + secondary views live in WorkspaceTopBar (AppChromeSubTabs).
+ * This shell renders the active view body only.
  */
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import {
-  TrendingUp,
-  Layers,
-  Calendar,
-  Trophy,
-  AlertOctagon,
-  Gauge,
-  Receipt,
-  Star,
-  Megaphone,
-  Target,
-} from "lucide-react";
 import CsvExportButton from "../CsvExportButton";
 import GoalsView from "../GoalsView";
-import PageShell from "../PageShell";
 import WidgetBoundary from "../WidgetBoundary";
 import ClientRouteViewport from "../layout/ClientRouteViewport";
 import ClientToolbar from "../layout/ClientToolbar";
 import { SegmentStrip } from "../ui/SegmentStrip";
-import { OPS_CHANNEL_TOOLBAR, OPS_INSIGHTS_GROUPS } from "../../lib/wireline-ops-design";
-import { resolveAppPageSubTabId, resolveAppPageSubTabRoute } from "../../lib/page-sub-tabs";
+import { OPS_CHANNEL_TOOLBAR } from "../../lib/wireline-ops-design";
+import {
+  resolveAppPageSecondaryRoute,
+  resolveAppPageSecondaryTabId,
+  resolveAppPageSubTabId,
+  resolveAppPageSubTabRoute,
+} from "../../lib/page-sub-tabs";
 
 import FunnelView from "./FunnelView";
 import AttributionView from "./AttributionView";
@@ -53,77 +44,32 @@ export default function InsightsView() {
     searchParams.get("tab"),
   ) as InsightGroupId;
 
+  const secondaryRoute = resolveAppPageSecondaryRoute("/insights", activeGroup);
+  const activeView = secondaryRoute
+    ? resolveAppPageSecondaryTabId(secondaryRoute, searchParams.get("view"))
+    : "funnel";
+
   const wrap = (label: string, node: React.ReactNode) => (
     <WidgetBoundary label={label}>
       <div className="flex-1 min-h-0 w-full scroll-viewport scroll-pb-safe pr-1 pb-4">{node}</div>
     </WidgetBoundary>
   );
 
-  const allTabs = useMemo(
-    () => [
-      {
-        id: "funnel",
-        label: "Funnel",
-        icon: TrendingUp,
-        content: wrap("Funnel", <FunnelView days={days} />),
-      },
-      {
-        id: "goals",
-        label: "Goals",
-        icon: Target,
-        content: wrap("Goals", <GoalsView />),
-      },
-      {
-        id: "attribution",
-        label: "Attribution",
-        icon: Megaphone,
-        content: wrap("Attribution", <AttributionView days={days} />),
-      },
-      { id: "topics", label: "Topics", icon: Layers, content: wrap("Topics", <TopicsView />) },
-      {
-        id: "heatmap",
-        label: "Heatmap",
-        icon: Calendar,
-        content: wrap("Heatmap", <HeatmapView days={days} />),
-      },
-      {
-        id: "leaderboard",
-        label: "Leaderboard",
-        icon: Trophy,
-        content: wrap("Leaderboard", <LeaderboardView days={days} />),
-      },
-      {
-        id: "failures",
-        label: "Failures",
-        icon: AlertOctagon,
-        content: wrap("Failures", <FailureModesView />),
-      },
-      {
-        id: "latency",
-        label: "Latency",
-        icon: Gauge,
-        content: wrap("Latency", <VoiceLatencyView days={days} />),
-      },
-      {
-        id: "spend",
-        label: "AI Spend",
-        icon: Receipt,
-        content: wrap("AI Spend", <AISpendView days={days} />),
-      },
-      {
-        id: "quality",
-        label: "Quality",
-        icon: Star,
-        content: wrap("Quality", <QualityView days={days} />),
-      },
-    ],
-    [days],
-  );
-
-  const groupTabIds =
-    OPS_INSIGHTS_GROUPS.find((g) => g.id === activeGroup)?.tabs ?? OPS_INSIGHTS_GROUPS[0].tabs;
-
-  const visibleTabs = allTabs.filter((tab) => (groupTabIds as readonly string[]).includes(tab.id));
+  const viewContent = useMemo(() => {
+    const views: Record<string, React.ReactNode> = {
+      funnel: wrap("Funnel", <FunnelView days={days} />),
+      goals: wrap("Goals", <GoalsView />),
+      attribution: wrap("Attribution", <AttributionView days={days} />),
+      topics: wrap("Topics", <TopicsView />),
+      heatmap: wrap("Heatmap", <HeatmapView days={days} />),
+      leaderboard: wrap("Leaderboard", <LeaderboardView days={days} />),
+      failures: wrap("Failures", <FailureModesView />),
+      latency: wrap("Latency", <VoiceLatencyView days={days} />),
+      spend: wrap("AI Spend", <AISpendView days={days} />),
+      quality: wrap("Quality", <QualityView days={days} />),
+    };
+    return views[activeView] ?? views.funnel;
+  }, [activeView, days]);
 
   const dayPicker = (
     <SegmentStrip
@@ -147,14 +93,12 @@ export default function InsightsView() {
         }
       />
 
-      <PageShell
-        key={activeGroup}
-        title=""
-        eyebrow=""
-        subtitle=""
-        defaultTab={visibleTabs[0]?.id}
-        tabs={visibleTabs}
-      />
+      <div
+        key={`${activeGroup}-${activeView}`}
+        className="flex-1 min-h-0 flex flex-col overflow-hidden"
+      >
+        {viewContent}
+      </div>
     </ClientRouteViewport>
   );
 }

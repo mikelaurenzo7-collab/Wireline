@@ -1,22 +1,33 @@
 import type { ComponentType } from "react";
 import {
+  AlertOctagon,
   BarChart3,
   BookOpen,
   Calendar,
+  CalendarClock,
   Database,
+  Gauge,
   Globe,
   History,
+  Layers,
   LayoutGrid,
   ListTodo,
+  Megaphone,
   Mic,
   PhoneOutgoing,
   PlayCircle,
   Radio,
   Receipt,
+  Repeat,
   Shield,
   Star,
+  Target,
+  TrendingUp,
+  Trophy,
   Workflow,
+  Zap,
 } from "lucide-react";
+import { OPS_INSIGHTS_GROUPS } from "./wireline-ops-design";
 
 export type AppPageSubTab = {
   id: string;
@@ -104,4 +115,84 @@ export function resolveAppPageSubTabRoute(pathname: string): AppPageSubTabRoute 
 export function resolveAppPageSubTabId(route: AppPageSubTabRoute, tabParam: string | null): string {
   if (tabParam && route.tabs.some((t) => t.id === tabParam)) return tabParam;
   return route.defaultTab;
+}
+
+/** Secondary views — driven by ?view= when a primary section exposes nested tabs. */
+export type AppPageSecondaryTabRoute = {
+  pathname: string;
+  whenPrimaryTab: string;
+  tabs: AppPageSubTab[];
+  defaultView: string;
+  ariaLabel: string;
+  layoutIdPrefix: string;
+};
+
+export const INSIGHTS_VIEW_TABS: Record<string, AppPageSubTab> = {
+  funnel: { id: "funnel", label: "Funnel", icon: TrendingUp },
+  goals: { id: "goals", label: "Goals", icon: Target },
+  heatmap: { id: "heatmap", label: "Heatmap", icon: Calendar },
+  leaderboard: { id: "leaderboard", label: "Leaderboard", icon: Trophy },
+  failures: { id: "failures", label: "Failures", icon: AlertOctagon },
+  latency: { id: "latency", label: "Latency", icon: Gauge },
+  quality: { id: "quality", label: "Quality", icon: Star },
+  attribution: { id: "attribution", label: "Attribution", icon: Megaphone },
+  topics: { id: "topics", label: "Topics", icon: Layers },
+  spend: { id: "spend", label: "AI Spend", icon: Receipt },
+};
+
+export const OUTBOUND_VIEW_TABS: AppPageSubTab[] = [
+  { id: "dispatch", label: "Dispatch", icon: Zap },
+  { id: "campaigns", label: "Campaigns", icon: Megaphone },
+  { id: "sequences", label: "Sequences", icon: Repeat },
+  { id: "callbacks", label: "Callbacks", icon: CalendarClock },
+];
+
+export const APP_PAGE_SECONDARY_TAB_ROUTES: AppPageSecondaryTabRoute[] = [
+  {
+    pathname: "/phone",
+    whenPrimaryTab: "outbound",
+    tabs: OUTBOUND_VIEW_TABS,
+    defaultView: "dispatch",
+    ariaLabel: "Outbound sections",
+    layoutIdPrefix: "outbound-view",
+  },
+];
+
+export function resolveInsightsSecondaryTabs(groupId: string): AppPageSubTab[] {
+  const group = OPS_INSIGHTS_GROUPS.find((g) => g.id === groupId);
+  if (!group) return [];
+  return group.tabs
+    .map((id) => INSIGHTS_VIEW_TABS[id])
+    .filter((tab): tab is AppPageSubTab => Boolean(tab));
+}
+
+export function resolveAppPageSecondaryRoute(
+  pathname: string,
+  primaryTabId: string,
+): Omit<AppPageSecondaryTabRoute, "whenPrimaryTab"> | null {
+  if (pathname === "/insights") {
+    const tabs = resolveInsightsSecondaryTabs(primaryTabId);
+    if (tabs.length === 0) return null;
+    return {
+      pathname,
+      tabs,
+      defaultView: tabs[0]!.id,
+      ariaLabel: "Insights views",
+      layoutIdPrefix: "insights-view",
+    };
+  }
+  const match = APP_PAGE_SECONDARY_TAB_ROUTES.find(
+    (r) => r.pathname === pathname && r.whenPrimaryTab === primaryTabId,
+  );
+  if (!match) return null;
+  const { whenPrimaryTab: _when, ...rest } = match;
+  return rest;
+}
+
+export function resolveAppPageSecondaryTabId(
+  route: Pick<AppPageSecondaryTabRoute, "tabs" | "defaultView">,
+  viewParam: string | null,
+): string {
+  if (viewParam && route.tabs.some((t) => t.id === viewParam)) return viewParam;
+  return route.defaultView;
 }
