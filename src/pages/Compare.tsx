@@ -217,7 +217,7 @@ export default function Compare() {
               <caption className="sr-only">
                 Feature comparison of Wireline versus Air, Synthflow, Bland, and Retell
               </caption>
-              <thead>
+              <thead className="compare-table-head">
                 <tr className="border-b border-ink/[0.12]">
                   <th className="text-left p-4 pl-6 font-mono text-[10px] uppercase tracking-[0.3em] text-ink/55 font-medium w-64">
                     Capability
@@ -299,11 +299,22 @@ export default function Compare() {
                   {COMPETITORS.map((c) => (
                     <td
                       key={c.key}
-                      className={`p-3 text-center font-display italic text-xl ${
-                        c.key === "wireline" ? "bg-brand/12 text-brand" : "text-muted"
+                      className={`p-3 text-center align-middle ${
+                        c.key === "wireline" ? "bg-brand/12" : ""
                       }`}
                     >
-                      {score(c.key)}
+                      <span
+                        className={`font-display italic text-xl tabular-nums ${
+                          c.key === "wireline" ? "text-brand" : "text-ink/30"
+                        }`}
+                      >
+                        {score(c.key)}
+                      </span>
+                      {c.key === "wireline" && (
+                        <span className="block font-mono text-[8px] uppercase tracking-[0.25em] text-brand/60 mt-0.5">
+                          Best score
+                        </span>
+                      )}
                     </td>
                   ))}
                 </tr>
@@ -368,7 +379,7 @@ export default function Compare() {
             When a competitor is the better pick.
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 stagger-children">
-            <div className="wl-panel card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
+            <div className="wl-panel card-shimmer border border-ink/[0.08] border-l-2 border-l-brand/25 p-5 transition-all duration-300 hover:border-brand/30 hover:border-l-brand/50">
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand/70 mb-2">
                 Pick Air if
               </p>
@@ -378,7 +389,7 @@ export default function Compare() {
                 supervisor coaching, Air's pricing wins.
               </p>
             </div>
-            <div className="wl-panel card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
+            <div className="wl-panel card-shimmer border border-ink/[0.08] border-l-2 border-l-brand/25 p-5 transition-all duration-300 hover:border-brand/30 hover:border-l-brand/50">
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand/70 mb-2">
                 Pick Bland if
               </p>
@@ -389,7 +400,7 @@ export default function Compare() {
                 supervisor take-over.
               </p>
             </div>
-            <div className="wl-panel card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
+            <div className="wl-panel card-shimmer border border-ink/[0.08] border-l-2 border-l-brand/25 p-5 transition-all duration-300 hover:border-brand/30 hover:border-l-brand/50">
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand/70 mb-2">
                 Pick Retell if
               </p>

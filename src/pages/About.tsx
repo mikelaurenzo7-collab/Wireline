@@ -8,29 +8,38 @@
  */
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { Mail, ArrowRight, Sparkles, Phone } from "lucide-react";
+import { Mail, ArrowRight, Phone, Target, Eye, Zap, Layers } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import WirelineMark from "../components/WirelineMark";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { BRAND } from "../constants/brand-colors";
 
-const PRINCIPLES = [
+const PRINCIPLES: Array<{ title: string; body: string; Icon: LucideIcon; iconVariant: string }> = [
   {
     title: "Build the product the customer would build for themselves.",
     body: "Every feature in Wireline came out of a real conversation about a real business — not a roadmap whiteboard. If a paying client asks for something and it's true to the platform, it ships within a week.",
+    Icon: Target,
+    iconVariant: "bg-brand",
   },
   {
     title: "Honesty over polish.",
     body: "Wireline isn't HIPAA-certified yet. We say so out loud. Marcus's medical-intake demo is labeled \"healthcare-style demo, not HIPAA-certified.\" Investors and clients both reward that kind of clarity.",
+    Icon: Eye,
+    iconVariant: "bg-ink",
   },
   {
     title: "Solo founder, faster ship.",
     body: "No committees, no consensus rituals. When something breaks, the person who built it fixes it within the hour. When a customer wants something new, the person you talk to is the person who decides.",
+    Icon: Zap,
+    iconVariant: "bg-brand",
   },
   {
     title: "Horizontal platform, vertical wedge.",
     body: "Wireline runs the same way for home services, medical, legal, real estate, agencies, retail. We lead outbound with vertical-specific copy because it converts, but the platform is built for any business that picks up the phone.",
+    Icon: Layers,
+    iconVariant: "bg-ink",
   },
 ];
 
@@ -128,10 +137,10 @@ export default function About() {
                 className="wl-panel card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30 hover:shadow-[0_12px_48px_rgba(139,63,214,0.06)]"
               >
                 <div
-                  className="w-8 h-8 flex items-center justify-center mb-3 bg-brand"
+                  className={`w-8 h-8 flex items-center justify-center mb-3 ${p.iconVariant}`}
                   aria-hidden="true"
                 >
-                  <Sparkles className="w-4 h-4 text-white" strokeWidth={2} />
+                  <p.Icon className="w-4 h-4 text-white" strokeWidth={2} />
                 </div>
                 <h3 className="font-display italic text-xl text-ink mb-1.5 leading-tight">
                   {p.title}
