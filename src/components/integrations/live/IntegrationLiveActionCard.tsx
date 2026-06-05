@@ -7,7 +7,11 @@ import { Check, Loader2, Compass } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import type { IntegrationLiveAction } from "../../../lib/integration-live-scripts";
 import { INTEGRATION_STYLES } from "../../../lib/integration-activities";
-import { WIRELINE_DIRECTOR_BRAND, WL_APP_CLASSES } from "../../../lib/wireline-director-design";
+import {
+  WIRELINE_DIRECTOR_BRAND,
+  WL_APP_CLASSES,
+  WL_DIRECTOR_CLASSES,
+} from "../../../lib/wireline-director-design";
 import type { ToolIntegration } from "../../../lib/agent-capabilities";
 import { IntegrationLiveVisual } from "./IntegrationLiveVisuals";
 import { Badge } from "../../ui/shadcn/Badge";
@@ -110,7 +114,7 @@ export default function IntegrationLiveActionCard({
             <p className="text-[12px] font-semibold text-ink/90 leading-tight mt-0.5">
               {action.title}
             </p>
-            <p className="text-[10px] text-muted/80 mt-0.5">{action.detail}</p>
+            <p className={cn(WL_APP_CLASSES.bodyCaption, "mt-0.5")}>{action.detail}</p>
           </div>
         </div>
 
@@ -125,7 +129,9 @@ export default function IntegrationLiveActionCard({
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-              "mt-2.5 flex items-center gap-1.5 text-[10px] font-medium rounded-md px-2.5 py-1.5 border",
+              "mt-2.5 flex items-center gap-1.5 rounded-md px-2.5 py-1.5 border",
+              WL_DIRECTOR_CLASSES.metaCaption,
+              "font-medium",
               WL_APP_CLASSES.statusSuccess,
               WL_APP_CLASSES.textSuccess,
             )}

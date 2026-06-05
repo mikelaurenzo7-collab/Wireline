@@ -9,6 +9,7 @@ import { ShadButton } from "../ui/shadcn/ShadButton";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/shadcn/Popover";
 import { Input } from "../ui/shadcn/Input";
 import {
+  WL_APP_CLASSES,
   WL_DIRECTOR_CLASSES,
   DIRECTOR_MODEL_PICKER_COPY,
 } from "../../lib/wireline-director-design";
@@ -56,10 +57,12 @@ function OpenRouterModelRow({
   onPick: () => void;
 }) {
   return (
-    <button
+    <ShadButton
       type="button"
+      variant="ghost"
+      disableAnimations
       className={cn(
-        "w-full text-left rounded-lg transition-colors",
+        "w-full h-auto justify-start text-left rounded-md transition-colors",
         compact ? "px-2.5 py-1.5 text-[11px]" : "px-2.5 py-2 text-[12px]",
         active ? "bg-brand/12 text-brand-deep" : "hover:bg-muted/60",
       )}
@@ -67,15 +70,25 @@ function OpenRouterModelRow({
     >
       <span className="font-medium block truncate">{model.label}</span>
       {!compact && model.description ? (
-        <span className="block text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
+        <span
+          className={cn(
+            WL_APP_CLASSES.bodyCaption,
+            "block text-muted-foreground mt-0.5 line-clamp-2",
+          )}
+        >
           {model.description}
         </span>
       ) : compact ? (
-        <span className="block text-[9px] text-muted-foreground/80 truncate font-mono mt-0.5">
+        <span
+          className={cn(
+            WL_DIRECTOR_CLASSES.metaCaption,
+            "block text-muted-foreground/80 truncate font-mono mt-0.5",
+          )}
+        >
           {model.id}
         </span>
       ) : null}
-    </button>
+    </ShadButton>
   );
 }
 
@@ -240,22 +253,29 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
               ).map((tier) => {
                 const active = selection.provider === "wireline" && selection.tier === tier.id;
                 return (
-                  <button
+                  <ShadButton
                     key={tier.id}
                     type="button"
+                    variant="ghost"
+                    disableAnimations
                     className={cn(
-                      "w-full text-left rounded-lg px-2.5 py-2 text-[12px] transition-colors",
+                      "w-full h-auto justify-start text-left rounded-md px-2.5 py-2 text-[12px] transition-colors",
                       active ? "bg-brand/12 text-brand-deep" : "hover:bg-muted/60",
                     )}
                     onClick={() => void persist({ provider: "wireline", tier: tier.id })}
                   >
                     <span className="font-medium">{tier.label}</span>
                     {tier.description ? (
-                      <span className="block text-[10px] text-muted-foreground mt-0.5">
+                      <span
+                        className={cn(
+                          WL_APP_CLASSES.bodyCaption,
+                          "block text-muted-foreground mt-0.5",
+                        )}
+                      >
                         {tier.description}
                       </span>
                     ) : null}
-                  </button>
+                  </ShadButton>
                 );
               })}
             </div>
@@ -315,11 +335,13 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
 
                 {catalogOnly.length > 0 && (
                   <div>
-                    <button
+                    <ShadButton
                       type="button"
+                      variant="ghost"
+                      disableAnimations
                       className={cn(
                         WL_DIRECTOR_CLASSES.microLabel,
-                        "w-full text-left px-2 py-1.5 rounded-md hover:bg-muted/50 text-muted-foreground flex items-center justify-between gap-2",
+                        "w-full h-auto justify-between px-2 py-1.5 rounded-md hover:bg-muted/50 text-muted-foreground",
                       )}
                       onClick={() => setBrowseAllOpen((v) => !v)}
                       aria-expanded={browseAllOpen}
@@ -332,7 +354,7 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
                         )}
                         aria-hidden
                       />
-                    </button>
+                    </ShadButton>
                     {browseAllOpen && (
                       <div className="space-y-0.5 mt-1 max-h-[min(28vh,200px)] overflow-y-auto pr-0.5">
                         {filteredCatalog.map((model) => (

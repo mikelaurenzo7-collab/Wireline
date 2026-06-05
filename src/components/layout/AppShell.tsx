@@ -288,7 +288,7 @@ export default function AppShell() {
           <h1 className="brand-wordmark text-4xl md:text-6xl lg:text-7xl leading-[0.85] hero-headline-glow">
             {branding.brand_name.toUpperCase()}
           </h1>
-          <p className="text-eyebrow tracking-[0.4em] text-muted/60">Growth Engine Initializing</p>
+          <p className="text-eyebrow tracking-[0.4em] text-muted/60">Console initializing</p>
           <div className="wl-loading-dots justify-center pt-4">
             <span />
             <span />
@@ -373,6 +373,7 @@ export default function AppShell() {
           <WorkspaceTopBar
             eyebrow={pageCtx.eyebrow}
             title={pageCtx.title}
+            subtitle={pageCtx.subtitle}
             onShowShortcuts={() => setShowShortcuts(true)}
           />
         )}

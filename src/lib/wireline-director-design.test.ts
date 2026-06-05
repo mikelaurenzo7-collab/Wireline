@@ -79,6 +79,10 @@ describe("Wireline Director design contract", () => {
   it("exposes app chrome toolbar utilities", () => {
     expect(WL_APP_CLASSES.chromeToolbar).toBe("wl-chrome-toolbar");
     expect(WL_APP_CLASSES.mobileContextBar).toBe("wl-mobile-context-bar");
+    expect(WL_APP_CLASSES.pageContextAccent).toBe("wl-page-context-accent");
+    expect(WL_APP_CLASSES.workspaceTitle).toBe("wl-workspace-title");
+    expect(WL_APP_CLASSES.bodyCaption).toBe("wl-body-caption");
+    expect(WL_APP_CLASSES.inlineEmpty).toBe("wl-inline-empty");
   });
 
   it("exposes app settings panel classes without glass or aurora blobs", () => {

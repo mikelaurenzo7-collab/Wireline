@@ -23,12 +23,14 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { clsx } from "clsx";
+import { cn } from "../../lib/utils";
 import { authFetch } from "../../lib/api";
 import { useToast } from "../../contexts/ToastContext";
 import { EmptyState } from "../ui/EmptyState";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import type { ActionType } from "../../lib/action-types";
 import { OPS_COPY, OPS_CHANNEL_EMPTY, WL_OPS_CLASSES } from "../../lib/wireline-ops-design";
+import { WL_APP_CLASSES, WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
 
 interface ActionItem {
   id: string;
@@ -266,7 +268,7 @@ export function ActionFeed({
                             <h4 className="wl-label text-brand font-bold flex items-center gap-1.5">
                               <Sparkles className="w-3 h-3" /> AI Reasoning
                             </h4>
-                            <p className="text-[11px] text-ink/70 leading-relaxed italic">
+                            <p className={cn(WL_APP_CLASSES.bodyCaption, "text-ink/70 italic")}>
                               "{action.reasoning}"
                             </p>
                           </div>
@@ -279,11 +281,21 @@ export function ActionFeed({
                               <div className="space-y-3">
                                 <div className="flex items-center gap-2 pb-2 border-bottom border-black/5">
                                   <span className="wl-label text-muted font-mono">TO:</span>
-                                  <span className="text-[11px] font-medium text-ink">
+                                  <span
+                                    className={cn(
+                                      WL_APP_CLASSES.bodyCaption,
+                                      "font-medium text-ink",
+                                    )}
+                                  >
                                     {action.payload?.to || "—"}
                                   </span>
                                 </div>
-                                <div className="text-[11px] text-ink/80 leading-relaxed whitespace-pre-wrap font-sans">
+                                <div
+                                  className={cn(
+                                    WL_APP_CLASSES.bodyCaption,
+                                    "text-ink/80 whitespace-pre-wrap font-sans",
+                                  )}
+                                >
                                   {action.payload?.body || "No content drafted."}
                                 </div>
                               </div>
@@ -291,11 +303,21 @@ export function ActionFeed({
                               <div className="space-y-3">
                                 <div className="flex items-center gap-2 pb-2 border-bottom border-black/5">
                                   <span className="wl-label text-muted font-mono">TO:</span>
-                                  <span className="text-[11px] font-medium text-ink">
+                                  <span
+                                    className={cn(
+                                      WL_APP_CLASSES.bodyCaption,
+                                      "font-medium text-ink",
+                                    )}
+                                  >
                                     {action.payload?.to || "—"}
                                   </span>
                                 </div>
-                                <div className="text-[11px] text-ink/80 leading-relaxed whitespace-pre-wrap font-sans">
+                                <div
+                                  className={cn(
+                                    WL_APP_CLASSES.bodyCaption,
+                                    "text-ink/80 whitespace-pre-wrap font-sans",
+                                  )}
+                                >
                                   {action.payload?.message || "No content drafted."}
                                 </div>
                               </div>
@@ -303,11 +325,21 @@ export function ActionFeed({
                               <div className="space-y-3">
                                 <div className="flex items-center gap-2 pb-2 border-bottom border-black/5">
                                   <span className="wl-label text-muted font-mono">CHANNEL:</span>
-                                  <span className="text-[11px] font-medium text-ink">
+                                  <span
+                                    className={cn(
+                                      WL_APP_CLASSES.bodyCaption,
+                                      "font-medium text-ink",
+                                    )}
+                                  >
                                     {action.payload?.channel || "—"}
                                   </span>
                                 </div>
-                                <div className="text-[11px] text-ink/80 leading-relaxed whitespace-pre-wrap font-sans">
+                                <div
+                                  className={cn(
+                                    WL_APP_CLASSES.bodyCaption,
+                                    "text-ink/80 whitespace-pre-wrap font-sans",
+                                  )}
+                                >
                                   {action.payload?.message || "No content drafted."}
                                 </div>
                               </div>
@@ -320,14 +352,24 @@ export function ActionFeed({
                                     <span className="text-[9px] uppercase tracking-wider text-ink/40">
                                       {key}
                                     </span>
-                                    <span className="text-[10px] font-medium text-ink truncate">
+                                    <span
+                                      className={cn(
+                                        WL_DIRECTOR_CLASSES.metaCaption,
+                                        "font-medium text-ink truncate",
+                                      )}
+                                    >
                                       {String(val)}
                                     </span>
                                   </div>
                                 ))}
                               </div>
                             ) : (
-                              <div className="text-[10px] font-mono text-ink/40 break-all">
+                              <div
+                                className={cn(
+                                  WL_DIRECTOR_CLASSES.metaCaption,
+                                  "font-mono text-ink/40 break-all",
+                                )}
+                              >
                                 {JSON.stringify(action.payload, null, 2)}
                               </div>
                             )}

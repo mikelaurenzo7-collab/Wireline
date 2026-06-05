@@ -23,6 +23,7 @@ import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { WL_APP_CLASSES } from "../lib/wireline-director-design";
 import { OPS_FOUNDER, WL_FLEET_CLASSES } from "../lib/wireline-ops-design";
+import { MetricStatTile } from "./ui/MetricStatTile";
 import FounderOperatorConsole from "./admin/FounderOperatorConsole";
 
 /**
@@ -102,44 +103,6 @@ const STAFF: StaffMember[] = [
   },
 ];
 
-const STAT_CARD_CLASSES: Record<string, string> = {
-  brand: "border-brand/20 hover:border-brand/50 hover:shadow-[0_0_15px_rgba(79,30,123,0.12)]",
-  ink: "border-black/10 hover:border-black/20 hover:shadow-[0_0_15px_rgba(79,30,123,0.06)]",
-  rose: "border-destructive/25 hover:border-destructive/45 hover:shadow-[0_0_15px_rgba(232,70,106,0.12)]",
-  muted: "border-border hover:border-brand/25",
-};
-
-const STAT_TEXT_COLORS: Record<string, string> = {
-  brand: "text-brand",
-  ink: "text-ink",
-  rose: "text-destructive",
-  muted: "text-muted-foreground",
-};
-
-function StatTile({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number;
-  tone: keyof typeof STAT_CARD_CLASSES;
-}) {
-  return (
-    <div
-      className={cn(
-        "flex-1 min-w-[115px] rounded-md wl-panel border px-3 py-2.5 transition-colors duration-300",
-        STAT_CARD_CLASSES[tone],
-      )}
-    >
-      <div className={cn("text-xl font-display tabular-nums leading-none", STAT_TEXT_COLORS[tone])}>
-        {value.toLocaleString()}
-      </div>
-      <div className="wl-label-muted mt-1.5">{label}</div>
-    </div>
-  );
-}
-
 function StaffRow({
   member,
   exists,
@@ -177,7 +140,7 @@ function StaffRow({
           {member.name}
         </div>
         <div className="wl-label-muted mt-0.5 truncate">{member.title}</div>
-        <p className="text-[11px] text-muted/80 leading-snug mt-1.5 line-clamp-2">{member.blurb}</p>
+        <p className={cn(WL_APP_CLASSES.bodyCaption, "mt-1.5 line-clamp-2")}>{member.blurb}</p>
       </div>
       <div className="shrink-0 flex flex-col items-end gap-1 self-start pt-0.5">
         <span className="wl-label text-brand inline-flex items-center gap-1">
@@ -274,7 +237,7 @@ export default function FounderDashboard() {
             </ShadButton>
             <span className="font-display italic text-sm text-ink truncate">
               {selected.name}
-              <span className="text-muted not-italic font-sans text-[11px] ml-1.5">
+              <span className={cn(WL_APP_CLASSES.bodyCaption, "not-italic font-sans ml-1.5")}>
                 · {selected.title}
               </span>
             </span>
@@ -317,17 +280,17 @@ export default function FounderDashboard() {
           <div className="mb-5">
             <p className="app-section-title mb-2">Platform · live</p>
             <div className="flex flex-wrap gap-2.5">
-              <StatTile label="Paying" value={stats.users.paying} tone="brand" />
-              <StatTile label="Trialing" value={stats.users.trialing} tone="brand" />
-              <StatTile label="Total users" value={stats.users.total} tone="ink" />
-              <StatTile label="New (7d)" value={stats.users.new_last_7d} tone="brand" />
-              <StatTile label="Calls today" value={stats.calls.today} tone="ink" />
-              <StatTile
+              <MetricStatTile label="Paying" value={stats.users.paying} tone="brand" />
+              <MetricStatTile label="Trialing" value={stats.users.trialing} tone="brand" />
+              <MetricStatTile label="Total users" value={stats.users.total} tone="ink" />
+              <MetricStatTile label="New (7d)" value={stats.users.new_last_7d} tone="brand" />
+              <MetricStatTile label="Calls today" value={stats.calls.today} tone="ink" />
+              <MetricStatTile
                 label="Errors (24h)"
                 value={stats.health.errors_24h}
                 tone={stats.health.errors_24h > 0 ? "rose" : "muted"}
               />
-              <StatTile
+              <MetricStatTile
                 label="Warnings (24h)"
                 value={stats.health.warnings_24h}
                 tone={stats.health.warnings_24h > 0 ? "brand" : "muted"}

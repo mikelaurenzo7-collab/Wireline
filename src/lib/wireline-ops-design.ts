@@ -475,6 +475,21 @@ export const OPS_FOUNDER = {
   broadcastSend: "Send to all 6",
 } as const;
 
+/** KPI / metric tiles — founder dashboard, ops summaries */
+export const WL_STAT_CLASSES = {
+  tile: "wl-stat-tile",
+  tileBrand: "wl-stat-tile wl-stat-tile--brand",
+  tileInk: "wl-stat-tile wl-stat-tile--ink",
+  tileRose: "wl-stat-tile wl-stat-tile--rose",
+  tileMuted: "wl-stat-tile wl-stat-tile--muted",
+  value: "wl-stat-tile__value",
+  valueBrand: "wl-stat-tile__value wl-stat-tile__value--brand",
+  valueInk: "wl-stat-tile__value wl-stat-tile__value--ink",
+  valueRose: "wl-stat-tile__value wl-stat-tile__value--rose",
+  valueMuted: "wl-stat-tile__value wl-stat-tile__value--muted",
+  label: "wl-stat-tile__label wl-label-muted",
+} as const;
+
 /** Fleet / founder roster row class hooks (shared with AgentListPanel) */
 export const WL_FLEET_CLASSES = {
   agentRow: "wl-fleet-agent-row touch-press",

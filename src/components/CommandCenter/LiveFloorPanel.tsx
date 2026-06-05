@@ -16,6 +16,7 @@ import { EmptyState } from "../ui/EmptyState";
 import { AgentActivityIndicator } from "../ui/AgentActivityIndicator";
 import ClientRouteLoading from "../layout/ClientRouteLoading";
 import { WL_OPS_CLASSES, OPS_COPY, OPS_CHANNEL_EMPTY } from "../../lib/wireline-ops-design";
+import { WL_APP_CLASSES, WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
 
 export type FloorCall = {
   id: string;
@@ -262,7 +263,12 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                             <p className="font-mono text-sm sm:text-base text-ink truncate">
                               {call.customer_number}
                             </p>
-                            <p className="text-[11px] text-muted mt-0.5 truncate flex items-center gap-1">
+                            <p
+                              className={cn(
+                                WL_APP_CLASSES.bodyCaption,
+                                "mt-0.5 truncate flex items-center gap-1",
+                              )}
+                            >
                               {call.status === "active" && (
                                 <AgentActivityIndicator active size={14} pose="on-call" />
                               )}
@@ -283,7 +289,12 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                               <Sparkles className="w-3 h-3 text-brand" />
                               <span className="wl-label text-muted">Live reasoning</span>
                             </div>
-                            <p className="text-[11px] text-ink/75 leading-relaxed italic line-clamp-3">
+                            <p
+                              className={cn(
+                                WL_APP_CLASSES.bodyCaption,
+                                "text-ink/75 italic line-clamp-3",
+                              )}
+                            >
                               {call.thought}
                             </p>
                           </div>
@@ -402,7 +413,12 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                               </ShadButton>
                             </div>
                             {whisperLogs.length > 0 && (
-                              <div className="max-h-20 overflow-y-auto font-mono text-[10px] text-muted space-y-0.5">
+                              <div
+                                className={cn(
+                                  WL_DIRECTOR_CLASSES.metaCaption,
+                                  "max-h-20 overflow-y-auto font-mono text-muted space-y-0.5",
+                                )}
+                              >
                                 {whisperLogs.map((line, idx) => (
                                   <div key={idx} className="truncate">
                                     {line}
@@ -511,7 +527,9 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                   className="rounded-md p-3 bg-destructive/8 border border-destructive/25"
                 >
                   <p className="font-mono text-sm text-ink">{e.customer_number}</p>
-                  <p className="text-[11px] text-destructive mt-1">{e.sentiment_label}</p>
+                  <p className={cn(WL_APP_CLASSES.bodyCaption, "text-destructive mt-1")}>
+                    {e.sentiment_label}
+                  </p>
                 </div>
               ))}
             </div>

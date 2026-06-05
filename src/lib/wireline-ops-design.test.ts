@@ -21,6 +21,7 @@ import {
   WL_ADMIN_CLASSES,
   OPS_FOUNDER,
   WL_FLEET_CLASSES,
+  WL_STAT_CLASSES,
   WL_CHROME_CLASSES,
 } from "./wireline-ops-design";
 import { WIRELINE_DIRECTOR_BRAND } from "./wireline-director-design";
@@ -127,6 +128,8 @@ describe("Wireline Live Ops design contract", () => {
     expect(OPS_FOUNDER.stat(6)).toBe("6 staff agents");
     expect(WL_FLEET_CLASSES.agentRow).toBe("wl-fleet-agent-row touch-press");
     expect(WL_FLEET_CLASSES.agentRowList).toBe("wl-fleet-agent-row--list");
+    expect(WL_STAT_CLASSES.tileBrand).toContain("wl-stat-tile--brand");
+    expect(WL_STAT_CLASSES.valueRose).toContain("wl-stat-tile__value--rose");
     expect(WL_CHROME_CLASSES.drawerSection).toBe("wl-drawer-section-label");
   });
 });

@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Brain, Compass, GraduationCap, Loader2, Plug, Sparkles, Zap, Check } from "lucide-react";
 import { cn } from "../../lib/utils";
 import {
+  WL_APP_CLASSES,
   WL_DIRECTOR_CLASSES,
   directorPhaseCopy,
   DIRECTOR_LIVE_STEP_COPY,
@@ -115,7 +116,12 @@ function ThinkingStream({ text, isDeep }: { text: string; isDeep: boolean }) {
         className="relative max-h-28 overflow-y-auto scroll-viewport px-3 py-2.5"
       >
         <div className="pointer-events-none sticky top-0 -mb-6 h-4 bg-gradient-to-b from-paper dark:from-[#1a1225] to-transparent z-10" />
-        <p className="text-[11px] text-muted/80 leading-relaxed whitespace-pre-wrap font-mono">
+        <p
+          className={cn(
+            WL_DIRECTOR_CLASSES.metaCaption,
+            "text-muted/80 whitespace-pre-wrap font-mono",
+          )}
+        >
           {tail}
         </p>
       </div>
@@ -159,7 +165,8 @@ function OrchestrationStep({ step, index }: { step: DirectorLiveStep; index: num
       <div className="min-w-0 flex-1">
         <p
           className={cn(
-            "text-[11px] font-medium leading-tight",
+            WL_APP_CLASSES.bodyCaption,
+            "font-medium leading-tight",
             step.status === "active" ? "text-ink" : "text-ink/70",
           )}
         >

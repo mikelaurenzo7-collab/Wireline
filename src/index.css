@@ -1468,6 +1468,109 @@ html, body, .marketing-surface, .app-surface {
   color: color-mix(in srgb, var(--muted-foreground) 94%, white);
 }
 
+/* Sticky workspace chrome — title stack beside section tabs */
+.wl-workspace-eyebrow {
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: color-mix(in srgb, var(--color-brand) 58%, var(--color-muted));
+}
+.wl-workspace-title {
+  font-size: clamp(0.6875rem, 2.4vw, 0.8125rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--color-ink);
+}
+.dark .wl-workspace-title {
+  color: color-mix(in srgb, var(--foreground) 96%, white);
+}
+
+/** Dense supporting copy — staff blurbs, table hints, meta under titles */
+.wl-body-caption {
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--color-muted) 88%, var(--color-ink));
+}
+.dark .wl-body-caption {
+  color: color-mix(in srgb, var(--muted-foreground) 92%, white);
+}
+
+/** Inline panel empty — replaces ad-hoc text-[11px] rows in grids */
+.wl-inline-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  text-align: center;
+}
+.wl-inline-empty__label {
+  font-size: 0.6875rem;
+  line-height: 1.35;
+  color: var(--color-muted);
+}
+
+/** Metric tiles — founder dashboard, ops pulse, insights KPIs */
+.wl-stat-tile {
+  flex: 1 1 7.25rem;
+  min-width: 7.25rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--paper) 72%, white);
+  padding: 0.625rem 0.75rem;
+  transition:
+    border-color 0.28s ease,
+    box-shadow 0.28s ease;
+}
+.dark .wl-stat-tile {
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+}
+.wl-stat-tile__value {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.wl-stat-tile__label {
+  margin-top: 0.375rem;
+}
+.wl-stat-tile--brand {
+  border-color: color-mix(in srgb, var(--color-brand) 22%, transparent);
+}
+.wl-stat-tile--brand:hover {
+  border-color: color-mix(in srgb, var(--color-brand) 48%, transparent);
+  box-shadow: 0 0 15px color-mix(in srgb, var(--color-brand) 14%, transparent);
+}
+.wl-stat-tile--ink:hover {
+  border-color: color-mix(in srgb, var(--color-ink) 18%, transparent);
+  box-shadow: 0 0 15px color-mix(in srgb, var(--color-brand) 8%, transparent);
+}
+.wl-stat-tile--rose {
+  border-color: color-mix(in srgb, var(--destructive) 28%, transparent);
+}
+.wl-stat-tile--rose:hover {
+  border-color: color-mix(in srgb, var(--destructive) 42%, transparent);
+  box-shadow: 0 0 15px color-mix(in srgb, var(--destructive) 14%, transparent);
+}
+.wl-stat-tile--muted:hover {
+  border-color: color-mix(in srgb, var(--color-brand) 28%, transparent);
+}
+.wl-stat-tile__value--brand {
+  color: var(--color-brand);
+}
+.wl-stat-tile__value--ink {
+  color: var(--color-ink);
+}
+.wl-stat-tile__value--rose {
+  color: var(--destructive);
+}
+.wl-stat-tile__value--muted {
+  color: var(--muted-foreground);
+}
+
 /* Authenticated app — instrument surfaces only; marketing keeps signature glint */
 .app-surface .wl-empty-state {
   isolation: isolate;

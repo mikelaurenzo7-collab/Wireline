@@ -401,6 +401,14 @@ export const DIRECTOR_COMPOSER_CONTEXT = {
 export const WL_APP_CLASSES = {
   /** Desktop editorial subtitle under TopBar — operator context */
   pageContext: "wl-page-context",
+  /** Editorial left rail on workspace / route headers */
+  pageContextAccent: "wl-page-context-accent",
+  workspaceEyebrow: "wl-workspace-eyebrow",
+  workspaceTitle: "wl-workspace-title",
+  /** 11px supporting copy — blurbs, hints, secondary lines */
+  bodyCaption: "wl-body-caption",
+  inlineEmpty: "wl-inline-empty",
+  inlineEmptyLabel: "wl-inline-empty__label",
   /** Director / chat primary surface */
   missionCanvas: "wl-mission-canvas",
   settingsPanel: "wl-panel-elevated border border-border rounded-md p-6 space-y-5 mt-8",
