@@ -362,10 +362,7 @@ export default function AgentDock({ agentId, agentName, enabledTools, onLaunch }
               icon={Phone}
               eyebrow={OPS_CHANNEL_EMPTY.agentDockCalls.eyebrow}
               title={OPS_CHANNEL_EMPTY.agentDockCalls.title}
-              description={OPS_CHANNEL_EMPTY.agentDockCalls.description.replace(
-                "this agent",
-                agentName,
-              )}
+              description={`When ${agentName} starts taking calls, the latest outcomes show here.`}
               density="compact"
               withHalo={false}
               className="py-2"

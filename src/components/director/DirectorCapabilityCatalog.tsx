@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import { Input } from "../ui/shadcn/Input";
 import {
   DIRECTOR_CAPABILITY_CATEGORY_LABELS,
   DIRECTOR_CAPABILITY_CATALOG,
@@ -127,13 +128,13 @@ export function DirectorCapabilityCatalog({
             className="pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground/60"
             aria-hidden
           />
-          <input
+          <Input
             id="director-capability-search"
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search skills…"
-            className="w-full rounded-md border border-border/80 bg-cream/60 py-1.5 pl-7 pr-2 text-[11px] text-ink placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+            className="h-8 w-full py-1 pl-7 pr-2 text-[11px] bg-cream/60 border-border/80 placeholder:text-muted-foreground/60 focus-visible:ring-brand/40"
           />
         </div>
         {!filteredCatalog && (

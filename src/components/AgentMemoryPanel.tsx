@@ -157,7 +157,7 @@ export default function AgentMemoryPanel({
             icon={Phone}
             eyebrow={OPS_CHANNEL_EMPTY.agentRecall.eyebrow}
             title={OPS_CHANNEL_EMPTY.agentRecall.title}
-            description={OPS_CHANNEL_EMPTY.agentRecall.description.replace("this agent", agentName)}
+            description={`Once ${agentName} takes calls, conversation summaries appear here as recall context.`}
             density="compact"
             withHalo={false}
             className="py-4"

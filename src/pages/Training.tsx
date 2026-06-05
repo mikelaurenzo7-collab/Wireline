@@ -164,7 +164,7 @@ export default function Training() {
         </aside>
 
         <main className="flex-1 min-w-0 min-h-0 flex flex-col wl-panel-elevated overflow-hidden relative">
-          <header className="shrink-0 border-b border-black/8 glass-1 px-3 sm:px-4 py-2.5 lg:py-2">
+          <header className="shrink-0 border-b border-black/8 bg-paper/85 px-3 sm:px-4 py-2.5 lg:py-2">
             <div className="lg:hidden flex items-center gap-2 min-w-0">
               <span className="wl-orbit" data-active="true">
                 <span className="w-8 h-8 rounded-full bg-gradient-to-br from-brand/15 to-brand/8 flex items-center justify-center shrink-0">
