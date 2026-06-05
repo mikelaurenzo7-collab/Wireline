@@ -6,7 +6,7 @@ Prioritized map for design passes. Start with **P0** when the user doesn’t spe
 
 | Surface | Primary files | Notes |
 |---------|---------------|-------|
-| **Director / mission control** | `DirectorWorkspace.tsx`, `director/DirectorLiveSession.tsx`, `director/DirectorMessageBody.tsx`, `chat/ProposalCard.tsx` | Chat spine; proposals; live feed |
+| **Director / mission control** | `DirectorWorkspace.tsx`, `director/DirectorLiveSession.tsx`, `director/DirectorLiveOrchestra.tsx`, `director/DirectorMessageBody.tsx`, `director/DirectorComposerToolbar.tsx`, `director/DirectorComposerAccessory.tsx`, `director/DirectorComposerContextStrip.tsx`, `director/DirectorCapabilityCatalog.tsx`, `director/DirectorStarterPrompts.tsx`, `director/DirectorArtifactsPanel.tsx`, `director/DirectorResearchSources.tsx`, `chat/ProposalCard.tsx` | Chat spine; composer; capabilities; live orchestration; proposals |
 | **App shell** | `layout/AppShell.tsx`, `TopBar.tsx`, `Sidebar.tsx`, `AuroraBackdrop.tsx` | Global hierarchy, route titles |
 | **Agent chat** | `pages/AgentChat.tsx`, `hooks/useStreamingChat.ts` | Parity with Director patterns where appropriate |
 | **Founder dashboard** | `FounderDashboard.tsx` | Fleet overview; “needs attention” over vanity metrics |

@@ -89,5 +89,7 @@ npm run build && npm run start
 ## Contributing
 This repo is the property of Wireline. External contributions aren't open yet, but if you're interested in working on it, [reach out](https://trywireline.com/about).
 
+Engineering docs: [docs/README.md](./docs/README.md) (architecture, design system, deploy, SOC 2). New engineers start with [CONTRIBUTING.md](./CONTRIBUTING.md).
+
 ## License
 Proprietary. © 2026 Wireline. All rights reserved.

@@ -98,5 +98,6 @@ Explicit: **“Use wireline-design on [screen/feature].”**
 
 ## Resources
 
+- [DESIGN.md](../../../DESIGN.md) — canonical Aurora Cream design system (repo root)
 - [wireline-system.md](wireline-system.md) — tokens, classes, voice, accessibility
 - [surfaces.md](surfaces.md) — priority screens and file paths

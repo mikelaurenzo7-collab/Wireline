@@ -24,7 +24,7 @@ npm run db:push
 
 ## Schema Overview
 
-### Core Tables (30+ tables organized by domain)
+### Core Tables (55+ tables organized by domain; see `src/db/schema.ts`)
 
 #### 1. Identity & Accounts
 | Table | Purpose | Key Constraints |

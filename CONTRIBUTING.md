@@ -43,10 +43,11 @@ src/
 ```
 
 Key files to understand first:
-- `server.ts` — Express boot + middleware wiring
+- `server.ts` — Express boot + Vite dev middleware (single process on port 3000)
 - `src/lib/agent-runtime.ts` — System prompt composition (the moat)
 - `src/lib/claude-models.ts` — LLM tiering constants
 - `src/lib/plan-catalog.ts` — Pricing + plan definitions
+- `src/lib/wireline-director-design.ts` — Director UI copy, CSS class contract, capability catalog
 - `src/middleware/auth.ts` — JWT auth middleware
 - `src/db/schema.ts` — Complete database schema
 
@@ -124,6 +125,8 @@ All migrations use `IF NOT EXISTS` — safe to re-run.
 
 ### Styling
 
+- Read `DESIGN.md` before changing UI — shadcn primitives, Aurora Cream tokens, ratchet rules
+- Director / mission-control surfaces: use `WL_DIRECTOR_CLASSES` and shared copy from `wireline-director-design.ts`; run `npm run test:design` when the contract changes
 - Tailwind CSS 4 — no raw CSS except `src/index.css` globals
 - Mobile-first: design for 390px, scale up with `sm:`, `md:`, `lg:`
 - Touch targets: minimum 44×44px hit area on mobile, achieved via invisible `::after` pseudo-elements or transparent padding — NOT by inflating visual container size. Visual heights stay compact (36px inputs, 32px secondary buttons, 20px icons).
@@ -192,10 +195,12 @@ router.put("/api/settings", authenticateUser, requirePermission("settings.manage
 ## Getting Help
 
 - Architecture questions → read `ARCHITECTURE.md`
+- UI / design system → `DESIGN.md` + `src/lib/wireline-director-design.ts`
 - SOC 2 context → `docs/soc2-policies.md`
 - Pricing questions → `src/lib/plan-catalog.ts` (single source of truth)
 - Voice agent behavior → `src/lib/agent-runtime.ts` + `personality-vibes.ts`
 - Deployment → `DEPLOY.md`
+- Doc index → `docs/README.md`
 
 ---
 

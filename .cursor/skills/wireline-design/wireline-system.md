@@ -61,7 +61,7 @@ Route accents: `ROUTE_ACCENTS`, `NAV_GROUP_ACCENTS` — stay in purple/cream fam
 
 ## Director / mission control
 
-Import from `src/lib/wireline-director-design.ts`:
+Import from `src/lib/wireline-director-design.ts` (full map in that file — do not duplicate class strings in TSX):
 
 ```ts
 WL_DIRECTOR_CLASSES.missionPanel      // wl-mission-panel director-live-panel
@@ -70,6 +70,10 @@ WL_DIRECTOR_CLASSES.directorBubble    // assistant
 WL_DIRECTOR_CLASSES.operatorBubble    // user
 WL_DIRECTOR_CLASSES.proposalCard      // approval cards
 WL_DIRECTOR_CLASSES.proposalRail      // left accent rail
+WL_DIRECTOR_CLASSES.composerToolbar   // tool row
+WL_DIRECTOR_CLASSES.composerAccessory // expanded accessory panel
+WL_DIRECTOR_CLASSES.liveOrchestra     // multi-step live orchestration
+WL_APP_CLASSES.*                      // settings / insights / integrations chrome
 ```
 
 CSS blocks in `index.css`: `.wl-director-bubble`, `.wl-operator-bubble`, `.wl-composer-dock`, `.wl-proposal-card`, `.director-live-shimmer`, `.wl-orchestration-step`, `.wl-integration-live-card`.
@@ -124,6 +128,8 @@ Add shadcn: `npx shadcn@latest add <component> -y` (aliases in `components.json`
 ## Tests to run after design contract changes
 
 ```bash
+npm run test:design
+# or individually:
 npm test -- wireline-director-design
 npm test -- shadcn-pivot-ratchet
 ```

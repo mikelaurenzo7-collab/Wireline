@@ -177,6 +177,48 @@ On mobile (<xl), panels slide up from the bottom as full-width sheets instead of
 
 ---
 
+## 3c. Director mission control
+
+The **Director** is the account-level operator chat (route `/director`). It is
+the reference implementation for density, streaming UX, and purple/cream
+chrome. Do not invent one-off class names or copy in Director components.
+
+### Design contract (`src/lib/wireline-director-design.ts`)
+
+| Export | Use |
+|--------|-----|
+| `WIRELINE_DIRECTOR_BRAND` | Violet / signal / opus accent hex values |
+| `WL_DIRECTOR_CLASSES` | Canonical Tailwind + `wl-*` utility bundles (composer, bubbles, proposals, live orchestra) |
+| `WL_APP_CLASSES` | Shared app chrome outside Director (settings, insights, integrations) |
+| `DIRECTOR_CAPABILITY_*` | Capability catalog categories, labels, starter prompts |
+| `DIRECTOR_LIVE_STEP_COPY`, `LIVE_FEED_LABELS` | Live orchestration + integration feed copy |
+
+Add new shared Director strings and CSS class names here first, then wire
+components and extend `wireline-director-design.test.ts`. Run `npm run test:design`
+in CI-equivalent checks.
+
+### Component map (`src/components/`)
+
+| File | Responsibility |
+|------|----------------|
+| `DirectorWorkspace.tsx` | Shell: thread, streaming, artifacts panel, composer |
+| `director/DirectorLiveSession.tsx` | Live mission panel + feed |
+| `director/DirectorLiveOrchestra.tsx` | Multi-step orchestration UI |
+| `director/DirectorMessageBody.tsx` | Message rendering |
+| `director/DirectorComposerToolbar.tsx` | Composer tool row |
+| `director/DirectorComposerAccessory.tsx` | Expanded composer accessories |
+| `director/DirectorComposerContextStrip.tsx` | Context chips above input |
+| `director/DirectorCapabilityCatalog.tsx` | Pickable capabilities / starters |
+| `director/DirectorStarterPrompts.tsx` | Empty-state prompt chips |
+| `director/DirectorArtifactsPanel.tsx` | Deliverables rail |
+| `director/DirectorResearchSources.tsx` | Research citation list |
+| `chat/ProposalCard.tsx` | Approval proposals (dashed = not yet executed) |
+
+CSS for Director lives in `src/index.css` (search `.wl-director`, `.wl-composer`,
+`.wl-proposal`). Deeper surface priorities: `.cursor/skills/wireline-design/surfaces.md`.
+
+---
+
 ## 4. File Locations
 
 The UI layer is **tiered**. Always reach for the lowest tier that fits.

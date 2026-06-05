@@ -12,7 +12,7 @@
  *   routes         Screenshot every major route for visual QA
  *
  * Options:
- *   --url URL      Base URL (default: http://localhost:5173)
+ *   --url URL      Base URL (default: http://localhost:3000)
  *   --route PATH   Route to screenshot (with "screenshot" action)
  *   --out DIR      Screenshot output directory (default: /tmp/wireline-screenshots)
  *   --headed       Run with visible browser (non-headless)
@@ -30,7 +30,7 @@ const getFlag = (name) => {
 };
 const hasFlag = (name) => args.includes(`--${name}`);
 
-const BASE_URL = getFlag("url") || "http://localhost:5173";
+const BASE_URL = getFlag("url") || "http://localhost:3000";
 const OUT_DIR = getFlag("out") || "/tmp/wireline-screenshots";
 const ROUTE = getFlag("route") || "/";
 

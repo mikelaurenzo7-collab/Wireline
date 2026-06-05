@@ -28,7 +28,6 @@ All paths relative to the repo root.
 
 ```bash
 npm install
-npm install ws  # needed by supervisor-websocket-service
 ```
 
 Create a minimal `.env` if one doesn't exist (the app starts without a real DB
@@ -36,29 +35,26 @@ but logs connection errors):
 
 ```bash
 [ -f .env ] || cat > .env << 'EOF'
-DATABASE_URL=postgresql://localhost:5432/wireline_dev
-VITE_SUPABASE_URL=https://placeholder.supabase.co
-VITE_SUPABASE_ANON_KEY=placeholder
-SESSION_SECRET=dev-secret
+POSTGRES_URL=postgresql://localhost:5432/wireline_dev
+APP_URL=http://localhost:3000
+INTERNAL_JWT_SECRET=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 EOF
 ```
 
-Start both servers:
+**Dev server (recommended):** one process serves API + Vite HMR on port **3000**:
 
 ```bash
-# Kill any previous instances
-pkill -f 'tsx.*server/main' 2>/dev/null; pkill -f 'vite' 2>/dev/null; sleep 1
+npm run dev
+# → http://localhost:3000
+```
 
-# Express backend (port 3000)
-npx tsx server/main.ts &
-echo $! > /tmp/wireline-express.pid
+`server.ts` mounts Vite middleware in development — do **not** run a separate
+Vite process on 5173 unless you are debugging Vite in isolation.
 
-# Vite dev server (port 5173)
-npx vite --host &
-echo $! > /tmp/wireline-vite.pid
+Production-style validation:
 
-# Wait for Vite to be ready
-timeout 60 bash -c 'until curl -sf http://localhost:5173 >/dev/null; do sleep 1; done'
+```bash
+npm run verify   # lint + docs:check + authz:check + test + build
 ```
 
 ## Run (agent path) — Playwright driver
@@ -80,7 +76,7 @@ node .claude/skills/run-wireline/driver.mjs routes
 ```
 
 **Options:**
-- `--url URL` — base URL (default: `http://localhost:5173`)
+- `--url URL` — base URL (default: `http://localhost:3000`)
 - `--route PATH` — route for `screenshot` action (default: `/`)
 - `--out DIR` — screenshot output dir (default: `/tmp/wireline-screenshots`)
 - `--headed` — visible browser (non-headless)
@@ -94,27 +90,26 @@ resolution (1440×900 viewport).
 npm run dev
 ```
 
-Opens Vite at `http://localhost:5173`. The Express backend starts alongside via
-the dev script. Ctrl-C to stop.
+Opens at `http://localhost:3000`. Ctrl-C to stop.
 
 ## Stop
 
+Kill the dev process (Ctrl-C) or:
+
 ```bash
-kill $(cat /tmp/wireline-express.pid) 2>/dev/null
-kill $(cat /tmp/wireline-vite.pid) 2>/dev/null
-pkill -f 'tsx.*server/main' 2>/dev/null
-pkill -f 'vite' 2>/dev/null
+pkill -f 'tsx.*server\.ts' 2>/dev/null || true
 ```
 
 ## Test
 
 ```bash
-npx vite build          # type-check + bundle (fastest validation)
-npx vitest run          # unit tests (if configured)
+npm run lint          # TypeScript check (tsc --noEmit)
+npm run test:run      # Vitest unit tests
+npm run test:design   # Design contract + shadcn ratchet
+npm run build         # Production bundle
 ```
 
-Note: bare `tsc --noEmit` shows hundreds of pre-existing errors from missing
-ambient type declarations — use `vite build` for validation instead.
+Use `npm run verify` before pushing — it runs the full CI-equivalent pipeline.
 
 ## Routes
 
@@ -137,29 +132,25 @@ Authenticated routes redirect to the login page at `/auth`.
 
 ## Gotchas
 
-- **`ws` package not in deps**: `npm install` alone misses it. The Express
-  server imports `ws` for supervisor websockets. Run `npm install ws` or the
-  server crashes on start.
-- **No database needed for frontend**: The Express server logs Postgres
-  connection errors but continues serving. The Vite SPA works fully for
-  public routes without a DB.
-- **Auth-gated routes**: Director Chat, agents, training, ops, insights,
-  integrations, and settings all redirect to `/auth` (login page) without
-  a session. The driver's `interact` action gracefully detects this.
-- **Vite first-paint latency**: First navigation after cold start can take
-  5-10s while Vite compiles on demand. The driver uses `networkidle` +
+- **Single dev port:** API and frontend both live on **3000** via `npm run dev`.
+  The Playwright driver defaults to `http://localhost:3000`.
+- **No database needed for frontend:** The server logs Postgres connection errors
+  but continues serving. Public marketing routes work without a DB.
+- **Auth-gated routes:** Director Chat, agents, training, ops, insights,
+  integrations, and settings all redirect to `/auth` without a session. The
+  driver's `interact` action gracefully detects this.
+- **Vite first-paint latency:** First navigation after cold start can take
+  5–10s while Vite compiles on demand. The driver uses `networkidle` +
   2s buffer to handle this.
-- **TypeScript errors are pre-existing**: The repo has hundreds of TS errors
-  from missing `@types/*` packages. `vite build` succeeds because it uses
-  esbuild for transpilation, not tsc for checking.
+- **Env stubbing:** Missing Stripe / Vapi / Anthropic keys return 503 with
+  actionable JSON — the console still loads for UI work.
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---|---|
-| `EADDRINUSE :5173` | `pkill -f vite` then restart |
-| `EADDRINUSE :3000` | `pkill -f 'tsx.*server/main'` then restart |
-| `Cannot find package 'ws'` | `npm install ws` |
+| `EADDRINUSE :3000` | Stop the other process on 3000 or `pkill -f 'tsx.*server\.ts'` |
 | `browserType.launch: Executable doesn't exist` | `npx playwright install --with-deps chromium` |
-| Blank screenshot | Wait longer — increase `waitForTimeout` in driver or check `console --errors` |
-| DB connection errors in Express logs | Expected without Postgres; frontend still works |
+| Blank screenshot | Wait longer — increase wait in driver or check console errors |
+| DB connection errors in logs | Expected without Postgres; frontend still works on public routes |
+| Driver hits wrong port | Pass `--url http://localhost:3000` (5173 is legacy / Vite-only) |

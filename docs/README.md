@@ -9,7 +9,9 @@ Quick links to every operational and technical document in this repository.
 | Document                                  | Purpose                                                           |
 | ----------------------------------------- | ----------------------------------------------------------------- |
 | [ARCHITECTURE.md](../ARCHITECTURE.md)     | System design, LLM tiering, data flows, upgrade paths             |
+| [DESIGN.md](../DESIGN.md)                 | Aurora Cream UI system — shadcn tiers, tokens, Director contract  |
 | [DATABASE_SETUP.md](../DATABASE_SETUP.md) | Schema overview, indexes, RLS, connection config, troubleshooting |
+| [CONTRIBUTING.md](../CONTRIBUTING.md)     | Onboarding, workflow, code standards, security checklist          |
 
 ## Operations
 
@@ -29,8 +31,20 @@ Quick links to every operational and technical document in this repository.
 
 ---
 
+## Frontend & design (implementation)
+
+| Resource | Purpose |
+| -------- | ------- |
+| [`src/lib/wireline-director-design.ts`](../src/lib/wireline-director-design.ts) | Director copy, class names, capability catalog — single source of truth |
+| [`src/lib/wireline-director-design.test.ts`](../src/lib/wireline-director-design.test.ts) | Contract tests for Director design constants |
+| [`.cursor/skills/wireline-design/`](../.cursor/skills/wireline-design/) | Agent skill for UI upgrades (surfaces map, token reference) |
+| `npm run test:design` | Vitest: design audit, shadcn ratchet, director contract |
+
+Keep **DESIGN.md** (visual system) and **wireline-director-design.ts** (Director mission control) in sync when changing chat chrome, composer, or live-session UI.
+
 ## Conventions
 
 - **Credentials** belong in environment variables and secrets managers — never in docs.
 - **Runbooks** live at the top level or in `scripts/` alongside the tooling they document.
 - **Product docs** (for operators/customers) ship via the app, not as markdown in the repo.
+- **Generated docs** (`docs/AUTHZ_MATRIX.md`) are produced by `npm run authz:check` — edit the generator or route middleware, not the markdown by hand.

@@ -114,8 +114,8 @@ API route (/api/claude/*, /api/jobs/*, /api/daily-brief/*)
 
 ## 3. Database Schema (Key Tables)
 
-55 tables managed by Drizzle; 17 migrations, all idempotent
-(`IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`).
+57 tables managed by Drizzle; 36 SQL migrations under `drizzle/migrations/`, all
+idempotent (`IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`).
 
 | Table | Purpose |
 |------|---------|
@@ -132,13 +132,33 @@ API route (/api/claude/*, /api/jobs/*, /api/daily-brief/*)
 | `wireline_jobs` | Background job queue (claim / fail / retry, no Redis dep) |
 | `wireline_pronunciation_dictionaries` | Per-tenant ElevenLabs pronunciation overrides |
 | `wireline_outbound_campaigns` / `wireline_outbound_leads` | Outbound dialer + lead state machine |
+| `wireline_director_conversation_messages` | Account-level Director chat thread (operator ↔ director) |
+| `wireline_director_artifacts` / `wireline_director_artifact_objects` | Persisted Director deliverables (metadata + blob storage) |
 
 Account deletion is handled by `src/lib/account-deletion.ts`, which
-manually cascades through all 55 tables in dependency order. FKs exist from
+manually cascades through all 57 tables in dependency order. FKs exist from
 `wireline_settings`, `wireline_user_preferences`, and `wireline_spend_budgets`
 to `wireline_users` with cascade-delete; the remaining tables are cleaned
 up by the deletion module to give precise control over sequencing and
 logging.
+
+---
+
+## 3.1 Director (account-level AI workspace)
+
+The **Director** is the authenticated operator's mission-control chat — one
+thread per account (not per voice agent). It orchestrates fleet planning,
+approvals, integrations, research, and document deliverables.
+
+| Layer | Location | Role |
+|-------|----------|------|
+| **UI shell** | `src/components/DirectorWorkspace.tsx` | Layout, streaming chat, artifacts rail |
+| **Subcomponents** | `src/components/director/*` | Live session, composer, capability catalog, proposals |
+| **Design contract** | `src/lib/wireline-director-design.ts` | Copy, `WL_DIRECTOR_CLASSES`, capability categories — tested in `wireline-director-design.test.ts` |
+| **Visual system** | `DESIGN.md` + `src/index.css` | Aurora Cream utilities (`.wl-director-*`, composer dock, proposal cards) |
+| **Persistence** | `directorConversationMessages`, `directorArtifacts` | Thread history + generated files |
+
+Primary route: `/director` (also embedded in `FounderDashboard` and `AgentChat` with optional agent focus). See `DESIGN.md` §3c for component map.
 
 ---
 
@@ -217,7 +237,10 @@ on the production system-prompt size.
 | `src/lib/claude-recipes.ts` | `brief`, `coach`, `postCallAnalysis`, `dailyBrief` |
 | `src/lib/post-call-digest.ts` | Outcome classification + CRM + email + CSAT pipeline |
 | `src/lib/plan-catalog.ts` | Single source of truth for tiered pricing + unit economics |
+| `src/lib/wireline-director-design.ts` | Director UI contract (copy, CSS class names, capability catalog) |
+| `src/components/DirectorWorkspace.tsx` | Director mission-control shell |
 | `src/routes/health-routes.ts` | `/api/health` minimal probe + `/api/health/internal` + `/api/health/models` |
+| `DESIGN.md` | Aurora Cream design system + shadcn ratchet rules |
 
 ---
 
