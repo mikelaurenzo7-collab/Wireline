@@ -33,10 +33,12 @@ import { Badge } from "./ui/shadcn/Badge";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "./ui/shadcn/Tooltip";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { EmptyState } from "./ui/EmptyState";
+import { WL_DIRECTOR_CLASSES } from "../lib/wireline-director-design";
 import {
   OPS_TRIAGE_EMPTY,
   OPS_TRIAGE_ACCENTS,
   OPS_CHANNEL_TOOLBAR,
+  WL_OPS_CLASSES,
 } from "../lib/wireline-ops-design";
 import { BRAND } from "../constants/brand-colors";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
@@ -151,7 +153,10 @@ export default function TriageInbox() {
             variant="outline"
             size="sm"
             disableAnimations
-            className="h-9 rounded-full text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand"
+            className={cn(
+              "h-9 rounded-full text-muted hover:text-brand",
+              WL_OPS_CLASSES.filterChip,
+            )}
           >
             Retry
           </ShadButton>
@@ -213,7 +218,10 @@ export default function TriageInbox() {
               variant="outline"
               size="sm"
               disableAnimations
-              className="h-9 rounded-full text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40"
+              className={cn(
+                "h-9 rounded-full text-muted hover:text-brand hover:border-brand/40",
+                WL_OPS_CLASSES.filterChip,
+              )}
             >
               {loading ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -426,7 +434,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
                 )}
               </div>
               {c.coaching_note && (
-                <p className="text-[10px] text-muted/70 mt-1.5 line-clamp-1 pr-2">
+                <p className={cn(WL_DIRECTOR_CLASSES.metaCaption, "mt-1.5 line-clamp-1 pr-2")}>
                   {c.coaching_note}
                 </p>
               )}
@@ -777,7 +785,7 @@ const OpenTaskRow: React.FC<{
           <p className="text-[12px] text-ink/90 leading-snug">{task.description}</p>
           <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1.5 flex items-center gap-2">
             <span>{task.target_channel || "manual"}</span>
-            <span className="w-1 h-1 rounded-full bg-white/10" />
+            <span className={WL_OPS_CLASSES.dotSep} aria-hidden />
             <span>{formatDateTime(task.created_at)}</span>
           </div>
         </div>
@@ -813,7 +821,7 @@ function Escalations({ items }: { items: EscalationCall[] }) {
                 <span>{formatDateTime(c.created_at)}</span>
                 {c.lead_score !== null && c.lead_score !== undefined && (
                   <>
-                    <span className="w-1 h-1 rounded-full bg-white/10" />
+                    <span className={WL_OPS_CLASSES.dotSep} aria-hidden />
                     <Badge
                       variant="outline"
                       className="text-[7px] tracking-normal border-rose-500/20 text-rose-400 bg-rose-500/5 px-1 py-0 rounded"
@@ -824,7 +832,7 @@ function Escalations({ items }: { items: EscalationCall[] }) {
                 )}
               </div>
               {c.coaching_note && (
-                <p className="text-[10px] text-rose-400/80 mt-1.5 line-clamp-1 pr-2">
+                <p className="text-caption text-destructive/80 mt-1.5 line-clamp-1 pr-2">
                   {c.coaching_note}
                 </p>
               )}

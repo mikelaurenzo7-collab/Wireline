@@ -89,6 +89,7 @@ export function EmptyState({
         title={title}
         description={description}
         className="max-w-sm"
+        divider={false}
       />
 
       {children ? <div className="mt-6 w-full max-w-lg">{children}</div> : null}
@@ -98,7 +99,7 @@ export function EmptyState({
           {actions.map((action, index) => {
             const isPrimary = !!action.primary;
             const sharedClasses = cn(
-              "rounded-full transition-all",
+              "rounded-full transition-all touch-press",
               isPrimary
                 ? "bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20 hover:shadow-md hover:shadow-brand/25 hover:-translate-y-px"
                 : "hover:-translate-y-px",

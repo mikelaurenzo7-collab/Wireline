@@ -133,7 +133,7 @@ function ActionTicket({
         className="w-1.5 h-1.5 rounded-full shrink-0"
         style={{ background: tone === "cleared" ? "var(--wl-signal)" : brand }}
       />
-      <span className="text-[10px] font-medium text-ink/85 truncate">{action.title}</span>
+      <span className="text-[11px] font-medium text-ink/85 truncate">{action.title}</span>
       {tone === "cleared" && <Check className="w-2.5 h-2.5 shrink-0 wl-text-success" />}
     </motion.div>
   );
@@ -232,7 +232,12 @@ export default function DirectorLiveOrchestra({
       </div>
 
       {isProposal && (
-        <p className="mb-3 text-[10px] text-muted/70 italic px-0.5 border-l-2 border-brand/25 pl-2.5">
+        <p
+          className={cn(
+            WL_DIRECTOR_CLASSES.metaCaption,
+            "mb-3 italic px-0.5 border-l-2 border-brand/25 pl-2.5",
+          )}
+        >
           {LIVE_FEED_LABELS.proposalHint}
         </p>
       )}
@@ -258,17 +263,19 @@ export default function DirectorLiveOrchestra({
         >
           <Radio className="w-3 h-3 text-brand shrink-0 animate-pulse" />
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold text-ink leading-tight">
+            <p className="text-[11px] font-semibold text-ink leading-tight">
               {activeLiveStep.title}
             </p>
-            <p className="text-[9px] text-muted/70 truncate">{activeLiveStep.subtitle}</p>
+            <p className={cn(WL_DIRECTOR_CLASSES.metaCaption, "truncate")}>
+              {activeLiveStep.subtitle}
+            </p>
           </div>
         </motion.div>
       )}
 
       <div className="wl-live-orchestra-spotlight relative">
         <div className="flex items-center justify-between mb-2 px-0.5">
-          <span className="text-[9px] uppercase tracking-[0.2em] font-bold text-brand/80">
+          <span className={WL_DIRECTOR_CLASSES.spotlightLabel}>
             {active
               ? LIVE_ORCHESTRA_COPY.spotlightLive
               : cleared.length > 0
@@ -276,7 +283,12 @@ export default function DirectorLiveOrchestra({
                 : LIVE_ORCHESTRA_COPY.spotlightNext}
           </span>
           {active && (
-            <span className="inline-flex items-center gap-1 text-[8px] uppercase tracking-[0.16em] text-brand font-semibold">
+            <span
+              className={cn(
+                WL_DIRECTOR_CLASSES.microLabel,
+                "inline-flex items-center gap-1 text-brand",
+              )}
+            >
               <span className="relative flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/50" />
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-brand" />
@@ -306,7 +318,7 @@ export default function DirectorLiveOrchestra({
               className="rounded-md border border-dashed border-brand/25 bg-brand/[0.03] px-4 py-6 text-center"
             >
               <p className="text-[11px] font-semibold text-ink/80">{LIVE_ORCHESTRA_COPY.armNext}</p>
-              <p className="text-[10px] text-muted/70 mt-1">{queued[0].title}</p>
+              <p className={cn(WL_DIRECTOR_CLASSES.metaCaption, "mt-1")}>{queued[0].title}</p>
             </motion.div>
           ) : cleared.length > 0 ? (
             <motion.div

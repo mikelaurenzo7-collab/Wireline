@@ -51,6 +51,12 @@ export const WL_DIRECTOR_CLASSES = {
   researchSources: "wl-director-research-sources",
   opusBadge: "wl-director-opus-badge",
   liveOrchestra: "wl-live-orchestra",
+  /** 9px uppercase — live output / stream chrome headers */
+  microLabel: "wl-director-micro",
+  /** 10px supporting copy under step titles, tickets, pipeline detail */
+  metaCaption: "wl-director-meta",
+  /** Spotlight section label in live orchestra */
+  spotlightLabel: "wl-director-spotlight-label",
 } as const;
 
 /** Reusable app surfaces outside Director (settings, integrations, ops panels) */
@@ -316,6 +322,12 @@ export const WL_APP_CLASSES = {
   chromeToolbar: "wl-chrome-toolbar",
   /** Compact mobile route strip under TopBar */
   mobileContextBar: "wl-mobile-context-bar",
+  /** System banners (trial, verify email) */
+  banner: "wl-banner",
+  bannerInfo: "wl-banner wl-banner--info",
+  bannerWarn: "wl-banner wl-banner--warn",
+  bannerCritical: "wl-banner wl-banner--critical",
+  bannerCta: "app-micro-cta",
 } as const;
 
 export type DirectorStreamPhase = "connecting" | "thinking" | "replying" | "done";

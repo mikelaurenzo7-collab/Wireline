@@ -20,6 +20,7 @@ import { AnimatePresence, Reorder } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
+import { WL_OPS_CLASSES } from "../lib/wireline-ops-design";
 import { Checkbox } from "./ui/shadcn/Checkbox";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
@@ -1046,14 +1047,14 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     {/* Visual indicator of next step */}
                     {activeStepIndex < steps.length - 1 && (
                       <div className="flex items-center gap-3 mt-4 opacity-70">
-                        <div className="h-px flex-1 bg-white/10" />
-                        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-muted">
+                        <div className={cn(WL_OPS_CLASSES.divider, "flex-1")} aria-hidden />
+                        <div className="flex items-center gap-2 wl-label text-muted">
                           Proceeds to:{" "}
-                          <span className="text-ink font-medium">
+                          <span className="text-ink font-medium normal-case tracking-normal text-[11px]">
                             {steps[activeStepIndex + 1].name}
                           </span>
                         </div>
-                        <div className="h-px flex-1 bg-white/10" />
+                        <div className={cn(WL_OPS_CLASSES.divider, "flex-1")} aria-hidden />
                       </div>
                     )}
                   </div>

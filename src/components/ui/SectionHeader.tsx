@@ -25,11 +25,7 @@ export function SectionHeader({
 }: SectionHeaderProps) {
   return (
     <div className={cn("flex flex-col", className)}>
-      {eyebrow && (
-        <p className="font-mono text-[10px] uppercase tracking-[0.34em] text-brand/65 mb-1">
-          {eyebrow}
-        </p>
-      )}
+      {eyebrow && <p className="app-section-title text-brand/70 mb-1">{eyebrow}</p>}
       <div className="flex items-baseline justify-between gap-4">
         <div className="min-w-0">
           <h3 className="font-display italic text-[21px] leading-[1.05] text-ink tracking-[-0.01em]">

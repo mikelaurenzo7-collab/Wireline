@@ -91,9 +91,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
         <div className="rounded-md wl-panel border border-black/8 p-5">
           <div className="flex items-center gap-2 mb-4">
             <Activity className="w-4 h-4 text-brand" />
-            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
-              Voice Pipeline Telemetry
-            </p>
+            <p className="wl-insight-label text-brand/70">Voice Pipeline Telemetry</p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
@@ -146,7 +144,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                 >
                   {tile.value}
                 </p>
-                <p className="text-[10px] text-muted/70 mt-1">{tile.sub}</p>
+                <p className={cn("wl-director-meta", "mt-1")}>{tile.sub}</p>
               </div>
             ))}
           </div>
@@ -154,9 +152,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
           {/* Trend mini-chart */}
           {voiceTrends.length > 1 && (
             <div className="mt-4">
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted mb-3">
-                {days}-day TTFT trend
-              </p>
+              <p className="wl-insight-label mb-3">{days}-day TTFT trend</p>
               <div className="flex items-end gap-1 h-20">
                 {voiceTrends.map((t) => {
                   const height = t.avgTtftMs
@@ -207,18 +203,16 @@ export default function VoiceLatencyView({ days }: { days: number }) {
             key={tile.label}
             className="stat-tile-mobile rounded-md wl-panel border border-black/8 p-5"
           >
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted mb-2">
-              {tile.label}
-            </p>
+            <p className="wl-insight-label mb-2">{tile.label}</p>
             <p className="metric-value font-display italic text-3xl text-ink">{tile.value}</p>
-            <p className="text-[10px] text-muted/70 mt-2">{tile.sub}</p>
+            <p className={cn("wl-director-meta", "mt-2")}>{tile.sub}</p>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-md wl-panel border border-black/8 p-5">
-          <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70 mb-4">
+          <p className="wl-insight-label text-brand/70 mb-4">
             Live-call guards (Wireline defaults)
           </p>
           <ul className="space-y-3">
@@ -236,16 +230,14 @@ export default function VoiceLatencyView({ days }: { days: number }) {
               </li>
             ))}
           </ul>
-          <p className="text-[10px] text-muted/70 mt-4 leading-relaxed text-pretty">
+          <p className={cn("wl-director-meta", "mt-4 leading-relaxed text-pretty")}>
             These limits keep voice tool fan-out and assistant payloads bounded so callers hear
             answers faster — the same caps described on the Compare page vs DIY voice stacks.
           </p>
         </div>
 
         <div className="rounded-md wl-panel border border-black/8 p-5">
-          <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70 mb-4">
-            Slowest actions
-          </p>
+          <p className="wl-insight-label text-brand/70 mb-4">Slowest actions</p>
           <div className="space-y-2">
             {slowest.length === 0 ? (
               <p className="text-sm text-muted">No slow actions recorded.</p>

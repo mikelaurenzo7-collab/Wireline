@@ -4,6 +4,7 @@ import { AlertTriangle } from "lucide-react";
 import { authFetch, TRIAL_GATE_EVENT, type TrialGateBlockDetail } from "../../lib/api";
 import { safeDate } from "../../lib/safe-date";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import { cn } from "../../lib/utils";
 
 interface TrialState {
   daysLeft: number | null;
@@ -58,18 +59,8 @@ export default function TrialBanner() {
   const showByUsage = usagePct >= 60;
   if (!showByDays && !showByUsage) return null;
 
-  // Color escalates as risk approaches. Rose for the final 48 hours
-  // OR ≥90% outbound usage — both signal urgency without screaming.
-  // Amber otherwise.
   const critical = (daysLeft !== null && daysLeft <= 2) || usagePct >= 90;
-  const containerCls = critical
-    ? "bg-rose-500/12 border-b border-rose-500/40"
-    : "bg-amber-500/10 border-b border-amber-500/30";
-  const textCls = critical ? "text-rose-700" : "text-amber-700";
-  const iconCls = critical ? "text-rose-500" : "text-amber-500";
-  const buttonCls = critical
-    ? "bg-rose-500/25 border border-rose-500/50 text-rose-700 hover:bg-rose-500/35"
-    : "bg-amber-500/20 border border-amber-500/40 text-amber-700 hover:bg-amber-500/30";
+  const bannerTone = critical ? "wl-banner--critical" : "wl-banner--warn";
 
   const openUpgrade = () => {
     const detail: TrialGateBlockDetail = {
@@ -120,10 +111,10 @@ export default function TrialBanner() {
     <motion.div
       initial={{ height: 0, opacity: 0 }}
       animate={{ height: "auto", opacity: 1 }}
-      className={`${containerCls} px-6 py-2.5 flex items-center justify-between gap-4 flex-wrap`}
+      className={cn("wl-banner", bannerTone)}
     >
-      <div className={`flex items-center gap-2.5 text-xs ${textCls}`}>
-        <AlertTriangle className={`w-3.5 h-3.5 shrink-0 ${iconCls}`} />
+      <div className="wl-banner__body">
+        <AlertTriangle className="wl-banner__icon" aria-hidden />
         <span>{message}</span>
       </div>
       <ShadButton
@@ -132,7 +123,7 @@ export default function TrialBanner() {
         variant="outline"
         size="sm"
         onClick={openUpgrade}
-        className={`shrink-0 rounded-full text-[10px] uppercase tracking-[0.3em] ${buttonCls}`}
+        className="touch-press shrink-0 app-micro-cta h-auto after:hidden border-0 shadow-none"
       >
         Upgrade now
       </ShadButton>

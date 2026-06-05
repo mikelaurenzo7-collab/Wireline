@@ -26,7 +26,7 @@ export function InlineEmpty({ label, icon: Icon, accent, className }: InlineEmpt
           style={accent ? { color: accent } : undefined}
         />
       )}
-      <span className="text-[11px] text-muted-foreground tracking-wide">{label}</span>
+      <span className="text-[11px] leading-snug text-muted">{label}</span>
     </div>
   );
 }

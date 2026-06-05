@@ -7,6 +7,7 @@
  * duplicating spinner / empty / error chrome.
  */
 import React from "react";
+import { cn } from "../../lib/utils";
 import { BarChart3, CheckCircle2 as CheckCircle2Icon, AlertOctagon } from "lucide-react";
 import { authFetch, readApiJson } from "../../lib/api";
 import { WIRELINE_DIRECTOR_BRAND, WL_APP_CLASSES } from "../../lib/wireline-director-design";
@@ -47,7 +48,7 @@ export function Spinner() {
           />
         </div>
       </div>
-      <p className="font-mono text-[9px] uppercase tracking-[0.5em] text-muted/70 animate-pulse">
+      <p className={cn(WL_OPS_CLASSES.insightLabel, "text-[9px] tracking-[0.5em] animate-pulse")}>
         Computing…
       </p>
     </div>
@@ -58,7 +59,7 @@ export function Spinner() {
 
 import type { LucideIcon } from "lucide-react";
 import { EmptyState } from "../ui/EmptyState";
-import { OPS_INSIGHTS_EMPTY } from "../../lib/wireline-ops-design";
+import { OPS_INSIGHTS_EMPTY, WL_OPS_CLASSES } from "../../lib/wireline-ops-design";
 
 type InsightEmptyKey = keyof typeof OPS_INSIGHTS_EMPTY;
 
@@ -130,7 +131,7 @@ export function ErrCard({ error }: { error: string }) {
 export function Stat({ label, value, accent }: { label: string; value: any; accent?: string }) {
   return (
     <div>
-      <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">{label}</div>
+      <div className={WL_OPS_CLASSES.insightLabel}>{label}</div>
       <div
         className="font-display italic text-xl text-ink mt-1"
         style={accent ? { color: accent } : {}}
@@ -162,7 +163,7 @@ export function SpendStat({
       />
       <div className="relative z-10">
         <div className="flex items-center justify-between mb-3">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">{label}</p>
+          <p className={WL_OPS_CLASSES.insightLabel}>{label}</p>
           <Icon className="w-4 h-4" style={{ color: accent }} />
         </div>
         <p className="font-display italic text-3xl text-ink leading-none">{value}</p>

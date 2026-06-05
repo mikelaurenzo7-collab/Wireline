@@ -129,10 +129,7 @@ function SpendBudgetCard() {
             <Shield className="w-4 h-4" style={{ color: barColor }} />
           </div>
           <div>
-            <div
-              className="font-mono text-[10px] uppercase tracking-[0.32em]"
-              style={{ color: barColor }}
-            >
+            <div className="wl-insight-label tracking-[0.32em]" style={{ color: barColor }}>
               Monthly Budget
             </div>
             <div className="text-sm text-ink/70 mt-1">
@@ -176,7 +173,7 @@ function SpendBudgetCard() {
             />
           </div>
           {Array.isArray(status?.alerts_fired) && status.alerts_fired.length > 0 && (
-            <div className="text-[10px] uppercase tracking-[0.25em] text-muted pt-1">
+            <div className="wl-insight-label pt-1">
               Alerts fired this period:{" "}
               {status.alerts_fired.map((a: any) => `${a.threshold_pct}%`).join(" · ")}
             </div>
@@ -351,9 +348,7 @@ export default function AISpendView({ days }: { days: number }) {
 
           <div className={cn(WL_APP_CLASSES.panelFrame, "p-6 md:p-8")}>
             <div className="mb-5">
-              <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
-                Spend per Day · {data.window_days}d
-              </p>
+              <p className="wl-insight-label text-brand/70">Spend per Day · {data.window_days}d</p>
             </div>
             <div className="space-y-2">
               {by_day.map((d: any, i: number) => {
@@ -366,7 +361,7 @@ export default function AISpendView({ days }: { days: number }) {
                     transition={{ delay: i * 0.02, duration: 0.4 }}
                     className="flex items-center gap-3"
                   >
-                    <span className="shrink-0 text-[10px] uppercase tracking-[0.25em] text-muted w-20 font-mono">
+                    <span className="shrink-0 wl-insight-label w-20 font-mono">
                       {d.day.slice(5)}
                     </span>
                     <div className="flex-1 relative h-7 rounded-md bg-black/10 overflow-hidden">
@@ -392,9 +387,7 @@ export default function AISpendView({ days }: { days: number }) {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className={cn(WL_APP_CLASSES.insightStatCard, "p-5 space-y-3")}>
-              <div className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
-                Spend by Recipe
-              </div>
+              <div className="wl-insight-label text-brand/70">Spend by Recipe</div>
               <div className="space-y-2">
                 {by_action.slice(0, 12).map((a: any, i: number) => {
                   const pct = (Number(a.cost) / maxAction) * 100;
@@ -414,7 +407,7 @@ export default function AISpendView({ days }: { days: number }) {
                           className="absolute inset-y-0 left-0 rounded-full bg-brand"
                         />
                       </div>
-                      <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.25em] text-muted">
+                      <div className="flex items-center justify-between wl-insight-label">
                         <span>{a.calls} calls</span>
                         <span>avg {a.avg_latency_ms}ms</span>
                       </div>
@@ -425,9 +418,7 @@ export default function AISpendView({ days }: { days: number }) {
             </div>
 
             <div className={cn(WL_APP_CLASSES.insightStatCard, "p-5 space-y-3")}>
-              <div className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
-                Spend by Model
-              </div>
+              <div className="wl-insight-label text-brand/70">Spend by Model</div>
               <div className="space-y-3">
                 {by_model.map((m: any) => (
                   <div
@@ -436,9 +427,7 @@ export default function AISpendView({ days }: { days: number }) {
                   >
                     <div>
                       <div className="text-sm font-mono text-ink/90">{m.model}</div>
-                      <div className="text-[10px] uppercase tracking-[0.25em] text-muted mt-1">
-                        {m.calls} calls
-                      </div>
+                      <div className="wl-insight-label mt-1">{m.calls} calls</div>
                     </div>
                     <div className="font-display italic text-2xl text-aurora">
                       ${safeFixed(m.cost, 2)}

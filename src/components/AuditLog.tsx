@@ -385,7 +385,7 @@ export default function AuditLog() {
                 >
                   <SelectTrigger
                     aria-label="Time range"
-                    className="h-9 w-[140px] rounded-full wl-panel border border-border text-[10px] uppercase tracking-[0.22em] text-muted bg-transparent"
+                    className="h-9 w-[140px] rounded-full wl-panel border border-border text-[11px] text-muted bg-transparent"
                   >
                     <SelectValue />
                   </SelectTrigger>
@@ -405,7 +405,7 @@ export default function AuditLog() {
                   aria-label={filtersExpanded ? "Hide filters" : "Show filters"}
                   aria-expanded={filtersExpanded}
                   className={cn(
-                    "h-9 rounded-full text-[10px] uppercase tracking-[0.28em]",
+                    "h-9 rounded-full wl-ops-chip",
                     filtersExpanded && "border-brand/40 text-brand",
                   )}
                 >
@@ -419,7 +419,7 @@ export default function AuditLog() {
                   disableAnimations
                   onClick={fetchAudit}
                   disabled={loading}
-                  className="h-9 rounded-full text-[10px] uppercase tracking-[0.28em] text-muted"
+                  className="h-9 rounded-full wl-ops-chip text-muted"
                 >
                   {loading ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -436,7 +436,7 @@ export default function AuditLog() {
                   onClick={handleExport}
                   disabled={exporting || events.length === 0}
                   aria-label={`Export ${events.length} events as CSV`}
-                  className="h-9 rounded-full bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.28em] hover:bg-brand/25 shadow-none"
+                  className="h-9 rounded-full bg-brand/15 border-brand/40 text-brand wl-ops-chip hover:bg-brand/25 shadow-none"
                 >
                   {exporting ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -482,7 +482,7 @@ export default function AuditLog() {
 
           <div className="flex items-center gap-2.5 p-3 rounded-md bg-brand/5 border border-brand/15">
             <AlertTriangle className="w-4 h-4 text-brand shrink-0" aria-hidden />
-            <p className="text-[10px] text-brand/80 leading-snug">
+            <p className="wl-label text-brand/80 leading-snug">
               {OPS_SUPPORT_EMPTY.auditCompliance}
             </p>
           </div>

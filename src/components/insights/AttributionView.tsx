@@ -57,7 +57,7 @@ export default function AttributionView({ days }: { days: number }) {
       <div className="rounded-md wl-panel border border-black/8 overflow-hidden app-table-scroll">
         <table className="w-full text-sm">
           <thead className="bg-black/3">
-            <tr className="text-left font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
+            <tr className="text-left wl-insight-label">
               <th className="px-3 py-2.5 font-medium">Campaign</th>
               <th className="px-3 py-2.5 font-medium text-right">Calls</th>
               <th className="px-3 py-2.5 font-medium text-right">Minutes</th>

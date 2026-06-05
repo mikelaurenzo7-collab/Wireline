@@ -18,6 +18,12 @@ export const WL_OPS_CLASSES = {
   railCard: "wl-ops-rail-card",
   scoreBadge: "wl-ops-score-badge",
   setupNudge: "wl-setup-nudge",
+  /** Toolbar filter / action chip typography */
+  filterChip: "wl-ops-chip",
+  dotSep: "wl-dot-sep",
+  divider: "wl-ops-divider",
+  /** Insights tab section labels (mono instrument typography) */
+  insightLabel: "wl-insight-label",
 } as const;
 
 /** Sentiment chart — signal only for positive; brand purple neutral; rose negative */

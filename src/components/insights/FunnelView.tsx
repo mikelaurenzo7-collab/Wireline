@@ -44,9 +44,7 @@ export default function FunnelView({ days }: { days: number }) {
   return (
     <div className={cn(WL_APP_CLASSES.panelFrame, "p-8 md:p-10 space-y-4")}>
       <div className="mb-2">
-        <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/70">
-          Conversion · {data.window_days}d
-        </p>
+        <p className="wl-insight-label text-brand/70">Conversion · {data.window_days}d</p>
         <h3 className="font-display italic text-2xl text-ink leading-tight">Funnel</h3>
       </div>
       {stages.map((s: any, i: number) => {

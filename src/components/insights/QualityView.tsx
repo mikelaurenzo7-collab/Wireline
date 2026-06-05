@@ -130,7 +130,7 @@ export default function QualityView({ days }: { days: number }) {
           size="sm"
           onClick={handleScoreAll}
           disabled={scoring}
-          className="rounded-full bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25"
+          className="rounded-full bg-brand/15 border-brand/40 text-brand wl-ops-chip hover:bg-brand/25"
         >
           {scoring ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
           {scoring ? "Scoring…" : "Score All Unscored"}
@@ -153,9 +153,7 @@ export default function QualityView({ days }: { days: number }) {
               className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-25 blur-3xl pointer-events-none"
               style={{ background: `radial-gradient(circle,${accent},transparent)` }}
             />
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted mb-2">
-              {label}
-            </p>
+            <p className="wl-insight-label mb-2">{label}</p>
             <p className="font-display italic text-2xl leading-none" style={{ color: accent }}>
               {value}
             </p>

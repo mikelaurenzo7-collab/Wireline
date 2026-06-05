@@ -66,7 +66,12 @@ function CapabilityRow({
       <div className="min-w-0 flex-1">
         <p className="text-[11px] font-semibold text-ink leading-snug">{item.label}</p>
         {!compact && (
-          <p className="text-[10px] text-muted-foreground leading-relaxed mt-0.5 line-clamp-2">
+          <p
+            className={cn(
+              WL_DIRECTOR_CLASSES.metaCaption,
+              "text-muted-foreground leading-relaxed mt-0.5 line-clamp-2",
+            )}
+          >
             {item.description}
           </p>
         )}
@@ -94,9 +99,7 @@ export function DirectorCapabilityCatalog({
       <div className={cn(!embedded && "max-h-[min(220px,32dvh)] overflow-y-auto", className)}>
         {!embedded && (
           <div className="flex items-center justify-between gap-2 px-1 pb-2">
-            <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
-              Skills
-            </span>
+            <span className="wl-label text-muted-foreground">Skills</span>
             <span className="text-[9px] font-mono text-muted-foreground/70 tabular-nums">
               {DIRECTOR_CAPABILITY_CATALOG.length} total
             </span>
@@ -169,7 +172,12 @@ export function DirectorCapabilityCatalog({
                 <span className="block text-[11px] font-semibold text-ink leading-snug">
                   {item.label}
                 </span>
-                <span className="block text-[10px] text-muted-foreground leading-snug mt-0.5 line-clamp-2">
+                <span
+                  className={cn(
+                    WL_DIRECTOR_CLASSES.metaCaption,
+                    "block text-muted-foreground leading-snug mt-0.5 line-clamp-2",
+                  )}
+                >
                   {item.description}
                 </span>
               </span>
@@ -177,7 +185,12 @@ export function DirectorCapabilityCatalog({
           );
         })}
       </div>
-      <p className="mt-3 text-[10px] text-muted-foreground/80 leading-relaxed">
+      <p
+        className={cn(
+          WL_DIRECTOR_CLASSES.metaCaption,
+          "mt-3 text-muted-foreground/80 leading-relaxed",
+        )}
+      >
         Strategy, documents, outbound comms, live research, integrations, agent coaching, and brand
         generation — all approvable from this thread.
       </p>

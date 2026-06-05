@@ -28,7 +28,7 @@ import { useToast } from "../../contexts/ToastContext";
 import { InlineEmpty } from "../ui/InlineEmpty";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import type { ActionType } from "../../lib/action-types";
-import { OPS_COPY } from "../../lib/wireline-ops-design";
+import { OPS_COPY, WL_OPS_CLASSES } from "../../lib/wireline-ops-design";
 
 interface ActionItem {
   id: string;
@@ -267,7 +267,7 @@ export function ActionFeed({
                             {action.type === "send_email" ? (
                               <div className="space-y-3">
                                 <div className="flex items-center gap-2 pb-2 border-bottom border-black/5">
-                                  <span className="text-[10px] font-mono text-muted">TO:</span>
+                                  <span className="wl-label text-muted font-mono">TO:</span>
                                   <span className="text-[11px] font-medium text-ink">
                                     {action.payload?.to || "—"}
                                   </span>
@@ -279,7 +279,7 @@ export function ActionFeed({
                             ) : action.type === "send_text_message" ? (
                               <div className="space-y-3">
                                 <div className="flex items-center gap-2 pb-2 border-bottom border-black/5">
-                                  <span className="text-[10px] font-mono text-muted">TO:</span>
+                                  <span className="wl-label text-muted font-mono">TO:</span>
                                   <span className="text-[11px] font-medium text-ink">
                                     {action.payload?.to || "—"}
                                   </span>
@@ -291,7 +291,7 @@ export function ActionFeed({
                             ) : action.type === "notify_slack" ? (
                               <div className="space-y-3">
                                 <div className="flex items-center gap-2 pb-2 border-bottom border-black/5">
-                                  <span className="text-[10px] font-mono text-muted">CHANNEL:</span>
+                                  <span className="wl-label text-muted font-mono">CHANNEL:</span>
                                   <span className="text-[11px] font-medium text-ink">
                                     {action.payload?.channel || "—"}
                                   </span>
@@ -331,7 +331,10 @@ export function ActionFeed({
                               disableAnimations
                               disabled={isProcessing}
                               onClick={(e) => handleReject(action.id, e)}
-                              className="hit-area-44 touch-press flex-1 min-h-9 rounded-md border-rose-500/20 text-rose-600 text-[10px] uppercase tracking-[0.2em] hover:bg-rose-500/10"
+                              className={clsx(
+                                "hit-area-44 touch-press flex-1 min-h-9 rounded-md border-rose-500/20 text-rose-600 hover:bg-rose-500/10",
+                                WL_OPS_CLASSES.filterChip,
+                              )}
                             >
                               Dismiss Action
                             </ShadButton>
@@ -341,7 +344,10 @@ export function ActionFeed({
                               disableAnimations
                               disabled={isProcessing}
                               onClick={(e) => handleApprove(action.id, e)}
-                              className="hit-area-44 touch-press flex-[2] min-h-9 rounded-md text-[10px] uppercase tracking-[0.2em]"
+                              className={clsx(
+                                "hit-area-44 touch-press flex-[2] min-h-9 rounded-md",
+                                WL_OPS_CLASSES.filterChip,
+                              )}
                             >
                               {isProcessing ? (
                                 <Clock className="w-3.5 h-3.5 animate-spin" />

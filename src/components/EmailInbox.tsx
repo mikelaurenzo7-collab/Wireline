@@ -28,7 +28,7 @@ import {
 } from "./layout/ChannelInbox";
 import { PanelSkeleton } from "./Skeleton";
 import { EmptyState } from "./ui/EmptyState";
-import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR } from "../lib/wireline-ops-design";
+import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR, WL_OPS_CLASSES } from "../lib/wireline-ops-design";
 import { useToast } from "../contexts/ToastContext";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
@@ -275,7 +275,10 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
       disableAnimations
       onClick={syncInbox}
       disabled={syncing}
-      className="h-9 rounded-full text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40"
+      className={cn(
+        "h-9 rounded-full text-muted hover:text-brand hover:border-brand/40",
+        WL_OPS_CLASSES.filterChip,
+      )}
     >
       {syncing ? (
         <Loader2 className="w-3 h-3 animate-spin text-brand" />
@@ -448,7 +451,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           <h2 className="font-display italic text-xl md:text-2xl text-ink leading-tight truncate">
                             {selectedThread.subject || "(no subject)"}
                           </h2>
-                          <div className="text-[10px] uppercase tracking-[0.3em] text-muted/80 mt-1 flex items-center gap-1.5 truncate">
+                          <div className="wl-label text-muted/80 mt-1 flex items-center gap-1.5 truncate">
                             <User className="w-3 h-3 text-brand shrink-0" />
                             <span className="truncate">{selectedThread.customer_email}</span>
                           </div>
@@ -466,7 +469,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           size="sm"
                           disableAnimations
                           onClick={() => handlePhoneHandoff(selectedThread)}
-                          className="rounded-full text-[10px] uppercase tracking-[0.25em]"
+                          className="rounded-full wl-ops-chip text-muted hover:text-brand hover:border-brand/40"
                           title="Route this thread to a voice fleet agent"
                         >
                           <Phone className="w-3 h-3 text-brand" />
@@ -589,7 +592,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                             disableAnimations
                             onClick={fetchQuickReplies}
                             disabled={isLoadingQuickReplies}
-                            className="rounded-full text-[10px] uppercase tracking-[0.25em]"
+                            className="rounded-full wl-ops-chip text-muted hover:text-brand hover:border-brand/40"
                             title="Generate 3 quick-reply options"
                           >
                             {isLoadingQuickReplies ? (
@@ -606,7 +609,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                             disableAnimations
                             onClick={handleDraftAI}
                             disabled={isDrafting}
-                            className="rounded-full text-[10px] uppercase tracking-[0.25em]"
+                            className="rounded-full wl-ops-chip text-muted hover:text-brand hover:border-brand/40"
                           >
                             {isDrafting ? (
                               <Loader2 className="w-3 h-3 animate-spin" />

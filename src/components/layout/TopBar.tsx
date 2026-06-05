@@ -374,9 +374,7 @@ export default function TopBar({
                     {/* Account header — brand-tinted */}
                     <div className="relative px-4 py-3.5 border-b border-black/8 overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-br from-brand/[0.04] to-transparent pointer-events-none" />
-                      <p className="text-[9px] uppercase tracking-[0.2em] text-ink/35 mb-1">
-                        Signed in as
-                      </p>
+                      <p className="wl-label-muted mb-1">Signed in as</p>
                       <p className="text-[12px] font-semibold text-ink truncate relative z-10">
                         {user?.email || "—"}
                       </p>
@@ -426,7 +424,7 @@ export default function TopBar({
                           className="flex items-center gap-2.5 px-4 py-2.5 md:py-2 text-[12px] font-medium text-ink/70 hover:bg-brand/[0.04] hover:text-ink transition-colors group"
                           role="menuitem"
                         >
-                          <Crown className="w-3.5 h-3.5 text-amber-500/60 group-hover:text-amber-500 transition-colors" />
+                          <Crown className="w-3.5 h-3.5 text-brand/50 group-hover:text-brand transition-colors" />
                           Founder Dashboard
                         </Link>
                       )}

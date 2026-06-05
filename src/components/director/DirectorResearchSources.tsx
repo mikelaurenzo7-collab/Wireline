@@ -23,9 +23,7 @@ export function DirectorResearchSources({ sources }: { sources: ResearchSource[]
     >
       <div className="flex items-center gap-2">
         <Globe className="w-3.5 h-3.5 text-brand shrink-0" />
-        <span className="text-[10px] uppercase tracking-[0.2em] text-brand/80 font-semibold">
-          {LIVE_FEED_LABELS.researchEyebrow}
-        </span>
+        <span className={cn("wl-label text-brand/80")}>{LIVE_FEED_LABELS.researchEyebrow}</span>
         <span className="text-[9px] font-mono text-muted-foreground/70 tabular-nums">
           {sources.length} source{sources.length !== 1 ? "s" : ""}
         </span>

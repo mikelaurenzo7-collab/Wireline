@@ -44,7 +44,7 @@ export default function FailureModesView() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
+        <div className="flex items-center gap-2 wl-insight-label">
           {!data.cached && (
             <span className="relative flex h-1.5 w-1.5" aria-hidden>
               <span className="absolute inline-flex h-full w-full rounded-full bg-brand/60 animate-ping" />
@@ -59,7 +59,7 @@ export default function FailureModesView() {
           variant="outline"
           size="sm"
           onClick={() => load(true)}
-          className="rounded-full font-mono text-[10px] uppercase tracking-[0.2em] text-muted hover:text-ink hover:border-brand/25"
+          className="rounded-full wl-insight-label hover:text-ink hover:border-brand/25"
         >
           <RefreshCw className="w-3 h-3" /> Refresh
         </ShadButton>
@@ -104,9 +104,7 @@ export default function FailureModesView() {
           <div className="rounded-md bg-brand/10 border border-brand/30 p-4 flex items-start gap-3">
             <Sparkles className="w-4 h-4 text-brand shrink-0 mt-0.5" />
             <div>
-              <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-brand mb-1">
-                Recommended fix
-              </div>
+              <div className="wl-insight-label text-brand mb-1">Recommended fix</div>
               <p className="text-sm text-ink/90">{m.recommended_fix}</p>
             </div>
           </div>

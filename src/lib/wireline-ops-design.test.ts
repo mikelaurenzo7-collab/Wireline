@@ -31,6 +31,10 @@ describe("Wireline Live Ops design contract", () => {
     expect(WL_OPS_CLASSES.callCard).toContain("wl-ops-call-card");
     expect(WL_OPS_CLASSES.callCardEscalated).toContain("--escalated");
     expect(WL_OPS_CLASSES.setupNudge).toBe("wl-setup-nudge");
+    expect(WL_OPS_CLASSES.filterChip).toBe("wl-ops-chip");
+    expect(WL_OPS_CLASSES.dotSep).toBe("wl-dot-sep");
+    expect(WL_OPS_CLASSES.divider).toBe("wl-ops-divider");
+    expect(WL_OPS_CLASSES.insightLabel).toBe("wl-insight-label");
   });
 
   it("uses brand-aligned sentiment colors (signal for positive only)", () => {

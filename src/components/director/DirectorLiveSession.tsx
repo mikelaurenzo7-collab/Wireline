@@ -56,12 +56,13 @@ function LiveReplyPreview({ text }: { text: string }) {
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative mt-3 rounded-md border border-brand/12 bg-gradient-to-b from-white/90 to-brand/[0.03] dark:from-black/30 dark:to-brand/5 overflow-hidden wl-live-output"
+      className={cn(
+        "relative mt-3 rounded-md border border-brand/12 bg-gradient-to-b from-white/90 to-brand/[0.03] dark:from-black/30 dark:to-brand/5 overflow-hidden",
+        WL_DIRECTOR_CLASSES.liveOutput,
+      )}
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-brand/8 bg-brand/[0.04]">
-        <span className="text-[9px] uppercase tracking-[0.18em] text-brand/70 font-semibold">
-          Live output
-        </span>
+        <span className={cn(WL_DIRECTOR_CLASSES.microLabel, "text-brand/70")}>Live output</span>
         <span className="inline-flex items-center gap-1 text-[9px] text-muted font-mono tabular-nums">
           <span className="relative flex h-1.5 w-1.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/50" />
@@ -104,7 +105,7 @@ function ThinkingStream({ text, isDeep }: { text: string; isDeep: boolean }) {
         ) : (
           <Sparkles className="w-3 h-3 text-brand/70" />
         )}
-        <span className="text-[9px] uppercase tracking-[0.16em] text-muted font-medium">
+        <span className={cn(WL_DIRECTOR_CLASSES.microLabel, "text-muted font-medium")}>
           {isDeep ? "Deep analysis stream" : "Reasoning stream"}
         </span>
       </div>
@@ -163,7 +164,9 @@ function OrchestrationStep({ step, index }: { step: DirectorLiveStep; index: num
         >
           {step.title}
         </p>
-        <p className="text-[10px] text-muted/70 mt-0.5 leading-snug">{step.subtitle}</p>
+        <p className={cn(WL_DIRECTOR_CLASSES.metaCaption, "mt-0.5 leading-snug")}>
+          {step.subtitle}
+        </p>
       </div>
       {step.status === "active" && (
         <span className="relative shrink-0 flex h-2 w-2 mt-1">

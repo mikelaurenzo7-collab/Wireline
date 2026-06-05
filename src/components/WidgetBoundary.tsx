@@ -9,6 +9,7 @@ import { Component, ErrorInfo, ReactNode } from "react";
 import { AlertOctagon, RefreshCw } from "lucide-react";
 import { captureException } from "../lib/sentry";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { cn } from "../lib/utils";
 
 interface Props {
   children: ReactNode;
@@ -50,17 +51,22 @@ export default class WidgetBoundary extends Component<Props, State> {
     if (this.props.fallback) return this.props.fallback;
 
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-3 p-6 text-center">
-        <div className="w-10 h-10 rounded-md flex items-center justify-center bg-rose-500/12 border border-rose-500/30">
-          <AlertOctagon className="w-5 h-5 text-rose-400" />
+      <div
+        className={cn(
+          "h-full flex flex-col items-center justify-center gap-3 p-6 text-center",
+          "wl-panel rounded-md border border-border/60",
+        )}
+      >
+        <div className="w-10 h-10 rounded-md flex items-center justify-center bg-destructive/10 border border-destructive/25">
+          <AlertOctagon className="w-5 h-5 text-destructive" aria-hidden />
         </div>
         <div className="space-y-0.5">
-          <p className="text-[10px] uppercase tracking-[0.4em] text-rose-400">Widget unavailable</p>
+          <p className="wl-label text-destructive">Widget unavailable</p>
           {this.props.label && (
-            <p className="text-[11px] text-ink/80 font-medium">{this.props.label}</p>
+            <p className="text-[12px] text-ink font-medium">{this.props.label}</p>
           )}
-          <p className="text-[10px] text-muted/70 max-w-[220px] leading-relaxed mt-1">
-            The rest of the page is fine. We've logged the error.
+          <p className="text-caption max-w-[220px] mt-1">
+            The rest of the page is fine. We&apos;ve logged the error.
           </p>
         </div>
         <ShadButton
@@ -69,9 +75,9 @@ export default class WidgetBoundary extends Component<Props, State> {
           variant="outline"
           size="sm"
           onClick={this.reset}
-          className="rounded-full text-[10px] uppercase tracking-[0.28em] text-ink/70 hover:text-ink hover:border-brand/25"
+          className="touch-press rounded-full wl-ops-chip hover:text-ink hover:border-brand/25 gap-1.5"
         >
-          <RefreshCw className="w-3 h-3" /> Retry
+          <RefreshCw className="w-3 h-3" aria-hidden /> Retry
         </ShadButton>
       </div>
     );

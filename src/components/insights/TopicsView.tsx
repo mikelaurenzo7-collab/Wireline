@@ -40,7 +40,7 @@ export default function TopicsView() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
+        <div className="flex items-center gap-2 wl-insight-label">
           {!data.cached && (
             <span className="relative flex h-1.5 w-1.5" aria-hidden>
               <span className="absolute inline-flex h-full w-full rounded-full bg-brand/60 animate-ping" />
@@ -55,7 +55,7 @@ export default function TopicsView() {
           variant="outline"
           size="sm"
           onClick={() => load(true)}
-          className="rounded-full font-mono text-[10px] uppercase tracking-[0.2em] text-muted hover:text-ink hover:border-brand/25"
+          className="rounded-full wl-insight-label hover:text-ink hover:border-brand/25"
         >
           <RefreshCw className="w-3 h-3" /> Refresh
         </ShadButton>

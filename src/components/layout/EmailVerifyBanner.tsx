@@ -89,13 +89,9 @@ export default function EmailVerifyBanner() {
     }
   }
 
-  // Color always amber here — verification is informational, not
-  // urgent. Trial-expiry gets the rose treatment in TrialBanner.
-  const containerCls = "bg-amber-500/10 border-b border-amber-500/30";
-  const textCls = "text-amber-700";
-  const iconCls = "text-amber-500";
-  const buttonCls =
-    "bg-amber-500/20 border border-amber-500/40 text-amber-700 hover:bg-amber-500/30";
+  // Informational — trial urgency uses wl-banner--warn in TrialBanner.
+  const bannerTone =
+    outcome === "no-transport" || outcome === "error" ? "wl-banner--warn" : "wl-banner--info";
 
   let buttonLabel: React.ReactNode = "Resend email";
   let buttonDisabled = false;
@@ -121,21 +117,23 @@ export default function EmailVerifyBanner() {
     <motion.div
       initial={{ height: 0, opacity: 0 }}
       animate={{ height: "auto", opacity: 1 }}
-      className={`${containerCls} px-6 py-2.5 flex items-center justify-between gap-4 flex-wrap`}
+      className={cn("wl-banner", bannerTone)}
     >
-      <div className={`flex items-center gap-2.5 text-xs ${textCls}`}>
-        <Mail className={`w-3.5 h-3.5 shrink-0 ${iconCls}`} />
+      <div className="wl-banner__body">
+        <Mail className="wl-banner__icon" aria-hidden />
         <span>
           {outcome === "sent" ? (
             <>Verification email resent — check your inbox + spam folder.</>
           ) : outcome === "no-transport" ? (
             <>
-              <AlertTriangle className="inline w-3.5 h-3.5 mb-0.5 mr-1" />
-              Mail transport temporarily down. Try again in a few minutes — your trial isn't
+              <AlertTriangle className="inline w-3.5 h-3.5 mb-0.5 mr-1" aria-hidden />
+              Mail transport temporarily down. Try again in a few minutes — your trial isn&apos;t
               affected.
             </>
           ) : outcome === "error" ? (
-            <>Couldn't send the verification email. Refresh and try again, or contact support.</>
+            <>
+              Couldn&apos;t send the verification email. Refresh and try again, or contact support.
+            </>
           ) : (
             <>
               <strong>Verify your email</strong> to unlock outbound dialing and create more agents.
@@ -151,7 +149,10 @@ export default function EmailVerifyBanner() {
         disableAnimations
         onClick={resend}
         disabled={buttonDisabled}
-        className={cn("shrink-0 rounded-full text-[10px] uppercase tracking-[0.3em]", buttonCls)}
+        className={cn(
+          "touch-press shrink-0 app-micro-cta h-auto after:hidden border-0 shadow-none",
+          outcome === "sent" && "opacity-70",
+        )}
       >
         {buttonLabel}
       </ShadButton>

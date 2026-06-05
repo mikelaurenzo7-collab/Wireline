@@ -97,7 +97,7 @@ export default function CampaignsTab({
               size="sm"
               disableAnimations
               onClick={() => setShowCampaignModal(true)}
-              className="rounded-full bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25"
+              className="rounded-full bg-brand/15 border-brand/40 text-brand wl-ops-chip hover:bg-brand/25"
             >
               <Plus className="w-3 h-3" /> New
             </ShadButton>
@@ -117,7 +117,7 @@ export default function CampaignsTab({
               actions={[...OPS_CHANNEL_EMPTY.campaigns.actions]}
             />
           ) : (
-            <div className="divide-y divide-white/5">
+            <div className="divide-y divide-border/60">
               {campaigns.map((c) => {
                 const statusMeta = CAMPAIGN_STATUS[c.status] ?? CAMPAIGN_STATUS.draft;
                 const isSelected = selectedCampaign?.id === c.id;
@@ -157,9 +157,7 @@ export default function CampaignsTab({
                             {c.status}
                           </span>
                         </div>
-                        {c.goal && (
-                          <p className="text-[10px] text-ink/40 truncate mb-1">{c.goal}</p>
-                        )}
+                        {c.goal && <p className="text-caption truncate mb-1">{c.goal}</p>}
                         <div className="flex items-center gap-3 text-[9px] text-ink/40">
                           <span className="inline-flex items-center gap-1">
                             <Users className="w-2.5 h-2.5" />
@@ -207,7 +205,7 @@ export default function CampaignsTab({
                     setShowAnalytics((p) => !p);
                   }}
                   className={cn(
-                    "rounded-full border text-[10px] uppercase tracking-[0.25em]",
+                    "rounded-full border wl-ops-chip",
                     showAnalytics
                       ? "bg-brand/20 border-brand/50 text-brand hover:bg-brand/20"
                       : "wl-panel border-border text-muted hover:text-brand hover:border-brand/40",
@@ -224,7 +222,7 @@ export default function CampaignsTab({
                       disableAnimations
                       onClick={() => launchCampaign(selectedCampaign.id, selectedCampaign.name)}
                       disabled={launchingCampaignId === selectedCampaign.id}
-                      className="rounded-full bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25"
+                      className="rounded-full bg-brand/15 border-brand/40 text-brand wl-ops-chip hover:bg-brand/25"
                     >
                       {launchingCampaignId === selectedCampaign.id ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
@@ -242,7 +240,7 @@ export default function CampaignsTab({
                     disableAnimations
                     onClick={() => stopCampaign(selectedCampaign.id)}
                     disabled={stoppingCampaignId === selectedCampaign.id}
-                    className="rounded-full bg-rose-500/15 border-rose-500/40 text-rose-500 text-[10px] uppercase tracking-[0.25em] hover:bg-rose-500/25 shadow-none"
+                    className="rounded-full bg-rose-500/15 border-rose-500/40 text-rose-500 wl-ops-chip hover:bg-rose-500/25 shadow-none"
                   >
                     {stoppingCampaignId === selectedCampaign.id ? (
                       <Loader2 className="w-3 h-3 animate-spin" />
@@ -259,7 +257,7 @@ export default function CampaignsTab({
                     size="sm"
                     disableAnimations
                     onClick={() => setCampaignStatus(selectedCampaign.id, "active")}
-                    className="rounded-full bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25"
+                    className="rounded-full bg-brand/15 border-brand/40 text-brand wl-ops-chip hover:bg-brand/25"
                   >
                     <Play className="w-3 h-3" /> Activate
                   </ShadButton>
@@ -271,7 +269,7 @@ export default function CampaignsTab({
                     size="sm"
                     disableAnimations
                     onClick={() => setCampaignStatus(selectedCampaign.id, "paused")}
-                    className="rounded-full wl-panel border-border text-muted text-[10px] uppercase tracking-[0.25em] hover:text-brand hover:border-brand/40"
+                    className="rounded-full wl-panel border-border text-muted wl-ops-chip hover:text-brand hover:border-brand/40"
                   >
                     <Pause className="w-3 h-3" /> Pause
                   </ShadButton>
@@ -283,7 +281,7 @@ export default function CampaignsTab({
                     size="sm"
                     disableAnimations
                     onClick={() => setCampaignStatus(selectedCampaign.id, "active")}
-                    className="rounded-full bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25"
+                    className="rounded-full bg-brand/15 border-brand/40 text-brand wl-ops-chip hover:bg-brand/25"
                   >
                     <Play className="w-3 h-3" /> Resume
                   </ShadButton>
@@ -295,7 +293,7 @@ export default function CampaignsTab({
                     size="sm"
                     disableAnimations
                     onClick={() => setCampaignStatus(selectedCampaign.id, "completed")}
-                    className="rounded-full bg-brand/10 border-brand/30 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/20"
+                    className="rounded-full bg-brand/10 border-brand/30 text-brand wl-ops-chip hover:bg-brand/20"
                   >
                     <CheckCircle2 className="w-3 h-3" /> Complete
                   </ShadButton>
@@ -526,7 +524,7 @@ export default function CampaignsTab({
                   <div className="mx-4 mt-3 rounded-md bg-rose-500/10 border border-rose-500/30 p-3 flex items-center gap-3">
                     <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] text-rose-500 uppercase tracking-[0.25em]">
+                      <p className="wl-label text-rose-500">
                         {campaignLeads.filter((l) => l.status === "Failed").length} failed lead
                         {campaignLeads.filter((l) => l.status === "Failed").length > 1 ? "s" : ""}
                       </p>
@@ -573,7 +571,7 @@ export default function CampaignsTab({
                         </div>
                         <Link
                           to={`/contact/${encodeURIComponent(lead.phone_number || lead.customer_number || "unknown")}`}
-                          className="text-[10px] text-brand font-mono tabular-nums hover:underline"
+                          className="text-caption text-brand font-mono tabular-nums hover:underline"
                         >
                           {lead.phone_number || lead.customer_number}
                         </Link>

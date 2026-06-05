@@ -151,7 +151,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.5 }}
-          className="text-[10px] uppercase tracking-[0.42em] text-muted/70"
+          className="wl-label-muted !tracking-[0.38em] text-muted/80"
         >
           Already have an account?{" "}
           <Link to="/signin" className="text-brand hover:opacity-80 transition-opacity">
@@ -191,7 +191,7 @@ function NotFoundCard({
         <Icon className="w-4 h-4" strokeWidth={2.2} />
       </div>
       <div className="text-left flex-1 min-w-0">
-        <p className="text-[10px] uppercase tracking-[0.32em] text-muted">{hint}</p>
+        <p className="wl-label-muted !text-[0.625rem]">{hint}</p>
         <p className="text-[12px] text-ink font-medium">{label}</p>
       </div>
       <ChevronRight className="w-4 h-4 text-ink/65 group-hover:text-ink group-hover:translate-x-0.5 transition-all shrink-0" />

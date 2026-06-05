@@ -12,6 +12,7 @@ import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Check, Loader2, Circle } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
 
 export type PipelineStepStatus = "done" | "active" | "pending";
 
@@ -76,7 +77,7 @@ export function LiveTaskPipeline({ steps, className, variant = "default" }: Live
                   {step.label}
                 </p>
                 {step.status === "active" && step.detail && (
-                  <p className="text-[10px] text-muted/65 mt-0.5">{step.detail}</p>
+                  <p className={cn(WL_DIRECTOR_CLASSES.metaCaption, "mt-0.5")}>{step.detail}</p>
                 )}
               </div>
               {step.status === "active" && step.elapsedMs != null && step.elapsedMs > 800 && (

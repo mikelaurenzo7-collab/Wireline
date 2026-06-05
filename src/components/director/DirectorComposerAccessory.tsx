@@ -136,10 +136,13 @@ export function DirectorComposerAccessory({
                   <HeaderIcon className="w-3.5 h-3.5" />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-foreground">
-                    {meta.label}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground leading-snug line-clamp-2">
+                  <p className="wl-label text-foreground">{meta.label}</p>
+                  <p
+                    className={cn(
+                      WL_DIRECTOR_CLASSES.metaCaption,
+                      "text-muted-foreground line-clamp-2",
+                    )}
+                  >
                     {panelHint}
                   </p>
                 </div>
@@ -151,7 +154,7 @@ export function DirectorComposerAccessory({
                 disableAnimations
                 onClick={onClose}
                 aria-label={DIRECTOR_COMPOSER_CONTEXT.closePanelLabel}
-                className="h-8 min-w-[44px] px-2 text-[10px] uppercase tracking-[0.14em] text-muted shrink-0 touch-press"
+                className="h-8 min-w-[44px] px-2 wl-ops-chip text-muted shrink-0 touch-press"
               >
                 Close
               </ShadButton>
@@ -172,7 +175,7 @@ export function DirectorComposerAccessory({
                         <c.icon className="w-3 h-3 text-brand" aria-hidden />
                       </span>
                       <div className="min-w-0">
-                        <p className="text-[10px] font-semibold text-foreground truncate">
+                        <p className="text-[11px] font-semibold text-foreground truncate">
                           {c.label}
                         </p>
                         <p className="text-[9px] text-muted-foreground truncate">{c.desc}</p>
@@ -183,7 +186,7 @@ export function DirectorComposerAccessory({
                 <Link
                   to="/integrations"
                   onClick={onClose}
-                  className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-medium text-brand hover:text-brand/80"
+                  className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium text-brand hover:text-brand/80"
                 >
                   <ArrowUpRight className="w-3 h-3" />
                   Manage integrations
@@ -239,7 +242,12 @@ export function DirectorComposerAccessory({
                   </ShadButton>
                 ))}
                 {agents.length === 0 && (
-                  <p className="px-2 py-2 text-[10px] text-muted-foreground">
+                  <p
+                    className={cn(
+                      WL_DIRECTOR_CLASSES.metaCaption,
+                      "px-2 py-2 text-muted-foreground",
+                    )}
+                  >
                     Deploy an agent first
                   </p>
                 )}
@@ -248,7 +256,7 @@ export function DirectorComposerAccessory({
 
             {active === "tools" && (
               <div>
-                <p className="px-1 pb-1 text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+                <p className="wl-label text-muted-foreground px-1 pb-1">
                   {enabledTools.length > 0
                     ? `${enabledTools.length} active for ${focusedAgentName || "agent"}`
                     : "No abilities enabled"}

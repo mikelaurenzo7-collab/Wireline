@@ -47,11 +47,16 @@ export default function DirectorArtifactsPanel({ artifacts }: DirectorArtifactsP
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-muted font-semibold">
+            <span className={cn("wl-label text-muted flex items-center gap-1.5")}>
               <FileText className="w-3 h-3 text-brand/60" />
               Generated artifacts
             </span>
-            <span className="text-[10px] text-muted/50 font-mono tabular-nums">
+            <span
+              className={cn(
+                WL_DIRECTOR_CLASSES.metaCaption,
+                "font-mono tabular-nums text-muted/50",
+              )}
+            >
               {artifacts.length} file{artifacts.length !== 1 ? "s" : ""}
             </span>
           </div>
