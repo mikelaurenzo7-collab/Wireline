@@ -253,10 +253,8 @@ async function refreshDemoShowcaseCopy(userId: string, tx: typeof drizzle): Prom
     .select({ id: emailThreads.id, threadId: emailThreads.threadId })
     .from(emailThreads)
     .where(and(eq(emailThreads.userId, userId), like(emailThreads.threadId, "seed-email-%")))
-    .orderBy(emailThreads.threadId);
-  for (const row of seedEmails) {
-    const match = row.threadId?.match(/-(\d+)$/);
-    const i = match ? Number.parseInt(match[1], 10) : 0;
+    .orderBy(sql`(regexp_replace(${emailThreads.threadId}, '^.*-', ''))::int`);
+  for (let i = 0; i < seedEmails.length; i++) {
     const idx = i % SAMPLE_SUMMARIES.length;
     await tx
       .update(emailThreads)
@@ -265,7 +263,7 @@ async function refreshDemoShowcaseCopy(userId: string, tx: typeof drizzle): Prom
         subject: SAMPLE_EMAIL_SUBJECTS[i % SAMPLE_EMAIL_SUBJECTS.length],
         intentLabel: SAMPLE_INTENTS[idx % SAMPLE_INTENTS.length],
       })
-      .where(eq(emailThreads.id, row.id));
+      .where(eq(emailThreads.id, seedEmails[i].id));
   }
 
   for (let i = 0; i < DEMO_SMS_NUMBERS.length; i++) {
