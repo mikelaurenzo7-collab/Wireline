@@ -118,6 +118,7 @@ export default function LiveOps() {
   const [presenceLoading, setPresenceLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activatingGrowth, setActivatingGrowth] = useState(false);
+  const [agentsHydrated, setAgentsHydrated] = useState(false);
   const mountedRef = useRef(true);
   const dossiersRef = useRef(dossiers);
   dossiersRef.current = dossiers;
@@ -216,8 +217,12 @@ export default function LiveOps() {
   }, [user]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setAgentsHydrated(false);
+      return;
+    }
     let alive = true;
+    setAgentsHydrated(false);
     authFetch("/api/agents")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -231,7 +236,10 @@ export default function LiveOps() {
           );
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        if (alive) setAgentsHydrated(true);
+      });
     return () => {
       alive = false;
     };
@@ -382,7 +390,8 @@ export default function LiveOps() {
   const totalSentiment = sentimentData.reduce((s, d) => s + d.value, 0);
   const pendingActions = actions.filter((a) => a.status === "pending").length;
   const escalations = calls.filter((c) => c.status === "escalated").length;
-  const fleetAgentCount = stats?.agents?.length ?? agents.length;
+  const fleetAgentCount = agentsHydrated ? (stats?.agents?.length ?? agents.length) : 0;
+  const pulseLoading = loading || presenceLoading || !agentsHydrated;
 
   return (
     <PageTransition>
@@ -398,14 +407,14 @@ export default function LiveOps() {
             pendingActions={pendingActions}
             fleetAgents={fleetAgentCount}
             escalations={escalations}
-            loading={loading || presenceLoading}
+            loading={pulseLoading}
           />
 
           <ClientToolbar
             className="shrink-0 px-2 sm:px-3"
             left={
               <span className="app-toolbar-stat">
-                {loading || presenceLoading
+                {pulseLoading
                   ? OPS_CHANNEL_TOOLBAR.ops.loading
                   : activeTab === "floor"
                     ? OPS_CHANNEL_TOOLBAR.ops.floor(calls.length)

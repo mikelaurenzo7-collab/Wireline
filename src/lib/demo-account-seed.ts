@@ -36,7 +36,7 @@ export interface SeedReport {
 
 export const TARGET = {
   callLogs: 24,
-  leads: 18,
+  leads: 12,
   appointments: 8,
   knowledge: 6,
   dncList: 5,
@@ -214,6 +214,24 @@ async function countRows(
   return Number(row?.c ?? 0);
 }
 
+/** Keep one demo lead per customer phone (legacy seeds overshot TARGET.leads). */
+async function pruneDuplicateDemoLeads(userId: string, tx: DemoSeedDb): Promise<number> {
+  const pruned = await tx.execute(sql`
+    DELETE FROM wireline_outbound_leads AS d
+    USING (
+      SELECT id,
+        ROW_NUMBER() OVER (
+          PARTITION BY user_id, customer_number
+          ORDER BY id
+        ) AS rn
+      FROM wireline_outbound_leads
+      WHERE user_id = ${userId} AND demo = true
+    ) AS ranked
+    WHERE d.id = ranked.id AND ranked.rn > 1
+  `);
+  return Number((pruned as { rowCount?: number }).rowCount ?? 0);
+}
+
 /** Drop duplicate marketing inbox rows (legacy seeds wrote indices 0–11). */
 async function pruneExcessSeedEmailThreads(userId: string, tx: DemoSeedDb): Promise<number> {
   const userPrefix = userId.slice(0, 8);
@@ -250,6 +268,7 @@ async function countSeedSmsThreads(userId: string, tx: DemoSeedDb = drizzle): Pr
 
 /** Re-apply varied copy when demo rows already exist (idempotent re-seed / bulk-SQL repair). */
 async function refreshDemoShowcaseCopy(userId: string, tx: DemoSeedDb): Promise<void> {
+  await pruneDuplicateDemoLeads(userId, tx);
   await pruneExcessSeedEmailThreads(userId, tx);
 
   const calls = await tx
@@ -406,6 +425,7 @@ export async function seedDemoAccountData(userId: string): Promise<{
     }
 
     {
+      const prunedLeads = await pruneDuplicateDemoLeads(userId, tx);
       const before = await countRows("wireline_outbound_leads", userId, tx);
       const need = Math.max(0, TARGET.leads - before);
       let inserted = 0;
@@ -438,7 +458,11 @@ export async function seedDemoAccountData(userId: string): Promise<{
         });
         inserted++;
       }
-      report.push({ table: "wireline_outbound_leads", before, inserted, after: before + inserted });
+      const afterLeads = await countRows("wireline_outbound_leads", userId, tx);
+      if (prunedLeads > 0) {
+        log.info("Pruned duplicate demo pipeline leads", { userId, pruned: prunedLeads });
+      }
+      report.push({ table: "wireline_outbound_leads", before, inserted, after: afterLeads });
     }
 
     {

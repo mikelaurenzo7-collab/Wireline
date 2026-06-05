@@ -268,15 +268,31 @@ export async function planDirectorTurnResilient(
     !input.focusAgentId?.trim() &&
     selection.tier === "auto" &&
     (input.forceDeep === true || wantsDeepAnalysis(input.operatorMessage));
+  const tryOpusFallback =
+    selection.provider === "wireline" && selection.tier === "opus" && !input.shallowOnly;
   try {
     return await planDirectorTurn(input);
   } catch (e) {
-    if (!tryDeep) throw e;
-    log.warn("director deep turn failed, retrying without deep", {
-      userId: input.userId,
-      error: getErrorMessage(e),
-    });
-    return await planDirectorTurn({ ...input, forceDeep: false, shallowOnly: true });
+    if (tryDeep) {
+      log.warn("director deep turn failed, retrying without deep", {
+        userId: input.userId,
+        error: getErrorMessage(e),
+      });
+      return await planDirectorTurn({ ...input, forceDeep: false, shallowOnly: true });
+    }
+    if (tryOpusFallback) {
+      log.warn("director opus turn failed, retrying on sonnet", {
+        userId: input.userId,
+        error: getErrorMessage(e),
+      });
+      return await planDirectorTurn({
+        ...input,
+        modelSelection: { provider: "wireline", tier: "sonnet" },
+        forceDeep: false,
+        shallowOnly: true,
+      });
+    }
+    throw e;
   }
 }
 
