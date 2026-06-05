@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from "motion/react";
-import { Compass, Radio, Rocket } from "lucide-react";
+import { Compass, Radio, Rocket, ChevronRight } from "lucide-react";
 import { AUTH_PORTAL_SHOWCASE } from "../../lib/wireline-onboarding-copy";
 
 const FEATURE_ICONS = {
@@ -20,7 +20,7 @@ export default function AuthShowcasePanel() {
         ease: [0.16, 1, 0.3, 1],
         delay: reduceMotion ? 0 : 0.08,
       }}
-      className="wl-auth-showcase hidden lg:flex flex-col pr-10 min-w-0"
+      className="wl-auth-showcase hidden lg:flex flex-col pr-10 min-w-0 max-w-[500px]"
       aria-label="Wireline product overview"
     >
       <div>
@@ -38,7 +38,7 @@ export default function AuthShowcasePanel() {
 
       <ul className="space-y-2.5 stagger-children">
         {AUTH_PORTAL_SHOWCASE.features.map((feature, i) => {
-          const Icon = FEATURE_ICONS[feature.id as keyof typeof FEATURE_ICONS];
+          const Icon = FEATURE_ICONS[feature.id as keyof typeof FEATURE_ICONS] ?? ChevronRight;
           return (
             <motion.li
               key={feature.id}

@@ -1756,6 +1756,7 @@ html, body, .marketing-surface, .app-surface {
 :root {
   --radius: 0.75rem;
   --wl-signal: #10b981;
+  --site-header-height: 4rem; /* PublicSiteHeader h-16; keep in sync with header className */
 
   /* Surface colors */
   --background: #F5F0E6;
@@ -5548,7 +5549,8 @@ select:focus {
 }
 
 .stat-value-flip {
-  animation: stat-flip-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: stat-flip-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both,
+             stat-enter-glow 1.8s 0.5s ease-in-out both;
 }
 
 /* ── HEADLINE WORD REVEAL — cinematic stagger (no overflow clip on descenders) ─ */
@@ -6675,6 +6677,7 @@ html {
  * Premium elevated glass surface for the hero live demo section.
  * Stronger brand-tinted border and inset highlight vs standard wl-panel. */
 .wl-demo-frame {
+  background: var(--paper, #efe9dc); /* fallback for browsers without color-mix() */
   background: color-mix(in srgb, var(--paper, #efe9dc) 82%, white);
   backdrop-filter: blur(20px) saturate(140%);
   -webkit-backdrop-filter: blur(20px) saturate(140%);
@@ -6747,7 +6750,7 @@ html {
  * paper background as the page plus a faint border-bottom. */
 .compare-table-head th {
   position: sticky;
-  top: 64px; /* matches fixed PublicSiteHeader h-16 = 4rem = 64px */
+  top: var(--site-header-height);
   z-index: 20;
   background: var(--color-paper);
   box-shadow: 0 1px 0 rgba(26, 22, 20, 0.08);
@@ -6755,18 +6758,6 @@ html {
 .dark .compare-table-head th {
   background: var(--background);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-
-/* ── ABOUT PRINCIPLE ICON VARIANTS ──
- * Color-coded icon containers for the How We Operate principle grid. */
-.wl-principle-icon {
-  width: 2rem;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 0.75rem;
-  flex-shrink: 0;
 }
 
 /* ── FOOTER VERTICAL SEPARATOR ──
@@ -6780,20 +6771,15 @@ html {
 }
 
 /* ── HERO STAT NUMBER SHIMMER ──
- * On viewport entry, stat numbers pulse once with a soft brand hue. */
+ * stat-enter-glow is composed into .stat-value-flip below the fold. */
 @keyframes stat-enter-glow {
   0%   { text-shadow: none; }
   40%  { text-shadow: 0 0 32px rgba(139, 63, 214, 0.22); }
   100% { text-shadow: none; }
-}
-.stat-value-enter {
-  animation: stat-value-flip 0.9s cubic-bezier(0.16, 1, 0.3, 1) both,
-             stat-enter-glow 1.8s 0.5s ease-in-out both;
 }
 
 /* ── REDUCED MOTION — kill new animations ── */
 @media (prefers-reduced-motion: reduce) {
   .hero-ambient-beam { display: none; }
   .wl-tier-badge::after { animation: none !important; }
-  .stat-value-enter { animation: none !important; opacity: 1; }
 }

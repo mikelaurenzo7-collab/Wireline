@@ -379,7 +379,7 @@ export default function Compare() {
             When a competitor is the better pick.
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 stagger-children">
-            <div className="wl-panel card-shimmer border border-ink/[0.08] border-l-2 border-l-brand/25 p-5 transition-all duration-300 hover:border-brand/30 hover:border-l-brand/50">
+            <div className="wl-panel card-shimmer border border-ink/[0.08] border-l-2 border-l-brand/25 p-5 transition-all duration-300 hover:border-ink/[0.12] hover:border-l-brand/50">
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand/70 mb-2">
                 Pick Air if
               </p>
@@ -389,7 +389,7 @@ export default function Compare() {
                 supervisor coaching, Air's pricing wins.
               </p>
             </div>
-            <div className="wl-panel card-shimmer border border-ink/[0.08] border-l-2 border-l-brand/25 p-5 transition-all duration-300 hover:border-brand/30 hover:border-l-brand/50">
+            <div className="wl-panel card-shimmer border border-ink/[0.08] border-l-2 border-l-brand/25 p-5 transition-all duration-300 hover:border-ink/[0.12] hover:border-l-brand/50">
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand/70 mb-2">
                 Pick Bland if
               </p>
@@ -400,7 +400,7 @@ export default function Compare() {
                 supervisor take-over.
               </p>
             </div>
-            <div className="wl-panel card-shimmer border border-ink/[0.08] border-l-2 border-l-brand/25 p-5 transition-all duration-300 hover:border-brand/30 hover:border-l-brand/50">
+            <div className="wl-panel card-shimmer border border-ink/[0.08] border-l-2 border-l-brand/25 p-5 transition-all duration-300 hover:border-ink/[0.12] hover:border-l-brand/50">
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand/70 mb-2">
                 Pick Retell if
               </p>
