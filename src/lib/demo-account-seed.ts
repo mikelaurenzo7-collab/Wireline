@@ -37,9 +37,11 @@ export const TARGET = {
   appointments: 8,
   knowledge: 6,
   dncList: 5,
-  emailThreads: 12,
+  emailThreads: 6,
   smsThreads: 10,
 };
+
+const DEMO_PIPELINE_STAGES = ["cold", "contacted", "qualified", "demo", "won", "lost"] as const;
 
 export const SAMPLE_CUSTOMERS = [
   { name: "Alex Rivera", phone: "+14155551011", email: "alex.rivera@northstarmfg.com" },
@@ -209,6 +211,22 @@ async function countRows(
   return Number(row?.c ?? 0);
 }
 
+/** Drop duplicate marketing inbox rows (legacy seeds wrote indices 0–11). */
+async function pruneExcessSeedEmailThreads(userId: string, tx: typeof drizzle): Promise<number> {
+  const userPrefix = userId.slice(0, 8);
+  const pruned = await tx
+    .delete(emailThreads)
+    .where(
+      and(
+        eq(emailThreads.userId, userId),
+        like(emailThreads.threadId, `seed-email-${userPrefix}-%`),
+        sql`(regexp_replace(${emailThreads.threadId}, '^.*-', ''))::int >= ${TARGET.emailThreads}`,
+      ),
+    )
+    .returning({ id: emailThreads.id });
+  return pruned.length;
+}
+
 async function countSeedEmailThreads(
   userId: string,
   tx: typeof drizzle = drizzle,
@@ -232,6 +250,8 @@ async function countSeedSmsThreads(userId: string, tx: typeof drizzle = drizzle)
 
 /** Re-apply varied copy when demo rows already exist (idempotent re-seed / bulk-SQL repair). */
 async function refreshDemoShowcaseCopy(userId: string, tx: typeof drizzle): Promise<void> {
+  await pruneExcessSeedEmailThreads(userId, tx);
+
   const calls = await tx
     .select({ id: callLogs.id })
     .from(callLogs)
@@ -254,7 +274,7 @@ async function refreshDemoShowcaseCopy(userId: string, tx: typeof drizzle): Prom
     .from(emailThreads)
     .where(and(eq(emailThreads.userId, userId), like(emailThreads.threadId, "seed-email-%")))
     .orderBy(sql`(regexp_replace(${emailThreads.threadId}, '^.*-', ''))::int`);
-  for (let i = 0; i < seedEmails.length; i++) {
+  for (let i = 0; i < seedEmails.length && i < TARGET.emailThreads; i++) {
     const idx = i % SAMPLE_SUMMARIES.length;
     await tx
       .update(emailThreads)
@@ -293,6 +313,7 @@ async function refreshDemoShowcaseCopy(userId: string, tx: typeof drizzle): Prom
         email: cust.email,
         context: SAMPLE_SUMMARIES[(idx + 3) % SAMPLE_SUMMARIES.length],
         lastContactSummary: SAMPLE_SUMMARIES[idx],
+        pipelineStage: DEMO_PIPELINE_STAGES[i % DEMO_PIPELINE_STAGES.length],
       })
       .where(eq(outboundLeads.id, leads[i].id));
   }
@@ -407,6 +428,7 @@ export async function seedDemoAccountData(userId: string): Promise<{
           email: cust.email,
           context: SAMPLE_SUMMARIES[(i + 3) % SAMPLE_SUMMARIES.length],
           status: statuses[i % statuses.length],
+          pipelineStage: DEMO_PIPELINE_STAGES[i % DEMO_PIPELINE_STAGES.length],
           attempts: 1 + (i % 3),
           source: i % 4 === 0 ? "csv-upload" : i % 4 === 1 ? "api" : "manual",
           lastContactSummary: SAMPLE_SUMMARIES[i % SAMPLE_SUMMARIES.length],
@@ -484,12 +506,12 @@ export async function seedDemoAccountData(userId: string): Promise<{
     }
 
     {
+      const pruned = await pruneExcessSeedEmailThreads(userId, tx);
       const before = await countSeedEmailThreads(userId, tx);
-      const need = Math.max(0, TARGET.emailThreads - before);
       let inserted = 0;
-      for (let i = 0; i < need; i++) {
-        const cust = SAMPLE_CUSTOMERS[i % SAMPLE_CUSTOMERS.length];
-        const threadId = seedEmailThreadId(userId, i);
+      for (let index = 0; index < TARGET.emailThreads; index++) {
+        const cust = SAMPLE_CUSTOMERS[index % SAMPLE_CUSTOMERS.length];
+        const threadId = seedEmailThreadId(userId, index);
         const [thread] = await tx
           .insert(emailThreads)
           .values({
@@ -497,12 +519,12 @@ export async function seedDemoAccountData(userId: string): Promise<{
             agentId,
             threadId,
             customerEmail: cust.email,
-            subject: SAMPLE_EMAIL_SUBJECTS[i % SAMPLE_EMAIL_SUBJECTS.length],
+            subject: SAMPLE_EMAIL_SUBJECTS[index % SAMPLE_EMAIL_SUBJECTS.length],
             status: "open",
-            summary: SAMPLE_SUMMARIES[i % SAMPLE_SUMMARIES.length],
+            summary: SAMPLE_SUMMARIES[index % SAMPLE_SUMMARIES.length],
             leadScore: 45 + Math.floor(Math.random() * 50),
-            intentLabel: SAMPLE_INTENTS[i % SAMPLE_INTENTS.length],
-            read: i % 3 !== 0,
+            intentLabel: SAMPLE_INTENTS[index % SAMPLE_INTENTS.length],
+            read: index % 3 !== 0,
             lastMessageAt: randomCreatedAt(10),
             createdAt: randomCreatedAt(14),
           })
@@ -512,13 +534,13 @@ export async function seedDemoAccountData(userId: string): Promise<{
         if (thread?.id) {
           const inboundBody =
             "Hi team,\n\n" +
-            SAMPLE_SUMMARIES[i % SAMPLE_SUMMARIES.length] +
+            SAMPLE_SUMMARIES[index % SAMPLE_SUMMARIES.length] +
             "\n\nBest,\n" +
             cust.name.split(" ")[0];
           await tx.insert(emailMessages).values({
             userId,
             threadId: thread.id,
-            googleMessageId: `seed-gmail-${userPrefix}-${i}-in`,
+            googleMessageId: `seed-gmail-${userPrefix}-${index}-in`,
             role: "user",
             content: inboundBody,
             createdAt: randomCreatedAt(10),
@@ -526,18 +548,22 @@ export async function seedDemoAccountData(userId: string): Promise<{
           await tx.insert(emailMessages).values({
             userId,
             threadId: thread.id,
-            googleMessageId: `seed-gmail-${userPrefix}-${i}-out`,
+            googleMessageId: `seed-gmail-${userPrefix}-${index}-out`,
             role: "ai",
             content:
               "Thanks for reaching out — Avery here. " +
-              SAMPLE_SUMMARIES[(i + 2) % SAMPLE_SUMMARIES.length] +
+              SAMPLE_SUMMARIES[(index + 2) % SAMPLE_SUMMARIES.length] +
               " Let me know if you'd like to book a live demo.",
             createdAt: randomCreatedAt(9),
           });
           inserted++;
         }
       }
-      report.push({ table: "wireline_email_threads", before, inserted, after: before + inserted });
+      const afterEmail = await countSeedEmailThreads(userId, tx);
+      if (pruned > 0) {
+        log.info("Pruned excess demo email threads", { userId, pruned });
+      }
+      report.push({ table: "wireline_email_threads", before, inserted, after: afterEmail });
     }
 
     {

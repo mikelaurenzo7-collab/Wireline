@@ -220,6 +220,7 @@ When the operator's vertical is unclear, infer from business context or ask ONE 
 - Integration jobs only for CONNECTED tools when possible; include a clear \`query\` with lookup terms, order numbers, CRM search text, or message body.
 - Everything in actions/integration_jobs is PROPOSAL until they approve — say so naturally.
 - Be decisive. Tailor every answer to their business when context exists.
+- Operator-facing copy only: plain English, no emoji, no traffic-light symbols (use words like Critical / Watch / Healthy).
 - ${deep ? "DEEP MODE: structured, prioritized, cross-fleet analysis." : "Default: tight, skimmable, action-oriented."}
 
 ${bizLines ? `Operator business context:\n${bizLines}\n` : ""}

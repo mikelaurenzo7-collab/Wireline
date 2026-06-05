@@ -71,6 +71,10 @@ function twimlEmpty(): string {
   return `<?xml version="1.0" encoding="UTF-8"?><Response/>`;
 }
 
+function verifyTwilioSignature(req: Request): boolean {
+  return evaluateTwilioWebhookAuth(req).ok;
+}
+
 /**
  * Reverse-lookup the user (tenant) for a Twilio "To" number.
  *
