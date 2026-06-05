@@ -13,6 +13,11 @@ describe("SettingsTabSwitcher manifest", () => {
     expect(SRC).not.toContain('"agents"');
   });
 
+  it("does not expose platform system tab in customer settings", () => {
+    expect(SRC).not.toContain("tab=system");
+    expect(SRC).not.toMatch(/label:\s*"System"/);
+  });
+
   it("includes compliance and admin destinations under Settings hub", () => {
     expect(SRC).toContain('path: "/dnc"');
     expect(SRC).toContain('path: "/audit"');

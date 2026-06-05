@@ -6,6 +6,7 @@ import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
 import { getHealthCapabilities, getIntegrationsStatus } from "../lib/integrations-registry";
 import { authenticateUser } from "../middleware/auth";
+import { requirePlatformAdmin } from "../middleware/platform-admin";
 import { getOperatorSloSnapshot } from "../lib/operator-slos";
 import {
   CLAUDE_MODEL_DEFAULT,
@@ -151,16 +152,21 @@ router.get(
 );
 
 /**
- * Authenticated, structured integrations report. Used by the AdminSettings
- * Platform Health panel. Returns one row per registered integration with
- * status, required-ness, env-var presence map, and fallback notes.
+ * Platform-operator integrations report (env-var matrix). Used by the
+ * Founder dashboard operator console — not exposed to customer tenants.
  */
-router.get("/integrations", healthRateLimiter, authenticateUser, (_req: Request, res: Response) => {
-  res.json({
-    integrations: getIntegrationsStatus(),
-    timestamp: new Date().toISOString(),
-  });
-});
+router.get(
+  "/integrations",
+  healthRateLimiter,
+  authenticateUser,
+  requirePlatformAdmin,
+  (_req: Request, res: Response) => {
+    res.json({
+      integrations: getIntegrationsStatus(),
+      timestamp: new Date().toISOString(),
+    });
+  },
+);
 
 /**
  * Public, sanitized health probe. No auth required. Cached aggressively

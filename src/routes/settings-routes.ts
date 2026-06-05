@@ -8,6 +8,7 @@ import { eq, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage, mapObjectToCamel, mapObjectToSnake } from "../lib/server-utils";
 import { isOwnerEmail } from "../lib/auth-service";
+import { isPlatformAdmin } from "../middleware/platform-admin";
 import { enqueue } from "../lib/job-queue";
 import { jobsRateLimit, userPreferencesRateLimit } from "../middleware/api-rate-limits";
 import { ACCOUNT_DELETION_GRACE_DAYS, computeScheduledPurgeAt } from "../lib/account-deletion";
@@ -60,6 +61,14 @@ router.post(
       // vapiPrivateKey is a sensitive credential — must not be set via this
       // generic endpoint. It has a dedicated route with proper encryption.
       delete update.vapiPrivateKey;
+
+      const operator = await isPlatformAdmin(req.user);
+      if (!operator) {
+        delete update.subscriptionStatus;
+        delete update.maxAgents;
+        delete update.extraAgents;
+        delete update.founderUnlimitedAgents;
+      }
 
       const [data] = (await drizzle
         .update(settings)

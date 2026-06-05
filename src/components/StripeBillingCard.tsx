@@ -232,7 +232,9 @@ export default function StripeBillingCard() {
     );
   }
 
-  const hasActive = sub?.has_subscription && (sub.status === "active" || sub.status === "trialing");
+  const hasActive =
+    !!sub?.has_subscription &&
+    (sub.status === "active" || sub.status === "trialing" || sub.status === "past_due");
 
   return (
     <div className="space-y-8">
@@ -247,7 +249,7 @@ export default function StripeBillingCard() {
       )}
 
       {/* Voice-minute usage — only renders when there's an active plan */}
-      {sub?.has_subscription && <UsageMeter />}
+      {hasActive && <UsageMeter />}
 
       {error && (
         <div
@@ -259,175 +261,196 @@ export default function StripeBillingCard() {
         </div>
       )}
 
-      {/* Plan picker */}
-      <div className="rounded-md wl-panel border border-white/10 p-8 md:p-10 space-y-8">
-        <div className="border-b border-white/8 pb-6">
-          <h3 className="font-display italic lowercase text-3xl text-ink">
-            {hasActive ? "change plan" : "choose a plan"}
-          </h3>
-          {!hasActive && (
+      {hasActive ? (
+        <div className="rounded-md wl-panel border border-white/10 p-8 md:p-10 space-y-5">
+          <div className="border-b border-white/8 pb-5">
+            <h3 className="font-display italic lowercase text-2xl text-ink">Manage plan</h3>
             <p className="text-[12px] text-muted/70 mt-1.5 leading-relaxed max-w-lg">
-              Each agent replaces hours of human intake, follow-up, and triage work — for a fraction
-              of the cost. No setup fees. Cancel anytime.
+              Upgrade, downgrade, update payment method, or cancel through the secure Stripe
+              customer portal. Changes apply to your next billing cycle unless noted otherwise.
             </p>
-          )}
-          {hasActive && (
-            <p className="app-section-title/70 mt-2">
-              Use the Stripe portal above to upgrade, downgrade, or cancel.
-            </p>
-          )}
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <ShadButton
+              type="button"
+              disableAnimations
+              variant="outline"
+              onClick={openPortal}
+              disabled={busy === "portal"}
+              className="inline-flex gap-2.5 px-6 py-3 rounded-md text-[11px] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border-brand/40 text-brand"
+            >
+              {busy === "portal" ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ExternalLink className="w-4 h-4" />
+              )}
+              Open billing portal
+            </ShadButton>
+            <span className="app-section-title/65 flex items-center gap-2">
+              <Shield className="w-3 h-3" />
+              Upgrade · cancel · invoices
+            </span>
+          </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 stagger-children">
-          {plans.map((plan) => {
-            const Icon = PLAN_ICONS[plan.id] || Building2;
-            const accent = PLAN_ACCENTS[plan.id] || BRAND.purple;
-            const isCurrent = sub?.plan === plan.id && hasActive;
-            const isBusy = busy === plan.id;
-            const isSignupMatch = !hasActive && signupPlanInterest === plan.id;
-            return (
-              <motion.div
-                key={plan.id}
-                whileHover={{ y: -4 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                className={cn(
-                  "relative rounded-md wl-panel border p-7 flex flex-col gap-5 transition-all group overflow-hidden",
-                  isCurrent
-                    ? "border-brand/40 bg-brand/5"
-                    : isSignupMatch
-                      ? "border-brand/50 bg-brand/5 shadow-lg shadow-brand/10"
-                      : "border-white/10 hover:border-white/20",
-                )}
-              >
-                {isCurrent && (
-                  <div
-                    className="absolute -top-3 right-4 px-3 py-1 rounded-full text-paper text-[9px] uppercase tracking-[0.3em]"
-                    style={{ background: `linear-gradient(135deg, ${accent}, ${accent}99)` }}
-                  >
-                    Current plan
-                  </div>
-                )}
-                {!isCurrent && isSignupMatch && (
-                  <div
-                    className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em]"
-                    style={{
-                      background: BRAND.purple,
-                      color: "#fff",
-                    }}
-                  >
-                    Matched from visit
-                  </div>
-                )}
-                {!isCurrent && !isSignupMatch && plan.id === "pro" && (
-                  <div
-                    className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em]"
-                    style={{
-                      background: BRAND.purple,
-                      color: "#fff",
-                    }}
-                  >
-                    Most popular
-                  </div>
-                )}
-                <div className="flex items-center justify-between">
-                  <div
-                    className="w-12 h-12 rounded-md flex items-center justify-center"
-                    style={{ background: `${accent}18`, border: `1px solid ${accent}40` }}
-                  >
-                    <Icon className="w-6 h-6" style={{ color: accent }} />
-                  </div>
-                  <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
-                    {plan.max_agents} {plan.max_agents === 1 ? "agent" : "agents"}
-                  </span>
-                </div>
-                <div>
-                  <h4 className="font-display italic lowercase text-2xl text-ink">{plan.name}</h4>
-                  <div className="mt-1.5 flex items-baseline gap-1">
-                    {plan.price_usd_monthly > 0 ? (
-                      <>
-                        <span className="font-display italic text-4xl text-ink">
-                          ${plan.price_usd_monthly.toLocaleString()}
-                        </span>
-                        <span className="text-[10px] uppercase tracking-[0.3em] text-muted/70">
-                          /mo
-                        </span>
-                      </>
-                    ) : (
-                      // price 0 == contact-sales tier (Enterprise) — never
-                      // render "$0/mo", which reads as free.
-                      <span className="font-display italic text-4xl text-ink">Custom</span>
-                    )}
-                  </div>
-                </div>
-                <ul className="space-y-2 flex-1">
-                  {plan.features.map((f, i) => (
-                    <li key={i} className="flex items-start gap-2 text-caption">
-                      <Check
-                        className="w-3.5 h-3.5 mt-0.5 shrink-0"
-                        style={{ color: accent }}
-                        strokeWidth={2.5}
-                      />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <ShadButton
-                  type="button"
-                  disableAnimations
-                  variant={isCurrent ? "secondary" : "outline"}
-                  onClick={() => startCheckout(plan.id)}
-                  disabled={isBusy || isCurrent || !plan.configured}
-                  className={cn(
-                    "w-full py-3 rounded-md text-[10px] uppercase tracking-[0.28em] font-medium shadow-premium-button",
-                    isCurrent
-                      ? "bg-white/5 border-white/10 text-muted"
-                      : "border-white/20 hover:border-white/40 text-ink bg-white/5 hover:bg-white/10 hover-premium-glow",
-                  )}
-                  style={!isCurrent && !isBusy ? { borderColor: `${accent}50` } : {}}
-                >
-                  {isBusy ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : isCurrent ? (
-                    <>Current</>
-                  ) : (
-                    <>
-                      {hasActive ? "Switch" : "Subscribe"} <ArrowRight className="w-3 h-3" />
-                    </>
-                  )}
-                </ShadButton>
-                {!plan.configured && (
-                  <p className="text-[9px] uppercase tracking-[0.28em] text-muted/70 text-center leading-relaxed">
-                    Available soon — contact us to start on this tier
-                  </p>
-                )}
-                {/* Accent bar — pulses on current plan */}
+      ) : (
+        <PlanPicker
+          plans={plans}
+          signupPlanInterest={signupPlanInterest}
+          busy={busy}
+          onSelectPlan={startCheckout}
+        />
+      )}
+
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/6 pt-4 text-[9px] text-muted/70 uppercase tracking-[0.2em]">
+        <div className="flex items-center gap-2">
+          <Shield className="w-3 h-3" />
+          Stripe · PCI DSS Level 1 · Cancel anytime
+        </div>
+        <div className="flex items-center gap-3">
+          <a href="/privacy" className="hover:text-muted/70 transition-colors">
+            Privacy
+          </a>
+          <span>·</span>
+          <a href="/terms" className="hover:text-muted/70 transition-colors">
+            Terms
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PlanPicker({
+  plans,
+  signupPlanInterest,
+  busy,
+  onSelectPlan,
+}: {
+  plans: Plan[];
+  signupPlanInterest: string | null;
+  busy: string | null;
+  onSelectPlan: (planId: string) => void;
+}) {
+  return (
+    <div className="rounded-md wl-panel border border-white/10 p-8 md:p-10 space-y-8">
+      <div className="border-b border-white/8 pb-6">
+        <h3 className="font-display italic lowercase text-3xl text-ink">choose a plan</h3>
+        <p className="text-[12px] text-muted/70 mt-1.5 leading-relaxed max-w-lg">
+          Each agent replaces hours of human intake, follow-up, and triage work — for a fraction of
+          the cost. No setup fees. Cancel anytime.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 stagger-children">
+        {plans.map((plan) => {
+          const Icon = PLAN_ICONS[plan.id] || Building2;
+          const accent = PLAN_ACCENTS[plan.id] || BRAND.purple;
+          const isBusy = busy === plan.id;
+          const isSignupMatch = signupPlanInterest === plan.id;
+          return (
+            <motion.div
+              key={plan.id}
+              whileHover={{ y: -4 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              className={cn(
+                "relative rounded-md wl-panel border p-7 flex flex-col gap-5 transition-all group overflow-hidden",
+                isSignupMatch
+                  ? "border-brand/50 bg-brand/5 shadow-lg shadow-brand/10"
+                  : "border-white/10 hover:border-white/20",
+              )}
+            >
+              {!isSignupMatch && plan.id === "pro" && (
                 <div
-                  className={cn(
-                    "absolute bottom-0 left-0 right-0 h-[2px] transition-opacity duration-300",
-                    isCurrent ? "opacity-100" : "opacity-0 group-hover:opacity-60",
-                  )}
+                  className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em]"
                   style={{
-                    background: `linear-gradient(90deg, transparent, ${accent}, transparent)`,
+                    background: BRAND.purple,
+                    color: "#fff",
                   }}
-                />
-              </motion.div>
-            );
-          })}
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/6 pt-6">
-          <div className="app-section-title/65 flex items-center gap-2">
-            <Shield className="w-3 h-3" />
-            Stripe · PCI DSS Level 1 · Cancel anytime
-          </div>
-          <div className="flex items-center gap-3 text-[9px] text-muted/70 uppercase tracking-[0.2em]">
-            <a href="/privacy" className="hover:text-muted/70 transition-colors">
-              Privacy
-            </a>
-            <span>·</span>
-            <a href="/terms" className="hover:text-muted/70 transition-colors">
-              Terms
-            </a>
-          </div>
-        </div>
+                >
+                  Most popular
+                </div>
+              )}
+              {isSignupMatch && (
+                <div
+                  className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em]"
+                  style={{
+                    background: BRAND.purple,
+                    color: "#fff",
+                  }}
+                >
+                  Matched from visit
+                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <div
+                  className="w-12 h-12 rounded-md flex items-center justify-center"
+                  style={{ background: `${accent}18`, border: `1px solid ${accent}40` }}
+                >
+                  <Icon className="w-6 h-6" style={{ color: accent }} />
+                </div>
+                <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
+                  {plan.max_agents} {plan.max_agents === 1 ? "agent" : "agents"}
+                </span>
+              </div>
+              <div>
+                <h4 className="font-display italic lowercase text-2xl text-ink">{plan.name}</h4>
+                <div className="mt-1.5 flex items-baseline gap-1">
+                  {plan.price_usd_monthly > 0 ? (
+                    <>
+                      <span className="font-display italic text-4xl text-ink">
+                        ${plan.price_usd_monthly.toLocaleString()}
+                      </span>
+                      <span className="text-[10px] uppercase tracking-[0.3em] text-muted/70">
+                        /mo
+                      </span>
+                    </>
+                  ) : (
+                    <span className="font-display italic text-4xl text-ink">Custom</span>
+                  )}
+                </div>
+              </div>
+              <ul className="space-y-2 flex-1">
+                {plan.features.map((f, i) => (
+                  <li key={i} className="flex items-start gap-2 text-caption">
+                    <Check
+                      className="w-3.5 h-3.5 mt-0.5 shrink-0"
+                      style={{ color: accent }}
+                      strokeWidth={2.5}
+                    />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <ShadButton
+                type="button"
+                disableAnimations
+                variant="outline"
+                onClick={() => onSelectPlan(plan.id)}
+                disabled={isBusy || !plan.configured}
+                className="w-full py-3 rounded-md text-[10px] uppercase tracking-[0.28em] font-medium shadow-premium-button border-white/20 hover:border-white/40 text-ink bg-white/5 hover:bg-white/10 hover-premium-glow"
+                style={!isBusy ? { borderColor: `${accent}50` } : {}}
+              >
+                {isBusy ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <>
+                    Subscribe <ArrowRight className="w-3 h-3" />
+                  </>
+                )}
+              </ShadButton>
+              {!plan.configured && (
+                <p className="text-[9px] uppercase tracking-[0.28em] text-muted/70 text-center leading-relaxed">
+                  Available soon — contact us to start on this tier
+                </p>
+              )}
+              <div
+                className="absolute bottom-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-60 transition-opacity duration-300"
+                style={{
+                  background: `linear-gradient(90deg, transparent, ${accent}, transparent)`,
+                }}
+              />
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );

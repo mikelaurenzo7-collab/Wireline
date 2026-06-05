@@ -10,7 +10,6 @@ type AdminTab =
   | "subscription"
   | "team"
   | "flywheel"
-  | "system"
   | "activity"
   | "dnc"
   | "audit";
@@ -32,12 +31,7 @@ const TAB_GROUPS: { tabs: TabDef[] }[] = [
   { tabs: [{ id: "carrier", label: "Carrier", path: "/admin?tab=carrier" }] },
   { tabs: [{ id: "flywheel", label: "Growth", path: "/admin?tab=flywheel" }] },
   { tabs: [{ id: "integrations", label: "Integrations", path: "/integrations" }] },
-  {
-    tabs: [
-      { id: "system", label: "System", path: "/admin?tab=system" },
-      { id: "activity", label: "Activity", path: "/admin?tab=activity" },
-    ],
-  },
+  { tabs: [{ id: "activity", label: "Activity", path: "/admin?tab=activity" }] },
   {
     tabs: [
       { id: "dnc", label: "DNC", path: "/dnc" },
@@ -68,7 +62,6 @@ export default function SettingsTabSwitcher({
       "subscription",
       "team",
       "flywheel",
-      "system",
       "activity",
     ];
     return validTabs.includes(tab) ? tab : "branding";

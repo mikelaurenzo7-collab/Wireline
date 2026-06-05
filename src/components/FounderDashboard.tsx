@@ -23,6 +23,7 @@ import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { WL_APP_CLASSES } from "../lib/wireline-director-design";
 import { OPS_FOUNDER, WL_FLEET_CLASSES } from "../lib/wireline-ops-design";
+import FounderOperatorConsole from "./admin/FounderOperatorConsole";
 
 /**
  * Founder's Dashboard — Mike's command surface for his staff of 6
@@ -339,6 +340,8 @@ export default function FounderDashboard() {
             </p>
           </div>
         )}
+
+        <FounderOperatorConsole />
 
         {provisionedIds !== null && !allProvisioned && (
           <div className="mb-5 rounded-md border border-brand/30 bg-brand/5 p-3 text-[12px] text-ink/80">

@@ -22,10 +22,10 @@ import { CarrierPanel } from "./admin/CarrierPanel";
 // Voice library + pronunciation dictionary panels moved to AgentTraining
 // (they're agent training inputs, not tenant admin config).
 import { SubscriptionPanel } from "./admin/SubscriptionPanel";
-import { SystemPanel } from "./admin/SystemPanel";
 import { TeamPanel } from "./admin/TeamPanel";
 import { GrowthPanel } from "./admin/GrowthPanel";
 import { AuditActivityPanel } from "./admin/AuditActivityPanel";
+import { isOwnerOnlyAdminTab, isWirelineOperator } from "../lib/admin-access";
 
 type ConfirmState = { open: boolean; title: string; message: string; onConfirm: () => void };
 const CLOSED_CONFIRM: ConfirmState = { open: false, title: "", message: "", onConfirm: () => {} };
@@ -56,7 +56,7 @@ interface AdminSettingsState {
 
 export default function AdminSettings() {
   const { success: toastSuccess, error: toastError } = useToast();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const { updateBranding } = useBranding();
   const [confirmState, setConfirmState] = useState<ConfirmState>(CLOSED_CONFIRM);
   const [settings, setSettings] = useState<AdminSettingsState>({
@@ -88,24 +88,6 @@ export default function AdminSettings() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeletingNumber, setIsDeletingNumber] = useState<number | string | null>(null);
-  const [claudeStatus, setClaudeStatus] = useState<{
-    available: boolean;
-    model: string;
-    capabilities?: string[];
-  } | null>(null);
-  type IntegrationRow = {
-    id: string;
-    label: string;
-    description: string;
-    group: string;
-    required: boolean;
-    status: "configured" | "missing" | "fallback";
-    envVars: Array<{ name: string; present: boolean }>;
-    fallback?: string;
-    docsUrl?: string;
-  };
-  const [integrations, setIntegrations] = useState<IntegrationRow[] | null>(null);
-  const [operationalSlos, setOperationalSlos] = useState<Record<string, unknown> | null>(null);
   const [integrationHealth, setIntegrationHealth] = useState<IntegrationHealthPayload | null>(null);
 
   type AdminTab =
@@ -114,7 +96,6 @@ export default function AdminSettings() {
     | "subscription"
     | "team"
     | "flywheel"
-    | "system"
     | "activity"
     | "dnc"
     | "audit";
@@ -124,7 +105,6 @@ export default function AdminSettings() {
     "subscription",
     "team",
     "flywheel",
-    "system",
     "activity",
     "dnc",
     "audit",
@@ -147,6 +127,15 @@ export default function AdminSettings() {
       queueMicrotask(() => navigate("/chat", { replace: true }));
       return "branding";
     }
+    // Legacy / mistaken deep link — system health moved to Founder dashboard.
+    if (isOwnerOnlyAdminTab(qsRaw ?? "")) {
+      queueMicrotask(() =>
+        navigate(isWirelineOperator(user) ? "/founder" : "/admin?tab=subscription", {
+          replace: true,
+        }),
+      );
+      return "subscription";
+    }
     const qs = qsRaw as AdminTab;
     return VALID_TABS.includes(qs) ? qs : "branding";
   })();
@@ -166,9 +155,6 @@ export default function AdminSettings() {
 
   useEffect(() => {
     fetchData();
-    fetchClaudeStatus();
-    fetchIntegrations();
-    fetchOperationalSlos();
     fetchIntegrationHealth();
     fetchTeam();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time data load on mount
@@ -183,37 +169,6 @@ export default function AdminSettings() {
       }
     } catch {
       /* non-critical */
-    }
-  };
-
-  const fetchClaudeStatus = async () => {
-    try {
-      const r = await authFetch("/api/claude/status");
-      if (r.ok) setClaudeStatus(await r.json());
-    } catch {
-      /* non-critical */
-    }
-  };
-
-  const fetchIntegrations = async () => {
-    try {
-      const r = await authFetch("/api/health/integrations");
-      if (r.ok) {
-        const d = await r.json();
-        setIntegrations(d.integrations || []);
-      }
-    } catch {
-      /* non-critical */
-    }
-  };
-
-  const fetchOperationalSlos = async () => {
-    try {
-      const r = await authFetch("/api/health/slos");
-      if (r.ok) setOperationalSlos(await r.json());
-      else setOperationalSlos(null);
-    } catch {
-      setOperationalSlos(null);
     }
   };
 
@@ -416,7 +371,7 @@ export default function AdminSettings() {
           <div className="h-full flex flex-col">
             <IntegrationHealthBanner
               health={integrationHealth}
-              onOpenIntegrations={() => navigate("/admin?tab=system")}
+              onOpenIntegrations={() => navigate("/integrations")}
             />
             <div className="flex-1 min-h-0 scroll-viewport scroll-pb-safe">
               {isLoading ? (
@@ -482,14 +437,7 @@ export default function AdminSettings() {
                       exit={{ opacity: 0 }}
                       className="h-full"
                     >
-                      <SubscriptionPanel
-                        settings={settings}
-                        agents={agents}
-                        isSaving={isSaving}
-                        onUpdateSettings={setSettings}
-                        onSaveSettings={saveSettings}
-                        onDeleteAccount={deleteAccount}
-                      />
+                      <SubscriptionPanel onDeleteAccount={deleteAccount} />
                     </motion.div>
                   )}
 
@@ -526,25 +474,6 @@ export default function AdminSettings() {
                         setSettings={setSettings}
                         onSave={saveSettings}
                         isSaving={isSaving}
-                      />
-                    </motion.div>
-                  )}
-
-                  {activeTab === "system" && (
-                    <motion.div
-                      key="system"
-                      role="tabpanel"
-                      id="admin-panel-system"
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      className="h-full"
-                    >
-                      <SystemPanel
-                        claudeStatus={claudeStatus}
-                        integrations={integrations}
-                        operationalSlos={operationalSlos}
-                        onOpenIntegrations={() => navigate("/admin?tab=system")}
                       />
                     </motion.div>
                   )}
