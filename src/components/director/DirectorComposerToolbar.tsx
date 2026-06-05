@@ -1,5 +1,8 @@
 /**
  * Director composer tool rail — pill chips with bottom-rail active state.
+ * 
+ * Cycle 8 improvements: Stronger focus visibility, better contrast on active/engaged states,
+ * and improved accessibility for daily operator use.
  */
 import type { ReactNode } from "react";
 import { Brain, ChevronDown, Loader2, Paperclip, Plug, Sparkles, Bot, Wrench } from "lucide-react";
@@ -55,6 +58,7 @@ function ComposerToolChip({
       aria-label={ariaLabel ?? label}
       className={cn(
         WL_DIRECTOR_CLASSES.composerToolChip,
+        "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         active && WL_DIRECTOR_CLASSES.composerToolChipActive,
         engaged && !active && WL_DIRECTOR_CLASSES.composerToolChipEngaged,
         "h-auto touch-press rounded-full shadow-none",
@@ -121,8 +125,7 @@ export function DirectorComposerToolbar({
             selection={chatModelSelection}
             onChange={onChatModelChange}
             disabled={isSending}
-          />
-        ) : null}
+          ) : null}
         <ComposerToolChip
           id="connectors"
           label="Connectors"
@@ -161,8 +164,7 @@ export function DirectorComposerToolbar({
               enabledToolsCount > 0 ? (
                 <span className="font-mono text-[9px] tabular-nums opacity-70">
                   ({enabledToolsCount})
-                </span>
-              ) : null
+              ) : null}
             }
           />
         )}
@@ -179,6 +181,7 @@ export function DirectorComposerToolbar({
             title={DIRECTOR_DEEP_MODE_COPY.hint}
             className={cn(
               WL_DIRECTOR_CLASSES.composerToolChip,
+              "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               forceDeep && WL_DIRECTOR_CLASSES.composerToolChipActive,
               "h-auto touch-press rounded-full shadow-none",
             )}
