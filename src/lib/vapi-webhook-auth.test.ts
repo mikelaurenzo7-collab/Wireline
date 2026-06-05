@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import type { Request } from "express";
-import { vapiWebhookSecretOk } from "./vapi-webhook-auth";
+import { evaluateVapiWebhookAuth, vapiWebhookSecretOk } from "./vapi-webhook-auth";
 
 function reqWithSecret(secret?: string): Request {
   return {
@@ -42,5 +42,45 @@ describe("vapiWebhookSecretOk", () => {
   it("rejects wrong secret", () => {
     process.env.VAPI_WEBHOOK_SECRET = "expected-secret";
     expect(vapiWebhookSecretOk(reqWithSecret("wrong-secret"))).toBe(false);
+  });
+});
+
+describe("evaluateVapiWebhookAuth", () => {
+  const prevSecret = process.env.VAPI_WEBHOOK_SECRET;
+  const prevNodeEnv = process.env.NODE_ENV;
+  const prevVercel = process.env.VERCEL;
+
+  beforeEach(() => {
+    delete process.env.VAPI_WEBHOOK_SECRET;
+    process.env.NODE_ENV = "test";
+    delete process.env.VERCEL;
+  });
+
+  afterEach(() => {
+    process.env.VAPI_WEBHOOK_SECRET = prevSecret;
+    process.env.NODE_ENV = prevNodeEnv;
+    process.env.VERCEL = prevVercel;
+  });
+
+  it("allows dev traffic when secret is unset", () => {
+    expect(evaluateVapiWebhookAuth(reqWithSecret())).toEqual({ ok: true });
+  });
+
+  it("returns 503 in production when secret is unset", () => {
+    process.env.NODE_ENV = "production";
+    expect(evaluateVapiWebhookAuth(reqWithSecret())).toEqual({
+      ok: false,
+      status: 503,
+      error: "Webhook auth not configured.",
+    });
+  });
+
+  it("returns 401 when secret is configured but header mismatches", () => {
+    process.env.VAPI_WEBHOOK_SECRET = "expected-secret";
+    expect(evaluateVapiWebhookAuth(reqWithSecret("wrong"))).toEqual({
+      ok: false,
+      status: 401,
+      error: "Invalid webhook signature.",
+    });
   });
 });

@@ -46,6 +46,9 @@ jobs:
       - name: Guard — AuthZ default-deny contract (every route protected or allowlisted)
         run: npm run authz:check
 
+      - name: Schema drift check (Drizzle vs migrations)
+        run: npm run db:check
+
       - name: Lint
         run: npm run lint:eslint
 
@@ -53,10 +56,18 @@ jobs:
         run: npm run test:coverage
 
       - name: Tenant isolation integration tests
-        if: ${{ secrets.POSTGRES_URL != '' }}
         env:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-        run: npx vitest run tests/integration/agent-tenant-isolation.integration.test.ts
+        run: |
+          if [ -z "${POSTGRES_URL}" ]; then
+            if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+              echo "::error::POSTGRES_URL secret is required on main — tenant isolation must not silently skip"
+              exit 1
+            fi
+            echo "Skipping tenant isolation — POSTGRES_URL not configured for this ref"
+            exit 0
+          fi
+          npx vitest run tests/integration/agent-tenant-isolation.integration.test.ts
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4

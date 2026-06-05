@@ -6,7 +6,7 @@ import * as claudeBrain from "../../lib/claude-brain";
 import * as schema from "../../db/schema";
 import { enqueue } from "../../lib/job-queue";
 import { claimLeadEnrichmentSlot } from "../../lib/enrichment-debounce";
-import { drizzle, IS_PROD, log } from "../../lib/server-context";
+import { drizzle, log } from "../../lib/server-context";
 import { getErrorMessage } from "../../lib/server-utils";
 import {
   buildShowcaseAssistantPayload,
@@ -14,12 +14,8 @@ import {
 } from "../../lib/showcase-assistant";
 import { buildVapiAssistant } from "../../lib/vapi-assistant-factory";
 import { normalizeVapiToolCalls } from "../../lib/vapi-tool-call-utils";
-import {
-  SENTIMENT_ANGRY_SIGNALS,
-  SENTIMENT_POSITIVE_SIGNALS,
-  timingSafeEq,
-  VAPI_WEBHOOK_SECRET,
-} from "../../lib/vapi-helpers";
+import { SENTIMENT_ANGRY_SIGNALS, SENTIMENT_POSITIVE_SIGNALS } from "../../lib/vapi-helpers";
+import { evaluateVapiWebhookAuth } from "../../lib/vapi-webhook-auth";
 import { handleEndOfCallReport } from "../../lib/vapi-handlers";
 import { shouldQueueWebhook } from "../../lib/vapi-webhook-queue";
 import { resolveVapiWebhookAgent } from "../../lib/vapi-webhook-agent";
@@ -40,30 +36,26 @@ async function dispatchToolCall(
 }
 
 router.post("/api/vapi-webhook", async (req: express.Request, res: express.Response) => {
-  const provided =
-    (req.headers["x-vapi-secret"] as string | undefined) ||
-    (req.headers["x-vapi-signature"] as string | undefined) ||
-    "";
-
-  if (!process.env.VAPI_WEBHOOK_SECRET) {
-    if (IS_PROD) {
+  const auth = evaluateVapiWebhookAuth(req);
+  if (!auth.ok) {
+    if (auth.status === 503) {
       log.error("VAPI_WEBHOOK_SECRET unset in production — rejecting webhook");
-      return res.status(503).json({ error: "Webhook auth not configured." });
+    } else {
+      const provided =
+        (req.headers["x-vapi-secret"] as string | undefined) ||
+        (req.headers["x-vapi-signature"] as string | undefined) ||
+        "";
+      log.warn("Rejected Vapi webhook with bad/missing signature", {
+        ip: req.ip,
+        sig_prefix: provided ? provided.slice(0, 8) : null,
+        ts: Date.now(),
+      });
     }
-    if (!_warnedAboutVapiSecret) {
-      log.warn("VAPI_WEBHOOK_SECRET unset — accepting all webhook requests (dev only)");
-      _warnedAboutVapiSecret = true;
-    }
-  } else if (!timingSafeEq(provided, VAPI_WEBHOOK_SECRET)) {
-    // Include ip + signature prefix for abuse pattern detection
-    // (volume probing, replay attacks). Bounded leak — the prefix
-    // alone is not enough to reconstruct the secret.
-    log.warn("Rejected Vapi webhook with bad/missing signature", {
-      ip: req.ip,
-      sig_prefix: provided ? provided.slice(0, 8) : null,
-      ts: Date.now(),
-    });
-    return res.status(401).json({ error: "Invalid webhook signature." });
+    return res.status(auth.status).json({ error: auth.error });
+  }
+  if (!process.env.VAPI_WEBHOOK_SECRET && !_warnedAboutVapiSecret) {
+    log.warn("VAPI_WEBHOOK_SECRET unset — accepting all webhook requests (dev only)");
+    _warnedAboutVapiSecret = true;
   }
 
   const payload = req.body as Record<string, unknown>;
