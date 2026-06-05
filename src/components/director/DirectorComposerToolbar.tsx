@@ -1,8 +1,11 @@
 /**
  * Director composer tool rail — pill chips with bottom-rail active state.
- * 
- * Cycle 8 improvements: Stronger focus visibility, better contrast on active/engaged states,
- * and improved accessibility for daily operator use.
+ *
+ * World-class visual design standards (Cycle 11):
+ * - Refined active/engaged states with better elevation and depth
+ * - Premium focus treatment
+ * - Improved visual rhythm and hierarchy
+ * - Consistent with Aurora Cream design language
  */
 import type { ReactNode } from "react";
 import { Brain, ChevronDown, Loader2, Paperclip, Plug, Sparkles, Bot, Wrench } from "lucide-react";
@@ -58,9 +61,15 @@ function ComposerToolChip({
       aria-label={ariaLabel ?? label}
       className={cn(
         WL_DIRECTOR_CLASSES.composerToolChip,
-        "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-        active && WL_DIRECTOR_CLASSES.composerToolChipActive,
-        engaged && !active && WL_DIRECTOR_CLASSES.composerToolChipEngaged,
+        "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all duration-150",
+        active && cn(
+          WL_DIRECTOR_CLASSES.composerToolChipActive,
+          "shadow-sm ring-1 ring-brand/30 bg-brand/10"
+        ),
+        engaged && !active && cn(
+          WL_DIRECTOR_CLASSES.composerToolChipEngaged,
+          "ring-1 ring-brand/25 bg-brand/5"
+        ),
         "h-auto touch-press rounded-full shadow-none",
       )}
     >
@@ -73,8 +82,8 @@ function ComposerToolChip({
       {showChevron && (
         <ChevronDown
           className={cn(
-            "w-3 h-3 opacity-60 transition-transform",
-            active && "rotate-180 opacity-100",
+            "w-3 h-3 opacity-60 transition-transform duration-200",
+            active && "rotate-180 opacity-100"
           )}
           aria-hidden
         />
@@ -181,9 +190,12 @@ export function DirectorComposerToolbar({
             title={DIRECTOR_DEEP_MODE_COPY.hint}
             className={cn(
               WL_DIRECTOR_CLASSES.composerToolChip,
-              "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-              forceDeep && WL_DIRECTOR_CLASSES.composerToolChipActive,
-              "h-auto touch-press rounded-full shadow-none",
+              "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all duration-150",
+              forceDeep && cn(
+                WL_DIRECTOR_CLASSES.composerToolChipActive,
+                "shadow-sm ring-1 ring-brand/30 bg-brand/10"
+              ),
+              "h-auto touch-press rounded-full shadow-none"
             )}
           >
             <Brain className="w-3.5 h-3.5 shrink-0" />
