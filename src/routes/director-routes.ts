@@ -8,6 +8,14 @@ import { listAgentSummariesForUser } from "../lib/agents-store";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser, authenticateEventStream } from "../middleware/auth";
 import { claudeRateLimiter } from "../middleware/api-rate-limits";
+import {
+  validateBody,
+  directorMessageSchema,
+  directorStreamMessageSchema,
+  directorExecuteSchema,
+  pdfUploadSchema,
+  directorChatModelPatchSchema,
+} from "../lib/api-validation";
 import { enforceSpendCap, enforce24hSpendCap } from "../lib/spend-guards";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
@@ -501,8 +509,9 @@ router.get(
 router.patch(
   "/api/director/chat-model",
   authenticateUser,
+  validateBody(directorChatModelPatchSchema),
   async (req: AuthenticatedRequest, res: Response) => {
-    const parsed = parseDirectorChatModelSelection(req.body?.selection);
+    const parsed = parseDirectorChatModelSelection(req.body.selection);
     if (!parsed) {
       return res.status(400).json({ error: "Invalid model selection" });
     }
@@ -531,19 +540,13 @@ router.post(
   enforce24hSpendCap,
   enforceSpendCap,
   withAudit("director"),
+  validateBody(directorMessageSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const featureFlags = loadDirectorFeatureFlags();
-      const operatorMessage = String(req.body?.content || "").trim();
-      const focusAgentId = String(req.body?.focusAgentId || "").trim() || undefined;
-      const approval = req.body?.approval as DirectorApprovalRequest | undefined;
-
-      if (!operatorMessage && !approval) {
-        return res.status(400).json({ error: "Message content required" });
-      }
-      if (operatorMessage.length > 4000) {
-        return res.status(400).json({ error: "Message too long — keep under 4000 chars" });
-      }
+      const operatorMessage = String(req.body.content || "").trim();
+      const focusAgentId = String(req.body.focusAgentId || "").trim() || undefined;
+      const approval = req.body.approval as DirectorApprovalRequest | undefined;
 
       const fleet = await loadFleetSafe(req.user.id);
 
@@ -753,16 +756,11 @@ router.post(
   enforce24hSpendCap,
   enforceSpendCap,
   withAudit("director"),
+  validateBody(directorStreamMessageSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const operatorMessage = String(req.body?.content || "").trim();
-      const focusAgentId = String(req.body?.focusAgentId || "").trim() || undefined;
-      if (!operatorMessage) {
-        return res.status(400).json({ error: "Message content required" });
-      }
-      if (operatorMessage.length > 4000) {
-        return res.status(400).json({ error: "Message too long" });
-      }
+      const operatorMessage = req.body.content.trim();
+      const focusAgentId = String(req.body.focusAgentId || "").trim() || undefined;
       const resolved = await resolveDirectorModelSelection(
         req.user.id,
         req.body ?? {},
@@ -994,26 +992,22 @@ router.post(
 router.post(
   "/api/director/execute",
   authenticateUser,
+  validateBody(directorExecuteSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const kind = String(req.body?.kind || "");
+      const kind = req.body.kind;
       if (kind === "comms") {
-        const action = req.body?.action as DirectorProposedAction | undefined;
-        if (!action?.kind) return res.status(400).json({ error: "Invalid action" });
+        const action = req.body.action as DirectorProposedAction;
         const result = await executeDirectorCommsAction(req.user.id, action, {
-          hasExpressWrittenConsent: !!req.body?.hasExpressWrittenConsent,
+          hasExpressWrittenConsent: !!req.body.hasExpressWrittenConsent,
         });
         if (!result.success) return res.status(400).json({ error: result.error || "Failed" });
         return res.json(result);
       }
-      if (kind === "integration") {
-        const job = req.body?.job as DirectorIntegrationJob | undefined;
-        if (!job?.tool) return res.status(400).json({ error: "Invalid integration job" });
-        const result = await executeDirectorIntegrationJob(req.user.id, job);
-        if (!result.success) return res.status(400).json({ error: result.error || "Failed" });
-        return res.json(result);
-      }
-      return res.status(400).json({ error: "kind must be comms or integration" });
+      const job = req.body.job as DirectorIntegrationJob;
+      const result = await executeDirectorIntegrationJob(req.user.id, job);
+      if (!result.success) return res.status(400).json({ error: result.error || "Failed" });
+      return res.json(result);
     } catch (e) {
       log.error("director execute failed", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Execution failed" });
@@ -1025,16 +1019,11 @@ router.post(
   "/api/director/files",
   authenticateUser,
   claudeRateLimiter,
+  validateBody(pdfUploadSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       await ensureDirectorSchema();
-      const { pdfBase64, fileName } = req.body ?? {};
-      if (!pdfBase64 || typeof pdfBase64 !== "string") {
-        return res.status(400).json({ error: "pdfBase64 required" });
-      }
-      if (pdfBase64.length > 40 * 1024 * 1024) {
-        return res.status(413).json({ error: "File exceeds 30MB. Split it up." });
-      }
+      const { pdfBase64, fileName } = req.body;
       try {
         const head = Buffer.from(pdfBase64.slice(0, 16), "base64").toString("utf8", 0, 5);
         if (!head.startsWith("%PDF")) {

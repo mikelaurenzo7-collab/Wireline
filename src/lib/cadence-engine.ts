@@ -17,7 +17,7 @@
 
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, lte, asc } from "drizzle-orm";
+import { eq, and, lte, asc, inArray } from "drizzle-orm";
 import { placeOutboundCall } from "./vapi-client";
 import { sendTenantMessage } from "./twilio-service";
 import { IntegrationService } from "./integrations";
@@ -136,13 +136,34 @@ export async function tickDueCadenceRuns({
   let completed = 0;
   let failed = 0;
 
+  const cadenceIds = [...new Set(dueRuns.map((r) => r.cadenceId).filter(Boolean))] as string[];
+  const leadIds = [...new Set(dueRuns.map((r) => r.leadId).filter(Boolean))] as string[];
+
+  const [cadenceRows, leadRows] = await Promise.all([
+    cadenceIds.length
+      ? drizzle.select().from(schema.cadences).where(inArray(schema.cadences.id, cadenceIds))
+      : Promise.resolve([]),
+    leadIds.length
+      ? drizzle
+          .select({
+            id: schema.outboundLeads.id,
+            userId: schema.outboundLeads.userId,
+            customerName: schema.outboundLeads.customerName,
+            customerNumber: schema.outboundLeads.customerNumber,
+            email: schema.outboundLeads.email,
+            agentId: schema.outboundLeads.agentId,
+          })
+          .from(schema.outboundLeads)
+          .where(inArray(schema.outboundLeads.id, leadIds))
+      : Promise.resolve([]),
+  ]);
+
+  const cadenceById = new Map(cadenceRows.map((c) => [c.id, c]));
+  const leadById = new Map(leadRows.map((l) => [l.id, l]));
+
   for (const run of dueRuns) {
     try {
-      const [cadenceRow] = await drizzle
-        .select()
-        .from(schema.cadences)
-        .where(eq(schema.cadences.id, run.cadenceId))
-        .limit(1);
+      const cadenceRow = cadenceById.get(run.cadenceId);
       if (!cadenceRow || cadenceRow.active === false) {
         await drizzle
           .update(schema.cadenceRuns)
@@ -151,23 +172,8 @@ export async function tickDueCadenceRuns({
         continue;
       }
 
-      const [leadRow] = await drizzle
-        .select({
-          id: schema.outboundLeads.id,
-          customerName: schema.outboundLeads.customerName,
-          customerNumber: schema.outboundLeads.customerNumber,
-          email: schema.outboundLeads.email,
-          agentId: schema.outboundLeads.agentId,
-        })
-        .from(schema.outboundLeads)
-        // Defense in depth: ensure the lead still belongs to the same tenant
-        // that owns the cadence run. The enroll endpoint already validates
-        // this, but if a row were corrupted or migrated, we must not act
-        // on another tenant's lead.
-        .where(
-          and(eq(schema.outboundLeads.id, run.leadId), eq(schema.outboundLeads.userId, run.userId)),
-        )
-        .limit(1);
+      const leadRowRaw = leadById.get(run.leadId);
+      const leadRow = leadRowRaw && leadRowRaw.userId === run.userId ? leadRowRaw : undefined;
       if (!leadRow) {
         await drizzle
           .update(schema.cadenceRuns)

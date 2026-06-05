@@ -5,6 +5,7 @@ import { log, auditLogger, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, desc, lt, gte, inArray } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
+import { dashboardRateLimit } from "../middleware/api-rate-limits";
 import { computeDashboardStats } from "../lib/dashboard-stats";
 import { computeDashboardBenchmarks } from "../lib/dashboard-benchmarks";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
@@ -24,6 +25,7 @@ const router = Router();
 router.get(
   "/api/nav-counts",
   authenticateUser,
+  dashboardRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user.id;
@@ -146,6 +148,7 @@ router.get("/api/calls", authenticateUser, async (req: AuthenticatedRequest, res
 router.get(
   "/api/dashboard/stats",
   authenticateUser,
+  dashboardRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user.id;
@@ -310,6 +313,7 @@ router.get(
 router.get(
   "/api/dashboard/benchmarks",
   authenticateUser,
+  dashboardRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user.id;
@@ -362,6 +366,7 @@ router.get(
 router.get(
   "/api/appointments",
   authenticateUser,
+  dashboardRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const limitRaw = parseInt(req.query.limit as string);
@@ -403,6 +408,7 @@ router.get(
 router.get(
   "/api/dashboard/dossiers",
   authenticateUser,
+  dashboardRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const numbersRaw = req.query.numbers as string;
@@ -448,6 +454,7 @@ const APPOINTMENT_STATUSES = [
 router.post(
   "/api/appointments",
   authenticateUser,
+  dashboardRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { customer_name, service_type, date, time, phone_number, notes, agent_id, status } =
@@ -498,6 +505,7 @@ router.post(
 router.patch(
   "/api/appointments/:id",
   authenticateUser,
+  dashboardRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const allowed = [
@@ -577,6 +585,7 @@ router.patch(
 router.delete(
   "/api/appointments/:id",
   authenticateUser,
+  dashboardRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       await drizzle
@@ -620,6 +629,7 @@ function rowsToCsv(rows: Record<string, unknown>[], columns: string[]): string {
 router.get(
   "/api/export/:type.csv",
   authenticateUser,
+  dashboardRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const type = req.params.type;

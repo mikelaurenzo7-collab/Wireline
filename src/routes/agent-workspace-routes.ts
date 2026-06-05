@@ -12,6 +12,7 @@ import { and, desc, eq, gte, sql } from "drizzle-orm";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser, authenticateEventStream } from "../middleware/auth";
 import { claudeRateLimiter } from "../middleware/api-rate-limits";
+import { validateBody, workspaceMessageSchema, pdfUploadSchema } from "../lib/api-validation";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
@@ -104,16 +105,11 @@ router.post(
   // Per-user throttle (60/min) so a spammy operator can't run up model
   // cost — cheaper + safer than downgrading the model's intelligence.
   claudeRateLimiter,
+  validateBody(workspaceMessageSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const agentId = req.params.id;
-      const operatorMessage = String(req.body?.content || "").trim();
-      if (!operatorMessage) {
-        return res.status(400).json({ error: "Message content required" });
-      }
-      if (operatorMessage.length > 4000) {
-        return res.status(400).json({ error: "Message too long — keep under 4000 chars" });
-      }
+      const operatorMessage = req.body.content.trim();
 
       // Load agent + current config (the planner proposes changes against
       // the live values) + recent call context.
@@ -228,16 +224,11 @@ router.post(
   "/api/agents/:id/workspace/messages/stream",
   authenticateEventStream,
   claudeRateLimiter,
+  validateBody(workspaceMessageSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const agentId = req.params.id;
-      const operatorMessage = String(req.body?.content || "").trim();
-      if (!operatorMessage) {
-        return res.status(400).json({ error: "Message content required" });
-      }
-      if (operatorMessage.length > 4000) {
-        return res.status(400).json({ error: "Message too long" });
-      }
+      const operatorMessage = req.body.content.trim();
       if (!process.env.ANTHROPIC_API_KEY) {
         return res.status(503).json({ error: "LLM not configured" });
       }
@@ -381,16 +372,11 @@ router.post(
 router.post(
   "/api/agents/:id/workspace/files",
   authenticateUser,
+  validateBody(pdfUploadSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const agentId = req.params.id;
-      const { pdfBase64, fileName } = req.body ?? {};
-      if (!pdfBase64 || typeof pdfBase64 !== "string") {
-        return res.status(400).json({ error: "pdfBase64 required" });
-      }
-      if (pdfBase64.length > 40 * 1024 * 1024) {
-        return res.status(413).json({ error: "File exceeds 30MB. Split it up." });
-      }
+      const { pdfBase64, fileName } = req.body;
       // Magic-number sanity check — bail on obvious non-PDFs.
       try {
         const head = Buffer.from(pdfBase64.slice(0, 16), "base64").toString("utf8", 0, 5);

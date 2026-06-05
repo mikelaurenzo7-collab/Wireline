@@ -690,7 +690,7 @@ router.post(
           role: schema.agents.role,
         })
         .from(schema.agents)
-        .where(eq(schema.agents.id, call.agentId || ""))
+        .where(and(eq(schema.agents.id, call.agentId || ""), eq(schema.agents.userId, req.user.id)))
         .limit(1);
 
       const result = await claudeBrain.postCallAnalysis({
@@ -742,7 +742,9 @@ router.post("/coach", authenticateUser, async (req: AuthenticatedRequest, res: R
             role: schema.agents.role,
           })
           .from(schema.agents)
-          .where(eq(schema.agents.id, call.agentId || ""))
+          .where(
+            and(eq(schema.agents.id, call.agentId || ""), eq(schema.agents.userId, req.user.id)),
+          )
           .limit(1);
         if (a) {
           agentName = a.name;

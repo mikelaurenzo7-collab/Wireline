@@ -25,7 +25,8 @@ export default defineConfig(({ mode }) => {
       include: ["buffer"],
     },
     build: {
-      sourcemap: false,
+      // Hidden maps: debuggable prod stacks without exposing sources to browsers.
+      sourcemap: "hidden",
       // Vite defaults (chrome87 / es2020) make esbuild fail on lazy chunks that use
       // destructuring — e.g. OAuthComplete. Modern baseline matches our stack.
       target: "es2022",

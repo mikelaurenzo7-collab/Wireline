@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+/** Request body for POST /api/phone-numbers (snake_case API boundary). */
+export const PhoneNumberCreateRequestSchema = z.object({
+  phone_number: z.string().min(3).max(32),
+  vapi_number_id: z.string().max(120).optional(),
+});
+
 export const AgentSchema = z.object({
   id: z.string(),
   name: z.string(),

@@ -10,7 +10,7 @@ import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { CampaignCreateSchema, CampaignUpdateSchema } from "../lib/form-validators";
 import { computeOutcomeBreakdown, computeCallStats } from "../lib/campaign-analytics";
 import { validateBody } from "../lib/api-validation";
-import { claudeRateLimiter } from "../middleware/api-rate-limits";
+import { claudeRateLimiter, campaignWriteRateLimit } from "../middleware/api-rate-limits";
 
 const router = Router();
 
@@ -69,6 +69,7 @@ router.get("/api/campaigns", authenticateUser, async (req: AuthenticatedRequest,
 router.post(
   "/api/campaigns",
   authenticateUser,
+  campaignWriteRateLimit,
   validateBody(CampaignCreateSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -108,6 +109,7 @@ router.post(
 router.patch(
   "/api/campaigns/:id",
   authenticateUser,
+  campaignWriteRateLimit,
   validateBody(CampaignUpdateSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {

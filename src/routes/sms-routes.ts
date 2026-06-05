@@ -12,6 +12,8 @@ import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
+import { validateBody, smsReplySchema } from "../lib/api-validation";
+import { smsRateLimit } from "../middleware/api-rate-limits";
 import { sendTenantMessage } from "../lib/twilio-service";
 import { mapObjectToSnake } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -78,11 +80,12 @@ router.get(
 router.post(
   "/api/sms/threads/:id/reply",
   authenticateUser,
+  smsRateLimit,
+  validateBody(smsReplySchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const threadId = req.params.id;
-      const body = (req.body?.body as string | undefined)?.trim();
-      if (!body) return res.status(400).json({ error: "body is required" });
+      const body = req.body.body.trim();
 
       const [thread] = await drizzle
         .select({
@@ -120,6 +123,7 @@ router.post(
 router.post(
   "/api/sms/threads/:id/mark-read",
   authenticateUser,
+  smsRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       await drizzle

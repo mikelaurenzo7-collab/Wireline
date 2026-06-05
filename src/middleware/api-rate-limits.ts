@@ -274,6 +274,41 @@ export const fleetRateLimit = createRateLimiter({
   max: 120,
 });
 
+/** SMS send / mark-read — Twilio cost + abuse surface. */
+export const smsRateLimit = createRateLimiter({
+  bucket: "api:sms",
+  windowMs: 60 * 1000,
+  max: 60,
+});
+
+/** Dashboard reads, nav badges, CSV export. */
+export const dashboardRateLimit = createRateLimiter({
+  bucket: "api:dashboard",
+  windowMs: 60 * 1000,
+  max: 180,
+});
+
+/** Calendar sync — external API fan-out. */
+export const calendarRateLimit = createRateLimiter({
+  bucket: "api:calendar",
+  windowMs: 60 * 1000,
+  max: 30,
+});
+
+/** Agent CRUD + training mutations. */
+export const agentMutationRateLimit = createRateLimiter({
+  bucket: "api:agents-mutate",
+  windowMs: 60 * 1000,
+  max: 120,
+});
+
+/** Campaign create/update without Claude. */
+export const campaignWriteRateLimit = createRateLimiter({
+  bucket: "api:campaigns-write",
+  windowMs: 60 * 1000,
+  max: 60,
+});
+
 // ──────────────────────────────────────────────────────────────────────
 //  IP-based rate limiter — for unauthenticated/webhook endpoints where
 //  no req.user exists. Keys by IP address. Uses the same distributed

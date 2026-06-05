@@ -4,6 +4,7 @@ import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, gte, desc, asc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
+import { calendarRateLimit } from "../middleware/api-rate-limits";
 import { getErrorMessage } from "../lib/server-utils";
 import { syncGoogleCalendar } from "../services/google-calendar-sync";
 import { syncOutlookCalendar } from "../services/outlook-calendar-sync";
@@ -38,6 +39,7 @@ router.get(
 router.post(
   "/api/calendar/sync",
   authenticateUser,
+  calendarRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     const userId: string = req.user.id;
     try {

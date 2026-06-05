@@ -279,10 +279,11 @@ export const createWebhookSchema = z.object({
 });
 
 export const updateWebhookSchema = z.object({
+  name: z.string().min(1).max(120).optional(),
   url: urlSchema.optional(),
   events: z.array(z.string().min(1)).min(1).optional(),
-  secret: z.string().min(16).optional(),
-  isActive: z.boolean().optional(),
+  secret: z.union([z.string().min(16), z.literal(""), z.null()]).optional(),
+  active: z.boolean().optional(),
 });
 
 // ============================================================================
@@ -422,6 +423,82 @@ export const updateFleetTaskSchema = z.object({
   due_date: z.string().optional().nullable(),
   agent_id: z.string().optional().nullable(),
   resolution_notes: z.string().max(5000).optional(),
+});
+
+// ============================================================================
+// Tier-2 route schemas (SMS, carrier, email, director, workspace)
+// ============================================================================
+
+export const smsReplySchema = z.object({
+  body: z.string().min(1, "body is required").max(1600),
+});
+
+export const phoneNumberCreateSchema = z.object({
+  phone_number: z.string().min(3).max(32),
+  vapi_number_id: z.string().max(120).optional(),
+});
+
+export const phoneNumberPatchSchema = z
+  .object({
+    agent_id: z.string().max(120).optional().nullable(),
+    campaign_label: z.string().max(200).optional().nullable(),
+  })
+  .refine((data) => data.agent_id !== undefined || data.campaign_label !== undefined, {
+    message: "Nothing to update — pass agent_id or campaign_label.",
+  });
+
+export const emailThreadsReadStateSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(500),
+  read: z.boolean(),
+});
+
+export const emailInboxSyncSchema = z.object({
+  limit: z.number().int().min(1).max(500).optional(),
+  sinceIso: z.string().datetime().optional(),
+});
+
+export const directorMessageSchema = z
+  .object({
+    content: z.string().max(4000).optional(),
+    focusAgentId: z.string().max(120).optional(),
+    skipOperatorPersist: z.boolean().optional(),
+    approval: z.record(z.string(), z.unknown()).optional(),
+  })
+  .refine((data) => Boolean(data.content?.trim()) || data.approval, {
+    message: "Message content required",
+  });
+
+export const directorStreamMessageSchema = z.object({
+  content: z.string().min(1, "Message content required").max(4000),
+  focusAgentId: z.string().max(120).optional(),
+});
+
+export const directorExecuteSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("comms"),
+    action: z.object({ kind: z.string().min(1) }).passthrough(),
+    hasExpressWrittenConsent: z.boolean().optional(),
+  }),
+  z.object({
+    kind: z.literal("integration"),
+    job: z.object({ tool: z.string().min(1) }).passthrough(),
+  }),
+]);
+
+export const pdfUploadSchema = z.object({
+  pdfBase64: z
+    .string()
+    .min(1)
+    .max(40 * 1024 * 1024),
+  fileName: z.string().max(255).optional(),
+});
+
+export const workspaceMessageSchema = z.object({
+  content: z.string().min(1, "Message content required").max(4000),
+});
+
+export const directorChatModelPatchSchema = z.object({
+  selection: z.record(z.string(), z.unknown()),
 });
 
 // ============================================================================

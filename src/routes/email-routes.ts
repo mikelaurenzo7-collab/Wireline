@@ -4,6 +4,11 @@ import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc, asc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
+import {
+  validateBody,
+  emailThreadsReadStateSchema,
+  emailInboxSyncSchema,
+} from "../lib/api-validation";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
@@ -200,32 +205,19 @@ router.get(
 router.post(
   "/api/emails/threads/read-state",
   authenticateUser,
+  validateBody(emailThreadsReadStateSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { ids, read } = req.body as { ids?: unknown; read?: unknown };
-      if (!Array.isArray(ids) || ids.length === 0) {
-        return res.status(400).json({ error: "ids must be a non-empty array" });
-      }
-      if (typeof read !== "boolean") {
-        return res.status(400).json({ error: "read must be a boolean" });
-      }
-      const safeIds = ids.filter((v): v is string => typeof v === "string").slice(0, 500);
-      if (safeIds.length === 0) {
-        return res.status(400).json({ error: "ids must contain at least one string" });
-      }
-
+      const { ids, read } = req.body;
       const { inArray } = await import("drizzle-orm");
       await drizzle
         .update(schema.emailThreads)
         .set({ read })
         .where(
-          and(
-            inArray(schema.emailThreads.id, safeIds),
-            eq(schema.emailThreads.userId, req.user.id),
-          ),
+          and(inArray(schema.emailThreads.id, ids), eq(schema.emailThreads.userId, req.user.id)),
         );
 
-      res.json({ success: true, count: safeIds.length });
+      res.json({ success: true, count: ids.length });
     } catch (e: any) {
       log.error("Failed to update thread read state", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to update thread read state" });
@@ -247,37 +239,28 @@ router.post(
 router.post(
   "/api/emails/sync",
   authenticateUser,
+  validateBody(emailInboxSyncSchema),
   async (req: AuthenticatedRequest, res: Response) => {
-    const { limit, sinceIso } = (req.body as { limit?: number; sinceIso?: string }) || {};
+    const { limit, sinceIso } = req.body ?? {};
     try {
       const svc = new IntegrationService(req.user.id);
       const messages = await svc.fetchInboxMessages({ limit, sinceIso });
+      const rows = messages.map((m) => ({
+        userId: req.user.id,
+        threadId: m.threadId || m.messageId,
+        subject: m.subject,
+        customerEmail: m.from,
+        summary: m.snippet,
+        lastMessageAt: m.receivedAt,
+      }));
       let inserted = 0;
-      for (const m of messages) {
-        // Upsert by (userId, messageId) — first sync inserts, subsequent
-        // syncs no-op. The detailed thread/message UX is handled by the
-        // existing wireline_email_threads + wireline_email_messages
-        // tables that the legacy webhook already feeds.
-        try {
-          const threadId = m.threadId || m.messageId;
-          await drizzle
-            .insert(schema.emailThreads)
-            .values({
-              userId: req.user.id,
-              threadId,
-              subject: m.subject,
-              customerEmail: m.from,
-              summary: m.snippet,
-              lastMessageAt: m.receivedAt,
-            })
-            .onConflictDoNothing({ target: schema.emailThreads.threadId });
-          inserted++;
-        } catch (err: any) {
-          log.warn("Email sync upsert failed for one message", {
-            messageId: m.messageId,
-            error: err?.message,
-          });
-        }
+      if (rows.length > 0) {
+        const result = await drizzle
+          .insert(schema.emailThreads)
+          .values(rows)
+          .onConflictDoNothing({ target: schema.emailThreads.threadId })
+          .returning({ id: schema.emailThreads.id });
+        inserted = result.length;
       }
       res.json({
         ok: true,

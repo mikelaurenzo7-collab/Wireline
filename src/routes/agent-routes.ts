@@ -7,6 +7,7 @@ import * as schema from "../db/schema";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { validateBody, applyRoleSchema, agentManualEntrySchema } from "../lib/api-validation";
+import { agentMutationRateLimit } from "../middleware/api-rate-limits";
 import {
   getErrorMessage,
   sanitizeForAudit,
@@ -109,6 +110,7 @@ router.get("/api/agents/roles", (_req: Request, res: Response) => {
 router.post(
   "/api/agents/:id/apply-role",
   authenticateUser,
+  agentMutationRateLimit,
   validateBody(applyRoleSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -219,6 +221,7 @@ router.get(
 router.post(
   "/api/agents/:id/import",
   authenticateUser,
+  agentMutationRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const agentId = req.params.id;
@@ -361,6 +364,7 @@ router.get(
 router.post(
   "/api/agent-config/:id/manual",
   authenticateUser,
+  agentMutationRateLimit,
   validateBody(agentManualEntrySchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -479,6 +483,7 @@ router.delete(
 router.post(
   "/api/train/extract",
   authenticateUser,
+  agentMutationRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     const { message, agentId: rawAgentId } = req.body;
     const agentId = typeof rawAgentId === "string" && rawAgentId.trim() ? rawAgentId.trim() : "";
@@ -692,6 +697,7 @@ Respond ONLY in strict, valid JSON format (no markdown):
 router.post(
   "/api/train/save",
   authenticateUser,
+  agentMutationRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     const { extracted, agentId: rawAgentId } = req.body;
     const agentId = typeof rawAgentId === "string" && rawAgentId.trim() ? rawAgentId.trim() : "";
@@ -750,6 +756,7 @@ router.post(
 router.post(
   "/api/agents",
   authenticateUser,
+  agentMutationRateLimit,
   enforceTrialAgentCap,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -935,6 +942,7 @@ router.post(
 router.put(
   "/api/agents/:id",
   authenticateUser,
+  agentMutationRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       // Validate core fields using Zod schema
@@ -1078,6 +1086,7 @@ router.delete(
 router.post(
   "/api/agents/:id/optimize",
   authenticateUser,
+  agentMutationRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id } = req.params;
@@ -1343,6 +1352,7 @@ router.get(
 router.post(
   "/api/agents/:id/promote",
   authenticateUser,
+  agentMutationRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { lessonId } = req.body;
@@ -1447,6 +1457,7 @@ router.delete(
 router.post(
   "/api/knowledge-gaps/:lessonId/promote",
   authenticateUser,
+  agentMutationRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { customContent } = req.body;

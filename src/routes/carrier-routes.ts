@@ -4,6 +4,8 @@ import { log, fetchWithTimeout, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
+import { validateBody, phoneNumberPatchSchema } from "../lib/api-validation";
+import { PhoneNumberCreateRequestSchema } from "../../contracts/api-types";
 import { getErrorMessage } from "../lib/server-utils";
 import * as rateLimiters from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -48,6 +50,7 @@ router.post(
   "/api/phone-numbers",
   authenticateUser,
   rateLimiters.phoneNumberRateLimiter,
+  validateBody(PhoneNumberCreateRequestSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { phone_number, vapi_number_id } = req.body;
@@ -68,6 +71,7 @@ router.patch(
   "/api/phone-numbers/:id",
   authenticateUser,
   rateLimiters.phoneNumberRateLimiter,
+  validateBody(phoneNumberPatchSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { agent_id, campaign_label } = req.body;
