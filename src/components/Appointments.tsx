@@ -782,7 +782,7 @@ export default function AppointmentsView({ embedded = false }: { embedded?: bool
                         </p>
                       </motion.div>
                     ) : (
-                      <div className="divide-y divide-white/5">
+                      <div className="divide-y divide-black/6">
                         {completed.map((appt) => (
                           <AppointmentRow
                             key={appt.id}
@@ -946,7 +946,7 @@ function AppointmentRow({
                         onStatusChange(s);
                         setShowStatusMenu(false);
                       }}
-                      className="w-full h-auto justify-start rounded-none px-3 py-2 text-[10px] text-ink hover:bg-white/5"
+                      className="w-full h-auto justify-start rounded-none px-3 py-2 text-[10px] text-ink hover:bg-black/5"
                     >
                       <span className={cn("w-1.5 h-1.5 rounded-full", STATUS_META[s].dot)} />
                       {s}
