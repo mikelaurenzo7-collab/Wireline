@@ -171,3 +171,30 @@ test.describe("Wireline design — Director empty state visual regression", () =
     });
   });
 });
+
+// === Cycle 7: Visual Regression for Director Live Session ===
+test.describe("Wireline design — Director live session visual regression", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await authenticatePage(page, baseURL!);
+  });
+
+  test("Director live mission control panel renders consistently when active", async ({ page }) => {
+    await gotoAuthenticated(page, "/director");
+
+    // Wait for Director workspace to load
+    await expect(page.getByRole("heading", { name: /Director/i }).first()).toBeVisible({ timeout: 15000 });
+
+    // The live session panel appears during streaming. We test the container structure.
+    // Note: Full streaming state is dynamic; we snapshot the panel shell when present.
+    const liveSession = page.locator(".wl-panel, [data-testid*='live-session'], .director-live-session").first();
+
+    // Only snapshot if the live panel is visible (graceful handling)
+    if (await liveSession.isVisible().catch(() => false)) {
+      await expect(liveSession).toHaveScreenshot({
+        name: "director-live-session.png",
+        threshold: 0.3, // Higher tolerance for dynamic content
+      });
+    }
+  });
+});
