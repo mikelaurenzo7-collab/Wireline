@@ -1,0 +1,3 @@
+## 2025-06-05 - [Component Re-renders & Filter Optimizations]
+**Learning:** Found that `filter()` operations were running on every re-render in `CallLogs`, `DncManager`, and `CommandBar` even when underlying dependencies didn't change. Attempted to wrap with `useMemo`, but in `CommandBar`, defining an array inside a component and passing it to the dependency array of `useMemo` invalidates the memoization on every render.
+**Action:** When applying `useMemo` to array filtering logic, ensure that the array source itself is also memoized, moved outside the component, or correctly dependency tracked so it doesn't cause the very re-renders the optimization aims to prevent.

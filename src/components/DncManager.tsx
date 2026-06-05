@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { motion } from "motion/react";
 import {
   Shield,
@@ -104,10 +104,12 @@ export default function DncManager() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time fetch on mount
   }, []);
 
-  const filtered = entries.filter((e) => {
-    const q = search.toLowerCase();
-    return !q || (e.phone_raw || e.phone).includes(q) || (e.reason || "").toLowerCase().includes(q);
-  });
+  const filtered = useMemo(() => {
+    return entries.filter((e) => {
+      const q = search.toLowerCase();
+      return !q || (e.phone_raw || e.phone).includes(q) || (e.reason || "").toLowerCase().includes(q);
+    });
+  }, [entries, search]);
 
   const handleAdd = async () => {
     if (!addPhone.trim()) return;

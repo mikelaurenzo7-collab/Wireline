@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import { useState, useEffect, useCallback, KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useState, useEffect, useCallback, KeyboardEvent as ReactKeyboardEvent, useMemo } from "react";
 import {
   Search,
   Bot,
@@ -58,7 +58,7 @@ export default function CommandBar() {
   useBodyScrollLock(isOpen);
   const navigate = useNavigate();
 
-  const commands: CommandItem[] = [
+  const commands: CommandItem[] = useMemo(() => [
     // ── Navigation ─────────────────────────────────────────
     {
       id: "chat",
@@ -255,17 +255,19 @@ export default function CommandBar() {
       category: "Actions",
       action: () => navigate("/chat"),
     },
-  ];
+  ], [navigate]);
 
-  const filteredCommands = commands.filter((c) => {
-    if (c.ownerOnly && user?.is_owner !== true) return false;
-    const q = query.toLowerCase();
-    return (
-      c.label.toLowerCase().includes(q) ||
-      c.description.toLowerCase().includes(q) ||
-      c.category.toLowerCase().includes(q)
-    );
-  });
+  const filteredCommands = useMemo(() => {
+    return commands.filter((c) => {
+      if (c.ownerOnly && user?.is_owner !== true) return false;
+      const q = query.toLowerCase();
+      return (
+        c.label.toLowerCase().includes(q) ||
+        c.description.toLowerCase().includes(q) ||
+        c.category.toLowerCase().includes(q)
+      );
+    });
+  }, [commands, query, user?.is_owner]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
