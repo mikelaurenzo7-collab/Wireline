@@ -4,7 +4,7 @@ import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc, asc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
-import { getErrorMessage } from "../lib/server-utils";
+import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { IntegrationService } from "../lib/integrations";
@@ -145,7 +145,7 @@ router.get(
         .orderBy(desc(schema.emailThreads.lastMessageAt))
         .limit(100);
 
-      res.json({ threads: threads || [] });
+      res.json({ threads: mapObjectToSnake(threads || []) });
     } catch (e: any) {
       log.error("Failed to load email threads", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to load email threads" });
@@ -185,7 +185,7 @@ router.get(
           }),
         );
 
-      res.json({ messages: messages || [] });
+      res.json({ messages: mapObjectToSnake(messages || []) });
     } catch (e: any) {
       log.error("Failed to load email messages", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to load email messages" });

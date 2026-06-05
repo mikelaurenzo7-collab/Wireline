@@ -13,6 +13,7 @@ import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { sendTenantMessage } from "../lib/twilio-service";
+import { mapObjectToSnake } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
@@ -32,7 +33,7 @@ router.get(
         .where(eq(schema.smsThreads.userId, req.user.id))
         .orderBy(desc(schema.smsThreads.lastMessageAt))
         .limit(200);
-      res.json({ threads: threads || [] });
+      res.json({ threads: mapObjectToSnake(threads || []) });
     } catch (e: any) {
       log.warn("/api/sms/threads failed (migration may be pending)", { error: e?.message });
       res.json({ threads: [] });
@@ -62,7 +63,7 @@ router.get(
         .from(schema.smsMessages)
         .where(eq(schema.smsMessages.threadId, threadId))
         .orderBy(schema.smsMessages.createdAt);
-      res.json({ messages: messages || [] });
+      res.json({ messages: mapObjectToSnake(messages || []) });
     } catch (e: any) {
       log.warn("/api/sms/threads/:id/messages failed", { error: e?.message });
       res.json({ messages: [] });
