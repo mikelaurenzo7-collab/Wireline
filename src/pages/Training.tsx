@@ -1,6 +1,7 @@
 /**
  * Training — agent knowledge, voice, pronunciation, simulator, and flow.
  */
+import { useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { GraduationCap, Bot, Mail } from "lucide-react";
@@ -24,6 +25,20 @@ export default function Training() {
 
   const selectedAgentId = searchParams.get("agent") || (agents[0]?.id ?? "");
   const activeSubTab = resolveAppPageSubTabId(TRAINING_ROUTE, searchParams.get("tab"));
+
+  const setSubTab = useCallback(
+    (id: string) => {
+      setSearchParams(
+        (prev) => {
+          if (id === TRAINING_ROUTE.defaultTab) prev.delete("tab");
+          else prev.set("tab", id);
+          return prev;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   const selectAgent = (id: string) => {
     setSearchParams((prev) => {

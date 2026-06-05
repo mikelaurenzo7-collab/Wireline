@@ -1,6 +1,7 @@
 import { Keyboard } from "lucide-react";
 import ThemeToggle from "../ThemeToggle";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import AppChromeSubTabs from "./AppChromeSubTabs";
 import { cn } from "../../lib/utils";
 import { WL_APP_CLASSES } from "../../lib/wireline-director-design";
 
@@ -35,8 +36,12 @@ export default function DesktopPageContext({
     >
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0 flex-1">
-          {eyebrow && <p className={cn(WL_APP_CLASSES.proEyebrow, "text-brand/70 mb-1")}>{eyebrow}</p>}
-          <h1 className={cn(WL_APP_CLASSES.proTitle, "text-[1.5rem] sm:text-[1.625rem] text-balance")}>
+          {eyebrow && (
+            <p className={cn(WL_APP_CLASSES.proEyebrow, "text-brand/70 mb-1")}>{eyebrow}</p>
+          )}
+          <h1
+            className={cn(WL_APP_CLASSES.proTitle, "text-[1.5rem] sm:text-[1.625rem] text-balance")}
+          >
             {title}
           </h1>
           {subtitle && (
@@ -67,6 +72,7 @@ export default function DesktopPageContext({
           <ThemeToggle variant="default" compact className="rounded-md" />
         </div>
       </div>
+      <AppChromeSubTabs className="mt-3 mb-0 hidden lg:block" />
       <div className="mt-3 aurora-divider" aria-hidden="true" />
     </header>
   );

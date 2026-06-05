@@ -123,6 +123,38 @@ function getPageContext(
           subtitle: ROUTE_SUBTITLES["/agents"],
         };
       }
+      if (pathname === "/training") {
+        const trainingTab = params.get("tab");
+        const trainingMeta: Record<string, { title: string; subtitle: string }> = {
+          voices: { title: "Voices", subtitle: "Voice library and cloning" },
+          pronunciation: { title: "Pronunciation", subtitle: "Industry terms and brand names" },
+          simulator: { title: "Simulator", subtitle: "Test calls before customers dial in" },
+          flow: { title: "Flow", subtitle: "Conversation stages and transitions" },
+        };
+        if (trainingTab && trainingMeta[trainingTab]) {
+          return { eyebrow: section ?? "Fleet", ...trainingMeta[trainingTab] };
+        }
+        return {
+          eyebrow: section ?? "Fleet",
+          title: "Training",
+          subtitle: ROUTE_SUBTITLES["/training"],
+        };
+      }
+      if (pathname === "/insights") {
+        const insightsTab = params.get("tab");
+        const insightsMeta: Record<string, { title: string; subtitle: string }> = {
+          quality: { title: "Quality", subtitle: "Scorecards, failures, and latency" },
+          revenue: { title: "Revenue", subtitle: "Attribution, spend, and funnel economics" },
+        };
+        if (insightsTab && insightsMeta[insightsTab]) {
+          return { eyebrow: section ?? "Insights", ...insightsMeta[insightsTab] };
+        }
+        return {
+          eyebrow: section ?? "Insights",
+          title: "Insights",
+          subtitle: ROUTE_SUBTITLES["/insights"],
+        };
+      }
       return {
         eyebrow: section,
         title: exactTitle,
@@ -343,68 +375,67 @@ export default function AppShell() {
         <TrialBanner />
 
         {showPageContext && (
-          <DesktopPageContext
-            eyebrow={pageCtx.eyebrow}
-            title={pageCtx.title}
-            subtitle={pageCtx.subtitle}
-            onShowShortcuts={() => setShowShortcuts(true)}
-          />
-        )}
+          <div className="app-page-chrome sticky top-0 z-20 shrink-0 bg-paper/94 backdrop-blur-md border-b border-black/[0.06]">
+            <DesktopPageContext
+              eyebrow={pageCtx.eyebrow}
+              title={pageCtx.title}
+              subtitle={pageCtx.subtitle}
+              onShowShortcuts={() => setShowShortcuts(true)}
+            />
 
-        {/* Mobile/tablet route context — title strip + tools (theme moved off sidebar). */}
-        {showPageContext && (
-          <div
-            className={cn(
-              "lg:hidden shrink-0 px-3 sm:px-4 py-2.5",
-              WL_APP_CLASSES.mobileContextBar,
-            )}
-          >
+            {/* Mobile/tablet route context — title strip + tools (theme moved off sidebar). */}
             <div
               className={cn(
-                "flex items-start justify-between gap-2",
-                WL_APP_CLASSES.mobileContextAccent,
+                "lg:hidden shrink-0 px-3 sm:px-4 py-2.5",
+                WL_APP_CLASSES.mobileContextBar,
               )}
             >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  {pageCtx.eyebrow && (
-                    <>
-                      <span className="wl-label text-brand/65 shrink-0">{pageCtx.eyebrow}</span>
-                      <span aria-hidden="true" className="text-brand/25 text-[10px]">
-                        ·
-                      </span>
-                    </>
-                  )}
-                  <p className="font-display italic text-sm leading-none text-foreground tracking-tight truncate">
-                    {pageCtx.title}
-                  </p>
-                </div>
-                {pageCtx.subtitle && (
-                  <p className="mt-1 text-[11px] leading-snug text-muted line-clamp-2 text-pretty">
-                    {pageCtx.subtitle}
-                  </p>
+              <div
+                className={cn(
+                  "flex items-start justify-between gap-2",
+                  WL_APP_CLASSES.mobileContextAccent,
                 )}
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {pageCtx.eyebrow && (
+                      <>
+                        <span className="wl-label text-brand/65 shrink-0">{pageCtx.eyebrow}</span>
+                        <span aria-hidden="true" className="text-brand/25 text-[10px]">
+                          ·
+                        </span>
+                      </>
+                    )}
+                    <p className="font-display italic text-sm leading-none text-foreground tracking-tight truncate">
+                      {pageCtx.title}
+                    </p>
+                  </div>
+                  {pageCtx.subtitle && (
+                    <p className="mt-1 text-[11px] leading-snug text-muted line-clamp-2 text-pretty">
+                      {pageCtx.subtitle}
+                    </p>
+                  )}
+                </div>
+                <div className={cn(WL_APP_CLASSES.chromeToolbar, "shrink-0")}>
+                  <ShadButton
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    disableAnimations
+                    onClick={() => setShowShortcuts(true)}
+                    className="h-8 w-8 rounded-md text-muted hover:text-ink"
+                    aria-label="Keyboard shortcuts"
+                    title="Shortcuts (?)"
+                  >
+                    <Keyboard className="w-4 h-4" strokeWidth={1.75} />
+                  </ShadButton>
+                  <ThemeToggle variant="default" compact className="rounded-md" />
+                </div>
               </div>
-              <div className={cn(WL_APP_CLASSES.chromeToolbar, "shrink-0")}>
-                <ShadButton
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  disableAnimations
-                  onClick={() => setShowShortcuts(true)}
-                  className="h-8 w-8 rounded-md text-muted hover:text-ink"
-                  aria-label="Keyboard shortcuts"
-                  title="Shortcuts (?)"
-                >
-                  <Keyboard className="w-4 h-4" strokeWidth={1.75} />
-                </ShadButton>
-                <ThemeToggle variant="default" compact className="rounded-md" />
-              </div>
+              <AppChromeSubTabs className="pt-2.5 pb-0 lg:hidden" />
             </div>
           </div>
         )}
-
-        {showPageContext && <AppChromeSubTabs className="pb-1 lg:pb-0" />}
 
         <div className="client-console__stage-wrap flex-1 relative flex flex-col min-h-0">
           <div className="client-console__stage workspace-stage flex-1 overflow-x-hidden overflow-y-auto md:overflow-hidden relative z-10 min-h-0 px-3 pb-2 md:px-3 md:pb-3 lg:px-4 lg:pb-4">
