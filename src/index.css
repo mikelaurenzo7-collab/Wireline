@@ -1061,6 +1061,26 @@ html, body, .marketing-surface, .app-surface {
   border-radius: 0.5rem;
 }
 
+/* Kanban board — horizontal scroll when columns exceed viewport width */
+.wl-pipeline-board {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(107, 43, 153, 0.35) transparent;
+}
+.wl-pipeline-board::-webkit-scrollbar {
+  height: 8px;
+}
+.wl-pipeline-board::-webkit-scrollbar-thumb {
+  background: rgba(107, 43, 153, 0.35);
+  border-radius: 999px;
+}
+
 .wl-pipeline-card-grip {
   opacity: 0.35;
   transition: opacity 0.15s ease;
