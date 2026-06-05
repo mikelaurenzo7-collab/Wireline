@@ -53,8 +53,10 @@ export interface ResolvedDirectorLlm {
 
 export function resolveDirectorLlm(input: {
   selection?: DirectorChatModelSelection | null;
-  /** Fleet auto-deep (ignored when user pinned sonnet/openrouter). */
-  autoDeep?: boolean;
+  /** Fleet auto Opus (ignored when user pinned sonnet/openrouter). */
+  autoOpus?: boolean;
+  /** Adaptive thinking — only for explicit deep-analysis phrasing. */
+  deepThink?: boolean;
   /** Business plans, GTM docs, competitive analysis — larger output budget. */
   longDeliverable?: boolean;
   claudeSonnet: string;
@@ -70,7 +72,7 @@ export function resolveDirectorLlm(input: {
       provider: "openrouter",
       model: selection.modelId,
       deepThink: false,
-      maxTokens: resolveDirectorMaxTokens({ deep: false, longDeliverable, openRouter: true }),
+      maxTokens: resolveDirectorMaxTokens({ opus: false, longDeliverable, openRouter: true }),
       modelKind: "custom",
       modelLabel: labelFor(selection.modelId),
       openRouterModelId: selection.modelId,
@@ -83,7 +85,7 @@ export function resolveDirectorLlm(input: {
       provider: "wireline",
       model: input.claudeSonnet,
       deepThink: false,
-      maxTokens: resolveDirectorMaxTokens({ deep: false, longDeliverable }),
+      maxTokens: resolveDirectorMaxTokens({ opus: false, longDeliverable }),
       modelKind: "sonnet",
       modelLabel: "Sonnet",
     };
@@ -93,19 +95,20 @@ export function resolveDirectorLlm(input: {
       provider: "wireline",
       model: input.claudeOpus,
       deepThink: true,
-      maxTokens: resolveDirectorMaxTokens({ deep: true, longDeliverable }),
+      maxTokens: resolveDirectorMaxTokens({ opus: true, longDeliverable }),
       modelKind: "opus",
       modelLabel: "Opus",
     };
   }
 
-  const deep = input.autoDeep === true;
+  const opus = input.autoOpus === true;
+  const deepThink = input.deepThink === true && opus;
   return {
     provider: "wireline",
-    model: deep ? input.claudeOpus : input.claudeSonnet,
-    deepThink: deep,
-    maxTokens: resolveDirectorMaxTokens({ deep, longDeliverable }),
-    modelKind: deep ? "opus" : "sonnet",
-    modelLabel: deep ? "Opus" : "Sonnet",
+    model: opus ? input.claudeOpus : input.claudeSonnet,
+    deepThink,
+    maxTokens: resolveDirectorMaxTokens({ opus, longDeliverable }),
+    modelKind: opus ? "opus" : "sonnet",
+    modelLabel: opus ? "Opus" : "Sonnet",
   };
 }

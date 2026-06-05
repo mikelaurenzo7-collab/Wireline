@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { isCreativeIntent } from "./director-logo-tools";
 import {
   buildDirectorDeliverableGuidance,
   wantsCodeDeliverable,
@@ -16,6 +17,8 @@ describe("director deliverables", () => {
   it("routes explicit logo requests to creative path", () => {
     expect(wantsLogoCreativePath("Generate 3 logo concepts for my brand")).toBe(true);
     expect(wantsWebsiteDeliverable("Generate 3 logo concepts for my brand")).toBe(false);
+    expect(isCreativeIntent("Generate 3 logo concepts for my brand")).toBe(true);
+    expect(isCreativeIntent("Design a new website for my HVAC business")).toBe(false);
   });
 
   it("detects code deliverables", () => {

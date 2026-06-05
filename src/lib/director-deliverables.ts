@@ -44,9 +44,9 @@ export function wantsLongDeliverable(message: string): boolean {
 }
 
 const UNIVERSAL_BLOCK = `## Universal deliverables (always in scope)
-You can answer ANY reasonable operator request inside \`reply\`. Deliverables live in this thread as markdown — the operator copies or exports; Wireline does not auto-save code or HTML unless they approve a creative/integration export.
+You can answer ANY reasonable operator request inside \`reply\`. Deliverables live in this thread as markdown — the operator copies from chat; large plans, code, and website prototypes may also be saved as a downloadable .md file automatically.
 
-**Default:** Ship a complete, usable artifact in one turn. Do not refuse technical, creative, or strategic work. If scope is huge, deliver a strong v1 plus a short "phase 2" list.
+**Default:** Ship a complete, usable artifact in one turn. Do not refuse technical, creative, or strategic work. If scope is huge, deliver a strong v1 plus a short "phase 2" list. Long replies may also appear as a downloadable markdown file in the artifacts panel.
 
 **Code & engineering:** Use fenced blocks with language tags (\`typescript\`, \`tsx\`, \`javascript\`, \`html\`, \`css\`, \`sql\`, \`python\`, \`bash\`, \`json\`). Prefer complete, copy-paste-ready snippets. For multi-file work, label each block with a comment like \`// src/routes/example.ts\`. Match Wireline conventions when relevant: Zod validation, Express handlers, React 19 + Tailwind 4, Drizzle, structured logging — never \`console.log\`.
 

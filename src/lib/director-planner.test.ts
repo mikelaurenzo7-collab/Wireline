@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { wantsDeepAnalysis } from "./director-deep-analysis";
+import { wantsDeepAnalysis, wantsOpusModel } from "./director-deep-analysis";
 import { normalizeDirectorPlan, type DirectorFleetAgent } from "./director-planner";
 
 const FLEET: DirectorFleetAgent[] = [
@@ -13,7 +13,7 @@ describe("wantsDeepAnalysis — Opus escalation heuristic", () => {
     expect(wantsDeepAnalysis("Can you analyze everything and build a plan?")).toBe(true);
     expect(wantsDeepAnalysis("do a deep dive on last month")).toBe(true);
     expect(wantsDeepAnalysis("give me a full review")).toBe(true);
-    expect(wantsDeepAnalysis("help me strategize for Q3")).toBe(true);
+    expect(wantsOpusModel("help me strategize for Q3")).toBe(true);
   });
 
   it("stays on Sonnet for ordinary turns", () => {
@@ -22,15 +22,21 @@ describe("wantsDeepAnalysis — Opus escalation heuristic", () => {
     expect(wantsDeepAnalysis("turn on SMS for Ava")).toBe(false);
   });
 
-  it("escalates for long deliverables and competitor research", () => {
-    expect(wantsDeepAnalysis("Draft a one-page business plan for my company")).toBe(true);
-    expect(wantsDeepAnalysis("Research competitors and pricing in my market")).toBe(true);
-    expect(wantsDeepAnalysis("Write an SOP for after-hours call handling")).toBe(true);
+  it("uses Opus without adaptive thinking for heavy deliverables", () => {
+    expect(wantsOpusModel("Draft a one-page business plan for my company")).toBe(true);
+    expect(wantsOpusModel("Research competitors and pricing in my market")).toBe(true);
+    expect(wantsDeepAnalysis("Draft a one-page business plan for my company")).toBe(false);
   });
 
-  it("escalates for website design and code requests", () => {
-    expect(wantsDeepAnalysis("Design a new website for my dental practice")).toBe(true);
-    expect(wantsDeepAnalysis("Write a TypeScript API route with Zod validation")).toBe(true);
+  it("keeps website and routine code on Sonnet for latency", () => {
+    expect(wantsOpusModel("Design a new website for my dental practice")).toBe(false);
+    expect(wantsDeepAnalysis("Design a new website for my dental practice")).toBe(false);
+    expect(wantsOpusModel("Write a TypeScript API route with Zod validation")).toBe(false);
+  });
+
+  it("uses adaptive thinking only for explicit fleet audits", () => {
+    expect(wantsDeepAnalysis("Audit my whole fleet please")).toBe(true);
+    expect(wantsOpusModel("Audit my whole fleet please")).toBe(true);
   });
 });
 

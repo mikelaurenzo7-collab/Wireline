@@ -42,12 +42,22 @@ export interface DirectorProposalsMeta {
   integrationJobs: DirectorIntegrationJob[];
 }
 
+export interface DirectorDeliverableArtifactMeta {
+  id: string;
+  name: string;
+  artifactType: string;
+  mimeType: string;
+  sizeBytes: number;
+  downloadUrl?: string;
+}
+
 export interface DirectorMessageMetadata {
   suggestions?: DirectorSuggestionMeta[];
   approvals?: DirectorApprovalMeta[];
   previews?: DirectorPreviewMeta[];
   clarifyingQuestions?: string[];
   researchSources?: { title?: string; uri?: string }[];
+  deliverableArtifact?: DirectorDeliverableArtifactMeta;
   proposals?: DirectorProposalsMeta;
   model?: "sonnet" | "opus";
   modelLabel?: string;
@@ -69,6 +79,7 @@ export function packDirectorMetadata(
     (meta.previews?.length ?? 0) > 0 ||
     (meta.clarifyingQuestions?.length ?? 0) > 0 ||
     (meta.researchSources?.length ?? 0) > 0 ||
+    Boolean(meta.deliverableArtifact?.id) ||
     (meta.proposals &&
       (meta.proposals.changes.length > 0 ||
         meta.proposals.toolToggles.length > 0 ||
@@ -126,6 +137,10 @@ export function buildDirectorMetadataFromTurn(
     researchSources: Array.isArray(data.researchSources)
       ? (data.researchSources as { title?: string; uri?: string }[])
       : undefined,
+    deliverableArtifact:
+      data.deliverableArtifact && typeof data.deliverableArtifact === "object"
+        ? (data.deliverableArtifact as DirectorDeliverableArtifactMeta)
+        : undefined,
     proposals: hasProposals ? { changes, toolToggles, actions, integrationJobs } : undefined,
     model: (data.model as "sonnet" | "opus") || undefined,
     modelLabel: typeof data.modelLabel === "string" ? data.modelLabel : undefined,

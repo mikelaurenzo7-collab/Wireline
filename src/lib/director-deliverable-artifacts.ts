@@ -1,0 +1,120 @@
+/**
+ * Auto-persist large Director replies (plans, code, website prototypes) as
+ * downloadable markdown artifacts — complements in-chat fenced blocks.
+ */
+import { log } from "./server-context";
+import { getErrorMessage } from "./server-utils";
+import { storeDirectorArtifact } from "./director-artifacts";
+import {
+  wantsCodeDeliverable,
+  wantsLongDeliverable,
+  wantsWebsiteDeliverable,
+} from "./director-deliverables";
+
+export const DELIVERABLE_ARTIFACT_MIN_CHARS = 2_400;
+export const DELIVERABLE_ARTIFACT_TYPE = "markdown-deliverable";
+
+export interface DirectorDeliverableArtifactMeta {
+  id: string;
+  name: string;
+  artifactType: string;
+  mimeType: string;
+  sizeBytes: number;
+  downloadUrl?: string;
+}
+
+function hasSubstantialCodeFence(reply: string): boolean {
+  const match = reply.match(/```[\w-]*\n([\s\S]+?)```/);
+  return Boolean(match && match[1].trim().length >= 400);
+}
+
+function slugifyDeliverableName(operatorMessage: string): string {
+  const base = operatorMessage
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+  const stamp = new Date().toISOString().slice(0, 10);
+  if (wantsWebsiteDeliverable(operatorMessage)) {
+    return `website-${base || "design"}-${stamp}.md`;
+  }
+  if (wantsCodeDeliverable(operatorMessage)) {
+    return `code-${base || "snippet"}-${stamp}.md`;
+  }
+  if (wantsLongDeliverable(operatorMessage)) {
+    return `deliverable-${base || "doc"}-${stamp}.md`;
+  }
+  return `director-${base || "export"}-${stamp}.md`;
+}
+
+/** Whether this reply should be saved as a downloadable markdown file. */
+export function shouldPersistDeliverableArtifact(operatorMessage: string, reply: string): boolean {
+  const trimmed = reply.trim();
+  if (trimmed.length < DELIVERABLE_ARTIFACT_MIN_CHARS) return false;
+  if (/trouble responding|can't respond right now|LLM isn't configured/i.test(trimmed)) {
+    return false;
+  }
+  if (
+    wantsLongDeliverable(operatorMessage) ||
+    wantsWebsiteDeliverable(operatorMessage) ||
+    wantsCodeDeliverable(operatorMessage)
+  ) {
+    return true;
+  }
+  if (hasSubstantialCodeFence(trimmed) && trimmed.length >= 1_800) return true;
+  if ((trimmed.match(/^##\s/gm) || []).length >= 3 && trimmed.length >= 2_000) return true;
+  return trimmed.length >= 5_000;
+}
+
+function buildMarkdownFile(operatorMessage: string, reply: string): string {
+  const header = `# Director deliverable
+
+**Request:** ${operatorMessage.trim().slice(0, 500)}
+
+**Exported:** ${new Date().toISOString()}
+
+---
+
+`;
+  return `${header}${reply.trim()}\n`;
+}
+
+/**
+ * Store reply as markdown artifact. Returns null on skip or failure (non-fatal).
+ */
+export async function persistDirectorDeliverableArtifact(input: {
+  userId: string;
+  operatorMessage: string;
+  reply: string;
+}): Promise<DirectorDeliverableArtifactMeta | null> {
+  if (!shouldPersistDeliverableArtifact(input.operatorMessage, input.reply)) return null;
+  try {
+    const body = buildMarkdownFile(input.operatorMessage, input.reply);
+    const data = Buffer.from(body, "utf8");
+    const saved = await storeDirectorArtifact({
+      userId: input.userId,
+      toolName: "director_deliverable",
+      artifactType: DELIVERABLE_ARTIFACT_TYPE,
+      name: slugifyDeliverableName(input.operatorMessage),
+      mimeType: "text/markdown; charset=utf-8",
+      data,
+      metadata: {
+        operatorPreview: input.operatorMessage.trim().slice(0, 120),
+        charCount: input.reply.length,
+      },
+    });
+    return {
+      id: saved.id,
+      name: saved.name,
+      artifactType: saved.artifactType,
+      mimeType: saved.mimeType,
+      sizeBytes: saved.sizeBytes,
+    };
+  } catch (e) {
+    log.warn("director deliverable artifact persist failed", {
+      userId: input.userId,
+      error: getErrorMessage(e),
+    });
+    return null;
+  }
+}

@@ -38,7 +38,7 @@ import {
 } from "./director-model-selection";
 import { labelForOpenRouterModel } from "./openrouter-models";
 import { runDirectorTurnLlm } from "./director-stream-runner";
-import { wantsDeepAnalysis, wantsLongDeliverable } from "./director-deep-analysis";
+import { wantsDeepAnalysis, wantsLongDeliverable, wantsOpusModel } from "./director-deep-analysis";
 import { buildDirectorDeliverableGuidance } from "./director-deliverables";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
@@ -264,18 +264,20 @@ export async function planDirectorTurnResilient(
   input: DirectorTurnInput,
 ): Promise<DirectorTurnResult> {
   const selection = input.modelSelection ?? DEFAULT_DIRECTOR_MODEL_SELECTION;
-  const tryDeep =
+  const tryOpusRetry =
     selection.provider === "wireline" &&
     !input.focusAgentId?.trim() &&
     selection.tier === "auto" &&
-    (input.forceDeep === true || wantsDeepAnalysis(input.operatorMessage));
+    (input.forceDeep === true ||
+      wantsOpusModel(input.operatorMessage) ||
+      wantsDeepAnalysis(input.operatorMessage));
   const tryOpusFallback =
     selection.provider === "wireline" && selection.tier === "opus" && !input.shallowOnly;
   try {
     return await planDirectorTurn(input);
   } catch (e) {
-    if (tryDeep) {
-      log.warn("director deep turn failed, retrying without deep", {
+    if (tryOpusRetry) {
+      log.warn("director opus turn failed, retrying on sonnet", {
         userId: input.userId,
         error: getErrorMessage(e),
       });
@@ -323,7 +325,11 @@ export async function buildDirectorStreamContext(
 ): Promise<DirectorStreamContext> {
   const business = input.business ?? (await loadBusinessContext(input.userId));
   const focusId = input.focusAgentId?.trim();
-  const autoDeepEligible =
+  const autoOpusEligible =
+    !input.shallowOnly &&
+    !focusId &&
+    (input.forceDeep === true || wantsOpusModel(input.operatorMessage));
+  const deepThinkEligible =
     !input.shallowOnly &&
     !focusId &&
     (input.forceDeep === true || wantsDeepAnalysis(input.operatorMessage));
@@ -331,14 +337,15 @@ export async function buildDirectorStreamContext(
 
   const llm = resolveDirectorLlm({
     selection: input.modelSelection,
-    autoDeep: autoDeepEligible,
+    autoOpus: autoOpusEligible,
+    deepThink: deepThinkEligible,
     longDeliverable,
     claudeSonnet: CLAUDE_MODELS.SONNET,
     claudeOpus: CLAUDE_MODELS.OPUS,
     modelLabelForOpenRouter: labelForOpenRouterModel,
   });
 
-  const deep = !input.shallowOnly && !focusId && llm.modelKind === "opus";
+  const deep = !input.shallowOnly && !focusId && (llm.deepThink || llm.modelKind === "opus");
 
   if (focusId) {
     const ctx = await loadCoachContext(input.userId, focusId);
@@ -363,7 +370,8 @@ export async function buildDirectorStreamContext(
           input.modelSelection?.provider === "openrouter"
             ? input.modelSelection
             : { provider: "wireline", tier: "sonnet" },
-        autoDeep: false,
+        autoOpus: false,
+        deepThink: false,
         claudeSonnet: CLAUDE_MODELS.SONNET,
         claudeOpus: CLAUDE_MODELS.OPUS,
         modelLabelForOpenRouter: labelForOpenRouterModel,

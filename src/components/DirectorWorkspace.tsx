@@ -63,6 +63,8 @@ import {
   type IntegrationLiveAction,
 } from "../lib/integration-live-scripts";
 import { DirectorMessageBody } from "./director/DirectorMessageBody";
+import { DirectorDeliverableDownload } from "./director/DirectorDeliverableDownload";
+import type { DirectorDeliverableArtifactMeta } from "../lib/director-message-metadata";
 import { DirectorCapabilityCatalog } from "./director/DirectorCapabilityCatalog";
 import { SignalOrbFrame } from "./ui/SignalOrbFrame";
 import { DirectorComposerAccessory } from "./director/DirectorComposerAccessory";
@@ -137,6 +139,7 @@ interface DirectorMessage {
   previews?: DirectorPreview[];
   clarifyingQuestions?: string[];
   researchSources?: { title?: string; uri?: string }[];
+  deliverableArtifact?: DirectorDeliverableArtifactMeta;
   reasoning?: string;
   thinkingDurationMs?: number;
   model?: "sonnet" | "opus";
@@ -174,6 +177,7 @@ const SCENE_ICONS: Record<Exclude<DirectorMessageScene, "general">, React.Elemen
   comms: MessageCircle,
   fleet: Bot,
   document: FileText,
+  code: FileText,
 };
 
 export default function DirectorWorkspace({
@@ -260,6 +264,10 @@ export default function DirectorWorkspace({
         researchSources: Array.isArray(data.researchSources)
           ? (data.researchSources as { title?: string; uri?: string }[])
           : undefined,
+        deliverableArtifact:
+          data.deliverableArtifact && typeof data.deliverableArtifact === "object"
+            ? (data.deliverableArtifact as DirectorDeliverableArtifactMeta)
+            : undefined,
         reasoning: (data.reasoning as string) || undefined,
         thinkingDurationMs: (data.thinkingDurationMs as number) || undefined,
         model: (data.model as "sonnet" | "opus") || undefined,
@@ -355,6 +363,13 @@ export default function DirectorWorkspace({
         setIntegrationLiveActions(buildLiveActionsFromProposals({ integrationJobs, actions }));
       }
       appendDirectorReply(data);
+      if (Array.isArray(data.artifacts)) {
+        setArtifacts((prev) => {
+          const incoming = data.artifacts as DirectorArtifact[];
+          const ids = new Set(incoming.map((a) => a.id));
+          return [...incoming, ...prev.filter((a) => !ids.has(a.id))];
+        });
+      }
       setIsSending(false);
       streamReset();
       pendingSendRef.current = null;
@@ -1208,6 +1223,9 @@ export default function DirectorWorkspace({
                         {m.role === "director" ? (
                           <>
                             <DirectorMessageBody content={m.content} />
+                            {m.deliverableArtifact?.downloadUrl && (
+                              <DirectorDeliverableDownload artifact={m.deliverableArtifact} />
+                            )}
                             {/trouble responding|can't respond right now/i.test(m.content) &&
                               (() => {
                                 const idx = messages.findIndex((msg) => msg.id === m.id);

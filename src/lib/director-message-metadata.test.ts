@@ -34,4 +34,19 @@ describe("director message metadata", () => {
   it("returns null pack when empty", () => {
     expect(packDirectorMetadata({})).toBeNull();
   });
+
+  it("packs deliverable artifact download metadata", () => {
+    const packed = packDirectorMetadata({
+      deliverableArtifact: {
+        id: "42",
+        name: "website-hvac-2026-06-05.md",
+        artifactType: "markdown-deliverable",
+        mimeType: "text/markdown",
+        sizeBytes: 4096,
+        downloadUrl: "/api/director/artifacts?id=42",
+      },
+    });
+    expect(packed).toBeTruthy();
+    expect(parseDirectorMetadata(packed).deliverableArtifact?.name).toContain(".md");
+  });
 });

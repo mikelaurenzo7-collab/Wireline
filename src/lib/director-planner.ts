@@ -32,9 +32,10 @@ import {
   resolveDirectorMaxTokens,
   wantsDeepAnalysis,
   wantsLongDeliverable,
+  wantsOpusModel,
 } from "./director-deep-analysis";
 import { buildDirectorDeliverableGuidance } from "./director-deliverables";
-export { wantsDeepAnalysis, wantsLongDeliverable } from "./director-deep-analysis";
+export { wantsDeepAnalysis, wantsLongDeliverable, wantsOpusModel } from "./director-deep-analysis";
 import {
   appendResearchToUserPrompt,
   fetchDirectorResearchContext,
@@ -134,10 +135,12 @@ export function normalizeDirectorPlan(
  * model layer is unavailable — the caller decides the fallback copy.
  */
 export async function planDirector(input: PlanDirectorInput): Promise<DirectorPlan> {
-  const deep =
+  const deepThink =
     !input.shallowOnly && (input.forceDeep === true || wantsDeepAnalysis(input.operatorMessage));
+  const useOpus =
+    !input.shallowOnly && (input.forceDeep === true || wantsOpusModel(input.operatorMessage));
   const longDeliverable = wantsLongDeliverable(input.operatorMessage);
-  const model = deep ? CLAUDE_MODELS.OPUS : CLAUDE_MODELS.SONNET;
+  const model = useOpus ? CLAUDE_MODELS.OPUS : CLAUDE_MODELS.SONNET;
   const connections = await loadTenantIntegrationConnections(input.userId);
   const integrationPrompt = formatDirectorIntegrationPrompt(connections);
   const research = await fetchDirectorResearchContext({
@@ -149,14 +152,14 @@ export async function planDirector(input: PlanDirectorInput): Promise<DirectorPl
     thinking,
     thinkingDurationMs,
   } = await runStructuredWithThinking<RawDirectorReply>({
-    system: buildSystemPrompt(input, deep, integrationPrompt),
+    system: buildSystemPrompt(input, deepThink || useOpus, integrationPrompt),
     user: buildUserContent(input, research?.block),
     tool: DIRECTOR_TOOL,
     model,
-    deepThink: deep,
-    maxTokens: resolveDirectorMaxTokens({ deep, longDeliverable }),
+    deepThink,
+    maxTokens: resolveDirectorMaxTokens({ opus: useOpus, longDeliverable }),
   });
-  const plan = normalizeDirectorPlan(raw, input.fleet, deep ? "opus" : "sonnet");
+  const plan = normalizeDirectorPlan(raw, input.fleet, useOpus ? "opus" : "sonnet");
   return {
     ...plan,
     reasoning: thinking,

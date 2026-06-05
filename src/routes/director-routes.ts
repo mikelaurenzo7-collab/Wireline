@@ -64,6 +64,8 @@ import {
   listDirectorArtifactsSafe,
   loadDirectorMessages,
 } from "../lib/director-store";
+import { persistDirectorDeliverableArtifact } from "../lib/director-deliverable-artifacts";
+import type { DirectorFeatureFlags } from "../lib/director-feature-flags";
 
 const router = express.Router();
 const directorArtifactDownloadLimiter = createIpRateLimiter({
@@ -175,6 +177,34 @@ interface DirectorToolExecutionResult {
     success: boolean;
     latencyMs: number;
     costUsd: number;
+  };
+}
+
+async function attachDeliverableArtifactToTurn(
+  userId: string,
+  operatorMessage: string,
+  reply: string,
+  featureFlags: DirectorFeatureFlags,
+  turnData: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  if (!featureFlags.artifactsPanel || !operatorMessage.trim() || !reply.trim()) {
+    return turnData;
+  }
+  const saved = await persistDirectorDeliverableArtifact({
+    userId,
+    operatorMessage,
+    reply,
+  });
+  if (!saved) return turnData;
+  const deliverableArtifact = {
+    ...saved,
+    downloadUrl: buildSignedDownloadUrl("/api/director/artifacts", saved.id, userId),
+  };
+  const existingArtifacts = Array.isArray(turnData.artifacts) ? turnData.artifacts : [];
+  return {
+    ...turnData,
+    deliverableArtifact,
+    artifacts: [deliverableArtifact, ...existingArtifacts],
   };
 }
 
@@ -409,6 +439,7 @@ router.get(
             coachAgentId: meta.coachAgentId,
             coachAgentName: meta.coachAgentName,
             mode: meta.mode,
+            deliverableArtifact: meta.deliverableArtifact,
           };
         }),
       });
@@ -629,36 +660,46 @@ router.post(
         }
       }
 
+      const turnPayload = await attachDeliverableArtifactToTurn(
+        req.user.id,
+        operatorMessage,
+        reply,
+        featureFlags,
+        {
+          reply,
+          suggestions,
+          approvals,
+          previews,
+          clarifyingQuestions,
+          changes,
+          toolToggles,
+          actions,
+          integrationJobs,
+          model,
+          modelLabel,
+          modelProvider,
+          modelId,
+          thinkingDurationMs,
+          focusAgentId: coachAgentId,
+          focusAgentName: coachAgentName,
+          mode,
+          researchSources,
+          artifacts,
+        },
+      );
+
       await insertDirectorMessage({
         userId: req.user.id,
         role: "director",
         content: reply,
         reasoning: reasoning || null,
-        metadata: packDirectorMetadata(
-          buildDirectorMetadataFromTurn({
-            reply,
-            suggestions,
-            approvals,
-            previews,
-            clarifyingQuestions,
-            changes,
-            toolToggles,
-            actions,
-            integrationJobs,
-            model,
-            modelLabel,
-            modelProvider,
-            modelId,
-            thinkingDurationMs,
-            focusAgentId: coachAgentId,
-            focusAgentName: coachAgentName,
-            mode,
-            researchSources,
-          }),
-        ),
+        metadata: packDirectorMetadata(buildDirectorMetadataFromTurn(turnPayload)),
       });
 
-      if (artifacts.length === 0) {
+      const turnArtifacts = Array.isArray(turnPayload.artifacts) ? turnPayload.artifacts : [];
+      if (turnArtifacts.length > 0) {
+        artifacts = turnArtifacts;
+      } else if (artifacts.length === 0) {
         const { artifacts: latest } = await listDirectorArtifactsSafe(req.user.id, 40);
         artifacts = latest.map((a) => withSignedUrl(req.user.id, a));
       }
@@ -686,6 +727,7 @@ router.post(
         reasoning,
         thinkingDurationMs,
         researchSources,
+        deliverableArtifact: turnPayload.deliverableArtifact,
       });
     } catch (e) {
       log.error("director POST failed", { error: getErrorMessage(e) });
@@ -837,7 +879,7 @@ router.post(
 
         const normalized = streamCtx.normalize((result || {}) as Record<string, unknown>);
         const reply = normalized.reply || "";
-        const donePayload = {
+        let donePayload: Record<string, unknown> = {
           reply,
           suggestions: normalized.suggestions,
           changes: normalized.changes,
@@ -855,6 +897,14 @@ router.post(
           thinkingDurationMs,
           researchSources: streamCtx.researchSources,
         };
+
+        donePayload = await attachDeliverableArtifactToTurn(
+          req.user.id,
+          operatorMessage,
+          reply,
+          featureFlags,
+          donePayload,
+        );
 
         await insertDirectorMessage({
           userId: req.user.id,
@@ -882,7 +932,14 @@ router.post(
             thinking: turn.reasoning ?? "",
             durationMs: turn.thinkingDurationMs ?? 0,
           });
-          const donePayload = directorTurnToStreamDone(turn);
+          let donePayload: Record<string, unknown> = directorTurnToStreamDone(turn);
+          donePayload = await attachDeliverableArtifactToTurn(
+            req.user.id,
+            operatorMessage,
+            turn.reply,
+            featureFlags,
+            donePayload,
+          );
           await insertDirectorMessage({
             userId: req.user.id,
             role: "director",
