@@ -6,6 +6,7 @@
  * day-range picker, tab groups, and PageShell tab wiring.
  */
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   TrendingUp,
   Layers,
@@ -17,7 +18,6 @@ import {
   Star,
   Megaphone,
   Target,
-  BarChart3,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import CsvExportButton from "../CsvExportButton";
@@ -26,9 +26,9 @@ import PageShell from "../PageShell";
 import WidgetBoundary from "../WidgetBoundary";
 import ClientRouteViewport from "../layout/ClientRouteViewport";
 import ClientToolbar from "../layout/ClientToolbar";
-import ClientSubTabs from "../layout/ClientSubTabs";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { OPS_CHANNEL_TOOLBAR, OPS_INSIGHTS_GROUPS } from "../../lib/wireline-ops-design";
+import { resolveAppPageSubTabId, resolveAppPageSubTabRoute } from "../../lib/page-sub-tabs";
 
 import FunnelView from "./FunnelView";
 import AttributionView from "./AttributionView";
@@ -42,17 +42,17 @@ import QualityView from "./QualityView";
 
 const DAY_OPTIONS = [7, 14, 30, 60, 90] as const;
 
-const INSIGHT_GROUP_TABS = [
-  { id: "performance", label: "Performance", icon: BarChart3 },
-  { id: "quality", label: "Quality", icon: Star },
-  { id: "revenue", label: "Revenue", icon: Receipt },
-] as const;
+type InsightGroupId = "performance" | "quality" | "revenue";
 
-type InsightGroupId = (typeof INSIGHT_GROUP_TABS)[number]["id"];
+const INSIGHTS_ROUTE = resolveAppPageSubTabRoute("/insights")!;
 
 export default function InsightsView() {
   const [days, setDays] = useState(30);
-  const [activeGroup, setActiveGroup] = useState<InsightGroupId>("performance");
+  const [searchParams] = useSearchParams();
+  const activeGroup = resolveAppPageSubTabId(
+    INSIGHTS_ROUTE,
+    searchParams.get("tab"),
+  ) as InsightGroupId;
 
   const wrap = (label: string, node: React.ReactNode) => (
     <WidgetBoundary label={label}>
@@ -160,14 +160,6 @@ export default function InsightsView() {
             <CsvExportButton type="calls" label={OPS_CHANNEL_TOOLBAR.insights.export} />
           </>
         }
-      />
-
-      <ClientSubTabs
-        tabs={[...INSIGHT_GROUP_TABS]}
-        activeId={activeGroup}
-        onChange={(id) => setActiveGroup(id as InsightGroupId)}
-        aria-label="Insights categories"
-        layoutIdPrefix="insights-group"
       />
 
       <PageShell

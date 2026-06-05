@@ -3298,6 +3298,7 @@ html, body, .marketing-surface, .app-surface {
 .wl-ops-pulse-strip {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
   gap: 0.5rem;
   padding: 0.65rem 0.75rem 0;
 }
@@ -3310,6 +3311,10 @@ html, body, .marketing-surface, .app-surface {
 
 .wl-ops-metric {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 4.25rem;
   padding: 0.65rem 0.75rem 0.7rem 0.85rem;
   border-radius: 0.5rem;
   border: 1px solid color-mix(in srgb, var(--color-brand) 10%, transparent);
@@ -3338,10 +3343,12 @@ html, body, .marketing-surface, .app-surface {
   display: block;
   font-size: 0.5625rem;
   font-weight: 700;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: color-mix(in srgb, var(--color-brand) 72%, var(--color-ink));
   margin-bottom: 0.2rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .wl-ops-metric-value {

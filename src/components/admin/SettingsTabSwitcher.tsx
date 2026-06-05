@@ -46,7 +46,7 @@ const TAB_GROUPS: { tabs: TabDef[] }[] = [
   },
 ];
 
-export default function SettingsTabSwitcher() {
+export default function SettingsTabSwitcher({ className }: { className?: string }) {
   const location = useLocation();
 
   const getActiveTab = (): AdminTab => {
@@ -72,7 +72,10 @@ export default function SettingsTabSwitcher() {
 
   return (
     <div
-      className="shrink-0 flex items-center justify-start gap-1 overflow-x-auto scrollbar-hide mb-2 md:mb-3"
+      className={cn(
+        "shrink-0 flex items-center justify-start gap-1 overflow-x-auto scrollbar-hide mb-2 md:mb-3",
+        className,
+      )}
       role="tablist"
       aria-label="Settings sub-navigation"
     >

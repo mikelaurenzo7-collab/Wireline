@@ -11,10 +11,10 @@ import { OpsPulseStrip } from "../components/CommandCenter/OpsPulseStrip";
 import { OpsIntelligenceRail } from "../components/CommandCenter/OpsIntelligenceRail";
 import PageTransition from "../components/layout/PageTransition";
 import ClientRouteViewport from "../components/layout/ClientRouteViewport";
-import ClientSubTabs from "../components/layout/ClientSubTabs";
+import ClientToolbar from "../components/layout/ClientToolbar";
 import { clsx } from "clsx";
 import { motion } from "motion/react";
-import { Radio, Zap, Globe, Activity, ListTodo } from "lucide-react";
+import { Zap, Globe, Activity } from "lucide-react";
 import { ShadButton } from "../components/ui/shadcn/ShadButton";
 import { WL_OPS_CLASSES, OPS_SENTIMENT_COLORS, OPS_COPY } from "../lib/wireline-ops-design";
 
@@ -30,13 +30,7 @@ type LiveCall = {
   thought?: string;
 };
 
-const OPS_TABS = [
-  { id: "floor", label: "Live floor", icon: Radio },
-  { id: "intel", label: "Actions", icon: ListTodo },
-  { id: "analytics", label: "Analytics", icon: Globe },
-] as const;
-
-type OpsTabId = (typeof OPS_TABS)[number]["id"];
+type OpsTabId = "floor" | "intel" | "analytics";
 
 type ActionItem = {
   id: string;
@@ -103,17 +97,10 @@ type TaskPayload = {
 
 export default function LiveOps() {
   const { user } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
   const activeTab: OpsTabId =
     tabParam === "intel" || tabParam === "analytics" || tabParam === "floor" ? tabParam : "floor";
-
-  const setActiveTab = (id: string) => {
-    const next = new URLSearchParams(searchParams);
-    if (id === "floor") next.delete("tab");
-    else next.set("tab", id);
-    setSearchParams(next, { replace: true });
-  };
 
   const [calls, setCalls] = useState<LiveCall[]>([]);
   const [agents, setAgents] = useState<FloorAgent[]>([]);
@@ -392,8 +379,13 @@ export default function LiveOps() {
 
   return (
     <PageTransition>
-      <ClientRouteViewport scroll>
-        <div className={clsx("max-w-[1600px] mx-auto pb-6 w-full", WL_OPS_CLASSES.canvas)}>
+      <ClientRouteViewport>
+        <div
+          className={clsx(
+            "flex flex-col flex-1 min-h-0 h-full max-w-[1600px] mx-auto w-full",
+            WL_OPS_CLASSES.canvas,
+          )}
+        >
           <OpsPulseStrip
             liveCalls={calls.length}
             pendingActions={pendingActions}
@@ -402,38 +394,34 @@ export default function LiveOps() {
             loading={loading || presenceLoading}
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start lg:items-stretch px-2 sm:px-3 pt-2 pb-1 lg:flex-1 lg:min-h-0">
-            {/* Left Pane (Main Operations) */}
-            <div className="lg:col-span-8 xl:col-span-9 space-y-4 lg:flex lg:flex-col lg:min-h-0">
-              <div className="flex items-center justify-between gap-2">
-                <ClientSubTabs
-                  tabs={[...OPS_TABS]}
-                  activeId={activeTab}
-                  onChange={setActiveTab}
-                  aria-label="Live Ops sections"
-                  className="mb-0 md:mb-0 flex-1 min-w-0"
-                />
-                <ShadButton
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  disableAnimations
-                  onClick={refresh}
-                  disabled={isRefreshing || loading}
-                  className="touch-press shrink-0 w-9 rounded-md text-muted hover:text-ink wl-panel disabled:cursor-not-allowed"
-                  aria-label="Refresh"
-                  title="Refresh"
-                >
-                  <RefreshCw className={clsx("w-4 h-4", isRefreshing && "animate-spin")} />
-                </ShadButton>
-              </div>
+          <ClientToolbar
+            className="shrink-0 px-2 sm:px-3"
+            actions={
+              <ShadButton
+                type="button"
+                variant="outline"
+                size="icon"
+                disableAnimations
+                onClick={refresh}
+                disabled={isRefreshing || loading}
+                className="touch-press shrink-0 w-9 rounded-md text-muted hover:text-ink wl-panel disabled:cursor-not-allowed"
+                aria-label="Refresh"
+                title="Refresh"
+              >
+                <RefreshCw className={clsx("w-4 h-4", isRefreshing && "animate-spin")} />
+              </ShadButton>
+            }
+          />
 
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch px-2 sm:px-3 pt-1 pb-3 flex-1 min-h-0 overflow-hidden">
+            {/* Left Pane (Main Operations) */}
+            <div className="lg:col-span-8 xl:col-span-9 flex flex-col min-h-0 gap-3 overflow-hidden">
               {activeTab === "floor" && (
-                <section className="space-y-3 pt-1 lg:flex-1 lg:flex lg:flex-col lg:min-h-0">
+                <section className="flex-1 min-h-0 flex flex-col overflow-hidden">
                   <div
                     className={clsx(
                       WL_OPS_CLASSES.floorFrame,
-                      "lg:flex-1 lg:flex lg:flex-col lg:min-h-0",
+                      "flex-1 min-h-0 flex flex-col overflow-hidden",
                     )}
                   >
                     <LiveFloorPanel calls={calls} agents={agents} loading={presenceLoading} />
@@ -442,15 +430,20 @@ export default function LiveOps() {
               )}
 
               {activeTab === "intel" && (
-                <section className="space-y-2 pt-1">
-                  <div className={clsx(WL_OPS_CLASSES.floorFrame, "min-h-[320px] flex flex-col")}>
+                <section className="flex-1 min-h-0 flex flex-col overflow-hidden">
+                  <div
+                    className={clsx(
+                      WL_OPS_CLASSES.floorFrame,
+                      "flex-1 min-h-0 flex flex-col overflow-hidden",
+                    )}
+                  >
                     <ActionFeed actions={actions} onRefresh={refresh} />
                   </div>
                 </section>
               )}
 
               {activeTab === "analytics" && (
-                <section className="space-y-4 pt-1">
+                <section className="flex-1 min-h-0 overflow-y-auto scroll-viewport scroll-pb-safe space-y-4">
                   <span className="app-section-title block">{OPS_COPY.analyticsSection}</span>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 stagger-children">
                     {/* Analytics: Sentiment */}

@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import ClientRouteViewport from "./ClientRouteViewport";
-import SettingsTabSwitcher from "../admin/SettingsTabSwitcher";
 
 type AdminHubViewportProps = {
   children: ReactNode;
@@ -19,7 +18,6 @@ type AdminHubViewportProps = {
 export default function AdminHubViewport({ children, scroll, className }: AdminHubViewportProps) {
   return (
     <ClientRouteViewport scroll={scroll} className={className}>
-      <SettingsTabSwitcher />
       {scroll ? (
         <div className="route-scroll-body">{children}</div>
       ) : (

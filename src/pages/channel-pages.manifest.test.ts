@@ -23,10 +23,10 @@ describe("channel page manifests", () => {
     expect(sms).toContain("<SmsThreads embedded");
   });
 
-  it("PhonePage keeps internal Call History / Outbound / Appointments sub-tabs", () => {
+  it("PhonePage uses app chrome tab routing (not in-page ClientSubTabs)", () => {
     const phone = readFileSync(join(import.meta.dirname, "PhonePage.tsx"), "utf8");
-    expect(phone).toContain("ClientSubTabs");
-    expect(phone).toContain("Call History");
-    expect(phone).toContain('layoutIdPrefix="phone-section"');
+    expect(phone).not.toContain("ClientSubTabs");
+    expect(phone).toContain("resolveAppPageSubTabId");
+    expect(phone).toContain("CallLogs embedded");
   });
 });

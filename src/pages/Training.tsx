@@ -3,53 +3,31 @@
  */
 import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  GraduationCap,
-  Bot,
-  Mail,
-  Database,
-  Mic,
-  BookOpen,
-  PlayCircle,
-  Workflow,
-} from "lucide-react";
+import { GraduationCap, Bot, Mail } from "lucide-react";
 import AgentTraining from "../components/AgentTraining";
 import { useAgents } from "../contexts/AgentsContext";
 import ClientRouteViewport from "../components/layout/ClientRouteViewport";
 import ClientRouteLoading from "../components/layout/ClientRouteLoading";
-import ClientSubTabs from "../components/layout/ClientSubTabs";
 import ClientToolbar from "../components/layout/ClientToolbar";
+import { resolveAppPageSubTabId, resolveAppPageSubTabRoute } from "../lib/page-sub-tabs";
 import { EmptyState } from "../components/ui/EmptyState";
 import { RoleBadge } from "../components/fleet/helpers";
 import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR, WL_OPS_CLASSES } from "../lib/wireline-ops-design";
 import { cn } from "../lib/utils";
 import { ShadButton } from "../components/ui/shadcn/ShadButton";
 
-const SUB_TABS = [
-  { id: "database", label: "Knowledge", icon: Database },
-  { id: "voices", label: "Voices", icon: Mic },
-  { id: "pronunciation", label: "Pronunciation", icon: BookOpen },
-  { id: "simulator", label: "Simulator", icon: PlayCircle },
-  { id: "flow", label: "Flow", icon: Workflow },
-] as const;
+const TRAINING_ROUTE = resolveAppPageSubTabRoute("/training")!;
 
 export default function Training() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { agents, loading, degraded, refresh } = useAgents();
 
   const selectedAgentId = searchParams.get("agent") || (agents[0]?.id ?? "");
-  const activeSubTab = searchParams.get("tab") || "database";
+  const activeSubTab = resolveAppPageSubTabId(TRAINING_ROUTE, searchParams.get("tab"));
 
   const selectAgent = (id: string) => {
     setSearchParams((prev) => {
       prev.set("agent", id);
-      return prev;
-    });
-  };
-
-  const setSubTab = (tab: string) => {
-    setSearchParams((prev) => {
-      prev.set("tab", tab);
       return prev;
     });
   };
@@ -182,8 +160,8 @@ export default function Training() {
         </aside>
 
         <main className="flex-1 min-w-0 min-h-0 flex flex-col wl-panel-elevated overflow-hidden relative">
-          <header className="shrink-0 border-b border-black/8 glass-1 px-3 sm:px-4 pt-3 pb-2 lg:pt-2">
-            <div className="lg:hidden flex items-center gap-2 mb-2 min-w-0">
+          <header className="shrink-0 border-b border-black/8 glass-1 px-3 sm:px-4 py-2.5 lg:py-2">
+            <div className="lg:hidden flex items-center gap-2 min-w-0">
               <span className="wl-orbit" data-active="true">
                 <span className="w-8 h-8 rounded-full bg-gradient-to-br from-brand/15 to-brand/8 flex items-center justify-center shrink-0">
                   <GraduationCap className="w-4 h-4 text-brand" />
@@ -196,13 +174,6 @@ export default function Training() {
                 </h1>
               </div>
             </div>
-            <ClientSubTabs
-              tabs={[...SUB_TABS]}
-              activeId={activeSubTab}
-              onChange={setSubTab}
-              aria-label="Training modules"
-              className="mb-0"
-            />
           </header>
 
           <div className="flex-1 min-h-0 scroll-viewport">

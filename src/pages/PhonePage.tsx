@@ -1,64 +1,24 @@
 /**
-
  * PhonePage — voice channel: call history, outbound dialer, and appointments.
-
+ * Section tabs live in AppShell chrome (AppChromeSubTabs).
  */
-
 import { useSearchParams } from "react-router-dom";
-
-import { PhoneOutgoing, History, Calendar } from "lucide-react";
-
 import { AnimatePresence, motion } from "motion/react";
-
 import CallLogs from "../components/CallLogs";
-
 import OutboundDialer from "../components/OutboundDialer";
-
 import Appointments from "../components/Appointments";
-
 import ClientRouteViewport from "../components/layout/ClientRouteViewport";
-import ClientSubTabs from "../components/layout/ClientSubTabs";
+import { resolveAppPageSubTabId, resolveAppPageSubTabRoute } from "../lib/page-sub-tabs";
 
-type PhoneTab = "logs" | "outbound" | "appointments";
-
-const TABS = [
-  { id: "logs" as const, label: "Call History", icon: History },
-
-  { id: "outbound" as const, label: "Outbound", icon: PhoneOutgoing },
-
-  { id: "appointments" as const, label: "Appointments", icon: Calendar },
-];
+const PHONE_ROUTE = resolveAppPageSubTabRoute("/phone")!;
 
 export default function PhonePage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const tabParam = searchParams.get("tab");
-
-  const activeTab: PhoneTab =
-    tabParam === "outbound" || tabParam === "appointments" || tabParam === "logs"
-      ? tabParam
-      : "logs";
-
-  const setTab = (tab: PhoneTab) => {
-    setSearchParams((prev) => {
-      if (tab === "logs") prev.delete("tab");
-      else prev.set("tab", tab);
-
-      return prev;
-    });
-  };
+  const [searchParams] = useSearchParams();
+  const activeTab = resolveAppPageSubTabId(PHONE_ROUTE, searchParams.get("tab"));
 
   return (
     <ClientRouteViewport>
-      <ClientSubTabs
-        tabs={TABS}
-        activeId={activeTab}
-        onChange={(id) => setTab(id as PhoneTab)}
-        aria-label="Phone sections"
-        layoutIdPrefix="phone-section"
-      />
-
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -66,12 +26,10 @@ export default function PhonePage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.16 }}
-            className="h-full min-h-0"
+            className="flex-1 min-h-0 flex flex-col overflow-hidden"
           >
             {activeTab === "logs" && <CallLogs embedded />}
-
             {activeTab === "outbound" && <OutboundDialer embedded />}
-
             {activeTab === "appointments" && <Appointments embedded />}
           </motion.div>
         </AnimatePresence>

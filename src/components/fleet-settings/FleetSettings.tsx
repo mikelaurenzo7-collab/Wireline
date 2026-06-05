@@ -5,16 +5,15 @@
  * is tracked separately; this component intentionally treats the rows as
  * any[] until those contracts land. */
 import { useState, useEffect, useRef } from "react";
-import { Shield, LayoutGrid } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { authFetch, safeJson } from "../../lib/api";
 import { AGENTS_CHANGED_EVENT } from "../../contexts/AgentsContext";
 import ConfirmModal from "../ConfirmModal";
 import { useToast } from "../../contexts/ToastContext";
 import AgentTemplates from "../AgentTemplates";
 import ClientRouteViewport from "../layout/ClientRouteViewport";
-import ClientSubTabs from "../layout/ClientSubTabs";
 import ClientToolbar from "../layout/ClientToolbar";
+import { resolveAppPageSubTabId, resolveAppPageSubTabRoute } from "../../lib/page-sub-tabs";
 import { OPS_CHANNEL_TOOLBAR } from "../../lib/wireline-ops-design";
 import {
   AGENT_TOOL_CATALOG,
@@ -41,10 +40,15 @@ import AgentConfigPanel from "./AgentConfigPanel";
 // can be removed once every callsite has been migrated.
 export { PREMIUM_VOICES, DEFAULT_VOICE_BY_GENDER, AGENT_ROLES };
 
+const AGENTS_ROUTE = resolveAppPageSubTabRoute("/agents")!;
+
 export default function FleetSettings() {
   const { success: toastSuccess, error: toastError, warning: toastWarning } = useToast();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"templates" | "fleet">("templates");
+  const [searchParams] = useSearchParams();
+  const activeTab = resolveAppPageSubTabId(AGENTS_ROUTE, searchParams.get("tab")) as
+    | "templates"
+    | "fleet";
   const [agents, setAgents] = useState<any[]>([]);
   const [subscription, setSubscription] = useState<{ status: string; max_agents: number | null }>({
     status: "active",
@@ -372,17 +376,6 @@ export default function FleetSettings() {
             </span>
           }
         />
-        <ClientSubTabs
-          tabs={[
-            { id: "templates", label: "Templates", icon: LayoutGrid },
-            { id: "fleet", label: "My Fleet", icon: Shield },
-          ]}
-          activeId={activeTab}
-          onChange={(id) => setActiveTab(id as "templates" | "fleet")}
-          aria-label="Agent sections"
-          className="justify-start"
-        />
-
         {/* Tab content — render BOTH panels and toggle visibility with
             `hidden`. Switching the ternary previously unmounted the
             inactive panel, wiping form state, scroll positions, and

@@ -8,6 +8,7 @@ import AuroraBackdrop from "./AuroraBackdrop";
 import TopBar from "./TopBar";
 import Sidebar from "./Sidebar";
 import DesktopPageContext from "./DesktopPageContext";
+import AppChromeSubTabs from "./AppChromeSubTabs";
 import ThemeToggle from "../ThemeToggle";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { Keyboard } from "lucide-react";
@@ -108,12 +109,20 @@ function getPageContext(
         if (adminTab && tabMeta[adminTab]) return { eyebrow: "Admin", ...tabMeta[adminTab] };
         return { eyebrow: "Admin", title: "Settings", subtitle: ROUTE_SUBTITLES["/admin"] };
       }
-      if (pathname === "/agents")
+      if (pathname === "/agents") {
+        const agentsTab = params.get("tab");
+        if (agentsTab === "fleet")
+          return {
+            eyebrow: section ?? "Fleet",
+            title: "My Fleet",
+            subtitle: "Configure and manage deployed agents",
+          };
         return {
           eyebrow: section ?? "Fleet",
           title: "Agents",
           subtitle: ROUTE_SUBTITLES["/agents"],
         };
+      }
       return {
         eyebrow: section,
         title: exactTitle,
@@ -389,6 +398,8 @@ export default function AppShell() {
             </div>
           </div>
         )}
+
+        {showPageContext && <AppChromeSubTabs className="pb-1 lg:pb-0" />}
 
         <div className="client-console__stage-wrap flex-1 relative flex flex-col min-h-0">
           <div className="client-console__stage workspace-stage flex-1 overflow-x-hidden overflow-y-auto md:overflow-hidden relative z-10 min-h-0 px-3 pb-2 md:px-3 md:pb-3 lg:px-4 lg:pb-4">

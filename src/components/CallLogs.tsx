@@ -156,14 +156,14 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
       subtitle={embedded ? undefined : "Recorded calls and agent responses"}
       actions={embedded ? undefined : actions}
     >
-      <div className="h-full grid grid-cols-12 gap-3">
+      <div className="h-full min-h-0 grid grid-cols-12 gap-3 overflow-hidden">
         {/* List pane — hidden on mobile when a call is selected so the
             detail pane gets the full viewport. The detail's "Back" affordance
             (rendered below in the empty-detail branch + inside CallDetail)
             clears selectedCall to bring the list back. */}
         <div
           className={cn(
-            "col-span-12 md:col-span-6 lg:col-span-5 xl:col-span-4 h-full",
+            "col-span-12 md:col-span-6 lg:col-span-5 xl:col-span-4 h-full min-h-0 flex flex-col overflow-hidden",
             selectedCall && "hidden md:block",
           )}
         >
@@ -319,7 +319,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
             list takes the full viewport. */}
         <div
           className={cn(
-            "col-span-12 md:col-span-6 lg:col-span-7 xl:col-span-8 h-full",
+            "col-span-12 md:col-span-6 lg:col-span-7 xl:col-span-8 h-full min-h-0 flex flex-col overflow-hidden",
             !selectedCall && "hidden md:block",
           )}
         >
