@@ -211,7 +211,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
               className="flex-1 min-h-[12rem]"
             />
           ) : calls.length === 0 ? (
-            <div className="flex-1 min-h-[12rem] flex items-center justify-center">
+            <div className="flex-1 min-h-[12rem] flex items-center justify-center w-full min-w-0 px-2 sm:px-4">
               <EmptyState
                 icon={Radio}
                 eyebrow={OPS_CHANNEL_EMPTY.floor.eyebrow}
@@ -220,7 +220,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                 actions={[...OPS_CHANNEL_EMPTY.floor.actions]}
                 density="compact"
                 withHalo={false}
-                className="py-4"
+                className="py-4 w-full max-w-full"
               />
             </div>
           ) : (

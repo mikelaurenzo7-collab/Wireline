@@ -445,7 +445,7 @@ export default function LiveOps() {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch px-2 sm:px-3 pt-1 pb-3 flex-1 min-h-0 overflow-hidden">
             {/* Left Pane (Main Operations) */}
-            <div className="lg:col-span-8 xl:col-span-9 flex flex-col min-h-0 gap-3 overflow-hidden">
+            <div className="lg:col-span-8 xl:col-span-9 flex flex-col min-h-0 min-w-0 gap-3 overflow-hidden">
               {activeTab === "floor" && (
                 <section className="flex-1 min-h-0 flex flex-col overflow-hidden">
                   <div
@@ -474,7 +474,6 @@ export default function LiveOps() {
 
               {activeTab === "analytics" && (
                 <section className="flex-1 min-h-0 overflow-y-auto scroll-viewport scroll-pb-safe space-y-4">
-                  <span className="app-section-title block">{OPS_COPY.analyticsSection}</span>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 stagger-children">
                     {/* Analytics: Sentiment */}
                     <div

@@ -4,6 +4,7 @@ import { Menu, X, ArrowRight } from "lucide-react";
 import WirelineMark from "../WirelineMark";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import { useAuth } from "../../contexts/AuthContext";
 
 export type PublicNavActive = "signin" | "signup" | "home";
 
@@ -33,7 +34,10 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const { user, loading: authLoading } = useAuth();
   const isAuth = active === "signin" || active === "signup";
+  const signedIn = !!user && !authLoading;
+  const homeTo = signedIn ? "/ops" : "/";
 
   useEffect(() => {
     setMenuOpen(false);
@@ -75,7 +79,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 px-6 lg:px-12 h-16">
           {/* Logo */}
           <Link
-            to="/"
+            to={homeTo}
             className="flex items-center gap-2.5 group shrink-0"
             data-testid="header-logo"
           >
@@ -117,23 +121,35 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
           {/* Right actions — context-aware CTA. Hide primary CTA on auth pages
               to avoid redundancy with the inline auth card. */}
           <div className="flex items-center gap-3 shrink-0">
-            {active !== "signup" && (
+            {signedIn && !isAuth ? (
               <Link
-                to="/signin"
-                data-testid="header-signin"
-                className="hidden sm:inline-flex text-[13px] font-medium text-ink/65 hover:text-ink transition-colors"
-              >
-                Sign in
-              </Link>
-            )}
-            {active !== "signin" && active !== "signup" && (
-              <Link
-                to="/signup"
-                data-testid="header-cta"
+                to="/ops"
+                data-testid="header-dashboard"
                 className="hidden sm:inline-flex items-center gap-2 bg-gradient-to-r from-brand to-brand-deep text-white text-[13px] font-medium px-5 py-2 hover:opacity-90 transition-all duration-300 hover:shadow-lg hover:shadow-brand/25 hover:-translate-y-px"
               >
-                Start trial
+                Open dashboard
               </Link>
+            ) : (
+              <>
+                {active !== "signup" && (
+                  <Link
+                    to="/signin"
+                    data-testid="header-signin"
+                    className="hidden sm:inline-flex text-[13px] font-medium text-ink/65 hover:text-ink transition-colors"
+                  >
+                    Sign in
+                  </Link>
+                )}
+                {active !== "signin" && active !== "signup" && (
+                  <Link
+                    to="/signup"
+                    data-testid="header-cta"
+                    className="hidden sm:inline-flex items-center gap-2 bg-gradient-to-r from-brand to-brand-deep text-white text-[13px] font-medium px-5 py-2 hover:opacity-90 transition-all duration-300 hover:shadow-lg hover:shadow-brand/25 hover:-translate-y-px"
+                  >
+                    Start trial
+                  </Link>
+                )}
+              </>
             )}
 
             {/* Mobile hamburger */}
@@ -202,21 +218,35 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
               className="shrink-0 border-t border-ink/[0.08] p-4 flex flex-col gap-2.5"
               style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))" }}
             >
-              <Link
-                to="/signin"
-                className="flex items-center justify-center min-h-[48px] text-[14px] font-medium text-ink border border-ink/15 hover:border-ink/30 transition-colors"
-                onClick={() => setMenuOpen(false)}
-              >
-                Sign in
-              </Link>
-              <Link
-                to="/signup"
-                className="flex items-center justify-center gap-2 min-h-[48px] text-[14px] font-medium bg-gradient-to-r from-brand to-brand-deep text-white hover:opacity-90 transition-colors"
-                onClick={() => setMenuOpen(false)}
-              >
-                Start free trial
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+              {signedIn && !isAuth ? (
+                <Link
+                  to="/ops"
+                  data-testid="header-dashboard-mobile"
+                  className="flex items-center justify-center gap-2 min-h-[48px] text-[14px] font-medium bg-gradient-to-r from-brand to-brand-deep text-white hover:opacity-90 transition-colors"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Open dashboard
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    to="/signin"
+                    className="flex items-center justify-center min-h-[48px] text-[14px] font-medium text-ink border border-ink/15 hover:border-ink/30 transition-colors"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="flex items-center justify-center gap-2 min-h-[48px] text-[14px] font-medium bg-gradient-to-r from-brand to-brand-deep text-white hover:opacity-90 transition-colors"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Start free trial
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

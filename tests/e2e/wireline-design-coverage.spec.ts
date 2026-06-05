@@ -106,6 +106,21 @@ test.describe("Wireline design coverage — public responsive", () => {
   }
 });
 
+test.describe("Wireline design coverage — marketing while signed in", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await authenticatePage(page, baseURL!);
+  });
+
+  test("/pricing — dashboard CTA replaces sign-in funnel", async ({ page }) => {
+    await gotoHydrated(page, "/pricing");
+    await expect(page.getByTestId("header-dashboard")).toBeVisible();
+    await expect(page.getByTestId("header-signin")).toHaveCount(0);
+    await expect(page.getByTestId("header-cta")).toHaveCount(0);
+    await assertMarketingSurface(page);
+  });
+});
+
 test.describe("Wireline design coverage — authenticated routes", () => {
   test.beforeEach(async ({ page, baseURL }) => {
     await page.setViewportSize({ width: 1440, height: 900 });

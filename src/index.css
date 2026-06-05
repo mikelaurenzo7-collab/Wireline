@@ -975,7 +975,7 @@ html, body, .marketing-surface, .app-surface {
 }
 
 .wl-starter-chip {
-  border-radius: 9999px;
+  border-radius: 0.5rem;
   border: 1px solid color-mix(in srgb, var(--color-brand) 14%, transparent);
   background: color-mix(in srgb, var(--paper, #f5f0e6) 94%, white);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset;

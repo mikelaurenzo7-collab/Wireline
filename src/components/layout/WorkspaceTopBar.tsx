@@ -58,7 +58,7 @@ export default function WorkspaceTopBar({
             <p
               className={cn(
                 WL_APP_CLASSES.bodyCaption,
-                "hidden sm:block truncate max-w-[9rem] md:max-w-[14rem] lg:max-w-[18rem]",
+                "hidden sm:block line-clamp-2 text-pretty max-w-[11rem] md:max-w-[15rem] lg:max-w-[20rem]",
               )}
             >
               {subtitle}

@@ -106,7 +106,12 @@ export function EmptyState({
       {children ? <div className="mt-6 w-full max-w-lg">{children}</div> : null}
 
       {actions.length > 0 && (
-        <div className={cn("flex flex-wrap justify-center gap-2", compact ? "mt-4" : "mt-6")}>
+        <div
+          className={cn(
+            "flex flex-col sm:flex-row flex-wrap justify-center items-stretch sm:items-center gap-2 w-full max-w-full",
+            compact ? "mt-4" : "mt-6",
+          )}
+        >
           {actions.map((action, index) => {
             const isPrimary = !!action.primary;
 
@@ -118,13 +123,15 @@ export function EmptyState({
                   asChild
                   variant={isPrimary ? "default" : "outline"}
                   className={cn(
-                    "rounded-full touch-press",
+                    "rounded-full touch-press w-full sm:w-auto justify-center",
                     isPrimary && "app-primary-action",
                     !isPrimary && "border-brand/20 text-ink/85 hover:bg-brand/[0.04]",
                   )}
                 >
                   {internal ? (
-                    <Link to={action.to}>{action.label}</Link>
+                    <Link to={action.to} className="text-center">
+                      {action.label}
+                    </Link>
                   ) : (
                     <a href={action.to}>{action.label}</a>
                   )}
