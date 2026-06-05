@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  DELIVERABLE_ARTIFACT_MAX_BYTES,
   DELIVERABLE_ARTIFACT_MIN_CHARS,
   shouldPersistDeliverableArtifact,
 } from "./director-deliverable-artifacts";
@@ -29,5 +30,10 @@ describe("director deliverable artifacts", () => {
   it("persists multi-section long replies", () => {
     const doc = `## One\n\n${"a".repeat(800)}\n\n## Two\n\n${"b".repeat(800)}\n\n## Three\n\n${"c".repeat(900)}`;
     expect(shouldPersistDeliverableArtifact("write something", doc)).toBe(true);
+  });
+
+  it("documents artifact byte cap for Postgres base64 storage", () => {
+    expect(DELIVERABLE_ARTIFACT_MAX_BYTES).toBeGreaterThan(DELIVERABLE_ARTIFACT_MIN_CHARS);
+    expect(DELIVERABLE_ARTIFACT_MAX_BYTES).toBeLessThanOrEqual(1024 * 1024);
   });
 });

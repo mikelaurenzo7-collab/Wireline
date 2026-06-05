@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { ToolSchema } from "./claude-structured";
-import { wantsLogoCreativePath } from "./director-deliverables";
+import { wantsLogoCreativePath, wantsWebsiteDeliverable } from "./director-deliverables";
 
 export const DIRECTOR_TOOL_SCHEMAS: Record<string, ToolSchema> = {
   generate_logo: {
@@ -407,8 +407,11 @@ export function exportBrandPack(input: {
 }
 
 export function isCreativeIntent(text: string): boolean {
-  if (wantsLogoCreativePath(text)) return true;
+  const trimmed = text.trim();
+  if (wantsLogoCreativePath(trimmed)) return true;
+  // Website / landing asks stay on fleet LLM (HTML prototype) — not logo approvals.
+  if (wantsWebsiteDeliverable(trimmed)) return false;
   return /(generate\s+(?:an?\s+)?(?:image|picture|illustration|banner|hero)|create\s+(?:an?\s+)?(?:brand\s+visual|illustration))/i.test(
-    text.trim(),
+    trimmed,
   );
 }

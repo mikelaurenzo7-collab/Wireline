@@ -11,6 +11,7 @@ import type { DirectorStreamContext } from "./director-turn";
 export async function runDirectorStreamLlm<T = Record<string, unknown>>(
   ctx: DirectorStreamContext,
   callbacks: StreamCallbacks,
+  options?: { signal?: AbortSignal },
 ): Promise<StructuredResult<T>> {
   if (ctx.llmProvider === "openrouter") {
     return runOpenRouterStructuredStream<T>(
@@ -20,6 +21,7 @@ export async function runDirectorStreamLlm<T = Record<string, unknown>>(
         user: ctx.user,
         tool: ctx.tool,
         maxTokens: ctx.maxTokens,
+        signal: options?.signal,
       },
       callbacks,
     );
@@ -32,6 +34,7 @@ export async function runDirectorStreamLlm<T = Record<string, unknown>>(
       model: ctx.model,
       deepThink: ctx.deepThink,
       maxTokens: ctx.maxTokens,
+      signal: options?.signal,
     },
     callbacks,
   );

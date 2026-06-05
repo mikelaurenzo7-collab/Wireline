@@ -37,6 +37,39 @@ export interface OpenRouterStructuredOptions {
   user: string;
   tool: ToolSchema;
   maxTokens?: number;
+  signal?: AbortSignal;
+}
+
+/** Apply one SSE `data:` line from OpenRouter stream (exported for tests). */
+export function accumulateOpenRouterStreamLine(
+  trimmedLine: string,
+  toolArgsByIndex: Map<number, string>,
+): { prompt_tokens?: number; completion_tokens?: number } | undefined {
+  if (!trimmedLine.startsWith("data: ")) return undefined;
+  const payload = trimmedLine.slice(6);
+  if (payload === "[DONE]") return undefined;
+  let chunk: any;
+  try {
+    chunk = JSON.parse(payload);
+  } catch {
+    return undefined;
+  }
+  const usage =
+    chunk.usage != null
+      ? {
+          prompt_tokens: chunk.usage.prompt_tokens as number | undefined,
+          completion_tokens: chunk.usage.completion_tokens as number | undefined,
+        }
+      : undefined;
+  const delta = chunk.choices?.[0]?.delta;
+  if (delta?.tool_calls) {
+    for (const tc of delta.tool_calls) {
+      const idx = tc.index ?? 0;
+      const prev = toolArgsByIndex.get(idx) ?? "";
+      toolArgsByIndex.set(idx, prev + (tc.function?.arguments ?? ""));
+    }
+  }
+  return usage;
 }
 
 export async function runOpenRouterStructured<T = any>(
@@ -102,6 +135,7 @@ export async function runOpenRouterStructuredStream<T = any>(
   const res = await fetch(OPENROUTER_URL, {
     method: "POST",
     headers: openRouterHeaders(),
+    signal: opts.signal,
     body: JSON.stringify({
       model: opts.model,
       max_tokens: opts.maxTokens ?? 4096,
@@ -127,38 +161,34 @@ export async function runOpenRouterStructuredStream<T = any>(
   const toolArgsByIndex = new Map<number, string>();
   let usage = { prompt_tokens: 0, completion_tokens: 0 };
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
+  const onAbort = () => {
+    void reader.cancel();
+  };
+  opts.signal?.addEventListener("abort", onAbort, { once: true });
 
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed.startsWith("data: ")) continue;
-      const payload = trimmed.slice(6);
-      if (payload === "[DONE]") continue;
-      let chunk: any;
-      try {
-        chunk = JSON.parse(payload);
-      } catch {
-        continue;
+  try {
+    while (true) {
+      if (opts.signal?.aborted) {
+        throw new DOMException("OpenRouter stream aborted", "AbortError");
       }
-      if (chunk.usage) {
-        usage = {
-          prompt_tokens: chunk.usage.prompt_tokens ?? usage.prompt_tokens,
-          completion_tokens: chunk.usage.completion_tokens ?? usage.completion_tokens,
-        };
-      }
-      const delta = chunk.choices?.[0]?.delta;
-      if (!delta?.tool_calls) continue;
-      for (const tc of delta.tool_calls) {
-        const idx = tc.index ?? 0;
-        const prev = toolArgsByIndex.get(idx) ?? "";
-        toolArgsByIndex.set(idx, prev + (tc.function?.arguments ?? ""));
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+
+      for (const line of lines) {
+        const lineUsage = accumulateOpenRouterStreamLine(line.trim(), toolArgsByIndex);
+        if (lineUsage?.prompt_tokens != null) {
+          usage.prompt_tokens = lineUsage.prompt_tokens;
+        }
+        if (lineUsage?.completion_tokens != null) {
+          usage.completion_tokens = lineUsage.completion_tokens;
+        }
       }
     }
+  } finally {
+    opts.signal?.removeEventListener("abort", onAbort);
   }
 
   const latencyMs = Date.now() - t0;

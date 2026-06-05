@@ -52,6 +52,8 @@ interface StructuredOptions {
   complexity?: TaskComplexity;
   /** Hard ceiling on output tokens for this call (default 4096). */
   maxTokens?: number;
+  /** Abort when the HTTP client disconnects (Director SSE). */
+  signal?: AbortSignal;
 }
 
 /** Result from runStructuredWithThinking that includes optional reasoning from thinking blocks. */
@@ -202,9 +204,12 @@ export async function runStructuredStream<T = any>(
   let inToolInput = false;
 
   try {
-    const stream = client.messages.stream(body);
+    const stream = client.messages.stream(body, { signal: opts.signal });
 
     for await (const event of stream) {
+      if (opts.signal?.aborted) {
+        throw new DOMException("Director stream aborted", "AbortError");
+      }
       if (event.type === "content_block_start") {
         const block = (event as any).content_block;
         if (block?.type === "thinking") {

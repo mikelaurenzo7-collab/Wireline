@@ -47,6 +47,16 @@ const PROBES = [
     note: "no logo approval hijack (stream)",
     mode: "stream",
   },
+  {
+    id: "hero-not-creative",
+    message: "Generate a hero image for our homepage — include HTML prototype.",
+    expect: (d) =>
+      (!Array.isArray(d.approvals) || d.approvals.length === 0) &&
+      typeof d.reply === "string" &&
+      d.reply.length > 200,
+    note: "homepage hero stays on fleet LLM (stream)",
+    mode: "stream",
+  },
 ];
 
 async function login() {

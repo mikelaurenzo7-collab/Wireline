@@ -19,6 +19,7 @@ describe("director deliverables", () => {
     expect(wantsWebsiteDeliverable("Generate 3 logo concepts for my brand")).toBe(false);
     expect(isCreativeIntent("Generate 3 logo concepts for my brand")).toBe(true);
     expect(isCreativeIntent("Design a new website for my HVAC business")).toBe(false);
+    expect(isCreativeIntent("Generate a hero image for our homepage")).toBe(false);
   });
 
   it("detects code deliverables", () => {

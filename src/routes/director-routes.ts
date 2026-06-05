@@ -799,8 +799,10 @@ router.post(
       const featureFlags = loadDirectorFeatureFlags();
 
       let closed = false;
+      const streamAbort = new AbortController();
       req.on("close", () => {
         closed = true;
+        streamAbort.abort();
       });
 
       const writeSse = (event: string, data: unknown) => {
@@ -866,16 +868,25 @@ router.post(
 
       try {
         const streamWireline = streamCtx.llmProvider === "wireline";
-        const { result, thinking, thinkingDurationMs } = await runDirectorStreamLlm(streamCtx, {
-          onThinkingStart: streamWireline ? () => writeSse("thinking_start", {}) : undefined,
-          onThinkingChunk: streamWireline
-            ? (text) => writeSse("thinking_chunk", { text })
-            : undefined,
-          onThinkingEnd: streamWireline
-            ? (fullText, durationMs) => writeSse("thinking_end", { thinking: fullText, durationMs })
-            : undefined,
-          onResult: (r) => writeSse("reply", r),
-        });
+        const { result, thinking, thinkingDurationMs } = await runDirectorStreamLlm(
+          streamCtx,
+          {
+            onThinkingStart: streamWireline ? () => writeSse("thinking_start", {}) : undefined,
+            onThinkingChunk: streamWireline
+              ? (text) => writeSse("thinking_chunk", { text })
+              : undefined,
+            onThinkingEnd: streamWireline
+              ? (fullText, durationMs) =>
+                  writeSse("thinking_end", { thinking: fullText, durationMs })
+              : undefined,
+            onResult: (r) => writeSse("reply", r),
+          },
+          { signal: streamAbort.signal },
+        );
+
+        if (closed || streamAbort.signal.aborted) {
+          return;
+        }
 
         const normalized = streamCtx.normalize((result || {}) as Record<string, unknown>);
         const reply = normalized.reply || "";
@@ -916,6 +927,10 @@ router.post(
 
         writeSse("done", donePayload);
       } catch (e) {
+        if (closed || streamAbort.signal.aborted) {
+          log.info("director stream aborted by client");
+          return;
+        }
         log.error("director stream failed", { error: getErrorMessage(e) });
         try {
           const turn = await planDirectorTurnResilient({

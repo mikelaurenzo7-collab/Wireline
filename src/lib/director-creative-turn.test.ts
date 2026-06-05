@@ -4,8 +4,13 @@ import { buildCreativeDirectorTurn, isCreativeIntent } from "./director-creative
 describe("director creative turn", () => {
   it("detects logo / brand creative intents", () => {
     expect(isCreativeIntent("Design a logo for my startup")).toBe(true);
-    expect(isCreativeIntent("Generate a hero image for our homepage")).toBe(true);
+    expect(isCreativeIntent("Generate a banner for our Instagram")).toBe(true);
     expect(isCreativeIntent("How is my fleet doing?")).toBe(false);
+  });
+
+  it("does not hijack website deliverables with hero/image phrasing", () => {
+    expect(isCreativeIntent("Generate a hero image for our homepage")).toBe(false);
+    expect(isCreativeIntent("Design a new website with a hero banner")).toBe(false);
   });
 
   it("returns clarifying questions when brief is incomplete", () => {

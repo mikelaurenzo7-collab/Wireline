@@ -12,6 +12,8 @@ import {
 } from "./director-deliverables";
 
 export const DELIVERABLE_ARTIFACT_MIN_CHARS = 2_400;
+/** Cap stored markdown artifacts — replies can be large; base64 lives in Postgres. */
+export const DELIVERABLE_ARTIFACT_MAX_BYTES = 512_000;
 export const DELIVERABLE_ARTIFACT_TYPE = "markdown-deliverable";
 
 export interface DirectorDeliverableArtifactMeta {
@@ -66,10 +68,14 @@ export function shouldPersistDeliverableArtifact(operatorMessage: string, reply:
   return trimmed.length >= 5_000;
 }
 
+function sanitizeMarkdownInline(text: string): string {
+  return text.trim().slice(0, 500).replace(/\r?\n/g, " ").replace(/#/g, "\\#");
+}
+
 function buildMarkdownFile(operatorMessage: string, reply: string): string {
   const header = `# Director deliverable
 
-**Request:** ${operatorMessage.trim().slice(0, 500)}
+**Request:** ${sanitizeMarkdownInline(operatorMessage)}
 
 **Exported:** ${new Date().toISOString()}
 
@@ -91,6 +97,14 @@ export async function persistDirectorDeliverableArtifact(input: {
   try {
     const body = buildMarkdownFile(input.operatorMessage, input.reply);
     const data = Buffer.from(body, "utf8");
+    if (data.byteLength > DELIVERABLE_ARTIFACT_MAX_BYTES) {
+      log.warn("director deliverable artifact skipped — exceeds size cap", {
+        userId: input.userId,
+        bytes: data.byteLength,
+        cap: DELIVERABLE_ARTIFACT_MAX_BYTES,
+      });
+      return null;
+    }
     const saved = await storeDirectorArtifact({
       userId: input.userId,
       toolName: "director_deliverable",
