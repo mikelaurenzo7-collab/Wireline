@@ -116,15 +116,36 @@ test.describe("Wireline design — Director artifacts panel visual regression", 
   test("Director artifacts panel renders consistently (visual regression)", async ({ page }) => {
     await gotoAuthenticated(page, "/director");
 
-    // Wait for the Director workspace and artifacts panel to be ready
     await expect(page.getByRole("heading", { name: /Director|artifacts/i }).first()).toBeVisible({ timeout: 15000 });
 
     const artifactsPanel = page.locator(".wl-director-artifacts, [data-testid*='artifact'], .director-artifacts-panel").first();
 
-    // Take visual regression snapshot of the artifacts gallery
     await expect(artifactsPanel).toHaveScreenshot({
       name: "director-artifacts-panel.png",
-      threshold: 0.2, // Allow minor anti-aliasing differences
+      threshold: 0.2,
+    });
+  });
+});
+
+// === Cycle 3: Visual Regression for Director Composer ===
+test.describe("Wireline design — Director composer visual regression", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await authenticatePage(page, baseURL!);
+  });
+
+  test("Director composer toolbar and model picker render consistently", async ({ page }) => {
+    await gotoAuthenticated(page, "/director");
+
+    // Wait for Director to load
+    await expect(page.getByRole("heading", { name: /Director/i }).first()).toBeVisible({ timeout: 15000 });
+
+    // Target the composer toolbar area (contains model picker + tool chips)
+    const composerToolbar = page.locator(".director-composer-toolbar, [data-testid*='composer'], .wl-director-composer").first();
+
+    await expect(composerToolbar).toHaveScreenshot({
+      name: "director-composer-toolbar.png",
+      threshold: 0.25, // Slightly higher tolerance for interactive elements
     });
   });
 });
