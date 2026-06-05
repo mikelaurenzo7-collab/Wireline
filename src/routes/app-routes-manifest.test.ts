@@ -41,6 +41,9 @@ const REQUIRED_LEGACY_REDIRECTS: { path: string; target: string }[] = [
   { path: "/appointments", target: "/phone?tab=appointments" },
   { path: "/knowledge", target: "/training?tab=database" },
   { path: "/train", target: "/training" },
+  { path: "/director", target: "/chat" },
+  { path: "/account", target: "/admin?tab=subscription" },
+  { path: "/billing", target: "/admin?tab=subscription" },
   { path: "/activity", target: "ActivityRedirect" },
 ];
 

@@ -280,7 +280,7 @@ async function refreshDemoShowcaseCopy(userId: string, tx: typeof drizzle): Prom
     .select({ id: outboundLeads.id })
     .from(outboundLeads)
     .where(and(eq(outboundLeads.userId, userId), eq(outboundLeads.demo, true)))
-    .orderBy(desc(outboundLeads.createdAt));
+    .orderBy(outboundLeads.id);
   for (let i = 0; i < leads.length; i++) {
     const cust = SAMPLE_CUSTOMERS[i % SAMPLE_CUSTOMERS.length];
     const idx = i % SAMPLE_SUMMARIES.length;

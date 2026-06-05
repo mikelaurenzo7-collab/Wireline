@@ -7,6 +7,13 @@ import { cn } from "../../lib/utils";
 import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
 import { safeExternalHref } from "../../lib/safe-external-url";
 
+/** Strip traffic-light emoji from headings — operator UI uses tone chips instead. */
+function stripOperatorStatusEmoji(text: string): string {
+  return text
+    .replace(/^[\s\u{1F534}\u{1F7E1}\u{1F7E2}\u{1F7E0}\u26AA\u2705\u274C]+/u, "")
+    .trimStart();
+}
+
 function renderInline(text: string): React.ReactNode[] {
   const nodes: React.ReactNode[] = [];
   const pattern = /(\*\*[^*]+\*\*|~~[^~]+~~|`[^`]+`|!\[[^\]]*\]\([^)]+\)|\[[^\]]+\]\([^)]+\))/g;
@@ -169,14 +176,14 @@ function renderBlock(block: string, bi: number): React.ReactNode {
   if (first.startsWith("### ")) {
     return (
       <h4 key={bi} className="font-semibold text-ink tracking-[-0.01em] pt-0.5">
-        {renderInline(first.slice(4))}
+        {renderInline(stripOperatorStatusEmoji(first.slice(4)))}
       </h4>
     );
   }
   if (first.startsWith("## ")) {
     return (
       <h3 key={bi} className="font-bold text-ink tracking-[-0.02em] pt-0.5">
-        {renderInline(first.slice(3))}
+        {renderInline(stripOperatorStatusEmoji(first.slice(3)))}
         {lines.slice(1).map((l, i) => (
           <span key={i} className="block font-normal text-ink/90 mt-0.5">
             {renderInline(l)}

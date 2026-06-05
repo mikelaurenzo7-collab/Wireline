@@ -127,6 +127,11 @@ export default function AppRoutes() {
           <Route path="/inbox" element={<Navigate to="/email" replace />} />
           <Route path="/outbound" element={<Navigate to="/phone?tab=outbound" replace />} />
           <Route path="/cockpit" element={<Navigate to="/ops?tab=floor" replace />} />
+          <Route path="/director" element={<Navigate to="/chat" replace />} />
+          <Route path="/director/*" element={<Navigate to="/chat" replace />} />
+          <Route path="/account" element={<Navigate to="/admin?tab=subscription" replace />} />
+          <Route path="/account/*" element={<Navigate to="/admin?tab=subscription" replace />} />
+          <Route path="/billing" element={<Navigate to="/admin?tab=subscription" replace />} />
           <Route path="/appointments" element={<Navigate to="/phone?tab=appointments" replace />} />
           <Route path="/activity" element={<ActivityRedirect />} />
           <Route path="/knowledge" element={<Navigate to="/training?tab=database" replace />} />
