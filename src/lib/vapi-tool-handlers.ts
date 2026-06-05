@@ -166,12 +166,11 @@ export interface SendPaymentLinkArgs {
 }
 
 export interface SendPaymentLinkDeps {
-  /** email-service.sendEmail — generic transactional send. */
-  sendEmail: (opts: {
+  /** email-service.sendPaymentLinkEmail — platform Resend transport. */
+  sendPaymentLinkEmail: (opts: {
     to: string;
-    subject: string;
-    text: string;
-    html: string;
+    payUrl: string;
+    planLabel?: string;
   }) => Promise<SendResultLike>;
   appUrl?: string;
   log: ToolHandlerLogger;
@@ -212,18 +211,30 @@ export async function handleSendPaymentLink(
     // per plan once the caller is signed in.
     const planParam = plan ? `?plan=${encodeURIComponent(plan)}` : "";
     const payUrl = `${appUrl}/billing${planParam}`;
-    const planLabel = plan ? ` (${plan} plan)` : "";
-    const r = await deps.sendEmail({
+    const r = await deps.sendPaymentLinkEmail({
       to: to_email,
-      subject: "Your Wireline payment link",
-      text: `Hi,\n\nHere's your secure link to activate your Wireline plan${planLabel}:\n\n${payUrl}\n\nAny questions, just call us back.\n\n— Wireline`,
-      html: `<p>Hi,</p><p>Here's your secure link to activate your Wireline plan${planLabel}:</p><p><a href="${payUrl}">${payUrl}</a></p><p>Any questions, just call us back.</p><p>— Wireline</p>`,
+      payUrl,
+      planLabel: plan || undefined,
     });
 
+    if (r.ok) {
+      deps.log.info?.("send_payment_link delivered", {
+        to: to_email,
+        resendId: r.id,
+        payUrl,
+      });
+      return {
+        result: `DELIVERY_OK: Payment link sent to ${to_email}. Tell the caller it should arrive within a minute. Do not claim delivery unless you see DELIVERY_OK.`,
+      };
+    }
+
+    deps.log.error("send_payment_link delivery failed", {
+      to: to_email,
+      error: r.error,
+      payUrl,
+    });
     return {
-      result: r.ok
-        ? `Payment link sent to ${to_email}. It should land within a minute — confirm they got it.`
-        : `The email didn't go through. Read the link to the caller: ${payUrl}`,
+      result: `DELIVERY_FAILED: Email could not be sent (${r.error || "transport error"}). Do NOT tell the caller it was sent. Read this URL aloud and confirm they wrote it down: ${payUrl}`,
     };
   } catch (err: unknown) {
     deps.log.error("send_payment_link tool failed", {

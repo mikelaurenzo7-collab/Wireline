@@ -1,0 +1,104 @@
+/**
+ * Resend "from" address resolution — single source of truth for platform
+ * transactional mail (showcase signup/payment links, auth, billing).
+ *
+ * Resend only delivers from domains you've verified. If RESEND_API_KEY is set
+ * but RESEND_FROM_EMAIL / RESEND_FROM_DOMAIN don't match the verified domain,
+ * sends fail with 403/422 and live agents tell callers "the email didn't go through".
+ */
+
+const DEFAULT_DOMAIN = "trywireline.com";
+const DEFAULT_FROM = `Wireline <noreply@${DEFAULT_DOMAIN}>`;
+
+/** Extract the mailbox from `Name <a@b.com>` or a bare address. */
+export function extractEmailAddress(from: string): string {
+  const angle = from.match(/<([^>]+)>/);
+  if (angle?.[1]) return angle[1].trim();
+  return from.trim();
+}
+
+/** Domain portion of the configured From address (for diagnostics). */
+export function extractFromDomain(from: string): string {
+  const email = extractEmailAddress(from);
+  const at = email.lastIndexOf("@");
+  return at >= 0 ? email.slice(at + 1).toLowerCase() : "";
+}
+
+/**
+ * Normalize operator input:
+ *   - `user@domain.com` → `Wireline <user@domain.com>`
+ *   - `Wireline <user@domain.com>` → unchanged
+ */
+export function normalizeResendFromAddress(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return DEFAULT_FROM;
+  if (/<[^>]+@[^>]+>/.test(trimmed)) return trimmed;
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+    return `Wireline <${trimmed}>`;
+  }
+  return trimmed;
+}
+
+/**
+ * Resolved From header for Resend API calls.
+ *
+ * Priority:
+ *   1. RESEND_FROM_EMAIL (full address or `Name <email>`)
+ *   2. RESEND_FROM_DOMAIN → `Wireline <noreply@DOMAIN>`
+ *   3. Default `noreply@trywireline.com`
+ */
+export function resolveResendFromAddress(): string {
+  const explicit = process.env.RESEND_FROM_EMAIL?.trim();
+  if (explicit) return normalizeResendFromAddress(explicit);
+
+  const domain = process.env.RESEND_FROM_DOMAIN?.trim().toLowerCase();
+  if (domain) return `Wireline <noreply@${domain}>`;
+
+  return DEFAULT_FROM;
+}
+
+export interface ResendTransportDiagnostics {
+  from: string;
+  from_domain: string;
+  has_api_key: boolean;
+  configured_via: "RESEND_FROM_EMAIL" | "RESEND_FROM_DOMAIN" | "default";
+}
+
+export function getResendTransportDiagnostics(): ResendTransportDiagnostics {
+  const explicit = process.env.RESEND_FROM_EMAIL?.trim();
+  const domain = process.env.RESEND_FROM_DOMAIN?.trim();
+  const from = resolveResendFromAddress();
+  let configured_via: ResendTransportDiagnostics["configured_via"] = "default";
+  if (explicit) configured_via = "RESEND_FROM_EMAIL";
+  else if (domain) configured_via = "RESEND_FROM_DOMAIN";
+
+  return {
+    from,
+    from_domain: extractFromDomain(from),
+    has_api_key: Boolean(process.env.RESEND_API_KEY?.trim()),
+    configured_via,
+  };
+}
+
+/** Parse Resend error JSON into a short operator-facing string. */
+export function formatResendApiError(status: number, body: string): string {
+  let detail = body.slice(0, 300);
+  try {
+    const parsed = JSON.parse(body) as { message?: string; name?: string };
+    if (parsed.message) detail = parsed.message;
+  } catch {
+    /* keep raw slice */
+  }
+
+  if (status === 403 || /domain|verify|not verified/i.test(detail)) {
+    const from = resolveResendFromAddress();
+    const domain = extractFromDomain(from);
+    return (
+      `Resend ${status}: ${detail}. ` +
+      `Sending domain must be verified in Resend for "${domain}". ` +
+      `Set RESEND_FROM_EMAIL or RESEND_FROM_DOMAIN in Vercel to match your verified domain, then redeploy.`
+    );
+  }
+
+  return `Resend ${status}: ${detail}`;
+}

@@ -168,11 +168,22 @@ export async function handleShowcaseToolCalls(args: {
     }
 
     if (toolName === "send_payment_link") {
-      const { sendEmail } = await import("../../lib/email-service");
+      const { sendPaymentLinkEmail } = await import("../../lib/email-service");
       const { result } = await handleSendPaymentLink(toolArgs, {
-        sendEmail,
+        sendPaymentLinkEmail,
         log,
       });
+      if (result.startsWith("DELIVERY_FAILED:")) {
+        await queueShowcaseTask({
+          ownerUserId,
+          taskType: "showcase_payment_email_failed",
+          description: `[Payment email failed] ${args.showcaseAgentName} → ${String(toolArgs.to_email || "unknown")}`,
+          priority: "high",
+          callContext,
+          showcaseAgentName: args.showcaseAgentName,
+          extraCustomerInfo: { to_email: toolArgs.to_email, tool_result: result.slice(0, 500) },
+        }).catch(() => false);
+      }
       results.push({ toolCallId: toolCall.id, result });
       continue;
     }

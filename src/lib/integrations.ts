@@ -289,15 +289,38 @@ export class IntegrationService {
       // Fallback: If no mail account, try calendar accounts (many have mail too)
       const mailAccounts = accounts.length > 0 ? accounts : await this.getAccounts("calendar");
 
-      if (mailAccounts.length === 0) return false;
-
-      const account = mailAccounts[0];
-      if (account.provider === "google") {
-        return await this.sendGoogleEmail(account, params);
-      } else if (account.provider === "microsoft") {
-        return await this.sendMicrosoftEmail(account, params);
+      if (mailAccounts.length > 0) {
+        const account = mailAccounts[0];
+        if (account.provider === "google") {
+          return await this.sendGoogleEmail(account, params);
+        }
+        if (account.provider === "microsoft") {
+          return await this.sendMicrosoftEmail(account, params);
+        }
       }
-      return false;
+
+      // No OAuth mailbox — fall back to platform Resend so live voice
+      // agents can still deliver follow-ups when RESEND_API_KEY is set.
+      const { sendEmail: sendPlatformEmail } = await import("./email-service");
+      const escaped = params.body
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+      const html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.55; white-space: pre-wrap;">${escaped}</div>`;
+      const result = await sendPlatformEmail({
+        to: params.to,
+        subject: params.subject,
+        text: params.body,
+        html,
+      });
+      if (!result.ok) {
+        log.warn("Platform Resend fallback failed for tenant email", {
+          userId: this.userId,
+          to: params.to,
+          error: result.error,
+        });
+      }
+      return result.ok;
     } catch (err) {
       log.error("Email sending failed", { userId: this.userId, error: getErrorMessage(err) });
       return false;

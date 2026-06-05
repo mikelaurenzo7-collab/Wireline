@@ -198,7 +198,10 @@ router.post("/api/admin/test-email", optionalAuth, async (req: Request, res: Res
   if (!to) {
     return res.status(400).json({ ok: false, error: "No `to` address and no OWNER_EMAIL set." });
   }
-  const from = process.env.RESEND_FROM_EMAIL || "Wireline <noreply@trywireline.com>";
+  const { resolveResendFromAddress, getResendTransportDiagnostics } =
+    await import("../../lib/resend-config");
+  const from = resolveResendFromAddress();
+  const transport = getResendTransportDiagnostics();
 
   try {
     const r = await fetch("https://api.resend.com/emails", {
@@ -217,11 +220,12 @@ router.post("/api/admin/test-email", optionalAuth, async (req: Request, res: Res
       resend_status: r.status,
       resend_body: body.slice(0, 500),
       from_used: from,
+      transport,
       to,
       diagnosis: r.ok
         ? "Transport works."
         : r.status === 403
-          ? "Likely the sending domain isn't verified in Resend. Add + verify trywireline.com under Resend → Domains, then set RESEND_FROM_EMAIL or keep the noreply@trywireline.com default."
+          ? `Likely the sending domain isn't verified in Resend for "${transport.from_domain}". Verify that domain under Resend → Domains, set RESEND_FROM_EMAIL or RESEND_FROM_DOMAIN in Vercel to match, then redeploy.`
           : "See resend_body for the exact error.",
     });
   } catch (_e: any) {

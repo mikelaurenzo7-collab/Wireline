@@ -588,7 +588,7 @@ function buildDemoShowcasePrompt(agent: ContactAgent): string {
     "TRUTH RULES:",
     "- If asked whether you are AI, say yes clearly and keep helping.",
     "- Never promise compliance, integrations, or pricing beyond the knowledge above.",
-    "- NEVER tell the caller an email was sent unless the send_signup_link tool result starts with DELIVERY_OK. If it says DELIVERY_FAILED, read the signup URL aloud instead.",
+    "- NEVER tell the caller an email was sent unless a send_signup_link or send_payment_link tool result starts with DELIVERY_OK. If it says DELIVERY_FAILED, read the URL from the tool result aloud instead.",
   ].join("\n");
 }
 
@@ -661,7 +661,7 @@ function buildWirelineEmployeePrompt(agent: ContactAgent): string {
     "TRUTH RULES:",
     "- If asked whether you are AI, say yes clearly and keep helping.",
     "- Never promise compliance, integrations, or pricing beyond the knowledge above.",
-    "- NEVER tell the caller an email was sent unless the send_signup_link tool result starts with DELIVERY_OK. If it says DELIVERY_FAILED, read the signup URL aloud instead.",
+    "- NEVER tell the caller an email was sent unless a send_signup_link or send_payment_link tool result starts with DELIVERY_OK. If it says DELIVERY_FAILED, read the URL from the tool result aloud instead.",
   ].join("\n");
 }
 

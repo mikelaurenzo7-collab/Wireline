@@ -216,9 +216,9 @@ export async function handleCoreToolCall(
   // send_payment_link — emails the caller a checkout link for a
   // specific plan so they can pay + activate without friction.
   if (fn === "send_payment_link") {
-    const { sendEmail } = await import("../../lib/email-service");
+    const { sendPaymentLinkEmail } = await import("../../lib/email-service");
     const { result } = await handleSendPaymentLink(args || {}, {
-      sendEmail,
+      sendPaymentLinkEmail,
       log,
     });
     return { toolCallId, result };

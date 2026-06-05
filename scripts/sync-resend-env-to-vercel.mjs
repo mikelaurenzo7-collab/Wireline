@@ -5,6 +5,8 @@
  * Usage:
  *   $env:VERCEL_TOKEN = "<token>"
  *   $env:RESEND_API_KEY = "re_..."
+ *   $env:RESEND_FROM_EMAIL = "Wireline <noreply@trywireline.com>"
+ *   # or: $env:RESEND_FROM_DOMAIN = "trywireline.com"
  *   node scripts/sync-resend-env-to-vercel.mjs
  */
 
@@ -25,6 +27,16 @@ if (!resendKey) {
 }
 
 const envMap = { RESEND_API_KEY: resendKey };
+const fromEmail = process.env.RESEND_FROM_EMAIL?.trim();
+const fromDomain = process.env.RESEND_FROM_DOMAIN?.trim();
+if (fromEmail) envMap.RESEND_FROM_EMAIL = fromEmail;
+if (fromDomain) envMap.RESEND_FROM_DOMAIN = fromDomain;
+if (!fromEmail && !fromDomain) {
+  console.warn(
+    "Warning: neither RESEND_FROM_EMAIL nor RESEND_FROM_DOMAIN is set locally.\n" +
+      "         Production will default to noreply@trywireline.com — must match your verified Resend domain.",
+  );
+}
 
 function vercelUrl(path) {
   const sep = path.includes("?") ? "&" : "?";

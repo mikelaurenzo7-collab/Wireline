@@ -27,10 +27,13 @@ import {
   buildComplianceFooterHtml,
 } from "./email-compliance";
 import { BRAND } from "../constants/brand-colors";
+import {
+  formatResendApiError,
+  getResendTransportDiagnostics,
+  resolveResendFromAddress,
+} from "./resend-config";
 
-const DEFAULT_FROM = "Wireline <noreply@trywireline.com>";
-
-interface SendResult {
+export interface SendResult {
   ok: boolean;
   provider: "resend" | "log-fallback" | "no-transport";
   id?: string;
@@ -51,11 +54,11 @@ async function sendViaResend(args: {
   /** Extra SMTP headers (e.g. RFC 8058 List-Unsubscribe) for bulk/marketing mail. */
   headers?: Record<string, string>;
 }): Promise<SendResult> {
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) {
     return { ok: false, provider: "resend", error: "RESEND_API_KEY not set" };
   }
-  const from = process.env.RESEND_FROM_EMAIL || DEFAULT_FROM;
+  const from = resolveResendFromAddress();
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -74,16 +77,36 @@ async function sendViaResend(args: {
     });
     const body = await res.text();
     if (!res.ok) {
+      const error = formatResendApiError(res.status, body);
+      log.error("[email-service] Resend rejected send", {
+        status: res.status,
+        to: args.to,
+        from,
+        error,
+        transport: getResendTransportDiagnostics(),
+      });
       return {
         ok: false,
         provider: "resend",
-        error: `Resend ${res.status}: ${body.slice(0, 200)}`,
+        error,
       };
     }
     const parsed = body ? JSON.parse(body) : {};
+    log.info("[email-service] Resend accepted send", {
+      to: args.to,
+      from,
+      resendId: parsed?.id,
+    });
     return { ok: true, provider: "resend", id: parsed?.id };
   } catch (err) {
-    return { ok: false, provider: "resend", error: getErrorMessage(err) };
+    const error = getErrorMessage(err);
+    log.error("[email-service] Resend transport error", {
+      to: args.to,
+      from,
+      error,
+      transport: getResendTransportDiagnostics(),
+    });
+    return { ok: false, provider: "resend", error };
   }
 }
 
@@ -162,6 +185,60 @@ export async function sendPasswordResetEmail(opts: PasswordResetEmailOpts): Prom
  *   callerName  optional; if provided, used in the greeting
  *   agentName   the agent who's sending it (Sarah / Liam / Marcus / …)
  */
+/**
+ * Branded payment-link email for the showcase `send_payment_link` Vapi tool.
+ */
+export async function sendPaymentLinkEmail(opts: {
+  to: string;
+  payUrl: string;
+  planLabel?: string;
+}): Promise<SendResult> {
+  const planSuffix = opts.planLabel ? ` (${opts.planLabel} plan)` : "";
+  const subject = "Your Wireline payment link";
+  const text = [
+    "Hi,",
+    "",
+    `Here's your secure link to activate your Wireline plan${planSuffix}:`,
+    "",
+    opts.payUrl,
+    "",
+    "Any questions, just call us back on the same number you reached us on.",
+    "",
+    "— Wireline",
+  ].join("\n");
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a2e;">
+      <p style="margin: 0 0 16px; line-height: 1.55;">Hi,</p>
+      <p style="margin: 0 0 16px; line-height: 1.55;">Here's your secure link to activate your Wireline plan${planSuffix}.</p>
+      <p style="margin: 0 0 24px;"><a href="${opts.payUrl}" style="display: inline-block; background: ${BRAND.purple}; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Open payment link</a></p>
+      <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${opts.payUrl}</span></p>
+      <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">— Wireline</p>
+    </div>
+  `;
+
+  if (!process.env.RESEND_API_KEY?.trim()) {
+    log.warn("send_payment_link called but RESEND_API_KEY is not set — failing loud.", {
+      to: opts.to,
+      payUrl: opts.payUrl,
+    });
+    return {
+      ok: false,
+      provider: "no-transport",
+      error: "Email transport not configured (RESEND_API_KEY missing)",
+    };
+  }
+
+  const sent = await sendViaResend({ to: opts.to, subject, html, text });
+  if (!sent.ok) {
+    log.error("send_payment_link Resend rejected send", {
+      to: opts.to,
+      error: sent.error,
+      payUrl: opts.payUrl,
+    });
+  }
+  return sent;
+}
+
 export async function sendSignupLinkEmail(opts: {
   to: string;
   callerName?: string;

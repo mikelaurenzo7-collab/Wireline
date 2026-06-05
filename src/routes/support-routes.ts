@@ -23,7 +23,7 @@ import { getErrorMessage } from "../lib/server-utils";
 // verification, signup link) but no generic sendEmail. Inlining here
 // keeps the contact form a self-contained route + avoids touching
 // email-service.ts for a one-off use.
-const SUPPORT_FROM = process.env.RESEND_FROM_EMAIL || "Wireline <noreply@trywireline.com>";
+import { resolveResendFromAddress } from "../lib/resend-config";
 async function sendSupportEmail(args: {
   to: string;
   replyTo: string;
@@ -40,7 +40,7 @@ async function sendSupportEmail(args: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: SUPPORT_FROM,
+        from: resolveResendFromAddress(),
         to: args.to,
         reply_to: args.replyTo,
         subject: args.subject,
