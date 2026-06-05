@@ -23,9 +23,9 @@ const R = 8;
 const CIRC = 2 * Math.PI * R;
 
 function ringColor(pct: number): string {
-  if (pct >= 100) return "stroke-rose-500";
-  if (pct >= 85) return "stroke-amber-500";
-  return "stroke-brand/80";
+  if (pct >= 100) return "stroke-destructive";
+  if (pct >= 85) return "stroke-brand";
+  return "stroke-brand/70";
 }
 
 export function DirectorUsageIndicator({ className }: { className?: string }) {
@@ -81,7 +81,8 @@ export function DirectorUsageIndicator({ className }: { className?: string }) {
     <div
       className={cn(
         "pointer-events-auto cursor-default select-none rounded-full p-0.5",
-        "bg-card/40 backdrop-blur-sm border border-border/30 shadow-sm",
+        "bg-card/50 backdrop-blur-sm border border-border/40 shadow-sm",
+        "hover:border-brand/25 transition-colors",
         className,
       )}
       title={title}

@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { getPasswordPolicyError } from "../lib/password-policy";
 import { PageMeta } from "../lib/page-meta";
 import MarketingChrome from "../components/marketing/MarketingChrome";
+import WirelineMark from "../components/WirelineMark";
 import { Input } from "../components/ui/shadcn/Input";
 import { ShadButton } from "../components/ui/shadcn/ShadButton";
 
@@ -105,13 +106,20 @@ export default function ResetPassword() {
         path="/reset-password"
         noIndex
       />
-      <div className="flex flex-1 items-center justify-center px-4 py-8">
-        <div className="w-full max-w-md rounded-md border border-black/8 bg-[#FAF8F5] p-6 sm:p-8">
-          <div className="mb-6">
-            <h1 className="font-display italic text-2xl sm:text-3xl text-ink leading-tight">
-              Reset password
-            </h1>
-            <p className="text-caption mt-1.5">Choose a new password for your operator account.</p>
+      <div className="flex flex-1 items-center justify-center px-4 py-8 pt-20 sm:pt-24">
+        <div className="w-full max-w-[420px] wl-auth-card rounded-md p-6 sm:p-8">
+          <div className="wl-auth-card-header mb-6">
+            <div className="wl-auth-brand-chip" aria-hidden="true">
+              <WirelineMark className="w-5 h-5" stroke="white" strokeWidth={120} />
+            </div>
+            <div>
+              <h1 className="font-display italic text-2xl sm:text-3xl text-ink leading-tight">
+                Reset password
+              </h1>
+              <p className="text-caption mt-1.5">
+                Choose a new password for your operator account.
+              </p>
+            </div>
           </div>
 
           {success ? (
@@ -122,8 +130,8 @@ export default function ResetPassword() {
               </div>
             </div>
           ) : !token ? (
-            <div className="space-y-4 p-6 rounded-md bg-rose-500/10 border border-rose-500/30">
-              <div className="flex items-start gap-3 text-rose-500">
+            <div className="wl-auth-alert wl-auth-alert--destructive">
+              <div className="flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
                 <span className="text-sm leading-relaxed">
                   This reset link is missing its token. Request a new one from the{" "}
@@ -176,10 +184,7 @@ export default function ResetPassword() {
               </div>
 
               {error && (
-                <div
-                  role="alert"
-                  className="flex items-start gap-3 p-4 rounded-md bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs"
-                >
+                <div role="alert" className="wl-auth-alert wl-auth-alert--destructive text-xs">
                   <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                   <span className="leading-relaxed">{error}</span>
                 </div>

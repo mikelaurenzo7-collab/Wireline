@@ -15,6 +15,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import PublicSiteHeader from "./marketing/PublicSiteHeader";
+import WirelineMark from "./WirelineMark";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
@@ -402,13 +403,7 @@ export default function AuthPortal() {
             transition={{ duration: reduceMotion ? 0 : 0.45, ease: [0.16, 1, 0.3, 1] }}
             className="w-full max-w-[420px] mx-auto"
           >
-            <div
-              className="border border-ink/[0.06] bg-paper overflow-hidden"
-              style={{
-                boxShadow:
-                  "0 1px 0 rgba(255,255,255,0.9) inset, 0 24px 64px -24px rgba(26, 22, 20, 0.12), 0 8px 24px -12px rgba(107, 43, 153, 0.08)",
-              }}
-            >
+            <div className="wl-auth-card rounded-md">
               <div className="p-6 sm:p-8">
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -418,22 +413,31 @@ export default function AuthPortal() {
                     exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
                     transition={{ duration: reduceMotion ? 0 : 0.25, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    <div className="mb-6">
-                      <h1 className="font-display italic text-2xl sm:text-3xl text-ink leading-tight">
-                        {isReset ? "Reset password" : isSignUp ? "Create account" : "Welcome back"}
-                      </h1>
-                      <p className="text-caption mt-1.5">
-                        {isReset
-                          ? "We'll email you a secure reset link."
-                          : isSignUp
-                            ? "14-day trial · no credit card"
-                            : "Operator console access"}
-                      </p>
-                      {isSignUp && intentLabel && (
-                        <p className="mt-2 inline-flex rounded-full border border-brand/20 bg-brand/8 px-3 py-1 text-eyebrow !text-brand">
-                          From your visit · {intentLabel}
+                    <div className="wl-auth-card-header mb-6">
+                      <div className="wl-auth-brand-chip" aria-hidden="true">
+                        <WirelineMark className="w-5 h-5" stroke="white" strokeWidth={120} />
+                      </div>
+                      <div>
+                        <h1 className="font-display italic text-2xl sm:text-3xl text-ink leading-tight">
+                          {isReset
+                            ? "Reset password"
+                            : isSignUp
+                              ? "Create account"
+                              : "Welcome back"}
+                        </h1>
+                        <p className="text-caption mt-1.5">
+                          {isReset
+                            ? "We'll email you a secure reset link."
+                            : isSignUp
+                              ? "14-day trial · no credit card"
+                              : "Sign in to your operator console"}
                         </p>
-                      )}
+                        {isSignUp && intentLabel && (
+                          <p className="mt-2 inline-flex rounded-full border border-brand/20 bg-brand/8 px-3 py-1 text-eyebrow !text-brand">
+                            From your visit · {intentLabel}
+                          </p>
+                        )}
+                      </div>
                     </div>
 
                     {!isReset && (

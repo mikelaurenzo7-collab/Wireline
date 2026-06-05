@@ -213,7 +213,7 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
             {DIRECTOR_MODEL_PICKER_COPY.hint}
           </p>
         </div>
-        <div className="max-h-[min(56vh,380px)] overflow-y-auto p-2 space-y-3">
+        <div className="max-h-[min(58vh,420px)] overflow-y-auto p-2 space-y-3">
           <section>
             <p className={cn(WL_DIRECTOR_CLASSES.microLabel, "px-2 mb-1.5 text-muted-foreground")}>
               {DIRECTOR_MODEL_PICKER_COPY.wirelineSection}
@@ -275,15 +275,17 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
               </p>
             ) : (
               <div className="space-y-2">
-                <div className="relative px-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                  <Input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder={DIRECTOR_MODEL_PICKER_COPY.searchPlaceholder}
-                    className="h-8 pl-8 text-[11px] bg-muted/30 border-border/50"
-                    aria-label={DIRECTOR_MODEL_PICKER_COPY.searchPlaceholder}
-                  />
+                <div className="wl-director-model-popover-sticky -mx-2 px-2 -mt-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                    <Input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder={DIRECTOR_MODEL_PICKER_COPY.searchPlaceholder}
+                      className="h-8 pl-8 text-[11px] bg-muted/30 border-border/50"
+                      aria-label={DIRECTOR_MODEL_PICKER_COPY.searchPlaceholder}
+                    />
+                  </div>
                 </div>
 
                 {filteredCurated.length > 0 && (
