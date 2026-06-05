@@ -94,6 +94,19 @@ describe("normalizeDirectorPlan — suggestions", () => {
     expect(plan.suggestions).toHaveLength(0);
   });
 
+  it("preserves suggestion labels up to 80 characters", () => {
+    const longLabel = "Train an agent to use the CRM integration for inbound leads";
+    const plan = normalizeDirectorPlan(
+      {
+        reply: "x",
+        suggestions: [{ kind: "open_training", label: longLabel }],
+      },
+      FLEET,
+      "sonnet",
+    );
+    expect(plan.suggestions[0]?.label).toBe(longLabel);
+  });
+
   it("dedupes repeated suggestions and caps at 3", () => {
     const plan = normalizeDirectorPlan(
       {

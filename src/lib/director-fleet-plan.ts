@@ -87,7 +87,10 @@ export const DIRECTOR_FLEET_TOOL: ToolSchema = {
           type: "object",
           properties: {
             kind: { type: "string", enum: [...DIRECTOR_SUGGESTION_KINDS] },
-            label: { type: "string" },
+            label: {
+              type: "string",
+              description: "Short chip label (≤80 chars); wraps on mobile.",
+            },
             agentId: { type: "string" },
           },
           required: ["kind", "label"],
@@ -261,7 +264,7 @@ export function normalizeDirectorFleetPlan(
         continue;
       }
       const k = kind as DirectorSuggestionKind;
-      const label = clampString(rec.label, 24);
+      const label = clampString(rec.label, 80);
       if (!label) continue;
       let agentId: string | undefined;
       if (k === "focus_agent") {
