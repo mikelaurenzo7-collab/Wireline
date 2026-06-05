@@ -60,7 +60,7 @@ Structure \`reply\` as:
 2. **Sitemap** — pages and primary CTA per page
 3. **Page sections** — hero, proof, services, FAQ, footer (per key page)
 4. **Visual direction** — typography, color, spacing (words only; no emoji)
-5. **Starter prototype** — one self-contained \`\`\`html\`\`\` block (mobile-first, semantic landmarks, accessible labels, inline CSS or a single \`<style>\` block). Keep it under ~120 lines so the operator gets a paste-ready v1 fast; expand only if they ask.
+5. **Starter prototype** — you MUST include exactly one \`\`\`html\`\`\` fenced block (mobile-first, semantic landmarks, accessible labels, inline CSS or a single \`<style>\` block). Keep it under ~120 lines so the operator gets a paste-ready v1 fast.
 6. **Optional** — \`\`\`tsx\`\`\` component sketch if they will implement in React
 7. **Handoff** — hosting, forms, analytics, SEO meta, performance checklist
 

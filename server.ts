@@ -43,7 +43,7 @@ import { withAudit } from "./src/middleware/audit-middleware";
 import { enforceSpendCap, enforce24hSpendCap } from "./src/lib/spend-guards";
 import { initJobWorker } from "./src/lib/job-worker";
 import { performanceMonitoring } from "./src/middleware/performance";
-import { timeoutMiddleware } from "./src/middleware/timeout";
+import { defaultApiTimeoutMiddleware, timeoutMiddleware } from "./src/middleware/timeout";
 import { assertSameOrigin } from "./src/middleware/same-origin";
 
 // Routers
@@ -247,7 +247,7 @@ app.use("/api/campaigns", timeoutMiddleware(10_000));
 // Director turns run web research + structured Claude (or creative tool execution).
 // The default 20s API cap caused 504s on business plans and competitor research.
 app.use("/api/director", timeoutMiddleware(180_000));
-app.use("/api", timeoutMiddleware(20_000));
+app.use("/api", defaultApiTimeoutMiddleware);
 
 // Global Router Mounting
 app.use("/api/health", healthRouter);

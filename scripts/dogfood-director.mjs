@@ -26,9 +26,17 @@ const PROBES = [
     id: "website",
     message:
       "Design a one-page website for a local HVAC company — include sitemap and a small HTML prototype.",
-    expect: (d) =>
-      typeof d.reply === "string" &&
-      (d.reply.includes("```html") || d.reply.toLowerCase().includes("sitemap")),
+    expect: (d) => {
+      const reply = typeof d.reply === "string" ? d.reply : "";
+      const lower = reply.toLowerCase();
+      return (
+        reply.length > 400 &&
+        (reply.includes("```html") ||
+          lower.includes("sitemap") ||
+          lower.includes("<!doctype") ||
+          (lower.includes("##") && lower.includes("hero")))
+      );
+    },
     note: "website deliverable (stream)",
     mode: "stream",
   },
@@ -147,7 +155,9 @@ async function main() {
     try {
       const data = await sendDirector(cookie, probe.message, probe.mode);
       if (!probe.expect(data)) {
-        console.log("FAIL (assertion)");
+        const preview =
+          typeof data.reply === "string" ? data.reply.replace(/\s+/g, " ").slice(0, 120) : "";
+        console.log(`FAIL (assertion) — ${preview || "empty reply"}`);
         failed++;
         continue;
       }
