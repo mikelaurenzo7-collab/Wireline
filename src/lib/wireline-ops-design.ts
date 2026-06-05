@@ -354,6 +354,7 @@ export const OPS_FOUNDER = {
 export const WL_FLEET_CLASSES = {
   agentRow: "wl-fleet-agent-row",
   agentRowActive: "wl-fleet-agent-row--active",
+  agentRowList: "wl-fleet-agent-row--list",
   agentAvatar: "wl-fleet-agent-avatar",
   agentAvatarActive: "wl-fleet-agent-avatar--active",
 } as const;
@@ -368,7 +369,7 @@ export const WL_CHROME_CLASSES = {
 /** Channel inbox + list table class hooks (phone, email, SMS). */
 export const WL_CHANNEL_CLASSES = {
   inboxGrid:
-    "wl-channel-inbox-grid h-full min-h-[360px] grid grid-cols-1 lg:grid-cols-[minmax(280px,320px)_1fr] min-h-0",
+    "wl-channel-inbox-grid h-full min-h-[360px] grid grid-cols-1 lg:grid-cols-[minmax(280px,320px)_1fr]",
   inboxList:
     "min-h-0 flex flex-col border-b lg:border-b-0 lg:border-r border-border wl-panel rounded-none lg:rounded-l-md",
   inboxListHeader:

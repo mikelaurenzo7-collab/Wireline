@@ -130,6 +130,7 @@ export default function Pipeline() {
         toastError("Move failed", e?.message || "Try again.");
       } finally {
         setDraggingId(null);
+        setDragOverStage(null);
       }
     },
     [load, toastSuccess, toastError],
@@ -265,7 +266,10 @@ export default function Pipeline() {
                                 e.dataTransfer.effectAllowed = "move";
                                 e.dataTransfer.setData("text/plain", String(lead.id));
                               }}
-                              onDragEnd={() => setDraggingId(null)}
+                              onDragEnd={() => {
+                                setDraggingId(null);
+                                setDragOverStage(null);
+                              }}
                               className={cn(
                                 "group relative rounded-md p-3 cursor-grab active:cursor-grabbing border card-interactive-premium transition-all duration-300 overflow-hidden bg-gradient-to-br focus-within:ring-2 focus-within:ring-brand/40 focus-within:ring-offset-1 focus-within:ring-offset-background",
                                 stage.cardBg,

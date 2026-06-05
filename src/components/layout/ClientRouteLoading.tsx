@@ -21,7 +21,10 @@ export default function ClientRouteLoading({ icon, label = "Loading…", classNa
         "flex flex-1 items-center justify-center min-h-[40vh] paper-texture",
         className,
       )}
+      role="status"
+      aria-live="polite"
       aria-busy="true"
+      aria-label={label}
     >
       <div className="flex flex-col items-center gap-5">
         <div className="relative">

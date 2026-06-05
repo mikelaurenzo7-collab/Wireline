@@ -112,6 +112,7 @@ describe("Wireline Live Ops design contract", () => {
     expect(WL_ADMIN_CLASSES.panel).toBe("wl-admin-panel");
     expect(OPS_FOUNDER.stat(6)).toBe("6 staff agents");
     expect(WL_FLEET_CLASSES.agentRow).toBe("wl-fleet-agent-row");
+    expect(WL_FLEET_CLASSES.agentRowList).toBe("wl-fleet-agent-row--list");
     expect(WL_CHROME_CLASSES.drawerSection).toBe("wl-drawer-section-label");
   });
 });

@@ -127,6 +127,9 @@ export default function TopBar({
       <Link
         key={item.label}
         to={item.path}
+        onClick={() => {
+          if (isDrawer) onDrawerChange(false);
+        }}
         {...(item.dataTour ? { "data-tour": item.dataTour } : {})}
         title={isDrawer ? undefined : item.label}
         aria-label={`Go to ${item.label}`}
@@ -561,10 +564,9 @@ export default function TopBar({
                     )}
                   {renderNavItem(
                     {
-                      label: "Settings",
-                      path: "/admin",
-                      icon: Settings,
-                      matches: ["/integrations", "/dnc", "/audit", "/admin"],
+                      label: "Integrations",
+                      path: "/integrations",
+                      icon: PlugZap,
                     },
                     { variant: "drawer" },
                   )}

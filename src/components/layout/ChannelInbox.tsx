@@ -67,7 +67,7 @@ export function ChannelListColHeader({
   className?: string;
 }) {
   return (
-    <div className={cn(WL_CHANNEL_CLASSES.listColHeader, className)} role="row" aria-hidden>
+    <div className={cn(WL_CHANNEL_CLASSES.listColHeader, className)} role="row">
       {columns.map((col) => (
         <span key={col.label} className={cn("wl-label-muted truncate", col.className)}>
           {col.label}

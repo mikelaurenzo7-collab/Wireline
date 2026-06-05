@@ -95,7 +95,7 @@ export function IntegrationPlaybookPanel({
             {!isConnected && (
               <a
                 href="/integrations"
-                className="text-amber-600 underline underline-offset-2 hover:text-amber-500"
+                className="text-brand underline underline-offset-2 hover:text-brand-deep"
               >
                 Connect →
               </a>

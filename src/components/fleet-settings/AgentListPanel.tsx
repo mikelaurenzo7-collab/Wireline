@@ -88,14 +88,10 @@ export default function AgentListPanel({
                 animate={{ opacity: 1, y: 0 }}
                 key={agent.id}
                 className={cn(
-                  "w-full flex items-center gap-1 transition-all rounded-md border group overflow-hidden",
+                  "w-full flex items-center gap-1 transition-all rounded-md group overflow-hidden",
                   selectedAgent?.id === agent.id
-                    ? cn(
-                        WL_FLEET_CLASSES.agentRow,
-                        WL_FLEET_CLASSES.agentRowActive,
-                        "border-brand/35",
-                      )
-                    : cn(WL_FLEET_CLASSES.agentRow, "wl-panel hover:border-brand/30"),
+                    ? cn(WL_FLEET_CLASSES.agentRow, WL_FLEET_CLASSES.agentRowActive)
+                    : WL_FLEET_CLASSES.agentRow,
                 )}
               >
                 <ShadButton

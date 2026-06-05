@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import {
   Users2,
   MessageSquare,
@@ -158,7 +158,8 @@ function StaffRow({
       disabled={!exists}
       className={cn(
         WL_FLEET_CLASSES.agentRow,
-        "h-auto whitespace-normal justify-start px-3 py-3 hover:bg-transparent",
+        WL_FLEET_CLASSES.agentRowList,
+        "group h-auto whitespace-normal justify-start px-3 py-3 hover:bg-transparent",
         !exists && "opacity-50 cursor-not-allowed",
       )}
     >
@@ -384,14 +385,14 @@ export default function FounderDashboard() {
             { label: "Live Ops floor", href: "/ops?tab=floor", icon: Headphones },
             { label: "Agent chat + training", href: "/chat", icon: Sparkles },
           ].map((l) => (
-            <a
+            <Link
               key={l.href}
-              href={l.href}
+              to={l.href}
               className="inline-flex items-center gap-2 px-3 py-2 rounded-md wl-panel border border-border text-[11px] text-ink hover:border-brand/30 transition-colors"
             >
               <l.icon className="w-3.5 h-3.5 text-brand" />
               {l.label}
-            </a>
+            </Link>
           ))}
         </div>
       </div>

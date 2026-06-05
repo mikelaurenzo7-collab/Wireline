@@ -618,6 +618,14 @@ html, body, .marketing-surface, .app-surface {
   border-radius: 0 2px 2px 0;
   background: var(--color-brand);
 }
+.wl-fleet-agent-row--list {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+.wl-fleet-agent-row--list:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-brand) 5%, var(--paper, #f5f0e6));
+}
 .wl-fleet-agent-avatar {
   width: 2.25rem;
   height: 2.25rem;
