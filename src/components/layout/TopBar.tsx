@@ -253,13 +253,10 @@ export default function TopBar({
             </span>
           </Link>
 
-          {/* Full-bleed routes (/chat): mobile document title — contextual routes
-              use WorkspaceTopBar h1 instead. */}
-          {breadcrumb && showTopBarTheme && (
-            <h1 className="sr-only lg:hidden">{breadcrumb.title}</h1>
-          )}
+          {/* Full-bleed routes (/chat): one sr-only h1 — contextual routes use WorkspaceTopBar. */}
+          {breadcrumb && showTopBarTheme && <h1 className="sr-only">{breadcrumb.title}</h1>}
 
-          {/* Desktop (lg+): breadcrumb chrome for full-bleed routes only. */}
+          {/* Desktop (lg+): breadcrumb chrome for full-bleed routes only (visual; h1 above). */}
           <div className="hidden lg:flex items-center gap-3 min-w-0 flex-1">
             <AnimatePresence mode="wait">
               {breadcrumb && showTopBarTheme && (
@@ -279,9 +276,12 @@ export default function TopBar({
                       </span>
                     </>
                   )}
-                  <h1 className="text-[15px] font-semibold leading-none tracking-[-0.02em] truncate text-ink dark:text-[color:var(--wl-paper)] lg:sr-only">
+                  <span
+                    aria-hidden="true"
+                    className="text-[15px] font-semibold leading-none tracking-[-0.02em] truncate text-ink dark:text-[color:var(--wl-paper)]"
+                  >
                     {breadcrumb.title}
-                  </h1>
+                  </span>
                 </motion.div>
               )}
             </AnimatePresence>

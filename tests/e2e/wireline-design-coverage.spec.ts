@@ -153,6 +153,7 @@ test.describe("Wireline design coverage — authenticated routes", () => {
     await gotoAuthenticated(page, "/chat");
     await expect(page.getByTestId("director-workspace")).toBeVisible();
     await assertDirectorComposerDock(page);
+    await assertSingleH1(page);
   });
 
   test("/integrations — integration hub panels", async ({ page }) => {
