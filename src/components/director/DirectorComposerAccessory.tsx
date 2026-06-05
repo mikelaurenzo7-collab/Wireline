@@ -108,7 +108,7 @@ export function DirectorComposerAccessory({
         : "";
 
   return (
-    <AnimatePresence initial={false}>
+    <AnimatePresence mode="wait" initial={false}>
       {active && meta && (
         <motion.div
           key={active}

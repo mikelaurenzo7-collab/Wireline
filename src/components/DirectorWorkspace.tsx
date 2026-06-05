@@ -84,6 +84,7 @@ import {
   WL_DIRECTOR_CLASSES,
   type ComposerAccessoryKind,
 } from "../lib/wireline-director-design";
+import { wantsDeepAnalysis } from "../lib/director-planner";
 import LoadingDots from "./ui/LoadingDots";
 import {
   detectDirectorMessageScene,
@@ -181,6 +182,7 @@ export default function DirectorWorkspace({
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [composerAccessory, setComposerAccessory] = useState<ComposerAccessoryKind | null>(null);
+  const [forceDeep, setForceDeep] = useState(false);
   const [enabledTools, setEnabledTools] = useState<string[]>([]);
   const [resolved, setResolved] = useState<Record<string, "done" | "dismissed">>({});
   const [busyKey, setBusyKey] = useState<string | null>(null);
@@ -504,11 +506,15 @@ export default function DirectorWorkspace({
     return () => clearInterval(timer);
   }, [isSending, input, reduceMotion]);
 
-  const pickCapabilityExample = useCallback((text: string) => {
-    setInput(text);
-    setComposerAccessory(null);
-    inputRef.current?.focus();
-  }, []);
+  const pickCapabilityExample = useCallback(
+    (text: string) => {
+      setInput(text);
+      if (!focusAgentId && wantsDeepAnalysis(text)) setForceDeep(true);
+      setComposerAccessory(null);
+      inputRef.current?.focus();
+    },
+    [focusAgentId],
+  );
 
   const toggleComposerAccessory = useCallback((kind: ComposerAccessoryKind) => {
     setComposerAccessory((prev) => (prev === kind ? null : kind));
@@ -565,6 +571,7 @@ export default function DirectorWorkspace({
         content: trimmed,
         ...(focusAgentId ? { focusAgentId } : {}),
         ...(opts?.approval ? { approval: opts.approval } : {}),
+        ...(!focusAgentId && (forceDeep || wantsDeepAnalysis(trimmed)) ? { forceDeep: true } : {}),
       };
 
       // Use streaming for regular messages (no approvals — those stay non-streaming)
@@ -606,7 +613,7 @@ export default function DirectorWorkspace({
         inputRef.current?.focus();
       }
     },
-    [isSending, toastError, streamSend, focusAgentId],
+    [isSending, toastError, streamSend, focusAgentId, forceDeep],
   );
 
   const markResolved = (key: string, state: "done" | "dismissed") =>
@@ -1701,6 +1708,7 @@ export default function DirectorWorkspace({
               onPickCapability={pickCapabilityExample}
               onSelectCoach={(agentId) => {
                 onFocusAgentChange?.(agentId);
+                if (agentId) setForceDeep(false);
                 setComposerAccessory(null);
               }}
               onPickDocument={() => {
@@ -1728,6 +1736,8 @@ export default function DirectorWorkspace({
                 enabledToolsCount={enabledTools.length}
                 isUploading={isUploading}
                 isSending={isSending}
+                forceDeep={forceDeep}
+                onToggleForceDeep={() => setForceDeep((v) => !v)}
               />
 
               <Input

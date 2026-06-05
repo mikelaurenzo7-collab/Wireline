@@ -467,6 +467,7 @@ router.post(
             fleet,
             stats,
             focusAgentId,
+            forceDeep: req.body?.forceDeep === true,
           });
           reply = turn.reply;
           suggestions = turn.suggestions;
@@ -640,6 +641,7 @@ router.post(
         history,
         fleet,
         focusAgentId,
+        forceDeep: req.body?.forceDeep === true,
       });
 
       res.write(

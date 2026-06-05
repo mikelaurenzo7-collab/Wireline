@@ -62,6 +62,8 @@ export interface DirectorTurnInput {
   focusAgentId?: string;
   userId: string;
   business?: DirectorBusinessContext;
+  /** Fleet mode only — forces Opus + extended thinking (also auto-detected from phrasing). */
+  forceDeep?: boolean;
 }
 
 async function loadBusinessContext(userId: string): Promise<DirectorBusinessContext | undefined> {
@@ -173,6 +175,7 @@ export async function planDirectorTurn(input: DirectorTurnInput): Promise<Direct
         fleet: input.fleet,
         stats: input.stats,
         business,
+        forceDeep: input.forceDeep,
       });
       return {
         mode: "fleet",
@@ -215,6 +218,7 @@ export async function planDirectorTurn(input: DirectorTurnInput): Promise<Direct
     fleet: input.fleet,
     stats: input.stats,
     business,
+    forceDeep: input.forceDeep,
   });
 
   return {
@@ -254,7 +258,7 @@ export async function buildDirectorStreamContext(
 ): Promise<DirectorStreamContext> {
   const business = input.business ?? (await loadBusinessContext(input.userId));
   const focusId = input.focusAgentId?.trim();
-  const deep = wantsDeepAnalysis(input.operatorMessage);
+  const deep = !focusId && (input.forceDeep === true || wantsDeepAnalysis(input.operatorMessage));
 
   if (focusId) {
     const ctx = await loadCoachContext(input.userId, focusId);

@@ -272,6 +272,70 @@ export const DIRECTOR_CAPABILITY_CATALOG: readonly DirectorCapabilityItem[] = [
     category: "creative",
     example: "Generate 3 logo concepts for my home services brand",
   },
+  {
+    id: "call-review",
+    label: "Call review",
+    description: "Rank recent calls and propose script fixes",
+    category: "coach",
+    example: "Review my last 10 calls and tell me what to fix in scripts first",
+  },
+  {
+    id: "pipeline-health",
+    label: "Pipeline health",
+    description: "Where leads stall and what to do next",
+    category: "strategy",
+    example: "Analyze my outbound pipeline — where are deals stalling?",
+  },
+  {
+    id: "deep-dive",
+    label: "Deep fleet dive",
+    description: "Opus-level cross-fleet analysis (slower, sharper)",
+    category: "strategy",
+    example: "Do a deep dive on my fleet performance over the last 30 days",
+  },
+  {
+    id: "book-meeting",
+    label: "Book a meeting",
+    description: "Calendar check + confirmation draft",
+    category: "integrations",
+    example: "Check my calendar availability Thursday afternoon and draft a booking confirmation",
+  },
+  {
+    id: "enrich-lead",
+    label: "Enrich a lead",
+    description: "Apollo lookup + personalized opener",
+    category: "integrations",
+    example: "Enrich alex.rivera@northstarmfg.com with Apollo and draft a cold opener",
+  },
+  {
+    id: "docusign-flow",
+    label: "Send a contract",
+    description: "DocuSign envelope draft on approval",
+    category: "integrations",
+    example: "Draft a standard NDA follow-up and prepare it for DocuSign",
+  },
+  {
+    id: "landing-page",
+    label: "Landing page copy",
+    description: "Hero, proof, CTA sections for your offer",
+    category: "create",
+    example: "Write homepage hero and three sections for my HVAC company",
+  },
+  {
+    id: "objection-matrix",
+    label: "Objection matrix",
+    description: "Price, timing, competitor responses",
+    category: "create",
+    example: "Build an objection handling matrix for price, timing, and competition",
+  },
+  {
+    id: "analyze-pdf",
+    label: "Analyze a document",
+    description: "Summarize an attached PDF and extract action items",
+    category: "create",
+    example:
+      "I attached our service agreement — summarize risks and suggested agent talking points",
+  },
 ] as const;
 
 export const DIRECTOR_COMPOSER_HINTS = [
@@ -281,7 +345,14 @@ export const DIRECTOR_COMPOSER_HINTS = [
   "Research competitors, pricing, or compliance — live web intel…",
   "Orchestrate calls, texts, emails, and CRM work in one thread…",
   "Coach an agent: select Coach, then describe the change…",
+  "Toggle Deep analysis for Opus-level fleet strategy…",
 ] as const;
+
+export const DIRECTOR_DEEP_MODE_COPY = {
+  label: "Deep analysis",
+  shortLabel: "Deep",
+  hint: "Opus + extended thinking for fleet strategy (not used while coaching an agent)",
+} as const;
 
 export type ComposerAccessoryKind = "connectors" | "capabilities" | "coach" | "tools" | "attach";
 

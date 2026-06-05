@@ -2,11 +2,12 @@
  * Director composer tool rail — pill chips with bottom-rail active state.
  */
 import type { ReactNode } from "react";
-import { ChevronDown, Loader2, Paperclip, Plug, Sparkles, Bot, Wrench } from "lucide-react";
+import { Brain, ChevronDown, Loader2, Paperclip, Plug, Sparkles, Bot, Wrench } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import {
   WL_DIRECTOR_CLASSES,
+  DIRECTOR_DEEP_MODE_COPY,
   type ComposerAccessoryKind,
 } from "../../lib/wireline-director-design";
 
@@ -79,6 +80,8 @@ export interface DirectorComposerToolbarProps {
   enabledToolsCount: number;
   isUploading: boolean;
   isSending: boolean;
+  forceDeep?: boolean;
+  onToggleForceDeep?: () => void;
 }
 
 export function DirectorComposerToolbar({
@@ -89,7 +92,10 @@ export function DirectorComposerToolbar({
   enabledToolsCount,
   isUploading,
   isSending,
+  forceDeep = false,
+  onToggleForceDeep,
 }: DirectorComposerToolbarProps) {
+  const showDeepToggle = !focusAgentId && onToggleForceDeep;
   return (
     <div className={WL_DIRECTOR_CLASSES.composerToolbar}>
       <ComposerToolChip
@@ -134,6 +140,29 @@ export function DirectorComposerToolbar({
             ) : null
           }
         />
+      )}
+      {showDeepToggle && (
+        <ShadButton
+          type="button"
+          variant="ghost"
+          size="sm"
+          disableAnimations
+          disabled={isSending}
+          onClick={onToggleForceDeep}
+          aria-pressed={forceDeep}
+          aria-label={DIRECTOR_DEEP_MODE_COPY.hint}
+          title={DIRECTOR_DEEP_MODE_COPY.hint}
+          className={cn(
+            WL_DIRECTOR_CLASSES.composerToolChip,
+            forceDeep && WL_DIRECTOR_CLASSES.composerToolChipActive,
+            "h-auto touch-press rounded-full shadow-none border border-transparent",
+            forceDeep && "border-brand/30 bg-brand/10 text-brand",
+          )}
+        >
+          <Brain className="w-3.5 h-3.5 shrink-0" />
+          <span className="hidden sm:inline">{DIRECTOR_DEEP_MODE_COPY.label}</span>
+          <span className="sm:hidden">{DIRECTOR_DEEP_MODE_COPY.shortLabel}</span>
+        </ShadButton>
       )}
       <ComposerToolChip
         id="attach"

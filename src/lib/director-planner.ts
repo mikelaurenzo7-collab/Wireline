@@ -59,6 +59,7 @@ export interface DirectorPlan extends DirectorFleetPlan {
 }
 
 export interface PlanDirectorInput {
+  forceDeep?: boolean;
   userId: string;
   operatorMessage: string;
   history: Array<{ role: "operator" | "director"; content: string }>;
@@ -133,7 +134,7 @@ export function normalizeDirectorPlan(
  * model layer is unavailable — the caller decides the fallback copy.
  */
 export async function planDirector(input: PlanDirectorInput): Promise<DirectorPlan> {
-  const deep = wantsDeepAnalysis(input.operatorMessage);
+  const deep = input.forceDeep === true || wantsDeepAnalysis(input.operatorMessage);
   const model = deep ? CLAUDE_MODELS.OPUS : CLAUDE_MODELS.SONNET;
   const connections = await loadTenantIntegrationConnections(input.userId);
   const integrationPrompt = formatDirectorIntegrationPrompt(connections);
