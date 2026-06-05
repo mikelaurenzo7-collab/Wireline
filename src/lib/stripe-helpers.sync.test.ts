@@ -34,13 +34,18 @@ vi.mock("./server-context", () => ({
 vi.mock("../db/schema", () => ({
   subscriptions: { userId: "userId", stripeCustomerId: "stripeCustomerId" },
   settings: { userId: "userId" },
+  spendBudgets: { userId: "userId", monthlyLimitUsd: "monthlyLimitUsd" },
 }));
 vi.mock("drizzle-orm", () => ({ eq: vi.fn() }));
 vi.mock("./webhook-helpers", () => ({ dispatchWebhook }));
 vi.mock("./dashboard-cache", () => ({ invalidateDashboard }));
+vi.mock("./workspace-usage-snapshot", () => ({
+  ensureDefaultAiSpendBudget: vi.fn().mockResolvedValue(undefined),
+}));
 
 describe("syncSubscriptionFromStripe", () => {
   beforeEach(() => {
+    vi.resetModules();
     vi.clearAllMocks();
     process.env.STRIPE_PRO_PRICE_ID = "price_pro_monthly";
     process.env.STRIPE_STARTER_PRICE_ID = "price_starter_monthly";

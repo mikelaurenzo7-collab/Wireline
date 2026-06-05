@@ -236,8 +236,8 @@ router.get(
           .limit(500),
       ]);
 
-      const totalAppointments = Number(apptCountResult[0].count);
-      const totalLeads = Number(leadsCountResult[0].count);
+      const totalAppointments = Number(apptCountResult[0]?.count ?? 0);
+      const totalLeads = Number(leadsCountResult[0]?.count ?? 0);
 
       const stats = computeDashboardStats({
         totalAppointments,
@@ -284,8 +284,11 @@ router.get(
       setCachedDashboard(userId, responseData);
 
       res.json(responseData);
-    } catch (e: any) {
-      log.error("Dashboard stats error", { error: e?.message || String(e) });
+    } catch (e: unknown) {
+      log.error("Dashboard stats error", {
+        userId: req.user?.id,
+        error: e instanceof Error ? e.message : String(e),
+      });
       res.status(500).json({ error: "Failed to fetch stats" });
     }
   },

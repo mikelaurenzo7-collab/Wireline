@@ -180,6 +180,9 @@ export default function LiveOps() {
       ]);
 
       const { tasks: actionsData } = await actionsRes.json();
+      if (!statsRes.ok) {
+        throw new Error(`dashboard stats ${statsRes.status}`);
+      }
       const statsData = await statsRes.json();
 
       if (mountedRef.current) {

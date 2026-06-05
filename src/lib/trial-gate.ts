@@ -111,20 +111,35 @@ export async function saveSignupAttribution(
     updatedAt: new Date(),
   };
 
-  await drizzle
-    .insert(schema.settings)
-    .values({
-      id: userId,
+  try {
+    const updated = await drizzle
+      .update(schema.settings)
+      .set(attributionValues)
+      .where(eq(schema.settings.userId, userId))
+      .returning({ userId: schema.settings.userId });
+
+    if (updated.length > 0) return;
+
+    await drizzle
+      .insert(schema.settings)
+      .values({
+        id: userId,
+        userId,
+        subscriptionStatus: "trialing",
+        trialEndsAt: new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000),
+        trialOutboundCount: 0,
+        ...attributionValues,
+      })
+      .onConflictDoUpdate({
+        target: schema.settings.userId,
+        set: attributionValues,
+      });
+  } catch (err: unknown) {
+    log.warn("saveSignupAttribution failed (non-fatal)", {
       userId,
-      subscriptionStatus: "trialing",
-      trialEndsAt: new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000),
-      trialOutboundCount: 0,
-      ...attributionValues,
-    })
-    .onConflictDoUpdate({
-      target: schema.settings.userId,
-      set: attributionValues,
+      error: err instanceof Error ? err.message : String(err),
     });
+  }
 }
 
 interface TrialCheck {

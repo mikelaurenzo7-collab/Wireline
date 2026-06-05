@@ -4,7 +4,8 @@ import { dedupeDirectorArtifacts } from "./director-artifact-dedupe";
 describe("dedupeDirectorArtifacts", () => {
   it("keeps the newest artifact per name and type", () => {
     const older = new Date("2026-06-01T12:00:00Z");
-    const newer = new Date("2026-06-05T12:00:00Z");
+    const newerLogo = new Date("2026-06-05T11:00:00Z");
+    const newestDoc = new Date("2026-06-05T12:00:00Z");
     const deduped = dedupeDirectorArtifacts([
       {
         name: "logo-concept-2.svg",
@@ -15,13 +16,13 @@ describe("dedupeDirectorArtifacts", () => {
       {
         name: "logo-concept-2.svg",
         artifactType: "svg",
-        createdAt: newer,
+        createdAt: newerLogo,
         id: "2",
       },
       {
         name: "website.md",
         artifactType: "markdown",
-        createdAt: newer,
+        createdAt: newestDoc,
         id: "3",
       },
     ]);

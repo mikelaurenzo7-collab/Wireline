@@ -185,6 +185,13 @@ router.get(
       log.error("Failed to push initial snap to presence stream", { error: error.message });
     }
 
+    // Vercel serverless cannot hold long-lived SSE (no LISTEN/NOTIFY + maxDuration).
+    // Send the snapshot and close — Command Center falls back to /api/fleet/presence polling.
+    if (process.env.VERCEL === "1") {
+      res.end();
+      return;
+    }
+
     req.on("close", () => {
       presenceStreams.unregister(userId, res);
       res.end();

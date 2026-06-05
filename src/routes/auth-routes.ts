@@ -209,17 +209,10 @@ router.post(
   authenticateUser,
   validateBody(signupIntentSchema),
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { saveSignupAttribution } = await import("../lib/trial-gate");
-      await saveSignupAttribution(req.user.id, req.body);
-      return res.json({ ok: true });
-    } catch (err: any) {
-      log.error("signup intent save failed", {
-        userId: req.user?.id,
-        error: err?.message ?? String(err),
-      });
-      return res.status(500).json({ error: "Failed to save signup intent" });
-    }
+    const { saveSignupAttribution } = await import("../lib/trial-gate");
+    await saveSignupAttribution(req.user.id, req.body);
+    // Attribution is best-effort — saveSignupAttribution logs and swallows DB errors.
+    return res.json({ ok: true });
   },
 );
 

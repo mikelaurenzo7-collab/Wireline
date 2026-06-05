@@ -31,6 +31,12 @@ To promote a preview to production:
 Both production aliases (`trywireline.com`, `wireline-chi.vercel.app`,
 `wireline-revaluate.vercel.app`) update together when a deployment is promoted.
 
+### Node.js runtime
+
+The repo requires **Node 22+** (`.nvmrc`, `package.json` `engines`, and
+`vercel.json` `build.env.NODE_VERSION`). In Vercel → wireline → Settings →
+General, set **Node.js Version** to **22.x** if the dashboard still shows 20.x.
+
 ---
 
 ## Environment variables
