@@ -188,9 +188,9 @@ export default function Training() {
               </span>
               <div className="min-w-0">
                 <p className="wl-label text-muted">Training</p>
-                <h1 className="text-sm font-semibold text-ink truncate tracking-[-0.01em]">
+                <h2 className="text-sm font-semibold text-ink truncate tracking-[-0.01em] m-0">
                   {selectedAgent?.name ?? "Agent"}
-                </h1>
+                </h2>
               </div>
             </div>
           </header>

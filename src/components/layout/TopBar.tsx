@@ -253,13 +253,16 @@ export default function TopBar({
             </span>
           </Link>
 
-          {/* Desktop (lg+): contextual breadcrumb. Replaces the horizontal
-              nav strip that used to live here — the Aurora rail now carries
-              the nav, freeing this space to tell you WHERE YOU ARE.
-              Animated key-on-change so the title swap reads instantly. */}
+          {/* Full-bleed routes (/chat): mobile document title — contextual routes
+              use WorkspaceTopBar h1 instead. */}
+          {breadcrumb && showTopBarTheme && (
+            <h1 className="sr-only lg:hidden">{breadcrumb.title}</h1>
+          )}
+
+          {/* Desktop (lg+): breadcrumb chrome for full-bleed routes only. */}
           <div className="hidden lg:flex items-center gap-3 min-w-0 flex-1">
             <AnimatePresence mode="wait">
-              {breadcrumb && (
+              {breadcrumb && showTopBarTheme && (
                 <motion.div
                   key={location.pathname}
                   initial={{ opacity: 0, x: -6 }}

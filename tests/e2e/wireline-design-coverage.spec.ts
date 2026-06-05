@@ -256,6 +256,19 @@ test.describe("Wireline design coverage — mobile authenticated shell", () => {
     await expect(page.getByRole("navigation", { name: "Main navigation" })).toBeVisible();
     await page.getByRole("button", { name: "Close navigation" }).click();
   });
+
+  test("/training — exactly one h1 (workspace title, not agent name)", async ({ page }) => {
+    await gotoAuthenticated(page, "/training");
+    await assertSingleH1(page);
+    await expect(page.getByRole("heading", { level: 1, name: /training/i })).toBeVisible();
+  });
+
+  test("/integrations — workspace subtitle renders once on mobile", async ({ page }) => {
+    await gotoAuthenticated(page, "/integrations");
+    const bar = page.locator(".workspace-top-bar");
+    await expect(bar.getByText(/email, crm & third-party/i)).toHaveCount(1);
+    await assertNoHorizontalOverflow(page);
+  });
 });
 
 test.describe("Wireline design coverage — motion", () => {

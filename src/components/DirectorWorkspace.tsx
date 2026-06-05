@@ -1467,10 +1467,11 @@ export default function DirectorWorkspace({
                                 size="sm"
                                 disableAnimations
                                 onClick={() => runSuggestion(s)}
-                                className="group h-auto text-[11px] font-medium text-brand rounded-full border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10 hover:border-brand/40"
+                                title={s.label}
+                                className="group h-auto max-w-full text-left text-[11px] font-medium text-brand rounded-lg border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10 hover:border-brand/40 whitespace-normal"
                               >
-                                <Icon className="w-3 h-3" />
-                                {s.label}
+                                <Icon className="w-3 h-3 shrink-0" />
+                                <span className="min-w-0 text-pretty leading-snug">{s.label}</span>
                                 <ArrowUpRight className="w-2.5 h-2.5 opacity-0 -ml-1 group-hover:opacity-100 group-hover:ml-0 transition-all duration-200" />
                               </ShadButton>
                             );
@@ -1498,9 +1499,9 @@ export default function DirectorWorkspace({
                                   setInput(q.replace(/\?$/, "") + " — ");
                                   inputRef.current?.focus();
                                 }}
-                                className="h-auto text-[11px] text-left rounded-full border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10"
+                                className="h-auto max-w-full text-[11px] text-left rounded-lg border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10 whitespace-normal"
                               >
-                                {q}
+                                <span className="min-w-0 text-pretty leading-snug">{q}</span>
                               </ShadButton>
                             ))}
                           </div>

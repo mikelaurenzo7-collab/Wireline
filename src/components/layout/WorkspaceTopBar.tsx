@@ -51,22 +51,17 @@ export default function WorkspaceTopBar({
               {eyebrow}
             </p>
           )}
-          <p className={cn(WL_APP_CLASSES.workspaceTitle, "truncate max-w-[7rem] sm:max-w-none")}>
+          <h1
+            className={cn(
+              WL_APP_CLASSES.workspaceTitle,
+              "truncate sm:max-w-none m-0 font-semibold",
+            )}
+          >
             {title}
-          </p>
-          {subtitle && (
-            <p
-              className={cn(
-                WL_APP_CLASSES.bodyCaption,
-                "hidden sm:block line-clamp-2 text-pretty max-w-[11rem] md:max-w-[15rem] lg:max-w-[20rem]",
-              )}
-            >
-              {subtitle}
-            </p>
-          )}
+          </h1>
         </div>
         <span aria-hidden="true" className="w-px h-5 bg-black/10 shrink-0 self-center" />
-        <div className="flex-1 min-w-0 overflow-hidden self-center">
+        <div className="flex-1 min-w-0 self-center overflow-x-auto tab-strip-scroll">
           <AppChromeSubTabs density="compact" />
         </div>
         <div
@@ -92,14 +87,15 @@ export default function WorkspaceTopBar({
         </div>
       </div>
       {subtitle && (
-        <div
+        <p
           className={cn(
-            "sm:hidden px-3 pb-2 pt-0 border-t border-black/[0.05]",
+            WL_APP_CLASSES.bodyCaption,
+            "px-3 pb-2 pt-0 sm:pt-0 border-t border-black/[0.05] sm:border-t-0 line-clamp-2 text-pretty",
             WL_APP_CLASSES.pageContextAccent,
           )}
         >
-          <p className={cn(WL_APP_CLASSES.bodyCaption, "line-clamp-2")}>{subtitle}</p>
-        </div>
+          {subtitle}
+        </p>
       )}
     </header>
   );
