@@ -1,6 +1,5 @@
 /**
- * Composer context strip — coaching target + active tool hint.
- * Keeps operators oriented without covering the thread.
+ * Composer context strip — active coaching target pill.
  */
 import { Bot, X } from "lucide-react";
 import { cn } from "../../lib/utils";
@@ -30,8 +29,8 @@ export function DirectorComposerContextStrip({
       )}
     >
       {showCoach && (
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/20 bg-brand/[0.06] pl-2 pr-1 py-0.5 text-[10px] font-medium text-brand">
-          <Bot className="w-3 h-3 shrink-0" aria-hidden />
+        <div className="inline-flex items-center gap-1 rounded-full border border-brand/20 bg-brand/[0.06] pl-2 pr-0.5 py-0.5 text-[10px] font-medium text-brand">
+          <Bot className="w-3 h-3 shrink-0 ml-0.5" aria-hidden />
           <span>
             {DIRECTOR_COMPOSER_CONTEXT.coachingPrefix}{" "}
             <span className="font-semibold">{focusAgentName}</span>
@@ -44,12 +43,12 @@ export function DirectorComposerContextStrip({
               disableAnimations
               onClick={onClearCoach}
               aria-label={DIRECTOR_COMPOSER_CONTEXT.clearCoachLabel}
-              className="h-5 w-5 rounded-full text-brand/70 hover:text-brand hover:bg-brand/10"
+              className="shrink-0 h-11 w-11 rounded-full text-brand/70 hover:text-brand hover:bg-brand/10 touch-press"
             >
               <X className="w-3 h-3" />
             </ShadButton>
           )}
-        </span>
+        </div>
       )}
     </div>
   );

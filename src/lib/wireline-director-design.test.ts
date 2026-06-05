@@ -45,6 +45,8 @@ describe("Wireline Director design contract", () => {
     expect(WL_DIRECTOR_CLASSES.assistantMessage).toBe("wl-director-message--assistant");
     expect(DIRECTOR_COMPOSER_ACCESSORY_HINTS.capabilities).toContain("prompt");
     expect(DIRECTOR_COMPOSER_CONTEXT.coachingPrefix).toBe("Coaching");
+    expect(DIRECTOR_COMPOSER_CONTEXT.closePanelLabel).toContain("Close");
+    expect(WL_DIRECTOR_CLASSES.composerSendRow).toBe("wl-composer-send-row");
     expect(WL_DIRECTOR_CLASSES.scrollToBottom).toBe("wl-scroll-to-bottom-btn");
     expect(WL_DIRECTOR_CLASSES.liveOrchestra).toBe("wl-live-orchestra");
   });

@@ -38,6 +38,8 @@ export interface DirectorCapabilityCatalogProps {
   onPickExample: (text: string) => void;
   /** empty = hero embed; popover = composer dropdown */
   variant?: "empty" | "popover";
+  /** Inside composer accessory — defers scroll to parent panel */
+  embedded?: boolean;
   className?: string;
 }
 
@@ -57,7 +59,7 @@ function CapabilityRow({
       disableAnimations
       onClick={() => onPick(item.example)}
       className={cn(
-        "group w-full h-auto justify-start text-left rounded-md border border-transparent hover:border-brand/20 hover:bg-brand/[0.04] px-2.5 py-2 gap-2",
+        "group w-full h-auto justify-start text-left rounded-md border border-transparent hover:border-brand/20 hover:bg-brand/[0.04] px-2.5 py-2 gap-2 touch-press",
         compact && "py-1.5",
       )}
     >
@@ -77,6 +79,7 @@ function CapabilityRow({
 export function DirectorCapabilityCatalog({
   onPickExample,
   variant = "empty",
+  embedded = false,
   className,
 }: DirectorCapabilityCatalogProps) {
   const grouped = useMemo(() => directorCapabilitiesByCategory(), []);
@@ -88,16 +91,23 @@ export function DirectorCapabilityCatalog({
   if (variant === "popover") {
     const activeItems = grouped[activeCategory] ?? [];
     return (
-      <div className={cn("max-h-[min(220px,32dvh)] overflow-y-auto", className)}>
-        <div className="flex items-center justify-between gap-2 px-1 pb-2">
-          <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
-            Skills
-          </span>
-          <span className="text-[9px] font-mono text-muted-foreground/70 tabular-nums">
-            {DIRECTOR_CAPABILITY_CATALOG.length} total
-          </span>
-        </div>
-        <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-none -mx-0.5 px-0.5">
+      <div className={cn(!embedded && "max-h-[min(220px,32dvh)] overflow-y-auto", className)}>
+        {!embedded && (
+          <div className="flex items-center justify-between gap-2 px-1 pb-2">
+            <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
+              Skills
+            </span>
+            <span className="text-[9px] font-mono text-muted-foreground/70 tabular-nums">
+              {DIRECTOR_CAPABILITY_CATALOG.length} total
+            </span>
+          </div>
+        )}
+        <div
+          className={cn(
+            "flex gap-1 overflow-x-auto pb-2 scrollbar-none -mx-0.5 px-0.5",
+            embedded && "wl-composer-accessory-catalog-sticky",
+          )}
+        >
           {categories.map((cat) => {
             const Icon = CATEGORY_ICON[cat];
             const items = grouped[cat];

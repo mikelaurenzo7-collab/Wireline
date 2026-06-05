@@ -45,7 +45,7 @@ function ComposerToolChip({
       onClick={onClick}
       aria-pressed={active}
       aria-expanded={active}
-      aria-controls={`director-composer-accessory-${id}`}
+      aria-controls={active ? `director-composer-accessory-${id}` : undefined}
       aria-label={ariaLabel ?? label}
       className={cn(
         WL_DIRECTOR_CLASSES.composerToolChip,
@@ -55,7 +55,9 @@ function ComposerToolChip({
       )}
     >
       {icon}
-      <span className="hidden sm:inline">{label}</span>
+      <span className={cn("hidden sm:inline", id === "coach" && "wl-composer-tool-chip-label")}>
+        {label}
+      </span>
       <span className="sm:hidden">{shortLabel ?? label}</span>
       {trailing}
       <ChevronDown

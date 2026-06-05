@@ -42,6 +42,7 @@ export const WL_DIRECTOR_CLASSES = {
   composerToolChipActive: "wl-composer-tool-chip--active",
   composerToolChipEngaged: "wl-composer-tool-chip--engaged",
   composerContextStrip: "wl-composer-context-strip",
+  composerSendRow: "wl-composer-send-row",
   assistantMessage: "wl-director-message--assistant",
   messageMeta: "wl-director-message-meta",
   capabilityCatPill: "wl-director-cap-pill",
@@ -286,6 +287,7 @@ export const DIRECTOR_COMPOSER_ACCESSORY_HINTS: Record<ComposerAccessoryKind, st
 export const DIRECTOR_COMPOSER_CONTEXT = {
   coachingPrefix: "Coaching",
   clearCoachLabel: "Return to fleet-only mode",
+  closePanelLabel: "Close composer panel",
 } as const;
 
 export const WL_APP_CLASSES = {

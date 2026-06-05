@@ -36,6 +36,8 @@ import type { WorkspaceAgentSummary } from "../../contexts/AgentsContext";
 import {
   WL_DIRECTOR_CLASSES,
   DIRECTOR_COMPOSER_ACCESSORY_HINTS,
+  DIRECTOR_COMPOSER_CONTEXT,
+  DIRECTOR_CAPABILITY_CATALOG,
   type ComposerAccessoryKind,
 } from "../../lib/wireline-director-design";
 
@@ -98,6 +100,12 @@ export function DirectorComposerAccessory({
 }: DirectorComposerAccessoryProps) {
   const meta = active ? PANEL_META[active] : null;
   const HeaderIcon = meta?.icon ?? Plug;
+  const panelHint =
+    active === "capabilities"
+      ? `${DIRECTOR_COMPOSER_ACCESSORY_HINTS.capabilities} · ${DIRECTOR_CAPABILITY_CATALOG.length} skills`
+      : active
+        ? DIRECTOR_COMPOSER_ACCESSORY_HINTS[active]
+        : "";
 
   return (
     <AnimatePresence initial={false}>
@@ -115,10 +123,14 @@ export function DirectorComposerAccessory({
           className="overflow-hidden"
         >
           <div
-            className={cn(WL_DIRECTOR_CLASSES.composerAccessory, "px-3 py-2 sm:px-4")}
+            className={cn(
+              WL_DIRECTOR_CLASSES.composerAccessory,
+              active === "capabilities" && "wl-composer-accessory-panel--embedded-catalog",
+              "px-3 py-2 sm:px-4",
+            )}
             data-motion-panel
           >
-            <div className="flex items-start justify-between gap-3 mb-2">
+            <div className="flex items-start justify-between gap-3 mb-2 shrink-0">
               <div className="flex items-center gap-2 min-w-0">
                 <span className="flex w-7 h-7 shrink-0 items-center justify-center rounded-md bg-brand/10 text-brand">
                   <HeaderIcon className="w-3.5 h-3.5" />
@@ -128,7 +140,7 @@ export function DirectorComposerAccessory({
                     {meta.label}
                   </p>
                   <p className="text-[10px] text-muted-foreground leading-snug line-clamp-2">
-                    {DIRECTOR_COMPOSER_ACCESSORY_HINTS[active]}
+                    {panelHint}
                   </p>
                 </div>
               </div>
@@ -138,7 +150,8 @@ export function DirectorComposerAccessory({
                 size="sm"
                 disableAnimations
                 onClick={onClose}
-                className="h-7 px-2 text-[10px] uppercase tracking-[0.14em] text-muted shrink-0"
+                aria-label={DIRECTOR_COMPOSER_CONTEXT.closePanelLabel}
+                className="h-8 min-w-[44px] px-2 text-[10px] uppercase tracking-[0.14em] text-muted shrink-0 touch-press"
               >
                 Close
               </ShadButton>
@@ -146,14 +159,17 @@ export function DirectorComposerAccessory({
 
             {active === "connectors" && (
               <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+                <div className="wl-composer-accessory-connectors">
                   {CONNECTOR_CATALOG.map((c) => (
-                    <div
+                    <Link
                       key={c.id}
-                      className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/40"
+                      to="/integrations"
+                      onClick={onClose}
+                      aria-label={`${c.label} — ${c.desc}`}
+                      className="wl-composer-accessory-connector touch-press"
                     >
                       <span className="w-6 h-6 rounded-md bg-brand/12 flex items-center justify-center shrink-0">
-                        <c.icon className="w-3 h-3 text-brand" />
+                        <c.icon className="w-3 h-3 text-brand" aria-hidden />
                       </span>
                       <div className="min-w-0">
                         <p className="text-[10px] font-semibold text-foreground truncate">
@@ -161,7 +177,7 @@ export function DirectorComposerAccessory({
                         </p>
                         <p className="text-[9px] text-muted-foreground truncate">{c.desc}</p>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
                 <Link
@@ -176,7 +192,11 @@ export function DirectorComposerAccessory({
             )}
 
             {active === "capabilities" && (
-              <DirectorCapabilityCatalog variant="popover" onPickExample={onPickCapability} />
+              <DirectorCapabilityCatalog
+                variant="popover"
+                embedded
+                onPickExample={onPickCapability}
+              />
             )}
 
             {active === "coach" && (
@@ -186,9 +206,10 @@ export function DirectorComposerAccessory({
                   variant="ghost"
                   disableAnimations
                   onClick={() => onSelectCoach(null)}
+                  aria-pressed={!focusAgentId}
                   className={cn(
-                    "w-full justify-start gap-2 px-2.5 py-2 h-auto text-[11px] rounded-md",
-                    !focusAgentId && "bg-brand/8 text-brand font-medium",
+                    "w-full justify-start gap-2 px-2.5 py-2.5 h-auto text-[11px] rounded-md touch-press",
+                    !focusAgentId && "bg-brand/8 text-brand font-medium border border-brand/15",
                   )}
                 >
                   Fleet only
@@ -200,9 +221,10 @@ export function DirectorComposerAccessory({
                     variant="ghost"
                     disableAnimations
                     onClick={() => onSelectCoach(a.id)}
+                    aria-pressed={focusAgentId === a.id}
                     className={cn(
-                      "w-full justify-start gap-2 px-2.5 py-2 h-auto rounded-md",
-                      focusAgentId === a.id && "bg-brand/8",
+                      "w-full justify-start gap-2 px-2.5 py-2.5 h-auto rounded-md touch-press",
+                      focusAgentId === a.id && "bg-brand/8 border border-brand/15",
                     )}
                   >
                     <span className="w-6 h-6 rounded-full bg-brand/10 text-brand text-[10px] font-bold flex items-center justify-center shrink-0">
@@ -261,7 +283,7 @@ export function DirectorComposerAccessory({
                   disableAnimations
                   disabled={isUploading}
                   onClick={onPickDocument}
-                  className="h-auto justify-start gap-2 px-2.5 py-2 rounded-md"
+                  className="h-auto justify-start gap-2 px-2.5 py-2.5 rounded-md touch-press"
                 >
                   {isUploading ? (
                     <Loader2 className="w-4 h-4 text-brand animate-spin" />
@@ -280,7 +302,7 @@ export function DirectorComposerAccessory({
                   variant="ghost"
                   disableAnimations
                   onClick={onPickContextRule}
-                  className="h-auto justify-start gap-2 px-2.5 py-2 rounded-md"
+                  className="h-auto justify-start gap-2 px-2.5 py-2.5 rounded-md touch-press"
                 >
                   <Brain className="w-4 h-4 text-brand" />
                   <span className="text-left">
@@ -293,7 +315,7 @@ export function DirectorComposerAccessory({
                   variant="ghost"
                   disableAnimations
                   onClick={onPickPlaybookInstruction}
-                  className="h-auto justify-start gap-2 px-2.5 py-2 rounded-md"
+                  className="h-auto justify-start gap-2 px-2.5 py-2.5 rounded-md touch-press"
                 >
                   <GraduationCap className="w-4 h-4 text-brand" />
                   <span className="text-left">

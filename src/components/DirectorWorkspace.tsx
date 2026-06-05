@@ -944,10 +944,10 @@ export default function DirectorWorkspace({
       <div className="relative flex-1 min-h-0 flex flex-col">
         <div
           ref={scrollRef}
-          className="flex-1 min-h-0 scroll-viewport wl-scroll-edge px-3 sm:px-4 py-5"
+          className="flex-1 min-h-0 scroll-viewport wl-scroll-edge wl-director-thread-scroll px-3 sm:px-4 py-5"
         >
           {loadDegraded && !isLoading && (
-            <p className="rounded-md border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-[11px] text-amber-900/80 dark:text-amber-100/80">
+            <p className="rounded-md border border-brand/20 bg-brand/[0.06] px-3 py-2 text-[11px] text-ink/80 dark:text-foreground/85">
               Some Director data could not be loaded. Your thread may be incomplete — refresh to
               retry.
             </p>
@@ -1708,7 +1708,7 @@ export default function DirectorWorkspace({
               }}
             />
 
-            <div className="flex items-center justify-between gap-2 px-3 pb-3">
+            <div className={cn("px-3 pb-3", WL_DIRECTOR_CLASSES.composerSendRow)}>
               <DirectorComposerToolbar
                 activeAccessory={composerAccessory}
                 onToggle={toggleComposerAccessory}
