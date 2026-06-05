@@ -46,8 +46,7 @@ export const OPS_PULSE_METRICS = {
 export const OPS_COPY = {
   floorQuiet: "Floor is quiet — active conversations appear here.",
   floorLoading: "Loading live floor",
-  floorTitle: (n: number) =>
-    n === 0 ? "No live callers" : `${n} live caller${n === 1 ? "" : "s"}`,
+  floorTitle: (n: number) => (n === 0 ? "Live floor" : `${n} live caller${n === 1 ? "" : "s"}`),
   intelHub: "Action queue",
   intelEmpty: "All clear — no operator approvals waiting.",
   telemetryTitle: "Fleet pulse",
@@ -73,7 +72,7 @@ export const OPS_COPY = {
 export const OPS_CHANNEL_EMPTY = {
   floor: {
     eyebrow: "Live floor",
-    title: "No live callers",
+    title: "No active callers",
     description: "Active conversations stream here in real time — listen in, coach, or escalate.",
     actions: [
       { label: "View call history", to: "/phone" },

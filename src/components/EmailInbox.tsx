@@ -50,6 +50,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
   // synchronously by the effect below so any guard that reads it sees the
   // latest selection at resolution time.
   const selectedThreadIdRef = useRef<string | null>(null);
+  const autoSelectedDesktopRef = useRef(false);
   const mountedRef = useRef(true);
   useEffect(() => {
     mountedRef.current = true;
@@ -131,6 +132,14 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
     fetchThreads();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time fetch on mount
   }, []);
+
+  /** Desktop split-pane: pre-select the newest thread so the detail pane isn't empty on arrival. */
+  useEffect(() => {
+    if (loading || threads.length === 0 || autoSelectedDesktopRef.current) return;
+    if (!window.matchMedia("(min-width: 1024px)").matches) return;
+    autoSelectedDesktopRef.current = true;
+    setSelectedThread(threads[0]);
+  }, [loading, threads]);
 
   // Guarded against the rapid-thread-switch race: if the user clicks
   // thread A → B before A's response lands, A's late resolve must not

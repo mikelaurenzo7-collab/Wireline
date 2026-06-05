@@ -62,6 +62,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const autoSelectedDesktopRef = useRef(false);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -125,6 +126,13 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
     fetchThreads();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time fetch on mount
   }, []);
+
+  useEffect(() => {
+    if (loading || threads.length === 0 || autoSelectedDesktopRef.current) return;
+    if (!window.matchMedia("(min-width: 1024px)").matches) return;
+    autoSelectedDesktopRef.current = true;
+    setActiveId(threads[0].id);
+  }, [loading, threads]);
 
   useEffect(() => {
     if (activeId) fetchMessages(activeId);

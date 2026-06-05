@@ -52,7 +52,7 @@ describe("Wireline Live Ops design contract", () => {
   });
 
   it("formats floor title for zero and plural callers", () => {
-    expect(OPS_COPY.floorTitle(0)).toMatch(/no live/i);
+    expect(OPS_COPY.floorTitle(0)).toMatch(/live floor/i);
     expect(OPS_COPY.floorTitle(1)).toContain("1 live caller");
     expect(OPS_COPY.floorTitle(3)).toContain("3 live callers");
   });

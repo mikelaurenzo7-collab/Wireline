@@ -301,6 +301,7 @@ async function refreshDemoShowcaseCopy(userId: string, tx: DemoSeedDb): Promise<
         summary: SAMPLE_SUMMARIES[idx],
         subject: SAMPLE_EMAIL_SUBJECTS[i % SAMPLE_EMAIL_SUBJECTS.length],
         intentLabel: SAMPLE_INTENTS[idx % SAMPLE_INTENTS.length],
+        read: true,
       })
       .where(eq(emailThreads.id, seedEmails[i].id));
   }
@@ -548,7 +549,7 @@ export async function seedDemoAccountData(userId: string): Promise<{
             summary: SAMPLE_SUMMARIES[index % SAMPLE_SUMMARIES.length],
             leadScore: 45 + Math.floor(Math.random() * 50),
             intentLabel: SAMPLE_INTENTS[index % SAMPLE_INTENTS.length],
-            read: index % 3 !== 0,
+            read: true,
             lastMessageAt: randomCreatedAt(10),
             createdAt: randomCreatedAt(14),
           })
