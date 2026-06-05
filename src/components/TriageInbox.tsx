@@ -16,6 +16,7 @@ import {
   X,
   Check,
   Trash2,
+  type LucideIcon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { authFetch } from "../lib/api";
@@ -852,7 +853,7 @@ function TriagePanelEmpty({
   config,
   positive,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: LucideIcon;
   config: {
     eyebrow: string;
     title: string;

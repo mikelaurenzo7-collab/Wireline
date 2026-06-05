@@ -89,6 +89,7 @@ describe("Wireline Live Ops design contract", () => {
       true,
     );
     expect(OPS_INSIGHTS_EMPTY.quality.description.toLowerCase()).toContain("score");
+    expect(OPS_INSIGHTS_EMPTY.quality.actions.some((a) => a.to === "/phone")).toBe(true);
   });
 
   it("defines channel toolbar loading labels for route boundaries", () => {

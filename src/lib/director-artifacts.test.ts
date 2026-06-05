@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import {
   buildSignedDownloadUrl,
   createSignedDownloadToken,
@@ -6,6 +6,9 @@ import {
 } from "./director-artifact-signing";
 
 describe("director-artifacts signing", () => {
+  beforeAll(() => {
+    process.env.INTERNAL_JWT_SECRET = "test-artifact-signing-secret";
+  });
   it("creates and verifies signed download tokens", () => {
     const token = createSignedDownloadToken("42", "user-1", 300);
     expect(verifySignedDownloadToken("42", "user-1", String(token.exp), token.sig)).toBe(true);

@@ -59,7 +59,7 @@ Every agent runs **Claude Sonnet 4.6** on the live voice path — the smartest m
 git clone https://github.com/mikelaurenzo7-collab/wireline.git
 cd wireline
 
-# Install (Node 20+)
+# Install (Node 22+)
 npm install
 
 # Env — copy .env.example, fill in the secrets you have

@@ -1,6 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React from "react";
-import { CreditCard, AlertTriangle, Activity, CheckCircle2, Trash2, ServerCog } from "lucide-react";
+import {
+  CreditCard,
+  AlertTriangle,
+  Activity,
+  CheckCircle2,
+  Trash2,
+  ServerCog,
+  Loader2,
+} from "lucide-react";
 import { Panel } from "../PageShell";
 import StripeBillingCard from "../StripeBillingCard";
 import { cn } from "../../lib/utils";

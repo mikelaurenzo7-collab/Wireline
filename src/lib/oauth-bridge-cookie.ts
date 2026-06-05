@@ -28,5 +28,5 @@ export function readOAuthBridgeStateCookie(req: Request): string | undefined {
 }
 
 export function clearOAuthBridgeStateCookie(res: Response): void {
-  res.clearCookie(OAUTH_BRIDGE_STATE_COOKIE, oauthBridgeStateCookieOptions());
+  res.clearCookie(OAUTH_BRIDGE_STATE_COOKIE, baseCookieOptions());
 }

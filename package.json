@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "dev": "tsx server.ts",
@@ -34,6 +34,7 @@
     "docs:check": "node scripts/check-readme-pricing.mjs",
     "authz:check": "tsx scripts/generate-authz-matrix.ts",
     "security:audit": "npm audit --audit-level=high --omit=dev",
+    "security:audit:dev": "npm audit",
     "security:audit:full": "npm audit --omit=dev",
     "smoke:server": "VERCEL=1 node -e \"require('./dist/server.cjs'); console.log('server bundle imports')\"",
     "oauth:redirects": "node scripts/print-oauth-redirects.mjs",
@@ -125,7 +126,7 @@
     "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.30.1",
     "@typescript-eslint/parser": "^8.30.1",
-    "@vitest/coverage-v8": "^2.1.9",
+    "@vitest/coverage-v8": "^4.1.8",
     "autoprefixer": "^10.4.21",
     "drizzle-kit": "^0.31.10",
     "esbuild": "^0.28.0",
@@ -142,6 +143,9 @@
     "tsx": "^4.21.0",
     "typescript": "^6.0.3",
     "vite": "^6.2.0",
-    "vitest": "^2.1.9"
+    "vitest": "^4.1.8"
+  },
+  "overrides": {
+    "esbuild": "$esbuild"
   }
 }

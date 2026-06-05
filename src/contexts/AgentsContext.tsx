@@ -23,6 +23,7 @@ export interface WorkspaceAgentSummary {
   id: string;
   name: string;
   role: string | null;
+  channel?: "voice" | "email" | "omnichannel";
 }
 
 interface AgentsContextValue {
@@ -51,7 +52,12 @@ export const AGENTS_CHANGED_EVENT = "wireline:agents-changed";
 /** Hydrate roster from Director fleet when /api/agents is temporarily empty. */
 export const AGENTS_HYDRATE_EVENT = "wireline:agents-hydrate";
 
-function isAgentLike(a: unknown): a is { id: string; name?: string | null; role?: string | null } {
+function isAgentLike(a: unknown): a is {
+  id: string;
+  name?: string | null;
+  role?: string | null;
+  channel?: string | null;
+} {
   return (
     typeof a === "object" &&
     a !== null &&
@@ -61,12 +67,23 @@ function isAgentLike(a: unknown): a is { id: string; name?: string | null; role?
   );
 }
 
+function normalizeChannel(raw: string | null | undefined): WorkspaceAgentSummary["channel"] {
+  if (raw === "email" || raw === "voice" || raw === "omnichannel") return raw;
+  return undefined;
+}
+
 function toAgentSummary(a: {
   id: string;
   name?: string | null;
   role?: string | null;
+  channel?: string | null;
 }): WorkspaceAgentSummary {
-  return { id: a.id, name: a.name || "Untitled agent", role: a.role ?? null };
+  return {
+    id: a.id,
+    name: a.name || "Untitled agent",
+    role: a.role ?? null,
+    channel: normalizeChannel(a.channel),
+  };
 }
 
 function parseAgentsPayload(data: unknown): WorkspaceAgentSummary[] {

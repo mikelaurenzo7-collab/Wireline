@@ -1,3 +1,4 @@
+import type { MouseEvent } from "react";
 import { AlertTriangle, Loader2, X } from "lucide-react";
 import { cn } from "../lib/utils";
 import {
@@ -36,7 +37,7 @@ export default function ConfirmModal({
   return (
     <AlertDialog
       open={open}
-      onOpenChange={(nextOpen) => {
+      onOpenChange={(nextOpen: boolean) => {
         if (!nextOpen && !loading) onCancel();
       }}
     >
@@ -95,7 +96,7 @@ export default function ConfirmModal({
             <AlertDialogAction
               asChild
               disabled={loading}
-              onClick={(event) => {
+              onClick={(event: MouseEvent<HTMLButtonElement>) => {
                 event.preventDefault();
                 onConfirm();
               }}

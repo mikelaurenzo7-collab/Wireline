@@ -19,6 +19,7 @@ import {
 } from "recharts";
 import { authFetch, readApiJson } from "../../lib/api";
 import { useToast } from "../../contexts/ToastContext";
+import { OPS_INSIGHTS_EMPTY } from "../../lib/wireline-ops-design";
 import { fetchInsight, Spinner, ErrCard, qaColor, InsightEmpty } from "./shared";
 
 export default function QualityView({ days }: { days: number }) {
@@ -100,7 +101,7 @@ export default function QualityView({ days }: { days: number }) {
               },
               primary: true,
             },
-            { label: "View call history", to: "/phone" },
+            ...OPS_INSIGHTS_EMPTY.quality.actions,
           ]}
         />
       </div>

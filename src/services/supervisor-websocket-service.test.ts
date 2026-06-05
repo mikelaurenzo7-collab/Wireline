@@ -63,17 +63,15 @@ function createMockWs(): MockWs {
   return ws;
 }
 
-vi.mock("ws", () => ({
-  WebSocketServer: vi.fn().mockImplementation(() => {
+vi.mock("ws", () => {
+  // Vitest 4 invokes mocked constructors with `new` — arrow factories break here.
+  function WebSocketServerMock(this: EventEmitter) {
     const server = new EventEmitter();
-    (server as EventEmitter & { on: typeof EventEmitter.prototype.on }).on = function on(
-      event: string,
-      fn: (ws: MockWs, req: IncomingMessage) => void,
-    ) {
+    server.on = function on(event: string, fn: (ws: MockWs, req: IncomingMessage) => void) {
       if (event === "connection") h.state.connectionHandlers.push(fn);
       return EventEmitter.prototype.on.call(this, event, fn as (...args: unknown[]) => void);
     };
-    (server as { handleUpgrade: ReturnType<typeof vi.fn> }).handleUpgrade = vi.fn(
+    (server as EventEmitter & { handleUpgrade: ReturnType<typeof vi.fn> }).handleUpgrade = vi.fn(
       (_req: IncomingMessage, _socket: unknown, _head: unknown, cb: (ws: MockWs) => void) => {
         const ws = createMockWs();
         h.state.lastWs = ws;
@@ -82,9 +80,13 @@ vi.mock("ws", () => ({
       },
     );
     return server;
-  }),
-  WebSocket: { OPEN: 1 },
-}));
+  }
+
+  return {
+    WebSocketServer: vi.fn(WebSocketServerMock),
+    WebSocket: { OPEN: 1 },
+  };
+});
 
 vi.mock("../lib/server-context", () => ({
   drizzle: h.drizzle,

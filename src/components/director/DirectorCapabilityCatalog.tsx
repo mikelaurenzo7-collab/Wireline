@@ -117,9 +117,12 @@ export function DirectorCapabilityCatalog({
             if (items.length === 0) return null;
             const isActive = activeCategory === cat;
             return (
-              <button
+              <ShadButton
                 key={cat}
                 type="button"
+                variant="ghost"
+                size="sm"
+                disableAnimations
                 onClick={() => setActiveCategory(cat)}
                 aria-pressed={isActive}
                 aria-label={`${DIRECTOR_CAPABILITY_CATEGORY_LABELS[cat]} capabilities, ${items.length} skills`}
@@ -132,7 +135,7 @@ export function DirectorCapabilityCatalog({
                 <Icon className="w-3 h-3 shrink-0" aria-hidden />
                 {DIRECTOR_CAPABILITY_CATEGORY_LABELS[cat]}
                 <span className="font-mono opacity-60">{items.length}</span>
-              </button>
+              </ShadButton>
             );
           })}
         </div>

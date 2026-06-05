@@ -486,6 +486,10 @@ export const OPS_INSIGHTS_EMPTY = {
     title: "No QA scores yet",
     description:
       "Score an individual call in Call Logs, or batch-evaluate up to 20 unscored calls at once.",
+    actions: [
+      { label: "View call history", to: "/phone" },
+      { label: "Live Ops", to: "/ops" },
+    ],
   },
   topics: {
     eyebrow: "Topics",

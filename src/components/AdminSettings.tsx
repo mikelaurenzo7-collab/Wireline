@@ -30,12 +30,36 @@ import { AuditActivityPanel } from "./admin/AuditActivityPanel";
 type ConfirmState = { open: boolean; title: string; message: string; onConfirm: () => void };
 const CLOSED_CONFIRM: ConfirmState = { open: false, title: "", message: "", onConfirm: () => {} };
 
+interface AdminSettingsState {
+  vapi_phone_number_id: string;
+  vapi_phone_inbound_agent_id: string;
+  subscription_status: string;
+  max_agents: number;
+  voice_llm_provider: string;
+  voice_llm_model: string;
+  twilio_messaging_enabled: boolean;
+  twilio_lookup_enabled: boolean;
+  twilio_manager_alerts_enabled: boolean;
+  twilio_messaging_service_sid: string;
+  twilio_sms_from_number: string;
+  twilio_whatsapp_from_number: string;
+  twilio_manager_alert_number: string;
+  prospecting_enabled: boolean;
+  target_titles: string[];
+  target_industries: string[];
+  target_states: string[];
+  target_employee_ranges: string[];
+  brand_name: string;
+  brand_logo_url: string;
+  primary_color: string;
+}
+
 export default function AdminSettings() {
   const { success: toastSuccess, error: toastError } = useToast();
   const { signOut } = useAuth();
   const { updateBranding } = useBranding();
   const [confirmState, setConfirmState] = useState<ConfirmState>(CLOSED_CONFIRM);
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<AdminSettingsState>({
     vapi_phone_number_id: "",
     vapi_phone_inbound_agent_id: "",
     subscription_status: "active",

@@ -90,7 +90,7 @@ export function InsightEmpty({
       eyebrow={config.eyebrow}
       title={config.title}
       description={descriptionOverride ?? config.description}
-      actions={actionsOverride ?? config.actions ?? []}
+      actions={actionsOverride ?? [...config.actions]}
       accent={success ? WIRELINE_DIRECTOR_BRAND.violet : undefined}
     />
   );
