@@ -284,6 +284,14 @@ function AppContent() {
     return <div className="min-h-dvh bg-paper" aria-busy="true" />;
   }
 
+  // Legacy /auth alias — old links and e2e specs; canonical gate is /signin.
+  if (location.pathname === "/auth") {
+    if (user) {
+      return <Navigate to="/ops" replace />;
+    }
+    return <Navigate to={`/signin${location.search}`} replace />;
+  }
+
   if (!user) {
     const path = location.pathname;
     if (path === "/" || path === "") {
