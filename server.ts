@@ -244,6 +244,9 @@ app.use("/api/claude", enforceSpendCap);
 app.use("/api/emails", timeoutMiddleware(15_000));
 app.use("/api/phone-numbers", timeoutMiddleware(10_000));
 app.use("/api/campaigns", timeoutMiddleware(10_000));
+// Director turns run web research + structured Claude (or creative tool execution).
+// The default 20s API cap caused 504s on business plans and competitor research.
+app.use("/api/director", timeoutMiddleware(180_000));
 app.use("/api", timeoutMiddleware(20_000));
 
 // Global Router Mounting

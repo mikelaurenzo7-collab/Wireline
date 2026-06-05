@@ -4,6 +4,7 @@ import { buildCreativeDirectorTurn, isCreativeIntent } from "./director-creative
 describe("director creative turn", () => {
   it("detects logo / brand creative intents", () => {
     expect(isCreativeIntent("Design a logo for my startup")).toBe(true);
+    expect(isCreativeIntent("Generate a hero image for our homepage")).toBe(true);
     expect(isCreativeIntent("How is my fleet doing?")).toBe(false);
   });
 

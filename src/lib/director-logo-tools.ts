@@ -406,7 +406,7 @@ export function exportBrandPack(input: {
 }
 
 export function isCreativeIntent(text: string): boolean {
-  return /(logo|brand\s*pack|vector|svg|downloadable|download\s+file|design\s+a\s+mark)/i.test(
+  return /(logo|brand\s*pack|vector|svg|downloadable|download\s+file|design\s+a\s+mark|generate\s+(?:an?\s+)?(?:image|picture|illustration|icon|banner|hero)|create\s+(?:an?\s+)?(?:logo|brand|visual))/i.test(
     text,
   );
 }

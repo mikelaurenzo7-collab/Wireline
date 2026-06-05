@@ -56,4 +56,16 @@ describe("server.ts middleware wiring", () => {
     expect(dailyCapMount).toBeLessThan(spendCapMount);
     expect(spendCapMount).toBeLessThan(routerMount);
   });
+
+  it("mounts extended timeout on /api/director before the global API cap", () => {
+    const directorTimeout = SERVER.search(
+      /app\.use\(["']\/api\/director["']\s*,\s*timeoutMiddleware\(\s*180_000\s*\)\s*\)/,
+    );
+    const globalTimeout = SERVER.search(
+      /app\.use\(["']\/api["']\s*,\s*timeoutMiddleware\(20_000\)\s*\)/,
+    );
+    expect(directorTimeout).toBeGreaterThan(0);
+    expect(globalTimeout).toBeGreaterThan(0);
+    expect(directorTimeout).toBeLessThan(globalTimeout);
+  });
 });
