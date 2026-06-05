@@ -13,6 +13,8 @@ import {
   DIRECTOR_LOADING_COPY,
   DIRECTOR_LIVE_STEP_COPY,
   DIRECTOR_COMPOSER_HINTS,
+  DIRECTOR_COMPOSER_ACCESSORY_HINTS,
+  DIRECTOR_COMPOSER_CONTEXT,
   LIVE_FEED_LABELS,
   LIVE_ORCHESTRA_COPY,
   DIRECTOR_STARTER_PROMPTS_FEATURED_COUNT,
@@ -38,6 +40,11 @@ describe("Wireline Director design contract", () => {
     expect(WL_DIRECTOR_CLASSES.messageStack).toContain("wl-director-message-stack");
     expect(WL_DIRECTOR_CLASSES.emptyHero).toBe("wl-director-empty-hero");
     expect(WL_DIRECTOR_CLASSES.composerToolbar).toBe("wl-director-composer-toolbar");
+    expect(WL_DIRECTOR_CLASSES.composerAccessory).toBe("wl-composer-accessory-panel");
+    expect(WL_DIRECTOR_CLASSES.composerToolChip).toBe("wl-composer-tool-chip");
+    expect(WL_DIRECTOR_CLASSES.assistantMessage).toBe("wl-director-message--assistant");
+    expect(DIRECTOR_COMPOSER_ACCESSORY_HINTS.capabilities).toContain("prompt");
+    expect(DIRECTOR_COMPOSER_CONTEXT.coachingPrefix).toBe("Coaching");
     expect(WL_DIRECTOR_CLASSES.scrollToBottom).toBe("wl-scroll-to-bottom-btn");
     expect(WL_DIRECTOR_CLASSES.liveOrchestra).toBe("wl-live-orchestra");
   });
@@ -163,5 +170,13 @@ describe("Wireline Director design contract", () => {
   it("composer hints rotate through capability areas", () => {
     expect(DIRECTOR_COMPOSER_HINTS.length).toBeGreaterThanOrEqual(4);
     expect(DIRECTOR_COMPOSER_HINTS.some((h) => h.toLowerCase().includes("research"))).toBe(true);
+  });
+
+  it("composer accessory hints cover every panel kind", () => {
+    const kinds = ["connectors", "capabilities", "coach", "tools", "attach"] as const;
+    for (const kind of kinds) {
+      expect(DIRECTOR_COMPOSER_ACCESSORY_HINTS[kind].length).toBeGreaterThan(8);
+    }
+    expect(Object.keys(DIRECTOR_COMPOSER_ACCESSORY_HINTS)).toHaveLength(kinds.length);
   });
 });

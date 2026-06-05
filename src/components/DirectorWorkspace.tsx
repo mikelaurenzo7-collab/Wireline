@@ -1,11 +1,8 @@
 /**
  * DirectorWorkspace — the account-level "manager" chat surface.
  *
- * Redesigned to be the main show — Claude-style:
- * - Massive chat area with spacious message bubbles
- * - Prominent composer at bottom, centered, always visible
- * - Capability toggles as clever dropdown menus near composer
- * - Agent reasoning displayed prominently with lots of breathing room
+ * Mission-control chat: compact thread, inline composer accessories (never
+ * overlaying messages), and prominent reasoning + approval cards.
  *
  * The Director sits ABOVE the individual agents: it's always available (even
  * before the operator owns a single agent) and acts as the strategist that
@@ -13,7 +10,7 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import {
   Send,
   Loader2,
@@ -26,25 +23,13 @@ import {
   ArrowUpRight,
   Compass,
   ChevronDown,
-  Paperclip,
   FileText,
-  Brain,
   Plug,
   Phone,
-  Calendar,
-  Users,
   MessageCircle,
-  Video,
-  FileSignature,
-  Search,
-  ShoppingBag,
-  Grid3X3,
-  Megaphone,
-  Table,
   SlidersHorizontal,
   Power,
   Mail,
-  Wrench,
   Search as SearchIcon,
   Palette,
   Download,
@@ -79,6 +64,9 @@ import {
 } from "../lib/integration-live-scripts";
 import { DirectorMessageBody } from "./director/DirectorMessageBody";
 import { DirectorCapabilityCatalog } from "./director/DirectorCapabilityCatalog";
+import { DirectorComposerAccessory } from "./director/DirectorComposerAccessory";
+import { DirectorComposerContextStrip } from "./director/DirectorComposerContextStrip";
+import { DirectorComposerToolbar } from "./director/DirectorComposerToolbar";
 import { DirectorResearchSources } from "./director/DirectorResearchSources";
 import { DirectorStarterPrompts } from "./director/DirectorStarterPrompts";
 import DirectorArtifactsPanel, { type DirectorArtifact } from "./director/DirectorArtifactsPanel";
@@ -93,6 +81,7 @@ import {
   LIVE_FEED_LABELS,
   WL_APP_CLASSES,
   WL_DIRECTOR_CLASSES,
+  type ComposerAccessoryKind,
 } from "../lib/wireline-director-design";
 import LoadingDots from "./LoadingDots";
 import {
@@ -166,22 +155,6 @@ const SUGGESTION_ICON: Record<SuggestionKind, React.ElementType> = {
   open_insights: BarChart3,
 };
 
-const CONNECTOR_CATALOG = [
-  { icon: Phone, id: "twilio", label: "Twilio", desc: "Voice & SMS" },
-  { icon: Calendar, id: "calendar", label: "Calendar", desc: "Google / Outlook" },
-  { icon: Users, id: "crm", label: "CRM", desc: "Salesforce / HubSpot" },
-  { icon: MessageCircle, id: "slack", label: "Slack", desc: "Team notifications" },
-  { icon: Video, id: "zoom", label: "Zoom", desc: "Meeting links" },
-  { icon: FileSignature, id: "docusign", label: "DocuSign", desc: "Contracts" },
-  { icon: Search, id: "apollo", label: "Apollo", desc: "Lead enrichment" },
-  { icon: ShoppingBag, id: "shopify", label: "Shopify", desc: "E-commerce" },
-  { icon: Grid3X3, id: "square", label: "Square", desc: "Payments & POS" },
-  { icon: MessageCircle, id: "microsoft_teams", label: "MS Teams", desc: "Team notifications" },
-  { icon: Table, id: "microsoft_excel", label: "Excel", desc: "Call logging" },
-  { icon: Table, id: "google_sheets", label: "Google Sheets", desc: "Call logging" },
-  { icon: Megaphone, id: "meta", label: "Meta CAPI", desc: "Lead attribution" },
-] as const;
-
 const SCENE_ICONS: Record<Exclude<DirectorMessageScene, "general">, React.ElementType> = {
   creative: Palette,
   analysis: BarChart3,
@@ -206,10 +179,7 @@ export default function DirectorWorkspace({
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [connectorsOpen, setConnectorsOpen] = useState(false);
-  const [capabilitiesOpen, setCapabilitiesOpen] = useState(false);
-  const [coachOpen, setCoachOpen] = useState(false);
-  const [toolsOpen, setToolsOpen] = useState(false);
+  const [composerAccessory, setComposerAccessory] = useState<ComposerAccessoryKind | null>(null);
   const [enabledTools, setEnabledTools] = useState<string[]>([]);
   const [resolved, setResolved] = useState<Record<string, "done" | "dismissed">>({});
   const [busyKey, setBusyKey] = useState<string | null>(null);
@@ -217,7 +187,6 @@ export default function DirectorWorkspace({
   const [callConsent, setCallConsent] = useState<Record<string, boolean>>({});
   const [integrationLiveActions, setIntegrationLiveActions] = useState<IntegrationLiveAction[]>([]);
   const [liveSteps, setLiveSteps] = useState<DirectorLiveStep[]>([]);
-  const [attachmentsOpen, setAttachmentsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [artifacts, setArtifacts] = useState<DirectorArtifact[]>([]);
   const [featureFlags, setFeatureFlags] = useState({
@@ -229,11 +198,7 @@ export default function DirectorWorkspace({
   const [pinnedToBottom, setPinnedToBottom] = useState(true);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
-  const connectorsRef = useRef<HTMLDivElement | null>(null);
-  const capabilitiesRef = useRef<HTMLDivElement | null>(null);
-  const coachRef = useRef<HTMLDivElement | null>(null);
-  const toolsRef = useRef<HTMLDivElement | null>(null);
-  const attachmentsRef = useRef<HTMLDivElement | null>(null);
+  const composerDockRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingSendRef = useRef<{ trimmed: string; optimisticId?: string } | null>(null);
   const liveSequenceKeyRef = useRef<string | null>(null);
@@ -507,35 +472,27 @@ export default function DirectorWorkspace({
   }, [focusAgentId]);
 
   useEffect(() => {
+    if (focusAgentId) return;
+    setComposerAccessory((prev) => (prev === "coach" || prev === "tools" ? null : prev));
+  }, [focusAgentId]);
+
+  useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (connectorsRef.current && !connectorsRef.current.contains(e.target as Node)) {
-        setConnectorsOpen(false);
-      }
-      if (capabilitiesRef.current && !capabilitiesRef.current.contains(e.target as Node)) {
-        setCapabilitiesOpen(false);
-      }
-      if (coachRef.current && !coachRef.current.contains(e.target as Node)) {
-        setCoachOpen(false);
-      }
-      if (toolsRef.current && !toolsRef.current.contains(e.target as Node)) {
-        setToolsOpen(false);
-      }
-      if (attachmentsRef.current && !attachmentsRef.current.contains(e.target as Node)) {
-        setAttachmentsOpen(false);
-      }
+      if (composerDockRef.current?.contains(e.target as Node)) return;
+      setComposerAccessory(null);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   useEffect(() => {
-    if (!capabilitiesOpen) return;
+    if (!composerAccessory) return;
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setCapabilitiesOpen(false);
+      if (e.key === "Escape") setComposerAccessory(null);
     };
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
-  }, [capabilitiesOpen]);
+  }, [composerAccessory]);
 
   const [composerHintIndex, setComposerHintIndex] = useState(0);
   useEffect(() => {
@@ -548,9 +505,18 @@ export default function DirectorWorkspace({
 
   const pickCapabilityExample = useCallback((text: string) => {
     setInput(text);
-    setCapabilitiesOpen(false);
+    setComposerAccessory(null);
     inputRef.current?.focus();
   }, []);
+
+  const toggleComposerAccessory = useCallback((kind: ComposerAccessoryKind) => {
+    setComposerAccessory((prev) => (prev === kind ? null : kind));
+  }, []);
+
+  const clearCoachFocus = useCallback(() => {
+    onFocusAgentChange?.(null);
+    setComposerAccessory((prev) => (prev === "coach" || prev === "tools" ? null : prev));
+  }, [onFocusAgentChange]);
 
   const runSuggestion = useCallback(
     (s: DirectorSuggestion) => {
@@ -592,8 +558,7 @@ export default function DirectorWorkspace({
       if (optimistic) setMessages((prev) => [...prev, optimistic]);
       if (trimmed) setInput("");
       setIsSending(true);
-      setConnectorsOpen(false);
-      setCoachOpen(false);
+      setComposerAccessory(null);
 
       const payload = {
         content: trimmed,
@@ -1078,7 +1043,7 @@ export default function DirectorWorkspace({
               ) : null}
             </motion.div>
           ) : (
-            <div className={cn(WL_DIRECTOR_CLASSES.threadColumn, "space-y-4")}>
+            <div className={cn(WL_DIRECTOR_CLASSES.threadColumn, "space-y-2.5")}>
               {messages.map((m) => {
                 const scene =
                   m.role === "director"
@@ -1151,6 +1116,7 @@ export default function DirectorWorkspace({
                               )
                             : cn(
                                 WL_DIRECTOR_CLASSES.directorBubble,
+                                WL_DIRECTOR_CLASSES.assistantMessage,
                                 "text-ink dark:text-foreground rounded-bl-sm",
                               ),
                         )}
@@ -1188,7 +1154,7 @@ export default function DirectorWorkspace({
                               })()}
                           </>
                         ) : (
-                          <p className="text-[13px] leading-normal">{m.content}</p>
+                          <p className="text-[12px] leading-snug">{m.content}</p>
                         )}
 
                         {m.role === "director" && m.proposals && (
@@ -1359,27 +1325,23 @@ export default function DirectorWorkspace({
                             })()}
                           </div>
                         )}
-
-                        {/* Timestamp */}
-                        {m.createdAt && (
-                          <div className="mt-1.5 pt-1 border-t border-black/5 flex justify-end">
-                            <time
-                              dateTime={m.createdAt}
-                              className={cn(
-                                "text-[9px] font-mono tabular-nums",
-                                m.role === "operator" ? "text-white/50" : "text-muted/50",
-                              )}
-                            >
-                              {new Date(m.createdAt).toLocaleTimeString([], {
-                                hour: "numeric",
-                                minute: "2-digit",
-                              })}
-                            </time>
-                          </div>
-                        )}
                       </div>
 
-                      {/* Suggestions */}
+                      {m.createdAt && (
+                        <time
+                          dateTime={m.createdAt}
+                          className={cn(
+                            WL_DIRECTOR_CLASSES.messageMeta,
+                            m.role === "operator" && "wl-director-message-meta--operator",
+                          )}
+                        >
+                          {new Date(m.createdAt).toLocaleTimeString([], {
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}
+                        </time>
+                      )}
+
                       {m.suggestions && m.suggestions.length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
                           {m.suggestions.map((s, i) => {
@@ -1672,64 +1634,15 @@ export default function DirectorWorkspace({
         <DirectorArtifactsPanel artifacts={artifacts} />
       )}
 
-      {/* Composer - prominent at bottom, Claude-style */}
+      {/* Composer — accessory panel sits above toolbar so chat stays readable */}
       <div className="relative z-30 shrink-0 px-4 pb-6 pt-2">
-        <div className="max-w-3xl mx-auto">
-          {/* Connectors dropdown */}
-          <div ref={connectorsRef} className="relative mb-2">
-            <AnimatePresence>
-              {connectorsOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 4, scale: 0.98 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute bottom-full left-0 right-0 mb-2 rounded-md bg-popover text-popover-foreground backdrop-blur-md border border-border shadow-2xl p-2 z-50"
-                >
-                  <div className="flex items-center gap-2 px-3 py-2 border-b border-border mb-1">
-                    <Plug className="w-3.5 h-3.5 text-brand" />
-                    <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
-                      Connectors
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-1 max-h-[40vh] overflow-y-auto">
-                    {CONNECTOR_CATALOG.map((c) => (
-                      <div
-                        key={c.id}
-                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-md hover:bg-muted/40 group"
-                      >
-                        <span className="w-7 h-7 rounded-md bg-brand/15 flex items-center justify-center shrink-0">
-                          <c.icon className="w-3.5 h-3.5 text-brand" />
-                        </span>
-                        <div className="min-w-0">
-                          <p className="text-[11px] font-semibold text-foreground truncate">
-                            {c.label}
-                          </p>
-                          <p className="text-[9px] text-muted-foreground truncate">{c.desc}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-1 pt-1.5 border-t border-border">
-                    <a
-                      href="/integrations"
-                      className="flex items-center gap-2 px-3 py-2 text-[11px] font-medium text-brand hover:text-brand/80 transition-colors"
-                    >
-                      <ArrowUpRight className="w-3 h-3" />
-                      Manage integrations
-                    </a>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Main composer — specular depth treatment */}
+        <div className="max-w-3xl mx-auto" ref={composerDockRef}>
           <div
             className={cn(
               "relative transition-all duration-300",
               WL_DIRECTOR_CLASSES.composerDock,
               isSending && "ring-1 ring-brand/20",
+              composerAccessory && "wl-composer-dock--accessory-open",
             )}
           >
             {isSending && (
@@ -1742,12 +1655,18 @@ export default function DirectorWorkspace({
                 />
               </div>
             )}
+
+            <DirectorComposerContextStrip
+              focusAgentName={focusedAgent?.name}
+              onClearCoach={focusAgentId ? clearCoachFocus : undefined}
+            />
+
             <Textarea
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={onKeyDown}
-              rows={3}
+              rows={2}
               disabled={isSending}
               placeholder={
                 isSending
@@ -1756,370 +1675,79 @@ export default function DirectorWorkspace({
                     ? `Coach ${focusedAgent.name} via Director…`
                     : DIRECTOR_COMPOSER_HINTS[composerHintIndex]
               }
-              className="w-full resize-none border-0 bg-transparent shadow-none text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none px-5 py-4 leading-relaxed disabled:opacity-60 focus-visible:ring-0"
+              className="w-full resize-none border-0 bg-transparent shadow-none text-[13px] text-foreground placeholder:text-muted-foreground/50 outline-none px-4 py-3 leading-normal disabled:opacity-60 focus-visible:ring-0"
             />
 
-            {/* Bottom bar with actions */}
-            <div className="flex items-center justify-between gap-2 px-4 pb-3">
-              <div className={WL_DIRECTOR_CLASSES.composerToolbar}>
-                <ShadButton
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disableAnimations
-                  onClick={() => setConnectorsOpen(!connectorsOpen)}
-                  aria-label="Connectors"
-                  className={cn(
-                    "h-auto gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-[11px]",
-                    connectorsOpen && "bg-brand/10 text-brand border-brand/30",
-                  )}
-                >
-                  <Plug className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Connectors</span>
-                  <ChevronDown
-                    className={cn("w-3 h-3 transition-transform", connectorsOpen && "rotate-180")}
-                  />
-                </ShadButton>
+            <DirectorComposerAccessory
+              active={composerAccessory}
+              onClose={() => setComposerAccessory(null)}
+              agents={agents}
+              focusAgentId={focusAgentId ?? null}
+              focusedAgentName={focusedAgent?.name}
+              enabledTools={enabledTools}
+              isUploading={isUploading}
+              reduceMotion={reduceMotion ?? false}
+              onPickCapability={pickCapabilityExample}
+              onSelectCoach={(agentId) => {
+                onFocusAgentChange?.(agentId);
+                setComposerAccessory(null);
+              }}
+              onPickDocument={() => {
+                setComposerAccessory(null);
+                fileInputRef.current?.click();
+              }}
+              onPickContextRule={() => {
+                setComposerAccessory(null);
+                setInput("Add this standing rule to my fleet context: ");
+                inputRef.current?.focus();
+              }}
+              onPickPlaybookInstruction={() => {
+                setComposerAccessory(null);
+                setInput("Coach my agents on this playbook: ");
+                inputRef.current?.focus();
+              }}
+            />
 
-                <div className="relative" ref={capabilitiesRef}>
-                  <ShadButton
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disableAnimations
-                    id="director-capabilities-trigger"
-                    aria-expanded={capabilitiesOpen}
-                    aria-haspopup="dialog"
-                    aria-controls="director-capabilities-panel"
-                    onClick={() => {
-                      setCapabilitiesOpen(!capabilitiesOpen);
-                      setConnectorsOpen(false);
-                    }}
-                    aria-label="Capabilities"
-                    className={cn(
-                      "h-auto gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-[11px]",
-                      capabilitiesOpen && "bg-brand/10 text-brand border-brand/30",
-                    )}
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Capabilities</span>
-                    <ChevronDown
-                      className={cn(
-                        "w-3 h-3 transition-transform",
-                        capabilitiesOpen && "rotate-180",
-                      )}
-                    />
-                  </ShadButton>
-                  <AnimatePresence>
-                    {capabilitiesOpen && (
-                      <motion.div
-                        id="director-capabilities-panel"
-                        role="dialog"
-                        aria-labelledby="director-capabilities-trigger"
-                        initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 4, scale: 0.98 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute bottom-full left-0 mb-2 w-[min(100vw-2rem,320px)] rounded-md bg-popover text-popover-foreground backdrop-blur-md border border-border shadow-2xl z-50 overflow-hidden"
-                      >
-                        <DirectorCapabilityCatalog
-                          variant="popover"
-                          onPickExample={(text) => {
-                            pickCapabilityExample(text);
-                          }}
-                        />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+            <div className="flex items-center justify-between gap-2 px-3 pb-3">
+              <DirectorComposerToolbar
+                activeAccessory={composerAccessory}
+                onToggle={toggleComposerAccessory}
+                focusAgentId={focusAgentId ?? null}
+                focusedAgentName={focusedAgent?.name}
+                enabledToolsCount={enabledTools.length}
+                isUploading={isUploading}
+                isSending={isSending}
+              />
 
-                {/* Coach — select agent to configure */}
-                <div className="relative" ref={coachRef}>
-                  <ShadButton
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disableAnimations
-                    onClick={() => setCoachOpen(!coachOpen)}
-                    aria-label={focusedAgent ? `Coach ${focusedAgent.name}` : "Coach agent"}
-                    className={cn(
-                      "h-auto gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-[11px] max-w-[9rem] sm:max-w-none",
-                      (coachOpen || focusAgentId) && "bg-brand/10 text-brand border-brand/30",
-                    )}
-                  >
-                    <Bot className="w-3.5 h-3.5 shrink-0" />
-                    <span className="truncate max-w-[5.5rem] sm:max-w-none">
-                      {focusedAgent ? focusedAgent.name : "Coach"}
-                    </span>
-                    <ChevronDown
-                      className={cn("w-3 h-3 transition-transform", coachOpen && "rotate-180")}
-                    />
-                  </ShadButton>
-                  <AnimatePresence>
-                    {coachOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 4, scale: 0.98 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute bottom-full left-0 mb-2 w-56 rounded-md bg-popover text-popover-foreground backdrop-blur-md border border-border shadow-2xl p-1 z-50 max-h-[40vh] overflow-y-auto"
-                      >
-                        <ShadButton
-                          type="button"
-                          variant="ghost"
-                          disableAnimations
-                          onClick={() => {
-                            onFocusAgentChange?.(null);
-                            setCoachOpen(false);
-                          }}
-                          className={cn(
-                            "w-full justify-start gap-2 px-3 py-2 h-auto text-[11px] rounded-md",
-                            !focusAgentId && "bg-brand/8 text-brand font-medium",
-                          )}
-                        >
-                          Fleet only
-                        </ShadButton>
-                        {agents.map((a) => (
-                          <ShadButton
-                            key={a.id}
-                            type="button"
-                            variant="ghost"
-                            disableAnimations
-                            onClick={() => {
-                              onFocusAgentChange?.(a.id);
-                              setCoachOpen(false);
-                            }}
-                            className={cn(
-                              "w-full justify-start gap-2 px-3 py-2 h-auto rounded-md",
-                              focusAgentId === a.id && "bg-brand/8",
-                            )}
-                          >
-                            <span className="w-6 h-6 rounded-full bg-brand/10 text-brand text-[10px] font-bold flex items-center justify-center shrink-0">
-                              {a.name.slice(0, 1).toUpperCase()}
-                            </span>
-                            <span className="min-w-0">
-                              <span className="block text-[11px] font-semibold truncate">
-                                {a.name}
-                              </span>
-                              <span className="block text-[9px] text-muted-foreground truncate">
-                                {a.role?.replace(/_/g, " ") || "Agent"}
-                              </span>
-                            </span>
-                          </ShadButton>
-                        ))}
-                        {agents.length === 0 && (
-                          <p className="px-3 py-2 text-[10px] text-muted-foreground">
-                            Deploy an agent first
-                          </p>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+              <Input
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf,.pdf"
+                onChange={onFilePick}
+                className="hidden"
+              />
 
-                {focusAgentId && (
-                  <div className="relative" ref={toolsRef}>
-                    <ShadButton
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disableAnimations
-                      onClick={() => setToolsOpen(!toolsOpen)}
-                      aria-label="Agent abilities"
-                      className={cn(
-                        "h-auto gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-[11px]",
-                        toolsOpen && "bg-brand/10 text-brand border-brand/30",
-                      )}
-                    >
-                      <Wrench className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Abilities</span>
-                      {enabledTools.length > 0 && (
-                        <span className="text-[9px] opacity-70">({enabledTools.length})</span>
-                      )}
-                      <ChevronDown
-                        className={cn("w-3 h-3 transition-transform", toolsOpen && "rotate-180")}
-                      />
-                    </ShadButton>
-                    <AnimatePresence>
-                      {toolsOpen && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 4, scale: 0.98 }}
-                          transition={{ duration: 0.15 }}
-                          className="absolute bottom-full left-0 mb-2 w-64 rounded-md bg-popover text-popover-foreground backdrop-blur-md border border-border shadow-2xl p-2 z-50 max-h-[40vh] overflow-y-auto"
-                        >
-                          <p className="px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                            {enabledTools.length > 0
-                              ? `${enabledTools.length} active for ${focusedAgent?.name || "agent"}`
-                              : "No abilities enabled"}
-                          </p>
-                          {enabledTools.length === 0 ? (
-                            <p className="px-2 py-2 text-[11px] text-muted-foreground">
-                              Ask the Director to turn on capabilities.
-                            </p>
-                          ) : (
-                            enabledTools.map((tool) => {
-                              const meta = AGENT_TOOL_CATALOG.find((t) => t.name === tool);
-                              return (
-                                <div
-                                  key={tool}
-                                  className="px-2 py-1.5 text-[11px] text-foreground rounded-md"
-                                >
-                                  {meta?.label || tool}
-                                </div>
-                              );
-                            })
-                          )}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
+              <ShadButton
+                type="button"
+                size="sm"
+                disableAnimations
+                onClick={() => send(input)}
+                disabled={!input.trim() || isSending}
+                aria-label="Send message"
+                className="touch-press gap-2 px-4 py-2 h-auto text-[12px] font-semibold shadow-md shadow-brand/25 shrink-0"
+              >
+                {isSending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
                 )}
-
-                {/* Hidden file input */}
-                <Input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="application/pdf,.pdf"
-                  onChange={onFilePick}
-                  className="hidden"
-                />
-
-                {/* Attachments dropdown toggle */}
-                <div className="relative" ref={attachmentsRef}>
-                  <ShadButton
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disableAnimations
-                    onClick={() => setAttachmentsOpen(!attachmentsOpen)}
-                    disabled={isUploading || isSending}
-                    aria-label="Attach file"
-                    className={cn(
-                      "h-auto gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-[11px]",
-                      attachmentsOpen && "bg-brand/10 text-brand border-brand/30",
-                    )}
-                  >
-                    {isUploading ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-brand" />
-                    ) : (
-                      <Paperclip className="w-3.5 h-3.5" />
-                    )}
-                    <span className="hidden sm:inline">Attach</span>
-                    <ChevronDown
-                      className={cn(
-                        "w-3 h-3 transition-transform",
-                        attachmentsOpen && "rotate-180",
-                      )}
-                    />
-                  </ShadButton>
-
-                  <AnimatePresence>
-                    {attachmentsOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 4, scale: 0.98 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute bottom-full left-0 mb-2 w-48 rounded-md bg-popover text-popover-foreground backdrop-blur-md border border-border shadow-2xl p-1 z-50"
-                      >
-                        <ShadButton
-                          type="button"
-                          variant="ghost"
-                          disableAnimations
-                          onClick={() => {
-                            setAttachmentsOpen(false);
-                            fileInputRef.current?.click();
-                          }}
-                          className="w-full justify-start gap-2 px-3 py-2 h-auto rounded-md"
-                        >
-                          <FileText className="w-4 h-4 text-brand" />
-                          <div>
-                            <span className="block text-[11px] font-semibold text-foreground">
-                              Document
-                            </span>
-                            <span className="block text-[9px] text-muted-foreground">
-                              PDFs & files
-                            </span>
-                          </div>
-                        </ShadButton>
-
-                        <ShadButton
-                          type="button"
-                          variant="ghost"
-                          disableAnimations
-                          onClick={() => {
-                            setAttachmentsOpen(false);
-                            setInput("Add this standing rule to my fleet context: ");
-                            inputRef.current?.focus();
-                          }}
-                          className="w-full justify-start gap-2 px-3 py-2 h-auto rounded-md"
-                        >
-                          <Brain className="w-4 h-4 text-brand" />
-                          <div>
-                            <span className="block text-[11px] font-semibold text-foreground">
-                              Context
-                            </span>
-                            <span className="block text-[9px] text-muted-foreground">
-                              Add a global rule
-                            </span>
-                          </div>
-                        </ShadButton>
-
-                        <ShadButton
-                          type="button"
-                          variant="ghost"
-                          disableAnimations
-                          onClick={() => {
-                            setAttachmentsOpen(false);
-                            setInput("Coach my agents on this playbook: ");
-                            inputRef.current?.focus();
-                          }}
-                          className="w-full justify-start gap-2 px-3 py-2 h-auto rounded-md"
-                        >
-                          <GraduationCap className="w-4 h-4 text-brand" />
-                          <div>
-                            <span className="block text-[11px] font-semibold text-foreground">
-                              Instruction
-                            </span>
-                            <span className="block text-[9px] text-muted-foreground">
-                              Add a playbook
-                            </span>
-                          </div>
-                        </ShadButton>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-
-              {/* Right side - send */}
-
-              <div className="flex items-center gap-2">
-                <ShadButton
-                  type="button"
-                  size="sm"
-                  disableAnimations
-                  onClick={() => send(input)}
-                  disabled={!input.trim() || isSending}
-                  aria-label="Send message"
-                  className="touch-press gap-2 px-4 py-2 h-auto text-[12px] font-semibold shadow-md shadow-brand/25"
-                >
-                  {isSending ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4" />
-                  )}
-                  <span>Send</span>
-                </ShadButton>
-              </div>
+                <span className="hidden sm:inline">Send</span>
+              </ShadButton>
             </div>
           </div>
 
-          {/* Subtle hint */}
           <p className="text-center text-[9px] text-muted/60 mt-2 uppercase tracking-[0.12em]">
-            Press Enter to send · Shift+Enter for new line
+            Enter to send · Shift+Enter for new line
           </p>
         </div>
       </div>

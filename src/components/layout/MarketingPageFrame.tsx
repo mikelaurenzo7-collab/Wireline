@@ -33,7 +33,7 @@ export default function MarketingPageFrame({
   return (
     <div
       className={cn(
-        "marketing-surface relative bg-paper text-ink flex flex-col",
+        "marketing-surface relative bg-paper text-ink flex flex-col paper-texture",
         scroll ? "min-h-dvh" : "h-dvh max-h-dvh overflow-hidden",
         className,
       )}

@@ -107,7 +107,7 @@ export default function LandingPage() {
         path="/"
         structuredData={FAQ_STRUCTURED_DATA}
       />
-      <div className="marketing-surface min-h-dvh bg-paper relative">
+      <div className="marketing-surface min-h-dvh bg-paper relative paper-texture">
         <PublicSiteHeader active="home" />
 
         {/* ─── Hero ───────────────────────────────────────────────── */}

@@ -3,7 +3,6 @@
  * Used in empty state and composer popover so operators discover gen + execute paths.
  */
 import React, { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowUpRight,
   BarChart3,
@@ -13,13 +12,13 @@ import {
   Palette,
   Plug,
   Search,
-  Sparkles,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import {
   DIRECTOR_CAPABILITY_CATEGORY_LABELS,
   DIRECTOR_CAPABILITY_CATALOG,
+  WL_DIRECTOR_CLASSES,
   type DirectorCapabilityCategory,
   type DirectorCapabilityItem,
   directorCapabilitiesByCategory,
@@ -84,73 +83,55 @@ export function DirectorCapabilityCatalog({
   const categories = Object.keys(
     DIRECTOR_CAPABILITY_CATEGORY_LABELS,
   ) as DirectorCapabilityCategory[];
-  const [openCategory, setOpenCategory] = useState<DirectorCapabilityCategory | null>(
-    variant === "popover" ? "strategy" : null,
-  );
+  const [activeCategory, setActiveCategory] = useState<DirectorCapabilityCategory>("strategy");
 
   if (variant === "popover") {
+    const activeItems = grouped[activeCategory] ?? [];
     return (
-      <div className={cn("max-h-[min(52dvh,420px)] overflow-y-auto", className)}>
-        <div className="flex items-center gap-2 px-3 py-2 border-b border-border mb-1 sticky top-0 bg-popover/95 backdrop-blur-sm z-10">
-          <Sparkles className="w-3.5 h-3.5 text-brand" />
+      <div className={cn("max-h-[min(220px,32dvh)] overflow-y-auto", className)}>
+        <div className="flex items-center justify-between gap-2 px-1 pb-2">
           <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
-            What Director can do
+            Skills
           </span>
-          <span className="ml-auto text-[9px] font-mono text-muted-foreground/70 tabular-nums">
-            {DIRECTOR_CAPABILITY_CATALOG.length} skills
+          <span className="text-[9px] font-mono text-muted-foreground/70 tabular-nums">
+            {DIRECTOR_CAPABILITY_CATALOG.length} total
           </span>
         </div>
-        <div className="p-1 space-y-0.5">
+        <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-none -mx-0.5 px-0.5">
           {categories.map((cat) => {
             const Icon = CATEGORY_ICON[cat];
             const items = grouped[cat];
             if (items.length === 0) return null;
-            const isOpen = openCategory === cat;
-            const panelId = `director-cap-${cat}`;
+            const isActive = activeCategory === cat;
             return (
-              <div key={cat} className="rounded-md overflow-hidden">
-                <ShadButton
-                  type="button"
-                  variant="ghost"
-                  disableAnimations
-                  aria-expanded={isOpen}
-                  aria-controls={panelId}
-                  onClick={() => setOpenCategory(isOpen ? null : cat)}
-                  className="w-full h-auto justify-start gap-2 px-3 py-2 rounded-md text-[11px] font-semibold text-foreground"
-                >
-                  <Icon className="w-3.5 h-3.5 text-brand shrink-0" />
-                  {DIRECTOR_CAPABILITY_CATEGORY_LABELS[cat]}
-                  <span className="ml-auto text-[9px] font-mono text-muted-foreground">
-                    {items.length}
-                  </span>
-                </ShadButton>
-                <AnimatePresence initial={false}>
-                  {isOpen && (
-                    <motion.div
-                      id={panelId}
-                      role="region"
-                      aria-label={DIRECTOR_CAPABILITY_CATEGORY_LABELS[cat]}
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.18 }}
-                      className="overflow-hidden px-1 pb-1"
-                    >
-                      {items.map((item) => (
-                        <CapabilityRow key={item.id} item={item} onPick={onPickExample} compact />
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setActiveCategory(cat)}
+                aria-pressed={isActive}
+                aria-label={`${DIRECTOR_CAPABILITY_CATEGORY_LABELS[cat]} capabilities, ${items.length} skills`}
+                className={cn(
+                  WL_DIRECTOR_CLASSES.capabilityCatPill,
+                  isActive && "wl-director-cap-pill--active",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/45 focus-visible:ring-offset-1",
+                )}
+              >
+                <Icon className="w-3 h-3 shrink-0" aria-hidden />
+                {DIRECTOR_CAPABILITY_CATEGORY_LABELS[cat]}
+                <span className="font-mono opacity-60">{items.length}</span>
+              </button>
             );
           })}
+        </div>
+        <div className="space-y-0.5 px-0.5">
+          {activeItems.map((item) => (
+            <CapabilityRow key={item.id} item={item} onPick={onPickExample} compact />
+          ))}
         </div>
       </div>
     );
   }
 
-  // Empty-state: show top capabilities per category in a compact grid
   const featured = categories.flatMap((cat) => grouped[cat].slice(0, 1));
 
   return (

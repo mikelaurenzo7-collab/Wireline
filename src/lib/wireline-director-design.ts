@@ -37,6 +37,14 @@ export const WL_DIRECTOR_CLASSES = {
   operatorMessageStack: "wl-director-message-stack wl-director-message-stack--operator",
   emptyHero: "wl-director-empty-hero",
   composerToolbar: "wl-director-composer-toolbar",
+  composerAccessory: "wl-composer-accessory-panel",
+  composerToolChip: "wl-composer-tool-chip",
+  composerToolChipActive: "wl-composer-tool-chip--active",
+  composerToolChipEngaged: "wl-composer-tool-chip--engaged",
+  composerContextStrip: "wl-composer-context-strip",
+  assistantMessage: "wl-director-message--assistant",
+  messageMeta: "wl-director-message-meta",
+  capabilityCatPill: "wl-director-cap-pill",
   scrollToBottom: "wl-scroll-to-bottom-btn",
   artifactsPanel: "wl-director-artifacts-panel",
   researchSources: "wl-director-research-sources",
@@ -264,6 +272,21 @@ export const DIRECTOR_COMPOSER_HINTS = [
   "Orchestrate calls, texts, emails, and CRM work in one thread…",
   "Coach an agent: select Coach, then describe the change…",
 ] as const;
+
+export type ComposerAccessoryKind = "connectors" | "capabilities" | "coach" | "tools" | "attach";
+
+export const DIRECTOR_COMPOSER_ACCESSORY_HINTS: Record<ComposerAccessoryKind, string> = {
+  connectors: "Connector lanes your fleet can orchestrate through Director",
+  capabilities: "Tap a skill — example prompt lands in the composer",
+  coach: "Route this thread through one agent's memory and tools",
+  tools: "Abilities currently armed for the coached agent",
+  attach: "Documents, fleet context rules, or playbook instructions",
+};
+
+export const DIRECTOR_COMPOSER_CONTEXT = {
+  coachingPrefix: "Coaching",
+  clearCoachLabel: "Return to fleet-only mode",
+} as const;
 
 export const WL_APP_CLASSES = {
   /** Desktop editorial subtitle under TopBar — operator context */
