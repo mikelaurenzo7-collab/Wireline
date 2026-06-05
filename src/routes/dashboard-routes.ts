@@ -179,7 +179,19 @@ router.get(
           .from(schema.outboundLeads)
           .where(eq(schema.outboundLeads.userId, userId)),
         drizzle
-          .select()
+          .select({
+            id: schema.callLogs.id,
+            cost: schema.callLogs.cost,
+            durationSeconds: schema.callLogs.durationSeconds,
+            direction: schema.callLogs.direction,
+            createdAt: schema.callLogs.createdAt,
+            leadScore: schema.callLogs.leadScore,
+            intentLabel: schema.callLogs.intentLabel,
+            summary: schema.callLogs.summary,
+            customerNumber: schema.callLogs.customerNumber,
+            sentiment: schema.callLogs.sentiment,
+            coachingNote: schema.callLogs.coachingNote,
+          })
           .from(schema.callLogs)
           .where(eq(schema.callLogs.userId, userId))
           .orderBy(desc(schema.callLogs.createdAt))
