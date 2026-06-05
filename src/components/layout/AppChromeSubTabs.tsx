@@ -25,7 +25,7 @@ export default function AppChromeSubTabs({
     );
   }
 
-  if (!("tabs" in chrome) || chrome.tabs.length === 0) return null;
+  if (!("ariaLabel" in chrome) || chrome.tabs.length === 0) return null;
 
   const { secondary, ...primary } = chrome;
 

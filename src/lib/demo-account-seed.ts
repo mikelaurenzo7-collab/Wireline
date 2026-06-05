@@ -7,6 +7,9 @@ import { sql, eq, and, inArray, like, desc } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
 import { invalidateDashboard } from "./dashboard-cache";
 import * as schema from "../db/schema";
+/** Drizzle client or an open transaction — seed helpers accept both. */
+type DemoSeedDb = typeof drizzle | Parameters<Parameters<typeof drizzle.transaction>[0]>[0];
+
 import {
   users as usersTable,
   agents as agentsTable,
@@ -196,7 +199,7 @@ const TABLE_MAP: Record<string, typeof callLogs> = {
 async function countRows(
   tableName: string,
   userId: string,
-  tx: typeof drizzle = drizzle,
+  tx: DemoSeedDb = drizzle,
 ): Promise<number> {
   const table = TABLE_MAP[tableName];
   if (!table) throw new Error(`Unknown table: ${tableName}`);
@@ -212,7 +215,7 @@ async function countRows(
 }
 
 /** Drop duplicate marketing inbox rows (legacy seeds wrote indices 0–11). */
-async function pruneExcessSeedEmailThreads(userId: string, tx: typeof drizzle): Promise<number> {
+async function pruneExcessSeedEmailThreads(userId: string, tx: DemoSeedDb): Promise<number> {
   const userPrefix = userId.slice(0, 8);
   const pruned = await tx
     .delete(emailThreads)
@@ -227,10 +230,7 @@ async function pruneExcessSeedEmailThreads(userId: string, tx: typeof drizzle): 
   return pruned.length;
 }
 
-async function countSeedEmailThreads(
-  userId: string,
-  tx: typeof drizzle = drizzle,
-): Promise<number> {
+async function countSeedEmailThreads(userId: string, tx: DemoSeedDb = drizzle): Promise<number> {
   const [row] = await tx
     .select({ c: sql<number>`COUNT(*)::int` })
     .from(emailThreads)
@@ -238,7 +238,7 @@ async function countSeedEmailThreads(
   return Number(row?.c ?? 0);
 }
 
-async function countSeedSmsThreads(userId: string, tx: typeof drizzle = drizzle): Promise<number> {
+async function countSeedSmsThreads(userId: string, tx: DemoSeedDb = drizzle): Promise<number> {
   const [row] = await tx
     .select({ c: sql<number>`COUNT(*)::int` })
     .from(smsThreads)
@@ -249,7 +249,7 @@ async function countSeedSmsThreads(userId: string, tx: typeof drizzle = drizzle)
 }
 
 /** Re-apply varied copy when demo rows already exist (idempotent re-seed / bulk-SQL repair). */
-async function refreshDemoShowcaseCopy(userId: string, tx: typeof drizzle): Promise<void> {
+async function refreshDemoShowcaseCopy(userId: string, tx: DemoSeedDb): Promise<void> {
   await pruneExcessSeedEmailThreads(userId, tx);
 
   const calls = await tx
@@ -319,7 +319,7 @@ async function refreshDemoShowcaseCopy(userId: string, tx: typeof drizzle): Prom
   }
 }
 
-async function backfillTenantDemoRows(userId: string, tx: typeof drizzle = drizzle): Promise<void> {
+async function backfillTenantDemoRows(userId: string, tx: DemoSeedDb = drizzle): Promise<void> {
   const seedPhones = SAMPLE_CUSTOMERS.map((c) => c.phone);
   await tx.transaction(async (nestedTx) => {
     await nestedTx
