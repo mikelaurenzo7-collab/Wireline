@@ -20,6 +20,7 @@ import {
   WL_CHANNEL_CLASSES,
 } from "../lib/wireline-ops-design";
 import { useToast } from "../contexts/ToastContext";
+import { apiField, apiNum, apiStr } from "../lib/api-row";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
@@ -27,6 +28,7 @@ interface SmsThread {
   id: string;
   customer_number: string;
   status: string;
+  summary?: string | null;
   unread_count: number;
   last_message_at: string;
   created_at: string;
@@ -73,7 +75,20 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
     try {
       const r = await authFetch("/api/sms/threads");
       const d = await r.json();
-      if (mountedRef.current) setThreads(d.threads || []);
+      if (mountedRef.current) {
+        const rows = (d.threads || []) as Record<string, unknown>[];
+        setThreads(
+          rows.map((row) => ({
+            id: String(apiField(row, "id") ?? ""),
+            customer_number: apiStr(row, "customer_number", "Unknown number"),
+            status: apiStr(row, "status", "open"),
+            summary: apiStr(row, "summary") || null,
+            unread_count: apiNum(row, "unread_count"),
+            last_message_at: String(apiField(row, "last_message_at") ?? ""),
+            created_at: String(apiField(row, "created_at") ?? ""),
+          })),
+        );
+      }
     } catch (e: any) {
       if (mountedRef.current) toastError("Failed to load SMS inbox", e?.message);
     } finally {
@@ -86,7 +101,16 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
     try {
       const r = await authFetch(`/api/sms/threads/${threadId}/messages`);
       const d = await r.json();
-      setMessages(d.messages || []);
+      const rows = (d.messages || []) as Record<string, unknown>[];
+      setMessages(
+        rows.map((row) => ({
+          id: String(apiField(row, "id") ?? ""),
+          direction: (apiField<string>(row, "direction") === "out" ? "out" : "in") as "in" | "out",
+          body: apiStr(row, "body"),
+          created_at: String(apiField(row, "created_at") ?? ""),
+          twilio_sid: apiField<string>(row, "twilio_sid") ?? null,
+        })),
+      );
       // Clear unread on open
       await authFetch(`/api/sms/threads/${threadId}/mark-read`, { method: "POST" }).catch(() => {});
       setThreads((prev) => prev.map((t) => (t.id === threadId ? { ...t, unread_count: 0 } : t)));
@@ -198,6 +222,8 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                     {threads.map((t) => (
                       <motion.button
                         key={t.id}
+                        type="button"
+                        aria-label={`SMS thread with ${t.customer_number}`}
                         initial={{ opacity: 0, y: 4 }}
                         animate={{ opacity: 1, y: 0 }}
                         onClick={() => setActiveId(t.id)}
@@ -211,6 +237,11 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                             <p className="font-mono text-sm text-ink truncate">
                               {t.customer_number}
                             </p>
+                            {t.summary ? (
+                              <p className="text-[12px] text-muted mt-0.5 line-clamp-2 leading-snug">
+                                {t.summary}
+                              </p>
+                            ) : null}
                             <p className="chrome-subtle mt-0.5">
                               {formatDate(
                                 t.last_message_at,

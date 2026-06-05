@@ -541,11 +541,11 @@ export default function CampaignsTab({
                     </ShadButton>
                   </div>
                 )}
-                <div className="divide-y divide-white/5 mt-2">
+                <div className="divide-y divide-black/6 mt-2">
                   {campaignLeads.map((lead) => (
                     <div
                       key={lead.id}
-                      className="px-4 py-3 flex items-center gap-3 hover:bg-white/3 transition-colors"
+                      className="px-4 py-3 flex items-center gap-3 hover:bg-black/3 transition-colors"
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5 flex-wrap">

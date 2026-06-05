@@ -526,7 +526,7 @@ export default function DispatchTab({
                       ]}
                       className="grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_5rem]"
                     />
-                    <div className="divide-y divide-white/6">
+                    <div className="divide-y divide-black/6">
                       {leads.map((lead, idx) => (
                         <motion.div
                           layout
@@ -535,7 +535,7 @@ export default function DispatchTab({
                           key={lead.id || idx}
                           className={cn(
                             "px-4 py-3 flex flex-col sm:flex-row gap-3 transition-colors items-start sm:items-center",
-                            lead.status === "Queued" ? "bg-brand/5" : "hover:bg-white/3",
+                            lead.status === "Queued" ? "bg-brand/5" : "hover:bg-black/3",
                           )}
                         >
                           <div className="flex-1 min-w-0 space-y-1.5">

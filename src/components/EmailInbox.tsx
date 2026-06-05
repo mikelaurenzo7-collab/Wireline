@@ -30,6 +30,7 @@ import { PanelSkeleton } from "./Skeleton";
 import { EmptyState } from "./ui/EmptyState";
 import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR, WL_OPS_CLASSES } from "../lib/wireline-ops-design";
 import { useToast } from "../contexts/ToastContext";
+import { apiField, apiNum, apiStr } from "../lib/api-row";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
 export default function EmailInbox({ embedded = false }: { embedded?: boolean }) {
@@ -64,7 +65,22 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
     try {
       const res = await authFetch("/api/emails/threads");
       const data = await res.json();
-      if (mountedRef.current) setThreads(data.threads || []);
+      if (mountedRef.current) {
+        const rows = (data.threads || []) as Record<string, unknown>[];
+        setThreads(
+          rows.map((row) => ({
+            id: String(apiField(row, "id") ?? ""),
+            customer_email: apiStr(row, "customer_email"),
+            subject: apiStr(row, "subject"),
+            summary: apiStr(row, "summary"),
+            lead_score: apiNum(row, "lead_score"),
+            intent_label: apiStr(row, "intent_label", "none"),
+            read: Boolean(apiField(row, "read")),
+            last_message_at: String(apiField(row, "last_message_at") ?? ""),
+            created_at: String(apiField(row, "created_at") ?? ""),
+          })),
+        );
+      }
     } catch (e) {
       console.error("Failed to fetch threads:", e);
       if (mountedRef.current) {
@@ -136,7 +152,17 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
           signal: controller.signal,
         });
         const data = await res.json();
-        if (active) setMessages(data.messages || []);
+        if (active) {
+          const rows = (data.messages || []) as Record<string, unknown>[];
+          setMessages(
+            rows.map((row) => ({
+              id: apiField(row, "id"),
+              role: apiStr(row, "role", "user"),
+              content: apiStr(row, "content"),
+              created_at: String(apiField(row, "created_at") ?? ""),
+            })),
+          );
+        }
       } catch (e: any) {
         if (e?.name === "AbortError") return;
         if (active) console.error("Failed to fetch messages:", e);
@@ -156,7 +182,15 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
       // Compare against the ref (live) rather than the closure-captured
       // `selectedThread`, which would always equal threadId at call time.
       if (selectedThreadIdRef.current !== threadId) return;
-      setMessages(data.messages || []);
+      const rows = (data.messages || []) as Record<string, unknown>[];
+      setMessages(
+        rows.map((row) => ({
+          id: apiField(row, "id"),
+          role: apiStr(row, "role", "user"),
+          content: apiStr(row, "content"),
+          created_at: String(apiField(row, "created_at") ?? ""),
+        })),
+      );
     } catch (e) {
       console.error("Failed to fetch messages:", e);
       toastError("Messages unavailable", "Could not load messages for this thread.");
@@ -329,7 +363,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                     className="h-full py-10"
                   />
                 ) : (
-                  <div className="divide-y divide-white/6">
+                  <div className="divide-y divide-black/6">
                     {threads.map((thread) => {
                       const score = thread.lead_score || 0;
                       const active = selectedThread?.id === thread.id;
@@ -348,7 +382,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           onClick={() => setSelectedThread(thread)}
                           className={cn(
                             "group w-full px-4 py-3.5 text-left transition-all flex gap-3 items-start relative active:scale-[0.99] active:bg-black/[0.03] duration-100",
-                            active ? "bg-brand/6" : "hover:bg-white/3",
+                            active ? "bg-brand/6" : "hover:bg-black/3",
                           )}
                         >
                           {/* Active bar */}

@@ -215,7 +215,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                     { label: "Time", className: "text-right" },
                   ]}
                 />
-                <ul className="divide-y divide-white/5">
+                <ul className="divide-y divide-black/6">
                   {filteredCalls.map((call) => (
                     <li key={call.id}>
                       <ShadButton
@@ -228,7 +228,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                           "group w-full h-auto justify-start text-left flex items-center gap-3 px-3 py-3 relative active:scale-[0.99] duration-100 rounded-none",
                           selectedCall?.id === call.id
                             ? "bg-brand/8 hover:bg-brand/8"
-                            : "hover:bg-white/3",
+                            : "hover:bg-black/3",
                         )}
                       >
                         {/* Active indicator bar */}

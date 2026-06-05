@@ -475,7 +475,7 @@ function CalendarGrid({
                 key={idx}
                 className={cn(
                   "min-h-[50px] sm:min-h-[60px] md:min-h-[80px] border-b border-r border-black/6 p-1.5",
-                  cell.day ? "hover:bg-white/3 cursor-pointer" : "opacity-0 pointer-events-none",
+                  cell.day ? "hover:bg-black/3 cursor-pointer" : "opacity-0 pointer-events-none",
                 )}
               >
                 {cell.day && (
@@ -740,7 +740,7 @@ export default function AppointmentsView({ embedded = false }: { embedded?: bool
                           ]}
                           className="grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_5rem]"
                         />
-                        <div className="divide-y divide-white/5">
+                        <div className="divide-y divide-black/6">
                           {scheduled.map((appt) => (
                             <AppointmentRow
                               key={appt.id}
@@ -859,7 +859,7 @@ function AppointmentRow({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 8 }}
       transition={{ duration: 0.18 }}
-      className="px-4 py-3.5 hover:bg-white/3 transition-colors group"
+      className="px-4 py-3.5 hover:bg-black/3 transition-colors group"
     >
       <div className="flex items-start gap-3">
         <div className="w-9 h-9 rounded-md wl-panel flex items-center justify-center text-brand shrink-0 mt-0.5">

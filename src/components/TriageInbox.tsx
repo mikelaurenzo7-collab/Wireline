@@ -634,7 +634,7 @@ const KnowledgeGapRow: React.FC<{
                 setEditing(!editing);
                 setContent(cleaned);
               }}
-              className="w-7 h-7 rounded-full text-muted hover:text-ink hover:bg-white/5 transition-all flex items-center justify-center p-0"
+              className="w-7 h-7 rounded-full text-muted hover:text-ink hover:bg-black/5 transition-all flex items-center justify-center p-0"
               title={editing ? "Cancel" : "Edit before promoting"}
               aria-label={editing ? "Cancel edit" : "Edit gap content"}
             >
