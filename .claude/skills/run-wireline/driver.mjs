@@ -12,10 +12,18 @@
  *   routes         Screenshot every major route for visual QA
  *
  * Options:
- *   --url URL      Base URL (default: http://localhost:3000)
- *   --route PATH   Route to screenshot (with "screenshot" action)
- *   --out DIR      Screenshot output directory (default: /tmp/wireline-screenshots)
- *   --headed       Run with visible browser (non-headless)
+ *   --url URL          Base URL (default: http://localhost:3000)
+ *   --route PATH       Route to screenshot (with "screenshot" action)
+ *   --out DIR          Screenshot output directory (default: /tmp/wireline-screenshots)
+ *   --headed           Run with visible browser (non-headless)
+ *   --block-external   Abort all non-base-origin requests (fonts, analytics).
+ *                      Use in network-restricted environments where blocked
+ *                      third-party requests would otherwise stall navigation.
+ *
+ * Navigation note: we wait with `commit` + a poll for the React root to
+ * populate, NOT `networkidle`. The app holds long-lived connections (auth
+ * SSE, analytics), so `networkidle` never settles and every goto would time
+ * out. The root-populated check is the reliable "app is interactive" signal.
  */
 
 import { chromium } from "playwright";
@@ -50,23 +58,46 @@ async function launch() {
     deviceScaleFactor: 2,
     colorScheme: "light",
   });
+  // In network-restricted environments, blocked third-party requests (Google
+  // Fonts, Plausible) hang and stall navigation. Aborting anything off the
+  // app origin keeps the page from waiting on them.
+  if (hasFlag("block-external")) {
+    await context.route("**/*", (route) =>
+      route.request().url().startsWith(BASE_URL) ? route.continue() : route.abort(),
+    );
+  }
   const page = await context.newPage();
   page.setDefaultTimeout(20000);
   return { browser, context, page };
 }
 
+// Navigate and wait until the SPA is actually rendered. We use `commit`
+// (resolves as soon as the document response lands) and then poll for the
+// React root to fill in — `networkidle` is unusable here because the app keeps
+// long-lived connections (auth SSE, analytics) open, so it never fires.
+async function gotoStable(page, url) {
+  await page.goto(url, { waitUntil: "commit", timeout: 30000 });
+  await page
+    .waitForFunction(
+      () => {
+        const el = document.getElementById("root");
+        return !!el && el.innerText.trim().length > 30;
+      },
+      { timeout: 20000 },
+    )
+    .catch(() => {
+      // Fall through to the settle delay even if the heuristic doesn't trip —
+      // some routes (bare auth gates) render less than 30 chars of text.
+    });
+  await page.waitForTimeout(1500);
+}
+
 async function waitForApp(page) {
-  await page.goto(BASE_URL, { waitUntil: "networkidle", timeout: 30000 });
-  // Wait for React to mount
-  await page.waitForTimeout(2000);
+  await gotoStable(page, BASE_URL);
 }
 
 async function navigateTo(page, route) {
-  await page.goto(`${BASE_URL}${route}`, {
-    waitUntil: "networkidle",
-    timeout: 30000,
-  });
-  await page.waitForTimeout(2000);
+  await gotoStable(page, `${BASE_URL}${route}`);
 }
 
 // ── SMOKE: Landing page + Director Chat ──
