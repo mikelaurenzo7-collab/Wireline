@@ -3,7 +3,13 @@ import { drizzle, log, fetchWithTimeout } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, lte } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
-import { hostnameResolvesToPrivate } from "./webhook-validators";
+import { resolveWebhookDeliveryHostname } from "./webhook-validators";
+import {
+  WEBHOOK_DELIVERY_FAILED,
+  WEBHOOK_DELIVERY_PENDING,
+  WEBHOOK_DELIVERY_SUCCESS,
+  type WebhookDeliveryStatus,
+} from "./webhook-delivery-status";
 import { SentryEvents } from "./sentry-events";
 import { createHmac } from "node:crypto";
 
@@ -97,7 +103,7 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
   if (!hook?.url) {
     await drizzle
       .update(schema.webhookDeliveries)
-      .set({ status: "failed", nextAttemptAt: null })
+      .set({ status: WEBHOOK_DELIVERY_FAILED, nextAttemptAt: null })
       .where(eq(schema.webhookDeliveries.id, deliveryIdBig));
     return;
   }
@@ -113,16 +119,22 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
   let statusCode: number | null = null;
   let success = false;
   try {
-    if (await hostnameResolvesToPrivate(hook.url)) {
-      log.warn("Webhook delivery blocked — hostname resolves to private IP (DNS rebinding)", {
+    const hostnameResolution = await resolveWebhookDeliveryHostname(hook.url);
+    if (hostnameResolution.status !== "public") {
+      const lastError =
+        hostnameResolution.status === "private"
+          ? "blocked_private_destination"
+          : "dns_resolution_failed";
+      log.warn("Webhook delivery blocked — hostname guard", {
         deliveryId: String(deliveryId),
         webhookId: hook.id,
+        reason: lastError,
       });
       await drizzle
         .update(schema.webhookDeliveries)
         .set({
-          status: "failed",
-          lastError: "blocked_private_destination",
+          status: WEBHOOK_DELIVERY_FAILED,
+          lastError,
           lastAttemptAt: new Date(),
           nextAttemptAt: null,
         })
@@ -133,7 +145,7 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
     const res = await fetchWithTimeout(hook.url, { method: "POST", headers, body }, 10_000);
     statusCode = res.status;
     success = res.ok;
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.warn("Webhook delivery attempt failed", { deliveryId, error: getErrorMessage(err) });
   }
 
@@ -143,10 +155,16 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
   const nextAttemptAt =
     success || reachedDead ? null : new Date(Date.now() + Math.pow(2, newAttempts) * 60_000);
 
+  const nextStatus: WebhookDeliveryStatus = success
+    ? WEBHOOK_DELIVERY_SUCCESS
+    : reachedDead
+      ? WEBHOOK_DELIVERY_FAILED
+      : WEBHOOK_DELIVERY_PENDING;
+
   await drizzle
     .update(schema.webhookDeliveries)
     .set({
-      status: success ? "success" : reachedDead ? "failed" : "pending",
+      status: nextStatus,
       lastStatusCode: statusCode,
       attempts: newAttempts,
       lastAttemptAt: new Date(),

@@ -13,6 +13,7 @@ import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { IntegrationService } from "../lib/integrations";
+import { touchNavCounts } from "../lib/nav-counts-invalidate";
 
 const router = Router();
 
@@ -183,6 +184,7 @@ router.get(
         .where(
           and(eq(schema.emailThreads.id, threadId), eq(schema.emailThreads.userId, req.user.id)),
         )
+        .then(() => touchNavCounts(req.user.id))
         .catch((err) =>
           log.warn("Failed to mark email thread as read", {
             error: getErrorMessage(err),
@@ -217,6 +219,7 @@ router.post(
           and(inArray(schema.emailThreads.id, ids), eq(schema.emailThreads.userId, req.user.id)),
         );
 
+      touchNavCounts(req.user.id);
       res.json({ success: true, count: ids.length });
     } catch (e: any) {
       log.error("Failed to update thread read state", { error: getErrorMessage(e) });
@@ -262,6 +265,7 @@ router.post(
           .returning({ id: schema.emailThreads.id });
         inserted = result.length;
       }
+      if (inserted > 0) touchNavCounts(req.user.id);
       res.json({
         ok: true,
         fetched: messages.length,

@@ -11,6 +11,7 @@ import { CampaignCreateSchema, CampaignUpdateSchema } from "../lib/form-validato
 import { computeOutcomeBreakdown, computeCallStats } from "../lib/campaign-analytics";
 import { validateBody } from "../lib/api-validation";
 import { claudeRateLimiter, campaignWriteRateLimit } from "../middleware/api-rate-limits";
+import { touchNavCounts } from "../lib/nav-counts-invalidate";
 
 const router = Router();
 
@@ -424,7 +425,7 @@ router.post(
 
       await drizzle
         .update(schema.outboundLeads)
-        .set({ status: "Queued", updatedAt: new Date() })
+        .set({ status: "Queued" })
         .where(
           and(
             inArray(schema.outboundLeads.id, failedIds),
@@ -432,6 +433,7 @@ router.post(
           ),
         );
 
+      touchNavCounts(req.user.id);
       res.json({ success: true, reset: failed.length });
     } catch (error: any) {
       log.error("Retry failed leads error", { error: getErrorMessage(error) });

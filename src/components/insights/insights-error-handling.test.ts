@@ -60,7 +60,7 @@ describe("EmptyState routing contract", () => {
   it("uses React Router Link for internal paths", () => {
     const src = read("components/ui/EmptyState.tsx");
     expect(src).toContain('from "react-router-dom"');
-    expect(src).toContain("<Link to={action.to}>");
+    expect(src).toMatch(/<Link to=\{action\.to\}/);
     expect(src).toMatch(/action\.to\.startsWith\("\/"\)/);
   });
 });

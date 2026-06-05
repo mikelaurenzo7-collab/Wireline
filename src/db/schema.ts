@@ -634,6 +634,7 @@ export const appointments = pgTable(
   },
   () => ({
     userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_appointments_user_id ON wireline_appointments USING btree (user_id)`,
+    userPhoneTailIdx: sql`CREATE INDEX IF NOT EXISTS idx_appointments_user_phone_tail ON wireline_appointments (user_id, right(regexp_replace(phone_number, '[^0-9]', '', 'g'), 10))`,
     userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_appointments_user_created ON wireline_appointments USING btree (user_id, created_at)`,
     createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_appointments_created_at ON wireline_appointments USING btree (created_at)`,
     statusIdx: sql`CREATE INDEX IF NOT EXISTS idx_appointments_status ON wireline_appointments USING btree (status)`,
@@ -699,6 +700,7 @@ export const callLogs = pgTable(
     ttftIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_ttft ON wireline_call_logs USING btree (ttft_ms) WHERE ttft_ms IS NOT NULL`,
     demoCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_demo_created ON wireline_call_logs USING btree (demo, created_at) WHERE demo = true`,
     pipelineErrorIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_pipeline_error ON wireline_call_logs USING btree (pipeline_error) WHERE pipeline_error IS NOT NULL`,
+    userPhoneTailIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_user_phone_tail ON wireline_call_logs (user_id, right(regexp_replace(customer_number, '[^0-9]', '', 'g'), 10))`,
   }),
 );
 
@@ -1160,6 +1162,7 @@ export const outboundLeads = pgTable(
     statusNextAttemptIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_status_next_attempt ON wireline_outbound_leads USING btree (status, callback_scheduled_at) WHERE status IN ('Pending', 'Retry')`,
     userCustomerNumberIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_user_customer_number ON wireline_outbound_leads USING btree (user_id, customer_number)`,
     userIdempotencyUniqueIdx: sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_outbound_leads_user_idempotency ON wireline_outbound_leads (user_id, idempotency_key) WHERE idempotency_key IS NOT NULL`,
+    userPhoneTailIdx: sql`CREATE INDEX IF NOT EXISTS idx_outbound_leads_user_phone_tail ON wireline_outbound_leads (user_id, right(regexp_replace(phone_number, '[^0-9]', '', 'g'), 10))`,
   }),
 );
 
@@ -1518,6 +1521,7 @@ export const leadDossiers = pgTable(
   (t: any) => ({
     unq: unique().on(t.userId, t.customerNumber),
     customerEmailIdx: sql`CREATE INDEX IF NOT EXISTS idx_lead_dossiers_user_email ON wireline_lead_dossiers USING btree (user_id, customer_email) WHERE customer_email IS NOT NULL`,
+    userPhoneTailIdx: sql`CREATE INDEX IF NOT EXISTS idx_lead_dossiers_user_phone_tail ON wireline_lead_dossiers (user_id, right(regexp_replace(customer_number, '[^0-9]', '', 'g'), 10))`,
   }),
 );
 

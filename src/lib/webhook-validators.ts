@@ -61,6 +61,66 @@ export function isSsrfUrl(raw: string): boolean {
 }
 
 const PRIVATE_MSG = "Webhook URL must not target private or internal addresses.";
+const DNS_MSG = "Could not resolve webhook hostname.";
+
+export type WebhookHostnameResolution =
+  | { status: "public" }
+  | { status: "private" }
+  | { status: "dns_error" };
+
+function parseWebhookHost(raw: string): { host: string } | { error: "invalid_url" } {
+  try {
+    const parsed = new URL(raw);
+    const rawHost = parsed.hostname.toLowerCase();
+    const host = rawHost.startsWith("[") ? rawHost.slice(1, -1) : rawHost;
+    return { host };
+  } catch {
+    return { error: "invalid_url" };
+  }
+}
+
+async function lookupHostnameAddresses(host: string) {
+  const { lookup } = await import("node:dns/promises");
+  return lookup(host, { all: true });
+}
+
+function addressesIncludePrivate(addrs: Array<{ address: string; family: number }>): boolean {
+  return addrs.some(
+    ({ address, family }) =>
+      (family === 4 && isPrivateIp(address)) || (family === 6 && isPrivateIpv6(address)),
+  );
+}
+
+/**
+ * Delivery-time DNS guard — fail closed on resolution failure to block rebinding.
+ */
+export async function resolveWebhookDeliveryHostname(
+  raw: string,
+): Promise<WebhookHostnameResolution> {
+  const parsed = parseWebhookHost(raw);
+  if ("error" in parsed) return { status: "dns_error" };
+
+  const { host } = parsed;
+  const isIpLiteral = /^[\d.]+$/.test(host) || host.includes(":");
+  if (isIpLiteral) return { status: "public" }; // sync guards already handled literals
+
+  try {
+    const addrs = await lookupHostnameAddresses(host);
+    if (addressesIncludePrivate(addrs)) return { status: "private" };
+    return { status: "public" };
+  } catch {
+    return { status: "dns_error" };
+  }
+}
+
+/**
+ * @deprecated Prefer resolveWebhookDeliveryHostname for delivery-time checks.
+ * Returns true when the hostname resolves private OR DNS fails (fail-closed).
+ */
+export async function hostnameResolvesToPrivate(raw: string): Promise<boolean> {
+  const resolution = await resolveWebhookDeliveryHostname(raw);
+  return resolution.status === "private" || resolution.status === "dns_error";
+}
 
 /**
  * Full async validator used at registration time.
@@ -79,9 +139,6 @@ export async function validateWebhookUrl(raw: string): Promise<string | null> {
   const rawHost = parsed.hostname.toLowerCase();
   const host = rawHost.startsWith("[") ? rawHost.slice(1, -1) : rawHost;
 
-  // IP-literal-only checks: gate IPv4 prefix checks on a parsed IPv4 literal and
-  // IPv6 prefix checks on host containing ":" — otherwise legitimate domains
-  // like "10.example.com" or "fd-prod.example.com" would be wrongly flagged.
   const isIpv4Literal = IPV4_LITERAL_RE.test(host);
   const isIpv6Literal = host.includes(":");
   if (
@@ -92,48 +149,14 @@ export async function validateWebhookUrl(raw: string): Promise<string | null> {
     return PRIVATE_MSG;
   }
 
-  // Resolve every A and AAAA answer — a host with mixed public/private records
-  // must still be rejected.
   const isIpLiteral = /^[\d.]+$/.test(host) || host.includes(":");
   if (!isIpLiteral) {
-    const { lookup } = await import("node:dns/promises");
     try {
-      const addrs = await lookup(host, { all: true });
-      for (const { address, family } of addrs) {
-        if (family === 4 && isPrivateIp(address)) return PRIVATE_MSG;
-        if (family === 6 && isPrivateIpv6(address)) return PRIVATE_MSG;
-      }
+      const addrs = await lookupHostnameAddresses(host);
+      if (addressesIncludePrivate(addrs)) return PRIVATE_MSG;
     } catch {
-      /* DNS failure — allow through; delivery will fail naturally */
+      return DNS_MSG;
     }
   }
   return null;
-}
-
-/**
- * Async DNS check reused at delivery time to guard against DNS rebinding.
- * Returns true if the hostname resolves to any private/internal address.
- * Returns false on DNS failure (conservative — don't block on outage).
- */
-export async function hostnameResolvesToPrivate(raw: string): Promise<boolean> {
-  let parsed: URL;
-  try {
-    parsed = new URL(raw);
-  } catch {
-    return false;
-  }
-  const rawHost = parsed.hostname.toLowerCase();
-  const host = rawHost.startsWith("[") ? rawHost.slice(1, -1) : rawHost;
-  const isIpLiteral = /^[\d.]+$/.test(host) || host.includes(":");
-  if (isIpLiteral) return false; // already caught by isSsrfUrl
-  try {
-    const { lookup } = await import("node:dns/promises");
-    const addrs = await lookup(host, { all: true });
-    return addrs.some(
-      ({ address, family }) =>
-        (family === 4 && isPrivateIp(address)) || (family === 6 && isPrivateIpv6(address)),
-    );
-  } catch {
-    return false;
-  }
 }

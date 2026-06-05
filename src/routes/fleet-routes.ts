@@ -9,6 +9,7 @@ import { authenticateUser, authenticateEventStream } from "../middleware/auth";
 import { fleetRateLimit } from "../middleware/api-rate-limits";
 import { validateBody, updateFleetTaskSchema } from "../lib/api-validation";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
+import { touchNavCounts } from "../lib/nav-counts-invalidate";
 import { parseFormData, FleetTaskCreateSchema } from "../lib/form-validators";
 import { compileActivityFeed } from "../lib/fleet-activity";
 import { ROLE_PERSONALITY_TEMPLATES } from "../lib/agent-constants";
@@ -302,6 +303,7 @@ router.post(
         priority,
         dueDate: due_date ? new Date(due_date) : null,
       });
+      touchNavCounts(req.user.id);
       res.json({ success: true });
     } catch (error: any) {
       log.error("Failed to create fleet task", { error: error.message });
@@ -344,6 +346,7 @@ router.patch(
         .where(
           and(eq(schema.fleetTasks.id, req.params.id), eq(schema.fleetTasks.userId, req.user.id)),
         );
+      if (status !== undefined) touchNavCounts(req.user.id);
       res.json({ success: true });
     } catch (error: any) {
       log.error("Failed to update fleet task", { error: error.message });
@@ -399,6 +402,7 @@ router.post(
           .update(schema.fleetTasks)
           .set({ status: "completed", resolutionNotes: "Approved and executed by operator" })
           .where(eq(schema.fleetTasks.id, taskId));
+        touchNavCounts(userId);
         res.json({ success: true });
       } else {
         res.status(500).json({ error: result.error || "Action execution failed" });

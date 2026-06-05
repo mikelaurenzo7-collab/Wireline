@@ -106,6 +106,37 @@ export function estimateMemWindowResetMs(now = Date.now()): number {
   return Math.max(0, WINDOW_MS - (now - memWindowStart));
 }
 
+export type DailySpendWindowBackend = "redis" | "memory";
+
+export interface DailySpendWindowReset {
+  resetMs: number;
+  backend: DailySpendWindowBackend;
+}
+
+/**
+ * Ms until the rolling 24h spend window resets — Redis PTTL when available,
+ * otherwise the in-process fallback clock.
+ */
+export async function getDailySpendWindowReset(): Promise<DailySpendWindowReset> {
+  const r = getRedis();
+  if (r) {
+    try {
+      const ttl = (await r.pttl(REDIS_KEY)) as number;
+      if (Number.isFinite(ttl) && ttl > 0) {
+        return { resetMs: ttl, backend: "redis" };
+      }
+      return { resetMs: WINDOW_MS, backend: "redis" };
+    } catch (err) {
+      log.warn("[daily-spend] Redis PTTL failed, falling back to memory window", {
+        error: (err as Error).message,
+      });
+    }
+  } else {
+    warnNoRedisOnce();
+  }
+  return { resetMs: estimateMemWindowResetMs(), backend: "memory" };
+}
+
 /** Test-only reset of in-memory fallback state. */
 export function resetDailySpendMemStateForTests(): void {
   memWindowStart = Date.now();

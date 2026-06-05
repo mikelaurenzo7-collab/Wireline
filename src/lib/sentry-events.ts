@@ -29,6 +29,7 @@ export const SentryEvents = {
   cacheOperation: logEvent("cache_operation"),
   budgetWarning: logEvent("budget_warning"),
   budgetExceeded: logEvent("budget_exceeded"),
+  spendGuardDegraded: logEvent("spend_guard_degraded"),
   agentOptimized: logEvent("agent_optimized"),
 };
 

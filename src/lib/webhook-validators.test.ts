@@ -1,5 +1,17 @@
-import { describe, expect, it } from "vitest";
-import { isPrivateIp, isPrivateIpv6, isSsrfUrl } from "./webhook-validators";
+import { describe, expect, it, vi, beforeEach } from "vitest";
+import {
+  isPrivateIp,
+  isPrivateIpv6,
+  isSsrfUrl,
+  resolveWebhookDeliveryHostname,
+  validateWebhookUrl,
+} from "./webhook-validators";
+
+vi.mock("node:dns/promises", () => ({
+  lookup: vi.fn(),
+}));
+
+import { lookup } from "node:dns/promises";
 
 describe("webhook-validators — SSRF guard", () => {
   describe("isPrivateIp", () => {
@@ -139,6 +151,53 @@ describe("webhook-validators — SSRF guard", () => {
       expect(isSsrfUrl("https://fd-prod.example.com/hook")).toBe(false);
       // "feb-promo.example.com" should NOT be flagged as link-local
       expect(isSsrfUrl("https://feb-promo.example.com/hook")).toBe(false);
+    });
+  });
+
+  describe("resolveWebhookDeliveryHostname (DNS fail-closed)", () => {
+    beforeEach(() => {
+      vi.mocked(lookup).mockReset();
+    });
+
+    it("returns dns_error when lookup throws", async () => {
+      vi.mocked(lookup).mockRejectedValue(new Error("ENOTFOUND"));
+      await expect(resolveWebhookDeliveryHostname("https://example.com/hook")).resolves.toEqual({
+        status: "dns_error",
+      });
+    });
+
+    it("returns private when resolved A record is RFC1918", async () => {
+      vi.mocked(lookup).mockResolvedValue([{ address: "10.0.0.1", family: 4 }]);
+      await expect(
+        resolveWebhookDeliveryHostname("https://customer.example/hook"),
+      ).resolves.toEqual({
+        status: "private",
+      });
+    });
+
+    it("returns public for safe DNS answers", async () => {
+      vi.mocked(lookup).mockResolvedValue([{ address: "8.8.8.8", family: 4 }]);
+      await expect(
+        resolveWebhookDeliveryHostname("https://hooks.zapier.com/hooks/catch/1"),
+      ).resolves.toEqual({ status: "public" });
+    });
+  });
+
+  describe("validateWebhookUrl (registration-time DNS)", () => {
+    beforeEach(() => {
+      vi.mocked(lookup).mockReset();
+    });
+
+    it("rejects when DNS lookup fails", async () => {
+      vi.mocked(lookup).mockRejectedValue(new Error("SERVFAIL"));
+      await expect(validateWebhookUrl("https://example.com/hook")).resolves.toBe(
+        "Could not resolve webhook hostname.",
+      );
+    });
+
+    it("accepts public hostnames that resolve cleanly", async () => {
+      vi.mocked(lookup).mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
+      await expect(validateWebhookUrl("https://example.com/hook")).resolves.toBeNull();
     });
   });
 });

@@ -29,10 +29,10 @@ export default defineConfig({
       // we stay well clear of the floor. These remain strictly above the prior
       // baseline (8/55/25/8), so they are a regression guard, not a flaky gate.
       thresholds: {
-        statements: 10,
+        statements: 11,
         branches: 60,
-        functions: 30,
-        lines: 10,
+        functions: 31,
+        lines: 11,
       },
     },
   },

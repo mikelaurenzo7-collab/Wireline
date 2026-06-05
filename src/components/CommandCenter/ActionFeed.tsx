@@ -150,9 +150,6 @@ export function ActionFeed({
               <motion.div
                 layout
                 key={action.id}
-                role="button"
-                tabIndex={0}
-                aria-expanded={isExpanded}
                 className={clsx(
                   "relative group rounded-md border transition-all duration-300 overflow-hidden",
                   action.status === "pending"
@@ -160,13 +157,6 @@ export function ActionFeed({
                     : "bg-black/[0.02] border-black/4 opacity-60",
                   isExpanded && "border-brand/40 bg-paper/90 ring-1 ring-brand/10 shadow-lg",
                 )}
-                onClick={() => setExpandedId(isExpanded ? null : action.id)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setExpandedId(isExpanded ? null : action.id);
-                  }
-                }}
               >
                 <div
                   className={clsx(
@@ -179,9 +169,21 @@ export function ActionFeed({
                   )}
                 />
 
-                <div className="p-4 pl-5 cursor-pointer">
+                <div className="p-4 pl-5">
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      aria-expanded={isExpanded}
+                      className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer"
+                      onClick={() => setExpandedId(isExpanded ? null : action.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setExpandedId(isExpanded ? null : action.id);
+                        }
+                      }}
+                    >
                       <div
                         className={clsx(
                           "w-9 h-9 rounded-md flex items-center justify-center shrink-0 border transition-all",
@@ -205,7 +207,7 @@ export function ActionFeed({
                           >
                             {action.priority}
                           </span>
-                          <span className="text-[9px] text-ink/40 font-mono">
+                          <span className="text-[9px] text-ink/55 font-mono">
                             {new Date(action.created_at).toLocaleTimeString([], {
                               hour: "2-digit",
                               minute: "2-digit",
@@ -251,13 +253,13 @@ export function ActionFeed({
                             </div>
                           )}
                           {isExpanded ? (
-                            <ChevronUp className="w-4 h-4 text-ink/40" />
+                            <ChevronUp className="w-4 h-4 text-ink/55" />
                           ) : (
-                            <ChevronDown className="w-4 h-4 text-ink/40" />
+                            <ChevronDown className="w-4 h-4 text-ink/55" />
                           )}
                         </div>
                       ) : (
-                        <AlertCircle className="w-4 h-4 text-ink/40" />
+                        <AlertCircle className="w-4 h-4 text-ink/55" />
                       )}
                     </div>
                   </div>
@@ -358,7 +360,7 @@ export function ActionFeed({
                               <div className="grid grid-cols-2 gap-3">
                                 {Object.entries(action.payload || {}).map(([key, val]) => (
                                   <div key={key} className="flex flex-col gap-1">
-                                    <span className="text-[9px] uppercase tracking-wider text-ink/40">
+                                    <span className="text-[9px] uppercase tracking-wider text-ink/55">
                                       {key}
                                     </span>
                                     <span
@@ -376,7 +378,7 @@ export function ActionFeed({
                               <div
                                 className={cn(
                                   WL_DIRECTOR_CLASSES.metaCaption,
-                                  "font-mono text-ink/40 break-all",
+                                  "font-mono text-ink/55 break-all",
                                 )}
                               >
                                 {JSON.stringify(action.payload, null, 2)}

@@ -35,8 +35,11 @@ export function isAbortError(e: any): boolean {
  * out expected abort/network-blip noise. Reduces Sentry signal loss +
  * keeps the console honest during E2E runs.
  */
-export function logFetchError(label: string, e: any): void {
+export function logFetchError(label: string, e: unknown): void {
   if (isAbortError(e)) return;
 
-  console.error(label, e);
+  // Dev-only — production surfaces errors via toasts / boundaries.
+  if (typeof import.meta !== "undefined" && import.meta.env?.DEV) {
+    console.error(label, e);
+  }
 }

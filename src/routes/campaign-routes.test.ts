@@ -110,6 +110,7 @@ vi.mock("../middleware/auth", () => ({
 
 vi.mock("../middleware/api-rate-limits", () => ({
   claudeRateLimiter: vi.fn((_req: any, _res: any, next: any) => next()),
+  campaignWriteRateLimit: vi.fn((_req: any, _res: any, next: any) => next()),
 }));
 
 vi.mock("../lib/campaign-analytics", () => ({

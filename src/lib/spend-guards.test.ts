@@ -69,6 +69,7 @@ vi.mock("./webhook-helpers", () => ({
 vi.mock("./sentry-events", () => ({
   SentryEvents: {
     budgetExceeded: vi.fn(),
+    spendGuardDegraded: vi.fn(),
   },
 }));
 
@@ -353,6 +354,8 @@ describe("Spend Guards & Budgets", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           code: "DAILY_SPEND_LIMIT_EXCEEDED",
+          reset_in_ms: expect.any(Number),
+          reset_backend: expect.stringMatching(/^(redis|memory)$/),
         }),
       );
     });

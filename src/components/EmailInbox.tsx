@@ -32,6 +32,7 @@ import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR, WL_OPS_CLASSES } from "../lib/w
 import { useToast } from "../contexts/ToastContext";
 import { apiField, apiNum, apiStr } from "../lib/api-row";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { clientLog, getClientErrorMessage } from "../lib/client-log";
 
 export default function EmailInbox({ embedded = false }: { embedded?: boolean }) {
   const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
@@ -131,8 +132,8 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
         "Inbox synced",
         body.message ?? `${threads.length} thread${threads.length === 1 ? "" : "s"} loaded`,
       );
-    } catch (e: any) {
-      toastError("Sync failed", e?.message || "Could not reach the server.");
+    } catch (e: unknown) {
+      toastError("Sync failed", getClientErrorMessage(e));
     } finally {
       setSyncing(false);
     }
@@ -182,9 +183,9 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
             })),
           );
         }
-      } catch (e: any) {
-        if (e?.name === "AbortError") return;
-        if (active) console.error("Failed to fetch messages:", e);
+      } catch (e: unknown) {
+        if (e instanceof Error && e.name === "AbortError") return;
+        if (active) clientLog.error("EmailInbox.fetchMessages", e);
       }
     })();
     return () => {
@@ -210,9 +211,9 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
           created_at: String(apiField(row, "created_at") ?? ""),
         })),
       );
-    } catch (e) {
-      console.error("Failed to fetch messages:", e);
-      toastError("Messages unavailable", "Could not load messages for this thread.");
+    } catch (e: unknown) {
+      clientLog.error("EmailInbox.fetchMessages", e);
+      toastError("Messages unavailable", getClientErrorMessage(e));
     }
   };
 
@@ -238,7 +239,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
         }
       } else if (claudeRes.status !== 503) {
         const err = await claudeRes.json().catch(() => ({}));
-        console.warn("Claude draft failed; falling back to Gemini:", err); // eslint-disable-line no-console
+        clientLog.warn("EmailInbox.draftAI", err);
       }
       const res = await authFetch(`/api/emails/draft`, {
         method: "POST",
@@ -254,8 +255,8 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
         setReplyText(data.draft);
         toastSuccess("Draft ready", "Review and send when ready.");
       }
-    } catch (e: any) {
-      toastError("Draft failed", e.message);
+    } catch (e: unknown) {
+      toastError("Draft failed", getClientErrorMessage(e));
     } finally {
       setIsDrafting(false);
     }
@@ -277,8 +278,8 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
       } else if (res.status === 503) {
         toastError("Quick replies unavailable", "AI brain isn't configured on this workspace yet.");
       }
-    } catch (e: any) {
-      toastError("Quick replies failed", e.message);
+    } catch (e: unknown) {
+      toastError("Quick replies failed", getClientErrorMessage(e));
     } finally {
       setIsLoadingQuickReplies(false);
     }
@@ -295,8 +296,8 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
       setReplyText("");
       fetchMessages(selectedThread.id);
       toastSuccess("Reply sent");
-    } catch (e: any) {
-      toastError("Reply failed", e.message);
+    } catch (e: unknown) {
+      toastError("Reply failed", getClientErrorMessage(e));
     }
   };
 
@@ -315,8 +316,8 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
         }),
       });
       toastSuccess("Callback queued", `Handoff task created for ${thread.customer_email}`);
-    } catch (e: any) {
-      toastError("Handoff failed", e.message);
+    } catch (e: unknown) {
+      toastError("Handoff failed", getClientErrorMessage(e));
     }
   };
 
@@ -397,7 +398,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           ? "bg-destructive/12 text-destructive border-destructive/25"
                           : score >= 50
                             ? "bg-brand/12 text-brand border-brand/25"
-                            : "bg-black/4 text-ink/40 border-black/8";
+                            : "bg-black/4 text-ink/55 border-black/8";
                       return (
                         <motion.button
                           type="button"
@@ -435,10 +436,10 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           {/* Content */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2 mb-0.5">
-                              <span className="text-[9px] uppercase tracking-[0.24em] text-ink/40 truncate">
+                              <span className="text-[9px] uppercase tracking-[0.24em] text-ink/55 truncate">
                                 {thread.customer_email}
                               </span>
-                              <span className="text-[8px] tabular-nums text-ink/40 shrink-0">
+                              <span className="text-[8px] tabular-nums text-ink/55 shrink-0">
                                 {formatDate(thread.last_message_at)}
                               </span>
                             </div>
@@ -563,7 +564,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                               <div
                                 className={cn(
                                   "text-[9px] uppercase tracking-[0.3em] mb-2 flex items-center gap-1.5",
-                                  msg.role === "ai" ? "text-brand" : "text-ink/40",
+                                  msg.role === "ai" ? "text-brand" : "text-ink/55",
                                 )}
                               >
                                 {msg.role === "ai" ? (
@@ -581,7 +582,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                                 {msg.content}
                               </p>
                             </div>
-                            <span className="text-[9px] uppercase tracking-[0.3em] text-ink/40 mt-1.5 tabular-nums">
+                            <span className="text-[9px] uppercase tracking-[0.3em] text-ink/55 mt-1.5 tabular-nums">
                               {formatTime(msg.created_at)}
                             </span>
                           </motion.div>
@@ -596,7 +597,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             <Zap className="w-3 h-3 text-brand" />
-                            <span className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
+                            <span className="text-[9px] uppercase tracking-[0.3em] text-ink/55">
                               Quick replies
                             </span>
                           </div>
@@ -627,7 +628,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                       )}
 
                       <div className="rounded-md wl-panel focus-within:border-brand/35 transition-colors overflow-hidden">
-                        <div className="px-3 pt-2.5 pb-1 flex items-center gap-2 text-ink/40">
+                        <div className="px-3 pt-2.5 pb-1 flex items-center gap-2 text-ink/55">
                           <Terminal className="w-3 h-3" />
                           <span className="text-[9px] uppercase tracking-[0.35em]">
                             Compose reply
@@ -637,7 +638,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           value={replyText}
                           onChange={(e) => setReplyText(e.target.value)}
                           placeholder="Type a reply or ask the agent to draft one…"
-                          className="w-full px-3 pb-3 min-h-[100px] outline-none text-ink text-sm leading-relaxed resize-none bg-transparent placeholder:text-ink/40"
+                          className="w-full px-3 pb-3 min-h-[100px] outline-none text-ink text-sm leading-relaxed resize-none bg-transparent placeholder:text-ink/55"
                         />
                       </div>
                       <div className="flex items-center justify-between gap-3">

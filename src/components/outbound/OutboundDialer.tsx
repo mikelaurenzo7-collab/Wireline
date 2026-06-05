@@ -95,7 +95,7 @@ export default function OutboundDialer({ embedded: _embedded = false }: { embedd
         setDncEntries(d.entries || []);
       }
     } catch (e) {
-      console.error("Failed to load DNC entries for dialer check", e);
+      logFetchError("Failed to load DNC entries for dialer check", e);
     }
   };
 
@@ -152,7 +152,7 @@ export default function OutboundDialer({ embedded: _embedded = false }: { embedd
       setLeadsHasMore(leadsData.hasMore || false);
       setLeadsTotal(leadsData.total || 0);
     } catch (e) {
-      console.error(e);
+      logFetchError("OutboundDialer", e);
       toastError(
         "Load failed",
         "Could not load leads or agents. Check your connection and try again.",
@@ -170,7 +170,7 @@ export default function OutboundDialer({ embedded: _embedded = false }: { embedd
       setLeadsHasMore(data.hasMore || false);
       setLeadsTotal(data.total || 0);
     } catch (e) {
-      console.error(e);
+      logFetchError("OutboundDialer", e);
       toastError("Load more failed", "Could not load additional leads.");
     }
     setIsLoadingMore(false);
@@ -189,7 +189,7 @@ export default function OutboundDialer({ embedded: _embedded = false }: { embedd
           const resp = await authFetch(`/api/outbound/${id}`, { method: "DELETE" });
           if (resp.ok) setLeads((prev) => prev.filter((l) => l.id !== id));
         } catch (e) {
-          console.error("Failed to delete lead:", e);
+          logFetchError("Failed to delete lead", e);
           toastError("Delete failed", "Could not remove this lead. Please try again.");
         }
         setIsDeletingLead(null);
@@ -431,7 +431,7 @@ export default function OutboundDialer({ embedded: _embedded = false }: { embedd
         try {
           await authFetch(`/api/outbound/${lead.id}`, { method: "DELETE" });
         } catch (e) {
-          console.error("Failed to delete DNC lead", e);
+          logFetchError("Failed to delete DNC lead", e);
         }
       } else {
         verifiedQueued.push(lead);
@@ -470,7 +470,7 @@ export default function OutboundDialer({ embedded: _embedded = false }: { embedd
         }
         await new Promise((resolve) => setTimeout(resolve, 2000));
       } catch (e) {
-        console.error("Failed batch call", e);
+        logFetchError("Failed batch call", e);
         toastError(
           "Batch call error",
           `Could not dispatch call to ${lead.customer_number || "unknown number"}.`,
@@ -538,7 +538,7 @@ export default function OutboundDialer({ embedded: _embedded = false }: { embedd
           setSelectedCampaign((prev: any) => ({ ...prev, ...data.campaign }));
       }
     } catch (e) {
-      console.error("Failed to set campaign status:", e);
+      logFetchError("Failed to set campaign status", e);
       toastError("Status update failed", "Could not change campaign status. Please try again.");
     }
   };
@@ -557,7 +557,7 @@ export default function OutboundDialer({ embedded: _embedded = false }: { embedd
           setCampaigns((prev) => prev.filter((c) => c.id !== id));
           if (selectedCampaign?.id === id) setSelectedCampaign(null);
         } catch (e) {
-          console.error("Failed to delete campaign:", e);
+          logFetchError("Failed to delete campaign", e);
           toastError("Delete failed", "Could not delete this campaign. Please try again.");
         }
       },

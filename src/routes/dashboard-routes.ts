@@ -52,7 +52,7 @@ router.get(
           .select({ count: sql`count(*)` })
           .from(schema.outboundLeads)
           .where(
-            and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.status, "queued")),
+            and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.status, "Queued")),
           ),
         drizzle
           .select({ label: schema.signalPresence.label })
@@ -77,8 +77,12 @@ router.get(
       setCachedNavCounts(userId, counts);
       res.json(counts);
     } catch (e) {
-      log.warn("nav-counts failed", { error: e instanceof Error ? e.message : String(e) });
-      res.json({ "/triage": 0, "/inbox": 0, "/outbound": 0, "/live": 0 });
+      const message = e instanceof Error ? e.message : String(e);
+      log.warn("nav-counts failed", { error: message });
+      res.status(503).json({
+        error: "Nav badge counts are temporarily unavailable.",
+        code: "NAV_COUNTS_UNAVAILABLE",
+      });
     }
   },
 );

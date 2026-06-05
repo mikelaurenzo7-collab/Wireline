@@ -100,6 +100,7 @@ export default function SettingsTabSwitcher({
                   key={t.id}
                   to={t.path}
                   role="tab"
+                  data-testid={`admin-tab-${t.id}`}
                   aria-selected={active}
                   className={cn(
                     "touch-press relative shrink-0 inline-flex items-center gap-1.5 transition-colors uppercase font-semibold whitespace-nowrap rounded-none",

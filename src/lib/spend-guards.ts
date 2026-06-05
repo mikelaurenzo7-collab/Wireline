@@ -16,7 +16,7 @@ import { eq, and, gte, sql } from "drizzle-orm";
 import {
   recordDailySpendUsd,
   getDailySpendUsd,
-  estimateMemWindowResetMs,
+  getDailySpendWindowReset,
 } from "./daily-spend-accumulator";
 
 // ──────────────────────────────────────────────────────────────────────
@@ -212,10 +212,16 @@ export async function enforceSpendCap(req: AuthedRequest, res: Response, next: N
       });
     }
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
     log.warn("enforceSpendCap check failed — allowing request through", {
       user_id: req?.user?.id,
       requestId: res.locals?.requestId,
-      error: err instanceof Error ? err.message : String(err),
+      error: message,
+    });
+    SentryEvents.spendGuardDegraded({
+      guard: "monthly_spend_cap",
+      user_id: req?.user?.id,
+      error: message,
     });
   }
   next();
@@ -254,17 +260,25 @@ export async function enforce24hSpendCap(_req: Request, res: Response, next: Nex
   try {
     const accumulated = await getDailySpendUsd();
     if (accumulated >= DAILY_SPEND_LIMIT_USD) {
-      const resetMinutes = Math.ceil(estimateMemWindowResetMs() / 60_000);
+      const { resetMs, backend } = await getDailySpendWindowReset();
+      const resetMinutes = Math.max(1, Math.ceil(resetMs / 60_000));
       return res.status(402).json({
         error: `Daily Claude spend limit reached ($${DAILY_SPEND_LIMIT_USD.toFixed(2)}/day, 1 % of $${CLAUDE_MONTHLY_BUDGET_USD} monthly budget). Resets in ~${resetMinutes} minutes.`,
         code: "DAILY_SPEND_LIMIT_EXCEEDED",
         daily_limit_usd: DAILY_SPEND_LIMIT_USD,
         accumulated_usd: Number(accumulated.toFixed(4)),
+        reset_in_ms: resetMs,
+        reset_backend: backend,
       });
     }
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
     log.warn("enforce24hSpendCap check failed — allowing request through", {
-      error: err instanceof Error ? err.message : String(err),
+      error: message,
+    });
+    SentryEvents.spendGuardDegraded({
+      guard: "daily_spend_cap",
+      error: message,
     });
   }
   next();

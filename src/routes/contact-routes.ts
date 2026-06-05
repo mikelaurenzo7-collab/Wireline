@@ -1,9 +1,10 @@
 import { Router, Response } from "express";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, desc, ilike } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { normalizePhoneTail, buildContactProfile } from "../lib/contact-profile";
+import { phoneTailEquals } from "../lib/phone-tail-sql";
 import { claudeErr } from "../lib/claude-response-helpers";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -32,7 +33,7 @@ router.get(
         .where(
           and(
             eq(schema.leadDossiers.userId, req.user.id),
-            ilike(schema.leadDossiers.customerNumber, `%${norm}`),
+            phoneTailEquals(schema.leadDossiers.customerNumber, norm),
           ),
         )
         .limit(1);
@@ -60,7 +61,7 @@ router.get(
           .where(
             and(
               eq(schema.callLogs.userId, req.user.id),
-              ilike(schema.callLogs.customerNumber, `%${norm}`),
+              phoneTailEquals(schema.callLogs.customerNumber, norm),
             ),
           )
           .orderBy(desc(schema.callLogs.createdAt))
@@ -80,7 +81,7 @@ router.get(
           .where(
             and(
               eq(schema.outboundLeads.userId, req.user.id),
-              ilike(schema.outboundLeads.phoneNumber, `%${norm}`),
+              phoneTailEquals(schema.outboundLeads.phoneNumber, norm),
             ),
           )
           .orderBy(desc(schema.outboundLeads.createdAt))
@@ -100,7 +101,7 @@ router.get(
           .where(
             and(
               eq(schema.appointments.userId, req.user.id),
-              ilike(schema.appointments.phoneNumber, `%${norm}`),
+              phoneTailEquals(schema.appointments.phoneNumber, norm),
             ),
           )
           .orderBy(desc(schema.appointments.createdAt))

@@ -13,6 +13,7 @@ import { postAgentNotification, getDefaultChannel } from "./slack-service";
 import { resolveAgentTools } from "./agent-capabilities";
 import { sendMetaConversion } from "./meta-service";
 import { superviseClientCommunication } from "./claude-brain";
+import { touchNavCounts } from "./nav-counts-invalidate";
 
 /**
  * The Action Engine is responsible for executing tasks extracted by the AI
@@ -219,6 +220,7 @@ async function handleSendEmail(userId: string, action: ActionItem, context: { so
     .returning({ id: schema.fleetTasks.id });
 
   if (!data) throw new Error("Failed to insert email draft task");
+  touchNavCounts(userId);
   return { success: true, actionId: data.id };
 }
 
@@ -242,6 +244,7 @@ async function handleScheduleCalendar(
     .returning({ id: schema.fleetTasks.id });
 
   if (!data) throw new Error("Failed to insert calendar invite task");
+  touchNavCounts(userId);
   return { success: true, actionId: data.id };
 }
 
@@ -424,6 +427,7 @@ async function handleCreateInternalTask(
     .returning({ id: schema.fleetTasks.id });
 
   if (!data) throw new Error("Failed to insert internal follow-up task");
+  touchNavCounts(userId);
   return { success: true, actionId: data.id };
 }
 
@@ -469,6 +473,7 @@ async function handleSendContract(
     sourceId: context.sourceId,
   });
 
+  touchNavCounts(userId);
   log.info("Contract sent via DocuSign", { userId, envelopeId: result.envelopeId });
   return { success: true, actionId: result.envelopeId };
 }
@@ -566,6 +571,7 @@ async function handleDraftSendContract(
     .returning({ id: schema.fleetTasks.id });
 
   if (!data) throw new Error("Failed to insert contract draft task");
+  touchNavCounts(userId);
   return { success: true, actionId: data.id };
 }
 
@@ -598,6 +604,7 @@ async function handleDraftSendTextMessage(
     .returning({ id: schema.fleetTasks.id });
 
   if (!data) throw new Error("Failed to insert text message draft task");
+  touchNavCounts(userId);
   return { success: true, actionId: data.id };
 }
 
@@ -628,6 +635,7 @@ async function handleDraftProspectLeads(
     .returning({ id: schema.fleetTasks.id });
 
   if (!data) throw new Error("Failed to insert prospect draft task");
+  touchNavCounts(userId);
   return { success: true, actionId: data.id };
 }
 

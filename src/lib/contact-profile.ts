@@ -100,9 +100,13 @@ export interface ContactProfile {
   emails: EmailThreadRow[];
 }
 
-// Normalize a phone number to its last-10-digit form for matching.
-// Returns "" when the input has no digits, which the route handler
-// uses to reject the request as invalid.
+/**
+ * Normalize a phone number to its last-10-digit form for matching.
+ * US-centric: NANP numbers stored with or without +1 collapse to the same tail.
+ * International numbers longer than 10 digits keep only the final 10 — callers
+ * outside NANP may need a future E.164-aware matcher.
+ * Returns "" when the input has no digits (route handler rejects as invalid).
+ */
 export function normalizePhoneTail(raw: string): string {
   return raw.replace(/\D/g, "").slice(-10);
 }

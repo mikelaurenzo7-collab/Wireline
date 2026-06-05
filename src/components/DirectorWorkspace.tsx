@@ -1468,7 +1468,7 @@ export default function DirectorWorkspace({
                                 disableAnimations
                                 onClick={() => runSuggestion(s)}
                                 title={s.label}
-                                className="group !inline-flex h-auto min-h-8 w-full sm:w-auto max-w-full justify-start text-left text-[11px] font-medium text-brand rounded-lg border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10 hover:border-brand/40 !whitespace-normal overflow-visible"
+                                className="group !inline-flex h-auto min-h-8 w-full sm:w-auto max-w-full justify-start text-left text-[11px] font-medium text-brand rounded-md border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10 hover:border-brand/40 !whitespace-normal overflow-visible"
                               >
                                 <Icon className="w-3 h-3 shrink-0" />
                                 <span className="min-w-0 flex-1 text-pretty leading-snug break-words">
@@ -1501,7 +1501,7 @@ export default function DirectorWorkspace({
                                   setInput(q.replace(/\?$/, "") + " — ");
                                   inputRef.current?.focus();
                                 }}
-                                className="!inline-flex h-auto min-h-8 w-full sm:w-auto max-w-full justify-start text-[11px] text-left rounded-lg border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10 !whitespace-normal overflow-visible"
+                                className="!inline-flex h-auto min-h-8 w-full sm:w-auto max-w-full justify-start text-[11px] text-left rounded-md border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10 !whitespace-normal overflow-visible"
                               >
                                 <span className="min-w-0 flex-1 text-pretty leading-snug break-words">
                                   {q}
@@ -1783,6 +1783,7 @@ export default function DirectorWorkspace({
 
             <Textarea
               ref={inputRef}
+              data-testid="director-composer"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={onKeyDown}

@@ -1822,7 +1822,7 @@ html, body, .marketing-surface, .app-surface {
    * `text-muted-soft` flip automatically when the .dark class lands on
    * <html>. */
   --muted-resolved: #5A534A;
-  --muted-soft-resolved: #71717a;
+  --muted-soft-resolved: #5c574f;
 
   /* ═══════════════════════════════════════════════════════════════
      REFINED EDITORIAL FOUNDATION — Aurora Cream 2.5

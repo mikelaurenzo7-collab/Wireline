@@ -19,6 +19,7 @@ import { evaluateVapiWebhookAuth } from "../../lib/vapi-webhook-auth";
 import { handleEndOfCallReport } from "../../lib/vapi-handlers";
 import { shouldQueueWebhook } from "../../lib/vapi-webhook-queue";
 import { resolveVapiWebhookAgent } from "../../lib/vapi-webhook-agent";
+import { touchNavCounts } from "../../lib/nav-counts-invalidate";
 
 import { handleShowcaseToolCalls } from "./showcase-handlers";
 import { dispatchAgentToolCall } from "../../lib/agent-tool-dispatch";
@@ -224,6 +225,7 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
             target: schema.signalPresence.id,
             set: { status },
           });
+        if (agent?.user_id) touchNavCounts(agent.user_id);
 
         // Update lead status to "Connected" when call is in-progress
         if (status === "in-progress" && customerNumber && agent?.user_id) {
@@ -254,6 +256,7 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
         }
       } else if (status === "ended" || status === "completed") {
         await drizzle.delete(schema.signalPresence).where(eq(schema.signalPresence.id, callId));
+        if (agent?.user_id) touchNavCounts(agent.user_id);
       }
     }
   }
@@ -284,6 +287,7 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
         .update(schema.signalPresence)
         .set({ label: liveSentimentLabel })
         .where(eq(schema.signalPresence.id, callId));
+      if (agent.user_id) touchNavCounts(agent.user_id);
 
       // Deep Gemini analysis runs async — never block the webhook thread.
       if (negativeHits >= 1 && shouldQueueWebhook("conversation-update")) {
