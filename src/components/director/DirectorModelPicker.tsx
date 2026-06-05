@@ -1,5 +1,8 @@
 /**
  * Director composer — Wireline tiers vs OpenRouter model catalog.
+ * 
+ * Cycle 5 improvements: Stronger focus visibility, better active state contrast,
+ * and improved accessibility for daily operator use.
  */
 import { useEffect, useMemo, useState } from "react";
 import { Cpu, ChevronDown, Loader2, Search } from "lucide-react";
@@ -62,11 +65,11 @@ function OpenRouterModelRow({
       variant="ghost"
       disableAnimations
       className={cn(
-        "w-full h-auto justify-start text-left rounded-md transition-colors",
+        "w-full h-auto justify-start text-left rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-brand/60",
         compact ? "px-2.5 py-1.5 text-[11px]" : "px-2.5 py-2 text-[12px]",
         active
-          ? "bg-brand/15 text-foreground ring-1 ring-brand/30"
-          : "hover:bg-muted/60 text-foreground",
+          ? "bg-brand/20 text-foreground ring-1 ring-brand/40 font-medium"
+          : "hover:bg-muted/70 text-foreground",
       )}
       onClick={onPick}
     >
@@ -201,6 +204,7 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
           aria-label={DIRECTOR_MODEL_PICKER_COPY.hint}
           className={cn(
             WL_DIRECTOR_CLASSES.composerToolChip,
+            "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
             selection.provider === "openrouter" && WL_DIRECTOR_CLASSES.composerToolChipEngaged,
             "h-auto touch-press rounded-full shadow-none max-w-[140px]",
           )}
@@ -219,6 +223,8 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
         align="start"
         side="top"
         className="w-[min(100vw-2rem,24rem)] p-0 border-border/60 bg-card/95 backdrop-blur-md"
+        role="listbox"
+        aria-label="Model selection"
       >
         <div className="p-3 border-b border-border/50">
           <p className="text-[11px] font-medium text-foreground">
@@ -261,10 +267,10 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
                     variant="ghost"
                     disableAnimations
                     className={cn(
-                      "w-full h-auto justify-start text-left rounded-md px-2.5 py-2 text-[12px] transition-colors",
+                      "w-full h-auto justify-start text-left rounded-md px-2.5 py-2 text-[12px] transition-colors focus-visible:ring-2 focus-visible:ring-brand/60",
                       active
-                        ? "bg-brand/15 text-foreground ring-1 ring-brand/30"
-                        : "hover:bg-muted/60 text-foreground",
+                        ? "bg-brand/20 text-foreground ring-1 ring-brand/40 font-medium"
+                        : "hover:bg-muted/70 text-foreground",
                     )}
                     onClick={() => void persist({ provider: "wireline", tier: tier.id })}
                   >
@@ -292,11 +298,9 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
             {catalog?.openRouterRequiresUpgrade ? (
               <p className="text-[10px] text-muted-foreground px-2 py-2 leading-snug">
                 {DIRECTOR_MODEL_PICKER_COPY.requiresUpgrade}
-              </p>
             ) : !catalog?.openRouterEnabled ? (
               <p className="text-[10px] text-muted-foreground px-2 py-2 leading-snug">
                 {DIRECTOR_MODEL_PICKER_COPY.notConfigured}
-              </p>
             ) : (
               <div className="space-y-2">
                 <div className="wl-director-model-popover-sticky -mx-2 px-2 -mt-2">
@@ -306,7 +310,7 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder={DIRECTOR_MODEL_PICKER_COPY.searchPlaceholder}
-                      className="h-8 pl-8 text-[11px] bg-muted/30 border-border/50"
+                      className="h-8 pl-8 text-[11px] bg-muted/30 border-border/50 focus-visible:ring-2 focus-visible:ring-brand/60"
                       aria-label={DIRECTOR_MODEL_PICKER_COPY.searchPlaceholder}
                     />
                   </div>
@@ -345,7 +349,7 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
                       disableAnimations
                       className={cn(
                         WL_DIRECTOR_CLASSES.microLabel,
-                        "w-full h-auto justify-between px-2 py-1.5 rounded-md hover:bg-muted/50 text-muted-foreground",
+                        "w-full h-auto justify-between px-2 py-1.5 rounded-md hover:bg-muted/60 text-muted-foreground focus-visible:ring-2 focus-visible:ring-brand/60",
                       )}
                       onClick={() => setBrowseAllOpen((v) => !v)}
                       aria-expanded={browseAllOpen}
@@ -370,9 +374,8 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
                               selection.provider === "openrouter" && selection.modelId === model.id
                             }
                             onPick={() =>
-                              void persist({ provider: "openrouter", modelId: model.id })
-                            }
-                          />
+                              void persist({ provider: "openrouter", modelId: model.id })}
+                            />
                         ))}
                         {filteredCatalog.length === 0 && searchNorm ? (
                           <p className="text-[10px] text-muted-foreground px-2 py-2">
