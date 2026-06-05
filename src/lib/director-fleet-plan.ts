@@ -78,7 +78,7 @@ export const DIRECTOR_FLEET_TOOL: ToolSchema = {
       reply: {
         type: "string",
         description:
-          "Conversational reply. For documents/plans/code, include the full deliverable in reply using clear markdown headings. ≤800 words unless generating a full doc.",
+          "Conversational reply. For documents/plans/code, include the full deliverable in reply using clear markdown headings and sections — go long when they asked for a full business plan, SOP, GTM doc, or competitive analysis.",
       },
       suggestions: {
         type: "array",
@@ -149,8 +149,10 @@ export function buildDirectorFleetSystemPrompt(input: {
   business?: DirectorBusinessContext;
   deep: boolean;
   integrationPrompt?: string;
+  /** Per-turn guidance for code, websites, and open-ended deliverables. */
+  deliverableGuidance?: string;
 }): string {
-  const { fleet, stats, business, deep, integrationPrompt } = input;
+  const { fleet, stats, business, deep, integrationPrompt, deliverableGuidance } = input;
   const fleetLines =
     fleet.length === 0
       ? "(No agents yet — help them deploy their first agent.)"
@@ -183,13 +185,13 @@ Who you're talking to: the business owner / operator. This ONE chat is mission c
 
 **Think & plan:** Strategy, audits, GTM, pricing, hiring plans, post-call coaching playbooks, weekly priorities.
 
-**Create in chat:** Business plans, SOPs, marketing copy, email sequences, landing page copy, contracts, proposals, spreadsheets (markdown tables), SQL snippets, API integration code, automation scripts, meeting agendas — use markdown structure. Go long when they ask for a full document or codebase artifact.
+**Create in chat:** Anything they ask for — business plans, SOPs, marketing copy, full website prototypes (HTML/CSS in fenced blocks), TypeScript/React/API code, SQL, scripts, spreadsheets (markdown tables), contracts, meeting agendas. Code and sites are delivered in \`reply\` for copy/paste (not auto-stored). Go long when they ask for a full document or buildable artifact.
 
 **Research & intelligence:** You have LIVE grounded web search (Gemini). The platform may inject fresh web findings above the operator message — synthesize them with clear takeaways and cite sources when present. For deeper or multi-step research, propose \`gemini_ground\` in \`integration_jobs\` with a precise \`query\` (competitor scan, regulatory update, pricing benchmark). Never guess current public facts when a lookup is available.
 
 **Orchestration:** For multi-step goals ("look up the order, text them, log to CRM"), populate ALL steps as ordered \`actions\` + \`integration_jobs\` in one turn — the UI shows Step 1, Step 2, etc. Do not stop at the first step.
 
-**Image / brand:** Logo and brand pack generation is available via the creative flow — describe concepts in reply; the UI may surface generate_logo approvals.
+**Image / brand:** Logo and brand pack generation uses the creative approval flow when they explicitly want a logo/brand pack — not for whole-website design (use HTML/CSS prototypes in \`reply\` instead).
 
 **Execute on approval (populate actions / integration_jobs):**
 - Email, SMS, outbound calls — draft fully, add to \`actions\` with agent_id when placing calls.
@@ -230,7 +232,8 @@ ${fleetLines}
 ${statsLine}
 
 Available integrations (via integration_jobs):
-${integrationLines}`;
+${integrationLines}
+${deliverableGuidance ? `\n${deliverableGuidance}` : ""}`;
 }
 
 export function normalizeDirectorFleetPlan(
@@ -238,7 +241,7 @@ export function normalizeDirectorFleetPlan(
   fleet: DirectorFleetAgent[],
 ): DirectorFleetPlan {
   const reply =
-    clampString(raw.reply, 12000) ||
+    clampString(raw.reply, 32_000) ||
     "I'm here — tell me what you want to move forward and I'll orchestrate it.";
 
   const ownedIds = new Set(fleet.map((a) => a.id));

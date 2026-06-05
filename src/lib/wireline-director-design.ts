@@ -104,6 +104,11 @@ export const DIRECTOR_SCENE_BADGES = {
     color: "text-brand-deep",
     bg: "bg-brand/10 border-brand/25",
   },
+  code: {
+    label: "Code",
+    color: "text-brand-deep",
+    bg: "bg-brand/10 border-brand/25",
+  },
 } as const;
 
 export type DirectorCapabilityCategory =
@@ -326,6 +331,22 @@ export const DIRECTOR_CAPABILITY_CATALOG: readonly DirectorCapabilityItem[] = [
     example: "Write homepage hero and three sections for my HVAC company",
   },
   {
+    id: "website-design",
+    label: "Website design",
+    description: "Sitemap, page copy, and HTML/CSS prototype in chat",
+    category: "create",
+    example:
+      "Design a new website for my business — sitemap, section copy, and a mobile-first HTML prototype I can hand to a developer",
+  },
+  {
+    id: "code-snippet",
+    label: "Code & automation",
+    description: "TypeScript, SQL, scripts — copy from fenced blocks",
+    category: "create",
+    example:
+      "Write a TypeScript Express route with Zod validation that accepts a lead intake payload",
+  },
+  {
     id: "objection-matrix",
     label: "Objection matrix",
     description: "Price, timing, competitor responses",
@@ -346,6 +367,7 @@ export const DIRECTOR_COMPOSER_HINTS = [
   "Message Director…",
   "Ask for a fleet audit, GTM plan, or weekly priorities…",
   "Draft scripts, SOPs, email sequences, or a business plan…",
+  "Design a website or ask for TypeScript / SQL / automation code…",
   "Research competitors, pricing, or compliance — live web intel…",
   "Orchestrate calls, texts, emails, and CRM work in one thread…",
   "Coach an agent: select Coach, then describe the change…",
@@ -541,6 +563,11 @@ export const DIRECTOR_STARTER_PROMPTS: readonly DirectorStarterPrompt[] = [
     intent: "Creative approval flow",
   },
   {
+    id: "website-prototype",
+    label: "Design a website with HTML I can copy",
+    intent: "Sitemap + prototype in chat",
+  },
+  {
     id: "post-call-coach",
     label: "Review recent calls and coach my agents",
     intent: "Fleet coaching from call history",
@@ -560,6 +587,7 @@ export const DIRECTOR_CAPABILITY_PILLS = [
   { id: "email", label: "Email" },
   { id: "sms", label: "SMS" },
   { id: "documents", label: "Documents" },
+  { id: "code", label: "Code" },
   { id: "research", label: "Research" },
   { id: "crm", label: "CRM" },
   { id: "integrations", label: "Integrations" },

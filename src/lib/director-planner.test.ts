@@ -21,6 +21,17 @@ describe("wantsDeepAnalysis — Opus escalation heuristic", () => {
     expect(wantsDeepAnalysis("what agent should I hire first?")).toBe(false);
     expect(wantsDeepAnalysis("turn on SMS for Ava")).toBe(false);
   });
+
+  it("escalates for long deliverables and competitor research", () => {
+    expect(wantsDeepAnalysis("Draft a one-page business plan for my company")).toBe(true);
+    expect(wantsDeepAnalysis("Research competitors and pricing in my market")).toBe(true);
+    expect(wantsDeepAnalysis("Write an SOP for after-hours call handling")).toBe(true);
+  });
+
+  it("escalates for website design and code requests", () => {
+    expect(wantsDeepAnalysis("Design a new website for my dental practice")).toBe(true);
+    expect(wantsDeepAnalysis("Write a TypeScript API route with Zod validation")).toBe(true);
+  });
 });
 
 describe("normalizeDirectorPlan — reply", () => {

@@ -51,4 +51,15 @@ SMS follow-up on day 3`;
   it("returns general when no signals match", () => {
     expect(detectDirectorMessageScene("Thanks — noted.")).toBe("general");
   });
+
+  it("classifies website deliverables as document, not creative", () => {
+    expect(detectDirectorMessageScene("Here is your website sitemap and homepage wireframe.")).toBe(
+      "document",
+    );
+  });
+
+  it("classifies fenced code as code scene", () => {
+    const content = "Summary\n\n```typescript\nexport function hello() {}\n```";
+    expect(detectDirectorMessageScene(content)).toBe("code");
+  });
 });

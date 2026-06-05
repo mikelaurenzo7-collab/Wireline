@@ -9,6 +9,7 @@ export type DirectorMessageScene =
   | "comms"
   | "fleet"
   | "document"
+  | "code"
   | "general";
 
 export interface DirectorSceneProposalHints {
@@ -19,11 +20,15 @@ export interface DirectorSceneProposalHints {
 const SCENE_PATTERNS: Array<{ scene: Exclude<DirectorMessageScene, "general">; re: RegExp }> = [
   {
     scene: "creative",
-    re: /\b(logo|brand.?pack|design|illustration|image|video|visual|color.?palette|generat.*image|creat.*visual|render|mockup|artwork|icon.?set|banner|thumbnail|svg|vectorize|brand.?kit|creative)\b/i,
+    re: /\b(logo|brand.?pack|illustration|vectorize|brand.?kit|icon.?set|favicon|wordmark|generat.*logo|creat.*logo)\b/i,
   },
   {
     scene: "document",
-    re: /\b(business plan|one.?pager|sop|playbook|runbook|proposal|contract|email sequence|call script|checklist|deliverable|marketing copy|landing page copy|objection)\b/i,
+    re: /\b(business plan|one.?pager|sop|playbook|runbook|proposal|contract|email sequence|call script|checklist|deliverable|marketing copy|landing page|website|web\s*site|homepage|sitemap|wireframe|web\s*design|ux\s|ui\s)\b/i,
+  },
+  {
+    scene: "code",
+    re: /\b(```[\w]*|typescript|javascript|python|sql|api\s+route|react\s+component|express|zod|drizzle|css|html|function\s|const\s+\w+\s*=|npm\s+install)\b/i,
   },
   {
     scene: "analysis",
@@ -51,6 +56,10 @@ function isMultiSectionDocument(content: string): boolean {
   return (content.match(/^##\s/gm) || []).length >= 2;
 }
 
+function hasCodeFence(content: string): boolean {
+  return /```[\w]*\n[\s\S]+?```/.test(content);
+}
+
 export function detectDirectorMessageScene(
   content: string,
   previews?: readonly unknown[],
@@ -58,6 +67,7 @@ export function detectDirectorMessageScene(
 ): DirectorMessageScene {
   if (previews && previews.length > 0) return "creative";
   if (proposals?.integrationJobs && proposals.integrationJobs.length > 0) return "integration";
+  if (hasCodeFence(content)) return "code";
   if (isMultiSectionDocument(content)) return "document";
   if (proposals?.actions && proposals.actions.length > 0) return "comms";
   for (const { scene, re } of SCENE_PATTERNS) {

@@ -12,6 +12,8 @@ describe("director web research", () => {
     );
     expect(wantsDirectorWebResearch("Text Jordan back")).toBe(false);
     expect(wantsDirectorWebResearch("Research the latest FDCPA updates for my agency")).toBe(true);
+    expect(wantsDirectorWebResearch("Draft a business plan — include market sizing")).toBe(true);
+    expect(wantsDirectorWebResearch("Compare our Instagram vs competitors")).toBe(true);
   });
 
   it("builds a richer query from short follow-ups", () => {

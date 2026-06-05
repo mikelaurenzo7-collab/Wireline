@@ -2,6 +2,7 @@
  * Director chat model selection — Wireline-managed Claude tiers or tenant-
  * routed OpenRouter models (company API key, per-user preference).
  */
+import { resolveDirectorMaxTokens } from "./director-deep-analysis";
 
 export type WirelineDirectorTier = "auto" | "sonnet" | "opus";
 
@@ -54,19 +55,22 @@ export function resolveDirectorLlm(input: {
   selection?: DirectorChatModelSelection | null;
   /** Fleet auto-deep (ignored when user pinned sonnet/openrouter). */
   autoDeep?: boolean;
+  /** Business plans, GTM docs, competitive analysis — larger output budget. */
+  longDeliverable?: boolean;
   claudeSonnet: string;
   claudeOpus: string;
   modelLabelForOpenRouter?: (id: string) => string;
 }): ResolvedDirectorLlm {
   const selection = input.selection ?? DEFAULT_DIRECTOR_MODEL_SELECTION;
   const labelFor = input.modelLabelForOpenRouter ?? ((id: string) => id);
+  const longDeliverable = input.longDeliverable === true;
 
   if (selection.provider === "openrouter") {
     return {
       provider: "openrouter",
       model: selection.modelId,
       deepThink: false,
-      maxTokens: 4096,
+      maxTokens: resolveDirectorMaxTokens({ deep: false, longDeliverable, openRouter: true }),
       modelKind: "custom",
       modelLabel: labelFor(selection.modelId),
       openRouterModelId: selection.modelId,
@@ -79,7 +83,7 @@ export function resolveDirectorLlm(input: {
       provider: "wireline",
       model: input.claudeSonnet,
       deepThink: false,
-      maxTokens: 2800,
+      maxTokens: resolveDirectorMaxTokens({ deep: false, longDeliverable }),
       modelKind: "sonnet",
       modelLabel: "Sonnet",
     };
@@ -89,7 +93,7 @@ export function resolveDirectorLlm(input: {
       provider: "wireline",
       model: input.claudeOpus,
       deepThink: true,
-      maxTokens: 4000,
+      maxTokens: resolveDirectorMaxTokens({ deep: true, longDeliverable }),
       modelKind: "opus",
       modelLabel: "Opus",
     };
@@ -100,7 +104,7 @@ export function resolveDirectorLlm(input: {
     provider: "wireline",
     model: deep ? input.claudeOpus : input.claudeSonnet,
     deepThink: deep,
-    maxTokens: deep ? 4000 : 2800,
+    maxTokens: resolveDirectorMaxTokens({ deep, longDeliverable }),
     modelKind: deep ? "opus" : "sonnet",
     modelLabel: deep ? "Opus" : "Sonnet",
   };

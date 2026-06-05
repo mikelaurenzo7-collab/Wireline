@@ -38,7 +38,8 @@ import {
 } from "./director-model-selection";
 import { labelForOpenRouterModel } from "./openrouter-models";
 import { runDirectorTurnLlm } from "./director-stream-runner";
-import { wantsDeepAnalysis } from "./director-deep-analysis";
+import { wantsDeepAnalysis, wantsLongDeliverable } from "./director-deep-analysis";
+import { buildDirectorDeliverableGuidance } from "./director-deliverables";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import {
@@ -326,10 +327,12 @@ export async function buildDirectorStreamContext(
     !input.shallowOnly &&
     !focusId &&
     (input.forceDeep === true || wantsDeepAnalysis(input.operatorMessage));
+  const longDeliverable = wantsLongDeliverable(input.operatorMessage);
 
   const llm = resolveDirectorLlm({
     selection: input.modelSelection,
     autoDeep: autoDeepEligible,
+    longDeliverable,
     claudeSonnet: CLAUDE_MODELS.SONNET,
     claudeOpus: CLAUDE_MODELS.OPUS,
     modelLabelForOpenRouter: labelForOpenRouterModel,
@@ -407,6 +410,7 @@ export async function buildDirectorStreamContext(
     business,
     deep,
     integrationPrompt,
+    deliverableGuidance: buildDirectorDeliverableGuidance(input.operatorMessage),
   });
 
   const transcript = input.history

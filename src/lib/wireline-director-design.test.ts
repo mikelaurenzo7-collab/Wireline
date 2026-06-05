@@ -140,6 +140,7 @@ describe("Wireline Director design contract", () => {
     const labels = DIRECTOR_CAPABILITY_PILLS.map((p) => p.label);
     expect(labels).toContain("Voice");
     expect(labels).toContain("Documents");
+    expect(labels).toContain("Code");
     expect(labels).toContain("Research");
     expect(labels).toContain("Creative");
     expect(labels.length).toBeGreaterThanOrEqual(8);
@@ -172,6 +173,7 @@ describe("Wireline Director design contract", () => {
       expect(badge.bg).not.toMatch(/emerald|sky|fuchsia|blue/i);
     }
     expect(DIRECTOR_SCENE_BADGES.document.label).toBe("Deliverable");
+    expect(DIRECTOR_SCENE_BADGES.code.label).toBe("Code");
   });
 
   it("live feed labels distinguish scripted vs proposal modes", () => {

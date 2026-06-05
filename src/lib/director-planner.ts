@@ -28,8 +28,13 @@ import {
 } from "./director-fleet-plan";
 import { formatDirectorIntegrationPrompt } from "./director-integration-prompt";
 import { loadTenantIntegrationConnections } from "./tenant-integration-connections";
-import { wantsDeepAnalysis } from "./director-deep-analysis";
-export { wantsDeepAnalysis } from "./director-deep-analysis";
+import {
+  resolveDirectorMaxTokens,
+  wantsDeepAnalysis,
+  wantsLongDeliverable,
+} from "./director-deep-analysis";
+import { buildDirectorDeliverableGuidance } from "./director-deliverables";
+export { wantsDeepAnalysis, wantsLongDeliverable } from "./director-deep-analysis";
 import {
   appendResearchToUserPrompt,
   fetchDirectorResearchContext,
@@ -90,6 +95,7 @@ function buildSystemPrompt(
     business: input.business,
     deep,
     integrationPrompt,
+    deliverableGuidance: buildDirectorDeliverableGuidance(input.operatorMessage),
   });
 }
 
@@ -130,6 +136,7 @@ export function normalizeDirectorPlan(
 export async function planDirector(input: PlanDirectorInput): Promise<DirectorPlan> {
   const deep =
     !input.shallowOnly && (input.forceDeep === true || wantsDeepAnalysis(input.operatorMessage));
+  const longDeliverable = wantsLongDeliverable(input.operatorMessage);
   const model = deep ? CLAUDE_MODELS.OPUS : CLAUDE_MODELS.SONNET;
   const connections = await loadTenantIntegrationConnections(input.userId);
   const integrationPrompt = formatDirectorIntegrationPrompt(connections);
@@ -147,7 +154,7 @@ export async function planDirector(input: PlanDirectorInput): Promise<DirectorPl
     tool: DIRECTOR_TOOL,
     model,
     deepThink: deep,
-    maxTokens: deep ? 4000 : 2800,
+    maxTokens: resolveDirectorMaxTokens({ deep, longDeliverable }),
   });
   const plan = normalizeDirectorPlan(raw, input.fleet, deep ? "opus" : "sonnet");
   return {

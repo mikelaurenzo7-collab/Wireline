@@ -2,10 +2,12 @@
  * Lightweight markdown-style rendering for Director replies —
  * headings, lists, code, tables, links, and inline emphasis.
  */
-import React from "react";
+import React, { useCallback, useState } from "react";
+import { Check, Copy } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
 import { safeExternalHref } from "../../lib/safe-external-url";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 /** Strip traffic-light emoji from headings — operator UI uses tone chips instead. */
 function stripOperatorStatusEmoji(text: string): string {
@@ -106,15 +108,36 @@ function renderInline(text: string): React.ReactNode[] {
 }
 
 function CodeBlock({ code, lang }: { code: string; lang?: string }) {
+  const [copied, setCopied] = useState(false);
+  const onCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(code.trimEnd());
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard denied — ignore */
+    }
+  }, [code]);
+
   return (
-    <div className="rounded-md border border-black/8 dark:border-white/10 overflow-hidden">
-      {lang && (
-        <div className="px-3 py-1.5 border-b border-black/8 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04]">
-          <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted">
-            {lang}
-          </span>
-        </div>
-      )}
+    <div className="rounded-md border border-black/8 dark:border-white/10 overflow-hidden group">
+      <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-black/8 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04]">
+        <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted">
+          {lang || "code"}
+        </span>
+        <ShadButton
+          type="button"
+          variant="ghost"
+          size="sm"
+          disableAnimations
+          onClick={() => void onCopy()}
+          className="h-7 min-h-0 px-2 text-[10px] text-muted-foreground hover:text-ink opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+          aria-label={copied ? "Copied" : "Copy code"}
+        >
+          {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+          <span className="sr-only sm:not-sr-only sm:ml-1">{copied ? "Copied" : "Copy"}</span>
+        </ShadButton>
+      </div>
       <pre className="overflow-x-auto p-2 text-[11px] leading-normal font-mono text-ink/90 bg-black/[0.03] dark:bg-white/[0.03]">
         <code>{code.trimEnd()}</code>
       </pre>

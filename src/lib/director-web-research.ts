@@ -19,7 +19,7 @@ export interface DirectorResearchContext {
 }
 
 const RESEARCH_SIGNAL =
-  /\b(search|look\s*up|lookup|find out|research|investigate|competitors?|competition|market(?:ing)?|benchmark|pricing|price of|regulation|compliance|news|headline|who is|what(?:'s| is) the latest|current (?:price|rate|trend)|how much (?:does|do|is|are)|compare|versus|vs\.?|industry trend|best practice|statistics|data on|tell me about|charg(?:e|ing|es))\b/i;
+  /\b(search|look\s*up|lookup|find out|research|investigate|competitors?|competition|market(?:ing)?|benchmark|pricing|price of|regulation|compliance|news|headline|who is|what(?:'s| is) the latest|current (?:price|rate|trend)|how much (?:does|do|is|are)|compare|versus|vs\.?|industry trend|best practice|statistics|data on|tell me about|charg(?:e|ing|es)|business\s+plan|go-to-market|gtm|social\s+media|instagram|tiktok|linkedin|facebook\s+ads|google\s+ads)\b/i;
 
 const ACTION_ONLY =
   /^(text|call|email|send|deploy|create|update|change|turn on|turn off|enable|disable|approve|schedule)\b/i;
