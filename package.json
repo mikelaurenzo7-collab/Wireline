@@ -20,7 +20,7 @@
     "lint:eslint": "eslint --max-warnings 0 src/",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
-    "verify": "npm run lint && npm run docs:check && npm run authz:check && npm run test:run && npm run security:audit && npm run build",
+    "verify": "npm run lint && npm run lint:eslint && npm run docs:check && npm run authz:check && npm run test:run && npm run security:audit && npm run build && npm run smoke:server",
     "assets": "node scripts/render-image-assets.mjs",
     "check-prod-env": "node scripts/check-prod-env.mjs",
     "stripe:setup": "node scripts/setup-stripe-billing.mjs",

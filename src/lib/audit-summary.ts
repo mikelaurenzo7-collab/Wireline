@@ -101,8 +101,8 @@ export function inputRateForModel(model: string | null | undefined): number {
   const exactRates: Record<string, number> = {
     "claude-haiku-4-5": 1,
     "claude-sonnet-4-6": 3,
-    "claude-opus-4-7": 15,
-    "claude-opus-4-6": 15,
+    "claude-opus-4-7": 5,
+    "claude-opus-4-6": 5,
     "claude-3-5-sonnet-20241022": 3,
     "gemini-1.5-flash": 0.075,
     "gemini-1.5-pro": 1.25,
@@ -115,7 +115,7 @@ export function inputRateForModel(model: string | null | undefined): number {
   if (exactRates[model] !== undefined) return exactRates[model];
   if (model.includes("haiku")) return 1;
   if (model.includes("sonnet")) return 3;
-  if (model.includes("opus")) return 15;
+  if (model.includes("opus")) return 5;
   return 15;
 }
 

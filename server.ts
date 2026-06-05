@@ -38,6 +38,9 @@ import { buildCSP, buildConnectSrcs } from "./src/lib/csp";
 import { isRedisConfigured, startMemoryCleanup } from "./src/lib/rate-limit";
 import { installWebhookBodyParsers } from "./src/lib/body-parsers";
 import { claudeRateLimiter } from "./src/middleware/api-rate-limits";
+import { authenticateUser } from "./src/middleware/auth";
+import { withAudit } from "./src/middleware/audit-middleware";
+import { enforceSpendCap, enforce24hSpendCap } from "./src/lib/spend-guards";
 import { initJobWorker } from "./src/lib/job-worker";
 import { performanceMonitoring } from "./src/middleware/performance";
 import { timeoutMiddleware } from "./src/middleware/timeout";
@@ -232,6 +235,12 @@ app.use("/api", performanceMonitoring(2000));
 // returned cheaply without waiting on Anthropic.
 app.use("/api/claude", claudeRateLimiter);
 app.use("/api/claude", timeoutMiddleware(30_000));
+// Auth + spend recording before handlers — every Claude call must hit audit
+// context and monthly/daily caps (see CLAUDE.md spend-cap array).
+app.use("/api/claude", authenticateUser);
+app.use("/api/claude", withAudit("claude"));
+app.use("/api/claude", enforce24hSpendCap);
+app.use("/api/claude", enforceSpendCap);
 app.use("/api/emails", timeoutMiddleware(15_000));
 app.use("/api/phone-numbers", timeoutMiddleware(10_000));
 app.use("/api/campaigns", timeoutMiddleware(10_000));

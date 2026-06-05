@@ -15,6 +15,9 @@ import { drizzle } from "./server-context";
 
 // Order matters: child tables before parent tables to satisfy any FKs that
 // are not ON DELETE CASCADE.
+//
+// wireline_stripe_events is intentionally omitted — it is a global Stripe
+// idempotency ledger with no user_id column.
 export const ACCOUNT_DELETION_TABLES: ReadonlyArray<string> = [
   "wireline_audit_log",
   "wireline_signal_presence",
@@ -58,7 +61,8 @@ export const ACCOUNT_DELETION_TABLES: ReadonlyArray<string> = [
   "wireline_quota_limits",
   "wireline_spend_alerts",
   "wireline_spend_budgets",
-  "wireline_stripe_events",
+  "wireline_password_reset_tokens",
+  "wireline_email_verification_tokens",
   "wireline_subscriptions",
   "wireline_onboarding_progress",
   "wireline_user_preferences",
@@ -66,18 +70,24 @@ export const ACCOUNT_DELETION_TABLES: ReadonlyArray<string> = [
   "wireline_calendar_accounts",
   "wireline_crm_connections",
   "wireline_team_members",
-  "wireline_change_log",
-  "wireline_incidents",
   "wireline_jobs",
   "wireline_settings",
 ];
 
 // Tables that scope by tenant_id instead of user_id.
-const TENANT_SCOPED_TABLES = new Set<string>([
-  "wireline_team_members",
-  "wireline_change_log",
-  "wireline_incidents",
-]);
+const TENANT_SCOPED_TABLES = new Set<string>(["wireline_team_members"]);
+
+type ExecuteResult = { rows?: Array<{ table_exists?: boolean }> };
+
+async function tableExists(
+  tx: { execute: PurgeAccountDeps["db"]["execute"] },
+  table: string,
+): Promise<boolean> {
+  const res = (await tx.execute(
+    sql`SELECT to_regclass(${table}) IS NOT NULL AS table_exists`,
+  )) as ExecuteResult;
+  return Boolean(res.rows?.[0]?.table_exists);
+}
 
 export interface PurgeAccountDeps {
   db: typeof drizzle;
@@ -109,6 +119,10 @@ export async function purgeAccount(
   try {
     return await db.transaction(async (tx) => {
       for (const table of ACCOUNT_DELETION_TABLES) {
+        if (!(await tableExists(tx, table))) {
+          log.warn("account purge skipped missing table", { table, userId });
+          continue;
+        }
         const userCol = TENANT_SCOPED_TABLES.has(table) ? "tenant_id" : "user_id";
         // Use parameterized query to prevent SQL injection
         // Table name is validated against known list, userId is parameterized

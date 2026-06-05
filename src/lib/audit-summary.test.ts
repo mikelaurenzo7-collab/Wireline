@@ -50,7 +50,7 @@ describe("inputRateForModel", () => {
   it("uses exact lookup for known SKUs", () => {
     expect(inputRateForModel("claude-haiku-4-5")).toBe(1);
     expect(inputRateForModel("claude-sonnet-4-6")).toBe(3);
-    expect(inputRateForModel("claude-opus-4-7")).toBe(15);
+    expect(inputRateForModel("claude-opus-4-7")).toBe(5);
     expect(inputRateForModel("gemini-1.5-flash")).toBe(0.075);
     expect(inputRateForModel("gpt-4o")).toBe(5);
   });
@@ -58,7 +58,7 @@ describe("inputRateForModel", () => {
   it("falls back to family heuristics for unknown variants", () => {
     expect(inputRateForModel("anthropic.claude-haiku-bedrock")).toBe(1);
     expect(inputRateForModel("anthropic.claude-sonnet-bedrock")).toBe(3);
-    expect(inputRateForModel("anthropic.claude-opus-bedrock")).toBe(15);
+    expect(inputRateForModel("anthropic.claude-opus-bedrock")).toBe(5);
     // Unknown family → conservative 15 (opus-tier) to avoid under-reporting cost.
     expect(inputRateForModel("mystery-llm-v9")).toBe(15);
   });

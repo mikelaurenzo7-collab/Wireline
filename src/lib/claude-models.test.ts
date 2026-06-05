@@ -40,6 +40,15 @@ describe("Wireline LLM tiering — constants are stable", () => {
     expect(MODEL_PRICING[CLAUDE_MODELS.SONNET]).toBeDefined();
     expect(MODEL_PRICING[CLAUDE_MODELS.OPUS]).toBeDefined();
   });
+
+  it("Opus pricing matches Anthropic Opus 4.x list rates ($5/$25 per 1M)", () => {
+    expect(MODEL_PRICING[CLAUDE_MODELS.OPUS]).toEqual({
+      input: 5,
+      output: 25,
+      cacheRead: 0.5,
+      cacheWrite: 6.25,
+    });
+  });
 });
 
 describe("resolveVapiVoiceModelSelection", () => {

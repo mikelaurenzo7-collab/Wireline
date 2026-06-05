@@ -1152,6 +1152,7 @@ export const outboundLeads = pgTable(
     userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_user_created ON wireline_outbound_leads USING btree (user_id, created_at DESC)`,
     statusNextAttemptIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_status_next_attempt ON wireline_outbound_leads USING btree (status, callback_scheduled_at) WHERE status IN ('Pending', 'Retry')`,
     userCustomerNumberIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_user_customer_number ON wireline_outbound_leads USING btree (user_id, customer_number)`,
+    userIdempotencyUniqueIdx: sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_outbound_leads_user_idempotency ON wireline_outbound_leads (user_id, idempotency_key) WHERE idempotency_key IS NOT NULL`,
   }),
 );
 

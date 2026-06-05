@@ -3,6 +3,7 @@ import {
   computeScheduledPurgeAt,
   purgeAccount,
   ACCOUNT_DELETION_GRACE_DAYS,
+  ACCOUNT_DELETION_TABLES,
 } from "./account-deletion";
 
 describe("Account Deletion", () => {
@@ -19,9 +20,18 @@ describe("Account Deletion", () => {
   });
 
   describe("purgeAccount", () => {
+    it("does not delete the global stripe_events idempotency ledger", () => {
+      expect(ACCOUNT_DELETION_TABLES).not.toContain("wireline_stripe_events");
+    });
+
+    it("purges PII-bearing auth token tables", () => {
+      expect(ACCOUNT_DELETION_TABLES).toContain("wireline_password_reset_tokens");
+      expect(ACCOUNT_DELETION_TABLES).toContain("wireline_email_verification_tokens");
+    });
+
     it("successfully runs transaction and returns ok: true with all touched tables", async () => {
       const mockTx = {
-        execute: vi.fn().mockResolvedValue({}),
+        execute: vi.fn().mockResolvedValue({ rows: [{ table_exists: true }] }),
       };
       const mockDb = {
         transaction: vi.fn(async (cb) => {
@@ -42,9 +52,8 @@ describe("Account Deletion", () => {
       expect(result.error).toBeUndefined();
       expect(result.tablesTouched.length).toBeGreaterThan(0);
 
-      // Verify that tx.execute was called for each table + wireline_users delete
-      // Total execute calls = count of ACCOUNT_DELETION_TABLES + 1 (for wireline_users)
-      expect(mockTx.execute).toHaveBeenCalledTimes(result.tablesTouched.length + 1);
+      // Each table: existence check + DELETE, then wireline_users DELETE
+      expect(mockTx.execute).toHaveBeenCalledTimes(result.tablesTouched.length * 2 + 1);
       expect(mockDb.transaction).toHaveBeenCalled();
 
       // Verify that log.error was not called

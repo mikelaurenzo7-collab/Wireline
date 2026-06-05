@@ -30,7 +30,7 @@ import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import twilio from "twilio";
-import { timingSafeEq, VAPI_WEBHOOK_SECRET } from "../lib/vapi-helpers";
+import { vapiWebhookSecretOk } from "../lib/vapi-webhook-auth";
 import { postMessage as slackPostMessage, getDefaultChannel } from "../lib/slack-service";
 
 // Targeted, tight rate limit on the public escalation webhook.
@@ -83,16 +83,9 @@ async function dispatchOwnerSms(
 router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Response) => {
   // Auth — same secret as the main Vapi webhook (Vapi sends it as
   // X-Vapi-Secret or X-Vapi-Signature). Reject mismatches.
-  const provided =
-    (req.headers["x-vapi-secret"] as string | undefined) ||
-    (req.headers["x-vapi-signature"] as string | undefined) ||
-    "";
-
-  if (process.env.VAPI_WEBHOOK_SECRET) {
-    if (!timingSafeEq(provided, VAPI_WEBHOOK_SECRET)) {
-      log.warn("Rejected escalation with bad signature");
-      return res.status(401).json({ error: "Invalid signature" });
-    }
+  if (!vapiWebhookSecretOk(req)) {
+    log.warn("Rejected escalation with bad or missing Vapi webhook secret");
+    return res.status(401).json({ error: "Invalid signature" });
   }
 
   const b = (req.body || {}) as EscalationBody;

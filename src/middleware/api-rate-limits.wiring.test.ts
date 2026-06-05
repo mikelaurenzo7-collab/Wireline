@@ -30,4 +30,30 @@ describe("server.ts middleware wiring", () => {
     expect(routerMount).toBeGreaterThan(0);
     expect(limiterMount).toBeLessThan(routerMount);
   });
+
+  it("imports spend-cap + audit middleware for /api/claude", () => {
+    expect(SERVER).toMatch(/\bwithAudit\b/);
+    expect(SERVER).toMatch(/\benforceSpendCap\b/);
+    expect(SERVER).toMatch(/\benforce24hSpendCap\b/);
+    expect(SERVER).toMatch(/\bauthenticateUser\b/);
+  });
+
+  it("mounts auth, audit, and spend caps on /api/claude before claudeRouter", () => {
+    const authMount = SERVER.search(/app\.use\(["']\/api\/claude["']\s*,\s*authenticateUser\s*\)/);
+    const auditMount = SERVER.search(/app\.use\(["']\/api\/claude["']\s*,\s*withAudit\(/);
+    const dailyCapMount = SERVER.search(
+      /app\.use\(["']\/api\/claude["']\s*,\s*enforce24hSpendCap\s*\)/,
+    );
+    const spendCapMount = SERVER.search(
+      /app\.use\(["']\/api\/claude["']\s*,\s*enforceSpendCap\s*\)/,
+    );
+    const routerMount = SERVER.search(/app\.use\(["']\/api\/claude["']\s*,\s*claudeRouter\s*\)/);
+    for (const idx of [authMount, auditMount, dailyCapMount, spendCapMount, routerMount]) {
+      expect(idx).toBeGreaterThan(0);
+    }
+    expect(authMount).toBeLessThan(auditMount);
+    expect(auditMount).toBeLessThan(dailyCapMount);
+    expect(dailyCapMount).toBeLessThan(spendCapMount);
+    expect(spendCapMount).toBeLessThan(routerMount);
+  });
 });
