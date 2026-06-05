@@ -115,6 +115,8 @@ export default function LandingPage() {
           data-testid="hero-section"
           className="relative px-6 lg:px-12 pt-24 pb-10 lg:pt-28 lg:pb-12 overflow-x-hidden"
         >
+          {/* Atmospheric depth — focuses eye on headline without competing with it */}
+          <div className="hero-ambient-beam" aria-hidden="true" />
           <HeroDecorations />
           <div className="relative z-10 max-w-7xl mx-auto w-full">
             <motion.div
@@ -161,10 +163,10 @@ export default function LandingPage() {
                   Live demo — no signup
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 rounded-md border border-ink/10 bg-white/25 backdrop-blur-sm p-4 sm:p-5 shadow-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 wl-demo-frame p-4 sm:p-5">
                   {csDemo && (
                     <div className="flex flex-col items-center gap-2 text-center">
-                      <p className="text-[11px] font-medium text-ink/70">
+                      <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink/60">
                         Jordan · inbound support
                       </p>
                       <BrowserCallWidget
@@ -180,8 +182,10 @@ export default function LandingPage() {
                     </div>
                   )}
                   {salesDemo && (
-                    <div className="flex flex-col items-center gap-2 text-center sm:border-l sm:border-ink/[0.08] sm:pl-4">
-                      <p className="text-[11px] font-medium text-ink/70">Jake · outbound sales</p>
+                    <div className="flex flex-col items-center gap-2 text-center sm:border-l sm:border-brand/[0.12] sm:pl-4">
+                      <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink/60">
+                        Jake · outbound sales
+                      </p>
                       <BrowserCallWidget
                         agentName={salesDemo.name}
                         buttonLabel={`Talk to ${salesDemo.name}`}
@@ -253,8 +257,13 @@ export default function LandingPage() {
                   whileInView={{ opacity: 1, y: 0, scale: 1 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.12, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                  className="wl-stat-glow bg-paper p-8 md:p-10 lg:p-12 group stat-shimmer"
+                  className="wl-stat-glow bg-paper p-8 md:p-10 lg:p-12 group stat-shimmer relative overflow-hidden"
                 >
+                  {/* Brand accent — a 2px stripe at the top that grows on hover */}
+                  <span
+                    className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-brand/60 via-brand to-brand/60 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500"
+                    aria-hidden="true"
+                  />
                   <p
                     className="stat-value-flip font-display italic text-[clamp(2.2rem,5vw,4rem)] leading-none text-ink tracking-tight"
                     style={{ animationDelay: `${0.3 + i * 0.2}s` }}

@@ -355,34 +355,40 @@ export default function Pricing() {
 
       {/* Billing interval toggle */}
       <section className="relative z-10 px-4 sm:px-6 lg:px-10 max-w-7xl mx-auto pb-6">
-        <div className="flex items-center justify-center gap-3">
-          <ShadButton
-            type="button"
-            disableAnimations
-            variant={billingInterval === "month" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setBillingInterval("month")}
-            className={`px-4 py-2 font-mono text-[11px] uppercase tracking-[0.28em] font-medium ${
-              billingInterval === "month" ? "billing-toggle-active border" : ""
-            }`}
-          >
-            Monthly
-          </ShadButton>
-          <ShadButton
-            type="button"
-            disableAnimations
-            variant={billingInterval === "year" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setBillingInterval("year")}
-            className={`px-4 py-2 font-mono text-[11px] uppercase tracking-[0.28em] font-medium relative ${
-              billingInterval === "year" ? "billing-toggle-active border" : ""
-            }`}
-          >
-            Annual
-            <span className="ml-2 inline-flex items-center px-1.5 py-0.5 text-[10px] uppercase tracking-[0.2em] font-bold bg-brand/12 border border-brand/30 text-brand">
-              Save 20%
-            </span>
-          </ShadButton>
+        <div className="flex items-center justify-center">
+          <div className="wl-billing-toggle">
+            <ShadButton
+              type="button"
+              disableAnimations
+              variant={billingInterval === "month" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setBillingInterval("month")}
+              className={`px-5 py-2 font-mono text-[11px] uppercase tracking-[0.28em] font-medium ${
+                billingInterval === "month"
+                  ? "billing-toggle-active"
+                  : "text-ink/60 hover:text-ink hover:bg-transparent"
+              }`}
+            >
+              Monthly
+            </ShadButton>
+            <ShadButton
+              type="button"
+              disableAnimations
+              variant={billingInterval === "year" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setBillingInterval("year")}
+              className={`px-5 py-2 font-mono text-[11px] uppercase tracking-[0.28em] font-medium relative ${
+                billingInterval === "year"
+                  ? "billing-toggle-active"
+                  : "text-ink/60 hover:text-ink hover:bg-transparent"
+              }`}
+            >
+              Annual
+              <span className="ml-2 inline-flex items-center px-1.5 py-0.5 text-[10px] uppercase tracking-[0.2em] font-bold bg-brand/12 border border-brand/30 text-brand">
+                Save 20%
+              </span>
+            </ShadButton>
+          </div>
         </div>
       </section>
 
@@ -419,6 +425,16 @@ export default function Pricing() {
                 }
               >
                 <div className="mb-4">
+                  {tier.highlight && (
+                    <div className="wl-tier-badge mb-3">
+                      <Sparkles
+                        className="w-2.5 h-2.5 shrink-0"
+                        strokeWidth={2.8}
+                        aria-hidden="true"
+                      />
+                      Most Popular
+                    </div>
+                  )}
                   <h2 className="font-display italic text-2xl text-ink mb-1">{tier.name}</h2>
                   <p className="text-[11px] text-ink/65 leading-snug">{tier.blurb}</p>
                 </div>
