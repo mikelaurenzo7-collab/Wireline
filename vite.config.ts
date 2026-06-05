@@ -26,6 +26,10 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       sourcemap: false,
+      // Vite defaults (chrome87 / es2020) make esbuild fail on lazy chunks that use
+      // destructuring — e.g. OAuthComplete. Modern baseline matches our stack.
+      target: "es2022",
+      cssTarget: "chrome111",
       // Keep chunks reasonable — 500 kB uncompressed is a good ceiling
       // before we start caring about a given page's specific imports.
       chunkSizeWarningLimit: 600,
