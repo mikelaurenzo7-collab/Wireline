@@ -147,6 +147,10 @@ export const FOUNDER_FLEET_TEMPLATES: FleetAgentTemplate[] = [
   },
 ];
 
+/** Minimum agents after a full founder seed (6 personas + specialty roster). */
+export const EXPECTED_FOUNDER_FLEET_AGENT_COUNT =
+  Object.keys(WIRELINE_PERSONAS).length + FOUNDER_FLEET_TEMPLATES.length;
+
 const KNOWLEDGE_SNIPPETS: Record<string, string[]> = {
   default: [
     "Wireline plans start at $49/mo (Personal) with a 14-day free trial and included phone number.",

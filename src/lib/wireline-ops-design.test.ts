@@ -131,5 +131,7 @@ describe("Wireline Live Ops design contract", () => {
     expect(WL_STAT_CLASSES.tileBrand).toContain("wl-stat-tile--brand");
     expect(WL_STAT_CLASSES.valueRose).toContain("wl-stat-tile__value--rose");
     expect(WL_CHROME_CLASSES.drawerSection).toBe("wl-drawer-section-label");
+    expect(WL_CHROME_CLASSES.inverseHover).toContain("chrome-inverse-hover");
+    expect(WL_CHROME_CLASSES.paper).toBe("chrome-paper");
   });
 });

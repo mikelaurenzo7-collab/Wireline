@@ -7,7 +7,11 @@ import {
   type DirectorChatModelSelection,
 } from "./director-model-selection";
 import { isOpenRouterConfigured, listOpenRouterModelsForDirector } from "./openrouter-models";
-import { getSubscriptionPlanId, openRouterAllowedForPlanId } from "./plan-entitlements";
+import {
+  effectivePlanIdForEntitlements,
+  getEffectiveSubscriptionPlanId,
+  openRouterAllowedForEntitlements,
+} from "./plan-entitlements";
 
 export type DirectorModelValidationResult =
   | { ok: true; selection: DirectorChatModelSelection }
@@ -26,8 +30,9 @@ export function clearDirectorModelAllowlistCache(): void {
 
 export async function validateDirectorChatModelSelection(
   selection: DirectorChatModelSelection,
-  options?: { planId?: string | null },
+  options?: { planId?: string | null; email?: string | null },
 ): Promise<DirectorModelValidationResult> {
+  const planId = effectivePlanIdForEntitlements(options?.planId, options?.email);
   if (selection.provider === "wireline") {
     if (!process.env.ANTHROPIC_API_KEY?.trim()) {
       return {
@@ -47,7 +52,7 @@ export async function validateDirectorChatModelSelection(
     };
   }
 
-  if (!openRouterAllowedForPlanId(options?.planId)) {
+  if (!openRouterAllowedForEntitlements(planId, options?.email)) {
     return {
       ok: false,
       error: "OpenRouter models require a Pro plan or higher",
@@ -69,10 +74,13 @@ export async function validateDirectorChatModelSelection(
 
 export async function sanitizeDirectorChatModelPreference(
   selection: DirectorChatModelSelection,
-  options?: { planId?: string | null },
+  options?: { planId?: string | null; email?: string | null },
 ): Promise<DirectorChatModelSelection> {
   if (selection.provider === "wireline") return selection;
-  if (!isOpenRouterConfigured() || !openRouterAllowedForPlanId(options?.planId)) {
+  if (
+    !isOpenRouterConfigured() ||
+    !openRouterAllowedForEntitlements(options?.planId, options?.email)
+  ) {
     return DEFAULT_DIRECTOR_MODEL_SELECTION;
   }
   const allowed = await getAllowedOpenRouterModelIds();
@@ -85,11 +93,12 @@ export async function resolveDirectorModelSelection(
   userId: string,
   body: Record<string, unknown>,
   loadPreference: (id: string) => Promise<DirectorChatModelSelection>,
+  email?: string | null,
 ): Promise<
   { ok: true; selection: DirectorChatModelSelection } | { ok: false; error: string; status: number }
 > {
-  const planId = await getSubscriptionPlanId(userId);
-  const planOpts = { planId };
+  const planId = await getEffectiveSubscriptionPlanId(userId, email);
+  const planOpts = { planId, email };
 
   const fromBody = parseDirectorChatModelSelection(body.modelSelection);
   if (fromBody) {

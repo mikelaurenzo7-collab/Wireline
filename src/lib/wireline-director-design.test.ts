@@ -33,6 +33,7 @@ describe("Wireline Director design contract", () => {
     expect(WL_DIRECTOR_CLASSES.missionPanel).toContain("wl-mission-panel");
     expect(WL_DIRECTOR_CLASSES.missionPanel).not.toContain("grid");
     expect(WL_DIRECTOR_CLASSES.composerDock).toContain("wl-composer-dock");
+    expect(WL_DIRECTOR_CLASSES.composerColumn).toContain("lg:max-w-5xl");
     expect(WL_DIRECTOR_CLASSES.directorBubble).toBe("wl-director-bubble");
     expect(WL_DIRECTOR_CLASSES.proposalCard).toBe("wl-proposal-card");
     expect(WL_DIRECTOR_CLASSES.orchestrationStep).toBe("wl-orchestration-step");
@@ -83,6 +84,8 @@ describe("Wireline Director design contract", () => {
     expect(WL_APP_CLASSES.workspaceTitle).toBe("wl-workspace-title");
     expect(WL_APP_CLASSES.bodyCaption).toBe("wl-body-caption");
     expect(WL_APP_CLASSES.inlineEmpty).toBe("wl-inline-empty");
+    expect(WL_APP_CLASSES.surfaceVelvet).toContain("velvet");
+    expect(WL_APP_CLASSES.chromeInverseHover).toContain("chrome-inverse-hover");
   });
 
   it("exposes app settings panel classes without glass or aurora blobs", () => {

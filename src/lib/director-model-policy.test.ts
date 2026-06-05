@@ -24,6 +24,7 @@ vi.mock("./plan-entitlements", async (importOriginal) => {
   return {
     ...actual,
     getSubscriptionPlanId: vi.fn(async () => "pro"),
+    getEffectiveSubscriptionPlanId: vi.fn(async () => "pro"),
   };
 });
 

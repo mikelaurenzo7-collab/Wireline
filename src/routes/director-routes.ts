@@ -36,7 +36,10 @@ import {
   validateDirectorChatModelSelection,
 } from "../lib/director-model-policy";
 import { isOpenRouterConfigured, listOpenRouterModelsForDirector } from "../lib/openrouter-models";
-import { getSubscriptionPlanId, openRouterAllowedForPlanId } from "../lib/plan-entitlements";
+import {
+  getEffectiveSubscriptionPlanId,
+  openRouterAllowedForEntitlements,
+} from "../lib/plan-entitlements";
 import { runDirectorStreamLlm } from "../lib/director-stream-runner";
 import { loadDirectorFeatureFlags } from "../lib/director-feature-flags";
 import {
@@ -468,8 +471,8 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const preference = await loadDirectorChatModelPreference(req.user.id);
-      const planId = await getSubscriptionPlanId(req.user.id);
-      const planAllowsOpenRouter = openRouterAllowedForPlanId(planId);
+      const planId = await getEffectiveSubscriptionPlanId(req.user.id, req.user.email);
+      const planAllowsOpenRouter = openRouterAllowedForEntitlements(planId, req.user.email);
       const { enabled, curated, catalog } = await listOpenRouterModelsForDirector();
       res.json({
         preference,
@@ -502,8 +505,11 @@ router.patch(
     if (!parsed) {
       return res.status(400).json({ error: "Invalid model selection" });
     }
-    const planId = await getSubscriptionPlanId(req.user.id);
-    const validated = await validateDirectorChatModelSelection(parsed, { planId });
+    const planId = await getEffectiveSubscriptionPlanId(req.user.id, req.user.email);
+    const validated = await validateDirectorChatModelSelection(parsed, {
+      planId,
+      email: req.user.email,
+    });
     if (!validated.ok) {
       return res.status(validated.status).json({ error: validated.error });
     }
@@ -613,6 +619,7 @@ router.post(
           req.user.id,
           req.body ?? {},
           loadDirectorChatModelPreference,
+          req.user.email,
         );
         if (!resolved.ok) {
           reply =
@@ -759,6 +766,7 @@ router.post(
         req.user.id,
         req.body ?? {},
         loadDirectorChatModelPreference,
+        req.user.email,
       );
       if (!resolved.ok) {
         return res.status(resolved.status).json({ error: resolved.error });

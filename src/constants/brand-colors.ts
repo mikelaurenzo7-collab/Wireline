@@ -16,6 +16,10 @@ export const BRAND = {
   creamWarm: "#D4C9B8",
   creamDeep: "#C4B5A0",
   ink: "#1A1614",
+  /** Dark elevated panel surface — composer, artifacts, live fades */
+  velvet: "#1A1225",
+  /** Luminous brand on dark chrome (wordmarks, focus accents) */
+  chromeGlow: "#C77DFF",
   /** Errors, overage, and critical compliance only — not decorative. */
   rose: "#E8466A",
 } as const;

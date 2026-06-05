@@ -534,7 +534,11 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const result = await bootstrapFounderFleetIfEmpty(req.user.id, req.user.email);
-      res.json({ ok: true, founderSeeded: result.seeded });
+      res.json({
+        ok: true,
+        founderSeeded: result.seeded,
+        subscriptionEnsured: result.subscriptionEnsured ?? false,
+      });
     } catch (error) {
       log.warn("Auth: bootstrap failed", { userId: req.user.id, error });
       res.status(503).json({ ok: false, founderSeeded: false, error: "Bootstrap failed" });

@@ -170,7 +170,7 @@ export default function TopBar({
                 : "text-ink/65 group-hover:text-ink"
               : active
                 ? ""
-                : "chrome-muted group-hover:text-brand dark:group-hover:text-[#EFE9DC]",
+                : "chrome-muted group-hover:text-brand dark:group-hover:text-paper-warm",
           )}
           style={active ? { color: activeTextColor } : undefined}
           strokeWidth={active ? 2.5 : 1.75}
@@ -240,7 +240,7 @@ export default function TopBar({
               transition={{ type: "spring", stiffness: 420, damping: 32 }}
               className="relative w-7 h-7 rounded-md flex items-center justify-center overflow-hidden shrink-0 elev-1"
               style={{
-                background: "#EFE9DC",
+                background: BRAND.paper,
                 boxShadow:
                   "0 4px 14px -4px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.22) inset",
               }}
@@ -248,7 +248,7 @@ export default function TopBar({
               <WirelineMark className="w-4 h-4 text-brand relative z-10" strokeWidth={130} />
               <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent" />
             </motion.div>
-            <span className="brand-wordmark text-[15px] sm:text-[16px] leading-none hidden sm:inline text-brand dark:text-[#c77dff] !filter-none">
+            <span className="brand-wordmark chrome-wordmark text-[15px] sm:text-[16px] leading-none hidden sm:inline text-brand !filter-none">
               {branding.brand_name.toUpperCase()}
             </span>
           </Link>
@@ -320,7 +320,7 @@ export default function TopBar({
               onClick={() => {
                 window.dispatchEvent(new CustomEvent("wireline:open-command-bar"));
               }}
-              className="md:w-auto md:h-7 md:px-2 rounded-md chrome-muted hover:text-[#EFE9DC] hover:bg-white/10"
+              className="md:w-auto md:h-7 md:px-2 rounded-md chrome-muted chrome-inverse-hover touch-press"
               aria-label="Open command bar"
               title="Search ( / )"
             >
@@ -355,7 +355,7 @@ export default function TopBar({
                 </div>
                 <ChevronDown
                   className={cn(
-                    "w-3 h-3 text-[#EFE9DC]/60 transition-transform",
+                    "w-3 h-3 chrome-paper-faint transition-transform",
                     userMenuOpen && "rotate-180",
                   )}
                 />
@@ -461,10 +461,10 @@ export default function TopBar({
               size="icon"
               disableAnimations
               onClick={() => onDrawerChange(true)}
-              className="flex lg:hidden w-10 h-10 rounded-md hover:bg-brand/5 dark:hover:bg-white/5"
+              className="touch-press flex lg:hidden w-10 h-10 rounded-md hover:bg-brand/5 dark:hover:bg-white/5"
               aria-label="Open navigation"
             >
-              <Menu className="w-5 h-5 text-brand dark:text-[#EFE9DC]" />
+              <Menu className="w-5 h-5 text-brand dark:text-paper-warm" />
             </ShadButton>
           </div>
         </div>
@@ -502,7 +502,7 @@ export default function TopBar({
                   className="flex items-center gap-2.5"
                 >
                   <div className="w-9 h-9 rounded-md flex items-center justify-center bg-brand">
-                    <WirelineMark className="w-4 h-4 text-[#EFE9DC]" strokeWidth={130} />
+                    <WirelineMark className="w-4 h-4 chrome-paper" strokeWidth={130} />
                   </div>
                   <span className="brand-wordmark text-[16px] leading-none">
                     {branding.brand_name.toUpperCase()}

@@ -347,11 +347,16 @@ html, body, .marketing-surface, .app-surface {
     inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
-/* Director chat thread — centered column, compact bubbles */
+/* Director chat thread — centered column; widens on desktop */
 .wl-director-thread {
   width: 100%;
   max-width: 40rem;
   margin-inline: auto;
+}
+@media (min-width: 1024px) {
+  .wl-director-thread {
+    max-width: 56rem;
+  }
 }
 
 .wl-director-message-stack {
@@ -362,10 +367,20 @@ html, body, .marketing-surface, .app-surface {
   max-width: min(100%, 22rem);
   min-width: 0;
 }
+@media (min-width: 1024px) {
+  .wl-director-message-stack {
+    max-width: min(100%, 32rem);
+  }
+}
 
 .wl-director-message-stack--operator {
   max-width: min(100%, 15rem);
   align-items: flex-end;
+}
+@media (min-width: 1024px) {
+  .wl-director-message-stack--operator {
+    max-width: min(100%, 24rem);
+  }
 }
 
 .wl-director-message {
@@ -503,6 +518,11 @@ html, body, .marketing-surface, .app-surface {
   scrollbar-width: thin;
   background: color-mix(in srgb, var(--paper, #f5f0e6) 88%, white);
   border-top: 1px solid color-mix(in srgb, var(--color-brand, #8b3fd6) 10%, transparent);
+}
+@media (min-width: 1024px) {
+  .wl-composer-accessory-panel {
+    max-height: min(300px, 38dvh);
+  }
 }
 .wl-composer-accessory-panel--embedded-catalog {
   /* Single scroll container — catalog defers height to this panel */
@@ -656,7 +676,8 @@ html, body, .marketing-surface, .app-surface {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  flex-shrink: 0;
+  flex-shrink: 1;
+  min-width: 0;
   padding: 0.25rem 0.5rem;
   border-radius: 9999px;
   border: 1px solid color-mix(in srgb, var(--color-brand, #8b3fd6) 14%, transparent);
@@ -1791,6 +1812,9 @@ html, body, .marketing-surface, .app-surface {
   --ink: #1A1614;
   --paper: #F5F0E6;
   --paper-warm: #EFE9DC;
+  /** Elevated dark panels — composer, artifacts, live session fades */
+  --velvet: #1a1225;
+  --chrome-glow: #8B3FD6;
 
   /* Muted typography — resolves to the warm cream-ink fades on light
    * and the cool zinc fades on dark. Referenced by --color-muted /
@@ -1832,6 +1856,8 @@ html, body, .marketing-surface, .app-surface {
 
 .dark {
   /* Dark mode surface colors — deep velvet editorial purple-black */
+  --velvet: #1a1225;
+  --chrome-glow: #c77dff;
   --background: #0f0c17;
   --foreground: #f3e8ff;
   --card: rgba(24, 18, 38, 0.92);
@@ -1934,6 +1960,8 @@ html, body, .marketing-surface, .app-surface {
   --color-ink: var(--ink);
   --color-paper: var(--paper);
   --color-paper-warm: var(--paper-warm, #efe9dc);
+  --color-velvet: var(--velvet);
+  --color-chrome-glow: var(--chrome-glow);
   --color-on-brand: #ffffff;
 
   /* Tailwind base overrides */
@@ -3084,6 +3112,22 @@ html, body, .marketing-surface, .app-surface {
 }
 .dark .chrome-subtle {
   color: color-mix(in srgb, #efe9dc 58%, transparent);
+}
+
+/* Inverse chrome controls (TopBar on velvet) — cream hover on purple shell */
+.chrome-inverse-hover:hover,
+.chrome-inverse-hover:focus-visible {
+  color: var(--paper-warm);
+  background: rgba(255, 255, 255, 0.1);
+}
+.chrome-paper {
+  color: var(--paper-warm);
+}
+.chrome-paper-faint {
+  color: color-mix(in srgb, var(--paper-warm) 60%, transparent);
+}
+.dark .chrome-wordmark {
+  color: var(--chrome-glow);
 }
 
 /* In-app content area — slightly stronger muted than marketing default */

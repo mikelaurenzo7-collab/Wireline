@@ -140,7 +140,7 @@ export function DirectorCapabilityCatalog({
         {!filteredCatalog && (
           <div
             className={cn(
-              "flex gap-1 overflow-x-auto pb-2 scrollbar-none -mx-0.5 px-0.5",
+              "flex flex-wrap gap-1 pb-2 -mx-0.5 px-0.5",
               embedded && "wl-composer-accessory-catalog-sticky",
             )}
           >

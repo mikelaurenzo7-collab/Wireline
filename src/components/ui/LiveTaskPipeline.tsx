@@ -52,7 +52,7 @@ export function LiveTaskPipeline({ steps, className, variant = "default" }: Live
             >
               <span
                 className={cn(
-                  "absolute left-0 top-2.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 bg-paper dark:bg-[#1a1225]",
+                  "absolute left-0 top-2.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 bg-paper dark:bg-velvet",
                   step.status === "done" &&
                     "border-[color-mix(in_srgb,var(--wl-signal)_50%,transparent)]",
                   step.status === "active" && "border-brand bg-brand/10",

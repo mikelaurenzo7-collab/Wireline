@@ -133,7 +133,7 @@ export default function TrustSignals() {
         {VERTICALS.map(({ icon: Icon, label }) => (
           <div
             key={label}
-            className="group flex flex-col items-center gap-1.5 rounded-md border border-black/5 bg-[#FAF8F5]/80 py-2.5 px-1 transition-all hover:border-brand/20 hover:bg-[#FAF8F5] hover:-translate-y-0.5"
+            className="group flex flex-col items-center gap-1.5 rounded-md border border-black/5 bg-paper/80 py-2.5 px-1 transition-all hover:border-brand/20 hover:bg-paper hover:-translate-y-0.5"
             title={label}
           >
             <Icon
@@ -154,7 +154,7 @@ export default function TrustSignals() {
           return (
             <div
               key={label}
-              className="rounded-md border border-black/5 bg-[#FAF8F5]/60 p-2.5 transition-all hover:bg-[#FAF8F5] hover:border-black/10"
+              className="rounded-md border border-black/5 bg-paper/60 p-2.5 transition-all hover:bg-paper hover:border-black/10"
             >
               <div className="flex items-center justify-between gap-2 mb-1.5">
                 <Icon className="w-3.5 h-3.5 text-ink/70" strokeWidth={1.75} />

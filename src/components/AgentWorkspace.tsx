@@ -1108,7 +1108,7 @@ export default function AgentWorkspace({
                         {agentName}
                       </span>
                     </div>
-                    <div className="bg-paper/90 dark:bg-[#1a1225]/60 backdrop-blur-sm border border-brand/12 rounded-md rounded-bl-md px-5 py-4 shadow-sm">
+                    <div className="bg-paper/90 dark:bg-velvet/60 backdrop-blur-sm border border-brand/12 rounded-md rounded-bl-md px-5 py-4 shadow-sm">
                       <div className="flex items-center gap-2.5 mb-2">
                         <AgentActivityIndicator active size={24} pose="on-call" />
                         <LiveThinkingIndicator isDeep={false} />
@@ -1271,7 +1271,7 @@ export default function AgentWorkspace({
 
           {/* Composer - prominent at bottom */}
           <div className="shrink-0 px-4 pb-6 pt-2">
-            <div className="relative rounded-md border border-brand/20 bg-paper/95 dark:bg-[#1a1225]/80 backdrop-blur-md shadow-lg shadow-brand/5 transition-all duration-300 focus-within:border-brand/40 focus-within:shadow-xl focus-within:shadow-brand/10">
+            <div className="relative rounded-md border border-brand/20 bg-paper/95 dark:bg-velvet/80 backdrop-blur-md shadow-lg shadow-brand/5 transition-all duration-300 focus-within:border-brand/40 focus-within:shadow-xl focus-within:shadow-brand/10">
               <textarea
                 ref={inputRef}
                 value={input}

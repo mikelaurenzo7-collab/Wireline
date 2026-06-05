@@ -1538,7 +1538,7 @@ export default function DirectorWorkspace({
                                 key={p.conceptId}
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="group relative rounded-md border border-brand/12 bg-paper/95 dark:bg-[#1a1225]/60 overflow-hidden shadow-sm hover:shadow-xl hover:border-brand/25 transition-all duration-300"
+                                className="group relative rounded-md border border-brand/12 bg-paper/95 dark:bg-velvet/60 overflow-hidden shadow-sm hover:shadow-xl hover:border-brand/25 transition-all duration-300"
                               >
                                 {/* Image canvas with hover overlay */}
                                 <div className="relative overflow-hidden wl-checkerboard bg-[length:16px_16px]">
@@ -1729,7 +1729,7 @@ export default function DirectorWorkspace({
 
       {/* Composer — accessory panel sits above toolbar so chat stays readable */}
       <div className="relative z-30 shrink-0 px-4 pb-6 pt-2">
-        <div className="max-w-3xl mx-auto relative" ref={composerDockRef}>
+        <div className={cn(WL_DIRECTOR_CLASSES.composerColumn, "relative")} ref={composerDockRef}>
           <DirectorUsageIndicator className="absolute -top-1 right-0 z-40" />
           <div
             className={cn(

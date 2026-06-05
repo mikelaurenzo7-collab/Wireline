@@ -4,9 +4,13 @@
  */
 import { eq } from "drizzle-orm";
 import * as schema from "../db/schema";
+import { isOwnerEmail } from "./auth-service";
 import { planById, type StripePlanId } from "./plan-catalog";
 import { drizzle } from "./server-context";
 import type { PlanTier } from "./tenant-quotas";
+
+/** Platform owners dogfood on enterprise entitlements without a Stripe row. */
+export const FOUNDER_EFFECTIVE_PLAN_ID: StripePlanId = "enterprise";
 
 const OPENROUTER_PLANS = new Set<StripePlanId>(["pro", "business", "enterprise"]);
 
@@ -35,6 +39,30 @@ export function openRouterAllowedForTier(tier: PlanTier): boolean {
 
 export function openRouterAllowedForPlanId(planId: string | null | undefined): boolean {
   return openRouterAllowedForTier(subscriptionPlanToTier(planId));
+}
+
+/** Apply OWNER_EMAIL / OWNER_EMAILS override before tier gates. */
+export function effectivePlanIdForEntitlements(
+  planId: string | null | undefined,
+  email?: string | null,
+): string | null {
+  if (isOwnerEmail(email)) return FOUNDER_EFFECTIVE_PLAN_ID;
+  return planId ?? null;
+}
+
+export function openRouterAllowedForEntitlements(
+  planId: string | null | undefined,
+  email?: string | null,
+): boolean {
+  return openRouterAllowedForPlanId(effectivePlanIdForEntitlements(planId, email));
+}
+
+export async function getEffectiveSubscriptionPlanId(
+  userId: string,
+  email?: string | null,
+): Promise<string | null> {
+  const planId = await getSubscriptionPlanId(userId);
+  return effectivePlanIdForEntitlements(planId, email);
 }
 
 /** Default monthly AI spend hard-cap (USD) seeded on subscribe when no custom budget exists. */

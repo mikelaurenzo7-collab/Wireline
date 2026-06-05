@@ -41,7 +41,8 @@ export default function DirectorArtifactsPanel({ artifacts }: DirectorArtifactsP
     <div className="shrink-0 px-4 pb-2">
       <div
         className={cn(
-          "max-w-3xl mx-auto rounded-md border backdrop-blur-sm p-3 space-y-3",
+          WL_DIRECTOR_CLASSES.composerColumn,
+          "rounded-md border backdrop-blur-sm p-3 space-y-3",
           WL_DIRECTOR_CLASSES.artifactsPanel,
         )}
       >

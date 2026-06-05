@@ -49,6 +49,8 @@ export const WL_DIRECTOR_CLASSES = {
   composerSendRow: "wl-composer-send-row",
   composerSendBtn: "wl-composer-send-btn",
   composerInput: "wl-composer-input",
+  /** Desktop-wide chat + composer column (thread + dock share this width). */
+  composerColumn: "w-full max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto",
   composerToolbarScroll: "wl-composer-toolbar-scroll",
   assistantMessage: "wl-director-message--assistant",
   messageMeta: "wl-director-message-meta",
@@ -465,6 +467,11 @@ export const WL_APP_CLASSES = {
   segmentStrip: "app-segment-strip",
   /** System banners (trial, verify email) */
   banner: "wl-banner",
+  /** Light paper / dark velvet elevated surfaces (bubbles, cards, composer) */
+  surfaceVelvet: "bg-paper/90 dark:bg-velvet/60",
+  surfaceVelvetStrong: "bg-paper/95 dark:bg-velvet/80",
+  /** TopBar / inverse chrome icon buttons */
+  chromeInverseHover: "chrome-inverse-hover hover:bg-white/10",
   bannerInfo: "wl-banner wl-banner--info",
   bannerWarn: "wl-banner wl-banner--warn",
   bannerCritical: "wl-banner wl-banner--critical",

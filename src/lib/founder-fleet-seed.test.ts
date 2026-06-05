@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ALL_AGENT_TOOLS,
+  EXPECTED_FOUNDER_FLEET_AGENT_COUNT,
   FOUNDER_FLEET_TEMPLATES,
   founderFleetAgentScope,
   namespacedFleetAgentId,
@@ -27,5 +28,8 @@ describe("founder-fleet-seed", () => {
   it("includes wireline personas plus specialty vertical agents", () => {
     expect(Object.keys(WIRELINE_PERSONAS)).toHaveLength(6);
     expect(FOUNDER_FLEET_TEMPLATES.length).toBeGreaterThanOrEqual(10);
+    expect(EXPECTED_FOUNDER_FLEET_AGENT_COUNT).toBe(
+      Object.keys(WIRELINE_PERSONAS).length + FOUNDER_FLEET_TEMPLATES.length,
+    );
   });
 });

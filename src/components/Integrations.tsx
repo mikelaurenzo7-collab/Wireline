@@ -269,7 +269,7 @@ export default function Integrations() {
                     <ShadButton
                       onClick={handleConnectGmail}
                       variant="outline"
-                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full app-primary-action text-[11px] uppercase tracking-[0.22em]"
+                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full app-primary-action text-[11px] uppercase tracking-[0.22em] touch-press"
                     >
                       <Plus className="w-3 h-3" />
                       Gmail
@@ -277,7 +277,7 @@ export default function Integrations() {
                     <ShadButton
                       onClick={handleConnectOutlook}
                       variant="outline"
-                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border-brand/30 text-brand text-[11px] uppercase tracking-[0.22em] hover:bg-brand/[0.08] transition-colors"
+                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border-brand/30 text-brand text-[11px] uppercase tracking-[0.22em] hover:bg-brand/[0.08] transition-colors touch-press"
                     >
                       <Plus className="w-3 h-3" />
                       Outlook
@@ -285,7 +285,7 @@ export default function Integrations() {
                     <ShadButton
                       onClick={handleConnectYahoo}
                       variant="outline"
-                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border-brand/30 text-brand text-[11px] uppercase tracking-[0.22em] hover:bg-brand/[0.08] transition-colors"
+                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border-brand/30 text-brand text-[11px] uppercase tracking-[0.22em] hover:bg-brand/[0.08] transition-colors touch-press"
                     >
                       <Plus className="w-3 h-3" />
                       Yahoo

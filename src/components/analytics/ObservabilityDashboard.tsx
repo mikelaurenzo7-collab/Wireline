@@ -140,7 +140,7 @@ export default function ObservabilityDashboard() {
       </div>
 
       {metrics?.noData && (
-        <div className="rounded-md border border-white/5 bg-[#120f14]/50 p-6 text-center space-y-2">
+        <div className="rounded-md border border-border bg-background/50 p-6 text-center space-y-2">
           <Activity className="h-8 w-8 text-brand mx-auto animate-pulse" />
           <h4 className="text-sm font-semibold text-ink">Waiting for Telemetry</h4>
           <p className="text-xs text-muted max-w-md mx-auto">

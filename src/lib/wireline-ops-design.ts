@@ -503,6 +503,10 @@ export const WL_CHROME_CLASSES = {
   drawerSection: "wl-drawer-section-label",
   railItemActive: "wl-rail-item--active",
   railFooterActive: "wl-rail-footer--active",
+  inverseHover: "chrome-inverse-hover hover:bg-white/10",
+  paper: "chrome-paper",
+  paperFaint: "chrome-paper-faint",
+  wordmark: "brand-wordmark chrome-wordmark",
 } as const;
 
 /** Channel inbox + list table class hooks (phone, email, SMS). */

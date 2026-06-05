@@ -45,7 +45,7 @@ export default function ThemeToggle({ className, variant = "inverse", compact = 
           ? "h-8 w-8 min-w-8 px-0 [&_svg]:size-4"
           : "md:w-auto md:h-7 md:px-2 md:[&_svg]:size-4",
         variant === "inverse"
-          ? "chrome-muted hover:text-[#EFE9DC] hover:bg-white/10 focus-visible:ring-offset-transparent"
+          ? "chrome-muted chrome-inverse-hover focus-visible:ring-offset-transparent"
           : "text-muted-foreground hover:text-foreground hover:bg-accent",
         className,
       )}
