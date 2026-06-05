@@ -6,6 +6,7 @@ import {
   missingCreativeFields,
   normalizeVectorSvg,
   parseCreativeBriefFromText,
+  sanitizeLogoSvgForExport,
 } from "./director-logo-tools";
 
 describe("director-logo-tools", () => {
@@ -56,6 +57,24 @@ describe("director-logo-tools", () => {
     expect(generated.concepts).toHaveLength(3);
     expect(generated.chosenConceptId.length).toBeGreaterThan(5);
     expect(generated.critique.toLowerCase()).toContain("best concept");
+    for (const concept of generated.concepts) {
+      expect(concept.svg).not.toMatch(
+        /<text[^>]*>[\s]*(?:Monogram Mark|Symbol Lockup|Wordmark Emblem)/i,
+      );
+      expect(concept.title.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("strips legacy concept captions from downloadable SVG", () => {
+    const legacy = `<svg xmlns="http://www.w3.org/2000/svg" width="280" height="280" viewBox="0 0 280 280">
+  <rect width="280" height="280" fill="white"/>
+  <circle cx="140" cy="140" r="100" fill="#111"/>
+  <text x="140" y="262" font-size="16">Wordmark Emblem</text>
+</svg>`;
+    const cleaned = sanitizeLogoSvgForExport(legacy);
+    expect(cleaned).not.toContain("Wordmark Emblem");
+    expect(cleaned).not.toContain('fill="white"');
+    expect(normalizeVectorSvg(legacy)).not.toContain("Wordmark Emblem");
   });
 
   it("rejects vector svg payloads containing scripts", () => {

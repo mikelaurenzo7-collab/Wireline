@@ -179,8 +179,21 @@ export function checkCreativePolicy(prompt: string): DirectorPolicyCheckResult {
   return { allowed: true };
 }
 
+/** Strip UI-only caption text from logo SVGs before export (legacy + new). */
+export function sanitizeLogoSvgForExport(svg: string): string {
+  let out = svg;
+  out = out.replace(
+    /<text\b[^>]*>[\s]*(?:Monogram Mark|Symbol Lockup|Wordmark Emblem|Concept\s+\d+)[\s]*<\/text>/gi,
+    "",
+  );
+  out = out.replace(/<text\b[^>]*y="26[0-9]"[^>]*>[^<]*<\/text>/gi, "");
+  out = out.replace(/<rect\b[^>]*width="280"[^>]*height="280"[^>]*fill="white"[^>]*\/?>/i, "");
+  return out.trim();
+}
+
 function paletteFromColors(colors: string): [string, string, string] {
   const presets: Array<[RegExp, [string, string, string]]> = [
+    [/cream|#f5f0e6|wireline|#4f1e7b/i, ["#4F1E7B", "#F5F0E6", "#2d1048"]],
     [/blue|navy|indigo/i, ["#1d4ed8", "#0ea5e9", "#0f172a"]],
     [/green|emerald|mint/i, ["#059669", "#34d399", "#064e3b"]],
     [/red|rose|crimson/i, ["#dc2626", "#fb7185", "#450a0a"]],
@@ -193,7 +206,7 @@ function paletteFromColors(colors: string): [string, string, string] {
 }
 
 function makeSvgConcept(index: number, brief: DirectorCreativeBrief): DirectorLogoConcept {
-  const [primary, accent, neutral] = paletteFromColors(brief.colors);
+  const [primary, accent] = paletteFromColors(brief.colors);
   const title =
     ["Monogram Mark", "Symbol Lockup", "Wordmark Emblem"][index] ?? `Concept ${index + 1}`;
   const initials =
@@ -218,7 +231,23 @@ function makeSvgConcept(index: number, brief: DirectorCreativeBrief): DirectorLo
       ? `<circle cx="140" cy="140" r="46" fill="${accent}"/>`
       : `<path d="M60 200 C120 120, 160 260, 220 120" stroke="${accent}" stroke-width="16" fill="none" stroke-linecap="round"/>`;
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="280" height="280" viewBox="0 0 280 280" role="img" aria-label="${title}">\n  <rect width="280" height="280" fill="white"/>\n  ${shape}\n  ${accentShape}\n  <text x="140" y="156" text-anchor="middle" fill="white" font-size="64" font-family="Inter,Arial,sans-serif" font-weight="700">${initials}</text>\n  <text x="140" y="262" text-anchor="middle" fill="${neutral}" font-size="16" font-family="Inter,Arial,sans-serif">${title}</text>\n</svg>`;
+  const monogram =
+    index !== 1
+      ? `<text x="140" y="156" text-anchor="middle" dominant-baseline="middle" fill="white" font-size="64" font-family="Inter,Arial,sans-serif" font-weight="700">${initials}</text>`
+      : "";
+
+  const svg =
+    sanitizeLogoSvgForExport(`<svg xmlns="http://www.w3.org/2000/svg" width="280" height="280" viewBox="0 0 280 280" role="img" aria-label="${title}">
+  <defs>
+    <linearGradient id="g${index}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${primary}"/>
+      <stop offset="100%" stop-color="${accent}"/>
+    </linearGradient>
+  </defs>
+  ${shape.replaceAll(`fill="${primary}"`, `fill="url(#g${index})"`)}
+  ${accentShape}
+  ${monogram}
+</svg>`);
 
   const rationale = `${title} optimized for ${brief.usage}. Style: ${brief.style}. Palette: ${brief.colors}.`;
   const score = 100 - index * 7 + Math.max(0, 12 - brief.style.length / 8);
@@ -261,12 +290,17 @@ export function generateLogoConcepts(
 }
 
 export function normalizeVectorSvg(svg: string): string {
-  const raw = clampText(svg, 20000);
+  const raw = sanitizeLogoSvgForExport(clampText(svg, 20000));
   if (/<\s*script[\s\S]*?>/i.test(raw) || /<\s*\/\s*script\s*>/i.test(raw)) {
     throw new Error("SVG contains forbidden script tags.");
   }
   if (!/^<svg[\s\S]*<\/svg>$/i.test(raw)) {
     throw new Error("Invalid SVG payload for vector export.");
+  }
+  if (
+    /<text\b[^>]*>[\s]*(?:Monogram Mark|Symbol Lockup|Wordmark Emblem|Concept\s+\d+)/i.test(raw)
+  ) {
+    throw new Error("SVG still contains concept caption text — export only the mark.");
   }
   if (Buffer.byteLength(raw, "utf8") > 200 * 1024) {
     throw new Error("SVG too large. Keep vector exports under 200KB.");
