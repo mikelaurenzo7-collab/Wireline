@@ -130,18 +130,21 @@ test.describe("Responsive — touch targets on mobile", () => {
     const buttons = page.locator("header button:visible, header a:visible");
     const count = await buttons.count();
 
+    const failures: string[] = [];
     for (let i = 0; i < Math.min(count, 10); i++) {
       const el = buttons.nth(i);
       const box = await el.boundingBox();
       if (box) {
-        // Touch targets should be at least 32px (relaxed from 44px for inline links)
         const minDimension = Math.min(box.width, box.height);
-        // Log rather than hard-fail for links (which may rely on padding)
         if (minDimension < 32) {
-          console.warn(`Touch target #${i} is ${box.width}×${box.height}px — below 32px minimum`);
+          failures.push(`#${i} is ${box.width}×${box.height}px`);
         }
       }
     }
+    expect(
+      failures,
+      failures.length ? `Header touch targets below 32px: ${failures.join("; ")}` : undefined,
+    ).toHaveLength(0);
   });
 });
 
@@ -191,7 +194,9 @@ test.describe("Responsive — signup form adapts", () => {
  * AgentWorkspace, composer, pricing CTAs, and all future operator surfaces.
  */
 test.describe("Design system — mobile-first flawless + desktop refined", () => {
-  test("primary CTAs on pricing meet 36px+ mobile tap target and scale elegantly on desktop", async ({ page }) => {
+  test("primary CTAs on pricing meet 36px+ mobile tap target and scale elegantly on desktop", async ({
+    page,
+  }) => {
     // Mobile phone viewport (first impression surface)
     await page.setViewportSize({ width: 390, height: 844 });
     await gotoHydrated(page, "/pricing");
@@ -219,7 +224,9 @@ test.describe("Design system — mobile-first flawless + desktop refined", () =>
     expect(desktopBox!.height).toBeLessThanOrEqual(52);
   });
 
-  test("interactive pills and buttons on mobile respect density + reachability rules", async ({ page }) => {
+  test("interactive pills and buttons on mobile respect density + reachability rules", async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await gotoHydrated(page, "/pricing");
 
@@ -237,7 +244,9 @@ test.describe("Design system — mobile-first flawless + desktop refined", () =>
     }
   });
 
-  test("workspace-like tab/pill patterns would be usable on mobile and refined on desktop (regression guard)", async ({ page }) => {
+  test("workspace-like tab/pill patterns would be usable on mobile and refined on desktop (regression guard)", async ({
+    page,
+  }) => {
     // We test the public patterns that mirror the workspace pill/toggle language
     // (glass, rounded-full, small text on mobile, generous targets).
     // Full authenticated workspace version lives in a dedicated workspace E2E spec.
@@ -268,7 +277,9 @@ test.describe("Design system — mobile-first flawless + desktop refined", () =>
  *   spacing. Never feels like "mobile ported" or "desktop neglected".
  */
 test.describe("Design system TDD — workspace tabs & composer (mobile flawless + desktop refined)", () => {
-  test("workspace tab/pill targets meet 36px+ on mobile phones and stay refined on desktop", async ({ page }) => {
+  test("workspace tab/pill targets meet 36px+ on mobile phones and stay refined on desktop", async ({
+    page,
+  }) => {
     // This mirrors the exact pill structure in AgentWorkspace (Training/Connectors/Memory toggles)
     // and the rail in AgentChat. We assert the invariants so regressions in future edits are caught.
 
@@ -277,7 +288,7 @@ test.describe("Design system TDD — workspace tabs & composer (mobile flawless 
     await gotoHydrated(page, "/pricing"); // public proxy for pill-like CTAs
 
     const mobileButtons = page.getByRole("link", { name: /start free trial|compare plans/i });
-    if (await mobileButtons.count() > 0) {
+    if ((await mobileButtons.count()) > 0) {
       const box = await mobileButtons.first().boundingBox();
       if (box) {
         expect(box.height).toBeGreaterThanOrEqual(36);
@@ -289,7 +300,7 @@ test.describe("Design system TDD — workspace tabs & composer (mobile flawless 
     await gotoHydrated(page, "/pricing");
 
     const desktopButtons = page.getByRole("link", { name: /start free trial|compare plans/i });
-    if (await desktopButtons.count() > 0) {
+    if ((await desktopButtons.count()) > 0) {
       const box = await desktopButtons.first().boundingBox();
       if (box) {
         // Refined desktop: comfortable but elegant (not bloated, not tiny)
@@ -299,7 +310,9 @@ test.describe("Design system TDD — workspace tabs & composer (mobile flawless 
     }
   });
 
-  test("composer-style action buttons (paperclip/send) respect thumb reach on mobile and refined proportions on desktop", async ({ page }) => {
+  test("composer-style action buttons (paperclip/send) respect thumb reach on mobile and refined proportions on desktop", async ({
+    page,
+  }) => {
     // Proxy test using public surfaces that have similar icon-button + input clusters.
     // Real workspace composer assertions belong in a dedicated authenticated workspace E2E spec.
 

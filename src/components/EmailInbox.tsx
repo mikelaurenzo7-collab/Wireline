@@ -37,6 +37,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
   const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
   const [threads, setThreads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchErr, setFetchErr] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [selectedThread, setSelectedThread] = useState<any | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
@@ -63,9 +64,17 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
   }, [selectedThread?.id]);
 
   const fetchThreads = async () => {
+    setLoading(true);
+    setFetchErr(null);
     try {
       const res = await authFetch("/api/emails/threads");
-      const data = await res.json();
+      const data = (await res.json().catch(() => ({}))) as {
+        threads?: Record<string, unknown>[];
+        error?: string;
+      };
+      if (!res.ok) {
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
       if (mountedRef.current) {
         const rows = (data.threads || []) as Record<string, unknown>[];
         setThreads(
@@ -83,9 +92,10 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
         );
       }
     } catch (e) {
-      console.error("Failed to fetch threads:", e);
+      const message = e instanceof Error ? e.message : "Could not load email threads";
       if (mountedRef.current) {
-        toastError("Inbox unavailable", "Could not load email threads. Please refresh.");
+        setFetchErr(message);
+        toastError("Inbox unavailable", message);
       }
     } finally {
       if (mountedRef.current) setLoading(false);
@@ -355,6 +365,17 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
               <AnimatePresence mode="sync">
                 {loading ? (
                   <PanelSkeleton rows={6} />
+                ) : fetchErr ? (
+                  <EmptyState
+                    icon={Mail}
+                    eyebrow="Inbox unavailable"
+                    title="Couldn't load threads"
+                    description={fetchErr}
+                    actions={[{ label: "Retry", onClick: fetchThreads, primary: true }]}
+                    density="compact"
+                    withHalo={false}
+                    className="h-full py-10"
+                  />
                 ) : threads.length === 0 ? (
                   <EmptyState
                     icon={Mail}

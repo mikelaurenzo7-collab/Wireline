@@ -29,31 +29,24 @@ function getRedis(): Redis | null {
 // In-memory fallback with LRU eviction to prevent OOM
 const MAX_MEMORY_BUCKETS = 10_000; // Limit to prevent unbounded growth
 const memBuckets = new Map<string, { count: number; resetAt: number }>();
-const accessSet = new Set<string>(); // O(1) existence check
-const accessOrder: string[] = []; // Maintains insertion/access order
+/** Map insertion order = LRU order; delete+set moves a key to most-recent. */
+const accessOrder = new Map<string, true>();
 
 /** Evict least-recently-used bucket if at capacity */
 function evictLRUIfNeeded(): void {
-  while (memBuckets.size >= MAX_MEMORY_BUCKETS && accessOrder.length > 0) {
-    const oldestKey = accessOrder.shift();
+  while (memBuckets.size >= MAX_MEMORY_BUCKETS && accessOrder.size > 0) {
+    const oldestKey = accessOrder.keys().next().value;
     if (oldestKey) {
+      accessOrder.delete(oldestKey);
       memBuckets.delete(oldestKey);
-      accessSet.delete(oldestKey);
     }
   }
 }
 
-/** Update access order for LRU tracking */
+/** Update access order for LRU tracking — O(1) via Map delete+set. */
 function touchKey(key: string): void {
-  if (accessSet.has(key)) {
-    const idx = accessOrder.indexOf(key);
-    if (idx !== -1) {
-      accessOrder.splice(idx, 1);
-    }
-  } else {
-    accessSet.add(key);
-  }
-  accessOrder.push(key);
+  if (accessOrder.has(key)) accessOrder.delete(key);
+  accessOrder.set(key, true);
 }
 
 export interface RateLimitResult {
@@ -144,11 +137,8 @@ export function startMemoryCleanup(intervalMs = 5 * 60_000) {
       }
     }
 
-    // Clean up access order to prevent memory leak
     for (const k of expiredKeys) {
-      accessSet.delete(k);
-      const idx = accessOrder.indexOf(k);
-      if (idx !== -1) accessOrder.splice(idx, 1);
+      accessOrder.delete(k);
     }
 
     // Enforce LRU limit

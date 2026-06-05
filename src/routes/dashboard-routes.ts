@@ -14,6 +14,7 @@ import {
   setCachedDashboard,
   invalidateDashboard,
 } from "../lib/dashboard-cache";
+import { getCachedNavCounts, setCachedNavCounts } from "../lib/nav-counts-cache";
 
 const router = Router();
 
@@ -29,6 +30,12 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user.id;
+
+      const cached = getCachedNavCounts(userId);
+      if (cached) {
+        res.json(cached);
+        return;
+      }
 
       const [[triageResult], [emailResult], [outboundResult], liveSignals] = await Promise.all([
         drizzle
@@ -61,12 +68,14 @@ router.get(
         (s: { label: string | null }) => typeof s.label === "string" && s.label.startsWith("⚠"),
       ).length;
 
-      res.json({
+      const counts = {
         "/triage": triageCount,
         "/inbox": emailCount,
         "/outbound": outboundCount,
         "/live": distressedCount,
-      });
+      };
+      setCachedNavCounts(userId, counts);
+      res.json(counts);
     } catch (e) {
       log.warn("nav-counts failed", { error: e instanceof Error ? e.message : String(e) });
       res.json({ "/triage": 0, "/inbox": 0, "/outbound": 0, "/live": 0 });

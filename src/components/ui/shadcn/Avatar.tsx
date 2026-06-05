@@ -12,8 +12,12 @@ const Avatar = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) =
 );
 Avatar.displayName = "Avatar";
 
-const AvatarImage = ({ className, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) => (
-  <img className={cn("aspect-square h-full w-full object-cover", className)} {...props} />
+const AvatarImage = ({
+  className,
+  alt = "",
+  ...props
+}: React.ImgHTMLAttributes<HTMLImageElement>) => (
+  <img alt={alt} className={cn("aspect-square h-full w-full object-cover", className)} {...props} />
 );
 AvatarImage.displayName = "AvatarImage";
 

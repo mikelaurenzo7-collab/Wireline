@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
+import { useId } from "react";
 import { Bot, Zap } from "lucide-react";
 import { Input } from "../ui/shadcn/Input";
 import { AdminSaveBar } from "./AdminSaveBar";
@@ -13,6 +14,12 @@ interface BrandingPanelProps {
 }
 
 export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: BrandingPanelProps) {
+  const baseId = useId();
+  const nameId = `${baseId}-brand-name`;
+  const logoId = `${baseId}-brand-logo`;
+  const colorId = `${baseId}-brand-color`;
+  const colorTextId = `${baseId}-brand-color-text`;
+
   return (
     <div className="flex flex-col gap-5">
       <div
@@ -31,8 +38,11 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div>
-              <label className="app-field-label">Platform Name</label>
+              <label htmlFor={nameId} className="app-field-label">
+                Platform Name
+              </label>
               <Input
+                id={nameId}
                 type="text"
                 placeholder="Wireline OS"
                 className="app-input-soft py-3 h-auto"
@@ -41,8 +51,11 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
               />
             </div>
             <div>
-              <label className="app-field-label">Brand Logo URL</label>
+              <label htmlFor={logoId} className="app-field-label">
+                Brand Logo URL
+              </label>
               <Input
+                id={logoId}
                 type="text"
                 placeholder="https://assets.yoursite.com/logo.png"
                 className="app-input-soft py-3 h-auto"
@@ -51,16 +64,22 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
               />
             </div>
             <div>
-              <label className="app-field-label">Primary Color</label>
+              <label htmlFor={colorId} className="app-field-label">
+                Primary Color
+              </label>
               <div className="flex gap-2.5">
                 <Input
+                  id={colorId}
                   type="color"
+                  aria-label="Primary color swatch"
                   className="brand-color-swatch w-11 h-11 rounded-md bg-transparent border-input cursor-pointer p-0"
                   value={settings.primary_color || BRAND.purple}
                   onChange={(e) => onUpdate({ ...settings, primary_color: e.target.value })}
                 />
                 <Input
+                  id={colorTextId}
                   type="text"
+                  aria-label="Primary color hex value"
                   className="app-input-soft flex-1 py-3 h-auto font-mono"
                   value={settings.primary_color || BRAND.purple}
                   onChange={(e) => onUpdate({ ...settings, primary_color: e.target.value })}

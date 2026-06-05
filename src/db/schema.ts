@@ -416,13 +416,19 @@ export const knowledge = pgTable(
   }),
 );
 
-export const personality = pgTable("wireline_personality", {
-  agentId: text("agent_id")
-    .primaryKey()
-    .references(() => agents.id, { onDelete: "cascade" }),
-  userId: uuid("user_id").notNull(),
-  content: text("content").notNull(),
-});
+export const personality = pgTable(
+  "wireline_personality",
+  {
+    agentId: text("agent_id")
+      .primaryKey()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull(),
+    content: text("content").notNull(),
+  },
+  () => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_personality_user_id ON wireline_personality USING btree (user_id)`,
+  }),
+);
 
 export const agentLessons = pgTable(
   "wireline_agent_lessons",
@@ -744,6 +750,7 @@ export const calendarAccounts = pgTable(
       t.userId,
       t.emailAddress,
     ),
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_calendar_accounts_user_id ON wireline_calendar_accounts USING btree (user_id)`,
   }),
 );
 
@@ -1176,19 +1183,25 @@ export const signalPresence = pgTable(
 );
 
 // 3.6 INTAKE KEYS (API ACCESS)
-export const intakeKeys = pgTable("wireline_intake_keys", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id").notNull(),
-  name: text("name").notNull(),
-  keyPrefix: text("key_prefix").notNull(),
-  keyHash: text("key_hash").notNull().unique(),
-  defaultAgentId: text("default_agent_id"),
-  autoDial: boolean("auto_dial").default(false),
-  active: boolean("active").default(true),
-  lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
-  useCount: integer("use_count").default(0),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+export const intakeKeys = pgTable(
+  "wireline_intake_keys",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    name: text("name").notNull(),
+    keyPrefix: text("key_prefix").notNull(),
+    keyHash: text("key_hash").notNull().unique(),
+    defaultAgentId: text("default_agent_id"),
+    autoDial: boolean("auto_dial").default(false),
+    active: boolean("active").default(true),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    useCount: integer("use_count").default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  () => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_intake_keys_user_id ON wireline_intake_keys USING btree (user_id)`,
+  }),
+);
 
 // 4. AUDIT LOG (AI SPEND & COMPLIANCE)
 export const auditLog = pgTable(
@@ -1224,25 +1237,31 @@ export const auditLog = pgTable(
 );
 
 // 4.1 WEBHOOKS
-export const webhooks = pgTable("wireline_webhooks", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id").notNull(),
-  name: text("name").notNull(),
-  url: text("url").notNull(),
-  events: text("events")
-    .array()
-    .notNull()
-    .default(sql`'{}'::text[]`),
-  secret: text("secret"),
-  secretEncrypted: text("secret_encrypted"),
-  secretLastFour: text("secret_last_four"),
-  active: boolean("active").default(true),
-  lastTriggeredAt: timestamp("last_triggered_at", { withTimezone: true }),
-  lastStatus: integer("last_status"),
-  lastError: text("last_error"),
-  deliveryCount: integer("delivery_count").default(0),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+export const webhooks = pgTable(
+  "wireline_webhooks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    name: text("name").notNull(),
+    url: text("url").notNull(),
+    events: text("events")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    secret: text("secret"),
+    secretEncrypted: text("secret_encrypted"),
+    secretLastFour: text("secret_last_four"),
+    active: boolean("active").default(true),
+    lastTriggeredAt: timestamp("last_triggered_at", { withTimezone: true }),
+    lastStatus: integer("last_status"),
+    lastError: text("last_error"),
+    deliveryCount: integer("delivery_count").default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  () => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_webhooks_user_id ON wireline_webhooks USING btree (user_id)`,
+  }),
+);
 
 export const webhookDeliveries = pgTable(
   "wireline_webhook_deliveries",

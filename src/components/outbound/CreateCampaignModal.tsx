@@ -3,7 +3,7 @@
  * CreateCampaignModal — Modal form for creating new outbound campaigns.
  * Extracted from the monolithic OutboundDialer.tsx.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { Plus, Bot, Loader2, AlertTriangle, Clock } from "lucide-react";
 import { authFetch } from "../../lib/api";
 import {
@@ -26,6 +26,13 @@ export default function CreateCampaignModal({
   onClose: () => void;
   onCreated: (c: any) => void;
 }) {
+  const baseId = useId();
+  const nameId = `${baseId}-campaign-name`;
+  const goalId = `${baseId}-campaign-goal`;
+  const windowStartId = `${baseId}-window-start`;
+  const windowEndId = `${baseId}-window-end`;
+  const maxAttemptsId = `${baseId}-max-attempts`;
+
   const [form, setForm] = useState({
     name: "",
     goal: "",
@@ -83,8 +90,11 @@ export default function CreateCampaignModal({
 
         <div className="p-5 space-y-4 overflow-y-auto max-h-[60dvh] scrollbar-hide">
           <div className="space-y-1.5">
-            <label className="app-section-title">Campaign Name</label>
+            <label htmlFor={nameId} className="app-section-title">
+              Campaign Name
+            </label>
             <Input
+              id={nameId}
               placeholder="Q4 Win-Back Drive"
               value={form.name}
               onChange={(e) => set("name", e.target.value)}
@@ -92,8 +102,11 @@ export default function CreateCampaignModal({
             />
           </div>
           <div className="space-y-1.5">
-            <label className="app-section-title">Goal (optional)</label>
+            <label htmlFor={goalId} className="app-section-title">
+              Goal (optional)
+            </label>
             <Input
+              id={goalId}
               placeholder="Re-engage churned users from past 90 days"
               value={form.goal}
               onChange={(e) => set("goal", e.target.value)}
@@ -128,10 +141,14 @@ export default function CreateCampaignModal({
           )}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="app-section-title flex items-center gap-1.5">
+              <label
+                htmlFor={windowStartId}
+                className="app-section-title flex items-center gap-1.5"
+              >
                 <Clock className="w-2.5 h-2.5 text-brand" /> Window start
               </label>
               <Input
+                id={windowStartId}
                 type="time"
                 value={form.call_window_start}
                 onChange={(e) => set("call_window_start", e.target.value)}
@@ -139,8 +156,11 @@ export default function CreateCampaignModal({
               />
             </div>
             <div className="space-y-1.5">
-              <label className="app-section-title">Window end</label>
+              <label htmlFor={windowEndId} className="app-section-title">
+                Window end
+              </label>
               <Input
+                id={windowEndId}
                 type="time"
                 value={form.call_window_end}
                 onChange={(e) => set("call_window_end", e.target.value)}
@@ -149,8 +169,11 @@ export default function CreateCampaignModal({
             </div>
           </div>
           <div className="space-y-1.5">
-            <label className="app-section-title">Max retry attempts</label>
+            <label htmlFor={maxAttemptsId} className="app-section-title">
+              Max retry attempts
+            </label>
             <Input
+              id={maxAttemptsId}
               type="number"
               inputMode="numeric"
               min="1"

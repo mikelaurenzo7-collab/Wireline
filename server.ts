@@ -181,7 +181,8 @@ app.use((req: express.Request, res: express.Response, next: express.NextFunction
   next();
 });
 
-// Security headers
+// Security headers for API + SSR paths. Static shell assets get parallel headers
+// from vercel.json; CSP here uses buildCSP() for dynamic connect-src in dev.
 const CSP_CONNECT_SRCS = buildConnectSrcs(!IS_PROD);
 
 app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -424,8 +425,10 @@ async function startServer() {
   process.on("SIGINT", () => shutdown("SIGINT"));
 }
 
-// Background Worker
-stopWorker = initJobWorker() || undefined;
+// Background worker — long-lived node only; Vercel uses /api/jobs/sweep cron instead.
+if (process.env.VERCEL !== "1") {
+  stopWorker = initJobWorker() || undefined;
+}
 
 // Safety nets
 process.on("unhandledRejection", (reason: unknown) => {

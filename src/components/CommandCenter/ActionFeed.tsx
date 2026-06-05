@@ -150,6 +150,9 @@ export function ActionFeed({
               <motion.div
                 layout
                 key={action.id}
+                role="button"
+                tabIndex={0}
+                aria-expanded={isExpanded}
                 className={clsx(
                   "relative group rounded-md border transition-all duration-300 overflow-hidden",
                   action.status === "pending"
@@ -158,6 +161,12 @@ export function ActionFeed({
                   isExpanded && "border-brand/40 bg-paper/90 ring-1 ring-brand/10 shadow-lg",
                 )}
                 onClick={() => setExpandedId(isExpanded ? null : action.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setExpandedId(isExpanded ? null : action.id);
+                  }
+                }}
               >
                 <div
                   className={clsx(
