@@ -78,7 +78,7 @@ test.describe("Wireline design — authenticated app surfaces", () => {
   });
 
   for (const route of AUTHENTICATED_ROUTES) {
-    test(`${route.path} renders app surface without aurora-ring`, async ({ page }) => {
+    test(`${route.path} renders app surface without aurora-ring", async ({ page }) => {
       await gotoAuthenticated(page, route.path);
       await assertAuthenticatedShell(page);
       await assertNoAuroraRingInApp(page);
@@ -95,7 +95,7 @@ test.describe("Wireline design — authenticated mobile shell", () => {
   });
 
   for (const path of ["/chat", "/phone", "/agents", "/integrations"] as const) {
-    test(`${path} mobile layout stays in brand shell`, async ({ page }) => {
+    test(`${path} mobile layout stays in brand shell", async ({ page }) => {
       await page.goto(path, { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible({
         timeout: 25_000,
@@ -146,6 +146,28 @@ test.describe("Wireline design — Director composer visual regression", () => {
     await expect(composerToolbar).toHaveScreenshot({
       name: "director-composer-toolbar.png",
       threshold: 0.25, // Slightly higher tolerance for interactive elements
+    });
+  });
+});
+
+// === Cycle 6: Visual Regression for Director Empty State ===
+test.describe("Wireline design — Director empty state visual regression", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await authenticatePage(page, baseURL!);
+  });
+
+  test("Director empty state renders beautifully and consistently", async ({ page }) => {
+    await gotoAuthenticated(page, "/director");
+
+    // Wait for empty state to appear (no messages)
+    await expect(page.getByText(/Always-on fleet manager|Mission control/i)).toBeVisible({ timeout: 15000 });
+
+    const emptyHero = page.locator(".wl-director-empty-section, [data-testid*='empty'], .director-empty-hero").first();
+
+    await expect(emptyHero).toHaveScreenshot({
+      name: "director-empty-state.png",
+      threshold: 0.2,
     });
   });
 });
