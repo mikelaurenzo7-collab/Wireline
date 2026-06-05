@@ -20,14 +20,15 @@ import { cn } from "../../lib/utils";
 import {
   findNavItemForPath,
   NAV_GROUPS,
+  NAV_SHORTCUT_HINTS,
   PAGE_TITLES,
-  SIDEBAR_NAV_ITEMS,
   type NavItem,
 } from "../../constants/navigation";
 import { useBranding } from "../../contexts/BrandingContext";
 import { BRAND } from "../../constants/brand-colors";
 import { useTheme } from "../../contexts/ThemeContext";
 import { shouldShowTopBarThemeToggle } from "../../lib/wireline-app-chrome";
+import { WL_CHROME_CLASSES } from "../../lib/wireline-ops-design";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
 interface Props {
@@ -132,7 +133,7 @@ export default function TopBar({
         aria-current={active ? "page" : undefined}
         className={cn(
           "group relative flex items-center gap-1.5 px-2.5 lg:px-3 rounded-md transition-all text-[11px] sm:text-[12px] font-medium shrink-0",
-          isDrawer ? "min-h-11" : "h-8",
+          isDrawer ? "min-h-11 w-full" : "h-8",
           isDrawer
             ? active
               ? "shadow-md shadow-brand/20"
@@ -174,7 +175,7 @@ export default function TopBar({
         {withLabel && (
           <span
             className={cn(
-              "relative z-10 whitespace-nowrap transition-all duration-300",
+              "relative z-10 whitespace-nowrap transition-all duration-300 flex-1 min-w-0 truncate text-left",
               isDrawer ? "inline" : "hidden lg:inline",
               active ? "font-semibold" : "font-normal",
             )}
@@ -182,6 +183,11 @@ export default function TopBar({
           >
             {item.label}
           </span>
+        )}
+        {isDrawer && NAV_SHORTCUT_HINTS[item.path] && !badge && (
+          <kbd className="relative z-10 ml-auto shrink-0 text-[9px] font-mono px-1.5 py-0.5 rounded border border-black/10 bg-black/[0.03] text-muted leading-none">
+            {NAV_SHORTCUT_HINTS[item.path]}
+          </kbd>
         )}
         {badge > 0 && (
           <span
@@ -515,23 +521,54 @@ export default function TopBar({
                 </ShadButton>
               </div>
 
-              <nav className="flex-1 min-h-0 scroll-viewport space-y-0.5">
-                {SIDEBAR_NAV_ITEMS.filter((item) => !item.ownerOnly || user?.is_owner === true).map(
-                  (item) => renderNavItem(item, { variant: "drawer" }),
-                )}
+              <nav className="flex-1 min-h-0 scroll-viewport space-y-1">
+                {NAV_GROUPS.map((group) => {
+                  const visibleItems = group.items.filter(
+                    (item) => !item.ownerOnly || user?.is_owner === true,
+                  );
+                  if (visibleItems.length === 0) return null;
+                  return (
+                    <div key={group.label}>
+                      <p className={WL_CHROME_CLASSES.drawerSection}>{group.label}</p>
+                      <div className="space-y-0.5">
+                        {visibleItems.map((item) => renderNavItem(item, { variant: "drawer" }))}
+                      </div>
+                    </div>
+                  );
+                })}
                 <div
                   className="h-px my-2 mx-2 bg-gradient-to-r from-brand/10 via-brand/5 to-transparent"
                   aria-hidden="true"
                 />
-                {renderNavItem(
-                  {
-                    label: "Settings",
-                    path: "/admin",
-                    icon: Settings,
-                    matches: ["/integrations", "/dnc", "/audit", "/admin"],
-                  },
-                  { variant: "drawer" },
-                )}
+                <p className={WL_CHROME_CLASSES.drawerSection}>Account</p>
+                <div className="space-y-0.5">
+                  {renderNavItem(
+                    {
+                      label: "Help",
+                      path: "/help",
+                      icon: LifeBuoy,
+                    },
+                    { variant: "drawer" },
+                  )}
+                  {user?.is_owner &&
+                    renderNavItem(
+                      {
+                        label: "Founder",
+                        path: "/founder",
+                        icon: Crown,
+                      },
+                      { variant: "drawer" },
+                    )}
+                  {renderNavItem(
+                    {
+                      label: "Settings",
+                      path: "/admin",
+                      icon: Settings,
+                      matches: ["/integrations", "/dnc", "/audit", "/admin"],
+                    },
+                    { variant: "drawer" },
+                  )}
+                </div>
               </nav>
 
               <div className="pt-3 mt-3 aurora-divider space-y-2">

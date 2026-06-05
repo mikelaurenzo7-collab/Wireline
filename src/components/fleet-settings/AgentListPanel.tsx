@@ -12,6 +12,7 @@ import type { RoleValue } from "../fleet/helpers";
 import { EmptyState } from "../ui/EmptyState";
 import ClientRouteLoading from "../layout/ClientRouteLoading";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import { WL_FLEET_CLASSES } from "../../lib/wireline-ops-design";
 
 interface Props {
   agents: any[];
@@ -89,25 +90,14 @@ export default function AgentListPanel({
                 className={cn(
                   "w-full flex items-center gap-1 transition-all rounded-md border group overflow-hidden",
                   selectedAgent?.id === agent.id
-                    ? "border-brand/35"
-                    : "wl-panel hover:border-brand/30",
+                    ? cn(
+                        WL_FLEET_CLASSES.agentRow,
+                        WL_FLEET_CLASSES.agentRowActive,
+                        "border-brand/35",
+                      )
+                    : cn(WL_FLEET_CLASSES.agentRow, "wl-panel hover:border-brand/30"),
                 )}
-                style={
-                  selectedAgent?.id === agent.id
-                    ? {
-                        background:
-                          "linear-gradient(135deg, rgba(107, 43, 153 ,0.08), rgba(107, 43, 153 ,0.05))",
-                      }
-                    : undefined
-                }
               >
-                {selectedAgent?.id === agent.id && (
-                  <div
-                    className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full"
-                    style={{ background: "linear-gradient(to bottom, #8B3FD6, #8B3FD6)" }}
-                  />
-                )}
-
                 <ShadButton
                   type="button"
                   variant="ghost"
@@ -120,10 +110,10 @@ export default function AgentListPanel({
                 >
                   <div
                     className={cn(
-                      "w-9 h-9 rounded-md flex items-center justify-center shrink-0 transition-all border",
-                      selectedAgent?.id === agent.id
-                        ? "border-brand/35 bg-brand/12 text-brand"
-                        : "border-black/8 dark:border-white/10 bg-paper/70 dark:bg-white/3 text-ink/70 group-hover:text-ink group-hover:bg-brand/5 dark:group-hover:bg-white/8",
+                      WL_FLEET_CLASSES.agentAvatar,
+                      selectedAgent?.id === agent.id && WL_FLEET_CLASSES.agentAvatarActive,
+                      selectedAgent?.id !== agent.id &&
+                        "group-hover:border-brand/25 group-hover:bg-brand/5 group-hover:text-ink",
                     )}
                   >
                     {agent.channel === "email" ? (

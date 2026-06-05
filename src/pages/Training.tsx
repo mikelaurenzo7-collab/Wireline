@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   GraduationCap,
   Bot,
-  ChevronRight,
+  Mail,
   Database,
   Mic,
   BookOpen,
@@ -18,8 +18,10 @@ import { useAgents } from "../contexts/AgentsContext";
 import ClientRouteViewport from "../components/layout/ClientRouteViewport";
 import ClientRouteLoading from "../components/layout/ClientRouteLoading";
 import ClientSubTabs from "../components/layout/ClientSubTabs";
+import ClientToolbar from "../components/layout/ClientToolbar";
 import { EmptyState } from "../components/ui/EmptyState";
-import { OPS_CHANNEL_EMPTY } from "../lib/wireline-ops-design";
+import { RoleBadge } from "../components/fleet/helpers";
+import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR, WL_OPS_CLASSES } from "../lib/wireline-ops-design";
 import { cn } from "../lib/utils";
 import { ShadButton } from "../components/ui/shadcn/ShadButton";
 
@@ -57,7 +59,10 @@ export default function Training() {
   if (loading && agents.length === 0) {
     return (
       <ClientRouteViewport>
-        <ClientRouteLoading icon={<GraduationCap className="w-7 h-7" />} label="Loading training" />
+        <ClientRouteLoading
+          icon={<GraduationCap className="w-7 h-7" />}
+          label={OPS_CHANNEL_TOOLBAR.training.loading}
+        />
       </ClientRouteViewport>
     );
   }
@@ -93,100 +98,89 @@ export default function Training() {
     );
   }
 
+  const agentRow = (agent: (typeof agents)[number], compact?: boolean) => {
+    const selected = agent.id === selectedAgentId;
+    return (
+      <ShadButton
+        key={agent.id}
+        type="button"
+        disableAnimations
+        variant="ghost"
+        onClick={() => selectAgent(agent.id)}
+        className={cn(
+          "touch-press w-full h-auto justify-start text-left gap-2.5 group relative overflow-hidden rounded-md border",
+          compact ? "shrink-0 min-w-[140px] px-3 py-2" : "px-3 py-3",
+          selected ? "border-brand/35 bg-brand/[0.06]" : "wl-panel hover:border-brand/30",
+        )}
+      >
+        <div
+          className={cn(
+            "rounded-md flex items-center justify-center shrink-0 transition-all border",
+            compact ? "w-8 h-8" : "w-9 h-9",
+            selected
+              ? "border-brand/35 bg-brand/12 text-brand"
+              : "border-black/8 bg-paper/70 text-ink/70 group-hover:bg-brand/5",
+          )}
+        >
+          {agent.channel === "email" ? (
+            <Mail className={compact ? "w-3.5 h-3.5" : "w-4 h-4"} />
+          ) : (
+            <Bot className={compact ? "w-3.5 h-3.5" : "w-4 h-4"} />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p
+            className={cn(
+              "truncate leading-tight",
+              compact ? "text-[12px] font-medium" : "font-display italic text-base text-ink",
+              selected && !compact && "text-ink",
+            )}
+          >
+            {agent.name}
+          </p>
+          {!compact && agent.role && (
+            <div className="mt-1">
+              <RoleBadge role={agent.role} size="xs" />
+            </div>
+          )}
+        </div>
+      </ShadButton>
+    );
+  };
+
   return (
     <ClientRouteViewport>
+      <ClientToolbar
+        left={
+          <span className="app-toolbar-stat">
+            {OPS_CHANNEL_TOOLBAR.training.stat(agents.length)}
+            {selectedAgent ? ` · ${selectedAgent.name}` : ""}
+          </span>
+        }
+      />
+
       <div className="flex flex-col lg:flex-row gap-3 flex-1 min-h-0">
-        <aside className="shrink-0 lg:w-[260px] flex flex-col lg:min-h-0 lg:self-stretch">
-          {/* Mobile: horizontal orbit strip */}
-          <div className="lg:hidden flex items-center gap-2 overflow-x-auto scrollbar-hide scroll-viewport pb-2 stagger-children">
-            {agents.map((agent) => (
-              <ShadButton
-                key={agent.id}
-                type="button"
-                disableAnimations
-                variant={agent.id === selectedAgentId ? "secondary" : "ghost"}
-                onClick={() => selectAgent(agent.id)}
-                className={cn(
-                  "touch-press shrink-0 h-auto gap-2 px-3 py-2 text-[12px] min-h-[40px]",
-                  agent.id === selectedAgentId
-                    ? "wl-panel-elevated font-semibold text-ink"
-                    : "text-muted hover:bg-white/40 dark:hover:bg-white/[0.04]",
-                )}
-              >
-                <span className="wl-orbit" data-active={agent.id === selectedAgentId}>
-                  <span
-                    className={cn(
-                      "w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors",
-                      agent.id === selectedAgentId
-                        ? "bg-gradient-to-br from-brand to-brand-deep text-on-brand"
-                        : "bg-brand/8 text-brand",
-                    )}
-                  >
-                    <Bot className="w-3.5 h-3.5" />
-                  </span>
-                </span>
-                <span className="truncate max-w-[100px]">{agent.name}</span>
-              </ShadButton>
-            ))}
+        <aside className="shrink-0 lg:w-[280px] flex flex-col lg:min-h-0 lg:self-stretch">
+          {/* Mobile: horizontal agent strip — fleet chip rhythm */}
+          <div className="lg:hidden flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2">
+            {agents.map((agent) => agentRow(agent, true))}
           </div>
 
-          {/* Desktop: vertical agent list with specular depth */}
-          <div className="hidden lg:flex flex-1 min-h-0 flex-col gap-1.5 scroll-viewport wl-panel p-3 relative">
-            <p className="px-2 py-1.5 mb-1 wl-label text-brand/70">Select Agent</p>
-            <div className="space-y-1 stagger-children">
-              {agents.map((agent) => (
-                <ShadButton
-                  key={agent.id}
-                  type="button"
-                  disableAnimations
-                  variant={agent.id === selectedAgentId ? "secondary" : "ghost"}
-                  onClick={() => selectAgent(agent.id)}
-                  className={cn(
-                    "touch-press w-full h-auto justify-start text-left gap-2.5 px-3 py-2.5 group relative overflow-hidden",
-                    agent.id === selectedAgentId
-                      ? "wl-panel-elevated text-ink"
-                      : "hover:bg-brand/[0.03] text-muted",
-                  )}
-                >
-                  <span className="wl-orbit" data-active={agent.id === selectedAgentId}>
-                    <span
-                      className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors",
-                        agent.id === selectedAgentId
-                          ? "bg-gradient-to-br from-brand to-brand-deep text-on-brand"
-                          : "bg-brand/8 text-brand group-hover:bg-brand/12",
-                      )}
-                    >
-                      <Bot className="w-4 h-4" />
-                    </span>
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className={cn(
-                        "text-[12px] truncate leading-tight tracking-[-0.01em]",
-                        agent.id === selectedAgentId
-                          ? "font-semibold text-ink"
-                          : "font-medium text-ink/80",
-                      )}
-                    >
-                      {agent.name}
-                    </p>
-                    {agent.role && (
-                      <p className="text-[10px] text-ink/40 truncate capitalize mt-0.5">
-                        {agent.role.replace(/_/g, " ")}
-                      </p>
-                    )}
-                  </div>
-                  {agent.id === selectedAgentId && (
-                    <ChevronRight className="w-3.5 h-3.5 text-brand/55 shrink-0" />
-                  )}
-                </ShadButton>
-              ))}
+          {/* Desktop: vertical fleet-style list */}
+          <div className={cn(WL_OPS_CLASSES.railCard, "hidden lg:flex flex-1 min-h-0 flex-col")}>
+            <div className="flex items-center justify-between mb-3 shrink-0">
+              <p className="wl-label flex items-center gap-2">
+                <GraduationCap className="w-3.5 h-3.5 text-brand" />
+                Agents
+              </p>
+              <span className="text-[10px] font-mono text-muted tabular-nums">{agents.length}</span>
+            </div>
+            <div className="flex-1 min-h-0 scroll-viewport space-y-1.5 stagger-children">
+              {agents.map((agent) => agentRow(agent))}
             </div>
           </div>
         </aside>
 
-        {/* Main content — elevated workspace panel */}
         <main className="flex-1 min-w-0 min-h-0 flex flex-col wl-panel-elevated overflow-hidden relative">
           <header className="shrink-0 border-b border-brand/6 bg-white/40 dark:bg-black/20 backdrop-blur-sm px-3 sm:px-4 pt-3 pb-2 lg:pt-2">
             <div className="lg:hidden flex items-center gap-2 mb-2 min-w-0">

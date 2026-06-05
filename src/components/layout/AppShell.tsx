@@ -48,6 +48,7 @@ const ROUTE_SUBTITLES: Record<string, string> = {
   "/dnc": "Do-not-call list & TCPA compliance",
   "/audit": "Security events & compliance ledger",
   "/chat": "Director wingman — plan, coach, and approve from one thread",
+  "/help": "Team lines, demos & quick paths into the product",
 };
 
 function getPageContext(

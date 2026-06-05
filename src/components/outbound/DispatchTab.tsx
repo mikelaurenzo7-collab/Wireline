@@ -27,7 +27,9 @@ import { cn } from "../../lib/utils";
 import { Link } from "react-router-dom";
 import { ClaudeRecipeButton } from "../ClaudeRecipes";
 import { Panel } from "../PageShell";
-import EmptyState from "../EmptyState";
+import { EmptyState } from "../ui/EmptyState";
+import { BRAND } from "../../constants/brand-colors";
+import { ChannelListColHeader } from "../layout/ChannelInbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
 import { Checkbox } from "../ui/shadcn/Checkbox";
 import { Input } from "../ui/shadcn/Input";
@@ -504,7 +506,7 @@ export default function DispatchTab({
                     icon={UploadCloud}
                     title="Queue is idle"
                     description="Upload a CSV of contacts and your agent will dial through them with full call notes saved to the CRM."
-                    accent="#8B3FD6"
+                    accent={BRAND.purple}
                     actions={[
                       {
                         label: "Upload CSV",
@@ -515,94 +517,104 @@ export default function DispatchTab({
                     ]}
                   />
                 ) : (
-                  <div className="divide-y divide-white/6">
-                    {leads.map((lead, idx) => (
-                      <motion.div
-                        layout
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        key={lead.id || idx}
-                        className={cn(
-                          "px-4 py-3 flex flex-col sm:flex-row gap-3 transition-colors items-start sm:items-center",
-                          lead.status === "Queued" ? "bg-brand/5" : "hover:bg-white/3",
-                        )}
-                      >
-                        <div className="flex-1 min-w-0 space-y-1.5">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="font-display italic text-lg text-ink leading-none truncate">
-                              {lead.customer_name || "Unknown subject"}
-                            </h3>
-                            {lead.source === "inbound" && (
-                              <span className="px-1.5 py-0.5 rounded-full bg-brand-2/15 border border-brand-2/40 text-brand-2 text-[9px] uppercase tracking-[0.25em] leading-none">
-                                Inbound
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span
-                              className={cn(
-                                "px-1.5 py-0.5 rounded-full border text-[9px] uppercase tracking-[0.25em] leading-none inline-flex items-center gap-1",
-                                lead.status === "Completed"
-                                  ? "bg-brand/10 border-brand/30 text-brand"
-                                  : lead.status === "Queued"
-                                    ? "bg-brand/15 border-brand/40 text-brand"
-                                    : "bg-rose-500/10 border-rose-500/30 text-rose-500",
+                  <>
+                    <ChannelListColHeader
+                      columns={[
+                        { label: "Lead" },
+                        { label: "Number" },
+                        { label: "Status", className: "text-right" },
+                      ]}
+                      className="grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_5rem]"
+                    />
+                    <div className="divide-y divide-white/6">
+                      {leads.map((lead, idx) => (
+                        <motion.div
+                          layout
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          key={lead.id || idx}
+                          className={cn(
+                            "px-4 py-3 flex flex-col sm:flex-row gap-3 transition-colors items-start sm:items-center",
+                            lead.status === "Queued" ? "bg-brand/5" : "hover:bg-white/3",
+                          )}
+                        >
+                          <div className="flex-1 min-w-0 space-y-1.5">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className="font-display italic text-lg text-ink leading-none truncate">
+                                {lead.customer_name || "Unknown subject"}
+                              </h3>
+                              {lead.source === "inbound" && (
+                                <span className="px-1.5 py-0.5 rounded-full bg-brand-2/15 border border-brand-2/40 text-brand-2 text-[9px] uppercase tracking-[0.25em] leading-none">
+                                  Inbound
+                                </span>
                               )}
-                            >
-                              <span className="w-1 h-1 rounded-full bg-current" /> {lead.status}
-                            </span>
-                            <Link
-                              to={`/contact/${encodeURIComponent(lead.phone_number || lead.customer_number || "unknown")}`}
-                              className="px-2 py-0.5 rounded-full wl-panel border border-brand/30 hover:bg-brand/10 hover:border-brand/60 text-[10px] text-brand font-mono tabular-nums"
-                            >
-                              {lead.phone_number || lead.customer_number}
-                            </Link>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span
+                                className={cn(
+                                  "px-1.5 py-0.5 rounded-full border text-[9px] uppercase tracking-[0.25em] leading-none inline-flex items-center gap-1",
+                                  lead.status === "Completed"
+                                    ? "bg-brand/10 border-brand/30 text-brand"
+                                    : lead.status === "Queued"
+                                      ? "bg-brand/15 border-brand/40 text-brand"
+                                      : "bg-rose-500/10 border-rose-500/30 text-rose-500",
+                                )}
+                              >
+                                <span className="w-1 h-1 rounded-full bg-current" /> {lead.status}
+                              </span>
+                              <Link
+                                to={`/contact/${encodeURIComponent(lead.phone_number || lead.customer_number || "unknown")}`}
+                                className="px-2 py-0.5 rounded-full wl-panel border border-brand/30 hover:bg-brand/10 hover:border-brand/60 text-[10px] text-brand font-mono tabular-nums"
+                              >
+                                {lead.phone_number || lead.customer_number}
+                              </Link>
+                            </div>
                           </div>
-                        </div>
 
-                        <div className="shrink-0 flex items-center gap-1.5">
-                          <ClaudeRecipeButton
-                            recipe="enrich-lead"
-                            variant="ghost"
-                            initial={{
-                              customerName: lead.customer_name,
-                              customerNumber: lead.phone_number || lead.customer_number,
-                              context: lead.context,
-                            }}
-                            label="Enrich"
-                          />
-                          <ClaudeRecipeButton
-                            recipe="brief"
-                            variant="ghost"
-                            agentId={selectedAgentId}
-                            initial={{
-                              customerName: lead.customer_name,
-                              customerNumber: lead.phone_number,
-                              reasonForCall: lead.context,
-                            }}
-                            label="Brief"
-                          />
-                          <ShadButton
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            disableAnimations
-                            onClick={() => deleteLead(lead.id)}
-                            disabled={isDeletingLead === lead.id}
-                            aria-label="Remove lead"
-                            title="Remove lead"
-                            className="w-7 h-7 rounded-full text-muted hover:text-rose-500 hover:border-rose-500/30"
-                          >
-                            {isDeletingLead === lead.id ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <Trash2 className="w-3 h-3" />
-                            )}
-                          </ShadButton>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
+                          <div className="shrink-0 flex items-center gap-1.5">
+                            <ClaudeRecipeButton
+                              recipe="enrich-lead"
+                              variant="ghost"
+                              initial={{
+                                customerName: lead.customer_name,
+                                customerNumber: lead.phone_number || lead.customer_number,
+                                context: lead.context,
+                              }}
+                              label="Enrich"
+                            />
+                            <ClaudeRecipeButton
+                              recipe="brief"
+                              variant="ghost"
+                              agentId={selectedAgentId}
+                              initial={{
+                                customerName: lead.customer_name,
+                                customerNumber: lead.phone_number,
+                                reasonForCall: lead.context,
+                              }}
+                              label="Brief"
+                            />
+                            <ShadButton
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              disableAnimations
+                              onClick={() => deleteLead(lead.id)}
+                              disabled={isDeletingLead === lead.id}
+                              aria-label="Remove lead"
+                              title="Remove lead"
+                              className="w-7 h-7 rounded-full text-muted hover:text-rose-500 hover:border-rose-500/30"
+                            >
+                              {isDeletingLead === lead.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-3 h-3" />
+                              )}
+                            </ShadButton>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </>
                 )}
               </AnimatePresence>
 

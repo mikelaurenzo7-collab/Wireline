@@ -19,9 +19,16 @@ import { authFetch } from "../lib/api";
 import { formatDate, formatTime } from "../lib/safe-date";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import PageShell, { Panel } from "./PageShell";
+import ClientToolbar from "./layout/ClientToolbar";
+import ClientRouteLoading from "./layout/ClientRouteLoading";
+import {
+  ChannelInboxGrid,
+  ChannelInboxListPane,
+  ChannelInboxDetailPane,
+} from "./layout/ChannelInbox";
 import { PanelSkeleton } from "./Skeleton";
 import { EmptyState } from "./ui/EmptyState";
-import { OPS_CHANNEL_EMPTY } from "../lib/wireline-ops-design";
+import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR } from "../lib/wireline-ops-design";
 import { useToast } from "../contexts/ToastContext";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
@@ -268,400 +275,410 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
       disableAnimations
       onClick={syncInbox}
       disabled={syncing}
-      className="rounded-full text-[11px] uppercase tracking-[0.22em]"
+      className="h-9 rounded-full text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40"
     >
       {syncing ? (
         <Loader2 className="w-3 h-3 animate-spin text-brand" />
       ) : (
         <RotateCw className="w-3 h-3 text-brand" />
       )}
-      Sync inbox
+      {OPS_CHANNEL_TOOLBAR.email.sync}
     </ShadButton>
   );
 
-  return (
-    <div className="h-full flex flex-col min-h-0">
-      <div className="flex-1 min-h-0">
-        <PageShell
-          title={embedded ? "" : "Email"}
-          eyebrow={embedded ? undefined : "Communications · Email"}
-          subtitle={
-            embedded
-              ? undefined
-              : `${threads.length} thread${threads.length === 1 ? "" : "s"} in your inbox.`
-          }
+  const showInitialLoad = embedded && loading && threads.length === 0;
+
+  const inboxBody = (
+    <div className="flex-1 min-h-0">
+      <PageShell
+        title={embedded ? "" : "Email"}
+        eyebrow={embedded ? undefined : "Communications · Email"}
+        subtitle={
+          embedded
+            ? undefined
+            : `${threads.length} thread${threads.length === 1 ? "" : "s"} in your inbox.`
+        }
+      >
+        <Panel
+          title="Inbox"
+          hint="THREADS & REPLIES"
+          icon={Inbox}
+          flush
+          className="h-full"
+          actions={embedded ? undefined : syncAction}
         >
-          <Panel
-            title="Inbox"
-            hint="THREADS & REPLIES"
-            icon={Inbox}
-            flush
-            className="h-full"
-            actions={syncAction}
-          >
-            <div className="h-full min-h-[360px] grid grid-cols-1 lg:grid-cols-[minmax(300px,360px)_1fr] min-h-0">
-              {/* Thread list */}
-              <div
-                className={cn(
-                  "min-h-0 flex flex-col border-b lg:border-b-0 lg:border-r border-black/8",
-                  selectedThread && "hidden lg:flex",
-                )}
-              >
-                <div className="shrink-0 px-3 py-2 border-b border-black/6 flex items-center justify-between">
-                  <span className="text-eyebrow opacity-80">All conversations</span>
-                  <span className="text-[9px] uppercase tracking-[0.28em] text-muted tabular-nums">
-                    {threads.length}
-                  </span>
-                </div>
-                <div className="flex-1 min-h-0 scroll-viewport panel-scroll">
-                  <AnimatePresence mode="sync">
-                    {loading ? (
-                      <PanelSkeleton rows={6} />
-                    ) : threads.length === 0 ? (
-                      <EmptyState
-                        icon={Mail}
-                        eyebrow={OPS_CHANNEL_EMPTY.email.eyebrow}
-                        title={OPS_CHANNEL_EMPTY.email.title}
-                        description={OPS_CHANNEL_EMPTY.email.description}
-                        actions={[...OPS_CHANNEL_EMPTY.email.actions]}
-                        className="h-full py-10"
-                      />
-                    ) : (
-                      <div className="divide-y divide-white/6">
-                        {threads.map((thread) => {
-                          const score = thread.lead_score || 0;
-                          const active = selectedThread?.id === thread.id;
-                          const scoreTone =
-                            score >= 80
-                              ? "bg-rose-500/12 text-rose-500 border-rose-500/25"
-                              : score >= 50
-                                ? "bg-brand/12 text-brand border-brand/25"
-                                : "bg-black/4 text-ink/40 border-black/8";
-                          return (
-                            <motion.button
-                              layout
-                              initial={{ opacity: 0, y: 4 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              key={thread.id}
-                              onClick={() => setSelectedThread(thread)}
-                              className={cn(
-                                "group w-full px-4 py-3.5 text-left transition-all flex gap-3 items-start relative active:scale-[0.99] active:bg-white/5 duration-100",
-                                active ? "bg-brand/6" : "hover:bg-white/3",
-                              )}
-                            >
-                              {/* Active bar */}
-                              {active && (
-                                <div
-                                  className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full bg-brand"
-                                  aria-hidden="true"
-                                />
-                              )}
+          <ChannelInboxGrid>
+            <ChannelInboxListPane
+              label="All conversations"
+              count={threads.length}
+              detailOpen={!!selectedThread}
+            >
+              <AnimatePresence mode="sync">
+                {loading ? (
+                  <PanelSkeleton rows={6} />
+                ) : threads.length === 0 ? (
+                  <EmptyState
+                    icon={Mail}
+                    eyebrow={OPS_CHANNEL_EMPTY.email.eyebrow}
+                    title={OPS_CHANNEL_EMPTY.email.title}
+                    description={OPS_CHANNEL_EMPTY.email.description}
+                    actions={[...OPS_CHANNEL_EMPTY.email.actions]}
+                    className="h-full py-10"
+                  />
+                ) : (
+                  <div className="divide-y divide-white/6">
+                    {threads.map((thread) => {
+                      const score = thread.lead_score || 0;
+                      const active = selectedThread?.id === thread.id;
+                      const scoreTone =
+                        score >= 80
+                          ? "bg-rose-500/12 text-rose-500 border-rose-500/25"
+                          : score >= 50
+                            ? "bg-brand/12 text-brand border-brand/25"
+                            : "bg-black/4 text-ink/40 border-black/8";
+                      return (
+                        <motion.button
+                          layout
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          key={thread.id}
+                          onClick={() => setSelectedThread(thread)}
+                          className={cn(
+                            "group w-full px-4 py-3.5 text-left transition-all flex gap-3 items-start relative active:scale-[0.99] active:bg-white/5 duration-100",
+                            active ? "bg-brand/6" : "hover:bg-white/3",
+                          )}
+                        >
+                          {/* Active bar */}
+                          {active && (
+                            <div
+                              className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full bg-brand"
+                              aria-hidden="true"
+                            />
+                          )}
 
-                              {/* Avatar */}
-                              <div
-                                className={cn(
-                                  "w-9 h-9 rounded-md flex items-center justify-center font-display italic text-base shrink-0 border transition-all",
-                                  active
-                                    ? "border-brand/30 bg-brand/10 text-brand"
-                                    : "border-white/10 bg-white/4 text-ink/70 group-hover:text-ink",
-                                )}
-                              >
-                                {thread.customer_email?.[0]?.toUpperCase() || "?"}
-                              </div>
-
-                              {/* Content */}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-2 mb-0.5">
-                                  <span className="text-[9px] uppercase tracking-[0.24em] text-ink/40 truncate">
-                                    {thread.customer_email}
-                                  </span>
-                                  <span className="text-[8px] tabular-nums text-ink/40 shrink-0">
-                                    {formatDate(thread.last_message_at)}
-                                  </span>
-                                </div>
-                                <h4 className="font-display italic text-sm text-ink leading-tight truncate mb-1">
-                                  {thread.subject || "(no subject)"}
-                                </h4>
-                                <div className="flex items-center gap-2">
-                                  <p className="text-[10px] text-ink/40 truncate flex-1">
-                                    {thread.summary || "Pending analysis…"}
-                                  </p>
-                                  <span
-                                    className={cn(
-                                      "shrink-0 px-1.5 py-0.5 rounded-full border text-[8px] font-mono",
-                                      scoreTone,
-                                    )}
-                                  >
-                                    {score}%
-                                  </span>
-                                </div>
-                              </div>
-                            </motion.button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-
-              {/* Thread detail */}
-              <div
-                className={cn(
-                  "min-h-0 flex flex-col bg-white/[0.02]",
-                  !selectedThread && "hidden lg:flex",
-                )}
-              >
-                <AnimatePresence mode="wait">
-                  {selectedThread ? (
-                    <motion.div
-                      key={selectedThread.id}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      className="h-full flex flex-col min-h-0"
-                    >
-                      {/* Subject header */}
-                      <div className="shrink-0 px-3 sm:px-4 py-3 border-b border-white/8 flex items-center justify-between gap-2 sm:gap-3">
-                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                          <ShadButton
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            disableAnimations
-                            className="lg:hidden min-h-11 w-11 rounded-md shrink-0"
-                            onClick={() => setSelectedThread(null)}
-                            aria-label="Back to thread list"
-                          >
-                            <ChevronRight className="w-4 h-4 rotate-180" />
-                          </ShadButton>
+                          {/* Avatar */}
                           <div
                             className={cn(
-                              "shrink-0 w-12 h-12 rounded-md wl-panel border flex flex-col items-center justify-center",
-                              (selectedThread.lead_score || 0) >= 80
-                                ? "border-rose-500/40 text-rose-500"
-                                : (selectedThread.lead_score || 0) >= 50
-                                  ? "border-brand/40 text-brand"
-                                  : "border-white/10 text-muted",
+                              "w-9 h-9 rounded-md flex items-center justify-center font-display italic text-base shrink-0 border transition-all",
+                              active
+                                ? "border-brand/30 bg-brand/10 text-brand"
+                                : "border-white/10 bg-white/4 text-ink/70 group-hover:text-ink",
                             )}
                           >
-                            <span className="text-[7px] uppercase tracking-[0.3em] leading-none mb-0.5">
-                              Intent
-                            </span>
-                            <span className="font-display italic text-xl leading-none tabular-nums">
-                              {selectedThread.lead_score || 0}
-                            </span>
+                            {thread.customer_email?.[0]?.toUpperCase() || "?"}
                           </div>
-                          <div className="min-w-0">
-                            <h2 className="font-display italic text-xl md:text-2xl text-ink leading-tight truncate">
-                              {selectedThread.subject || "(no subject)"}
-                            </h2>
-                            <div className="text-[10px] uppercase tracking-[0.3em] text-muted/80 mt-1 flex items-center gap-1.5 truncate">
-                              <User className="w-3 h-3 text-brand shrink-0" />
-                              <span className="truncate">{selectedThread.customer_email}</span>
+
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2 mb-0.5">
+                              <span className="text-[9px] uppercase tracking-[0.24em] text-ink/40 truncate">
+                                {thread.customer_email}
+                              </span>
+                              <span className="text-[8px] tabular-nums text-ink/40 shrink-0">
+                                {formatDate(thread.last_message_at)}
+                              </span>
+                            </div>
+                            <h4 className="font-display italic text-sm text-ink leading-tight truncate mb-1">
+                              {thread.subject || "(no subject)"}
+                            </h4>
+                            <div className="flex items-center gap-2">
+                              <p className="text-[10px] text-ink/40 truncate flex-1">
+                                {thread.summary || "Pending analysis…"}
+                              </p>
+                              <span
+                                className={cn(
+                                  "shrink-0 px-1.5 py-0.5 rounded-full border text-[8px] font-mono",
+                                  scoreTone,
+                                )}
+                              >
+                                {score}%
+                              </span>
                             </div>
                           </div>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                )}
+              </AnimatePresence>
+            </ChannelInboxListPane>
+
+            <ChannelInboxDetailPane detailOpen={!!selectedThread}>
+              <AnimatePresence mode="wait">
+                {selectedThread ? (
+                  <motion.div
+                    key={selectedThread.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="h-full flex flex-col min-h-0"
+                  >
+                    {/* Subject header */}
+                    <div className="shrink-0 px-3 sm:px-4 py-3 border-b border-white/8 flex items-center justify-between gap-2 sm:gap-3">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        <ShadButton
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disableAnimations
+                          className="lg:hidden min-h-11 w-11 rounded-md shrink-0"
+                          onClick={() => setSelectedThread(null)}
+                          aria-label="Back to thread list"
+                        >
+                          <ChevronRight className="w-4 h-4 rotate-180" />
+                        </ShadButton>
+                        <div
+                          className={cn(
+                            "shrink-0 w-12 h-12 rounded-md wl-panel border flex flex-col items-center justify-center",
+                            (selectedThread.lead_score || 0) >= 80
+                              ? "border-rose-500/40 text-rose-500"
+                              : (selectedThread.lead_score || 0) >= 50
+                                ? "border-brand/40 text-brand"
+                                : "border-white/10 text-muted",
+                          )}
+                        >
+                          <span className="text-[7px] uppercase tracking-[0.3em] leading-none mb-0.5">
+                            Intent
+                          </span>
+                          <span className="font-display italic text-xl leading-none tabular-nums">
+                            {selectedThread.lead_score || 0}
+                          </span>
                         </div>
-                        <div className="shrink-0 flex items-center gap-1.5">
-                          <ClaudeRecipeButton
-                            recipe="summarize-thread"
-                            threadId={selectedThread.id}
-                            label="Summarize"
-                          />
+                        <div className="min-w-0">
+                          <h2 className="font-display italic text-xl md:text-2xl text-ink leading-tight truncate">
+                            {selectedThread.subject || "(no subject)"}
+                          </h2>
+                          <div className="text-[10px] uppercase tracking-[0.3em] text-muted/80 mt-1 flex items-center gap-1.5 truncate">
+                            <User className="w-3 h-3 text-brand shrink-0" />
+                            <span className="truncate">{selectedThread.customer_email}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="shrink-0 flex items-center gap-1.5">
+                        <ClaudeRecipeButton
+                          recipe="summarize-thread"
+                          threadId={selectedThread.id}
+                          label="Summarize"
+                        />
+                        <ShadButton
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disableAnimations
+                          onClick={() => handlePhoneHandoff(selectedThread)}
+                          className="rounded-full text-[10px] uppercase tracking-[0.25em]"
+                          title="Route this thread to a voice fleet agent"
+                        >
+                          <Phone className="w-3 h-3 text-brand" />
+                          Voice handoff
+                        </ShadButton>
+                      </div>
+                    </div>
+
+                    {/* Messages */}
+                    <div className="flex-1 scroll-viewport scrollbar-hide p-4 space-y-3">
+                      <AnimatePresence>
+                        {messages.map((msg, idx) => (
+                          <motion.div
+                            initial={{ opacity: 0, x: msg.role === "ai" ? 8 : -8 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            key={msg.id || idx}
+                            className={cn(
+                              "flex flex-col max-w-[88%]",
+                              msg.role === "ai" ? "ml-auto items-end" : "items-start",
+                            )}
+                          >
+                            <div
+                              className={cn(
+                                "rounded-md border p-4 leading-relaxed",
+                                msg.role === "ai"
+                                  ? "wl-panel border-brand/30 text-ink"
+                                  : "bg-white/5 border-white/10 text-ink",
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "text-[9px] uppercase tracking-[0.3em] mb-2 flex items-center gap-1.5",
+                                  msg.role === "ai" ? "text-brand" : "text-ink/40",
+                                )}
+                              >
+                                {msg.role === "ai" ? (
+                                  <>
+                                    <span className="w-1.5 h-1.5 bg-brand rounded-full animate-pulse" />{" "}
+                                    Agent reply
+                                  </>
+                                ) : (
+                                  <>
+                                    <User className="w-2.5 h-2.5" /> Inbound
+                                  </>
+                                )}
+                              </div>
+                              <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                                {msg.content}
+                              </p>
+                            </div>
+                            <span className="text-[9px] uppercase tracking-[0.3em] text-ink/40 mt-1.5 tabular-nums">
+                              {formatTime(msg.created_at)}
+                            </span>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Reply composer */}
+                    <div className="shrink-0 px-4 py-3 border-t border-black/7 space-y-3">
+                      {/* Quick reply chips */}
+                      {(quickReplies.length > 0 || isLoadingQuickReplies) && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Zap className="w-3 h-3 text-brand" />
+                            <span className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
+                              Quick replies
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {isLoadingQuickReplies
+                              ? Array.from({ length: 3 }).map((_, i) => (
+                                  <div
+                                    key={i}
+                                    className="h-7 w-28 rounded-full bg-black/5 animate-pulse"
+                                  />
+                                ))
+                              : quickReplies.map((r, i) => (
+                                  <ShadButton
+                                    key={i}
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    disableAnimations
+                                    onClick={() => setReplyText(r.body)}
+                                    title={r.body}
+                                    className="rounded-full text-[10px] tracking-wide"
+                                  >
+                                    <span>{r.label}</span>
+                                  </ShadButton>
+                                ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="rounded-md wl-panel focus-within:border-brand/35 transition-colors overflow-hidden">
+                        <div className="px-3 pt-2.5 pb-1 flex items-center gap-2 text-ink/40">
+                          <Terminal className="w-3 h-3" />
+                          <span className="text-[9px] uppercase tracking-[0.35em]">
+                            Compose reply
+                          </span>
+                        </div>
+                        <textarea
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          placeholder="Type a reply or ask the agent to draft one…"
+                          className="w-full px-3 pb-3 min-h-[100px] outline-none text-ink text-sm leading-relaxed resize-none bg-transparent placeholder:text-ink/40"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-[10px] text-ink/40 flex-1 leading-relaxed hidden md:block">
+                          Drafts use trained heuristics from this agent's persona and prior thread
+                          context.
+                        </p>
+                        <div className="flex items-center gap-2">
                           <ShadButton
                             type="button"
                             variant="outline"
                             size="sm"
                             disableAnimations
-                            onClick={() => handlePhoneHandoff(selectedThread)}
+                            onClick={fetchQuickReplies}
+                            disabled={isLoadingQuickReplies}
                             className="rounded-full text-[10px] uppercase tracking-[0.25em]"
-                            title="Route this thread to a voice fleet agent"
+                            title="Generate 3 quick-reply options"
                           >
-                            <Phone className="w-3 h-3 text-brand" />
-                            Voice handoff
+                            {isLoadingQuickReplies ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Zap className="w-3 h-3 text-brand" />
+                            )}
+                            Quick
+                          </ShadButton>
+                          <ShadButton
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disableAnimations
+                            onClick={handleDraftAI}
+                            disabled={isDrafting}
+                            className="rounded-full text-[10px] uppercase tracking-[0.25em]"
+                          >
+                            {isDrafting ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Bot className="w-3 h-3 text-brand" />
+                            )}
+                            AI draft
+                          </ShadButton>
+                          <ShadButton
+                            type="button"
+                            variant="editorial"
+                            size="sm"
+                            disableAnimations
+                            onClick={sendReply}
+                            className="rounded-full text-[10px] tracking-[0.25em]"
+                          >
+                            <Send className="w-3 h-3" /> Send
                           </ShadButton>
                         </div>
                       </div>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.96 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="h-full flex flex-col items-center justify-center gap-4 px-6 text-center"
+                  >
+                    <div className="w-16 h-16 rounded-md wl-panel flex items-center justify-center text-muted">
+                      <Mail className="w-7 h-7" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <h3 className="font-display italic lowercase text-2xl text-ink">
+                        select a thread
+                      </h3>
+                      <p className="app-section-title/70 max-w-sm">
+                        Pick a conversation from the list to monitor or reply.
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </ChannelInboxDetailPane>
+          </ChannelInboxGrid>
+        </Panel>
+      </PageShell>
+    </div>
+  );
 
-                      {/* Messages */}
-                      <div className="flex-1 scroll-viewport scrollbar-hide p-4 space-y-3">
-                        <AnimatePresence>
-                          {messages.map((msg, idx) => (
-                            <motion.div
-                              initial={{ opacity: 0, x: msg.role === "ai" ? 8 : -8 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              key={msg.id || idx}
-                              className={cn(
-                                "flex flex-col max-w-[88%]",
-                                msg.role === "ai" ? "ml-auto items-end" : "items-start",
-                              )}
-                            >
-                              <div
-                                className={cn(
-                                  "rounded-md border p-4 leading-relaxed",
-                                  msg.role === "ai"
-                                    ? "wl-panel border-brand/30 text-ink"
-                                    : "bg-white/5 border-white/10 text-ink",
-                                )}
-                              >
-                                <div
-                                  className={cn(
-                                    "text-[9px] uppercase tracking-[0.3em] mb-2 flex items-center gap-1.5",
-                                    msg.role === "ai" ? "text-brand" : "text-ink/40",
-                                  )}
-                                >
-                                  {msg.role === "ai" ? (
-                                    <>
-                                      <span className="w-1.5 h-1.5 bg-brand rounded-full animate-pulse" />{" "}
-                                      Agent reply
-                                    </>
-                                  ) : (
-                                    <>
-                                      <User className="w-2.5 h-2.5" /> Inbound
-                                    </>
-                                  )}
-                                </div>
-                                <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                                  {msg.content}
-                                </p>
-                              </div>
-                              <span className="text-[9px] uppercase tracking-[0.3em] text-ink/40 mt-1.5 tabular-nums">
-                                {formatTime(msg.created_at)}
-                              </span>
-                            </motion.div>
-                          ))}
-                        </AnimatePresence>
-                      </div>
-
-                      {/* Reply composer */}
-                      <div className="shrink-0 px-4 py-3 border-t border-black/7 space-y-3">
-                        {/* Quick reply chips */}
-                        {(quickReplies.length > 0 || isLoadingQuickReplies) && (
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Zap className="w-3 h-3 text-brand" />
-                              <span className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
-                                Quick replies
-                              </span>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              {isLoadingQuickReplies
-                                ? Array.from({ length: 3 }).map((_, i) => (
-                                    <div
-                                      key={i}
-                                      className="h-7 w-28 rounded-full bg-black/5 animate-pulse"
-                                    />
-                                  ))
-                                : quickReplies.map((r, i) => (
-                                    <ShadButton
-                                      key={i}
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      disableAnimations
-                                      onClick={() => setReplyText(r.body)}
-                                      title={r.body}
-                                      className="rounded-full text-[10px] tracking-wide"
-                                    >
-                                      <span>{r.label}</span>
-                                    </ShadButton>
-                                  ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="rounded-md wl-panel focus-within:border-brand/35 transition-colors overflow-hidden">
-                          <div className="px-3 pt-2.5 pb-1 flex items-center gap-2 text-ink/40">
-                            <Terminal className="w-3 h-3" />
-                            <span className="text-[9px] uppercase tracking-[0.35em]">
-                              Compose reply
-                            </span>
-                          </div>
-                          <textarea
-                            value={replyText}
-                            onChange={(e) => setReplyText(e.target.value)}
-                            placeholder="Type a reply or ask the agent to draft one…"
-                            className="w-full px-3 pb-3 min-h-[100px] outline-none text-ink text-sm leading-relaxed resize-none bg-transparent placeholder:text-ink/40"
-                          />
-                        </div>
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-[10px] text-ink/40 flex-1 leading-relaxed hidden md:block">
-                            Drafts use trained heuristics from this agent's persona and prior thread
-                            context.
-                          </p>
-                          <div className="flex items-center gap-2">
-                            <ShadButton
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              disableAnimations
-                              onClick={fetchQuickReplies}
-                              disabled={isLoadingQuickReplies}
-                              className="rounded-full text-[10px] uppercase tracking-[0.25em]"
-                              title="Generate 3 quick-reply options"
-                            >
-                              {isLoadingQuickReplies ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                              ) : (
-                                <Zap className="w-3 h-3 text-brand" />
-                              )}
-                              Quick
-                            </ShadButton>
-                            <ShadButton
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              disableAnimations
-                              onClick={handleDraftAI}
-                              disabled={isDrafting}
-                              className="rounded-full text-[10px] uppercase tracking-[0.25em]"
-                            >
-                              {isDrafting ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                              ) : (
-                                <Bot className="w-3 h-3 text-brand" />
-                              )}
-                              AI draft
-                            </ShadButton>
-                            <ShadButton
-                              type="button"
-                              variant="editorial"
-                              size="sm"
-                              disableAnimations
-                              onClick={sendReply}
-                              className="rounded-full text-[10px] tracking-[0.25em]"
-                            >
-                              <Send className="w-3 h-3" /> Send
-                            </ShadButton>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.96 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="h-full flex flex-col items-center justify-center gap-4 px-6 text-center"
-                    >
-                      <div className="w-16 h-16 rounded-md wl-panel flex items-center justify-center text-muted">
-                        <Mail className="w-7 h-7" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <h3 className="font-display italic lowercase text-2xl text-ink">
-                          select a thread
-                        </h3>
-                        <p className="app-section-title/70 max-w-sm">
-                          Pick a conversation from the list to monitor or reply.
-                        </p>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-          </Panel>
-        </PageShell>
-      </div>
+  return (
+    <div className="h-full flex flex-col min-h-0">
+      {embedded && (
+        <ClientToolbar
+          left={
+            <span className="app-toolbar-stat">
+              {showInitialLoad
+                ? OPS_CHANNEL_TOOLBAR.email.loading
+                : OPS_CHANNEL_TOOLBAR.email.stat(threads.length)}
+            </span>
+          }
+          actions={syncAction}
+        />
+      )}
+      {showInitialLoad ? (
+        <ClientRouteLoading
+          icon={<Mail className="w-7 h-7" />}
+          label={OPS_CHANNEL_TOOLBAR.email.loading}
+          className="flex-1 min-h-0"
+        />
+      ) : (
+        inboxBody
+      )}
     </div>
   );
 }

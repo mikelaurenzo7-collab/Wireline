@@ -5,16 +5,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  Radio,
-  Users,
-  ShieldAlert,
-  Loader2,
-  Activity,
-  Headphones,
-  Phone,
-  Sparkles,
-} from "lucide-react";
+import { Radio, Users, ShieldAlert, Activity, Headphones, Phone, Sparkles } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useToast } from "../../contexts/ToastContext";
 import { useAuth } from "../../contexts/AuthContext";
@@ -23,6 +14,7 @@ import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { EmptyState } from "../ui/EmptyState";
 import { AgentActivityIndicator } from "../ui/AgentActivityIndicator";
+import ClientRouteLoading from "../layout/ClientRouteLoading";
 import { WL_OPS_CLASSES, OPS_COPY, OPS_CHANNEL_EMPTY } from "../../lib/wireline-ops-design";
 
 export type FloorCall = {
@@ -201,17 +193,19 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
             </h2>
           </div>
           {escalations.length > 0 && (
-            <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/25 text-rose-600 text-[10px] font-mono uppercase tracking-wider">
-              <ShieldAlert className="w-3 h-3" />
+            <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/25 text-rose-600 wl-label">
+              <ShieldAlert className="w-3 h-3" aria-hidden />
               {escalations.length} escalated
             </span>
           )}
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-16 wl-panel rounded-md">
-            <Loader2 className="w-6 h-6 animate-spin text-brand" />
-          </div>
+          <ClientRouteLoading
+            icon={<Radio className="w-6 h-6" />}
+            label={OPS_COPY.floorLoading}
+            className="min-h-[220px] wl-panel rounded-md"
+          />
         ) : calls.length === 0 ? (
           <div className="flex-1 flex items-center justify-center min-h-[220px] wl-panel rounded-md">
             <EmptyState
@@ -243,16 +237,18 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                       escalated ? WL_OPS_CLASSES.callCardEscalated : WL_OPS_CLASSES.callCard,
                     )}
                   >
-                    <div className="flex items-start gap-3 mb-3">
+                    <div className="flex items-start gap-2.5 sm:gap-3 mb-2 sm:mb-3">
                       <div
                         className={cn(
-                          "w-11 h-11 rounded-md flex items-center justify-center shrink-0",
+                          "w-9 h-9 sm:w-11 sm:h-11 rounded-md flex items-center justify-center shrink-0",
                           escalated
                             ? "bg-rose-500/10 text-rose-600 border border-rose-500/20"
                             : "bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20",
                         )}
                       >
-                        <Phone className={cn("w-5 h-5", escalated && "animate-pulse")} />
+                        <Phone
+                          className={cn("w-4 h-4 sm:w-5 sm:h-5", escalated && "animate-pulse")}
+                        />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="font-mono text-sm sm:text-base text-ink truncate">
@@ -272,7 +268,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                     </div>
 
                     {call.thought && (
-                      <div className="mb-3 p-3 rounded-md wl-panel">
+                      <div className="mb-2 sm:mb-3 p-2.5 sm:p-3 rounded-md wl-panel">
                         <div className="flex items-center gap-1.5 mb-1">
                           <Sparkles className="w-3 h-3 text-brand" />
                           <span className="wl-label text-muted">Live reasoning</span>
@@ -283,7 +279,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                       </div>
                     )}
 
-                    <div className="mb-3">
+                    <div className="mb-2 sm:mb-3">
                       <div className="flex justify-between text-[10px] text-muted mb-1">
                         <span>Urgency</span>
                         <span className="font-mono font-semibold text-ink">
@@ -329,7 +325,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                           size="sm"
                           disableAnimations
                           onClick={stopListening}
-                          className="touch-press min-h-[40px] rounded-md text-[10px] uppercase tracking-[0.18em] border-rose-500/30 text-rose-600 hover:bg-rose-500/10"
+                          className="touch-press min-h-[36px] sm:min-h-[40px] rounded-md text-[10px] uppercase tracking-[0.18em] border-rose-500/30 text-rose-600 hover:bg-rose-500/10"
                         >
                           <Radio className="w-3.5 h-3.5" />
                           Stop
@@ -341,7 +337,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                           size="sm"
                           disableAnimations
                           onClick={() => startListening(call.id)}
-                          className="touch-press min-h-[40px] rounded-md text-[10px] uppercase tracking-[0.18em]"
+                          className="touch-press min-h-[36px] sm:min-h-[40px] rounded-md text-[10px] uppercase tracking-[0.18em]"
                         >
                           <Headphones className="w-3.5 h-3.5" />
                           Listen
@@ -354,7 +350,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                           size="sm"
                           disableAnimations
                           onClick={stopWhispering}
-                          className="touch-press min-h-[40px] rounded-md text-[10px] uppercase tracking-[0.18em] border-brand/30 text-brand hover:bg-brand/10"
+                          className="touch-press min-h-[36px] sm:min-h-[40px] rounded-md text-[10px] uppercase tracking-[0.18em] border-brand/30 text-brand hover:bg-brand/10"
                         >
                           Close coach
                         </ShadButton>
@@ -365,7 +361,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                           size="sm"
                           disableAnimations
                           onClick={() => startWhispering(call.id)}
-                          className="touch-press min-h-[40px] rounded-md text-[10px] uppercase tracking-[0.18em]"
+                          className="touch-press min-h-[36px] sm:min-h-[40px] rounded-md text-[10px] uppercase tracking-[0.18em]"
                         >
                           <Activity className="w-3.5 h-3.5" />
                           Coach
@@ -416,7 +412,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
 
       {/* Agent rail — stacks below on mobile/tablet, sidebar on xl+ */}
       <aside className="xl:col-span-4 flex flex-col gap-3 min-h-0">
-        <div className="wl-panel rounded-md p-4">
+        <div className={WL_OPS_CLASSES.railCard}>
           <div className="flex items-center justify-between mb-3">
             <h3 className="wl-label flex items-center gap-2">
               <Users className="w-3.5 h-3.5 text-brand" />
@@ -484,7 +480,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
           )}
         </div>
 
-        <div className="wl-panel rounded-md p-4">
+        <div className={WL_OPS_CLASSES.railCard}>
           <h3 className="wl-label flex items-center gap-2 mb-3">
             <ShieldAlert className="w-3.5 h-3.5 text-rose-500" />
             Escalations
@@ -505,7 +501,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
           )}
         </div>
 
-        <div className="wl-panel rounded-md p-4 grid grid-cols-2 gap-3 text-[11px]">
+        <div className={cn(WL_OPS_CLASSES.railCard, "grid grid-cols-2 gap-3")}>
           <div>
             <p className="wl-label text-muted">On call</p>
             <p className="font-display italic text-2xl text-ink tabular-nums">

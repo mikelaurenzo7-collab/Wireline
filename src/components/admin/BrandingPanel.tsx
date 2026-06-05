@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import { Bot, Zap, Save, Loader2 } from "lucide-react";
+import { Bot, Zap } from "lucide-react";
 import { Input } from "../ui/shadcn/Input";
-import { ShadButton } from "../ui/shadcn/ShadButton";
+import { AdminSaveBar } from "./AdminSaveBar";
+import { OPS_ADMIN, WL_ADMIN_CLASSES } from "../../lib/wireline-ops-design";
+import { BRAND } from "../../constants/brand-colors";
 
 interface BrandingPanelProps {
   settings: any;
@@ -13,7 +15,9 @@ interface BrandingPanelProps {
 export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: BrandingPanelProps) {
   return (
     <div className="flex flex-col gap-5">
-      <div className="client-panel p-5 md:p-6 rounded-md wl-panel border border-input">
+      <div
+        className={`client-panel rounded-md wl-panel border border-input ${WL_ADMIN_CLASSES.panel}`}
+      >
         <div className="flex items-center gap-3 mb-5">
           <div className="w-8 h-8 rounded-md bg-brand/10 border border-brand/18 text-brand shadow-sm shadow-brand/10 flex items-center justify-center shrink-0">
             <Bot className="w-4 h-4" />
@@ -52,13 +56,13 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
                 <Input
                   type="color"
                   className="brand-color-swatch w-11 h-11 rounded-md bg-transparent border-input cursor-pointer p-0"
-                  value={settings.primary_color || "#8B3FD6"}
+                  value={settings.primary_color || BRAND.purple}
                   onChange={(e) => onUpdate({ ...settings, primary_color: e.target.value })}
                 />
                 <Input
                   type="text"
                   className="app-input-soft flex-1 py-3 h-auto font-mono"
-                  value={settings.primary_color || "#8B3FD6"}
+                  value={settings.primary_color || BRAND.purple}
                   onChange={(e) => onUpdate({ ...settings, primary_color: e.target.value })}
                 />
               </div>
@@ -112,21 +116,12 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
         </div>
 
         {onSave && (
-          <div className="app-soft-divider mt-7 pt-5 border-t">
-            <ShadButton
-              onClick={onSave}
-              disabled={isSaving}
-              variant="outline"
-              className="disabled:opacity-50 disabled:cursor-not-allowed app-primary-action w-full md:w-auto flex items-center justify-center gap-2 border-input"
-            >
-              {isSaving ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
-              Save Branding Settings
-            </ShadButton>
-          </div>
+          <AdminSaveBar
+            onClick={onSave}
+            isSaving={!!isSaving}
+            label={OPS_ADMIN.saveLabels.branding}
+            fullWidth
+          />
         )}
       </div>
     </div>

@@ -381,6 +381,8 @@ html, body, .marketing-surface, .app-surface {
 
 .wl-composer-dock {
   border-radius: 1.25rem;
+  /* Popovers anchor above toolbar buttons — must not clip */
+  overflow: visible;
 }
 .wl-composer-dock:focus-within {
   box-shadow:
@@ -495,6 +497,167 @@ html, body, .marketing-surface, .app-surface {
   border-color: rgba(139, 63, 214, 0.22);
 }
 
+/* Third-party demo thumbnails — isolated from app chrome; brand border only */
+.wl-integration-preview-card {
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-brand) 12%, transparent);
+  background: color-mix(in srgb, var(--paper, #f5f0e6) 96%, white);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+}
+.dark .wl-integration-preview-card {
+  background: rgba(18, 14, 28, 0.65);
+  border-color: rgba(155, 92, 224, 0.14);
+}
+
+.wl-pipeline-column--drop-target {
+  outline: 2px solid color-mix(in srgb, var(--color-brand) 35%, transparent);
+  outline-offset: -2px;
+  border-radius: 0.5rem;
+}
+
+.wl-pipeline-card-grip {
+  opacity: 0.35;
+  transition: opacity 0.15s ease;
+}
+.group:hover .wl-pipeline-card-grip,
+.group:focus-within .wl-pipeline-card-grip {
+  opacity: 0.7;
+}
+
+.wl-fleet-config-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--paper, #f5f0e6);
+  overflow-y: auto;
+}
+@media (min-width: 768px) {
+  .wl-fleet-config-drawer {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    background: transparent;
+    overflow-y: visible;
+  }
+}
+
+/* Admin settings panels — consistent padding + save footer */
+.wl-admin-panel {
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+@media (min-width: 768px) {
+  .wl-admin-panel {
+    padding: 1.25rem 1.5rem;
+  }
+}
+
+.wl-admin-save-bar {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-ink, #1a1424) 8%, transparent);
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Help center — calm operator cards (no gradient carnival) */
+.wl-help-agent-card {
+  border: 1px solid color-mix(in srgb, var(--color-ink, #1a1424) 10%, transparent);
+  background: color-mix(in srgb, var(--paper, #f5f0e6) 92%, white);
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.wl-help-agent-card:hover {
+  border-color: color-mix(in srgb, var(--color-brand) 28%, transparent);
+  background: color-mix(in srgb, var(--color-brand) 4%, var(--paper, #f5f0e6));
+}
+.wl-help-agent-card[data-demo="true"] {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--color-brand) 30%, transparent);
+}
+
+.wl-filter-chip {
+  border-radius: 9999px;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  height: auto;
+  padding: 0.375rem 0.75rem;
+}
+
+/* Fleet sidebar + founder roster — shared agent row */
+.wl-fleet-agent-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--color-ink, #1a1424) 8%, transparent);
+  border-radius: 0.375rem;
+  background: color-mix(in srgb, var(--paper, #f5f0e6) 96%, white);
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.wl-fleet-agent-row:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-brand) 28%, transparent);
+}
+.wl-fleet-agent-row--active {
+  border-color: color-mix(in srgb, var(--color-brand) 35%, transparent);
+  background: color-mix(in srgb, var(--color-brand) 8%, var(--paper, #f5f0e6));
+}
+.wl-fleet-agent-row--active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
+  background: var(--color-brand);
+}
+.wl-fleet-agent-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--color-ink, #1a1424) 8%, transparent);
+  background: color-mix(in srgb, var(--paper, #f5f0e6) 88%, white);
+  color: color-mix(in srgb, var(--color-ink, #1a1424) 65%, transparent);
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.wl-fleet-agent-avatar--active {
+  border-color: color-mix(in srgb, var(--color-brand) 35%, transparent);
+  background: color-mix(in srgb, var(--color-brand) 12%, transparent);
+  color: var(--color-brand);
+}
+
+/* Mobile drawer — IA section headers */
+.wl-drawer-section-label {
+  font-size: 9px;
+  letter-spacing: 0.32em;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-muted) 90%, transparent);
+  padding: 0.625rem 0.5rem 0.375rem;
+}
+
+/* Sidebar rail — stronger active affordance */
+.wl-rail-item--active {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+.wl-rail-footer--active {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
 /* Director live orchestra — runway, spotlight, ticket strips */
 .wl-live-orchestra {
   position: relative;
@@ -600,14 +763,9 @@ html, body, .marketing-surface, .app-surface {
   min-width: 0;
   flex: 1;
   overflow-x: auto;
+  overflow-y: visible;
   scrollbar-width: none;
-  mask-image: linear-gradient(
-    to right,
-    transparent,
-    black 0.75rem,
-    black calc(100% - 0.75rem),
-    transparent
-  );
+  /* No mask-image — it clipped upward composer popovers (Capabilities, Coach, Attach). */
 }
 .wl-director-composer-toolbar::-webkit-scrollbar {
   display: none;
@@ -710,10 +868,39 @@ html, body, .marketing-surface, .app-surface {
  * Premium uppercase labels with positive tracking for small sizes */
 .wl-label {
   font-size: 10px;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.22em;
   font-weight: 600;
   text-transform: uppercase;
   line-height: 1.2;
+}
+
+.wl-label-muted {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  font-weight: 600;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: var(--color-muted);
+}
+
+/* ClientToolbar left slot — live stat / filter summary */
+.app-toolbar-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  line-height: 1.3;
+}
+
+/* Filter triggers and compact selects on channel pages */
+.wl-filter-trigger {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
 }
 
 /* ── SCROLL CONTAINMENT for scroll-viewport children ── */
@@ -2491,7 +2678,8 @@ html, body, .marketing-surface, .app-surface {
     0 1px 0 rgba(255, 255, 255, 0.8) inset,
     0 16px 48px -32px rgba(59, 21, 76, 0.12),
     0 0 0 1px rgba(26, 22, 20, 0.03);
-  overflow: hidden;
+  /* Inner scroll-viewport owns vertical scroll; composer popovers must paint above the dock */
+  overflow: visible;
 }
 .dark .wl-mission-canvas {
   border-color: rgba(155, 92, 224, 0.14);
@@ -2636,6 +2824,22 @@ html, body, .marketing-surface, .app-surface {
   border-color: rgba(155, 92, 224, 0.12);
 }
 
+@media (max-width: 639px) {
+  .wl-ops-floor-frame {
+    padding: 0.75rem 0.85rem;
+  }
+  .wl-ops-call-card {
+    padding: 0.75rem 0.85rem 0.75rem 1rem;
+  }
+  .wl-ops-rail-card {
+    padding: 0.75rem 0.85rem;
+  }
+  .wl-ops-pulse-strip {
+    gap: 0.5rem;
+    padding: 0.65rem 0.75rem;
+  }
+}
+
 .wl-ops-score-badge {
   font-size: 0.5625rem;
   font-weight: 700;
@@ -2647,6 +2851,12 @@ html, body, .marketing-surface, .app-surface {
   border: 1px solid color-mix(in srgb, var(--color-brand) 22%, transparent);
   background: color-mix(in srgb, var(--color-brand) 8%, transparent);
   color: color-mix(in srgb, var(--color-brand-deep) 75%, var(--color-ink));
+}
+
+@media (max-width: 639px) {
+  .wl-channel-inbox-grid {
+    min-height: 320px;
+  }
 }
 
 .wl-setup-nudge {

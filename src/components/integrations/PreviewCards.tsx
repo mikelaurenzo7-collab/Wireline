@@ -17,6 +17,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { type ToolIntegration } from "../../lib/agent-capabilities";
+import { BRAND } from "../../constants/brand-colors";
+
+/** Orbit / playbook chrome — brand purple; preview thumbnails keep vendor demo colors */
+const INTEGRATION_ORBIT_COLOR = BRAND.purple;
 
 // ── Animated Preview Cards ────────────────────────────────────────────────────
 
@@ -35,7 +39,7 @@ export function CRMPreviewCard() {
   const stages = ["New", "Qualified", "Proposal", "Won"];
 
   return (
-    <div className="rounded-md overflow-hidden border border-white/8 text-left">
+    <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
         style={{ background: "#FF7A59" }}
@@ -101,7 +105,7 @@ export function SlackPreviewCard() {
   }, []);
 
   return (
-    <div className="rounded-md overflow-hidden border border-white/8 text-left">
+    <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
       <div
         className="flex items-center gap-2 px-3 py-2 text-[10px] font-semibold"
         style={{ background: "#1A1D21", color: "#E8E8E8" }}
@@ -171,7 +175,7 @@ export function SMSPreviewCard() {
   }, []);
 
   return (
-    <div className="rounded-md overflow-hidden border border-white/8 text-left">
+    <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
       <div
         className="flex items-center justify-center py-2 text-[10px] font-medium"
         style={{ background: "#1C1C1E", color: "rgba(255,255,255,0.5)" }}
@@ -237,7 +241,7 @@ export function SMSPreviewCard() {
 
 export function ZoomPreviewCard() {
   return (
-    <div className="rounded-md overflow-hidden border border-white/8 text-left">
+    <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
         style={{ background: "#2D8CFF" }}
@@ -273,7 +277,7 @@ export function CalendarPreviewCard() {
   }, []);
 
   return (
-    <div className="rounded-md overflow-hidden border border-white/8 text-left">
+    <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
         style={{ background: "#34A853" }}
@@ -328,7 +332,7 @@ export function ShopifyPreviewCard() {
   }, []);
 
   return (
-    <div className="rounded-md overflow-hidden border border-white/8 text-left">
+    <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
       <div
         className="flex items-center justify-between px-3 py-2 text-[10px] font-semibold"
         style={{ background: "#1A1A1A", color: "#96BF48" }}
@@ -407,7 +411,7 @@ export function SquarePreviewCard() {
   }, []);
 
   return (
-    <div className="rounded-md overflow-hidden border border-white/8 text-left">
+    <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
         style={{ background: "#3E4348" }}
@@ -455,7 +459,7 @@ export function DocuSignPreviewCard() {
   const fields = ["Signature", "Date", "Initials"];
 
   return (
-    <div className="rounded-md overflow-hidden border border-white/8 text-left">
+    <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold"
         style={{ background: "#FFC720", color: "#1a1a1a" }}
@@ -535,7 +539,7 @@ export function MetaPreviewCard() {
   }, []);
 
   return (
-    <div className="rounded-md overflow-hidden border border-white/8 text-left">
+    <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
         style={{ background: "#1877F2" }}
@@ -608,7 +612,7 @@ export function ApolloPreviewCard() {
   ];
 
   return (
-    <div className="rounded-md overflow-hidden border border-white/8 text-left">
+    <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
         style={{ background: "#8B5CF6" }}
@@ -668,7 +672,7 @@ export function GeminiPreviewCard() {
   ];
 
   return (
-    <div className="rounded-md overflow-hidden border border-white/8 text-left">
+    <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
         style={{ background: "linear-gradient(90deg, #4285F4, #9B72CB)" }}
@@ -729,7 +733,7 @@ export function TeamsPreviewCard() {
   }, []);
 
   return (
-    <div className="rounded-md overflow-hidden border border-white/8 text-left">
+    <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
         style={{ background: "#6264A7" }}
@@ -798,7 +802,7 @@ export function ExcelPreviewCard() {
   ];
 
   return (
-    <div className="rounded-md overflow-hidden border border-white/8 text-left">
+    <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
         style={{ background: "#217346" }}
@@ -873,7 +877,7 @@ export function SheetsPreviewCard() {
   ];
 
   return (
-    <div className="rounded-md overflow-hidden border border-white/8 text-left">
+    <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
       <div
         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
         style={{ background: "#0F9D58" }}
@@ -949,7 +953,7 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
   {
     key: "crm",
     label: "CRM",
-    color: "#FF7A59",
+    color: INTEGRATION_ORBIT_COLOR,
     Icon: Database,
     tagline: "Create contacts, log calls, and update pipeline stages in real-time",
     PreviewCard: CRMPreviewCard,
@@ -957,7 +961,7 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
   {
     key: "slack",
     label: "Slack",
-    color: "#36C5F0",
+    color: INTEGRATION_ORBIT_COLOR,
     Icon: MessageSquare,
     tagline: "Notify your team the instant something important happens on a call",
     PreviewCard: SlackPreviewCard,
@@ -965,7 +969,7 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
   {
     key: "twilio",
     label: "SMS",
-    color: "#F22F46",
+    color: INTEGRATION_ORBIT_COLOR,
     Icon: MessageCircle,
     tagline: "Send text follow-ups and validate phone numbers mid-call",
     PreviewCard: SMSPreviewCard,
@@ -973,7 +977,7 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
   {
     key: "zoom",
     label: "Zoom",
-    color: "#2D8CFF",
+    color: INTEGRATION_ORBIT_COLOR,
     Icon: Video,
     tagline: "Generate meeting links and attach them to calendar bookings",
     PreviewCard: ZoomPreviewCard,
@@ -981,7 +985,7 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
   {
     key: "calendar",
     label: "Calendar",
-    color: "#34A853",
+    color: INTEGRATION_ORBIT_COLOR,
     Icon: CalendarCheck,
     tagline: "Check live availability and book appointments in real-time",
     PreviewCard: CalendarPreviewCard,
@@ -989,7 +993,7 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
   {
     key: "shopify",
     label: "Shopify",
-    color: "#96BF48",
+    color: INTEGRATION_ORBIT_COLOR,
     Icon: ShoppingBag,
     tagline: "Look up orders, manage returns, apply discounts, and draft orders",
     PreviewCard: ShopifyPreviewCard,
@@ -997,7 +1001,7 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
   {
     key: "square",
     label: "Square",
-    color: "#00A2E8",
+    color: INTEGRATION_ORBIT_COLOR,
     Icon: CreditCard,
     tagline: "Look up orders, create payment links, and send invoices",
     PreviewCard: SquarePreviewCard,
@@ -1005,7 +1009,7 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
   {
     key: "docusign",
     label: "DocuSign",
-    color: "#FFC720",
+    color: INTEGRATION_ORBIT_COLOR,
     Icon: FileText,
     tagline: "Dispatch contracts and collect e-signatures the moment a deal closes",
     PreviewCard: DocuSignPreviewCard,
@@ -1013,7 +1017,7 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
   {
     key: "meta",
     label: "Meta",
-    color: "#1877F2",
+    color: INTEGRATION_ORBIT_COLOR,
     Icon: Target,
     tagline: "Submit qualified leads to Meta CAPI for accurate ad attribution",
     PreviewCard: MetaPreviewCard,
@@ -1021,7 +1025,7 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
   {
     key: "apollo",
     label: "Apollo",
-    color: "#8B5CF6",
+    color: INTEGRATION_ORBIT_COLOR,
     Icon: Search,
     tagline: "Enrich any caller with LinkedIn profile, title, and company revenue",
     PreviewCard: ApolloPreviewCard,
@@ -1029,7 +1033,7 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
   {
     key: "microsoft_teams",
     label: "Teams",
-    color: "#6264A7",
+    color: INTEGRATION_ORBIT_COLOR,
     Icon: Users2,
     tagline: "Post important updates to your Microsoft Teams channel",
     PreviewCard: TeamsPreviewCard,
@@ -1037,7 +1041,7 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
   {
     key: "microsoft_excel",
     label: "Excel",
-    color: "#217346",
+    color: INTEGRATION_ORBIT_COLOR,
     Icon: Table2,
     tagline: "Append call summaries to your Wireline log spreadsheet in OneDrive",
     PreviewCard: ExcelPreviewCard,
@@ -1045,7 +1049,7 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
   {
     key: "google_sheets",
     label: "Google Sheets",
-    color: "#0F9D58",
+    color: INTEGRATION_ORBIT_COLOR,
     Icon: Table2,
     tagline: "Append call summaries to your Wireline log spreadsheet in Google Drive",
     PreviewCard: SheetsPreviewCard,

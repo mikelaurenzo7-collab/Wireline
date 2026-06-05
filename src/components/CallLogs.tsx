@@ -37,9 +37,12 @@ import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
 import HubTabs, { CHANNELS_HUB } from "./HubTabs";
+import ClientToolbar from "./layout/ClientToolbar";
+import ClientRouteLoading from "./layout/ClientRouteLoading";
+import { ChannelListColHeader } from "./layout/ChannelInbox";
 import { PanelSkeleton } from "./Skeleton";
-import EmptyState from "./EmptyState";
-import { OPS_CHANNEL_EMPTY } from "../lib/wireline-ops-design";
+import { EmptyState } from "./ui/EmptyState";
+import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR } from "../lib/wireline-ops-design";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { useToast } from "../contexts/ToastContext";
 import type { CallLog } from "../types/api";
@@ -131,7 +134,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
         <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
           <SelectTrigger
             aria-label="Filter by call direction"
-            className="h-9 pl-8 pr-3 rounded-full wl-panel text-[10px] uppercase tracking-[0.22em] text-ink"
+            className="h-9 pl-8 pr-3 rounded-full wl-panel wl-filter-trigger text-ink"
           >
             <SelectValue />
           </SelectTrigger>
@@ -151,7 +154,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
       eyebrow={embedded ? undefined : "Communications · Voice"}
       title={embedded ? "" : "Call Logs"}
       subtitle={embedded ? undefined : "Recorded calls and agent responses"}
-      actions={actions}
+      actions={embedded ? undefined : actions}
     >
       <div className="h-full grid grid-cols-12 gap-3">
         {/* List pane — hidden on mobile when a call is selected so the
@@ -204,101 +207,110 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                 className="h-full py-10"
               />
             ) : (
-              <ul className="divide-y divide-white/5">
-                {filteredCalls.map((call) => (
-                  <li key={call.id}>
-                    <ShadButton
-                      type="button"
-                      variant="ghost"
-                      disableAnimations
-                      onClick={() => setSelectedCall(call)}
-                      aria-label={`Open signal from ${call.customer_number || "Sim Test"}: ${call.summary || "no summary"}`}
-                      className={cn(
-                        "group w-full h-auto justify-start text-left flex items-center gap-3 px-3 py-3 relative active:scale-[0.99] duration-100 rounded-none",
-                        selectedCall?.id === call.id
-                          ? "bg-brand/8 hover:bg-brand/8"
-                          : "hover:bg-white/3",
-                      )}
-                    >
-                      {/* Active indicator bar */}
-                      {selectedCall?.id === call.id && (
-                        <div
-                          className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full bg-brand"
-                          aria-hidden="true"
-                        />
-                      )}
-
-                      {/* Direction icon */}
-                      <div
+              <>
+                <ChannelListColHeader
+                  columns={[
+                    { label: "Contact" },
+                    { label: "Signal" },
+                    { label: "Time", className: "text-right" },
+                  ]}
+                />
+                <ul className="divide-y divide-white/5">
+                  {filteredCalls.map((call) => (
+                    <li key={call.id}>
+                      <ShadButton
+                        type="button"
+                        variant="ghost"
+                        disableAnimations
+                        onClick={() => setSelectedCall(call)}
+                        aria-label={`Open signal from ${call.customer_number || "Sim Test"}: ${call.summary || "no summary"}`}
                         className={cn(
-                          "w-9 h-9 rounded-md flex items-center justify-center shrink-0 border transition-all",
-                          call.direction === "inbound"
-                            ? "bg-brand/8 border-brand/25 text-brand"
-                            : "bg-brand-2/8 border-brand-2/25 text-brand-2",
-                          selectedCall?.id === call.id && "scale-105",
+                          "group w-full h-auto justify-start text-left flex items-center gap-3 px-3 py-3 relative active:scale-[0.99] duration-100 rounded-none",
+                          selectedCall?.id === call.id
+                            ? "bg-brand/8 hover:bg-brand/8"
+                            : "hover:bg-white/3",
                         )}
                       >
-                        {call.direction === "inbound" ? (
-                          <PhoneIncoming className="w-4 h-4" />
-                        ) : (
-                          <PhoneOutgoing className="w-4 h-4" />
+                        {/* Active indicator bar */}
+                        {selectedCall?.id === call.id && (
+                          <div
+                            className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full bg-brand"
+                            aria-hidden="true"
+                          />
                         )}
-                      </div>
 
-                      {/* Content */}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <span className="font-display italic text-sm text-ink truncate">
-                            {call.customer_number || "Sim Test"}
-                          </span>
-                          {/* Lead score badge */}
-                          <span
-                            className={cn(
-                              "shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight border",
-                              (call.lead_score || 0) >= 80
-                                ? "bg-brand/12 text-brand border-brand/20"
-                                : (call.lead_score || 0) >= 50
-                                  ? "bg-brand/8 text-brand/80 border-brand/15"
-                                  : "bg-black/[0.06] text-ink/40 border-transparent",
-                            )}
-                          >
-                            {call.lead_score || 0}
-                          </span>
-                          {/* QA score badge */}
-                          {call.qa_score != null && (
+                        {/* Direction icon */}
+                        <div
+                          className={cn(
+                            "w-9 h-9 rounded-md flex items-center justify-center shrink-0 border transition-all",
+                            call.direction === "inbound"
+                              ? "bg-brand/8 border-brand/25 text-brand"
+                              : "bg-brand-2/8 border-brand-2/25 text-brand-2",
+                            selectedCall?.id === call.id && "scale-105",
+                          )}
+                        >
+                          {call.direction === "inbound" ? (
+                            <PhoneIncoming className="w-4 h-4" />
+                          ) : (
+                            <PhoneOutgoing className="w-4 h-4" />
+                          )}
+                        </div>
+
+                        {/* Content */}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="font-display italic text-sm text-ink truncate">
+                              {call.customer_number || "Sim Test"}
+                            </span>
+                            {/* Lead score badge */}
                             <span
                               className={cn(
                                 "shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight border",
-                                call.qa_score >= 75
-                                  ? "bg-brand/8 text-brand border-brand/20"
-                                  : call.qa_score >= 50
-                                    ? "bg-brand/5 text-brand/70 border-brand/15"
-                                    : "bg-rose-500/8 text-rose-500 border-rose-500/20",
+                                (call.lead_score || 0) >= 80
+                                  ? "bg-brand/12 text-brand border-brand/20"
+                                  : (call.lead_score || 0) >= 50
+                                    ? "bg-brand/8 text-brand/80 border-brand/15"
+                                    : "bg-black/[0.06] text-ink/40 border-transparent",
                               )}
                             >
-                              ★{call.qa_score}
+                              {call.lead_score || 0}
                             </span>
-                          )}
-                          <SentimentDot sentiment={call.sentiment} />
+                            {/* QA score badge */}
+                            {call.qa_score != null && (
+                              <span
+                                className={cn(
+                                  "shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight border",
+                                  call.qa_score >= 75
+                                    ? "bg-brand/8 text-brand border-brand/20"
+                                    : call.qa_score >= 50
+                                      ? "bg-brand/5 text-brand/70 border-brand/15"
+                                      : "bg-rose-500/8 text-rose-500 border-rose-500/20",
+                                )}
+                              >
+                                ★{call.qa_score}
+                              </span>
+                            )}
+                            <SentimentDot sentiment={call.sentiment} />
+                          </div>
+                          <p className="text-[10px] text-ink/40 truncate leading-tight">
+                            {call.summary || "Decoding…"}
+                          </p>
                         </div>
-                        <p className="text-[10px] text-ink/40 truncate leading-tight">
-                          {call.summary || "Decoding…"}
-                        </p>
-                      </div>
 
-                      {/* Date/time */}
-                      <div className="text-right shrink-0">
-                        <div className="text-[9px] text-muted/80">
-                          {formatDate(call.created_at)}
+                        {/* Date/time */}
+                        <div className="text-right shrink-0">
+                          <div className="text-[9px] text-muted/80">
+                            {formatDate(call.created_at)}
+                          </div>
+                          <div className="text-[8px] text-ink/40 uppercase tracking-[0.2em]">
+                            {formatTime(call.created_at, { hour: "2-digit", minute: "2-digit" })}
+                          </div>
                         </div>
-                        <div className="text-[8px] text-ink/40 uppercase tracking-[0.2em]">
-                          {formatTime(call.created_at, { hour: "2-digit", minute: "2-digit" })}
-                        </div>
-                      </div>
-                    </ShadButton>
-                  </li>
-                ))}
-              </ul>
+                      </ShadButton>
+                    </li>
+                  ))}
+                </ul>
+              </>
             )}
           </Panel>
         </div>
@@ -339,7 +351,30 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
   );
 
   if (embedded) {
-    return <div className="h-full flex flex-col min-h-0">{body}</div>;
+    const showInitialLoad = loading && calls.length === 0;
+    return (
+      <div className="h-full flex flex-col min-h-0">
+        <ClientToolbar
+          left={
+            <span className="app-toolbar-stat">
+              {showInitialLoad
+                ? OPS_CHANNEL_TOOLBAR.phone.loading
+                : OPS_CHANNEL_TOOLBAR.phone.stat(filteredCalls.length)}
+            </span>
+          }
+          actions={actions}
+        />
+        {showInitialLoad ? (
+          <ClientRouteLoading
+            icon={<Phone className="w-7 h-7" />}
+            label={OPS_CHANNEL_TOOLBAR.phone.loading}
+            className="flex-1 min-h-0"
+          />
+        ) : (
+          body
+        )}
+      </div>
+    );
   }
 
   return (

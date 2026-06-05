@@ -25,6 +25,8 @@ import CallbacksListExtracted from "./CallbacksList";
 import CreateCampaignModalExtracted from "./CreateCampaignModal";
 import DispatchTab from "./DispatchTab";
 import CampaignsTab from "./CampaignsTab";
+import ClientToolbar from "../layout/ClientToolbar";
+import { OPS_CHANNEL_TOOLBAR } from "../../lib/wireline-ops-design";
 import { Input } from "../ui/shadcn/Input";
 
 export default function OutboundDialer({ embedded = false }: { embedded?: boolean }) {
@@ -577,6 +579,18 @@ export default function OutboundDialer({ embedded = false }: { embedded?: boolea
       />
       <div className="h-full flex flex-col min-h-0">
         {!embedded && <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />}
+        {embedded && (
+          <ClientToolbar
+            left={
+              <span className="app-toolbar-stat">
+                {isLoading
+                  ? OPS_CHANNEL_TOOLBAR.outbound.loading
+                  : OPS_CHANNEL_TOOLBAR.outbound.stat(queuedCount, leadsTotal)}
+              </span>
+            }
+            actions={<CsvExportButton type="leads" label={OPS_CHANNEL_TOOLBAR.outbound.export} />}
+          />
+        )}
         <div className="flex-1 min-h-0">
           <PageShell
             title={embedded ? "" : "Outbound"}
@@ -586,7 +600,11 @@ export default function OutboundDialer({ embedded = false }: { embedded?: boolea
                 ? undefined
                 : "Run outbound calling campaigns for lead qualification and follow-up."
             }
-            actions={<CsvExportButton type="leads" label="Export" />}
+            actions={
+              embedded ? undefined : (
+                <CsvExportButton type="leads" label={OPS_CHANNEL_TOOLBAR.outbound.export} />
+              )
+            }
             tabs={[
               {
                 id: "dispatch",

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useState, useEffect } from "react";
-import { Mail, CheckCircle2, Plus, Trash2, Loader2, Bot, RotateCw, Phone, Zap } from "lucide-react";
+import { Mail, CheckCircle2, Plus, Trash2, Bot, RotateCw, Phone, Zap } from "lucide-react";
 import { motion } from "motion/react";
 import { authFetch, readApiJson } from "../lib/api";
 import PageShell, { Panel } from "./PageShell";
@@ -9,7 +9,10 @@ import { useToast } from "../contexts/ToastContext";
 import ConfirmModal from "./ConfirmModal";
 import CrmConnectionCard from "./CrmConnectionCard";
 import { EMAIL_INBOUND_TASKS } from "../lib/integration-playbooks";
-import { OPS_CHANNEL_EMPTY } from "../lib/wireline-ops-design";
+import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR } from "../lib/wireline-ops-design";
+import ClientRouteViewport from "./layout/ClientRouteViewport";
+import ClientToolbar from "./layout/ClientToolbar";
+import ClientRouteLoading from "./layout/ClientRouteLoading";
 import { getIntegrationLogo } from "./layout/IntegrationLogos";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
@@ -230,215 +233,232 @@ export default function Integrations() {
       className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full wl-panel border border-input text-ink text-[11px] uppercase tracking-[0.22em] hover:border-brand/40 transition-colors disabled:opacity-50"
     >
       <RotateCw className={`w-3 h-3 text-brand ${syncing ? "animate-spin" : ""}`} />
-      {syncing ? "Syncing…" : "Sync all"}
+      {syncing ? "Syncing…" : OPS_CHANNEL_TOOLBAR.integrations.sync}
     </ShadButton>
   );
 
   return (
     <>
       <AdminHubViewport scroll>
-        <PageShell title="" eyebrow="" subtitle="" scrollable actions={syncAction}>
-          <div className="flex flex-col gap-3">
-            <Panel
-              title="Email carriers"
-              hint="GMAIL · OUTLOOK"
-              icon={Mail}
-              autoHeight
-              flush
-              actions={
-                <div className="flex items-center gap-2">
-                  <ShadButton
-                    onClick={handleConnectGmail}
-                    variant="outline"
-                    className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors"
-                  >
-                    <Plus className="w-3 h-3" />
-                    Gmail
-                  </ShadButton>
-                  <ShadButton
-                    onClick={handleConnectOutlook}
-                    variant="outline"
-                    className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-brand/10 border border-brand/30 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/20 transition-colors"
-                  >
-                    <Plus className="w-3 h-3" />
-                    Outlook
-                  </ShadButton>
-                  <ShadButton
-                    onClick={handleConnectYahoo}
-                    variant="outline"
-                    className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-brand/10 border border-brand/30 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/20 transition-colors"
-                  >
-                    <Plus className="w-3 h-3" />
-                    Yahoo
-                  </ShadButton>
-                </div>
-              }
-            >
-              {loading ? (
-                <div className="h-full flex flex-col items-center justify-center gap-2 py-8">
-                  <Loader2 className="w-5 h-5 animate-spin text-brand" />
-                  <span className="app-section-title/70">Loading integrations</span>
-                </div>
-              ) : accounts.length === 0 ? (
-                <EmptyState
+        <ClientRouteViewport>
+          <ClientToolbar
+            left={
+              <span className="app-toolbar-stat">
+                {loading
+                  ? OPS_CHANNEL_TOOLBAR.integrations.loading
+                  : OPS_CHANNEL_TOOLBAR.integrations.stat(accounts.length)}
+              </span>
+            }
+            actions={syncAction}
+          />
+          {loading ? (
+            <ClientRouteLoading
+              icon={<Zap className="w-7 h-7" />}
+              label={OPS_CHANNEL_TOOLBAR.integrations.loading}
+              className="flex-1 min-h-0"
+            />
+          ) : (
+            <PageShell title="" eyebrow="" subtitle="" scrollable>
+              <div className="flex flex-col gap-3">
+                <Panel
+                  title="Email carriers"
+                  hint="GMAIL · OUTLOOK"
                   icon={Mail}
-                  eyebrow={OPS_CHANNEL_EMPTY.integrations.eyebrow}
-                  title={OPS_CHANNEL_EMPTY.integrations.title}
-                  description={OPS_CHANNEL_EMPTY.integrations.description}
-                  className="py-8"
-                  actions={[
-                    {
-                      label: "Connect Gmail",
-                      onClick: handleConnectGmail,
-                      primary: true,
-                    },
-                    {
-                      label: "Connect Outlook",
-                      onClick: handleConnectOutlook,
-                      primary: true,
-                    },
-                    {
-                      label: "Connect Yahoo",
-                      onClick: handleConnectYahoo,
-                      primary: true,
-                    },
-                  ]}
-                >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left stagger-children">
-                    {EMAIL_INBOUND_TASKS.map((task) => (
-                      <div
-                        key={task.id}
-                        className="rounded-md border border-brand/8 bg-brand/[0.02] px-3 py-2"
+                  autoHeight
+                  flush
+                  actions={
+                    <div className="flex items-center gap-2">
+                      <ShadButton
+                        onClick={handleConnectGmail}
+                        variant="outline"
+                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors"
                       >
-                        <p className="text-[10px] text-ink font-medium leading-snug">
-                          {task.callerMoment}
-                        </p>
-                        <p className="text-[10px] text-ink/40 mt-1 leading-snug">
-                          {task.agentAction}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </EmptyState>
-              ) : (
-                <>
-                  <div className="px-4 py-3 border-b border-black/6 bg-brand/5">
-                    <p className="text-[9px] uppercase tracking-[0.32em] text-brand font-medium mb-2">
-                      When email arrives
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {EMAIL_INBOUND_TASKS.map((task) => (
-                        <div
-                          key={task.id}
-                          className="rounded-md border border-input bg-paper/80 px-3 py-2.5"
-                        >
-                          <div className="flex items-start gap-2 mb-1.5">
-                            <Phone className="w-3 h-3 text-brand shrink-0 mt-0.5" />
-                            <p className="text-[10px] text-ink font-medium leading-snug text-pretty">
+                        <Plus className="w-3 h-3" />
+                        Gmail
+                      </ShadButton>
+                      <ShadButton
+                        onClick={handleConnectOutlook}
+                        variant="outline"
+                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-brand/10 border border-brand/30 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/20 transition-colors"
+                      >
+                        <Plus className="w-3 h-3" />
+                        Outlook
+                      </ShadButton>
+                      <ShadButton
+                        onClick={handleConnectYahoo}
+                        variant="outline"
+                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-brand/10 border border-brand/30 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/20 transition-colors"
+                      >
+                        <Plus className="w-3 h-3" />
+                        Yahoo
+                      </ShadButton>
+                    </div>
+                  }
+                >
+                  {accounts.length === 0 ? (
+                    <EmptyState
+                      icon={Mail}
+                      eyebrow={OPS_CHANNEL_EMPTY.integrations.eyebrow}
+                      title={OPS_CHANNEL_EMPTY.integrations.title}
+                      description={OPS_CHANNEL_EMPTY.integrations.description}
+                      className="py-8"
+                      actions={[
+                        {
+                          label: "Connect Gmail",
+                          onClick: handleConnectGmail,
+                          primary: true,
+                        },
+                        {
+                          label: "Connect Outlook",
+                          onClick: handleConnectOutlook,
+                          primary: true,
+                        },
+                        {
+                          label: "Connect Yahoo",
+                          onClick: handleConnectYahoo,
+                          primary: true,
+                        },
+                      ]}
+                    >
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left stagger-children">
+                        {EMAIL_INBOUND_TASKS.map((task) => (
+                          <div
+                            key={task.id}
+                            className="rounded-md border border-brand/8 bg-brand/[0.02] px-3 py-2"
+                          >
+                            <p className="text-[10px] text-ink font-medium leading-snug">
                               {task.callerMoment}
                             </p>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <Zap className="w-3 h-3 text-brand/80 shrink-0 mt-0.5" />
-                            <p className="text-[10px] text-muted/80 leading-relaxed text-pretty">
+                            <p className="text-[10px] text-ink/40 mt-1 leading-snug">
                               {task.agentAction}
                             </p>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="divide-y divide-white/6 stagger-children">
-                    {accounts.map((acc) => {
-                      const meta = PROVIDER_META[acc.provider] || PROVIDER_META.google;
-                      return (
-                        <motion.div
-                          layout
-                          initial={{ opacity: 0, y: 4 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          key={acc.id}
-                          className="px-3 py-2 flex flex-col xl:flex-row xl:items-center gap-3 hover:bg-brand/[0.025] transition-colors group"
-                        >
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                        ))}
+                      </div>
+                    </EmptyState>
+                  ) : (
+                    <>
+                      <div className="px-4 py-3 border-b border-black/6 bg-brand/5">
+                        <p className="text-[9px] uppercase tracking-[0.32em] text-brand font-medium mb-2">
+                          When email arrives
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {EMAIL_INBOUND_TASKS.map((task) => (
                             <div
-                              className={`w-10 h-10 rounded-md wl-panel border border-input flex items-center justify-center shrink-0 overflow-hidden ${meta.color}`}
+                              key={task.id}
+                              className="rounded-md border border-input bg-paper/80 px-3 py-2.5"
                             >
-                              {getIntegrationLogo(meta.logoName) ?? <Mail className="w-4 h-4" />}
-                            </div>
-                            <div className="min-w-0 space-y-1">
-                              <div className="font-display italic text-lg text-ink leading-none truncate">
-                                {acc.email_address}
+                              <div className="flex items-start gap-2 mb-1.5">
+                                <Phone className="w-3 h-3 text-brand shrink-0 mt-0.5" />
+                                <p className="text-[10px] text-ink font-medium leading-snug text-pretty">
+                                  {task.callerMoment}
+                                </p>
                               </div>
-                              <div className="flex items-center gap-2">
-                                {acc.provider === "yahoo" ? (
-                                  <span
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-500 text-[9px] uppercase tracking-[0.3em]"
-                                    title="Yahoo inbox sync is coming soon — OAuth connection is stored"
+                              <div className="flex items-start gap-2">
+                                <Zap className="w-3 h-3 text-brand/80 shrink-0 mt-0.5" />
+                                <p className="text-[10px] text-muted/80 leading-relaxed text-pretty">
+                                  {task.agentAction}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="divide-y divide-white/6 stagger-children">
+                        {accounts.map((acc) => {
+                          const meta = PROVIDER_META[acc.provider] || PROVIDER_META.google;
+                          return (
+                            <motion.div
+                              layout
+                              initial={{ opacity: 0, y: 4 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              key={acc.id}
+                              className="px-3 py-2 flex flex-col xl:flex-row xl:items-center gap-3 hover:bg-brand/[0.025] transition-colors group"
+                            >
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <div
+                                  className={`w-10 h-10 rounded-md wl-panel border border-input flex items-center justify-center shrink-0 overflow-hidden ${meta.color}`}
+                                >
+                                  {getIntegrationLogo(meta.logoName) ?? (
+                                    <Mail className="w-4 h-4" />
+                                  )}
+                                </div>
+                                <div className="min-w-0 space-y-1">
+                                  <div className="font-display italic text-lg text-ink leading-none truncate">
+                                    {acc.email_address}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {acc.provider === "yahoo" ? (
+                                      <span
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-500 text-[9px] uppercase tracking-[0.3em]"
+                                        title="Yahoo inbox sync is coming soon — OAuth connection is stored"
+                                      >
+                                        Connected · Inbox soon
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand/10 border border-brand/30 text-brand text-[9px] uppercase tracking-[0.3em]">
+                                        <CheckCircle2 className="w-2.5 h-2.5" /> Synced
+                                      </span>
+                                    )}
+                                    <span
+                                      className={`text-[9px] uppercase tracking-[0.3em] font-mono ${meta.color}`}
+                                    >
+                                      {meta.label}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2 shrink-0">
+                                <Label className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground inline-flex items-center gap-1.5">
+                                  <Bot className="w-3 h-3 text-brand" /> Route to
+                                </Label>
+                                <div className="relative">
+                                  <Select
+                                    value={acc.agent_id || "none"}
+                                    onValueChange={(v) => updateAccountAgent(acc.id, v)}
                                   >
-                                    Connected · Inbox soon
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand/10 border border-brand/30 text-brand text-[9px] uppercase tracking-[0.3em]">
-                                    <CheckCircle2 className="w-2.5 h-2.5" /> Synced
-                                  </span>
-                                )}
-                                <span
-                                  className={`text-[9px] uppercase tracking-[0.3em] font-mono ${meta.color}`}
+                                    <SelectTrigger
+                                      aria-label="Route to agent"
+                                      className="text-xs bg-black/5 border border-input rounded-md pl-3 py-1.5 text-ink h-auto"
+                                    >
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="none">Unassigned</SelectItem>
+                                      {agents.map((agent) => (
+                                        <SelectItem key={agent.id} value={agent.id}>
+                                          {agent.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                <ShadButton
+                                  onClick={() => handleDisconnect(acc.id)}
+                                  variant="outline"
+                                  className="w-8 h-8 rounded-md wl-panel border border-input text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all flex items-center justify-center p-0"
+                                  title="Disconnect"
                                 >
-                                  {meta.label}
-                                </span>
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </ShadButton>
                               </div>
-                            </div>
-                          </div>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </Panel>
 
-                          <div className="flex items-center gap-2 shrink-0">
-                            <Label className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground inline-flex items-center gap-1.5">
-                              <Bot className="w-3 h-3 text-brand" /> Route to
-                            </Label>
-                            <div className="relative">
-                              <Select
-                                value={acc.agent_id || "none"}
-                                onValueChange={(v) => updateAccountAgent(acc.id, v)}
-                              >
-                                <SelectTrigger
-                                  aria-label="Route to agent"
-                                  className="text-xs bg-black/5 border border-input rounded-md pl-3 py-1.5 text-ink h-auto"
-                                >
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">Unassigned</SelectItem>
-                                  {agents.map((agent) => (
-                                    <SelectItem key={agent.id} value={agent.id}>
-                                      {agent.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <ShadButton
-                              onClick={() => handleDisconnect(acc.id)}
-                              variant="outline"
-                              className="w-8 h-8 rounded-md wl-panel border border-input text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all flex items-center justify-center p-0"
-                              title="Disconnect"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </ShadButton>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-            </Panel>
-
-            <div>
-              <CrmConnectionCard />
-            </div>
-          </div>
-        </PageShell>
+                <div>
+                  <CrmConnectionCard />
+                </div>
+              </div>
+            </PageShell>
+          )}
+        </ClientRouteViewport>
       </AdminHubViewport>
 
       <ConfirmModal

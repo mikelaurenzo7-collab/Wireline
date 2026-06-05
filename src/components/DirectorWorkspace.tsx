@@ -1673,7 +1673,7 @@ export default function DirectorWorkspace({
       )}
 
       {/* Composer - prominent at bottom, Claude-style */}
-      <div className="shrink-0 px-4 pb-6 pt-2">
+      <div className="relative z-30 shrink-0 px-4 pb-6 pt-2">
         <div className="max-w-3xl mx-auto">
           {/* Connectors dropdown */}
           <div ref={connectorsRef} className="relative mb-2">
@@ -1684,7 +1684,7 @@ export default function DirectorWorkspace({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 4, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute bottom-full left-0 right-0 mb-2 rounded-md bg-popover text-popover-foreground backdrop-blur-md border border-border shadow-2xl p-2 z-20"
+                  className="absolute bottom-full left-0 right-0 mb-2 rounded-md bg-popover text-popover-foreground backdrop-blur-md border border-border shadow-2xl p-2 z-50"
                 >
                   <div className="flex items-center gap-2 px-3 py-2 border-b border-border mb-1">
                     <Plug className="w-3.5 h-3.5 text-brand" />
@@ -1820,7 +1820,7 @@ export default function DirectorWorkspace({
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 4, scale: 0.98 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute bottom-full left-0 mb-2 w-[min(100vw-2rem,320px)] rounded-md bg-popover text-popover-foreground backdrop-blur-md border border-border shadow-2xl z-20 overflow-hidden"
+                        className="absolute bottom-full left-0 mb-2 w-[min(100vw-2rem,320px)] rounded-md bg-popover text-popover-foreground backdrop-blur-md border border-border shadow-2xl z-50 overflow-hidden"
                       >
                         <DirectorCapabilityCatalog
                           variant="popover"
@@ -1862,7 +1862,7 @@ export default function DirectorWorkspace({
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 4, scale: 0.98 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute bottom-full left-0 mb-2 w-56 rounded-md bg-popover text-popover-foreground backdrop-blur-md border border-border shadow-2xl p-1 z-20 max-h-[40vh] overflow-y-auto"
+                        className="absolute bottom-full left-0 mb-2 w-56 rounded-md bg-popover text-popover-foreground backdrop-blur-md border border-border shadow-2xl p-1 z-50 max-h-[40vh] overflow-y-auto"
                       >
                         <ShadButton
                           type="button"
@@ -1947,7 +1947,7 @@ export default function DirectorWorkspace({
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 4, scale: 0.98 }}
                           transition={{ duration: 0.15 }}
-                          className="absolute bottom-full left-0 mb-2 w-64 rounded-md bg-popover text-popover-foreground backdrop-blur-md border border-border shadow-2xl p-2 z-20 max-h-[40vh] overflow-y-auto"
+                          className="absolute bottom-full left-0 mb-2 w-64 rounded-md bg-popover text-popover-foreground backdrop-blur-md border border-border shadow-2xl p-2 z-50 max-h-[40vh] overflow-y-auto"
                         >
                           <p className="px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
                             {enabledTools.length > 0
@@ -2022,7 +2022,7 @@ export default function DirectorWorkspace({
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 4, scale: 0.98 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute bottom-full left-0 mb-2 w-48 rounded-md bg-popover text-popover-foreground backdrop-blur-md border border-border shadow-2xl p-1 z-20"
+                        className="absolute bottom-full left-0 mb-2 w-48 rounded-md bg-popover text-popover-foreground backdrop-blur-md border border-border shadow-2xl p-1 z-50"
                       >
                         <ShadButton
                           type="button"

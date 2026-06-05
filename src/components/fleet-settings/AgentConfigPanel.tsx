@@ -191,6 +191,7 @@ export default function AgentConfigPanel({
       className={cn(
         "flex-1 min-h-0 scroll-viewport px-3 py-3",
         !selectedAgent && "hidden md:block",
+        selectedAgent && "wl-fleet-config-drawer md:flex-1",
       )}
     >
       {/* Mobile-only back button — clears selectedAgent so the list

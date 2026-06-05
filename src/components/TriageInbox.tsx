@@ -33,7 +33,12 @@ import { Badge } from "./ui/shadcn/Badge";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "./ui/shadcn/Tooltip";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { EmptyState } from "./ui/EmptyState";
-import { OPS_TRIAGE_EMPTY } from "../lib/wireline-ops-design";
+import {
+  OPS_TRIAGE_EMPTY,
+  OPS_TRIAGE_ACCENTS,
+  OPS_CHANNEL_TOOLBAR,
+} from "../lib/wireline-ops-design";
+import { BRAND } from "../constants/brand-colors";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
 
 interface HotLead {
@@ -135,16 +140,18 @@ export default function TriageInbox() {
       {loading && !data ? (
         <ClientRouteLoading
           icon={<Compass className="w-6 h-6 animate-spin-slow" />}
-          label="Scanning…"
+          label={OPS_CHANNEL_TOOLBAR.triage.loading}
           className="py-6"
         />
       ) : fetchErr ? (
         <div className="h-full flex flex-col items-center justify-center gap-3 px-6 text-center py-6">
-          <p className="text-[10px] uppercase tracking-[0.35em] text-rose-500">{fetchErr}</p>
+          <p className="wl-label text-rose-500">{fetchErr}</p>
           <ShadButton
             onClick={fetchData}
-            variant="ghost"
-            className="text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand"
+            variant="outline"
+            size="sm"
+            disableAnimations
+            className="h-9 rounded-full text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand"
           >
             Retry
           </ShadButton>
@@ -189,26 +196,31 @@ export default function TriageInbox() {
     <ClientRouteViewport>
       <ClientToolbar
         left={
-          <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted">
-            <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
-            {totalAttention} need attention
+          <span className="app-toolbar-stat">
+            <span className="w-2 h-2 rounded-full bg-brand animate-pulse" aria-hidden />
+            {loading && !data
+              ? OPS_CHANNEL_TOOLBAR.triage.loading
+              : OPS_CHANNEL_TOOLBAR.triage.stat(totalAttention)}
           </span>
         }
         actions={
           <>
             <CsvExportButton type="tasks" label="CSV" />
             <ShadButton
+              type="button"
               onClick={fetchData}
               disabled={loading}
               variant="outline"
-              className="h-9 px-3 rounded-full wl-panel border border-input text-eyebrow hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
+              size="sm"
+              disableAnimations
+              className="h-9 rounded-full text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40"
             >
               {loading ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
               ) : (
                 <RefreshCw className="w-3 h-3" />
               )}
-              Refresh
+              {OPS_CHANNEL_TOOLBAR.triage.refresh}
             </ShadButton>
           </>
         }
@@ -251,7 +263,7 @@ export default function TriageInbox() {
               <WidgetBoundary label="Hot Leads">
                 <HotLeads items={data?.hot_leads || []} />
               </WidgetBoundary>,
-              "#8B6FA8",
+              OPS_TRIAGE_ACCENTS.hotLeads,
             )}
           </div>
 
@@ -268,7 +280,7 @@ export default function TriageInbox() {
                   onFetchFailed={fetchData}
                 />
               </WidgetBoundary>,
-              "#8B3FD6",
+              OPS_TRIAGE_ACCENTS.openTasks,
             )}
           </div>
 
@@ -281,7 +293,7 @@ export default function TriageInbox() {
               <WidgetBoundary label="Escalations">
                 <Escalations items={data?.escalations || []} />
               </WidgetBoundary>,
-              "#E8466A",
+              OPS_TRIAGE_ACCENTS.escalations,
             )}
           </div>
 
@@ -294,7 +306,7 @@ export default function TriageInbox() {
               <WidgetBoundary label="Compliance">
                 <ComplianceList items={data?.compliance || []} />
               </WidgetBoundary>,
-              "#E8466A",
+              OPS_TRIAGE_ACCENTS.compliance,
             )}
           </div>
 
@@ -311,7 +323,7 @@ export default function TriageInbox() {
                   onDiscard={removeGap}
                 />
               </WidgetBoundary>,
-              "#8B3FD6",
+              OPS_TRIAGE_ACCENTS.knowledgeGaps,
             )}
           </div>
         </div>
@@ -353,7 +365,11 @@ function HotLeads({ items }: { items: HotLead[] }) {
                   cy="22"
                   fill="none"
                   stroke={
-                    c.lead_score >= 80 ? "#8B3FD6" : c.lead_score >= 60 ? "#8B6FA8" : "#E8466A"
+                    c.lead_score >= 80
+                      ? BRAND.purple
+                      : c.lead_score >= 60
+                        ? BRAND.purpleMuted
+                        : BRAND.rose
                   }
                   strokeWidth="4"
                   strokeDasharray={`${(c.lead_score / 100) * 100.53} 100.53`}

@@ -6,9 +6,20 @@ import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatDate } from "../lib/safe-date";
 import PageShell, { Panel } from "./PageShell";
+import ClientToolbar from "./layout/ClientToolbar";
+import ClientRouteLoading from "./layout/ClientRouteLoading";
+import {
+  ChannelInboxGrid,
+  ChannelInboxListPane,
+  ChannelInboxDetailPane,
+} from "./layout/ChannelInbox";
+import { EmptyState } from "./ui/EmptyState";
+import {
+  OPS_CHANNEL_EMPTY,
+  OPS_CHANNEL_TOOLBAR,
+  WL_CHANNEL_CLASSES,
+} from "../lib/wireline-ops-design";
 import { useToast } from "../contexts/ToastContext";
-import EmptyState from "./EmptyState";
-import { OPS_CHANNEL_EMPTY } from "../lib/wireline-ops-design";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
@@ -131,219 +142,234 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
 
   const activeThread = threads.find((t) => t.id === activeId);
 
-  return (
-    <div className="h-full flex flex-col min-h-0">
-      <div className="flex-1 min-h-0">
-        <PageShell
-          eyebrow={embedded ? undefined : "Channels · Messaging"}
-          title={embedded ? "" : "SMS Inbox"}
-          subtitle={
-            embedded
-              ? undefined
-              : "Two-way text conversations with customers — outbound from your agents, inbound replies routed here."
-          }
-          actions={
-            <ShadButton
-              type="button"
-              variant="outline"
-              size="sm"
-              disableAnimations
-              onClick={fetchThreads}
-              disabled={loading}
-              className="h-11 rounded-full text-[10px] uppercase tracking-[0.28em]"
+  const refreshAction = (
+    <ShadButton
+      type="button"
+      variant="outline"
+      size="sm"
+      disableAnimations
+      onClick={fetchThreads}
+      disabled={loading}
+      className="h-9 rounded-full text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40"
+    >
+      {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+      {OPS_CHANNEL_TOOLBAR.sms.refresh}
+    </ShadButton>
+  );
+
+  const showInitialLoad = embedded && loading && threads.length === 0;
+
+  const inboxBody = (
+    <div className="flex-1 min-h-0">
+      <PageShell
+        eyebrow={embedded ? undefined : "Channels · Messaging"}
+        title={embedded ? "" : "SMS Inbox"}
+        subtitle={
+          embedded
+            ? undefined
+            : "Two-way text conversations with customers — outbound from your agents, inbound replies routed here."
+        }
+        actions={embedded ? undefined : refreshAction}
+      >
+        <Panel title="Inbox" hint="SMS · THREADS & REPLIES" icon={Inbox} flush className="h-full">
+          <ChannelInboxGrid>
+            <ChannelInboxListPane
+              label="All conversations"
+              count={threads.length}
+              detailOpen={!!activeId}
             >
               {loading ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
+                <ClientRouteLoading
+                  icon={<MessageSquare className="w-5 h-5" />}
+                  label={OPS_CHANNEL_TOOLBAR.sms.loading}
+                  className="py-8"
+                />
+              ) : threads.length === 0 ? (
+                <EmptyState
+                  icon={MessageSquare}
+                  eyebrow={OPS_CHANNEL_EMPTY.sms.eyebrow}
+                  title={OPS_CHANNEL_EMPTY.sms.title}
+                  description={OPS_CHANNEL_EMPTY.sms.description}
+                  actions={[...OPS_CHANNEL_EMPTY.sms.actions]}
+                />
               ) : (
-                <RefreshCw className="w-3 h-3" />
-              )}
-              Refresh
-            </ShadButton>
-          }
-        >
-          <Panel title="Inbox" hint="SMS · THREADS & REPLIES" icon={Inbox} flush className="h-full">
-            <div className="h-full min-h-[360px] grid grid-cols-1 lg:grid-cols-[minmax(280px,320px)_1fr] min-h-0">
-              <div
-                className={cn(
-                  "min-h-0 flex flex-col border-b lg:border-b-0 lg:border-r border-black/8",
-                  activeId && "hidden lg:flex",
-                )}
-              >
-                <div className="shrink-0 px-3 py-2 border-b border-black/6 flex items-center justify-between">
-                  <span className="text-eyebrow opacity-80">All conversations</span>
-                  <span className="text-[9px] uppercase tracking-[0.28em] text-muted tabular-nums">
-                    {threads.length}
-                  </span>
-                </div>
-                <div className="flex-1 min-h-0 scroll-viewport panel-scroll p-2">
-                  {loading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <Loader2 className="w-5 h-5 animate-spin text-muted" />
-                    </div>
-                  ) : threads.length === 0 ? (
-                    <EmptyState
-                      icon={MessageSquare}
-                      eyebrow={OPS_CHANNEL_EMPTY.sms.eyebrow}
-                      title={OPS_CHANNEL_EMPTY.sms.title}
-                      description={OPS_CHANNEL_EMPTY.sms.description}
-                      actions={[...OPS_CHANNEL_EMPTY.sms.actions]}
-                    />
-                  ) : (
-                    <div className="space-y-1.5">
-                      <AnimatePresence>
-                        {threads.map((t) => (
-                          <motion.button
-                            key={t.id}
-                            initial={{ opacity: 0, y: 4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            onClick={() => setActiveId(t.id)}
-                            className={cn(
-                              "w-full text-left rounded-md p-3 border transition-all",
-                              activeId === t.id
-                                ? "bg-brand/8 border-brand/30"
-                                : "bg-white/[0.02] border-white/10 hover:border-white/20",
-                            )}
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0 flex-1">
-                                <p className="font-mono text-sm text-ink truncate">
-                                  {t.customer_number}
-                                </p>
-                                <p className="text-[10px] text-ink/40 mt-0.5">
-                                  {formatDate(
-                                    t.last_message_at,
-                                    {
-                                      month: "short",
-                                      day: "numeric",
-                                      hour: "numeric",
-                                      minute: "2-digit",
-                                    },
-                                    "—",
-                                    "en-US",
-                                  )}
-                                </p>
-                              </div>
-                              {t.unread_count > 0 && (
-                                <span className="shrink-0 inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-brand text-on-brand text-[10px] font-bold">
-                                  {t.unread_count}
-                                </span>
-                              )}
-                            </div>
-                          </motion.button>
-                        ))}
-                      </AnimatePresence>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className={cn("min-h-0 flex flex-col", !activeId && "hidden lg:flex")}>
-                {!activeThread ? (
-                  <EmptyState
-                    icon={MessageSquare}
-                    title="Pick a conversation"
-                    description="Select a thread on the left to see the full SMS history and reply."
-                    className="h-full py-12"
-                  />
-                ) : (
-                  <div className="h-full flex flex-col min-h-0 p-3">
-                    <div className="shrink-0 pb-2 border-b border-black/6 flex items-center gap-2">
-                      <Phone className="w-3.5 h-3.5 text-brand shrink-0" />
-                      <span className="font-mono text-sm text-ink truncate">
-                        {activeThread.customer_number}
-                      </span>
-                      <span className="text-eyebrow opacity-70 ml-auto">Two-way</span>
-                    </div>
-                    <ShadButton
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      disableAnimations
-                      onClick={() => setActiveId(null)}
-                      aria-label="Back to threads"
-                      className="lg:hidden self-start h-auto p-1 mb-2 text-[10px] uppercase tracking-[0.3em] text-muted"
-                    >
-                      <ArrowLeft className="w-2.5 h-2.5" /> Back
-                    </ShadButton>
-                    <div className="flex-1 min-h-0 scroll-viewport space-y-2 pb-3">
-                      {messagesLoading ? (
-                        <div className="flex items-center justify-center py-12">
-                          <Loader2 className="w-5 h-5 animate-spin text-muted" />
-                        </div>
-                      ) : (
-                        messages.map((m) => (
-                          <div
-                            key={m.id}
-                            className={cn(
-                              "max-w-[78%] rounded-md px-3.5 py-2.5 border",
-                              m.direction === "out"
-                                ? "ml-auto bg-brand/12 border-brand/30 text-ink"
-                                : "mr-auto bg-white/[0.04] border-white/10 text-ink",
-                            )}
-                          >
-                            <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">
-                              {m.body}
+                <div className="space-y-1.5">
+                  <AnimatePresence>
+                    {threads.map((t) => (
+                      <motion.button
+                        key={t.id}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        onClick={() => setActiveId(t.id)}
+                        className={cn(
+                          WL_CHANNEL_CLASSES.threadRow,
+                          activeId === t.id && WL_CHANNEL_CLASSES.threadRowActive,
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-mono text-sm text-ink truncate">
+                              {t.customer_number}
                             </p>
-                            <p className="text-[9px] uppercase tracking-[0.25em] text-ink/40 mt-1.5">
-                              {m.direction === "out" ? "You" : "Caller"} ·{" "}
+                            <p className="text-[10px] text-ink/40 mt-0.5">
                               {formatDate(
-                                m.created_at,
-                                { hour: "numeric", minute: "2-digit" },
+                                t.last_message_at,
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                },
                                 "—",
                                 "en-US",
                               )}
                             </p>
                           </div>
-                        ))
-                      )}
-                      <div ref={messagesEndRef} />
-                    </div>
-
-                    <div className="shrink-0 border-t border-white/8 pt-3">
-                      <div className="flex gap-2">
-                        <Input
-                          type="text"
-                          value={reply}
-                          onChange={(e) => setReply(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey) {
-                              e.preventDefault();
-                              handleSend();
-                            }
-                          }}
-                          placeholder="Type a reply…"
-                          disabled={sending}
-                          className="flex-1 text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 disabled:opacity-50"
-                        />
-                        <ShadButton
-                          type="button"
-                          variant="editorial"
-                          size="icon"
-                          disableAnimations
-                          onClick={handleSend}
-                          disabled={sending || !reply.trim()}
-                          aria-label="Send SMS reply"
-                          className="touch-press shrink-0 min-h-11 w-11 rounded-md"
-                        >
-                          {sending ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Send className="w-4 h-4" />
+                          {t.unread_count > 0 && (
+                            <span className="shrink-0 inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-brand text-on-brand text-[10px] font-bold">
+                              {t.unread_count}
+                            </span>
                           )}
-                        </ShadButton>
-                      </div>
-                      <p className="text-[10px] text-ink/40 mt-1.5 leading-relaxed">
-                        Sent from your Twilio sender · TCPA opt-out applies · STOP keyword
-                        auto-honored.
-                      </p>
-                    </div>
+                        </div>
+                      </motion.button>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
+            </ChannelInboxListPane>
+
+            <ChannelInboxDetailPane detailOpen={!!activeId}>
+              {!activeThread ? (
+                <EmptyState
+                  icon={MessageSquare}
+                  title="Pick a conversation"
+                  description="Select a thread on the left to see the full SMS history and reply."
+                  className="h-full py-12"
+                />
+              ) : (
+                <div className="h-full flex flex-col min-h-0 p-3">
+                  <div className="shrink-0 pb-2 border-b border-black/6 flex items-center gap-2">
+                    <Phone className="w-3.5 h-3.5 text-brand shrink-0" />
+                    <span className="font-mono text-sm text-ink truncate">
+                      {activeThread.customer_number}
+                    </span>
+                    <span className="text-eyebrow opacity-70 ml-auto">Two-way</span>
                   </div>
-                )}
-              </div>
-            </div>
-          </Panel>
-        </PageShell>
-      </div>
+                  <ShadButton
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disableAnimations
+                    onClick={() => setActiveId(null)}
+                    aria-label="Back to threads"
+                    className="lg:hidden self-start h-auto p-1 mb-2 text-[10px] uppercase tracking-[0.3em] text-muted"
+                  >
+                    <ArrowLeft className="w-2.5 h-2.5" /> Back
+                  </ShadButton>
+                  <div className="flex-1 min-h-0 scroll-viewport space-y-2 pb-3">
+                    {messagesLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-5 h-5 animate-spin text-muted" />
+                      </div>
+                    ) : (
+                      messages.map((m) => (
+                        <div
+                          key={m.id}
+                          className={cn(
+                            "max-w-[78%] rounded-md px-3.5 py-2.5 border",
+                            m.direction === "out"
+                              ? "ml-auto bg-brand/12 border-brand/30 text-ink"
+                              : "mr-auto bg-white/[0.04] border-white/10 text-ink",
+                          )}
+                        >
+                          <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">
+                            {m.body}
+                          </p>
+                          <p className="text-[9px] uppercase tracking-[0.25em] text-ink/40 mt-1.5">
+                            {m.direction === "out" ? "You" : "Caller"} ·{" "}
+                            {formatDate(
+                              m.created_at,
+                              { hour: "numeric", minute: "2-digit" },
+                              "—",
+                              "en-US",
+                            )}
+                          </p>
+                        </div>
+                      ))
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+
+                  <div className="shrink-0 border-t border-white/8 pt-3">
+                    <div className="flex gap-2">
+                      <Input
+                        type="text"
+                        value={reply}
+                        onChange={(e) => setReply(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSend();
+                          }
+                        }}
+                        placeholder="Type a reply…"
+                        disabled={sending}
+                        className="flex-1 text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 disabled:opacity-50"
+                      />
+                      <ShadButton
+                        type="button"
+                        variant="editorial"
+                        size="icon"
+                        disableAnimations
+                        onClick={handleSend}
+                        disabled={sending || !reply.trim()}
+                        aria-label="Send SMS reply"
+                        className="touch-press shrink-0 min-h-11 w-11 rounded-md"
+                      >
+                        {sending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Send className="w-4 h-4" />
+                        )}
+                      </ShadButton>
+                    </div>
+                    <p className="text-[10px] text-ink/40 mt-1.5 leading-relaxed">
+                      Sent from your Twilio sender · TCPA opt-out applies · STOP keyword
+                      auto-honored.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </ChannelInboxDetailPane>
+          </ChannelInboxGrid>
+        </Panel>
+      </PageShell>
+    </div>
+  );
+
+  return (
+    <div className="h-full flex flex-col min-h-0">
+      {embedded && (
+        <ClientToolbar
+          left={
+            <span className="app-toolbar-stat">
+              {showInitialLoad
+                ? OPS_CHANNEL_TOOLBAR.sms.loading
+                : OPS_CHANNEL_TOOLBAR.sms.stat(threads.length)}
+            </span>
+          }
+          actions={refreshAction}
+        />
+      )}
+      {showInitialLoad ? (
+        <ClientRouteLoading
+          icon={<MessageSquare className="w-7 h-7" />}
+          label={OPS_CHANNEL_TOOLBAR.sms.loading}
+          className="flex-1 min-h-0"
+        />
+      ) : (
+        inboxBody
+      )}
     </div>
   );
 }

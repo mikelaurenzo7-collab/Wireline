@@ -28,7 +28,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../../lib/utils";
 import { Link } from "react-router-dom";
 import { Panel } from "../PageShell";
-import EmptyState from "../EmptyState";
+import { EmptyState } from "../ui/EmptyState";
 import { OPS_CHANNEL_EMPTY } from "../../lib/wireline-ops-design";
 import ClientRouteLoading from "../layout/ClientRouteLoading";
 import { ShadButton } from "../ui/shadcn/ShadButton";

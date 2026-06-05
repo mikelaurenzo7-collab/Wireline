@@ -36,6 +36,7 @@ export const OPS_PULSE_METRICS = {
 
 export const OPS_COPY = {
   floorQuiet: "Floor is quiet — active conversations appear here.",
+  floorLoading: "Loading live floor",
   floorTitle: (n: number) =>
     n === 0 ? "No live callers" : `${n} live caller${n === 1 ? "" : "s"}`,
   intelHub: "Action queue",
@@ -174,6 +175,15 @@ export const OPS_CHANNEL_EMPTY = {
   },
 } as const;
 
+/** Triage panel accent rails — brand-only (no orphan hex in routes) */
+export const OPS_TRIAGE_ACCENTS = {
+  hotLeads: BRAND.purpleMuted,
+  openTasks: BRAND.purple,
+  escalations: BRAND.rose,
+  compliance: BRAND.rose,
+  knowledgeGaps: BRAND.purple,
+} as const;
+
 /** Triage panel empty states — `/triage` widget columns */
 export const OPS_TRIAGE_EMPTY = {
   hotLeads: {
@@ -214,7 +224,9 @@ export const OPS_TRIAGE_EMPTY = {
 export const OPS_HELP = {
   title: "Help & demos",
   eyebrow: "Support",
-  subtitle: "Live team lines, role-play demos, and quick paths back into the product.",
+  subtitle: "Team lines, demos, and shortcuts back into Wireline.",
+  stat: (live: number, demos: number) =>
+    `${live} live line${live === 1 ? "" : "s"} · ${demos} demo${demos === 1 ? "" : "s"}`,
   quickLinks: [
     { label: "Director · Chat", to: "/chat", hint: "Deploy agents & ask questions" },
     { label: "Integrations", to: "/integrations", hint: "Gmail, Outlook, Yahoo" },
@@ -222,6 +234,171 @@ export const OPS_HELP = {
     { label: "System status", to: "/status", hint: "Public uptime feed" },
   ],
 } as const;
+
+/** Channel toolbar copy — ClientToolbar left labels + loading states */
+export const OPS_CHANNEL_TOOLBAR = {
+  phone: {
+    loading: "Loading call history",
+    stat: (n: number) => `${n} call${n === 1 ? "" : "s"}`,
+    searchPlaceholder: "Search signals…",
+  },
+  email: {
+    loading: "Loading inbox",
+    stat: (n: number) => `${n} thread${n === 1 ? "" : "s"}`,
+    sync: "Sync inbox",
+  },
+  sms: {
+    loading: "Loading SMS threads",
+    stat: (n: number) => `${n} conversation${n === 1 ? "" : "s"}`,
+    refresh: "Refresh",
+  },
+  audit: {
+    loading: "Loading audit log",
+    stat: (n: number) => `${n.toLocaleString()} event${n === 1 ? "" : "s"}`,
+    export: "Export CSV",
+    refresh: "Refresh",
+  },
+  pipeline: {
+    loading: "Loading pipeline",
+  },
+  triage: {
+    loading: "Scanning triage",
+    stat: (n: number) => `${n} need attention`,
+    refresh: "Refresh",
+  },
+  insights: {
+    stat: (days: number) => `${days}-day window`,
+    export: "Export CSV",
+  },
+  training: {
+    loading: "Loading training",
+    stat: (n: number) => `${n} agent${n === 1 ? "" : "s"}`,
+  },
+  appointments: {
+    loading: "Loading appointments",
+    stat: (n: number) => `${n} scheduled`,
+    book: "Book",
+  },
+  outbound: {
+    loading: "Loading queue",
+    stat: (queued: number, total: number) =>
+      total > 0 ? `${queued} queued · ${total} leads` : "Queue idle",
+    export: "Export",
+  },
+  contact: {
+    loading: "Loading contact",
+    stat: (events: number) => `${events} event${events === 1 ? "" : "s"}`,
+  },
+  fleet: {
+    templatesStat: (n: number) => `${n} template${n === 1 ? "" : "s"}`,
+    agentsStat: (n: number) => `${n} agent${n === 1 ? "" : "s"}`,
+  },
+  integrations: {
+    loading: "Loading integrations",
+    stat: (n: number) => `${n} carrier${n === 1 ? "" : "s"}`,
+    sync: "Sync all",
+  },
+} as const;
+
+/** Pipeline kanban copy */
+export const OPS_PIPELINE = {
+  emptyColumn: "Drop leads here",
+  dragHint: "Drag to move stage",
+} as const;
+
+/** Integration preview + live card class hooks */
+export const WL_INTEGRATION_CLASSES = {
+  previewCard: "wl-integration-preview-card",
+  liveCard: "wl-integration-live-card",
+} as const;
+
+/** Admin hub — settings tabs, panel padding, save footers */
+export const OPS_ADMIN = {
+  loading: "Loading settings",
+  saving: "Saving…",
+  tabLabels: {
+    branding: "Branding",
+    carrier: "Carrier & routing",
+    subscription: "Billing",
+    team: "Team access",
+    flywheel: "Growth engine",
+    system: "System health",
+    activity: "Audit activity",
+  },
+  saveLabels: {
+    branding: "Save branding",
+    carrier: "Save carrier settings",
+    carrierMessaging: "Save messaging config",
+    subscription: "Save billing",
+    growth: "Save growth settings",
+  },
+} as const;
+
+export type OpsAdminTab = keyof typeof OPS_ADMIN.tabLabels;
+
+export const WL_ADMIN_CLASSES = {
+  panel: "wl-admin-panel",
+  saveBar: "wl-admin-save-bar",
+  helpCard: "wl-help-agent-card",
+} as const;
+
+/** Founder command surface copy */
+export const OPS_FOUNDER = {
+  loading: "Loading staff",
+  stat: (n: number) => `${n} staff agent${n === 1 ? "" : "s"}`,
+  broadcastPlaceholder: "e.g. From today, always confirm the caller's email by spelling it back.",
+  broadcastSend: "Send to all 6",
+} as const;
+
+/** Fleet / founder roster row class hooks (shared with AgentListPanel) */
+export const WL_FLEET_CLASSES = {
+  agentRow: "wl-fleet-agent-row",
+  agentRowActive: "wl-fleet-agent-row--active",
+  agentAvatar: "wl-fleet-agent-avatar",
+  agentAvatarActive: "wl-fleet-agent-avatar--active",
+} as const;
+
+/** Mobile drawer section labels */
+export const WL_CHROME_CLASSES = {
+  drawerSection: "wl-drawer-section-label",
+  railItemActive: "wl-rail-item--active",
+  railFooterActive: "wl-rail-footer--active",
+} as const;
+
+/** Channel inbox + list table class hooks (phone, email, SMS). */
+export const WL_CHANNEL_CLASSES = {
+  inboxGrid:
+    "wl-channel-inbox-grid h-full min-h-[360px] grid grid-cols-1 lg:grid-cols-[minmax(280px,320px)_1fr] min-h-0",
+  inboxList:
+    "min-h-0 flex flex-col border-b lg:border-b-0 lg:border-r border-border wl-panel rounded-none lg:rounded-l-md",
+  inboxListHeader:
+    "shrink-0 px-3 py-2 border-b border-black/6 flex items-center justify-between gap-2",
+  inboxDetail: "min-h-0 flex flex-col bg-white/[0.02] lg:rounded-r-md",
+  listColHeader:
+    "hidden sm:grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_4.5rem] gap-2 px-3 py-2 border-b border-black/6 bg-black/[0.02]",
+  threadRow:
+    "w-full text-left rounded-md p-3 border border-border bg-paper/40 transition-all hover:border-brand/25",
+  threadRowActive: "bg-brand/8 border-brand/30",
+} as const;
+
+/** Insights tab groups — Performance / Quality / Revenue */
+export const OPS_INSIGHTS_GROUPS = [
+  {
+    id: "performance",
+    label: "Performance",
+    tabs: ["funnel", "goals", "heatmap", "leaderboard"] as const,
+  },
+  {
+    id: "quality",
+    label: "Quality",
+    tabs: ["failures", "latency", "quality"] as const,
+  },
+  {
+    id: "revenue",
+    label: "Revenue",
+    tabs: ["attribution", "topics", "spend"] as const,
+  },
+] as const;
 
 /** Compliance & admin empty states */
 export const OPS_SUPPORT_EMPTY = {
@@ -236,6 +413,16 @@ export const OPS_SUPPORT_EMPTY = {
     title: "No matches",
     description: "Try a different search term or clear the filter.",
   },
+  auditCompliance:
+    "Audit events are retained for compliance review. Export CSV for external archival or regulator requests.",
+} as const;
+
+/** Audit severity legend — mirrors DNC compliance chip vocabulary */
+export const OPS_AUDIT_SEVERITY = {
+  info: { label: "Info", hint: "Routine operations" },
+  warning: { label: "Warning", hint: "Review recommended" },
+  error: { label: "Error", hint: "Failed or blocked action" },
+  critical: { label: "Critical", hint: "Immediate attention" },
 } as const;
 
 /** Insights tab empty states — data-driven panels with route CTAs */

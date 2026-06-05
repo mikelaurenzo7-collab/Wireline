@@ -48,9 +48,7 @@ export default function ClientRouteLoading({ icon, label = "Loading…", classNa
           </Medallion>
         </div>
 
-        <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-muted/70 animate-pulse">
-          {label}
-        </span>
+        <span className="wl-label-muted animate-pulse">{label}</span>
       </div>
     </div>
   );

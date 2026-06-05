@@ -1,3 +1,13 @@
+import { BRAND } from "../constants/brand-colors";
+
+/** Brand-only card tints — purple/cream family for in-app help + marketing cards. */
+export const CONTACT_AGENT_TINTS = {
+  primary: BRAND.purple,
+  deep: BRAND.purpleDeep,
+  muted: BRAND.purpleMuted,
+  cream: BRAND.creamDeep,
+} as const;
+
 /**
  * Single source of truth for public showcase phone lines.
  *
@@ -95,7 +105,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     handles: ALL_ENCOMPASSING_HANDLES,
     tel: "+16306425661",
     display: "(630) 642-5661",
-    tint: "#8B3FD6",
+    tint: CONTACT_AGENT_TINTS.primary,
     defaultVibe: "warm",
   },
   {
@@ -115,7 +125,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     handles: ALL_ENCOMPASSING_HANDLES,
     tel: "+16305811834",
     display: "(630) 581-1834",
-    tint: "#8B3FD6",
+    tint: CONTACT_AGENT_TINTS.deep,
     defaultVibe: "playful",
   },
 ];
@@ -146,7 +156,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
       "customer service, inbound, front desk, scheduling, FAQ, message taking, home services, after hours",
     tel: "+16306425927",
     display: "(630) 642-5927",
-    tint: "#8B3FD6",
+    tint: CONTACT_AGENT_TINTS.primary,
     defaultVibe: "warm",
   },
   {
@@ -163,7 +173,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
       "demo concierge, choose demo, home services, HVAC, plumbing, electrical, medical, legal, real estate, insurance, restaurant, outbound, SDR",
     tel: "+15642389455",
     display: "(564) 238-9455",
-    tint: "#f59e0b",
+    tint: CONTACT_AGENT_TINTS.deep,
     defaultVibe: "playful",
   },
   {
@@ -179,7 +189,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     handles: "medical, healthcare, clinic, patient intake, appointment",
     tel: "+16173134469",
     display: "(617) 313-4469",
-    tint: "#8B3FD6",
+    tint: CONTACT_AGENT_TINTS.muted,
     defaultVibe: "authoritative",
   },
   {
@@ -194,7 +204,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     handles: "legal, law firm, intake, conflict check, consultation",
     tel: "+15727269365",
     display: "(572) 726-9365",
-    tint: "#8b5cf6",
+    tint: CONTACT_AGENT_TINTS.primary,
     defaultVibe: "authoritative",
   },
   {
@@ -210,7 +220,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     handles: "real estate, realtor, listing, showing, buyer, seller lead",
     tel: "+19733638874",
     display: "(973) 363-8874",
-    tint: "#C4B5A0",
+    tint: CONTACT_AGENT_TINTS.cream,
     defaultVibe: "playful",
   },
   {
@@ -226,7 +236,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     handles: "insurance, claim, loss, FNOL, quote, policy",
     tel: "+19044601596",
     display: "(904) 460-1596",
-    tint: "#06b6d4",
+    tint: CONTACT_AGENT_TINTS.muted,
     defaultVibe: "authoritative",
   },
   {
@@ -242,7 +252,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     handles: "outbound, cold call, SDR, prospecting, qualification, BANT",
     tel: "+14692571581",
     display: "(469) 257-1581",
-    tint: "#f59e0b",
+    tint: CONTACT_AGENT_TINTS.deep,
     defaultVibe: "playful",
   },
 ];

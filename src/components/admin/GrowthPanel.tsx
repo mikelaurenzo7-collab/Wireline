@@ -4,8 +4,6 @@ import {
   Zap,
   Plus,
   Trash2,
-  Save,
-  Loader2,
   Target,
   Users,
   Building2,
@@ -17,6 +15,8 @@ import { cn } from "../../lib/utils";
 import { Panel } from "../PageShell";
 import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import { AdminSaveBar } from "./AdminSaveBar";
+import { OPS_ADMIN } from "../../lib/wireline-ops-design";
 
 interface GrowthPanelProps {
   settings: any;
@@ -333,21 +333,11 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
               </div>
             </div>
 
-            <div className="pt-8 border-t border-input flex justify-end">
-              <ShadButton
-                onClick={onSave}
-                disabled={isSaving}
-                variant="outline"
-                className="disabled:opacity-50 disabled:cursor-not-allowed app-primary-action !px-12 flex items-center justify-center gap-3"
-              >
-                {isSaving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4" />
-                )}
-                <span>Sync Growth Protocol</span>
-              </ShadButton>
-            </div>
+            <AdminSaveBar
+              onClick={onSave}
+              isSaving={isSaving}
+              label={OPS_ADMIN.saveLabels.growth}
+            />
           </div>
         </Panel>
       </div>

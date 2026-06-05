@@ -24,9 +24,11 @@ import { formatMoney, safeFixed, formatPhone } from "../lib/safe-number";
 import { ResponsiveContainer, AreaChart, Area } from "recharts";
 import ClientRouteViewport from "./layout/ClientRouteViewport";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
+import ClientToolbar from "./layout/ClientToolbar";
 import AppPageIntro from "./layout/AppPageIntro";
 import { EmptyState } from "./ui/EmptyState";
-import { OPS_CHANNEL_EMPTY } from "../lib/wireline-ops-design";
+import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR } from "../lib/wireline-ops-design";
+import { BRAND } from "../constants/brand-colors";
 
 interface ContactData {
   number: string;
@@ -128,7 +130,10 @@ export default function ContactProfile() {
   if (loading)
     return (
       <ClientRouteViewport className="items-center justify-center">
-        <ClientRouteLoading icon={<Activity className="w-6 h-6" />} label="Loading contact" />
+        <ClientRouteLoading
+          icon={<Activity className="w-6 h-6" />}
+          label={OPS_CHANNEL_TOOLBAR.contact.loading}
+        />
       </ClientRouteViewport>
     );
 
@@ -153,9 +158,17 @@ export default function ContactProfile() {
   return (
     <ClientRouteViewport scroll>
       <div className="max-w-[1200px] mx-auto space-y-4 sm:space-y-5 pb-6">
+        <ClientToolbar
+          left={
+            <span className="app-toolbar-stat">
+              {OPS_CHANNEL_TOOLBAR.contact.stat(timeline.length)}
+            </span>
+          }
+        />
+
         <Link
           to="/pipeline"
-          className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-muted hover:text-brand transition-colors min-h-10"
+          className="inline-flex items-center gap-2 wl-label-muted hover:text-brand transition-colors min-h-10"
         >
           <ChevronLeft className="w-3.5 h-3.5" /> Pipeline
         </Link>
@@ -195,9 +208,7 @@ export default function ContactProfile() {
         {highIntent && (
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/25">
             <Sparkles className="w-3.5 h-3.5 text-rose-600" />
-            <span className="text-[10px] uppercase tracking-[0.2em] text-rose-600 font-medium">
-              High intent lead
-            </span>
+            <span className="wl-label text-rose-600 font-medium">High intent lead</span>
           </div>
         )}
 
@@ -206,7 +217,7 @@ export default function ContactProfile() {
             label="Calls"
             value={String(data.stats.total_calls)}
             icon={Phone}
-            accent="#8B3FD6"
+            accent={BRAND.purple}
             sparkData={callSpark.length >= 2 ? callSpark : undefined}
             gradientId={`${sparkUid}-calls`}
           />
@@ -214,7 +225,7 @@ export default function ContactProfile() {
             label="Minutes"
             value={String(data.stats.total_minutes)}
             icon={Clock}
-            accent="#8B3FD6"
+            accent={BRAND.purple}
             sparkData={minuteSpark.length >= 2 ? minuteSpark : undefined}
             gradientId={`${sparkUid}-minutes`}
           />
@@ -222,14 +233,14 @@ export default function ContactProfile() {
             label="Avg Score"
             value={String(data.stats.avg_lead_score)}
             icon={Target}
-            accent="#8B3FD6"
+            accent={BRAND.purple}
             gradientId={`${sparkUid}-score`}
           />
           <StatCard
             label="Spend"
             value={formatMoney(data.stats?.total_cost, 2)}
             icon={DollarSign}
-            accent="#8B3FD6"
+            accent={BRAND.purple}
             gradientId={`${sparkUid}-spend`}
           />
         </div>
@@ -240,9 +251,7 @@ export default function ContactProfile() {
               <Activity className="w-5 h-5 text-brand shrink-0" />
               Timeline
             </h2>
-            <span className="text-[10px] uppercase tracking-[0.2em] text-muted shrink-0">
-              {timeline.length} events
-            </span>
+            <span className="wl-label-muted shrink-0">{timeline.length} events</span>
           </div>
           {timeline.length === 0 ? (
             <div className="py-6">
@@ -294,7 +303,7 @@ function StatCard({
       />
       <div className="relative z-10">
         <div className="flex items-center justify-between mb-2 sm:mb-3">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-muted">{label}</p>
+          <p className="wl-label-muted">{label}</p>
           <Icon className="w-4 h-4" style={{ color: accent }} />
         </div>
         <p className="font-display italic text-2xl sm:text-3xl lg:text-4xl text-ink leading-none tabular-nums">
@@ -335,7 +344,7 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
   return (
     <Link
       to={isCall ? "/phone" : "/phone?tab=appointments"}
-      className="group relative block px-4 sm:px-6 py-4 sm:py-5 md:pl-6 hover:bg-black/[0.02] transition-colors"
+      className="group relative block px-4 sm:px-6 py-3 sm:py-3.5 md:pl-6 hover:bg-black/[0.02] transition-colors"
     >
       <div className="hidden md:block absolute left-[-1.35rem] top-6 w-2.5 h-2.5 rounded-full bg-paper border-2 border-brand/40 group-hover:border-brand transition-colors" />
       <div className="flex items-start gap-3 sm:gap-4">

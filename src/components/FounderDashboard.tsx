@@ -18,34 +18,16 @@ import { useToast } from "../contexts/ToastContext";
 import { useAuth } from "../contexts/AuthContext";
 import DirectorWorkspace from "./DirectorWorkspace";
 import ClientRouteViewport from "./layout/ClientRouteViewport";
+import ClientToolbar from "./layout/ClientToolbar";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { WL_APP_CLASSES } from "../lib/wireline-director-design";
-
-/** Purple/cream-only roster accents — no cross-hue decorative gradients */
-const STAFF_PANEL_ACCENTS = [
-  "from-brand/10 to-brand-deep/8",
-  "from-brand/12 to-brand-deep/6",
-  "from-brand/15 to-brand-deep/10",
-  "from-brand-deep/12 to-brand/8",
-  "from-brand/8 to-brand-deep/12",
-  "from-brand-deep/10 to-brand/10",
-] as const;
+import { OPS_FOUNDER, WL_FLEET_CLASSES } from "../lib/wireline-ops-design";
 
 /**
  * Founder's Dashboard — Mike's command surface for his staff of 6
  * Wireline AI agents (the dogfood team that answers Wireline's own
  * lines). Mirrors the server-side WIRELINE_PERSONAS roster.
- *
- * What it does today:
- *   - Roster of the 6 staff with role + voice + what they handle
- *   - Per-employee chat WITH MEMORY (reuses the agent-workspace
- *     thread API — every message persists, the agent remembers)
- *   - Team broadcast: send one directive to all 6 staff threads
- *   - One-click provisioning if the staff agents don't exist yet
- *
- * The 6 staff agent IDs are stable (wireline-<role>) — created by
- * POST /api/admin/provision-wireline-agents.
  */
 
 type StaffRole = "reception" | "sales" | "support" | "technical" | "onboarding" | "success";
@@ -66,7 +48,6 @@ interface StaffMember {
   title: string;
   blurb: string;
   icon: typeof Users2;
-  accent: string;
 }
 
 const STAFF: StaffMember[] = [
@@ -77,7 +58,6 @@ const STAFF: StaffMember[] = [
     title: "Reception",
     blurb: "First voice callers hear. Greets, identifies intent, routes to the right teammate.",
     icon: Headphones,
-    accent: STAFF_PANEL_ACCENTS[0],
   },
   {
     role: "sales",
@@ -86,7 +66,6 @@ const STAFF: StaffMember[] = [
     title: "Sales",
     blurb: "Pricing, plan fit, demos, objection handling. Can offer up to 10% off + book demos.",
     icon: Sparkles,
-    accent: STAFF_PANEL_ACCENTS[1],
   },
   {
     role: "support",
@@ -95,7 +74,6 @@ const STAFF: StaffMember[] = [
     title: "Support",
     blurb: "Account help, billing, troubleshooting. Auto-issues refunds up to $50.",
     icon: MessageSquare,
-    accent: STAFF_PANEL_ACCENTS[2],
   },
   {
     role: "technical",
@@ -104,7 +82,6 @@ const STAFF: StaffMember[] = [
     title: "Technical",
     blurb: "Integrations, webhooks, API, voice quality, CRM sync — the developer-mindset calls.",
     icon: Wrench,
-    accent: STAFF_PANEL_ACCENTS[3],
   },
   {
     role: "onboarding",
@@ -113,7 +90,6 @@ const STAFF: StaffMember[] = [
     title: "Onboarding",
     blurb: "Gets new customers to their first working agent fast. Books white-glove sessions.",
     icon: Rocket,
-    accent: STAFF_PANEL_ACCENTS[4],
   },
   {
     role: "success",
@@ -122,7 +98,6 @@ const STAFF: StaffMember[] = [
     title: "Customer Success",
     blurb: "Usage reviews, best-practice coaching, expansion, churn saves for existing accounts.",
     icon: HeartHandshake,
-    accent: STAFF_PANEL_ACCENTS[5],
   },
 ];
 
@@ -164,6 +139,55 @@ function StatTile({
   );
 }
 
+function StaffRow({
+  member,
+  exists,
+  onSelect,
+}: {
+  member: StaffMember;
+  exists: boolean;
+  onSelect: () => void;
+}) {
+  const Icon = member.icon;
+  return (
+    <ShadButton
+      type="button"
+      variant="ghost"
+      disableAnimations
+      onClick={() => exists && onSelect()}
+      disabled={!exists}
+      className={cn(
+        WL_FLEET_CLASSES.agentRow,
+        "h-auto whitespace-normal justify-start px-3 py-3 hover:bg-transparent",
+        !exists && "opacity-50 cursor-not-allowed",
+      )}
+    >
+      <div
+        className={cn(
+          WL_FLEET_CLASSES.agentAvatar,
+          exists && "group-hover:border-brand/25 group-hover:bg-brand/5",
+        )}
+      >
+        <Icon className="w-4 h-4" strokeWidth={2} />
+      </div>
+      <div className="flex-1 min-w-0 text-left">
+        <div className="font-display italic text-base text-ink leading-tight truncate">
+          {member.name}
+        </div>
+        <div className="wl-label-muted mt-0.5 truncate">{member.title}</div>
+        <p className="text-[11px] text-muted/80 leading-snug mt-1.5 line-clamp-2">{member.blurb}</p>
+      </div>
+      <div className="shrink-0 flex flex-col items-end gap-1 self-start pt-0.5">
+        <span className="wl-label text-brand inline-flex items-center gap-1">
+          <MessageSquare className="w-3 h-3" />
+          {exists ? "Chat" : "Missing"}
+        </span>
+        {exists && <ArrowUpRight className="w-3.5 h-3.5 text-brand/70" />}
+      </div>
+    </ShadButton>
+  );
+}
+
 export default function FounderDashboard() {
   const { error: toastError, success: toastSuccess } = useToast();
   const { user } = useAuth();
@@ -173,9 +197,6 @@ export default function FounderDashboard() {
   const [broadcasting, setBroadcasting] = useState(false);
   const [stats, setStats] = useState<FounderStats | null>(null);
 
-  // Resolve which of the 6 staff agents actually exist in the DB,
-  // and pull the platform-wide stats. Both no-op for non-owners
-  // (the page itself is owner-gated below).
   useEffect(() => {
     if (!user?.is_owner) return;
     authFetch("/api/agents")
@@ -191,16 +212,13 @@ export default function FounderDashboard() {
         if (d?.ok) setStats(d as FounderStats);
       })
       .catch(() => {
-        /* stats are best-effort — the roster still works without them */
+        /* stats are best-effort */
       });
   }, [user?.is_owner]);
 
   const allProvisioned =
     provisionedIds !== null && STAFF.every((s) => provisionedIds.has(s.agentId));
 
-  // Send one directive to every staff member's chat thread at once —
-  // "team meeting" broadcast. Each message lands in that agent's
-  // memory thread, so the next time you open their chat it's there.
   const sendBroadcast = async () => {
     const text = broadcast.trim();
     if (!text || broadcasting) return;
@@ -230,10 +248,6 @@ export default function FounderDashboard() {
     }
   };
 
-  // Owner-only surface. Non-owners (team members, customers who somehow
-  // land on /founder) get silently redirected to Home so the route's
-  // existence isn't even disclosed. Server-side /api/admin/founder-stats
-  // is independently gated by authorizeMigration (OWNER_EMAIL check).
   if (user && user.is_owner !== true) {
     return <Navigate to="/" replace />;
   }
@@ -265,24 +279,31 @@ export default function FounderDashboard() {
     );
   }
 
+  const provisionedCount =
+    provisionedIds === null
+      ? STAFF.length
+      : STAFF.filter((s) => provisionedIds.has(s.agentId)).length;
+
   return (
     <ClientRouteViewport scroll>
-      <div className="max-w-[1100px] mx-auto w-full px-4 md:px-6 py-6 pb-8">
-        {/* Header */}
-        <div className="mb-6">
+      <ClientToolbar
+        left={
+          <span className="app-toolbar-stat">
+            {provisionedIds === null ? OPS_FOUNDER.loading : OPS_FOUNDER.stat(provisionedCount)}
+          </span>
+        }
+      />
+      <div className="max-w-[900px] mx-auto w-full px-4 md:px-6 py-4 pb-8">
+        <div className="mb-5">
           <p className="app-section-title mb-1">Founder · Command</p>
-          <h1 className="font-display italic lowercase text-3xl md:text-4xl text-ink leading-none">
-            <div className="hero-word-reveal flex flex-wrap"><span className="text-aurora block">your</span><span className="text-aurora block ml-2">wireline</span><span className="text-aurora block ml-2">staff</span></div>
-          </h1>
-          <p className="text-[13px] text-muted/80 mt-2 max-w-xl leading-relaxed">
-            Six AI agents run Wireline's own phone lines. Chat with any of them — they remember
-            every conversation — or send the whole team a directive at once.
+          <p className="text-[13px] text-muted/80 max-w-xl leading-relaxed">
+            Six AI agents run Wireline's own phone lines. Open any staff chat — they remember every
+            conversation — or broadcast a directive to the whole team.
           </p>
         </div>
 
-        {/* Platform stats */}
         {stats && (
-          <div className="mb-6">
+          <div className="mb-5">
             <p className="app-section-title mb-2">Platform · live</p>
             <div className="flex flex-wrap gap-2.5">
               <StatTile label="Paying" value={stats.users.paying} tone="brand" />
@@ -309,7 +330,6 @@ export default function FounderDashboard() {
           </div>
         )}
 
-        {/* Provisioning banner */}
         {provisionedIds !== null && !allProvisioned && (
           <div className="mb-5 rounded-md border border-brand/30 bg-brand/5 p-3 text-[12px] text-ink/80">
             Some staff agents aren't provisioned yet. Run
@@ -320,11 +340,10 @@ export default function FounderDashboard() {
           </div>
         )}
 
-        {/* Team broadcast */}
-        <div className={cn(WL_APP_CLASSES.settingsPanel, "mt-0 mb-6")}>
+        <div className={cn(WL_APP_CLASSES.settingsPanel, "mt-0 mb-5")}>
           <div className="flex items-center gap-2 mb-2.5">
             <Users2 className="w-4 h-4 text-brand" />
-            <span className="app-section-title">Team meeting — broadcast a directive</span>
+            <span className="app-section-title">Team broadcast</span>
           </div>
           <div className="flex items-center gap-2">
             <Input
@@ -332,7 +351,7 @@ export default function FounderDashboard() {
               value={broadcast}
               onChange={(e) => setBroadcast(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && sendBroadcast()}
-              placeholder="e.g. From today, always confirm the caller's email by spelling it back."
+              placeholder={OPS_FOUNDER.broadcastPlaceholder}
               className="flex-1 bg-black/5 border border-black/10 rounded-md px-3 py-2.5 text-sm text-ink outline-none focus:border-brand/40 transition-colors placeholder:text-muted/70"
             />
             <ShadButton
@@ -342,7 +361,7 @@ export default function FounderDashboard() {
               className="px-4 py-2.5 text-[11px] uppercase tracking-[0.2em] font-medium shrink-0"
             >
               {broadcasting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-              Send to all 6
+              {OPS_FOUNDER.broadcastSend}
             </ShadButton>
           </div>
           <p className="text-[10px] text-muted/70 mt-2">
@@ -350,50 +369,16 @@ export default function FounderDashboard() {
           </p>
         </div>
 
-        {/* Staff roster */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 wl-reveal-stagger">
+        <div className="wl-panel border border-input rounded-md overflow-hidden divide-y divide-border">
           {STAFF.map((s) => {
             const exists = provisionedIds === null || provisionedIds.has(s.agentId);
             return (
-              <ShadButton
-                key={s.role}
-                type="button"
-                variant="ghost"
-                disableAnimations
-                onClick={() => exists && setSelected(s)}
-                disabled={!exists}
-                className={cn(
-                  "h-auto text-left rounded-md border p-4 bg-gradient-to-br whitespace-normal justify-start",
-                  s.accent,
-                  exists
-                    ? "border-border hover:border-brand/30 hover:bg-accent/30"
-                    : "border-border opacity-50 cursor-not-allowed",
-                )}
-              >
-                <div className="flex items-center gap-2.5 mb-2">
-                  <div className="w-9 h-9 rounded-md bg-paper flex items-center justify-center text-brand shrink-0 relative"><div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-brand wl-badge-pulse border-2 border-white"></div>
-                    <s.icon className="w-4.5 h-4.5" />
-                  </div>
-                  <div>
-                    <div className="text-[14px] font-medium text-ink leading-tight">{s.name}</div>
-                    <div className="text-[10px] uppercase tracking-[0.2em] text-muted/70">
-                      {s.title}
-                    </div>
-                  </div>
-                </div>
-                <p className="text-[11px] text-ink/65 leading-relaxed mb-3">{s.blurb}</p>
-                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-brand">
-                  <MessageSquare className="w-3 h-3" />
-                  {exists ? "Open chat" : "Not provisioned"}
-                  {exists && <ArrowUpRight className="w-3 h-3" />}
-                </div>
-              </ShadButton>
+              <StaffRow key={s.role} member={s} exists={exists} onSelect={() => setSelected(s)} />
             );
           })}
         </div>
 
-        {/* Quick links */}
-        <div className="mt-6 flex flex-wrap gap-2">
+        <div className="mt-5 flex flex-wrap gap-2">
           {[
             { label: "Call logs + analytics", href: "/phone", icon: Phone },
             { label: "Live Ops floor", href: "/ops?tab=floor", icon: Headphones },

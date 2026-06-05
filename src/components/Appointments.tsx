@@ -25,6 +25,10 @@ import { authFetch } from "../lib/api";
 import { cn, logFetchError } from "../lib/utils";
 import PageShell, { Panel } from "./PageShell";
 import HubTabs, { CHANNELS_HUB } from "./HubTabs";
+import ClientToolbar from "./layout/ClientToolbar";
+import ClientRouteLoading from "./layout/ClientRouteLoading";
+import { ChannelListColHeader } from "./layout/ChannelInbox";
+import { OPS_CHANNEL_TOOLBAR } from "../lib/wireline-ops-design";
 import { useToast } from "../contexts/ToastContext";
 import ConfirmModal from "./ConfirmModal";
 import { EmptyState } from "./ui/EmptyState";
@@ -656,18 +660,31 @@ export default function AppointmentsView({ embedded = false }: { embedded?: bool
     <>
       <div className="h-full flex flex-col min-h-0">
         {!embedded && <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />}
+        {embedded && (
+          <ClientToolbar
+            left={
+              <span className="app-toolbar-stat">
+                {isLoading
+                  ? OPS_CHANNEL_TOOLBAR.appointments.loading
+                  : OPS_CHANNEL_TOOLBAR.appointments.stat(scheduled.length)}
+              </span>
+            }
+            actions={actions}
+          />
+        )}
         <div className="flex-1 min-h-0">
           <PageShell
             title={embedded ? "" : "Appointments"}
             eyebrow={embedded ? undefined : "Operations · Schedule"}
             subtitle={embedded ? undefined : "Appointments scheduled and managed by your agents."}
-            actions={actions}
+            actions={embedded ? undefined : actions}
           >
             {isLoading ? (
-              <div className="h-full flex items-center justify-center gap-3">
-                <Loader2 className="w-5 h-5 animate-spin text-brand" />
-                <span className="app-section-title/70">Loading…</span>
-              </div>
+              <ClientRouteLoading
+                icon={<CalendarIcon className="w-6 h-6" />}
+                label={OPS_CHANNEL_TOOLBAR.appointments.loading}
+                className="h-full min-h-[280px]"
+              />
             ) : viewMode === "calendar" ? (
               <Panel title="Calendar" hint="Monthly view" icon={CalendarIcon} flush>
                 <CalendarGrid
@@ -714,22 +731,32 @@ export default function AppointmentsView({ embedded = false }: { embedded?: bool
                         />
                       </motion.div>
                     ) : (
-                      <div className="divide-y divide-white/5">
-                        {scheduled.map((appt) => (
-                          <AppointmentRow
-                            key={appt.id}
-                            appt={appt}
-                            agents={agents}
-                            deleting={deletingId === appt.id}
-                            onEdit={() => {
-                              setEditTarget(appt);
-                              setShowModal(true);
-                            }}
-                            onDelete={() => handleDelete(appt.id)}
-                            onStatusChange={(s) => handleStatusChange(appt.id, s)}
-                          />
-                        ))}
-                      </div>
+                      <>
+                        <ChannelListColHeader
+                          columns={[
+                            { label: "Customer" },
+                            { label: "When" },
+                            { label: "Status", className: "text-right" },
+                          ]}
+                          className="grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_5rem]"
+                        />
+                        <div className="divide-y divide-white/5">
+                          {scheduled.map((appt) => (
+                            <AppointmentRow
+                              key={appt.id}
+                              appt={appt}
+                              agents={agents}
+                              deleting={deletingId === appt.id}
+                              onEdit={() => {
+                                setEditTarget(appt);
+                                setShowModal(true);
+                              }}
+                              onDelete={() => handleDelete(appt.id)}
+                              onStatusChange={(s) => handleStatusChange(appt.id, s)}
+                            />
+                          ))}
+                        </div>
+                      </>
                     )}
                   </AnimatePresence>
                 </Panel>

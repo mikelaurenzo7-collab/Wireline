@@ -1,7 +1,9 @@
 import { Phone, ArrowRight, MessageCircle, BookOpen, ExternalLink, Compass } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
+import { cn } from "../lib/utils";
 import ClientRouteViewport from "./layout/ClientRouteViewport";
+import ClientToolbar from "./layout/ClientToolbar";
 import PageShell, { Panel } from "./PageShell";
 import {
   WIRELINE_CONTACT_AGENTS,
@@ -14,7 +16,7 @@ import {
   WIRELINE_FEATURES,
   WIRELINE_INTEGRATIONS,
 } from "../data/wireline-knowledge";
-import { OPS_HELP } from "../lib/wireline-ops-design";
+import { OPS_HELP, WL_ADMIN_CLASSES } from "../lib/wireline-ops-design";
 
 function AgentCard({
   agent,
@@ -28,37 +30,27 @@ function AgentCard({
   return (
     <a
       href={`tel:${agent.tel}`}
-      className={
-        "group relative block rounded-md p-4 overflow-hidden hover:scale-[1.015] transition-all duration-200 " +
-        (isDemo
-          ? "border-2 border-dashed border-amber-500/40 hover:border-amber-500/70"
-          : "border border-black/10 hover:border-brand/30")
-      }
-      style={{
-        background: `linear-gradient(135deg, ${agent.tint}2c, ${agent.tint}10)`,
-        boxShadow: `0 10px 28px -14px ${agent.tint}88`,
-      }}
+      data-demo={isDemo ? "true" : undefined}
+      className={cn(
+        "group relative block rounded-md p-4 transition-colors",
+        WL_ADMIN_CLASSES.helpCard,
+        isDemo && "border-dashed",
+      )}
     >
       {isDemo && (
         <span
-          className="absolute top-2 right-2 z-10 text-[8px] uppercase tracking-[0.32em] px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-700 leading-none"
+          className="absolute top-2 right-2 z-10 text-[8px] uppercase tracking-[0.32em] px-2 py-0.5 rounded-md bg-brand/10 border border-brand/30 text-brand-deep leading-none"
           title="Role-play demo line — not a real customer service number"
         >
           Demo
         </span>
       )}
       <div className="flex items-start gap-3">
-        <div
-          className="w-11 h-11 rounded-md flex items-center justify-center shrink-0"
-          style={{
-            background: `linear-gradient(135deg, ${agent.tint}, ${agent.tint}cc)`,
-            boxShadow: `0 6px 14px -4px ${agent.tint}aa`,
-          }}
-        >
-          <Phone className="w-4 h-4 text-paper" strokeWidth={2.4} />
+        <div className="w-11 h-11 rounded-md bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">
+          <Phone className="w-4 h-4 text-brand" strokeWidth={2.4} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] uppercase tracking-[0.32em] text-muted/80 leading-none mb-1.5 truncate">
+          <p className="wl-label-muted mb-1.5 truncate">
             {agent.name} · {agent.role}
           </p>
           <p
@@ -76,41 +68,45 @@ function AgentCard({
             </p>
           )}
         </div>
-        <ArrowRight className="w-4 h-4 text-ink/65 group-hover:text-ink group-hover:translate-x-1 transition-all shrink-0 mt-1" />
+        <ArrowRight className="w-4 h-4 text-muted group-hover:text-brand group-hover:translate-x-1 transition-all shrink-0 mt-1" />
       </div>
     </a>
   );
 }
 
+const helpActions = (
+  <>
+    <a
+      href={WIRELINE_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-panel border border-black/10 text-[11px] uppercase tracking-[0.22em] text-ink/80 hover:text-ink hover:border-brand/25 transition-colors"
+    >
+      <ExternalLink className="w-3.5 h-3.5" />
+      trywireline.com
+    </a>
+    <a
+      href={`mailto:${WIRELINE_SUPPORT_EMAIL}`}
+      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-panel border border-black/10 text-[11px] uppercase tracking-[0.22em] text-ink/80 hover:text-ink hover:border-brand/25 transition-colors"
+    >
+      <MessageCircle className="w-3.5 h-3.5" />
+      Email Mike
+    </a>
+  </>
+);
+
 export default function HelpCenter() {
   return (
     <ClientRouteViewport scroll>
-      <PageShell
-        scrollable
-        title={OPS_HELP.title}
-        eyebrow={OPS_HELP.eyebrow}
-        subtitle={OPS_HELP.subtitle}
-        actions={
-          <>
-            <a
-              href={WIRELINE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-panel border border-black/10 text-[11px] uppercase tracking-[0.22em] text-ink/80 hover:text-ink hover:border-brand/25 transition-colors"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              trywireline.com
-            </a>
-            <a
-              href={`mailto:${WIRELINE_SUPPORT_EMAIL}`}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-panel border border-black/10 text-[11px] uppercase tracking-[0.22em] text-ink/80 hover:text-ink hover:border-brand/25 transition-colors"
-            >
-              <MessageCircle className="w-3.5 h-3.5" />
-              Email Mike
-            </a>
-          </>
+      <ClientToolbar
+        left={
+          <span className="app-toolbar-stat">
+            {OPS_HELP.stat(WIRELINE_CONTACT_AGENTS.length, WIRELINE_DEMO_AGENTS.length)}
+          </span>
         }
-      >
+        actions={helpActions}
+      />
+      <PageShell scrollable title="" eyebrow="" subtitle="">
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 pb-4">
           <div className="xl:col-span-2 space-y-4">
             <Panel
@@ -175,9 +171,7 @@ export default function HelpCenter() {
               <div className="space-y-3">
                 {WIRELINE_FEATURES.map((f) => (
                   <div key={f.title}>
-                    <p className="text-[11px] uppercase tracking-[0.28em] text-brand/90 mb-1">
-                      {f.title}
-                    </p>
+                    <p className="wl-label text-brand/90 mb-1">{f.title}</p>
                     <p className="text-[12px] text-muted/80 leading-snug">{f.blurb}</p>
                   </div>
                 ))}
@@ -193,7 +187,7 @@ export default function HelpCenter() {
                 {WIRELINE_INTEGRATIONS.map((i) => (
                   <span
                     key={i}
-                    className="text-[10px] uppercase tracking-[0.22em] px-2 py-1 rounded-md bg-brand/[0.06] border border-black/8 text-ink/80"
+                    className="wl-label px-2 py-1 rounded-md bg-brand/[0.06] border border-black/8 text-ink/80 normal-case tracking-[0.18em]"
                   >
                     {i}
                   </span>

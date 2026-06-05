@@ -134,103 +134,97 @@ export const DEFAULT_VOICE_BY_GENDER = {
 // AGENT_ROLES — role metadata. Mirrors ROLE_PERSONALITY_TEMPLATES on
 // the server. The `tw` object holds Tailwind classes pre-composed so
 // callers don't string-concat color stems at render time.
+// Purple + cream family only — distinct opacity steps, not cross-hue.
 // ──────────────────────────────────────────────────────────────────────
+const ROLE_TW = {
+  brand: {
+    bg: "bg-brand/10",
+    text: "text-brand",
+    border: "border-brand/25",
+    dot: "bg-brand",
+  },
+  brandDeep: {
+    bg: "bg-brand-deep/10",
+    text: "text-brand-deep",
+    border: "border-brand-deep/25",
+    dot: "bg-brand-deep",
+  },
+  brandSoft: {
+    bg: "bg-brand/8",
+    text: "text-brand",
+    border: "border-brand/20",
+    dot: "bg-brand/70",
+  },
+  success: {
+    bg: "wl-status-success",
+    text: "wl-text-success",
+    border: "border-[color-mix(in_srgb,var(--wl-signal)_25%,transparent)]",
+    dot: "bg-brand",
+  },
+  critical: {
+    bg: "bg-rose-500/10",
+    text: "text-rose-600",
+    border: "border-rose-500/25",
+    dot: "bg-rose-500",
+  },
+} as const;
+
 export const AGENT_ROLES = [
   {
     value: "sales",
     label: "Sales",
     description: "Closes deals and drives revenue",
-    color: "amber",
-    tw: {
-      bg: "bg-amber-500/10",
-      text: "text-amber-600",
-      border: "border-amber-500/25",
-      dot: "bg-amber-500",
-    },
+    color: "brand",
+    tw: ROLE_TW.brand,
   },
   {
     value: "customer_service",
     label: "Customer Service",
     description: "Handles inbound issues and support",
-    color: "emerald",
-    tw: {
-      bg: "wl-status-success",
-      text: "wl-text-success",
-      border: "border-[color-mix(in_srgb,var(--wl-signal)_25%,transparent)]",
-      dot: "bg-brand",
-    },
+    color: "success",
+    tw: ROLE_TW.success,
   },
   {
     value: "scheduler",
     label: "Scheduler",
     description: "Books appointments and manages calendars",
-    color: "violet",
-    tw: {
-      bg: "bg-violet-500/10",
-      text: "text-violet-600",
-      border: "border-violet-500/25",
-      dot: "bg-violet-500",
-    },
+    color: "brandDeep",
+    tw: ROLE_TW.brandDeep,
   },
   {
     value: "collections",
     label: "Collections",
     description: "Handles payment follow-ups and recovery",
-    color: "rose",
-    tw: {
-      bg: "bg-rose-500/10",
-      text: "text-rose-600",
-      border: "border-rose-500/25",
-      dot: "bg-rose-500",
-    },
+    color: "critical",
+    tw: ROLE_TW.critical,
   },
   {
     value: "technical_support",
     label: "Technical Support",
     description: "Diagnoses and resolves technical issues",
-    color: "blue",
-    tw: {
-      bg: "bg-brand/10",
-      text: "text-brand",
-      border: "border-blue-500/25",
-      dot: "bg-brand",
-    },
+    color: "brandSoft",
+    tw: ROLE_TW.brandSoft,
   },
   {
     value: "lead_qualifier",
     label: "Lead Qualifier",
     description: "Screens and scores inbound prospects",
-    color: "orange",
-    tw: {
-      bg: "bg-orange-500/10",
-      text: "text-orange-600",
-      border: "border-orange-500/25",
-      dot: "bg-orange-500",
-    },
+    color: "brandDeep",
+    tw: ROLE_TW.brandDeep,
   },
   {
     value: "receptionist",
     label: "Receptionist",
     description: "Routes calls and creates first impressions",
-    color: "cyan",
-    tw: {
-      bg: "bg-cyan-500/10",
-      text: "text-cyan-600",
-      border: "border-cyan-500/25",
-      dot: "bg-cyan-500",
-    },
+    color: "brandSoft",
+    tw: ROLE_TW.brandSoft,
   },
   {
     value: "marketing",
     label: "Marketing",
     description: "Nurtures prospects and runs campaigns",
-    color: "purple",
-    tw: {
-      bg: "bg-purple-500/10",
-      text: "text-purple-600",
-      border: "border-purple-500/25",
-      dot: "bg-purple-500",
-    },
+    color: "brand",
+    tw: ROLE_TW.brand,
   },
 ] as const;
 

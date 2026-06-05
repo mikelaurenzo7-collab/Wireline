@@ -14,6 +14,8 @@ import { useToast } from "../../contexts/ToastContext";
 import AgentTemplates from "../AgentTemplates";
 import ClientRouteViewport from "../layout/ClientRouteViewport";
 import ClientSubTabs from "../layout/ClientSubTabs";
+import ClientToolbar from "../layout/ClientToolbar";
+import { OPS_CHANNEL_TOOLBAR } from "../../lib/wireline-ops-design";
 import {
   AGENT_TOOL_CATALOG,
   resolveAgentTools,
@@ -361,6 +363,15 @@ export default function FleetSettings() {
   return (
     <>
       <ClientRouteViewport>
+        <ClientToolbar
+          left={
+            <span className="app-toolbar-stat">
+              {activeTab === "templates"
+                ? "Template gallery"
+                : OPS_CHANNEL_TOOLBAR.fleet.agentsStat(agents.length)}
+            </span>
+          }
+        />
         <ClientSubTabs
           tabs={[
             { id: "templates", label: "Templates", icon: LayoutGrid },

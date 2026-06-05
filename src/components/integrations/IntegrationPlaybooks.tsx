@@ -5,6 +5,9 @@ import { getIntegrationPlaybook } from "../../lib/integration-playbooks";
 import IntegrationCapabilityPanel from "../IntegrationCapabilityPanel";
 import { type IntegrationMeta, resolveConnected, ACTIVITY_LOG } from "./PreviewCards";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import { BRAND } from "../../constants/brand-colors";
+import { WL_INTEGRATION_CLASSES } from "../../lib/wireline-ops-design";
+import { cn } from "../../lib/utils";
 
 interface PlaybookPanelProps {
   activeKey: ToolIntegration;
@@ -48,26 +51,12 @@ export function IntegrationPlaybookPanel({
       exit={{ opacity: 0, y: 8 }}
       transition={{ duration: 0.18, ease: "easeOut" }}
     >
-      <div
-        className="rounded-md border p-3 space-y-3"
-        style={{
-          borderColor: `${activeIntegration.color}30`,
-          background: `${activeIntegration.color}06`,
-        }}
-      >
+      <div className={cn(WL_INTEGRATION_CLASSES.liveCard, "rounded-md border p-3 space-y-3")}>
         {/* Panel header */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2.5">
-            <div
-              className="w-8 h-8 rounded-md flex items-center justify-center shrink-0"
-              style={{
-                background: `${activeIntegration.color}20`,
-                boxShadow: `0 0 10px ${activeIntegration.color}30`,
-              }}
-            >
-              <activeIntegration.Icon
-                style={{ width: 16, height: 16, color: activeIntegration.color }}
-              />
+            <div className="w-8 h-8 rounded-md flex items-center justify-center shrink-0 bg-brand/15 border border-brand/20">
+              <activeIntegration.Icon className="w-4 h-4 text-brand" />
             </div>
             <div>
               <div className="text-sm font-semibold text-ink">{activeIntegration.label}</div>
@@ -93,11 +82,12 @@ export function IntegrationPlaybookPanel({
         <div className="flex items-center justify-between text-[10px]">
           <div className="flex items-center gap-1.5">
             <div
-              className="w-1.5 h-1.5 rounded-full"
-              style={{
-                background: isConnected ? "#8B3FD6" : "#8B6FA8",
-                boxShadow: isConnected ? "0 0 4px #8B3FD6" : "none",
-              }}
+              className={cn(
+                "w-1.5 h-1.5 rounded-full",
+                isConnected
+                  ? "bg-brand shadow-[0_0_4px] shadow-brand/60"
+                  : "bg-muted-foreground/40",
+              )}
             />
             <span className="text-muted/70">{isConnected ? "Connected" : "Not connected"}</span>
           </div>
@@ -118,7 +108,7 @@ export function IntegrationPlaybookPanel({
 
         <IntegrationCapabilityPanel
           integration={activeKey}
-          accentColor={activeIntegration.color}
+          accentColor={BRAND.purple}
           connected={isConnected}
           enabledTools={selectedToolNames}
           onToggleTool={onToggleTool}
@@ -131,34 +121,24 @@ export function IntegrationPlaybookPanel({
         {/* Recent activity feed */}
         {ACTIVITY_LOG[activeKey] && (
           <div className="space-y-1.5">
-            <div
-              className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.28em]"
-              style={{ color: "rgba(255,255,255,0.35)" }}
-            >
+            <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.28em] wl-label-muted">
               <Activity size={9} />
               Recent Activity
             </div>
-            <div
-              className="rounded-md overflow-hidden"
-              style={{ border: `1px solid ${activeIntegration.color}18` }}
-            >
+            <div className="wl-integration-preview-card rounded-md overflow-hidden border border-border">
               {ACTIVITY_LOG[activeKey]!.map((item, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-2 px-2.5 py-1.5 text-[10px]"
-                  style={{
-                    background: i === 0 ? `${activeIntegration.color}0e` : "rgba(0,0,0,0.12)",
-                    borderBottom:
-                      i < ACTIVITY_LOG[activeKey]!.length - 1
-                        ? `1px solid ${activeIntegration.color}10`
-                        : undefined,
-                  }}
+                  className={cn(
+                    "flex items-center gap-2 px-2.5 py-1.5 text-[10px] border-b border-border/60 last:border-b-0",
+                    i === 0 ? "bg-brand/[0.06]" : "bg-transparent",
+                  )}
                 >
                   <div
-                    className="w-1 h-1 rounded-full shrink-0"
-                    style={{
-                      background: i === 0 ? activeIntegration.color : "rgba(255,255,255,0.18)",
-                    }}
+                    className={cn(
+                      "w-1 h-1 rounded-full shrink-0",
+                      i === 0 ? "bg-brand" : "bg-muted-foreground/30",
+                    )}
                   />
                   <span className="flex-1 text-muted/80 truncate">{item.text}</span>
                   <span className="text-muted/70 shrink-0 pl-2">{item.time}</span>

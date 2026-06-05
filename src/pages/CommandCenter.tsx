@@ -443,7 +443,7 @@ export default function LiveOps() {
 
               {activeTab === "intel" && (
                 <section className="space-y-2 pt-1">
-                  <div className="wl-panel-elevated rounded-md p-5 min-h-[320px] flex flex-col">
+                  <div className={clsx(WL_OPS_CLASSES.floorFrame, "min-h-[320px] flex flex-col")}>
                     <ActionFeed actions={actions} onRefresh={refresh} />
                   </div>
                 </section>
@@ -454,7 +454,12 @@ export default function LiveOps() {
                   <span className="app-section-title block">{OPS_COPY.analyticsSection}</span>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 stagger-children">
                     {/* Analytics: Sentiment */}
-                    <div className="wl-panel-elevated rounded-md p-5 hover:border-brand/35 transition-colors duration-200">
+                    <div
+                      className={clsx(
+                        WL_OPS_CLASSES.railCard,
+                        "hover:border-brand/35 transition-colors duration-200",
+                      )}
+                    >
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="wl-label flex items-center gap-2">
                           <Globe className="w-3.5 h-3.5 text-brand" />
@@ -545,7 +550,12 @@ export default function LiveOps() {
                     </div>
 
                     {/* Analytics: Unit Economics */}
-                    <div className="wl-panel-elevated rounded-md p-5 hover:border-brand/35 transition-colors duration-200">
+                    <div
+                      className={clsx(
+                        WL_OPS_CLASSES.railCard,
+                        "hover:border-brand/35 transition-colors duration-200",
+                      )}
+                    >
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="wl-label flex items-center gap-2">
                           <Zap className="w-3.5 h-3.5 text-brand" />

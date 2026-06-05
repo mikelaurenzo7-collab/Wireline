@@ -26,9 +26,10 @@ import WirelineMark from "../WirelineMark";
 import { useAuth } from "../../contexts/AuthContext";
 import { useBranding } from "../../contexts/BrandingContext";
 import { SIDEBAR_NAV_ITEMS, type NavItem, NAV_SHORTCUT_HINTS } from "../../constants/navigation";
-import { BRAND, ROUTE_ACCENTS } from "../../constants/brand-colors";
+import { BRAND } from "../../constants/brand-colors";
 import { authFetch } from "../../lib/api";
 import { useLivePresence } from "../../hooks/useLivePresence";
+import { WL_CHROME_CLASSES } from "../../lib/wireline-ops-design";
 import { cn } from "../../lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/shadcn/Tooltip";
 import { ShadButton } from "../ui/shadcn/ShadButton";
@@ -195,7 +196,6 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                       active={isActive(item)}
                       badge={resolveBadge(item, navBadges)}
                       expanded={effective}
-                      accent={ROUTE_ACCENTS[item.path]?.[0] ?? BRAND.purple}
                       shortcut={SHORTCUTS[item.path]}
                     />
                   </React.Fragment>
@@ -322,11 +322,10 @@ interface RailItemProps {
   active: boolean;
   badge: number;
   expanded: boolean;
-  accent: string;
   shortcut?: string;
 }
 
-function RailItem({ item, active, badge, expanded, accent, shortcut }: RailItemProps) {
+function RailItem({ item, active, badge, expanded, shortcut }: RailItemProps) {
   const Icon = item.icon;
 
   const link = (
@@ -339,7 +338,10 @@ function RailItem({ item, active, badge, expanded, accent, shortcut }: RailItemP
         "touch-press group relative flex items-center gap-2 h-8 px-2 rounded-md transition-all duration-150",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
         active
-          ? "bg-white/[0.15] text-white font-semibold dark:bg-white/[0.12] dark:text-white"
+          ? cn(
+              "bg-white/[0.15] text-white font-semibold dark:bg-white/[0.12] dark:text-white",
+              WL_CHROME_CLASSES.railItemActive,
+            )
           : "text-white/70 hover:text-white hover:bg-white/[0.08] dark:text-white/55 dark:hover:text-white/85 dark:hover:bg-white/[0.06]",
       )}
     >
@@ -347,8 +349,7 @@ function RailItem({ item, active, badge, expanded, accent, shortcut }: RailItemP
       {active && (
         <span
           aria-hidden="true"
-          className="absolute -left-2 top-1.5 bottom-1.5 w-[3px] rounded-r-full"
-          style={{ background: accent, boxShadow: `0 0 10px ${accent}88` }}
+          className="absolute -left-2 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-brand shadow-[0_0_10px] shadow-brand/50"
         />
       )}
       <Icon
@@ -487,15 +488,24 @@ function FooterItem({ to, icon: Icon, label, expanded, active, dataTour }: Foote
       {...(dataTour ? { "data-tour": dataTour } : {})}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "touch-press group h-8 flex items-center gap-2 px-2 rounded-md transition-all",
+        "touch-press group relative h-8 flex items-center gap-2 px-2 rounded-md transition-all",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
         active
-          ? "bg-white/[0.15] text-white font-semibold dark:bg-white/10 dark:text-white/90"
+          ? cn(
+              "bg-white/[0.15] text-white font-semibold dark:bg-white/10 dark:text-white/90",
+              WL_CHROME_CLASSES.railFooterActive,
+            )
           : "text-white/70 hover:text-white hover:bg-white/[0.08] dark:text-white/50 dark:hover:text-white/80 dark:hover:bg-white/[0.06]",
       )}
     >
-      <Icon className="w-4 h-4 shrink-0" strokeWidth={active ? 2.5 : 1.75} />
-      {expanded && <span className="text-[12px] font-medium truncate">{label}</span>}
+      {active && (
+        <span
+          aria-hidden="true"
+          className="absolute -left-2 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-brand shadow-[0_0_10px] shadow-brand/50"
+        />
+      )}
+      <Icon className="w-4 h-4 shrink-0 relative z-10" strokeWidth={active ? 2.5 : 1.75} />
+      {expanded && <span className="text-[12px] font-medium truncate relative z-10">{label}</span>}
     </Link>
   );
 

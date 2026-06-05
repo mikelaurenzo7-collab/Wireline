@@ -1,18 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React from "react";
-import {
-  CreditCard,
-  AlertTriangle,
-  Loader2,
-  Save,
-  Activity,
-  CheckCircle2,
-  Trash2,
-  ServerCog,
-} from "lucide-react";
+import { CreditCard, AlertTriangle, Activity, CheckCircle2, Trash2, ServerCog } from "lucide-react";
 import { Panel } from "../PageShell";
 import StripeBillingCard from "../StripeBillingCard";
 import { cn } from "../../lib/utils";
+import { AdminSaveBar } from "./AdminSaveBar";
+import { OPS_ADMIN } from "../../lib/wireline-ops-design";
 import { Link } from "react-router-dom";
 import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
@@ -123,20 +116,12 @@ export function SubscriptionPanel({
               </div>
             </div>
 
-            <ShadButton
+            <AdminSaveBar
               onClick={onSaveSettings}
-              disabled={isSaving}
-              variant="outline"
-              disableAnimations
-              className="app-primary-action w-full disabled:opacity-50"
-            >
-              {isSaving ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Save className="w-3.5 h-3.5" />
-              )}
-              Save billing
-            </ShadButton>
+              isSaving={isSaving}
+              label={OPS_ADMIN.saveLabels.subscription}
+              fullWidth
+            />
           </div>
 
           <div className="rounded-md wl-panel border border-input p-4 space-y-3">

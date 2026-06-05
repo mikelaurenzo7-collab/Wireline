@@ -5,7 +5,6 @@ import {
   Shield,
   Search,
   Download,
-  ChevronDown,
   ChevronRight,
   AlertTriangle,
   AlertCircle,
@@ -18,13 +17,22 @@ import {
   DollarSign,
   Activity,
   Filter,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 import PageShell, { Panel } from "./PageShell";
-import EmptyState from "./EmptyState";
-import { OPS_CHANNEL_EMPTY } from "../lib/wireline-ops-design";
+import { EmptyState } from "./ui/EmptyState";
+import {
+  OPS_CHANNEL_EMPTY,
+  OPS_CHANNEL_TOOLBAR,
+  OPS_SUPPORT_EMPTY,
+  OPS_AUDIT_SEVERITY,
+} from "../lib/wireline-ops-design";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { authFetch } from "../lib/api";
 import AdminHubViewport from "./layout/AdminHubViewport";
+import ClientRouteLoading from "./layout/ClientRouteLoading";
+import ClientToolbar from "./layout/ClientToolbar";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
 import { formatDateTime } from "../lib/safe-date";
@@ -65,44 +73,23 @@ const EVENT_CATEGORIES = {
   data: "Data Operations",
 } as const;
 
-function SeverityIcon({ severity }: { severity: AuditSeverity }) {
+function SeverityIcon({ severity, size = "md" }: { severity: AuditSeverity; size?: "md" | "sm" }) {
   const config = {
-    info: { Icon: Info, color: "text-brand", bg: "bg-brand/10" },
-    warning: { Icon: AlertTriangle, color: "text-brand", bg: "bg-brand/10" },
-    error: { Icon: AlertCircle, color: "text-rose-600", bg: "bg-rose-500/10" },
-    critical: { Icon: XCircle, color: "text-rose-600", bg: "bg-rose-500/10" },
+    info: { Icon: Info, color: "text-brand", bg: "bg-brand/10", label: "Info" },
+    warning: { Icon: AlertTriangle, color: "text-brand", bg: "bg-brand/10", label: "Warning" },
+    error: { Icon: AlertCircle, color: "text-rose-600", bg: "bg-rose-500/10", label: "Error" },
+    critical: { Icon: XCircle, color: "text-rose-600", bg: "bg-rose-500/10", label: "Critical" },
   };
-  const { Icon, color, bg } = config[severity];
+  const { Icon, color, bg, label } = config[severity];
+  const box = size === "sm" ? "w-5 h-5" : "w-8 h-8";
+  const icon = size === "sm" ? "w-3 h-3" : "w-4 h-4";
   return (
-    <div className={cn("w-8 h-8 rounded-md flex items-center justify-center shrink-0", bg)}>
-      <Icon className={cn("w-4 h-4", color)} />
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  color,
-}: {
-  label: string;
-  value: string | number;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-}) {
-  return (
-    <div className="relative wl-panel rounded-md p-4 border border-border overflow-hidden">
-      <div
-        className={cn("absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20 blur-3xl", color)}
-      />
-      <div className="relative z-10">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[10px] uppercase tracking-[0.3em] text-muted">{label}</span>
-          <Icon className="w-3.5 h-3.5 text-muted/70" />
-        </div>
-        <p className="text-2xl font-display italic text-ink">{value}</p>
-      </div>
+    <div
+      className={cn("rounded-md flex items-center justify-center shrink-0", box, bg)}
+      aria-hidden={size === "sm"}
+    >
+      <Icon className={cn(icon, color)} aria-hidden />
+      {size !== "sm" && <span className="sr-only">{label} severity</span>}
     </div>
   );
 }
@@ -258,55 +245,53 @@ export default function AuditLog() {
   // Expandable rows
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
-  // Fetch events
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams();
-        params.set("days", timeRange.toString());
-        if (selectedSeverities.length > 0) {
-          selectedSeverities.forEach((s) => params.append("severity", s));
-        }
-        if (selectedCategories.length > 0) {
-          selectedCategories.forEach((c) => params.append("event_type", c));
-        }
-
-        const [eventsRes, statsRes] = await Promise.all([
-          authFetch(`/api/audit/events?${params}`),
-          authFetch(`/api/audit/stats?${params}`),
-        ]);
-
-        if (!eventsRes.ok || !statsRes.ok) {
-          throw new Error("Failed to fetch audit data");
-        }
-
-        const eventsData: AuditResponse = await eventsRes.json();
-        const statsData: any = await statsRes.json();
-
-        // Map backend response to frontend stats shape
-        const mappedStats: AuditStats = {
-          total: statsData.total_events || 0,
-          api_calls: statsData.total_api_calls || 0,
-          total_cost: statsData.total_cost_usd || 0,
-          critical_count: statsData.by_severity?.critical || 0,
-        };
-
-        setEvents(eventsData.events);
-        setStats(mappedStats);
-      } catch (err) {
-        console.error("Failed to load audit log:", err);
-        toastError(
-          "Failed to load audit log",
-          "Could not fetch audit events. Check your network connection and try refreshing.",
-        );
-      } finally {
-        setLoading(false);
+  const fetchAudit = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("days", timeRange.toString());
+      if (selectedSeverities.length > 0) {
+        selectedSeverities.forEach((s) => params.append("severity", s));
       }
-    };
+      if (selectedCategories.length > 0) {
+        selectedCategories.forEach((c) => params.append("event_type", c));
+      }
 
-    fetchData();
+      const [eventsRes, statsRes] = await Promise.all([
+        authFetch(`/api/audit/events?${params}`),
+        authFetch(`/api/audit/stats?${params}`),
+      ]);
+
+      if (!eventsRes.ok || !statsRes.ok) {
+        throw new Error("Failed to fetch audit data");
+      }
+
+      const eventsData: AuditResponse = await eventsRes.json();
+      const statsData: any = await statsRes.json();
+
+      const mappedStats: AuditStats = {
+        total: statsData.total_events || 0,
+        api_calls: statsData.total_api_calls || 0,
+        total_cost: statsData.total_cost_usd || 0,
+        critical_count: statsData.by_severity?.critical || 0,
+      };
+
+      setEvents(eventsData.events);
+      setStats(mappedStats);
+    } catch (err) {
+      console.error("Failed to load audit log:", err);
+      toastError(
+        "Failed to load audit log",
+        "Could not fetch audit events. Check your network connection and try refreshing.",
+      );
+    } finally {
+      setLoading(false);
+    }
   }, [timeRange, selectedSeverities, selectedCategories, toastError]);
+
+  useEffect(() => {
+    fetchAudit();
+  }, [fetchAudit]);
 
   // Filtered events (search)
   const filteredEvents = useMemo(() => {
@@ -382,129 +367,148 @@ export default function AuditLog() {
 
   return (
     <AdminHubViewport scroll>
-      <PageShell
-        title=""
-        eyebrow=""
-        subtitle=""
-        scrollable
-        actions={
-          <ShadButton
-            type="button"
-            variant="outline"
-            disableAnimations
-            onClick={handleExport}
-            disabled={exporting || events.length === 0}
-            aria-label={`Export ${events.length} events as CSV`}
-            className="rounded-full text-[11px] uppercase tracking-[0.3em]"
-          >
-            {exporting ? (
-              <>
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+      <PageShell title="" eyebrow="" subtitle="" scrollable>
+        <div className="flex flex-col flex-1 min-h-0 gap-3 h-full">
+          <ClientToolbar
+            left={
+              <span className="app-toolbar-stat">
+                {loading
+                  ? OPS_CHANNEL_TOOLBAR.audit.loading
+                  : OPS_CHANNEL_TOOLBAR.audit.stat(filteredEvents.length)}
+              </span>
+            }
+            actions={
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                <Select
+                  value={String(timeRange)}
+                  onValueChange={(v) => setTimeRange(Number(v) as TimeRange)}
                 >
-                  <Download className="w-3.5 h-3.5" />
-                </motion.div>
-                exporting...
-              </>
-            ) : (
-              <>
-                <Download className="w-3.5 h-3.5" />
-                export
-              </>
-            )}
-          </ShadButton>
-        }
-      >
-        <div className="flex flex-col gap-4 p-4 md:p-0">
-          {/* Stats Overview */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard
-              label="Total Events"
-              value={stats?.total.toLocaleString() || "—"}
-              icon={Activity}
-              color="bg-brand/30"
-            />
-            <StatCard
-              label="API Calls"
-              value={stats?.api_calls.toLocaleString() || "—"}
-              icon={Cpu}
-              color="bg-brand/20"
-            />
-            <StatCard
-              label="Total Cost"
-              value={stats ? `$${stats.total_cost.toFixed(2)}` : "—"}
-              icon={DollarSign}
-              color="bg-brand/25"
-            />
-            <StatCard
-              label="Critical Events"
-              value={stats?.critical_count || 0}
-              icon={Shield}
-              color="bg-rose-400/40"
-            />
+                  <SelectTrigger
+                    aria-label="Time range"
+                    className="h-9 w-[140px] rounded-full wl-panel border border-border text-[10px] uppercase tracking-[0.22em] text-muted bg-transparent"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Last 24 hours</SelectItem>
+                    <SelectItem value="7">Last 7 days</SelectItem>
+                    <SelectItem value="30">Last 30 days</SelectItem>
+                    <SelectItem value="90">Last 90 days</SelectItem>
+                  </SelectContent>
+                </Select>
+                <ShadButton
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disableAnimations
+                  onClick={() => setFiltersExpanded(!filtersExpanded)}
+                  aria-label={filtersExpanded ? "Hide filters" : "Show filters"}
+                  aria-expanded={filtersExpanded}
+                  className={cn(
+                    "h-9 rounded-full text-[10px] uppercase tracking-[0.28em]",
+                    filtersExpanded && "border-brand/40 text-brand",
+                  )}
+                >
+                  <Filter className="w-3 h-3" />
+                  Filters
+                </ShadButton>
+                <ShadButton
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disableAnimations
+                  onClick={fetchAudit}
+                  disabled={loading}
+                  className="h-9 rounded-full text-[10px] uppercase tracking-[0.28em] text-muted"
+                >
+                  {loading ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-3 h-3" />
+                  )}
+                  {OPS_CHANNEL_TOOLBAR.audit.refresh}
+                </ShadButton>
+                <ShadButton
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  disableAnimations
+                  onClick={handleExport}
+                  disabled={exporting || events.length === 0}
+                  aria-label={`Export ${events.length} events as CSV`}
+                  className="h-9 rounded-full bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.28em] hover:bg-brand/25 shadow-none"
+                >
+                  {exporting ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Download className="w-3 h-3" />
+                  )}
+                  {OPS_CHANNEL_TOOLBAR.audit.export}
+                </ShadButton>
+              </div>
+            }
+          />
+
+          {/* Stat bar — DNC compliance pattern */}
+          <div className="shrink-0 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              {
+                label: "Total Events",
+                value: stats?.total.toLocaleString() || "—",
+                icon: Activity,
+              },
+              { label: "API Calls", value: stats?.api_calls.toLocaleString() || "—", icon: Cpu },
+              {
+                label: "Total Cost",
+                value: stats ? `$${stats.total_cost.toFixed(2)}` : "—",
+                icon: DollarSign,
+              },
+              { label: "Critical", value: stats?.critical_count ?? "—", icon: Shield },
+            ].map(({ label, value, icon: Icon }) => (
+              <div
+                key={label}
+                className="relative rounded-md wl-panel border border-border p-4 overflow-hidden"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <p className="wl-label-muted">{label}</p>
+                  <Icon className="w-3.5 h-3.5 text-brand" />
+                </div>
+                <p className="font-display italic text-3xl text-ink leading-none tabular-nums">
+                  {value}
+                </p>
+              </div>
+            ))}
           </div>
 
-          {/* Search and Time Range */}
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
-              <Input
-                type="search"
-                aria-label="Search audit events"
-                placeholder="Search events..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    // Trigger search (already handled by useMemo)
-                  }
-                }}
-                className="w-full pl-11 pr-4 py-3 rounded-md wl-panel border border-border text-sm text-ink placeholder:text-muted/70 focus:outline-none focus:border-brand/40 transition-all"
-              />
-            </div>
-            <div className="relative">
-              <Select
-                value={String(timeRange)}
-                onValueChange={(v) => setTimeRange(Number(v) as TimeRange)}
-              >
-                <SelectTrigger
-                  aria-label="Time range"
-                  className="pl-4 pr-3 py-3 rounded-md wl-panel border border-border text-sm text-ink bg-transparent h-auto"
+          <div className="flex items-center gap-2.5 p-3 rounded-md bg-brand/5 border border-brand/15">
+            <AlertTriangle className="w-4 h-4 text-brand shrink-0" aria-hidden />
+            <p className="text-[10px] text-brand/80 leading-snug">
+              {OPS_SUPPORT_EMPTY.auditCompliance}
+            </p>
+          </div>
+
+          {/* Severity legend */}
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Severity legend">
+            {SEVERITY_OPTIONS.map((severity) => {
+              const meta = OPS_AUDIT_SEVERITY[severity];
+              const active = selectedSeverities.includes(severity);
+              return (
+                <ShadButton
+                  key={severity}
+                  type="button"
+                  variant={active ? "default" : "outline"}
+                  size="sm"
+                  disableAnimations
+                  onClick={() => toggleSeverity(severity)}
+                  aria-pressed={active}
+                  title={meta.hint}
+                  className="wl-filter-chip rounded-full h-auto px-3 py-1.5 inline-flex items-center gap-1.5"
                 >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Last 24 hours</SelectItem>
-                  <SelectItem value="7">Last 7 days</SelectItem>
-                  <SelectItem value="30">Last 30 days</SelectItem>
-                  <SelectItem value="90">Last 90 days</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <ShadButton
-              type="button"
-              variant="outline"
-              disableAnimations
-              onClick={() => setFiltersExpanded(!filtersExpanded)}
-              aria-label={filtersExpanded ? "Hide filters" : "Show filters"}
-              aria-expanded={filtersExpanded}
-              className={cn(
-                "h-auto px-4 py-3 rounded-md text-sm",
-                filtersExpanded
-                  ? "border-brand/40 text-brand"
-                  : "text-ink/80 hover:border-brand/25",
-              )}
-            >
-              <Filter className="w-4 h-4" />
-              Filters
-              <motion.div
-                animate={{ rotate: filtersExpanded ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ChevronDown className="w-4 h-4" />
-              </motion.div>
-            </ShadButton>
+                  <SeverityIcon severity={severity} size="sm" />
+                  {meta.label}
+                </ShadButton>
+              );
+            })}
           </div>
 
           {/* Filters Panel */}
@@ -519,27 +523,7 @@ export default function AuditLog() {
               >
                 <div className="wl-panel rounded-md border border-border p-4 space-y-4">
                   <div>
-                    <h4 className="text-xs uppercase tracking-[0.3em] text-muted mb-3">Severity</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {SEVERITY_OPTIONS.map((severity) => (
-                        <ShadButton
-                          key={severity}
-                          type="button"
-                          variant={selectedSeverities.includes(severity) ? "default" : "outline"}
-                          size="sm"
-                          disableAnimations
-                          onClick={() => toggleSeverity(severity)}
-                          className="rounded-full text-xs uppercase tracking-wider h-auto px-3 py-1.5"
-                        >
-                          {severity}
-                        </ShadButton>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="text-xs uppercase tracking-[0.3em] text-muted mb-3">
-                      Event Type
-                    </h4>
+                    <h4 className="wl-label-muted mb-3">Event type</h4>
                     <div className="flex flex-wrap gap-2">
                       {Object.entries(EVENT_CATEGORIES).map(([key, label]) => (
                         <ShadButton
@@ -549,7 +533,7 @@ export default function AuditLog() {
                           size="sm"
                           disableAnimations
                           onClick={() => toggleCategory(key)}
-                          className="rounded-full text-xs uppercase tracking-wider h-auto px-3 py-1.5"
+                          className="wl-filter-chip rounded-full h-auto px-3 py-1.5"
                         >
                           {label}
                         </ShadButton>
@@ -562,49 +546,67 @@ export default function AuditLog() {
           </AnimatePresence>
 
           {/* Events List */}
-          <Panel title="Activity Stream" icon={Shield} scroll>
-            {loading ? (
-              <div className="flex items-center justify-center py-20">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                >
-                  <Shield className="w-8 h-8 text-brand" />
-                </motion.div>
-              </div>
-            ) : filteredEvents.length === 0 ? (
-              searchQuery.trim() ? (
-                <EmptyState
-                  icon={Shield}
-                  eyebrow={OPS_CHANNEL_EMPTY.auditNoMatch.eyebrow}
-                  title={OPS_CHANNEL_EMPTY.auditNoMatch.title}
-                  description={OPS_CHANNEL_EMPTY.auditNoMatch.description}
-                  actions={[
-                    { label: "Clear search", onClick: () => setSearchQuery(""), primary: true },
-                  ]}
-                />
-              ) : (
-                <EmptyState
-                  icon={Shield}
-                  eyebrow={OPS_CHANNEL_EMPTY.audit.eyebrow}
-                  title={OPS_CHANNEL_EMPTY.audit.title}
-                  description={OPS_CHANNEL_EMPTY.audit.description}
-                  actions={[...OPS_CHANNEL_EMPTY.audit.actions]}
-                />
-              )
-            ) : (
-              <div className="space-y-3">
-                {filteredEvents.map((event) => (
-                  <EventRow
-                    key={event.id}
-                    event={event}
-                    expanded={expandedRows.has(event.id)}
-                    onToggle={() => toggleRow(event.id)}
+          <div className="flex-1 min-h-0">
+            <Panel
+              title="Activity Stream"
+              hint={`${filteredEvents.length} events`}
+              icon={Shield}
+              scroll
+              className="h-full"
+              actions={
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+                  <Input
+                    type="search"
+                    aria-label="Search audit events"
+                    placeholder="Search events…"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-8 w-44 pl-8 pr-3 rounded-full wl-panel border border-border text-[11px] text-ink placeholder:text-ink/40 focus:border-brand/40 focus:outline-none"
                   />
-                ))}
-              </div>
-            )}
-          </Panel>
+                </div>
+              }
+            >
+              {loading ? (
+                <ClientRouteLoading
+                  icon={<Shield className="w-7 h-7" />}
+                  label={OPS_CHANNEL_TOOLBAR.audit.loading}
+                  className="min-h-[280px]"
+                />
+              ) : filteredEvents.length === 0 ? (
+                searchQuery.trim() ? (
+                  <EmptyState
+                    icon={Shield}
+                    eyebrow={OPS_CHANNEL_EMPTY.auditNoMatch.eyebrow}
+                    title={OPS_CHANNEL_EMPTY.auditNoMatch.title}
+                    description={OPS_CHANNEL_EMPTY.auditNoMatch.description}
+                    actions={[
+                      { label: "Clear search", onClick: () => setSearchQuery(""), primary: true },
+                    ]}
+                  />
+                ) : (
+                  <EmptyState
+                    icon={Shield}
+                    eyebrow={OPS_CHANNEL_EMPTY.audit.eyebrow}
+                    title={OPS_CHANNEL_EMPTY.audit.title}
+                    description={OPS_CHANNEL_EMPTY.audit.description}
+                    actions={[...OPS_CHANNEL_EMPTY.audit.actions]}
+                  />
+                )
+              ) : (
+                <div className="space-y-3">
+                  {filteredEvents.map((event) => (
+                    <EventRow
+                      key={event.id}
+                      event={event}
+                      expanded={expandedRows.has(event.id)}
+                      onToggle={() => toggleRow(event.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </Panel>
+          </div>
         </div>
       </PageShell>
     </AdminHubViewport>

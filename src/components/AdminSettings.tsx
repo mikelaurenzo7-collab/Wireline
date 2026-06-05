@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Settings } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import ConfirmModal from "./ConfirmModal";
 import { motion, AnimatePresence } from "motion/react";
@@ -12,6 +12,9 @@ import { useToast } from "../contexts/ToastContext";
 import { useBranding } from "../contexts/BrandingContext";
 import AdminHubViewport from "./layout/AdminHubViewport";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
+import ClientToolbar from "./layout/ClientToolbar";
+import { OPS_ADMIN, type OpsAdminTab } from "../lib/wireline-ops-design";
+import { BRAND } from "../constants/brand-colors";
 
 // Modularized Panels
 import { BrandingPanel } from "./admin/BrandingPanel";
@@ -53,7 +56,7 @@ export default function AdminSettings() {
     target_employee_ranges: ["1,10", "11,50"] as string[],
     brand_name: "",
     brand_logo_url: "",
-    primary_color: "#8B3FD6",
+    primary_color: BRAND.purple,
   });
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [agents, setAgents] = useState<any[]>([]);
@@ -223,7 +226,7 @@ export default function AdminSettings() {
           target_employee_ranges: settingsRes.target_employee_ranges || ["1,10", "11,50"],
           brand_name: settingsRes.brand_name || "",
           brand_logo_url: settingsRes.brand_logo_url || "",
-          primary_color: settingsRes.primary_color || "#8B3FD6",
+          primary_color: settingsRes.primary_color || BRAND.purple,
         });
       }
       setAgents(agentsRes.agents || []);
@@ -376,6 +379,15 @@ export default function AdminSettings() {
   return (
     <>
       <AdminHubViewport>
+        <ClientToolbar
+          left={
+            <span className="app-toolbar-stat">
+              {isLoading
+                ? OPS_ADMIN.loading
+                : (OPS_ADMIN.tabLabels[activeTab as OpsAdminTab] ?? "Settings")}
+            </span>
+          }
+        />
         <PageShell title="" eyebrow="" subtitle="">
           <div className="h-full flex flex-col">
             <IntegrationHealthBanner
@@ -385,8 +397,8 @@ export default function AdminSettings() {
             <div className="flex-1 min-h-0 scroll-viewport scroll-pb-safe">
               {isLoading ? (
                 <ClientRouteLoading
-                  icon={<Loader2 className="w-7 h-7 animate-spin" aria-hidden />}
-                  label="Loading settings"
+                  icon={<Settings className="w-7 h-7" />}
+                  label={OPS_ADMIN.loading}
                 />
               ) : (
                 <AnimatePresence mode="wait">

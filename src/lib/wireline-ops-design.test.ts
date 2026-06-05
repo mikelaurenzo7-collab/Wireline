@@ -9,6 +9,18 @@ import {
   OPS_HELP,
   OPS_SUPPORT_EMPTY,
   OPS_INSIGHTS_EMPTY,
+  OPS_CHANNEL_TOOLBAR,
+  OPS_AUDIT_SEVERITY,
+  OPS_TRIAGE_ACCENTS,
+  OPS_INSIGHTS_GROUPS,
+  WL_CHANNEL_CLASSES,
+  OPS_PIPELINE,
+  WL_INTEGRATION_CLASSES,
+  OPS_ADMIN,
+  WL_ADMIN_CLASSES,
+  OPS_FOUNDER,
+  WL_FLEET_CLASSES,
+  WL_CHROME_CLASSES,
 } from "./wireline-ops-design";
 import { WIRELINE_DIRECTOR_BRAND } from "./wireline-director-design";
 import { BRAND } from "../constants/brand-colors";
@@ -65,11 +77,41 @@ describe("Wireline Live Ops design contract", () => {
 
   it("defines help, support, and insights empty copy with route CTAs", () => {
     expect(OPS_HELP.quickLinks.some((l) => l.to === "/chat")).toBe(true);
+    expect(OPS_HELP.stat(3, 2)).toBe("3 live lines · 2 demos");
     expect(OPS_SUPPORT_EMPTY.dnc.title.toLowerCase()).toContain("blocked");
+    expect(OPS_SUPPORT_EMPTY.auditCompliance.toLowerCase()).toContain("compliance");
     expect(OPS_INSIGHTS_EMPTY.funnel.actions?.some((a) => a.to.includes("outbound"))).toBe(true);
     expect(OPS_INSIGHTS_EMPTY.attribution.actions?.some((a) => a.to.includes("carrier"))).toBe(
       true,
     );
     expect(OPS_INSIGHTS_EMPTY.quality.description.toLowerCase()).toContain("score");
+  });
+
+  it("defines channel toolbar loading labels for route boundaries", () => {
+    expect(OPS_CHANNEL_TOOLBAR.phone.loading.toLowerCase()).toContain("call");
+    expect(OPS_CHANNEL_TOOLBAR.email.stat(1)).toBe("1 thread");
+    expect(OPS_CHANNEL_TOOLBAR.sms.stat(3)).toBe("3 conversations");
+    expect(OPS_CHANNEL_TOOLBAR.audit.loading.toLowerCase()).toContain("audit");
+    expect(OPS_CHANNEL_TOOLBAR.audit.stat(1)).toBe("1 event");
+    expect(OPS_CHANNEL_TOOLBAR.audit.stat(1200)).toBe("1,200 events");
+    expect(OPS_AUDIT_SEVERITY.critical.label).toBe("Critical");
+    expect(OPS_TRIAGE_ACCENTS.escalations).toBe(BRAND.rose);
+    expect(OPS_INSIGHTS_GROUPS).toHaveLength(3);
+    expect(OPS_CHANNEL_TOOLBAR.triage.stat(4)).toBe("4 need attention");
+    expect(OPS_CHANNEL_TOOLBAR.insights.stat(30)).toBe("30-day window");
+    expect(WL_CHANNEL_CLASSES.inboxGrid).toContain("wl-channel-inbox-grid");
+    expect(OPS_CHANNEL_TOOLBAR.outbound.stat(2, 10)).toBe("2 queued · 10 leads");
+    expect(OPS_CHANNEL_TOOLBAR.contact.stat(3)).toBe("3 events");
+    expect(OPS_CHANNEL_TOOLBAR.fleet.agentsStat(2)).toBe("2 agents");
+    expect(OPS_CHANNEL_TOOLBAR.integrations.stat(1)).toBe("1 carrier");
+    expect(OPS_PIPELINE.emptyColumn.toLowerCase()).toContain("drop");
+    expect(WL_INTEGRATION_CLASSES.previewCard).toBe("wl-integration-preview-card");
+    expect(WL_INTEGRATION_CLASSES.liveCard).toBe("wl-integration-live-card");
+    expect(OPS_ADMIN.tabLabels.branding).toBe("Branding");
+    expect(OPS_ADMIN.saveLabels.growth).toBe("Save growth settings");
+    expect(WL_ADMIN_CLASSES.panel).toBe("wl-admin-panel");
+    expect(OPS_FOUNDER.stat(6)).toBe("6 staff agents");
+    expect(WL_FLEET_CLASSES.agentRow).toBe("wl-fleet-agent-row");
+    expect(WL_CHROME_CLASSES.drawerSection).toBe("wl-drawer-section-label");
   });
 });
