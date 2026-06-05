@@ -192,7 +192,7 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-brand" />
               </span>
-              <h2 className="font-display italic text-lg sm:text-xl text-ink truncate">
+              <h2 className="wl-label text-foreground truncate">
                 {OPS_COPY.floorTitle(calls.length)}
               </h2>
             </div>

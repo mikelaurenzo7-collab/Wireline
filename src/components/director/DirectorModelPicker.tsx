@@ -64,7 +64,9 @@ function OpenRouterModelRow({
       className={cn(
         "w-full h-auto justify-start text-left rounded-md transition-colors",
         compact ? "px-2.5 py-1.5 text-[11px]" : "px-2.5 py-2 text-[12px]",
-        active ? "bg-brand/12 text-brand-deep" : "hover:bg-muted/60",
+        active
+          ? "bg-brand/15 text-foreground ring-1 ring-brand/30"
+          : "hover:bg-muted/60 text-foreground",
       )}
       onClick={onPick}
     >
@@ -260,7 +262,9 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
                     disableAnimations
                     className={cn(
                       "w-full h-auto justify-start text-left rounded-md px-2.5 py-2 text-[12px] transition-colors",
-                      active ? "bg-brand/12 text-brand-deep" : "hover:bg-muted/60",
+                      active
+                        ? "bg-brand/15 text-foreground ring-1 ring-brand/30"
+                        : "hover:bg-muted/60 text-foreground",
                     )}
                     onClick={() => void persist({ provider: "wireline", tier: tier.id })}
                   >

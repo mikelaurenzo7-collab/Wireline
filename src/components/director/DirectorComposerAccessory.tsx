@@ -116,10 +116,10 @@ export function DirectorComposerAccessory({
           role="region"
           aria-label={meta.label}
           data-motion-panel
-          initial={reduceMotion ? false : { height: 0, opacity: 0 }}
-          animate={reduceMotion ? undefined : { height: "auto", opacity: 1 }}
-          exit={reduceMotion ? undefined : { height: 0, opacity: 0 }}
-          transition={{ duration: reduceMotion ? 0 : 0.2, ease: [0.16, 1, 0.3, 1] }}
+          initial={reduceMotion ? false : { opacity: 0, y: 4 }}
+          animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+          exit={reduceMotion ? undefined : { opacity: 0, y: 4 }}
+          transition={{ duration: reduceMotion ? 0 : 0.14, ease: [0.16, 1, 0.3, 1] }}
           className="overflow-hidden"
         >
           <div

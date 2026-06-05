@@ -7,6 +7,7 @@
  */
 import React from "react";
 import { Download, FileText, Image as ImageIcon } from "lucide-react";
+import { dedupeDirectorArtifacts } from "../../lib/director-artifact-dedupe";
 import { cn } from "../../lib/utils";
 import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
 import { ArtifactCard, type ArtifactType } from "../ui/ArtifactCard";
@@ -28,11 +29,18 @@ export interface DirectorArtifactsPanelProps {
 }
 
 export default function DirectorArtifactsPanel({ artifacts }: DirectorArtifactsPanelProps) {
-  const imageArts = artifacts.filter(
+  const uniqueArtifacts = dedupeDirectorArtifacts(
+    artifacts.map((a) => ({
+      ...a,
+      createdAt: new Date(a.createdAt),
+    })),
+  );
+
+  const imageArts = uniqueArtifacts.filter(
     (a) =>
       a.mimeType?.startsWith("image/") || a.artifactType === "svg" || a.artifactType === "image",
   );
-  const fileArts = artifacts.filter(
+  const fileArts = uniqueArtifacts.filter(
     (a) =>
       !a.mimeType?.startsWith("image/") && a.artifactType !== "svg" && a.artifactType !== "image",
   );
@@ -58,7 +66,7 @@ export default function DirectorArtifactsPanel({ artifacts }: DirectorArtifactsP
                 "font-mono tabular-nums text-muted/50",
               )}
             >
-              {artifacts.length} file{artifacts.length !== 1 ? "s" : ""}
+              {uniqueArtifacts.length} file{uniqueArtifacts.length !== 1 ? "s" : ""}
             </span>
           </div>
         </div>

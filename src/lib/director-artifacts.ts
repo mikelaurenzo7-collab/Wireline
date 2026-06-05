@@ -1,7 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
+import { dedupeDirectorArtifacts } from "./director-artifact-dedupe";
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
+
+export { dedupeDirectorArtifacts } from "./director-artifact-dedupe";
 export {
   buildSignedDownloadUrl,
   createSignedDownloadToken,
@@ -74,6 +77,25 @@ export async function storeDirectorArtifact(input: {
   };
 }
 
+export async function clearDirectorArtifacts(userId: string): Promise<number> {
+  const rows = await drizzle
+    .select({ objectKey: schema.directorArtifacts.objectKey })
+    .from(schema.directorArtifacts)
+    .where(eq(schema.directorArtifacts.userId, userId));
+
+  if (rows.length === 0) return 0;
+
+  await drizzle.delete(schema.directorArtifacts).where(eq(schema.directorArtifacts.userId, userId));
+
+  for (const { objectKey } of rows) {
+    await drizzle
+      .delete(schema.directorArtifactObjects)
+      .where(eq(schema.directorArtifactObjects.objectKey, objectKey));
+  }
+
+  return rows.length;
+}
+
 export async function listDirectorArtifacts(
   userId: string,
   limit = 100,
@@ -100,7 +122,7 @@ export async function listDirectorArtifacts(
     .orderBy(desc(schema.directorArtifacts.createdAt))
     .limit(limit);
 
-  return rows.map((row) => ({
+  const mapped = rows.map((row) => ({
     id: String(row.id),
     userId: row.userId,
     threadKey: row.threadKey,
@@ -112,6 +134,8 @@ export async function listDirectorArtifacts(
     createdAt: row.createdAt,
     metadata: (row.metadata as Record<string, unknown>) ?? {},
   }));
+
+  return dedupeDirectorArtifacts(mapped).slice(0, limit);
 }
 
 export async function loadDirectorArtifactData(input: {

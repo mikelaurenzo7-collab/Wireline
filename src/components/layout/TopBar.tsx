@@ -334,7 +334,7 @@ export default function TopBar({
                 On mobile this replaces the sign-out that was buried in the
                 drawer; tap the avatar to access Billing, Settings, Sign out.
                 Taller py-2 (mobile) / py-1 (desktop) for iOS 44pt target. */}
-            <div ref={userMenuRef} className="relative">
+            <div ref={userMenuRef} className="relative z-[60] isolate">
               <ShadButton
                 type="button"
                 variant="chrome"
@@ -369,7 +369,7 @@ export default function TopBar({
                     transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
                     role="menu"
                     aria-label="Account menu"
-                    className="absolute right-0 top-full mt-2 min-w-[240px] w-64 md:w-72 max-w-[90vw] rounded-md wl-panel-elevated wl-card-shine shadow-2xl shadow-brand/8 overflow-hidden z-50"
+                    className="absolute right-0 top-full mt-2 min-w-[240px] w-64 md:w-72 max-w-[90vw] rounded-md border border-black/10 bg-paper dark:bg-card wl-card-shine shadow-2xl shadow-brand/12 overflow-hidden z-[90]"
                   >
                     {/* Account header — brand-tinted */}
                     <div className="relative px-4 py-3.5 border-b border-black/8 overflow-hidden">

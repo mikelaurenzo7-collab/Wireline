@@ -56,6 +56,7 @@ import {
 } from "../lib/director-message-metadata";
 import {
   buildSignedDownloadUrl,
+  clearDirectorArtifacts,
   listDirectorArtifacts,
   loadDirectorArtifactData,
   storeDirectorArtifact,
@@ -1096,7 +1097,8 @@ router.delete(
       await drizzle
         .delete(schema.directorConversationMessages)
         .where(eq(schema.directorConversationMessages.userId, req.user.id));
-      res.json({ cleared: true });
+      const artifactsCleared = await clearDirectorArtifacts(req.user.id);
+      res.json({ cleared: true, artifactsCleared });
     } catch (e) {
       log.error("director clear failed", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to clear Director thread" });

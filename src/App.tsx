@@ -63,11 +63,14 @@ function AppContent() {
 
   // Redirect authenticated users away from auth-only pages to Live Ops.
   useEffect(() => {
+    if (!user) return;
+    const path = location.pathname;
     if (
-      user &&
-      (location.pathname === "/login" ||
-        location.pathname === "/signin" ||
-        location.pathname === "/signup")
+      path === "/login" ||
+      path === "/signin" ||
+      path === "/signup" ||
+      path === "/auth" ||
+      path.startsWith("/auth/")
     ) {
       navigate("/ops", { replace: true });
     }
@@ -284,12 +287,15 @@ function AppContent() {
     return <div className="min-h-dvh bg-paper" aria-busy="true" />;
   }
 
-  // Legacy /auth alias — old links and e2e specs; canonical gate is /signin.
-  if (location.pathname === "/auth") {
+  // Legacy /auth/* aliases — old links and e2e specs; canonical gate is /signin.
+  if (location.pathname === "/auth" || location.pathname.startsWith("/auth/")) {
     if (user) {
       return <Navigate to="/ops" replace />;
     }
-    return <Navigate to={`/signin${location.search}`} replace />;
+    const legacySub = location.pathname.slice("/auth".length);
+    const authTarget =
+      legacySub === "/signup" ? "/signup" : legacySub === "/login" ? "/login" : "/signin";
+    return <Navigate to={`${authTarget}${location.search}`} replace />;
   }
 
   if (!user) {

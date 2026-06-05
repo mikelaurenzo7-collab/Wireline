@@ -863,12 +863,18 @@ export default function DirectorWorkspace({
   );
 
   const clearThread = useCallback(async () => {
-    if (!confirm("Clear your entire conversation with the Director?")) return;
+    if (
+      !confirm("Clear your Director conversation and generated artifacts? This cannot be undone.")
+    ) {
+      return;
+    }
     try {
       const r = await authFetch("/api/director/messages", { method: "DELETE" });
       if (!r.ok) throw new Error("Clear failed");
       setMessages([]);
-      toastSuccess("Thread cleared", "Fresh start with your Director");
+      setArtifacts([]);
+      setResolved({});
+      toastSuccess("Thread cleared", "Conversation and artifacts removed");
     } catch {
       toastError("Couldn't clear thread");
     }

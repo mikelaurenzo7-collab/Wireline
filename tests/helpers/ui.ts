@@ -51,6 +51,8 @@ export const EXTENDED_PUBLIC_ROUTES = [
 export const AUTH_PUBLIC_ROUTES = [
   { path: "/reset-password", name: "reset-password", title: /Wireline/i },
   { path: "/login", name: "login", title: /Wireline/i },
+  { path: "/auth/signin", name: "auth-signin-legacy", title: /Wireline/i },
+  { path: "/auth/signup", name: "auth-signup-legacy", title: /Wireline/i },
 ] as const;
 
 /** Legal, docs, and error surfaces. */
