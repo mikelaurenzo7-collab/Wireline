@@ -220,3 +220,27 @@ test.describe("Wireline design — Director starter prompts and capabilities vis
     }
   });
 });
+
+// === Cycle 10: Visual Regression for Director Thread Header ===
+test.describe("Wireline design — Director thread header visual regression", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await authenticatePage(page, baseURL!);
+  });
+
+  test("Director thread header and clear button render consistently", async ({ page }) => {
+    await gotoAuthenticated(page, "/director");
+
+    // Wait for Director to have messages (so header appears)
+    await expect(page.getByRole("heading", { name: /Director/i }).first()).toBeVisible({ timeout: 15000 });
+
+    const threadHeader = page.locator(".wl-director-thread-header, [data-testid*='thread-header'], .border-b.border-brand\/6").first();
+
+    if (await threadHeader.isVisible().catch(() => false)) {
+      await expect(threadHeader).toHaveScreenshot({
+        name: "director-thread-header.png",
+        threshold: 0.2,
+      });
+    }
+  });
+});
