@@ -10,9 +10,23 @@ import {
 import { drizzle } from "./server-context";
 import { dispatchWebhook } from "./webhook-helpers";
 import { SentryEvents } from "./sentry-events";
+import {
+  recordDailySpendUsd,
+  getDailySpendUsd,
+  resetDailySpendMemStateForTests,
+} from "./daily-spend-accumulator";
 
 let mockBudgetRows: any[] = [];
-let mockAuditLogRows: any[] = [];
+let mockMtdRow: { mtdCost: string }[] = [{ mtdCost: "0" }];
+
+vi.mock("./daily-spend-accumulator", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./daily-spend-accumulator")>();
+  return {
+    ...actual,
+    recordDailySpendUsd: vi.fn(actual.recordDailySpendUsd),
+    getDailySpendUsd: vi.fn(actual.getDailySpendUsd),
+  };
+});
 
 // Mock server context (Drizzle, logger)
 vi.mock("./server-context", () => {
@@ -26,7 +40,7 @@ vi.mock("./server-context", () => {
           if (chain.limit.mock.calls.length > 0) {
             return Promise.resolve(onFulfilled(mockBudgetRows));
           }
-          return Promise.resolve(onFulfilled ? onFulfilled(mockAuditLogRows) : mockAuditLogRows);
+          return Promise.resolve(onFulfilled ? onFulfilled(mockMtdRow) : mockMtdRow);
         }),
       };
       return chain;
@@ -64,7 +78,8 @@ describe("Spend Guards & Budgets", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockBudgetRows = [];
-    mockAuditLogRows = [];
+    mockMtdRow = [{ mtdCost: "0" }];
+    resetDailySpendMemStateForTests();
     clearBudgetCache(userId);
   });
 
@@ -84,7 +99,7 @@ describe("Spend Guards & Budgets", () => {
           enabled: true,
         },
       ];
-      mockAuditLogRows = [{ costUsd: "25.50" }, { costUsd: "15.25" }];
+      mockMtdRow = [{ mtdCost: "40.75" }];
 
       const snap = await getBudgetSnapshot(userId);
       expect(snap.budget).toEqual({
@@ -148,7 +163,7 @@ describe("Spend Guards & Budgets", () => {
           enabled: true,
         },
       ];
-      mockAuditLogRows = [{ costUsd: "75.00" }]; // Already at $75
+      mockMtdRow = [{ mtdCost: "75.00" }]; // Already at $75
 
       // Populate budgetCache first so bumpBudgetCache has a target
       await getBudgetSnapshot(userId);
@@ -178,7 +193,7 @@ describe("Spend Guards & Budgets", () => {
           enabled: true,
         },
       ];
-      mockAuditLogRows = [{ costUsd: "95.00" }];
+      mockMtdRow = [{ mtdCost: "95.00" }];
 
       // Populate budgetCache first so bumpBudgetCache has a target
       await getBudgetSnapshot(userId);
@@ -211,7 +226,7 @@ describe("Spend Guards & Budgets", () => {
           enabled: true,
         },
       ];
-      mockAuditLogRows = [{ costUsd: "85.00" }];
+      mockMtdRow = [{ mtdCost: "85.00" }];
 
       // Populate budgetCache first so bumpBudgetCache has a target
       await getBudgetSnapshot(userId);
@@ -245,7 +260,7 @@ describe("Spend Guards & Budgets", () => {
           enabled: true,
         },
       ];
-      mockAuditLogRows = [{ costUsd: "45.00" }];
+      mockMtdRow = [{ mtdCost: "45.00" }];
 
       const req = { user: { id: userId } };
       const res = {};
@@ -264,7 +279,7 @@ describe("Spend Guards & Budgets", () => {
           enabled: true,
         },
       ];
-      mockAuditLogRows = [{ costUsd: "105.00" }];
+      mockMtdRow = [{ mtdCost: "105.00" }];
 
       const req = { user: { id: userId } };
       const res = {};
@@ -283,7 +298,7 @@ describe("Spend Guards & Budgets", () => {
           enabled: true,
         },
       ];
-      mockAuditLogRows = [{ costUsd: "105.00" }];
+      mockMtdRow = [{ mtdCost: "105.00" }];
 
       const req = { user: { id: userId } };
       const res = {
@@ -321,9 +336,8 @@ describe("Spend Guards & Budgets", () => {
   });
 
   describe("enforce24hSpendCap system-wide cap", () => {
-    it("blocks request once daily spend threshold is breached", () => {
-      // Set some daily spend
-      recordDailySpend(500.0); // Breach DAILY_SPEND_LIMIT_USD (which is 1% of CLAUDE_MONTHLY_BUDGET_USD)
+    it("blocks request once daily spend threshold is breached", async () => {
+      await recordDailySpendUsd(500.0);
 
       const req = {};
       const res = {
@@ -332,7 +346,8 @@ describe("Spend Guards & Budgets", () => {
       };
       const next = vi.fn();
 
-      enforce24hSpendCap(req, res, next);
+      await enforce24hSpendCap(req as any, res as any, next);
+      expect(getDailySpendUsd).toHaveBeenCalled();
       expect(next).not.toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(402);
       expect(res.json).toHaveBeenCalledWith(
@@ -340,6 +355,13 @@ describe("Spend Guards & Budgets", () => {
           code: "DAILY_SPEND_LIMIT_EXCEEDED",
         }),
       );
+    });
+
+    it("recordDailySpend delegates to Redis-backed accumulator", async () => {
+      recordDailySpend(1.25);
+      await vi.waitFor(() => {
+        expect(recordDailySpendUsd).toHaveBeenCalledWith(1.25);
+      });
     });
   });
 });

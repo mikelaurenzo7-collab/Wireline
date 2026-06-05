@@ -190,7 +190,7 @@ export const spendAlerts = pgTable(
   "wireline_spend_alerts",
   {
     id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
-    userId: uuid("user_id"),
+    userId: uuid("user_id").notNull(),
     thresholdPct: integer("threshold_pct"),
     period: text("period"),
     firedAt: timestamp("fired_at", { withTimezone: true }).defaultNow(),
@@ -205,7 +205,7 @@ export const deletionQueue = pgTable(
   "wireline_deletion_queue",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id"),
+    userId: uuid("user_id").notNull(),
     requestedAt: timestamp("requested_at", { withTimezone: true }).defaultNow(),
     scheduledPurgeAt: timestamp("scheduled_purge_at", { withTimezone: true }),
     status: text("status").default("pending"),
@@ -224,7 +224,7 @@ export const agents = pgTable(
   "wireline_agents",
   {
     id: text("id").primaryKey(),
-    userId: uuid("user_id"),
+    userId: uuid("user_id").notNull(),
     name: text("name").notNull(),
     voiceId: text("voice_id"),
     voiceIdInbound: text("voice_id_inbound"),
@@ -390,7 +390,7 @@ export const directives = pgTable(
   "wireline_directives",
   {
     id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
-    userId: uuid("user_id"),
+    userId: uuid("user_id").notNull(),
     agentId: text("agent_id").references(() => agents.id, { onDelete: "cascade" }),
     content: text("content").notNull(),
     priority: integer("priority").default(5),
@@ -405,7 +405,7 @@ export const knowledge = pgTable(
   "wireline_knowledge",
   {
     id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
-    userId: uuid("user_id"),
+    userId: uuid("user_id").notNull(),
     agentId: text("agent_id").references(() => agents.id, { onDelete: "cascade" }),
     content: text("content").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
@@ -428,7 +428,7 @@ export const agentLessons = pgTable(
   "wireline_agent_lessons",
   {
     id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
-    userId: uuid("user_id"),
+    userId: uuid("user_id").notNull(),
     agentId: text("agent_id").references(() => agents.id, { onDelete: "cascade" }),
     lesson: text("lesson").notNull(),
     sourceCallId: text("source_call_id"),
@@ -610,7 +610,7 @@ export const appointments = pgTable(
   "wireline_appointments",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id"),
+    userId: uuid("user_id").notNull(),
     agentId: text("agent_id").references(() => agents.id),
     callId: text("call_id"),
     date: text("date"),
@@ -640,7 +640,7 @@ export const callLogs = pgTable(
   "wireline_call_logs",
   {
     id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
-    userId: uuid("user_id"),
+    userId: uuid("user_id").notNull(),
     vapiCallId: text("vapi_call_id").unique(),
     agentId: text("agent_id").references(() => agents.id),
     direction: text("direction"),
@@ -701,7 +701,7 @@ export const emailAccounts = pgTable(
   "wireline_email_accounts",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id"),
+    userId: uuid("user_id").notNull(),
     emailAddress: text("email_address").unique().notNull(),
     provider: text("provider").default("google"),
     accessToken: text("access_token"),
@@ -725,7 +725,7 @@ export const calendarAccounts = pgTable(
   "wireline_calendar_accounts",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id"),
+    userId: uuid("user_id").notNull(),
     /**
      * Mirrors `wireline_email_accounts.email_address` so the same OAuth
      * grant lands in both tables. Used as the conflict target for the
@@ -773,7 +773,7 @@ export const emailThreads = pgTable(
   "wireline_email_threads",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id"),
+    userId: uuid("user_id").notNull(),
     accountId: uuid("account_id").references(() => emailAccounts.id, { onDelete: "cascade" }),
     agentId: text("agent_id").references(() => agents.id, { onDelete: "set null" }),
     threadId: text("thread_id").unique(),
@@ -800,7 +800,7 @@ export const emailMessages = pgTable(
   "wireline_email_messages",
   {
     id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
-    userId: uuid("user_id"),
+    userId: uuid("user_id").notNull(),
     threadId: uuid("thread_id").references(() => emailThreads.id, { onDelete: "cascade" }),
     googleMessageId: text("google_message_id").unique(),
     role: text("role"), // 'user' or 'ai'
@@ -1010,7 +1010,7 @@ export const fleetTasks = pgTable(
   "wireline_fleet_tasks",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id"),
+    userId: uuid("user_id").notNull(),
     sourceType: text("source_type"),
     sourceId: text("source_id"),
     targetChannel: text("target_channel"),
@@ -1045,7 +1045,7 @@ export const phoneNumbers = pgTable(
   "wireline_phone_numbers",
   {
     id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
-    userId: uuid("user_id"),
+    userId: uuid("user_id").notNull(),
     phoneNumber: text("phone_number").unique().notNull(),
     vapiNumberId: text("vapi_number_id"),
     agentId: text("agent_id").references(() => agents.id),
@@ -1066,7 +1066,7 @@ export const outboundCampaigns = pgTable(
   "wireline_outbound_campaigns",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id"),
+    userId: uuid("user_id").notNull(),
     name: text("name").notNull(),
     goal: text("goal"),
     agentId: text("agent_id").references(() => agents.id, { onDelete: "set null" }),
@@ -1096,7 +1096,7 @@ export const outboundLeads = pgTable(
   "wireline_outbound_leads",
   {
     id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
-    userId: uuid("user_id"),
+    userId: uuid("user_id").notNull(),
     agentId: text("agent_id").references(() => agents.id),
     campaignId: uuid("campaign_id").references(() => outboundCampaigns.id, {
       onDelete: "set null",
@@ -1161,7 +1161,7 @@ export const signalPresence = pgTable(
   "wireline_signal_presence",
   {
     id: text("id").primaryKey(), // call_id
-    userId: uuid("user_id"),
+    userId: uuid("user_id").notNull(),
     agentId: text("agent_id").references(() => agents.id),
     customerNumber: text("customer_number"),
     status: text("status"),
@@ -1178,7 +1178,7 @@ export const signalPresence = pgTable(
 // 3.6 INTAKE KEYS (API ACCESS)
 export const intakeKeys = pgTable("wireline_intake_keys", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id"),
+  userId: uuid("user_id").notNull(),
   name: text("name").notNull(),
   keyPrefix: text("key_prefix").notNull(),
   keyHash: text("key_hash").notNull().unique(),
@@ -1195,7 +1195,7 @@ export const auditLog = pgTable(
   "wireline_audit_log",
   {
     id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
-    userId: uuid("user_id"),
+    userId: uuid("user_id").notNull(),
     action: text("action").notNull(),
     provider: text("provider"),
     model: text("model"),
@@ -1226,7 +1226,7 @@ export const auditLog = pgTable(
 // 4.1 WEBHOOKS
 export const webhooks = pgTable("wireline_webhooks", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id"),
+  userId: uuid("user_id").notNull(),
   name: text("name").notNull(),
   url: text("url").notNull(),
   events: text("events")
@@ -1326,7 +1326,7 @@ export const emailSuppressions = pgTable("wireline_email_suppressions", {
 export const onboardingProgress = pgTable(
   "wireline_onboarding_progress",
   {
-    userId: uuid("user_id"),
+    userId: uuid("user_id").notNull(),
     stepId: text("step_id"),
     completed: boolean("completed").default(false),
     completedAt: timestamp("completed_at", { withTimezone: true }),

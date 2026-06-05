@@ -9,6 +9,9 @@ import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
+/** Per-channel cap on contact timeline rows — keeps profile API bounded. */
+const CONTACT_HISTORY_LIMIT = 100;
+
 // ──────────────────────────────────────────────────────────
 //  CONTACT PROFILE — unified per-customer history
 // ──────────────────────────────────────────────────────────
@@ -60,7 +63,8 @@ router.get(
               ilike(schema.callLogs.customerNumber, `%${norm}`),
             ),
           )
-          .orderBy(desc(schema.callLogs.createdAt)),
+          .orderBy(desc(schema.callLogs.createdAt))
+          .limit(CONTACT_HISTORY_LIMIT),
         drizzle
           .select({
             id: schema.outboundLeads.id,
@@ -79,7 +83,8 @@ router.get(
               ilike(schema.outboundLeads.phoneNumber, `%${norm}`),
             ),
           )
-          .orderBy(desc(schema.outboundLeads.createdAt)),
+          .orderBy(desc(schema.outboundLeads.createdAt))
+          .limit(CONTACT_HISTORY_LIMIT),
         drizzle
           .select({
             id: schema.appointments.id,
@@ -98,7 +103,8 @@ router.get(
               ilike(schema.appointments.phoneNumber, `%${norm}`),
             ),
           )
-          .orderBy(desc(schema.appointments.createdAt)),
+          .orderBy(desc(schema.appointments.createdAt))
+          .limit(CONTACT_HISTORY_LIMIT),
         customerEmail
           ? drizzle
               .select()
@@ -110,6 +116,7 @@ router.get(
                 ),
               )
               .orderBy(desc(schema.emailThreads.lastMessageAt))
+              .limit(CONTACT_HISTORY_LIMIT)
           : Promise.resolve([]),
       ]);
 

@@ -596,6 +596,9 @@ router.delete(
   },
 );
 
+/** Matches audit export cap — prevents unbounded memory use on large tenants. */
+const DATA_EXPORT_MAX_ROWS = 5_000;
+
 function rowsToCsv(rows: Record<string, unknown>[], columns: string[]): string {
   if (rows.length === 0) return columns.join(",");
   const header = columns.join(",");
@@ -639,28 +642,32 @@ router.get(
           .select()
           .from(schema.callLogs)
           .where(eq(schema.callLogs.userId, req.user.id))
-          .orderBy(desc(schema.callLogs.createdAt));
+          .orderBy(desc(schema.callLogs.createdAt))
+          .limit(DATA_EXPORT_MAX_ROWS);
       } else if (type === "leads") {
         columns = ["createdAt", "phoneNumber", "customerName", "status", "lastCalledAt"];
         data = await drizzle
           .select()
           .from(schema.outboundLeads)
           .where(eq(schema.outboundLeads.userId, req.user.id))
-          .orderBy(desc(schema.outboundLeads.createdAt));
+          .orderBy(desc(schema.outboundLeads.createdAt))
+          .limit(DATA_EXPORT_MAX_ROWS);
       } else if (type === "triage") {
         columns = ["createdAt", "taskType", "status", "priority", "description"];
         data = await drizzle
           .select()
           .from(schema.fleetTasks)
           .where(eq(schema.fleetTasks.userId, req.user.id))
-          .orderBy(desc(schema.fleetTasks.createdAt));
+          .orderBy(desc(schema.fleetTasks.createdAt))
+          .limit(DATA_EXPORT_MAX_ROWS);
       } else if (type === "appointments") {
         columns = ["date", "time", "customerName", "serviceType", "status", "phoneNumber"];
         data = await drizzle
           .select()
           .from(schema.appointments)
           .where(eq(schema.appointments.userId, req.user.id))
-          .orderBy(desc(schema.appointments.date));
+          .orderBy(desc(schema.appointments.date))
+          .limit(DATA_EXPORT_MAX_ROWS);
       } else {
         return res.status(404).json({ error: "Unknown export type." });
       }

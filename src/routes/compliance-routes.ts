@@ -10,7 +10,11 @@ import {
   getConsentRuleForPhone,
   CONSENT_RULE_VERSION,
 } from "../lib/tcpa-consent";
-import { DNC_IMPORT_MAX_ENTRIES, dncImportLimitError } from "../lib/dnc-import-limits";
+import {
+  DNC_IMPORT_MAX_ENTRIES,
+  DNC_LIST_MAX_ENTRIES,
+  dncImportLimitError,
+} from "../lib/dnc-import-limits";
 import { normalizeDncPhone } from "../lib/compliance";
 import { getErrorMessage } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -41,7 +45,8 @@ router.get("/dnc", authenticateUser, async (req: AuthenticatedRequest, res: Resp
       })
       .from(schema.dncList)
       .where(eq(schema.dncList.userId, req.user.id))
-      .orderBy(desc(schema.dncList.createdAt));
+      .orderBy(desc(schema.dncList.createdAt))
+      .limit(DNC_LIST_MAX_ENTRIES);
 
     // SPA reads snake_case (entry.phone_raw, entry.created_at). Normalize
     // at the boundary so the formatted phone shows instead of bare e164.

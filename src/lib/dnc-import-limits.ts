@@ -5,6 +5,8 @@
 
 /** Max numbers per DNC POST (manual + CSV). Enforced client- and server-side. */
 export const DNC_IMPORT_MAX_ENTRIES = 5000;
+/** Upper bound for GET /dnc list responses (matches import cap). */
+export const DNC_LIST_MAX_ENTRIES = DNC_IMPORT_MAX_ENTRIES;
 
 export function dncImportLimitError(count: number): string | null {
   if (count <= DNC_IMPORT_MAX_ENTRIES) return null;

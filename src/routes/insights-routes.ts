@@ -3,7 +3,7 @@ import { Router, Response } from "express";
 
 import { drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, desc, gte, lt, or } from "drizzle-orm";
+import { eq, and, desc, gte, lt, or, sql, count } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import * as claudeBrain from "../lib/claude-brain";
 import { claudeErr } from "../lib/claude-response-helpers";
@@ -25,50 +25,70 @@ router.get(
       const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-      const [calls, appts, leads] = await Promise.all([
+      const userId = req.user.id;
+      const callWhere = and(
+        eq(schema.callLogs.userId, userId),
+        gte(schema.callLogs.createdAt, since),
+      );
+      const apptWhere = and(
+        eq(schema.appointments.userId, userId),
+        gte(schema.appointments.createdAt, since),
+      );
+      const leadWhere = and(
+        eq(schema.outboundLeads.userId, userId),
+        gte(schema.outboundLeads.createdAt, since),
+      );
+
+      const [callRows, apptRows, leadRows] = await Promise.all([
         drizzle
           .select({
-            leadScore: schema.callLogs.leadScore,
-            intentLabel: schema.callLogs.intentLabel,
-            durationSeconds: schema.callLogs.durationSeconds,
-            createdAt: schema.callLogs.createdAt,
+            totalCalls: count(),
+            connected:
+              sql<number>`count(*) filter (where coalesce(${schema.callLogs.durationSeconds}, 0) > 10)`.mapWith(
+                Number,
+              ),
+            qualified:
+              sql<number>`count(*) filter (where coalesce(${schema.callLogs.leadScore}, 0) >= 50)`.mapWith(
+                Number,
+              ),
+            highIntent:
+              sql<number>`count(*) filter (where ${schema.callLogs.intentLabel} = 'high')`.mapWith(
+                Number,
+              ),
           })
           .from(schema.callLogs)
-          .where(
-            and(eq(schema.callLogs.userId, req.user.id), gte(schema.callLogs.createdAt, since)),
-          ),
-        drizzle
-          .select({ status: schema.appointments.status, createdAt: schema.appointments.createdAt })
-          .from(schema.appointments)
-          .where(
-            and(
-              eq(schema.appointments.userId, req.user.id),
-              gte(schema.appointments.createdAt, since),
-            ),
-          ),
+          .where(callWhere),
         drizzle
           .select({
-            status: schema.outboundLeads.status,
-            createdAt: schema.outboundLeads.createdAt,
+            bookings: count(),
+            completed:
+              sql<number>`count(*) filter (where ${schema.appointments.status} = 'Completed')`.mapWith(
+                Number,
+              ),
+          })
+          .from(schema.appointments)
+          .where(apptWhere),
+        drizzle
+          .select({
+            queuedLeads:
+              sql<number>`count(*) filter (where ${schema.outboundLeads.status} in ('Pending', 'Queued'))`.mapWith(
+                Number,
+              ),
           })
           .from(schema.outboundLeads)
-          .where(
-            and(
-              eq(schema.outboundLeads.userId, req.user.id),
-              gte(schema.outboundLeads.createdAt, since),
-            ),
-          ),
+          .where(leadWhere),
       ]);
 
-      const totalCalls = calls?.length || 0;
-      const connected = (calls || []).filter((c: any) => (c.durationSeconds || 0) > 10).length;
-      const qualified = (calls || []).filter((c: any) => (c.leadScore || 0) >= 50).length;
-      const highIntent = (calls || []).filter((c: any) => c.intentLabel === "high").length;
-      const bookings = (appts || []).length;
-      const completed = (appts || []).filter((a: any) => a.status === "Completed").length;
-      const queuedLeads = (leads || []).filter(
-        (l: any) => l.status === "Pending" || l.status === "Queued",
-      ).length;
+      const callAgg = callRows[0];
+      const apptAgg = apptRows[0];
+      const leadAgg = leadRows[0];
+      const totalCalls = callAgg?.totalCalls ?? 0;
+      const connected = callAgg?.connected ?? 0;
+      const qualified = callAgg?.qualified ?? 0;
+      const highIntent = callAgg?.highIntent ?? 0;
+      const bookings = apptAgg?.bookings ?? 0;
+      const completed = apptAgg?.completed ?? 0;
+      const queuedLeads = leadAgg?.queuedLeads ?? 0;
 
       res.json({
         window_days: days,
@@ -95,29 +115,37 @@ router.get(
     try {
       const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-      const calls = await drizzle
-        .select({ createdAt: schema.callLogs.createdAt, leadScore: schema.callLogs.leadScore })
+      const buckets = await drizzle
+        .select({
+          weekday: sql<number>`extract(dow from ${schema.callLogs.createdAt})::int`.mapWith(Number),
+          hour: sql<number>`extract(hour from ${schema.callLogs.createdAt})::int`.mapWith(Number),
+          count: count(),
+          avgScore:
+            sql<number>`coalesce(round(avg(coalesce(${schema.callLogs.leadScore}, 0))), 0)::int`.mapWith(
+              Number,
+            ),
+        })
         .from(schema.callLogs)
-        .where(and(eq(schema.callLogs.userId, req.user.id), gte(schema.callLogs.createdAt, since)));
+        .where(and(eq(schema.callLogs.userId, req.user.id), gte(schema.callLogs.createdAt, since)))
+        .groupBy(
+          sql`extract(dow from ${schema.callLogs.createdAt})`,
+          sql`extract(hour from ${schema.callLogs.createdAt})`,
+        );
+
+      const bucketMap = new Map<string, { c: number; s: number }>();
+      for (const row of buckets) {
+        bucketMap.set(`${row.weekday}-${row.hour}`, { c: row.count, s: row.avgScore });
+      }
 
       const grid: { hour: number; weekday: number; count: number; avg_score: number }[] = [];
-      const buckets: Record<string, { c: number; s: number }> = {};
-      for (const c of calls || []) {
-        const d = new Date(c.createdAt);
-        const key = `${d.getDay()}-${d.getHours()}`;
-        const b = buckets[key] || { c: 0, s: 0 };
-        b.c++;
-        b.s += c.leadScore || 0;
-        buckets[key] = b;
-      }
       for (let w = 0; w < 7; w++) {
         for (let h = 0; h < 24; h++) {
-          const b = buckets[`${w}-${h}`] || { c: 0, s: 0 };
+          const b = bucketMap.get(`${w}-${h}`) || { c: 0, s: 0 };
           grid.push({
             weekday: w,
             hour: h,
             count: b.c,
-            avg_score: b.c ? Math.round(b.s / b.c) : 0,
+            avg_score: b.c ? b.s : 0,
           });
         }
       }
@@ -136,7 +164,17 @@ router.get(
       const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-      const [agents, calls, appts, auditLogs] = await Promise.all([
+      const userId = req.user.id;
+      const callWhere = and(
+        eq(schema.callLogs.userId, userId),
+        gte(schema.callLogs.createdAt, since),
+      );
+      const apptWhere = and(
+        eq(schema.appointments.userId, userId),
+        gte(schema.appointments.createdAt, since),
+      );
+
+      const [agents, callStats, apptStats, aiCostStats] = await Promise.all([
         drizzle
           .select({
             id: schema.agents.id,
@@ -146,80 +184,87 @@ router.get(
             role: schema.agents.role,
           })
           .from(schema.agents)
-          .where(eq(schema.agents.userId, req.user.id))
+          .where(eq(schema.agents.userId, userId))
           .limit(500),
         drizzle
           .select({
             agentId: schema.callLogs.agentId,
-            leadScore: schema.callLogs.leadScore,
-            intentLabel: schema.callLogs.intentLabel,
-            durationSeconds: schema.callLogs.durationSeconds,
-            cost: schema.callLogs.cost,
-            createdAt: schema.callLogs.createdAt,
+            totalCalls: count(),
+            qualified:
+              sql<number>`count(*) filter (where coalesce(${schema.callLogs.leadScore}, 0) >= 50)`.mapWith(
+                Number,
+              ),
+            highIntent:
+              sql<number>`count(*) filter (where ${schema.callLogs.intentLabel} = 'high')`.mapWith(
+                Number,
+              ),
+            minutes:
+              sql<number>`coalesce(round(sum(coalesce(${schema.callLogs.durationSeconds}, 0)) / 60.0), 0)::int`.mapWith(
+                Number,
+              ),
+            cost: sql<string>`coalesce(sum(coalesce(${schema.callLogs.cost}, 0)), 0)`.mapWith(
+              String,
+            ),
+            avgScore:
+              sql<number>`coalesce(round(avg(coalesce(${schema.callLogs.leadScore}, 0))), 0)::int`.mapWith(
+                Number,
+              ),
           })
           .from(schema.callLogs)
-          .where(
-            and(eq(schema.callLogs.userId, req.user.id), gte(schema.callLogs.createdAt, since)),
-          ),
+          .where(callWhere)
+          .groupBy(schema.callLogs.agentId),
         drizzle
-          .select({ agentId: schema.appointments.agentId })
+          .select({
+            agentId: schema.appointments.agentId,
+            bookings: count(),
+          })
           .from(schema.appointments)
-          .where(
-            and(
-              eq(schema.appointments.userId, req.user.id),
-              gte(schema.appointments.createdAt, since),
-            ),
-          ),
+          .where(apptWhere)
+          .groupBy(schema.appointments.agentId),
         drizzle
-          .select({ metadata: schema.auditLog.metadata })
+          .select({
+            agentId:
+              sql<string>`coalesce(${schema.auditLog.metadata}->>'agent_id', 'unknown')`.mapWith(
+                String,
+              ),
+            aiCost:
+              sql<string>`coalesce(sum(coalesce((${schema.auditLog.metadata}->>'cost_usd')::numeric, 0)), 0)`.mapWith(
+                String,
+              ),
+          })
           .from(schema.auditLog)
           .where(
             and(
-              eq(schema.auditLog.userId, req.user.id),
+              eq(schema.auditLog.userId, userId),
               eq(schema.auditLog.eventType, "ai.api_call"),
               gte(schema.auditLog.createdAt, since),
             ),
-          ),
+          )
+          .groupBy(sql`coalesce(${schema.auditLog.metadata}->>'agent_id', 'unknown')`),
       ]);
 
-      const aiCostByAgent: Record<string, number> = {};
-      for (const row of auditLogs || []) {
-        const meta = row.metadata as any;
-        if (!meta) continue;
-        const id = meta.agent_id || "unknown";
-        const c = Number(meta.cost_usd) || 0;
-        aiCostByAgent[id] = (aiCostByAgent[id] || 0) + c;
-      }
-
-      const callsByAgent: Record<string, any[]> = {};
-      for (const c of calls || []) {
-        const id = c.agentId || "unknown";
-        (callsByAgent[id] ||= []).push(c);
-      }
-      const apptsByAgent: Record<string, number> = {};
-      for (const a of appts || []) {
-        const id = a.agentId || "unknown";
-        apptsByAgent[id] = (apptsByAgent[id] || 0) + 1;
-      }
+      const callByAgent = new Map((callStats || []).map((r) => [r.agentId || "unknown", r]));
+      const apptsByAgent = new Map(
+        (apptStats || []).map((r) => [r.agentId || "unknown", r.bookings ?? 0]),
+      );
+      const aiCostByAgent = new Map(
+        (aiCostStats || []).map((r) => [r.agentId, Number(r.aiCost || 0)]),
+      );
 
       const rows = (agents || [])
         .map((a: any) => {
-          const agentCalls = callsByAgent[a.id] || [];
-          const total = agentCalls.length;
-          const qualifiedCount = agentCalls.filter((c) => (c.leadScore || 0) >= 50).length;
-          const highIntentCount = agentCalls.filter((c) => c.intentLabel === "high").length;
-          const minutes = Math.round(
-            agentCalls.reduce((s, c) => s + (c.durationSeconds || 0), 0) / 60,
-          );
-          const cost = Number(agentCalls.reduce((s, c) => s + Number(c.cost || 0), 0).toFixed(2));
-          const avgScore = total
-            ? Math.round(agentCalls.reduce((s, c) => s + (c.leadScore || 0), 0) / total)
-            : 0;
-          const bookings = apptsByAgent[a.id] || 0;
+          const stats = callByAgent.get(a.id);
+          const total = stats?.totalCalls ?? 0;
+          const qualifiedCount = stats?.qualified ?? 0;
+          const highIntentCount = stats?.highIntent ?? 0;
+          const minutes = stats?.minutes ?? 0;
+          const cost = Number(Number(stats?.cost ?? 0).toFixed(2));
+          const avgScore = stats?.avgScore ?? 0;
+          const bookings = apptsByAgent.get(a.id) ?? 0;
           const costPerQualified = qualifiedCount ? Number((cost / qualifiedCount).toFixed(2)) : 0;
           const outcomes = qualifiedCount + bookings;
           const costPerOutcome = outcomes ? Number((cost / outcomes).toFixed(2)) : 0;
-          const aiCost = Number((aiCostByAgent[a.id] || 0).toFixed(4));
+          const aiCost = Number((aiCostByAgent.get(a.id) ?? 0).toFixed(4));
           const totalCost = Number((cost + aiCost).toFixed(4));
           return {
             agent_id: a.id,

@@ -6,13 +6,18 @@
  * can import these without creating a circular dependency.
  *
  * Per-user monthly hard-cap (enforceSpendCap) reads from the DB;
- * system-wide 24h cap (enforce24hSpendCap) uses an in-process accumulator.
+ * system-wide 24h cap (enforce24hSpendCap) uses Upstash Redis when configured.
  */
 
 import type { Request, Response, NextFunction } from "express";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, gte } from "drizzle-orm";
+import { eq, and, gte, sql } from "drizzle-orm";
+import {
+  recordDailySpendUsd,
+  getDailySpendUsd,
+  estimateMemWindowResetMs,
+} from "./daily-spend-accumulator";
 
 // ──────────────────────────────────────────────────────────────────────
 //  PER-USER monthly hard-cap
@@ -68,7 +73,7 @@ export async function getBudgetSnapshot(
     return cached;
   }
 
-  const [budgetRow, logRows] = await Promise.all([
+  const [budgetRow, mtdRow] = await Promise.all([
     drizzle
       .select({
         monthlyLimitUsd: schema.spendBudgets.monthlyLimitUsd,
@@ -82,20 +87,20 @@ export async function getBudgetSnapshot(
       .then((rows) => rows[0] || null),
 
     drizzle
-      .select({ costUsd: schema.auditLog.costUsd })
+      .select({
+        mtdCost: sql<string>`coalesce(sum(${schema.auditLog.costUsd}), 0)`.mapWith(String),
+      })
       .from(schema.auditLog)
       .where(
         and(
           eq(schema.auditLog.userId, userId),
           gte(schema.auditLog.createdAt, periodStartIso(period)),
         ),
-      ),
+      )
+      .then((rows) => rows[0]),
   ]);
 
-  const mtdCost = (logRows || []).reduce(
-    (s: number, r: { costUsd: number | string | null }) => s + Number(r.costUsd || 0),
-    0,
-  );
+  const mtdCost = Number(mtdRow?.mtdCost ?? 0);
   const entry: BudgetCacheEntry = {
     fetchedAt: Date.now(),
     budget: budgetRow
@@ -223,47 +228,43 @@ export async function enforceSpendCap(req: AuthedRequest, res: Response, next: N
 const CLAUDE_MONTHLY_BUDGET_USD = Math.max(0, Number(process.env.CLAUDE_MONTHLY_BUDGET_USD ?? 50));
 export const DAILY_SPEND_LIMIT_USD = CLAUDE_MONTHLY_BUDGET_USD * 0.01; // 1% of monthly
 
-// In-process accumulator — intentionally resets on cold start.
-// For stronger guarantees use Upstash Redis as the rate-limit store.
-let _dailySpendWindowStart = Date.now();
-let _dailySpendAccumUsd = 0;
-
 /**
  * Call this after every Claude API round trip to track cumulative 24h spend.
  */
-export function recordDailySpend(usd: number) {
-  const now = Date.now();
-  if (now - _dailySpendWindowStart > 24 * 60 * 60_000) {
-    _dailySpendWindowStart = now;
-    _dailySpendAccumUsd = 0;
-  }
-  _dailySpendAccumUsd += usd;
-  if (DAILY_SPEND_LIMIT_USD > 0 && _dailySpendAccumUsd >= DAILY_SPEND_LIMIT_USD) {
-    log.warn("Daily Claude spend cap reached", {
-      daily_limit_usd: DAILY_SPEND_LIMIT_USD,
-      accumulated_usd: Number(_dailySpendAccumUsd.toFixed(4)),
-      monthly_budget_usd: CLAUDE_MONTHLY_BUDGET_USD,
+export function recordDailySpend(usd: number): void {
+  void recordDailySpendUsd(usd)
+    .then(() => getDailySpendUsd())
+    .then((accumulated) => {
+      if (DAILY_SPEND_LIMIT_USD > 0 && accumulated >= DAILY_SPEND_LIMIT_USD) {
+        log.warn("Daily Claude spend cap reached", {
+          daily_limit_usd: DAILY_SPEND_LIMIT_USD,
+          accumulated_usd: Number(accumulated.toFixed(4)),
+          monthly_budget_usd: CLAUDE_MONTHLY_BUDGET_USD,
+        });
+      }
     });
-  }
 }
 
 /**
  * Express pre-handler — blocks Claude endpoints when the 24h spend window
  * is over budget. Disabled when CLAUDE_MONTHLY_BUDGET_USD is 0.
  */
-export function enforce24hSpendCap(_req: Request, res: Response, next: NextFunction) {
+export async function enforce24hSpendCap(_req: Request, res: Response, next: NextFunction) {
   if (DAILY_SPEND_LIMIT_USD <= 0) return next(); // disabled when budget is 0
-  const now = Date.now();
-  if (now - _dailySpendWindowStart > 24 * 60 * 60_000) {
-    _dailySpendWindowStart = now;
-    _dailySpendAccumUsd = 0;
-  }
-  if (_dailySpendAccumUsd >= DAILY_SPEND_LIMIT_USD) {
-    return res.status(402).json({
-      error: `Daily Claude spend limit reached ($${DAILY_SPEND_LIMIT_USD.toFixed(2)}/day, 1 % of $${CLAUDE_MONTHLY_BUDGET_USD} monthly budget). Resets in ${Math.ceil((24 * 60 * 60_000 - (now - _dailySpendWindowStart)) / 60_000)} minutes.`,
-      code: "DAILY_SPEND_LIMIT_EXCEEDED",
-      daily_limit_usd: DAILY_SPEND_LIMIT_USD,
-      accumulated_usd: Number(_dailySpendAccumUsd.toFixed(4)),
+  try {
+    const accumulated = await getDailySpendUsd();
+    if (accumulated >= DAILY_SPEND_LIMIT_USD) {
+      const resetMinutes = Math.ceil(estimateMemWindowResetMs() / 60_000);
+      return res.status(402).json({
+        error: `Daily Claude spend limit reached ($${DAILY_SPEND_LIMIT_USD.toFixed(2)}/day, 1 % of $${CLAUDE_MONTHLY_BUDGET_USD} monthly budget). Resets in ~${resetMinutes} minutes.`,
+        code: "DAILY_SPEND_LIMIT_EXCEEDED",
+        daily_limit_usd: DAILY_SPEND_LIMIT_USD,
+        accumulated_usd: Number(accumulated.toFixed(4)),
+      });
+    }
+  } catch (err) {
+    log.warn("enforce24hSpendCap check failed — allowing request through", {
+      error: err instanceof Error ? err.message : String(err),
     });
   }
   next();

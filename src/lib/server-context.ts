@@ -26,10 +26,12 @@ export async function fetchWithTimeout(
 
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL,
-  max: 10,
-  min: 2,
+  // Serverless: avoid eager min connections per instance (Supabase pooler ~100 cap).
+  max: 5,
+  min: 0,
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 5_000,
+  allowExitOnIdle: true,
 });
 
 export const tenantStore = new AsyncLocalStorage<string>();

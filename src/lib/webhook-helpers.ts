@@ -3,6 +3,7 @@ import { drizzle, log, fetchWithTimeout } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, lte } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
+import { hostnameResolvesToPrivate } from "./webhook-validators";
 import { SentryEvents } from "./sentry-events";
 import { createHmac } from "node:crypto";
 
@@ -112,6 +113,23 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
   let statusCode: number | null = null;
   let success = false;
   try {
+    if (await hostnameResolvesToPrivate(hook.url)) {
+      log.warn("Webhook delivery blocked — hostname resolves to private IP (DNS rebinding)", {
+        deliveryId: String(deliveryId),
+        webhookId: hook.id,
+      });
+      await drizzle
+        .update(schema.webhookDeliveries)
+        .set({
+          status: "failed",
+          lastError: "blocked_private_destination",
+          lastAttemptAt: new Date(),
+          nextAttemptAt: null,
+        })
+        .where(eq(schema.webhookDeliveries.id, deliveryIdBig));
+      return;
+    }
+
     const res = await fetchWithTimeout(hook.url, { method: "POST", headers, body }, 10_000);
     statusCode = res.status;
     success = res.ok;
