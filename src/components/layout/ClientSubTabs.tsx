@@ -79,7 +79,7 @@ export default function ClientSubTabs({
       aria-label={ariaLabel}
       onKeyDown={handleKeyDown}
       className={cn(
-        "shrink-0 flex items-center gap-1 overflow-x-auto scroll-viewport pb-0.5",
+        "shrink-0 flex items-center gap-1 tab-strip-scroll",
         density === "compact" ? "mb-0 justify-start" : "justify-center mb-2 md:mb-3",
         className,
       )}

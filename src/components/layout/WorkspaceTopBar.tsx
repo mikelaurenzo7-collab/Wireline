@@ -37,7 +37,7 @@ export default function WorkspaceTopBar({ eyebrow, title, className, onShowShort
           </p>
         </div>
         <span aria-hidden="true" className="w-px h-5 bg-black/10 shrink-0" />
-        <div className="flex-1 min-w-0 overflow-x-auto scrollbar-hide">
+        <div className="flex-1 min-w-0 overflow-hidden">
           <AppChromeSubTabs density="compact" />
         </div>
         <div className="flex items-center gap-0.5 shrink-0" role="toolbar" aria-label="Page tools">

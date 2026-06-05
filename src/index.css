@@ -2202,6 +2202,20 @@ html, body, .marketing-surface, .app-surface {
     scrollbar-color: rgba(107, 43, 153, 0.18) transparent;
   }
 
+  /* Horizontal tab strips — scroll when cramped, no phantom scrollbar when content fits */
+  .tab-strip-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .tab-strip-scroll::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
