@@ -186,14 +186,36 @@ test.describe("Wireline design — Director live session visual regression", () 
     await expect(page.getByRole("heading", { name: /Director/i }).first()).toBeVisible({ timeout: 15000 });
 
     // The live session panel appears during streaming. We test the container structure.
-    // Note: Full streaming state is dynamic; we snapshot the panel shell when present.
     const liveSession = page.locator(".wl-panel, [data-testid*='live-session'], .director-live-session").first();
 
-    // Only snapshot if the live panel is visible (graceful handling)
     if (await liveSession.isVisible().catch(() => false)) {
       await expect(liveSession).toHaveScreenshot({
         name: "director-live-session.png",
-        threshold: 0.3, // Higher tolerance for dynamic content
+        threshold: 0.3,
+      });
+    }
+  });
+});
+
+// === Cycle 9: Visual Regression for Director Starter Prompts & Capabilities ===
+test.describe("Wireline design — Director starter prompts and capabilities visual regression", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await authenticatePage(page, baseURL!);
+  });
+
+  test("Director starter prompts and capability catalog render consistently", async ({ page }) => {
+    await gotoAuthenticated(page, "/director");
+
+    await expect(page.getByRole("heading", { name: /Director/i }).first()).toBeVisible({ timeout: 15000 });
+
+    // Target the starter prompts and capability catalog area in empty state
+    const starterSection = page.locator(".wl-director-empty-section, [data-testid*='starter'], .director-capability-catalog").first();
+
+    if (await starterSection.isVisible().catch(() => false)) {
+      await expect(starterSection).toHaveScreenshot({
+        name: "director-starter-prompts.png",
+        threshold: 0.25,
       });
     }
   });
