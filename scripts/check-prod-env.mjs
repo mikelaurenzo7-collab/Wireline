@@ -50,6 +50,11 @@ const recommended = [
   ["ANTHROPIC_API_KEY", "Claude — required for /api/claude/* recipes"],
   ["VITE_VAPI_PUBLIC_KEY", "Vapi — required for browser-side test calls from the dashboard"],
   ["VAPI_PRIVATE_KEY", "Vapi — required for outbound/inbound voice agents"],
+  [
+    "TWILIO_AUTH_TOKEN",
+    "Twilio — inbound SMS webhook rejects unsigned requests in prod when unset",
+    process.env.TWILIO_AUTH_TOKEN,
+  ],
   ["APP_URL", "Canonical URL — required for OAuth redirects + email links"],
   ["CORS_ORIGINS", "CORS allowlist — required in prod or browser API calls fail"],
   ["STRIPE_SECRET_KEY", "Stripe — billing endpoints return 503 when unset"],

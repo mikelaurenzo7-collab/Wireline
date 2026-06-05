@@ -14,6 +14,7 @@ import { getClient, isClaudeAvailable } from "./claude-client";
 import { runStructured, runCompletion } from "./claude-structured";
 import { TOOLS, CLIENT_COMMUNICATION_SUPERVISOR_TOOL, SCORE_INTENT_TOOL } from "./claude-tools";
 import { log } from "./server-context";
+import { EMAIL_INBOUND_UNTRUSTED_RULES, wrapInboundEmailForLlm } from "./email-prompt-safety";
 
 /* ────────────────────────────────────────────────────────────────────────
  *  Role-specific scoring lenses applied on top of the generic analysis prompt.
@@ -733,12 +734,18 @@ ${input.knowledgeBase.length ? input.knowledgeBase.map((k) => `- ${k}`).join("\n
 - ≤120 words unless the customer's question genuinely demands more.
 - Acknowledge the customer's actual question; don't preamble.
 - Never invent facts that aren't in the knowledge base — say "I'll check with the team" instead.
-- If they want an appointment, use your tools to check availability and book it if confirmed.`;
+- If they want an appointment, use your tools to check availability and book it if confirmed.
+
+${EMAIL_INBOUND_UNTRUSTED_RULES}`;
 
   const messages: Anthropic.MessageParam[] = [
     {
       role: "user",
-      content: `From: ${input.fromEmail}\nSubject: ${input.subject}\n\n${input.emailBody}`,
+      content: wrapInboundEmailForLlm({
+        fromEmail: input.fromEmail,
+        subject: input.subject,
+        emailBody: input.emailBody,
+      }),
     },
   ];
 
