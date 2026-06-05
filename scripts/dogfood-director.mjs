@@ -2,6 +2,9 @@
 /**
  * Director dogfood — login, send capability probes, assert routing + response shape.
  * Usage: node scripts/dogfood-director.mjs [--base https://trywireline.com]
+ *
+ * Website probes use the SSE stream (same as the product UI) to avoid platform
+ * timeouts on long non-streaming POST bodies.
  */
 const base = (() => {
   const i = process.argv.indexOf("--base");
@@ -17,6 +20,7 @@ const PROBES = [
     message: "Write a short TypeScript function that validates US phone numbers with Zod.",
     expect: (d) => typeof d.reply === "string" && d.reply.length > 80,
     note: "code in reply",
+    mode: "post",
   },
   {
     id: "website",
@@ -25,13 +29,15 @@ const PROBES = [
     expect: (d) =>
       typeof d.reply === "string" &&
       (d.reply.includes("```html") || d.reply.toLowerCase().includes("sitemap")),
-    note: "website deliverable",
+    note: "website deliverable (stream)",
+    mode: "stream",
   },
   {
     id: "not-logo",
     message: "Design a new website for my plumbing business with booking CTA.",
     expect: (d) => !Array.isArray(d.approvals) || d.approvals.length === 0,
-    note: "no logo approval hijack",
+    note: "no logo approval hijack (stream)",
+    mode: "stream",
   },
 ];
 
@@ -53,13 +59,29 @@ async function login() {
   return session.split(";")[0];
 }
 
-async function sendDirector(cookie, content) {
+function parseSseBuffer(buffer) {
+  let done = null;
+  const lines = buffer.split("\n");
+  let event = "";
+  for (const line of lines) {
+    if (line.startsWith("event: ")) event = line.slice(7).trim();
+    else if (line.startsWith("data: ") && event) {
+      try {
+        const data = JSON.parse(line.slice(6));
+        if (event === "done") done = data;
+      } catch {
+        /* ignore */
+      }
+      event = "";
+    } else if (line === "") event = "";
+  }
+  return done;
+}
+
+async function sendDirectorPost(cookie, content) {
   const r = await fetch(`${base}/api/director/messages`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Cookie: cookie,
-    },
+    headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({
       content,
       modelSelection: { provider: "wireline", tier: "sonnet" },
@@ -72,10 +94,44 @@ async function sendDirector(cookie, content) {
   } catch {
     throw new Error(`Invalid JSON ${r.status}: ${text.slice(0, 300)}`);
   }
-  if (!r.ok) {
-    throw new Error(`Director ${r.status}: ${data.error || text.slice(0, 200)}`);
-  }
+  if (!r.ok) throw new Error(`Director ${r.status}: ${data.error || text.slice(0, 200)}`);
   return data;
+}
+
+async function sendDirectorStream(cookie, content) {
+  const r = await fetch(`${base}/api/director/messages/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Cookie: cookie },
+    body: JSON.stringify({
+      content,
+      modelSelection: { provider: "wireline", tier: "sonnet" },
+    }),
+  });
+  if (!r.ok) {
+    const text = await r.text();
+    throw new Error(`Director stream ${r.status}: ${text.slice(0, 200)}`);
+  }
+  const reader = r.body?.getReader();
+  if (!reader) throw new Error("No response body");
+  const decoder = new TextDecoder();
+  let buffer = "";
+  const deadline = Date.now() + 180_000;
+  while (Date.now() < deadline) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const parsed = parseSseBuffer(buffer);
+    if (parsed) return parsed;
+  }
+  const parsed = parseSseBuffer(buffer);
+  if (parsed) return parsed;
+  throw new Error("Stream ended without done event");
+}
+
+async function sendDirector(cookie, content, mode) {
+  return mode === "stream"
+    ? sendDirectorStream(cookie, content)
+    : sendDirectorPost(cookie, content);
 }
 
 async function main() {
@@ -89,7 +145,7 @@ async function main() {
   for (const probe of PROBES) {
     process.stdout.write(`  [${probe.id}] ${probe.note}… `);
     try {
-      const data = await sendDirector(cookie, probe.message);
+      const data = await sendDirector(cookie, probe.message, probe.mode);
       if (!probe.expect(data)) {
         console.log("FAIL (assertion)");
         failed++;
