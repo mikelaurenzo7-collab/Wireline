@@ -1,6 +1,6 @@
 /**
  * Director composer — Wireline tiers vs OpenRouter model catalog.
- * 
+ *
  * Cycle 5 improvements: Stronger focus visibility, better active state contrast,
  * and improved accessibility for daily operator use.
  */
@@ -298,9 +298,11 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
             {catalog?.openRouterRequiresUpgrade ? (
               <p className="text-[10px] text-muted-foreground px-2 py-2 leading-snug">
                 {DIRECTOR_MODEL_PICKER_COPY.requiresUpgrade}
+              </p>
             ) : !catalog?.openRouterEnabled ? (
               <p className="text-[10px] text-muted-foreground px-2 py-2 leading-snug">
                 {DIRECTOR_MODEL_PICKER_COPY.notConfigured}
+              </p>
             ) : (
               <div className="space-y-2">
                 <div className="wl-director-model-popover-sticky -mx-2 px-2 -mt-2">
@@ -374,8 +376,9 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
                               selection.provider === "openrouter" && selection.modelId === model.id
                             }
                             onPick={() =>
-                              void persist({ provider: "openrouter", modelId: model.id })}
-                            />
+                              void persist({ provider: "openrouter", modelId: model.id })
+                            }
+                          />
                         ))}
                         {filteredCatalog.length === 0 && searchNorm ? (
                           <p className="text-[10px] text-muted-foreground px-2 py-2">

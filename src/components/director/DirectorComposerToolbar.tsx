@@ -62,14 +62,14 @@ function ComposerToolChip({
       className={cn(
         WL_DIRECTOR_CLASSES.composerToolChip,
         "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all duration-150",
-        active && cn(
-          WL_DIRECTOR_CLASSES.composerToolChipActive,
-          "shadow-sm ring-1 ring-brand/30 bg-brand/10"
-        ),
-        engaged && !active && cn(
-          WL_DIRECTOR_CLASSES.composerToolChipEngaged,
-          "ring-1 ring-brand/25 bg-brand/5"
-        ),
+        active &&
+          cn(
+            WL_DIRECTOR_CLASSES.composerToolChipActive,
+            "shadow-sm ring-1 ring-brand/30 bg-brand/10",
+          ),
+        engaged &&
+          !active &&
+          cn(WL_DIRECTOR_CLASSES.composerToolChipEngaged, "ring-1 ring-brand/25 bg-brand/5"),
         "h-auto touch-press rounded-full shadow-none",
       )}
     >
@@ -83,7 +83,7 @@ function ComposerToolChip({
         <ChevronDown
           className={cn(
             "w-3 h-3 opacity-60 transition-transform duration-200",
-            active && "rotate-180 opacity-100"
+            active && "rotate-180 opacity-100",
           )}
           aria-hidden
         />
@@ -134,7 +134,8 @@ export function DirectorComposerToolbar({
             selection={chatModelSelection}
             onChange={onChatModelChange}
             disabled={isSending}
-          ) : null}
+          />
+        ) : null}
         <ComposerToolChip
           id="connectors"
           label="Connectors"
@@ -173,7 +174,8 @@ export function DirectorComposerToolbar({
               enabledToolsCount > 0 ? (
                 <span className="font-mono text-[9px] tabular-nums opacity-70">
                   ({enabledToolsCount})
-              ) : null}
+                </span>
+              ) : null
             }
           />
         )}
@@ -191,11 +193,12 @@ export function DirectorComposerToolbar({
             className={cn(
               WL_DIRECTOR_CLASSES.composerToolChip,
               "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all duration-150",
-              forceDeep && cn(
-                WL_DIRECTOR_CLASSES.composerToolChipActive,
-                "shadow-sm ring-1 ring-brand/30 bg-brand/10"
-              ),
-              "h-auto touch-press rounded-full shadow-none"
+              forceDeep &&
+                cn(
+                  WL_DIRECTOR_CLASSES.composerToolChipActive,
+                  "shadow-sm ring-1 ring-brand/30 bg-brand/10",
+                ),
+              "h-auto touch-press rounded-full shadow-none",
             )}
           >
             <Brain className="w-3.5 h-3.5 shrink-0" />
