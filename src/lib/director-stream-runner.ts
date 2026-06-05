@@ -1,0 +1,63 @@
+import {
+  runStructuredStream,
+  runStructuredWithThinking,
+  type StreamCallbacks,
+  type StructuredResult,
+  type ToolSchema,
+} from "./claude-structured";
+import { runOpenRouterStructured, runOpenRouterStructuredStream } from "./openrouter-structured";
+import type { DirectorStreamContext } from "./director-turn";
+
+export async function runDirectorStreamLlm<T = Record<string, unknown>>(
+  ctx: DirectorStreamContext,
+  callbacks: StreamCallbacks,
+): Promise<StructuredResult<T>> {
+  if (ctx.llmProvider === "openrouter") {
+    return runOpenRouterStructuredStream<T>(
+      {
+        model: ctx.model,
+        system: ctx.system,
+        user: ctx.user,
+        tool: ctx.tool,
+        maxTokens: ctx.maxTokens,
+      },
+      callbacks,
+    );
+  }
+  return runStructuredStream<T>(
+    {
+      system: ctx.system,
+      user: ctx.user,
+      tool: ctx.tool,
+      model: ctx.model,
+      deepThink: ctx.deepThink,
+      maxTokens: ctx.maxTokens,
+    },
+    callbacks,
+  );
+}
+
+export async function runDirectorTurnLlm<T = Record<string, unknown>>(
+  ctx: Pick<
+    DirectorStreamContext,
+    "llmProvider" | "model" | "system" | "user" | "tool" | "maxTokens" | "deepThink"
+  >,
+): Promise<StructuredResult<T>> {
+  if (ctx.llmProvider === "openrouter") {
+    return runOpenRouterStructured<T>({
+      model: ctx.model,
+      system: ctx.system,
+      user: ctx.user,
+      tool: ctx.tool,
+      maxTokens: ctx.maxTokens,
+    });
+  }
+  return runStructuredWithThinking<T>({
+    system: ctx.system,
+    user: ctx.user,
+    tool: ctx.tool as ToolSchema,
+    model: ctx.model,
+    deepThink: ctx.deepThink,
+    maxTokens: ctx.maxTokens,
+  });
+}

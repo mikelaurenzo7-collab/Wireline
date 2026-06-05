@@ -13,7 +13,7 @@ import { CLAUDE_MODELS, DEFAULT_MODEL, MODEL_PRICING } from "./claude-models";
 
 export interface ClaudeCallMeta {
   model: string;
-  provider: "anthropic";
+  provider: "anthropic" | "openrouter";
   input_tokens: number;
   output_tokens: number;
   cache_read_tokens: number;
@@ -139,6 +139,24 @@ export function recordUsage(model: string, response: { usage: any }, latencyMs: 
     output_tokens: response.usage?.output_tokens ?? 0,
     cache_read_tokens: response.usage?.cache_read_input_tokens ?? 0,
     cache_create_tokens: response.usage?.cache_creation_input_tokens ?? 0,
+    latency_ms: latencyMs,
+  });
+}
+
+export function recordOpenRouterUsage(
+  model: string,
+  usage: { input_tokens: number; output_tokens: number },
+  latencyMs: number,
+) {
+  const ctx = auditCtx.getStore();
+  if (!ctx) return;
+  ctx.records.push({
+    model,
+    provider: "openrouter",
+    input_tokens: usage.input_tokens,
+    output_tokens: usage.output_tokens,
+    cache_read_tokens: 0,
+    cache_create_tokens: 0,
     latency_ms: latencyMs,
   });
 }

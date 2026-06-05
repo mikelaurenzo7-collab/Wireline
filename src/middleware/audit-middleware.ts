@@ -15,6 +15,32 @@ import { getErrorMessage } from "../lib/server-utils";
 import * as claudeBrain from "../lib/claude-brain";
 import type { ClaudeCallMeta } from "../lib/claude-brain";
 import { recordDailySpend, evaluateSpend } from "../lib/spend-guards";
+import { estimateOpenRouterCostUsd } from "../lib/openrouter-models";
+
+function estimateAuditRecordCost(r: {
+  provider: string;
+  model: string;
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_tokens: number;
+  cache_create_tokens: number;
+}): number {
+  if (r.provider === "openrouter") {
+    return estimateOpenRouterCostUsd(r.model, {
+      input_tokens: r.input_tokens,
+      output_tokens: r.output_tokens,
+    });
+  }
+  return claudeBrain.estimateCost(
+    {
+      input_tokens: r.input_tokens,
+      output_tokens: r.output_tokens,
+      cache_read_input_tokens: r.cache_read_tokens,
+      cache_creation_input_tokens: r.cache_create_tokens,
+    },
+    r.model,
+  );
+}
 
 /**
  * Persist Claude usage rows + quota + monthly spend hooks. Shared by HTTP
@@ -38,17 +64,7 @@ export async function persistClaudeAuditRecords(opts: {
     outputTokens: r.output_tokens,
     cacheReadTokens: r.cache_read_tokens,
     cacheCreateTokens: r.cache_create_tokens,
-    costUsd: String(
-      claudeBrain.estimateCost(
-        {
-          input_tokens: r.input_tokens,
-          output_tokens: r.output_tokens,
-          cache_read_input_tokens: r.cache_read_tokens,
-          cache_creation_input_tokens: r.cache_create_tokens,
-        },
-        r.model,
-      ),
-    ),
+    costUsd: String(estimateAuditRecordCost(r)),
     latencyMs: r.latency_ms,
     metadata: { ...(opts.requestMeta || {}) },
   }));

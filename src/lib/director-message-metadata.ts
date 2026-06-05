@@ -50,6 +50,9 @@ export interface DirectorMessageMetadata {
   researchSources?: { title?: string; uri?: string }[];
   proposals?: DirectorProposalsMeta;
   model?: "sonnet" | "opus";
+  modelLabel?: string;
+  modelProvider?: "wireline" | "openrouter";
+  modelId?: string;
   thinkingDurationMs?: number;
   coachAgentId?: string;
   coachAgentName?: string;
@@ -72,6 +75,9 @@ export function packDirectorMetadata(
         meta.proposals.actions.length > 0 ||
         meta.proposals.integrationJobs.length > 0)) ||
     meta.model ||
+    meta.modelLabel ||
+    meta.modelProvider ||
+    meta.modelId ||
     meta.thinkingDurationMs ||
     meta.coachAgentId ||
     meta.coachAgentName ||
@@ -122,6 +128,12 @@ export function buildDirectorMetadataFromTurn(
       : undefined,
     proposals: hasProposals ? { changes, toolToggles, actions, integrationJobs } : undefined,
     model: (data.model as "sonnet" | "opus") || undefined,
+    modelLabel: typeof data.modelLabel === "string" ? data.modelLabel : undefined,
+    modelProvider:
+      data.modelProvider === "wireline" || data.modelProvider === "openrouter"
+        ? data.modelProvider
+        : undefined,
+    modelId: typeof data.modelId === "string" ? data.modelId : undefined,
     thinkingDurationMs: (data.thinkingDurationMs as number) || undefined,
     coachAgentId: (data.focusAgentId as string) || (data.coachAgentId as string) || undefined,
     coachAgentName: (data.focusAgentName as string) || (data.coachAgentName as string) || undefined,

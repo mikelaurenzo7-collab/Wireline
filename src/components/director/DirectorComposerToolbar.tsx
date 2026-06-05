@@ -11,6 +11,8 @@ import {
   DIRECTOR_DEEP_MODE_COPY,
   type ComposerAccessoryKind,
 } from "../../lib/wireline-director-design";
+import { DirectorModelPicker } from "./DirectorModelPicker";
+import type { DirectorChatModelSelection } from "../../lib/director-model-selection";
 
 type ToolChipProps = {
   id: ComposerAccessoryKind;
@@ -87,6 +89,8 @@ export interface DirectorComposerToolbarProps {
   isSending: boolean;
   forceDeep?: boolean;
   onToggleForceDeep?: () => void;
+  chatModelSelection?: DirectorChatModelSelection;
+  onChatModelChange?: (next: DirectorChatModelSelection) => void;
 }
 
 export function DirectorComposerToolbar({
@@ -99,8 +103,11 @@ export function DirectorComposerToolbar({
   isSending,
   forceDeep = false,
   onToggleForceDeep,
+  chatModelSelection,
+  onChatModelChange,
 }: DirectorComposerToolbarProps) {
-  const showDeepToggle = !focusAgentId && onToggleForceDeep;
+  const showDeepToggle =
+    !focusAgentId && onToggleForceDeep && chatModelSelection?.provider !== "openrouter";
 
   return (
     <div className={WL_DIRECTOR_CLASSES.composerToolbarScroll}>
@@ -109,6 +116,13 @@ export function DirectorComposerToolbar({
         aria-label={DIRECTOR_COMPOSER_CONTEXT.toolbarLabel}
         className={WL_DIRECTOR_CLASSES.composerToolbar}
       >
+        {chatModelSelection && onChatModelChange ? (
+          <DirectorModelPicker
+            selection={chatModelSelection}
+            onChange={onChatModelChange}
+            disabled={isSending}
+          />
+        ) : null}
         <ComposerToolChip
           id="connectors"
           label="Connectors"

@@ -86,6 +86,10 @@ import {
   type ComposerAccessoryKind,
 } from "../lib/wireline-director-design";
 import { wantsDeepAnalysis } from "../lib/director-deep-analysis";
+import {
+  DEFAULT_DIRECTOR_MODEL_SELECTION,
+  type DirectorChatModelSelection,
+} from "../lib/director-model-selection";
 import LoadingDots from "./ui/LoadingDots";
 import {
   detectDirectorMessageScene,
@@ -135,6 +139,9 @@ interface DirectorMessage {
   reasoning?: string;
   thinkingDurationMs?: number;
   model?: "sonnet" | "opus";
+  modelLabel?: string;
+  modelProvider?: "wireline" | "openrouter";
+  modelId?: string;
   coachAgentId?: string;
   coachAgentName?: string;
   proposals?: {
@@ -184,6 +191,9 @@ export default function DirectorWorkspace({
   const [isSending, setIsSending] = useState(false);
   const [composerAccessory, setComposerAccessory] = useState<ComposerAccessoryKind | null>(null);
   const [forceDeep, setForceDeep] = useState(false);
+  const [chatModelSelection, setChatModelSelection] = useState<DirectorChatModelSelection>(
+    DEFAULT_DIRECTOR_MODEL_SELECTION,
+  );
   const [enabledTools, setEnabledTools] = useState<string[]>([]);
   const [resolved, setResolved] = useState<Record<string, "done" | "dismissed">>({});
   const [busyKey, setBusyKey] = useState<string | null>(null);
@@ -252,6 +262,12 @@ export default function DirectorWorkspace({
         reasoning: (data.reasoning as string) || undefined,
         thinkingDurationMs: (data.thinkingDurationMs as number) || undefined,
         model: (data.model as "sonnet" | "opus") || undefined,
+        modelLabel: typeof data.modelLabel === "string" ? data.modelLabel : undefined,
+        modelProvider:
+          data.modelProvider === "wireline" || data.modelProvider === "openrouter"
+            ? data.modelProvider
+            : undefined,
+        modelId: typeof data.modelId === "string" ? data.modelId : undefined,
         coachAgentId: (data.focusAgentId as string) || focusAgentId || undefined,
         coachAgentName: (data.focusAgentName as string) || focusedAgent?.name || undefined,
         proposals: hasProposals ? { changes, toolToggles, actions, integrationJobs } : undefined,
@@ -300,6 +316,9 @@ export default function DirectorWorkspace({
               creativeTools: data.featureFlags.creativeTools !== false,
               artifactsPanel: data.featureFlags.artifactsPanel !== false,
             });
+          }
+          if (data.chatModelPreference) {
+            setChatModelSelection(data.chatModelPreference as DirectorChatModelSelection);
           }
           if (data.degraded && attempt === 0) {
             await new Promise((resolve) => setTimeout(resolve, 600));
@@ -367,9 +386,12 @@ export default function DirectorWorkspace({
             content: trimmed,
             ...(focusAgentId ? { focusAgentId } : {}),
             ...(opts?.skipOperatorPersist ? { skipOperatorPersist: true } : {}),
-            ...(!focusAgentId && (forceDeep || wantsDeepAnalysis(trimmed))
+            ...(!focusAgentId &&
+            chatModelSelection.provider === "wireline" &&
+            (forceDeep || wantsDeepAnalysis(trimmed))
               ? { forceDeep: true }
               : {}),
+            modelSelection: chatModelSelection,
           }),
         });
         const parsed = await readApiJson<Record<string, unknown>>(r);
@@ -388,7 +410,7 @@ export default function DirectorWorkspace({
         inputRef.current?.focus();
       }
     },
-    [appendDirectorReply, streamReset, toastError, focusAgentId, forceDeep],
+    [appendDirectorReply, streamReset, toastError, focusAgentId, forceDeep, chatModelSelection],
   );
   sendNonStreamingRef.current = sendNonStreaming;
 
@@ -406,7 +428,11 @@ export default function DirectorWorkspace({
     if (phase === "thinking" || phase === "replying" || phase === "done") {
       steps.push({
         id: "thinking",
-        label: streamState.isDeep ? "Deep analysis (Opus)" : "Reasoning",
+        label: streamState.modelDisplayLabel
+          ? streamState.modelDisplayLabel
+          : streamState.isDeep
+            ? "Deep analysis (Opus)"
+            : "Reasoning",
         status: phase === "thinking" ? "active" : "done",
         detail:
           phase === "thinking" && streamState.thinkingText ? "Live reasoning stream" : undefined,
@@ -589,7 +615,12 @@ export default function DirectorWorkspace({
         ...(focusAgentId ? { focusAgentId } : {}),
         ...(opts?.approval ? { approval: opts.approval } : {}),
         ...(opts?.isRetry ? { skipOperatorPersist: true } : {}),
-        ...(!focusAgentId && (forceDeep || wantsDeepAnalysis(trimmed)) ? { forceDeep: true } : {}),
+        ...(!focusAgentId &&
+        chatModelSelection.provider === "wireline" &&
+        (forceDeep || wantsDeepAnalysis(trimmed))
+          ? { forceDeep: true }
+          : {}),
+        modelSelection: chatModelSelection,
       };
 
       // Use streaming for regular messages (no approvals — those stay non-streaming)
@@ -619,6 +650,12 @@ export default function DirectorWorkspace({
           reasoning: data.reasoning,
           thinkingDurationMs: data.thinkingDurationMs,
           model: data.model,
+          modelLabel: typeof data.modelLabel === "string" ? data.modelLabel : undefined,
+          modelProvider:
+            data.modelProvider === "wireline" || data.modelProvider === "openrouter"
+              ? data.modelProvider
+              : undefined,
+          modelId: typeof data.modelId === "string" ? data.modelId : undefined,
         };
         setMessages((prev) => [...prev, reply]);
         if (Array.isArray(data.artifacts)) setArtifacts(data.artifacts);
@@ -631,7 +668,7 @@ export default function DirectorWorkspace({
         inputRef.current?.focus();
       }
     },
-    [isSending, toastError, streamSend, focusAgentId, forceDeep],
+    [isSending, toastError, streamSend, focusAgentId, forceDeep, chatModelSelection],
   );
 
   const markResolved = (key: string, state: "done" | "dismissed") =>
@@ -1162,7 +1199,7 @@ export default function DirectorWorkspace({
                           <ThinkingDisplay
                             reasoning={m.reasoning}
                             thinkingDurationMs={m.thinkingDurationMs}
-                            isDeep={m.model === "opus"}
+                            isDeep={m.model === "opus" && m.modelProvider !== "openrouter"}
                             animate={false}
                           />
                         )}
@@ -1636,6 +1673,7 @@ export default function DirectorWorkspace({
                 phase={streamState.phase === "idle" ? "connecting" : streamState.phase}
                 isDeep={streamState.isDeep}
                 model={streamState.model}
+                modelDisplayLabel={streamState.modelDisplayLabel}
                 coachAgentName={focusedAgent?.name}
                 thinkingText={streamState.thinkingText}
                 thinkingDurationMs={streamState.thinkingDurationMs}
@@ -1760,6 +1798,8 @@ export default function DirectorWorkspace({
                 isSending={isSending}
                 forceDeep={forceDeep}
                 onToggleForceDeep={() => setForceDeep((v) => !v)}
+                chatModelSelection={chatModelSelection}
+                onChatModelChange={setChatModelSelection}
               />
 
               <Input

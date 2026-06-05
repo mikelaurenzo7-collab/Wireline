@@ -33,6 +33,8 @@ export interface StreamingState {
   error?: string;
   /** Model name from meta event. */
   model?: string;
+  /** Human label from meta (Wireline tier or OpenRouter model). */
+  modelDisplayLabel?: string;
 }
 
 const INITIAL_STATE: StreamingState = {
@@ -170,8 +172,10 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
               setState((s) => ({
                 ...s,
                 phase: "connecting",
-                isDeep: data.deep === true,
+                isDeep: data.deep === true && data.model !== "custom",
                 model: (data.model as string) || undefined,
+                modelDisplayLabel:
+                  typeof data.modelLabel === "string" ? data.modelLabel : undefined,
                 streamEstablished: true,
               }));
               break;

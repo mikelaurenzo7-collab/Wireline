@@ -29,6 +29,7 @@ export interface DirectorLiveSessionProps {
   phase: StreamPhase;
   isDeep: boolean;
   model?: string;
+  modelDisplayLabel?: string;
   coachAgentName?: string | null;
   thinkingText: string;
   thinkingDurationMs?: number;
@@ -190,6 +191,7 @@ export default function DirectorLiveSession({
   integrationActions,
   liveSteps,
   className,
+  modelDisplayLabel,
 }: DirectorLiveSessionProps) {
   const [elapsedMs, setElapsedMs] = useState(0);
 
@@ -208,7 +210,9 @@ export default function DirectorLiveSession({
     });
   }, [phase, isDeep, coachAgentName]);
 
-  const modelLabel = isDeep ? "Opus" : model?.includes("sonnet") ? "Sonnet" : "Director";
+  const modelLabel =
+    modelDisplayLabel?.trim() ||
+    (isDeep ? "Opus" : model?.includes("sonnet") ? "Sonnet" : "Director");
 
   return (
     <motion.div

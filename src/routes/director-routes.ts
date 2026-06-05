@@ -8,6 +8,7 @@ import { listAgentSummariesForUser } from "../lib/agents-store";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser, authenticateEventStream } from "../middleware/auth";
 import { claudeRateLimiter } from "../middleware/api-rate-limits";
+import { enforceSpendCap, enforce24hSpendCap } from "../lib/spend-guards";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
@@ -22,7 +23,20 @@ import {
   buildDirectorStreamContext,
   type DirectorTurnResult,
 } from "../lib/director-turn";
-import { runStructuredStream } from "../lib/claude-structured";
+import { withAudit } from "../middleware/audit-middleware";
+import { parseDirectorChatModelSelection } from "../lib/director-model-selection";
+import {
+  loadDirectorChatModelPreference,
+  saveDirectorChatModelPreference,
+} from "../lib/director-model-preference";
+import {
+  directorLlmConfigured,
+  directorStreamMetaModel,
+  resolveDirectorModelSelection,
+  validateDirectorChatModelSelection,
+} from "../lib/director-model-policy";
+import { isOpenRouterConfigured, listOpenRouterModelsForDirector } from "../lib/openrouter-models";
+import { runDirectorStreamLlm } from "../lib/director-stream-runner";
 import { loadDirectorFeatureFlags } from "../lib/director-feature-flags";
 import {
   checkCreativePolicy,
@@ -108,6 +122,9 @@ function directorTurnToStreamDone(turn: DirectorTurnResult) {
     focusAgentId: turn.focusAgentId,
     focusAgentName: turn.focusAgentName,
     model: turn.model,
+    modelLabel: turn.modelLabel,
+    modelProvider: turn.modelProvider,
+    modelId: turn.modelId,
     reasoning: turn.reasoning,
     thinkingDurationMs: turn.thinkingDurationMs,
     researchSources: turn.researchSources,
@@ -360,9 +377,13 @@ router.get(
       );
       const degraded = messagesDegraded || artifactsDegraded;
 
+      const chatModelPreference = await loadDirectorChatModelPreference(req.user.id);
+
       res.json({
         fleet,
         featureFlags: loadDirectorFeatureFlags(),
+        chatModelPreference,
+        openRouterEnabled: isOpenRouterConfigured(),
         artifacts: artifacts.map((a) => withSignedUrl(req.user.id, a)),
         degraded: degraded || undefined,
         messages: messages.reverse().map((m) => {
@@ -380,6 +401,9 @@ router.get(
             researchSources: meta.researchSources,
             proposals: meta.proposals,
             model: meta.model,
+            modelLabel: meta.modelLabel,
+            modelProvider: meta.modelProvider,
+            modelId: meta.modelId,
             thinkingDurationMs: meta.thinkingDurationMs,
             coachAgentId: meta.coachAgentId,
             coachAgentName: meta.coachAgentName,
@@ -406,10 +430,63 @@ router.get(
   },
 );
 
+router.get(
+  "/api/director/chat-models",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const preference = await loadDirectorChatModelPreference(req.user.id);
+      const { enabled, curated } = await listOpenRouterModelsForDirector();
+      res.json({
+        preference,
+        openRouterEnabled: enabled,
+        wirelineTiers: [
+          {
+            id: "auto",
+            label: "Auto (recommended)",
+            description: "Sonnet by default; Opus for deep fleet strategy",
+          },
+          { id: "sonnet", label: "Sonnet", description: "Fast, balanced Director turns" },
+          { id: "opus", label: "Opus", description: "Deep analysis + extended thinking" },
+        ],
+        curated,
+      });
+    } catch (e) {
+      log.error("director chat-models failed", { error: getErrorMessage(e) });
+      res.status(500).json({ error: "Failed to load chat models" });
+    }
+  },
+);
+
+router.patch(
+  "/api/director/chat-model",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const parsed = parseDirectorChatModelSelection(req.body?.selection);
+    if (!parsed) {
+      return res.status(400).json({ error: "Invalid model selection" });
+    }
+    const validated = await validateDirectorChatModelSelection(parsed);
+    if (!validated.ok) {
+      return res.status(validated.status).json({ error: validated.error });
+    }
+    try {
+      const saved = await saveDirectorChatModelPreference(req.user.id, validated.selection);
+      res.json({ preference: saved });
+    } catch (e) {
+      log.error("director chat-model save failed", { error: getErrorMessage(e) });
+      res.status(500).json({ error: "Failed to save model preference" });
+    }
+  },
+);
+
 router.post(
   "/api/director/messages",
   authenticateUser,
   claudeRateLimiter,
+  enforce24hSpendCap,
+  enforceSpendCap,
+  withAudit("director"),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const featureFlags = loadDirectorFeatureFlags();
@@ -447,6 +524,9 @@ router.post(
       let reply = "";
       let suggestions: unknown[] = [];
       let model: "sonnet" | "opus" = "sonnet";
+      let modelLabel: string | undefined;
+      let modelProvider: "wireline" | "openrouter" | undefined;
+      let modelId: string | undefined;
       let approvals: unknown[] = [];
       let previews: unknown[] = [];
       let artifacts: unknown[] = [];
@@ -491,37 +571,55 @@ router.post(
         reply = creative.reply;
         approvals = creative.approvals;
         clarifyingQuestions = creative.clarifyingQuestions;
-      } else if (!process.env.ANTHROPIC_API_KEY) {
-        reply =
-          "I can't respond right now — the LLM isn't configured. Your message is saved; try again later.";
       } else {
-        try {
-          const turn = await planDirectorTurnResilient({
-            userId: req.user.id,
-            operatorMessage,
-            history,
-            fleet,
-            stats,
-            focusAgentId,
-            forceDeep: req.body?.forceDeep === true,
-          });
-          reply = turn.reply;
-          suggestions = turn.suggestions;
-          model = turn.model;
-          reasoning = turn.reasoning;
-          thinkingDurationMs = turn.thinkingDurationMs;
-          changes = turn.changes;
-          toolToggles = turn.toolToggles;
-          actions = turn.actions;
-          integrationJobs = turn.integrationJobs;
-          mode = turn.mode;
-          coachAgentId = turn.focusAgentId;
-          coachAgentName = turn.focusAgentName;
-          researchSources = turn.researchSources;
-        } catch (e) {
-          log.error("director planner failed", { error: getErrorMessage(e) });
+        const resolved = await resolveDirectorModelSelection(
+          req.user.id,
+          req.body ?? {},
+          loadDirectorChatModelPreference,
+        );
+        if (!resolved.ok) {
           reply =
-            "Sorry — I'm having trouble responding right now. Your message is saved; try again in a moment.";
+            resolved.status === 503
+              ? "The selected model isn't available on this workspace yet. Your message is saved — try Wireline Auto or contact your admin."
+              : "That model isn't available. Your message is saved — pick another model from the composer.";
+        } else if (!directorLlmConfigured(resolved.selection)) {
+          reply =
+            resolved.selection.provider === "openrouter"
+              ? "OpenRouter isn't configured on this workspace yet. Your message is saved — pick Wireline Auto or ask your admin to add OPENROUTER_API_KEY."
+              : "I can't respond right now — the LLM isn't configured. Your message is saved; try again later.";
+        } else {
+          try {
+            const turn = await planDirectorTurnResilient({
+              userId: req.user.id,
+              operatorMessage,
+              history,
+              fleet,
+              stats,
+              focusAgentId,
+              forceDeep: req.body?.forceDeep === true,
+              modelSelection: resolved.selection,
+            });
+            reply = turn.reply;
+            suggestions = turn.suggestions;
+            model = turn.model;
+            modelLabel = turn.modelLabel;
+            modelProvider = turn.modelProvider;
+            modelId = turn.modelId;
+            reasoning = turn.reasoning;
+            thinkingDurationMs = turn.thinkingDurationMs;
+            changes = turn.changes;
+            toolToggles = turn.toolToggles;
+            actions = turn.actions;
+            integrationJobs = turn.integrationJobs;
+            mode = turn.mode;
+            coachAgentId = turn.focusAgentId;
+            coachAgentName = turn.focusAgentName;
+            researchSources = turn.researchSources;
+          } catch (e) {
+            log.error("director planner failed", { error: getErrorMessage(e) });
+            reply =
+              "Sorry — I'm having trouble responding right now. Your message is saved; try again in a moment.";
+          }
         }
       }
 
@@ -542,6 +640,9 @@ router.post(
             actions,
             integrationJobs,
             model,
+            modelLabel,
+            modelProvider,
+            modelId,
             thinkingDurationMs,
             focusAgentId: coachAgentId,
             focusAgentName: coachAgentName,
@@ -560,6 +661,9 @@ router.post(
         reply,
         suggestions,
         model,
+        modelLabel,
+        modelProvider,
+        modelId,
         mode,
         focusAgentId: coachAgentId,
         focusAgentName: coachAgentName,
@@ -590,6 +694,9 @@ router.post(
   "/api/director/messages/stream",
   authenticateEventStream,
   claudeRateLimiter,
+  enforce24hSpendCap,
+  enforceSpendCap,
+  withAudit("director"),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const operatorMessage = String(req.body?.content || "").trim();
@@ -600,8 +707,22 @@ router.post(
       if (operatorMessage.length > 4000) {
         return res.status(400).json({ error: "Message too long" });
       }
-      if (!process.env.ANTHROPIC_API_KEY) {
-        return res.status(503).json({ error: "LLM not configured" });
+      const resolved = await resolveDirectorModelSelection(
+        req.user.id,
+        req.body ?? {},
+        loadDirectorChatModelPreference,
+      );
+      if (!resolved.ok) {
+        return res.status(resolved.status).json({ error: resolved.error });
+      }
+      const modelSelection = resolved.selection;
+      if (!directorLlmConfigured(modelSelection)) {
+        return res.status(503).json({
+          error:
+            modelSelection.provider === "openrouter"
+              ? "OpenRouter not configured"
+              : "LLM not configured",
+        });
       }
 
       // Set up SSE headers
@@ -678,12 +799,17 @@ router.post(
         fleet,
         focusAgentId,
         forceDeep: req.body?.forceDeep === true,
+        modelSelection,
       });
 
+      const streamMeta = directorStreamMetaModel(streamCtx);
       res.write(
         `event: meta\ndata: ${JSON.stringify({
-          model: streamCtx.model.includes("opus") ? "opus" : "sonnet",
-          deep: streamCtx.deepThink,
+          model: streamMeta.model,
+          modelLabel: streamCtx.modelLabel,
+          modelProvider: streamCtx.llmProvider,
+          modelId: streamCtx.modelId,
+          deep: streamMeta.deep,
           mode: streamCtx.mode,
           focusAgentId: streamCtx.focusAgentId,
           focusAgentName: streamCtx.focusAgentName,
@@ -691,23 +817,17 @@ router.post(
       );
 
       try {
-        const { result, thinking, thinkingDurationMs } = await runStructuredStream(
-          {
-            system: streamCtx.system,
-            user: streamCtx.user,
-            tool: streamCtx.tool,
-            model: streamCtx.model,
-            deepThink: streamCtx.deepThink,
-            maxTokens: streamCtx.maxTokens,
-          },
-          {
-            onThinkingStart: () => writeSse("thinking_start", {}),
-            onThinkingChunk: (text) => writeSse("thinking_chunk", { text }),
-            onThinkingEnd: (fullText, durationMs) =>
-              writeSse("thinking_end", { thinking: fullText, durationMs }),
-            onResult: (r) => writeSse("reply", r),
-          },
-        );
+        const streamWireline = streamCtx.llmProvider === "wireline";
+        const { result, thinking, thinkingDurationMs } = await runDirectorStreamLlm(streamCtx, {
+          onThinkingStart: streamWireline ? () => writeSse("thinking_start", {}) : undefined,
+          onThinkingChunk: streamWireline
+            ? (text) => writeSse("thinking_chunk", { text })
+            : undefined,
+          onThinkingEnd: streamWireline
+            ? (fullText, durationMs) => writeSse("thinking_end", { thinking: fullText, durationMs })
+            : undefined,
+          onResult: (r) => writeSse("reply", r),
+        });
 
         const normalized = streamCtx.normalize((result || {}) as Record<string, unknown>);
         const reply = normalized.reply || "";
@@ -722,6 +842,9 @@ router.post(
           focusAgentId: normalized.focusAgentId,
           focusAgentName: normalized.focusAgentName,
           model: normalized.model,
+          modelLabel: streamCtx.modelLabel,
+          modelProvider: streamCtx.llmProvider,
+          modelId: streamCtx.modelId,
           reasoning: thinking,
           thinkingDurationMs,
           researchSources: streamCtx.researchSources,
@@ -747,6 +870,7 @@ router.post(
             stats,
             focusAgentId,
             forceDeep: req.body?.forceDeep === true,
+            modelSelection,
           });
           writeSse("thinking_end", {
             thinking: turn.reasoning ?? "",

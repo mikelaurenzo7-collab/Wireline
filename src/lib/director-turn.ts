@@ -31,6 +31,13 @@ import {
 } from "./workspace-planner";
 import type { ToolSchema } from "./claude-structured";
 import { CLAUDE_MODELS } from "./claude-models";
+import {
+  DEFAULT_DIRECTOR_MODEL_SELECTION,
+  resolveDirectorLlm,
+  type DirectorChatModelSelection,
+} from "./director-model-selection";
+import { labelForOpenRouterModel } from "./openrouter-models";
+import { runDirectorTurnLlm } from "./director-stream-runner";
 import { wantsDeepAnalysis } from "./director-deep-analysis";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
@@ -51,6 +58,9 @@ export interface DirectorTurnResult {
   actions: DirectorProposedAction[];
   integrationJobs: DirectorIntegrationJob[];
   model: "sonnet" | "opus";
+  modelLabel?: string;
+  modelProvider?: "wireline" | "openrouter";
+  modelId?: string;
   reasoning?: string;
   thinkingDurationMs?: number;
   researchSources?: DirectorResearchSource[];
@@ -68,6 +78,8 @@ export interface DirectorTurnInput {
   forceDeep?: boolean;
   /** Skip Opus/deep heuristics (retry path after stream/deep failures). */
   shallowOnly?: boolean;
+  /** Per-user Director chat model (Wireline tiers or OpenRouter id). */
+  modelSelection?: DirectorChatModelSelection;
 }
 
 async function loadBusinessContext(userId: string): Promise<DirectorBusinessContext | undefined> {
@@ -166,9 +178,36 @@ function workspaceToTurnResult(
   };
 }
 
+export function usesDirectorStructuredLlm(
+  input: DirectorTurnInput,
+  selection: DirectorChatModelSelection = input.modelSelection ?? DEFAULT_DIRECTOR_MODEL_SELECTION,
+): boolean {
+  if (selection.provider === "openrouter") return true;
+  if (!input.focusAgentId?.trim()) return true;
+  return false;
+}
+
+async function runDirectorStructuredTurn(input: DirectorTurnInput): Promise<DirectorTurnResult> {
+  const streamCtx = await buildDirectorStreamContext(input);
+  const { result, thinking, thinkingDurationMs } =
+    await runDirectorTurnLlm<Record<string, unknown>>(streamCtx);
+  const normalized = streamCtx.normalize(result);
+  return {
+    ...normalized,
+    reasoning: thinking,
+    thinkingDurationMs,
+    researchSources: streamCtx.researchSources,
+  };
+}
+
 export async function planDirectorTurn(input: DirectorTurnInput): Promise<DirectorTurnResult> {
   const business = input.business ?? (await loadBusinessContext(input.userId));
   const focusId = input.focusAgentId?.trim();
+
+  if (usesDirectorStructuredLlm(input)) {
+    return runDirectorStructuredTurn(input);
+  }
+
   if (focusId) {
     const ctx = await loadCoachContext(input.userId, focusId);
     if (!ctx) {
@@ -216,38 +255,18 @@ export async function planDirectorTurn(input: DirectorTurnInput): Promise<Direct
     return workspaceToTurnResult(plan, focusId, ctx.agent.name, research?.sources);
   }
 
-  const fleetPlan = await planDirector({
-    userId: input.userId,
-    operatorMessage: input.operatorMessage,
-    history: input.history,
-    fleet: input.fleet,
-    stats: input.stats,
-    business,
-    forceDeep: input.forceDeep,
-    shallowOnly: input.shallowOnly,
-  });
-
-  return {
-    mode: "fleet",
-    reply: fleetPlan.reply,
-    suggestions: fleetPlan.suggestions,
-    changes: [],
-    toolToggles: [],
-    actions: fleetPlan.actions,
-    integrationJobs: fleetPlan.integrationJobs,
-    model: fleetPlan.model,
-    reasoning: fleetPlan.reasoning,
-    thinkingDurationMs: fleetPlan.thinkingDurationMs,
-    researchSources: fleetPlan.researchSources,
-  };
+  throw new Error("Director turn routing invariant violated");
 }
 
 /** Non-stream + stream fallback — retries without Opus/deep thinking if the first call fails. */
 export async function planDirectorTurnResilient(
   input: DirectorTurnInput,
 ): Promise<DirectorTurnResult> {
+  const selection = input.modelSelection ?? DEFAULT_DIRECTOR_MODEL_SELECTION;
   const tryDeep =
+    selection.provider === "wireline" &&
     !input.focusAgentId?.trim() &&
+    selection.tier === "auto" &&
     (input.forceDeep === true || wantsDeepAnalysis(input.operatorMessage));
   try {
     return await planDirectorTurn(input);
@@ -269,6 +288,10 @@ export interface DirectorStreamContext {
   model: string;
   deepThink: boolean;
   maxTokens: number;
+  llmProvider: "wireline" | "openrouter";
+  modelLabel: string;
+  modelKind: "sonnet" | "opus" | "custom";
+  modelId?: string;
   focusAgentId?: string;
   focusAgentName?: string;
   normalize: (
@@ -283,10 +306,20 @@ export async function buildDirectorStreamContext(
 ): Promise<DirectorStreamContext> {
   const business = input.business ?? (await loadBusinessContext(input.userId));
   const focusId = input.focusAgentId?.trim();
-  const deep =
+  const autoDeepEligible =
     !input.shallowOnly &&
     !focusId &&
     (input.forceDeep === true || wantsDeepAnalysis(input.operatorMessage));
+
+  const llm = resolveDirectorLlm({
+    selection: input.modelSelection,
+    autoDeep: autoDeepEligible,
+    claudeSonnet: CLAUDE_MODELS.SONNET,
+    claudeOpus: CLAUDE_MODELS.OPUS,
+    modelLabelForOpenRouter: labelForOpenRouterModel,
+  });
+
+  const deep = !input.shallowOnly && !focusId && llm.modelKind === "opus";
 
   if (focusId) {
     const ctx = await loadCoachContext(input.userId, focusId);
@@ -306,20 +339,40 @@ export async function buildDirectorStreamContext(
         history: input.history,
       });
       const { system, user, tool } = buildWorkspaceStreamContext(wsInput);
+      const coachLlm = resolveDirectorLlm({
+        selection:
+          input.modelSelection?.provider === "openrouter"
+            ? input.modelSelection
+            : { provider: "wireline", tier: "sonnet" },
+        autoDeep: false,
+        claudeSonnet: CLAUDE_MODELS.SONNET,
+        claudeOpus: CLAUDE_MODELS.OPUS,
+        modelLabelForOpenRouter: labelForOpenRouterModel,
+      });
       return {
         mode: "coach",
         system,
         user: appendResearchToUserPrompt(user, research?.block),
         tool,
-        model: CLAUDE_MODELS.SONNET,
+        model: coachLlm.model,
         deepThink: false,
-        maxTokens: 1800,
+        maxTokens: coachLlm.maxTokens,
+        llmProvider: coachLlm.provider,
+        modelLabel: coachLlm.modelLabel,
+        modelKind: coachLlm.modelKind,
+        modelId: coachLlm.openRouterModelId,
         focusAgentId: focusId,
         focusAgentName: ctx.agent.name || undefined,
         researchSources: research?.sources,
         normalize: (raw) => {
           const plan = normalizePlan(raw, { agentId: focusId });
-          return workspaceToTurnResult(plan, focusId, ctx.agent.name, research?.sources);
+          const base = workspaceToTurnResult(plan, focusId, ctx.agent.name, research?.sources);
+          return {
+            ...base,
+            modelLabel: coachLlm.modelLabel,
+            modelProvider: coachLlm.provider,
+            modelId: coachLlm.openRouterModelId,
+          };
         },
       };
     }
@@ -356,12 +409,17 @@ export async function buildDirectorStreamContext(
     system,
     user,
     tool,
-    model: deep ? CLAUDE_MODELS.OPUS : CLAUDE_MODELS.SONNET,
-    deepThink: deep,
-    maxTokens: deep ? 4000 : 2800,
+    model: llm.model,
+    deepThink: llm.deepThink,
+    maxTokens: llm.maxTokens,
+    llmProvider: llm.provider,
+    modelLabel: llm.modelLabel,
+    modelKind: llm.modelKind,
+    modelId: llm.openRouterModelId,
     researchSources: research?.sources,
     normalize: (raw) => {
       const plan = normalizeDirectorFleetPlan(raw, input.fleet);
+      const modelMeta = llm.modelKind === "custom" ? ("sonnet" as const) : llm.modelKind;
       return {
         mode: "fleet",
         reply: plan.reply,
@@ -370,7 +428,10 @@ export async function buildDirectorStreamContext(
         toolToggles: [],
         actions: plan.actions,
         integrationJobs: plan.integrationJobs,
-        model: deep ? "opus" : "sonnet",
+        model: modelMeta,
+        modelLabel: llm.modelLabel,
+        modelProvider: llm.provider,
+        modelId: llm.openRouterModelId,
       };
     },
   };

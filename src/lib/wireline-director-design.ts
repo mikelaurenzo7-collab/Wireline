@@ -358,6 +358,18 @@ export const DIRECTOR_DEEP_MODE_COPY = {
   hint: "Opus + extended thinking for fleet strategy (not used while coaching an agent)",
 } as const;
 
+export const DIRECTOR_MODEL_PICKER_COPY = {
+  label: "Model",
+  shortLabel: "Model",
+  hint: "Director chat only — voice agents stay on Wireline Sonnet. OpenRouter uses your company key.",
+  wirelineSection: "Wireline",
+  openRouterSection: "OpenRouter",
+  autoLabel: "Auto (recommended)",
+  sonnetLabel: "Sonnet",
+  opusLabel: "Opus",
+  notConfigured: "Add OPENROUTER_API_KEY in Vercel to unlock custom models.",
+} as const;
+
 export type ComposerAccessoryKind = "connectors" | "capabilities" | "coach" | "tools" | "attach";
 
 export const DIRECTOR_COMPOSER_ACCESSORY_HINTS: Record<ComposerAccessoryKind, string> = {
