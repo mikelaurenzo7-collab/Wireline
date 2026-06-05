@@ -155,6 +155,9 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
       },
     });
 
+  const { ensureDefaultAiSpendBudget } = await import("./workspace-usage-snapshot");
+  await ensureDefaultAiSpendBudget(userId, plan?.id ?? null);
+
   invalidateDashboard(userId);
 
   dispatchWebhook(userId, "subscription.changed", {

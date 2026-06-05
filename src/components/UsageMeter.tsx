@@ -8,9 +8,15 @@ import { Progress } from "./ui/shadcn/Progress";
 
 interface UsageSnapshot {
   plan_id: string | null;
+  plan_name?: string | null;
   voice_minutes_used: number;
   voice_minutes_included: number;
   voice_minutes_remaining: number;
+  voice_usage_pct?: number;
+  ai_spend_usd?: number;
+  ai_spend_limit_usd?: number;
+  ai_spend_pct?: number;
+  usage_pct?: number;
   overage_minutes: number;
   overage_per_min_usd: number;
   overage_cost_usd: number;

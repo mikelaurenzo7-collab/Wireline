@@ -19,6 +19,14 @@ vi.mock("./openrouter-models", () => ({
   })),
 }));
 
+vi.mock("./plan-entitlements", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./plan-entitlements")>();
+  return {
+    ...actual,
+    getSubscriptionPlanId: vi.fn(async () => "pro"),
+  };
+});
+
 describe("validateDirectorChatModelSelection", () => {
   const prevAnthropic = process.env.ANTHROPIC_API_KEY;
 
@@ -32,20 +40,38 @@ describe("validateDirectorChatModelSelection", () => {
   });
 
   it("rejects openrouter models outside the catalog", async () => {
-    const result = await validateDirectorChatModelSelection({
-      provider: "openrouter",
-      modelId: "evil/unknown-model",
-    });
+    const result = await validateDirectorChatModelSelection(
+      {
+        provider: "openrouter",
+        modelId: "evil/unknown-model",
+      },
+      { planId: "pro" },
+    );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.status).toBe(400);
   });
 
-  it("accepts catalog openrouter models", async () => {
-    const result = await validateDirectorChatModelSelection({
-      provider: "openrouter",
-      modelId: "openai/gpt-4o",
-    });
+  it("accepts catalog openrouter models on Pro+", async () => {
+    const result = await validateDirectorChatModelSelection(
+      {
+        provider: "openrouter",
+        modelId: "openai/gpt-4o",
+      },
+      { planId: "pro" },
+    );
     expect(result.ok).toBe(true);
+  });
+
+  it("rejects openrouter on Starter", async () => {
+    const result = await validateDirectorChatModelSelection(
+      {
+        provider: "openrouter",
+        modelId: "openai/gpt-4o",
+      },
+      { planId: "starter" },
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.status).toBe(403);
   });
 });
 

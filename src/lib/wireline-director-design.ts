@@ -368,6 +368,16 @@ export const DIRECTOR_MODEL_PICKER_COPY = {
   sonnetLabel: "Sonnet",
   opusLabel: "Opus",
   notConfigured: "Add OPENROUTER_API_KEY in Vercel to unlock custom models.",
+  requiresUpgrade: "OpenRouter custom models are on Pro and above. Upgrade in Billing to unlock.",
+  searchPlaceholder: "Search models…",
+  recommendedSection: "Recommended",
+  browseAll: (count: number) => `All models (${count})`,
+  noSearchResults: "No models match your search.",
+} as const;
+
+export const DIRECTOR_USAGE_RING_COPY = {
+  title: "Monthly workspace usage",
+  noPlan: "Subscribe to a plan to track voice and AI usage.",
 } as const;
 
 export type ComposerAccessoryKind = "connectors" | "capabilities" | "coach" | "tools" | "attach";

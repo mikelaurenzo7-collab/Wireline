@@ -20,6 +20,7 @@ import { eq, sql, and } from "drizzle-orm";
 import type { VercelPgDatabase } from "drizzle-orm/vercel-postgres";
 import * as schema from "../db/schema";
 import { log } from "./server-context";
+import { voiceMinutesDailyQuotaForTier } from "./plan-entitlements";
 
 // ─────────────────────────────────────────────────────────────────
 // Plan defaults
@@ -131,7 +132,10 @@ export function resolveLimit(
 }
 
 export function resolveProfile(plan: PlanTier, overrides: QuotaOverrideRow[]): QuotaProfile {
-  const out: QuotaProfile = { ...PLAN_DEFAULTS[plan] };
+  const out: QuotaProfile = {
+    ...PLAN_DEFAULTS[plan],
+    voice_minutes_daily: voiceMinutesDailyQuotaForTier(plan),
+  };
   for (const o of overrides) {
     if (!ALL_DIMENSIONS.includes(o.dimension)) continue;
     out[o.dimension] = resolveLimit(plan, o.dimension, { value: o.value, enabled: o.enabled });

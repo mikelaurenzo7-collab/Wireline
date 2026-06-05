@@ -2,11 +2,12 @@
  * Director composer — Wireline tiers vs OpenRouter model catalog.
  */
 import { useEffect, useMemo, useState } from "react";
-import { Cpu, ChevronDown, Loader2 } from "lucide-react";
+import { Cpu, ChevronDown, Loader2, Search } from "lucide-react";
 import { authFetch } from "../../lib/api";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/shadcn/Popover";
+import { Input } from "../ui/shadcn/Input";
 import {
   WL_DIRECTOR_CLASSES,
   DIRECTOR_MODEL_PICKER_COPY,
@@ -19,20 +20,63 @@ type WirelineTier = "auto" | "sonnet" | "opus";
 interface ChatModelsResponse {
   preference: DirectorChatModelSelection;
   openRouterEnabled: boolean;
+  openRouterRequiresUpgrade?: boolean;
   wirelineTiers: { id: WirelineTier; label: string; description: string }[];
   curated: OpenRouterModelOption[];
+  catalog?: OpenRouterModelOption[];
 }
 
 function selectionLabel(
   selection: DirectorChatModelSelection,
-  curated: OpenRouterModelOption[],
+  models: OpenRouterModelOption[],
 ): string {
   if (selection.provider === "wireline") {
     if (selection.tier === "auto") return DIRECTOR_MODEL_PICKER_COPY.autoLabel;
     if (selection.tier === "opus") return DIRECTOR_MODEL_PICKER_COPY.opusLabel;
     return DIRECTOR_MODEL_PICKER_COPY.sonnetLabel;
   }
-  return curated.find((m) => m.id === selection.modelId)?.label ?? selection.modelId;
+  return models.find((m) => m.id === selection.modelId)?.label ?? selection.modelId;
+}
+
+function matchesSearch(model: OpenRouterModelOption, query: string): boolean {
+  if (!query) return true;
+  const hay = `${model.label} ${model.id} ${model.description}`.toLowerCase();
+  return hay.includes(query);
+}
+
+function OpenRouterModelRow({
+  model,
+  active,
+  compact,
+  onPick,
+}: {
+  model: OpenRouterModelOption;
+  active: boolean;
+  compact?: boolean;
+  onPick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        "w-full text-left rounded-lg transition-colors",
+        compact ? "px-2.5 py-1.5 text-[11px]" : "px-2.5 py-2 text-[12px]",
+        active ? "bg-brand/12 text-brand-deep" : "hover:bg-muted/60",
+      )}
+      onClick={onPick}
+    >
+      <span className="font-medium block truncate">{model.label}</span>
+      {!compact && model.description ? (
+        <span className="block text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
+          {model.description}
+        </span>
+      ) : compact ? (
+        <span className="block text-[9px] text-muted-foreground/80 truncate font-mono mt-0.5">
+          {model.id}
+        </span>
+      ) : null}
+    </button>
+  );
 }
 
 export interface DirectorModelPickerProps {
@@ -46,6 +90,8 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [catalog, setCatalog] = useState<ChatModelsResponse | null>(null);
+  const [search, setSearch] = useState("");
+  const [browseAllOpen, setBrowseAllOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,8 +111,42 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
     };
   }, []);
 
-  const curated = useMemo(() => catalog?.curated ?? [], [catalog]);
-  const label = useMemo(() => selectionLabel(selection, curated), [selection, curated]);
+  useEffect(() => {
+    if (!open) {
+      setSearch("");
+      setBrowseAllOpen(false);
+    }
+  }, [open]);
+
+  const allModels = useMemo(
+    () => catalog?.catalog ?? catalog?.curated ?? [],
+    [catalog?.catalog, catalog?.curated],
+  );
+  const curatedIds = useMemo(
+    () => new Set((catalog?.curated ?? []).map((m) => m.id)),
+    [catalog?.curated],
+  );
+  const curated = useMemo(() => catalog?.curated ?? [], [catalog?.curated]);
+  const catalogOnly = useMemo(
+    () => allModels.filter((m) => !curatedIds.has(m.id)),
+    [allModels, curatedIds],
+  );
+
+  const searchNorm = search.trim().toLowerCase();
+  const filteredCurated = useMemo(
+    () => curated.filter((m) => matchesSearch(m, searchNorm)),
+    [curated, searchNorm],
+  );
+  const filteredCatalog = useMemo(
+    () => catalogOnly.filter((m) => matchesSearch(m, searchNorm)),
+    [catalogOnly, searchNorm],
+  );
+
+  useEffect(() => {
+    if (searchNorm) setBrowseAllOpen(true);
+  }, [searchNorm]);
+
+  const label = useMemo(() => selectionLabel(selection, allModels), [selection, allModels]);
 
   const persist = async (next: DirectorChatModelSelection) => {
     const previous = selection;
@@ -89,6 +169,9 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
       setSaving(false);
     }
   };
+
+  const openRouterReady =
+    catalog?.openRouterEnabled && !catalog?.openRouterRequiresUpgrade && curated.length > 0;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -120,7 +203,7 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
       <PopoverContent
         align="start"
         side="top"
-        className="w-[min(100vw-2rem,22rem)] p-0 border-border/60 bg-card/95 backdrop-blur-md"
+        className="w-[min(100vw-2rem,24rem)] p-0 border-border/60 bg-card/95 backdrop-blur-md"
       >
         <div className="p-3 border-b border-border/50">
           <p className="text-[11px] font-medium text-foreground">
@@ -130,7 +213,7 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
             {DIRECTOR_MODEL_PICKER_COPY.hint}
           </p>
         </div>
-        <div className="max-h-[min(50vh,320px)] overflow-y-auto p-2 space-y-3">
+        <div className="max-h-[min(56vh,380px)] overflow-y-auto p-2 space-y-3">
           <section>
             <p className={cn(WL_DIRECTOR_CLASSES.microLabel, "px-2 mb-1.5 text-muted-foreground")}>
               {DIRECTOR_MODEL_PICKER_COPY.wirelineSection}
@@ -182,32 +265,105 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
             <p className={cn(WL_DIRECTOR_CLASSES.microLabel, "px-2 mb-1.5 text-muted-foreground")}>
               {DIRECTOR_MODEL_PICKER_COPY.openRouterSection}
             </p>
-            {!catalog?.openRouterEnabled ? (
+            {catalog?.openRouterRequiresUpgrade ? (
+              <p className="text-[10px] text-muted-foreground px-2 py-2 leading-snug">
+                {DIRECTOR_MODEL_PICKER_COPY.requiresUpgrade}
+              </p>
+            ) : !catalog?.openRouterEnabled ? (
               <p className="text-[10px] text-muted-foreground px-2 py-2 leading-snug">
                 {DIRECTOR_MODEL_PICKER_COPY.notConfigured}
               </p>
             ) : (
-              <div className="space-y-0.5">
-                {curated.map((model) => {
-                  const active =
-                    selection.provider === "openrouter" && selection.modelId === model.id;
-                  return (
+              <div className="space-y-2">
+                <div className="relative px-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder={DIRECTOR_MODEL_PICKER_COPY.searchPlaceholder}
+                    className="h-8 pl-8 text-[11px] bg-muted/30 border-border/50"
+                    aria-label={DIRECTOR_MODEL_PICKER_COPY.searchPlaceholder}
+                  />
+                </div>
+
+                {filteredCurated.length > 0 && (
+                  <div>
+                    <p
+                      className={cn(
+                        WL_DIRECTOR_CLASSES.microLabel,
+                        "px-2 mb-1 text-muted-foreground/90",
+                      )}
+                    >
+                      {DIRECTOR_MODEL_PICKER_COPY.recommendedSection}
+                    </p>
+                    <div className="space-y-0.5">
+                      {filteredCurated.map((model) => (
+                        <OpenRouterModelRow
+                          key={model.id}
+                          model={model}
+                          active={
+                            selection.provider === "openrouter" && selection.modelId === model.id
+                          }
+                          onPick={() => void persist({ provider: "openrouter", modelId: model.id })}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {catalogOnly.length > 0 && (
+                  <div>
                     <button
-                      key={model.id}
                       type="button"
                       className={cn(
-                        "w-full text-left rounded-lg px-2.5 py-2 text-[12px] transition-colors",
-                        active ? "bg-brand/12 text-brand-deep" : "hover:bg-muted/60",
+                        WL_DIRECTOR_CLASSES.microLabel,
+                        "w-full text-left px-2 py-1.5 rounded-md hover:bg-muted/50 text-muted-foreground flex items-center justify-between gap-2",
                       )}
-                      onClick={() => void persist({ provider: "openrouter", modelId: model.id })}
+                      onClick={() => setBrowseAllOpen((v) => !v)}
+                      aria-expanded={browseAllOpen}
                     >
-                      <span className="font-medium">{model.label}</span>
-                      <span className="block text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
-                        {model.description}
-                      </span>
+                      {DIRECTOR_MODEL_PICKER_COPY.browseAll(catalogOnly.length)}
+                      <ChevronDown
+                        className={cn(
+                          "w-3 h-3 shrink-0 transition-transform",
+                          browseAllOpen && "rotate-180",
+                        )}
+                        aria-hidden
+                      />
                     </button>
-                  );
-                })}
+                    {browseAllOpen && (
+                      <div className="space-y-0.5 mt-1 max-h-[min(28vh,200px)] overflow-y-auto pr-0.5">
+                        {filteredCatalog.map((model) => (
+                          <OpenRouterModelRow
+                            key={model.id}
+                            model={model}
+                            compact
+                            active={
+                              selection.provider === "openrouter" && selection.modelId === model.id
+                            }
+                            onPick={() =>
+                              void persist({ provider: "openrouter", modelId: model.id })
+                            }
+                          />
+                        ))}
+                        {filteredCatalog.length === 0 && searchNorm ? (
+                          <p className="text-[10px] text-muted-foreground px-2 py-2">
+                            {DIRECTOR_MODEL_PICKER_COPY.noSearchResults}
+                          </p>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {openRouterReady &&
+                  searchNorm &&
+                  filteredCurated.length === 0 &&
+                  filteredCatalog.length === 0 && (
+                    <p className="text-[10px] text-muted-foreground px-2 py-2">
+                      {DIRECTOR_MODEL_PICKER_COPY.noSearchResults}
+                    </p>
+                  )}
               </div>
             )}
           </section>

@@ -7,6 +7,7 @@ import {
   type DirectorChatModelSelection,
 } from "./director-model-selection";
 import { isOpenRouterConfigured, listOpenRouterModelsForDirector } from "./openrouter-models";
+import { getSubscriptionPlanId, openRouterAllowedForPlanId } from "./plan-entitlements";
 
 export type DirectorModelValidationResult =
   | { ok: true; selection: DirectorChatModelSelection }
@@ -25,6 +26,7 @@ export function clearDirectorModelAllowlistCache(): void {
 
 export async function validateDirectorChatModelSelection(
   selection: DirectorChatModelSelection,
+  options?: { planId?: string | null },
 ): Promise<DirectorModelValidationResult> {
   if (selection.provider === "wireline") {
     if (!process.env.ANTHROPIC_API_KEY?.trim()) {
@@ -45,6 +47,14 @@ export async function validateDirectorChatModelSelection(
     };
   }
 
+  if (!openRouterAllowedForPlanId(options?.planId)) {
+    return {
+      ok: false,
+      error: "OpenRouter models require a Pro plan or higher",
+      status: 403,
+    };
+  }
+
   const allowed = await getAllowedOpenRouterModelIds();
   if (!allowed.has(selection.modelId)) {
     return {
@@ -59,9 +69,12 @@ export async function validateDirectorChatModelSelection(
 
 export async function sanitizeDirectorChatModelPreference(
   selection: DirectorChatModelSelection,
+  options?: { planId?: string | null },
 ): Promise<DirectorChatModelSelection> {
   if (selection.provider === "wireline") return selection;
-  if (!isOpenRouterConfigured()) return DEFAULT_DIRECTOR_MODEL_SELECTION;
+  if (!isOpenRouterConfigured() || !openRouterAllowedForPlanId(options?.planId)) {
+    return DEFAULT_DIRECTOR_MODEL_SELECTION;
+  }
   const allowed = await getAllowedOpenRouterModelIds();
   if (allowed.has(selection.modelId)) return selection;
   return DEFAULT_DIRECTOR_MODEL_SELECTION;
@@ -75,14 +88,17 @@ export async function resolveDirectorModelSelection(
 ): Promise<
   { ok: true; selection: DirectorChatModelSelection } | { ok: false; error: string; status: number }
 > {
+  const planId = await getSubscriptionPlanId(userId);
+  const planOpts = { planId };
+
   const fromBody = parseDirectorChatModelSelection(body.modelSelection);
   if (fromBody) {
-    return validateDirectorChatModelSelection(fromBody);
+    return validateDirectorChatModelSelection(fromBody, planOpts);
   }
 
   const stored = await loadPreference(userId);
-  const sanitized = await sanitizeDirectorChatModelPreference(stored);
-  return validateDirectorChatModelSelection(sanitized);
+  const sanitized = await sanitizeDirectorChatModelPreference(stored, planOpts);
+  return validateDirectorChatModelSelection(sanitized, planOpts);
 }
 
 export function directorLlmConfigured(selection: DirectorChatModelSelection): boolean {

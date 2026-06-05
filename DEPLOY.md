@@ -63,7 +63,7 @@ specific branch for Preview which is awkward — prefer the UI.
 | `OWNER_PHONE` / `OWNER_EMAIL` / `PLATFORM_SMS_FROM` | Escalation routing (where agent escalations go). Set `OWNER_EMAIL=mikelaurenzo7@gmail.com` for the founder account. |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`       | Billing                                                                                     |
 | `ANTHROPIC_API_KEY`                                 | Claude API for agent reasoning                                                              |
-| `OPENROUTER_API_KEY`                                | Optional — Director chat model picker (company key; voice runtime unchanged)                |
+| `OPENROUTER_API_KEY`                                | Optional — Director chat model picker (Pro+ in app; company key; voice runtime unchanged) |
 
 ### Internal JWT secret cleanup
 

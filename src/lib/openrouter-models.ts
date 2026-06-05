@@ -100,15 +100,23 @@ export const CURATED_OPENROUTER_MODELS: OpenRouterModelOption[] = [
 
 const curatedById = new Map(CURATED_OPENROUTER_MODELS.map((m) => [m.id, m]));
 
+function catalogLookup(): Map<string, OpenRouterModelOption> {
+  const map = new Map(curatedById);
+  for (const m of catalogCache?.models ?? []) {
+    map.set(m.id, m);
+  }
+  return map;
+}
+
 export function labelForOpenRouterModel(id: string): string {
-  return curatedById.get(id)?.label ?? id.split("/").pop() ?? id;
+  return catalogLookup().get(id)?.label ?? id.split("/").pop() ?? id;
 }
 
 export function estimateOpenRouterCostUsd(
   modelId: string,
   usage: { input_tokens: number; output_tokens: number },
 ): number {
-  const meta = curatedById.get(modelId);
+  const meta = catalogLookup().get(modelId);
   const inRate = meta?.inputPerMillion ?? 3;
   const outRate = meta?.outputPerMillion ?? 15;
   return (usage.input_tokens * inRate) / 1_000_000 + (usage.output_tokens * outRate) / 1_000_000;
@@ -154,6 +162,11 @@ export async function listOpenRouterModelsForDirector(): Promise<{
       const id = typeof row.id === "string" ? row.id.trim() : "";
       if (!id || curatedById.has(id)) continue;
       if (!isOpenRouterModelId(id)) continue;
+      const arch =
+        typeof row.architecture === "object" ? (row.architecture as Record<string, unknown>) : null;
+      const modality = arch?.modality;
+      if (typeof modality === "string" && !/text/i.test(modality)) continue;
+
       const name = typeof row.name === "string" ? row.name : id;
       const pricing = row.pricing as { prompt?: string; completion?: string } | undefined;
       const inputPerMillion = pricing?.prompt ? Number(pricing.prompt) * 1_000_000 : undefined;
@@ -163,13 +176,14 @@ export async function listOpenRouterModelsForDirector(): Promise<{
       fromApi.push({
         id,
         label: name,
-        description: "OpenRouter catalog",
+        description: "",
         category: "fast",
         inputPerMillion: Number.isFinite(inputPerMillion) ? inputPerMillion : undefined,
         outputPerMillion: Number.isFinite(outputPerMillion) ? outputPerMillion : undefined,
       });
     }
-    const merged = [...curated, ...fromApi.slice(0, 40)];
+    fromApi.sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" }));
+    const merged = [...curated, ...fromApi];
     catalogCache = { at: now, models: merged };
     return { enabled: true, curated, catalog: merged };
   } catch {

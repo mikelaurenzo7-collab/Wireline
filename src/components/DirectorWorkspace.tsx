@@ -68,6 +68,7 @@ import { SignalOrbFrame } from "./ui/SignalOrbFrame";
 import { DirectorComposerAccessory } from "./director/DirectorComposerAccessory";
 import { DirectorComposerContextStrip } from "./director/DirectorComposerContextStrip";
 import { DirectorComposerToolbar } from "./director/DirectorComposerToolbar";
+import { DirectorUsageIndicator } from "./director/DirectorUsageIndicator";
 import { DirectorResearchSources } from "./director/DirectorResearchSources";
 import { DirectorStarterPrompts } from "./director/DirectorStarterPrompts";
 import DirectorArtifactsPanel, { type DirectorArtifact } from "./director/DirectorArtifactsPanel";
@@ -1710,7 +1711,8 @@ export default function DirectorWorkspace({
 
       {/* Composer — accessory panel sits above toolbar so chat stays readable */}
       <div className="relative z-30 shrink-0 px-4 pb-6 pt-2">
-        <div className="max-w-3xl mx-auto" ref={composerDockRef}>
+        <div className="max-w-3xl mx-auto relative" ref={composerDockRef}>
+          <DirectorUsageIndicator className="absolute -top-1 right-0 z-40" />
           <div
             className={cn(
               "relative transition-all duration-300",
@@ -1811,6 +1813,7 @@ export default function DirectorWorkspace({
               />
 
               <div className="flex items-center gap-2 shrink-0">
+                <DirectorUsageIndicator className="sm:hidden shrink-0" />
                 <span
                   id="director-composer-send-hint"
                   className="hidden lg:inline chrome-subtle whitespace-nowrap"

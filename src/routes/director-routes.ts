@@ -36,6 +36,7 @@ import {
   validateDirectorChatModelSelection,
 } from "../lib/director-model-policy";
 import { isOpenRouterConfigured, listOpenRouterModelsForDirector } from "../lib/openrouter-models";
+import { getSubscriptionPlanId, openRouterAllowedForPlanId } from "../lib/plan-entitlements";
 import { runDirectorStreamLlm } from "../lib/director-stream-runner";
 import { loadDirectorFeatureFlags } from "../lib/director-feature-flags";
 import {
@@ -436,10 +437,13 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const preference = await loadDirectorChatModelPreference(req.user.id);
-      const { enabled, curated } = await listOpenRouterModelsForDirector();
+      const planId = await getSubscriptionPlanId(req.user.id);
+      const planAllowsOpenRouter = openRouterAllowedForPlanId(planId);
+      const { enabled, curated, catalog } = await listOpenRouterModelsForDirector();
       res.json({
         preference,
-        openRouterEnabled: enabled,
+        openRouterEnabled: enabled && planAllowsOpenRouter,
+        openRouterRequiresUpgrade: enabled && !planAllowsOpenRouter,
         wirelineTiers: [
           {
             id: "auto",
@@ -450,6 +454,7 @@ router.get(
           { id: "opus", label: "Opus", description: "Deep analysis + extended thinking" },
         ],
         curated,
+        catalog,
       });
     } catch (e) {
       log.error("director chat-models failed", { error: getErrorMessage(e) });
@@ -466,7 +471,8 @@ router.patch(
     if (!parsed) {
       return res.status(400).json({ error: "Invalid model selection" });
     }
-    const validated = await validateDirectorChatModelSelection(parsed);
+    const planId = await getSubscriptionPlanId(req.user.id);
+    const validated = await validateDirectorChatModelSelection(parsed, { planId });
     if (!validated.ok) {
       return res.status(validated.status).json({ error: validated.error });
     }

@@ -359,6 +359,32 @@ vi.mock("../lib/phone-line-entitlements", () => ({
 vi.mock("../lib/voice-usage", () => ({
   getVoiceUsageSnapshot: vi.fn(async () => ({ total_minutes: 0 })),
 }));
+vi.mock("../lib/workspace-usage-snapshot", () => ({
+  getWorkspaceUsageSnapshot: vi.fn(async () => ({
+    plan_id: null,
+    plan_name: null,
+    voice_minutes_used: 0,
+    voice_minutes_included: 0,
+    voice_minutes_remaining: 0,
+    voice_usage_pct: 0,
+    voice_minutes_cap: 0,
+    overage_minutes: 0,
+    overage_per_min_usd: 0,
+    overage_cost_usd: 0,
+    period_key: "2026-05",
+    reset_at: "2026-06-01T00:00:00.000Z",
+    stripe_metered: false,
+    ai_spend_usd: 0,
+    ai_spend_limit_usd: 0,
+    ai_spend_pct: 0,
+    ai_spend_hard_cap: true,
+    claude_tokens_used_today: 0,
+    claude_tokens_daily_limit: 0,
+    claude_tokens_pct: 0,
+    openrouter_allowed: false,
+    usage_pct: 0,
+  })),
+}));
 
 async function buildApp() {
   const billingModule = await import("./billing-routes");
@@ -565,18 +591,30 @@ describe("billing routes integration", () => {
   });
 
   it("returns voice usage snapshot from /billing/usage", async () => {
-    const { getVoiceUsageSnapshot } = await import("../lib/voice-usage");
-    vi.mocked(getVoiceUsageSnapshot).mockResolvedValueOnce({
+    const { getWorkspaceUsageSnapshot } = await import("../lib/workspace-usage-snapshot");
+    vi.mocked(getWorkspaceUsageSnapshot).mockResolvedValueOnce({
       plan_id: "starter",
+      plan_name: "Starter",
       voice_minutes_used: 1250,
       voice_minutes_included: 1200,
       voice_minutes_remaining: 0,
+      voice_minutes_cap: 1200,
+      voice_usage_pct: 100,
       overage_minutes: 50,
       overage_per_min_usd: 0.18,
       overage_cost_usd: 9,
       period_key: "2026-05",
       reset_at: "2026-06-01T00:00:00.000Z",
       stripe_metered: true,
+      ai_spend_usd: 0,
+      ai_spend_limit_usd: 35,
+      ai_spend_pct: 0,
+      ai_spend_hard_cap: true,
+      claude_tokens_used_today: 0,
+      claude_tokens_daily_limit: 1_500_000,
+      claude_tokens_pct: 0,
+      openrouter_allowed: false,
+      usage_pct: 100,
     });
 
     const response = await request(await buildApp())
