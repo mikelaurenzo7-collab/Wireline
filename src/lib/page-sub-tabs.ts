@@ -134,7 +134,7 @@ export const INSIGHTS_VIEW_TABS: Record<string, AppPageSubTab> = {
   leaderboard: { id: "leaderboard", label: "Leaderboard", icon: Trophy },
   failures: { id: "failures", label: "Failures", icon: AlertOctagon },
   latency: { id: "latency", label: "Latency", icon: Gauge },
-  quality: { id: "quality", label: "Quality", icon: Star },
+  quality: { id: "quality", label: "Scorecards", icon: Star },
   attribution: { id: "attribution", label: "Attribution", icon: Megaphone },
   topics: { id: "topics", label: "Topics", icon: Layers },
   spend: { id: "spend", label: "AI Spend", icon: Receipt },

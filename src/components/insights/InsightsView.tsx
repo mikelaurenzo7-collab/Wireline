@@ -66,7 +66,7 @@ export default function InsightsView() {
       failures: wrap("Failures", <FailureModesView />),
       latency: wrap("Latency", <VoiceLatencyView days={days} />),
       spend: wrap("AI Spend", <AISpendView days={days} />),
-      quality: wrap("Quality", <QualityView days={days} />),
+      quality: wrap("Scorecards", <QualityView days={days} />),
     };
     return views[activeView] ?? views.funnel;
   }, [activeView, days]);
