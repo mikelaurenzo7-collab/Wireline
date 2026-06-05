@@ -28,6 +28,8 @@ import {
 } from "./director-fleet-plan";
 import { formatDirectorIntegrationPrompt } from "./director-integration-prompt";
 import { loadTenantIntegrationConnections } from "./tenant-integration-connections";
+import { wantsDeepAnalysis } from "./director-deep-analysis";
+export { wantsDeepAnalysis } from "./director-deep-analysis";
 import {
   appendResearchToUserPrompt,
   fetchDirectorResearchContext,
@@ -60,6 +62,8 @@ export interface DirectorPlan extends DirectorFleetPlan {
 
 export interface PlanDirectorInput {
   forceDeep?: boolean;
+  /** Skip Opus/deep heuristics (used when retrying after a deep-turn failure). */
+  shallowOnly?: boolean;
   userId: string;
   operatorMessage: string;
   history: Array<{ role: "operator" | "director"; content: string }>;
@@ -71,16 +75,6 @@ export interface PlanDirectorInput {
     openTasks?: number;
   };
   business?: DirectorBusinessContext;
-}
-
-/**
- * Heuristic: does this turn warrant the (pricier, slower, smarter) Opus tier?
- * Triggers on explicit requests for deep, cross-fleet strategic analysis.
- */
-export function wantsDeepAnalysis(message: string): boolean {
-  return /\b(audit|deep[\s-]?dive|analy[sz]e (everything|all|the (whole|entire))|review (everything|all|the (whole|entire))|full (review|analysis|audit)|strateg(y|ize|ise|ic plan)|optimi[sz]e (everything|all|the (whole|entire))|benchmark)\b/i.test(
-    message,
-  );
 }
 
 const DIRECTOR_TOOL = DIRECTOR_FLEET_TOOL;
@@ -134,7 +128,8 @@ export function normalizeDirectorPlan(
  * model layer is unavailable — the caller decides the fallback copy.
  */
 export async function planDirector(input: PlanDirectorInput): Promise<DirectorPlan> {
-  const deep = input.forceDeep === true || wantsDeepAnalysis(input.operatorMessage);
+  const deep =
+    !input.shallowOnly && (input.forceDeep === true || wantsDeepAnalysis(input.operatorMessage));
   const model = deep ? CLAUDE_MODELS.OPUS : CLAUDE_MODELS.SONNET;
   const connections = await loadTenantIntegrationConnections(input.userId);
   const integrationPrompt = formatDirectorIntegrationPrompt(connections);

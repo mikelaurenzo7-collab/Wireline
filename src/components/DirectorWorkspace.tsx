@@ -84,7 +84,7 @@ import {
   WL_DIRECTOR_CLASSES,
   type ComposerAccessoryKind,
 } from "../lib/wireline-director-design";
-import { wantsDeepAnalysis } from "../lib/director-planner";
+import { wantsDeepAnalysis } from "../lib/director-deep-analysis";
 import LoadingDots from "./ui/LoadingDots";
 import {
   detectDirectorMessageScene,
@@ -366,6 +366,9 @@ export default function DirectorWorkspace({
             content: trimmed,
             ...(focusAgentId ? { focusAgentId } : {}),
             ...(opts?.skipOperatorPersist ? { skipOperatorPersist: true } : {}),
+            ...(!focusAgentId && (forceDeep || wantsDeepAnalysis(trimmed))
+              ? { forceDeep: true }
+              : {}),
           }),
         });
         const parsed = await readApiJson<Record<string, unknown>>(r);
@@ -384,7 +387,7 @@ export default function DirectorWorkspace({
         inputRef.current?.focus();
       }
     },
-    [appendDirectorReply, streamReset, toastError, focusAgentId],
+    [appendDirectorReply, streamReset, toastError, focusAgentId, forceDeep],
   );
   sendNonStreamingRef.current = sendNonStreaming;
 
@@ -551,17 +554,30 @@ export default function DirectorWorkspace({
   );
 
   const send = useCallback(
-    async (text: string, opts?: { approval?: DirectorApproval }) => {
+    async (text: string, opts?: { approval?: DirectorApproval; isRetry?: boolean }) => {
       const trimmed = text.trim();
       if ((!trimmed && !opts?.approval) || isSending) return;
-      const optimistic: DirectorMessage | null = trimmed
-        ? {
-            id: `tmp-${Date.now()}`,
-            role: "operator",
-            content: trimmed,
-            createdAt: new Date().toISOString(),
+      if (opts?.isRetry) {
+        setMessages((prev) => {
+          const last = prev[prev.length - 1];
+          if (
+            last?.role === "director" &&
+            /trouble responding|can't respond right now/i.test(last.content)
+          ) {
+            return prev.slice(0, -1);
           }
-        : null;
+          return prev;
+        });
+      }
+      const optimistic: DirectorMessage | null =
+        trimmed && !opts?.isRetry
+          ? {
+              id: `tmp-${Date.now()}`,
+              role: "operator",
+              content: trimmed,
+              createdAt: new Date().toISOString(),
+            }
+          : null;
       if (optimistic) setMessages((prev) => [...prev, optimistic]);
       if (trimmed) setInput("");
       setIsSending(true);
@@ -571,6 +587,7 @@ export default function DirectorWorkspace({
         content: trimmed,
         ...(focusAgentId ? { focusAgentId } : {}),
         ...(opts?.approval ? { approval: opts.approval } : {}),
+        ...(opts?.isRetry ? { skipOperatorPersist: true } : {}),
         ...(!focusAgentId && (forceDeep || wantsDeepAnalysis(trimmed)) ? { forceDeep: true } : {}),
       };
 
@@ -1164,7 +1181,7 @@ export default function DirectorWorkspace({
                                     size="sm"
                                     className="mt-3 h-8 px-3 text-[11px] uppercase tracking-[0.12em] border border-brand/25 text-brand hover:bg-brand/8"
                                     disabled={isSending}
-                                    onClick={() => void send(prior.content)}
+                                    onClick={() => void send(prior.content, { isRetry: true })}
                                   >
                                     Retry message
                                   </ShadButton>

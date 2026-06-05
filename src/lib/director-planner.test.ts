@@ -1,9 +1,6 @@
 import { describe, it, expect } from "vitest";
-import {
-  normalizeDirectorPlan,
-  wantsDeepAnalysis,
-  type DirectorFleetAgent,
-} from "./director-planner";
+import { wantsDeepAnalysis } from "./director-deep-analysis";
+import { normalizeDirectorPlan, type DirectorFleetAgent } from "./director-planner";
 
 const FLEET: DirectorFleetAgent[] = [
   { id: "agent-1", name: "Ava", role: "sales" },

@@ -17,7 +17,11 @@ import {
   executeDirectorIntegrationJob,
 } from "../lib/director-executor";
 import type { DirectorIntegrationJob, DirectorProposedAction } from "../lib/director-fleet-plan";
-import { planDirectorTurn, buildDirectorStreamContext } from "../lib/director-turn";
+import {
+  planDirectorTurnResilient,
+  buildDirectorStreamContext,
+  type DirectorTurnResult,
+} from "../lib/director-turn";
 import { runStructuredStream } from "../lib/claude-structured";
 import { loadDirectorFeatureFlags } from "../lib/director-feature-flags";
 import {
@@ -66,6 +70,66 @@ async function loadFleetSafe(userId: string): Promise<DirectorFleetAgent[]> {
   } catch (e) {
     log.warn("director fleet load failed", { error: getErrorMessage(e), userId });
     return [];
+  }
+}
+
+async function loadDirectorWeekStats(
+  userId: string,
+): Promise<{ calls7d?: number; bookings7d?: number } | undefined> {
+  try {
+    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const [[calls], [bookings]] = await Promise.all([
+      drizzle
+        .select({ n: sql<number>`count(*)::int` })
+        .from(schema.callLogs)
+        .where(and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, since))),
+      drizzle
+        .select({ n: sql<number>`count(*)::int` })
+        .from(schema.appointments)
+        .where(
+          and(eq(schema.appointments.userId, userId), gte(schema.appointments.createdAt, since)),
+        ),
+    ]);
+    return { calls7d: calls?.n ?? 0, bookings7d: bookings?.n ?? 0 };
+  } catch {
+    return undefined;
+  }
+}
+
+function directorTurnToStreamDone(turn: DirectorTurnResult) {
+  return {
+    reply: turn.reply,
+    suggestions: turn.suggestions,
+    changes: turn.changes,
+    toolToggles: turn.toolToggles,
+    actions: turn.actions,
+    integrationJobs: turn.integrationJobs,
+    mode: turn.mode,
+    focusAgentId: turn.focusAgentId,
+    focusAgentName: turn.focusAgentName,
+    model: turn.model,
+    reasoning: turn.reasoning,
+    thinkingDurationMs: turn.thinkingDurationMs,
+    researchSources: turn.researchSources,
+  };
+}
+
+async function persistOperatorMessageIfNeeded(
+  userId: string,
+  operatorMessage: string,
+  priorMessages: Awaited<ReturnType<typeof loadDirectorMessages>>,
+  skipPersist: boolean,
+) {
+  if (!operatorMessage) return;
+  const last = priorMessages.messages[0];
+  const duplicatePending =
+    skipPersist && last?.role === "operator" && last.content.trim() === operatorMessage;
+  if (!duplicatePending) {
+    await insertDirectorMessage({
+      userId,
+      role: "operator",
+      content: operatorMessage,
+    });
   }
 }
 
@@ -362,30 +426,7 @@ router.post(
 
       const fleet = await loadFleetSafe(req.user.id);
 
-      let stats: { calls7d?: number; bookings7d?: number } | undefined;
-      try {
-        const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        const [[calls], [bookings]] = await Promise.all([
-          drizzle
-            .select({ n: sql<number>`count(*)::int` })
-            .from(schema.callLogs)
-            .where(
-              and(eq(schema.callLogs.userId, req.user.id), gte(schema.callLogs.createdAt, since)),
-            ),
-          drizzle
-            .select({ n: sql<number>`count(*)::int` })
-            .from(schema.appointments)
-            .where(
-              and(
-                eq(schema.appointments.userId, req.user.id),
-                gte(schema.appointments.createdAt, since),
-              ),
-            ),
-        ]);
-        stats = { calls7d: calls?.n ?? 0, bookings7d: bookings?.n ?? 0 };
-      } catch {
-        stats = undefined;
-      }
+      const stats = await loadDirectorWeekStats(req.user.id);
 
       const priorMessages = await loadDirectorMessages(req.user.id, CLAUDE_CONTEXT_WINDOW);
 
@@ -395,17 +436,12 @@ router.post(
       }));
 
       if (operatorMessage) {
-        const skipPersist = req.body?.skipOperatorPersist === true;
-        const last = priorMessages.messages[0];
-        const duplicatePending =
-          skipPersist && last?.role === "operator" && last.content.trim() === operatorMessage;
-        if (!duplicatePending) {
-          await insertDirectorMessage({
-            userId: req.user.id,
-            role: "operator",
-            content: operatorMessage,
-          });
-        }
+        await persistOperatorMessageIfNeeded(
+          req.user.id,
+          operatorMessage,
+          priorMessages,
+          req.body?.skipOperatorPersist === true,
+        );
       }
 
       let reply = "";
@@ -460,7 +496,7 @@ router.post(
           "I can't respond right now — the LLM isn't configured. Your message is saved; try again later.";
       } else {
         try {
-          const turn = await planDirectorTurn({
+          const turn = await planDirectorTurnResilient({
             userId: req.user.id,
             operatorMessage,
             history,
@@ -575,8 +611,8 @@ router.post(
       res.setHeader("Content-Encoding", "none");
 
       const fleet = await loadFleetSafe(req.user.id);
+      const stats = await loadDirectorWeekStats(req.user.id);
 
-      // Load history for context
       const priorMessages = await loadDirectorMessages(req.user.id, CLAUDE_CONTEXT_WINDOW);
 
       const history = priorMessages.messages.reverse().map((m) => ({
@@ -584,12 +620,12 @@ router.post(
         content: m.content,
       }));
 
-      // Save operator message
-      await insertDirectorMessage({
-        userId: req.user.id,
-        role: "operator",
-        content: operatorMessage,
-      });
+      await persistOperatorMessageIfNeeded(
+        req.user.id,
+        operatorMessage,
+        priorMessages,
+        req.body?.skipOperatorPersist === true,
+      );
 
       const featureFlags = loadDirectorFeatureFlags();
 
@@ -702,7 +738,35 @@ router.post(
         writeSse("done", donePayload);
       } catch (e) {
         log.error("director stream failed", { error: getErrorMessage(e) });
-        writeSse("error", { message: "Failed to generate response" });
+        try {
+          const turn = await planDirectorTurnResilient({
+            userId: req.user.id,
+            operatorMessage,
+            history,
+            fleet,
+            stats,
+            focusAgentId,
+            forceDeep: req.body?.forceDeep === true,
+          });
+          writeSse("thinking_end", {
+            thinking: turn.reasoning ?? "",
+            durationMs: turn.thinkingDurationMs ?? 0,
+          });
+          const donePayload = directorTurnToStreamDone(turn);
+          await insertDirectorMessage({
+            userId: req.user.id,
+            role: "director",
+            content: turn.reply || "(empty)",
+            reasoning: turn.reasoning || null,
+            metadata: packDirectorMetadata(buildDirectorMetadataFromTurn(donePayload)),
+          });
+          writeSse("done", donePayload);
+        } catch (fallbackErr) {
+          log.error("director stream fallback failed", {
+            error: getErrorMessage(fallbackErr),
+          });
+          writeSse("error", { message: "Failed to generate response" });
+        }
       }
 
       if (!closed) res.end();

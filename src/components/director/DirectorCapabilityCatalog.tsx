@@ -92,57 +92,96 @@ export function DirectorCapabilityCatalog({
     DIRECTOR_CAPABILITY_CATEGORY_LABELS,
   ) as DirectorCapabilityCategory[];
   const [activeCategory, setActiveCategory] = useState<DirectorCapabilityCategory>("strategy");
+  const [query, setQuery] = useState("");
+
+  const filteredCatalog = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return null;
+    return DIRECTOR_CAPABILITY_CATALOG.filter(
+      (item) =>
+        item.label.toLowerCase().includes(q) ||
+        item.description.toLowerCase().includes(q) ||
+        item.example.toLowerCase().includes(q),
+    );
+  }, [query]);
 
   if (variant === "popover") {
-    const activeItems = grouped[activeCategory] ?? [];
+    const activeItems = filteredCatalog ?? grouped[activeCategory] ?? [];
     return (
       <div className={cn(!embedded && "max-h-[min(220px,32dvh)] overflow-y-auto", className)}>
         {!embedded && (
           <div className="flex items-center justify-between gap-2 px-1 pb-2">
             <span className="wl-label text-muted-foreground">Skills</span>
             <span className="text-[9px] font-mono text-muted-foreground/70 tabular-nums">
-              {DIRECTOR_CAPABILITY_CATALOG.length} total
+              {filteredCatalog
+                ? `${filteredCatalog.length} match`
+                : `${DIRECTOR_CAPABILITY_CATALOG.length} total`}
             </span>
           </div>
         )}
-        <div
-          className={cn(
-            "flex gap-1 overflow-x-auto pb-2 scrollbar-none -mx-0.5 px-0.5",
-            embedded && "wl-composer-accessory-catalog-sticky",
-          )}
-        >
-          {categories.map((cat) => {
-            const Icon = CATEGORY_ICON[cat];
-            const items = grouped[cat];
-            if (items.length === 0) return null;
-            const isActive = activeCategory === cat;
-            return (
-              <ShadButton
-                key={cat}
-                type="button"
-                variant="ghost"
-                size="sm"
-                disableAnimations
-                onClick={() => setActiveCategory(cat)}
-                aria-pressed={isActive}
-                aria-label={`${DIRECTOR_CAPABILITY_CATEGORY_LABELS[cat]} capabilities, ${items.length} skills`}
-                className={cn(
-                  WL_DIRECTOR_CLASSES.capabilityCatPill,
-                  isActive && "wl-director-cap-pill--active",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/45 focus-visible:ring-offset-1",
-                )}
-              >
-                <Icon className="w-3 h-3 shrink-0" aria-hidden />
-                {DIRECTOR_CAPABILITY_CATEGORY_LABELS[cat]}
-                <span className="font-mono opacity-60">{items.length}</span>
-              </ShadButton>
-            );
-          })}
+        <label className="sr-only" htmlFor="director-capability-search">
+          Search capabilities
+        </label>
+        <div className="relative px-0.5 pb-2">
+          <Search
+            className="pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground/60"
+            aria-hidden
+          />
+          <input
+            id="director-capability-search"
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search skills…"
+            className="w-full rounded-md border border-border/80 bg-cream/60 py-1.5 pl-7 pr-2 text-[11px] text-ink placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+          />
         </div>
+        {!filteredCatalog && (
+          <div
+            className={cn(
+              "flex gap-1 overflow-x-auto pb-2 scrollbar-none -mx-0.5 px-0.5",
+              embedded && "wl-composer-accessory-catalog-sticky",
+            )}
+          >
+            {categories.map((cat) => {
+              const Icon = CATEGORY_ICON[cat];
+              const items = grouped[cat];
+              if (items.length === 0) return null;
+              const isActive = activeCategory === cat;
+              return (
+                <ShadButton
+                  key={cat}
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disableAnimations
+                  onClick={() => setActiveCategory(cat)}
+                  aria-pressed={isActive}
+                  aria-label={`${DIRECTOR_CAPABILITY_CATEGORY_LABELS[cat]} capabilities, ${items.length} skills`}
+                  className={cn(
+                    WL_DIRECTOR_CLASSES.capabilityCatPill,
+                    isActive && "wl-director-cap-pill--active",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/45 focus-visible:ring-offset-1",
+                  )}
+                >
+                  <Icon className="w-3 h-3 shrink-0" aria-hidden />
+                  {DIRECTOR_CAPABILITY_CATEGORY_LABELS[cat]}
+                  <span className="font-mono opacity-60">{items.length}</span>
+                </ShadButton>
+              );
+            })}
+          </div>
+        )}
         <div className="space-y-0.5 px-0.5">
-          {activeItems.map((item) => (
-            <CapabilityRow key={item.id} item={item} onPick={onPickExample} compact />
-          ))}
+          {activeItems.length === 0 ? (
+            <p className={cn(WL_DIRECTOR_CLASSES.metaCaption, "px-2 py-3 text-muted-foreground")}>
+              No skills match &ldquo;{query.trim()}&rdquo;
+            </p>
+          ) : (
+            activeItems.map((item) => (
+              <CapabilityRow key={item.id} item={item} onPick={onPickExample} compact />
+            ))
+          )}
         </div>
       </div>
     );

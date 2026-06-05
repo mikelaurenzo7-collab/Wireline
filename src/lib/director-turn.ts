@@ -31,7 +31,9 @@ import {
 } from "./workspace-planner";
 import type { ToolSchema } from "./claude-structured";
 import { CLAUDE_MODELS } from "./claude-models";
-import { wantsDeepAnalysis } from "./director-planner";
+import { wantsDeepAnalysis } from "./director-deep-analysis";
+import { log } from "./server-context";
+import { getErrorMessage } from "./server-utils";
 import {
   appendResearchToUserPrompt,
   fetchDirectorResearchContext,
@@ -64,6 +66,8 @@ export interface DirectorTurnInput {
   business?: DirectorBusinessContext;
   /** Fleet mode only — forces Opus + extended thinking (also auto-detected from phrasing). */
   forceDeep?: boolean;
+  /** Skip Opus/deep heuristics (retry path after stream/deep failures). */
+  shallowOnly?: boolean;
 }
 
 async function loadBusinessContext(userId: string): Promise<DirectorBusinessContext | undefined> {
@@ -176,6 +180,7 @@ export async function planDirectorTurn(input: DirectorTurnInput): Promise<Direct
         stats: input.stats,
         business,
         forceDeep: input.forceDeep,
+        shallowOnly: input.shallowOnly,
       });
       return {
         mode: "fleet",
@@ -219,6 +224,7 @@ export async function planDirectorTurn(input: DirectorTurnInput): Promise<Direct
     stats: input.stats,
     business,
     forceDeep: input.forceDeep,
+    shallowOnly: input.shallowOnly,
   });
 
   return {
@@ -234,6 +240,25 @@ export async function planDirectorTurn(input: DirectorTurnInput): Promise<Direct
     thinkingDurationMs: fleetPlan.thinkingDurationMs,
     researchSources: fleetPlan.researchSources,
   };
+}
+
+/** Non-stream + stream fallback — retries without Opus/deep thinking if the first call fails. */
+export async function planDirectorTurnResilient(
+  input: DirectorTurnInput,
+): Promise<DirectorTurnResult> {
+  const tryDeep =
+    !input.focusAgentId?.trim() &&
+    (input.forceDeep === true || wantsDeepAnalysis(input.operatorMessage));
+  try {
+    return await planDirectorTurn(input);
+  } catch (e) {
+    if (!tryDeep) throw e;
+    log.warn("director deep turn failed, retrying without deep", {
+      userId: input.userId,
+      error: getErrorMessage(e),
+    });
+    return await planDirectorTurn({ ...input, forceDeep: false, shallowOnly: true });
+  }
 }
 
 export interface DirectorStreamContext {
@@ -258,7 +283,10 @@ export async function buildDirectorStreamContext(
 ): Promise<DirectorStreamContext> {
   const business = input.business ?? (await loadBusinessContext(input.userId));
   const focusId = input.focusAgentId?.trim();
-  const deep = !focusId && (input.forceDeep === true || wantsDeepAnalysis(input.operatorMessage));
+  const deep =
+    !input.shallowOnly &&
+    !focusId &&
+    (input.forceDeep === true || wantsDeepAnalysis(input.operatorMessage));
 
   if (focusId) {
     const ctx = await loadCoachContext(input.userId, focusId);

@@ -87,7 +87,12 @@ export async function fetchDirectorResearchContext(input: {
   if (!wantsDirectorWebResearch(input.operatorMessage)) return null;
 
   const query = buildDirectorResearchQuery(input.operatorMessage, input.history ?? []);
-  const grounded = await groundedSearch(query);
+  let grounded;
+  try {
+    grounded = await groundedSearch(query);
+  } catch {
+    return null;
+  }
   if (!grounded.answer?.trim() || grounded.groundingMode === "unavailable") return null;
 
   return {
