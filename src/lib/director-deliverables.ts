@@ -2,12 +2,17 @@
  * Director universal deliverables — client-safe intent detection and prompt
  * guidance for code, websites, and open-ended operator requests.
  */
+export { wantsStitchMediaRequest } from "./director-stitch-intent";
 
 const WEBSITE_SIGNAL =
   /\b(website|web\s*site|landing\s*page|homepage|home\s*page|site\s*map|sitemap|wireframe|web\s*design|design\s+(?:a|my|our|the)\s+(?:website|site|landing)|redesign\s+(?:the\s+)?(?:website|site)|new\s+site|multi-?page\s+site|e-?commerce\s+site|booking\s+page|service\s+area\s+page)\b/i;
 
 const CODE_SIGNAL =
-  /\b(code|source\s*code|typescript|javascript|python|sql|regex|api\s+route|express\s+route|react\s+component|next\.?js|vite|tailwind|css|html|json\s+schema|curl|bash\s+script|shell\s+script|automation\s+script|webhook\s+handler|unit\s+test|vitest|playwright|drizzle|migration|zod\s+schema|function\s|class\s|interface\s|type\s+alias|npm|package\.json|dockerfile|github\s+action)\b/i;
+  /\b(code|source\s*code|typescript|javascript|python|sql|regex|api\s+route|express\s+route|react\s+component|next\.?js|vite|tailwind|css|json\s+schema|curl|bash\s+script|shell\s+script|automation\s+script|webhook\s+handler|unit\s+test|vitest|playwright|drizzle|migration|zod\s+schema|function\s|class\s|interface\s|type\s+alias|npm|package\.json|dockerfile|github\s+action)\b/i;
+
+/** Natural-language coding asks without capability chips or explicit language keywords. */
+const CODE_NATURAL_SIGNAL =
+  /\b(?:write|build|implement|create|draft|give\s+me|show\s+me|need|help\s+me\s+(?:write|build|code))\s+(?:a\s+|an\s+|the\s+|my\s+)?(?:short\s+|simple\s+|small\s+)?(?:\w+\s+){0,4}(?:function|validator|validation|route|handler|endpoint|middleware|component|hook|script|module|utility|helper|parser|schema|migration|test(?:\s+suite)?|api)\b/i;
 
 const LOGO_CREATIVE_SIGNAL =
   /\b(logo|brand\s*pack|wordmark|favicon|app\s*icon|vectorize|vector\s+logo|generate\s+(?:\d+\s+)?(?:logo|brand)|create\s+(?:a\s+)?logo|design\s+(?:a\s+)?logo|brand\s+kit|icon\s+set)\b/i;
@@ -22,7 +27,14 @@ export function wantsWebsiteDeliverable(message: string): boolean {
 
 /** Operator asked for code or technical artifacts in chat. */
 export function wantsCodeDeliverable(message: string): boolean {
-  return CODE_SIGNAL.test(message.trim());
+  const trimmed = message.trim();
+  if (!trimmed) return false;
+  if (CODE_SIGNAL.test(trimmed)) return true;
+  if (CODE_NATURAL_SIGNAL.test(trimmed)) return true;
+  return (
+    /\b(zod|typescript|javascript|python)\b/i.test(trimmed) &&
+    /\b(validat|function|route|component)\w*/i.test(trimmed)
+  );
 }
 
 /** Route to logo/brand-pack creative approvals (not fleet LLM). */

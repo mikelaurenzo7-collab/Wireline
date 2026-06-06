@@ -79,7 +79,8 @@ import {
 } from "../lib/director-store";
 import { persistDirectorDeliverableArtifact } from "../lib/director-deliverable-artifacts";
 import type { DirectorFeatureFlags } from "../lib/director-feature-flags";
-import { wantsLongDeliverable } from "../lib/director-deliverables";
+import { wantsLongDeliverable, wantsStitchMediaRequest } from "../lib/director-deliverables";
+import { tryDirectorStitchTurn } from "../lib/director-stitch-service";
 import {
   collapseDirectorThreadDuplicates,
   insertDirectorReplyIfAbsent,
@@ -221,7 +222,7 @@ function filterDirectorArtifactsForThread(
     .filter(Boolean);
 
   return artifacts.filter((a) => {
-    if (a.toolName !== "director_deliverable") return true;
+    if (a.toolName !== "director_deliverable" && a.toolName !== "google_stitch") return true;
     const preview = (
       a.metadata as { operatorPreview?: string } | undefined
     )?.operatorPreview?.trim();
@@ -729,6 +730,7 @@ router.post(
       let coachAgentId: string | undefined;
       let coachAgentName: string | undefined;
       let researchSources: { title?: string; uri?: string }[] | undefined;
+      let stitchSession: { projectId: string; screenId: string; projectTitle?: string } | undefined;
 
       if (approval && featureFlags.toolExecution) {
         if (!approval.approved) {
@@ -759,94 +761,121 @@ router.post(
         approvals = creative.approvals;
         clarifyingQuestions = creative.clarifyingQuestions;
       } else {
-        const resolved = await resolveDirectorModelSelection(
-          req.user.id,
-          req.body ?? {},
-          loadDirectorChatModelPreference,
-          req.user.email,
-        );
-        if (!resolved.ok) {
-          reply =
-            resolved.status === 503
-              ? "The selected model isn't available on this workspace yet. Your message is saved — try Wireline Auto or contact your admin."
-              : "That model isn't available. Your message is saved — pick another model from the composer.";
-        } else if (!directorLlmConfigured(resolved.selection)) {
-          reply =
-            resolved.selection.provider === "openrouter"
-              ? "OpenRouter isn't configured on this workspace yet. Your message is saved — pick Wireline Auto or ask your admin to add OPENROUTER_API_KEY."
-              : "I can't respond right now — the LLM isn't configured. Your message is saved; try again later.";
-        } else {
-          try {
-            const turn = await planDirectorTurnResilient({
-              userId: req.user.id,
-              operatorMessage,
-              history,
-              fleet,
-              stats,
-              focusAgentId,
-              forceDeep: req.body?.forceDeep === true,
-              modelSelection: resolved.selection,
-            });
-            reply = turn.reply;
-            suggestions = turn.suggestions;
-            model = turn.model;
-            modelLabel = turn.modelLabel;
-            modelProvider = turn.modelProvider;
-            modelId = turn.modelId;
-            reasoning = turn.reasoning;
-            thinkingDurationMs = turn.thinkingDurationMs;
-            changes = turn.changes;
-            toolToggles = turn.toolToggles;
-            actions = turn.actions;
-            integrationJobs = turn.integrationJobs;
-            mode = turn.mode;
-            coachAgentId = turn.focusAgentId;
-            coachAgentName = turn.focusAgentName;
-            researchSources = turn.researchSources;
-          } catch (e) {
-            log.error("director planner failed", { error: getErrorMessage(e) });
-            reply =
-              "Sorry — I'm having trouble responding right now. Your message is saved; try again in a moment.";
+        let usedStitch = false;
+        if (
+          operatorMessage &&
+          featureFlags.stitchMedia &&
+          wantsStitchMediaRequest(operatorMessage)
+        ) {
+          const stitchTurn = await tryDirectorStitchTurn({
+            userId: req.user.id,
+            operatorMessage,
+          });
+          if (stitchTurn) {
+            usedStitch = true;
+            reply = stitchTurn.reply;
+            previews = stitchTurn.previews;
+            artifacts = stitchTurn.artifacts;
+            modelLabel = "Google Stitch";
+            modelProvider = "wireline";
+            thinkingDurationMs = stitchTurn.durationMs;
+            reasoning = stitchTurn.thinkingSummary;
+            stitchSession = stitchTurn.stitchSession;
           }
+        }
 
-          if (
-            isDirectorStubReply(reply) &&
-            wantsLongDeliverable(operatorMessage) &&
-            resolved.selection.provider === "wireline"
-          ) {
-            log.warn("director deliverable stub — retrying on sonnet", { userId: req.user.id });
+        if (!usedStitch) {
+          const resolved = await resolveDirectorModelSelection(
+            req.user.id,
+            req.body ?? {},
+            loadDirectorChatModelPreference,
+            req.user.email,
+          );
+          if (!resolved.ok) {
+            reply =
+              resolved.status === 503
+                ? "The selected model isn't available on this workspace yet. Your message is saved — try Wireline Auto or contact your admin."
+                : "That model isn't available. Your message is saved — pick another model from the composer.";
+          } else if (!directorLlmConfigured(resolved.selection)) {
+            reply =
+              resolved.selection.provider === "openrouter"
+                ? "OpenRouter isn't configured on this workspace yet. Your message is saved — pick Wireline Auto or ask your admin to add OPENROUTER_API_KEY."
+                : "I can't respond right now — the LLM isn't configured. Your message is saved; try again later.";
+          } else {
             try {
-              const retry = await planDirectorTurnResilient({
+              const turn = await planDirectorTurnResilient({
                 userId: req.user.id,
                 operatorMessage,
                 history,
                 fleet,
                 stats,
                 focusAgentId,
-                forceDeep: false,
-                shallowOnly: true,
-                modelSelection: { provider: "wireline", tier: "sonnet" },
+                forceDeep: req.body?.forceDeep === true,
+                modelSelection: resolved.selection,
               });
-              if (!isDirectorStubReply(retry.reply)) {
-                reply = retry.reply;
-                suggestions = retry.suggestions;
-                model = retry.model;
-                modelLabel = retry.modelLabel;
-                modelProvider = retry.modelProvider;
-                modelId = retry.modelId;
-                reasoning = retry.reasoning;
-                thinkingDurationMs = retry.thinkingDurationMs;
-                changes = retry.changes;
-                toolToggles = retry.toolToggles;
-                actions = retry.actions;
-                integrationJobs = retry.integrationJobs;
-                mode = retry.mode;
-                coachAgentId = retry.focusAgentId;
-                coachAgentName = retry.focusAgentName;
-                researchSources = retry.researchSources;
+              reply = turn.reply;
+              suggestions = turn.suggestions;
+              model = turn.model;
+              modelLabel = turn.modelLabel;
+              modelProvider = turn.modelProvider;
+              modelId = turn.modelId;
+              reasoning = turn.reasoning;
+              thinkingDurationMs = turn.thinkingDurationMs;
+              changes = turn.changes;
+              toolToggles = turn.toolToggles;
+              actions = turn.actions;
+              integrationJobs = turn.integrationJobs;
+              mode = turn.mode;
+              coachAgentId = turn.focusAgentId;
+              coachAgentName = turn.focusAgentName;
+              researchSources = turn.researchSources;
+            } catch (e) {
+              log.error("director planner failed", { error: getErrorMessage(e) });
+              reply =
+                "Sorry — I'm having trouble responding right now. Your message is saved; try again in a moment.";
+            }
+
+            if (
+              isDirectorStubReply(reply) &&
+              wantsLongDeliverable(operatorMessage) &&
+              resolved.selection.provider === "wireline"
+            ) {
+              log.warn("director deliverable stub — retrying on sonnet", { userId: req.user.id });
+              try {
+                const retry = await planDirectorTurnResilient({
+                  userId: req.user.id,
+                  operatorMessage,
+                  history,
+                  fleet,
+                  stats,
+                  focusAgentId,
+                  forceDeep: false,
+                  shallowOnly: true,
+                  modelSelection: { provider: "wireline", tier: "sonnet" },
+                });
+                if (!isDirectorStubReply(retry.reply)) {
+                  reply = retry.reply;
+                  suggestions = retry.suggestions;
+                  model = retry.model;
+                  modelLabel = retry.modelLabel;
+                  modelProvider = retry.modelProvider;
+                  modelId = retry.modelId;
+                  reasoning = retry.reasoning;
+                  thinkingDurationMs = retry.thinkingDurationMs;
+                  changes = retry.changes;
+                  toolToggles = retry.toolToggles;
+                  actions = retry.actions;
+                  integrationJobs = retry.integrationJobs;
+                  mode = retry.mode;
+                  coachAgentId = retry.focusAgentId;
+                  coachAgentName = retry.focusAgentName;
+                  researchSources = retry.researchSources;
+                }
+              } catch (retryErr) {
+                log.error("director deliverable retry failed", {
+                  error: getErrorMessage(retryErr),
+                });
               }
-            } catch (retryErr) {
-              log.error("director deliverable retry failed", { error: getErrorMessage(retryErr) });
             }
           }
         }
@@ -877,6 +906,7 @@ router.post(
           mode,
           researchSources,
           artifacts,
+          stitchSession,
         },
       );
 
@@ -1037,6 +1067,51 @@ router.post(
           }),
         );
         return;
+      }
+
+      if (featureFlags.stitchMedia && wantsStitchMediaRequest(operatorMessage)) {
+        sse.write("meta", {
+          model: "stitch",
+          modelLabel: "Google Stitch",
+          modelProvider: "wireline",
+          deep: false,
+          mode: "fleet",
+        });
+        sse.write("thinking_start", {});
+        const stitchTurn = await tryDirectorStitchTurn({
+          userId: req.user.id,
+          operatorMessage,
+          onProgress: (text) => sse.write("thinking_chunk", { text }),
+          signal: streamAbort.signal,
+        });
+        if (stitchTurn) {
+          sse.write("thinking_end", {
+            thinking: stitchTurn.thinkingSummary,
+            durationMs: stitchTurn.durationMs,
+          });
+          const donePayload: Record<string, unknown> = {
+            reply: stitchTurn.reply,
+            previews: stitchTurn.previews,
+            artifacts: stitchTurn.artifacts,
+            model: "sonnet",
+            modelLabel: "Google Stitch",
+            modelProvider: "wireline",
+            mode: "fleet",
+            thinkingDurationMs: stitchTurn.durationMs,
+            reasoning: stitchTurn.thinkingSummary,
+            stitchSession: stitchTurn.stitchSession,
+          };
+          await finalizeDirectorStreamTurn(
+            sse,
+            req.user.id,
+            operatorMessage,
+            stitchTurn.reply,
+            donePayload,
+            stitchTurn.thinkingSummary,
+            featureFlags,
+          );
+          return;
+        }
       }
 
       const streamCtx = await buildDirectorStreamContext({

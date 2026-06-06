@@ -14,6 +14,17 @@ const base = (() => {
 const EMAIL = process.env.DOGFOOD_EMAIL || "wireline.demo@trywireline.com";
 const PASSWORD = process.env.DOGFOOD_PASSWORD || "WirelineDemo!2026";
 
+function isStitchTurn(d) {
+  const reply = typeof d.reply === "string" ? d.reply.toLowerCase() : "";
+  return (
+    reply.includes("google stitch") ||
+    d.modelLabel === "Google Stitch" ||
+    (Array.isArray(d.previews) && d.previews.length > 0) ||
+    (Array.isArray(d.artifacts) &&
+      d.artifacts.some((a) => a && a.toolName === "google_stitch"))
+  );
+}
+
 const PROBES = [
   {
     id: "code",
@@ -23,12 +34,22 @@ const PROBES = [
     mode: "post",
   },
   {
+    id: "code-natural",
+    message: "I need a small function that checks if an email address looks valid.",
+    expect: (d) => typeof d.reply === "string" && d.reply.length > 60 && !isStitchTurn(d),
+    note: "natural-language code (no capability chip)",
+    mode: "post",
+  },
+  {
     id: "website",
     message:
       "Design a one-page website for a local HVAC company — include sitemap and a small HTML prototype.",
     expect: (d) => {
       const reply = typeof d.reply === "string" ? d.reply : "";
       const lower = reply.toLowerCase();
+      if (isStitchTurn(d)) {
+        return reply.length > 120;
+      }
       return (
         reply.length > 400 &&
         (reply.includes("```html") ||
@@ -54,8 +75,15 @@ const PROBES = [
       (!Array.isArray(d.approvals) || d.approvals.length === 0) &&
       typeof d.reply === "string" &&
       d.reply.length > 200,
-    note: "homepage hero stays on fleet LLM (stream)",
+    note: "homepage hero → Stitch or fleet LLM (stream)",
     mode: "stream",
+  },
+  {
+    id: "opus-auto",
+    message: "Summarize what Wireline Director can help me ship this week.",
+    expect: (d) => typeof d.reply === "string" && d.reply.length > 80,
+    note: "general fleet reply (post)",
+    mode: "post",
   },
 ];
 
@@ -133,7 +161,7 @@ async function sendDirectorStream(cookie, content) {
   if (!reader) throw new Error("No response body");
   const decoder = new TextDecoder();
   let buffer = "";
-  const deadline = Date.now() + 180_000;
+  const deadline = Date.now() + 300_000;
   while (Date.now() < deadline) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -172,8 +200,12 @@ async function main() {
         continue;
       }
       const artifact = data.deliverableArtifact;
-      const extra =
-        artifact?.name ? ` · artifact ${artifact.name}` : data.model ? ` · ${data.model}` : "";
+      const label = data.modelLabel || data.model;
+      const extra = artifact?.name
+        ? ` · artifact ${artifact.name}`
+        : label
+          ? ` · ${label}`
+          : "";
       console.log(`OK (${data.reply?.length ?? 0} chars${extra})`);
       passed++;
     } catch (e) {

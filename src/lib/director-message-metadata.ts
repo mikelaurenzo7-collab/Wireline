@@ -51,6 +51,12 @@ export interface DirectorDeliverableArtifactMeta {
   downloadUrl?: string;
 }
 
+export interface DirectorStitchSessionMeta {
+  projectId: string;
+  screenId: string;
+  projectTitle?: string;
+}
+
 export interface DirectorMessageMetadata {
   suggestions?: DirectorSuggestionMeta[];
   approvals?: DirectorApprovalMeta[];
@@ -58,6 +64,7 @@ export interface DirectorMessageMetadata {
   clarifyingQuestions?: string[];
   researchSources?: { title?: string; uri?: string }[];
   deliverableArtifact?: DirectorDeliverableArtifactMeta;
+  stitchSession?: DirectorStitchSessionMeta;
   proposals?: DirectorProposalsMeta;
   model?: "sonnet" | "opus";
   modelLabel?: string;
@@ -80,6 +87,7 @@ export function packDirectorMetadata(
     (meta.clarifyingQuestions?.length ?? 0) > 0 ||
     (meta.researchSources?.length ?? 0) > 0 ||
     Boolean(meta.deliverableArtifact?.id) ||
+    Boolean(meta.stitchSession?.projectId) ||
     (meta.proposals &&
       (meta.proposals.changes.length > 0 ||
         meta.proposals.toolToggles.length > 0 ||
@@ -140,6 +148,10 @@ export function buildDirectorMetadataFromTurn(
     deliverableArtifact:
       data.deliverableArtifact && typeof data.deliverableArtifact === "object"
         ? (data.deliverableArtifact as DirectorDeliverableArtifactMeta)
+        : undefined,
+    stitchSession:
+      data.stitchSession && typeof data.stitchSession === "object"
+        ? (data.stitchSession as DirectorStitchSessionMeta)
         : undefined,
     proposals: hasProposals ? { changes, toolToggles, actions, integrationJobs } : undefined,
     model: (data.model as "sonnet" | "opus") || undefined,

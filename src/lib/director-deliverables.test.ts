@@ -5,6 +5,7 @@ import {
   wantsCodeDeliverable,
   wantsLogoCreativePath,
   wantsLongDeliverable,
+  wantsStitchMediaRequest,
   wantsWebsiteDeliverable,
 } from "./director-deliverables";
 
@@ -25,6 +26,15 @@ describe("director deliverables", () => {
   it("detects code deliverables", () => {
     expect(wantsCodeDeliverable("Write a TypeScript Express route with Zod validation")).toBe(true);
     expect(wantsLongDeliverable("Build a React component for our pricing table")).toBe(true);
+    expect(
+      wantsCodeDeliverable("Write a short function that validates US phone numbers with Zod"),
+    ).toBe(true);
+    expect(wantsCodeDeliverable("Help me build a webhook handler for Stripe")).toBe(true);
+  });
+
+  it("detects stitch media without capability chips", () => {
+    expect(wantsStitchMediaRequest("Design a landing page for my plumbing business")).toBe(true);
+    expect(wantsStitchMediaRequest("Write a Zod validator for emails")).toBe(false);
   });
 
   it("includes website and code guidance in system append", () => {
