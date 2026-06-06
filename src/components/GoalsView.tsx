@@ -463,7 +463,7 @@ export default function GoalsView() {
     );
   }
 
-  if (err || !data) {
+  if (err || !data || !data.metrics || !data.goals) {
     return (
       <div className="rounded-md bg-rose-500/10 border border-rose-500/30 p-6 text-rose-600 text-sm">
         {err || "Goals unavailable."}

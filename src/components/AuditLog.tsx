@@ -286,7 +286,7 @@ export default function AuditLog() {
         critical_count: statsData.by_severity?.critical || 0,
       };
 
-      setEvents(eventsData.events);
+      setEvents(eventsData.events ?? []);
       setStats(mappedStats);
     } catch (err) {
       console.error("Failed to load audit log:", err);
