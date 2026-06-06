@@ -107,6 +107,22 @@ async function gotoStable(page, url) {
   await page.waitForTimeout(1500);
 }
 
+// Marketing/landing pages reveal most sections with `whileInView`
+// (intersection-observer) animations that start at opacity:0 and only animate
+// in once scrolled into view. A static full-page screenshot never scrolls, so
+// those sections capture as empty cream voids — making the page look broken
+// when it isn't. Before a full-page shot, walk the scroll position down the
+// document (and back to top) so every reveal fires.
+async function revealOnScroll(page) {
+  const height = await page.evaluate(() => document.body.scrollHeight);
+  for (let y = 0; y < height; y += 700) {
+    await page.evaluate((yy) => window.scrollTo(0, yy), y);
+    await page.waitForTimeout(220);
+  }
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(500);
+}
+
 async function waitForApp(page) {
   await gotoStable(page, BASE_URL);
 }
@@ -243,8 +259,11 @@ async function routes() {
 async function viewports() {
   // When --route is passed, sweep just that route across breakpoints; otherwise
   // sweep a representative set covering public + auth-gate surfaces.
+  // Default set covers the public surfaces that render fully without a session.
+  // (`/showcase` is the real Demos page; `/demos` and `/director` are NOT routes
+  // and redirect to the sign-in gate — use the authed-qa harness for the console.)
   const routeFlag = getFlag("route");
-  const ROUTES = routeFlag ? [routeFlag] : ["/", "/pricing", "/demos", "/director"];
+  const ROUTES = routeFlag ? [routeFlag] : ["/", "/pricing", "/showcase", "/compare"];
 
   console.log(
     `[driver] Viewport sweep — ${ROUTES.length} route(s) × ${VIEWPORTS.length} breakpoints${
@@ -257,6 +276,9 @@ async function viewports() {
     try {
       for (const route of ROUTES) {
         await gotoStable(page, `${BASE_URL}${route}`);
+        // For full-page shots, trigger scroll-reveal sections first so the
+        // capture reflects the real page, not empty pre-animation voids.
+        if (FULL_PAGE) await revealOnScroll(page);
         const slug = route.replace(/\//g, "-").replace(/^-/, "") || "index";
         const name = `vp-${vp.name}-${slug}`;
         await page.screenshot({ path: ssPath(name), fullPage: FULL_PAGE });

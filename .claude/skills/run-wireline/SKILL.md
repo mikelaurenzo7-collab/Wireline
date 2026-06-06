@@ -198,9 +198,10 @@ Use `npm run verify` before pushing — it runs the full CI-equivalent pipeline.
 |---|---|---|
 | `/` | No | Marketing landing page |
 | `/pricing` | No | Plans & pricing |
-| `/demos` | No | Demo lines |
+| `/showcase` | No | Demo lines (the "Demos" nav target; `/demos` is **not** a route and redirects to sign-in) |
 | `/compare` | No | Competitor comparison |
 | `/about` | No | About page |
+| `/support` | No | Support / ticket form |
 | `/chat` | Yes | Director Chat (AI workspace; renders in-chat Google Stitch designs) |
 | `/agents` | Yes | Agent fleet management |
 | `/training` | Yes | Training & playbooks |
@@ -217,6 +218,13 @@ Authenticated routes redirect to the login page at `/auth`.
   The Playwright driver defaults to `http://localhost:3000`.
 - **No database needed for frontend:** The server logs Postgres connection errors
   but continues serving. Public marketing routes work without a DB.
+- **Scroll-reveal on marketing pages:** the landing/marketing pages reveal most
+  sections with `whileInView` (intersection-observer) animations that start at
+  `opacity:0`. A static `--full` screenshot never scrolls, so those sections
+  capture as **empty cream voids** — the page looks broken when it isn't. The
+  `viewports --full` action scrolls the document to fire every reveal before
+  capturing (`revealOnScroll`); don't "fix" a void you see in a non-scrolled
+  full-page shot without confirming it persists after scroll.
 - **Auth-gated routes:** Director Chat, agents, training, ops, insights,
   integrations, and settings all redirect to `/auth` without a session. The
   driver's `interact` action gracefully detects this.
