@@ -36,6 +36,12 @@ interface EmptyStateProps {
    * (wl-panel-elevated) so insights / dashboard panels share a single primitive.
    */
   framed?: boolean;
+  /**
+   * Center the empty state in its available vertical space (min 55vh) so a
+   * full-page / full-tab empty doesn't cling to the top of the viewport with a
+   * large dead void below it. Opt-in: only the sole-content empties should fill.
+   */
+  fill?: boolean;
   /** compact = embedded panels with less vertical padding */
   density?: "default" | "compact";
   /** Optional slot between description and action buttons (task grids, hints). */
@@ -56,6 +62,7 @@ export function EmptyState({
   eyebrow = "No data yet",
   accent,
   framed = false,
+  fill = false,
   density = "default",
   children,
 }: EmptyStateProps) {
@@ -159,9 +166,9 @@ export function EmptyState({
     </motion.div>
   );
 
-  if (!framed) return body;
-
-  return (
+  const content = !framed ? (
+    body
+  ) : (
     <div
       className={cn(
         WL_APP_CLASSES.panelFrame,
@@ -171,4 +178,11 @@ export function EmptyState({
       {body}
     </div>
   );
+
+  if (!fill) return content;
+
+  // Center the empty surface within its available vertical space (keeping the
+  // panel full-width via flex-col stretch) so full-page empties read as
+  // balanced rather than top-glued with a large void beneath them.
+  return <div className="flex flex-col w-full min-h-[55vh] justify-center">{content}</div>;
 }

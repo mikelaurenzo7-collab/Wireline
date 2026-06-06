@@ -126,7 +126,7 @@ still redirect to the sign-in gate.
 ## Authenticated QA — client console + in-chat Google Stitch render
 
 Auth-gated routes (`/chat`, `/agents`, `/training`, `/ops`, `/insights`,
-`/integrations`, `/settings`) redirect to `/auth` without a session. To screenshot
+`/integrations`, `/admin`) redirect to `/auth` without a session. To screenshot
 the **real operator console** without a database, use the second driver,
 `.claude/skills/run-wireline/authed-qa.mjs`. It intercepts every request: it
 fulfills `/api/**` with mocks (so `/api/auth/session` returns a mock owner and the
@@ -150,7 +150,7 @@ npx vite preview --port 4173 --host 127.0.0.1 &   # serve dist/ statically
 for VP in "390x844:mobile" "834x1112:tablet" "1440x900:desktop"; do
   SIZE="${VP%%:*}"; NAME="${VP##*:}"
   QA_URL=http://127.0.0.1:4173 QA_VIEWPORT=$SIZE QA_OUT=/tmp/wireline-screenshots/$NAME \
-    QA_ROUTES="/chat,/agents,/training,/ops,/insights,/integrations,/settings" \
+    QA_ROUTES="/chat,/agents,/training,/ops,/insights,/integrations,/admin" \
     node .claude/skills/run-wireline/authed-qa.mjs
 done
 ```
@@ -207,7 +207,7 @@ Use `npm run verify` before pushing — it runs the full CI-equivalent pipeline.
 | `/ops` | Yes | Operations dashboard |
 | `/insights` | Yes | Analytics & insights |
 | `/integrations` | Yes | Integration marketplace |
-| `/settings` | Yes | Account settings |
+| `/admin` | Yes | Account settings (branding, team, billing, carrier) — the "Settings" nav target; `/settings` is **not** a route and 404s |
 
 Authenticated routes redirect to the login page at `/auth`.
 
