@@ -206,7 +206,11 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
             WL_DIRECTOR_CLASSES.composerToolChip,
             "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
             selection.provider === "openrouter" && WL_DIRECTOR_CLASSES.composerToolChipEngaged,
-            "h-auto touch-press rounded-full shadow-none max-w-[140px]",
+            // Cap width so the chip stays compact where the toolbar is tight
+            // (mobile shows the short "Model" label; tablet keeps 140px), but
+            // give it room on large screens so the default "Auto (recommended)"
+            // label renders in full instead of truncating to "Auto (rec…".
+            "h-auto touch-press rounded-full shadow-none max-w-[140px] lg:max-w-[220px]",
           )}
         >
           {saving || loading ? (
