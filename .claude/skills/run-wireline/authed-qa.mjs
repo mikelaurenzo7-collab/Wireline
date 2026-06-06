@@ -25,10 +25,92 @@ const MOCK_USER = {
   is_owner: true,
 };
 
+// A self-contained "design screenshot" rendered as an SVG data URL, so the
+// Stitch gallery's Screenshot tab shows a real image with zero network. Mimics
+// a Stitch-generated landing-page mock in Wireline's brand palette.
+const STITCH_PREVIEW_SVG =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1180" viewBox="0 0 900 1180">
+      <rect width="900" height="1180" fill="#EFE9DC"/>
+      <rect width="900" height="64" fill="#1A1614"/>
+      <circle cx="44" cy="32" r="10" fill="#8B3FD6"/>
+      <rect x="64" y="26" width="120" height="12" rx="3" fill="#EFE9DC"/>
+      <rect x="660" y="22" width="90" height="20" rx="10" fill="#8B3FD6"/>
+      <rect x="770" y="22" width="90" height="20" rx="10" fill="#6B2FA8"/>
+      <rect x="80" y="150" width="520" height="44" rx="6" fill="#1A1614"/>
+      <rect x="80" y="208" width="440" height="44" rx="6" fill="#4F1E7B"/>
+      <rect x="80" y="300" width="620" height="16" rx="4" fill="#1A1614" opacity="0.55"/>
+      <rect x="80" y="328" width="560" height="16" rx="4" fill="#1A1614" opacity="0.4"/>
+      <rect x="80" y="392" width="180" height="48" rx="8" fill="#8B3FD6"/>
+      <rect x="280" y="392" width="160" height="48" rx="8" fill="none" stroke="#4F1E7B" stroke-width="2"/>
+      <rect x="80" y="520" width="240" height="300" rx="14" fill="#ffffff" stroke="#8B3FD6" stroke-opacity="0.25"/>
+      <rect x="340" y="520" width="240" height="300" rx="14" fill="#ffffff" stroke="#8B3FD6" stroke-opacity="0.25"/>
+      <rect x="600" y="520" width="240" height="300" rx="14" fill="#ffffff" stroke="#8B3FD6" stroke-opacity="0.25"/>
+      <circle cx="120" cy="572" r="20" fill="#8B3FD6" opacity="0.85"/>
+      <circle cx="380" cy="572" r="20" fill="#6B2FA8" opacity="0.85"/>
+      <circle cx="640" cy="572" r="20" fill="#10B981" opacity="0.85"/>
+      <rect x="100" y="900" width="700" height="200" rx="16" fill="#4F1E7B"/>
+      <rect x="140" y="950" width="360" height="22" rx="5" fill="#EFE9DC"/>
+      <rect x="140" y="990" width="300" height="14" rx="4" fill="#EFE9DC" opacity="0.7"/>
+      <rect x="600" y="980" width="150" height="44" rx="8" fill="#8B3FD6"/>
+    </svg>`,
+  );
+
+// A Director conversation that exercises the chat thread AND the Google Stitch
+// in-chat render (the gallery only mounts when a message's previews[0] is a
+// Stitch preview — kind:"stitch" or rationale matching /google stitch/i).
+const STITCH_CONVERSATION = {
+  messages: [
+    {
+      id: "qa-user-1",
+      role: "user",
+      content: "Design a landing page for my new home-services brand, Brightline.",
+      createdAt: new Date(Date.now() - 60000).toISOString(),
+    },
+    {
+      id: "qa-director-1",
+      role: "director",
+      content:
+        "Here's a first pass from Google Stitch — a clean, conversion-focused landing page in your brand palette. Flip to Live HTML to interact, or Export to hand it to your dev team.",
+      createdAt: new Date(Date.now() - 45000).toISOString(),
+      model: "opus",
+      modelLabel: "Opus",
+      previews: [
+        {
+          conceptId: "qa-stitch-1",
+          title: "Brightline — Hero + Services",
+          rationale: "Google Stitch concept, desktop-first.",
+          kind: "stitch",
+          previewDataUrl: STITCH_PREVIEW_SVG,
+          htmlDownloadUrl: "/api/director/files/qa-stitch-1.html?inline=1",
+          imageDownloadUrl: "/api/director/files/qa-stitch-1.png",
+          deviceType: "DESKTOP",
+        },
+        {
+          conceptId: "qa-stitch-2",
+          title: "Brightline — Mobile variant",
+          rationale: "Google Stitch concept, mobile layout.",
+          kind: "stitch",
+          previewDataUrl: STITCH_PREVIEW_SVG,
+          htmlDownloadUrl: "/api/director/files/qa-stitch-2.html?inline=1",
+          deviceType: "MOBILE",
+        },
+      ],
+    },
+  ],
+  artifacts: [],
+  fleet: [],
+  featureFlags: { toolExecution: true },
+  degraded: false,
+};
+
 // Sensible empty defaults so pages don't crash on missing data.
 function mockApi(urlPath) {
   if (urlPath.includes("/auth/session")) return { user: MOCK_USER };
   if (urlPath.includes("/nav-counts")) return {};
+  // Director chat: return a thread that includes a live Google Stitch render.
+  if (urlPath.includes("/director/messages")) return STITCH_CONVERSATION;
   if (urlPath.includes("/agents")) return { agents: [] };
   if (urlPath.includes("/settings")) return { settings: {} };
   // Generic: arrays for list-y endpoints, object otherwise.
@@ -61,17 +143,29 @@ async function main() {
     }
   });
 
-  await context.route("**/api/**", async (route) => {
-    const u = new URL(route.request().url());
-    try {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(mockApi(u.pathname)),
-      });
-    } catch {
-      await route.abort();
+  // One handler for every request: fulfill API calls with mocks, let same-origin
+  // app assets through, and abort anything off-origin (Google Fonts, analytics)
+  // so `networkidle` actually settles in a network-restricted sandbox.
+  await context.route("**/*", async (route) => {
+    const url = route.request().url();
+    if (url.includes("/api/")) {
+      const u = new URL(url);
+      try {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(mockApi(u.pathname)),
+        });
+      } catch {
+        await route.abort();
+      }
+      return;
     }
+    if (url.startsWith(BASE_URL) || url.startsWith("data:") || url.startsWith("blob:")) {
+      await route.continue();
+      return;
+    }
+    await route.abort();
   });
 
   const page = await context.newPage();

@@ -137,17 +137,18 @@ export default function DirectorStitchPreviewGallery({
         )}
       </div>
 
-      <div className="flex flex-wrap gap-1 mb-3 p-1 rounded-xl bg-black/[0.03] dark:bg-white/[0.04] border border-brand/10">
+      <div className="flex flex-wrap gap-1 mb-3 p-1 rounded-md bg-black/[0.03] dark:bg-white/[0.04] border border-brand/10">
         {tabs.map((t) => {
           const Icon = t.icon;
           const selected = tab === t.id;
           return (
-            <button
+            <ShadButton
               key={t.id}
               type="button"
+              variant="ghost"
               onClick={() => setTab(t.id)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all",
+                "h-auto flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all",
                 selected
                   ? "bg-paper dark:bg-velvet/80 text-brand shadow-sm border border-brand/20"
                   : "text-muted hover:text-ink hover:bg-paper/60",
@@ -155,7 +156,7 @@ export default function DirectorStitchPreviewGallery({
             >
               <Icon className="w-3.5 h-3.5" />
               {t.label}
-            </button>
+            </ShadButton>
           );
         })}
       </div>
@@ -167,7 +168,7 @@ export default function DirectorStitchPreviewGallery({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-          className="rounded-xl border border-brand/15 bg-gradient-to-b from-paper/98 to-paper/90 dark:from-velvet/70 dark:to-velvet/50 overflow-hidden shadow-[0_20px_50px_-24px_rgba(107,47,168,0.35)]"
+          className="rounded-md border border-brand/15 bg-gradient-to-b from-paper/98 to-paper/90 dark:from-velvet/70 dark:to-velvet/50 overflow-hidden shadow-[0_20px_50px_-24px_rgba(107,47,168,0.35)]"
         >
           {tab === "design" && (
             <DeviceChrome device={active.deviceType}>
@@ -220,7 +221,7 @@ export default function DirectorStitchPreviewGallery({
                         return active.htmlDownloadUrl!;
                       }
                     })()}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold bg-brand text-white hover:bg-brand-deep transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold bg-brand text-white hover:bg-brand-deep transition-colors"
                   >
                     <Download className="w-3.5 h-3.5" />
                     HTML prototype
@@ -229,7 +230,7 @@ export default function DirectorStitchPreviewGallery({
                 {active.imageDownloadUrl && (
                   <a
                     href={active.imageDownloadUrl}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold border border-brand/25 text-brand bg-brand/5 hover:bg-brand/10"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold border border-brand/25 text-brand bg-brand/5 hover:bg-brand/10"
                   >
                     <Download className="w-3.5 h-3.5" />
                     PNG screenshot
@@ -240,7 +241,7 @@ export default function DirectorStitchPreviewGallery({
                     href={active.htmlDownloadUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold border border-black/10 hover:border-brand/20"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold border border-black/10 hover:border-brand/20"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                     Open live

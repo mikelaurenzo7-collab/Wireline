@@ -59,7 +59,7 @@ npm run verify   # lint + docs:check + authz:check + test + build
 
 ## Run (agent path) — Playwright driver
 
-The driver supports four actions:
+The driver supports five actions:
 
 ```bash
 # Smoke test: landing page + Director Chat (or login redirect)
@@ -73,19 +73,27 @@ node .claude/skills/run-wireline/driver.mjs interact
 
 # Screenshot all major routes for visual QA
 node .claude/skills/run-wireline/driver.mjs routes
+
+# Responsive QA: key routes at mobile (390) / tablet (834) / desktop (1440)
+node .claude/skills/run-wireline/driver.mjs viewports
+# …or one route across all three breakpoints, full-page:
+node .claude/skills/run-wireline/driver.mjs viewports --route /pricing --full
 ```
 
 **Options:**
 - `--url URL` — base URL (default: `http://localhost:3000`)
-- `--route PATH` — route for `screenshot` action (default: `/`)
+- `--route PATH` — route for `screenshot` / `viewports` (default: `/`)
 - `--out DIR` — screenshot output dir (default: `/tmp/wireline-screenshots`)
+- `--full` — full-page (scrolled) screenshots for `viewports`, not just the fold
 - `--headed` — visible browser (non-headless)
 - `--block-external` — abort all non-base-origin requests (fonts, analytics).
   Use in network-restricted environments where blocked third-party requests
   would otherwise stall navigation.
 
 Screenshots land in `/tmp/wireline-screenshots/` as PNG files at 2x retina
-resolution (1440×900 viewport).
+resolution (default desktop 1440×900; `viewports` emits `vp-<size>-<route>.png`
+for mobile 390 / tablet 834 / desktop 1440 — Wireline designs mobile-first at
+390px, so that's the canonical small breakpoint).
 
 The driver waits with `commit` + a poll for the React root to render — **not**
 `networkidle`. The app holds long-lived connections (auth SSE, analytics), so
@@ -114,6 +122,48 @@ node .claude/skills/run-wireline/driver.mjs routes \
 API calls 404 against `vite preview` (it's static-only), so this is for
 **frontend / visual QA**; the marketing pages render fully and auth-gated routes
 still redirect to the sign-in gate.
+
+## Authenticated QA — client console + in-chat Google Stitch render
+
+Auth-gated routes (`/chat`, `/agents`, `/training`, `/ops`, `/insights`,
+`/integrations`, `/settings`) redirect to `/auth` without a session. To screenshot
+the **real operator console** without a database, use the second driver,
+`.claude/skills/run-wireline/authed-qa.mjs`. It intercepts every request: it
+fulfills `/api/**` with mocks (so `/api/auth/session` returns a mock owner and the
+console renders), lets same-origin app assets through, and aborts off-origin
+requests so `networkidle` settles.
+
+Critically, it mocks `GET /api/director/messages` with a Director thread that
+**includes a Google Stitch in-chat render** — the `DirectorStitchPreviewGallery`
+only mounts when a message's `previews[0]` is a Stitch preview (`kind:"stitch"`),
+so the mock supplies one with an inline SVG data-URL screenshot. This renders the
+Screenshot / Live HTML / Export tabs and the device-framed design preview with
+zero network and no real Stitch backend.
+
+Run it against the static preview (works in network-restricted sandboxes), once
+per breakpoint for responsive coverage:
+
+```bash
+npm run build
+npx vite preview --port 4173 --host 127.0.0.1 &   # serve dist/ statically
+
+for VP in "390x844:mobile" "834x1112:tablet" "1440x900:desktop"; do
+  SIZE="${VP%%:*}"; NAME="${VP##*:}"
+  QA_URL=http://127.0.0.1:4173 QA_VIEWPORT=$SIZE QA_OUT=/tmp/wireline-screenshots/$NAME \
+    QA_ROUTES="/chat,/agents,/training,/ops,/insights,/integrations,/settings" \
+    node .claude/skills/run-wireline/authed-qa.mjs
+done
+```
+
+Screenshots land in `/tmp/wireline-screenshots/<size>/authed-<route>.png`; the
+`/chat` shot shows the live Stitch gallery. The script also writes
+`authed-qa.json` with a flex-height diagnostic per route (flags content clipped
+mid-viewport or large bottom dead-space). `QA_VIEWPORT` defaults to `1440x900`,
+`QA_ROUTES` to the full sidebar set.
+
+**Expected noise (not failures):** `Failed to load resource: net::ERR_FAILED`
+(aborted off-origin fonts/analytics) and, on `/ops`, an `EventSource ... MIME
+type` warning (the SSE endpoint gets a JSON mock). Both are harmless for visual QA.
 
 ## Run (human path)
 
@@ -151,7 +201,7 @@ Use `npm run verify` before pushing — it runs the full CI-equivalent pipeline.
 | `/demos` | No | Demo lines |
 | `/compare` | No | Competitor comparison |
 | `/about` | No | About page |
-| `/director` | Yes | Director Chat (AI workspace) |
+| `/chat` | Yes | Director Chat (AI workspace; renders in-chat Google Stitch designs) |
 | `/agents` | Yes | Agent fleet management |
 | `/training` | Yes | Training & playbooks |
 | `/ops` | Yes | Operations dashboard |
@@ -175,6 +225,14 @@ Authenticated routes redirect to the login page at `/auth`.
   for the React root to populate (not `networkidle`, which never settles here).
 - **Env stubbing:** Missing Stripe / Vapi / Anthropic keys return 503 with
   actionable JSON — the console still loads for UI work.
+- **Director Chat route is `/chat`, not `/director`:** `/director` redirects to
+  the `/auth` sign-in gate. The authenticated workspace (and the in-chat Stitch
+  render) lives at `/chat` — that's what `authed-qa.mjs` screenshots.
+- **Stitch gallery is metadata-gated:** `DirectorStitchPreviewGallery` only
+  mounts when a Director message's `previews[0]` is a Stitch preview
+  (`kind:"stitch"` or a rationale matching `/google stitch/i`). To QA it without
+  the real Stitch backend, mock `/api/director/messages` to include one — see the
+  `STITCH_CONVERSATION` mock in `authed-qa.mjs`.
 
 ## Troubleshooting
 
