@@ -8,6 +8,10 @@ vi.mock("./director-stitch-service", () => ({
   tryDirectorStitchTurn: vi.fn(),
 }));
 
+vi.mock("./google-stitch-config", () => ({
+  isGoogleStitchConfigured: vi.fn(() => false),
+}));
+
 vi.mock("./director-stitch-brief", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./director-stitch-brief")>();
   return {
@@ -24,10 +28,13 @@ vi.mock("./director-stitch-brief", async (importOriginal) => {
 });
 
 import { tryDirectorStitchTurn } from "./director-stitch-service";
+import { isGoogleStitchConfigured } from "./google-stitch-config";
+import { WIRELINE_STITCH_UI } from "./wireline-director-design";
 
 describe("director stitch fallback", () => {
   beforeEach(() => {
     vi.mocked(tryDirectorStitchTurn).mockReset();
+    vi.mocked(isGoogleStitchConfigured).mockReturnValue(false);
   });
 
   const input = {
@@ -77,7 +84,7 @@ describe("director stitch fallback", () => {
     }
   });
 
-  it("falls back to LLM design context when stitch returns null", async () => {
+  it("falls back to LLM design context when stitch returns null and Stitch is off", async () => {
     vi.mocked(tryDirectorStitchTurn).mockResolvedValueOnce(null);
 
     const result = await resolveStitchDirectorPath(input);
@@ -88,6 +95,17 @@ describe("director stitch fallback", () => {
         artifactType: "stitch-design-brief",
         name: "design.md",
       });
+    }
+  });
+
+  it("returns stitch-failed copy when stitch returns null but Stitch is configured", async () => {
+    vi.mocked(isGoogleStitchConfigured).mockReturnValue(true);
+    vi.mocked(tryDirectorStitchTurn).mockResolvedValueOnce(null);
+
+    const result = await resolveStitchDirectorPath(input);
+    expect(result.kind).toBe("stitch-failed");
+    if (result.kind === "stitch-failed") {
+      expect(result.turn.reply).toBe(WIRELINE_STITCH_UI.failReply);
     }
   });
 

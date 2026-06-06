@@ -150,7 +150,15 @@ interface DirectorPreview {
   kind?: "logo" | "stitch";
   htmlDownloadUrl?: string;
   imageDownloadUrl?: string;
+  htmlArtifactId?: string;
+  imageArtifactId?: string;
   deviceType?: "DESKTOP" | "MOBILE" | "TABLET" | "AGNOSTIC";
+}
+
+interface DirectorStitchSession {
+  projectId: string;
+  screenId: string;
+  projectTitle?: string;
 }
 
 interface DirectorMessage {
@@ -172,6 +180,8 @@ interface DirectorMessage {
   modelId?: string;
   coachAgentId?: string;
   coachAgentName?: string;
+  stitchSession?: DirectorStitchSession;
+  stitchAssetsPending?: boolean;
   proposals?: {
     changes: ProposedChange[];
     toolToggles: ProposedToolToggle[];
@@ -315,12 +325,67 @@ export default function DirectorWorkspace({
         modelId: typeof data.modelId === "string" ? data.modelId : undefined,
         coachAgentId: (data.focusAgentId as string) || focusAgentId || undefined,
         coachAgentName: (data.focusAgentName as string) || focusedAgent?.name || undefined,
+        stitchSession:
+          data.stitchSession && typeof data.stitchSession === "object"
+            ? (data.stitchSession as DirectorStitchSession)
+            : undefined,
+        stitchAssetsPending: data.stitchAssetsPending === true,
         proposals: hasProposals ? { changes, toolToggles, actions, integrationJobs } : undefined,
       };
       setMessages((prev) => [...prev, reply]);
       if (Array.isArray(data.artifacts)) setArtifacts(data.artifacts as DirectorArtifact[]);
+      return reply;
     },
     [focusAgentId, focusedAgent?.name],
+  );
+
+  const pollStitchFinalize = useCallback(
+    async (message: DirectorMessage, operatorMessage: string) => {
+      const session = message.stitchSession;
+      if (!session?.projectId || !session.screenId) return false;
+
+      const waits = [3_000, 6_000, 10_000, 15_000, 20_000, 25_000, 30_000, 40_000, 50_000];
+      for (const waitMs of waits) {
+        await new Promise((resolve) => setTimeout(resolve, waitMs));
+        const r = await authFetch("/api/director/stitch/finalize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            projectId: session.projectId,
+            screenId: session.screenId,
+            operatorMessage,
+          }),
+        });
+        if (r.status === 202) continue;
+        if (!r.ok) continue;
+        const data = await r.json();
+        if (!data.ok || !Array.isArray(data.previews) || data.previews.length === 0) continue;
+
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === message.id
+              ? {
+                  ...m,
+                  previews: data.previews as DirectorPreview[],
+                  stitchAssetsPending: false,
+                }
+              : m,
+          ),
+        );
+        if (Array.isArray(data.artifacts)) {
+          setArtifacts((prev) => {
+            const merged = [...prev];
+            for (const a of data.artifacts as DirectorArtifact[]) {
+              if (!merged.some((x) => x.id === a.id)) merged.unshift(a);
+            }
+            return merged;
+          });
+        }
+        return true;
+      }
+      return false;
+    },
+    [],
   );
 
   const loadMessages = useCallback(async () => {
@@ -558,7 +623,14 @@ export default function DirectorWorkspace({
         });
         const parsed = await readApiJson<Record<string, unknown>>(r);
         if (!parsed.ok) throw new Error(parsed.error);
-        appendDirectorReply(parsed.data);
+        const reply = appendDirectorReply(parsed.data);
+        if (
+          parsed.data.stitchAssetsPending === true &&
+          reply.stitchSession?.projectId &&
+          reply.stitchSession?.screenId
+        ) {
+          void pollStitchFinalize(reply, trimmed);
+        }
       } catch {
         if (opts?.recoverPersistedReply) {
           const recovered = await recoverPersistedDirectorReply(
@@ -595,6 +667,7 @@ export default function DirectorWorkspace({
       featureFlags.stitchMedia,
       stitchBrandingAvailable,
       useStitchAccountBranding,
+      pollStitchFinalize,
     ],
   );
   sendNonStreamingRef.current = sendNonStreaming;

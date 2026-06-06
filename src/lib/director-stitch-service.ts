@@ -61,6 +61,8 @@ export interface DirectorStitchTurnResult {
   previews: DirectorPreviewMeta[];
   artifacts: Array<Record<string, unknown>>;
   stitchSession?: StitchSession;
+  /** Screen composed in Stitch but HTML/PNG still packaging — client should call finalize. */
+  stitchAssetsPending?: boolean;
   thinkingSummary: string;
   durationMs: number;
   clarifyingQuestions?: string[];
@@ -128,24 +130,40 @@ async function fetchRemoteAsset(url: string, signal?: AbortSignal): Promise<Buff
 }
 
 async function fetchScreenAssets(
+  runtime: GoogleStitchRuntime,
   screen: Screen,
   signal?: AbortSignal,
 ): Promise<{ html?: Buffer; image?: Buffer; screen: Record<string, unknown> }> {
-  let screenRecord = screenEntityToRecord(screen);
+  let activeScreen = screen;
+  if (screen.screenId && screen.projectId) {
+    try {
+      activeScreen = await withStitchAbort(signal, () =>
+        runtime.stitch.project(screen.projectId).getScreen(screen.screenId),
+      );
+    } catch (e) {
+      log.warn("stitch getScreen refresh failed", {
+        screenId: screen.screenId,
+        projectId: screen.projectId,
+        error: getErrorMessage(e),
+      });
+    }
+  }
+
+  let screenRecord = screenEntityToRecord(activeScreen);
   let html = extractStitchInlineHtml(screenRecord);
   let image = extractStitchInlineImage(screenRecord);
 
   const [htmlUrl, imageUrl] = await Promise.all([
-    withStitchAbort(signal, () => screen.getHtml()).catch((e) => {
+    withStitchAbort(signal, () => activeScreen.getHtml()).catch((e) => {
       log.warn("stitch getHtml failed", {
-        screenId: screen.screenId,
+        screenId: activeScreen.screenId,
         error: getErrorMessage(e),
       });
       return "";
     }),
-    withStitchAbort(signal, () => screen.getImage()).catch((e) => {
+    withStitchAbort(signal, () => activeScreen.getImage()).catch((e) => {
       log.warn("stitch getImage failed", {
-        screenId: screen.screenId,
+        screenId: activeScreen.screenId,
         error: getErrorMessage(e),
       });
       return "";
@@ -155,10 +173,10 @@ async function fetchScreenAssets(
   const safeHtmlUrl = sanitizeStitchAssetUrl(htmlUrl);
   const safeImageUrl = sanitizeStitchAssetUrl(imageUrl);
   if (htmlUrl && !safeHtmlUrl) {
-    log.warn("stitch html url blocked", { screenId: screen.screenId });
+    log.warn("stitch html url blocked", { screenId: activeScreen.screenId });
   }
   if (imageUrl && !safeImageUrl) {
-    log.warn("stitch image url blocked", { screenId: screen.screenId });
+    log.warn("stitch image url blocked", { screenId: activeScreen.screenId });
   }
   if (safeHtmlUrl) {
     screenRecord = mergeStitchScreenRecord(screenRecord, {
@@ -183,7 +201,7 @@ async function fetchScreenAssets(
       if (!resolvedHtmlUrl) return undefined;
       return fetchRemoteAsset(resolvedHtmlUrl, signal).catch((e) => {
         log.warn("stitch html download failed", {
-          screenId: screen.screenId,
+          screenId: activeScreen.screenId,
           error: getErrorMessage(e),
         });
         return undefined;
@@ -194,7 +212,7 @@ async function fetchScreenAssets(
       if (!resolvedImageUrl) return undefined;
       return fetchRemoteAsset(resolvedImageUrl, signal).catch((e) => {
         log.warn("stitch image download failed", {
-          screenId: screen.screenId,
+          screenId: activeScreen.screenId,
           error: getErrorMessage(e),
         });
         return undefined;
@@ -207,6 +225,7 @@ async function fetchScreenAssets(
 
 /** Stitch screenshot/HTML can lag the screen record — poll until at least one asset is ready. */
 async function fetchScreenAssetsWithRetry(
+  runtime: GoogleStitchRuntime,
   screen: Screen,
   signal?: AbortSignal,
 ): Promise<{ html?: Buffer; image?: Buffer; screen: Record<string, unknown> }> {
@@ -214,14 +233,14 @@ async function fetchScreenAssetsWithRetry(
     0, 4_000, 8_000, 12_000, 18_000, 24_000, 32_000, 40_000, 50_000, 60_000, 72_000, 84_000, 96_000,
     110_000, 125_000, 140_000, 155_000, 170_000, 185_000, 200_000,
   ];
-  let last = await fetchScreenAssets(screen, signal);
+  let last = await fetchScreenAssets(runtime, screen, signal);
   for (let i = 1; i < delaysMs.length; i++) {
     const finalAttempt = i === delaysMs.length - 1;
     if (stitchScreenAssetsReady(last, { allowImageFallback: finalAttempt })) {
       return last;
     }
     await sleepMs(delaysMs[i]! - delaysMs[i - 1]!, signal);
-    last = await fetchScreenAssets(screen, signal);
+    last = await fetchScreenAssets(runtime, screen, signal);
   }
   return last;
 }
@@ -444,6 +463,154 @@ function buildStitchReply(
   ].join("\n");
 }
 
+interface PackageStitchScreenInput {
+  userId: string;
+  operatorMessage: string;
+  screenId: string;
+  projectId: string;
+  deviceType: ReturnType<typeof resolveStitchDeviceType>;
+  assets: { html?: Buffer; image?: Buffer };
+  title: string;
+  artifactSuffix: string;
+}
+
+async function packageStitchScreenAssets(
+  input: PackageStitchScreenInput,
+): Promise<{ preview?: DirectorPreviewMeta; artifacts: Array<Record<string, unknown>> }> {
+  const artifacts: Array<Record<string, unknown>> = [];
+  const stamp = new Date().toISOString().slice(0, 10);
+  const { screenId, projectId, deviceType, assets, title, artifactSuffix } = input;
+
+  let htmlDownloadUrl: string | undefined;
+  let imageDownloadUrl: string | undefined;
+  let htmlArtifactId: string | undefined;
+  let imageArtifactId: string | undefined;
+  let previewDataUrl = "";
+
+  if (assets.html) {
+    const saved = await storeDirectorArtifact({
+      userId: input.userId,
+      toolName: "google_stitch",
+      artifactType: "stitch-html",
+      name: `stitch-${stamp}${artifactSuffix}.html`,
+      mimeType: "text/html; charset=utf-8",
+      data: assets.html,
+      metadata: {
+        operatorPreview: input.operatorMessage.trim().slice(0, 120),
+        stitchProjectId: projectId,
+        stitchScreenId: screenId,
+        deviceType,
+      },
+    });
+    htmlArtifactId = saved.id;
+    htmlDownloadUrl = buildSignedPreviewUrl("/api/director/artifacts", saved.id, input.userId);
+    artifacts.push({
+      ...saved,
+      downloadUrl: buildSignedDownloadUrl("/api/director/artifacts", saved.id, input.userId),
+    });
+  }
+
+  const imageIsPlaceholder =
+    assets.image !== undefined && isLikelyStitchPlaceholderImage(assets.image);
+
+  if (assets.image && !(assets.html && imageIsPlaceholder)) {
+    const saved = await storeDirectorArtifact({
+      userId: input.userId,
+      toolName: "google_stitch",
+      artifactType: "stitch-screenshot",
+      name: `stitch-${stamp}${artifactSuffix}.png`,
+      mimeType: "image/png",
+      data: assets.image,
+      metadata: {
+        operatorPreview: input.operatorMessage.trim().slice(0, 120),
+        stitchProjectId: projectId,
+        stitchScreenId: screenId,
+        deviceType,
+      },
+    });
+    imageArtifactId = saved.id;
+    imageDownloadUrl = buildSignedPreviewUrl("/api/director/artifacts", saved.id, input.userId);
+    artifacts.push({
+      ...saved,
+      downloadUrl: buildSignedDownloadUrl("/api/director/artifacts", saved.id, input.userId),
+    });
+    previewDataUrl =
+      assets.image.byteLength <= STITCH_PREVIEW_MAX_BYTES
+        ? `data:image/png;base64,${assets.image.toString("base64")}`
+        : imageDownloadUrl;
+  }
+
+  if (
+    !stitchScreenAssetsReady(
+      { html: assets.html, image: assets.image },
+      { allowImageFallback: true },
+    )
+  ) {
+    log.warn("stitch screen skipped — only placeholder assets", {
+      screenId,
+      projectId,
+      deviceType,
+      htmlBytes: assets.html?.byteLength ?? 0,
+      imageBytes: assets.image?.byteLength ?? 0,
+    });
+    return { artifacts };
+  }
+
+  if (!htmlArtifactId && !imageArtifactId) {
+    log.warn("stitch screen skipped — no packaged assets", { screenId, projectId, deviceType });
+    return { artifacts };
+  }
+
+  return {
+    preview: {
+      conceptId: screenId,
+      title,
+      rationale: WIRELINE_STITCH_UI.modelLabel,
+      kind: "stitch",
+      deviceType,
+      previewDataUrl: previewDataUrl || imageDownloadUrl || htmlDownloadUrl || "",
+      htmlDownloadUrl,
+      imageDownloadUrl,
+      htmlArtifactId,
+      imageArtifactId,
+    },
+    artifacts,
+  };
+}
+
+/** Poll Stitch for HTML/PNG and package director artifacts (used after pending renders). */
+export async function finalizeDirectorStitchScreen(input: {
+  userId: string;
+  projectId: string;
+  screenId: string;
+  operatorMessage: string;
+  deviceType?: ReturnType<typeof resolveStitchDeviceType>;
+  signal?: AbortSignal;
+}): Promise<{ previews: DirectorPreviewMeta[]; artifacts: Array<Record<string, unknown>> } | null> {
+  if (!isGoogleStitchConfigured()) return null;
+
+  const runtime = await createGoogleStitchRuntime();
+  try {
+    const deviceType = input.deviceType ?? resolveStitchDeviceType(input.operatorMessage);
+    const screen = runtime.stitch.project(input.projectId).screen(input.screenId);
+    const assets = await fetchScreenAssetsWithRetry(runtime, screen, input.signal);
+    const packaged = await packageStitchScreenAssets({
+      userId: input.userId,
+      operatorMessage: input.operatorMessage,
+      screenId: input.screenId,
+      projectId: input.projectId,
+      deviceType,
+      assets,
+      title: deviceType === "MOBILE" ? "Mobile screen" : "Screen",
+      artifactSuffix: "",
+    });
+    if (!packaged.preview) return null;
+    return { previews: [packaged.preview], artifacts: packaged.artifacts };
+  } finally {
+    await runtime.close().catch(() => undefined);
+  }
+}
+
 export async function runDirectorStitchTurn(
   input: DirectorStitchTurnInput & { designBriefMarkdown: string; businessName?: string },
 ): Promise<DirectorStitchTurnResult> {
@@ -501,119 +668,31 @@ export async function runDirectorStitchTurn(
       if (!screenId) continue;
 
       input.onProgress?.(`Downloading assets for screen ${i + 1}/${screens.length}…`);
-      const assets = await fetchScreenAssetsWithRetry(screen, input.signal);
+      const assets = await fetchScreenAssetsWithRetry(runtime, screen, input.signal);
 
-      const stamp = new Date().toISOString().slice(0, 10);
       const suffix = screens.length > 1 ? `-v${i + 1}` : "";
-
       const title =
         screens.length > 1
           ? `Variant ${i + 1}`
           : deviceType === "MOBILE"
             ? "Mobile screen"
             : "Screen";
-      let htmlDownloadUrl: string | undefined;
-      let imageDownloadUrl: string | undefined;
-      let htmlArtifactId: string | undefined;
-      let imageArtifactId: string | undefined;
-      let previewDataUrl = "";
 
-      if (assets.html) {
-        const saved = await storeDirectorArtifact({
-          userId: input.userId,
-          toolName: "google_stitch",
-          artifactType: "stitch-html",
-          name: `stitch-${stamp}${suffix}.html`,
-          mimeType: "text/html; charset=utf-8",
-          data: assets.html,
-          metadata: {
-            operatorPreview: input.operatorMessage.trim().slice(0, 120),
-            stitchProjectId: projectId,
-            stitchScreenId: screenId,
-            deviceType,
-          },
-        });
-        htmlArtifactId = saved.id;
-        htmlDownloadUrl = buildSignedPreviewUrl("/api/director/artifacts", saved.id, input.userId);
-        artifacts.push({
-          ...saved,
-          downloadUrl: buildSignedDownloadUrl("/api/director/artifacts", saved.id, input.userId),
-        });
-      }
-
-      const imageIsPlaceholder =
-        assets.image !== undefined && isLikelyStitchPlaceholderImage(assets.image);
-
-      if (assets.image && !(assets.html && imageIsPlaceholder)) {
-        const saved = await storeDirectorArtifact({
-          userId: input.userId,
-          toolName: "google_stitch",
-          artifactType: "stitch-screenshot",
-          name: `stitch-${stamp}${suffix}.png`,
-          mimeType: "image/png",
-          data: assets.image,
-          metadata: {
-            operatorPreview: input.operatorMessage.trim().slice(0, 120),
-            stitchProjectId: projectId,
-            stitchScreenId: screenId,
-            deviceType,
-          },
-        });
-        imageArtifactId = saved.id;
-        imageDownloadUrl = buildSignedPreviewUrl("/api/director/artifacts", saved.id, input.userId);
-        artifacts.push({
-          ...saved,
-          downloadUrl: buildSignedDownloadUrl("/api/director/artifacts", saved.id, input.userId),
-        });
-        previewDataUrl =
-          assets.image.byteLength <= STITCH_PREVIEW_MAX_BYTES
-            ? `data:image/png;base64,${assets.image.toString("base64")}`
-            : imageDownloadUrl;
-      }
-
-      if (
-        !stitchScreenAssetsReady(
-          { html: assets.html, image: assets.image },
-          { allowImageFallback: true },
-        )
-      ) {
-        log.warn("stitch screen skipped — only placeholder assets", {
-          screenId,
-          projectId,
-          deviceType,
-          htmlBytes: assets.html?.byteLength ?? 0,
-          imageBytes: assets.image?.byteLength ?? 0,
-        });
-        continue;
-      }
-
-      if (!htmlArtifactId && !imageArtifactId) {
-        log.warn("stitch screen skipped — no packaged assets", { screenId, projectId, deviceType });
-        continue;
-      }
-
-      previews.push({
-        conceptId: screenId,
-        title,
-        rationale: WIRELINE_STITCH_UI.modelLabel,
-        kind: "stitch",
+      const packaged = await packageStitchScreenAssets({
+        userId: input.userId,
+        operatorMessage: input.operatorMessage,
+        screenId,
+        projectId,
         deviceType,
-        previewDataUrl: previewDataUrl || imageDownloadUrl || htmlDownloadUrl || "",
-        htmlDownloadUrl,
-        imageDownloadUrl,
-        htmlArtifactId,
-        imageArtifactId,
+        assets,
+        title,
+        artifactSuffix: suffix,
       });
-
-      thinkingLines.push(`Screen ${screenId} (${deviceType})`);
-    }
-
-    if (previews.length === 0) {
-      throw new GoogleStitchError(
-        "Wireline Design composed a screen but preview assets were not ready. Try again.",
-        "VALIDATION_ERROR",
-        true,
-      );
+      artifacts.push(...packaged.artifacts);
+      if (packaged.preview) {
+        previews.push(packaged.preview);
+        thinkingLines.push(`Screen ${screenId} (${deviceType})`);
+      }
     }
 
     const primary = screens[0]!;
@@ -624,6 +703,24 @@ export async function runDirectorStitchTurn(
     };
 
     const durationMs = Date.now() - t0;
+
+    if (previews.length === 0) {
+      log.warn("stitch assets pending after in-request poll", {
+        projectId: stitchSession.projectId,
+        screenId: stitchSession.screenId,
+        userId: input.userId,
+      });
+      return {
+        reply: WIRELINE_STITCH_UI.packagingPendingReply,
+        previews: [],
+        artifacts,
+        stitchSession,
+        stitchAssetsPending: true,
+        thinkingSummary: `Screen ${stitchSession.screenId} (${deviceType}) — packaging`,
+        durationMs,
+      };
+    }
+
     return {
       reply: buildStitchReply(operation, screens.length, deviceType),
       previews,

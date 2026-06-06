@@ -473,6 +473,13 @@ export const directorStitchOptionsSchema = z.object({
   useAccountBranding: z.boolean().optional(),
 });
 
+export const directorStitchFinalizeSchema = z.object({
+  projectId: z.string().min(1).max(64),
+  screenId: z.string().min(1).max(128),
+  operatorMessage: z.string().min(1).max(4000),
+  deviceType: z.enum(["DESKTOP", "MOBILE", "TABLET", "AGNOSTIC"]).optional(),
+});
+
 export const directorMessageSchema = z
   .object({
     content: z.string().max(4000).optional(),

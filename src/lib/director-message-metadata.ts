@@ -74,6 +74,7 @@ export interface DirectorMessageMetadata {
   researchSources?: { title?: string; uri?: string }[];
   deliverableArtifact?: DirectorDeliverableArtifactMeta;
   stitchSession?: DirectorStitchSessionMeta;
+  stitchAssetsPending?: boolean;
   proposals?: DirectorProposalsMeta;
   model?: "sonnet" | "opus";
   modelLabel?: string;
@@ -97,6 +98,7 @@ export function packDirectorMetadata(
     (meta.researchSources?.length ?? 0) > 0 ||
     Boolean(meta.deliverableArtifact?.id) ||
     Boolean(meta.stitchSession?.projectId) ||
+    meta.stitchAssetsPending === true ||
     (meta.proposals &&
       (meta.proposals.changes.length > 0 ||
         meta.proposals.toolToggles.length > 0 ||
@@ -162,6 +164,7 @@ export function buildDirectorMetadataFromTurn(
       data.stitchSession && typeof data.stitchSession === "object"
         ? (data.stitchSession as DirectorStitchSessionMeta)
         : undefined,
+    stitchAssetsPending: data.stitchAssetsPending === true ? true : undefined,
     proposals: hasProposals ? { changes, toolToggles, actions, integrationJobs } : undefined,
     model: (data.model as "sonnet" | "opus") || undefined,
     modelLabel: typeof data.modelLabel === "string" ? data.modelLabel : undefined,

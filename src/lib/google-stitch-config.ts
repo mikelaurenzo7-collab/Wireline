@@ -27,7 +27,11 @@ export function getGoogleStitchTimeoutMs(): number {
   return Number.isFinite(n) && n > 30_000 ? Math.min(n, 540_000) : DEFAULT_STITCH_TIMEOUT_MS;
 }
 
-/** Optional default project — must be TEXT_TO_UI_PRO (create at stitch.withgoogle.com). */
+/**
+ * Default Stitch project — numeric ID from stitch.withgoogle.com/projects/{id}.
+ * This is NOT GOOGLE_CLOUD_PROJECT (GCP console); Wireline uses API-key auth only.
+ * Project must be TEXT_TO_UI / TEXT_TO_UI_PRO (created in Stitch web UI, not MCP create_project).
+ */
 export function getGoogleStitchProjectId(): string | null {
   const raw =
     process.env.GOOGLE_STITCH_PROJECT_ID?.trim() || process.env.STITCH_PROJECT_ID?.trim() || "";

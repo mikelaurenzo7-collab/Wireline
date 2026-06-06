@@ -68,7 +68,9 @@ describe("google stitch mcp parsing", () => {
 
   it("waits for HTML before accepting placeholder screenshots", () => {
     const grid = Buffer.alloc(4_000);
-    const html = Buffer.from("<html><body>Ready</body></html>");
+    const html = Buffer.from(
+      "<!DOCTYPE html><html><body><main>Ready for preview with enough bytes</main></body></html>",
+    );
     const png = Buffer.alloc(120_000);
 
     expect(isLikelyStitchPlaceholderImage(grid)).toBe(true);

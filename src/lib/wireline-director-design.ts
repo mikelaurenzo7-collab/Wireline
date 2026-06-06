@@ -463,6 +463,13 @@ export const WIRELINE_STITCH_UI = {
     "",
     "If it keeps failing, check that UI generation is enabled for your workspace or contact support.",
   ].join("\n"),
+  packagingPendingReply: [
+    "Your screen is composed in Wireline Design — I'm finishing the HTML preview now.",
+    "",
+    "This page will update automatically when packaging completes (usually under a minute).",
+    "",
+    "You can also open **Design preview** from the thread header once it's ready.",
+  ].join("\n"),
   chatFallbackReasoning:
     "Wireline Design live render unavailable — drafting HTML prototype in chat",
 } as const;

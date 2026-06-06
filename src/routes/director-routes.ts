@@ -12,6 +12,7 @@ import {
   validateBody,
   directorMessageSchema,
   directorStreamMessageSchema,
+  directorStitchFinalizeSchema,
   directorExecuteSchema,
   pdfUploadSchema,
   directorChatModelPatchSchema,
@@ -88,6 +89,7 @@ import {
   STITCH_DESIGN_LLM_REASONING,
   type StitchDesignLlmFallback,
 } from "../lib/director-stitch-fallback";
+import { finalizeDirectorStitchScreen } from "../lib/director-stitch-service";
 import {
   collapseDirectorThreadDuplicates,
   insertDirectorReplyIfAbsent,
@@ -739,6 +741,7 @@ router.post(
       let coachAgentName: string | undefined;
       let researchSources: { title?: string; uri?: string }[] | undefined;
       let stitchSession: { projectId: string; screenId: string; projectTitle?: string } | undefined;
+      let stitchAssetsPending = false;
 
       if (approval && featureFlags.toolExecution) {
         if (!approval.approved) {
@@ -780,7 +783,7 @@ router.post(
               })
             : { kind: "none" as const };
 
-        if (stitchPath.kind === "stitch") {
+        if (stitchPath.kind === "stitch" || stitchPath.kind === "stitch-failed") {
           const stitchTurn = stitchPath.turn;
           reply = stitchTurn.reply;
           previews = stitchTurn.previews;
@@ -791,6 +794,7 @@ router.post(
           thinkingDurationMs = stitchTurn.durationMs;
           reasoning = stitchTurn.thinkingSummary;
           stitchSession = stitchTurn.stitchSession;
+          stitchAssetsPending = stitchTurn.stitchAssetsPending === true;
         } else {
           if (stitchPath.kind === "llm-fallback") {
             stitchDesignFallback = stitchPath.fallback;
@@ -923,6 +927,7 @@ router.post(
           researchSources,
           artifacts,
           stitchSession,
+          stitchAssetsPending,
         },
       );
 
@@ -983,6 +988,8 @@ router.post(
         thinkingDurationMs,
         researchSources,
         deliverableArtifact: turnPayload.deliverableArtifact,
+        stitchSession,
+        stitchAssetsPending,
       });
     } catch (e) {
       log.error("director POST failed", { error: getErrorMessage(e) });
@@ -1097,7 +1104,7 @@ router.post(
           })
         : { kind: "none" as const };
 
-      if (stitchPath.kind === "stitch") {
+      if (stitchPath.kind === "stitch" || stitchPath.kind === "stitch-failed") {
         const stitchTurn = stitchPath.turn;
         sse.write("meta", {
           model: "stitch",
@@ -1123,6 +1130,7 @@ router.post(
           thinkingDurationMs: stitchTurn.durationMs,
           reasoning: stitchTurn.thinkingSummary,
           stitchSession: stitchTurn.stitchSession,
+          stitchAssetsPending: stitchTurn.stitchAssetsPending === true,
         };
         await finalizeDirectorStreamTurn(
           sse,
@@ -1361,6 +1369,40 @@ router.post(
       if (!res.headersSent) {
         res.status(500).json({ error: "Failed to start stream", detail: errMsg });
       }
+    }
+  },
+);
+
+router.post(
+  "/api/director/stitch/finalize",
+  authenticateUser,
+  claudeRateLimiter,
+  validateBody(directorStitchFinalizeSchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { projectId, screenId, operatorMessage, deviceType } = req.body;
+      const result = await finalizeDirectorStitchScreen({
+        userId: req.user.id,
+        projectId,
+        screenId,
+        operatorMessage,
+        deviceType,
+      });
+      if (!result) {
+        return res.status(202).json({
+          ok: false,
+          pending: true,
+          message: "Preview assets are not ready yet",
+        });
+      }
+      return res.json({
+        ok: true,
+        previews: result.previews,
+        artifacts: result.artifacts,
+      });
+    } catch (e) {
+      log.error("director stitch finalize failed", { error: getErrorMessage(e) });
+      res.status(500).json({ error: "Failed to finalize Stitch preview" });
     }
   },
 );

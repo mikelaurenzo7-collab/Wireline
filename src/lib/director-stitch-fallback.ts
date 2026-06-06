@@ -12,6 +12,7 @@ import {
   type StitchBriefOptions,
 } from "./director-stitch-brief";
 import { tryDirectorStitchTurn, type DirectorStitchTurnResult } from "./director-stitch-service";
+import { isGoogleStitchConfigured } from "./google-stitch-config";
 import { log } from "./server-context";
 import { WIRELINE_STITCH_UI } from "./wireline-director-design";
 
@@ -36,6 +37,7 @@ export interface StitchDirectorPathInput {
 
 export type StitchDirectorPathResult =
   | { kind: "stitch"; turn: DirectorStitchTurnResult }
+  | { kind: "stitch-failed"; turn: DirectorStitchTurnResult }
   | { kind: "llm-fallback"; fallback: StitchDesignLlmFallback }
   | { kind: "none" };
 
@@ -112,6 +114,22 @@ export async function resolveStitchDirectorPath(
   const stitchTurn = await tryDirectorStitchTurn(input);
   if (stitchTurn) {
     return { kind: "stitch", turn: stitchTurn };
+  }
+
+  if (isGoogleStitchConfigured()) {
+    log.info("director stitch render failed — returning operator fail copy", {
+      userId: input.userId,
+    });
+    return {
+      kind: "stitch-failed",
+      turn: {
+        reply: WIRELINE_STITCH_UI.failReply,
+        previews: [],
+        artifacts: [],
+        thinkingSummary: WIRELINE_STITCH_UI.chatFallbackReasoning,
+        durationMs: 0,
+      },
+    };
   }
 
   log.info("director stitch unavailable — falling back to chat design", {
