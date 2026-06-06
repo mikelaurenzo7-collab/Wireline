@@ -112,6 +112,22 @@ function pickDownloadUrl(screen: Record<string, unknown>, kind: "html" | "image"
   );
 }
 
+/** Keep generate-time asset URLs when a later get_screen poll has not packaged yet. */
+function mergeStitchScreenAssetFields(
+  seed: Record<string, unknown>,
+  fresh: Record<string, unknown>,
+): Record<string, unknown> {
+  const merged = mergeStitchScreenRecord(seed, fresh);
+  for (const field of ["htmlCode", "html", "screenshot", "image"] as const) {
+    const freshBlock = fresh[field];
+    const seedBlock = seed[field];
+    if (!pickDownloadUrlFromBlock(freshBlock) && pickDownloadUrlFromBlock(seedBlock)) {
+      merged[field] = seedBlock;
+    }
+  }
+  return merged;
+}
+
 async function fetchRemoteAsset(url: string, signal?: AbortSignal): Promise<Buffer> {
   const host = new URL(url).hostname;
   if (!isAllowedStitchAssetHost(host)) {
@@ -129,14 +145,15 @@ async function fetchScreenAssets(
   screen: Screen,
   signal?: AbortSignal,
 ): Promise<{ html?: Buffer; image?: Buffer; screen: Record<string, unknown> }> {
+  const seedRecord = screenEntityToRecord(screen);
   let activeScreen = screen;
-  let screenRecord = screenEntityToRecord(activeScreen);
+  let screenRecord = seedRecord;
   if (screen.screenId && screen.projectId) {
     try {
       activeScreen = await withStitchAbort(signal, () =>
         runtime.stitch.project(screen.projectId).getScreen(screen.screenId),
       );
-      screenRecord = screenEntityToRecord(activeScreen);
+      const freshRecord = screenEntityToRecord(activeScreen);
       const raw = await withStitchAbort(signal, () =>
         runtime.client.callTool<unknown>("get_screen", {
           projectId: screen.projectId,
@@ -144,7 +161,10 @@ async function fetchScreenAssets(
           name: `projects/${screen.projectId}/screens/${screen.screenId}`,
         }),
       );
-      screenRecord = mergeStitchScreenRecord(screenRecord, raw);
+      screenRecord = mergeStitchScreenAssetFields(
+        seedRecord,
+        mergeStitchScreenRecord(freshRecord, raw),
+      );
     } catch (e) {
       log.warn("stitch getScreen refresh failed", {
         screenId: screen.screenId,

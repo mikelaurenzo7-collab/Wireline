@@ -61,6 +61,9 @@ export function resolveStitchModelId(message: string): StitchModelId {
   if (/\b(polish|production|high[\s-]?fi|pixel[\s-]?perfect)\b/i.test(message)) {
     return "GEMINI_3_1_PRO";
   }
+  if (wantsWebsiteDeliverable(message) || /\blanding\s+page\b/i.test(message)) {
+    return "GEMINI_3_1_PRO";
+  }
   return "GEMINI_3_FLASH";
 }
 
@@ -111,6 +114,13 @@ export function buildStitchGenerationPrompt(
   const base = operatorMessage.trim();
   const biz = opts?.businessName?.trim();
   const prefix = biz ? `Business: ${biz}. ` : "";
-  const designSystem = opts?.designBriefMarkdown?.trim() || WIRELINE_STITCH_DESIGN_BRIEF;
-  return `${prefix}${base}. Follow this design brief:\n\n${designSystem}\n\nDeliver production-ready semantic HTML with accessible labels, a single <style> block or inline CSS, mobile-first layout unless desktop/web is requested, and realistic placeholder content matching the industry in the request.`;
+  const briefRaw = opts?.designBriefMarkdown?.trim();
+  const briefForStitch = briefRaw
+    ? (() => {
+        const match = briefRaw.match(/### Operator request\s*\n([\s\S]*?)(?:\n##|\n```|$)/);
+        const operatorSection = match?.[1]?.trim();
+        return (operatorSection || briefRaw).slice(0, 1_200);
+      })()
+    : WIRELINE_STITCH_DESIGN_BRIEF;
+  return `${prefix}${base}. Follow this design brief:\n\n${briefForStitch}\n\nDeliver production-ready semantic HTML with accessible labels, a single <style> block or inline CSS, mobile-first layout unless desktop/web is requested, and realistic placeholder content matching the industry in the request.`;
 }
