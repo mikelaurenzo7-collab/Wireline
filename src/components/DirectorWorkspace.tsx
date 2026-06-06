@@ -266,6 +266,8 @@ export default function DirectorWorkspace({
   const lastStreamOperatorRef = useRef<string | null>(null);
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
+  /** Stitch finalize polls already started this mount — dedupes resume across reloads/streams. */
+  const stitchPollRef = useRef<Set<string>>(new Set());
   const liveSequenceKeyRef = useRef<string | null>(null);
   const sendNonStreamingRef = useRef<
     | ((
@@ -345,25 +347,32 @@ export default function DirectorWorkspace({
       if (!session?.projectId || !session.screenId) return false;
 
       const waits = [
-        5_000, 8_000, 10_000, 12_000, 15_000, 15_000, 20_000, 20_000, 25_000, 25_000, 30_000,
+        2_000, 5_000, 8_000, 10_000, 12_000, 15_000, 15_000, 20_000, 20_000, 25_000, 25_000, 30_000,
         30_000, 30_000, 30_000, 30_000, 30_000, 30_000, 30_000, 30_000, 30_000, 30_000, 30_000,
         30_000, 30_000,
       ];
       for (const waitMs of waits) {
         await new Promise((resolve) => setTimeout(resolve, waitMs));
-        const r = await authFetch("/api/director/stitch/finalize", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            projectId: session.projectId,
-            screenId: session.screenId,
-            operatorMessage,
-          }),
-        });
+        let r: Response;
+        try {
+          r = await authFetch("/api/director/stitch/finalize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              projectId: session.projectId,
+              screenId: session.screenId,
+              operatorMessage,
+            }),
+          });
+        } catch {
+          continue;
+        }
         if (r.status === 202) continue;
         if (!r.ok) continue;
-        const data = await r.json();
-        if (!data.ok || !Array.isArray(data.previews) || data.previews.length === 0) continue;
+        const data = await r.json().catch(() => null);
+        if (!data || !data.ok || !Array.isArray(data.previews) || data.previews.length === 0) {
+          continue;
+        }
 
         setMessages((prev) =>
           prev.map((m) =>
@@ -387,10 +396,42 @@ export default function DirectorWorkspace({
         }
         return true;
       }
+      // Polling window exhausted without packaged assets — clear the pending flag so the
+      // thread stops claiming an imminent update and the operator can re-run the prompt.
+      setMessages((prev) =>
+        prev.map((m) => (m.id === message.id ? { ...m, stitchAssetsPending: false } : m)),
+      );
       return false;
     },
     [],
   );
+
+  /** Operator text that triggered a given director message — used to resume Stitch finalize. */
+  const operatorMessageForReply = useCallback((messageId: string): string => {
+    const msgs = messagesRef.current;
+    const idx = msgs.findIndex((m) => m.id === messageId);
+    if (idx < 0) return "";
+    for (let i = idx - 1; i >= 0; i--) {
+      if (msgs[i]?.role === "operator") return msgs[i]!.content;
+    }
+    return "";
+  }, []);
+
+  // Resume Stitch finalize polling for any pending render — inline reply, streamed reply,
+  // recovered turn, or a page reload all surface here. Without this, a screen that finishes
+  // packaging after the initial request is stranded in "packaging…" forever and the preview
+  // (and its Preview/Screenshot/Export tabs) never appears. Deduped per message per mount.
+  useEffect(() => {
+    for (const m of messages) {
+      if (m.role !== "director" || m.stitchAssetsPending !== true) continue;
+      const session = m.stitchSession;
+      if (!session?.projectId || !session.screenId) continue;
+      if (m.previews && m.previews.length > 0) continue;
+      if (stitchPollRef.current.has(m.id)) continue;
+      stitchPollRef.current.add(m.id);
+      void pollStitchFinalize(m, operatorMessageForReply(m.id));
+    }
+  }, [messages, pollStitchFinalize, operatorMessageForReply]);
 
   const loadMessages = useCallback(async () => {
     if (authLoading) return;
@@ -627,14 +668,9 @@ export default function DirectorWorkspace({
         });
         const parsed = await readApiJson<Record<string, unknown>>(r);
         if (!parsed.ok) throw new Error(parsed.error);
-        const reply = appendDirectorReply(parsed.data);
-        if (
-          parsed.data.stitchAssetsPending === true &&
-          reply.stitchSession?.projectId &&
-          reply.stitchSession?.screenId
-        ) {
-          void pollStitchFinalize(reply, trimmed);
-        }
+        appendDirectorReply(parsed.data);
+        // Pending Stitch renders are resumed by the finalize-poll effect (keyed on the
+        // appended message), so inline, streamed, and reloaded turns all converge there.
       } catch {
         if (opts?.recoverPersistedReply) {
           const recovered = await recoverPersistedDirectorReply(
@@ -671,7 +707,6 @@ export default function DirectorWorkspace({
       featureFlags.stitchMedia,
       stitchBrandingAvailable,
       useStitchAccountBranding,
-      pollStitchFinalize,
     ],
   );
   sendNonStreamingRef.current = sendNonStreaming;
@@ -1865,6 +1900,18 @@ export default function DirectorWorkspace({
                       {m.previews && m.previews.length > 0 && isStitchPreview(m.previews[0]) && (
                         <DirectorStitchPreviewTeaser preview={m.previews[0]} />
                       )}
+
+                      {m.stitchAssetsPending &&
+                        !(m.previews && m.previews.length > 0) &&
+                        m.stitchSession?.screenId && (
+                          <div className="w-full max-w-md flex items-center gap-2.5 rounded-md border border-brand/20 bg-brand/[0.05] px-3.5 py-3">
+                            <Loader2 className="w-4 h-4 text-brand animate-spin shrink-0" />
+                            <p className="text-[11px] text-muted leading-relaxed">
+                              Finishing the render — this updates automatically when packaging
+                              completes.
+                            </p>
+                          </div>
+                        )}
 
                       {m.previews && m.previews.length > 0 && !isStitchPreview(m.previews[0]) && (
                         <div className="w-full">
