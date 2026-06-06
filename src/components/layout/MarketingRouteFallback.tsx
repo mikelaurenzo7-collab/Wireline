@@ -32,9 +32,7 @@ export default function MarketingRouteFallback() {
           </Medallion>
         </SignalOrbFrame>
 
-        <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
-          Loading…
-        </span>
+        <span className="text-sm font-medium tracking-wide text-muted/90">Loading…</span>
       </div>
     </div>
   );

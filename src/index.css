@@ -3228,15 +3228,16 @@ html, body, .marketing-surface, .app-surface {
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--color-ink);
-  background: transparent;
-  border: 1px solid color-mix(in srgb, var(--color-ink) 12%, transparent);
+  background: color-mix(in srgb, var(--paper, #f5f0e8) 88%, white);
+  border: 1px solid color-mix(in srgb, var(--color-ink) 22%, transparent);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.65) inset;
   transition: background 0.15s ease, border-color 0.15s ease;
   border-radius: 0;
 }
 
 .marketing-btn-secondary:hover {
-  background: color-mix(in srgb, white 60%, transparent);
-  border-color: color-mix(in srgb, var(--color-ink) 20%, transparent);
+  background: color-mix(in srgb, white 78%, var(--paper, #f5f0e8));
+  border-color: color-mix(in srgb, var(--color-brand, #8b3fd6) 28%, var(--color-ink) 18%);
 }
 
 .marketing-has-sticky-cta {
@@ -6374,9 +6375,12 @@ select:focus {
 .wl-form-divider span {
   font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.25em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(26, 22, 20, 0.4);
+  color: rgba(26, 22, 20, 0.58);
+}
+.dark .wl-form-divider span {
+  color: rgba(243, 232, 255, 0.55);
 }
 
 /* ── PAGE SECTION HEADER ──

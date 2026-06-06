@@ -428,7 +428,7 @@ export async function runDirectorStitchTurn(input: {
   }
 
   const t0 = Date.now();
-  const runtime = createGoogleStitchRuntime();
+  const runtime = await createGoogleStitchRuntime();
 
   try {
     const priorSession = await loadLatestStitchSession(input.userId);

@@ -1,7 +1,9 @@
 /**
  * Wireline adapter for @google/stitch-sdk — official Stitch MCP client + domain API.
+ *
+ * Dynamic-import the ESM-only SDK so the CJS server bundle can boot on Vercel
+ * without resolving @google/stitch-sdk at require() time.
  */
-import { Stitch, StitchToolClient } from "@google/stitch-sdk";
 import {
   getGoogleStitchApiKey,
   getGoogleStitchMcpBaseUrl,
@@ -16,18 +18,21 @@ export {
   withStitchAbort,
 } from "./google-stitch-sdk-helpers";
 
+type StitchSdkModule = typeof import("@google/stitch-sdk");
+
 export interface GoogleStitchRuntime {
-  stitch: Stitch;
-  client: StitchToolClient;
+  stitch: InstanceType<StitchSdkModule["Stitch"]>;
+  client: InstanceType<StitchSdkModule["StitchToolClient"]>;
   close: () => Promise<void>;
 }
 
-export function createGoogleStitchRuntime(): GoogleStitchRuntime {
+export async function createGoogleStitchRuntime(): Promise<GoogleStitchRuntime> {
   const apiKey = getGoogleStitchApiKey();
   if (!apiKey) {
     throw new GoogleStitchError("GOOGLE_STITCH_API_KEY is not configured", "AUTH_FAILED");
   }
 
+  const { Stitch, StitchToolClient } = await import("@google/stitch-sdk");
   const client = new StitchToolClient({
     apiKey,
     baseUrl: getGoogleStitchMcpBaseUrl(),

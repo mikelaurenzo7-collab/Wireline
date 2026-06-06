@@ -32,11 +32,24 @@ const AuthContext = createContext<AuthContextType>({
   signIn: () => {},
 });
 
+const SESSION_PROBE_MS = 8_000;
+
 async function fetchSessionUser(): Promise<User | null> {
-  const res = await fetch("/api/auth/session", { credentials: "include" });
-  if (!res.ok) return null;
-  const data = (await res.json()) as { user?: User };
-  return data.user ?? null;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), SESSION_PROBE_MS);
+  try {
+    const res = await fetch("/api/auth/session", {
+      credentials: "include",
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { user?: User };
+    return data.user ?? null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 async function migrateLegacyLocalStorage(): Promise<void> {

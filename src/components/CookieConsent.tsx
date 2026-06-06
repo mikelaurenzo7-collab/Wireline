@@ -4,6 +4,7 @@ import { Cookie, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { isMarketingStickyCtaRoute, MARKETING_STICKY_CTA_BOTTOM } from "../lib/marketing-mobile";
+import { isAuthPortalPath } from "../lib/public-routes";
 
 const STORAGE_KEY = "wireline_cookie_consent";
 
@@ -40,6 +41,7 @@ export default function CookieConsent() {
     };
   }, []);
 
+  const onAuthRoute = isAuthPortalPath(location.pathname);
   const clearMarketingSticky = !hasSession && isMarketingStickyCtaRoute(location.pathname);
 
   const dismiss = () => {
@@ -69,13 +71,20 @@ export default function CookieConsent() {
           className="fixed z-[9999] left-3 right-3 sm:left-5 sm:right-auto sm:max-w-[320px]"
           role="dialog"
           aria-label="Cookie notice"
-          style={{
-            // Sit just above the bottom edge (and the iOS home bar). When the
-            // marketing sticky CTA is present, ride above it instead.
-            bottom: clearMarketingSticky
-              ? MARKETING_STICKY_CTA_BOTTOM
-              : "max(0.75rem, env(safe-area-inset-bottom, 0))",
-          }}
+          style={
+            onAuthRoute
+              ? {
+                  // Auth CTAs sit at the bottom — pin the notice to the top on sign-in.
+                  top: "max(0.75rem, env(safe-area-inset-top, 0))",
+                }
+              : {
+                  // Sit just above the bottom edge (and the iOS home bar). When the
+                  // marketing sticky CTA is present, ride above it instead.
+                  bottom: clearMarketingSticky
+                    ? MARKETING_STICKY_CTA_BOTTOM
+                    : "max(0.75rem, env(safe-area-inset-bottom, 0))",
+                }
+          }
         >
           {/* Compact contained card — bottom-left, never spans the screen or
               overlaps a centered CTA. */}

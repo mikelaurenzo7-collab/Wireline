@@ -7,7 +7,6 @@ import {
   Loader2,
   ArrowRight,
   UserPlus,
-  LogIn,
   AlertTriangle,
   Check,
   Eye,
@@ -679,7 +678,7 @@ export default function AuthPortal() {
                           </>
                         ) : (
                           <>
-                            <LogIn className="w-4 h-4" /> Sign in <ArrowRight className="w-4 h-4" />
+                            Sign in <ArrowRight className="w-4 h-4" />
                           </>
                         )}
                       </ShadButton>

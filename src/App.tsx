@@ -17,6 +17,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { BrandingProvider } from "./contexts/BrandingContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { MotionConfig } from "motion/react";
+import { isMarketingHomePath, isSessionOptionalPublicPath } from "./lib/public-routes";
 
 const Pricing = lazy(() => import("./pages/Pricing"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
@@ -75,6 +76,14 @@ function AppContent() {
       navigate("/ops", { replace: true });
     }
   }, [user, location.pathname, navigate]);
+
+  // Fail open: logged-in users who land on `/` after session hydrates go to the console.
+  useEffect(() => {
+    if (loading || !user) return;
+    if (isMarketingHomePath(location.pathname)) {
+      navigate("/ops", { replace: true });
+    }
+  }, [loading, user, location.pathname, navigate]);
 
   // Public pages — accessible before auth.
   if (location.pathname === "/privacy") {
@@ -283,8 +292,36 @@ function AppContent() {
     );
   }
 
+  // Session-optional public routes — render without blocking on auth hydration.
+  if (!user && isSessionOptionalPublicPath(location.pathname)) {
+    if (location.pathname === "/auth" || location.pathname.startsWith("/auth/")) {
+      const legacySub = location.pathname.slice("/auth".length);
+      const authTarget = legacySub === "/signup" ? "/signup" : "/signin";
+      return <Navigate to={`${authTarget}${location.search}`} replace />;
+    }
+    if (location.pathname === "/login") {
+      return <Navigate to={`/signin${location.search}`} replace />;
+    }
+    if (isMarketingHomePath(location.pathname)) {
+      return (
+        <Suspense fallback={<MarketingRouteFallback />}>
+          <div className="marketing-surface min-h-dvh">
+            <LandingPage />
+          </div>
+        </Suspense>
+      );
+    }
+    if (location.pathname === "/signup" || location.pathname === "/signin") {
+      return (
+        <ErrorBoundary>
+          <AuthPortal />
+        </ErrorBoundary>
+      );
+    }
+  }
+
   if (loading) {
-    return <div className="min-h-dvh bg-paper" aria-busy="true" />;
+    return <MarketingRouteFallback />;
   }
 
   // Legacy /auth/* aliases — old links and e2e specs; canonical gate is /signin.
