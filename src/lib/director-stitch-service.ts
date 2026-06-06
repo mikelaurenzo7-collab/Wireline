@@ -125,6 +125,9 @@ function sleepMs(ms: number, signal?: AbortSignal): Promise<void> {
   });
 }
 
+const STITCH_LIST_TIMEOUT_MS = 30_000;
+const STITCH_GENERATE_TIMEOUT_MS = 150_000;
+
 async function listStitchScreens(
   client: GoogleStitchMcpClient,
   projectId: string,
@@ -132,12 +135,52 @@ async function listStitchScreens(
 ): Promise<Array<Record<string, unknown>>> {
   const args = { projectId, name: `projects/${projectId}` };
   try {
-    const listed = await client.callTool<unknown>("list_screens", args, signal);
-    return extractStitchScreens(listed);
+    const listed = await client.callTool<unknown>(
+      "list_screens",
+      args,
+      signal,
+      STITCH_LIST_TIMEOUT_MS,
+    );
+    const screens = extractStitchScreens(listed);
+    if (screens.length > 0) return screens;
   } catch {
-    const listed = await client.callTool<unknown>("list_screens", { projectId }, signal);
-    return extractStitchScreens(listed);
+    /* try alternate shape */
   }
+  try {
+    const listed = await client.callTool<unknown>(
+      "list_screens",
+      { projectId },
+      signal,
+      STITCH_LIST_TIMEOUT_MS,
+    );
+    const screens = extractStitchScreens(listed);
+    if (screens.length > 0) return screens;
+  } catch {
+    /* fall through */
+  }
+  try {
+    const project = await client.callTool<unknown>(
+      "get_project",
+      { name: `projects/${projectId}` },
+      signal,
+      STITCH_LIST_TIMEOUT_MS,
+    );
+    return extractStitchScreens(project);
+  } catch {
+    return [];
+  }
+}
+
+function pickNewestStitchScreens(
+  screens: Array<Record<string, unknown>>,
+  knownScreenIds: Set<string>,
+): Array<Record<string, unknown>> {
+  const fresh = screens.filter((s) => {
+    const id = String(s.screenId ?? "").trim();
+    return id && !knownScreenIds.has(id);
+  });
+  const pool = fresh.length > 0 ? fresh : screens;
+  return [...pool].sort((a, b) => Number(b.screenId ?? 0) - Number(a.screenId ?? 0));
 }
 
 async function ensureStitchProject(
@@ -155,7 +198,17 @@ async function ensureStitchProject(
   }
 
   onProgress?.("Loading Stitch projects…");
-  const listed = await client.callTool<unknown>("list_projects", { filter: "view=owned" }, signal);
+  let listed: unknown;
+  try {
+    listed = await client.callTool<unknown>(
+      "list_projects",
+      { filter: "view=owned" },
+      signal,
+      STITCH_LIST_TIMEOUT_MS,
+    );
+  } catch {
+    listed = await client.callTool<unknown>("list_projects", {}, signal, STITCH_LIST_TIMEOUT_MS);
+  }
   const picked = pickCompatibleStitchProject(extractStitchProjects(listed));
   if (picked) {
     return {
@@ -242,6 +295,10 @@ async function runStitchOperation(
     if (screens.length > 0) return screens;
   }
 
+  const knownBefore = new Set(
+    (await listStitchScreens(client, projectId, signal)).map((s) => String(s.screenId ?? "")),
+  );
+
   onProgress?.("Generating Stitch screen (1–3 min)…");
   let generated: unknown;
   try {
@@ -249,6 +306,7 @@ async function runStitchOperation(
       "generate_screen_from_text",
       { projectId, prompt, deviceType, modelId },
       signal,
+      STITCH_GENERATE_TIMEOUT_MS,
     );
   } catch (e) {
     log.warn("stitch generate_screen_from_text call ended early — polling screens", {
@@ -262,11 +320,12 @@ async function runStitchOperation(
 
   const pollProjectId = extractStitchProjectId(generated) ?? projectId;
   onProgress?.("Waiting for Stitch render to finish…");
-  for (let attempt = 0; attempt < 16; attempt++) {
-    await sleepMs(attempt === 0 ? 8_000 : 12_000, signal);
-    screens = await listStitchScreens(client, pollProjectId, signal);
-    if (screens.length > 0) return screens;
-    onProgress?.(`Still rendering… (${attempt + 1}/16)`);
+  for (let attempt = 0; attempt < 24; attempt++) {
+    await sleepMs(attempt === 0 ? 6_000 : 8_000, signal);
+    const listed = await listStitchScreens(client, pollProjectId, signal);
+    screens = pickNewestStitchScreens(listed, knownBefore);
+    if (screens.length > 0) return screens.slice(0, 5);
+    onProgress?.(`Still rendering… (${attempt + 1}/24)`);
   }
 
   throw new GoogleStitchError("Stitch returned no screens", "VALIDATION_ERROR", true);

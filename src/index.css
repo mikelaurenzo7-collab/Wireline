@@ -3657,6 +3657,34 @@ html, body, .marketing-surface, .app-surface {
   border: 0;
   background: white;
 }
+.wl-stitch-live-session {
+  max-width: min(100%, 42rem);
+}
+.wl-stitch-live-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.wl-stitch-live-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    color-mix(in srgb, var(--color-brand) 12%, transparent) 50%,
+    transparent 60%
+  );
+  animation: wl-stitch-shimmer 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes wl-stitch-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
 
 /* Director / primary chat canvas */
 .wl-mission-canvas {

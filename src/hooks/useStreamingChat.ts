@@ -83,8 +83,8 @@ export function parseSseEvents(
  * Returns a `send` function that POSTs to a streaming endpoint and
  * a reactive `state` object that updates through the streaming lifecycle.
  */
-/** Reset on every SSE chunk — long Opus / logo turns can run 3+ minutes. */
-const STREAM_IDLE_MS = 300_000;
+/** Reset on every SSE chunk — Stitch / Opus turns can run 5+ minutes. */
+const STREAM_IDLE_MS = 540_000;
 
 export function useStreamingChat(endpoint: string, options?: UseStreamingChatOptions) {
   const [state, setState] = useState<StreamingState>(INITIAL_STATE);

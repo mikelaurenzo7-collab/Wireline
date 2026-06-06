@@ -55,7 +55,7 @@ export function resolveStitchModelId(message: string): StitchModelId {
   if (/\b(polish|production|high[\s-]?fi|pixel[\s-]?perfect)\b/i.test(message)) {
     return "GEMINI_3_1_PRO";
   }
-  return wantsWebsiteDeliverable(message) ? "GEMINI_3_1_PRO" : "GEMINI_3_FLASH";
+  return "GEMINI_3_FLASH";
 }
 
 export function resolveStitchMediaOperation(

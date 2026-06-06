@@ -1113,6 +1113,31 @@ router.post(
           );
           return;
         }
+
+        sse.write("thinking_end", { thinking: "Stitch did not return a screen", durationMs: 0 });
+        const stitchFailReply = [
+          "**Google Stitch** could not finish this render in time.",
+          "",
+          "1. Create a **TEXT_TO_UI** project at [stitch.withgoogle.com](https://stitch.withgoogle.com)",
+          "2. Copy the project ID from the URL into **GOOGLE_STITCH_PROJECT_ID** (Vercel env)",
+          "3. Send the same prompt again — no capability chip needed",
+        ].join("\n");
+        await finalizeDirectorStreamTurn(
+          sse,
+          req.user.id,
+          operatorMessage,
+          stitchFailReply,
+          {
+            reply: stitchFailReply,
+            model: "sonnet",
+            modelLabel: "Google Stitch",
+            modelProvider: "wireline",
+            mode: "fleet",
+          },
+          "",
+          featureFlags,
+        );
+        return;
       }
 
       const streamCtx = await buildDirectorStreamContext({
