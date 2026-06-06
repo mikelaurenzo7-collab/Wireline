@@ -64,6 +64,7 @@ export default function Training() {
     return (
       <ClientRouteViewport>
         <EmptyState
+          framed
           fill
           icon={GraduationCap}
           title="Couldn't load your agents"
@@ -80,6 +81,7 @@ export default function Training() {
     return (
       <ClientRouteViewport>
         <EmptyState
+          framed
           fill
           icon={GraduationCap}
           eyebrow={OPS_CHANNEL_EMPTY.training.eyebrow}
