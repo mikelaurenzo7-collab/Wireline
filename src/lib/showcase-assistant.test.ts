@@ -23,9 +23,13 @@ import {
   buildShowcaseAssistantPayload,
   buildShowcaseFunctionTools,
   buildShowcaseSystemPrompt,
+  extractShowcaseDialedNumber,
+  findShowcaseAgentByPayload,
+  findShowcaseAgentByPhoneNumber,
   isOwnerRoutingShowcaseTool,
   showcaseToolNamesForKind,
   showcaseVapiAssistantName,
+  SHOWCASE_WEBHOOK_URL,
 } from "./showcase-assistant";
 import { WIRELINE_CONTACT_AGENTS, WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
 
@@ -250,5 +254,179 @@ describe("showcase catalog — Vapi payload invariants", () => {
       expect(names).toContain("escalate_to_human");
       expect(names).toContain("schedule_callback");
     }
+  });
+
+  it("payload includes serverUrlSecret when option provided", () => {
+    const sarah = WIRELINE_CONTACT_AGENTS[0];
+    const payload = buildShowcaseAssistantPayload(sarah, "cs", { serverUrlSecret: "test-secret" });
+    expect(payload.serverUrlSecret).toBe("test-secret");
+  });
+
+  it("payload omits serverUrlSecret when option not provided", () => {
+    const sarah = WIRELINE_CONTACT_AGENTS[0];
+    const payload = buildShowcaseAssistantPayload(sarah, "cs");
+    expect(payload).not.toHaveProperty("serverUrlSecret");
+  });
+
+  it("SHOWCASE_WEBHOOK_URL is used as serverUrl in all payloads", () => {
+    const agent = WIRELINE_CONTACT_AGENTS[0];
+    const payload = buildShowcaseAssistantPayload(agent, "cs");
+    expect(payload.serverUrl).toBe(SHOWCASE_WEBHOOK_URL);
+  });
+
+  it("payload without voiceId omits voice block", () => {
+    // Create a mock agent without a voiceId
+    const agentNoVoice = { ...WIRELINE_CONTACT_AGENTS[0], voiceId: undefined };
+    const payload = buildShowcaseAssistantPayload(agentNoVoice, "cs");
+    expect(payload).not.toHaveProperty("voice");
+  });
+});
+
+describe("buildShowcaseSystemPrompt — remaining demo agents", () => {
+  it("Ria prompt uses concierge-specific opening flow", () => {
+    const ria = WIRELINE_DEMO_AGENTS.find((a) => a.name === "Ria")!;
+    if (!ria) return;
+    const prompt = buildShowcaseSystemPrompt(ria, "demo");
+    expect(prompt).toMatch(/concierge|vertical|pick a vertical/i);
+    expect(prompt).toMatch(/ROLE-PLAY STANDARD — Demo concierge/i);
+  });
+
+  it("Aisha prompt includes real estate buyer qualification", () => {
+    const aisha = WIRELINE_DEMO_AGENTS.find((a) => a.name === "Aisha")!;
+    if (!aisha) return;
+    const prompt = buildShowcaseSystemPrompt(aisha, "demo");
+    expect(prompt).toMatch(/brokerage or team name/i);
+    expect(prompt).toMatch(/ROLE-PLAY STANDARD — Real estate/i);
+  });
+
+  it("Elena prompt includes insurance intake flow", () => {
+    const elena = WIRELINE_DEMO_AGENTS.find((a) => a.name === "Elena")!;
+    if (!elena) return;
+    const prompt = buildShowcaseSystemPrompt(elena, "demo");
+    expect(prompt).toMatch(/agency name/i);
+    expect(prompt).toMatch(/ROLE-PLAY STANDARD — Insurance/i);
+  });
+});
+
+describe("extractShowcaseDialedNumber", () => {
+  it("extracts from payload.call.phoneNumber as string", () => {
+    expect(extractShowcaseDialedNumber({ call: { phoneNumber: "+16306425661" } })).toBe(
+      "+16306425661",
+    );
+  });
+
+  it("extracts from payload.call.phoneNumber.number as object", () => {
+    expect(extractShowcaseDialedNumber({ call: { phoneNumber: { number: "+16305811834" } } })).toBe(
+      "+16305811834",
+    );
+  });
+
+  it("extracts from payload.message.call.phoneNumber as string", () => {
+    expect(
+      extractShowcaseDialedNumber({ message: { call: { phoneNumber: "+16306425661" } } }),
+    ).toBe("+16306425661");
+  });
+
+  it("extracts from payload.message.call.phoneNumber.number as object", () => {
+    expect(
+      extractShowcaseDialedNumber({
+        message: { call: { phoneNumber: { number: "+16306425661" } } },
+      }),
+    ).toBe("+16306425661");
+  });
+
+  it("returns null for empty payload", () => {
+    expect(extractShowcaseDialedNumber({})).toBeNull();
+  });
+
+  it("returns null for payload with empty call object", () => {
+    expect(extractShowcaseDialedNumber({ call: {} })).toBeNull();
+  });
+
+  it("returns null when phoneNumber is whitespace only", () => {
+    expect(extractShowcaseDialedNumber({ call: { phoneNumber: "   " } })).toBeNull();
+  });
+
+  it("prefers call.phoneNumber over message.call.phoneNumber", () => {
+    const result = extractShowcaseDialedNumber({
+      call: { phoneNumber: "+16305811834" },
+      message: { call: { phoneNumber: "+16306425661" } },
+    });
+    expect(result).toBe("+16305811834");
+  });
+});
+
+describe("findShowcaseAgentByPhoneNumber", () => {
+  it("returns null for null input", () => {
+    expect(findShowcaseAgentByPhoneNumber(null)).toBeNull();
+  });
+
+  it("returns null for undefined input", () => {
+    expect(findShowcaseAgentByPhoneNumber(undefined)).toBeNull();
+  });
+
+  it("returns null for empty string", () => {
+    expect(findShowcaseAgentByPhoneNumber("")).toBeNull();
+  });
+
+  it("returns null for unknown number", () => {
+    expect(findShowcaseAgentByPhoneNumber("+19999999999")).toBeNull();
+  });
+
+  it("finds Sarah by her E.164 number", () => {
+    const result = findShowcaseAgentByPhoneNumber("+16306425661");
+    expect(result).not.toBeNull();
+    expect(result!.agent.name).toBe("Sarah");
+    expect(result!.kind).toBe("cs");
+  });
+
+  it("finds Liam by his E.164 number", () => {
+    const result = findShowcaseAgentByPhoneNumber("+16305811834");
+    expect(result).not.toBeNull();
+    expect(result!.agent.name).toBe("Liam");
+    expect(result!.kind).toBe("cs");
+  });
+
+  it("returns cs kind for all contact agents", () => {
+    for (const agent of WIRELINE_CONTACT_AGENTS) {
+      const result = findShowcaseAgentByPhoneNumber(agent.tel);
+      if (result) expect(result.kind).toBe("cs");
+    }
+  });
+
+  it("returns demo kind for demo agents", () => {
+    for (const agent of WIRELINE_DEMO_AGENTS) {
+      const result = findShowcaseAgentByPhoneNumber(agent.tel);
+      if (result) expect(result.kind).toBe("demo");
+    }
+  });
+
+  it("does not throw for arbitrary phone string formats", () => {
+    const inputs = ["6306425661", "16306425661", "+1-630-642-5661", "(630) 642-5661", "abc"];
+    for (const input of inputs) {
+      expect(() => findShowcaseAgentByPhoneNumber(input)).not.toThrow();
+    }
+  });
+});
+
+describe("findShowcaseAgentByPayload", () => {
+  it("returns null for empty payload", () => {
+    expect(findShowcaseAgentByPayload({})).toBeNull();
+  });
+
+  it("finds Sarah from call.phoneNumber", () => {
+    const result = findShowcaseAgentByPayload({ call: { phoneNumber: "+16306425661" } });
+    expect(result?.agent.name).toBe("Sarah");
+  });
+
+  it("finds Liam from message.call.phoneNumber", () => {
+    const result = findShowcaseAgentByPayload({
+      message: { call: { phoneNumber: "+16305811834" } },
+    });
+    expect(result?.agent.name).toBe("Liam");
+  });
+
+  it("returns null for unknown number in payload", () => {
+    expect(findShowcaseAgentByPayload({ call: { phoneNumber: "+10000000000" } })).toBeNull();
   });
 });

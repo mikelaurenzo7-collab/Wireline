@@ -184,7 +184,7 @@ export function EmptyState({
   // Center the empty surface within its available vertical space so full-page
   // empties read as balanced rather than top-glued with a large void beneath.
   // `flex-1` fills the parent when it's a height-bearing flex column (the
-  // desktop console layout); `min-h-[55vh]` is the floor that guarantees the
+  // desktop console layout); `min-h-[75vh]` is the floor that guarantees the
   // same centered balance on mobile, where that flex height chain collapses
   // and `flex-1`/`h-full` would otherwise resolve to zero. Together they fix
   // mobile without regressing the desktop centering.

@@ -116,7 +116,7 @@ const STITCH_SVG = `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="ht
 
 // Multiple Director conversation scenarios to stress the chat UI
 function buildChatScenario(kind) {
-  const base = { artifacts: [], fleet: MOCK_AGENTS, featureFlags: { toolExecution: true }, degraded: false };
+  const base = { artifacts: [], fleet: MOCK_AGENTS, featureFlags: { toolExecution: true, stitchMedia: true, creativeTools: true, artifactsPanel: true }, degraded: false };
   const ts = (offset) => new Date(Date.now() - offset * 1000).toISOString();
 
   if (kind === "stitch") {
@@ -160,6 +160,102 @@ function buildChatScenario(kind) {
           id: "d4", role: "director",
           content: "Here's my recommended campaign blueprint for the **90-Day Re-engagement** push:\n\n**Wave 1 — Week 1** _(ARIA, 200 contacts/day)_\n- Warm reintroduction call — acknowledge the gap, lead with new value prop\n- Filter: status = dormant AND last_contact > 90 days AND deal_value > $1,500\n\n**Wave 2 — Week 2** _(MAX as backup for no-answers)_\n- SMS nudge with a direct scheduling link\n- Trigger: Wave 1 no-answer after 2 attempts\n\n**Success metric:** ≥12% reconnect rate → booked call\n\nShall I build the campaign or do you want to tweak the filter criteria first?",
           createdAt: ts(480), model: "opus", modelLabel: "Opus",
+        },
+      ],
+    };
+  }
+
+  // Client persona: Medical/Healthcare — HIPAA scheduling scenario
+  if (kind === "medical-intake") {
+    return {
+      ...base,
+      messages: [
+        { id: "u-med1", role: "user", content: "NOVA hasn't been able to confirm insurance for new patients before the appointment. Patients are showing up and we're billing them the wrong amount. Fix it.", createdAt: ts(600) },
+        {
+          id: "d-med1", role: "director",
+          content: "This is a HIPAA-adjacent intake gap — here's what I see and the fix.\n\n**Root cause:** NOVA's intake flow collects DOB and chief complaint but skips insurance verification. She books the slot and moves on.\n\n**Fix in 3 steps:**\n\n1. **Add insurance intake to her system prompt** — after collecting reason for visit, she asks for insurance carrier and member ID, reads them back, and flags the appointment as 'verification needed' if she can't get them.\n2. **Add a verification gate tool** — I'll wire a `verify_insurance` function call so NOVA can hit your clearinghouse API mid-call and get a real-time eligibility check.\n3. **Update her first message** — prepend a brief 'I'll also need your insurance info to confirm your co-pay before we finalize the slot' so patients arrive expecting it.\n\nShall I update NOVA's system prompt now and draft the `verify_insurance` tool spec?",
+          createdAt: ts(580), model: "opus", modelLabel: "Opus",
+        },
+        { id: "u-med2", role: "user", content: "Yes, update NOVA and draft the tool spec.", createdAt: ts(560) },
+        { id: "d-med2", role: "director", content: "Done. NOVA's prompt now includes a structured insurance intake step after reason-for-visit. I've also drafted the `verify_insurance` tool spec — it takes `member_id`, `insurance_carrier`, `dob`, and `appointment_type`, returns `covered: boolean`, `copay_usd: number`, and `requires_referral: boolean`. Hand this to your dev team to wire to your clearinghouse. I've flagged this in the audit trail. NOVA's next call will use the updated flow.", createdAt: ts(540), model: "opus", modelLabel: "Opus" },
+      ],
+    };
+  }
+
+  // Client persona: Legal — intake compliance scenario
+  if (kind === "legal-intake") {
+    return {
+      ...base,
+      messages: [
+        { id: "u-leg1", role: "user", content: "A prospect called Diana asking about suing their employer and she gave legal advice. This is a huge liability. What happened and how do we prevent it?", createdAt: ts(800) },
+        {
+          id: "d-leg1", role: "director",
+          content: "I reviewed Diana's call from this morning (call ID: #LF-2241). Here's what happened and the fix.\n\n**What happened:** The caller asked 'do I have a case?' and Diana responded with 'it sounds like you might have grounds for a wrongful termination claim based on what you described.' That crosses the line — legal advice, not legal intake.\n\n**Immediate action:** Diana's system prompt needs an explicit prohibition:\n\n> *'Never give legal opinions or assessments. If asked whether they have a case, say: \"That's exactly what the consultation is for — I can book you with one of our attorneys who can evaluate the facts and give you a real answer.\"'*\n\n**Three guardrails I'm adding:**\n1. Hard block on phrases like 'you have a case', 'you might have grounds', 'you could sue'\n2. Mandatory redirect to consultation booking when caller asks for legal assessment\n3. Compliance flag in the call summary if 'legal advice' intent is detected\n\nWant me to update Diana's prompt and add the compliance flags now?",
+          createdAt: ts(780), model: "opus", modelLabel: "Opus",
+        },
+      ],
+    };
+  }
+
+  // Client persona: Real estate — buyer qualification + showing
+  if (kind === "real-estate") {
+    return {
+      ...base,
+      messages: [
+        { id: "u-re1", role: "user", content: "How is Aisha performing on buyer calls this week? And we have a big open house Saturday — set her up for it.", createdAt: ts(400) },
+        {
+          id: "d-re1", role: "director",
+          content: "**Aisha — This Week (Mon–Thu)**\n\n| Metric | Value |\n|---|---|\n| Buyer calls handled | 34 |\n| Showings booked | 11 (32.4% conversion) |\n| Avg call duration | 3m 22s |\n| Pre-qual questions asked | 91% of calls |\n\nStrong conversion for buyer intake. One gap: she's not consistently capturing pre-approval status — only 62% of booked showings have a confirmed pre-approval in the notes.\n\n**Saturday Open House setup — 842 Elmwood Ave, 11am–2pm:**\n\nI'll update Aisha's system prompt for Saturday with:\n- Property address, beds/baths, price ($485K), and key selling points (renovated kitchen, 0.4 acre lot, top-rated school district)\n- Instructions to capture pre-approval status, timeline, and buyer agent status before booking\n- A specific call-to-action: 'Would you like to come Saturday between 11 and 2?'\n\nShall I apply the update now?",
+          createdAt: ts(380), model: "opus", modelLabel: "Opus",
+        },
+        { id: "u-re2", role: "user", content: "Apply it. Also add the pool and the 2-car garage to the talking points.", createdAt: ts(360) },
+        { id: "d-re2", role: "director", content: "Updated. Aisha's Saturday brief now includes: 4BR/3BA renovated colonial, updated kitchen, 0.4 acre lot, pool, 2-car garage, top school district — $485K, open house 11am–2pm. She'll lead with those features and push for a Saturday visit. The update is live on her next call.", createdAt: ts(340), model: "opus", modelLabel: "Opus" },
+      ],
+    };
+  }
+
+  // Client persona: Enterprise B2B — multi-stakeholder SaaS evaluation
+  if (kind === "enterprise-b2b") {
+    return {
+      ...base,
+      messages: [
+        { id: "u-b2b1", role: "user", content: "We have an enterprise prospect — Fortis Health, 800 seats, evaluating us vs. a competitor. They want a custom demo next week. Help me prep.", createdAt: ts(900) },
+        {
+          id: "d-b2b1", role: "director",
+          content: "**Fortis Health Demo Prep — Enterprise Track**\n\nHere's a ready-to-run prep package:\n\n**Their likely eval criteria (healthcare enterprise):**\n- HIPAA BAA availability and compliance posture\n- EHR/CRM integration (Epic, Salesforce Health Cloud)\n- Uptime SLA and fail-safe behavior on live calls\n- Volume pricing at 800+ seats\n- Custom voice + persona per department\n\n**Demo flow I recommend (45 min):**\n1. **(5 min)** Wireline overview — 'one fleet, every channel'\n2. **(15 min)** Live NOVA demo — patient intake call with real-time insurance verification and appointment booking\n3. **(10 min)** Director walkthrough — show how their ops team would coach, analyze, and retrain agents from one screen\n4. **(10 min)** Integration deep-dive — Epic webhook flow, call summary to EHR, escalation to human\n5. **(5 min)** Pricing + procurement path\n\n**Competitive positioning against their shortlist:**\nIf they're evaluating Conversica or Observe.AI, our differentiation is real-time voice (not async email), HIPAA-native, and no per-seat per-minute overage surprises.\n\nWant me to generate a custom slide deck outline or a tailored ROI model for 800 seats?",
+          createdAt: ts(880), model: "opus", modelLabel: "Opus",
+        },
+      ],
+    };
+  }
+
+  // Client persona: Frustrated/hostile client — escalation and retention
+  if (kind === "hostile-client") {
+    return {
+      ...base,
+      messages: [
+        { id: "u-hos1", role: "user", content: "A client just called MAX furious — their campaign bombed, 0 closes in 5 days, they want a refund and they're threatening to go to Twitter. What do I do?", createdAt: ts(200) },
+        {
+          id: "d-hos1", role: "director",
+          content: "**Immediate response playbook — angry client, active threat:**\n\n**Do this in the next 30 minutes:**\n\n1. **Call them directly** — don't let this sit in email. A human call within 30 min defuses 80% of 'I'm going to Twitter' situations.\n\n2. **Lead with acknowledgment, not defense:** *'I hear you — zero closes in 5 days is not acceptable and I want to fix it. Can I have 10 minutes to walk through what happened and what we're doing about it?'*\n\n3. **Have the root cause ready** — I pulled MAX's last 5 days:\n   - 847 dials → 211 connects → 0 closes\n   - **Issue:** 73% of connects are hanging up in the first 12 seconds\n   - **Likely cause:** MAX's opener sounds scripted on this campaign — the pitch is product-led ('we help companies with X') instead of problem-led ('I noticed you're hiring 3 SDRs...')\n\n4. **Offer a concrete remediation** (not a refund as first move):\n   - Pause the campaign for 48h\n   - Rewrite MAX's opener to be research-led\n   - Run a 100-dial A/B test at no additional cost\n   - Daily performance check-in for the next 2 weeks\n\n5. **If they still demand a refund:** Offer a 50% credit toward the next month (protects revenue, signals accountability).\n\nWant me to draft the call script and the updated MAX opener?",
+          createdAt: ts(180), model: "opus", modelLabel: "Opus",
+        },
+        { id: "u-hos2", role: "user", content: "Draft both. And fast.", createdAt: ts(160) },
+        { id: "d-hos2", role: "director", content: "**Call script (2 min, no fluffy opener):**\n\n*'Hey [name], it's [your name] from Wireline — I saw what happened with MAX this week and I wanted to call you personally. Zero closes in 5 days isn't okay, and I take that seriously. I ran the call data this morning and I know exactly what went wrong. I want to give you 10 minutes, tell you what I found, and show you what we're changing today. Is now okay?'*\n\n**MAX's new opener (research-led, problem-first):**\n\n*'Hey [prospect name] — I saw [Company] is expanding into [market/vertical]. I'm reaching out because we work with companies doing exactly that kind of growth and we help them convert more of the conversations they're already having. Do you have 90 seconds?'*\n\nBoth are staged and ready. Campaign paused. I'll flag you after the first 50 dials on the new opener with preliminary data.", createdAt: ts(140), model: "opus", modelLabel: "Opus" },
+      ],
+    };
+  }
+
+  // Client persona: Competitor switch — inbound hot lead
+  if (kind === "competitor-switch") {
+    return {
+      ...base,
+      messages: [
+        { id: "u-comp1", role: "user", content: "We have an inbound lead from a dental group who just left a competitor after a bad experience. They have 12 locations and are ready to sign. How do I close this fast?", createdAt: ts(350) },
+        {
+          id: "d-comp1", role: "director",
+          content: "**Hot-close playbook — competitor switcher, 12-location DSO:**\n\n**Speed is your edge.** They just had a bad experience — every day they wait is a day the pain is fresh and they might find another option. Close within 48 hours.\n\n**Discovery questions for the first call (10 min):**\n1. What specifically broke down with the previous vendor? *(pain point = your opening for differentiation)*\n2. Which locations are live with voice AI today vs. none? *(sizing the immediate win)*\n3. Who else is in the room for the decision — is it you or do we need IT/compliance? *(multi-threader alert)*\n4. What's their timeline to flip — is it 'ASAP' or constrained by a contract end date?\n\n**Your differentiation for a dental DSO:**\n- HIPAA BAA included, PHI handling documented — dental groups get burned by vendors who don't know this\n- Per-location custom personas — their Plymouth office agent sounds different from their downtown flagship\n- No voice AI lockout on the platform — they can always reach a human in 2 rings if needed\n\n**Deal structure I'd recommend:**\n- Start 3 pilot locations (fastest win, lowest risk for them)\n- 90-day pilot contract, no long-term commitment yet\n- Include 2 weeks of white-glove onboarding\n- Price at 20% below your standard rate for the pilot to get them in, full price at renewal\n\n**Close line:** *'You've already made the hardest decision — leaving the old vendor. Let me make the next decision easy. We can have your first three locations live in 5 business days.'*\n\nWant me to draft the proposal email?",
+          createdAt: ts(330), model: "opus", modelLabel: "Opus",
         },
       ],
     };
@@ -556,6 +652,282 @@ async function suitChat() {
     const clearFound = await clearBtn.isVisible().catch(() => false);
     if (!clearFound) e.flags.push("ELEMENT_NOT_FOUND: Clear button");
   });
+}
+
+// ─── Suite: Client Roleplay ───────────────────────────────────────────────────
+// Tests Director Chat as heavy users with specific business contexts would use it.
+// Each scenario is a real client archetype: healthcare, legal, real-estate, B2B,
+// hostile, competitor-switch. Validates formatting, model attribution, content quality.
+async function suiteClientRoleplay() {
+  console.log("\n▸ Suite: roleplay");
+
+  const ROLEPLAY_SCENARIOS = [
+    {
+      kind: "medical-intake",
+      label: "Healthcare / HIPAA intake gap",
+      checks: [/HIPAA/i, /insurance/i, /verify_insurance/i],
+    },
+    {
+      kind: "legal-intake",
+      label: "Legal firm — compliance breach",
+      checks: [/legal advice/i, /consultation/i, /compliance/i],
+    },
+    {
+      kind: "real-estate",
+      label: "Real estate — buyer + open house prep",
+      checks: [/showing/i, /pool|garage/i, /pre-approval/i],
+    },
+    {
+      kind: "enterprise-b2b",
+      label: "Enterprise B2B — 800-seat healthcare deal",
+      checks: [/HIPAA/i, /Epic/i, /ROI/i],
+    },
+    {
+      kind: "hostile-client",
+      label: "Hostile client — zero closes, refund threat",
+      checks: [/zero closes/i, /acknowledgment|opener/i, /script/i],
+    },
+    {
+      kind: "competitor-switch",
+      label: "Competitor switch — 12-location DSO hot lead",
+      checks: [/pilot/i, /HIPAA/i, /5 business days/i],
+    },
+  ];
+
+  for (const scenario of ROLEPLAY_SCENARIOS) {
+    _chatScenario = scenario.kind;
+
+    await step("roleplay", `${scenario.label} — renders`, async (e) => {
+      await nav("/chat");
+      // Assistant + bubble classes are on the SAME element — no descendant selector
+      const bubble = page.locator(".wl-director-bubble.wl-director-message--assistant").first();
+      const appeared = await bubble.waitFor({ state: "visible", timeout: 10000 }).then(() => true).catch(() => false);
+      if (!appeared) { e.flags.push("ELEMENT_NOT_FOUND: director message bubble"); return; }
+      await page.waitForTimeout(500);
+    });
+
+    await step("roleplay", `${scenario.label} — content quality`, async (e) => {
+      const bodyText = await page.locator("body").textContent().catch(() => "");
+      for (const check of scenario.checks) {
+        if (!check.test(bodyText)) {
+          e.flags.push(`CONTENT_MISSING: expected ${check} in Director response`);
+        }
+      }
+    });
+
+    await step("roleplay", `${scenario.label} — model picker chip visible`, async (e) => {
+      // Persisted Director messages don't render a per-message model badge — verify the
+      // composer-level model picker is visible (the user's source of model truth).
+      const picker = page.getByRole("button", { name: /auto|sonnet|opus|model/i }).first();
+      const visible = await picker.isVisible().catch(() => false);
+      if (!visible) e.flags.push("ELEMENT_NOT_FOUND: model picker chip");
+    });
+
+    await step("roleplay", `${scenario.label} — markdown rendering`, async (e) => {
+      // Look inside the director doc specifically for any markdown element
+      const inDoc = page.locator(".wl-director-doc strong, .wl-director-doc h1, .wl-director-doc h2, .wl-director-doc h3, .wl-director-doc ol, .wl-director-doc ul");
+      const count = await inDoc.count().catch(() => 0);
+      if (count === 0) e.flags.push("MARKDOWN_NOT_RENDERED: no bold/heading/list in Director message");
+    });
+
+    await step("roleplay", `${scenario.label} — compose as client`, async (e) => {
+      // Type a follow-up as the client would
+      const FOLLOWUPS = {
+        "medical-intake": "What about patients who don't have insurance?",
+        "legal-intake": "How do we handle calls where the client is clearly distressed?",
+        "real-estate": "Can Aisha also handle rental inquiries?",
+        "enterprise-b2b": "Can you generate the ROI model for 800 seats?",
+        "hostile-client": "What if they reject the 50% credit offer?",
+        "competitor-switch": "Draft the proposal email.",
+      };
+      const followUp = FOLLOWUPS[scenario.kind] || "Tell me more.";
+      const textarea = page.locator("textarea, [contenteditable='true'], [role='textbox']").first();
+      const found = await textarea.isVisible().catch(() => false);
+      if (!found) { e.flags.push("ELEMENT_NOT_FOUND: chat composer"); return; }
+      await textarea.click();
+      await textarea.fill(followUp);
+      await page.waitForTimeout(200);
+      const val = await textarea.inputValue().catch(async () => (await textarea.textContent()) || "");
+      if (!val || val.length < 5) e.flags.push("INTERACTION_FAILED: could not type follow-up in composer");
+      await textarea.fill(""); // clear
+    });
+  }
+
+  // Cross-scenario: coach chip available
+  _chatScenario = "hostile-client";
+  await step("roleplay", "Coach chip — hostile-client scenario", async (e) => {
+    await nav("/chat");
+    await page.waitForTimeout(1000);
+    const coach = page.getByRole("button", { name: /coach/i }).first();
+    const found = await coach.isVisible().catch(() => false);
+    if (!found) e.flags.push("ELEMENT_NOT_FOUND: Coach chip (may be hidden in this toolbar state)");
+    else {
+      await coach.click();
+      await page.waitForTimeout(400);
+      await page.keyboard.press("Escape");
+    }
+  });
+
+  // Responsive check: roleplay renders on tablet
+  _chatScenario = "enterprise-b2b";
+  await step("roleplay", "Enterprise B2B — tablet viewport (834px)", async (e) => {
+    await page.setViewportSize({ width: 834, height: 1112 });
+    await nav("/chat");
+    await page.waitForTimeout(800);
+    const bubble = page.locator(".wl-director-bubble, [class*='director-bubble'], [class*='message']").first();
+    const found = await bubble.isVisible().catch(() => false);
+    if (!found) e.flags.push("ELEMENT_NOT_FOUND: director bubble at tablet width");
+    await page.setViewportSize({ width: VW, height: VH });
+  });
+}
+
+// ─── Suite: Stitch Live Render ────────────────────────────────────────────────
+// Simulates the real Stitch render flow: user types a design request, the live
+// render panel appears with the 3–5 minute hint and animated phases, then the
+// rendered preview gallery replaces it once the (delayed) POST resolves.
+//
+// The default chat scenario mock returns immediately. Here we install a request
+// interceptor that DELAYS the POST /api/director/messages response by 5 seconds
+// so the live session is observable in real time. This mirrors what a real user
+// sees: the elapsed counter ticks, phases advance, then the final design lands.
+async function suiteStitchLiveRender() {
+  console.log("\n▸ Suite: stitch-live");
+
+  // Stash existing chatScenario, set up a custom Stitch-completion payload.
+  _chatScenario = "stitch";
+
+  // Install a delayed POST handler — must be a more-specific route than the
+  // global /api/* handler. Playwright runs the most-recently-added route first.
+  await context.route("**/api/director/messages", async (route) => {
+    const req = route.request();
+    if (req.method() === "POST") {
+      // Delay 5s so the live panel is captured live. (Real Stitch takes 3–5 min.)
+      await new Promise((r) => setTimeout(r, 5000));
+      const completedScenario = buildChatScenario("stitch");
+      // Append the newly rendered Stitch preview as the latest assistant message
+      const newPreview = {
+        conceptId: "stitch-live-1",
+        title: "Brightline — Live Render Complete",
+        rationale: "Fresh Wireline Design render — desktop, conversion-focused.",
+        kind: "stitch",
+        previewDataUrl: STITCH_SVG,
+        htmlDownloadUrl: "/api/director/files/stitch-live-1.html?inline=1",
+        imageDownloadUrl: "/api/director/files/stitch-live-1.png",
+        deviceType: "DESKTOP",
+      };
+      const renderedReply = {
+        id: `d-live-${Date.now()}`,
+        role: "director",
+        content: "Here's your rendered design — Wireline Design just packaged the export.",
+        createdAt: new Date().toISOString(),
+        model: "opus",
+        modelLabel: "Opus",
+        previews: [newPreview],
+      };
+      return await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ...completedScenario, messages: [...completedScenario.messages, renderedReply] }),
+      });
+    }
+    // GETs use the default scenario fast-path
+    return await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(buildChatScenario(_chatScenario)),
+    });
+  });
+
+  await step("stitch-live", "Composer renders + can type design request", async (e) => {
+    await nav("/chat");
+    await page.waitForTimeout(1200);
+    const textarea = page.locator("textarea, [contenteditable='true'], [role='textbox']").first();
+    const found = await textarea.isVisible().catch(() => false);
+    if (!found) { e.flags.push("ELEMENT_NOT_FOUND: chat composer"); return; }
+    await textarea.click();
+    // This phrase matches `wantsStitchMediaRequest` — "design a landing page" hits
+    // STITCH_UI_MEDIA_SIGNAL via the "design ... landing" pattern.
+    await textarea.fill("Design a landing page for my home services brand, Brightline. Make it mobile-first with a hero and three feature cards.");
+    await page.waitForTimeout(300);
+  });
+
+  await step("stitch-live", "Send button triggers live render panel", async (e) => {
+    const sendBtn = page.getByRole("button", { name: /send message/i }).first();
+    const found = await sendBtn.isVisible().catch(() => false);
+    if (!found) { e.flags.push("ELEMENT_NOT_FOUND: Send message button"); return; }
+    await sendBtn.click();
+    // Wait briefly for state to flip to stitchRendering=true
+    await page.waitForTimeout(800);
+  });
+
+  await step("stitch-live", "Live render badge — 'Wireline Design' label visible", async (e) => {
+    const badge = page.locator(".wl-stitch-live-session").getByText(/wireline design/i).first();
+    const visible = await badge.isVisible({ timeout: 4000 }).catch(() => false);
+    if (!visible) e.flags.push("ELEMENT_NOT_FOUND: 'Wireline Design' badge label");
+  });
+
+  await step("stitch-live", "Live render — 3–5 minute hint visible", async (e) => {
+    const hint = page.getByText(/3.{0,3}5 minutes|typically takes/i).first();
+    const visible = await hint.isVisible({ timeout: 3000 }).catch(() => false);
+    if (!visible) e.flags.push("ELEMENT_NOT_FOUND: 3–5 minute hint text");
+  });
+
+  await step("stitch-live", "Live render — phase text visible (Composing/Rendering/etc)", async (e) => {
+    const phase = page.locator(".wl-stitch-live-session").getByText(/composing|rendering|polishing|applying|packaging/i).first();
+    const visible = await phase.isVisible({ timeout: 3000 }).catch(() => false);
+    if (!visible) e.flags.push("ELEMENT_NOT_FOUND: phase text in live session");
+  });
+
+  await step("stitch-live", "Live render — elapsed seconds counter ticks", async (e) => {
+    const counter = page.locator(".wl-stitch-live-session").getByText(/^\d+s$/).first();
+    const visible = await counter.isVisible({ timeout: 3000 }).catch(() => false);
+    if (!visible) { e.flags.push("ELEMENT_NOT_FOUND: elapsed seconds counter"); return; }
+    const first = (await counter.textContent().catch(() => "0s")) || "0s";
+    await page.waitForTimeout(1500);
+    const second = (await counter.textContent().catch(() => "0s")) || "0s";
+    const firstSec = parseInt(first.replace("s", ""), 10) || 0;
+    const secondSec = parseInt(second.replace("s", ""), 10) || 0;
+    if (secondSec <= firstSec) e.flags.push("INTERACTION_FAILED: elapsed counter did not advance");
+  });
+
+  await step("stitch-live", "Live render — operator prompt is shown back to user", async (e) => {
+    const echoed = page.locator(".wl-stitch-live-session").getByText(/home services brand|Brightline/i).first();
+    const visible = await echoed.isVisible({ timeout: 2000 }).catch(() => false);
+    if (!visible) e.flags.push("ELEMENT_NOT_FOUND: operator prompt echoed in live session");
+  });
+
+  await step("stitch-live", "Live render — device chrome shimmer is visible", async (e) => {
+    const device = page.locator(".wl-stitch-device.wl-stitch-live-shimmer").first();
+    const visible = await device.isVisible({ timeout: 2000 }).catch(() => false);
+    if (!visible) e.flags.push("ELEMENT_NOT_FOUND: device chrome shimmer container");
+  });
+
+  await step("stitch-live", "Successful render: gallery replaces live panel", async (e) => {
+    // POST mock fulfils after 5s — wait up to 12s for the live session to dismount
+    const livePanel = page.locator(".wl-stitch-live-session");
+    const gone = await livePanel.first().waitFor({ state: "detached", timeout: 12000 }).then(() => true).catch(() => false);
+    if (!gone) { e.flags.push("INTERACTION_FAILED: live session did not dismount after POST resolved"); return; }
+    // Verify the gallery (final state) is now visible — Screenshot tab is the default
+    const gallery = page.locator(".wl-stitch-device, [class*='stitch-gallery'], [class*='wl-stitch']").first();
+    const galleryUp = await gallery.isVisible({ timeout: 5000 }).catch(() => false);
+    if (!galleryUp) e.flags.push("ELEMENT_NOT_FOUND: stitch gallery did not appear after render");
+  });
+
+  await step("stitch-live", "Rendered gallery — Screenshot/Live HTML/Export tabs present", async (e) => {
+    const screenshot = await page.getByRole("button", { name: /screenshot/i }).first().isVisible().catch(() => false);
+    const exportTab = await page.getByRole("button", { name: /^export$/i }).first().isVisible().catch(() => false);
+    if (!screenshot) e.flags.push("ELEMENT_NOT_FOUND: Screenshot tab in rendered gallery");
+    if (!exportTab) e.flags.push("ELEMENT_NOT_FOUND: Export tab in rendered gallery");
+  });
+
+  await step("stitch-live", "Rendered gallery — design preview image is rendered", async (e) => {
+    const img = page.locator(".wl-stitch-device img, [class*='wl-stitch'] img").first();
+    const visible = await img.isVisible({ timeout: 4000 }).catch(() => false);
+    if (!visible) e.flags.push("ELEMENT_NOT_FOUND: rendered design preview image");
+  });
+
+  // Reset to default: remove the delayed route so subsequent suites use the fast mock.
+  await context.unroute("**/api/director/messages");
 }
 
 // ─── Suite: Agents ────────────────────────────────────────────────────────────
@@ -1280,6 +1652,8 @@ async function main() {
 
   // Run suites
   if (!SUITES_FILTER || SUITES_FILTER.has("chat")) await suitChat();
+  if (!SUITES_FILTER || SUITES_FILTER.has("roleplay")) await suiteClientRoleplay();
+  if (!SUITES_FILTER || SUITES_FILTER.has("stitch-live")) await suiteStitchLiveRender();
   if (!SUITES_FILTER || SUITES_FILTER.has("agents")) await suiteAgents();
   if (!SUITES_FILTER || SUITES_FILTER.has("training")) await suiteTraining();
   if (!SUITES_FILTER || SUITES_FILTER.has("ops")) await suiteOps();
