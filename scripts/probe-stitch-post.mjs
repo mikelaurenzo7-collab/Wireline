@@ -43,7 +43,10 @@ async function main() {
     process.exit(1);
   }
   const previews = Array.isArray(data.previews) ? data.previews.length : 0;
-  const stitch = data.modelLabel === "Google Stitch" || previews > 0;
+  const stitch =
+    data.modelLabel === "Wireline Design" ||
+    data.modelLabel === "Google Stitch" ||
+    previews > 0;
   console.log(
     JSON.stringify({
       ok: true,
@@ -54,7 +57,12 @@ async function main() {
       replyStart: String(data.reply || "").slice(0, 100),
     }),
   );
-  process.exit(stitch ? 0 : 1);
+  const ok = stitch && previews > 0;
+  if (!ok) {
+    console.error("FAIL: stitch turn without packaged previews", { previews, modelLabel: data.modelLabel });
+    process.exit(1);
+  }
+  process.exit(0);
 }
 
 main().catch((e) => {

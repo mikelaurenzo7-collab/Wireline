@@ -427,6 +427,31 @@ export const DIRECTOR_COMPOSER_CONTEXT = {
   toolbarLabel: "Composer tools",
 } as const;
 
+/** User-facing UI generation — Wireline-branded (provider is an implementation detail). */
+export const WIRELINE_STITCH_UI = {
+  modelLabel: "Wireline Design",
+  badgeLabel: "Wireline Design",
+  deviceChromeLabel: "Live preview",
+  loadingPhases: [
+    "Composing layout…",
+    "Rendering screen…",
+    "Polishing typography…",
+    "Applying brand tokens…",
+    "Packaging preview…",
+  ],
+  loadingHint:
+    "Wireline Design typically takes 3–5 minutes end-to-end (compose + package). Stay on this tab.",
+  exportBlurb: "Production HTML/CSS — hand off to your team or keep iterating in chat.",
+  fallbackCopy: "Preview is in your artifacts panel — open HTML or PNG from the thread header.",
+  failReply: [
+    "I couldn't finish this design render in time.",
+    "",
+    "Your message is saved — try the same prompt again in a minute, or ask for a smaller scope (e.g. hero section only).",
+    "",
+    "If it keeps failing, check that UI generation is enabled for your workspace or contact support.",
+  ].join("\n"),
+} as const;
+
 export const WL_APP_CLASSES = {
   /** Desktop editorial subtitle under TopBar — operator context */
   pageContext: "wl-page-context",

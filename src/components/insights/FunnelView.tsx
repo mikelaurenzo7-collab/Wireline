@@ -42,7 +42,7 @@ export default function FunnelView({ days }: { days: number }) {
   }
 
   return (
-    <div className={cn(WL_APP_CLASSES.panelFrame, "p-8 md:p-10 space-y-4")}>
+    <div className={cn(WL_APP_CLASSES.panelFrame, "p-5 md:p-6 space-y-3")}>
       <div className="mb-2">
         <p className="wl-insight-label text-brand/70">Conversion · {data.window_days}d</p>
         <h3 className="font-display italic text-2xl text-ink leading-tight">Funnel</h3>
@@ -74,7 +74,11 @@ export default function FunnelView({ days }: { days: number }) {
               />
             </div>
             {drop !== null && drop > 0 && (
-              <div className="app-section-title text-right">↓ {drop}% from previous stage</div>
+              <div className="app-section-title text-right text-muted/80">
+                {drop === 100 && s.count === 0
+                  ? "None progressed from previous stage"
+                  : `↓ ${drop}% drop-off from previous stage`}
+              </div>
             )}
           </motion.div>
         );

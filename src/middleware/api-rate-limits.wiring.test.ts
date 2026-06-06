@@ -59,7 +59,7 @@ describe("server.ts middleware wiring", () => {
 
   it("mounts extended timeout on /api/director and skips default cap for director paths", () => {
     const directorTimeout = SERVER.search(
-      /app\.use\(["']\/api\/director["']\s*,\s*timeoutMiddleware\(\s*180_000\s*\)\s*\)/,
+      /app\.use\(["']\/api\/director["']\s*,\s*timeoutMiddleware\(\s*DIRECTOR_REQUEST_TIMEOUT_MS\s*\)\s*\)/,
     );
     const defaultTimeout = SERVER.search(
       /app\.use\(["']\/api["']\s*,\s*defaultApiTimeoutMiddleware\s*\)/,

@@ -75,6 +75,7 @@ describe("buildCSP", () => {
     expect(csp).toContain("style-src 'self' 'unsafe-inline' https://fonts.googleapis.com");
     expect(csp).toContain("font-src 'self' data: https://fonts.gstatic.com");
     expect(csp).toContain("img-src 'self' data: blob: https:");
+    expect(csp).toContain("frame-src 'self' blob:");
   });
 
   it("threads the supplied connectSrcs string into connect-src", () => {

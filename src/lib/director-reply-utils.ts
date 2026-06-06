@@ -1,4 +1,12 @@
+import { WIRELINE_STITCH_UI } from "./wireline-director-design";
+
 /** Shared Director reply heuristics (safe for client + server). */
+
+const STITCH_MODEL_LABELS = new Set([WIRELINE_STITCH_UI.modelLabel, "Google Stitch"]);
+
+export function isStitchModelLabel(label?: string): boolean {
+  return Boolean(label && STITCH_MODEL_LABELS.has(label));
+}
 
 export const DIRECTOR_STUB_REPLY =
   "I'm here — tell me what you want to move forward and I'll orchestrate it.";
@@ -23,6 +31,43 @@ export function isSubstantiveDirectorPayload(data: Record<string, unknown> | und
 }
 
 /** Drop stub director rows that follow a substantive reply for the same operator turn. */
+export function operatorTurnHasDirectorReply(
+  messages: {
+    role: string;
+    content: string;
+    modelLabel?: string;
+    previews?: unknown[];
+  }[],
+  operatorContent: string,
+  options?: { requireStitch?: boolean },
+): boolean {
+  const needle = operatorContent.trim();
+  const idx = messages.findIndex((m) => m.role === "operator" && m.content.trim() === needle);
+  if (idx < 0) return false;
+
+  for (const m of messages.slice(idx + 1)) {
+    if (m.role === "operator") break;
+    if (m.role !== "director") continue;
+
+    if (options?.requireStitch) {
+      const previews = Array.isArray(m.previews) ? m.previews : [];
+      const isStitch =
+        isStitchModelLabel(m.modelLabel) ||
+        previews.some(
+          (p) =>
+            !!p &&
+            typeof p === "object" &&
+            (p as { kind?: string }).kind === "stitch",
+        );
+      if (isStitch && isSubstantiveDirectorReply(m.content)) return true;
+      continue;
+    }
+
+    if (isSubstantiveDirectorReply(m.content)) return true;
+  }
+  return false;
+}
+
 export function collapseDirectorThreadDuplicates<T extends { role: string; content: string }>(
   messagesAsc: T[],
 ): T[] {

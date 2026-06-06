@@ -36,7 +36,11 @@ import {
   Sparkles,
   LayoutTemplate,
 } from "lucide-react";
-import { authFetch, readApiJson } from "../lib/api";
+import {
+  authFetch,
+  DIRECTOR_STITCH_REQUEST_TIMEOUT_MS,
+  readApiJson,
+} from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { hydrateAgentsFromFleet, useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -51,6 +55,7 @@ import { useStreamingChat } from "../hooks/useStreamingChat";
 import {
   isSubstantiveDirectorPayload,
   isSubstantiveDirectorReply,
+  operatorTurnHasDirectorReply,
 } from "../lib/director-reply-utils";
 import ProposalCard from "./chat/ProposalCard";
 import { AGENT_TOOL_CATALOG } from "../lib/agent-capabilities";
@@ -481,12 +486,47 @@ export default function DirectorWorkspace({
     },
   });
 
+  const recoverPersistedDirectorReply = useCallback(
+    async (trimmed: string, requireStitch: boolean): Promise<boolean> => {
+      const waits = [400, 900, 1600, 3000, 5000, 8000, 12_000, 18_000];
+      for (const waitMs of waits) {
+        await new Promise((resolve) => setTimeout(resolve, waitMs));
+        const r = await authFetch("/api/director/messages");
+        if (!r.ok) continue;
+        const data = await r.json();
+        const msgs = Array.isArray(data.messages) ? data.messages : [];
+        if (
+          !operatorTurnHasDirectorReply(msgs, trimmed, {
+            requireStitch: requireStitch,
+          })
+        ) {
+          continue;
+        }
+        setMessages(msgs);
+        if (Array.isArray(data.artifacts)) setArtifacts(data.artifacts);
+        return true;
+      }
+      return false;
+    },
+    [],
+  );
+
   const sendNonStreaming = useCallback(
-    async (trimmed: string, optimisticId?: string, opts?: { skipOperatorPersist?: boolean }) => {
+    async (
+      trimmed: string,
+      optimisticId?: string,
+      opts?: {
+        skipOperatorPersist?: boolean;
+        timeoutMs?: number;
+        recoverPersistedReply?: boolean;
+        requireStitchReply?: boolean;
+      },
+    ) => {
       try {
         const r = await authFetch("/api/director/messages", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          timeoutMs: opts?.timeoutMs,
           body: JSON.stringify({
             content: trimmed,
             ...(focusAgentId ? { focusAgentId } : {}),
@@ -503,11 +543,23 @@ export default function DirectorWorkspace({
         if (!parsed.ok) throw new Error(parsed.error);
         appendDirectorReply(parsed.data);
       } catch {
+        if (opts?.recoverPersistedReply) {
+          const recovered = await recoverPersistedDirectorReply(
+            trimmed,
+            opts.requireStitchReply === true,
+          );
+          if (recovered) return;
+        }
         if (optimisticId) {
           setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
         }
         setInput(trimmed);
-        toastError("Couldn't send", "Try again in a moment");
+        toastError(
+          opts?.requireStitchReply ? "Stitch didn't finish in time" : "Couldn't send",
+          opts?.requireStitchReply
+            ? "Your render may still land in this thread — refresh in a moment or try again."
+            : "Try again in a moment",
+        );
       } finally {
         setIsSending(false);
         streamReset();
@@ -515,7 +567,15 @@ export default function DirectorWorkspace({
         inputRef.current?.focus();
       }
     },
-    [appendDirectorReply, streamReset, toastError, focusAgentId, forceDeep, chatModelSelection],
+    [
+      appendDirectorReply,
+      recoverPersistedDirectorReply,
+      streamReset,
+      toastError,
+      focusAgentId,
+      forceDeep,
+      chatModelSelection,
+    ],
   );
   sendNonStreamingRef.current = sendNonStreaming;
 
@@ -736,7 +796,11 @@ export default function DirectorWorkspace({
         setStitchPrompt(trimmed);
         setStitchRendering(true);
         try {
-          await sendNonStreaming(trimmed, optimistic?.id);
+          await sendNonStreaming(trimmed, optimistic?.id, {
+            timeoutMs: DIRECTOR_STITCH_REQUEST_TIMEOUT_MS,
+            recoverPersistedReply: true,
+            requireStitchReply: true,
+          });
         } finally {
           setStitchRendering(false);
           setStitchPrompt("");
@@ -1833,7 +1897,7 @@ export default function DirectorWorkspace({
             </div>
           )}
 
-          {/* Google Stitch render — dedicated live panel (non-streaming POST) */}
+          {/* Wireline Design render — dedicated live panel (non-streaming POST) */}
           {isSending && stitchRendering && (
             <div className={WL_DIRECTOR_CLASSES.threadColumn}>
               <DirectorStitchLiveSession operatorPrompt={stitchPrompt} />
@@ -1919,6 +1983,7 @@ export default function DirectorWorkspace({
               rows={2}
               disabled={isSending}
               aria-describedby="director-composer-send-hint"
+              title={DIRECTOR_COMPOSER_CONTEXT.sendHint}
               placeholder={
                 isSending
                   ? "Director is working…"
@@ -1931,6 +1996,9 @@ export default function DirectorWorkspace({
                 "w-full resize-none border-0 bg-transparent shadow-none text-[13px] text-foreground placeholder:text-muted-foreground/50 outline-none px-4 py-3 leading-normal disabled:opacity-60 focus-visible:ring-0",
               )}
             />
+            <span id="director-composer-send-hint" className="sr-only">
+              {DIRECTOR_COMPOSER_CONTEXT.sendHint}
+            </span>
 
             <DirectorComposerAccessory
               active={composerAccessory}
@@ -1988,12 +2056,6 @@ export default function DirectorWorkspace({
 
               <div className="flex items-center gap-2 shrink-0">
                 <DirectorUsageIndicator className="sm:hidden shrink-0" />
-                <span
-                  id="director-composer-send-hint"
-                  className="hidden lg:inline chrome-subtle whitespace-nowrap"
-                >
-                  {DIRECTOR_COMPOSER_CONTEXT.sendHint}
-                </span>
                 <ShadButton
                   type="button"
                   size="sm"
@@ -2016,10 +2078,6 @@ export default function DirectorWorkspace({
               </div>
             </div>
           </div>
-
-          <p className="text-center text-[9px] text-muted/60 mt-2 uppercase tracking-[0.12em] lg:hidden">
-            {DIRECTOR_COMPOSER_CONTEXT.sendHint}
-          </p>
         </div>
       </div>
     </div>

@@ -65,6 +65,7 @@ import {
 } from "../lib/director-message-metadata";
 import {
   buildSignedDownloadUrl,
+  buildSignedPreviewUrl,
   clearDirectorArtifacts,
   listDirectorArtifacts,
   loadDirectorArtifactData,
@@ -80,6 +81,7 @@ import {
 import { persistDirectorDeliverableArtifact } from "../lib/director-deliverable-artifacts";
 import type { DirectorFeatureFlags } from "../lib/director-feature-flags";
 import { wantsLongDeliverable, wantsStitchMediaRequest } from "../lib/director-deliverables";
+import { WIRELINE_STITCH_UI } from "../lib/wireline-director-design";
 import { tryDirectorStitchTurn } from "../lib/director-stitch-service";
 import {
   collapseDirectorThreadDuplicates,
@@ -772,16 +774,20 @@ router.post(
             userId: req.user.id,
             operatorMessage,
           });
+          usedStitch = true;
           if (stitchTurn) {
-            usedStitch = true;
             reply = stitchTurn.reply;
             previews = stitchTurn.previews;
             artifacts = stitchTurn.artifacts;
-            modelLabel = "Google Stitch";
+            modelLabel = WIRELINE_STITCH_UI.modelLabel;
             modelProvider = "wireline";
             thinkingDurationMs = stitchTurn.durationMs;
             reasoning = stitchTurn.thinkingSummary;
             stitchSession = stitchTurn.stitchSession;
+          } else {
+            reply = WIRELINE_STITCH_UI.failReply;
+            modelLabel = WIRELINE_STITCH_UI.modelLabel;
+            modelProvider = "wireline";
           }
         }
 
@@ -1073,7 +1079,7 @@ router.post(
       if (featureFlags.stitchMedia && wantsStitchMediaRequest(operatorMessage)) {
         sse.write("meta", {
           model: "stitch",
-          modelLabel: "Google Stitch",
+          modelLabel: WIRELINE_STITCH_UI.modelLabel,
           modelProvider: "wireline",
           deep: false,
           mode: "fleet",
@@ -1095,7 +1101,7 @@ router.post(
             previews: stitchTurn.previews,
             artifacts: stitchTurn.artifacts,
             model: "sonnet",
-            modelLabel: "Google Stitch",
+            modelLabel: WIRELINE_STITCH_UI.modelLabel,
             modelProvider: "wireline",
             mode: "fleet",
             thinkingDurationMs: stitchTurn.durationMs,
@@ -1114,23 +1120,16 @@ router.post(
           return;
         }
 
-        sse.write("thinking_end", { thinking: "Stitch did not return a screen", durationMs: 0 });
-        const stitchFailReply = [
-          "**Google Stitch** could not finish this render in time.",
-          "",
-          "1. Create a **TEXT_TO_UI** project at [stitch.withgoogle.com](https://stitch.withgoogle.com)",
-          "2. Copy the project ID from the URL into **GOOGLE_STITCH_PROJECT_ID** (Vercel env)",
-          "3. Send the same prompt again — no capability chip needed",
-        ].join("\n");
+        sse.write("thinking_end", { thinking: "Design render did not complete", durationMs: 0 });
         await finalizeDirectorStreamTurn(
           sse,
           req.user.id,
           operatorMessage,
-          stitchFailReply,
+          WIRELINE_STITCH_UI.failReply,
           {
-            reply: stitchFailReply,
+            reply: WIRELINE_STITCH_UI.failReply,
             model: "sonnet",
-            modelLabel: "Google Stitch",
+            modelLabel: WIRELINE_STITCH_UI.modelLabel,
             modelProvider: "wireline",
             mode: "fleet",
           },
@@ -1462,6 +1461,37 @@ router.delete(
     } catch (e) {
       log.error("director clear failed", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to clear Director thread" });
+    }
+  },
+);
+
+router.get(
+  "/api/director/artifacts/:id/signed-url",
+  directorArtifactDownloadLimiter,
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      await ensureDirectorSchema();
+      const artifactId = String(req.params.id || "").trim();
+      if (!artifactId) return res.status(400).json({ error: "Artifact id required" });
+
+      const loaded = await loadDirectorArtifactData({ artifactId, userId: req.user.id });
+      if (!loaded) return res.status(404).json({ error: "Artifact not found" });
+
+      const inline = String(req.query.inline || "") === "1";
+      const url = inline
+        ? buildSignedPreviewUrl("/api/director/artifacts", artifactId, req.user.id)
+        : buildSignedDownloadUrl("/api/director/artifacts", artifactId, req.user.id);
+
+      res.json({
+        url,
+        artifactId,
+        mimeType: loaded.artifact.mimeType,
+        inline,
+      });
+    } catch (e) {
+      log.error("director artifact signed-url failed", { error: getErrorMessage(e) });
+      res.status(500).json({ error: "Failed to mint artifact preview URL" });
     }
   },
 );

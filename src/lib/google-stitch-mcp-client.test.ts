@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  extractStitchInlineHtml,
+  extractStitchInlineImage,
   extractStitchProjectId,
   extractStitchProjects,
+  mergeStitchScreenRecord,
   pickCompatibleStitchProject,
   extractStitchScreens,
 } from "./google-stitch-mcp-client";
@@ -30,6 +33,35 @@ describe("google stitch mcp parsing", () => {
     expect(screens).toHaveLength(1);
     expect(screens[0]?.screenId).toBe("9876543210");
     expect(screens[0]?.projectId).toBe("1234567890");
+  });
+
+  it("extracts inline HTML and base64 screenshot payloads", () => {
+    const html = extractStitchInlineHtml({ html: "<html><body>Hi</body></html>" });
+    expect(html?.toString("utf8")).toContain("<body>Hi</body>");
+    const pngBytes = Buffer.alloc(96, 0xab);
+    const image = extractStitchInlineImage({ image: pngBytes.toString("base64") });
+    expect(image?.equals(pngBytes)).toBe(true);
+  });
+
+  it("merges flat get_screen payloads", () => {
+    const merged = mergeStitchScreenRecord(
+      { screenId: "42" },
+      {
+        htmlCode: { downloadUrl: "https://storage.googleapis.com/a.html" },
+        screenshot: { downloadUrl: "https://storage.googleapis.com/a.png" },
+      },
+    );
+    expect(merged.htmlCode).toBeDefined();
+    expect(merged.screenshot).toBeDefined();
+  });
+
+  it("extracts UUID-style screen ids from resource names", () => {
+    const screens = extractStitchScreens({
+      screens: [{ name: "projects/4044680601076201931/screens/98b50e2ddc9943efb387052637738f61" }],
+    });
+    expect(screens).toHaveLength(1);
+    expect(screens[0]?.screenId).toBe("98b50e2ddc9943efb387052637738f61");
+    expect(screens[0]?.projectId).toBe("4044680601076201931");
   });
 
   it("prefers TEXT_TO_UI_PRO when listing projects", () => {

@@ -38,6 +38,9 @@ export interface DirectorPreviewMeta {
   kind?: DirectorPreviewKind;
   htmlDownloadUrl?: string;
   imageDownloadUrl?: string;
+  /** Persisted artifact row ids — used to mint fresh signed preview URLs in the UI. */
+  htmlArtifactId?: string;
+  imageArtifactId?: string;
   deviceType?: "DESKTOP" | "MOBILE" | "TABLET" | "AGNOSTIC";
 }
 

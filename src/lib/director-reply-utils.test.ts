@@ -4,6 +4,7 @@ import {
   collapseDirectorThreadDuplicates,
   isDirectorStubReply,
   isSubstantiveDirectorReply,
+  operatorTurnHasDirectorReply,
 } from "./director-reply-utils";
 
 describe("director-reply-utils", () => {
@@ -11,6 +12,25 @@ describe("director-reply-utils", () => {
     expect(isDirectorStubReply(DIRECTOR_STUB_REPLY)).toBe(true);
     expect(isSubstantiveDirectorReply(DIRECTOR_STUB_REPLY)).toBe(false);
     expect(isSubstantiveDirectorReply("x".repeat(200))).toBe(true);
+  });
+
+  it("detects stitch director reply after matching operator turn", () => {
+    const good = "A".repeat(200);
+    expect(
+      operatorTurnHasDirectorReply(
+        [
+          { role: "operator", content: "Design a landing page" },
+          {
+            role: "director",
+            content: good,
+            modelLabel: "Wireline Design",
+            previews: [{ kind: "stitch" }],
+          },
+        ],
+        "Design a landing page",
+        { requireStitch: true },
+      ),
+    ).toBe(true);
   });
 
   it("collapses stub director rows after substantive reply for same operator turn", () => {

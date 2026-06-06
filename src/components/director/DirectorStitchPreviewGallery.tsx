@@ -1,7 +1,8 @@
 /**
- * In-chat Google Stitch render — device frame, live HTML iframe, variants carousel.
+ * In-chat Wireline UI preview — device frame, live HTML iframe, variants carousel.
+ * The device frame only appears once screenshot or HTML is ready to render.
  */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ChevronLeft,
@@ -10,12 +11,13 @@ import {
   ExternalLink,
   LayoutTemplate,
   Monitor,
-  Smartphone,
   Sparkles,
 } from "lucide-react";
 import type { DirectorPreviewMeta } from "../../lib/director-message-metadata";
+import { fetchDirectorArtifactSignedUrl } from "../../hooks/useDirectorArtifactInlineSrc";
+import { useStitchPreviewReady } from "../../hooks/useStitchPreviewReady";
 import { cn } from "../../lib/utils";
-import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
+import { WL_DIRECTOR_CLASSES, WIRELINE_STITCH_UI } from "../../lib/wireline-director-design";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
 export interface DirectorStitchPreviewGalleryProps {
@@ -64,10 +66,159 @@ function DeviceChrome({
         <span className="wl-stitch-device-dot" />
         <span className="wl-stitch-device-dot wl-stitch-device-dot--mid" />
         <span className="wl-stitch-device-dot wl-stitch-device-dot--dim" />
-        <span className="wl-stitch-device-url">stitch.withgoogle.com</span>
+        <span className="wl-stitch-device-url">{WIRELINE_STITCH_UI.deviceChromeLabel}</span>
       </div>
       <div className="wl-stitch-device-screen">{children}</div>
     </div>
+  );
+}
+
+function StitchPreviewPane({
+  preview,
+  ready,
+}: {
+  preview: DirectorPreviewMeta;
+  ready: ReturnType<typeof useStitchPreviewReady>;
+}) {
+  const hasRenderableImage = Boolean(ready.imageSrc);
+  const hasRenderableHtml = Boolean(ready.htmlSrc);
+
+  const [tab, setTab] = useState<StitchTab>(hasRenderableImage ? "design" : "live");
+  const autoTabbedRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (autoTabbedRef.current === preview.conceptId) return;
+    if (hasRenderableHtml && !hasRenderableImage) {
+      autoTabbedRef.current = preview.conceptId;
+      setTab("live");
+    }
+  }, [preview.conceptId, hasRenderableHtml, hasRenderableImage]);
+
+  const openArtifactDownload = async (artifactId: string | undefined, inline: boolean) => {
+    if (!artifactId) return;
+    const url = await fetchDirectorArtifactSignedUrl(artifactId, inline);
+    if (!url) return;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const tabs = useMemo(() => {
+    const list: { id: StitchTab; label: string; icon: React.ElementType }[] = [];
+    if (hasRenderableImage) {
+      list.push({ id: "design", label: "Screenshot", icon: LayoutTemplate });
+    }
+    if (hasRenderableHtml) {
+      list.push({ id: "live", label: "Live HTML", icon: Monitor });
+    }
+    list.push({ id: "export", label: "Export", icon: Download });
+    return list;
+  }, [hasRenderableHtml, hasRenderableImage]);
+
+  return (
+    <>
+      <div className="flex flex-wrap gap-1 mb-3 p-1 rounded-md bg-black/[0.03] dark:bg-white/[0.04] border border-brand/10">
+        {tabs.map((t) => {
+          const Icon = t.icon;
+          const selected = tab === t.id;
+          return (
+            <ShadButton
+              key={t.id}
+              type="button"
+              variant="ghost"
+              onClick={() => setTab(t.id)}
+              className={cn(
+                "h-auto flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all",
+                selected
+                  ? "bg-paper dark:bg-velvet/80 text-brand shadow-sm border border-brand/20"
+                  : "text-muted hover:text-ink hover:bg-paper/60",
+              )}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {t.label}
+            </ShadButton>
+          );
+        })}
+      </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={`${preview.conceptId}-${tab}`}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          className="rounded-md border border-brand/15 bg-gradient-to-b from-paper/98 to-paper/90 dark:from-velvet/70 dark:to-velvet/50 overflow-hidden shadow-[0_20px_50px_-24px_rgba(107,47,168,0.35)]"
+        >
+          {tab === "design" && hasRenderableImage && (
+            <DeviceChrome device={preview.deviceType}>
+              <div className="relative min-h-[280px] flex items-center justify-center p-2">
+                <img
+                  src={ready.imageSrc}
+                  alt={preview.title}
+                  className="max-h-[min(52vh,520px)] w-full object-contain object-top"
+                  loading="lazy"
+                  onError={() => {
+                    if (hasRenderableHtml) setTab("live");
+                  }}
+                />
+              </div>
+            </DeviceChrome>
+          )}
+
+          {tab === "live" && hasRenderableHtml && (
+            <DeviceChrome device={preview.deviceType}>
+              <iframe
+                title={`Live preview — ${preview.title}`}
+                src={ready.htmlSrc}
+                className="wl-stitch-live-iframe"
+                sandbox="allow-scripts allow-same-origin"
+                loading="lazy"
+              />
+            </DeviceChrome>
+          )}
+
+          {tab === "export" && (
+            <div className="p-4 sm:p-5 space-y-3">
+              <p className="text-[12px] text-ink font-medium">{preview.title}</p>
+              <p className="text-[11px] text-muted leading-relaxed">
+                {WIRELINE_STITCH_UI.exportBlurb}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {ready.htmlArtifactId && (
+                  <ShadButton
+                    type="button"
+                    onClick={() => void openArtifactDownload(ready.htmlArtifactId, false)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold bg-brand text-white hover:bg-brand-deep transition-colors h-auto"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    HTML prototype
+                  </ShadButton>
+                )}
+                {ready.imageArtifactId && (
+                  <ShadButton
+                    type="button"
+                    onClick={() => void openArtifactDownload(ready.imageArtifactId, false)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold border border-brand/25 text-brand bg-brand/5 hover:bg-brand/10 h-auto"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    PNG screenshot
+                  </ShadButton>
+                )}
+                {ready.htmlArtifactId && (
+                  <ShadButton
+                    type="button"
+                    onClick={() => void openArtifactDownload(ready.htmlArtifactId, true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold border border-black/10 hover:border-brand/20 h-auto"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Open live
+                  </ShadButton>
+                )}
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
+    </>
   );
 }
 
@@ -77,21 +228,15 @@ export default function DirectorStitchPreviewGallery({
   disabled,
 }: DirectorStitchPreviewGalleryProps) {
   const [index, setIndex] = useState(0);
-  const [tab, setTab] = useState<StitchTab>("design");
   const active = previews[index] ?? previews[0];
-  const hasLive = Boolean(active?.htmlDownloadUrl);
-  const hasImage = Boolean(active?.previewDataUrl || active?.imageDownloadUrl);
-
-  const tabs = useMemo(() => {
-    const list: { id: StitchTab; label: string; icon: React.ElementType }[] = [
-      { id: "design", label: "Screenshot", icon: LayoutTemplate },
-    ];
-    if (hasLive) list.push({ id: "live", label: "Live HTML", icon: Monitor });
-    list.push({ id: "export", label: "Export", icon: Download });
-    return list;
-  }, [hasLive]);
+  const ready = useStitchPreviewReady(
+    active ?? { conceptId: "", title: "", rationale: "", previewDataUrl: "" },
+  );
 
   if (!active) return null;
+
+  // Only mount the device frame once screenshot or live HTML is render-ready — no spinners.
+  if (!ready.hasSources || !ready.isReady) return null;
 
   const goPrev = () => setIndex((i) => (i - 1 + previews.length) % previews.length);
   const goNext = () => setIndex((i) => (i + 1) % previews.length);
@@ -104,7 +249,7 @@ export default function DirectorStitchPreviewGallery({
           <span
             className={cn(WL_DIRECTOR_CLASSES.microLabel, "text-brand font-bold tracking-[0.14em]")}
           >
-            Google Stitch
+            {WIRELINE_STITCH_UI.badgeLabel}
           </span>
           <span className="text-[10px] text-muted/60 font-mono tabular-nums">
             {deviceLabel(active.deviceType)}
@@ -137,121 +282,7 @@ export default function DirectorStitchPreviewGallery({
         )}
       </div>
 
-      <div className="flex flex-wrap gap-1 mb-3 p-1 rounded-md bg-black/[0.03] dark:bg-white/[0.04] border border-brand/10">
-        {tabs.map((t) => {
-          const Icon = t.icon;
-          const selected = tab === t.id;
-          return (
-            <ShadButton
-              key={t.id}
-              type="button"
-              variant="ghost"
-              onClick={() => setTab(t.id)}
-              className={cn(
-                "h-auto flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all",
-                selected
-                  ? "bg-paper dark:bg-velvet/80 text-brand shadow-sm border border-brand/20"
-                  : "text-muted hover:text-ink hover:bg-paper/60",
-              )}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              {t.label}
-            </ShadButton>
-          );
-        })}
-      </div>
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={`${active.conceptId}-${tab}`}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -4 }}
-          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-          className="rounded-md border border-brand/15 bg-gradient-to-b from-paper/98 to-paper/90 dark:from-velvet/70 dark:to-velvet/50 overflow-hidden shadow-[0_20px_50px_-24px_rgba(107,47,168,0.35)]"
-        >
-          {tab === "design" && (
-            <DeviceChrome device={active.deviceType}>
-              <div className="relative wl-checkerboard min-h-[280px] flex items-center justify-center p-2">
-                {hasImage ? (
-                  <img
-                    src={active.previewDataUrl || active.imageDownloadUrl}
-                    alt={active.title}
-                    className="max-h-[min(52vh,520px)] w-full object-contain object-top"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="flex flex-col items-center gap-2 py-16 text-muted/60">
-                    <Smartphone className="w-10 h-10 text-brand/25" />
-                    <p className="text-[11px]">Screenshot pending — open Live HTML</p>
-                  </div>
-                )}
-              </div>
-            </DeviceChrome>
-          )}
-
-          {tab === "live" && hasLive && (
-            <DeviceChrome device={active.deviceType}>
-              <iframe
-                title={`Stitch live preview — ${active.title}`}
-                src={active.htmlDownloadUrl}
-                className="wl-stitch-live-iframe"
-                sandbox="allow-scripts allow-same-origin"
-                loading="lazy"
-              />
-            </DeviceChrome>
-          )}
-
-          {tab === "export" && (
-            <div className="p-4 sm:p-5 space-y-3">
-              <p className="text-[12px] text-ink font-medium">{active.title}</p>
-              <p className="text-[11px] text-muted leading-relaxed">
-                Production HTML/CSS from Stitch — hand off to your dev team or keep iterating in
-                chat.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {active.htmlDownloadUrl && (
-                  <a
-                    href={(() => {
-                      try {
-                        const u = new URL(active.htmlDownloadUrl!, window.location.origin);
-                        u.searchParams.delete("inline");
-                        return `${u.pathname}${u.search}`;
-                      } catch {
-                        return active.htmlDownloadUrl!;
-                      }
-                    })()}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold bg-brand text-white hover:bg-brand-deep transition-colors"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    HTML prototype
-                  </a>
-                )}
-                {active.imageDownloadUrl && (
-                  <a
-                    href={active.imageDownloadUrl}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold border border-brand/25 text-brand bg-brand/5 hover:bg-brand/10"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    PNG screenshot
-                  </a>
-                )}
-                {active.htmlDownloadUrl && (
-                  <a
-                    href={active.htmlDownloadUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold border border-black/10 hover:border-brand/20"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    Open live
-                  </a>
-                )}
-              </div>
-            </div>
-          )}
-        </motion.div>
-      </AnimatePresence>
+      <StitchPreviewPane key={active.conceptId} preview={active} ready={ready} />
 
       <div className="mt-3 flex flex-wrap gap-1.5">
         {QUICK_EDITS.map((prompt) => (

@@ -80,6 +80,8 @@ export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'")
     `connect-src ${connectSrcs}`,
     `media-src 'self' blob:`,
     `worker-src 'self' blob:`,
+    // Director Stitch live HTML previews load artifact HTML via blob: iframes.
+    `frame-src 'self' blob:`,
     `frame-ancestors 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,
