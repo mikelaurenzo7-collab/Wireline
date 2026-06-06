@@ -224,6 +224,8 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                   actions={[...OPS_CHANNEL_EMPTY.sms.actions]}
                   density="compact"
                   withHalo={false}
+                  fill
+                  className="py-10"
                 />
               ) : (
                 <div className="space-y-1.5">
@@ -287,7 +289,8 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                   description={OPS_CHANNEL_EMPTY.inboxDetail.description}
                   density="compact"
                   withHalo={false}
-                  className="h-full py-12"
+                  fill
+                  className="py-12"
                 />
               ) : (
                 <div className="h-full flex flex-col min-h-0 p-3">

@@ -181,8 +181,12 @@ export function EmptyState({
 
   if (!fill) return content;
 
-  // Center the empty surface within its available vertical space (keeping the
-  // panel full-width via flex-col stretch) so full-page empties read as
-  // balanced rather than top-glued with a large void beneath them.
-  return <div className="flex flex-col w-full min-h-[55vh] justify-center">{content}</div>;
+  // Center the empty surface within its available vertical space so full-page
+  // empties read as balanced rather than top-glued with a large void beneath.
+  // `flex-1` fills the parent when it's a height-bearing flex column (the
+  // desktop console layout); `min-h-[55vh]` is the floor that guarantees the
+  // same centered balance on mobile, where that flex height chain collapses
+  // and `flex-1`/`h-full` would otherwise resolve to zero. Together they fix
+  // mobile without regressing the desktop centering.
+  return <div className="flex flex-1 flex-col w-full min-h-[55vh] justify-center">{content}</div>;
 }

@@ -207,7 +207,8 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                   actions={[...OPS_CHANNEL_EMPTY.phone.actions]}
                   density="compact"
                   withHalo={false}
-                  className="h-full py-10"
+                  fill
+                  className="py-10"
                 />
               ) : (
                 <EmptyState
@@ -225,7 +226,8 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                       ? [{ label: "Show all directions", onClick: () => setFilter("all") }]
                       : []),
                   ]}
-                  className="h-full py-10"
+                  fill
+                  className="py-10"
                 />
               )
             ) : (

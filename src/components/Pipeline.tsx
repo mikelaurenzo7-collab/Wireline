@@ -195,7 +195,8 @@ export default function Pipeline() {
               actions={[...OPS_CHANNEL_EMPTY.pipeline.actions]}
               density="compact"
               withHalo={false}
-              className="h-full py-10"
+              fill
+              className="py-10"
             />
           )}
           {/* Mobile: vertical stack of columns.
