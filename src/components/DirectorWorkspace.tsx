@@ -36,14 +36,15 @@ import {
   Sparkles,
   LayoutTemplate,
 } from "lucide-react";
-import {
-  authFetch,
-  DIRECTOR_STITCH_REQUEST_TIMEOUT_MS,
-  readApiJson,
-} from "../lib/api";
+import { authFetch, DIRECTOR_STITCH_REQUEST_TIMEOUT_MS, readApiJson } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { hydrateAgentsFromFleet, useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
+import { useBranding } from "../contexts/BrandingContext";
+import {
+  hasConfiguredTenantBranding,
+  stitchBrandingFromSnake,
+} from "../lib/director-stitch-branding";
 import { cn } from "../lib/utils";
 import FleetSetupNudge from "./FleetSetupNudge";
 import { ThinkingDisplay } from "./ui/ThinkingDisplay";
@@ -206,6 +207,7 @@ export default function DirectorWorkspace({
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
   const { user, loading: authLoading } = useAuth();
+  const { branding } = useBranding();
   const { agents } = useAgents();
   const focusedAgent = focusAgentId ? agents.find((a) => a.id === focusAgentId) : undefined;
   const { error: toastError, success: toastSuccess } = useToast();
@@ -236,6 +238,8 @@ export default function DirectorWorkspace({
   });
   const [stitchRendering, setStitchRendering] = useState(false);
   const [stitchPrompt, setStitchPrompt] = useState("");
+  const [useStitchAccountBranding, setUseStitchAccountBranding] = useState(true);
+  const stitchBrandingAvailable = hasConfiguredTenantBranding(stitchBrandingFromSnake(branding));
   const [loadDegraded, setLoadDegraded] = useState(false);
   const [pinnedToBottom, setPinnedToBottom] = useState(true);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -531,6 +535,13 @@ export default function DirectorWorkspace({
             content: trimmed,
             ...(focusAgentId ? { focusAgentId } : {}),
             ...(opts?.skipOperatorPersist ? { skipOperatorPersist: true } : {}),
+            ...(featureFlags.stitchMedia && wantsStitchMediaRequest(trimmed)
+              ? {
+                  stitchOptions: {
+                    useAccountBranding: stitchBrandingAvailable && useStitchAccountBranding,
+                  },
+                }
+              : {}),
             ...(!focusAgentId &&
             chatModelSelection.provider === "wireline" &&
             (forceDeep || wantsDeepAnalysis(trimmed))
@@ -575,6 +586,9 @@ export default function DirectorWorkspace({
       focusAgentId,
       forceDeep,
       chatModelSelection,
+      featureFlags.stitchMedia,
+      stitchBrandingAvailable,
+      useStitchAccountBranding,
     ],
   );
   sendNonStreamingRef.current = sendNonStreaming;
@@ -775,11 +789,17 @@ export default function DirectorWorkspace({
       setIsSending(true);
       setComposerAccessory(null);
 
+      const stitchOptions =
+        featureFlags.stitchMedia && wantsStitchMediaRequest(trimmed)
+          ? { useAccountBranding: stitchBrandingAvailable && useStitchAccountBranding }
+          : undefined;
+
       const payload = {
         content: trimmed,
         ...(focusAgentId ? { focusAgentId } : {}),
         ...(opts?.approval ? { approval: opts.approval } : {}),
         ...(opts?.isRetry ? { skipOperatorPersist: true } : {}),
+        ...(stitchOptions ? { stitchOptions } : {}),
         ...(!focusAgentId &&
         chatModelSelection.provider === "wireline" &&
         (forceDeep || wantsDeepAnalysis(trimmed))
@@ -863,6 +883,8 @@ export default function DirectorWorkspace({
       forceDeep,
       chatModelSelection,
       featureFlags.stitchMedia,
+      stitchBrandingAvailable,
+      useStitchAccountBranding,
     ],
   );
 
@@ -2044,6 +2066,10 @@ export default function DirectorWorkspace({
                 onToggleForceDeep={() => setForceDeep((v) => !v)}
                 chatModelSelection={chatModelSelection}
                 onChatModelChange={setChatModelSelection}
+                stitchMediaEnabled={featureFlags.stitchMedia}
+                useStitchAccountBranding={useStitchAccountBranding}
+                onToggleStitchAccountBranding={() => setUseStitchAccountBranding((v) => !v)}
+                stitchBrandingAvailable={stitchBrandingAvailable}
               />
 
               <Input

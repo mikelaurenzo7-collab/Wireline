@@ -106,10 +106,11 @@ export const WIRELINE_STITCH_DESIGN_BRIEF =
 /** Enrich operator text into a Stitch-ready structured prompt. */
 export function buildStitchGenerationPrompt(
   operatorMessage: string,
-  businessName?: string,
+  opts?: { businessName?: string; designBriefMarkdown?: string },
 ): string {
   const base = operatorMessage.trim();
-  const biz = businessName?.trim();
+  const biz = opts?.businessName?.trim();
   const prefix = biz ? `Business: ${biz}. ` : "";
-  return `${prefix}${base}. ${WIRELINE_STITCH_DESIGN_BRIEF} Deliver production-ready semantic HTML with accessible labels, a single <style> block or inline CSS, mobile-first layout unless desktop/web is requested, and realistic placeholder content matching the industry in the request.`;
+  const designSystem = opts?.designBriefMarkdown?.trim() || WIRELINE_STITCH_DESIGN_BRIEF;
+  return `${prefix}${base}. Follow this design brief:\n\n${designSystem}\n\nDeliver production-ready semantic HTML with accessible labels, a single <style> block or inline CSS, mobile-first layout unless desktop/web is requested, and realistic placeholder content matching the industry in the request.`;
 }

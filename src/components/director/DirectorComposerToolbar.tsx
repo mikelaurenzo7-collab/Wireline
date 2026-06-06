@@ -8,13 +8,24 @@
  * - Consistent with Aurora Cream design language
  */
 import type { ReactNode } from "react";
-import { Brain, ChevronDown, Loader2, Paperclip, Plug, Sparkles, Bot, Wrench } from "lucide-react";
+import {
+  Brain,
+  ChevronDown,
+  Loader2,
+  Palette,
+  Paperclip,
+  Plug,
+  Sparkles,
+  Bot,
+  Wrench,
+} from "lucide-react";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import {
   WL_DIRECTOR_CLASSES,
   DIRECTOR_COMPOSER_CONTEXT,
   DIRECTOR_DEEP_MODE_COPY,
+  WIRELINE_STITCH_UI,
   type ComposerAccessoryKind,
 } from "../../lib/wireline-director-design";
 import { DirectorModelPicker } from "./DirectorModelPicker";
@@ -104,6 +115,10 @@ export interface DirectorComposerToolbarProps {
   onToggleForceDeep?: () => void;
   chatModelSelection?: DirectorChatModelSelection;
   onChatModelChange?: (next: DirectorChatModelSelection) => void;
+  stitchMediaEnabled?: boolean;
+  useStitchAccountBranding?: boolean;
+  onToggleStitchAccountBranding?: () => void;
+  stitchBrandingAvailable?: boolean;
 }
 
 export function DirectorComposerToolbar({
@@ -118,9 +133,15 @@ export function DirectorComposerToolbar({
   onToggleForceDeep,
   chatModelSelection,
   onChatModelChange,
+  stitchMediaEnabled = false,
+  useStitchAccountBranding = true,
+  onToggleStitchAccountBranding,
+  stitchBrandingAvailable = false,
 }: DirectorComposerToolbarProps) {
   const showDeepToggle =
     !focusAgentId && onToggleForceDeep && chatModelSelection?.provider !== "openrouter";
+  const showStitchBrandingToggle =
+    stitchMediaEnabled && onToggleStitchAccountBranding && stitchBrandingAvailable;
 
   return (
     <div className={WL_DIRECTOR_CLASSES.composerToolbarScroll}>
@@ -178,6 +199,36 @@ export function DirectorComposerToolbar({
               ) : null
             }
           />
+        )}
+        {showStitchBrandingToggle && (
+          <ShadButton
+            type="button"
+            variant="ghost"
+            size="sm"
+            disableAnimations
+            disabled={isSending}
+            onClick={onToggleStitchAccountBranding}
+            aria-pressed={useStitchAccountBranding}
+            title={
+              useStitchAccountBranding
+                ? WIRELINE_STITCH_UI.brandingToggleHint
+                : WIRELINE_STITCH_UI.brandingToggleEmptyHint
+            }
+            className={cn(
+              WL_DIRECTOR_CLASSES.composerToolChip,
+              "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all duration-150",
+              useStitchAccountBranding &&
+                cn(
+                  WL_DIRECTOR_CLASSES.composerToolChipActive,
+                  "shadow-sm ring-1 ring-brand/30 bg-brand/10",
+                ),
+              "h-auto touch-press rounded-full shadow-none",
+            )}
+          >
+            <Palette className="w-3.5 h-3.5 shrink-0" />
+            <span className="hidden sm:inline">{WIRELINE_STITCH_UI.brandingToggleLabel}</span>
+            <span className="sm:hidden">Brand</span>
+          </ShadButton>
         )}
         {showDeepToggle && (
           <ShadButton

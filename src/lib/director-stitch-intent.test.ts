@@ -24,7 +24,10 @@ describe("director stitch intent", () => {
   });
 
   it("appends Aurora Cream brief to Stitch generation prompts", () => {
-    const prompt = buildStitchGenerationPrompt("Design a landing page hero", "Acme Plumbing");
+    const prompt = buildStitchGenerationPrompt("Design a landing page hero", {
+      businessName: "Acme Plumbing",
+      designBriefMarkdown: WIRELINE_STITCH_DESIGN_BRIEF,
+    });
     expect(prompt).toContain("Acme Plumbing");
     expect(prompt).toContain(WIRELINE_STITCH_DESIGN_BRIEF);
     expect(prompt).toContain("semantic HTML");

@@ -469,6 +469,10 @@ export const directorChatModelSelectionSchema = z.discriminatedUnion("provider",
   }),
 ]);
 
+export const directorStitchOptionsSchema = z.object({
+  useAccountBranding: z.boolean().optional(),
+});
+
 export const directorMessageSchema = z
   .object({
     content: z.string().max(4000).optional(),
@@ -476,6 +480,7 @@ export const directorMessageSchema = z
     skipOperatorPersist: z.boolean().optional(),
     forceDeep: z.boolean().optional(),
     modelSelection: directorChatModelSelectionSchema.optional(),
+    stitchOptions: directorStitchOptionsSchema.optional(),
     approval: z.record(z.string(), z.unknown()).optional(),
   })
   .refine((data) => Boolean(data.content?.trim()) || data.approval, {
@@ -488,6 +493,7 @@ export const directorStreamMessageSchema = z.object({
   skipOperatorPersist: z.boolean().optional(),
   forceDeep: z.boolean().optional(),
   modelSelection: directorChatModelSelectionSchema.optional(),
+  stitchOptions: directorStitchOptionsSchema.optional(),
 });
 
 export const directorExecuteSchema = z.discriminatedUnion("kind", [

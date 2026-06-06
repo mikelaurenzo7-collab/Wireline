@@ -773,12 +773,15 @@ router.post(
           const stitchTurn = await tryDirectorStitchTurn({
             userId: req.user.id,
             operatorMessage,
+            history,
+            stitchOptions: req.body?.stitchOptions,
           });
           usedStitch = true;
           if (stitchTurn) {
             reply = stitchTurn.reply;
             previews = stitchTurn.previews;
             artifacts = stitchTurn.artifacts;
+            clarifyingQuestions = stitchTurn.clarifyingQuestions ?? clarifyingQuestions;
             modelLabel = WIRELINE_STITCH_UI.modelLabel;
             modelProvider = "wireline";
             thinkingDurationMs = stitchTurn.durationMs;
@@ -1088,6 +1091,8 @@ router.post(
         const stitchTurn = await tryDirectorStitchTurn({
           userId: req.user.id,
           operatorMessage,
+          history,
+          stitchOptions: req.body?.stitchOptions,
           onProgress: (text) => sse.write("thinking_chunk", { text }),
           signal: streamAbort.signal,
         });
@@ -1100,6 +1105,7 @@ router.post(
             reply: stitchTurn.reply,
             previews: stitchTurn.previews,
             artifacts: stitchTurn.artifacts,
+            clarifyingQuestions: stitchTurn.clarifyingQuestions,
             model: "sonnet",
             modelLabel: WIRELINE_STITCH_UI.modelLabel,
             modelProvider: "wireline",

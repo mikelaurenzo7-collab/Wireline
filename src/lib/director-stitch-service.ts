@@ -7,6 +7,17 @@ import { buildSignedDownloadUrl, buildSignedPreviewUrl } from "./director-artifa
 import { storeDirectorArtifact } from "./director-artifacts";
 import type { DirectorPreviewMeta } from "./director-message-metadata";
 import {
+  buildStitchClarifyReply,
+  buildStitchDesignBriefArtifact,
+  buildStitchDesignMarkdown,
+  loadStitchTenantBranding,
+  missingStitchBriefFields,
+  parseStitchDesignBrief,
+  resolveUseAccountBranding,
+  stitchClarifyingQuestions,
+  type StitchBriefOptions,
+} from "./director-stitch-brief";
+import {
   buildStitchGenerationPrompt,
   resolveStitchDeviceType,
   resolveStitchMediaOperation,
@@ -47,12 +58,24 @@ export interface DirectorStitchTurnResult {
   reply: string;
   previews: DirectorPreviewMeta[];
   artifacts: Array<Record<string, unknown>>;
-  stitchSession: StitchSession;
+  stitchSession?: StitchSession;
   thinkingSummary: string;
   durationMs: number;
+  clarifyingQuestions?: string[];
+  designBriefMarkdown?: string;
 }
 
 export type StitchProgressCallback = (message: string) => void;
+
+export interface DirectorStitchTurnInput {
+  userId: string;
+  operatorMessage: string;
+  businessName?: string;
+  history?: Array<{ role: "operator" | "director"; content: string }>;
+  stitchOptions?: StitchBriefOptions;
+  onProgress?: StitchProgressCallback;
+  signal?: AbortSignal;
+}
 
 function pickDownloadUrlFromBlock(block: unknown): string | null {
   if (!block || typeof block !== "object") return null;
@@ -416,13 +439,9 @@ function buildStitchReply(
   ].join("\n");
 }
 
-export async function runDirectorStitchTurn(input: {
-  userId: string;
-  operatorMessage: string;
-  businessName?: string;
-  onProgress?: StitchProgressCallback;
-  signal?: AbortSignal;
-}): Promise<DirectorStitchTurnResult> {
+export async function runDirectorStitchTurn(
+  input: DirectorStitchTurnInput & { designBriefMarkdown: string; businessName?: string },
+): Promise<DirectorStitchTurnResult> {
   if (!isGoogleStitchConfigured()) {
     throw new GoogleStitchError("Google Stitch is not configured", "AUTH_FAILED");
   }
@@ -435,7 +454,10 @@ export async function runDirectorStitchTurn(input: {
     const operation = resolveStitchMediaOperation(input.operatorMessage, priorSession);
     const deviceType = resolveStitchDeviceType(input.operatorMessage);
     const modelId = resolveStitchModelId(input.operatorMessage);
-    const prompt = buildStitchGenerationPrompt(input.operatorMessage, input.businessName);
+    const prompt = buildStitchGenerationPrompt(input.operatorMessage, {
+      businessName: input.businessName,
+      designBriefMarkdown: input.designBriefMarkdown,
+    });
 
     const project = await ensureStitchProject(
       runtime,
@@ -593,13 +615,57 @@ export async function runDirectorStitchTurn(input: {
   }
 }
 
+async function planDirectorStitchTurn(
+  input: DirectorStitchTurnInput,
+): Promise<DirectorStitchTurnResult | null> {
+  const t0 = Date.now();
+  const branding = await loadStitchTenantBranding(input.userId);
+  const useAccountBranding = resolveUseAccountBranding(input.stitchOptions, branding);
+  const history = input.history ?? [];
+  const priorSession = await loadLatestStitchSession(input.userId);
+  const operation = resolveStitchMediaOperation(input.operatorMessage, priorSession);
+  const brief = parseStitchDesignBrief(input.operatorMessage, history, branding);
+  const designBriefMarkdown = buildStitchDesignMarkdown({
+    brief,
+    branding,
+    useAccountBranding,
+  });
+  const missing = missingStitchBriefFields(brief, operation, Boolean(priorSession));
+
+  if (missing.length > 0) {
+    const clarifyingQuestions = stitchClarifyingQuestions(missing);
+    return {
+      reply: buildStitchClarifyReply(missing, designBriefMarkdown, useAccountBranding),
+      previews: [],
+      artifacts: [buildStitchDesignBriefArtifact(designBriefMarkdown)],
+      clarifyingQuestions,
+      designBriefMarkdown,
+      thinkingSummary: "Gathering design requirements",
+      durationMs: Date.now() - t0,
+    };
+  }
+
+  const businessName =
+    input.businessName?.trim() ||
+    brief.businessName ||
+    branding.businessName ||
+    branding.brandName ||
+    undefined;
+
+  return runDirectorStitchTurn({
+    ...input,
+    businessName,
+    designBriefMarkdown,
+  });
+}
+
 /** Non-throwing entry — returns null so Director can fall back to Claude. */
 export async function tryDirectorStitchTurn(
-  input: Parameters<typeof runDirectorStitchTurn>[0],
+  input: DirectorStitchTurnInput,
 ): Promise<DirectorStitchTurnResult | null> {
   if (!isGoogleStitchConfigured()) return null;
   try {
-    return await runDirectorStitchTurn(input);
+    return await planDirectorStitchTurn(input);
   } catch (e) {
     log.warn("director stitch turn failed — falling back to LLM", {
       userId: input.userId,

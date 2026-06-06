@@ -37,6 +37,7 @@ export function operatorTurnHasDirectorReply(
     content: string;
     modelLabel?: string;
     previews?: unknown[];
+    clarifyingQuestions?: string[];
   }[],
   operatorContent: string,
   options?: { requireStitch?: boolean },
@@ -54,12 +55,10 @@ export function operatorTurnHasDirectorReply(
       const isStitch =
         isStitchModelLabel(m.modelLabel) ||
         previews.some(
-          (p) =>
-            !!p &&
-            typeof p === "object" &&
-            (p as { kind?: string }).kind === "stitch",
+          (p) => !!p && typeof p === "object" && (p as { kind?: string }).kind === "stitch",
         );
-      if (isStitch && isSubstantiveDirectorReply(m.content)) return true;
+      const clarifying = Array.isArray(m.clarifyingQuestions) && m.clarifyingQuestions.length > 0;
+      if (isStitch && (isSubstantiveDirectorReply(m.content) || clarifying)) return true;
       continue;
     }
 

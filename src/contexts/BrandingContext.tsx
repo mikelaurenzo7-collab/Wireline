@@ -7,12 +7,18 @@ type BrandingSettings = {
   brand_name: string;
   brand_logo_url: string;
   primary_color: string;
+  business_name: string;
+  business_type: string;
+  primary_product: string;
 };
 
 const DEFAULT_BRANDING: BrandingSettings = {
   brand_name: "Wireline",
   brand_logo_url: "",
   primary_color: "#8B3FD6",
+  business_name: "",
+  business_type: "",
+  primary_product: "",
 };
 
 type BrandingContextType = {
@@ -47,6 +53,9 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
             brand_name: s.brand_name || DEFAULT_BRANDING.brand_name,
             brand_logo_url: s.brand_logo_url || DEFAULT_BRANDING.brand_logo_url,
             primary_color: s.primary_color || DEFAULT_BRANDING.primary_color,
+            business_name: s.business_name || DEFAULT_BRANDING.business_name,
+            business_type: s.business_type || DEFAULT_BRANDING.business_type,
+            primary_product: s.primary_product || DEFAULT_BRANDING.primary_product,
           });
         }
       } catch (e: any) {

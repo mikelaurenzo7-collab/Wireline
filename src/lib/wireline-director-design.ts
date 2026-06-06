@@ -431,6 +431,10 @@ export const DIRECTOR_COMPOSER_CONTEXT = {
 export const WIRELINE_STITCH_UI = {
   modelLabel: "Wireline Design",
   badgeLabel: "Wireline Design",
+  brandingToggleLabel: "Account branding",
+  brandingToggleHint:
+    "When on, Wireline Design pulls your Admin → Branding kit (name, color, logo) into design.md before rendering.",
+  brandingToggleEmptyHint: "Set branding in Admin to enable account kit for design renders.",
   deviceChromeLabel: "Live preview",
   loadingPhases: [
     "Composing layout…",

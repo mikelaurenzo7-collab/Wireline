@@ -33,6 +33,24 @@ describe("director-reply-utils", () => {
     ).toBe(true);
   });
 
+  it("treats stitch clarifying questions as a recovered director reply", () => {
+    expect(
+      operatorTurnHasDirectorReply(
+        [
+          { role: "operator", content: "Design a landing page" },
+          {
+            role: "director",
+            content: "Before I generate screens, I need a bit more context.",
+            modelLabel: "Wireline Design",
+            clarifyingQuestions: ["Who is the primary audience?"],
+          },
+        ],
+        "Design a landing page",
+        { requireStitch: true },
+      ),
+    ).toBe(true);
+  });
+
   it("collapses stub director rows after substantive reply for same operator turn", () => {
     const good = "A".repeat(200);
     const thread = collapseDirectorThreadDuplicates([
