@@ -53,11 +53,9 @@ export function useStitchPreviewReady(preview: DirectorPreviewMeta): StitchPrevi
     enabled: hasSources && Boolean(htmlArtifactId),
   });
 
-  const imageSrc = embeddedImage
-    ? preview.previewDataUrl
-    : (imageBlob.src ?? (imageBlob.error ? preview.imageDownloadUrl : undefined));
+  const imageSrc = embeddedImage ? preview.previewDataUrl : imageBlob.src;
 
-  const htmlSrc = htmlBlob.src ?? (htmlBlob.error ? preview.htmlDownloadUrl : undefined);
+  const htmlSrc = htmlBlob.src;
 
   const hasRenderableImage = Boolean(imageSrc);
   const hasRenderableHtml = Boolean(htmlSrc);

@@ -237,14 +237,13 @@ export default function DirectorStitchPreviewGallery({
   if (!ready.hasSources) return null;
 
   if (!ready.isReady) {
+    if (ready.failed) {
+      return (
+        <p className="text-[11px] text-muted/80 mt-2 px-1">{WIRELINE_STITCH_UI.fallbackCopy}</p>
+      );
+    }
     return (
       <DirectorStitchLiveSession operatorPrompt={active.title || undefined} className="mt-2" />
-    );
-  }
-
-  if (ready.failed) {
-    return (
-      <p className="text-[11px] text-muted/80 mt-2 px-1">{WIRELINE_STITCH_UI.fallbackCopy}</p>
     );
   }
 
