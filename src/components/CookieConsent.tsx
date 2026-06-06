@@ -66,7 +66,7 @@ export default function CookieConsent() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 24, opacity: 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 36 }}
-          className="fixed z-[9999] left-3 right-3 sm:left-5 sm:right-auto sm:max-w-sm"
+          className="fixed z-[9999] left-3 right-3 sm:left-5 sm:right-auto sm:max-w-[320px]"
           role="dialog"
           aria-label="Cookie notice"
           style={{
