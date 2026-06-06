@@ -203,6 +203,30 @@ export function extractStitchInlineHtml(payload: unknown): Buffer | undefined {
 }
 
 /** PNG bytes inline (base64) from get_screen_image / fetch_screen_image. */
+/** Stitch often returns a tiny grid placeholder PNG before HTML/screenshot packaging finishes. */
+export const STITCH_PLACEHOLDER_IMAGE_MAX_BYTES = 25_000;
+
+export function isLikelyStitchPlaceholderImage(buf: Buffer): boolean {
+  return buf.byteLength <= STITCH_PLACEHOLDER_IMAGE_MAX_BYTES;
+}
+
+/** HTML is authoritative; image-only counts on the final poll when it is not a grid placeholder. */
+export function stitchScreenAssetsReady(
+  assets: { html?: Buffer; image?: Buffer },
+  options: { allowImageFallback?: boolean } = {},
+): boolean {
+  if (assets.html && assets.html.byteLength > 50) return true;
+  if (
+    options.allowImageFallback &&
+    assets.image &&
+    assets.image.byteLength > 0 &&
+    !isLikelyStitchPlaceholderImage(assets.image)
+  ) {
+    return true;
+  }
+  return false;
+}
+
 export function extractStitchInlineImage(payload: unknown): Buffer | undefined {
   const fromBase64 = (raw: string): Buffer | undefined => {
     const clean = raw.replace(/^data:image\/[a-z+]+;base64,/i, "").trim();

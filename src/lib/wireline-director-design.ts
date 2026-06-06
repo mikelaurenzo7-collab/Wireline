@@ -446,6 +446,15 @@ export const WIRELINE_STITCH_UI = {
   loadingHint:
     "Wireline Design typically takes 3–5 minutes end-to-end (compose + package). Stay on this tab.",
   exportBlurb: "Production HTML/CSS — hand off to your team or keep iterating in chat.",
+  previewPageTitle: "Design preview",
+  previewPageBackLabel: "Back to chat",
+  previewTabLabel: "Preview",
+  screenshotTabLabel: "Screenshot",
+  previewTeaserTitle: "Design ready",
+  previewTeaserBody:
+    "Open the full-screen preview to inspect layout, export HTML, or iterate in chat.",
+  previewTeaserAction: "Open preview",
+  previewSideEntryLabel: "Design preview",
   fallbackCopy: "Preview is in your artifacts panel — open HTML or PNG from the thread header.",
   failReply: [
     "I couldn't finish this design render in time.",

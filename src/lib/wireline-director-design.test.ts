@@ -213,5 +213,7 @@ describe("Wireline Director design contract", () => {
     expect(WIRELINE_STITCH_UI.failReply).toMatch(/couldn't finish/i);
     expect(WIRELINE_STITCH_UI.chatFallbackReasoning).toMatch(/chat/i);
     expect(WIRELINE_STITCH_UI.loadingPhases.join(" ")).not.toMatch(/google/i);
+    expect(WIRELINE_STITCH_UI.previewTeaserAction).toMatch(/preview/i);
+    expect(WIRELINE_STITCH_UI.previewPageTitle).toBeTruthy();
   });
 });

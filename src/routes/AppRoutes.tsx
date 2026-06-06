@@ -29,6 +29,7 @@ const Training = lazyRoute(() => import("../pages/Training"));
 const PhonePage = lazyRoute(() => import("../pages/PhonePage"));
 const EmailPage = lazyRoute(() => import("../pages/EmailPage"));
 const SmsPage = lazyRoute(() => import("../pages/SmsPage"));
+const DesignPreviewPage = lazyRoute(() => import("../pages/DesignPreviewPage"));
 
 export default function AppRoutes() {
   return (
@@ -172,6 +173,16 @@ export default function AppRoutes() {
               <PageTransition>
                 <ErrorBoundary>
                   <AgentChat />
+                </ErrorBoundary>
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/design/preview"
+            element={
+              <PageTransition>
+                <ErrorBoundary>
+                  <DesignPreviewPage />
                 </ErrorBoundary>
               </PageTransition>
             }

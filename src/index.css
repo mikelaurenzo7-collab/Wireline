@@ -3682,6 +3682,18 @@ html, body, .marketing-surface, .app-surface {
   border: 0;
   background: white;
 }
+.wl-stitch-device--studio {
+  max-width: min(100%, 24rem);
+}
+.wl-stitch-device-screen--studio {
+  min-height: min(72vh, 720px);
+}
+.wl-stitch-live-iframe--studio {
+  min-height: min(72vh, 720px);
+}
+.wl-design-preview-page {
+  min-height: 100%;
+}
 .wl-stitch-live-session {
   max-width: min(100%, 42rem);
 }

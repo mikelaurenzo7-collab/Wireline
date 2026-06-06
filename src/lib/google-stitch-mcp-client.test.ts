@@ -7,6 +7,8 @@ import {
   mergeStitchScreenRecord,
   pickCompatibleStitchProject,
   extractStitchScreens,
+  isLikelyStitchPlaceholderImage,
+  stitchScreenAssetsReady,
 } from "./google-stitch-mcp-client";
 
 describe("google stitch mcp parsing", () => {
@@ -62,6 +64,19 @@ describe("google stitch mcp parsing", () => {
     expect(screens).toHaveLength(1);
     expect(screens[0]?.screenId).toBe("98b50e2ddc9943efb387052637738f61");
     expect(screens[0]?.projectId).toBe("4044680601076201931");
+  });
+
+  it("waits for HTML before accepting placeholder screenshots", () => {
+    const grid = Buffer.alloc(4_000);
+    const html = Buffer.from("<html><body>Ready</body></html>");
+    const png = Buffer.alloc(120_000);
+
+    expect(isLikelyStitchPlaceholderImage(grid)).toBe(true);
+    expect(isLikelyStitchPlaceholderImage(png)).toBe(false);
+    expect(stitchScreenAssetsReady({ image: grid })).toBe(false);
+    expect(stitchScreenAssetsReady({ image: grid }, { allowImageFallback: true })).toBe(false);
+    expect(stitchScreenAssetsReady({ html })).toBe(true);
+    expect(stitchScreenAssetsReady({ image: png }, { allowImageFallback: true })).toBe(true);
   });
 
   it("prefers TEXT_TO_UI_PRO when listing projects", () => {

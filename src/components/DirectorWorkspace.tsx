@@ -9,7 +9,7 @@
  * helps plan the fleet, decide what agents to hire, and coach them.
  */
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
 import {
   Send,
@@ -85,9 +85,13 @@ import { DirectorUsageIndicator } from "./director/DirectorUsageIndicator";
 import { DirectorResearchSources } from "./director/DirectorResearchSources";
 import { DirectorStarterPrompts } from "./director/DirectorStarterPrompts";
 import DirectorArtifactsPanel, { type DirectorArtifact } from "./director/DirectorArtifactsPanel";
-import DirectorStitchPreviewGallery from "./director/DirectorStitchPreviewGallery";
+import DirectorStitchPreviewTeaser from "./director/DirectorStitchPreviewTeaser";
 import DirectorStitchLiveSession from "./director/DirectorStitchLiveSession";
-import { isStitchPreview } from "../lib/director-stitch-preview";
+import { findLatestStitchPreview, isStitchPreview } from "../lib/director-stitch-preview";
+import {
+  buildStitchPreviewPageUrl,
+  stitchPreviewPageUrlIsValid,
+} from "../lib/director-stitch-preview-route";
 import { wantsStitchMediaRequest } from "../lib/director-stitch-intent";
 import { INTEGRATION_STYLES } from "../lib/integration-activities";
 import type { ToolIntegration } from "../lib/agent-capabilities";
@@ -100,6 +104,7 @@ import {
   DIRECTOR_COMPOSER_CONTEXT,
   LIVE_FEED_LABELS,
   WL_APP_CLASSES,
+  WIRELINE_STITCH_UI,
   WL_DIRECTOR_CLASSES,
   type ComposerAccessoryKind,
 } from "../lib/wireline-director-design";
@@ -205,6 +210,7 @@ export default function DirectorWorkspace({
   onFocusAgentChange,
 }: DirectorWorkspaceProps) {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const reduceMotion = useReducedMotion();
   const { user, loading: authLoading } = useAuth();
   const { branding } = useBranding();
@@ -715,6 +721,21 @@ export default function DirectorWorkspace({
     return () => clearInterval(timer);
   }, [isSending, input, reduceMotion]);
 
+  useEffect(() => {
+    const prompt = searchParams.get("prompt")?.trim();
+    if (!prompt) return;
+    setInput(prompt);
+    inputRef.current?.focus();
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("prompt");
+        return next;
+      },
+      { replace: true },
+    );
+  }, [searchParams, setSearchParams]);
+
   const pickCapabilityExample = useCallback(
     (text: string) => {
       setInput(text);
@@ -1172,6 +1193,7 @@ export default function DirectorWorkspace({
   };
 
   const lastDirectorMessageId = [...messages].reverse().find((m) => m.role === "director")?.id;
+  const latestStitchPreview = findLatestStitchPreview(messages);
 
   return (
     <div
@@ -1220,23 +1242,46 @@ export default function DirectorWorkspace({
               </p>
             </div>
           </div>
-          <ShadButton
-            type="button"
-            variant="ghost"
-            size="sm"
-            disableAnimations
-            onClick={clearThread}
-            disabled={isClearing}
-            className="touch-press shrink-0 text-[10px] uppercase tracking-[0.18em] text-muted hover:text-rose-600 hover:bg-rose-500/8 h-auto px-2.5 py-1.5"
-            aria-label="Clear thread"
-          >
-            {isClearing ? (
-              <Loader2 className="w-3 h-3 animate-spin" />
-            ) : (
-              <Trash2 className="w-3 h-3" />
-            )}
-            <span>Clear</span>
-          </ShadButton>
+          <div className="flex items-center gap-1.5">
+            {latestStitchPreview &&
+              stitchPreviewPageUrlIsValid(latestStitchPreview.preview) &&
+              !isSending && (
+                <ShadButton
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  disableAnimations
+                  className="touch-press shrink-0 text-[10px] uppercase tracking-[0.14em] text-brand hover:text-brand-deep hover:bg-brand/8 h-auto px-2.5 py-1.5 border border-brand/15"
+                >
+                  <Link
+                    to={buildStitchPreviewPageUrl(latestStitchPreview.preview)}
+                    aria-label={WIRELINE_STITCH_UI.previewSideEntryLabel}
+                  >
+                    <LayoutTemplate className="w-3 h-3" />
+                    <span className="hidden sm:inline">
+                      {WIRELINE_STITCH_UI.previewSideEntryLabel}
+                    </span>
+                  </Link>
+                </ShadButton>
+              )}
+            <ShadButton
+              type="button"
+              variant="ghost"
+              size="sm"
+              disableAnimations
+              onClick={clearThread}
+              disabled={isClearing}
+              className="touch-press shrink-0 text-[10px] uppercase tracking-[0.18em] text-muted hover:text-rose-600 hover:bg-rose-500/8 h-auto px-2.5 py-1.5"
+              aria-label="Clear thread"
+            >
+              {isClearing ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Trash2 className="w-3 h-3" />
+              )}
+              <span>Clear</span>
+            </ShadButton>
+          </div>
         </div>
       )}
 
@@ -1741,11 +1786,7 @@ export default function DirectorWorkspace({
                       )}
 
                       {m.previews && m.previews.length > 0 && isStitchPreview(m.previews[0]) && (
-                        <DirectorStitchPreviewGallery
-                          previews={m.previews}
-                          onSuggestEdit={(prompt) => void send(prompt)}
-                          disabled={isSending}
-                        />
+                        <DirectorStitchPreviewTeaser preview={m.previews[0]} />
                       )}
 
                       {m.previews && m.previews.length > 0 && !isStitchPreview(m.previews[0]) && (

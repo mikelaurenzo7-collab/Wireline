@@ -33,6 +33,8 @@ import {
   pickCompatibleStitchProject,
   extractStitchInlineHtml,
   extractStitchInlineImage,
+  isLikelyStitchPlaceholderImage,
+  stitchScreenAssetsReady,
 } from "./google-stitch-mcp-client";
 import { createGoogleStitchRuntime, type GoogleStitchRuntime } from "./google-stitch-sdk-client";
 import {
@@ -214,7 +216,10 @@ async function fetchScreenAssetsWithRetry(
   ];
   let last = await fetchScreenAssets(screen, signal);
   for (let i = 1; i < delaysMs.length; i++) {
-    if (last.html || last.image) return last;
+    const finalAttempt = i === delaysMs.length - 1;
+    if (stitchScreenAssetsReady(last, { allowImageFallback: finalAttempt })) {
+      return last;
+    }
     await sleepMs(delaysMs[i]! - delaysMs[i - 1]!, signal);
     last = await fetchScreenAssets(screen, signal);
   }
@@ -536,7 +541,10 @@ export async function runDirectorStitchTurn(
         });
       }
 
-      if (assets.image) {
+      const imageIsPlaceholder =
+        assets.image !== undefined && isLikelyStitchPlaceholderImage(assets.image);
+
+      if (assets.image && !(assets.html && imageIsPlaceholder)) {
         const saved = await storeDirectorArtifact({
           userId: input.userId,
           toolName: "google_stitch",
@@ -561,6 +569,22 @@ export async function runDirectorStitchTurn(
           assets.image.byteLength <= STITCH_PREVIEW_MAX_BYTES
             ? `data:image/png;base64,${assets.image.toString("base64")}`
             : imageDownloadUrl;
+      }
+
+      if (
+        !stitchScreenAssetsReady(
+          { html: assets.html, image: assets.image },
+          { allowImageFallback: true },
+        )
+      ) {
+        log.warn("stitch screen skipped — only placeholder assets", {
+          screenId,
+          projectId,
+          deviceType,
+          htmlBytes: assets.html?.byteLength ?? 0,
+          imageBytes: assets.image?.byteLength ?? 0,
+        });
+        continue;
       }
 
       if (!htmlArtifactId && !imageArtifactId) {
