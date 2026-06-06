@@ -375,7 +375,8 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                     actions={[{ label: "Retry", onClick: fetchThreads, primary: true }]}
                     density="compact"
                     withHalo={false}
-                    className="h-full py-10"
+                    fill
+                    className="py-10"
                   />
                 ) : threads.length === 0 ? (
                   <EmptyState
@@ -386,7 +387,8 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                     actions={[...OPS_CHANNEL_EMPTY.email.actions]}
                     density="compact"
                     withHalo={false}
-                    className="h-full py-10"
+                    fill
+                    className="py-10"
                   />
                 ) : (
                   <div className="divide-y divide-black/6">
@@ -702,7 +704,8 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                     description={OPS_CHANNEL_EMPTY.inboxDetail.description}
                     density="compact"
                     withHalo={false}
-                    className="h-full py-12"
+                    fill
+                    className="py-12"
                   />
                 )}
               </AnimatePresence>

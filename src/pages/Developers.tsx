@@ -126,14 +126,14 @@ export default function Developers() {
             <h2 className="font-display italic text-2xl text-ink">Authentication</h2>
           </div>
           <p className="text-muted/85 text-sm leading-relaxed mb-4">
-            Every API request must include a ****** in the{" "}
+            Every API request must include a Bearer token in the{" "}
             <code className="text-ink/90 bg-white/5 px-1.5 py-0.5 text-xs">Authorization</code>{" "}
             header. Tokens are created in your dashboard under Settings → API Access.
           </p>
           <div className="bg-black/30 border border-white/8 p-4 font-mono text-xs text-brand/75 overflow-x-auto">
             <code>
               curl -X GET &apos;{appOrigin}/api/agents&apos; \<br />
-              {"  "}-H &apos;Authorization: ******;
+              {"  "}-H &apos;Authorization: Bearer wl_YOUR_API_KEY&apos;
             </code>
           </div>
         </div>
@@ -196,7 +196,7 @@ export default function Developers() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
-              to="/login"
+              to="/signin"
               className="inline-flex items-center gap-2 px-5 py-3 text-[11px] uppercase tracking-[0.30em] font-medium text-on-brand bg-brand"
             >
               Sign in <ArrowRight className="w-4 h-4" />

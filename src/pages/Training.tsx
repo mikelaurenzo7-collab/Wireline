@@ -63,16 +63,15 @@ export default function Training() {
   if (!loading && degraded && agents.length === 0) {
     return (
       <ClientRouteViewport>
-        <div className="flex flex-1 items-center justify-center min-h-[50vh] px-4">
-          <EmptyState
-            icon={GraduationCap}
-            title="Couldn't load your agents"
-            description="The server returned a partial response. Check your connection and try again."
-            density="compact"
-            withHalo={false}
-            actions={[{ label: "Retry", onClick: () => refresh(), primary: true }]}
-          />
-        </div>
+        <EmptyState
+          fill
+          icon={GraduationCap}
+          title="Couldn't load your agents"
+          description="The server returned a partial response. Check your connection and try again."
+          density="compact"
+          withHalo={false}
+          actions={[{ label: "Retry", onClick: () => refresh(), primary: true }]}
+        />
       </ClientRouteViewport>
     );
   }
@@ -80,17 +79,16 @@ export default function Training() {
   if (agents.length === 0) {
     return (
       <ClientRouteViewport>
-        <div className="flex flex-1 items-center justify-center min-h-[50vh] px-4">
-          <EmptyState
-            icon={GraduationCap}
-            eyebrow={OPS_CHANNEL_EMPTY.training.eyebrow}
-            title={OPS_CHANNEL_EMPTY.training.title}
-            description={OPS_CHANNEL_EMPTY.training.description}
-            density="compact"
-            withHalo={false}
-            actions={[...OPS_CHANNEL_EMPTY.training.actions]}
-          />
-        </div>
+        <EmptyState
+          fill
+          icon={GraduationCap}
+          eyebrow={OPS_CHANNEL_EMPTY.training.eyebrow}
+          title={OPS_CHANNEL_EMPTY.training.title}
+          description={OPS_CHANNEL_EMPTY.training.description}
+          density="compact"
+          withHalo={false}
+          actions={[...OPS_CHANNEL_EMPTY.training.actions]}
+        />
       </ClientRouteViewport>
     );
   }

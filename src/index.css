@@ -156,6 +156,30 @@ html, body, .marketing-surface, .app-surface {
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
+/* ── COMPARISON TABLE — STICKY CAPABILITY COLUMN ──
+ * The competitor comparison table is wider than a phone (6 columns), so it
+ * pans horizontally on mobile. Without pinning the first column, panning to
+ * the right-hand competitors scrolls the row labels off-screen and the
+ * checkmarks lose all meaning. Pin the capability column so labels stay put.
+ * Inert on desktop, where the table fits and nothing scrolls. The background
+ * must be opaque so the panning glyph cells don't bleed through; the shadow
+ * only reads once the user actually pans. */
+.wl-compare-sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: color-mix(in srgb, var(--paper, #f5f0e6) 96%, white);
+  box-shadow:
+    1px 0 0 rgba(26, 22, 20, 0.08),
+    8px 0 14px -10px rgba(26, 22, 20, 0.18);
+}
+.dark .wl-compare-sticky-col {
+  background: color-mix(in srgb, #0f0c17 92%, black);
+  box-shadow:
+    1px 0 0 rgba(255, 255, 255, 0.06),
+    8px 0 14px -10px rgba(0, 0, 0, 0.5);
+}
+
 /* ── ISOLATED SCROLL VIEWPORT ──
  * Inner containers that own their scroll axis. Prevents scroll chaining
  * so the locked app shell stays rigid while content scrolls freely.

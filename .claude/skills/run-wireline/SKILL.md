@@ -126,7 +126,7 @@ still redirect to the sign-in gate.
 ## Authenticated QA — client console + in-chat Google Stitch render
 
 Auth-gated routes (`/chat`, `/agents`, `/training`, `/ops`, `/insights`,
-`/integrations`, `/settings`) redirect to `/auth` without a session. To screenshot
+`/integrations`, `/admin`) redirect to `/auth` without a session. To screenshot
 the **real operator console** without a database, use the second driver,
 `.claude/skills/run-wireline/authed-qa.mjs`. It intercepts every request: it
 fulfills `/api/**` with mocks (so `/api/auth/session` returns a mock owner and the
@@ -150,7 +150,7 @@ npx vite preview --port 4173 --host 127.0.0.1 &   # serve dist/ statically
 for VP in "390x844:mobile" "834x1112:tablet" "1440x900:desktop"; do
   SIZE="${VP%%:*}"; NAME="${VP##*:}"
   QA_URL=http://127.0.0.1:4173 QA_VIEWPORT=$SIZE QA_OUT=/tmp/wireline-screenshots/$NAME \
-    QA_ROUTES="/chat,/agents,/training,/ops,/insights,/integrations,/settings" \
+    QA_ROUTES="/chat,/agents,/training,/ops,/insights,/integrations,/admin" \
     node .claude/skills/run-wireline/authed-qa.mjs
 done
 ```
@@ -198,16 +198,17 @@ Use `npm run verify` before pushing — it runs the full CI-equivalent pipeline.
 |---|---|---|
 | `/` | No | Marketing landing page |
 | `/pricing` | No | Plans & pricing |
-| `/demos` | No | Demo lines |
+| `/showcase` | No | Demo lines (the "Demos" nav target; `/demos` is **not** a route and redirects to sign-in) |
 | `/compare` | No | Competitor comparison |
 | `/about` | No | About page |
+| `/support` | No | Support / ticket form |
 | `/chat` | Yes | Director Chat (AI workspace; renders in-chat Google Stitch designs) |
 | `/agents` | Yes | Agent fleet management |
 | `/training` | Yes | Training & playbooks |
 | `/ops` | Yes | Operations dashboard |
 | `/insights` | Yes | Analytics & insights |
 | `/integrations` | Yes | Integration marketplace |
-| `/settings` | Yes | Account settings |
+| `/admin` | Yes | Account settings (branding, team, billing, carrier) — the "Settings" nav target; `/settings` is **not** a route and 404s |
 
 Authenticated routes redirect to the login page at `/auth`.
 
@@ -217,6 +218,13 @@ Authenticated routes redirect to the login page at `/auth`.
   The Playwright driver defaults to `http://localhost:3000`.
 - **No database needed for frontend:** The server logs Postgres connection errors
   but continues serving. Public marketing routes work without a DB.
+- **Scroll-reveal on marketing pages:** the landing/marketing pages reveal most
+  sections with `whileInView` (intersection-observer) animations that start at
+  `opacity:0`. A static `--full` screenshot never scrolls, so those sections
+  capture as **empty cream voids** — the page looks broken when it isn't. The
+  `viewports --full` action scrolls the document to fire every reveal before
+  capturing (`revealOnScroll`); don't "fix" a void you see in a non-scrolled
+  full-page shot without confirming it persists after scroll.
 - **Auth-gated routes:** Director Chat, agents, training, ops, insights,
   integrations, and settings all redirect to `/auth` without a session. The
   driver's `interact` action gracefully detects this.

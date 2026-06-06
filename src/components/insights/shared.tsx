@@ -83,6 +83,7 @@ export function InsightEmpty({
   return (
     <EmptyState
       framed
+      fill
       density="compact"
       withHalo={false}
       icon={icon}
