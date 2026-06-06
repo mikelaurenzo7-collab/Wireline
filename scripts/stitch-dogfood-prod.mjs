@@ -16,7 +16,7 @@ const PASSWORD = process.env.DOGFOOD_PASSWORD || "WirelineDemo!2026";
 const PROMPT =
   process.env.STITCH_PROMPT ||
   "Design a sleek mobile landing page for Laurenzo Cleaning Company — hero, services, testimonials, book-now CTA. Warm trustworthy palette.";
-const WAIT_MS = Number(process.env.STITCH_WAIT_MS || 6 * 60 * 1000);
+const WAIT_MS = Number(process.env.STITCH_WAIT_MS || 8 * 60 * 1000);
 const OUT = path.join(process.cwd(), "terminals", "dogfood-prod", "stitch");
 const SS = path.join(OUT, "screenshots");
 [OUT, SS].forEach((d) => {
@@ -142,30 +142,43 @@ async function main() {
 
   const t0 = Date.now();
   let renderOk = false;
+  let previewOk = false;
   let lastPhase = "";
   while (Date.now() - t0 < WAIT_MS) {
     await page.waitForTimeout(15_000);
     text = await bodyText(page);
     const elapsed = Math.round((Date.now() - t0) / 1000);
 
+    const hasTeaser = /Design ready/i.test(text) && /Open preview/i.test(text);
     const hasDevice =
-      (await page.locator(".wl-stitch-device, .wl-stitch-gallery").count()) > 0;
+      (await page.locator(".wl-stitch-device, .wl-stitch-gallery, .wl-stitch-preview-teaser").count()) > 0;
     const hasScreenshotTab = /Screenshot/i.test(text) && /Wireline Design/i.test(text);
     const hasLiveHtml = /Live HTML/i.test(text);
     const hasImg = (await page.locator(".wl-stitch-device-screen img, .wl-stitch-gallery img").count()) > 0;
-    const hasIframe = (await page.locator(".wl-stitch-device-screen iframe").count()) > 0;
-    const assetsPending = /assets pending/i.test(text);
+    const hasIframe = (await page.locator(".wl-stitch-device-screen iframe, .wl-stitch-live-iframe").count()) > 0;
+    const assetsPending = /finishing the HTML preview|assets pending|Packaging preview/i.test(text);
     const working = /Director is working|Rendering screen|Composing layout|WIRELINE DESIGN/i.test(
       text,
     );
+    const stitchClarify =
+      !working &&
+      elapsed > 10 &&
+      /Gathering design requirements|Before I generate screens/i.test(text);
+    if (stitchClarify && elapsed > 20) {
+      note("stitch-clarify", false, `stuck on clarify gate at ${elapsed}s — brief inference bug`);
+      await page.screenshot({ path: path.join(SS, "03-stitch-clarify-blocked.png"), fullPage: true });
+      break;
+    }
     const stitchFail =
       !working &&
       elapsed > 30 &&
-      /couldn't finish|couldn't complete/i.test(text);
+      (/couldn't finish|couldn't complete|live render unavailable/i.test(text) &&
+        !assetsPending);
     const sendFail = /Couldn't send|Stream interrupted/i.test(text);
 
     const phase =
-      text.match(/Composing|Generating|Packaging|Wireline Design/i)?.[0] || "waiting";
+      text.match(/Composing|Generating|Packaging|Wireline Design|Design ready|finishing/i)?.[0] ||
+      "waiting";
     if (phase !== lastPhase) {
       console.log(`  … ${elapsed}s — ${phase}`);
       lastPhase = phase;
@@ -180,20 +193,54 @@ async function main() {
       await page.screenshot({ path: path.join(SS, "03-stitch-fail.png"), fullPage: true });
       break;
     }
-    if (hasDevice && (hasImg || hasIframe || hasScreenshotTab || hasLiveHtml)) {
+    if (hasTeaser || (hasDevice && (hasImg || hasIframe || hasScreenshotTab || hasLiveHtml))) {
       renderOk = true;
-      note("stitch-render", true, `inline render at ${elapsed}s`);
+      note("stitch-render", true, `thread teaser/render at ${elapsed}s`);
       await page.screenshot({ path: path.join(SS, "04-stitch-success.png"), fullPage: true });
       break;
     }
-    if (assetsPending && elapsed > 120) {
-      console.log(`  ! assets pending at ${elapsed}s (no device frame yet)`);
+    if (assetsPending && elapsed > 60) {
+      console.log(`  … ${elapsed}s — packaging/finalize in progress`);
     }
     if (elapsed % 60 < 20) {
       await page.screenshot({
         path: path.join(SS, `progress-${elapsed}s.png`),
         fullPage: false,
       });
+    }
+  }
+
+  if (renderOk) {
+    const openPreview = page.getByRole("link", { name: /Open preview/i }).or(
+      page.getByRole("button", { name: /Open preview/i }),
+    );
+    if (await openPreview.count()) {
+      await openPreview.first().click();
+      await page.waitForURL(/\/design\/preview/, { timeout: 30_000 }).catch(() => {});
+    } else {
+      await page.goto(`${base}/design/preview`, { waitUntil: "networkidle", timeout: 60_000 }).catch(() =>
+        page.goto(`${base}/design/preview`, { waitUntil: "commit", timeout: 60_000 }),
+      );
+    }
+    await page.waitForTimeout(3000);
+    await page.screenshot({ path: path.join(SS, "stitch-preview-page.png"), fullPage: false });
+
+    const previewText = await bodyText(page);
+    const hasPreviewStudio = (await page.locator(".wl-stitch-studio").count()) > 0;
+    const hasLiveIframe = (await page.locator(".wl-stitch-live-iframe").count()) > 0;
+    previewOk =
+      hasPreviewStudio &&
+      (hasLiveIframe || /Live HTML/i.test(previewText)) &&
+      !/drafting HTML prototype/i.test(previewText);
+    note(
+      "preview-page",
+      previewOk,
+      previewOk
+        ? "full-screen preview with live HTML"
+        : `studio=${hasPreviewStudio} iframe=${hasLiveIframe}`,
+    );
+    if (previewOk) {
+      await page.screenshot({ path: path.join(SS, "stitch-render-success.png"), fullPage: true });
     }
   }
 
@@ -207,7 +254,7 @@ async function main() {
   writeFileSync(path.join(OUT, "report.json"), JSON.stringify(report, null, 2));
   console.log(`Report: ${path.join(OUT, "report.json")}`);
   await browser.close();
-  process.exit(renderOk ? 0 : 1);
+  process.exit(renderOk && previewOk ? 0 : 1);
 }
 
 main().catch((e) => {

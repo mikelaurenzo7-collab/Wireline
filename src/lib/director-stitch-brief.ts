@@ -41,6 +41,36 @@ const AUDIENCE_RE =
 const GOAL_RE =
   /\b(bookings?|appointments?|leads?|calls?|conversions?|sign[\s-]?ups?|demo\s+requests?|quote\s+requests?|sales|brand\s+awareness|showcase|portfolio)\b/i;
 
+/** CTAs and hyphenated variants that GOAL_RE misses (e.g. book-now). */
+const GOAL_CTA_RE =
+  /\b(book[\s-]?now|book\s+a\b|schedule(?:\s+a)?\b|get\s+(?:a\s+)?quote|request\s+(?:a\s+)?quote|call\s+(?:us|now)|contact\s+(?:us|form)|sign[\s-]?up|cta|call[\s-]?to[\s-]?action)\b/i;
+
+const LANDING_SECTION_RE =
+  /\b(hero|services?|testimonials?|pricing|about|contact|faq|footer|features?|portfolio|gallery|how\s+it\s+works|team|reviews?)\b/i;
+
+/** Default audience when the operator names an industry but not a segment. */
+const INDUSTRY_AUDIENCE: Readonly<Record<string, string>> = {
+  cleaning: "homeowners",
+  plumbing: "homeowners",
+  hvac: "homeowners",
+  roofing: "homeowners",
+  landscaping: "homeowners",
+  contractor: "homeowners",
+  "home services": "homeowners",
+  dental: "patients",
+  medical: "patients",
+  legal: "businesses",
+  "law firm": "businesses",
+  "real estate": "buyers and sellers",
+  restaurant: "local diners",
+  insurance: "consumers",
+  saas: "SMB operators",
+  salon: "local customers",
+  fitness: "local members",
+  accounting: "small businesses",
+  "auto repair": "vehicle owners",
+};
+
 const TONE_RE =
   /\b(trustworthy|premium|friendly|playful|professional|modern|minimal|editorial|warm|bold|luxury|approachable)\b/i;
 
@@ -87,9 +117,70 @@ function pickMatch(text: string, re: RegExp): string {
 function inferBusinessName(text: string, branding: StitchTenantBranding): string {
   const forMatch = text.match(/\bfor\s+([A-Z][\w&'.-]+(?:\s+[A-Z][\w&'.-]+){0,4})/);
   if (forMatch?.[1]) return forMatch[1].trim();
+  const companyMatch = text.match(
+    /\b([A-Z][\w&'.-]+(?:\s+[A-Z][\w&'.-]+){0,3}\s+(?:Company|Co\.|LLC|Inc\.|Group|Services|Cleaning|Plumbing|Dental|Law))\b/,
+  );
+  if (companyMatch?.[1]) return companyMatch[1].trim();
   if (branding.businessName) return branding.businessName;
   if (branding.brandName && branding.brandName.toLowerCase() !== "wireline") {
     return branding.brandName;
+  }
+  return "";
+}
+
+function inferAudience(corpus: string, industry: string): string {
+  const direct = pickMatch(corpus, AUDIENCE_RE);
+  if (direct) return direct;
+  const normalizedIndustry = industry.trim().toLowerCase();
+  if (normalizedIndustry) {
+    for (const [key, audience] of Object.entries(INDUSTRY_AUDIENCE)) {
+      if (normalizedIndustry.includes(key)) return audience;
+    }
+  }
+  if (/\b(b2b|enterprise|saas|platform|software)\b/i.test(corpus)) return "SMB operators";
+  if (/\b(local|neighborhood|community)\b/i.test(corpus)) return "local customers";
+  return "";
+}
+
+function inferPrimaryGoal(corpus: string): string {
+  const direct = pickMatch(corpus, GOAL_RE);
+  if (direct) return direct;
+  if (GOAL_CTA_RE.test(corpus)) {
+    if (/\b(book|schedule|appointment)\b/i.test(corpus)) return "bookings";
+    if (/\bquote\b/i.test(corpus)) return "quote requests";
+    if (/\bcall\b/i.test(corpus)) return "calls";
+    if (/\b(contact|lead)\b/i.test(corpus)) return "leads";
+    if (/\bsign[\s-]?up\b/i.test(corpus)) return "sign-ups";
+    return "conversions";
+  }
+  if (/\blanding\s+page\b/i.test(corpus) && LANDING_SECTION_RE.test(corpus)) {
+    return "conversions";
+  }
+  return "";
+}
+
+function inferPages(corpus: string, operatorMessage: string): string {
+  if (PAGE_LIST_RE.test(corpus)) {
+    return (
+      corpus
+        .split("\n")
+        .find((line) => PAGE_LIST_RE.test(line))
+        ?.trim()
+        .slice(0, 240) || pickMatch(corpus, PAGE_LIST_RE)
+    );
+  }
+  const sections = [
+    ...new Set(
+      [...operatorMessage.matchAll(new RegExp(LANDING_SECTION_RE.source, "gi"))].map((m) =>
+        m[0].toLowerCase(),
+      ),
+    ),
+  ];
+  if (sections.length >= 2) {
+    return `Single-page landing: ${sections.join(", ")}`;
+  }
+  if (/\blanding\s+page\b/i.test(corpus)) {
+    return "Single-page landing (from operator request)";
   }
   return "";
 }
@@ -105,16 +196,10 @@ export function parseStitchDesignBrief(
     pickMatch(corpus, INDUSTRY_RE) ||
     pickMatch(operatorMessage, INDUSTRY_RE);
   const businessName = inferBusinessName(corpus, branding);
-  const audience = pickMatch(corpus, AUDIENCE_RE);
-  const primaryGoal = pickMatch(corpus, GOAL_RE);
+  const audience = inferAudience(corpus, industry);
+  const primaryGoal = inferPrimaryGoal(corpus);
   const tone = pickMatch(corpus, TONE_RE);
-  const pages = PAGE_LIST_RE.test(corpus)
-    ? corpus
-        .split("\n")
-        .find((line) => PAGE_LIST_RE.test(line))
-        ?.trim()
-        .slice(0, 240) || pickMatch(corpus, PAGE_LIST_RE)
-    : "";
+  const pages = inferPages(corpus, operatorMessage);
 
   const styleBits: string[] = [];
   if (tone) styleBits.push(`Tone: ${tone}`);

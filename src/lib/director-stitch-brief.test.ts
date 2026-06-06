@@ -81,6 +81,37 @@ describe("director stitch brief", () => {
     expect(reply).toContain(md);
   });
 
+  it("infers audience, goal, and pages from a rich landing-page prompt (prod dogfood)", () => {
+    const prompt =
+      "Design a sleek mobile landing page for Laurenzo Cleaning Company — hero, services, testimonials, book-now CTA. Warm trustworthy palette.";
+    const brief = parseStitchDesignBrief(prompt, [], {
+      brandName: null,
+      brandLogoUrl: null,
+      primaryColor: null,
+      businessName: null,
+      businessType: null,
+      primaryProduct: null,
+    });
+    expect(brief.businessName).toBe("Laurenzo Cleaning Company");
+    expect(brief.industry).toMatch(/cleaning/i);
+    expect(brief.audience).toBe("homeowners");
+    expect(brief.primaryGoal).toBe("bookings");
+    expect(brief.pages).toMatch(/hero/i);
+    expect(missingStitchBriefFields(brief, "generate", false)).toEqual([]);
+  });
+
+  it("still clarifies on vague one-liners", () => {
+    const brief = parseStitchDesignBrief("Design a landing page", [], {
+      brandName: null,
+      brandLogoUrl: null,
+      primaryColor: null,
+      businessName: null,
+      businessType: null,
+      primaryProduct: null,
+    });
+    expect(missingStitchBriefFields(brief, "generate", false).length).toBeGreaterThan(0);
+  });
+
   it("omits unsafe logo URLs from design.md", () => {
     const brief = parseStitchDesignBrief("Design for homeowners", [], branding);
     const md = buildStitchDesignMarkdown({
