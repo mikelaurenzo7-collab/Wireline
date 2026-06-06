@@ -82,6 +82,8 @@ export interface DirectorTurnInput {
   shallowOnly?: boolean;
   /** Per-user Director chat model (Wireline tiers or OpenRouter id). */
   modelSelection?: DirectorChatModelSelection;
+  /** Override deliverable system guidance (e.g. Stitch → Claude design fallback). */
+  deliverableGuidance?: string;
 }
 
 async function loadBusinessContext(userId: string): Promise<DirectorBusinessContext | undefined> {
@@ -440,7 +442,8 @@ export async function buildDirectorStreamContext(
     business,
     deep,
     integrationPrompt,
-    deliverableGuidance: buildDirectorDeliverableGuidance(input.operatorMessage),
+    deliverableGuidance:
+      input.deliverableGuidance ?? buildDirectorDeliverableGuidance(input.operatorMessage),
   });
 
   const transcript = input.history

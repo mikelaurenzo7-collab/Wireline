@@ -37,6 +37,10 @@ describe("director deliverables", () => {
     expect(wantsStitchMediaRequest("Write a Zod validator for emails")).toBe(false);
   });
 
+  it("treats stitch design asks as long deliverables for retry policy", () => {
+    expect(wantsLongDeliverable("Design a mobile app UI mockup for booking")).toBe(true);
+  });
+
   it("includes website and code guidance in system append", () => {
     const guidance = buildDirectorDeliverableGuidance(
       "Design a website and give me the HTML/CSS prototype",

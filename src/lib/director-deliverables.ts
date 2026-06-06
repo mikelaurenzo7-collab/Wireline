@@ -2,7 +2,9 @@
  * Director universal deliverables — client-safe intent detection and prompt
  * guidance for code, websites, and open-ended operator requests.
  */
-export { wantsStitchMediaRequest } from "./director-stitch-intent";
+import { wantsStitchMediaRequest } from "./director-stitch-intent";
+
+export { wantsStitchMediaRequest };
 
 const WEBSITE_SIGNAL =
   /\b(website|web\s*site|landing\s*page|homepage|home\s*page|site\s*map|sitemap|wireframe|web\s*design|design\s+(?:a|my|our|the)\s+(?:website|site|landing)|redesign\s+(?:the\s+)?(?:website|site)|new\s+site|multi-?page\s+site|e-?commerce\s+site|booking\s+page|service\s+area\s+page)\b/i;
@@ -49,6 +51,7 @@ export function wantsLogoCreativePath(message: string): boolean {
 
 /** Long-form structured output — shared with Opus escalation. */
 export function wantsLongDeliverable(message: string): boolean {
+  if (wantsStitchMediaRequest(message)) return true;
   if (wantsWebsiteDeliverable(message) || wantsCodeDeliverable(message)) return true;
   return /\b(business\s+plan|go-to-market|gtm\s+plan|standard\s+operating|sop\b|operating\s+procedure|competitive\s+analysis|competitor\s+(?:research|analysis|landscape|scan)|market\s+research|pitch\s+deck|investor\s+(?:memo|deck)|executive\s+summary|strategic\s+plan|marketing\s+plan|content\s+calendar|playbook|proposal\s+for|rfp\s+response|technical\s+spec|architecture\s+doc|prd\b|product\s+requirements)\b/i.test(
     message,

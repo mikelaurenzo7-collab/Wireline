@@ -454,6 +454,8 @@ export const WIRELINE_STITCH_UI = {
     "",
     "If it keeps failing, check that UI generation is enabled for your workspace or contact support.",
   ].join("\n"),
+  chatFallbackReasoning:
+    "Wireline Design live render unavailable — drafting HTML prototype in chat",
 } as const;
 
 export const WL_APP_CLASSES = {

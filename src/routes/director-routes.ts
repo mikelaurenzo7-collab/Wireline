@@ -80,9 +80,14 @@ import {
 } from "../lib/director-store";
 import { persistDirectorDeliverableArtifact } from "../lib/director-deliverable-artifacts";
 import type { DirectorFeatureFlags } from "../lib/director-feature-flags";
-import { wantsLongDeliverable, wantsStitchMediaRequest } from "../lib/director-deliverables";
+import { wantsLongDeliverable } from "../lib/director-deliverables";
 import { WIRELINE_STITCH_UI } from "../lib/wireline-director-design";
-import { tryDirectorStitchTurn } from "../lib/director-stitch-service";
+import {
+  resolveStitchDirectorPath,
+  STITCH_DESIGN_LLM_MODEL_LABEL,
+  STITCH_DESIGN_LLM_REASONING,
+  type StitchDesignLlmFallback,
+} from "../lib/director-stitch-fallback";
 import {
   collapseDirectorThreadDuplicates,
   insertDirectorReplyIfAbsent,
@@ -764,37 +769,34 @@ router.post(
         approvals = creative.approvals;
         clarifyingQuestions = creative.clarifyingQuestions;
       } else {
-        let usedStitch = false;
-        if (
-          operatorMessage &&
-          featureFlags.stitchMedia &&
-          wantsStitchMediaRequest(operatorMessage)
-        ) {
-          const stitchTurn = await tryDirectorStitchTurn({
-            userId: req.user.id,
-            operatorMessage,
-            history,
-            stitchOptions: req.body?.stitchOptions,
-          });
-          usedStitch = true;
-          if (stitchTurn) {
-            reply = stitchTurn.reply;
-            previews = stitchTurn.previews;
-            artifacts = stitchTurn.artifacts;
-            clarifyingQuestions = stitchTurn.clarifyingQuestions ?? clarifyingQuestions;
-            modelLabel = WIRELINE_STITCH_UI.modelLabel;
-            modelProvider = "wireline";
-            thinkingDurationMs = stitchTurn.durationMs;
-            reasoning = stitchTurn.thinkingSummary;
-            stitchSession = stitchTurn.stitchSession;
-          } else {
-            reply = WIRELINE_STITCH_UI.failReply;
-            modelLabel = WIRELINE_STITCH_UI.modelLabel;
-            modelProvider = "wireline";
-          }
-        }
+        let stitchDesignFallback: StitchDesignLlmFallback | undefined;
+        const stitchPath =
+          operatorMessage && featureFlags.stitchMedia
+            ? await resolveStitchDirectorPath({
+                userId: req.user.id,
+                operatorMessage,
+                history,
+                stitchOptions: req.body?.stitchOptions,
+              })
+            : { kind: "none" as const };
 
-        if (!usedStitch) {
+        if (stitchPath.kind === "stitch") {
+          const stitchTurn = stitchPath.turn;
+          reply = stitchTurn.reply;
+          previews = stitchTurn.previews;
+          artifacts = stitchTurn.artifacts;
+          clarifyingQuestions = stitchTurn.clarifyingQuestions ?? clarifyingQuestions;
+          modelLabel = WIRELINE_STITCH_UI.modelLabel;
+          modelProvider = "wireline";
+          thinkingDurationMs = stitchTurn.durationMs;
+          reasoning = stitchTurn.thinkingSummary;
+          stitchSession = stitchTurn.stitchSession;
+        } else {
+          if (stitchPath.kind === "llm-fallback") {
+            stitchDesignFallback = stitchPath.fallback;
+            artifacts = stitchPath.fallback.artifacts;
+          }
+
           const resolved = await resolveDirectorModelSelection(
             req.user.id,
             req.body ?? {},
@@ -822,14 +824,15 @@ router.post(
                 focusAgentId,
                 forceDeep: req.body?.forceDeep === true,
                 modelSelection: resolved.selection,
+                deliverableGuidance: stitchDesignFallback?.deliverableGuidance,
               });
               reply = turn.reply;
               suggestions = turn.suggestions;
               model = turn.model;
-              modelLabel = turn.modelLabel;
-              modelProvider = turn.modelProvider;
+              modelLabel = stitchDesignFallback ? STITCH_DESIGN_LLM_MODEL_LABEL : turn.modelLabel;
+              modelProvider = stitchDesignFallback ? "wireline" : turn.modelProvider;
               modelId = turn.modelId;
-              reasoning = turn.reasoning;
+              reasoning = stitchDesignFallback ? STITCH_DESIGN_LLM_REASONING : turn.reasoning;
               thinkingDurationMs = turn.thinkingDurationMs;
               changes = turn.changes;
               toolToggles = turn.toolToggles;
@@ -862,13 +865,16 @@ router.post(
                   forceDeep: false,
                   shallowOnly: true,
                   modelSelection: { provider: "wireline", tier: "sonnet" },
+                  deliverableGuidance: stitchDesignFallback?.deliverableGuidance,
                 });
                 if (!isDirectorStubReply(retry.reply)) {
                   reply = retry.reply;
                   suggestions = retry.suggestions;
                   model = retry.model;
-                  modelLabel = retry.modelLabel;
-                  modelProvider = retry.modelProvider;
+                  modelLabel = stitchDesignFallback
+                    ? STITCH_DESIGN_LLM_MODEL_LABEL
+                    : retry.modelLabel;
+                  modelProvider = stitchDesignFallback ? "wireline" : retry.modelProvider;
                   modelId = retry.modelId;
                   reasoning = retry.reasoning;
                   thinkingDurationMs = retry.thinkingDurationMs;
@@ -1079,7 +1085,20 @@ router.post(
         return;
       }
 
-      if (featureFlags.stitchMedia && wantsStitchMediaRequest(operatorMessage)) {
+      let stitchDesignFallback: StitchDesignLlmFallback | undefined;
+      const stitchPath = featureFlags.stitchMedia
+        ? await resolveStitchDirectorPath({
+            userId: req.user.id,
+            operatorMessage,
+            history,
+            stitchOptions: req.body?.stitchOptions,
+            onProgress: (text) => sse.write("thinking_chunk", { text }),
+            signal: streamAbort.signal,
+          })
+        : { kind: "none" as const };
+
+      if (stitchPath.kind === "stitch") {
+        const stitchTurn = stitchPath.turn;
         sse.write("meta", {
           model: "stitch",
           modelLabel: WIRELINE_STITCH_UI.modelLabel,
@@ -1088,61 +1107,37 @@ router.post(
           mode: "fleet",
         });
         sse.write("thinking_start", {});
-        const stitchTurn = await tryDirectorStitchTurn({
-          userId: req.user.id,
-          operatorMessage,
-          history,
-          stitchOptions: req.body?.stitchOptions,
-          onProgress: (text) => sse.write("thinking_chunk", { text }),
-          signal: streamAbort.signal,
+        sse.write("thinking_end", {
+          thinking: stitchTurn.thinkingSummary,
+          durationMs: stitchTurn.durationMs,
         });
-        if (stitchTurn) {
-          sse.write("thinking_end", {
-            thinking: stitchTurn.thinkingSummary,
-            durationMs: stitchTurn.durationMs,
-          });
-          const donePayload: Record<string, unknown> = {
-            reply: stitchTurn.reply,
-            previews: stitchTurn.previews,
-            artifacts: stitchTurn.artifacts,
-            clarifyingQuestions: stitchTurn.clarifyingQuestions,
-            model: "sonnet",
-            modelLabel: WIRELINE_STITCH_UI.modelLabel,
-            modelProvider: "wireline",
-            mode: "fleet",
-            thinkingDurationMs: stitchTurn.durationMs,
-            reasoning: stitchTurn.thinkingSummary,
-            stitchSession: stitchTurn.stitchSession,
-          };
-          await finalizeDirectorStreamTurn(
-            sse,
-            req.user.id,
-            operatorMessage,
-            stitchTurn.reply,
-            donePayload,
-            stitchTurn.thinkingSummary,
-            featureFlags,
-          );
-          return;
-        }
-
-        sse.write("thinking_end", { thinking: "Design render did not complete", durationMs: 0 });
+        const donePayload: Record<string, unknown> = {
+          reply: stitchTurn.reply,
+          previews: stitchTurn.previews,
+          artifacts: stitchTurn.artifacts,
+          clarifyingQuestions: stitchTurn.clarifyingQuestions,
+          model: "sonnet",
+          modelLabel: WIRELINE_STITCH_UI.modelLabel,
+          modelProvider: "wireline",
+          mode: "fleet",
+          thinkingDurationMs: stitchTurn.durationMs,
+          reasoning: stitchTurn.thinkingSummary,
+          stitchSession: stitchTurn.stitchSession,
+        };
         await finalizeDirectorStreamTurn(
           sse,
           req.user.id,
           operatorMessage,
-          WIRELINE_STITCH_UI.failReply,
-          {
-            reply: WIRELINE_STITCH_UI.failReply,
-            model: "sonnet",
-            modelLabel: WIRELINE_STITCH_UI.modelLabel,
-            modelProvider: "wireline",
-            mode: "fleet",
-          },
-          "",
+          stitchTurn.reply,
+          donePayload,
+          stitchTurn.thinkingSummary,
           featureFlags,
         );
         return;
+      }
+
+      if (stitchPath.kind === "llm-fallback") {
+        stitchDesignFallback = stitchPath.fallback;
       }
 
       const streamCtx = await buildDirectorStreamContext({
@@ -1153,12 +1148,13 @@ router.post(
         focusAgentId,
         forceDeep: req.body?.forceDeep === true,
         modelSelection,
+        deliverableGuidance: stitchDesignFallback?.deliverableGuidance,
       });
 
       const streamMeta = directorStreamMetaModel(streamCtx);
       sse.write("meta", {
         model: streamMeta.model,
-        modelLabel: streamCtx.modelLabel,
+        modelLabel: stitchDesignFallback ? STITCH_DESIGN_LLM_MODEL_LABEL : streamCtx.modelLabel,
         modelProvider: streamCtx.llmProvider,
         modelId: streamCtx.modelId,
         deep: streamMeta.deep,
@@ -1214,6 +1210,7 @@ router.post(
             forceDeep: false,
             shallowOnly: true,
             modelSelection: { provider: "wireline", tier: "sonnet" },
+            deliverableGuidance: stitchDesignFallback?.deliverableGuidance,
           });
           if (!isDirectorStubReply(retry.reply)) {
             normalized = {
@@ -1227,8 +1224,8 @@ router.post(
               focusAgentId: retry.focusAgentId,
               focusAgentName: retry.focusAgentName,
               model: retry.model,
-              modelLabel: retry.modelLabel,
-              modelProvider: retry.modelProvider,
+              modelLabel: stitchDesignFallback ? STITCH_DESIGN_LLM_MODEL_LABEL : retry.modelLabel,
+              modelProvider: stitchDesignFallback ? "wireline" : retry.modelProvider,
               modelId: retry.modelId,
             };
             reply = retry.reply;
@@ -1275,12 +1272,15 @@ router.post(
           focusAgentId: normalized.focusAgentId,
           focusAgentName: normalized.focusAgentName,
           model: normalized.model,
-          modelLabel: streamCtx.modelLabel,
-          modelProvider: streamCtx.llmProvider,
+          modelLabel: stitchDesignFallback
+            ? STITCH_DESIGN_LLM_MODEL_LABEL
+            : (normalized.modelLabel ?? streamCtx.modelLabel),
+          modelProvider: stitchDesignFallback ? "wireline" : streamCtx.llmProvider,
           modelId: streamCtx.modelId,
-          reasoning: thinking,
+          reasoning: stitchDesignFallback ? STITCH_DESIGN_LLM_REASONING : thinking,
           thinkingDurationMs,
           researchSources: streamCtx.researchSources,
+          ...(stitchDesignFallback ? { artifacts: stitchDesignFallback.artifacts } : {}),
         };
 
         streamFinalized = await finalizeDirectorStreamTurn(
