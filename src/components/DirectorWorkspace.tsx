@@ -36,7 +36,11 @@ import {
   Sparkles,
   LayoutTemplate,
 } from "lucide-react";
-import { authFetch, readApiJson } from "../lib/api";
+import {
+  authFetch,
+  DIRECTOR_STITCH_REQUEST_TIMEOUT_MS,
+  readApiJson,
+} from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { hydrateAgentsFromFleet, useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -51,6 +55,7 @@ import { useStreamingChat } from "../hooks/useStreamingChat";
 import {
   isSubstantiveDirectorPayload,
   isSubstantiveDirectorReply,
+  operatorTurnHasDirectorReply,
 } from "../lib/director-reply-utils";
 import ProposalCard from "./chat/ProposalCard";
 import { AGENT_TOOL_CATALOG } from "../lib/agent-capabilities";
@@ -481,12 +486,47 @@ export default function DirectorWorkspace({
     },
   });
 
+  const recoverPersistedDirectorReply = useCallback(
+    async (trimmed: string, requireStitch: boolean): Promise<boolean> => {
+      const waits = [400, 900, 1600, 3000, 5000, 8000, 12_000, 18_000];
+      for (const waitMs of waits) {
+        await new Promise((resolve) => setTimeout(resolve, waitMs));
+        const r = await authFetch("/api/director/messages");
+        if (!r.ok) continue;
+        const data = await r.json();
+        const msgs = Array.isArray(data.messages) ? data.messages : [];
+        if (
+          !operatorTurnHasDirectorReply(msgs, trimmed, {
+            requireStitch: requireStitch,
+          })
+        ) {
+          continue;
+        }
+        setMessages(msgs);
+        if (Array.isArray(data.artifacts)) setArtifacts(data.artifacts);
+        return true;
+      }
+      return false;
+    },
+    [],
+  );
+
   const sendNonStreaming = useCallback(
-    async (trimmed: string, optimisticId?: string, opts?: { skipOperatorPersist?: boolean }) => {
+    async (
+      trimmed: string,
+      optimisticId?: string,
+      opts?: {
+        skipOperatorPersist?: boolean;
+        timeoutMs?: number;
+        recoverPersistedReply?: boolean;
+        requireStitchReply?: boolean;
+      },
+    ) => {
       try {
         const r = await authFetch("/api/director/messages", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          timeoutMs: opts?.timeoutMs,
           body: JSON.stringify({
             content: trimmed,
             ...(focusAgentId ? { focusAgentId } : {}),
@@ -503,11 +543,23 @@ export default function DirectorWorkspace({
         if (!parsed.ok) throw new Error(parsed.error);
         appendDirectorReply(parsed.data);
       } catch {
+        if (opts?.recoverPersistedReply) {
+          const recovered = await recoverPersistedDirectorReply(
+            trimmed,
+            opts.requireStitchReply === true,
+          );
+          if (recovered) return;
+        }
         if (optimisticId) {
           setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
         }
         setInput(trimmed);
-        toastError("Couldn't send", "Try again in a moment");
+        toastError(
+          opts?.requireStitchReply ? "Stitch didn't finish in time" : "Couldn't send",
+          opts?.requireStitchReply
+            ? "Your render may still land in this thread — refresh in a moment or try again."
+            : "Try again in a moment",
+        );
       } finally {
         setIsSending(false);
         streamReset();
@@ -515,7 +567,15 @@ export default function DirectorWorkspace({
         inputRef.current?.focus();
       }
     },
-    [appendDirectorReply, streamReset, toastError, focusAgentId, forceDeep, chatModelSelection],
+    [
+      appendDirectorReply,
+      recoverPersistedDirectorReply,
+      streamReset,
+      toastError,
+      focusAgentId,
+      forceDeep,
+      chatModelSelection,
+    ],
   );
   sendNonStreamingRef.current = sendNonStreaming;
 
@@ -736,7 +796,11 @@ export default function DirectorWorkspace({
         setStitchPrompt(trimmed);
         setStitchRendering(true);
         try {
-          await sendNonStreaming(trimmed, optimistic?.id);
+          await sendNonStreaming(trimmed, optimistic?.id, {
+            timeoutMs: DIRECTOR_STITCH_REQUEST_TIMEOUT_MS,
+            recoverPersistedReply: true,
+            requireStitchReply: true,
+          });
         } finally {
           setStitchRendering(false);
           setStitchPrompt("");

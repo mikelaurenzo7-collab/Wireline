@@ -2,7 +2,16 @@
 // Default per-request timeout for backend calls. Long enough for the
 // slowest Claude paths (deep-think recipes ~ 60-90s) but bounded so
 // the UI never spins forever on a stalled fetch.
-const DEFAULT_TIMEOUT_MS = 120_000;
+export const DEFAULT_REQUEST_TIMEOUT_MS = 120_000;
+/** Google Stitch renders server-side for 1–3+ min — stay under Vercel maxDuration (600s). */
+export const DIRECTOR_STITCH_REQUEST_TIMEOUT_MS = 360_000;
+
+const DEFAULT_TIMEOUT_MS = DEFAULT_REQUEST_TIMEOUT_MS;
+
+export interface AuthFetchOptions extends RequestInit {
+  /** Override default 120s cap (e.g. Stitch UI generation). */
+  timeoutMs?: number;
+}
 
 // Logger stub for client-side (avoid console.error in production)
 const logError = (message: string, ...args: any[]) => {
@@ -242,24 +251,26 @@ export async function getFreshAccessToken(): Promise<string | null> {
   return null;
 }
 
-export async function authFetch(url: string, options: RequestInit = {}) {
+export async function authFetch(url: string, options: AuthFetchOptions = {}) {
   if (!url.includes("/api/auth/refresh")) {
     await refreshSessionIfNeeded();
   }
 
+  const { timeoutMs = DEFAULT_TIMEOUT_MS, ...fetchOptions } = options;
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...((options.headers as Record<string, string>) || {}),
+    ...((fetchOptions.headers as Record<string, string>) || {}),
   };
 
   const timeoutCtrl = new AbortController();
-  const timer = setTimeout(() => timeoutCtrl.abort(), DEFAULT_TIMEOUT_MS);
-  const signal = options.signal
-    ? combineSignals(options.signal, timeoutCtrl.signal)
+  const timer = setTimeout(() => timeoutCtrl.abort(), timeoutMs);
+  const signal = fetchOptions.signal
+    ? combineSignals(fetchOptions.signal, timeoutCtrl.signal)
     : timeoutCtrl.signal;
   try {
     const response = await fetch(url, {
-      ...options,
+      ...fetchOptions,
       headers,
       credentials: "include",
       signal,

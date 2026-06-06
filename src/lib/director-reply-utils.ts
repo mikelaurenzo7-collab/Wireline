@@ -23,6 +23,43 @@ export function isSubstantiveDirectorPayload(data: Record<string, unknown> | und
 }
 
 /** Drop stub director rows that follow a substantive reply for the same operator turn. */
+export function operatorTurnHasDirectorReply(
+  messages: {
+    role: string;
+    content: string;
+    modelLabel?: string;
+    previews?: unknown[];
+  }[],
+  operatorContent: string,
+  options?: { requireStitch?: boolean },
+): boolean {
+  const needle = operatorContent.trim();
+  const idx = messages.findIndex((m) => m.role === "operator" && m.content.trim() === needle);
+  if (idx < 0) return false;
+
+  for (const m of messages.slice(idx + 1)) {
+    if (m.role === "operator") break;
+    if (m.role !== "director") continue;
+
+    if (options?.requireStitch) {
+      const previews = Array.isArray(m.previews) ? m.previews : [];
+      const isStitch =
+        m.modelLabel === "Google Stitch" ||
+        previews.some(
+          (p) =>
+            !!p &&
+            typeof p === "object" &&
+            (p as { kind?: string }).kind === "stitch",
+        );
+      if (isStitch && isSubstantiveDirectorReply(m.content)) return true;
+      continue;
+    }
+
+    if (isSubstantiveDirectorReply(m.content)) return true;
+  }
+  return false;
+}
+
 export function collapseDirectorThreadDuplicates<T extends { role: string; content: string }>(
   messagesAsc: T[],
 ): T[] {
