@@ -876,7 +876,7 @@ router.post(
                     : retry.modelLabel;
                   modelProvider = stitchDesignFallback ? "wireline" : retry.modelProvider;
                   modelId = retry.modelId;
-                  reasoning = retry.reasoning;
+                  reasoning = stitchDesignFallback ? STITCH_DESIGN_LLM_REASONING : retry.reasoning;
                   thinkingDurationMs = retry.thinkingDurationMs;
                   changes = retry.changes;
                   toolToggles = retry.toolToggles;

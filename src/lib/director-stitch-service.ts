@@ -615,9 +615,17 @@ export async function runDirectorStitchTurn(
   }
 }
 
-async function planDirectorStitchTurn(
+export type StitchPreparedTurn =
+  | { phase: "clarify"; turn: DirectorStitchTurnResult }
+  | {
+      phase: "render";
+      input: DirectorStitchTurnInput & { designBriefMarkdown: string; businessName?: string };
+    };
+
+/** Brief gate + design.md — runs even when Stitch API is not configured. */
+export async function prepareStitchDirectorTurn(
   input: DirectorStitchTurnInput,
-): Promise<DirectorStitchTurnResult | null> {
+): Promise<StitchPreparedTurn> {
   const t0 = Date.now();
   const branding = await loadStitchTenantBranding(input.userId);
   const useAccountBranding = resolveUseAccountBranding(input.stitchOptions, branding);
@@ -635,13 +643,16 @@ async function planDirectorStitchTurn(
   if (missing.length > 0) {
     const clarifyingQuestions = stitchClarifyingQuestions(missing);
     return {
-      reply: buildStitchClarifyReply(missing, designBriefMarkdown, useAccountBranding),
-      previews: [],
-      artifacts: [buildStitchDesignBriefArtifact(designBriefMarkdown)],
-      clarifyingQuestions,
-      designBriefMarkdown,
-      thinkingSummary: "Gathering design requirements",
-      durationMs: Date.now() - t0,
+      phase: "clarify",
+      turn: {
+        reply: buildStitchClarifyReply(missing, designBriefMarkdown, useAccountBranding),
+        previews: [],
+        artifacts: [buildStitchDesignBriefArtifact(designBriefMarkdown)],
+        clarifyingQuestions,
+        designBriefMarkdown,
+        thinkingSummary: "Gathering design requirements",
+        durationMs: Date.now() - t0,
+      },
     };
   }
 
@@ -652,20 +663,25 @@ async function planDirectorStitchTurn(
     branding.brandName ||
     undefined;
 
-  return runDirectorStitchTurn({
-    ...input,
-    businessName,
-    designBriefMarkdown,
-  });
+  return {
+    phase: "render",
+    input: {
+      ...input,
+      businessName,
+      designBriefMarkdown,
+    },
+  };
 }
 
-/** Non-throwing entry — returns null so Director can fall back to Claude. */
+/** Non-throwing entry — clarify turns always return; null only when render cannot run. */
 export async function tryDirectorStitchTurn(
   input: DirectorStitchTurnInput,
 ): Promise<DirectorStitchTurnResult | null> {
-  if (!isGoogleStitchConfigured()) return null;
   try {
-    return await planDirectorStitchTurn(input);
+    const prepared = await prepareStitchDirectorTurn(input);
+    if (prepared.phase === "clarify") return prepared.turn;
+    if (!isGoogleStitchConfigured()) return null;
+    return await runDirectorStitchTurn(prepared.input);
   } catch (e) {
     log.warn("director stitch turn failed — falling back to LLM", {
       userId: input.userId,

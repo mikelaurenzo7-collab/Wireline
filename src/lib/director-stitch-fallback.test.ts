@@ -44,6 +44,23 @@ describe("director stitch fallback", () => {
     expect(guidance).toContain(md);
   });
 
+  it("returns clarify turns as stitch without LLM fallback", async () => {
+    vi.mocked(tryDirectorStitchTurn).mockResolvedValueOnce({
+      reply: "Before I generate screens, I need a bit more context.",
+      previews: [],
+      artifacts: [{ name: "design.md" }],
+      clarifyingQuestions: ["Who is the primary audience?"],
+      thinkingSummary: "Gathering design requirements",
+      durationMs: 5,
+    });
+
+    const result = await resolveStitchDirectorPath({
+      ...input,
+      operatorMessage: "Design a landing page",
+    });
+    expect(result.kind).toBe("stitch");
+  });
+
   it("returns stitch turn when render succeeds", async () => {
     vi.mocked(tryDirectorStitchTurn).mockResolvedValueOnce({
       reply: "Rendered",
