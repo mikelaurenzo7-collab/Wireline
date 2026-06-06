@@ -508,7 +508,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                             Intent
                           </span>
                           <span className="font-display italic text-xl leading-none tabular-nums">
-                            {selectedThread.lead_score || 0}
+                            {selectedThread.lead_score || 0}%
                           </span>
                         </div>
                         <div className="min-w-0">
@@ -526,6 +526,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           recipe="summarize-thread"
                           threadId={selectedThread.id}
                           label="Summarize"
+                          className="border-brand/40 bg-brand/[0.06] text-brand hover:bg-brand/12"
                         />
                         <ShadButton
                           type="button"
@@ -533,7 +534,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           size="sm"
                           disableAnimations
                           onClick={() => handlePhoneHandoff(selectedThread)}
-                          className="rounded-full wl-ops-chip text-muted hover:text-brand hover:border-brand/40"
+                          className="rounded-full border-brand/40 bg-brand/[0.06] text-brand text-[11px] uppercase tracking-[0.22em] hover:bg-brand/12 hover:border-brand/60"
                           title="Route this thread to a voice fleet agent"
                         >
                           <Phone className="w-3 h-3 text-brand" />

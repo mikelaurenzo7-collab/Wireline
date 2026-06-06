@@ -7,6 +7,7 @@ import * as schema from "../db/schema";
 export { dedupeDirectorArtifacts } from "./director-artifact-dedupe";
 export {
   buildSignedDownloadUrl,
+  buildSignedPreviewUrl,
   createSignedDownloadToken,
   verifySignedDownloadToken,
 } from "./director-artifact-signing";

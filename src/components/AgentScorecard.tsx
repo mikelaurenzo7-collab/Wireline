@@ -96,7 +96,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
     );
   }
 
-  if (!data) return null;
+  if (!data?.primary) return null;
 
   return (
     <motion.section

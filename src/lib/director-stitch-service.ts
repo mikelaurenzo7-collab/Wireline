@@ -110,6 +110,24 @@ async function fetchScreenAssets(
   return { html, image, screen };
 }
 
+/** Stitch screenshot/HTML URLs can lag behind the screen record — poll briefly. */
+async function fetchScreenAssetsWithRetry(
+  client: GoogleStitchMcpClient,
+  projectId: string,
+  screenId: string,
+  signal?: AbortSignal,
+): Promise<{ html?: Buffer; image?: Buffer; screen: Record<string, unknown> }> {
+  const delaysMs = [0, 3_000, 5_000, 8_000, 10_000, 12_000];
+  let last = await fetchScreenAssets(client, projectId, screenId, signal);
+  for (let i = 1; i < delaysMs.length; i++) {
+    if (last.html && last.image) return last;
+    await sleepMs(delaysMs[i]!, signal);
+    last = await fetchScreenAssets(client, projectId, screenId, signal);
+    if (last.html || last.image) return last;
+  }
+  return last;
+}
+
 function sleepMs(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) {
@@ -417,7 +435,7 @@ export async function runDirectorStitchTurn(input: {
     if (!screenId) continue;
 
     input.onProgress?.(`Downloading assets for screen ${i + 1}/${screens.length}…`);
-    const assets = await fetchScreenAssets(client, projectId, screenId, input.signal);
+    const assets = await fetchScreenAssetsWithRetry(client, projectId, screenId, input.signal);
 
     const stamp = new Date().toISOString().slice(0, 10);
     const suffix = screens.length > 1 ? `-v${i + 1}` : "";
@@ -430,6 +448,8 @@ export async function runDirectorStitchTurn(input: {
           : "Screen";
     let htmlDownloadUrl: string | undefined;
     let imageDownloadUrl: string | undefined;
+    let htmlArtifactId: string | undefined;
+    let imageArtifactId: string | undefined;
     let previewDataUrl = "";
 
     if (assets.html) {
@@ -447,6 +467,7 @@ export async function runDirectorStitchTurn(input: {
           deviceType,
         },
       });
+      htmlArtifactId = saved.id;
       htmlDownloadUrl = buildSignedPreviewUrl("/api/director/artifacts", saved.id, input.userId);
       artifacts.push({
         ...saved,
@@ -469,8 +490,12 @@ export async function runDirectorStitchTurn(input: {
           deviceType,
         },
       });
-      imageDownloadUrl = buildSignedDownloadUrl("/api/director/artifacts", saved.id, input.userId);
-      artifacts.push({ ...saved, downloadUrl: imageDownloadUrl });
+      imageArtifactId = saved.id;
+      imageDownloadUrl = buildSignedPreviewUrl("/api/director/artifacts", saved.id, input.userId);
+      artifacts.push({
+        ...saved,
+        downloadUrl: buildSignedDownloadUrl("/api/director/artifacts", saved.id, input.userId),
+      });
       previewDataUrl =
         assets.image.byteLength <= STITCH_PREVIEW_MAX_BYTES
           ? `data:image/png;base64,${assets.image.toString("base64")}`
@@ -486,6 +511,8 @@ export async function runDirectorStitchTurn(input: {
       previewDataUrl: previewDataUrl || imageDownloadUrl || htmlDownloadUrl || "",
       htmlDownloadUrl,
       imageDownloadUrl,
+      htmlArtifactId,
+      imageArtifactId,
     });
 
     thinkingLines.push(`Screen ${screenId} (${deviceType})`);

@@ -65,6 +65,7 @@ import {
 } from "../lib/director-message-metadata";
 import {
   buildSignedDownloadUrl,
+  buildSignedPreviewUrl,
   clearDirectorArtifacts,
   listDirectorArtifacts,
   loadDirectorArtifactData,
@@ -1462,6 +1463,37 @@ router.delete(
     } catch (e) {
       log.error("director clear failed", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to clear Director thread" });
+    }
+  },
+);
+
+router.get(
+  "/api/director/artifacts/:id/signed-url",
+  directorArtifactDownloadLimiter,
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      await ensureDirectorSchema();
+      const artifactId = String(req.params.id || "").trim();
+      if (!artifactId) return res.status(400).json({ error: "Artifact id required" });
+
+      const loaded = await loadDirectorArtifactData({ artifactId, userId: req.user.id });
+      if (!loaded) return res.status(404).json({ error: "Artifact not found" });
+
+      const inline = String(req.query.inline || "") === "1";
+      const url = inline
+        ? buildSignedPreviewUrl("/api/director/artifacts", artifactId, req.user.id)
+        : buildSignedDownloadUrl("/api/director/artifacts", artifactId, req.user.id);
+
+      res.json({
+        url,
+        artifactId,
+        mimeType: loaded.artifact.mimeType,
+        inline,
+      });
+    } catch (e) {
+      log.error("director artifact signed-url failed", { error: getErrorMessage(e) });
+      res.status(500).json({ error: "Failed to mint artifact preview URL" });
     }
   },
 );
