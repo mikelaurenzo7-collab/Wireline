@@ -4,7 +4,8 @@
  */
 
 const STITCH_MCP_BASE = "https://stitch.googleapis.com/mcp";
-const DEFAULT_STITCH_TIMEOUT_MS = 280_000;
+/** Match Director / Vercel budget — Stitch generate can run 3–5 min. */
+const DEFAULT_STITCH_TIMEOUT_MS = 540_000;
 
 export function getGoogleStitchApiKey(): string | null {
   const key = process.env.GOOGLE_STITCH_API_KEY?.trim() || process.env.STITCH_API_KEY?.trim() || "";

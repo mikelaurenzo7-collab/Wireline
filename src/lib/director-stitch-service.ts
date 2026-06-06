@@ -30,6 +30,7 @@ import {
   screenEntityToRecord,
   withStitchAbort,
 } from "./google-stitch-sdk-helpers";
+import { isAllowedStitchAssetHost, sanitizeStitchAssetUrl } from "./google-stitch-asset-url";
 import {
   getGoogleStitchApiKey,
   getGoogleStitchProjectId,
@@ -84,16 +85,6 @@ function pickDownloadUrl(screen: Record<string, unknown>, kind: "html" | "image"
   );
 }
 
-function isAllowedStitchAssetHost(host: string): boolean {
-  return (
-    /\.googleapis\.com$/i.test(host) ||
-    /\.googleusercontent\.com$/i.test(host) ||
-    /\.gstatic\.com$/i.test(host) ||
-    /\.cloud\.google\.com$/i.test(host) ||
-    /\.withgoogle\.com$/i.test(host)
-  );
-}
-
 async function fetchRemoteAsset(url: string, signal?: AbortSignal): Promise<Buffer> {
   const host = new URL(url).hostname;
   if (!isAllowedStitchAssetHost(host)) {
@@ -136,14 +127,22 @@ async function fetchScreenAssets(
     }),
   ]);
 
-  if (htmlUrl) {
+  const safeHtmlUrl = sanitizeStitchAssetUrl(htmlUrl);
+  const safeImageUrl = sanitizeStitchAssetUrl(imageUrl);
+  if (htmlUrl && !safeHtmlUrl) {
+    log.warn("stitch html url blocked", { screenId: screen.screenId });
+  }
+  if (imageUrl && !safeImageUrl) {
+    log.warn("stitch image url blocked", { screenId: screen.screenId });
+  }
+  if (safeHtmlUrl) {
     screenRecord = mergeStitchScreenRecord(screenRecord, {
-      htmlCode: { downloadUrl: htmlUrl },
+      htmlCode: { downloadUrl: safeHtmlUrl },
     });
   }
-  if (imageUrl) {
+  if (safeImageUrl) {
     screenRecord = mergeStitchScreenRecord(screenRecord, {
-      screenshot: { downloadUrl: imageUrl },
+      screenshot: { downloadUrl: safeImageUrl },
     });
   }
 
@@ -205,11 +204,15 @@ function sleepMs(ms: number, signal?: AbortSignal): Promise<void> {
       reject(new GoogleStitchError("Stitch request aborted", "NETWORK_ERROR", true));
       return;
     }
-    const timer = setTimeout(resolve, ms);
     const onAbort = () => {
       clearTimeout(timer);
+      signal?.removeEventListener("abort", onAbort);
       reject(new GoogleStitchError("Stitch request aborted", "NETWORK_ERROR", true));
     };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
     signal?.addEventListener("abort", onAbort, { once: true });
   });
 }
@@ -291,6 +294,38 @@ async function runStitchOperation(
   const { operation, projectId, screenId, prompt, deviceType, modelId } = input;
   const project = runtime.stitch.project(projectId);
 
+  if (operation === "variants") {
+    if (!screenId) {
+      throw new GoogleStitchError(
+        "No Stitch screen to variant — generate a screen first.",
+        "VALIDATION_ERROR",
+      );
+    }
+    onProgress?.("Generating Stitch design variants…");
+    const opts = resolveStitchVariantOptions(input.operatorMessage);
+    const variants = await withStitchAbort(signal, () =>
+      project.screen(screenId).variants(prompt, opts, deviceType, modelId),
+    );
+    if (variants.length === 0) {
+      throw new GoogleStitchError("Stitch returned no variants", "VALIDATION_ERROR", true);
+    }
+    return variants;
+  }
+
+  if (operation === "edit") {
+    if (!screenId) {
+      throw new GoogleStitchError(
+        "No Stitch screen to edit — generate a screen first.",
+        "VALIDATION_ERROR",
+      );
+    }
+    onProgress?.("Editing Stitch screen…");
+    const updated = await withStitchAbort(signal, () =>
+      project.screen(screenId).edit(prompt, deviceType, modelId),
+    );
+    return [updated];
+  }
+
   if (operation === "build_site") {
     onProgress?.("Building multi-page site in Stitch…");
     try {
@@ -302,34 +337,19 @@ async function runStitchOperation(
           modelId,
         }),
       );
-      const screens = extractStitchScreens(built).map((record) =>
-        runtime.stitch
-          .project(String(record.projectId ?? projectId))
-          .screen(String(record.screenId)),
-      );
+      const screens = extractStitchScreens(built)
+        .filter((record) => String(record.screenId ?? "").trim())
+        .map((record) =>
+          runtime.stitch
+            .project(String(record.projectId ?? projectId))
+            .screen(String(record.screenId)),
+        );
       if (screens.length > 0) return screens;
     } catch (e) {
       log.warn("stitch build_site unavailable, falling back to generate", {
         error: getErrorMessage(e),
       });
     }
-  }
-
-  if (operation === "variants" && screenId) {
-    onProgress?.("Generating Stitch design variants…");
-    const opts = resolveStitchVariantOptions(input.operatorMessage);
-    const screen = project.screen(screenId);
-    const variants = await withStitchAbort(signal, () =>
-      screen.variants(prompt, opts, deviceType, modelId),
-    );
-    if (variants.length > 0) return variants;
-  }
-
-  if (operation === "edit" && screenId) {
-    onProgress?.("Editing Stitch screen…");
-    const screen = project.screen(screenId);
-    const updated = await withStitchAbort(signal, () => screen.edit(prompt, deviceType, modelId));
-    return [updated];
   }
 
   const knownBefore = new Set(
