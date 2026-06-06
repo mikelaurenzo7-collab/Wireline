@@ -44,7 +44,7 @@ export function useDirectorArtifactBlobSrc(
   const [src, setSrc] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
-  const blobRef = useRef<string | undefined>();
+  const blobRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     const revokeBlob = () => {
