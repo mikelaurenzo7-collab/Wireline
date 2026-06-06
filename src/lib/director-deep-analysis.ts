@@ -41,5 +41,5 @@ export function resolveDirectorMaxTokens(input: {
   if (input.opus) {
     return input.longDeliverable ? 8192 : 4000;
   }
-  return input.longDeliverable ? 4000 : 2800;
+  return input.longDeliverable ? 8192 : 2800;
 }

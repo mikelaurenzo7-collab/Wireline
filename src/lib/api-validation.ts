@@ -457,11 +457,25 @@ export const emailInboxSyncSchema = z.object({
   sinceIso: z.string().datetime().optional(),
 });
 
+/** Director composer model pin — must survive validateBody (unknown keys are stripped). */
+export const directorChatModelSelectionSchema = z.discriminatedUnion("provider", [
+  z.object({
+    provider: z.literal("wireline"),
+    tier: z.enum(["auto", "sonnet", "opus"]),
+  }),
+  z.object({
+    provider: z.literal("openrouter"),
+    modelId: z.string().min(1).max(128),
+  }),
+]);
+
 export const directorMessageSchema = z
   .object({
     content: z.string().max(4000).optional(),
     focusAgentId: z.string().max(120).optional(),
     skipOperatorPersist: z.boolean().optional(),
+    forceDeep: z.boolean().optional(),
+    modelSelection: directorChatModelSelectionSchema.optional(),
     approval: z.record(z.string(), z.unknown()).optional(),
   })
   .refine((data) => Boolean(data.content?.trim()) || data.approval, {
@@ -471,6 +485,9 @@ export const directorMessageSchema = z
 export const directorStreamMessageSchema = z.object({
   content: z.string().min(1, "Message content required").max(4000),
   focusAgentId: z.string().max(120).optional(),
+  skipOperatorPersist: z.boolean().optional(),
+  forceDeep: z.boolean().optional(),
+  modelSelection: directorChatModelSelectionSchema.optional(),
 });
 
 export const directorExecuteSchema = z.discriminatedUnion("kind", [

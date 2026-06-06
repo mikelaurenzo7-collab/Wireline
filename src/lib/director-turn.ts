@@ -349,6 +349,8 @@ export async function buildDirectorStreamContext(
     !focusId &&
     (input.forceDeep === true || wantsDeepAnalysis(input.operatorMessage));
   const longDeliverable = wantsLongDeliverable(input.operatorMessage);
+  const skipAdaptiveThinking =
+    longDeliverable && !wantsDeepAnalysis(input.operatorMessage) && input.forceDeep !== true;
 
   const llm = resolveDirectorLlm({
     selection: input.modelSelection,
@@ -360,7 +362,12 @@ export async function buildDirectorStreamContext(
     modelLabelForOpenRouter: labelForOpenRouterModel,
   });
 
-  const deep = !input.shallowOnly && !focusId && (llm.deepThink || llm.modelKind === "opus");
+  const effectiveDeepThink = skipAdaptiveThinking ? false : llm.deepThink;
+  const deep =
+    !input.shallowOnly &&
+    !focusId &&
+    !skipAdaptiveThinking &&
+    (llm.deepThink || llm.modelKind === "opus");
 
   if (focusId) {
     const ctx = await loadCoachContext(input.userId, focusId);
@@ -453,7 +460,7 @@ export async function buildDirectorStreamContext(
     user,
     tool,
     model: llm.model,
-    deepThink: llm.deepThink,
+    deepThink: effectiveDeepThink,
     maxTokens: llm.maxTokens,
     llmProvider: llm.provider,
     modelLabel: llm.modelLabel,

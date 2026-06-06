@@ -82,7 +82,6 @@ import type { DirectorFeatureFlags } from "../lib/director-feature-flags";
 import { wantsLongDeliverable } from "../lib/director-deliverables";
 import {
   collapseDirectorThreadDuplicates,
-  hasSubstantiveDirectorReplyForOperator,
   insertDirectorReplyIfAbsent,
   isDirectorStubReply,
   loadExistingDirectorTurnResponse,
@@ -199,6 +198,14 @@ async function finalizeDirectorStreamTurn(
   return true;
 }
 
+function operatorSnippetMatchesArtifactPreview(snippet: string, preview: string): boolean {
+  const minLen = 15;
+  const a = snippet.trim().slice(0, 60);
+  const b = preview.trim().slice(0, 60);
+  if (a.length < minLen || b.length < minLen) return false;
+  return preview.startsWith(a) || snippet.startsWith(b) || a.startsWith(b) || b.startsWith(a);
+}
+
 function filterDirectorArtifactsForThread(
   messagesDesc: Array<{ role: string; metadata: unknown }>,
   artifacts: Array<Record<string, unknown>>,
@@ -212,19 +219,32 @@ function filterDirectorArtifactsForThread(
       return typeof row.content === "string" ? row.content.trim().slice(0, 120) : "";
     })
     .filter(Boolean);
-  const linkedIds = new Set(
-    asc
-      .map((m) => parseDirectorMetadata(m.metadata).deliverableArtifact?.id)
-      .filter((id): id is string => Boolean(id)),
-  );
 
   return artifacts.filter((a) => {
     if (a.toolName !== "director_deliverable") return true;
-    if (linkedIds.has(String(a.id))) return true;
-    const preview = (a.metadata as { operatorPreview?: string } | undefined)?.operatorPreview;
-    if (preview && operatorSnippets.some((s) => preview.startsWith(s.slice(0, 40)))) return true;
-    return false;
+    const preview = (
+      a.metadata as { operatorPreview?: string } | undefined
+    )?.operatorPreview?.trim();
+    if (!preview) return false;
+    return operatorSnippets.some((s) => operatorSnippetMatchesArtifactPreview(s, preview));
   });
+}
+
+/** Recover a completed turn from DB when the stream errors after persist (or parallel retry). */
+async function emitStreamDoneFromPersisted(
+  sse: SseStreamHandle,
+  userId: string,
+  operatorMessage: string,
+): Promise<boolean> {
+  const existing = await loadExistingDirectorTurnResponse(userId, operatorMessage);
+  if (!existing || isDirectorStubReply(existing.content)) return false;
+  sse.write("thinking_end", {
+    thinking: existing.reasoning ?? "",
+    durationMs: 0,
+  });
+  sse.write("done", jsonFromPersistedDirectorTurn(existing));
+  sse.end();
+  return true;
 }
 
 function jsonFromPersistedDirectorTurn(
@@ -1179,14 +1199,12 @@ router.post(
           });
           return;
         }
-        if (await hasSubstantiveDirectorReplyForOperator(req.user.id, operatorMessage)) {
-          log.info("director stream fallback skipped — turn already persisted", {
-            userId: req.user.id,
-          });
-          sse.end();
+        if (await emitStreamDoneFromPersisted(sse, req.user.id, operatorMessage)) {
+          log.info("director stream recovered from persisted turn", { userId: req.user.id });
           return;
         }
         log.error("director stream failed", { error: getErrorMessage(e) });
+        const deliverableTurn = wantsLongDeliverable(operatorMessage);
         try {
           const turn = await planDirectorTurnResilient({
             userId: req.user.id,
@@ -1195,14 +1213,16 @@ router.post(
             fleet,
             stats,
             focusAgentId,
-            forceDeep: req.body?.forceDeep === true,
-            modelSelection,
+            forceDeep: deliverableTurn ? false : req.body?.forceDeep === true,
+            shallowOnly: deliverableTurn,
+            modelSelection: deliverableTurn
+              ? { provider: "wireline", tier: "sonnet" }
+              : modelSelection,
           });
           if (
             isDirectorStubReply(turn.reply) &&
-            (await hasSubstantiveDirectorReplyForOperator(req.user.id, operatorMessage))
+            (await emitStreamDoneFromPersisted(sse, req.user.id, operatorMessage))
           ) {
-            sse.end();
             return;
           }
           sse.write("thinking_end", {
@@ -1222,9 +1242,10 @@ router.post(
           log.error("director stream fallback failed", {
             error: getErrorMessage(fallbackErr),
           });
-          if (!(await hasSubstantiveDirectorReplyForOperator(req.user.id, operatorMessage))) {
-            sse.write("error", { message: "Failed to generate response" });
+          if (await emitStreamDoneFromPersisted(sse, req.user.id, operatorMessage)) {
+            return;
           }
+          sse.write("error", { message: "Failed to generate response" });
           sse.end();
         }
       }
