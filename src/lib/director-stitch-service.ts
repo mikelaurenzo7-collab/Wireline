@@ -15,11 +15,13 @@ import {
 import { loadLatestStitchSession } from "./director-stitch-session";
 import {
   extractStitchProjectId,
+  extractStitchProjects,
   extractStitchScreens,
   GoogleStitchError,
   GoogleStitchMcpClient,
+  pickCompatibleStitchProject,
 } from "./google-stitch-mcp-client";
-import { isGoogleStitchConfigured } from "./google-stitch-config";
+import { getGoogleStitchProjectId, isGoogleStitchConfigured } from "./google-stitch-config";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 
@@ -108,6 +110,36 @@ async function fetchScreenAssets(
   return { html, image, screen };
 }
 
+function sleepMs(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new GoogleStitchError("Stitch request aborted", "NETWORK_ERROR", true));
+      return;
+    }
+    const timer = setTimeout(resolve, ms);
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(new GoogleStitchError("Stitch request aborted", "NETWORK_ERROR", true));
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
+async function listStitchScreens(
+  client: GoogleStitchMcpClient,
+  projectId: string,
+  signal?: AbortSignal,
+): Promise<Array<Record<string, unknown>>> {
+  const args = { projectId, name: `projects/${projectId}` };
+  try {
+    const listed = await client.callTool<unknown>("list_screens", args, signal);
+    return extractStitchScreens(listed);
+  } catch {
+    const listed = await client.callTool<unknown>("list_screens", { projectId }, signal);
+    return extractStitchScreens(listed);
+  }
+}
+
 async function ensureStitchProject(
   client: GoogleStitchMcpClient,
   userId: string,
@@ -116,17 +148,27 @@ async function ensureStitchProject(
   signal?: AbortSignal,
 ): Promise<StitchSession> {
   if (session?.projectId) return session;
-  onProgress?.("Creating Stitch project…");
-  const created = await client.callTool<unknown>(
-    "create_project",
-    { title: `Wireline Director · ${userId.slice(0, 8)}` },
-    signal,
-  );
-  const projectId = extractStitchProjectId(created);
-  if (!projectId) {
-    throw new GoogleStitchError("Stitch did not return a project id", "VALIDATION_ERROR");
+
+  const envProjectId = getGoogleStitchProjectId();
+  if (envProjectId) {
+    return { projectId: envProjectId, screenId: "", projectTitle: "Wireline Director" };
   }
-  return { projectId, screenId: "", projectTitle: "Wireline Director" };
+
+  onProgress?.("Loading Stitch projects…");
+  const listed = await client.callTool<unknown>("list_projects", { filter: "view=owned" }, signal);
+  const picked = pickCompatibleStitchProject(extractStitchProjects(listed));
+  if (picked) {
+    return {
+      projectId: picked.projectId,
+      screenId: "",
+      projectTitle: picked.title || "Wireline Director",
+    };
+  }
+
+  throw new GoogleStitchError(
+    "No Stitch project available for UI generation. Create a project at stitch.withgoogle.com (TEXT_TO_UI), then set GOOGLE_STITCH_PROJECT_ID in Vercel.",
+    "VALIDATION_ERROR",
+  );
 }
 
 async function runStitchOperation(
@@ -201,23 +243,30 @@ async function runStitchOperation(
   }
 
   onProgress?.("Generating Stitch screen (1–3 min)…");
-  const generated = await client.callTool<unknown>(
-    "generate_screen_from_text",
-    { projectId, prompt, deviceType, modelId },
-    signal,
-  );
-  const screens = extractStitchScreens(generated);
-  if (screens.length > 0) return screens;
-
-  const projectIdFromGen = extractStitchProjectId(generated);
-  if (projectIdFromGen) {
-    onProgress?.("Fetching generated screens…");
-    const listed = await client.callTool<unknown>(
-      "list_screens",
-      { projectId: projectIdFromGen, name: `projects/${projectIdFromGen}` },
+  let generated: unknown;
+  try {
+    generated = await client.callTool<unknown>(
+      "generate_screen_from_text",
+      { projectId, prompt, deviceType, modelId },
       signal,
     );
-    return extractStitchScreens(listed);
+  } catch (e) {
+    log.warn("stitch generate_screen_from_text call ended early — polling screens", {
+      error: getErrorMessage(e),
+    });
+    generated = null;
+  }
+
+  let screens = generated ? extractStitchScreens(generated) : [];
+  if (screens.length > 0) return screens;
+
+  const pollProjectId = extractStitchProjectId(generated) ?? projectId;
+  onProgress?.("Waiting for Stitch render to finish…");
+  for (let attempt = 0; attempt < 16; attempt++) {
+    await sleepMs(attempt === 0 ? 8_000 : 12_000, signal);
+    screens = await listStitchScreens(client, pollProjectId, signal);
+    if (screens.length > 0) return screens;
+    onProgress?.(`Still rendering… (${attempt + 1}/16)`);
   }
 
   throw new GoogleStitchError("Stitch returned no screens", "VALIDATION_ERROR", true);

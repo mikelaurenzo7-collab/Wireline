@@ -81,6 +81,61 @@ export function extractStitchScreens(payload: unknown): Array<Record<string, unk
   return found;
 }
 
+export interface StitchProjectRef {
+  projectId: string;
+  title?: string;
+  projectType?: string;
+}
+
+export function extractStitchProjects(payload: unknown): StitchProjectRef[] {
+  const found: StitchProjectRef[] = [];
+  const seen = new Set<string>();
+
+  const visit = (node: unknown): void => {
+    if (!node || typeof node !== "object") return;
+    if (Array.isArray(node)) {
+      for (const item of node) visit(item);
+      return;
+    }
+    const o = node as Record<string, unknown>;
+    let projectId = "";
+    for (const key of ["projectId", "id", "name"]) {
+      const raw = o[key];
+      if (typeof raw === "string") {
+        projectId = raw.replace(/^projects\//, "").trim();
+        if (/^\d+$/.test(projectId)) break;
+        projectId = "";
+      }
+    }
+    if (projectId && !seen.has(projectId)) {
+      seen.add(projectId);
+      const projectType = [o.projectType, o.type, o.project_type]
+        .map((v) => (typeof v === "string" ? v : ""))
+        .find(Boolean);
+      const title = [o.title, o.displayName, o.display_name]
+        .map((v) => (typeof v === "string" ? v : ""))
+        .find(Boolean);
+      found.push({
+        projectId,
+        title: title || undefined,
+        projectType: projectType || undefined,
+      });
+    }
+    for (const value of Object.values(o)) visit(value);
+  };
+
+  visit(payload);
+  return found;
+}
+
+/** Prefer TEXT_TO_UI_PRO projects — MCP create_project yields PROJECT_DESIGN (no generation). */
+export function pickCompatibleStitchProject(projects: StitchProjectRef[]): StitchProjectRef | null {
+  if (projects.length === 0) return null;
+  const textToUi = projects.filter((p) => /TEXT_TO_UI/i.test(p.projectType ?? ""));
+  if (textToUi.length > 0) return textToUi[0]!;
+  return projects[0]!;
+}
+
 export function extractStitchProjectId(payload: unknown): string | null {
   const visit = (node: unknown): string | null => {
     if (!node || typeof node !== "object") return null;
