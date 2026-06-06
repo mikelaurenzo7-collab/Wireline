@@ -16,7 +16,7 @@ const PASSWORD = process.env.DOGFOOD_PASSWORD || "WirelineDemo!2026";
 const PROMPT =
   process.env.STITCH_PROMPT ||
   "Design a sleek mobile landing page for Laurenzo Cleaning Company — hero, services, testimonials, book-now CTA. Warm trustworthy palette.";
-const WAIT_MS = Number(process.env.STITCH_WAIT_MS || 8 * 60 * 1000);
+const WAIT_MS = Number(process.env.STITCH_WAIT_MS || 10 * 60 * 1000);
 const OUT = path.join(process.cwd(), "terminals", "dogfood-prod", "stitch");
 const SS = path.join(OUT, "screenshots");
 [OUT, SS].forEach((d) => {

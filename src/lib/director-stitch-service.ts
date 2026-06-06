@@ -43,12 +43,12 @@ import {
   screenEntityToRecord,
   withStitchAbort,
 } from "./google-stitch-sdk-helpers";
-import { isAllowedStitchAssetHost, sanitizeStitchAssetUrl } from "./google-stitch-asset-url";
 import {
-  getGoogleStitchApiKey,
-  getGoogleStitchProjectId,
-  isGoogleStitchConfigured,
-} from "./google-stitch-config";
+  isAllowedStitchAssetHost,
+  fetchStitchAssetUrl,
+  sanitizeStitchAssetUrl,
+} from "./google-stitch-asset-url";
+import { getGoogleStitchProjectId, isGoogleStitchConfigured } from "./google-stitch-config";
 import { WIRELINE_STITCH_UI } from "./wireline-director-design";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
@@ -117,16 +117,11 @@ async function fetchRemoteAsset(url: string, signal?: AbortSignal): Promise<Buff
   if (!isAllowedStitchAssetHost(host)) {
     throw new GoogleStitchError(`Refusing non-Google asset host: ${host}`, "VALIDATION_ERROR");
   }
-  const apiKey = getGoogleStitchApiKey();
-  const headers: Record<string, string> = {};
-  if (apiKey && /stitch|googleapis|withgoogle/i.test(host)) {
-    headers["X-Goog-Api-Key"] = apiKey;
+  try {
+    return await fetchStitchAssetUrl(url, signal);
+  } catch (e) {
+    throw new GoogleStitchError(getErrorMessage(e), "NETWORK_ERROR", true);
   }
-  const res = await fetch(url, { signal, headers });
-  if (!res.ok) {
-    throw new GoogleStitchError(`Asset download failed (${res.status})`, "NETWORK_ERROR", true);
-  }
-  return Buffer.from(await res.arrayBuffer());
 }
 
 async function fetchScreenAssets(
@@ -135,11 +130,21 @@ async function fetchScreenAssets(
   signal?: AbortSignal,
 ): Promise<{ html?: Buffer; image?: Buffer; screen: Record<string, unknown> }> {
   let activeScreen = screen;
+  let screenRecord = screenEntityToRecord(activeScreen);
   if (screen.screenId && screen.projectId) {
     try {
       activeScreen = await withStitchAbort(signal, () =>
         runtime.stitch.project(screen.projectId).getScreen(screen.screenId),
       );
+      screenRecord = screenEntityToRecord(activeScreen);
+      const raw = await withStitchAbort(signal, () =>
+        runtime.client.callTool<unknown>("get_screen", {
+          projectId: screen.projectId,
+          screenId: screen.screenId,
+          name: `projects/${screen.projectId}/screens/${screen.screenId}`,
+        }),
+      );
+      screenRecord = mergeStitchScreenRecord(screenRecord, raw);
     } catch (e) {
       log.warn("stitch getScreen refresh failed", {
         screenId: screen.screenId,
@@ -149,7 +154,6 @@ async function fetchScreenAssets(
     }
   }
 
-  let screenRecord = screenEntityToRecord(activeScreen);
   let html = extractStitchInlineHtml(screenRecord);
   let image = extractStitchInlineImage(screenRecord);
 
@@ -513,7 +517,11 @@ async function packageStitchScreenAssets(
   const imageIsPlaceholder =
     assets.image !== undefined && isLikelyStitchPlaceholderImage(assets.image);
 
-  if (assets.image && !(assets.html && imageIsPlaceholder)) {
+  if (
+    assets.image &&
+    !isLikelyStitchPlaceholderImage(assets.image) &&
+    !(assets.html && imageIsPlaceholder)
+  ) {
     const saved = await storeDirectorArtifact({
       userId: input.userId,
       toolName: "google_stitch",
@@ -593,7 +601,7 @@ export async function finalizeDirectorStitchScreen(input: {
   try {
     const deviceType = input.deviceType ?? resolveStitchDeviceType(input.operatorMessage);
     const screen = runtime.stitch.project(input.projectId).screen(input.screenId);
-    const assets = await fetchScreenAssetsWithRetry(runtime, screen, input.signal);
+    const assets = await fetchScreenAssets(runtime, screen, input.signal);
     const packaged = await packageStitchScreenAssets({
       userId: input.userId,
       operatorMessage: input.operatorMessage,

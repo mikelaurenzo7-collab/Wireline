@@ -344,7 +344,11 @@ export default function DirectorWorkspace({
       const session = message.stitchSession;
       if (!session?.projectId || !session.screenId) return false;
 
-      const waits = [3_000, 6_000, 10_000, 15_000, 20_000, 25_000, 30_000, 40_000, 50_000];
+      const waits = [
+        5_000, 8_000, 10_000, 12_000, 15_000, 15_000, 20_000, 20_000, 25_000, 25_000, 30_000,
+        30_000, 30_000, 30_000, 30_000, 30_000, 30_000, 30_000, 30_000, 30_000, 30_000, 30_000,
+        30_000, 30_000,
+      ];
       for (const waitMs of waits) {
         await new Promise((resolve) => setTimeout(resolve, waitMs));
         const r = await authFetch("/api/director/stitch/finalize", {
