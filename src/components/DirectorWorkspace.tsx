@@ -34,6 +34,7 @@ import {
   Palette,
   Download,
   Sparkles,
+  LayoutTemplate,
 } from "lucide-react";
 import { authFetch, readApiJson } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
@@ -78,6 +79,10 @@ import { DirectorUsageIndicator } from "./director/DirectorUsageIndicator";
 import { DirectorResearchSources } from "./director/DirectorResearchSources";
 import { DirectorStarterPrompts } from "./director/DirectorStarterPrompts";
 import DirectorArtifactsPanel, { type DirectorArtifact } from "./director/DirectorArtifactsPanel";
+import DirectorStitchPreviewGallery from "./director/DirectorStitchPreviewGallery";
+import DirectorStitchLiveSession from "./director/DirectorStitchLiveSession";
+import { isStitchPreview } from "../lib/director-stitch-preview";
+import { wantsStitchMediaRequest } from "../lib/director-stitch-intent";
 import { INTEGRATION_STYLES } from "../lib/integration-activities";
 import type { ToolIntegration } from "../lib/agent-capabilities";
 import {
@@ -131,6 +136,10 @@ interface DirectorPreview {
   rationale: string;
   previewDataUrl: string;
   svg?: string;
+  kind?: "logo" | "stitch";
+  htmlDownloadUrl?: string;
+  imageDownloadUrl?: string;
+  deviceType?: "DESKTOP" | "MOBILE" | "TABLET" | "AGNOSTIC";
 }
 
 interface DirectorMessage {
@@ -174,6 +183,7 @@ const SUGGESTION_ICON: Record<SuggestionKind, React.ElementType> = {
 };
 
 const SCENE_ICONS: Record<Exclude<DirectorMessageScene, "general">, React.ElementType> = {
+  design: LayoutTemplate,
   creative: Palette,
   analysis: BarChart3,
   integration: Plug,
@@ -217,7 +227,10 @@ export default function DirectorWorkspace({
     toolExecution: true,
     creativeTools: true,
     artifactsPanel: true,
+    stitchMedia: true,
   });
+  const [stitchRendering, setStitchRendering] = useState(false);
+  const [stitchPrompt, setStitchPrompt] = useState("");
   const [loadDegraded, setLoadDegraded] = useState(false);
   const [pinnedToBottom, setPinnedToBottom] = useState(true);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -332,6 +345,7 @@ export default function DirectorWorkspace({
               toolExecution: data.featureFlags.toolExecution !== false,
               creativeTools: data.featureFlags.creativeTools !== false,
               artifactsPanel: data.featureFlags.artifactsPanel !== false,
+              stitchMedia: data.featureFlags.stitchMedia !== false,
             });
           }
           if (data.chatModelPreference) {
@@ -714,6 +728,22 @@ export default function DirectorWorkspace({
         modelSelection: chatModelSelection,
       };
 
+      const useStitchPost =
+        !opts?.approval && trimmed && featureFlags.stitchMedia && wantsStitchMediaRequest(trimmed);
+
+      if (useStitchPost) {
+        pendingSendRef.current = { trimmed, optimisticId: optimistic?.id };
+        setStitchPrompt(trimmed);
+        setStitchRendering(true);
+        try {
+          await sendNonStreaming(trimmed, optimistic?.id);
+        } finally {
+          setStitchRendering(false);
+          setStitchPrompt("");
+        }
+        return;
+      }
+
       // Use streaming for regular messages (no approvals — those stay non-streaming)
       if (!opts?.approval) {
         pendingSendRef.current = { trimmed, optimisticId: optimistic?.id };
@@ -760,7 +790,16 @@ export default function DirectorWorkspace({
         inputRef.current?.focus();
       }
     },
-    [isSending, toastError, streamSend, focusAgentId, forceDeep, chatModelSelection],
+    [
+      isSending,
+      toastError,
+      streamSend,
+      sendNonStreaming,
+      focusAgentId,
+      forceDeep,
+      chatModelSelection,
+      featureFlags.stitchMedia,
+    ],
   );
 
   const markResolved = (key: string, state: "done" | "dismissed") =>
@@ -1615,7 +1654,15 @@ export default function DirectorWorkspace({
                         </div>
                       )}
 
-                      {m.previews && m.previews.length > 0 && (
+                      {m.previews && m.previews.length > 0 && isStitchPreview(m.previews[0]) && (
+                        <DirectorStitchPreviewGallery
+                          previews={m.previews}
+                          onSuggestEdit={(prompt) => void send(prompt)}
+                          disabled={isSending}
+                        />
+                      )}
+
+                      {m.previews && m.previews.length > 0 && !isStitchPreview(m.previews[0]) && (
                         <div className="w-full">
                           {/* Gallery header */}
                           <div className="flex items-center gap-2 mb-2">
@@ -1786,8 +1833,15 @@ export default function DirectorWorkspace({
             </div>
           )}
 
+          {/* Google Stitch render — dedicated live panel (non-streaming POST) */}
+          {isSending && stitchRendering && (
+            <div className={WL_DIRECTOR_CLASSES.threadColumn}>
+              <DirectorStitchLiveSession operatorPrompt={stitchPrompt} />
+            </div>
+          )}
+
           {/* Live streaming — mission control panel */}
-          {isSending && (
+          {isSending && !stitchRendering && (
             <div className={WL_DIRECTOR_CLASSES.threadColumn}>
               <DirectorLiveSession
                 phase={streamState.phase === "idle" ? "connecting" : streamState.phase}

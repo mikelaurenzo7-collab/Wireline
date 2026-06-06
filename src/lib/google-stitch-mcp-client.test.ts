@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { extractStitchProjectId, extractStitchScreens } from "./google-stitch-mcp-client";
+import {
+  extractStitchProjectId,
+  extractStitchProjects,
+  pickCompatibleStitchProject,
+  extractStitchScreens,
+} from "./google-stitch-mcp-client";
 
 describe("google stitch mcp parsing", () => {
   it("extracts project and screen ids from nested payloads", () => {
@@ -16,5 +21,24 @@ describe("google stitch mcp parsing", () => {
     expect(extractStitchProjectId(payload)).toBe("1234567890");
     expect(extractStitchScreens(payload)).toHaveLength(1);
     expect(extractStitchScreens(payload)[0]?.screenId).toBe("9876543210");
+  });
+
+  it("extracts screens from Stitch resource names", () => {
+    const screens = extractStitchScreens({
+      screens: [{ name: "projects/1234567890/screens/9876543210" }],
+    });
+    expect(screens).toHaveLength(1);
+    expect(screens[0]?.screenId).toBe("9876543210");
+    expect(screens[0]?.projectId).toBe("1234567890");
+  });
+
+  it("prefers TEXT_TO_UI_PRO when listing projects", () => {
+    const projects = extractStitchProjects({
+      projects: [
+        { projectId: "111", projectType: "PROJECT_DESIGN", title: "MCP stub" },
+        { projectId: "222", projectType: "TEXT_TO_UI_PRO", title: "Wireline" },
+      ],
+    });
+    expect(pickCompatibleStitchProject(projects)?.projectId).toBe("222");
   });
 });

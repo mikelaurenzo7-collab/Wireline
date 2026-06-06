@@ -3594,6 +3594,98 @@ html, body, .marketing-surface, .app-surface {
   );
 }
 
+/* Google Stitch in-chat preview */
+.wl-stitch-gallery {
+  max-width: min(100%, 42rem);
+}
+.wl-stitch-device {
+  width: 100%;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-ink) 6%, transparent);
+}
+.wl-stitch-device--mobile {
+  max-width: 320px;
+}
+.wl-stitch-device--desktop {
+  max-width: 100%;
+}
+.wl-stitch-device-chrome {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--paper) 92%, white),
+    color-mix(in srgb, var(--paper) 78%, var(--color-brand) 4%)
+  );
+  border-bottom: 1px solid color-mix(in srgb, var(--color-brand) 12%, transparent);
+}
+.dark .wl-stitch-device-chrome {
+  background: linear-gradient(180deg, rgba(22, 18, 32, 0.95), rgba(15, 12, 23, 0.88));
+}
+.wl-stitch-device-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-brand) 55%, #e879a9);
+}
+.wl-stitch-device-dot--mid {
+  opacity: 0.65;
+}
+.wl-stitch-device-dot--dim {
+  opacity: 0.35;
+}
+.wl-stitch-device-url {
+  margin-left: auto;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--color-ink) 45%, transparent);
+}
+.wl-stitch-device-screen {
+  background: var(--paper);
+}
+.dark .wl-stitch-device-screen {
+  background: rgba(8, 6, 14, 0.92);
+}
+.wl-stitch-live-iframe {
+  display: block;
+  width: 100%;
+  min-height: min(56vh, 560px);
+  border: 0;
+  background: white;
+}
+.wl-stitch-live-session {
+  max-width: min(100%, 42rem);
+}
+.wl-stitch-live-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.wl-stitch-live-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    color-mix(in srgb, var(--color-brand) 12%, transparent) 50%,
+    transparent 60%
+  );
+  animation: wl-stitch-shimmer 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes wl-stitch-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 /* Director / primary chat canvas */
 .wl-mission-canvas {
   position: relative;

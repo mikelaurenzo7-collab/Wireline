@@ -1,9 +1,9 @@
 /**
  * Director × Google Stitch — generate, edit, variants, and site builds for UI media.
  */
-import { buildSignedDownloadUrl } from "./director-artifacts";
-import type { DirectorPreviewMeta } from "./director-message-metadata";
+import { buildSignedDownloadUrl, buildSignedPreviewUrl } from "./director-artifact-signing";
 import { storeDirectorArtifact } from "./director-artifacts";
+import type { DirectorPreviewMeta } from "./director-message-metadata";
 import {
   buildStitchGenerationPrompt,
   resolveStitchDeviceType,
@@ -15,11 +15,13 @@ import {
 import { loadLatestStitchSession } from "./director-stitch-session";
 import {
   extractStitchProjectId,
+  extractStitchProjects,
   extractStitchScreens,
   GoogleStitchError,
   GoogleStitchMcpClient,
+  pickCompatibleStitchProject,
 } from "./google-stitch-mcp-client";
-import { isGoogleStitchConfigured } from "./google-stitch-config";
+import { getGoogleStitchProjectId, isGoogleStitchConfigured } from "./google-stitch-config";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 
@@ -108,6 +110,79 @@ async function fetchScreenAssets(
   return { html, image, screen };
 }
 
+function sleepMs(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new GoogleStitchError("Stitch request aborted", "NETWORK_ERROR", true));
+      return;
+    }
+    const timer = setTimeout(resolve, ms);
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(new GoogleStitchError("Stitch request aborted", "NETWORK_ERROR", true));
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
+const STITCH_LIST_TIMEOUT_MS = 30_000;
+const STITCH_GENERATE_TIMEOUT_MS = 150_000;
+
+async function listStitchScreens(
+  client: GoogleStitchMcpClient,
+  projectId: string,
+  signal?: AbortSignal,
+): Promise<Array<Record<string, unknown>>> {
+  const args = { projectId, name: `projects/${projectId}` };
+  try {
+    const listed = await client.callTool<unknown>(
+      "list_screens",
+      args,
+      signal,
+      STITCH_LIST_TIMEOUT_MS,
+    );
+    const screens = extractStitchScreens(listed);
+    if (screens.length > 0) return screens;
+  } catch {
+    /* try alternate shape */
+  }
+  try {
+    const listed = await client.callTool<unknown>(
+      "list_screens",
+      { projectId },
+      signal,
+      STITCH_LIST_TIMEOUT_MS,
+    );
+    const screens = extractStitchScreens(listed);
+    if (screens.length > 0) return screens;
+  } catch {
+    /* fall through */
+  }
+  try {
+    const project = await client.callTool<unknown>(
+      "get_project",
+      { name: `projects/${projectId}` },
+      signal,
+      STITCH_LIST_TIMEOUT_MS,
+    );
+    return extractStitchScreens(project);
+  } catch {
+    return [];
+  }
+}
+
+function pickNewestStitchScreens(
+  screens: Array<Record<string, unknown>>,
+  knownScreenIds: Set<string>,
+): Array<Record<string, unknown>> {
+  const fresh = screens.filter((s) => {
+    const id = String(s.screenId ?? "").trim();
+    return id && !knownScreenIds.has(id);
+  });
+  const pool = fresh.length > 0 ? fresh : screens;
+  return [...pool].sort((a, b) => Number(b.screenId ?? 0) - Number(a.screenId ?? 0));
+}
+
 async function ensureStitchProject(
   client: GoogleStitchMcpClient,
   userId: string,
@@ -116,17 +191,37 @@ async function ensureStitchProject(
   signal?: AbortSignal,
 ): Promise<StitchSession> {
   if (session?.projectId) return session;
-  onProgress?.("Creating Stitch project…");
-  const created = await client.callTool<unknown>(
-    "create_project",
-    { title: `Wireline Director · ${userId.slice(0, 8)}` },
-    signal,
-  );
-  const projectId = extractStitchProjectId(created);
-  if (!projectId) {
-    throw new GoogleStitchError("Stitch did not return a project id", "VALIDATION_ERROR");
+
+  const envProjectId = getGoogleStitchProjectId();
+  if (envProjectId) {
+    return { projectId: envProjectId, screenId: "", projectTitle: "Wireline Director" };
   }
-  return { projectId, screenId: "", projectTitle: "Wireline Director" };
+
+  onProgress?.("Loading Stitch projects…");
+  let listed: unknown;
+  try {
+    listed = await client.callTool<unknown>(
+      "list_projects",
+      { filter: "view=owned" },
+      signal,
+      STITCH_LIST_TIMEOUT_MS,
+    );
+  } catch {
+    listed = await client.callTool<unknown>("list_projects", {}, signal, STITCH_LIST_TIMEOUT_MS);
+  }
+  const picked = pickCompatibleStitchProject(extractStitchProjects(listed));
+  if (picked) {
+    return {
+      projectId: picked.projectId,
+      screenId: "",
+      projectTitle: picked.title || "Wireline Director",
+    };
+  }
+
+  throw new GoogleStitchError(
+    "No Stitch project available for UI generation. Create a project at stitch.withgoogle.com (TEXT_TO_UI), then set GOOGLE_STITCH_PROJECT_ID in Vercel.",
+    "VALIDATION_ERROR",
+  );
 }
 
 async function runStitchOperation(
@@ -200,24 +295,37 @@ async function runStitchOperation(
     if (screens.length > 0) return screens;
   }
 
-  onProgress?.("Generating Stitch screen (1–3 min)…");
-  const generated = await client.callTool<unknown>(
-    "generate_screen_from_text",
-    { projectId, prompt, deviceType, modelId },
-    signal,
+  const knownBefore = new Set(
+    (await listStitchScreens(client, projectId, signal)).map((s) => String(s.screenId ?? "")),
   );
-  const screens = extractStitchScreens(generated);
+
+  onProgress?.("Generating Stitch screen (1–3 min)…");
+  let generated: unknown;
+  try {
+    generated = await client.callTool<unknown>(
+      "generate_screen_from_text",
+      { projectId, prompt, deviceType, modelId },
+      signal,
+      STITCH_GENERATE_TIMEOUT_MS,
+    );
+  } catch (e) {
+    log.warn("stitch generate_screen_from_text call ended early — polling screens", {
+      error: getErrorMessage(e),
+    });
+    generated = null;
+  }
+
+  let screens = generated ? extractStitchScreens(generated) : [];
   if (screens.length > 0) return screens;
 
-  const projectIdFromGen = extractStitchProjectId(generated);
-  if (projectIdFromGen) {
-    onProgress?.("Fetching generated screens…");
-    const listed = await client.callTool<unknown>(
-      "list_screens",
-      { projectId: projectIdFromGen, name: `projects/${projectIdFromGen}` },
-      signal,
-    );
-    return extractStitchScreens(listed);
+  const pollProjectId = extractStitchProjectId(generated) ?? projectId;
+  onProgress?.("Waiting for Stitch render to finish…");
+  for (let attempt = 0; attempt < 24; attempt++) {
+    await sleepMs(attempt === 0 ? 6_000 : 8_000, signal);
+    const listed = await listStitchScreens(client, pollProjectId, signal);
+    screens = pickNewestStitchScreens(listed, knownBefore);
+    if (screens.length > 0) return screens.slice(0, 5);
+    onProgress?.(`Still rendering… (${attempt + 1}/24)`);
   }
 
   throw new GoogleStitchError("Stitch returned no screens", "VALIDATION_ERROR", true);
@@ -314,6 +422,16 @@ export async function runDirectorStitchTurn(input: {
     const stamp = new Date().toISOString().slice(0, 10);
     const suffix = screens.length > 1 ? `-v${i + 1}` : "";
 
+    const title =
+      screens.length > 1
+        ? `Variant ${i + 1}`
+        : deviceType === "MOBILE"
+          ? "Mobile screen"
+          : "Screen";
+    let htmlDownloadUrl: string | undefined;
+    let imageDownloadUrl: string | undefined;
+    let previewDataUrl = "";
+
     if (assets.html) {
       const saved = await storeDirectorArtifact({
         userId: input.userId,
@@ -329,6 +447,7 @@ export async function runDirectorStitchTurn(input: {
           deviceType,
         },
       });
+      htmlDownloadUrl = buildSignedPreviewUrl("/api/director/artifacts", saved.id, input.userId);
       artifacts.push({
         ...saved,
         downloadUrl: buildSignedDownloadUrl("/api/director/artifacts", saved.id, input.userId),
@@ -347,27 +466,27 @@ export async function runDirectorStitchTurn(input: {
           operatorPreview: input.operatorMessage.trim().slice(0, 120),
           stitchProjectId: projectId,
           stitchScreenId: screenId,
+          deviceType,
         },
       });
-      const downloadUrl = buildSignedDownloadUrl("/api/director/artifacts", saved.id, input.userId);
-      artifacts.push({ ...saved, downloadUrl });
-
-      if (assets.image.byteLength <= STITCH_PREVIEW_MAX_BYTES) {
-        previews.push({
-          conceptId: screenId,
-          title: screens.length > 1 ? `Variant ${i + 1}` : "Stitch preview",
-          rationale: "Google Stitch screenshot",
-          previewDataUrl: `data:image/png;base64,${assets.image.toString("base64")}`,
-        });
-      } else {
-        previews.push({
-          conceptId: screenId,
-          title: screens.length > 1 ? `Variant ${i + 1}` : "Stitch preview",
-          rationale: "Google Stitch screenshot — open artifact to download",
-          previewDataUrl: downloadUrl,
-        });
-      }
+      imageDownloadUrl = buildSignedDownloadUrl("/api/director/artifacts", saved.id, input.userId);
+      artifacts.push({ ...saved, downloadUrl: imageDownloadUrl });
+      previewDataUrl =
+        assets.image.byteLength <= STITCH_PREVIEW_MAX_BYTES
+          ? `data:image/png;base64,${assets.image.toString("base64")}`
+          : imageDownloadUrl;
     }
+
+    previews.push({
+      conceptId: screenId,
+      title,
+      rationale: "Google Stitch",
+      kind: "stitch",
+      deviceType,
+      previewDataUrl: previewDataUrl || imageDownloadUrl || htmlDownloadUrl || "",
+      htmlDownloadUrl,
+      imageDownloadUrl,
+    });
 
     thinkingLines.push(`Screen ${screenId} (${deviceType})`);
   }

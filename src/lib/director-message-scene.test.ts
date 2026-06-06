@@ -53,6 +53,10 @@ SMS follow-up on day 3`;
   });
 
   it("classifies website deliverables as document, not creative", () => {
+    expect(
+      detectDirectorMessageScene("Rendered UI", [{ kind: "stitch", rationale: "Google Stitch" }]),
+    ).toBe("design");
+
     expect(detectDirectorMessageScene("Here is your website sitemap and homepage wireframe.")).toBe(
       "document",
     );

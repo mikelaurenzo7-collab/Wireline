@@ -586,6 +586,7 @@ router.get(
             coachAgentName: meta.coachAgentName,
             mode: meta.mode,
             deliverableArtifact: meta.deliverableArtifact,
+            stitchSession: meta.stitchSession,
           };
         }),
       });
@@ -1112,6 +1113,31 @@ router.post(
           );
           return;
         }
+
+        sse.write("thinking_end", { thinking: "Stitch did not return a screen", durationMs: 0 });
+        const stitchFailReply = [
+          "**Google Stitch** could not finish this render in time.",
+          "",
+          "1. Create a **TEXT_TO_UI** project at [stitch.withgoogle.com](https://stitch.withgoogle.com)",
+          "2. Copy the project ID from the URL into **GOOGLE_STITCH_PROJECT_ID** (Vercel env)",
+          "3. Send the same prompt again — no capability chip needed",
+        ].join("\n");
+        await finalizeDirectorStreamTurn(
+          sse,
+          req.user.id,
+          operatorMessage,
+          stitchFailReply,
+          {
+            reply: stitchFailReply,
+            model: "sonnet",
+            modelLabel: "Google Stitch",
+            modelProvider: "wireline",
+            mode: "fleet",
+          },
+          "",
+          featureFlags,
+        );
+        return;
       }
 
       const streamCtx = await buildDirectorStreamContext({
@@ -1457,9 +1483,18 @@ router.get(
       const loaded = await loadDirectorArtifactData({ artifactId, userId: req.user.id });
       if (!loaded) return res.status(404).json({ error: "Artifact not found" });
 
+      const inline = String(req.query.inline || "") === "1";
       res.setHeader("Content-Type", loaded.artifact.mimeType);
       res.setHeader("Content-Length", String(loaded.artifact.sizeBytes));
-      res.setHeader("Content-Disposition", `attachment; filename="${loaded.artifact.name}"`);
+      res.setHeader(
+        "Content-Disposition",
+        inline
+          ? `inline; filename="${loaded.artifact.name}"`
+          : `attachment; filename="${loaded.artifact.name}"`,
+      );
+      if (inline && loaded.artifact.mimeType.startsWith("text/html")) {
+        res.setHeader("X-Frame-Options", "SAMEORIGIN");
+      }
       res.send(loaded.data);
     } catch (e) {
       log.error("director artifact download failed", { error: getErrorMessage(e) });

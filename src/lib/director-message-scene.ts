@@ -2,6 +2,7 @@
  * Director reply scene detection — drives message badges in the chat thread.
  */
 export type DirectorMessageScene =
+  | "design"
   | "creative"
   | "analysis"
   | "integration"
@@ -60,11 +61,18 @@ function hasCodeFence(content: string): boolean {
   return /```[\w]*\n[\s\S]+?```/.test(content);
 }
 
+function isStitchPreviewRow(p: unknown): boolean {
+  if (!p || typeof p !== "object") return false;
+  const row = p as { kind?: string; rationale?: string };
+  return row.kind === "stitch" || /google stitch/i.test(row.rationale || "");
+}
+
 export function detectDirectorMessageScene(
   content: string,
   previews?: readonly unknown[],
   proposals?: DirectorSceneProposalHints,
 ): DirectorMessageScene {
+  if (previews?.some(isStitchPreviewRow)) return "design";
   if (previews && previews.length > 0) return "creative";
   if (proposals?.integrationJobs && proposals.integrationJobs.length > 0) return "integration";
   if (hasCodeFence(content)) return "code";

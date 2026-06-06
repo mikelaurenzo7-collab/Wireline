@@ -1,0 +1,7 @@
+---
+pid: 71292
+cwd: "C:\Users\MichaelLaurenzo\Downloads\Wireline-2"
+command: "Get-ChildItem -Path \"C:\\Users\\MichaelLaurenzo\\AppData\\Local\\fnm\",\"C:\\Users\\MichaelLaurenzo\\.nvm\",\"C:\\Users\\MichaelLaurenzo\\AppData\\Roaming\\nvm\" -Filter \"node.exe\" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName"
+started_at: 2026-06-05T01:37:22.761Z
+running_for_ms: 11474997 
+---
