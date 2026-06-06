@@ -596,6 +596,7 @@ router.get(
             mode: meta.mode,
             deliverableArtifact: meta.deliverableArtifact,
             stitchSession: meta.stitchSession,
+            stitchAssetsPending: meta.stitchAssetsPending === true ? true : undefined,
           };
         }),
       });
