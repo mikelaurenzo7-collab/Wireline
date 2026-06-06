@@ -43,50 +43,105 @@ export interface DirectorStitchTurnResult {
 
 export type StitchProgressCallback = (message: string) => void;
 
+function pickDownloadUrlFromBlock(block: unknown): string | null {
+  if (!block || typeof block !== "object") return null;
+  const o = block as Record<string, unknown>;
+  for (const key of ["downloadUrl", "uri", "url", "signedUrl", "signed_url"]) {
+    const raw = o[key];
+    if (typeof raw === "string" && raw.startsWith("http")) return raw;
+  }
+  for (const value of Object.values(o)) {
+    const hit = pickDownloadUrlFromBlock(value);
+    if (hit) return hit;
+  }
+  return null;
+}
+
 function pickDownloadUrl(screen: Record<string, unknown>, kind: "html" | "image"): string | null {
-  const htmlBlock = screen.htmlCode as { downloadUrl?: string } | undefined;
-  const shot = screen.screenshot as { downloadUrl?: string } | undefined;
   if (kind === "html") {
     return (
-      htmlBlock?.downloadUrl ||
-      (screen.htmlDownloadUrl as string | undefined) ||
-      (screen.htmlUrl as string | undefined) ||
-      null
+      pickDownloadUrlFromBlock(screen.htmlCode) ||
+      pickDownloadUrlFromBlock(screen.html) ||
+      (typeof screen.htmlDownloadUrl === "string" ? screen.htmlDownloadUrl : null) ||
+      (typeof screen.htmlUrl === "string" ? screen.htmlUrl : null)
     );
   }
   return (
-    shot?.downloadUrl ||
-    (screen.imageDownloadUrl as string | undefined) ||
-    (screen.screenshotUrl as string | undefined) ||
-    null
+    pickDownloadUrlFromBlock(screen.screenshot) ||
+    pickDownloadUrlFromBlock(screen.image) ||
+    (typeof screen.imageDownloadUrl === "string" ? screen.imageDownloadUrl : null) ||
+    (typeof screen.screenshotUrl === "string" ? screen.screenshotUrl : null)
   );
 }
 
 const STITCH_ASSET_TOOL_TIMEOUT_MS = 25_000;
 
-function stitchScreenToolArgs(projectId: string, screenId: string): Record<string, string> {
-  return {
-    projectId,
-    screenId,
-    name: `projects/${projectId}/screens/${screenId}`,
-  };
+function stitchGetScreenArgVariants(
+  projectId: string,
+  screenId: string,
+): Array<Record<string, string>> {
+  return [
+    { projectId, screenId },
+    { projectId, screenId, name: `projects/${projectId}/screens/${screenId}` },
+    { name: `projects/${projectId}/screens/${screenId}` },
+  ];
+}
+
+function isAllowedStitchAssetHost(host: string): boolean {
+  return (
+    /\.googleapis\.com$/i.test(host) ||
+    /\.googleusercontent\.com$/i.test(host) ||
+    /\.gstatic\.com$/i.test(host) ||
+    /\.cloud\.google\.com$/i.test(host) ||
+    /\.withgoogle\.com$/i.test(host)
+  );
 }
 
 async function fetchRemoteAsset(url: string, signal?: AbortSignal): Promise<Buffer> {
   const host = new URL(url).hostname;
-  if (
-    !/\.googleapis\.com$|\.googleusercontent\.com$|\.gstatic\.com$|\.cloud\.google\.com$/i.test(
-      host,
-    )
-  ) {
+  if (!isAllowedStitchAssetHost(host)) {
     throw new GoogleStitchError(`Refusing non-Google asset host: ${host}`, "VALIDATION_ERROR");
   }
-  const res = await fetch(url, { signal });
+  const apiKey = getGoogleStitchApiKey();
+  const headers: Record<string, string> = {};
+  if (apiKey && /stitch|googleapis|withgoogle/i.test(host)) {
+    headers["X-Goog-Api-Key"] = apiKey;
+  }
+  const res = await fetch(url, { signal, headers });
   if (!res.ok) {
     throw new GoogleStitchError(`Asset download failed (${res.status})`, "NETWORK_ERROR", true);
   }
-  const buf = Buffer.from(await res.arrayBuffer());
-  return buf;
+  return Buffer.from(await res.arrayBuffer());
+}
+
+async function loadScreenViaGetScreen(
+  client: GoogleStitchMcpClient,
+  projectId: string,
+  screenId: string,
+  signal?: AbortSignal,
+): Promise<Record<string, unknown>> {
+  let lastErr: unknown;
+  for (const args of stitchGetScreenArgVariants(projectId, screenId)) {
+    try {
+      const payload = await client.callTool<unknown>(
+        "get_screen",
+        args,
+        signal,
+        STITCH_ASSET_TOOL_TIMEOUT_MS,
+      );
+      return mergeStitchScreenRecord({ screenId, projectId }, payload);
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  if (lastErr) {
+    log.warn("stitch get_screen failed for all arg shapes", {
+      projectId,
+      screenId,
+      error: getErrorMessage(lastErr),
+    });
+  }
+  return { screenId, projectId };
 }
 
 async function fetchScreenAssets(
@@ -94,92 +149,49 @@ async function fetchScreenAssets(
   projectId: string,
   screenId: string,
   signal?: AbortSignal,
+  screenHint?: Record<string, unknown>,
 ): Promise<{ html?: Buffer; image?: Buffer; screen: Record<string, unknown> }> {
-  const args = stitchScreenToolArgs(projectId, screenId);
-  let screen: Record<string, unknown> = { screenId, projectId };
-  let html: Buffer | undefined;
-  let image: Buffer | undefined;
+  let screen: Record<string, unknown> = mergeStitchScreenRecord(
+    { screenId, projectId },
+    screenHint ?? {},
+  );
+  let html = extractStitchInlineHtml(screen);
+  let image = extractStitchInlineImage(screen);
 
-  try {
-    const payload = await client.callTool<unknown>(
-      "get_screen",
-      args,
-      signal,
-      STITCH_ASSET_TOOL_TIMEOUT_MS,
-    );
-    screen = mergeStitchScreenRecord(screen, payload);
-  } catch {
-    /* download URLs may lag — fall through to dedicated asset tools */
-  }
+  const refreshed = await loadScreenViaGetScreen(client, projectId, screenId, signal);
+  screen = mergeStitchScreenRecord(screen, refreshed);
+  html = html ?? extractStitchInlineHtml(screen);
+  image = image ?? extractStitchInlineImage(screen);
 
-  let htmlUrl = pickDownloadUrl(screen, "html");
-  let imageUrl = pickDownloadUrl(screen, "image");
+  const htmlUrl = pickDownloadUrl(screen, "html");
+  const imageUrl = pickDownloadUrl(screen, "image");
 
-  const [htmlBranch, imageBranch] = await Promise.all([
-    (async (): Promise<{ packed?: Buffer; screenPatch: Record<string, unknown> }> => {
-      let packed = html;
-      let url = htmlUrl;
-      let screenPatch: Record<string, unknown> = {};
-      if (!packed) {
-        for (const tool of ["get_screen_code", "fetch_screen_code"] as const) {
-          try {
-            const payload = await client.callTool<unknown>(
-              tool,
-              args,
-              signal,
-              STITCH_ASSET_TOOL_TIMEOUT_MS,
-            );
-            packed = extractStitchInlineHtml(payload);
-            screenPatch = mergeStitchScreenRecord(screenPatch, payload);
-            url = url || pickDownloadUrl(screenPatch, "html");
-            if (packed) break;
-          } catch {
-            /* try alternate tool name */
-          }
-        }
-      }
-      if (!packed && url) {
-        packed = await fetchRemoteAsset(url, signal).catch(() => undefined);
-      }
-      return { packed, screenPatch };
+  const [htmlPacked, imagePacked] = await Promise.all([
+    (async (): Promise<Buffer | undefined> => {
+      if (html) return html;
+      if (!htmlUrl) return undefined;
+      return fetchRemoteAsset(htmlUrl, signal).catch((e) => {
+        log.warn("stitch html download failed", {
+          screenId,
+          error: getErrorMessage(e),
+        });
+        return undefined;
+      });
     })(),
-    (async (): Promise<{ packed?: Buffer; screenPatch: Record<string, unknown> }> => {
-      let packed = image;
-      let url = imageUrl;
-      let screenPatch: Record<string, unknown> = {};
-      if (!packed) {
-        for (const tool of ["get_screen_image", "fetch_screen_image"] as const) {
-          try {
-            const payload = await client.callTool<unknown>(
-              tool,
-              args,
-              signal,
-              STITCH_ASSET_TOOL_TIMEOUT_MS,
-            );
-            packed = extractStitchInlineImage(payload);
-            screenPatch = mergeStitchScreenRecord(screenPatch, payload);
-            url = url || pickDownloadUrl(screenPatch, "image");
-            if (packed) break;
-          } catch {
-            /* try alternate tool name */
-          }
-        }
-      }
-      if (!packed && url) {
-        packed = await fetchRemoteAsset(url, signal).catch(() => undefined);
-      }
-      return { packed, screenPatch };
+    (async (): Promise<Buffer | undefined> => {
+      if (image) return image;
+      if (!imageUrl) return undefined;
+      return fetchRemoteAsset(imageUrl, signal).catch((e) => {
+        log.warn("stitch image download failed", {
+          screenId,
+          error: getErrorMessage(e),
+        });
+        return undefined;
+      });
     })(),
   ]);
 
-  screen = mergeStitchScreenRecord(
-    mergeStitchScreenRecord(screen, htmlBranch.screenPatch),
-    imageBranch.screenPatch,
-  );
-  html = htmlBranch.packed;
-  image = imageBranch.packed;
-
-  return { html, image, screen };
+  return { html: htmlPacked, image: imagePacked, screen };
 }
 
 /** Stitch screenshot/HTML can lag the screen record — poll until at least one asset is ready. */
@@ -188,16 +200,18 @@ async function fetchScreenAssetsWithRetry(
   projectId: string,
   screenId: string,
   signal?: AbortSignal,
+  screenHint?: Record<string, unknown>,
 ): Promise<{ html?: Buffer; image?: Buffer; screen: Record<string, unknown> }> {
+  // Signed Stitch download URLs can lag screen creation by several minutes.
   const delaysMs = [
-    0, 3_000, 6_000, 9_000, 12_000, 16_000, 20_000, 25_000, 30_000, 36_000, 42_000, 48_000, 55_000,
-    62_000, 70_000, 78_000, 86_000, 95_000,
+    0, 4_000, 8_000, 12_000, 18_000, 24_000, 32_000, 40_000, 50_000, 60_000, 72_000, 84_000, 96_000,
+    110_000, 125_000, 140_000, 155_000, 170_000, 185_000, 200_000,
   ];
-  let last = await fetchScreenAssets(client, projectId, screenId, signal);
+  let last = await fetchScreenAssets(client, projectId, screenId, signal, screenHint);
   for (let i = 1; i < delaysMs.length; i++) {
     if (last.html || last.image) return last;
     await sleepMs(delaysMs[i]! - delaysMs[i - 1]!, signal);
-    last = await fetchScreenAssets(client, projectId, screenId, signal);
+    last = await fetchScreenAssets(client, projectId, screenId, signal, screenHint);
   }
   return last;
 }
@@ -510,7 +524,13 @@ export async function runDirectorStitchTurn(input: {
     if (!screenId) continue;
 
     input.onProgress?.(`Downloading assets for screen ${i + 1}/${screens.length}…`);
-    const assets = await fetchScreenAssetsWithRetry(client, projectId, screenId, input.signal);
+    const assets = await fetchScreenAssetsWithRetry(
+      client,
+      projectId,
+      screenId,
+      input.signal,
+      screen,
+    );
 
     const stamp = new Date().toISOString().slice(0, 10);
     const suffix = screens.length > 1 ? `-v${i + 1}` : "";
