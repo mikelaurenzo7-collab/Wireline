@@ -26,34 +26,79 @@ const MOCK_USER = {
 };
 
 // A self-contained "design screenshot" rendered as an SVG data URL, so the
-// Stitch gallery's Screenshot tab shows a real image with zero network. Mimics
-// a Stitch-generated landing-page mock in Wireline's brand palette.
+// Stitch gallery's Screenshot tab shows a real image with zero network. Renders
+// a Brightline home-services landing page approximating what a real Google
+// Stitch generation would produce — proper headlines, body copy, real button
+// labels, three feature cards with icons + captions, and a CTA footer band.
 const STITCH_PREVIEW_SVG =
   "data:image/svg+xml;utf8," +
   encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1180" viewBox="0 0 900 1180">
-      <rect width="900" height="1180" fill="#EFE9DC"/>
-      <rect width="900" height="64" fill="#1A1614"/>
-      <circle cx="44" cy="32" r="10" fill="#8B3FD6"/>
-      <rect x="64" y="26" width="120" height="12" rx="3" fill="#EFE9DC"/>
-      <rect x="660" y="22" width="90" height="20" rx="10" fill="#8B3FD6"/>
-      <rect x="770" y="22" width="90" height="20" rx="10" fill="#6B2FA8"/>
-      <rect x="80" y="150" width="520" height="44" rx="6" fill="#1A1614"/>
-      <rect x="80" y="208" width="440" height="44" rx="6" fill="#4F1E7B"/>
-      <rect x="80" y="300" width="620" height="16" rx="4" fill="#1A1614" opacity="0.55"/>
-      <rect x="80" y="328" width="560" height="16" rx="4" fill="#1A1614" opacity="0.4"/>
-      <rect x="80" y="392" width="180" height="48" rx="8" fill="#8B3FD6"/>
-      <rect x="280" y="392" width="160" height="48" rx="8" fill="none" stroke="#4F1E7B" stroke-width="2"/>
-      <rect x="80" y="520" width="240" height="300" rx="14" fill="#ffffff" stroke="#8B3FD6" stroke-opacity="0.25"/>
-      <rect x="340" y="520" width="240" height="300" rx="14" fill="#ffffff" stroke="#8B3FD6" stroke-opacity="0.25"/>
-      <rect x="600" y="520" width="240" height="300" rx="14" fill="#ffffff" stroke="#8B3FD6" stroke-opacity="0.25"/>
-      <circle cx="120" cy="572" r="20" fill="#8B3FD6" opacity="0.85"/>
-      <circle cx="380" cy="572" r="20" fill="#6B2FA8" opacity="0.85"/>
-      <circle cx="640" cy="572" r="20" fill="#10B981" opacity="0.85"/>
-      <rect x="100" y="900" width="700" height="200" rx="16" fill="#4F1E7B"/>
-      <rect x="140" y="950" width="360" height="22" rx="5" fill="#EFE9DC"/>
-      <rect x="140" y="990" width="300" height="14" rx="4" fill="#EFE9DC" opacity="0.7"/>
-      <rect x="600" y="980" width="150" height="44" rx="8" fill="#8B3FD6"/>
+    `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1180" viewBox="0 0 900 1180" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+      <defs>
+        <linearGradient id="heroGrad" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0%" stop-color="#EFE9DC"/>
+          <stop offset="100%" stop-color="#E8E0CF"/>
+        </linearGradient>
+        <linearGradient id="brandGrad" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0%" stop-color="#8B3FD6"/>
+          <stop offset="100%" stop-color="#4F1E7B"/>
+        </linearGradient>
+      </defs>
+      <rect width="900" height="1180" fill="url(#heroGrad)"/>
+      <!-- Top nav -->
+      <rect width="900" height="72" fill="#1A1614"/>
+      <circle cx="48" cy="36" r="11" fill="#8B3FD6"/>
+      <text x="68" y="42" fill="#EFE9DC" font-size="16" font-weight="700">Brightline</text>
+      <text x="540" y="42" fill="#EFE9DC" opacity="0.7" font-size="13">Services</text>
+      <text x="618" y="42" fill="#EFE9DC" opacity="0.7" font-size="13">Pricing</text>
+      <text x="685" y="42" fill="#EFE9DC" opacity="0.7" font-size="13">About</text>
+      <text x="740" y="42" fill="#EFE9DC" opacity="0.7" font-size="13">Contact</text>
+      <rect x="800" y="22" width="80" height="28" rx="14" fill="url(#brandGrad)"/>
+      <text x="840" y="40" fill="#EFE9DC" font-size="12" font-weight="600" text-anchor="middle">Book now</text>
+      <!-- Hero headline -->
+      <text x="80" y="190" fill="#1A1614" font-size="44" font-weight="700" font-style="italic">Quality home care,</text>
+      <text x="80" y="240" fill="#4F1E7B" font-size="44" font-weight="700" font-style="italic">every season.</text>
+      <text x="80" y="290" fill="#1A1614" font-size="15" opacity="0.7">Trusted by 2,400+ homeowners — HVAC, plumbing,</text>
+      <text x="80" y="312" fill="#1A1614" font-size="15" opacity="0.7">electrical, and emergency service in 24 hours or less.</text>
+      <!-- Hero CTAs -->
+      <rect x="80" y="356" width="200" height="52" rx="10" fill="url(#brandGrad)"/>
+      <text x="180" y="388" fill="#FFFFFF" font-size="14" font-weight="700" text-anchor="middle">Get a free estimate</text>
+      <rect x="296" y="356" width="180" height="52" rx="10" fill="none" stroke="#4F1E7B" stroke-width="2"/>
+      <text x="386" y="388" fill="#4F1E7B" font-size="14" font-weight="600" text-anchor="middle">Call (847) 555-0110</text>
+      <text x="80" y="442" fill="#1A1614" font-size="11" opacity="0.55">★★★★★  4.9/5 — 412 Google reviews · Licensed &amp; insured</text>
+      <!-- Feature cards -->
+      <text x="80" y="510" fill="#1A1614" font-size="22" font-weight="700" font-style="italic">What we do best</text>
+      <rect x="80" y="540" width="240" height="280" rx="14" fill="#FFFFFF" stroke="#8B3FD6" stroke-opacity="0.18"/>
+      <circle cx="200" cy="600" r="28" fill="#8B3FD6" opacity="0.15"/>
+      <circle cx="200" cy="600" r="12" fill="#8B3FD6"/>
+      <text x="200" y="664" fill="#1A1614" font-size="17" font-weight="700" text-anchor="middle">HVAC &amp; Heating</text>
+      <text x="200" y="700" fill="#1A1614" font-size="12" opacity="0.65" text-anchor="middle">Furnace, AC, ducts.</text>
+      <text x="200" y="720" fill="#1A1614" font-size="12" opacity="0.65" text-anchor="middle">Tune-ups &amp; new installs.</text>
+      <text x="200" y="780" fill="#4F1E7B" font-size="13" font-weight="600" text-anchor="middle">From $89 →</text>
+      <rect x="340" y="540" width="240" height="280" rx="14" fill="#FFFFFF" stroke="#8B3FD6" stroke-opacity="0.18"/>
+      <circle cx="460" cy="600" r="28" fill="#6B2FA8" opacity="0.15"/>
+      <circle cx="460" cy="600" r="12" fill="#6B2FA8"/>
+      <text x="460" y="664" fill="#1A1614" font-size="17" font-weight="700" text-anchor="middle">Plumbing</text>
+      <text x="460" y="700" fill="#1A1614" font-size="12" opacity="0.65" text-anchor="middle">Drains, water heaters,</text>
+      <text x="460" y="720" fill="#1A1614" font-size="12" opacity="0.65" text-anchor="middle">leaks &amp; emergencies.</text>
+      <text x="460" y="780" fill="#4F1E7B" font-size="13" font-weight="600" text-anchor="middle">From $129 →</text>
+      <rect x="600" y="540" width="240" height="280" rx="14" fill="#FFFFFF" stroke="#8B3FD6" stroke-opacity="0.18"/>
+      <circle cx="720" cy="600" r="28" fill="#10B981" opacity="0.18"/>
+      <circle cx="720" cy="600" r="12" fill="#10B981"/>
+      <text x="720" y="664" fill="#1A1614" font-size="17" font-weight="700" text-anchor="middle">Electrical</text>
+      <text x="720" y="700" fill="#1A1614" font-size="12" opacity="0.65" text-anchor="middle">Panels, wiring, EV</text>
+      <text x="720" y="720" fill="#1A1614" font-size="12" opacity="0.65" text-anchor="middle">chargers &amp; lighting.</text>
+      <text x="720" y="780" fill="#4F1E7B" font-size="13" font-weight="600" text-anchor="middle">From $99 →</text>
+      <!-- Testimonial / stats band -->
+      <text x="80" y="880" fill="#1A1614" font-size="14" opacity="0.5">⎯ TRUSTED BY ⎯</text>
+      <text x="80" y="918" fill="#1A1614" font-size="22" font-weight="600" font-style="italic">"Saved us $400 on our furnace tune-up. Same-day service."</text>
+      <text x="80" y="948" fill="#1A1614" font-size="13" opacity="0.6">— Jen K., Naperville · Verified customer</text>
+      <!-- CTA footer -->
+      <rect x="80" y="990" width="740" height="150" rx="16" fill="#4F1E7B"/>
+      <text x="120" y="1040" fill="#EFE9DC" font-size="22" font-weight="700" font-style="italic">Ready to book?</text>
+      <text x="120" y="1070" fill="#EFE9DC" font-size="14" opacity="0.85">No-obligation estimate. Most jobs scheduled within 24 hours.</text>
+      <rect x="620" y="1024" width="170" height="48" rx="10" fill="#8B3FD6"/>
+      <text x="705" y="1054" fill="#FFFFFF" font-size="14" font-weight="700" text-anchor="middle">Get my estimate</text>
     </svg>`,
   );
 
