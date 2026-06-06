@@ -54,3 +54,18 @@ export function buildSignedDownloadUrl(
   const params = new URLSearchParams({ exp: String(token.exp), sig: token.sig });
   return `${basePath}/${encodeURIComponent(artifactId)}/download?${params.toString()}`;
 }
+
+/** Same as download URL but renders inline (iframe / live HTML preview). */
+export function buildSignedPreviewUrl(
+  basePath: string,
+  artifactId: string,
+  userId: string,
+): string {
+  const token = createSignedDownloadToken(artifactId, userId);
+  const params = new URLSearchParams({
+    exp: String(token.exp),
+    sig: token.sig,
+    inline: "1",
+  });
+  return `${basePath}/${encodeURIComponent(artifactId)}/download?${params.toString()}`;
+}

@@ -34,6 +34,7 @@ import {
   Palette,
   Download,
   Sparkles,
+  LayoutTemplate,
 } from "lucide-react";
 import { authFetch, readApiJson } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
@@ -78,6 +79,8 @@ import { DirectorUsageIndicator } from "./director/DirectorUsageIndicator";
 import { DirectorResearchSources } from "./director/DirectorResearchSources";
 import { DirectorStarterPrompts } from "./director/DirectorStarterPrompts";
 import DirectorArtifactsPanel, { type DirectorArtifact } from "./director/DirectorArtifactsPanel";
+import DirectorStitchPreviewGallery from "./director/DirectorStitchPreviewGallery";
+import { isStitchPreview } from "../lib/director-stitch-preview";
 import { INTEGRATION_STYLES } from "../lib/integration-activities";
 import type { ToolIntegration } from "../lib/agent-capabilities";
 import {
@@ -131,6 +134,10 @@ interface DirectorPreview {
   rationale: string;
   previewDataUrl: string;
   svg?: string;
+  kind?: "logo" | "stitch";
+  htmlDownloadUrl?: string;
+  imageDownloadUrl?: string;
+  deviceType?: "DESKTOP" | "MOBILE" | "TABLET" | "AGNOSTIC";
 }
 
 interface DirectorMessage {
@@ -174,6 +181,7 @@ const SUGGESTION_ICON: Record<SuggestionKind, React.ElementType> = {
 };
 
 const SCENE_ICONS: Record<Exclude<DirectorMessageScene, "general">, React.ElementType> = {
+  design: LayoutTemplate,
   creative: Palette,
   analysis: BarChart3,
   integration: Plug,
@@ -1615,7 +1623,15 @@ export default function DirectorWorkspace({
                         </div>
                       )}
 
-                      {m.previews && m.previews.length > 0 && (
+                      {m.previews && m.previews.length > 0 && isStitchPreview(m.previews[0]) && (
+                        <DirectorStitchPreviewGallery
+                          previews={m.previews}
+                          onSuggestEdit={(prompt) => void send(prompt)}
+                          disabled={isSending}
+                        />
+                      )}
+
+                      {m.previews && m.previews.length > 0 && !isStitchPreview(m.previews[0]) && (
                         <div className="w-full">
                           {/* Gallery header */}
                           <div className="flex items-center gap-2 mb-2">

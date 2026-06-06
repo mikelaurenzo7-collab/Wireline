@@ -1,9 +1,9 @@
 /**
  * Director × Google Stitch — generate, edit, variants, and site builds for UI media.
  */
-import { buildSignedDownloadUrl } from "./director-artifacts";
-import type { DirectorPreviewMeta } from "./director-message-metadata";
+import { buildSignedDownloadUrl, buildSignedPreviewUrl } from "./director-artifact-signing";
 import { storeDirectorArtifact } from "./director-artifacts";
+import type { DirectorPreviewMeta } from "./director-message-metadata";
 import {
   buildStitchGenerationPrompt,
   resolveStitchDeviceType,
@@ -314,6 +314,16 @@ export async function runDirectorStitchTurn(input: {
     const stamp = new Date().toISOString().slice(0, 10);
     const suffix = screens.length > 1 ? `-v${i + 1}` : "";
 
+    const title =
+      screens.length > 1
+        ? `Variant ${i + 1}`
+        : deviceType === "MOBILE"
+          ? "Mobile screen"
+          : "Screen";
+    let htmlDownloadUrl: string | undefined;
+    let imageDownloadUrl: string | undefined;
+    let previewDataUrl = "";
+
     if (assets.html) {
       const saved = await storeDirectorArtifact({
         userId: input.userId,
@@ -329,6 +339,7 @@ export async function runDirectorStitchTurn(input: {
           deviceType,
         },
       });
+      htmlDownloadUrl = buildSignedPreviewUrl("/api/director/artifacts", saved.id, input.userId);
       artifacts.push({
         ...saved,
         downloadUrl: buildSignedDownloadUrl("/api/director/artifacts", saved.id, input.userId),
@@ -347,27 +358,27 @@ export async function runDirectorStitchTurn(input: {
           operatorPreview: input.operatorMessage.trim().slice(0, 120),
           stitchProjectId: projectId,
           stitchScreenId: screenId,
+          deviceType,
         },
       });
-      const downloadUrl = buildSignedDownloadUrl("/api/director/artifacts", saved.id, input.userId);
-      artifacts.push({ ...saved, downloadUrl });
-
-      if (assets.image.byteLength <= STITCH_PREVIEW_MAX_BYTES) {
-        previews.push({
-          conceptId: screenId,
-          title: screens.length > 1 ? `Variant ${i + 1}` : "Stitch preview",
-          rationale: "Google Stitch screenshot",
-          previewDataUrl: `data:image/png;base64,${assets.image.toString("base64")}`,
-        });
-      } else {
-        previews.push({
-          conceptId: screenId,
-          title: screens.length > 1 ? `Variant ${i + 1}` : "Stitch preview",
-          rationale: "Google Stitch screenshot — open artifact to download",
-          previewDataUrl: downloadUrl,
-        });
-      }
+      imageDownloadUrl = buildSignedDownloadUrl("/api/director/artifacts", saved.id, input.userId);
+      artifacts.push({ ...saved, downloadUrl: imageDownloadUrl });
+      previewDataUrl =
+        assets.image.byteLength <= STITCH_PREVIEW_MAX_BYTES
+          ? `data:image/png;base64,${assets.image.toString("base64")}`
+          : imageDownloadUrl;
     }
+
+    previews.push({
+      conceptId: screenId,
+      title,
+      rationale: "Google Stitch",
+      kind: "stitch",
+      deviceType,
+      previewDataUrl: previewDataUrl || imageDownloadUrl || htmlDownloadUrl || "",
+      htmlDownloadUrl,
+      imageDownloadUrl,
+    });
 
     thinkingLines.push(`Screen ${screenId} (${deviceType})`);
   }

@@ -71,6 +71,11 @@ export const WL_DIRECTOR_CLASSES = {
 /** Reusable app surfaces outside Director (settings, integrations, ops panels) */
 /** Director message scene chips — purple/cream only (no sky/fuchsia literals). */
 export const DIRECTOR_SCENE_BADGES = {
+  design: {
+    label: "Stitch UI",
+    color: "text-brand-deep",
+    bg: "bg-brand/12 border-brand/30",
+  },
   creative: {
     label: "Creative",
     color: "text-brand-deep",

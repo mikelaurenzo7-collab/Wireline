@@ -27,12 +27,18 @@ export interface DirectorApprovalMeta {
   input: Record<string, unknown>;
 }
 
+export type DirectorPreviewKind = "logo" | "stitch";
+
 export interface DirectorPreviewMeta {
   conceptId: string;
   title: string;
   rationale: string;
   previewDataUrl: string;
   svg?: string;
+  kind?: DirectorPreviewKind;
+  htmlDownloadUrl?: string;
+  imageDownloadUrl?: string;
+  deviceType?: "DESKTOP" | "MOBILE" | "TABLET" | "AGNOSTIC";
 }
 
 export interface DirectorProposalsMeta {
