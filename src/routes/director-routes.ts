@@ -774,8 +774,8 @@ router.post(
             userId: req.user.id,
             operatorMessage,
           });
+          usedStitch = true;
           if (stitchTurn) {
-            usedStitch = true;
             reply = stitchTurn.reply;
             previews = stitchTurn.previews;
             artifacts = stitchTurn.artifacts;
@@ -784,6 +784,10 @@ router.post(
             thinkingDurationMs = stitchTurn.durationMs;
             reasoning = stitchTurn.thinkingSummary;
             stitchSession = stitchTurn.stitchSession;
+          } else {
+            reply = WIRELINE_STITCH_UI.failReply;
+            modelLabel = WIRELINE_STITCH_UI.modelLabel;
+            modelProvider = "wireline";
           }
         }
 
@@ -1117,20 +1121,13 @@ router.post(
         }
 
         sse.write("thinking_end", { thinking: "Design render did not complete", durationMs: 0 });
-        const stitchFailReply = [
-          "I couldn't finish this design render in time.",
-          "",
-          "Your message is saved — try the same prompt again in a minute, or ask for a smaller scope (e.g. hero section only).",
-          "",
-          "If it keeps failing, check that UI generation is enabled for your workspace or contact support.",
-        ].join("\n");
         await finalizeDirectorStreamTurn(
           sse,
           req.user.id,
           operatorMessage,
-          stitchFailReply,
+          WIRELINE_STITCH_UI.failReply,
           {
-            reply: stitchFailReply,
+            reply: WIRELINE_STITCH_UI.failReply,
             model: "sonnet",
             modelLabel: WIRELINE_STITCH_UI.modelLabel,
             modelProvider: "wireline",

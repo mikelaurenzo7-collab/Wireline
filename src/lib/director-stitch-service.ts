@@ -29,8 +29,8 @@ import { WIRELINE_STITCH_UI } from "./wireline-director-design";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 
-/** Inline data-URL in message metadata so the device frame renders without a client blob round-trip. */
-const STITCH_PREVIEW_MAX_BYTES = 900_000;
+/** Inline data-URL in message metadata — cap size for JSONB message rows. */
+const STITCH_PREVIEW_MAX_BYTES = 600_000;
 
 export interface DirectorStitchTurnResult {
   reply: string;
@@ -62,7 +62,7 @@ function pickDownloadUrl(screen: Record<string, unknown>, kind: "html" | "image"
   );
 }
 
-const STITCH_ASSET_TOOL_TIMEOUT_MS = 60_000;
+const STITCH_ASSET_TOOL_TIMEOUT_MS = 25_000;
 
 function stitchScreenToolArgs(projectId: string, screenId: string): Record<string, string> {
   return {
@@ -115,50 +115,69 @@ async function fetchScreenAssets(
   let htmlUrl = pickDownloadUrl(screen, "html");
   let imageUrl = pickDownloadUrl(screen, "image");
 
-  if (!html) {
-    for (const tool of ["get_screen_code", "fetch_screen_code"] as const) {
-      try {
-        const payload = await client.callTool<unknown>(
-          tool,
-          args,
-          signal,
-          STITCH_ASSET_TOOL_TIMEOUT_MS,
-        );
-        html = extractStitchInlineHtml(payload);
-        screen = mergeStitchScreenRecord(screen, payload);
-        htmlUrl = htmlUrl || pickDownloadUrl(screen, "html");
-        if (html) break;
-      } catch {
-        /* try alternate tool name */
+  const [htmlBranch, imageBranch] = await Promise.all([
+    (async (): Promise<{ packed?: Buffer; screenPatch: Record<string, unknown> }> => {
+      let packed = html;
+      let url = htmlUrl;
+      let screenPatch: Record<string, unknown> = {};
+      if (!packed) {
+        for (const tool of ["get_screen_code", "fetch_screen_code"] as const) {
+          try {
+            const payload = await client.callTool<unknown>(
+              tool,
+              args,
+              signal,
+              STITCH_ASSET_TOOL_TIMEOUT_MS,
+            );
+            packed = extractStitchInlineHtml(payload);
+            screenPatch = mergeStitchScreenRecord(screenPatch, payload);
+            url = url || pickDownloadUrl(screenPatch, "html");
+            if (packed) break;
+          } catch {
+            /* try alternate tool name */
+          }
+        }
       }
-    }
-  }
-
-  if (!image) {
-    for (const tool of ["get_screen_image", "fetch_screen_image"] as const) {
-      try {
-        const payload = await client.callTool<unknown>(
-          tool,
-          args,
-          signal,
-          STITCH_ASSET_TOOL_TIMEOUT_MS,
-        );
-        image = extractStitchInlineImage(payload);
-        screen = mergeStitchScreenRecord(screen, payload);
-        imageUrl = imageUrl || pickDownloadUrl(screen, "image");
-        if (image) break;
-      } catch {
-        /* try alternate tool name */
+      if (!packed && url) {
+        packed = await fetchRemoteAsset(url, signal).catch(() => undefined);
       }
-    }
-  }
+      return { packed, screenPatch };
+    })(),
+    (async (): Promise<{ packed?: Buffer; screenPatch: Record<string, unknown> }> => {
+      let packed = image;
+      let url = imageUrl;
+      let screenPatch: Record<string, unknown> = {};
+      if (!packed) {
+        for (const tool of ["get_screen_image", "fetch_screen_image"] as const) {
+          try {
+            const payload = await client.callTool<unknown>(
+              tool,
+              args,
+              signal,
+              STITCH_ASSET_TOOL_TIMEOUT_MS,
+            );
+            packed = extractStitchInlineImage(payload);
+            screenPatch = mergeStitchScreenRecord(screenPatch, payload);
+            url = url || pickDownloadUrl(screenPatch, "image");
+            if (packed) break;
+          } catch {
+            /* try alternate tool name */
+          }
+        }
+      }
+      if (!packed && url) {
+        packed = await fetchRemoteAsset(url, signal).catch(() => undefined);
+      }
+      return { packed, screenPatch };
+    })(),
+  ]);
 
-  if (!html && htmlUrl) {
-    html = await fetchRemoteAsset(htmlUrl, signal).catch(() => undefined);
-  }
-  if (!image && imageUrl) {
-    image = await fetchRemoteAsset(imageUrl, signal).catch(() => undefined);
-  }
+  screen = mergeStitchScreenRecord(
+    mergeStitchScreenRecord(screen, htmlBranch.screenPatch),
+    imageBranch.screenPatch,
+  );
+  html = htmlBranch.packed;
+  image = imageBranch.packed;
 
   return { html, image, screen };
 }
@@ -373,7 +392,7 @@ async function runStitchOperation(
     (await listStitchScreens(client, projectId, signal)).map((s) => String(s.screenId ?? "")),
   );
 
-  onProgress?.("Generating Stitch screen (1–3 min)…");
+  onProgress?.("Generating Wireline Design screen (3–5 min)…");
   let generated: unknown;
   try {
     generated = await client.callTool<unknown>(

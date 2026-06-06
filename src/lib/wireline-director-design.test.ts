@@ -208,7 +208,9 @@ describe("Wireline Director design contract", () => {
   it("stitch UI copy is Wireline-branded without vendor marketing", () => {
     expect(WIRELINE_STITCH_UI.badgeLabel).toBe("Wireline Design");
     expect(WIRELINE_STITCH_UI.deviceChromeLabel).not.toMatch(/google/i);
+    expect(WIRELINE_STITCH_UI.loadingHint).toMatch(/3–5 minutes/);
     expect(WIRELINE_STITCH_UI.loadingHint).not.toMatch(/api key/i);
+    expect(WIRELINE_STITCH_UI.failReply).toMatch(/couldn't finish/i);
     expect(WIRELINE_STITCH_UI.loadingPhases.join(" ")).not.toMatch(/google/i);
   });
 });
