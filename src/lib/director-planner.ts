@@ -124,8 +124,9 @@ export function normalizeDirectorPlan(
   raw: RawDirectorReply,
   fleet: DirectorFleetAgent[],
   model: "sonnet" | "opus",
+  operatorMessage?: string,
 ): DirectorPlan {
-  const fleetPlan = normalizeDirectorFleetPlan(raw, fleet);
+  const fleetPlan = normalizeDirectorFleetPlan(raw, fleet, operatorMessage);
   return { ...fleetPlan, model };
 }
 
@@ -159,7 +160,12 @@ export async function planDirector(input: PlanDirectorInput): Promise<DirectorPl
     deepThink,
     maxTokens: resolveDirectorMaxTokens({ opus: useOpus, longDeliverable }),
   });
-  const plan = normalizeDirectorPlan(raw, input.fleet, useOpus ? "opus" : "sonnet");
+  const plan = normalizeDirectorPlan(
+    raw,
+    input.fleet,
+    useOpus ? "opus" : "sonnet",
+    input.operatorMessage,
+  );
   return {
     ...plan,
     reasoning: thinking,

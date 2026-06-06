@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeDirectorFleetPlan } from "./director-fleet-plan";
+import { DirectorEmptyPlanError, normalizeDirectorFleetPlan } from "./director-fleet-plan";
 import type { DirectorFleetAgent } from "./director-planner";
 
 const FLEET: DirectorFleetAgent[] = [
@@ -71,6 +71,16 @@ describe("normalizeDirectorFleetPlan — actions & integration jobs", () => {
     expect(plan.integrationJobs).toHaveLength(2);
     expect(plan.integrationJobs[0].step).toBe(1);
     expect(plan.integrationJobs[1].step).toBe(2);
+  });
+
+  it("throws on empty reply for deliverable intents", () => {
+    expect(() =>
+      normalizeDirectorFleetPlan(
+        { reply: "" },
+        FLEET,
+        "Design a one-page website for a local HVAC company",
+      ),
+    ).toThrow(DirectorEmptyPlanError);
   });
 
   it("accepts gemini_ground web research integration jobs", () => {

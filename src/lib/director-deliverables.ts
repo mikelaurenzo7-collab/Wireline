@@ -55,6 +55,8 @@ You can answer ANY reasonable operator request inside \`reply\`. Deliverables li
 **Refusals:** Only refuse illegal content, impersonation of real brands/trademarks in logo generation, or medical/legal advice framed as professional counsel — not "I can't write code."`;
 
 const WEBSITE_BLOCK = `## Website / product design mode (this turn)
+**Industry:** Match the business vertical in THIS message only (HVAC vs plumbing vs dental, etc.). Do not recycle copy from earlier turns unless the operator asks.
+
 Structure \`reply\` as:
 1. **Goals & audience** (2–4 bullets)
 2. **Sitemap** — pages and primary CTA per page

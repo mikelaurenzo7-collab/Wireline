@@ -853,11 +853,19 @@ export async function handleJob(job: JobRow): Promise<void> {
  * Initializes the background job worker.
  * Returns a stop function.
  */
-export function initJobWorker() {
+export function initJobWorker(opts?: { dbReady?: boolean }) {
   if (process.env.VERCEL === "1") return null;
+  if (opts?.dbReady === false) {
+    log.warn("job worker skipped — database not connected");
+    return null;
+  }
 
   return startWorker(drizzle, handleJob, {
     pollIntervalMs: 10_000,
-    onError: (err) => log.error("job worker error", { error: err.message }),
+    onError: (err) =>
+      log.error("job worker poll failed", {
+        error: err.message,
+        hint: "Check POSTGRES_URL and that wireline_jobs exists",
+      }),
   });
 }

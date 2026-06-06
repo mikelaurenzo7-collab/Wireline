@@ -48,7 +48,10 @@ interface UseStreamingChatOptions {
   /** Called when the full response is complete. */
   onComplete?: (data: Record<string, unknown>) => void;
   /** Called on error. */
-  onError?: (message: string, context: { streamEstablished: boolean }) => void;
+  onError?: (
+    message: string,
+    context: { streamEstablished: boolean; partialReply?: Record<string, unknown> },
+  ) => void;
 }
 
 /** Parse one SSE event block from a line batch. Exported for tests. */
@@ -80,7 +83,8 @@ export function parseSseEvents(
  * Returns a `send` function that POSTs to a streaming endpoint and
  * a reactive `state` object that updates through the streaming lifecycle.
  */
-const STREAM_IDLE_MS = 120_000;
+/** Reset on every SSE chunk — long Opus / logo turns can run 3+ minutes. */
+const STREAM_IDLE_MS = 300_000;
 
 export function useStreamingChat(endpoint: string, options?: UseStreamingChatOptions) {
   const [state, setState] = useState<StreamingState>(INITIAL_STATE);
@@ -115,6 +119,7 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
     completionRef.current = true;
     optionsRef.current?.onError?.(message, {
       streamEstablished: streamEstablishedRef.current,
+      partialReply: latestReplyRef.current,
     });
   }, []);
 
@@ -124,10 +129,17 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
       const controller = new AbortController();
       abortRef.current = controller;
       let timedOut = false;
-      const timeoutId = window.setTimeout(() => {
+      let timeoutId = window.setTimeout(() => {
         timedOut = true;
         controller.abort();
       }, STREAM_IDLE_MS);
+      const bumpIdleTimeout = () => {
+        window.clearTimeout(timeoutId);
+        timeoutId = window.setTimeout(() => {
+          timedOut = true;
+          controller.abort();
+        }, STREAM_IDLE_MS);
+      };
 
       completionRef.current = false;
       latestReplyRef.current = undefined;
@@ -175,6 +187,7 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
         let buffer = "";
 
         const handleEvent = (event: string, data: Record<string, unknown>) => {
+          bumpIdleTimeout();
           switch (event) {
             case "meta":
               streamEstablishedRef.current = true;
@@ -261,6 +274,7 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
           if (done) break;
           if (controller.signal.aborted) break;
 
+          bumpIdleTimeout();
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split("\n");
           buffer = lines.pop() || "";

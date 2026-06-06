@@ -47,6 +47,10 @@ import { ShadButton } from "./ui/shadcn/ShadButton";
 import { Input } from "./ui/shadcn/Input";
 import { Textarea } from "./ui/shadcn/Textarea";
 import { useStreamingChat } from "../hooks/useStreamingChat";
+import {
+  isSubstantiveDirectorPayload,
+  isSubstantiveDirectorReply,
+} from "../lib/director-reply-utils";
 import ProposalCard from "./chat/ProposalCard";
 import { AGENT_TOOL_CATALOG } from "../lib/agent-capabilities";
 import type { ProposedAction, ProposedChange, ProposedToolToggle } from "../lib/workspace-planner";
@@ -221,6 +225,9 @@ export default function DirectorWorkspace({
   const composerDockRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingSendRef = useRef<{ trimmed: string; optimisticId?: string } | null>(null);
+  const lastStreamOperatorRef = useRef<string | null>(null);
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
   const liveSequenceKeyRef = useRef<string | null>(null);
   const sendNonStreamingRef = useRef<
     | ((
@@ -364,6 +371,13 @@ export default function DirectorWorkspace({
         setIntegrationLiveActions(buildLiveActionsFromProposals({ integrationJobs, actions }));
       }
       appendDirectorReply(data);
+      if (
+        !data.deliverableArtifact &&
+        typeof data.reply === "string" &&
+        data.reply.length > 2_000
+      ) {
+        window.setTimeout(() => void loadMessages(), 2_500);
+      }
       if (Array.isArray(data.artifacts)) {
         setArtifacts((prev) => {
           const incoming = data.artifacts as DirectorArtifact[];
@@ -374,22 +388,82 @@ export default function DirectorWorkspace({
       setIsSending(false);
       streamReset();
       pendingSendRef.current = null;
+      lastStreamOperatorRef.current = null;
       inputRef.current?.focus();
     },
-    onError: (msg, { streamEstablished }) => {
+    onError: (msg, { streamEstablished, partialReply }) => {
       const pending = pendingSendRef.current;
-      if (pending?.trimmed) {
-        void sendNonStreamingRef.current?.(pending.trimmed, pending.optimisticId, {
-          skipOperatorPersist: streamEstablished,
-        });
+      const operatorProbe = pending?.trimmed ?? lastStreamOperatorRef.current ?? "";
+
+      if (isSubstantiveDirectorPayload(partialReply)) {
+        appendDirectorReply(partialReply!);
+        setIsSending(false);
+        streamReset();
+        pendingSendRef.current = null;
+        lastStreamOperatorRef.current = null;
+        inputRef.current?.focus();
         return;
       }
-      void loadMessages();
-      toastError("Stream interrupted", msg);
-      setIsSending(false);
-      streamReset();
-      pendingSendRef.current = null;
-      inputRef.current?.focus();
+
+      const directorReplyExists = (text: string) => {
+        const probe = text.trim();
+        if (!probe) return false;
+        const msgs = messagesRef.current;
+        const operatorIdx = msgs.findIndex(
+          (m) => m.role === "operator" && m.content.trim() === probe,
+        );
+        if (operatorIdx >= 0) {
+          return msgs
+            .slice(operatorIdx + 1)
+            .some((m) => m.role === "director" && isSubstantiveDirectorReply(m.content));
+        }
+        const last = msgs[msgs.length - 1];
+        return last?.role === "director" && isSubstantiveDirectorReply(last.content);
+      };
+
+      const recoverFromPersistedTurn = async (): Promise<boolean> => {
+        for (let waitMs of [400, 900, 1600]) {
+          await loadMessages();
+          if (directorReplyExists(operatorProbe)) return true;
+          await new Promise((resolve) => setTimeout(resolve, waitMs));
+        }
+        await loadMessages();
+        return directorReplyExists(operatorProbe);
+      };
+
+      if (pending?.trimmed) {
+        void (async () => {
+          if (await recoverFromPersistedTurn()) {
+            setIsSending(false);
+            streamReset();
+            pendingSendRef.current = null;
+            lastStreamOperatorRef.current = null;
+            inputRef.current?.focus();
+            return;
+          }
+          void sendNonStreamingRef.current?.(pending.trimmed, pending.optimisticId, {
+            skipOperatorPersist: streamEstablished,
+          });
+        })();
+        return;
+      }
+
+      void (async () => {
+        if (await recoverFromPersistedTurn()) {
+          setIsSending(false);
+          streamReset();
+          pendingSendRef.current = null;
+          lastStreamOperatorRef.current = null;
+          inputRef.current?.focus();
+          return;
+        }
+        toastError("Stream interrupted", msg);
+        setIsSending(false);
+        streamReset();
+        pendingSendRef.current = null;
+        lastStreamOperatorRef.current = null;
+        inputRef.current?.focus();
+      })();
     },
   });
 
@@ -643,6 +717,7 @@ export default function DirectorWorkspace({
       // Use streaming for regular messages (no approvals — those stay non-streaming)
       if (!opts?.approval) {
         pendingSendRef.current = { trimmed, optimisticId: optimistic?.id };
+        lastStreamOperatorRef.current = trimmed;
         streamSend(payload);
         return;
       }

@@ -24,6 +24,7 @@ import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, lte, gte, inArray } from "drizzle-orm";
 import { reportError } from "./error-reporter";
+import { getErrorMessage } from "./server-utils";
 
 type DrizzleDB = typeof drizzle;
 
@@ -236,6 +237,27 @@ export async function failJob(
 
 export type JobHandler = (job: JobRow) => Promise<void>;
 
+/** Human-readable message when the poll loop throws (Drizzle often uses empty `.message`). */
+export function formatJobWorkerSweepError(err: unknown): string {
+  if (err && typeof err === "object") {
+    const o = err as Record<string, unknown>;
+    const msg =
+      err instanceof Error
+        ? err.message.trim()
+        : typeof o.message === "string"
+          ? o.message.trim()
+          : "";
+    if (msg) return msg;
+    const cause = o.cause;
+    if (typeof cause === "string" && cause.trim()) return cause;
+    if (cause instanceof Error && cause.message.trim()) return cause.message;
+    if (typeof o.code === "string") return `database error (${o.code})`;
+  }
+  const base = getErrorMessage(err).trim();
+  if (base && base !== "[object Object]") return base;
+  return "job queue poll failed (database unreachable or misconfigured POSTGRES_URL)";
+}
+
 export interface WorkerOptions {
   /** Interval between sweeps when idle. Default: 10 seconds. */
   pollIntervalMs?: number;
@@ -277,8 +299,8 @@ export function startWorker(db: DrizzleDB, handler: any, opts: WorkerOptions = {
           await failJob(db, job, msg);
         }
       }
-    } catch (err: any) {
-      opts.onError?.(err instanceof Error ? err : new Error(String(err)));
+    } catch (err: unknown) {
+      opts.onError?.(new Error(formatJobWorkerSweepError(err)));
     }
     if (!stopped) {
       timer = setTimeout(sweep, pollMs);

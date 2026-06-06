@@ -49,6 +49,7 @@ import {
   openRouterAllowedForEntitlements,
 } from "../lib/plan-entitlements";
 import { runDirectorStreamLlm } from "../lib/director-stream-runner";
+import { createSseStream, writeSseBootstrap, type SseStreamHandle } from "../lib/sse-stream";
 import { loadDirectorFeatureFlags } from "../lib/director-feature-flags";
 import {
   checkCreativePolicy,
@@ -78,6 +79,14 @@ import {
 } from "../lib/director-store";
 import { persistDirectorDeliverableArtifact } from "../lib/director-deliverable-artifacts";
 import type { DirectorFeatureFlags } from "../lib/director-feature-flags";
+import { wantsLongDeliverable } from "../lib/director-deliverables";
+import {
+  collapseDirectorThreadDuplicates,
+  hasSubstantiveDirectorReplyForOperator,
+  insertDirectorReplyIfAbsent,
+  isDirectorStubReply,
+  loadExistingDirectorTurnResponse,
+} from "../lib/director-turn-persist";
 
 const router = express.Router();
 const directorArtifactDownloadLimiter = createIpRateLimiter({
@@ -143,6 +152,107 @@ function directorTurnToStreamDone(turn: DirectorTurnResult) {
     reasoning: turn.reasoning,
     thinkingDurationMs: turn.thinkingDurationMs,
     researchSources: turn.researchSources,
+  };
+}
+
+/** Emit `done` immediately, then persist in the background — avoids proxy drops during artifact DB work. */
+async function finalizeDirectorStreamTurn(
+  sse: SseStreamHandle,
+  userId: string,
+  operatorMessage: string,
+  reply: string,
+  donePayload: Record<string, unknown>,
+  thinking: string | null | undefined,
+  featureFlags: ReturnType<typeof loadDirectorFeatureFlags>,
+): Promise<boolean> {
+  const trimmed = reply.trim();
+  if (!trimmed) return false;
+
+  const quickPayload = { ...donePayload, reply: trimmed };
+  sse.write("done", quickPayload);
+  sse.end();
+
+  void (async () => {
+    try {
+      const enriched = await attachDeliverableArtifactToTurn(
+        userId,
+        operatorMessage,
+        trimmed,
+        featureFlags,
+        quickPayload,
+      );
+      const insertResult = await insertDirectorReplyIfAbsent({
+        userId,
+        operatorMessage,
+        reply: trimmed,
+        reasoning: thinking || null,
+        metadata: packDirectorMetadata(buildDirectorMetadataFromTurn(enriched)),
+      });
+      if (insertResult === "skipped_duplicate" || insertResult === "skipped_stub") {
+        log.info("director stream persist skipped", { userId, insertResult });
+      }
+    } catch (err) {
+      log.error("director stream persist failed", { error: getErrorMessage(err), userId });
+    }
+  })();
+
+  return true;
+}
+
+function filterDirectorArtifactsForThread(
+  messagesDesc: Array<{ role: string; metadata: unknown }>,
+  artifacts: Array<Record<string, unknown>>,
+): Array<Record<string, unknown>> {
+  const asc = [...messagesDesc].reverse();
+  const operatorSnippets = asc
+    .filter((m) => m.role === "operator")
+    .slice(-6)
+    .map((m) => {
+      const row = m as { content?: string };
+      return typeof row.content === "string" ? row.content.trim().slice(0, 120) : "";
+    })
+    .filter(Boolean);
+  const linkedIds = new Set(
+    asc
+      .map((m) => parseDirectorMetadata(m.metadata).deliverableArtifact?.id)
+      .filter((id): id is string => Boolean(id)),
+  );
+
+  return artifacts.filter((a) => {
+    if (a.toolName !== "director_deliverable") return true;
+    if (linkedIds.has(String(a.id))) return true;
+    const preview = (a.metadata as { operatorPreview?: string } | undefined)?.operatorPreview;
+    if (preview && operatorSnippets.some((s) => preview.startsWith(s.slice(0, 40)))) return true;
+    return false;
+  });
+}
+
+function jsonFromPersistedDirectorTurn(
+  existing: NonNullable<Awaited<ReturnType<typeof loadExistingDirectorTurnResponse>>>,
+): Record<string, unknown> {
+  const meta = existing.metadata;
+  return {
+    reply: existing.content,
+    reasoning: existing.reasoning || undefined,
+    suggestions: meta.suggestions,
+    approvals: meta.approvals,
+    previews: meta.previews,
+    clarifyingQuestions: meta.clarifyingQuestions,
+    changes: meta.proposals?.changes,
+    toolToggles: meta.proposals?.toolToggles,
+    actions: meta.proposals?.actions,
+    integrationJobs: meta.proposals?.integrationJobs,
+    model: meta.model,
+    modelLabel: meta.modelLabel,
+    modelProvider: meta.modelProvider,
+    modelId: meta.modelId,
+    thinkingDurationMs: meta.thinkingDurationMs,
+    focusAgentId: meta.coachAgentId,
+    focusAgentName: meta.coachAgentName,
+    mode: meta.mode,
+    researchSources: meta.researchSources,
+    deliverableArtifact: meta.deliverableArtifact,
+    artifacts: meta.deliverableArtifact ? [meta.deliverableArtifact] : undefined,
   };
 }
 
@@ -427,9 +537,12 @@ router.get(
         featureFlags: loadDirectorFeatureFlags(),
         chatModelPreference,
         openRouterEnabled: isOpenRouterConfigured(),
-        artifacts: artifacts.map((a) => withSignedUrl(req.user.id, a)),
+        artifacts: filterDirectorArtifactsForThread(
+          messages,
+          artifacts.map((a) => withSignedUrl(req.user.id, a)),
+        ),
         degraded: degraded || undefined,
-        messages: messages.reverse().map((m) => {
+        messages: collapseDirectorThreadDuplicates(messages.reverse()).map((m) => {
           const meta = parseDirectorMetadata(m.metadata);
           return {
             id: String(m.id),
@@ -568,6 +681,13 @@ router.post(
         );
       }
 
+      if (operatorMessage && req.body?.skipOperatorPersist === true) {
+        const existing = await loadExistingDirectorTurnResponse(req.user.id, operatorMessage);
+        if (existing) {
+          return res.json(jsonFromPersistedDirectorTurn(existing));
+        }
+      }
+
       let reply = "";
       let suggestions: unknown[] = [];
       let model: "sonnet" | "opus" = "sonnet";
@@ -668,6 +788,47 @@ router.post(
             reply =
               "Sorry — I'm having trouble responding right now. Your message is saved; try again in a moment.";
           }
+
+          if (
+            isDirectorStubReply(reply) &&
+            wantsLongDeliverable(operatorMessage) &&
+            resolved.selection.provider === "wireline"
+          ) {
+            log.warn("director deliverable stub — retrying on sonnet", { userId: req.user.id });
+            try {
+              const retry = await planDirectorTurnResilient({
+                userId: req.user.id,
+                operatorMessage,
+                history,
+                fleet,
+                stats,
+                focusAgentId,
+                forceDeep: false,
+                shallowOnly: true,
+                modelSelection: { provider: "wireline", tier: "sonnet" },
+              });
+              if (!isDirectorStubReply(retry.reply)) {
+                reply = retry.reply;
+                suggestions = retry.suggestions;
+                model = retry.model;
+                modelLabel = retry.modelLabel;
+                modelProvider = retry.modelProvider;
+                modelId = retry.modelId;
+                reasoning = retry.reasoning;
+                thinkingDurationMs = retry.thinkingDurationMs;
+                changes = retry.changes;
+                toolToggles = retry.toolToggles;
+                actions = retry.actions;
+                integrationJobs = retry.integrationJobs;
+                mode = retry.mode;
+                coachAgentId = retry.focusAgentId;
+                coachAgentName = retry.focusAgentName;
+                researchSources = retry.researchSources;
+              }
+            } catch (retryErr) {
+              log.error("director deliverable retry failed", { error: getErrorMessage(retryErr) });
+            }
+          }
         }
       }
 
@@ -699,13 +860,30 @@ router.post(
         },
       );
 
-      await insertDirectorMessage({
+      const insertResult = await insertDirectorReplyIfAbsent({
         userId: req.user.id,
-        role: "director",
-        content: reply,
+        operatorMessage,
+        reply,
         reasoning: reasoning || null,
         metadata: packDirectorMetadata(buildDirectorMetadataFromTurn(turnPayload)),
       });
+
+      if (insertResult !== "inserted" && operatorMessage) {
+        const existing = await loadExistingDirectorTurnResponse(req.user.id, operatorMessage);
+        if (existing) {
+          const persisted = jsonFromPersistedDirectorTurn(existing);
+          const { artifacts: latest } = await listDirectorArtifactsSafe(req.user.id, 40);
+          return res.json({
+            ...persisted,
+            artifacts: filterDirectorArtifactsForThread(
+              priorMessages.messages,
+              latest.map((a) => withSignedUrl(req.user.id, a)),
+            ),
+            featureFlags,
+            toolTelemetry,
+          });
+        }
+      }
 
       const turnArtifacts = Array.isArray(turnPayload.artifacts) ? turnPayload.artifacts : [];
       if (turnArtifacts.length > 0) {
@@ -780,11 +958,11 @@ router.post(
         });
       }
 
-      // Set up SSE headers
-      res.setHeader("Content-Type", "text/event-stream");
-      res.setHeader("Cache-Control", "no-cache");
-      res.setHeader("Connection", "keep-alive");
-      res.setHeader("Content-Encoding", "none");
+      const sse = createSseStream(req, res);
+      writeSseBootstrap(sse);
+
+      const streamAbort = new AbortController();
+      sse.onClientDisconnect(() => streamAbort.abort());
 
       const fleet = await loadFleetSafe(req.user.id);
       const stats = await loadDirectorWeekStats(req.user.id);
@@ -805,18 +983,6 @@ router.post(
 
       const featureFlags = loadDirectorFeatureFlags();
 
-      let closed = false;
-      const streamAbort = new AbortController();
-      req.on("close", () => {
-        closed = true;
-        streamAbort.abort();
-      });
-
-      const writeSse = (event: string, data: unknown) => {
-        if (closed) return;
-        res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-      };
-
       if (
         featureFlags.toolExecution &&
         featureFlags.creativeTools &&
@@ -831,21 +997,25 @@ router.post(
           }),
         );
 
-        await insertDirectorMessage({
-          userId: req.user.id,
-          role: "director",
-          content: creative.reply,
-          metadata,
-        });
-
-        writeSse("meta", { model: "sonnet", deep: false, mode: "fleet" });
-        writeSse("thinking_end", { thinking: "", durationMs: 0 });
-        writeSse("done", {
+        sse.write("meta", { model: "sonnet", deep: false, mode: "fleet" });
+        sse.write("thinking_end", { thinking: "", durationMs: 0 });
+        sse.write("done", {
           reply: creative.reply,
           approvals: creative.approvals,
           clarifyingQuestions: creative.clarifyingQuestions,
         });
-        if (!closed) res.end();
+        sse.end();
+        void insertDirectorReplyIfAbsent({
+          userId: req.user.id,
+          operatorMessage,
+          reply: creative.reply,
+          metadata,
+        }).catch((err) =>
+          log.error("director creative stream persist failed", {
+            error: getErrorMessage(err),
+            userId: req.user.id,
+          }),
+        );
         return;
       }
 
@@ -860,44 +1030,115 @@ router.post(
       });
 
       const streamMeta = directorStreamMetaModel(streamCtx);
-      res.write(
-        `event: meta\ndata: ${JSON.stringify({
-          model: streamMeta.model,
-          modelLabel: streamCtx.modelLabel,
-          modelProvider: streamCtx.llmProvider,
-          modelId: streamCtx.modelId,
-          deep: streamMeta.deep,
-          mode: streamCtx.mode,
-          focusAgentId: streamCtx.focusAgentId,
-          focusAgentName: streamCtx.focusAgentName,
-        })}\n\n`,
-      );
+      sse.write("meta", {
+        model: streamMeta.model,
+        modelLabel: streamCtx.modelLabel,
+        modelProvider: streamCtx.llmProvider,
+        modelId: streamCtx.modelId,
+        deep: streamMeta.deep,
+        mode: streamCtx.mode,
+        focusAgentId: streamCtx.focusAgentId,
+        focusAgentName: streamCtx.focusAgentName,
+      });
 
+      let streamFinalized = false;
       try {
         const streamWireline = streamCtx.llmProvider === "wireline";
         const { result, thinking, thinkingDurationMs } = await runDirectorStreamLlm(
           streamCtx,
           {
-            onThinkingStart: streamWireline ? () => writeSse("thinking_start", {}) : undefined,
+            onThinkingStart: streamWireline ? () => sse.write("thinking_start", {}) : undefined,
             onThinkingChunk: streamWireline
-              ? (text) => writeSse("thinking_chunk", { text })
+              ? (text) => sse.write("thinking_chunk", { text })
               : undefined,
             onThinkingEnd: streamWireline
               ? (fullText, durationMs) =>
-                  writeSse("thinking_end", { thinking: fullText, durationMs })
+                  sse.write("thinking_end", { thinking: fullText, durationMs })
               : undefined,
-            onResult: (r) => writeSse("reply", r),
+            onResult: (r) => {
+              const rec = r as Record<string, unknown>;
+              const preview =
+                typeof rec.reply === "string"
+                  ? { reply: rec.reply }
+                  : { reply: typeof r === "string" ? r : "" };
+              sse.write("reply", preview);
+            },
           },
           { signal: streamAbort.signal },
         );
 
-        if (closed || streamAbort.signal.aborted) {
-          return;
+        let normalized = streamCtx.normalize((result || {}) as Record<string, unknown>);
+        let reply = normalized.reply || "";
+
+        if (
+          isDirectorStubReply(reply) &&
+          wantsLongDeliverable(operatorMessage) &&
+          streamCtx.llmProvider === "wireline"
+        ) {
+          log.warn("director stream deliverable stub — retrying on sonnet", {
+            userId: req.user.id,
+          });
+          const retry = await planDirectorTurnResilient({
+            userId: req.user.id,
+            operatorMessage,
+            history,
+            fleet,
+            stats,
+            focusAgentId,
+            forceDeep: false,
+            shallowOnly: true,
+            modelSelection: { provider: "wireline", tier: "sonnet" },
+          });
+          if (!isDirectorStubReply(retry.reply)) {
+            normalized = {
+              mode: retry.mode,
+              reply: retry.reply,
+              suggestions: retry.suggestions,
+              changes: retry.changes,
+              toolToggles: retry.toolToggles,
+              actions: retry.actions,
+              integrationJobs: retry.integrationJobs,
+              focusAgentId: retry.focusAgentId,
+              focusAgentName: retry.focusAgentName,
+              model: retry.model,
+              modelLabel: retry.modelLabel,
+              modelProvider: retry.modelProvider,
+              modelId: retry.modelId,
+            };
+            reply = retry.reply;
+          }
         }
 
-        const normalized = streamCtx.normalize((result || {}) as Record<string, unknown>);
-        const reply = normalized.reply || "";
-        let donePayload: Record<string, unknown> = {
+        if (isDirectorStubReply(reply)) {
+          const existing = await loadExistingDirectorTurnResponse(req.user.id, operatorMessage);
+          if (existing) {
+            reply = existing.content;
+            const meta = existing.metadata;
+            normalized = {
+              mode: meta.mode ?? normalized.mode,
+              reply: existing.content,
+              suggestions: meta.suggestions ?? normalized.suggestions,
+              changes: meta.proposals?.changes ?? normalized.changes,
+              toolToggles: meta.proposals?.toolToggles ?? normalized.toolToggles,
+              actions: meta.proposals?.actions ?? normalized.actions,
+              integrationJobs: meta.proposals?.integrationJobs ?? normalized.integrationJobs,
+              focusAgentId: meta.coachAgentId ?? normalized.focusAgentId,
+              focusAgentName: meta.coachAgentName ?? normalized.focusAgentName,
+              model: meta.model ?? normalized.model,
+              modelLabel: meta.modelLabel ?? normalized.modelLabel,
+              modelProvider: meta.modelProvider ?? normalized.modelProvider,
+              modelId: meta.modelId ?? normalized.modelId,
+            };
+          } else if (wantsLongDeliverable(operatorMessage)) {
+            sse.write("error", {
+              message: "Could not generate a complete deliverable — try again in a moment.",
+            });
+            sse.end();
+            return;
+          }
+        }
+
+        const donePayload: Record<string, unknown> = {
           reply,
           suggestions: normalized.suggestions,
           changes: normalized.changes,
@@ -916,26 +1157,33 @@ router.post(
           researchSources: streamCtx.researchSources,
         };
 
-        donePayload = await attachDeliverableArtifactToTurn(
+        streamFinalized = await finalizeDirectorStreamTurn(
+          sse,
           req.user.id,
           operatorMessage,
           reply,
-          featureFlags,
           donePayload,
+          thinking,
+          featureFlags,
         );
-
-        await insertDirectorMessage({
-          userId: req.user.id,
-          role: "director",
-          content: reply || "(empty)",
-          reasoning: thinking || null,
-          metadata: packDirectorMetadata(buildDirectorMetadataFromTurn(donePayload)),
-        });
-
-        writeSse("done", donePayload);
       } catch (e) {
-        if (closed || streamAbort.signal.aborted) {
-          log.info("director stream aborted by client");
+        if (streamAbort.signal.aborted) {
+          log.info("director stream aborted by client", { userId: req.user.id });
+          if (!streamFinalized) sse.end();
+          return;
+        }
+        if (streamFinalized) {
+          log.info("director stream error after finalize — skipping fallback", {
+            userId: req.user.id,
+            error: getErrorMessage(e),
+          });
+          return;
+        }
+        if (await hasSubstantiveDirectorReplyForOperator(req.user.id, operatorMessage)) {
+          log.info("director stream fallback skipped — turn already persisted", {
+            userId: req.user.id,
+          });
+          sse.end();
           return;
         }
         log.error("director stream failed", { error: getErrorMessage(e) });
@@ -950,35 +1198,36 @@ router.post(
             forceDeep: req.body?.forceDeep === true,
             modelSelection,
           });
-          writeSse("thinking_end", {
+          if (
+            isDirectorStubReply(turn.reply) &&
+            (await hasSubstantiveDirectorReplyForOperator(req.user.id, operatorMessage))
+          ) {
+            sse.end();
+            return;
+          }
+          sse.write("thinking_end", {
             thinking: turn.reasoning ?? "",
             durationMs: turn.thinkingDurationMs ?? 0,
           });
-          let donePayload: Record<string, unknown> = directorTurnToStreamDone(turn);
-          donePayload = await attachDeliverableArtifactToTurn(
+          await finalizeDirectorStreamTurn(
+            sse,
             req.user.id,
             operatorMessage,
             turn.reply,
+            directorTurnToStreamDone(turn),
+            turn.reasoning,
             featureFlags,
-            donePayload,
           );
-          await insertDirectorMessage({
-            userId: req.user.id,
-            role: "director",
-            content: turn.reply || "(empty)",
-            reasoning: turn.reasoning || null,
-            metadata: packDirectorMetadata(buildDirectorMetadataFromTurn(donePayload)),
-          });
-          writeSse("done", donePayload);
         } catch (fallbackErr) {
           log.error("director stream fallback failed", {
             error: getErrorMessage(fallbackErr),
           });
-          writeSse("error", { message: "Failed to generate response" });
+          if (!(await hasSubstantiveDirectorReplyForOperator(req.user.id, operatorMessage))) {
+            sse.write("error", { message: "Failed to generate response" });
+          }
+          sse.end();
         }
       }
-
-      if (!closed) res.end();
     } catch (e) {
       const errMsg = getErrorMessage(e);
       log.error("director stream setup failed", { error: errMsg });

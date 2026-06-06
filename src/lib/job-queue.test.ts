@@ -6,12 +6,25 @@ import {
   claimJob,
   completeJob,
   failJob,
+  formatJobWorkerSweepError,
 } from "./job-queue";
 
 // The job-queue functions accept the Drizzle handle as an argument, so we can
 // pass a hand-rolled fake that records the chained `.set()` / `.values()`
 // payloads. This lets us assert the money/identity-critical retry, exhaustion,
 // and atomic-claim semantics without a live Postgres.
+
+describe("formatJobWorkerSweepError", () => {
+  it("falls back when Error.message is empty", () => {
+    expect(formatJobWorkerSweepError(new Error(""))).toContain("database unreachable");
+  });
+
+  it("uses drizzle-style cause when message is blank", () => {
+    expect(formatJobWorkerSweepError({ message: "", cause: "Failed query: SELECT 1" })).toBe(
+      "Failed query: SELECT 1",
+    );
+  });
+});
 
 describe("backoffSeconds", () => {
   it("follows the 30s / 2m / 10m / 1h schedule", () => {

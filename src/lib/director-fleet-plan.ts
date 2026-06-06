@@ -10,6 +10,15 @@ import {
   type WorkspaceActionKind,
 } from "./workspace-planner";
 import { DIRECTOR_INTEGRATION_TOOLS } from "./director-integration-tools";
+import { wantsLongDeliverable } from "./director-deliverables";
+import { DIRECTOR_STUB_REPLY } from "./director-reply-utils";
+
+export class DirectorEmptyPlanError extends Error {
+  constructor() {
+    super("DIRECTOR_EMPTY_PLAN");
+    this.name = "DirectorEmptyPlanError";
+  }
+}
 
 /** Lightweight navigation suggestions the Director can surface as chips. */
 export const DIRECTOR_SUGGESTION_KINDS = [
@@ -242,10 +251,15 @@ ${deliverableGuidance ? `\n${deliverableGuidance}` : ""}`;
 export function normalizeDirectorFleetPlan(
   raw: Record<string, unknown>,
   fleet: DirectorFleetAgent[],
+  operatorMessage?: string,
 ): DirectorFleetPlan {
-  const reply =
-    clampString(raw.reply, 32_000) ||
-    "I'm here — tell me what you want to move forward and I'll orchestrate it.";
+  const explicit = clampString(raw.reply, 32_000);
+  if (!explicit) {
+    if (operatorMessage?.trim() && wantsLongDeliverable(operatorMessage)) {
+      throw new DirectorEmptyPlanError();
+    }
+  }
+  const reply = explicit || DIRECTOR_STUB_REPLY;
 
   const ownedIds = new Set(fleet.map((a) => a.id));
   const defaultAgentId = fleet[0]?.id;

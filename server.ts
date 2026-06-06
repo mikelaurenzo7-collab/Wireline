@@ -366,6 +366,13 @@ async function startServer() {
       await import("./src/services/presence-stream-service");
     await initPresenceDbListener();
     void startPresenceListener();
+
+    // Background worker — only when Postgres is reachable (avoids poll-loop spam in dev).
+    if (process.env.VERCEL !== "1") {
+      stopWorker = initJobWorker({ dbReady: true }) || undefined;
+    }
+  } else if (process.env.VERCEL !== "1") {
+    log.warn("job worker skipped — database not connected");
   }
 
   if (process.env.NODE_ENV !== "production") {
@@ -423,11 +430,6 @@ async function startServer() {
 
   process.on("SIGTERM", () => shutdown("SIGTERM"));
   process.on("SIGINT", () => shutdown("SIGINT"));
-}
-
-// Background worker — long-lived node only; Vercel uses /api/jobs/sweep cron instead.
-if (process.env.VERCEL !== "1") {
-  stopWorker = initJobWorker() || undefined;
 }
 
 // Safety nets

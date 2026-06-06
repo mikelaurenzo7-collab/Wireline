@@ -16,6 +16,7 @@ import {
 import type { DirectorIntegrationJob, DirectorProposedAction } from "./director-fleet-plan";
 import {
   buildDirectorFleetSystemPrompt,
+  DirectorEmptyPlanError,
   DIRECTOR_FLEET_TOOL,
   normalizeDirectorFleetPlan,
 } from "./director-fleet-plan";
@@ -276,6 +277,20 @@ export async function planDirectorTurnResilient(
   try {
     return await planDirectorTurn(input);
   } catch (e) {
+    if (e instanceof DirectorEmptyPlanError && wantsLongDeliverable(input.operatorMessage)) {
+      log.warn("director empty deliverable plan — retrying on sonnet", {
+        userId: input.userId,
+      });
+      return await planDirectorTurn({
+        ...input,
+        modelSelection:
+          input.modelSelection?.provider === "wireline"
+            ? { provider: "wireline", tier: "sonnet" }
+            : input.modelSelection,
+        forceDeep: false,
+        shallowOnly: true,
+      });
+    }
     if (tryOpusRetry) {
       log.warn("director opus turn failed, retrying on sonnet", {
         userId: input.userId,
@@ -446,7 +461,7 @@ export async function buildDirectorStreamContext(
     modelId: llm.openRouterModelId,
     researchSources: research?.sources,
     normalize: (raw) => {
-      const plan = normalizeDirectorFleetPlan(raw, input.fleet);
+      const plan = normalizeDirectorFleetPlan(raw, input.fleet, input.operatorMessage);
       const modelMeta = llm.modelKind === "custom" ? ("sonnet" as const) : llm.modelKind;
       return {
         mode: "fleet",

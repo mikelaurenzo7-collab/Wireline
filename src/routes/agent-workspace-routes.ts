@@ -246,13 +246,9 @@ router.post(
         .limit(1);
       if (!agent) return res.status(404).json({ error: "Agent not found" });
 
-      // Set up SSE headers
-      res.setHeader("Content-Type", "text/event-stream");
-      res.setHeader("Cache-Control", "no-cache");
-      res.setHeader("Connection", "keep-alive");
-      res.setHeader("Content-Encoding", "none");
-
-      res.write(`event: meta\ndata: ${JSON.stringify({ agentId, agentName: agent.name })}\n\n`);
+      const { createSseStream, writeSseBootstrap } = await import("../lib/sse-stream");
+      const sse = createSseStream(req, res);
+      writeSseBootstrap(sse, { agentId, agentName: agent.name });
 
       // Load history
       const priorMessages = await drizzle
@@ -306,16 +302,6 @@ router.post(
         .join("\n");
       const user = `${transcript ? `Conversation:\n${transcript}\n\n` : ""}Operator: ${operatorMessage}`;
 
-      let closed = false;
-      req.on("close", () => {
-        closed = true;
-      });
-
-      const writeSse = (event: string, data: unknown) => {
-        if (closed) return;
-        res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-      };
-
       try {
         const { result, thinking, thinkingDurationMs } = await runStructuredStream(
           {
@@ -326,32 +312,35 @@ router.post(
             maxTokens: 1500,
           },
           {
-            onThinkingStart: () => writeSse("thinking_start", {}),
-            onThinkingChunk: (text) => writeSse("thinking_chunk", { text }),
+            onThinkingStart: () => sse.write("thinking_start", {}),
+            onThinkingChunk: (text) => sse.write("thinking_chunk", { text }),
             onThinkingEnd: (fullText, durationMs) =>
-              writeSse("thinking_end", { thinking: fullText, durationMs }),
-            onResult: (r) => writeSse("reply", r),
+              sse.write("thinking_end", { thinking: fullText, durationMs }),
+            onResult: (r) => sse.write("reply", r),
           },
         );
 
         const reply = typeof result?.reply === "string" ? result.reply.trim() : "";
 
-        // Persist agent reply
-        await drizzle.insert(schema.agentConversationMessages).values({
-          userId: req.user.id,
-          agentId,
-          role: "agent",
-          content: reply || "(empty)",
-          reasoning: thinking || null,
-        });
-
-        writeSse("done", { reply, reasoning: thinking, thinkingDurationMs });
+        sse.write("done", { reply, reasoning: thinking, thinkingDurationMs });
+        sse.end();
+        void drizzle
+          .insert(schema.agentConversationMessages)
+          .values({
+            userId: req.user.id,
+            agentId,
+            role: "agent",
+            content: reply || "(empty)",
+            reasoning: thinking || null,
+          })
+          .catch((err) =>
+            log.error("workspace stream persist failed", { error: getErrorMessage(err), agentId }),
+          );
       } catch (e) {
         log.error("workspace stream failed", { error: getErrorMessage(e), agentId });
-        writeSse("error", { message: "Failed to generate response" });
+        sse.write("error", { message: "Failed to generate response" });
+        sse.end();
       }
-
-      if (!closed) res.end();
     } catch (e) {
       const errMsg = getErrorMessage(e);
       log.error("workspace stream setup failed", { error: errMsg });
