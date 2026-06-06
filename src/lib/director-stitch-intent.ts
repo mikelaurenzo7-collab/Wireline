@@ -10,6 +10,12 @@ import {
 export type StitchDeviceType = "DESKTOP" | "MOBILE" | "TABLET" | "AGNOSTIC";
 export type StitchMediaOperation = "generate" | "edit" | "variants" | "build_site";
 export type StitchModelId = "GEMINI_3_FLASH" | "GEMINI_3_1_PRO";
+export type StitchVariantAspect =
+  | "LAYOUT"
+  | "COLOR_SCHEME"
+  | "IMAGES"
+  | "TEXT_FONT"
+  | "TEXT_CONTENT";
 
 export interface StitchSession {
   projectId: string;
@@ -72,9 +78,9 @@ export function resolveStitchMediaOperation(
 export function resolveStitchVariantOptions(message: string): {
   variantCount: number;
   creativeRange: "REFINE" | "EXPLORE" | "REIMAGINE";
-  aspects: string[];
+  aspects: StitchVariantAspect[];
 } {
-  const aspects: string[] = [];
+  const aspects: StitchVariantAspect[] = [];
   const lower = message.toLowerCase();
   if (/layout/.test(lower)) aspects.push("LAYOUT");
   if (/color/.test(lower)) aspects.push("COLOR_SCHEME");

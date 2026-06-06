@@ -57,7 +57,12 @@ async function main() {
       replyStart: String(data.reply || "").slice(0, 100),
     }),
   );
-  process.exit(stitch ? 0 : 1);
+  const ok = stitch && previews > 0;
+  if (!ok) {
+    console.error("FAIL: stitch turn without packaged previews", { previews, modelLabel: data.modelLabel });
+    process.exit(1);
+  }
+  process.exit(0);
 }
 
 main().catch((e) => {

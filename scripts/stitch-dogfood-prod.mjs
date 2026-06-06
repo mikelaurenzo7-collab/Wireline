@@ -117,12 +117,18 @@ async function main() {
   const clearBtn = page.getByRole("button", { name: /clear/i });
   if (await clearBtn.count()) {
     await clearBtn.first().click().catch(() => {});
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(2500);
+    for (let i = 0; i < 8; i++) {
+      const body = await bodyText(page);
+      if (!/DIRECTOR/i.test(body) || /Orchestrate your fleet/i.test(body)) break;
+      await page.waitForTimeout(1500);
+    }
   }
 
   const composer = page.getByRole("textbox").last();
   await composer.waitFor({ state: "visible", timeout: 20_000 });
   await composer.fill(PROMPT);
+  const sentAt = Date.now();
   await page.getByRole("button", { name: /send/i }).click();
 
   await page.waitForTimeout(3000);
@@ -149,7 +155,13 @@ async function main() {
     const hasImg = (await page.locator(".wl-stitch-device-screen img, .wl-stitch-gallery img").count()) > 0;
     const hasIframe = (await page.locator(".wl-stitch-device-screen iframe").count()) > 0;
     const assetsPending = /assets pending/i.test(text);
-    const stitchFail = /couldn't finish|couldn't complete/i.test(text);
+    const working = /Director is working|Rendering screen|Composing layout|WIRELINE DESIGN/i.test(
+      text,
+    );
+    const stitchFail =
+      !working &&
+      elapsed > 30 &&
+      /couldn't finish|couldn't complete/i.test(text);
     const sendFail = /Couldn't send|Stream interrupted/i.test(text);
 
     const phase =

@@ -1,6 +1,6 @@
 /**
- * Thin HTTP client for the Google Stitch MCP endpoint.
- * Uses API key auth (X-Goog-Api-Key) — no SDK required.
+ * Stitch response parsers and legacy HTTP MCP client.
+ * Production Director flows use @google/stitch-sdk via google-stitch-sdk-client.ts.
  */
 import {
   getGoogleStitchApiKey,
@@ -68,7 +68,7 @@ export function extractStitchScreens(payload: unknown): Array<Record<string, unk
     let projectId = "";
     const nameRaw = o.name;
     if (typeof nameRaw === "string") {
-      const match = nameRaw.match(/projects\/(\d+)\/screens\/(\d+)/);
+      const match = nameRaw.match(/projects\/([^/]+)\/screens\/([^/]+)/);
       if (match) {
         projectId = match[1]!;
         screenId = match[2]!;
@@ -84,7 +84,7 @@ export function extractStitchScreens(payload: unknown): Array<Record<string, unk
         .replace(/^projects\//, "")
         .trim();
     }
-    if (screenId && /^\d+$/.test(screenId) && !seen.has(screenId)) {
+    if (screenId && /^[a-zA-Z0-9_-]+$/.test(screenId) && !seen.has(screenId)) {
       seen.add(screenId);
       found.push({ ...o, screenId, projectId: projectId || undefined });
     }
@@ -117,7 +117,7 @@ export function extractStitchProjects(payload: unknown): StitchProjectRef[] {
       const raw = o[key];
       if (typeof raw === "string") {
         projectId = raw.replace(/^projects\//, "").trim();
-        if (/^\d+$/.test(projectId)) break;
+        if (/^[a-zA-Z0-9_-]+$/.test(projectId)) break;
         projectId = "";
       }
     }
@@ -279,7 +279,7 @@ export function extractStitchProjectId(payload: unknown): string | null {
       const raw = o[key];
       if (typeof raw === "string") {
         const id = raw.replace(/^projects\//, "").trim();
-        if (/^\d+$/.test(id)) return id;
+        if (/^[a-zA-Z0-9_-]+$/.test(id)) return id;
       }
     }
     for (const value of Object.values(o)) {

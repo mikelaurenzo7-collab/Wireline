@@ -55,6 +55,15 @@ describe("google stitch mcp parsing", () => {
     expect(merged.screenshot).toBeDefined();
   });
 
+  it("extracts UUID-style screen ids from resource names", () => {
+    const screens = extractStitchScreens({
+      screens: [{ name: "projects/4044680601076201931/screens/98b50e2ddc9943efb387052637738f61" }],
+    });
+    expect(screens).toHaveLength(1);
+    expect(screens[0]?.screenId).toBe("98b50e2ddc9943efb387052637738f61");
+    expect(screens[0]?.projectId).toBe("4044680601076201931");
+  });
+
   it("prefers TEXT_TO_UI_PRO when listing projects", () => {
     const projects = extractStitchProjects({
       projects: [
