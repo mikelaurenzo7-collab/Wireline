@@ -51,7 +51,9 @@ export default function InsightsView() {
 
   const wrap = (label: string, node: React.ReactNode) => (
     <WidgetBoundary label={label}>
-      <div className="flex-1 min-h-0 w-full scroll-viewport scroll-pb-safe pr-1 pb-4">{node}</div>
+      <div className="flex flex-col flex-1 min-h-0 w-full scroll-viewport scroll-pb-safe pr-1 pb-4">
+        {node}
+      </div>
     </WidgetBoundary>
   );
 

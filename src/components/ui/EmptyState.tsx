@@ -188,5 +188,5 @@ export function EmptyState({
   // same centered balance on mobile, where that flex height chain collapses
   // and `flex-1`/`h-full` would otherwise resolve to zero. Together they fix
   // mobile without regressing the desktop centering.
-  return <div className="flex flex-1 flex-col w-full min-h-[55vh] justify-center">{content}</div>;
+  return <div className="flex flex-1 flex-col w-full min-h-[75vh] justify-center">{content}</div>;
 }
