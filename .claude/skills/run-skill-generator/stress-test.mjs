@@ -116,7 +116,7 @@ const STITCH_SVG = `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="ht
 
 // Multiple Director conversation scenarios to stress the chat UI
 function buildChatScenario(kind) {
-  const base = { artifacts: [], fleet: MOCK_AGENTS, featureFlags: { toolExecution: true }, degraded: false };
+  const base = { artifacts: [], fleet: MOCK_AGENTS, featureFlags: { toolExecution: true, stitchMedia: true, creativeTools: true, artifactsPanel: true }, degraded: false };
   const ts = (offset) => new Date(Date.now() - offset * 1000).toISOString();
 
   if (kind === "stitch") {
@@ -779,6 +779,155 @@ async function suiteClientRoleplay() {
     if (!found) e.flags.push("ELEMENT_NOT_FOUND: director bubble at tablet width");
     await page.setViewportSize({ width: VW, height: VH });
   });
+}
+
+// ─── Suite: Stitch Live Render ────────────────────────────────────────────────
+// Simulates the real Stitch render flow: user types a design request, the live
+// render panel appears with the 3–5 minute hint and animated phases, then the
+// rendered preview gallery replaces it once the (delayed) POST resolves.
+//
+// The default chat scenario mock returns immediately. Here we install a request
+// interceptor that DELAYS the POST /api/director/messages response by 5 seconds
+// so the live session is observable in real time. This mirrors what a real user
+// sees: the elapsed counter ticks, phases advance, then the final design lands.
+async function suiteStitchLiveRender() {
+  console.log("\n▸ Suite: stitch-live");
+
+  // Stash existing chatScenario, set up a custom Stitch-completion payload.
+  _chatScenario = "stitch";
+
+  // Install a delayed POST handler — must be a more-specific route than the
+  // global /api/* handler. Playwright runs the most-recently-added route first.
+  await context.route("**/api/director/messages", async (route) => {
+    const req = route.request();
+    if (req.method() === "POST") {
+      // Delay 5s so the live panel is captured live. (Real Stitch takes 3–5 min.)
+      await new Promise((r) => setTimeout(r, 5000));
+      const completedScenario = buildChatScenario("stitch");
+      // Append the newly rendered Stitch preview as the latest assistant message
+      const newPreview = {
+        conceptId: "stitch-live-1",
+        title: "Brightline — Live Render Complete",
+        rationale: "Fresh Wireline Design render — desktop, conversion-focused.",
+        kind: "stitch",
+        previewDataUrl: STITCH_SVG,
+        htmlDownloadUrl: "/api/director/files/stitch-live-1.html?inline=1",
+        imageDownloadUrl: "/api/director/files/stitch-live-1.png",
+        deviceType: "DESKTOP",
+      };
+      const renderedReply = {
+        id: `d-live-${Date.now()}`,
+        role: "director",
+        content: "Here's your rendered design — Wireline Design just packaged the export.",
+        createdAt: new Date().toISOString(),
+        model: "opus",
+        modelLabel: "Opus",
+        previews: [newPreview],
+      };
+      return await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ...completedScenario, messages: [...completedScenario.messages, renderedReply] }),
+      });
+    }
+    // GETs use the default scenario fast-path
+    return await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(buildChatScenario(_chatScenario)),
+    });
+  });
+
+  await step("stitch-live", "Composer renders + can type design request", async (e) => {
+    await nav("/chat");
+    await page.waitForTimeout(1200);
+    const textarea = page.locator("textarea, [contenteditable='true'], [role='textbox']").first();
+    const found = await textarea.isVisible().catch(() => false);
+    if (!found) { e.flags.push("ELEMENT_NOT_FOUND: chat composer"); return; }
+    await textarea.click();
+    // This phrase matches `wantsStitchMediaRequest` — "design a landing page" hits
+    // STITCH_UI_MEDIA_SIGNAL via the "design ... landing" pattern.
+    await textarea.fill("Design a landing page for my home services brand, Brightline. Make it mobile-first with a hero and three feature cards.");
+    await page.waitForTimeout(300);
+  });
+
+  await step("stitch-live", "Send button triggers live render panel", async (e) => {
+    const sendBtn = page.getByRole("button", { name: /send message/i }).first();
+    const found = await sendBtn.isVisible().catch(() => false);
+    if (!found) { e.flags.push("ELEMENT_NOT_FOUND: Send message button"); return; }
+    await sendBtn.click();
+    // Wait briefly for state to flip to stitchRendering=true
+    await page.waitForTimeout(800);
+  });
+
+  await step("stitch-live", "Live render badge — 'Wireline Design' label visible", async (e) => {
+    const badge = page.locator(".wl-stitch-live-session").getByText(/wireline design/i).first();
+    const visible = await badge.isVisible({ timeout: 4000 }).catch(() => false);
+    if (!visible) e.flags.push("ELEMENT_NOT_FOUND: 'Wireline Design' badge label");
+  });
+
+  await step("stitch-live", "Live render — 3–5 minute hint visible", async (e) => {
+    const hint = page.getByText(/3.{0,3}5 minutes|typically takes/i).first();
+    const visible = await hint.isVisible({ timeout: 3000 }).catch(() => false);
+    if (!visible) e.flags.push("ELEMENT_NOT_FOUND: 3–5 minute hint text");
+  });
+
+  await step("stitch-live", "Live render — phase text visible (Composing/Rendering/etc)", async (e) => {
+    const phase = page.locator(".wl-stitch-live-session").getByText(/composing|rendering|polishing|applying|packaging/i).first();
+    const visible = await phase.isVisible({ timeout: 3000 }).catch(() => false);
+    if (!visible) e.flags.push("ELEMENT_NOT_FOUND: phase text in live session");
+  });
+
+  await step("stitch-live", "Live render — elapsed seconds counter ticks", async (e) => {
+    const counter = page.locator(".wl-stitch-live-session").getByText(/^\d+s$/).first();
+    const visible = await counter.isVisible({ timeout: 3000 }).catch(() => false);
+    if (!visible) { e.flags.push("ELEMENT_NOT_FOUND: elapsed seconds counter"); return; }
+    const first = (await counter.textContent().catch(() => "0s")) || "0s";
+    await page.waitForTimeout(1500);
+    const second = (await counter.textContent().catch(() => "0s")) || "0s";
+    const firstSec = parseInt(first.replace("s", ""), 10) || 0;
+    const secondSec = parseInt(second.replace("s", ""), 10) || 0;
+    if (secondSec <= firstSec) e.flags.push("INTERACTION_FAILED: elapsed counter did not advance");
+  });
+
+  await step("stitch-live", "Live render — operator prompt is shown back to user", async (e) => {
+    const echoed = page.locator(".wl-stitch-live-session").getByText(/home services brand|Brightline/i).first();
+    const visible = await echoed.isVisible({ timeout: 2000 }).catch(() => false);
+    if (!visible) e.flags.push("ELEMENT_NOT_FOUND: operator prompt echoed in live session");
+  });
+
+  await step("stitch-live", "Live render — device chrome shimmer is visible", async (e) => {
+    const device = page.locator(".wl-stitch-device.wl-stitch-live-shimmer").first();
+    const visible = await device.isVisible({ timeout: 2000 }).catch(() => false);
+    if (!visible) e.flags.push("ELEMENT_NOT_FOUND: device chrome shimmer container");
+  });
+
+  await step("stitch-live", "Successful render: gallery replaces live panel", async (e) => {
+    // POST mock fulfils after 5s — wait up to 12s for the live session to dismount
+    const livePanel = page.locator(".wl-stitch-live-session");
+    const gone = await livePanel.first().waitFor({ state: "detached", timeout: 12000 }).then(() => true).catch(() => false);
+    if (!gone) { e.flags.push("INTERACTION_FAILED: live session did not dismount after POST resolved"); return; }
+    // Verify the gallery (final state) is now visible — Screenshot tab is the default
+    const gallery = page.locator(".wl-stitch-device, [class*='stitch-gallery'], [class*='wl-stitch']").first();
+    const galleryUp = await gallery.isVisible({ timeout: 5000 }).catch(() => false);
+    if (!galleryUp) e.flags.push("ELEMENT_NOT_FOUND: stitch gallery did not appear after render");
+  });
+
+  await step("stitch-live", "Rendered gallery — Screenshot/Live HTML/Export tabs present", async (e) => {
+    const screenshot = await page.getByRole("button", { name: /screenshot/i }).first().isVisible().catch(() => false);
+    const exportTab = await page.getByRole("button", { name: /^export$/i }).first().isVisible().catch(() => false);
+    if (!screenshot) e.flags.push("ELEMENT_NOT_FOUND: Screenshot tab in rendered gallery");
+    if (!exportTab) e.flags.push("ELEMENT_NOT_FOUND: Export tab in rendered gallery");
+  });
+
+  await step("stitch-live", "Rendered gallery — design preview image is rendered", async (e) => {
+    const img = page.locator(".wl-stitch-device img, [class*='wl-stitch'] img").first();
+    const visible = await img.isVisible({ timeout: 4000 }).catch(() => false);
+    if (!visible) e.flags.push("ELEMENT_NOT_FOUND: rendered design preview image");
+  });
+
+  // Reset to default: remove the delayed route so subsequent suites use the fast mock.
+  await context.unroute("**/api/director/messages");
 }
 
 // ─── Suite: Agents ────────────────────────────────────────────────────────────
@@ -1504,6 +1653,7 @@ async function main() {
   // Run suites
   if (!SUITES_FILTER || SUITES_FILTER.has("chat")) await suitChat();
   if (!SUITES_FILTER || SUITES_FILTER.has("roleplay")) await suiteClientRoleplay();
+  if (!SUITES_FILTER || SUITES_FILTER.has("stitch-live")) await suiteStitchLiveRender();
   if (!SUITES_FILTER || SUITES_FILTER.has("agents")) await suiteAgents();
   if (!SUITES_FILTER || SUITES_FILTER.has("training")) await suiteTraining();
   if (!SUITES_FILTER || SUITES_FILTER.has("ops")) await suiteOps();

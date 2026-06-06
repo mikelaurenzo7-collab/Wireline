@@ -302,9 +302,16 @@ async function runStitchOperation(
       );
     }
     onProgress?.("Generating Stitch design variants…");
+    // SDK 0.3.5 declares `VariantOptions.aspects` with missing parens — the union
+    // widens to either a single literal OR `"TEXT_CONTENT"[]`, instead of the
+    // intended `(union)[]`. The runtime accepts a mixed-aspect array, so we cast
+    // through `unknown` at the call site to bypass the upstream typing bug.
     const opts = resolveStitchVariantOptions(input.operatorMessage);
     const variants = await withStitchAbort(signal, () =>
-      project.screen(screenId).variants(prompt, opts, deviceType, modelId),
+      project
+        .screen(screenId)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- SDK type bug (see comment above)
+        .variants(prompt, opts as any, deviceType, modelId),
     );
     if (variants.length === 0) {
       throw new GoogleStitchError("Stitch returned no variants", "VALIDATION_ERROR", true);
