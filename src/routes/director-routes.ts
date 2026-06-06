@@ -81,6 +81,7 @@ import {
 import { persistDirectorDeliverableArtifact } from "../lib/director-deliverable-artifacts";
 import type { DirectorFeatureFlags } from "../lib/director-feature-flags";
 import { wantsLongDeliverable, wantsStitchMediaRequest } from "../lib/director-deliverables";
+import { WIRELINE_STITCH_UI } from "../lib/wireline-director-design";
 import { tryDirectorStitchTurn } from "../lib/director-stitch-service";
 import {
   collapseDirectorThreadDuplicates,
@@ -778,7 +779,7 @@ router.post(
             reply = stitchTurn.reply;
             previews = stitchTurn.previews;
             artifacts = stitchTurn.artifacts;
-            modelLabel = "Google Stitch";
+            modelLabel = WIRELINE_STITCH_UI.modelLabel;
             modelProvider = "wireline";
             thinkingDurationMs = stitchTurn.durationMs;
             reasoning = stitchTurn.thinkingSummary;
@@ -1074,7 +1075,7 @@ router.post(
       if (featureFlags.stitchMedia && wantsStitchMediaRequest(operatorMessage)) {
         sse.write("meta", {
           model: "stitch",
-          modelLabel: "Google Stitch",
+          modelLabel: WIRELINE_STITCH_UI.modelLabel,
           modelProvider: "wireline",
           deep: false,
           mode: "fleet",
@@ -1096,7 +1097,7 @@ router.post(
             previews: stitchTurn.previews,
             artifacts: stitchTurn.artifacts,
             model: "sonnet",
-            modelLabel: "Google Stitch",
+            modelLabel: WIRELINE_STITCH_UI.modelLabel,
             modelProvider: "wireline",
             mode: "fleet",
             thinkingDurationMs: stitchTurn.durationMs,
@@ -1115,13 +1116,13 @@ router.post(
           return;
         }
 
-        sse.write("thinking_end", { thinking: "Stitch did not return a screen", durationMs: 0 });
+        sse.write("thinking_end", { thinking: "Design render did not complete", durationMs: 0 });
         const stitchFailReply = [
-          "**Google Stitch** could not finish this render in time.",
+          "I couldn't finish this design render in time.",
           "",
-          "1. Create a **TEXT_TO_UI** project at [stitch.withgoogle.com](https://stitch.withgoogle.com)",
-          "2. Copy the project ID from the URL into **GOOGLE_STITCH_PROJECT_ID** (Vercel env)",
-          "3. Send the same prompt again — no capability chip needed",
+          "Your message is saved — try the same prompt again in a minute, or ask for a smaller scope (e.g. hero section only).",
+          "",
+          "If it keeps failing, check that UI generation is enabled for your workspace or contact support.",
         ].join("\n");
         await finalizeDirectorStreamTurn(
           sse,
@@ -1131,7 +1132,7 @@ router.post(
           {
             reply: stitchFailReply,
             model: "sonnet",
-            modelLabel: "Google Stitch",
+            modelLabel: WIRELINE_STITCH_UI.modelLabel,
             modelProvider: "wireline",
             mode: "fleet",
           },

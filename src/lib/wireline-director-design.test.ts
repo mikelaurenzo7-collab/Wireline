@@ -15,6 +15,7 @@ import {
   DIRECTOR_COMPOSER_HINTS,
   DIRECTOR_COMPOSER_ACCESSORY_HINTS,
   DIRECTOR_COMPOSER_CONTEXT,
+  WIRELINE_STITCH_UI,
   LIVE_FEED_LABELS,
   LIVE_ORCHESTRA_COPY,
   DIRECTOR_STARTER_PROMPTS_FEATURED_COUNT,
@@ -202,5 +203,12 @@ describe("Wireline Director design contract", () => {
   it("composer context copy includes send hint and toolbar label", () => {
     expect(DIRECTOR_COMPOSER_CONTEXT.sendHint).toMatch(/Enter/i);
     expect(DIRECTOR_COMPOSER_CONTEXT.toolbarLabel).toBeTruthy();
+  });
+
+  it("stitch UI copy is Wireline-branded without vendor marketing", () => {
+    expect(WIRELINE_STITCH_UI.badgeLabel).toBe("Wireline Design");
+    expect(WIRELINE_STITCH_UI.deviceChromeLabel).not.toMatch(/google/i);
+    expect(WIRELINE_STITCH_UI.loadingHint).not.toMatch(/api key/i);
+    expect(WIRELINE_STITCH_UI.loadingPhases.join(" ")).not.toMatch(/google/i);
   });
 });

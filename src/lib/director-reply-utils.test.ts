@@ -23,7 +23,7 @@ describe("director-reply-utils", () => {
           {
             role: "director",
             content: good,
-            modelLabel: "Google Stitch",
+            modelLabel: "Wireline Design",
             previews: [{ kind: "stitch" }],
           },
         ],

@@ -22,6 +22,7 @@ import {
   pickCompatibleStitchProject,
 } from "./google-stitch-mcp-client";
 import { getGoogleStitchProjectId, isGoogleStitchConfigured } from "./google-stitch-config";
+import { WIRELINE_STITCH_UI } from "./wireline-director-design";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 
@@ -117,7 +118,10 @@ async function fetchScreenAssetsWithRetry(
   screenId: string,
   signal?: AbortSignal,
 ): Promise<{ html?: Buffer; image?: Buffer; screen: Record<string, unknown> }> {
-  const delaysMs = [0, 3_000, 5_000, 8_000, 10_000, 12_000];
+  const delaysMs = [
+    0, 2_000, 4_000, 6_000, 8_000, 10_000, 12_000, 15_000, 18_000, 22_000, 26_000, 30_000, 35_000,
+    40_000, 45_000,
+  ];
   let last = await fetchScreenAssets(client, projectId, screenId, signal);
   for (let i = 1; i < delaysMs.length; i++) {
     if (last.html && last.image) return last;
@@ -363,18 +367,18 @@ function buildStitchReply(
           ? "multi-page site build"
           : "UI screen";
   return [
-    `I rendered your **${opLabel}** with **Google Stitch** (${deviceType.toLowerCase()}).`,
+    `I built your **${opLabel}** (${deviceType.toLowerCase()}).`,
     "",
     "**Included**",
-    "- Screenshot preview in this thread",
+    "- Live preview in this thread",
     "- Downloadable HTML/CSS prototype in artifacts",
     "",
     "**What you can ask next**",
-    "- “Make the hero darker” or “add a booking CTA” → Stitch edit",
-    "- “Show 3 color variants” → Stitch variants",
-    "- “Build out the full multi-page site” → Stitch site build",
+    "- “Make the hero darker” or “add a booking CTA”",
+    "- “Show 3 color variants”",
+    "- “Build out the full multi-page site”",
     "",
-    "No capability chip required — just describe the change in plain language.",
+    "Describe changes in plain language — no capability chip required.",
   ].join("\n");
 }
 
@@ -502,10 +506,15 @@ export async function runDirectorStitchTurn(input: {
           : imageDownloadUrl;
     }
 
+    if (!htmlArtifactId && !imageArtifactId) {
+      thinkingLines.push(`Screen ${screenId} (${deviceType}) — assets pending`);
+      continue;
+    }
+
     previews.push({
       conceptId: screenId,
       title,
-      rationale: "Google Stitch",
+      rationale: WIRELINE_STITCH_UI.modelLabel,
       kind: "stitch",
       deviceType,
       previewDataUrl: previewDataUrl || imageDownloadUrl || htmlDownloadUrl || "",

@@ -1897,7 +1897,7 @@ export default function DirectorWorkspace({
             </div>
           )}
 
-          {/* Google Stitch render — dedicated live panel (non-streaming POST) */}
+          {/* Wireline Design render — dedicated live panel (non-streaming POST) */}
           {isSending && stitchRendering && (
             <div className={WL_DIRECTOR_CLASSES.threadColumn}>
               <DirectorStitchLiveSession operatorPrompt={stitchPrompt} />

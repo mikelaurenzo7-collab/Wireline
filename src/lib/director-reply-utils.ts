@@ -1,4 +1,12 @@
+import { WIRELINE_STITCH_UI } from "./wireline-director-design";
+
 /** Shared Director reply heuristics (safe for client + server). */
+
+const STITCH_MODEL_LABELS = new Set([WIRELINE_STITCH_UI.modelLabel, "Google Stitch"]);
+
+export function isStitchModelLabel(label?: string): boolean {
+  return Boolean(label && STITCH_MODEL_LABELS.has(label));
+}
 
 export const DIRECTOR_STUB_REPLY =
   "I'm here — tell me what you want to move forward and I'll orchestrate it.";
@@ -44,7 +52,7 @@ export function operatorTurnHasDirectorReply(
     if (options?.requireStitch) {
       const previews = Array.isArray(m.previews) ? m.previews : [];
       const isStitch =
-        m.modelLabel === "Google Stitch" ||
+        isStitchModelLabel(m.modelLabel) ||
         previews.some(
           (p) =>
             !!p &&

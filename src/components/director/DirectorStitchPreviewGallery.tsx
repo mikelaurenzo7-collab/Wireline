@@ -1,5 +1,6 @@
 /**
- * In-chat Google Stitch render — device frame, live HTML iframe, variants carousel.
+ * In-chat Wireline UI preview — device frame, live HTML iframe, variants carousel.
+ * The device frame only appears once screenshot or HTML is ready to render.
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -9,20 +10,16 @@ import {
   Download,
   ExternalLink,
   LayoutTemplate,
-  Loader2,
   Monitor,
-  Smartphone,
   Sparkles,
 } from "lucide-react";
 import type { DirectorPreviewMeta } from "../../lib/director-message-metadata";
-import {
-  artifactIdFromDirectorSignedUrl,
-  fetchDirectorArtifactSignedUrl,
-  useDirectorArtifactBlobSrc,
-} from "../../hooks/useDirectorArtifactInlineSrc";
+import { fetchDirectorArtifactSignedUrl } from "../../hooks/useDirectorArtifactInlineSrc";
+import { useStitchPreviewReady } from "../../hooks/useStitchPreviewReady";
 import { cn } from "../../lib/utils";
-import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
+import { WL_DIRECTOR_CLASSES, WIRELINE_STITCH_UI } from "../../lib/wireline-director-design";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import DirectorStitchLiveSession from "./DirectorStitchLiveSession";
 
 export interface DirectorStitchPreviewGalleryProps {
   previews: DirectorPreviewMeta[];
@@ -51,18 +48,6 @@ function deviceLabel(device?: DirectorPreviewMeta["deviceType"]): string {
   }
 }
 
-function resolveImageArtifactId(preview: DirectorPreviewMeta): string | undefined {
-  return preview.imageArtifactId ?? artifactIdFromDirectorSignedUrl(preview.imageDownloadUrl);
-}
-
-function resolveHtmlArtifactId(preview: DirectorPreviewMeta): string | undefined {
-  return preview.htmlArtifactId ?? artifactIdFromDirectorSignedUrl(preview.htmlDownloadUrl);
-}
-
-function hasEmbeddedImageData(preview: DirectorPreviewMeta): boolean {
-  return Boolean(preview.previewDataUrl?.startsWith("data:"));
-}
-
 function DeviceChrome({
   device,
   children,
@@ -82,57 +67,33 @@ function DeviceChrome({
         <span className="wl-stitch-device-dot" />
         <span className="wl-stitch-device-dot wl-stitch-device-dot--mid" />
         <span className="wl-stitch-device-dot wl-stitch-device-dot--dim" />
-        <span className="wl-stitch-device-url">stitch.withgoogle.com</span>
+        <span className="wl-stitch-device-url">{WIRELINE_STITCH_UI.deviceChromeLabel}</span>
       </div>
       <div className="wl-stitch-device-screen">{children}</div>
     </div>
   );
 }
 
-function StitchPreviewLoading({ label }: { label: string }) {
-  return (
-    <div className="flex flex-col items-center gap-2 py-16 text-muted/60">
-      <Loader2 className="w-8 h-8 text-brand/40 animate-spin" aria-hidden />
-      <p className="text-[11px]">{label}</p>
-    </div>
-  );
-}
+function StitchPreviewPane({
+  preview,
+  ready,
+}: {
+  preview: DirectorPreviewMeta;
+  ready: ReturnType<typeof useStitchPreviewReady>;
+}) {
+  const hasRenderableImage = Boolean(ready.imageSrc);
+  const hasRenderableHtml = Boolean(ready.htmlSrc);
 
-function StitchPreviewPane({ preview }: { preview: DirectorPreviewMeta }) {
-  const imageArtifactId = resolveImageArtifactId(preview);
-  const htmlArtifactId = resolveHtmlArtifactId(preview);
-  const embeddedImage = hasEmbeddedImageData(preview);
-
-  const imageBlob = useDirectorArtifactBlobSrc(imageArtifactId, {
-    inline: true,
-    enabled: !embeddedImage && Boolean(imageArtifactId),
-  });
-  const htmlBlob = useDirectorArtifactBlobSrc(htmlArtifactId, {
-    inline: true,
-    enabled: Boolean(htmlArtifactId),
-  });
-
-  const imageSrc = embeddedImage
-    ? preview.previewDataUrl
-    : (imageBlob.src ?? (imageBlob.error ? preview.imageDownloadUrl : undefined));
-
-  const htmlSrc = htmlBlob.src ?? (htmlBlob.error ? preview.htmlDownloadUrl : undefined);
-
-  const hasRenderableImage = Boolean(imageSrc);
-  const hasRenderableHtml = Boolean(htmlSrc);
-  const imageLoading = !embeddedImage && imageArtifactId && imageBlob.loading;
-  const htmlLoading = htmlArtifactId && htmlBlob.loading;
-
-  const [tab, setTab] = useState<StitchTab>("design");
+  const [tab, setTab] = useState<StitchTab>(hasRenderableImage ? "design" : "live");
   const autoTabbedRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (autoTabbedRef.current === preview.conceptId) return;
-    if (hasRenderableHtml && !hasRenderableImage && !imageLoading) {
+    if (hasRenderableHtml && !hasRenderableImage) {
       autoTabbedRef.current = preview.conceptId;
       setTab("live");
     }
-  }, [preview.conceptId, hasRenderableHtml, hasRenderableImage, imageLoading]);
+  }, [preview.conceptId, hasRenderableHtml, hasRenderableImage]);
 
   const openArtifactDownload = async (artifactId: string | undefined, inline: boolean) => {
     if (!artifactId) return;
@@ -142,15 +103,16 @@ function StitchPreviewPane({ preview }: { preview: DirectorPreviewMeta }) {
   };
 
   const tabs = useMemo(() => {
-    const list: { id: StitchTab; label: string; icon: React.ElementType }[] = [
-      { id: "design", label: "Screenshot", icon: LayoutTemplate },
-    ];
-    if (hasRenderableHtml || htmlArtifactId || preview.htmlDownloadUrl) {
+    const list: { id: StitchTab; label: string; icon: React.ElementType }[] = [];
+    if (hasRenderableImage) {
+      list.push({ id: "design", label: "Screenshot", icon: LayoutTemplate });
+    }
+    if (hasRenderableHtml) {
       list.push({ id: "live", label: "Live HTML", icon: Monitor });
     }
     list.push({ id: "export", label: "Export", icon: Download });
     return list;
-  }, [hasRenderableHtml, htmlArtifactId, preview.htmlDownloadUrl]);
+  }, [hasRenderableHtml, hasRenderableImage]);
 
   return (
     <>
@@ -187,59 +149,31 @@ function StitchPreviewPane({ preview }: { preview: DirectorPreviewMeta }) {
           transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
           className="rounded-md border border-brand/15 bg-gradient-to-b from-paper/98 to-paper/90 dark:from-velvet/70 dark:to-velvet/50 overflow-hidden shadow-[0_20px_50px_-24px_rgba(107,47,168,0.35)]"
         >
-          {tab === "design" && (
+          {tab === "design" && hasRenderableImage && (
             <DeviceChrome device={preview.deviceType}>
-              <div className="relative wl-checkerboard min-h-[280px] flex items-center justify-center p-2">
-                {imageLoading ? (
-                  <StitchPreviewLoading label="Loading screenshot…" />
-                ) : hasRenderableImage ? (
-                  <img
-                    src={imageSrc}
-                    alt={preview.title}
-                    className="max-h-[min(52vh,520px)] w-full object-contain object-top"
-                    loading="lazy"
-                    onError={() => {
-                      if (hasRenderableHtml || htmlArtifactId) setTab("live");
-                    }}
-                  />
-                ) : (
-                  <div className="flex flex-col items-center gap-2 py-16 text-muted/60">
-                    <Smartphone className="w-10 h-10 text-brand/25" />
-                    <p className="text-[11px]">
-                      {hasRenderableHtml || htmlLoading
-                        ? "Screenshot unavailable — switch to Live HTML"
-                        : "Preview assets still processing…"}
-                    </p>
-                    {(hasRenderableHtml || htmlLoading) && (
-                      <ShadButton
-                        type="button"
-                        className="text-[10px] h-7 px-2.5"
-                        onClick={() => setTab("live")}
-                      >
-                        Open Live HTML
-                      </ShadButton>
-                    )}
-                  </div>
-                )}
+              <div className="relative min-h-[280px] flex items-center justify-center p-2">
+                <img
+                  src={ready.imageSrc}
+                  alt={preview.title}
+                  className="max-h-[min(52vh,520px)] w-full object-contain object-top"
+                  loading="lazy"
+                  onError={() => {
+                    if (hasRenderableHtml) setTab("live");
+                  }}
+                />
               </div>
             </DeviceChrome>
           )}
 
-          {tab === "live" && (hasRenderableHtml || htmlLoading || htmlArtifactId) && (
+          {tab === "live" && hasRenderableHtml && (
             <DeviceChrome device={preview.deviceType}>
-              {htmlLoading && !htmlSrc ? (
-                <StitchPreviewLoading label="Loading live HTML…" />
-              ) : htmlSrc ? (
-                <iframe
-                  title={`Stitch live preview — ${preview.title}`}
-                  src={htmlSrc}
-                  className="wl-stitch-live-iframe"
-                  sandbox="allow-scripts allow-same-origin"
-                  loading="lazy"
-                />
-              ) : (
-                <StitchPreviewLoading label="HTML preview unavailable" />
-              )}
+              <iframe
+                title={`Live preview — ${preview.title}`}
+                src={ready.htmlSrc}
+                className="wl-stitch-live-iframe"
+                sandbox="allow-scripts allow-same-origin"
+                loading="lazy"
+              />
             </DeviceChrome>
           )}
 
@@ -247,34 +181,33 @@ function StitchPreviewPane({ preview }: { preview: DirectorPreviewMeta }) {
             <div className="p-4 sm:p-5 space-y-3">
               <p className="text-[12px] text-ink font-medium">{preview.title}</p>
               <p className="text-[11px] text-muted leading-relaxed">
-                Production HTML/CSS from Stitch — hand off to your dev team or keep iterating in
-                chat.
+                {WIRELINE_STITCH_UI.exportBlurb}
               </p>
               <div className="flex flex-wrap gap-2">
-                {(htmlArtifactId || preview.htmlDownloadUrl) && (
+                {ready.htmlArtifactId && (
                   <ShadButton
                     type="button"
-                    onClick={() => void openArtifactDownload(htmlArtifactId, false)}
+                    onClick={() => void openArtifactDownload(ready.htmlArtifactId, false)}
                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold bg-brand text-white hover:bg-brand-deep transition-colors h-auto"
                   >
                     <Download className="w-3.5 h-3.5" />
                     HTML prototype
                   </ShadButton>
                 )}
-                {(imageArtifactId || preview.imageDownloadUrl) && (
+                {ready.imageArtifactId && (
                   <ShadButton
                     type="button"
-                    onClick={() => void openArtifactDownload(imageArtifactId, false)}
+                    onClick={() => void openArtifactDownload(ready.imageArtifactId, false)}
                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold border border-brand/25 text-brand bg-brand/5 hover:bg-brand/10 h-auto"
                   >
                     <Download className="w-3.5 h-3.5" />
                     PNG screenshot
                   </ShadButton>
                 )}
-                {(htmlArtifactId || preview.htmlDownloadUrl) && (
+                {ready.htmlArtifactId && (
                   <ShadButton
                     type="button"
-                    onClick={() => void openArtifactDownload(htmlArtifactId, true)}
+                    onClick={() => void openArtifactDownload(ready.htmlArtifactId, true)}
                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold border border-black/10 hover:border-brand/20 h-auto"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
@@ -297,8 +230,23 @@ export default function DirectorStitchPreviewGallery({
 }: DirectorStitchPreviewGalleryProps) {
   const [index, setIndex] = useState(0);
   const active = previews[index] ?? previews[0];
+  const ready = useStitchPreviewReady(active ?? { conceptId: "", title: "", rationale: "", previewDataUrl: "" });
 
   if (!active) return null;
+
+  if (!ready.hasSources) return null;
+
+  if (!ready.isReady) {
+    return (
+      <DirectorStitchLiveSession operatorPrompt={active.title || undefined} className="mt-2" />
+    );
+  }
+
+  if (ready.failed) {
+    return (
+      <p className="text-[11px] text-muted/80 mt-2 px-1">{WIRELINE_STITCH_UI.fallbackCopy}</p>
+    );
+  }
 
   const goPrev = () => setIndex((i) => (i - 1 + previews.length) % previews.length);
   const goNext = () => setIndex((i) => (i + 1) % previews.length);
@@ -311,7 +259,7 @@ export default function DirectorStitchPreviewGallery({
           <span
             className={cn(WL_DIRECTOR_CLASSES.microLabel, "text-brand font-bold tracking-[0.14em]")}
           >
-            Google Stitch
+            {WIRELINE_STITCH_UI.badgeLabel}
           </span>
           <span className="text-[10px] text-muted/60 font-mono tabular-nums">
             {deviceLabel(active.deviceType)}
@@ -344,7 +292,7 @@ export default function DirectorStitchPreviewGallery({
         )}
       </div>
 
-      <StitchPreviewPane key={active.conceptId} preview={active} />
+      <StitchPreviewPane key={active.conceptId} preview={active} ready={ready} />
 
       <div className="mt-3 flex flex-wrap gap-1.5">
         {QUICK_EDITS.map((prompt) => (
