@@ -150,6 +150,120 @@ export function pickCompatibleStitchProject(projects: StitchProjectRef[]): Stitc
   return projects[0]!;
 }
 
+/** HTML returned inline from get_screen_code / fetch_screen_code. */
+export function extractStitchInlineHtml(payload: unknown): Buffer | undefined {
+  const visitText = (node: unknown): string | undefined => {
+    if (typeof node !== "string") return undefined;
+    const trimmed = node.trim();
+    if (trimmed.startsWith("<!") || trimmed.startsWith("<html") || trimmed.includes("<body")) {
+      return trimmed;
+    }
+    return undefined;
+  };
+
+  const visit = (node: unknown): string | undefined => {
+    const direct = visitText(node);
+    if (direct) return direct;
+    if (!node || typeof node !== "object") return undefined;
+    if (Array.isArray(node)) {
+      for (const item of node) {
+        const hit = visit(item);
+        if (hit) return hit;
+      }
+      return undefined;
+    }
+    const o = node as Record<string, unknown>;
+    for (const key of ["html", "htmlCode", "code", "content", "source"]) {
+      const value = o[key];
+      if (typeof value === "string") {
+        const hit = visitText(value);
+        if (hit) return hit;
+      }
+      if (value && typeof value === "object" && !Array.isArray(value)) {
+        const block = value as { content?: string; html?: string };
+        if (typeof block.content === "string") {
+          const hit = visitText(block.content);
+          if (hit) return hit;
+        }
+        if (typeof block.html === "string") {
+          const hit = visitText(block.html);
+          if (hit) return hit;
+        }
+      }
+    }
+    for (const value of Object.values(o)) {
+      const hit = visit(value);
+      if (hit) return hit;
+    }
+    return undefined;
+  };
+
+  const html = visit(payload);
+  return html ? Buffer.from(html, "utf8") : undefined;
+}
+
+/** PNG bytes inline (base64) from get_screen_image / fetch_screen_image. */
+export function extractStitchInlineImage(payload: unknown): Buffer | undefined {
+  const fromBase64 = (raw: string): Buffer | undefined => {
+    const clean = raw.replace(/^data:image\/[a-z+]+;base64,/i, "").trim();
+    if (clean.length < 128) return undefined;
+    try {
+      return Buffer.from(clean, "base64");
+    } catch {
+      return undefined;
+    }
+  };
+
+  const visit = (node: unknown): Buffer | undefined => {
+    if (typeof node === "string") return fromBase64(node);
+    if (!node || typeof node !== "object") return undefined;
+    if (Array.isArray(node)) {
+      for (const item of node) {
+        const hit = visit(item);
+        if (hit) return hit;
+      }
+      return undefined;
+    }
+    const o = node as Record<string, unknown>;
+    for (const key of ["image", "screenshot", "png", "data", "content", "base64"]) {
+      const value = o[key];
+      if (typeof value === "string") {
+        const hit = fromBase64(value);
+        if (hit) return hit;
+      }
+    }
+    for (const value of Object.values(o)) {
+      const hit = visit(value);
+      if (hit) return hit;
+    }
+    return undefined;
+  };
+
+  return visit(payload);
+}
+
+/** Merge get_screen payloads into a screen record (flat or nested). */
+export function mergeStitchScreenRecord(
+  target: Record<string, unknown>,
+  payload: unknown,
+): Record<string, unknown> {
+  const screens = extractStitchScreens(payload);
+  if (screens[0]) return { ...target, ...screens[0] };
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return target;
+  const o = payload as Record<string, unknown>;
+  if (o.htmlCode || o.screenshot) return { ...target, ...o };
+  for (const key of ["result", "screen", "data"]) {
+    const inner = o[key];
+    if (inner && typeof inner === "object" && !Array.isArray(inner)) {
+      const record = inner as Record<string, unknown>;
+      if (record.htmlCode || record.screenshot || record.screenId) {
+        return { ...target, ...record };
+      }
+    }
+  }
+  return target;
+}
+
 export function extractStitchProjectId(payload: unknown): string | null {
   const visit = (node: unknown): string | null => {
     if (!node || typeof node !== "object") return null;

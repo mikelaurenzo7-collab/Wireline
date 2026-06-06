@@ -14,11 +14,14 @@ import {
 } from "./director-stitch-intent";
 import { loadLatestStitchSession } from "./director-stitch-session";
 import {
+  extractStitchInlineHtml,
+  extractStitchInlineImage,
   extractStitchProjectId,
   extractStitchProjects,
   extractStitchScreens,
   GoogleStitchError,
   GoogleStitchMcpClient,
+  mergeStitchScreenRecord,
   pickCompatibleStitchProject,
 } from "./google-stitch-mcp-client";
 import { getGoogleStitchProjectId, isGoogleStitchConfigured } from "./google-stitch-config";
@@ -58,9 +61,23 @@ function pickDownloadUrl(screen: Record<string, unknown>, kind: "html" | "image"
   );
 }
 
+const STITCH_ASSET_TOOL_TIMEOUT_MS = 60_000;
+
+function stitchScreenToolArgs(projectId: string, screenId: string): Record<string, string> {
+  return {
+    projectId,
+    screenId,
+    name: `projects/${projectId}/screens/${screenId}`,
+  };
+}
+
 async function fetchRemoteAsset(url: string, signal?: AbortSignal): Promise<Buffer> {
   const host = new URL(url).hostname;
-  if (!/\.googleapis\.com$|\.googleusercontent\.com$|\.gstatic\.com$/i.test(host)) {
+  if (
+    !/\.googleapis\.com$|\.googleusercontent\.com$|\.gstatic\.com$|\.cloud\.google\.com$/i.test(
+      host,
+    )
+  ) {
     throw new GoogleStitchError(`Refusing non-Google asset host: ${host}`, "VALIDATION_ERROR");
   }
   const res = await fetch(url, { signal });
@@ -77,36 +94,70 @@ async function fetchScreenAssets(
   screenId: string,
   signal?: AbortSignal,
 ): Promise<{ html?: Buffer; image?: Buffer; screen: Record<string, unknown> }> {
+  const args = stitchScreenToolArgs(projectId, screenId);
   let screen: Record<string, unknown> = { screenId, projectId };
+  let html: Buffer | undefined;
+  let image: Buffer | undefined;
+
+  try {
+    const payload = await client.callTool<unknown>(
+      "get_screen",
+      args,
+      signal,
+      STITCH_ASSET_TOOL_TIMEOUT_MS,
+    );
+    screen = mergeStitchScreenRecord(screen, payload);
+  } catch {
+    /* download URLs may lag — fall through to dedicated asset tools */
+  }
+
   let htmlUrl = pickDownloadUrl(screen, "html");
   let imageUrl = pickDownloadUrl(screen, "image");
 
-  const toolNames = ["get_screen", "fetch_screen_code", "fetch_screen_image"] as const;
-  for (const tool of toolNames) {
-    try {
-      const payload = await client.callTool<unknown>(
-        tool,
-        {
-          projectId,
-          screenId,
-          name: `projects/${projectId}/screens/${screenId}`,
-        },
-        signal,
-      );
-      const screens = extractStitchScreens(payload);
-      if (screens[0]) screen = { ...screen, ...screens[0] };
-      htmlUrl = htmlUrl || pickDownloadUrl(screen, "html");
-      imageUrl = imageUrl || pickDownloadUrl(screen, "image");
-      if (htmlUrl && imageUrl) break;
-    } catch {
-      /* try next tool shape */
+  if (!html) {
+    for (const tool of ["get_screen_code", "fetch_screen_code"] as const) {
+      try {
+        const payload = await client.callTool<unknown>(
+          tool,
+          args,
+          signal,
+          STITCH_ASSET_TOOL_TIMEOUT_MS,
+        );
+        html = extractStitchInlineHtml(payload);
+        screen = mergeStitchScreenRecord(screen, payload);
+        htmlUrl = htmlUrl || pickDownloadUrl(screen, "html");
+        if (html) break;
+      } catch {
+        /* try alternate tool name */
+      }
     }
   }
 
-  const [html, image] = await Promise.all([
-    htmlUrl ? fetchRemoteAsset(htmlUrl, signal).catch(() => undefined) : undefined,
-    imageUrl ? fetchRemoteAsset(imageUrl, signal).catch(() => undefined) : undefined,
-  ]);
+  if (!image) {
+    for (const tool of ["get_screen_image", "fetch_screen_image"] as const) {
+      try {
+        const payload = await client.callTool<unknown>(
+          tool,
+          args,
+          signal,
+          STITCH_ASSET_TOOL_TIMEOUT_MS,
+        );
+        image = extractStitchInlineImage(payload);
+        screen = mergeStitchScreenRecord(screen, payload);
+        imageUrl = imageUrl || pickDownloadUrl(screen, "image");
+        if (image) break;
+      } catch {
+        /* try alternate tool name */
+      }
+    }
+  }
+
+  if (!html && htmlUrl) {
+    html = await fetchRemoteAsset(htmlUrl, signal).catch(() => undefined);
+  }
+  if (!image && imageUrl) {
+    image = await fetchRemoteAsset(imageUrl, signal).catch(() => undefined);
+  }
 
   return { html, image, screen };
 }
