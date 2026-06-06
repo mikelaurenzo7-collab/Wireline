@@ -219,7 +219,7 @@ export default function Compare() {
               </caption>
               <thead>
                 <tr className="border-b border-ink/[0.12]">
-                  <th className="text-left p-4 pl-6 font-mono text-[10px] uppercase tracking-[0.3em] text-ink/55 font-medium w-64">
+                  <th className="wl-compare-sticky-col text-left p-4 pl-6 font-mono text-[10px] uppercase tracking-[0.3em] text-ink/55 font-medium w-64">
                     Capability
                   </th>
                   {COMPETITORS.map((c) => (
@@ -251,7 +251,7 @@ export default function Compare() {
                       i % 2 === 0 ? "bg-ink/[0.02]" : ""
                     }`}
                   >
-                    <td className="p-4 pl-6 align-top">
+                    <td className="wl-compare-sticky-col p-4 pl-6 align-top">
                       <p className="text-[13px] text-ink font-medium leading-snug">{row.feature}</p>
                       <p className="text-[11px] text-ink/60 mt-1 leading-relaxed">{row.detail}</p>
                       {row.feature.includes("integrations") && (
@@ -293,7 +293,7 @@ export default function Compare() {
                   </tr>
                 ))}
                 <tr className="border-t-2 border-brand/30">
-                  <td className="p-4 pl-6 text-[10px] uppercase tracking-[0.3em] text-muted/70 font-medium">
+                  <td className="wl-compare-sticky-col p-4 pl-6 text-[10px] uppercase tracking-[0.3em] text-muted/70 font-medium">
                     Score (out of {ROWS.length})
                   </td>
                   {COMPETITORS.map((c) => (
