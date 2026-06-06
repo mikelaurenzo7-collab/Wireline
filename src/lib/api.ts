@@ -4,7 +4,9 @@
 // the UI never spins forever on a stalled fetch.
 export const DEFAULT_REQUEST_TIMEOUT_MS = 120_000;
 /** Google Stitch renders server-side for 1–3+ min — stay under Vercel maxDuration (600s). */
-export const DIRECTOR_STITCH_REQUEST_TIMEOUT_MS = 360_000;
+export const DIRECTOR_STITCH_REQUEST_TIMEOUT_MS = 540_000;
+/** Express /api/director cap — Stitch generate + asset poll can exceed 3 min. */
+export const DIRECTOR_REQUEST_TIMEOUT_MS = 540_000;
 
 const DEFAULT_TIMEOUT_MS = DEFAULT_REQUEST_TIMEOUT_MS;
 

@@ -43,7 +43,10 @@ async function main() {
     process.exit(1);
   }
   const previews = Array.isArray(data.previews) ? data.previews.length : 0;
-  const stitch = data.modelLabel === "Google Stitch" || previews > 0;
+  const stitch =
+    data.modelLabel === "Wireline Design" ||
+    data.modelLabel === "Google Stitch" ||
+    previews > 0;
   console.log(
     JSON.stringify({
       ok: true,

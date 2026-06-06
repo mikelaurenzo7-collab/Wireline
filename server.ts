@@ -32,6 +32,7 @@ import { randomUUID } from "node:crypto";
 import { db, IS_PROD, log } from "./src/lib/server-context";
 import { getErrorMessage } from "./src/lib/server-utils";
 import { reportError } from "./src/lib/error-reporter";
+import { DIRECTOR_REQUEST_TIMEOUT_MS } from "./src/lib/api";
 import { AppError, formatErrorResponse } from "./src/lib/api-error";
 import { validateStartupEnv } from "./src/lib/startup";
 import { buildCSP, buildConnectSrcs } from "./src/lib/csp";
@@ -245,9 +246,9 @@ app.use("/api/claude", enforceSpendCap);
 app.use("/api/emails", timeoutMiddleware(15_000));
 app.use("/api/phone-numbers", timeoutMiddleware(10_000));
 app.use("/api/campaigns", timeoutMiddleware(10_000));
-// Director turns run web research + structured Claude (or creative tool execution).
-// The default 20s API cap caused 504s on business plans and competitor research.
-app.use("/api/director", timeoutMiddleware(180_000));
+// Director turns run web research + structured Claude (or Stitch UI generation).
+// Stitch MCP generate (~150s) + asset polling can exceed the old 180s cap.
+app.use("/api/director", timeoutMiddleware(DIRECTOR_REQUEST_TIMEOUT_MS));
 app.use("/api", defaultApiTimeoutMiddleware);
 
 // Global Router Mounting
