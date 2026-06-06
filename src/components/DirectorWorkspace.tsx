@@ -1919,6 +1919,7 @@ export default function DirectorWorkspace({
               rows={2}
               disabled={isSending}
               aria-describedby="director-composer-send-hint"
+              title={DIRECTOR_COMPOSER_CONTEXT.sendHint}
               placeholder={
                 isSending
                   ? "Director is working…"
@@ -1931,6 +1932,9 @@ export default function DirectorWorkspace({
                 "w-full resize-none border-0 bg-transparent shadow-none text-[13px] text-foreground placeholder:text-muted-foreground/50 outline-none px-4 py-3 leading-normal disabled:opacity-60 focus-visible:ring-0",
               )}
             />
+            <span id="director-composer-send-hint" className="sr-only">
+              {DIRECTOR_COMPOSER_CONTEXT.sendHint}
+            </span>
 
             <DirectorComposerAccessory
               active={composerAccessory}
@@ -1988,12 +1992,6 @@ export default function DirectorWorkspace({
 
               <div className="flex items-center gap-2 shrink-0">
                 <DirectorUsageIndicator className="sm:hidden shrink-0" />
-                <span
-                  id="director-composer-send-hint"
-                  className="hidden lg:inline chrome-subtle whitespace-nowrap"
-                >
-                  {DIRECTOR_COMPOSER_CONTEXT.sendHint}
-                </span>
                 <ShadButton
                   type="button"
                   size="sm"
@@ -2016,10 +2014,6 @@ export default function DirectorWorkspace({
               </div>
             </div>
           </div>
-
-          <p className="text-center text-[9px] text-muted/60 mt-2 uppercase tracking-[0.12em] lg:hidden">
-            {DIRECTOR_COMPOSER_CONTEXT.sendHint}
-          </p>
         </div>
       </div>
     </div>
