@@ -29,7 +29,8 @@ import { WIRELINE_STITCH_UI } from "./wireline-director-design";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 
-const STITCH_PREVIEW_MAX_BYTES = 400_000;
+/** Inline data-URL in message metadata so the device frame renders without a client blob round-trip. */
+const STITCH_PREVIEW_MAX_BYTES = 900_000;
 
 export interface DirectorStitchTurnResult {
   reply: string;
@@ -162,7 +163,7 @@ async function fetchScreenAssets(
   return { html, image, screen };
 }
 
-/** Stitch screenshot/HTML URLs can lag behind the screen record — poll briefly. */
+/** Stitch screenshot/HTML can lag the screen record — poll until at least one asset is ready. */
 async function fetchScreenAssetsWithRetry(
   client: GoogleStitchMcpClient,
   projectId: string,
@@ -170,15 +171,14 @@ async function fetchScreenAssetsWithRetry(
   signal?: AbortSignal,
 ): Promise<{ html?: Buffer; image?: Buffer; screen: Record<string, unknown> }> {
   const delaysMs = [
-    0, 2_000, 4_000, 6_000, 8_000, 10_000, 12_000, 15_000, 18_000, 22_000, 26_000, 30_000, 35_000,
-    40_000, 45_000,
+    0, 3_000, 6_000, 9_000, 12_000, 16_000, 20_000, 25_000, 30_000, 36_000, 42_000, 48_000, 55_000,
+    62_000, 70_000, 78_000, 86_000, 95_000,
   ];
   let last = await fetchScreenAssets(client, projectId, screenId, signal);
   for (let i = 1; i < delaysMs.length; i++) {
-    if (last.html && last.image) return last;
-    await sleepMs(delaysMs[i]!, signal);
-    last = await fetchScreenAssets(client, projectId, screenId, signal);
     if (last.html || last.image) return last;
+    await sleepMs(delaysMs[i]! - delaysMs[i - 1]!, signal);
+    last = await fetchScreenAssets(client, projectId, screenId, signal);
   }
   return last;
 }
@@ -199,7 +199,8 @@ function sleepMs(ms: number, signal?: AbortSignal): Promise<void> {
 }
 
 const STITCH_LIST_TIMEOUT_MS = 30_000;
-const STITCH_GENERATE_TIMEOUT_MS = 150_000;
+/** Stitch compose alone is often 1–3 min; avoid aborting early into slow list polling. */
+const STITCH_GENERATE_TIMEOUT_MS = 240_000;
 
 async function listStitchScreens(
   client: GoogleStitchMcpClient,
@@ -392,13 +393,13 @@ async function runStitchOperation(
   if (screens.length > 0) return screens;
 
   const pollProjectId = extractStitchProjectId(generated) ?? projectId;
-  onProgress?.("Waiting for Stitch render to finish…");
-  for (let attempt = 0; attempt < 24; attempt++) {
-    await sleepMs(attempt === 0 ? 6_000 : 8_000, signal);
+  onProgress?.("Waiting for Wireline Design to finish composing…");
+  for (let attempt = 0; attempt < 12; attempt++) {
+    await sleepMs(attempt === 0 ? 5_000 : 6_000, signal);
     const listed = await listStitchScreens(client, pollProjectId, signal);
     screens = pickNewestStitchScreens(listed, knownBefore);
     if (screens.length > 0) return screens.slice(0, 5);
-    onProgress?.(`Still rendering… (${attempt + 1}/24)`);
+    onProgress?.(`Still composing… (${attempt + 1}/12)`);
   }
 
   throw new GoogleStitchError("Stitch returned no screens", "VALIDATION_ERROR", true);
@@ -558,7 +559,7 @@ export async function runDirectorStitchTurn(input: {
     }
 
     if (!htmlArtifactId && !imageArtifactId) {
-      thinkingLines.push(`Screen ${screenId} (${deviceType}) — assets pending`);
+      log.warn("stitch screen skipped — no packaged assets", { screenId, projectId, deviceType });
       continue;
     }
 
@@ -576,6 +577,14 @@ export async function runDirectorStitchTurn(input: {
     });
 
     thinkingLines.push(`Screen ${screenId} (${deviceType})`);
+  }
+
+  if (previews.length === 0) {
+    throw new GoogleStitchError(
+      "Wireline Design composed a screen but preview assets were not ready. Try again.",
+      "VALIDATION_ERROR",
+      true,
+    );
   }
 
   const primary = screens[0]!;

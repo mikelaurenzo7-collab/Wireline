@@ -19,7 +19,6 @@ import { useStitchPreviewReady } from "../../hooks/useStitchPreviewReady";
 import { cn } from "../../lib/utils";
 import { WL_DIRECTOR_CLASSES, WIRELINE_STITCH_UI } from "../../lib/wireline-director-design";
 import { ShadButton } from "../ui/shadcn/ShadButton";
-import DirectorStitchLiveSession from "./DirectorStitchLiveSession";
 
 export interface DirectorStitchPreviewGalleryProps {
   previews: DirectorPreviewMeta[];
@@ -230,22 +229,14 @@ export default function DirectorStitchPreviewGallery({
 }: DirectorStitchPreviewGalleryProps) {
   const [index, setIndex] = useState(0);
   const active = previews[index] ?? previews[0];
-  const ready = useStitchPreviewReady(active ?? { conceptId: "", title: "", rationale: "", previewDataUrl: "" });
+  const ready = useStitchPreviewReady(
+    active ?? { conceptId: "", title: "", rationale: "", previewDataUrl: "" },
+  );
 
   if (!active) return null;
 
-  if (!ready.hasSources) return null;
-
-  if (!ready.isReady) {
-    if (ready.failed) {
-      return (
-        <p className="text-[11px] text-muted/80 mt-2 px-1">{WIRELINE_STITCH_UI.fallbackCopy}</p>
-      );
-    }
-    return (
-      <DirectorStitchLiveSession operatorPrompt={active.title || undefined} className="mt-2" />
-    );
-  }
+  // Only mount the device frame once screenshot or live HTML is render-ready — no spinners.
+  if (!ready.hasSources || !ready.isReady) return null;
 
   const goPrev = () => setIndex((i) => (i - 1 + previews.length) % previews.length);
   const goNext = () => setIndex((i) => (i + 1) % previews.length);

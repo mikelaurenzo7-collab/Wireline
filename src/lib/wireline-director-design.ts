@@ -439,7 +439,8 @@ export const WIRELINE_STITCH_UI = {
     "Applying brand tokens…",
     "Packaging preview…",
   ],
-  loadingHint: "Usually takes 1–3 minutes. Stay on this tab while Director finishes.",
+  loadingHint:
+    "Wireline Design typically takes 2–4 minutes end-to-end (compose + package). Stay on this tab.",
   exportBlurb: "Production HTML/CSS — hand off to your team or keep iterating in chat.",
   fallbackCopy: "Preview is in your artifacts panel — open HTML or PNG from the thread header.",
 } as const;
