@@ -114,7 +114,7 @@ API route (/api/claude/*, /api/jobs/*, /api/daily-brief/*)
 
 ## 3. Database Schema (Key Tables)
 
-57 tables managed by Drizzle; 36 SQL migrations under `drizzle/migrations/`, all
+57 tables managed by Drizzle; 43 SQL migrations under `drizzle/migrations/`, all
 idempotent (`IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`).
 
 | Table | Purpose |

@@ -10,12 +10,15 @@
  *   screenshot     Navigate to a specific route and screenshot
  *   interact       Run a full Director Chat interaction flow
  *   routes         Screenshot every major route for visual QA
+ *   viewports      Screenshot key routes at mobile / tablet / desktop widths
+ *                  (responsive visual QA — "world-class UI from every viewport")
  *
  * Options:
  *   --url URL          Base URL (default: http://localhost:3000)
- *   --route PATH       Route to screenshot (with "screenshot" action)
+ *   --route PATH       Route to screenshot (with "screenshot" / "viewports")
  *   --out DIR          Screenshot output directory (default: /tmp/wireline-screenshots)
  *   --headed           Run with visible browser (non-headless)
+ *   --full             Capture full-page (scrolled) screenshots, not just the fold
  *   --block-external   Abort all non-base-origin requests (fonts, analytics).
  *                      Use in network-restricted environments where blocked
  *                      third-party requests would otherwise stall navigation.
@@ -41,6 +44,16 @@ const hasFlag = (name) => args.includes(`--${name}`);
 const BASE_URL = getFlag("url") || "http://localhost:3000";
 const OUT_DIR = getFlag("out") || "/tmp/wireline-screenshots";
 const ROUTE = getFlag("route") || "/";
+const FULL_PAGE = hasFlag("full");
+
+// Responsive QA breakpoints. Wireline is designed mobile-first at 390px
+// (see DESIGN.md / CLAUDE.md), so that's the canonical small viewport;
+// tablet and desktop confirm the layout scales up cleanly.
+const VIEWPORTS = [
+  { name: "mobile", width: 390, height: 844, scale: 2 }, // iPhone 14-class
+  { name: "tablet", width: 834, height: 1112, scale: 2 }, // iPad-class
+  { name: "desktop", width: 1440, height: 900, scale: 2 }, // laptop
+];
 
 if (!existsSync(OUT_DIR)) mkdirSync(OUT_DIR, { recursive: true });
 
@@ -48,15 +61,17 @@ function ssPath(name) {
   return path.join(OUT_DIR, `${name}.png`);
 }
 
-async function launch() {
+async function launch(viewport = { width: 1440, height: 900, scale: 2 }) {
   const browser = await chromium.launch({
     headless: !hasFlag("headed"),
     args: ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
   });
   const context = await browser.newContext({
-    viewport: { width: 1440, height: 900 },
-    deviceScaleFactor: 2,
+    viewport: { width: viewport.width, height: viewport.height },
+    deviceScaleFactor: viewport.scale ?? 2,
     colorScheme: "light",
+    isMobile: viewport.width < 600,
+    hasTouch: viewport.width < 600,
   });
   // In network-restricted environments, blocked third-party requests (Google
   // Fonts, Plausible) hang and stall navigation. Aborting anything off the
@@ -224,6 +239,36 @@ async function routes() {
   }
 }
 
+// ── VIEWPORTS: One route (or a default set) across mobile/tablet/desktop ──
+async function viewports() {
+  // When --route is passed, sweep just that route across breakpoints; otherwise
+  // sweep a representative set covering public + auth-gate surfaces.
+  const routeFlag = getFlag("route");
+  const ROUTES = routeFlag ? [routeFlag] : ["/", "/pricing", "/demos", "/director"];
+
+  console.log(
+    `[driver] Viewport sweep — ${ROUTES.length} route(s) × ${VIEWPORTS.length} breakpoints${
+      FULL_PAGE ? " (full-page)" : ""
+    }...`,
+  );
+
+  for (const vp of VIEWPORTS) {
+    const { browser, page } = await launch(vp);
+    try {
+      for (const route of ROUTES) {
+        await gotoStable(page, `${BASE_URL}${route}`);
+        const slug = route.replace(/\//g, "-").replace(/^-/, "") || "index";
+        const name = `vp-${vp.name}-${slug}`;
+        await page.screenshot({ path: ssPath(name), fullPage: FULL_PAGE });
+        console.log(`[driver]   ${vp.name.padEnd(7)} ${vp.width}px  ${route}  → ${ssPath(name)}`);
+      }
+    } finally {
+      await browser.close();
+    }
+  }
+  console.log("[driver] Viewport sweep complete.");
+}
+
 // ── DISPATCH ──
 switch (action) {
   case "smoke":
@@ -238,8 +283,11 @@ switch (action) {
   case "routes":
     await routes();
     break;
+  case "viewports":
+    await viewports();
+    break;
   default:
     console.error(`Unknown action: ${action}`);
-    console.error("Valid actions: smoke, screenshot, interact, routes");
+    console.error("Valid actions: smoke, screenshot, interact, routes, viewports");
     process.exit(1);
 }

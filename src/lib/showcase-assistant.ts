@@ -6,8 +6,10 @@ import {
 } from "../data/contact-agents";
 import {
   WIRELINE_COMPLIANCE_STATUS,
+  WIRELINE_GROWTH_ENGINE,
   WIRELINE_INTEGRATIONS,
   WIRELINE_ONE_LINER,
+  WIRELINE_PAIN_SOLUTIONS,
   WIRELINE_PLANS,
   WIRELINE_VOICE_STACK,
 } from "../data/wireline-knowledge";
@@ -574,6 +576,7 @@ function buildDemoShowcasePrompt(agent: ContactAgent): string {
     ...buildSharedConversationStyle(agent),
     "- When the caller asks about Wireline, answer in YOUR voice (warm, conversational, the same rhythm as the rest of the call) — never recite a bulleted list of features.",
     ...buildCompactWirelineKnowledgeSection("demo"),
+    ...buildDemoClosingPlaybook(),
     "TOOL RULES:",
     "- Use send_signup_link when they want the trial or product details by email.",
     "- Use create_account when they want to start now.",
@@ -626,12 +629,35 @@ function buildCompactWirelineKnowledgeSection(kind: ShowcaseKind): string[] {
     "WIRELINE KNOWLEDGE:",
     modeLead,
     `- ${WIRELINE_ONE_LINER}`,
+    "- Core capabilities: inbound support that answers 24/7, the outbound growth engine, two-way texting, email agents, and a live supervisor cockpit with CRM sync.",
+    `- Growth engine (lead generation): ${WIRELINE_GROWTH_ENGINE}`,
     `- Pricing: ${buildCompactPricingSummary()}.`,
-    "- Core capabilities: voice calls, two-way texting, email follow-up, CRM sync, and supervisor visibility.",
     `- Integrations: ${WIRELINE_INTEGRATIONS.slice(0, 6).join(", ")}, and more.`,
     `- ${buildCompactComplianceSummary()}`,
     `- Voice runtime: ${WIRELINE_VOICE_STACK}`,
+    "- MATCH THE CALLER'S PROBLEM TO A CAPABILITY — when they name a pain, lead with the fix in your own words (never read these aloud as a list):",
+    ...WIRELINE_PAIN_SOLUTIONS.map((entry) => `    • ${entry.pain} → ${entry.solution}.`),
     modeTail,
+  ];
+}
+
+/**
+ * Demo agents are showcase salespeople: a strong role-play has earned the
+ * right to pitch Wireline and ask for the business. This block makes the
+ * close explicit (one clear, warm ask — not a polite sign-off) while
+ * staying inside the demo boundary: they convert through self-service
+ * tools (signup / account / payment link) and NEVER promise a human
+ * callback, which a demo line cannot honor.
+ */
+function buildDemoClosingPlaybook(): string[] {
+  return [
+    "CLOSE THE DEMO (sales instinct — you are selling Wireline):",
+    "- Once you have demonstrated the skill well, you have earned the pitch. Do NOT just end politely — turn into Wireline's salesperson.",
+    "- Name the value the caller just watched you deliver, tie it directly to the problem or goal they told you about, then make ONE clear ask.",
+    "- Default ask: offer to email a free-trial link so they can stand this up for their own business today — then capture their email, read it back, get an explicit yes, and call send_signup_link.",
+    "- If they are eager to start now, use create_account. If they are ready to buy, use send_payment_link. Match the tool to their readiness.",
+    "- Handle at most one objection with a short, honest answer (price, 'it sounds like AI', 'I need to think about it'), then re-ask for the micro-commitment.",
+    "- Stay warm and confident, never pushy: one clear ask, not three. If they decline, leave the door open and offer the signup link for whenever they are ready.",
   ];
 }
 

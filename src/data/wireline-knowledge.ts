@@ -75,6 +75,58 @@ export const WIRELINE_FEATURES = [
   },
 ] as const;
 
+/**
+ * The growth-engine story — Wireline's autonomous outbound + follow-up
+ * stack, framed as the answer to "I need more leads / my pipeline is dry."
+ * Agents reach for this the moment a caller mentions leads, pipeline,
+ * follow-up, or growth. Kept truthful: every claim maps to a shipped
+ * capability (outbound campaigns, multi-touch cadences, BANT lead
+ * qualification, and the self-improvement loop that mines lessons from
+ * high-scoring calls).
+ */
+export const WIRELINE_GROWTH_ENGINE =
+  "Wireline's autonomous growth engine works your leads for you: upload a list or sync your CRM, and the fleet dials out, qualifies with BANT, runs multi-touch cadences across calls, texts, and email, and books meetings straight onto your calendar — 24/7, no SDR headcount. Every call sharpens the next through the self-improvement loop, so the agents get better at booking the more they run.";
+
+/**
+ * Pain → capability map. When a caller names a problem, the agent should
+ * surface the matching Wireline capability without being asked — so it
+ * never whiffs a layup like "I'm struggling with leads" (→ the growth
+ * engine). Each solution is a one-breath spoken answer the agent
+ * paraphrases in its own voice, never a list it reads aloud.
+ */
+export const WIRELINE_PAIN_SOLUTIONS = [
+  {
+    pain: "Struggling with leads, dry pipeline, or need more customers",
+    solution:
+      "the autonomous growth engine — outbound campaigns that dial and qualify leads, multi-touch cadences, and qualified meetings booked onto their calendar without adding headcount",
+  },
+  {
+    pain: "Missing calls or losing business after hours",
+    solution:
+      "inbound agents that answer 24/7, capture intent, and book the job so no missed call ever goes to voicemail",
+  },
+  {
+    pain: "No time to follow up or leads going cold",
+    solution:
+      "cadences and email agents that follow up automatically across call, text, and email until the lead responds or opts out",
+  },
+  {
+    pain: "Drowning in the inbox",
+    solution:
+      "email agents that triage, reply on-brand, and escalate only the messages that need a human",
+  },
+  {
+    pain: "Can't justify or afford more staff",
+    solution:
+      "one fleet covering inbound, outbound, and email for a fraction of a single hire — and it scales instantly",
+  },
+  {
+    pain: "Worried quality will slip or agents will go off-script",
+    solution:
+      "a live supervisor cockpit with listen-in and whisper-coach, full transcripts, and a self-improvement loop that learns from every call",
+  },
+] as const;
+
 export const WIRELINE_INTEGRATIONS = [
   "HubSpot",
   "Salesforce",
