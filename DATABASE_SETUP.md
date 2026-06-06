@@ -24,13 +24,13 @@ npm run db:push
 
 ## Schema Overview
 
-### Core Tables (55+ tables organized by domain; see `src/db/schema.ts`)
+### Core Tables (57 tables organized by domain; see `src/db/schema.ts`)
 
 #### 1. Identity & Accounts
 | Table | Purpose | Key Constraints |
 |-------|---------|-----------------|
 | `wireline_users` | User accounts | UUID PK, unique email, RLS enabled |
-| `wireline_password_reset_tokens` | Secure password resets | Hashed tokens, 15-min TTL |
+| `wireline_password_reset_tokens` | Secure password resets | Hashed tokens, 1-hour TTL |
 | `wireline_email_verification_tokens` | Email verification | Hashed tokens, 24-hour TTL |
 
 #### 2. Settings & Billing
@@ -331,24 +331,51 @@ Status: ✅ HEALTHY
 
 ## Migration History
 
-| Migration | Date | Description |
-|-----------|------|-------------|
-| 0001 | 2024-XX | Initial purge function |
-| 0002 | 2024-XX | Email thread read tracking |
-| 0003 | 2024-XX | Drift column backfill |
-| 0004 | 2024-XX | Fleet task payload JSONB |
-| 0005 | 2024-XX | CRM connected email field |
-| 0006 | 2024-XX | Bigint PK migration |
-| 0007 | 2024-XX | Agent conversation messages |
-| 0008 | 2024-XX | Extra agents à la carte |
-| 0009 | 2024-XX | Cloned voices table |
-| 0010 | 2024-XX | Voice LLM default: Claude Sonnet |
-| 0011 | 2024-XX | Performance indexes |
-| 0012 | 2024-XX | Voice LLM default: GPT-4o |
-| 0013 | 2024-XX | Voice LLM default: Gemini 3 Flash |
-| 0014 | 2025-XX | Performance goals tracking |
-| 0015 | 2025-XX | Foreign key constraints |
-| 0016 | 2025-XX | Customer number indexing |
+| Migration | Description |
+|-----------|-------------|
+| 0001 | Initial purge function |
+| 0002 | Email thread read tracking + agent_id column |
+| 0003 | Drift column backfill |
+| 0004 | Fleet task payload JSONB |
+| 0005 | CRM connected email field |
+| 0006 | Identity tables to bigint PKs |
+| 0007 | Agent conversation messages table |
+| 0008 | Extra agents à la carte billing |
+| 0009 | Cloned voices table |
+| 0010 | Voice LLM default: Claude Sonnet |
+| 0011 | Performance indexes (phase 1) |
+| 0012 | Voice LLM default: GPT-4o |
+| 0013 | Voice LLM default: Gemini 3 Flash |
+| 0014 | Performance goals tracking |
+| 0015 | Foreign key constraints |
+| 0016 | Customer number indexing |
+| 0017 | Signup intent column |
+| 0018 | Performance indexes (phase 2) |
+| 0019 | Agent system prompt override column |
+| 0020 | RLS policies for tenant isolation |
+| 0021 | Email suppressions table |
+| 0022 | Director conversation messages table |
+| 0023 | Fix RLS policies UUID casting |
+| 0024 | RLS policies: empty GUC safe path |
+| 0025 | Webhook routing indexes |
+| 0026 | OAuth pending codes table + team members RLS |
+| 0027 | Director artifacts + artifact objects tables |
+| 0028 | Reasoning columns (voice_llm_provider, voice_llm_model) |
+| 0029 | Director message metadata column |
+| 0030 | Supabase audit hardening |
+| 0031 | Agent escalation + prompt columns |
+| 0032 | Settings business context (name, type, product, hours) |
+| 0033 | Personality user_id NOT NULL enforcement |
+| 0034 | OAuth pending bridge state column |
+| 0035 | OAuth pending codes lockdown (RLS + grant revocation) |
+| 0036 | RLS InitPlan performance optimization |
+| 0037 | Outbound leads idempotency unique constraint |
+| 0038 | Revoke RLS auto-enable on public schema |
+| 0039 | Tenant user_id NOT NULL on all tables |
+| 0040 | RLS InitPlan on remaining tables |
+| 0041 | Tenant user_id composite indexes for performance |
+| 0042 | Phone tail indexes (DNC, consent, caller ID lookups) |
+| 0043 | updated_at triggers for audit trail |
 
 ---
 

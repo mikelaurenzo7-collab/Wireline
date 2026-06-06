@@ -70,7 +70,7 @@ server.ts              # Express boot + Vite dev middleware; security headers, C
 api/index.ts           # Vercel serverless entry (maxDuration 600s)
 src/
 ├── pages/             # React route pages (lazy-loaded)
-├── components/        # Reusable UI (~94 dirs/files); director/* for the Director workspace
+├── components/        # Reusable UI (~140 files); director/* for the Director workspace
 ├── routes/            # Express API handlers (50+ *-routes.ts, each with co-located *.test.ts)
 ├── lib/               # Pure logic — agent runtime, billing, integrations, Claude clients (260+ files)
 ├── middleware/        # auth, rate limits, validation, RBAC (require-role), same-origin
@@ -79,7 +79,7 @@ src/
 ├── services/          # Client-side API service layer
 ├── contexts/ hooks/   # React contexts & custom hooks
 ├── types/ constants/  # Shared types & app constants
-drizzle/migrations/    # 36 idempotent SQL migrations (IF NOT EXISTS)
+drizzle/migrations/    # 43 idempotent SQL migrations (IF NOT EXISTS)
 scripts/               # ops scripts (stripe/vapi/resend sync, db health, authz matrix, seeding)
 tests/                 # e2e/ (Playwright), integration/, helpers/
 contracts/             # api-types.ts shared client/server contract

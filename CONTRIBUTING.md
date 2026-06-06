@@ -7,7 +7,7 @@ Guide for new engineers joining the team. Read this before your first PR.
 ## Quick Setup
 
 ```bash
-# Prerequisites: Node 20+, npm 10+
+# Prerequisites: Node 22+, npm 10+
 git clone https://github.com/mikelaurenzo7-collab/wireline.git
 cd wireline
 
