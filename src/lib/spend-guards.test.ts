@@ -10,11 +10,7 @@ import {
 import { drizzle } from "./server-context";
 import { dispatchWebhook } from "./webhook-helpers";
 import { SentryEvents } from "./sentry-events";
-import {
-  recordDailySpendUsd,
-  getDailySpendUsd,
-  resetDailySpendMemStateForTests,
-} from "./daily-spend-accumulator";
+import { recordDailySpendUsd, resetDailySpendMemStateForTests } from "./daily-spend-accumulator";
 
 let mockBudgetRows: any[] = [];
 let mockMtdRow: { mtdCost: string }[] = [{ mtdCost: "0" }];
@@ -290,7 +286,7 @@ describe("Spend Guards & Budgets", () => {
       expect(next).toHaveBeenCalled();
     });
 
-    it("returns 402 payment required and blocks request if hardCap is breached", async () => {
+    it("passes through when monthly limit exceeded even if hardCap is true (overage billing)", async () => {
       mockBudgetRows = [
         {
           monthlyLimitUsd: "100.00",
@@ -309,14 +305,8 @@ describe("Spend Guards & Budgets", () => {
       const next = vi.fn();
 
       await enforceSpendCap(req, res, next);
-      expect(next).not.toHaveBeenCalled();
-      expect(res.status).toHaveBeenCalledWith(402);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          code: "SPEND_LIMIT_EXCEEDED",
-          monthly_limit_usd: 100,
-        }),
-      );
+      expect(next).toHaveBeenCalled();
+      expect(res.status).not.toHaveBeenCalled();
     });
 
     it("fails open and passes request through if database query errors", async () => {
@@ -336,8 +326,8 @@ describe("Spend Guards & Budgets", () => {
     });
   });
 
-  describe("enforce24hSpendCap system-wide cap", () => {
-    it("blocks request once daily spend threshold is breached", async () => {
+  describe("enforce24hSpendCap (telemetry only)", () => {
+    it("always passes through regardless of accumulated daily spend", async () => {
       await recordDailySpendUsd(500.0);
 
       const req = {};
@@ -348,16 +338,8 @@ describe("Spend Guards & Budgets", () => {
       const next = vi.fn();
 
       await enforce24hSpendCap(req as any, res as any, next);
-      expect(getDailySpendUsd).toHaveBeenCalled();
-      expect(next).not.toHaveBeenCalled();
-      expect(res.status).toHaveBeenCalledWith(402);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          code: "DAILY_SPEND_LIMIT_EXCEEDED",
-          reset_in_ms: expect.any(Number),
-          reset_backend: expect.stringMatching(/^(redis|memory)$/),
-        }),
-      );
+      expect(next).toHaveBeenCalled();
+      expect(res.status).not.toHaveBeenCalled();
     });
 
     it("recordDailySpend delegates to Redis-backed accumulator", async () => {

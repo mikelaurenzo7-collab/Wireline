@@ -8,7 +8,6 @@ import {
   Database,
   Shield,
   AlertTriangle,
-  Lock,
   Save,
   Loader2,
 } from "lucide-react";
@@ -86,7 +85,7 @@ function SpendBudgetCard() {
         body: JSON.stringify({
           monthly_limit_usd: Number.isFinite(limit) ? limit : 0,
           warn_threshold_pct: draft.warn_threshold_pct,
-          hard_cap: draft.hard_cap,
+          hard_cap: false,
           enabled: draft.enabled,
         }),
       });
@@ -137,12 +136,7 @@ function SpendBudgetCard() {
             </div>
           </div>
         </div>
-        {status?.hard_capped_now && (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs">
-            <Lock className="w-3.5 h-3.5" /> Hard cap active — AI calls are blocked
-          </div>
-        )}
-        {!status?.hard_capped_now && isWarn && (
+        {isWarn && (
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand/10 border border-brand/30 text-brand text-xs">
             <AlertTriangle className="w-3.5 h-3.5" /> Spend has crossed your warn threshold
           </div>
@@ -181,11 +175,12 @@ function SpendBudgetCard() {
         </div>
       ) : (
         <div className="text-sm text-ink/70">
-          No monthly limit set. Configure one below to enable warnings and (optionally) a hard cap.
+          No monthly limit set. Configure one below for webhook warnings — overages bill through
+          your plan.
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
         <label className="space-y-1.5">
           <span className="app-section-title">Monthly limit (USD)</span>
           <Input
@@ -214,23 +209,6 @@ function SpendBudgetCard() {
             className="w-full h-11 px-4 rounded-md wl-panel border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
           />
         </label>
-        <div className="flex items-end gap-2">
-          <ShadButton
-            type="button"
-            disableAnimations
-            variant="outline"
-            onClick={() => setDraft({ ...draft, hard_cap: !draft.hard_cap })}
-            className={cn(
-              "h-11 px-4 rounded-md text-xs uppercase tracking-[0.25em]",
-              draft.hard_cap
-                ? "bg-rose-500/15 border-rose-500/40 text-rose-600"
-                : "text-ink/70 hover:border-brand/25",
-            )}
-            title="When on, AI calls return HTTP 402 once you've reached the monthly limit."
-          >
-            <Lock className="w-3.5 h-3.5" /> Hard cap {draft.hard_cap ? "on" : "off"}
-          </ShadButton>
-        </div>
       </div>
 
       <div className="flex items-center justify-between gap-4 pt-1">

@@ -237,7 +237,7 @@ app.use("/api", performanceMonitoring(2000));
 app.use("/api/claude", claudeRateLimiter);
 app.use("/api/claude", timeoutMiddleware(30_000));
 // Auth + spend recording before handlers — every Claude call must hit audit
-// context and monthly/daily caps (see CLAUDE.md spend-cap array).
+// context and spend telemetry (blocking caps removed — overages bill via Stripe).
 app.use("/api/claude", authenticateUser);
 app.use("/api/claude", withAudit("claude"));
 app.use("/api/claude", enforce24hSpendCap);

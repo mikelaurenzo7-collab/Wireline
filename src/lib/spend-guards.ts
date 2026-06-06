@@ -1,23 +1,16 @@
 /**
  * src/lib/spend-guards.ts
  *
- * Express middleware that enforces per-user monthly and system-wide
- * 24-hour Claude spend caps. Extracted from server.ts so route files
- * can import these without creating a circular dependency.
- *
- * Per-user monthly hard-cap (enforceSpendCap) reads from the DB;
- * system-wide 24h cap (enforce24hSpendCap) uses Upstash Redis when configured.
+ * Claude spend tracking + budget webhooks. Request blocking caps were removed —
+ * tenant overages are billed via Stripe (voice minutes, add-ons). Middleware
+ * here is a no-op pass-through; evaluateSpend still fires warn/exceeded webhooks.
  */
 
 import type { Request, Response, NextFunction } from "express";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, gte, sql } from "drizzle-orm";
-import {
-  recordDailySpendUsd,
-  getDailySpendUsd,
-  getDailySpendWindowReset,
-} from "./daily-spend-accumulator";
+import { recordDailySpendUsd, getDailySpendUsd } from "./daily-spend-accumulator";
 
 // ──────────────────────────────────────────────────────────────────────
 //  PER-USER monthly hard-cap
@@ -183,47 +176,10 @@ export async function evaluateSpend(userId: string, deltaUsd: number) {
   }
 }
 
-/**
- * Express middleware — blocks Claude endpoints when the operator has
- * enabled a monthly hard cap and the current month-to-date spend has
- * reached it. Fails OPEN on DB errors to avoid locking out everyone
- * when Supabase has a transient issue.
- */
 type AuthedRequest = Request & { user?: { id?: string } };
 
-export async function enforceSpendCap(req: AuthedRequest, res: Response, next: NextFunction) {
-  if (!req?.user?.id) return next();
-  try {
-    const snap = await getBudgetSnapshot(req.user.id);
-    const b = snap.budget;
-    if (
-      b &&
-      b.enabled &&
-      b.hard_cap &&
-      b.monthly_limit_usd > 0 &&
-      snap.mtdCost >= b.monthly_limit_usd
-    ) {
-      return res.status(402).json({
-        error: `Monthly Claude budget reached ($${b.monthly_limit_usd.toFixed(2)}). Disable hard cap or raise the limit in Insights → AI Spend.`,
-        code: "SPEND_LIMIT_EXCEEDED",
-        period: snap.period,
-        month_to_date_usd: Number(snap.mtdCost.toFixed(4)),
-        monthly_limit_usd: b.monthly_limit_usd,
-      });
-    }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    log.warn("enforceSpendCap check failed — allowing request through", {
-      user_id: req?.user?.id,
-      requestId: res.locals?.requestId,
-      error: message,
-    });
-    SentryEvents.spendGuardDegraded({
-      guard: "monthly_spend_cap",
-      user_id: req?.user?.id,
-      error: message,
-    });
-  }
+/** Legacy mount point — spend is never blocked; overages bill through Stripe. */
+export async function enforceSpendCap(_req: AuthedRequest, _res: Response, next: NextFunction) {
   next();
 }
 
@@ -231,8 +187,14 @@ export async function enforceSpendCap(req: AuthedRequest, res: Response, next: N
 //  SYSTEM-WIDE 24-hour accumulator cap
 // ──────────────────────────────────────────────────────────────────────
 
-const CLAUDE_MONTHLY_BUDGET_USD = Math.max(0, Number(process.env.CLAUDE_MONTHLY_BUDGET_USD ?? 50));
-export const DAILY_SPEND_LIMIT_USD = CLAUDE_MONTHLY_BUDGET_USD * 0.01; // 1% of monthly
+/** Ops telemetry only — optional alert threshold (USD / rolling 24h). Not enforced. */
+const CLAUDE_DAILY_ALERT_USD = Math.max(
+  0,
+  Number(process.env.CLAUDE_DAILY_ALERT_USD ?? process.env.CLAUDE_MONTHLY_BUDGET_USD ?? 0) * 0.01,
+);
+
+/** @deprecated Blocking removed — kept for tests/metrics that referenced the old 1% valve. */
+export const DAILY_SPEND_LIMIT_USD = 0;
 
 /**
  * Call this after every Claude API round trip to track cumulative 24h spend.
@@ -241,45 +203,16 @@ export function recordDailySpend(usd: number): void {
   void recordDailySpendUsd(usd)
     .then(() => getDailySpendUsd())
     .then((accumulated) => {
-      if (DAILY_SPEND_LIMIT_USD > 0 && accumulated >= DAILY_SPEND_LIMIT_USD) {
-        log.warn("Daily Claude spend cap reached", {
-          daily_limit_usd: DAILY_SPEND_LIMIT_USD,
+      if (CLAUDE_DAILY_ALERT_USD > 0 && accumulated >= CLAUDE_DAILY_ALERT_USD) {
+        log.warn("Daily Claude spend alert threshold crossed (telemetry only)", {
+          alert_threshold_usd: CLAUDE_DAILY_ALERT_USD,
           accumulated_usd: Number(accumulated.toFixed(4)),
-          monthly_budget_usd: CLAUDE_MONTHLY_BUDGET_USD,
         });
       }
     });
 }
 
-/**
- * Express pre-handler — blocks Claude endpoints when the 24h spend window
- * is over budget. Disabled when CLAUDE_MONTHLY_BUDGET_USD is 0.
- */
-export async function enforce24hSpendCap(_req: Request, res: Response, next: NextFunction) {
-  if (DAILY_SPEND_LIMIT_USD <= 0) return next(); // disabled when budget is 0
-  try {
-    const accumulated = await getDailySpendUsd();
-    if (accumulated >= DAILY_SPEND_LIMIT_USD) {
-      const { resetMs, backend } = await getDailySpendWindowReset();
-      const resetMinutes = Math.max(1, Math.ceil(resetMs / 60_000));
-      return res.status(402).json({
-        error: `Daily Claude spend limit reached ($${DAILY_SPEND_LIMIT_USD.toFixed(2)}/day, 1 % of $${CLAUDE_MONTHLY_BUDGET_USD} monthly budget). Resets in ~${resetMinutes} minutes.`,
-        code: "DAILY_SPEND_LIMIT_EXCEEDED",
-        daily_limit_usd: DAILY_SPEND_LIMIT_USD,
-        accumulated_usd: Number(accumulated.toFixed(4)),
-        reset_in_ms: resetMs,
-        reset_backend: backend,
-      });
-    }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    log.warn("enforce24hSpendCap check failed — allowing request through", {
-      error: message,
-    });
-    SentryEvents.spendGuardDegraded({
-      guard: "daily_spend_cap",
-      error: message,
-    });
-  }
+/** Legacy mount point — fleet-wide daily cap removed; usage bills per tenant. */
+export async function enforce24hSpendCap(_req: Request, _res: Response, next: NextFunction) {
   next();
 }

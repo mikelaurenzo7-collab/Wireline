@@ -210,7 +210,7 @@ router.put(
     try {
       const limit = Number(req.body.monthly_limit_usd ?? 0);
       const warn = Math.round(Number(req.body.warn_threshold_pct ?? 80));
-      const hardCap = !!req.body.hard_cap;
+      const hardCap = false;
       const enabled = req.body.enabled !== false;
       if (!Number.isFinite(limit) || limit < 0)
         return res.status(400).json({ error: "monthly_limit_usd must be a non-negative number" });
@@ -272,7 +272,7 @@ router.get("/spend/status", authenticateUser, async (req: AuthenticatedRequest, 
       hard_cap: snap.budget?.hard_cap ?? false,
       enabled: snap.budget?.enabled ?? true,
       warn_threshold_pct: snap.budget?.warn_threshold_pct ?? 80,
-      hard_capped_now: !!(snap.budget?.hard_cap && limit > 0 && snap.mtdCost >= limit),
+      hard_capped_now: false,
       alerts_fired: alerts || [],
     });
   } catch (e: any) {

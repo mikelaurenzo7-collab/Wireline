@@ -102,7 +102,7 @@ const optional = [
   ["VITE_SENTRY_DSN", "Frontend error monitoring"],
   [
     "CLAUDE_MONTHLY_BUDGET_USD",
-    "Monthly Claude spend cap in USD (default $50; 1 % daily safety valve)",
+    "Optional rolling-24h Claude spend alert threshold (telemetry only; 0 = off)",
   ],
 ];
 

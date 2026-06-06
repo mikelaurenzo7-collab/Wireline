@@ -570,7 +570,7 @@ describe("billing routes integration", () => {
     expect(h.clearBudgetCache).not.toHaveBeenCalled();
   });
 
-  it("persists spend budget with hard cap and clears cache", async () => {
+  it("persists spend budget warnings and clears cache (hard cap always off)", async () => {
     const response = await request(await buildApp())
       .put("/api/spend/budget")
       .set("Authorization", ["Bearer", "valid-token"].join(" "))
@@ -581,7 +581,7 @@ describe("billing routes integration", () => {
       expect.objectContaining({
         userId: "user-1",
         monthlyLimitUsd: "250",
-        hardCap: true,
+        hardCap: false,
         warnThresholdPct: 85,
         enabled: true,
       }),
