@@ -56,20 +56,24 @@ specific branch for Preview which is awkward — prefer the UI.
 
 ### Var inventory (key ones)
 
-| Var                                                 | Why it exists                                                                               |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `APP_URL`                                           | Base URL for OAuth callbacks, Stripe webhooks, Vapi assistant config                        |
-| `CORS_ORIGINS`                                      | Allowed origins for cross-origin API requests                                               |
-| `POSTGRES_URL`                                      | Supabase Postgres connection                                                                |
-| `INTERNAL_JWT_SECRET`                               | Wireline session JWT signing. Canonical name; `SUPABASE_JWT_SECRET` is only a legacy alias. |
-| `VAPI_PRIVATE_KEY`                                  | Server-side Vapi API calls                                                                  |
-| `VITE_VAPI_PUBLIC_KEY`                              | In-browser Vapi widget                                                                      |
-| `VAPI_WEBHOOK_SECRET`                               | Auth on `/api/vapi-webhook` and `/api/escalate`                                             |
-| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN`          | Outbound SMS, inbound webhook                                                               |
+| Var                                                 | Why it exists                                                                                                       |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `APP_URL`                                           | Base URL for OAuth callbacks, Stripe webhooks, Vapi assistant config                                                |
+| `CORS_ORIGINS`                                      | Allowed origins for cross-origin API requests                                                                       |
+| `POSTGRES_URL`                                      | Supabase Postgres connection                                                                                        |
+| `INTERNAL_JWT_SECRET`                               | Wireline session JWT signing. Canonical name; `SUPABASE_JWT_SECRET` is only a legacy alias.                         |
+| `VAPI_PRIVATE_KEY`                                  | Server-side Vapi API calls                                                                                          |
+| `VITE_VAPI_PUBLIC_KEY`                              | In-browser Vapi widget                                                                                              |
+| `VAPI_WEBHOOK_SECRET`                               | Auth on `/api/vapi-webhook` and `/api/escalate`                                                                     |
+| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN`          | Outbound SMS, inbound webhook                                                                                       |
 | `OWNER_PHONE` / `OWNER_EMAIL` / `PLATFORM_SMS_FROM` | Escalation routing (where agent escalations go). Set `OWNER_EMAIL=mikelaurenzo7@gmail.com` for the founder account. |
-| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`       | Billing                                                                                     |
-| `ANTHROPIC_API_KEY`                                 | Claude API for agent reasoning                                                              |
-| `OPENROUTER_API_KEY`                                | Optional — Director chat model picker (Pro+ in app; company key; voice runtime unchanged) |
+| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`       | Billing                                                                                                             |
+| `ANTHROPIC_API_KEY`                                 | Claude API for agent reasoning                                                                                      |
+| `GEMINI_API_KEY`                                    | Gemini fallback + grounded web research for Director context                                                        |
+| `OPENROUTER_API_KEY`                                | Optional — Director chat model picker (Pro+ in app; company key; voice runtime unchanged)                           |
+| `GOOGLE_STITCH_API_KEY`                             | Google Stitch SDK/MCP API key for Director UI/media generation                                                      |
+| `GOOGLE_STITCH_PROJECT_ID`                          | Stitch web project id from `stitch.withgoogle.com/projects/{id}` (not a Google Cloud id)                            |
+| `DIRECTOR_STITCH_MEDIA_ENABLED`                     | Enables Director routing for Stitch mockup/website/hero requests (`true`/`false`)                                   |
 
 ### Internal JWT secret cleanup
 

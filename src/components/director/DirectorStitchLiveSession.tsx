@@ -3,7 +3,7 @@
  */
 import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { LayoutTemplate, Sparkles } from "lucide-react";
+import { Check, FileText, ImageDown, LayoutTemplate, Palette, Sparkles } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { WL_DIRECTOR_CLASSES, WIRELINE_STITCH_UI } from "../../lib/wireline-director-design";
 
@@ -32,6 +32,12 @@ export default function DirectorStitchLiveSession({
   }, [phases.length]);
 
   const phase = phases[phaseIndex] ?? phases[0]!;
+  const steps = [
+    { label: "Design brief", detail: "Extracting audience, sections, and CTA", icon: FileText },
+    { label: "Brand system", detail: "Applying colors, spacing, and tone", icon: Palette },
+    { label: "Stitch render", detail: "Generating the responsive screen", icon: LayoutTemplate },
+    { label: "Preview assets", detail: "Packaging HTML and screenshot", icon: ImageDown },
+  ];
 
   return (
     <motion.div
@@ -46,7 +52,44 @@ export default function DirectorStitchLiveSession({
             {WIRELINE_STITCH_UI.badgeLabel}
           </span>
         </span>
-        <span className="text-[10px] font-mono text-muted/70 tabular-nums">{elapsedSec}s</span>
+        <span className="text-[10px] font-mono text-muted/70 tabular-nums">
+          {elapsedSec}s · usually 3–5m
+        </span>
+      </div>
+
+      <div className="mb-3 grid grid-cols-2 gap-2">
+        {steps.map((step, index) => {
+          const Icon = step.icon;
+          const stepIndex = Math.min(phaseIndex, steps.length - 1);
+          const done = index < stepIndex;
+          const active = index === stepIndex;
+          return (
+            <div
+              key={step.label}
+              className={cn(
+                "rounded-md border px-2.5 py-2 min-w-0",
+                active && "border-brand/30 bg-brand/[0.06]",
+                done && "border-emerald-500/20 bg-emerald-500/[0.05]",
+                !active && !done && "border-brand/8 bg-white/45 dark:bg-black/20 opacity-70",
+              )}
+            >
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span
+                  className={cn(
+                    "shrink-0 flex h-5 w-5 items-center justify-center rounded-full",
+                    done ? "bg-emerald-500/15 text-emerald-600" : "bg-brand/10 text-brand",
+                  )}
+                >
+                  {done ? <Check className="w-3 h-3" /> : <Icon className="w-3 h-3" />}
+                </span>
+                <span className="text-[10px] font-semibold text-ink truncate">{step.label}</span>
+              </div>
+              <p className="mt-1 text-[9px] text-muted/70 leading-snug line-clamp-2">
+                {step.detail}
+              </p>
+            </div>
+          );
+        })}
       </div>
 
       <div className="wl-stitch-device wl-stitch-device--mobile mx-auto wl-stitch-live-shimmer">

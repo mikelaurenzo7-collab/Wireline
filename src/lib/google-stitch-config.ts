@@ -12,8 +12,23 @@ export function getGoogleStitchApiKey(): string | null {
   return key || null;
 }
 
+export function getGoogleStitchAccessToken(): string | null {
+  const token = process.env.STITCH_ACCESS_TOKEN?.trim() || "";
+  return token || null;
+}
+
+export function getGoogleStitchQuotaProjectId(): string | null {
+  const raw = process.env.GOOGLE_CLOUD_PROJECT?.trim() || "";
+  return raw || null;
+}
+
+export function hasGoogleStitchCredentials(): boolean {
+  if (getGoogleStitchApiKey()) return true;
+  return Boolean(getGoogleStitchAccessToken() && getGoogleStitchQuotaProjectId());
+}
+
 export function isGoogleStitchConfigured(): boolean {
-  return Boolean(getGoogleStitchApiKey());
+  return hasGoogleStitchCredentials();
 }
 
 export function getGoogleStitchMcpBaseUrl(): string {
@@ -29,12 +44,19 @@ export function getGoogleStitchTimeoutMs(): number {
 
 /**
  * Default Stitch project — numeric ID from stitch.withgoogle.com/projects/{id}.
- * This is NOT GOOGLE_CLOUD_PROJECT (GCP console); Wireline uses API-key auth only.
+ * This is NOT GOOGLE_CLOUD_PROJECT (GCP console); GOOGLE_CLOUD_PROJECT is only for OAuth quota.
  * Project must be TEXT_TO_UI / TEXT_TO_UI_PRO (created in Stitch web UI, not MCP create_project).
  */
+export function parseGoogleStitchProjectId(raw: string | undefined | null): string | null {
+  const value = raw?.trim() || "";
+  if (!value) return null;
+  const urlMatch = value.match(/(?:^|\/)projects\/([^/?#]+)/i);
+  const candidate = (urlMatch?.[1] || value.replace(/^projects\//i, "")).trim();
+  return candidate.replace(/[?#].*$/, "") || null;
+}
+
 export function getGoogleStitchProjectId(): string | null {
   const raw =
     process.env.GOOGLE_STITCH_PROJECT_ID?.trim() || process.env.STITCH_PROJECT_ID?.trim() || "";
-  if (!raw) return null;
-  return raw.replace(/^projects\//, "").trim() || null;
+  return parseGoogleStitchProjectId(raw);
 }

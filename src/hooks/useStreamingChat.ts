@@ -16,6 +16,14 @@ import { refreshSessionIfNeeded } from "../lib/api";
 
 export type StreamPhase = "idle" | "connecting" | "thinking" | "replying" | "done" | "error";
 
+export interface StreamActivity {
+  id: string;
+  label: string;
+  detail?: string;
+  status: "active" | "done" | "warning";
+  at: number;
+}
+
 export interface StreamingState {
   /** Current phase of the streaming lifecycle. */
   phase: StreamPhase;
@@ -35,6 +43,8 @@ export interface StreamingState {
   model?: string;
   /** Human label from meta (Wireline tier or OpenRouter model). */
   modelDisplayLabel?: string;
+  /** Server-emitted activity milestones for transparent Director progress. */
+  activities: StreamActivity[];
 }
 
 const INITIAL_STATE: StreamingState = {
@@ -42,6 +52,7 @@ const INITIAL_STATE: StreamingState = {
   thinkingText: "",
   isDeep: false,
   streamEstablished: false,
+  activities: [],
 };
 
 interface UseStreamingChatOptions {
@@ -144,7 +155,13 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
       completionRef.current = false;
       latestReplyRef.current = undefined;
       streamEstablishedRef.current = false;
-      setState({ phase: "connecting", thinkingText: "", isDeep: false, streamEstablished: false });
+      setState({
+        phase: "connecting",
+        thinkingText: "",
+        isDeep: false,
+        streamEstablished: false,
+        activities: [],
+      });
 
       await refreshSessionIfNeeded();
 
@@ -201,6 +218,27 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
                 streamEstablished: true,
               }));
               break;
+
+            case "activity": {
+              streamEstablishedRef.current = true;
+              const id =
+                typeof data.id === "string" && data.id.trim() ? data.id.trim() : "activity";
+              const label =
+                typeof data.label === "string" && data.label.trim() ? data.label.trim() : "Working";
+              const status: StreamActivity["status"] =
+                data.status === "done" || data.status === "warning" ? data.status : "active";
+              const detail = typeof data.detail === "string" ? data.detail : undefined;
+              setState((s) => {
+                const next = { id, label, detail, status, at: Date.now() };
+                const without = s.activities.filter((a) => a.id !== id);
+                return {
+                  ...s,
+                  streamEstablished: true,
+                  activities: [...without, next].slice(-8),
+                };
+              });
+              break;
+            }
 
             case "thinking_start":
               streamEstablishedRef.current = true;

@@ -1,10 +1,85 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { createGoogleStitchRuntime } from "./google-stitch-sdk-client";
 import {
   mapStitchError,
   projectEntityToRef,
   screenEntityToRecord,
 } from "./google-stitch-sdk-helpers";
 import { GoogleStitchError } from "./google-stitch-mcp-client";
+
+const sdkMock = vi.hoisted(() => ({
+  clientOptions: [] as Array<Record<string, unknown>>,
+  close: vi.fn(async () => undefined),
+}));
+
+vi.mock("@google/stitch-sdk", () => ({
+  StitchToolClient: class StitchToolClient {
+    constructor(options: Record<string, unknown>) {
+      sdkMock.clientOptions.push(options);
+    }
+
+    close = sdkMock.close;
+  },
+  Stitch: class Stitch {
+    client: unknown;
+
+    constructor(client: unknown) {
+      this.client = client;
+    }
+  },
+}));
+
+function clearRuntimeStitchEnv() {
+  vi.stubEnv("GOOGLE_STITCH_API_KEY", "");
+  vi.stubEnv("STITCH_API_KEY", "");
+  vi.stubEnv("STITCH_ACCESS_TOKEN", "");
+  vi.stubEnv("GOOGLE_CLOUD_PROJECT", "");
+}
+
+describe("google stitch runtime", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    sdkMock.clientOptions.length = 0;
+    sdkMock.close.mockClear();
+  });
+
+  it("requires API-key auth or OAuth quota-project auth", async () => {
+    clearRuntimeStitchEnv();
+
+    await expect(createGoogleStitchRuntime()).rejects.toMatchObject({
+      code: "AUTH_FAILED",
+    });
+  });
+
+  it("prefers GOOGLE_STITCH_API_KEY for the SDK client", async () => {
+    vi.stubEnv("GOOGLE_STITCH_API_KEY", "stitch-key");
+    vi.stubEnv("STITCH_ACCESS_TOKEN", "oauth-token");
+    vi.stubEnv("GOOGLE_CLOUD_PROJECT", "quota-project");
+
+    await createGoogleStitchRuntime();
+
+    expect(sdkMock.clientOptions[0]).toMatchObject({
+      apiKey: "stitch-key",
+      accessToken: undefined,
+      projectId: undefined,
+      baseUrl: "https://stitch.googleapis.com/mcp",
+    });
+  });
+
+  it("supports the SDK OAuth alternative when no API key is set", async () => {
+    clearRuntimeStitchEnv();
+    vi.stubEnv("STITCH_ACCESS_TOKEN", "oauth-token");
+    vi.stubEnv("GOOGLE_CLOUD_PROJECT", "quota-project");
+
+    await createGoogleStitchRuntime();
+
+    expect(sdkMock.clientOptions[0]).toMatchObject({
+      apiKey: undefined,
+      accessToken: "oauth-token",
+      projectId: "quota-project",
+    });
+  });
+});
 
 describe("google stitch sdk helpers", () => {
   it("passes through GoogleStitchError", () => {

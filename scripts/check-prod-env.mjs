@@ -34,11 +34,7 @@ const required = [
     "Distributed rate-limit store — required for global abuse protection on Vercel",
     process.env.UPSTASH_REDIS_REST_URL,
   ],
-  [
-    "UPSTASH_REDIS_REST_TOKEN",
-    "Upstash Redis token",
-    process.env.UPSTASH_REDIS_REST_TOKEN,
-  ],
+  ["UPSTASH_REDIS_REST_TOKEN", "Upstash Redis token", process.env.UPSTASH_REDIS_REST_TOKEN],
   [
     "VAPI_WEBHOOK_SECRET",
     "Vapi webhook HMAC — voice observability rejects unsigned callbacks in prod when unset",
@@ -72,10 +68,6 @@ const recommended = [
   ["STRIPE_BUSINESS_PRICE_ID", "Stripe monthly price — Business"],
   ["STRIPE_BUSINESS_ANNUAL_PRICE_ID", "Stripe annual price — Business"],
   ["STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID", "Stripe extra-agent add-on — Business"],
-  [
-    "STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID",
-    "Stripe extra-agent add-on — Business",
-  ],
   ["STRIPE_PERSONAL_OVERAGE_PRICE_ID", "Stripe metered voice-overage price — Personal"],
   ["STRIPE_STARTER_OVERAGE_PRICE_ID", "Stripe metered voice-overage price — Starter"],
   ["STRIPE_PRO_OVERAGE_PRICE_ID", "Stripe metered voice-overage price — Pro"],
@@ -92,7 +84,10 @@ const recommended = [
 ];
 
 const optional = [
-  ["GEMINI_API_KEY", "Gemini fallback for legacy paths"],
+  ["GEMINI_API_KEY", "Gemini fallback for legacy paths and web research"],
+  ["GOOGLE_STITCH_API_KEY", "Google Stitch API key for Director UI generation"],
+  ["GOOGLE_STITCH_PROJECT_ID", "Stitch web project id for Director UI generation"],
+  ["DIRECTOR_STITCH_MEDIA_ENABLED", "Enable Director Stitch media routing (true/false)"],
   ["OPENAI_API_KEY", "Optional GPT second-tier fallback / degraded-mode recovery"],
   ["GOOGLE_CLIENT_ID", "Gmail OAuth — disables email integration when unset"],
   ["GOOGLE_CLIENT_SECRET", "Gmail OAuth"],

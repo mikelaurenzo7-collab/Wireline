@@ -13,7 +13,10 @@ export interface DirectorFeatureFlags {
 function envEnabled(name: string, defaultValue: boolean): boolean {
   const raw = process.env[name];
   if (raw === undefined) return defaultValue;
-  return /^(1|true|yes|on)$/i.test(raw.trim());
+  const value = raw.trim();
+  if (/^(1|true|yes|on)$/i.test(value)) return true;
+  if (/^(0|false|no|off)$/i.test(value)) return false;
+  return defaultValue;
 }
 
 export function loadDirectorFeatureFlags(): DirectorFeatureFlags {

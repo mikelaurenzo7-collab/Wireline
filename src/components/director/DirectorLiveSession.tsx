@@ -4,7 +4,17 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Brain, Compass, GraduationCap, Loader2, Plug, Sparkles, Zap, Check } from "lucide-react";
+import {
+  AlertCircle,
+  Brain,
+  Compass,
+  GraduationCap,
+  Loader2,
+  Plug,
+  Sparkles,
+  Zap,
+  Check,
+} from "lucide-react";
 import { cn } from "../../lib/utils";
 import {
   WL_APP_CLASSES,
@@ -12,7 +22,7 @@ import {
   directorPhaseCopy,
   DIRECTOR_LIVE_STEP_COPY,
 } from "../../lib/wireline-director-design";
-import type { StreamPhase } from "../../hooks/useStreamingChat";
+import type { StreamActivity, StreamPhase } from "../../hooks/useStreamingChat";
 import { LiveTaskPipeline, type PipelineStep } from "../ui/LiveTaskPipeline";
 import { LiveThinkingIndicator } from "../ui/ThinkingDisplay";
 import DirectorLiveOrchestra from "./DirectorLiveOrchestra";
@@ -38,6 +48,7 @@ export interface DirectorLiveSessionProps {
   pipelineSteps: PipelineStep[];
   integrationActions: IntegrationLiveAction[];
   liveSteps: DirectorLiveStep[];
+  activities: StreamActivity[];
   className?: string;
 }
 
@@ -129,6 +140,104 @@ function ThinkingStream({ text, isDeep }: { text: string; isDeep: boolean }) {
   );
 }
 
+function ActivityStatusIcon({ status }: { status: StreamActivity["status"] }) {
+  if (status === "active") return <Loader2 className="h-3 w-3 animate-spin" />;
+  if (status === "warning") return <AlertCircle className="h-3 w-3" />;
+  return <Check className="h-3 w-3" />;
+}
+
+function ActivityRail({ activities }: { activities: StreamActivity[] }) {
+  if (activities.length === 0) return null;
+  const visible = activities.slice(-6);
+  const current =
+    [...visible].reverse().find((activity) => activity.status === "active") ?? visible.at(-1);
+  const history = visible.filter((activity) => activity !== current).slice(-4);
+  const completedCount = visible.filter((activity) => activity.status === "done").length;
+
+  return (
+    <div className="relative overflow-hidden rounded-lg border border-brand/12 bg-gradient-to-b from-white/75 to-brand/[0.035] p-3 shadow-[0_12px_32px_rgba(45,27,78,0.06)] dark:from-black/25 dark:to-brand/10">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand/35 to-transparent" />
+      <div className="flex items-center justify-between gap-2">
+        <span className={cn(WL_DIRECTOR_CLASSES.microLabel, "text-brand/80")}>
+          Director is working
+        </span>
+        <span className="rounded-full border border-brand/10 bg-white/60 px-2 py-0.5 text-[9px] font-mono tabular-nums text-muted/70 dark:bg-black/20">
+          {completedCount}/{visible.length} milestones
+        </span>
+      </div>
+
+      {current && (
+        <motion.div
+          key={`${current.id}-${current.at}-current`}
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={cn(
+            "mt-2.5 rounded-md border px-3 py-2.5",
+            current.status === "active" && "border-brand/25 bg-brand/[0.07]",
+            current.status === "done" && "border-emerald-500/20 bg-emerald-500/[0.06]",
+            current.status === "warning" && "border-amber-500/25 bg-amber-500/[0.08]",
+          )}
+        >
+          <div className="flex items-start gap-2.5">
+            <span
+              className={cn(
+                "mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full",
+                current.status === "active" && "bg-brand/15 text-brand",
+                current.status === "done" && "bg-emerald-500/15 text-emerald-600",
+                current.status === "warning" && "bg-amber-500/15 text-amber-600",
+              )}
+            >
+              <ActivityStatusIcon status={current.status} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[12px] font-semibold leading-tight text-ink/90">
+                {current.label}
+              </span>
+              <span className="mt-1 block text-[10px] leading-snug text-muted/75">
+                {current.detail ||
+                  (current.status === "active"
+                    ? "Coordinating context, tools, and response drafting."
+                    : "Milestone recorded.")}
+              </span>
+            </span>
+            <span className="shrink-0 text-[9px] font-mono tabular-nums text-muted/55">
+              {formatElapsed(Math.max(0, Date.now() - current.at))}
+            </span>
+          </div>
+        </motion.div>
+      )}
+
+      {history.length > 0 && (
+        <div className="mt-2.5 space-y-1.5 border-t border-brand/8 pt-2">
+          {history.map((activity) => (
+            <motion.div
+              key={`${activity.id}-${activity.at}`}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-2 text-[10px] text-muted/75"
+            >
+              <span
+                className={cn(
+                  "inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full",
+                  activity.status === "active" && "bg-brand/10 text-brand",
+                  activity.status === "done" && "bg-emerald-500/10 text-emerald-600",
+                  activity.status === "warning" && "bg-amber-500/10 text-amber-600",
+                )}
+              >
+                <ActivityStatusIcon status={activity.status} />
+              </span>
+              <span className="min-w-0 flex-1 truncate">{activity.label}</span>
+              <span className="shrink-0 font-mono tabular-nums text-muted/50">
+                {formatElapsed(Math.max(0, Date.now() - activity.at))}
+              </span>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function OrchestrationStep({ step, index }: { step: DirectorLiveStep; index: number }) {
   return (
     <motion.div
@@ -197,6 +306,7 @@ export default function DirectorLiveSession({
   pipelineSteps,
   integrationActions,
   liveSteps,
+  activities,
   className,
   modelDisplayLabel,
 }: DirectorLiveSessionProps) {
@@ -306,6 +416,8 @@ export default function DirectorLiveSession({
             </div>
           </div>
         )}
+
+        <ActivityRail activities={activities} />
 
         {/* SSE pipeline — hide when fleet channel is showing live actions */}
         {pipelineSteps.length > 0 && integrationActions.length === 0 && (

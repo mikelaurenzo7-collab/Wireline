@@ -35,4 +35,16 @@ describe("previewHasAssetSources", () => {
       }),
     ).toBe(true);
   });
+
+  it("returns true for persisted signed download URLs", () => {
+    expect(
+      previewHasAssetSources({
+        conceptId: "1",
+        title: "Screen",
+        rationale: "Wireline Design",
+        previewDataUrl: "",
+        htmlDownloadUrl: "/api/director/artifacts/html-1/download?exp=1&sig=s&inline=1",
+      }),
+    ).toBe(true);
+  });
 });

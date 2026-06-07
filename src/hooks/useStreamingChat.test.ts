@@ -37,4 +37,26 @@ describe("useStreamingChat module", () => {
     });
     expect(events).toEqual([{ event: "done", data: { reply: "hello" } }]);
   });
+
+  it("parseSseEvents forwards Director activity milestones", () => {
+    const events: Array<{ event: string; data: Record<string, unknown> }> = [];
+    parseSseEvents(
+      [
+        "event: activity",
+        '{"id":"context","label":"Loaded workspace context","status":"done"}'.replace(
+          /^/,
+          "data: ",
+        ),
+      ],
+      (event, data) => {
+        events.push({ event, data });
+      },
+    );
+    expect(events).toEqual([
+      {
+        event: "activity",
+        data: { id: "context", label: "Loaded workspace context", status: "done" },
+      },
+    ]);
+  });
 });

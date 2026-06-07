@@ -243,6 +243,16 @@ function filterDirectorArtifactsForThread(
   });
 }
 
+function emitDirectorActivity(
+  sse: SseStreamHandle,
+  id: string,
+  label: string,
+  detail?: string,
+  status: "active" | "done" | "warning" = "active",
+): void {
+  sse.write("activity", { id, label, detail, status });
+}
+
 /** Recover a completed turn from DB when the stream errors after persist (or parallel retry). */
 async function emitStreamDoneFromPersisted(
   sse: SseStreamHandle,
@@ -1048,12 +1058,26 @@ router.post(
 
       const sse = createSseStream(req, res);
       writeSseBootstrap(sse);
+      emitDirectorActivity(
+        sse,
+        "connect",
+        "Opened Director channel",
+        "Preparing a live response",
+        "active",
+      );
 
       const streamAbort = new AbortController();
       sse.onClientDisconnect(() => streamAbort.abort());
 
       const fleet = await loadFleetSafe(req.user.id);
       const stats = await loadDirectorWeekStats(req.user.id);
+      emitDirectorActivity(
+        sse,
+        "context",
+        "Loaded workspace context",
+        `${fleet.length} agents · weekly usage ready`,
+        "done",
+      );
 
       const priorMessages = await loadDirectorMessages(req.user.id, CLAUDE_CONTEXT_WINDOW);
 
@@ -1068,8 +1092,16 @@ router.post(
         priorMessages,
         req.body?.skipOperatorPersist === true,
       );
+      emitDirectorActivity(sse, "memory", "Synced conversation memory", undefined, "done");
 
       const featureFlags = loadDirectorFeatureFlags();
+      emitDirectorActivity(
+        sse,
+        "route",
+        "Routing request",
+        "Checking tools, design, and agent context",
+        "active",
+      );
 
       if (
         featureFlags.toolExecution &&
@@ -1114,13 +1146,23 @@ router.post(
             operatorMessage,
             history,
             stitchOptions: req.body?.stitchOptions,
-            onProgress: (text) => sse.write("thinking_chunk", { text }),
+            onProgress: (text) => {
+              sse.write("thinking_chunk", { text });
+              emitDirectorActivity(sse, "stitch", "Rendering with Google Stitch", text, "active");
+            },
             signal: streamAbort.signal,
           })
         : { kind: "none" as const };
 
       if (stitchPath.kind === "stitch" || stitchPath.kind === "stitch-failed") {
         const stitchTurn = stitchPath.turn;
+        emitDirectorActivity(
+          sse,
+          "stitch",
+          stitchTurn.stitchAssetsPending ? "Stitch render queued" : "Stitch render packaged",
+          stitchTurn.thinkingSummary,
+          stitchTurn.stitchAssetsPending ? "active" : "done",
+        );
         sse.write("meta", {
           model: "stitch",
           modelLabel: WIRELINE_STITCH_UI.modelLabel,
@@ -1174,6 +1216,14 @@ router.post(
         deliverableGuidance: stitchDesignFallback?.deliverableGuidance,
       });
 
+      emitDirectorActivity(
+        sse,
+        "plan",
+        streamCtx.mode === "coach" ? "Prepared coaching context" : "Prepared fleet plan",
+        stitchDesignFallback ? "Using Wireline Design fallback artifacts" : streamCtx.modelLabel,
+        "done",
+      );
+
       const streamMeta = directorStreamMetaModel(streamCtx);
       sse.write("meta", {
         model: streamMeta.model,
@@ -1189,10 +1239,28 @@ router.post(
       let streamFinalized = false;
       try {
         const streamWireline = streamCtx.llmProvider === "wireline";
+        emitDirectorActivity(
+          sse,
+          "model",
+          "Contacting reasoning model",
+          streamCtx.modelLabel,
+          "active",
+        );
         const { result, thinking, thinkingDurationMs } = await runDirectorStreamLlm(
           streamCtx,
           {
-            onThinkingStart: streamWireline ? () => sse.write("thinking_start", {}) : undefined,
+            onThinkingStart: streamWireline
+              ? () => {
+                  emitDirectorActivity(
+                    sse,
+                    "model",
+                    "Reasoning through the request",
+                    streamCtx.modelLabel,
+                    "active",
+                  );
+                  sse.write("thinking_start", {});
+                }
+              : undefined,
             onThinkingChunk: streamWireline
               ? (text) => sse.write("thinking_chunk", { text })
               : undefined,
@@ -1206,6 +1274,13 @@ router.post(
                 typeof rec.reply === "string"
                   ? { reply: rec.reply }
                   : { reply: typeof r === "string" ? r : "" };
+              emitDirectorActivity(
+                sse,
+                "compose",
+                "Drafting final response",
+                "Structuring answer, proposals, and artifacts",
+                "active",
+              );
               sse.write("reply", preview);
             },
           },
@@ -1306,6 +1381,13 @@ router.post(
           ...(stitchDesignFallback ? { artifacts: stitchDesignFallback.artifacts } : {}),
         };
 
+        emitDirectorActivity(
+          sse,
+          "save",
+          "Saving Director output",
+          "Persisting reply and artifacts",
+          "active",
+        );
         streamFinalized = await finalizeDirectorStreamTurn(
           sse,
           req.user.id,
@@ -1354,10 +1436,24 @@ router.post(
           ) {
             return;
           }
+          emitDirectorActivity(
+            sse,
+            "fallback",
+            "Recovered with fast model",
+            "Primary stream degraded; using resilient fallback",
+            "warning",
+          );
           sse.write("thinking_end", {
             thinking: turn.reasoning ?? "",
             durationMs: turn.thinkingDurationMs ?? 0,
           });
+          emitDirectorActivity(
+            sse,
+            "save",
+            "Saving Director output",
+            "Persisting fallback reply",
+            "active",
+          );
           await finalizeDirectorStreamTurn(
             sse,
             req.user.id,

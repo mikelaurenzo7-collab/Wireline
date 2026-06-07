@@ -5,8 +5,10 @@
  * without resolving @google/stitch-sdk at require() time.
  */
 import {
+  getGoogleStitchAccessToken,
   getGoogleStitchApiKey,
   getGoogleStitchMcpBaseUrl,
+  getGoogleStitchQuotaProjectId,
   getGoogleStitchTimeoutMs,
 } from "./google-stitch-config";
 import { GoogleStitchError } from "./google-stitch-mcp-client";
@@ -28,13 +30,20 @@ export interface GoogleStitchRuntime {
 
 export async function createGoogleStitchRuntime(): Promise<GoogleStitchRuntime> {
   const apiKey = getGoogleStitchApiKey();
-  if (!apiKey) {
-    throw new GoogleStitchError("GOOGLE_STITCH_API_KEY is not configured", "AUTH_FAILED");
+  const accessToken = getGoogleStitchAccessToken();
+  const quotaProjectId = getGoogleStitchQuotaProjectId();
+  if (!apiKey && !(accessToken && quotaProjectId)) {
+    throw new GoogleStitchError(
+      "Google Stitch credentials are not configured. Set GOOGLE_STITCH_API_KEY (preferred) or STITCH_ACCESS_TOKEN + GOOGLE_CLOUD_PROJECT.",
+      "AUTH_FAILED",
+    );
   }
 
   const { Stitch, StitchToolClient } = await import("@google/stitch-sdk");
   const client = new StitchToolClient({
-    apiKey,
+    apiKey: apiKey ?? undefined,
+    accessToken: apiKey ? undefined : (accessToken ?? undefined),
+    projectId: apiKey ? undefined : (quotaProjectId ?? undefined),
     baseUrl: getGoogleStitchMcpBaseUrl(),
     timeout: getGoogleStitchTimeoutMs(),
   });

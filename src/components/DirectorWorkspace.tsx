@@ -865,6 +865,7 @@ export default function DirectorWorkspace({
     streamState.thinkingText,
     streamState.reply,
     streamState.phase,
+    streamState.activities,
     integrationLiveActions.length,
     pinnedToBottom,
   ]);
@@ -2241,6 +2242,7 @@ export default function DirectorWorkspace({
                 pipelineSteps={streamPipeline}
                 integrationActions={integrationLiveActions}
                 liveSteps={liveSteps}
+                activities={streamState.activities}
               />
             </div>
           )}
