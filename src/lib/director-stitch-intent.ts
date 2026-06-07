@@ -140,18 +140,14 @@ export function buildStitchGenerationPrompt(
   const biz = opts?.businessName?.trim();
   const prefix = biz ? `Business: ${biz}. ` : "";
   const briefRaw = opts?.designBriefMarkdown?.trim();
-  
-  const hasDarkTheme = /\b(dark[\s-]?mode|dark[\s-]?theme|darker)\b/i.test(base) || 
-                       (briefRaw && /\b(dark[\s-]?mode|dark[\s-]?theme|darker)\b/i.test(briefRaw));
-  const fallbackBrief = hasDarkTheme ? WIRELINE_STITCH_DARK_DESIGN_BRIEF : WIRELINE_STITCH_DESIGN_BRIEF;
 
-  const briefForStitch = briefRaw
-    ? (() => {
-        const match = briefRaw.match(/### Operator request\s*\n([\s\S]*?)(?:\n##|\n```|$)/);
-        const operatorSection = match?.[1]?.trim();
-        return (operatorSection || briefRaw).slice(0, 1_200);
-      })()
-    : fallbackBrief;
+  const hasDarkTheme =
+    /\b(dark[\s-]?mode|dark[\s-]?theme|darker)\b/i.test(base) ||
+    (briefRaw && /\b(dark[\s-]?mode|dark[\s-]?theme|darker)\b/i.test(briefRaw));
+  const fallbackBrief = hasDarkTheme
+    ? WIRELINE_STITCH_DARK_DESIGN_BRIEF
+    : WIRELINE_STITCH_DESIGN_BRIEF;
+
+  const briefForStitch = briefRaw ? briefRaw.slice(0, 2500) : fallbackBrief;
   return `${prefix}${base}. Follow this design brief:\n\n${briefForStitch}\n\nDeliver production-ready semantic HTML with accessible labels, a single <style> block or inline CSS, mobile-first layout unless desktop/web is requested, and realistic placeholder content matching the industry in the request.`;
 }
-

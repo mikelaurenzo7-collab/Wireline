@@ -1107,6 +1107,21 @@ router.post(
         return;
       }
 
+      let stitchMetaSent = false;
+      const sendStitchMeta = () => {
+        if (!stitchMetaSent) {
+          stitchMetaSent = true;
+          sse.write("meta", {
+            model: "stitch",
+            modelLabel: WIRELINE_STITCH_UI.modelLabel,
+            modelProvider: "wireline",
+            deep: false,
+            mode: "fleet",
+          });
+          sse.write("thinking_start", {});
+        }
+      };
+
       let stitchDesignFallback: StitchDesignLlmFallback | undefined;
       const stitchPath = featureFlags.stitchMedia
         ? await resolveStitchDirectorPath({
@@ -1114,21 +1129,17 @@ router.post(
             operatorMessage,
             history,
             stitchOptions: req.body?.stitchOptions,
-            onProgress: (text) => sse.write("thinking_chunk", { text }),
+            onProgress: (text) => {
+              sendStitchMeta();
+              sse.write("thinking_chunk", { text });
+            },
             signal: streamAbort.signal,
           })
         : { kind: "none" as const };
 
       if (stitchPath.kind === "stitch" || stitchPath.kind === "stitch-failed") {
         const stitchTurn = stitchPath.turn;
-        sse.write("meta", {
-          model: "stitch",
-          modelLabel: WIRELINE_STITCH_UI.modelLabel,
-          modelProvider: "wireline",
-          deep: false,
-          mode: "fleet",
-        });
-        sse.write("thinking_start", {});
+        sendStitchMeta();
         sse.write("thinking_end", {
           thinking: stitchTurn.thinkingSummary,
           durationMs: stitchTurn.durationMs,

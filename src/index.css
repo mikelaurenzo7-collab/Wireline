@@ -116,13 +116,13 @@ html, body, .marketing-surface, .app-surface {
  * Replaces heavy flat borders with ambient luminosity. Panels feel like
  * they exist in physical space — lit from above, floating over depth. */
 .wl-panel {
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 90%, white);
-  backdrop-filter: blur(16px) saturate(130%);
-  -webkit-backdrop-filter: blur(16px) saturate(130%);
-  border: 1px solid rgba(139, 63, 214, 0.08);
+  background: color-mix(in srgb, var(--paper, #f5f0e6) 94%, white);
+  backdrop-filter: blur(12px) saturate(110%);
+  -webkit-backdrop-filter: blur(12px) saturate(110%);
+  border: 1px solid rgba(26, 22, 20, 0.08);
   box-shadow:
-    0 8px 32px rgba(26, 22, 20, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+    0 4px 16px rgba(26, 22, 20, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 .dark .wl-panel {
   background: rgba(15, 12, 23, 0.75);
@@ -136,14 +136,14 @@ html, body, .marketing-surface, .app-surface {
 
 /* Elevated version for primary workspace containers */
 .wl-panel-elevated {
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 82%, white);
-  backdrop-filter: blur(24px) saturate(145%);
-  -webkit-backdrop-filter: blur(24px) saturate(145%);
-  border: 1px solid rgba(139, 63, 214, 0.1);
+  background: color-mix(in srgb, var(--paper, #f5f0e6) 88%, white);
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  border: 1px solid rgba(26, 22, 20, 0.1);
   box-shadow:
-    0 12px 48px rgba(26, 22, 20, 0.07),
-    0 2px 8px rgba(139, 63, 214, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    0 8px 32px rgba(26, 22, 20, 0.06),
+    0 1px 4px rgba(26, 22, 20, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 .dark .wl-panel-elevated {
   background: rgba(15, 12, 23, 0.82);
@@ -792,7 +792,7 @@ html, body, .marketing-surface, .app-surface {
 .wl-director-micro {
   font-size: 0.5625rem;
   font-weight: 600;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   line-height: 1.3;
 }
