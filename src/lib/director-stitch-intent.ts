@@ -127,6 +127,10 @@ export function resolveStitchVariantOptions(message: string): {
 export const WIRELINE_STITCH_DESIGN_BRIEF =
   'Wireline "Aurora Cream" design system: paper #EFE9DC, ink #1A1614, brand #4F1E7B→#3B154C gradient CTAs, Fraunces italic headlines, Plus Jakarta Sans UI, JetBrains Mono labels (small caps, wide tracking). Sharp editorial corners (minimal radius), cream glass top shells, purple aurora-ring on active states. Premium B2B SaaS — production-ready, not generic AI-purple template.';
 
+/** Compact Aurora Dark brief — appended to every Stitch generation for on-brand output in dark mode. */
+export const WIRELINE_STITCH_DARK_DESIGN_BRIEF =
+  'Wireline "Aurora Dark" design system: paper #0D0D11, ink #E2E8F0, brand #7C3AED→#4C1D95 gradient CTAs, Plus Jakarta Sans UI, JetBrains Mono labels (small caps, wide tracking). Sharp editorial corners (minimal radius), dark glassmorphism panels with 1px border-white/10 and backdrop-blur-md, purple aurora-glow on active states. Premium B2B SaaS dashboard — production-ready, dark mode, not generic AI-purple template.';
+
 /** Enrich operator text into a Stitch-ready structured prompt. */
 export function buildStitchGenerationPrompt(
   operatorMessage: string,
@@ -136,12 +140,18 @@ export function buildStitchGenerationPrompt(
   const biz = opts?.businessName?.trim();
   const prefix = biz ? `Business: ${biz}. ` : "";
   const briefRaw = opts?.designBriefMarkdown?.trim();
+  
+  const hasDarkTheme = /\b(dark[\s-]?mode|dark[\s-]?theme|darker)\b/i.test(base) || 
+                       (briefRaw && /\b(dark[\s-]?mode|dark[\s-]?theme|darker)\b/i.test(briefRaw));
+  const fallbackBrief = hasDarkTheme ? WIRELINE_STITCH_DARK_DESIGN_BRIEF : WIRELINE_STITCH_DESIGN_BRIEF;
+
   const briefForStitch = briefRaw
     ? (() => {
         const match = briefRaw.match(/### Operator request\s*\n([\s\S]*?)(?:\n##|\n```|$)/);
         const operatorSection = match?.[1]?.trim();
         return (operatorSection || briefRaw).slice(0, 1_200);
       })()
-    : WIRELINE_STITCH_DESIGN_BRIEF;
+    : fallbackBrief;
   return `${prefix}${base}. Follow this design brief:\n\n${briefForStitch}\n\nDeliver production-ready semantic HTML with accessible labels, a single <style> block or inline CSS, mobile-first layout unless desktop/web is requested, and realistic placeholder content matching the industry in the request.`;
 }
+

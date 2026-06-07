@@ -7,7 +7,7 @@ import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { BRAND } from "../constants/brand-colors";
 import { isSsrfUrl } from "./webhook-validators";
-import { WIRELINE_STITCH_DESIGN_BRIEF } from "./director-stitch-intent";
+import { WIRELINE_STITCH_DESIGN_BRIEF, WIRELINE_STITCH_DARK_DESIGN_BRIEF, wantsStitchMediaRequest } from "./director-stitch-intent";
 import type { StitchMediaOperation } from "./director-stitch-intent";
 import {
   hasConfiguredTenantBranding,
@@ -205,6 +205,10 @@ export function parseStitchDesignBrief(
   if (tone) styleBits.push(`Tone: ${tone}`);
   if (branding.primaryProduct) styleBits.push(`Offer: ${branding.primaryProduct}`);
 
+  const originalRequest = history
+    .map((h) => h.content)
+    .find((content) => wantsStitchMediaRequest(content)) || operatorMessage;
+
   return {
     businessName,
     industry,
@@ -212,7 +216,7 @@ export function parseStitchDesignBrief(
     primaryGoal,
     tone,
     pages,
-    operatorRequest: operatorMessage.trim(),
+    operatorRequest: originalRequest.trim(),
     styleNotes: styleBits.join(" · "),
   };
 }
@@ -291,6 +295,10 @@ export function buildStitchDesignMarkdown(input: {
     ? "Account brand kit (Admin → Branding) with Wireline editorial layout patterns."
     : "Prompt-derived visual system (no saved account branding).";
 
+  const isDark = /\b(dark[\s-]?mode|dark[\s-]?theme|darker)\b/i.test(brief.operatorRequest) || 
+                 /\b(dark[\s-]?mode|dark[\s-]?theme|darker)\b/i.test(brief.styleNotes);
+  const deliveryBrief = isDark ? WIRELINE_STITCH_DARK_DESIGN_BRIEF : WIRELINE_STITCH_DESIGN_BRIEF;
+
   return [
     `# Design brief — ${title}`,
     "",
@@ -307,7 +315,7 @@ export function buildStitchDesignMarkdown(input: {
     "",
     "## Visual system",
     `- Typography: ${typographyFromBranding(useAccountBranding)}`,
-    `- Surfaces: warm cream paper, sharp editorial corners, accessible contrast`,
+    `- Surfaces: ${isDark ? "dark UI surfaces, premium dark-mode" : "warm cream paper, sharp editorial corners, accessible contrast"}`,
     `- Components: clear CTAs, realistic industry copy, mobile-first unless desktop requested`,
     "",
     "## Screen scope",
@@ -317,7 +325,7 @@ export function buildStitchDesignMarkdown(input: {
     brief.operatorRequest,
     "",
     "## Delivery",
-    WIRELINE_STITCH_DESIGN_BRIEF,
+    deliveryBrief,
     "Ship semantic HTML with one <style> block, accessible labels, and production-ready spacing.",
   ]
     .filter((line) => line !== "")
