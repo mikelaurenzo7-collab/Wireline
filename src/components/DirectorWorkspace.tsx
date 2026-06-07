@@ -62,17 +62,7 @@ import ProposalCard from "./chat/ProposalCard";
 import { AGENT_TOOL_CATALOG } from "../lib/agent-capabilities";
 import type { ProposedAction, ProposedChange, ProposedToolToggle } from "../lib/workspace-planner";
 import type { DirectorIntegrationJob, DirectorProposedAction } from "../lib/director-fleet-plan";
-import DirectorLiveSession, {
-  advanceLiveStepsForPhase,
-  buildDirectorLiveSteps,
-  type DirectorLiveStep,
-} from "./director/DirectorLiveSession";
-import {
-  planIntegrationLiveScript,
-  startIntegrationLiveSequence,
-  buildLiveActionsFromProposals,
-  type IntegrationLiveAction,
-} from "../lib/integration-live-scripts";
+import DirectorLiveSession from "./director/DirectorLiveSession";
 import { DirectorMessageBody } from "./director/DirectorMessageBody";
 import { DirectorDeliverableDownload } from "./director/DirectorDeliverableDownload";
 import type { DirectorDeliverableArtifactMeta } from "../lib/director-message-metadata";
@@ -271,8 +261,6 @@ export default function DirectorWorkspace({
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [busyLabel, setBusyLabel] = useState<string | undefined>();
   const [callConsent, setCallConsent] = useState<Record<string, boolean>>({});
-  const [integrationLiveActions, setIntegrationLiveActions] = useState<IntegrationLiveAction[]>([]);
-  const [liveSteps, setLiveSteps] = useState<DirectorLiveStep[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [artifacts, setArtifacts] = useState<DirectorArtifact[]>([]);
@@ -303,7 +291,6 @@ export default function DirectorWorkspace({
   /** Stitch finalize polls already started this mount — dedupes resume across reloads/streams. */
   const stitchPollRef = useRef<Set<string>>(new Set());
   const stitchThreadVersionRef = useRef(0);
-  const liveSequenceKeyRef = useRef<string | null>(null);
   const sendNonStreamingRef = useRef<
     | ((
         trimmed: string,
@@ -640,13 +627,6 @@ export default function DirectorWorkspace({
     isStreaming,
   } = useStreamingChat("/api/director/messages/stream", {
     onComplete: (data) => {
-      const integrationJobs = Array.isArray(data.integrationJobs)
-        ? (data.integrationJobs as DirectorIntegrationJob[])
-        : [];
-      const actions = Array.isArray(data.actions) ? (data.actions as DirectorProposedAction[]) : [];
-      if (integrationJobs.length > 0 || actions.length > 0) {
-        setIntegrationLiveActions(buildLiveActionsFromProposals({ integrationJobs, actions }));
-      }
       appendDirectorReply(data);
       if (
         !data.deliverableArtifact &&
@@ -860,7 +840,6 @@ export default function DirectorWorkspace({
     streamState.thinkingText,
     streamState.reply,
     streamState.phase,
-    integrationLiveActions.length,
     pinnedToBottom,
   ]);
 
@@ -1119,37 +1098,6 @@ export default function DirectorWorkspace({
     agents[0]?.id ||
     null;
 
-  useEffect(() => {
-    if (!isSending && !isStreaming) {
-      liveSequenceKeyRef.current = null;
-      setIntegrationLiveActions([]);
-      return;
-    }
-
-    const message = pendingSendRef.current?.trimmed ?? "";
-    const sequenceKey = `${message}::${enabledTools.join(",")}`;
-    if (liveSequenceKeyRef.current === sequenceKey) return;
-    liveSequenceKeyRef.current = sequenceKey;
-
-    const script = planIntegrationLiveScript({ message, enabledTools });
-    return startIntegrationLiveSequence(script, setIntegrationLiveActions);
-  }, [isSending, isStreaming, enabledTools]);
-
-  useEffect(() => {
-    if (!isSending && !isStreaming) {
-      setLiveSteps([]);
-      return;
-    }
-    const base = buildDirectorLiveSteps({
-      hasIntegrations: enabledTools.some((t) =>
-        AGENT_TOOL_CATALOG.some((c) => c.name === t && c.integration),
-      ),
-      coachAgentName: focusedAgent?.name,
-      fleetSize: agents.length,
-    });
-    setLiveSteps(advanceLiveStepsForPhase(base, streamState.phase));
-  }, [streamState.phase, isSending, isStreaming, enabledTools, focusedAgent?.name, agents.length]);
-
   const approveChange = useCallback(
     async (key: string, change: ProposedChange, agentId: string) => {
       setBusyKey(key);
@@ -1297,8 +1245,6 @@ export default function DirectorWorkspace({
       setStitchPollExhausted({});
       setComposerAccessory(null);
       setForceDeep(false);
-      setIntegrationLiveActions([]);
-      setLiveSteps([]);
       setInput("");
       toastSuccess("Thread cleared", "Conversation and artifacts removed");
     } catch {
@@ -1431,8 +1377,6 @@ export default function DirectorWorkspace({
                   </span>
                 ) : focusedAgent ? (
                   `Coaching ${focusedAgent.name}`
-                ) : integrationLiveActions.length > 0 && isSending ? (
-                  `Fleet channel · ${integrationLiveActions.filter((a) => a.status === "success").length}/${integrationLiveActions.length}`
                 ) : (
                   "Always-on fleet manager"
                 )}
@@ -2233,8 +2177,6 @@ export default function DirectorWorkspace({
                   typeof streamState.reply?.reply === "string" ? streamState.reply.reply : undefined
                 }
                 pipelineSteps={streamPipeline}
-                integrationActions={integrationLiveActions}
-                liveSteps={liveSteps}
               />
             </div>
           )}

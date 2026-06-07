@@ -880,40 +880,36 @@ router.post(
         return res.status(500).json({ error: "Failed to create agent" });
       }
 
-      // Phone number is INCLUDED in every monthly tier — auto-provision a
-      // dedicated line (Twilio buy → Vapi import, or Vapi-managed fallback)
-      // bound to this agent. Tenants never wire carriers themselves.
-      // At tier cap, only unassigned lines are recycled; assigned lines stay
-      // with their agent until released.
-      //
-      // Fire-and-forget: number provisioning takes ~1-2s end-to-end and
-      // the agent-create response shouldn't block on Twilio. The agent
-      // is fully functional without a number (voice falls back to the
-      // Wireline Demo Line); the new number lands within 2s of the
-      // tenant landing on the dashboard.
-      void import("../lib/phone-provisioning")
-        .then(({ provisionTenantNumber }) =>
-          provisionTenantNumber(req.user.id, {
-            agentId,
-            campaignLabel: "auto-on-agent-create",
-          }),
-        )
-        .then((result) => {
-          if (!result.ok) {
-            log.warn("Auto phone provisioning skipped", {
+      const deferPhoneProvision =
+        req.body.defer_phone_provision === true || req.body.deferPhoneProvision === true;
+
+      // Phone number is INCLUDED in every monthly tier — auto-provision unless
+      // the client defers (Fast Start calls POST /api/phone-numbers/provision).
+      if (!deferPhoneProvision) {
+        void import("../lib/phone-provisioning")
+          .then(({ provisionTenantNumber }) =>
+            provisionTenantNumber(req.user.id, {
+              agentId,
+              campaignLabel: "auto-on-agent-create",
+            }),
+          )
+          .then((result) => {
+            if (!result.ok) {
+              log.warn("Auto phone provisioning skipped", {
+                userId: req.user.id,
+                agentId,
+                error: result.error,
+              });
+            }
+          })
+          .catch((err) =>
+            log.warn("Auto phone provisioning errored", {
               userId: req.user.id,
               agentId,
-              error: result.error,
-            });
-          }
-        })
-        .catch((err) =>
-          log.warn("Auto phone provisioning errored", {
-            userId: req.user.id,
-            agentId,
-            error: err?.message,
-          }),
-        );
+              error: err?.message,
+            }),
+          );
+      }
 
       // Audit log: agent creation
       void auditLogger
@@ -930,7 +926,7 @@ router.post(
       // new agent immediately instead of waiting for the TTL to expire.
       invalidateDashboard(req.user.id);
 
-      res.json({ success: true, id: agentId });
+      res.json({ success: true, id: agentId, name: rest.name });
     } catch (error) {
       log.error("Agent creation failed", { error: getErrorMessage(error) });
       res.status(500).json({ error: "Failed to create agent" });

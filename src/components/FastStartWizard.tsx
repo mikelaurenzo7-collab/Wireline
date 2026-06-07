@@ -130,7 +130,8 @@ const WIZARD_STEPS: WizardStep[] = [
   {
     id: "phone",
     title: "Get a phone number",
-    description: "Your dedicated line — included with your plan.",
+    description:
+      "Your plan includes a dedicated US line. Add an area code preference, or skip to test in the browser first.",
     icon: Phone,
     skippable: true,
   },
@@ -162,6 +163,8 @@ export default function FastStartWizard({
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [selectedVoiceId, setSelectedVoiceId] = useState<string>(DEFAULT_VOICE_BY_GENDER.female);
   const [areaCode, setAreaCode] = useState("");
+  const [phoneStepSkipped, setPhoneStepSkipped] = useState(false);
+  const [submitPhase, setSubmitPhase] = useState<"agent" | "knowledge" | "phone" | null>(null);
 
   const { success: toastSuccess, error: toastError } = useToast();
   const modalRef = useRef<HTMLDivElement>(null);
@@ -180,6 +183,8 @@ export default function FastStartWizard({
       setWebsiteUrl("");
       setSelectedVoiceId(DEFAULT_VOICE_BY_GENDER.female);
       setAreaCode("");
+      setPhoneStepSkipped(false);
+      setSubmitPhase(null);
     }
   }, [isOpen]);
 
@@ -231,6 +236,10 @@ export default function FastStartWizard({
       return;
     }
 
+    if (currentStep.id === "phone") {
+      setPhoneStepSkipped(false);
+    }
+
     setCurrentStepIndex((prev) => Math.min(prev + 1, WIZARD_STEPS.length - 1));
   };
 
@@ -242,6 +251,9 @@ export default function FastStartWizard({
   const handleSkip = () => {
     if (!currentStep.skippable) return;
     setError(null);
+    if (currentStep.id === "phone") {
+      setPhoneStepSkipped(true);
+    }
     setCurrentStepIndex((prev) => Math.min(prev + 1, WIZARD_STEPS.length - 1));
   };
 
@@ -249,18 +261,21 @@ export default function FastStartWizard({
     setIsSubmitting(true);
     setError(null);
 
+    const agentName = `${extractBusinessName(businessDescription)} Receptionist`;
+
     try {
-      // Step 1: Create agent
+      setSubmitPhase("agent");
       const agentResponse = await authFetch("/api/agents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: `${extractBusinessName(businessDescription)} Receptionist`,
+          name: agentName,
           description: businessDescription,
           voiceId: selectedVoiceId,
           archetype: "Receptionist",
           role: "customer_service",
           autoGenerate: true,
+          defer_phone_provision: true,
         }),
       });
 
@@ -268,18 +283,22 @@ export default function FastStartWizard({
         throw new Error("AGENT_CREATE_FAILED");
       }
 
-      const agent = await agentResponse.json();
+      const agentPayload = (await agentResponse.json()) as { id?: string; name?: string };
+      const agentId = agentPayload.id;
+      if (!agentId) {
+        throw new Error("AGENT_CREATE_FAILED");
+      }
 
-      // Step 2: Add knowledge if provided
       let knowledgeCount = 0;
       if (websiteUrl.trim()) {
+        setSubmitPhase("knowledge");
         try {
           const knowledgeResponse = await authFetch("/api/knowledge/scrape", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               url: websiteUrl,
-              agentId: agent.id,
+              agentId,
             }),
           });
 
@@ -287,38 +306,40 @@ export default function FastStartWizard({
             const knowledge = await knowledgeResponse.json();
             knowledgeCount = knowledge.items?.length ?? 0;
           }
-        } catch (knowledgeError) {
-          // Knowledge failure is non-blocking
-          console.error("Knowledge fetch failed:", knowledgeError);
+        } catch {
+          // Knowledge failure is non-blocking — operator can add later in Training.
         }
       }
 
-      // Step 3: Provision phone number if area code provided
       let phoneNumber: string | null = null;
-      if (areaCode.trim()) {
-        try {
-          const phoneResponse = await authFetch("/api/phone-numbers/provision", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              areaCode: areaCode.trim(),
-              agentId: agent.id,
-            }),
-          });
-
-          if (phoneResponse.ok) {
-            const phone = await phoneResponse.json();
-            phoneNumber = phone.number;
-          }
-        } catch (phoneError) {
-          // Phone failure is non-blocking
-          console.error("Phone provision failed:", phoneError);
+      if (!phoneStepSkipped) {
+        setSubmitPhase("phone");
+        const phoneResponse = await authFetch("/api/phone-numbers/provision", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            agent_id: agentId,
+            area_code: areaCode.trim() || undefined,
+          }),
+        });
+        const phonePayload = (await phoneResponse.json()) as {
+          ok?: boolean;
+          phone_number?: string;
+          error?: string;
+        };
+        if (phoneResponse.ok && phonePayload.phone_number) {
+          phoneNumber = phonePayload.phone_number;
+        } else if (!phoneResponse.ok) {
+          toastError(
+            "Phone line pending",
+            phonePayload.error || ONBOARDING_ERROR_MESSAGES.PHONE_PROVISION_FAILED,
+          );
         }
       }
 
       const result: FastStartResult = {
-        agentId: agent.id,
-        agentName: agent.name,
+        agentId,
+        agentName: agentPayload.name || agentName,
         phoneNumber: phoneNumber ?? "Browser test only",
         knowledgeItems: knowledgeCount,
         timeToCompleteMs: Date.now() - startTime,
@@ -337,6 +358,7 @@ export default function FastStartWizard({
       toastError("Could not complete setup", friendlyError);
     } finally {
       setIsSubmitting(false);
+      setSubmitPhase(null);
     }
   };
 
@@ -563,9 +585,9 @@ export default function FastStartWizard({
                     </label>
                     <div className="p-4 rounded-md bg-brand/5 border border-brand/20">
                       <p className="text-xs text-ink/80">
-                        <strong>Don't worry if we can't get this exact area code.</strong> You'll
-                        get a working number regardless, and you can always port in your existing
-                        business line later.
+                        Leave blank for any available US local number. If your preferred area code
+                        is out of stock, we assign the nearest match. Skip this step only if you
+                        want browser testing first — you can add a line later under Phone.
                       </p>
                     </div>
                   </div>
@@ -602,9 +624,11 @@ export default function FastStartWizard({
                         <div>
                           <p className="text-xs text-muted">Phone</p>
                           <p className="text-sm text-ink">
-                            {areaCode
-                              ? `Area code ${areaCode}`
-                              : "Browser test only — add number later"}
+                            {phoneStepSkipped
+                              ? "Skipped — browser test first"
+                              : areaCode
+                                ? `Prefer area code ${areaCode}`
+                                : "US local line — assigned at launch"}
                           </p>
                         </div>
                       </div>
@@ -663,7 +687,11 @@ export default function FastStartWizard({
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Creating your agent...
+                  {submitPhase === "phone"
+                    ? "Provisioning your line..."
+                    : submitPhase === "knowledge"
+                      ? "Reading your website..."
+                      : "Creating your agent..."}
                 </>
               ) : isLastStep ? (
                 <>

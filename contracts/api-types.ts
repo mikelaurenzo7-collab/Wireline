@@ -6,6 +6,15 @@ export const PhoneNumberCreateRequestSchema = z.object({
   vapi_number_id: z.string().max(120).optional(),
 });
 
+/** POST /api/phone-numbers/provision */
+export const PhoneNumberProvisionRequestSchema = z.object({
+  agent_id: z.string().min(1).max(120).optional(),
+  area_code: z
+    .string()
+    .regex(/^\d{3}$/)
+    .optional(),
+});
+
 export const AgentSchema = z.object({
   id: z.string(),
   name: z.string(),

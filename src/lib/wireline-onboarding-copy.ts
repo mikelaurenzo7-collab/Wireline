@@ -13,7 +13,7 @@ export const ONBOARDING_WELCOME = {
   bullets: [
     { label: "Agent", detail: "Name, role, and script generated from your description" },
     { label: "Knowledge", detail: "Optional website scrape for services and policies" },
-    { label: "Go live", detail: "Provision a number or test from the browser" },
+    { label: "Go live", detail: "Dedicated US line included — or skip to browser test first" },
   ],
   ctaPrimary: "Start Fast Setup",
   ctaSecondary: "Explore the console",

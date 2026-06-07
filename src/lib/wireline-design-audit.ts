@@ -22,7 +22,6 @@ export const MARKETING_PAGE_FILES = new Set([
 
 /** Third-party brand mocks — Shopify green, Slack purple, etc. */
 export const INTEGRATION_MOCK_FILES = new Set([
-  "IntegrationLiveVisuals.tsx",
   "integration-activities.tsx",
   "IntegrationLogos.tsx",
   "PreviewCards.tsx",

@@ -4,7 +4,11 @@ import { log, fetchWithTimeout, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
-import { validateBody, phoneNumberPatchSchema } from "../lib/api-validation";
+import {
+  validateBody,
+  phoneNumberPatchSchema,
+  phoneNumberProvisionSchema,
+} from "../lib/api-validation";
 import { PhoneNumberCreateRequestSchema } from "../../contracts/api-types";
 import { getErrorMessage } from "../lib/server-utils";
 import * as rateLimiters from "../middleware/api-rate-limits";
@@ -64,6 +68,62 @@ router.post(
     } catch (err: any) {
       log.error("POST /api/phone-numbers failed", { error: getErrorMessage(err) });
       res.status(500).json({ error: "Failed to add phone number" });
+    }
+  },
+);
+
+/**
+ * Provision a dedicated line for the tenant (Twilio buy → Vapi import, or Vapi pool).
+ * Used by Fast Start onboarding after agent create with defer_phone_provision.
+ * Idempotent per agent — returns an existing line when already bound.
+ */
+router.post(
+  "/api/phone-numbers/provision",
+  authenticateUser,
+  rateLimiters.phoneNumberRateLimiter,
+  validateBody(phoneNumberProvisionSchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const agentId = req.body.agent_id ? String(req.body.agent_id).trim() : undefined;
+      const areaCode = req.body.area_code ? String(req.body.area_code).trim() : undefined;
+
+      if (agentId) {
+        const [agent] = await drizzle
+          .select({ id: schema.agents.id })
+          .from(schema.agents)
+          .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+          .limit(1);
+        if (!agent) return res.status(404).json({ ok: false, error: "Agent not found." });
+      }
+
+      const { provisionTenantNumber } = await import("../lib/phone-provisioning");
+      const result = await provisionTenantNumber(req.user.id, {
+        agentId,
+        areaCode,
+        campaignLabel: "fast-start-provision",
+      });
+
+      if (!result.ok) {
+        const quotaHit =
+          typeof result.error === "string" &&
+          (/includes \d+ dedicated/i.test(result.error) || /upgrade to add/i.test(result.error));
+        return res.status(quotaHit ? 403 : 503).json({
+          ok: false,
+          error: result.error ?? "Could not provision a phone number.",
+        });
+      }
+
+      res.json({
+        ok: true,
+        phone_number: result.phoneNumber,
+        vapi_number_id: result.vapiNumberId,
+        reused: result.reused ?? false,
+      });
+    } catch (e: unknown) {
+      log.error("phone-numbers/provision failed", { error: getErrorMessage(e) });
+      res
+        .status(503)
+        .json({ ok: false, error: "Could not provision a phone number. Try again shortly." });
     }
   },
 );

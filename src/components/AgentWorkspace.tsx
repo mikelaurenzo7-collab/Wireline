@@ -26,7 +26,6 @@ import {
   Trash2,
   MessageSquare,
   MessagesSquare,
-  Sparkles,
   Paperclip,
   Check,
   X,
@@ -45,18 +44,12 @@ import {
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
-import { BRAND } from "../constants/brand-colors";
-import { AGENT_TOOL_CATALOG, type AgentToolCatalogEntry } from "../lib/agent-capabilities";
-import { INTEGRATION_STYLES } from "../lib/integration-activities";
 import {
   AGENT_WORKSPACE_STARTER_PROMPTS,
   WL_DIRECTOR_CLASSES,
 } from "../lib/wireline-director-design";
 import { ThinkingDisplay, LiveThinkingIndicator } from "./ui/ThinkingDisplay";
 import { LiveTaskPipeline, type PipelineStep } from "./ui/LiveTaskPipeline";
-import IntegrationActivityCard, {
-  type IntegrationActivityCardProps,
-} from "./IntegrationActivityCard";
 import { Skeleton } from "./ui/shadcn/Skeleton";
 import { Checkbox } from "./ui/shadcn/Checkbox";
 import { Input } from "./ui/shadcn/Input";
@@ -98,14 +91,6 @@ const IS_TOUCH =
   window.matchMedia("(pointer: coarse)").matches;
 const IS_APPLE =
   typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
-
-interface LiveStep {
-  id: string;
-  icon: React.ReactNode;
-  title: string;
-  subtitle: string;
-  status: "pending" | "active" | "done";
-}
 
 interface ProposedChange {
   field: string;
@@ -325,10 +310,6 @@ export default function AgentWorkspace({
   const [isSending, setIsSending] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [enabledTools, setEnabledTools] = useState<string[]>([]);
-  const [liveSteps, setLiveSteps] = useState<LiveStep[]>([]);
-  const [integrationActivities, setIntegrationActivities] = useState<
-    IntegrationActivityCardProps[]
-  >([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
   const activeTab = isWorkspaceTab(tabParam) ? tabParam : "chat";
@@ -503,124 +484,6 @@ export default function AgentWorkspace({
       });
     }
   }, [seedNonce, composerSeed?.text]);
-
-  useEffect(() => {
-    if (!isSending) {
-      setLiveSteps([]);
-      setIntegrationActivities([]);
-      return;
-    }
-
-    const activeIntegrations = enabledTools
-      .map((tName) => AGENT_TOOL_CATALOG.find((c) => c.name === tName))
-      .filter((c): c is AgentToolCatalogEntry & { integration: string } => !!c && !!c.integration);
-
-    // Group by integration to avoid duplicates
-    const uniqueIntegrations = Array.from(new Set(activeIntegrations.map((a) => a.integration)));
-
-    const steps: LiveStep[] = [
-      {
-        id: "1",
-        icon: <Brain className="w-3.5 h-3.5" />,
-        title: "Recalling workspace memory",
-        subtitle: "Thread history loaded • Context optimized",
-        status: "pending",
-      },
-      {
-        id: "2",
-        icon: <Plug className="w-3.5 h-3.5" />,
-        title: "Checking connected integrations",
-        subtitle:
-          uniqueIntegrations.length > 0
-            ? `${uniqueIntegrations.length} active • Preparing queries`
-            : "No active integrations • Using core skills",
-        status: "pending",
-      },
-      {
-        id: "3",
-        icon: <Sparkles className="w-3.5 h-3.5" />,
-        title: "Executing tool calls",
-        subtitle: "Processing tool schemas",
-        status: "pending",
-      },
-      {
-        id: "4",
-        icon: <GraduationCap className="w-3.5 h-3.5" />,
-        title: "Applying persona & instructions",
-        subtitle: "Voice rules active • Synthesizing reply",
-        status: "pending",
-      },
-    ];
-
-    setLiveSteps(steps.map((s) => ({ ...s, status: "pending" })));
-
-    // Create dynamic activities based on unique integrations
-    if (uniqueIntegrations.length > 0) {
-      uniqueIntegrations.forEach((integrationId, i) => {
-        const style = INTEGRATION_STYLES[integrationId as keyof typeof INTEGRATION_STYLES] || {
-          name: integrationId,
-          color: BRAND.purple,
-          icon: <Plug className="w-4 h-4" />,
-        };
-
-        const delayStart = 420 * 2 + i * 800 + 200;
-        const delayComplete = delayStart + 1000;
-
-        setTimeout(() => {
-          setIntegrationActivities((prev) => [
-            ...prev,
-            {
-              integration: style.name,
-              icon: style.icon,
-              action: `Querying ${style.name} API...`,
-              status: "active",
-              brandColor: style.color,
-            },
-          ]);
-        }, delayStart);
-
-        setTimeout(() => {
-          setIntegrationActivities((prev) =>
-            prev.map((a) =>
-              a.integration === style.name
-                ? {
-                    ...a,
-                    status: "success" as const,
-                    result: `Completed ${style.name} operation successfully`,
-                  }
-                : a,
-            ),
-          );
-        }, delayComplete);
-      });
-    }
-
-    steps.forEach((step, index) => {
-      setTimeout(
-        () => {
-          setLiveSteps((prev) =>
-            prev.map((s, idx) =>
-              idx === index
-                ? { ...s, status: "active" as const }
-                : idx < index
-                  ? { ...s, status: "done" as const }
-                  : s,
-            ),
-          );
-        },
-        420 * (index + 1),
-      );
-    });
-
-    const maxIntegrationDelay =
-      uniqueIntegrations.length > 0 ? uniqueIntegrations.length * 800 + 1200 : 0;
-    const totalDelay = Math.max(4200, 420 * 4 + maxIntegrationDelay);
-
-    setTimeout(() => {
-      setLiveSteps([]);
-      setIntegrationActivities([]);
-    }, totalDelay);
-  }, [isSending, enabledTools]);
 
   const triggerCommand = useCallback(
     (text: string) => {
@@ -1121,95 +984,24 @@ export default function AgentWorkspace({
                         </div>
                       )}
 
-                      {/* Live thinking text from stream */}
-                      {streamState.phase === "thinking" && streamState.thinkingText && (
-                        <div className="text-[11px] text-muted/70 leading-relaxed max-h-24 overflow-y-auto mb-2">
-                          <p className="whitespace-pre-wrap line-clamp-4">
-                            {streamState.thinkingText.slice(-400)}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Live reasoning steps */}
-                      <AnimatePresence>
-                        {liveSteps.map((step, index) => (
-                          <motion.div
-                            key={step.id}
-                            initial={{ opacity: 0, y: 12, scale: 0.96 }}
-                            animate={{
-                              opacity: 1,
-                              y: 0,
-                              scale: 1,
-                              transition: {
-                                delay: index * 0.05,
-                                duration: 0.4,
-                                ease: [0.23, 1.0, 0.32, 1.0],
-                              },
-                            }}
-                            exit={{ opacity: 0, y: -8 }}
-                            className={cn(
-                              "mt-2.5 rounded-md border px-4 py-3 text-xs transition-all",
-                              step.status === "active"
-                                ? "border-brand/40 bg-brand/5 shadow-sm"
-                                : step.status === "done"
-                                  ? "border-brand/30 bg-brand/5"
-                                  : "border-black/5 bg-white/60",
-                            )}
-                          >
-                            <div className="flex items-start gap-3">
-                              <div
-                                className={cn(
-                                  "mt-0.5 flex h-5 w-5 items-center justify-center rounded-md flex-shrink-0",
-                                  step.status === "active"
-                                    ? "text-brand"
-                                    : step.status === "done"
-                                      ? "text-brand"
-                                      : "text-muted",
-                                )}
-                              >
-                                {step.icon}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between">
-                                  <div className="font-medium text-ink">{step.title}</div>
-                                  {step.status === "active" && (
-                                    <div className="h-1 w-1 rounded-full bg-brand animate-ping" />
-                                  )}
-                                  {step.status === "done" && (
-                                    <Check className="w-3.5 h-3.5 text-brand" />
-                                  )}
-                                </div>
-                                <div className="text-[10px] text-muted leading-tight mt-0.5">
-                                  {step.subtitle}
-                                </div>
-                              </div>
-                            </div>
-                          </motion.div>
-                        ))}
-
-                        {integrationActivities.length > 0 && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -8 }}
-                            className="mt-2.5 grid gap-2"
-                          >
-                            {integrationActivities.map((activity, idx) => (
-                              <motion.div
-                                key={activity.integration}
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{
-                                  opacity: 1,
-                                  scale: 1,
-                                  transition: { delay: idx * 0.1, duration: 0.3 },
-                                }}
-                              >
-                                <IntegrationActivityCard {...activity} />
-                              </motion.div>
-                            ))}
-                          </motion.div>
+                      {(streamState.phase === "thinking" || streamState.phase === "replying") &&
+                        streamState.thinkingText && (
+                          <div className="text-[11px] text-muted/70 leading-relaxed max-h-24 overflow-y-auto mb-2">
+                            <p className="whitespace-pre-wrap line-clamp-6">
+                              {streamState.thinkingText.slice(-600)}
+                            </p>
+                          </div>
                         )}
-                      </AnimatePresence>
+
+                      {streamState.phase === "replying" &&
+                        typeof streamState.reply?.reply === "string" &&
+                        streamState.reply.reply.trim() && (
+                          <div className="text-[12px] text-ink/85 leading-relaxed max-h-28 overflow-y-auto border-t border-brand/8 pt-2 mt-1">
+                            <p className="whitespace-pre-wrap line-clamp-8">
+                              {streamState.reply.reply.slice(-800)}
+                            </p>
+                          </div>
+                        )}
                     </div>
                   </motion.div>
                 )}

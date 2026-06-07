@@ -447,6 +447,15 @@ export const phoneNumberPatchSchema = z
     message: "Nothing to update — pass agent_id or campaign_label.",
   });
 
+/** POST /api/phone-numbers/provision — buy or assign a tenant line (onboarding + self-serve). */
+export const phoneNumberProvisionSchema = z.object({
+  agent_id: z.string().min(1).max(120).optional(),
+  area_code: z
+    .string()
+    .regex(/^\d{3}$/, "area_code must be a 3-digit US code")
+    .optional(),
+});
+
 export const emailThreadsReadStateSchema = z.object({
   ids: z.array(z.string().uuid()).min(1).max(500),
   read: z.boolean(),
