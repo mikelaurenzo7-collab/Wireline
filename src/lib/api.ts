@@ -5,6 +5,8 @@
 export const DEFAULT_REQUEST_TIMEOUT_MS = 120_000;
 /** Wireline Design (Stitch) renders server-side for 3–5 min — stay under Vercel maxDuration (600s). */
 export const DIRECTOR_STITCH_REQUEST_TIMEOUT_MS = 540_000;
+/** Each finalize poll call can run up to ~2 min server-side before returning 202. */
+export const DIRECTOR_STITCH_FINALIZE_TIMEOUT_MS = 150_000;
 /** Express /api/director cap — Stitch generate + asset poll can exceed 3 min. */
 export const DIRECTOR_REQUEST_TIMEOUT_MS = 540_000;
 

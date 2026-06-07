@@ -131,7 +131,11 @@ function buildStitchUnavailableTurn(
     reply,
     previews: [],
     artifacts: [],
-    thinkingSummary: WIRELINE_STITCH_UI.chatFallbackReasoning,
+    thinkingSummary: isAuthFailure
+      ? "Wireline Design credentials unavailable"
+      : isValidationFailure
+        ? "Wireline Design configuration invalid"
+        : "Wireline Design render timed out",
     durationMs: 0,
   };
 }

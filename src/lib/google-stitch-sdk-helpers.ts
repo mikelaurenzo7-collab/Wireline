@@ -24,16 +24,22 @@ function isStitchErrorLike(error: unknown): error is StitchErrorLike {
   );
 }
 
+function isLikelyPlatformTimeout(message: string): boolean {
+  return /timeout|timed out|504|FUNCTION_INVOCATION_TIMEOUT|ECONNRESET|ETIMEDOUT|socket hang up/i.test(
+    message,
+  );
+}
+
 export function mapStitchError(error: unknown): GoogleStitchError {
   if (error instanceof GoogleStitchError) return error;
   if (isStitchErrorLike(error)) {
     return new GoogleStitchError(error.message, error.code, error.recoverable);
   }
-  return new GoogleStitchError(
-    error instanceof Error ? error.message : String(error),
-    "UNKNOWN_ERROR",
-    false,
-  );
+  const message = error instanceof Error ? error.message : String(error);
+  if (isLikelyPlatformTimeout(message)) {
+    return new GoogleStitchError(message, "NETWORK_ERROR", true);
+  }
+  return new GoogleStitchError(message, "UNKNOWN_ERROR", false);
 }
 
 export function screenEntityToRecord(screen: StitchScreenLike): Record<string, unknown> {

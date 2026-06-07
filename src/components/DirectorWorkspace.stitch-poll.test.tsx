@@ -9,6 +9,7 @@ const src = fs.readFileSync(path.resolve(__dirname, "DirectorWorkspace.tsx"), "u
 describe("DirectorWorkspace Stitch polling structure", () => {
   it("finalizes a specific render id with persisted device and operator context", () => {
     expect(src).toContain('authFetch("/api/director/stitch/finalize"');
+    expect(src).toContain("DIRECTOR_STITCH_FINALIZE_TIMEOUT_MS");
     expect(src).toContain("renderId: session.renderId");
     expect(src).toContain("operatorMessage: operatorMessage || session.operatorMessage");
     expect(src).toContain("deviceType: session.deviceType");

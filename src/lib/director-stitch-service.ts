@@ -52,7 +52,11 @@ import {
 } from "./google-stitch-asset-url";
 import {
   getGoogleStitchProjectId,
-  getStitchComposePollDelaysMs,
+  getStitchFinalizePollDelaysMs,
+  getStitchInRequestAssetPollDelaysMs,
+  getStitchInRequestDeadlineMs,
+  getStitchScreenDiscoveryPollDelaysMs,
+  STITCH_IN_REQUEST_ASSET_POLL_MS,
   isGoogleStitchConfigured,
 } from "./google-stitch-config";
 import { WIRELINE_STITCH_UI } from "./wireline-director-design";
@@ -258,8 +262,16 @@ async function fetchScreenAssetsWithRetry(
   runtime: GoogleStitchRuntime,
   screen: Screen,
   signal?: AbortSignal,
+  options: {
+    context?: "in-request" | "finalize";
+    pollDelaysMs?: number[];
+  } = {},
 ): Promise<{ html?: Buffer; image?: Buffer; screen: Record<string, unknown> }> {
-  const delaysMs = getStitchComposePollDelaysMs();
+  const delaysMs =
+    options.pollDelaysMs ??
+    (options.context === "finalize"
+      ? getStitchFinalizePollDelaysMs()
+      : getStitchInRequestAssetPollDelaysMs());
   let last = await fetchScreenAssets(runtime, screen, signal);
   for (let i = 1; i < delaysMs.length; i++) {
     const finalAttempt = i === delaysMs.length - 1;
@@ -372,8 +384,13 @@ async function runStitchOperation(
   },
   onProgress?: StitchProgressCallback,
   signal?: AbortSignal,
+  requestDeadlineMs?: number,
 ): Promise<Screen[]> {
   const { operation, projectId, screenId, prompt, deviceType, modelId } = input;
+  const remainingBeforeAssetPoll = () =>
+    requestDeadlineMs !== undefined
+      ? Math.max(0, requestDeadlineMs - Date.now() - STITCH_IN_REQUEST_ASSET_POLL_MS - 15_000)
+      : 180_000;
   const project = runtime.stitch.project(projectId);
 
   if (operation === "variants") {
@@ -458,7 +475,7 @@ async function runStitchOperation(
   if (generated?.screenId) return [generated];
 
   onProgress?.("Waiting for Wireline Design to finish composing…");
-  const pollDelays = getStitchComposePollDelaysMs();
+  const pollDelays = getStitchScreenDiscoveryPollDelaysMs(remainingBeforeAssetPoll());
   const pollAttempts = Math.max(1, pollDelays.length - 1);
   for (let attempt = 1; attempt < pollDelays.length; attempt++) {
     await sleepMs(pollDelays[attempt]! - pollDelays[attempt - 1]!, signal);
@@ -639,7 +656,9 @@ export async function finalizeDirectorStitchScreen(input: {
   try {
     const deviceType = input.deviceType ?? resolveStitchDeviceType(input.operatorMessage);
     const screen = runtime.stitch.project(input.projectId).screen(input.screenId);
-    const assets = await fetchScreenAssetsWithRetry(runtime, screen, input.signal);
+    const assets = await fetchScreenAssetsWithRetry(runtime, screen, input.signal, {
+      context: "finalize",
+    });
     const packaged = await packageStitchScreenAssets({
       userId: input.userId,
       operatorMessage: input.operatorMessage,
@@ -666,6 +685,7 @@ export async function runDirectorStitchTurn(
   }
 
   const t0 = Date.now();
+  const requestDeadlineMs = Date.now() + getStitchInRequestDeadlineMs();
   const runtime = await createGoogleStitchRuntime();
 
   try {
@@ -703,6 +723,7 @@ export async function runDirectorStitchTurn(
       },
       input.onProgress,
       input.signal,
+      requestDeadlineMs,
     );
 
     if (screens.length === 0) {
@@ -720,7 +741,21 @@ export async function runDirectorStitchTurn(
       if (!screenId) continue;
 
       input.onProgress?.(`Downloading assets for screen ${i + 1}/${screens.length}…`);
-      const assets = await fetchScreenAssetsWithRetry(runtime, screen, input.signal);
+      const wallLeftMs = requestDeadlineMs - Date.now() - 10_000;
+      const screensLeft = screens.length - i;
+      const perScreenBudget =
+        screensLeft > 1
+          ? Math.max(15_000, Math.floor(wallLeftMs / screensLeft))
+          : wallLeftMs;
+      const assets =
+        wallLeftMs < 8_000
+          ? await fetchScreenAssets(runtime, screen, input.signal)
+          : await fetchScreenAssetsWithRetry(runtime, screen, input.signal, {
+              context: "in-request",
+              pollDelaysMs: getStitchInRequestAssetPollDelaysMs(
+                Math.min(perScreenBudget, STITCH_IN_REQUEST_ASSET_POLL_MS),
+              ),
+            });
 
       const suffix = screens.length > 1 ? `-v${i + 1}` : "";
       const title =

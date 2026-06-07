@@ -37,7 +37,12 @@ import {
   LayoutTemplate,
   RefreshCw,
 } from "lucide-react";
-import { authFetch, DIRECTOR_STITCH_REQUEST_TIMEOUT_MS, readApiJson } from "../lib/api";
+import {
+  authFetch,
+  DIRECTOR_STITCH_FINALIZE_TIMEOUT_MS,
+  DIRECTOR_STITCH_REQUEST_TIMEOUT_MS,
+  readApiJson,
+} from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { hydrateAgentsFromFleet, useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -471,6 +476,7 @@ export default function DirectorWorkspace({
           r = await authFetch("/api/director/stitch/finalize", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            timeoutMs: DIRECTOR_STITCH_FINALIZE_TIMEOUT_MS,
             body: JSON.stringify({
               projectId: session.projectId,
               screenId: session.screenId,
