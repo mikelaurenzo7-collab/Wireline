@@ -43,17 +43,20 @@ function DeviceFrame({
   preview,
   ready,
   imageBroken,
-  onRetryImage,
+  onImageError,
+  onRetryPreview,
 }: {
   preview: DirectorPreviewMeta;
   ready: ReturnType<typeof useStitchPreviewReady>;
   imageBroken: boolean;
-  onRetryImage: () => void;
+  onImageError: () => void;
+  onRetryPreview: () => void;
 }) {
   const mobile = preview.deviceType === "MOBILE" || preview.deviceType === "TABLET";
   const showImage = Boolean(ready.imageSrc) && !imageBroken;
   const showHtml = !showImage && Boolean(ready.htmlSrc);
   const showCanvas = showImage || showHtml;
+  const effectiveFailed = ready.failed || (imageBroken && !ready.htmlSrc);
 
   return (
     <div className="mt-3">
@@ -77,7 +80,7 @@ function DeviceFrame({
               src={ready.imageSrc}
               alt={preview.title}
               loading="lazy"
-              onError={() => onRetryImage?.()}
+              onError={onImageError}
               className="block w-full max-h-[420px] object-contain object-top bg-paper dark:bg-velvet"
             />
           )}
@@ -89,13 +92,13 @@ function DeviceFrame({
               sandbox="allow-scripts allow-same-origin"
             />
           )}
-          {!showCanvas && !ready.failed && (
+          {!showCanvas && !effectiveFailed && (
             <div className="min-h-[180px] flex flex-col items-center justify-center gap-2 p-6 text-center">
               <Loader2 className="w-5 h-5 text-brand/50 animate-spin" />
               <p className="text-[11px] text-muted">Loading the rendered preview…</p>
             </div>
           )}
-          {!showCanvas && ready.failed && (
+          {!showCanvas && effectiveFailed && (
             <div className="min-h-[180px] flex flex-col items-center justify-center gap-2 p-6 text-center">
               <AlertCircle className="w-5 h-5 text-muted/60" />
               <p className="text-[11px] text-muted">{WIRELINE_STITCH_UI.fallbackCopy}</p>
@@ -104,7 +107,7 @@ function DeviceFrame({
                 variant="ghost"
                 size="sm"
                 disableAnimations
-                onClick={onRetryImage}
+                onClick={onRetryPreview}
                 className="mt-1 h-auto px-2.5 py-1 text-[10px] font-semibold text-brand hover:text-brand-deep"
               >
                 <RefreshCw className="w-3 h-3" />
@@ -128,19 +131,29 @@ export default function DirectorStitchPreviewTeaser({
   preview,
   inGrid = false,
 }: DirectorStitchPreviewTeaserProps) {
-  const ready = useStitchPreviewReady(preview);
+  const [retryNonce, setRetryNonce] = useState(0);
+  const ready = useStitchPreviewReady(preview, { refreshKey: retryNonce });
   const [imageBroken, setImageBroken] = useState(false);
   const hasPage = stitchPreviewPageUrlIsValid(preview);
   const previewUrl = hasPage ? buildStitchPreviewPageUrl(preview) : null;
 
   const handleImageError = useCallback(() => setImageBroken(true), []);
+  const handleRetry = useCallback(() => {
+    setImageBroken(false);
+    setRetryNonce((n) => n + 1);
+  }, []);
 
   return (
     <div
       role="status"
       aria-live="polite"
       aria-label={WIRELINE_STITCH_UI.previewTeaserTitle}
-      className="w-full max-w-md rounded-md border border-brand/20 bg-gradient-to-br from-brand/[0.05] to-paper/95 dark:from-brand/[0.08] dark:to-velvet/50 p-3.5 shadow-sm"
+      className={cn(
+        "w-full rounded-md border border-brand/20 bg-gradient-to-br from-brand/[0.05] to-paper/95 dark:from-brand/[0.08] dark:to-velvet/50 p-3.5 shadow-sm",
+        preview.deviceType === "DESKTOP" || preview.deviceType === "AGNOSTIC"
+          ? "max-w-2xl"
+          : "max-w-md",
+      )}
     >
       <div className="flex items-start gap-3">
         <span className="shrink-0 flex h-9 w-9 items-center justify-center rounded-md bg-brand/12 border border-brand/20 text-brand">
@@ -167,7 +180,8 @@ export default function DirectorStitchPreviewTeaser({
         preview={preview}
         ready={ready}
         imageBroken={imageBroken}
-        onRetryImage={handleImageError}
+        onImageError={handleImageError}
+        onRetryPreview={handleRetry}
       />
 
       {previewUrl && !inGrid && (
@@ -238,7 +252,7 @@ export function DirectorStitchPreviewVariantGrid({
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-      className="w-full max-w-2xl"
+      className="w-full max-w-3xl"
     >
       <div
         className={cn(

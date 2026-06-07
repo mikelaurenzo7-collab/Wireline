@@ -3634,6 +3634,7 @@ html, body, .marketing-surface, .app-surface {
 }
 .wl-stitch-device--desktop {
   max-width: 100%;
+  min-width: 0;
 }
 .wl-stitch-device-chrome {
   display: flex;
@@ -3683,6 +3684,9 @@ html, body, .marketing-surface, .app-surface {
   background: white;
 }
 .wl-stitch-device--studio {
+  max-width: min(100%, 64rem);
+}
+.wl-stitch-device--mobile.wl-stitch-device--studio {
   max-width: min(100%, 24rem);
 }
 .wl-stitch-device-screen--studio {

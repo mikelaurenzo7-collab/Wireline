@@ -35,6 +35,24 @@ export interface DirectorArtifactInlineSrc {
 const signedBlobCache = new Map<string, { src: string; expiresAt: number }>();
 const SIGNED_BLOB_CACHE_TTL_MS = 5 * 60 * 1000;
 
+function revokeObjectUrlIfUncached(src: string | undefined) {
+  if (!src) return;
+  for (const cached of signedBlobCache.values()) {
+    if (cached.src === src && cached.expiresAt > Date.now()) return;
+  }
+  URL.revokeObjectURL(src);
+}
+
+function pruneExpiredSignedBlobCache() {
+  const now = Date.now();
+  for (const [key, cached] of signedBlobCache.entries()) {
+    if (cached.expiresAt <= now) {
+      URL.revokeObjectURL(cached.src);
+      signedBlobCache.delete(key);
+    }
+  }
+}
+
 /**
  * Fetches a fresh signed artifact URL (session cookie) and exposes a blob: URL
  * suitable for <img> and <iframe> without forcing a download.
@@ -47,10 +65,11 @@ const SIGNED_BLOB_CACHE_TTL_MS = 5 * 60 * 1000;
  */
 export function useDirectorArtifactBlobSrc(
   artifactId: string | undefined,
-  options?: { inline?: boolean; enabled?: boolean },
+  options?: { inline?: boolean; enabled?: boolean; refreshKey?: string | number },
 ): DirectorArtifactInlineSrc {
   const inline = options?.inline ?? true;
   const enabled = options?.enabled ?? true;
+  const refreshKey = options?.refreshKey ?? 0;
   const [src, setSrc] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -60,7 +79,7 @@ export function useDirectorArtifactBlobSrc(
   useEffect(() => {
     const revokePending = () => {
       if (pendingRevokeRef.current) {
-        URL.revokeObjectURL(pendingRevokeRef.current);
+        revokeObjectUrlIfUncached(pendingRevokeRef.current);
         pendingRevokeRef.current = undefined;
       }
     };
@@ -74,6 +93,8 @@ export function useDirectorArtifactBlobSrc(
       setError(false);
       return;
     }
+
+    pruneExpiredSignedBlobCache();
 
     const cacheKey = `${artifactId}:${inline ? 1 : 0}`;
     const cached = signedBlobCache.get(cacheKey);
@@ -89,6 +110,7 @@ export function useDirectorArtifactBlobSrc(
       return;
     }
     if (cached) {
+      revokeObjectUrlIfUncached(cached.src);
       signedBlobCache.delete(cacheKey);
     }
 
@@ -134,12 +156,12 @@ export function useDirectorArtifactBlobSrc(
       cancelled = true;
       revokePending();
     };
-  }, [artifactId, inline, enabled]);
+  }, [artifactId, inline, enabled, refreshKey]);
 
   useEffect(() => {
     return () => {
       if (activeBlobRef.current) {
-        URL.revokeObjectURL(activeBlobRef.current);
+        revokeObjectUrlIfUncached(activeBlobRef.current);
         activeBlobRef.current = undefined;
       }
     };

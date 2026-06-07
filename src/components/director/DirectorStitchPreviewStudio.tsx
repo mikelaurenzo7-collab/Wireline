@@ -4,7 +4,15 @@
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Download, ExternalLink, LayoutTemplate, Loader2, Monitor, Sparkles } from "lucide-react";
+import {
+  Download,
+  ExternalLink,
+  LayoutTemplate,
+  Loader2,
+  Monitor,
+  RefreshCw,
+  Sparkles,
+} from "lucide-react";
 import type { DirectorPreviewMeta } from "../../lib/director-message-metadata";
 import { fetchDirectorArtifactSignedUrl } from "../../hooks/useDirectorArtifactInlineSrc";
 import { useStitchPreviewReady } from "../../hooks/useStitchPreviewReady";
@@ -121,7 +129,8 @@ export default function DirectorStitchPreviewStudio({
   defaultTab,
   className,
 }: DirectorStitchPreviewStudioProps) {
-  const ready = useStitchPreviewReady(preview);
+  const [retryNonce, setRetryNonce] = useState(0);
+  const ready = useStitchPreviewReady(preview, { refreshKey: retryNonce });
   const hasRenderableImage = Boolean(ready.imageSrc);
   const hasRenderableHtml = Boolean(ready.htmlSrc);
 
@@ -204,11 +213,26 @@ export default function DirectorStitchPreviewStudio({
     return (
       <div
         className={cn(
-          "wl-stitch-studio-loading rounded-md border border-brand/15 p-8 text-center",
+          "wl-stitch-studio-loading rounded-md border border-brand/15 p-8 text-center space-y-3",
           className,
         )}
       >
-        <p className="text-[12px] text-muted">Loading preview assets…</p>
+        <p className="text-[12px] text-muted">
+          {ready.failed ? WIRELINE_STITCH_UI.fallbackCopy : "Loading preview assets…"}
+        </p>
+        {ready.failed && (
+          <ShadButton
+            type="button"
+            variant="ghost"
+            size="sm"
+            disableAnimations
+            onClick={() => setRetryNonce((n) => n + 1)}
+            className="h-auto px-2.5 py-1 text-[10px] font-semibold text-brand hover:text-brand-deep"
+          >
+            <RefreshCw className="w-3 h-3" />
+            Retry preview
+          </ShadButton>
+        )}
       </div>
     );
   }
