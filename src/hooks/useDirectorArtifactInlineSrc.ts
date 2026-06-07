@@ -85,9 +85,9 @@ export function useDirectorArtifactBlobSrc(
     };
 
     if (!artifactId || !enabled) {
-      revokePending();
       pendingRevokeRef.current = activeBlobRef.current;
       activeBlobRef.current = undefined;
+      revokePending();
       setSrc(undefined);
       setLoading(false);
       setError(false);
@@ -163,6 +163,10 @@ export function useDirectorArtifactBlobSrc(
       if (activeBlobRef.current) {
         revokeObjectUrlIfUncached(activeBlobRef.current);
         activeBlobRef.current = undefined;
+      }
+      if (pendingRevokeRef.current) {
+        revokeObjectUrlIfUncached(pendingRevokeRef.current);
+        pendingRevokeRef.current = undefined;
       }
     };
   }, []);
