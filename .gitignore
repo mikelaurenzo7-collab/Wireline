@@ -37,5 +37,12 @@ credentials.json
 .credentials
 .local/
 
+# Local dogfood QA output (scripts write here; do not commit screenshots/reports)
+terminals/dogfood-prod/
+
+# Ad-hoc pack tarballs from local experiments
+npm.tgz
+stitch-sdk.tgz
+
 # Bundle visualizer output
 stats.html

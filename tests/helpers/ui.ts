@@ -136,8 +136,10 @@ export const AUTHENTICATED_TAB_DEEP_LINKS = [
   "/phone?tab=outbound",
   "/phone?tab=appointments",
   "/ops?tab=intel",
+  "/ops?tab=actions",
   "/ops?tab=analytics",
   "/ops?tab=floor",
+  "/admin?tab=growth",
   "/admin?tab=subscription",
   "/admin?tab=team",
   "/admin?tab=branding",
@@ -165,6 +167,8 @@ export const LEGACY_REDIRECTS = [
   { from: "/activity", to: "/phone" },
   { from: "/knowledge", to: "/training" },
   { from: "/train", to: "/training" },
+  { from: "/admin/growth", to: "/admin?tab=flywheel" },
+  { from: "/ops/actions", to: "/ops?tab=intel" },
 ] as const;
 
 /** Industry wedge landing pages reached from outbound DMs (/for/<slug>). */

@@ -3,11 +3,13 @@
  */
 import { describe, expect, it } from "vitest";
 import { getRouteAccent, getRouteAccentFromLocation, ROUTE_ACCENTS } from "./navigation";
-import { BRAND, ROUTE_ACCENT_DEFAULT } from "./brand-colors";
+import { BRAND, NAV_GROUP_ACCENTS, ROUTE_ACCENT_DEFAULT } from "./brand-colors";
 
 const ALLOWED_ROUTE_HEX = new Set([
   BRAND.purple,
   BRAND.purpleDeep,
+  BRAND.purpleMid,
+  BRAND.purpleRim,
   BRAND.purpleLight,
   BRAND.purpleMuted,
   BRAND.creamWarm,
@@ -78,8 +80,14 @@ describe("getRouteAccentFromLocation", () => {
   });
 });
 
-describe("ROUTE_ACCENTS palette", () => {
-  it("never uses legacy blues, oranges, or teals", () => {
+describe("brand palette contracts", () => {
+  it("NAV_GROUP_ACCENTS uses purple/cream family only", () => {
+    for (const hex of Object.values(NAV_GROUP_ACCENTS)) {
+      expect(ALLOWED_ROUTE_HEX.has(hex), `${hex} is not in brand palette`).toBe(true);
+    }
+  });
+
+  it("ROUTE_ACCENTS never uses legacy blues, oranges, or teals", () => {
     for (const pair of Object.values(ROUTE_ACCENTS)) {
       assertOnBrand(pair);
     }

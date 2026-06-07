@@ -209,9 +209,13 @@ Write findings to `terminals/dogfood-prod/dogfood-report.md` using
 | `/ops` `/triage` | Yes | Live ops, tabs, density |
 | `/phone` `/sms` `/email` `/pipeline` | Yes | Channel tables, seeded data |
 | `/insights` `/integrations` | Yes | Charts, marketplace cards |
-| `/admin` | Yes | Settings, Growth tab, team/billing |
+| `/admin` | Yes | Settings, Growth tab (`?tab=flywheel`), team/billing |
+| `/admin/growth` | Yes | Redirect → `/admin?tab=flywheel` |
+| `/ops/actions` | Yes | Redirect → `/ops?tab=intel` |
 
 `/director` and `/settings` are **not** routes — expect redirect/404.
+
+**Tab aliases:** `/ops?tab=actions` → Actions (`intel`); `/admin?tab=growth` → Growth (`flywheel`).
 
 ## Strict rules
 
@@ -228,10 +232,13 @@ Write findings to `terminals/dogfood-prod/dogfood-report.md` using
 |--------|---------|
 | `scripts/dogfood-reset.mjs` | Clear Director + demo dogfood data |
 | `scripts/prod-dogfood.mjs` | Login, route sweep, chat roleplay, screenshots |
+| `scripts/dogfood-marketing.mjs` | Marketing-only sweep (public routes + viewports) |
 | `scripts/dogfood-director.mjs` | API-level Director capability probes |
 | `scripts/stitch-dogfood-prod.mjs` | End-to-end Google Stitch render in chat |
 | `scripts/clear-demo-director.mjs` | Director thread only |
 | `.claude/skills/run-wireline/authed-qa.mjs` | Local mocked console layout QA |
+
+Artifacts write to `terminals/dogfood-prod/` (gitignored — local QA output only).
 
 ## Related skills
 
