@@ -12,6 +12,8 @@ coverage/
 .e2e-creds
 .qa-auth.sh
 .sc.local
+.qa.env
+.qa/
 
 # IDE — committed .vscode is intentional (shared workspace settings)
 .gitconfig
