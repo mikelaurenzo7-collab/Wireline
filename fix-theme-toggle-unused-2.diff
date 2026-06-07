@@ -1,0 +1,14 @@
+<<<<<<< SEARCH
+let theme: "system" | "light" | "dark" = "system";
+let resolvedTheme: "light" | "dark" = "light";
+=======
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+describe("ThemeToggle", () => {
+  beforeEach(() => {
+    theme = "system";
+    resolvedTheme = "light";
+  });
+=======
+describe("ThemeToggle", () => {
+>>>>>>> REPLACE

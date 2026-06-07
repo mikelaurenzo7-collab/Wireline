@@ -1,0 +1,10 @@
+<<<<<<< SEARCH
+import { describe, expect, it, vi, beforeEach } from "vitest";
+import ThemeToggle from "./ThemeToggle";
+
+const toggleTheme = vi.fn();
+=======
+import { describe, it, vi, beforeEach } from "vitest";
+
+const toggleTheme = vi.fn();
+>>>>>>> REPLACE
