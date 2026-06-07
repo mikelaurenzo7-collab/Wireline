@@ -728,6 +728,7 @@ export async function runDirectorStitchTurn(
       projectId: primary.projectId || project.projectId,
       screenId: primary.screenId,
       projectTitle: project.projectTitle,
+      deviceType,
     };
 
     const durationMs = Date.now() - t0;

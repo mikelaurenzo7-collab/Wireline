@@ -159,6 +159,7 @@ interface DirectorStitchSession {
   projectId: string;
   screenId: string;
   projectTitle?: string;
+  deviceType?: DirectorPreview["deviceType"];
 }
 
 interface DirectorMessage {
@@ -362,6 +363,7 @@ export default function DirectorWorkspace({
               projectId: session.projectId,
               screenId: session.screenId,
               operatorMessage,
+              deviceType: session.deviceType,
             }),
           });
         } catch {
@@ -1370,9 +1372,7 @@ export default function DirectorWorkspace({
                     aria-label={WIRELINE_STITCH_UI.previewSideEntryLabel}
                   >
                     <LayoutTemplate className="w-3 h-3" />
-                    <span className="hidden sm:inline">
-                      {WIRELINE_STITCH_UI.previewSideEntryLabel}
-                    </span>
+                    <span>{WIRELINE_STITCH_UI.previewSideEntryLabel}</span>
                   </Link>
                 </ShadButton>
               )}

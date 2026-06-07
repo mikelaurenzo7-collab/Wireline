@@ -3,12 +3,18 @@
  * Director thread. Production databases may lag migrations (missing `reasoning`
  * column or artifact tables); these helpers degrade gracefully instead of 500ing.
  */
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "./server-utils";
 import { listDirectorArtifacts, type DirectorStoredArtifact } from "./director-artifacts";
-import type { DirectorMessageMetadata } from "./director-message-metadata";
+import {
+  completedStitchPreviewsForSession,
+  mergeCompletedStitchPreviewMetadata,
+  parseDirectorMetadata,
+  type DirectorMessageMetadata,
+  type DirectorPreviewMeta,
+} from "./director-message-metadata";
 
 export interface DirectorStoredMessage {
   id: bigint;
@@ -246,6 +252,93 @@ export async function insertDirectorMessage(input: {
       content: input.content,
     });
   }
+}
+
+const RECENT_STITCH_MESSAGE_LIMIT = 40;
+
+async function loadRecentDirectorStitchRows(userId: string): Promise<
+  Array<{
+    id: bigint;
+    metadata: unknown;
+  }>
+> {
+  await ensureDirectorSchema();
+  return drizzle
+    .select({
+      id: schema.directorConversationMessages.id,
+      metadata: schema.directorConversationMessages.metadata,
+    })
+    .from(schema.directorConversationMessages)
+    .where(
+      and(
+        eq(schema.directorConversationMessages.userId, userId),
+        eq(schema.directorConversationMessages.role, "director"),
+      ),
+    )
+    .orderBy(desc(schema.directorConversationMessages.createdAt))
+    .limit(RECENT_STITCH_MESSAGE_LIMIT);
+}
+
+export async function loadCompletedDirectorStitchPreview(input: {
+  userId: string;
+  projectId: string;
+  screenId: string;
+}): Promise<DirectorPreviewMeta[] | null> {
+  try {
+    const rows = await loadRecentDirectorStitchRows(input.userId);
+    for (const row of rows) {
+      const meta = parseDirectorMetadata(row.metadata);
+      const previews = completedStitchPreviewsForSession(meta, input);
+      if (previews) return previews;
+    }
+  } catch (e) {
+    if (isPostgresMissingColumn(e, "metadata") || isPostgresMissingRelation(e)) {
+      log.warn("director stitch preview lookup degraded", {
+        userId: input.userId,
+        error: getErrorMessage(e),
+      });
+      return null;
+    }
+    throw e;
+  }
+  return null;
+}
+
+export async function persistDirectorStitchPreviewCompletion(input: {
+  userId: string;
+  projectId: string;
+  screenId: string;
+  previews: DirectorPreviewMeta[];
+}): Promise<boolean> {
+  if (input.previews.length === 0) return false;
+  try {
+    const rows = await loadRecentDirectorStitchRows(input.userId);
+    for (const row of rows) {
+      const meta = parseDirectorMetadata(row.metadata);
+      const next = mergeCompletedStitchPreviewMetadata(meta, input, input.previews);
+      if (!next) continue;
+      await drizzle
+        .update(schema.directorConversationMessages)
+        .set({ metadata: next })
+        .where(
+          and(
+            eq(schema.directorConversationMessages.id, row.id),
+            eq(schema.directorConversationMessages.userId, input.userId),
+          ),
+        );
+      return true;
+    }
+  } catch (e) {
+    if (isPostgresMissingColumn(e, "metadata") || isPostgresMissingRelation(e)) {
+      log.warn("director stitch preview persist degraded", {
+        userId: input.userId,
+        error: getErrorMessage(e),
+      });
+      return false;
+    }
+    throw e;
+  }
+  return false;
 }
 
 export async function listDirectorArtifactsSafe(
