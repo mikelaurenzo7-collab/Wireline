@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { type MutableRefObject, useEffect, useRef, useState } from "react";
 
 /** Parse artifact id from a persisted Director signed download/preview URL. */
 export function artifactIdFromDirectorSignedUrl(url?: string): string | undefined {
@@ -33,13 +33,61 @@ export interface DirectorArtifactInlineSrc {
 
 /** Simple in-memory µ-cache for signed blob URLs scoped to the browser session. */
 const signedBlobCache = new Map<string, { src: string; expiresAt: number }>();
+const activeBlobReferences = new Map<string, number>();
 const SIGNED_BLOB_CACHE_TTL_MS = 5 * 60 * 1000;
 
-function revokeObjectUrlIfUncached(src: string | undefined) {
+function incrementActiveBlobReference(src: string | undefined) {
   if (!src) return;
-  for (const cached of signedBlobCache.values()) {
-    if (cached.src === src && cached.expiresAt > Date.now()) return;
+  activeBlobReferences.set(src, (activeBlobReferences.get(src) ?? 0) + 1);
+}
+
+function decrementActiveBlobReference(src: string | undefined) {
+  if (!src) return;
+  const nextCount = (activeBlobReferences.get(src) ?? 0) - 1;
+  if (nextCount > 0) {
+    activeBlobReferences.set(src, nextCount);
+    return;
   }
+  activeBlobReferences.delete(src);
+}
+
+function setActiveBlobReference(
+  activeBlobRef: MutableRefObject<string | undefined>,
+  nextSrc: string | undefined,
+) {
+  const previousSrc = activeBlobRef.current;
+  if (previousSrc === nextSrc) return;
+  decrementActiveBlobReference(previousSrc);
+  activeBlobRef.current = nextSrc;
+  incrementActiveBlobReference(nextSrc);
+}
+
+function hasActiveBlobReferences(src: string | undefined) {
+  return !!src && (activeBlobReferences.get(src) ?? 0) > 0;
+}
+
+function releaseActiveBlobReference(activeBlobRef: MutableRefObject<string | undefined>) {
+  const previousSrc = activeBlobRef.current;
+  setActiveBlobReference(activeBlobRef, undefined);
+  return previousSrc;
+}
+
+function takeRefValue(ref: MutableRefObject<string | undefined>) {
+  const value = ref.current;
+  ref.current = undefined;
+  return value;
+}
+
+function hasUnexpiredSignedBlobCacheEntry(src: string) {
+  const now = Date.now();
+  for (const cached of signedBlobCache.values()) {
+    if (cached.src === src && cached.expiresAt > now) return true;
+  }
+  return false;
+}
+
+function revokeObjectUrlIfUncached(src: string | undefined) {
+  if (!src || hasActiveBlobReferences(src) || hasUnexpiredSignedBlobCacheEntry(src)) return;
   URL.revokeObjectURL(src);
 }
 
@@ -47,11 +95,19 @@ function pruneExpiredSignedBlobCache() {
   const now = Date.now();
   for (const [key, cached] of signedBlobCache.entries()) {
     if (cached.expiresAt <= now) {
-      URL.revokeObjectURL(cached.src);
       signedBlobCache.delete(key);
+      revokeObjectUrlIfUncached(cached.src);
     }
   }
 }
+
+export const __directorArtifactBlobCacheTestUtils = {
+  activeBlobReferences,
+  pruneExpiredSignedBlobCache,
+  revokeObjectUrlIfUncached,
+  setActiveBlobReference,
+  signedBlobCache,
+};
 
 /**
  * Fetches a fresh signed artifact URL (session cookie) and exposes a blob: URL
@@ -87,7 +143,7 @@ export function useDirectorArtifactBlobSrc(
     if (!artifactId || !enabled) {
       revokePending();
       pendingRevokeRef.current = activeBlobRef.current;
-      activeBlobRef.current = undefined;
+      setActiveBlobReference(activeBlobRef, undefined);
       setSrc(undefined);
       setLoading(false);
       setError(false);
@@ -103,7 +159,7 @@ export function useDirectorArtifactBlobSrc(
       if (activeBlobRef.current && activeBlobRef.current !== cached.src) {
         pendingRevokeRef.current = activeBlobRef.current;
       }
-      activeBlobRef.current = cached.src;
+      setActiveBlobReference(activeBlobRef, cached.src);
       setSrc(cached.src);
       setLoading(false);
       setError(false);
@@ -143,7 +199,7 @@ export function useDirectorArtifactBlobSrc(
         if (activeBlobRef.current && activeBlobRef.current !== nextBlobUrl) {
           pendingRevokeRef.current = activeBlobRef.current;
         }
-        activeBlobRef.current = nextBlobUrl;
+        setActiveBlobReference(activeBlobRef, nextBlobUrl);
         setSrc(nextBlobUrl);
       } catch {
         if (!cancelled) setError(true);
@@ -160,10 +216,8 @@ export function useDirectorArtifactBlobSrc(
 
   useEffect(() => {
     return () => {
-      if (activeBlobRef.current) {
-        revokeObjectUrlIfUncached(activeBlobRef.current);
-        activeBlobRef.current = undefined;
-      }
+      revokeObjectUrlIfUncached(releaseActiveBlobReference(activeBlobRef));
+      revokeObjectUrlIfUncached(takeRefValue(pendingRevokeRef));
     };
   }, []);
 
