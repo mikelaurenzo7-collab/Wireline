@@ -788,6 +788,18 @@ export type StitchPreparedTurn =
       input: DirectorStitchTurnInput & { designBriefMarkdown: string; businessName?: string };
     };
 
+export type DirectorStitchTurnAttempt =
+  | { kind: "turn"; turn: DirectorStitchTurnResult }
+  | { kind: "not-configured" }
+  | { kind: "recoverable-failure"; error: GoogleStitchError }
+  | { kind: "hard-failure"; error: GoogleStitchError };
+
+function isRecoverableStitchFailure(error: GoogleStitchError): boolean {
+  if (error.code === "AUTH_FAILED") return false;
+  if (error.code === "VALIDATION_ERROR" && !error.recoverable) return false;
+  return error.recoverable;
+}
+
 /** Brief gate + design.md — runs even when Stitch API is not configured. */
 export async function prepareStitchDirectorTurn(
   input: DirectorStitchTurnInput,
@@ -839,21 +851,29 @@ export async function prepareStitchDirectorTurn(
   };
 }
 
-/** Non-throwing entry — clarify turns always return; null only when render cannot run. */
+/**
+ * Non-throwing entry. Clarify/render successes return `turn`; disabled Stitch returns
+ * `not-configured`; render/package failures are classified so callers can decide
+ * whether to draft the design in chat or surface a hard unavailable message.
+ */
 export async function tryDirectorStitchTurn(
   input: DirectorStitchTurnInput,
-): Promise<DirectorStitchTurnResult | null> {
+): Promise<DirectorStitchTurnAttempt> {
   try {
     const prepared = await prepareStitchDirectorTurn(input);
-    if (prepared.phase === "clarify") return prepared.turn;
-    if (!isGoogleStitchConfigured()) return null;
-    return await runDirectorStitchTurn(prepared.input);
+    if (prepared.phase === "clarify") return { kind: "turn", turn: prepared.turn };
+    if (!isGoogleStitchConfigured()) return { kind: "not-configured" };
+    return { kind: "turn", turn: await runDirectorStitchTurn(prepared.input) };
   } catch (e) {
-    log.warn("director stitch turn failed — falling back to LLM", {
+    const error = mapStitchError(e);
+    const kind = isRecoverableStitchFailure(error) ? "recoverable-failure" : "hard-failure";
+    log.warn("director stitch turn failed", {
       userId: input.userId,
-      error: getErrorMessage(e),
-      code: e instanceof GoogleStitchError ? e.code : undefined,
+      error: getErrorMessage(error),
+      code: error.code,
+      recoverable: error.recoverable,
+      fallbackKind: kind,
     });
-    return null;
+    return { kind, error };
   }
 }
