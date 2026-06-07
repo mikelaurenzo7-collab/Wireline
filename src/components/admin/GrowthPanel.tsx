@@ -25,6 +25,39 @@ interface GrowthPanelProps {
   isSaving: boolean;
 }
 
+/** Honest ICP completeness score from saved targeting fields (not fabricated funnel stats). */
+function computeIcpInsights(settings: GrowthPanelProps["settings"]) {
+  const titles = settings.target_titles || [];
+  const industries = settings.target_industries || [];
+  const states = settings.target_states || [];
+  const sizes = settings.target_employee_ranges || [];
+  const filledBuckets = [titles, industries, states, sizes].filter((b) => b.length > 0).length;
+  const tagCount = titles.length + industries.length + states.length + sizes.length;
+  const completeness = settings.prospecting_enabled
+    ? Math.min(95, 40 + filledBuckets * 12 + Math.min(tagCount * 2, 20))
+    : Math.min(60, filledBuckets * 15 + tagCount * 2);
+
+  const industryLabel =
+    industries.length > 0
+      ? industries.slice(0, 2).join(industries.length > 2 ? ", …" : "")
+      : "your target industries";
+
+  let advice = "Turn on Autonomous Prospecting and save ICP tags to start sourcing leads.";
+  if (settings.prospecting_enabled && titles.length === 0) {
+    advice =
+      "Add at least one decision-maker title (e.g. Owner, CEO) so Apollo searches stay focused.";
+  } else if (settings.prospecting_enabled && industries.length === 0) {
+    advice =
+      "Add target industries so prospecting matches businesses that fit Wireline's sweet spot.";
+  } else if (settings.prospecting_enabled && states.length === 0) {
+    advice = "Geographic filters reduce wasted dials — start with your primary state or region.";
+  } else if (settings.prospecting_enabled) {
+    advice = `ICP targets ${industryLabel} — queue a prospecting run from Live Ops when you're ready to ingest leads.`;
+  }
+
+  return { completeness, industryLabel, advice };
+}
+
 export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthPanelProps) {
   const [newTitle, setNewTitle] = useState("");
   const [newIndustry, setNewIndustry] = useState("");
@@ -45,6 +78,8 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
       [field]: (settings[field] || []).filter((v: string) => v !== value),
     });
   };
+
+  const icp = computeIcpInsights(settings);
 
   return (
     <div className="h-full grid grid-cols-1 xl:grid-cols-3 gap-3 min-h-0 scroll-viewport pb-6">
@@ -354,30 +389,33 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-display text-ink">
-                  92<span className="text-lg text-muted">%</span>
+                  {icp.completeness}
+                  <span className="text-lg text-muted">%</span>
                 </span>
                 <TrendingUp className="w-4 h-4 text-brand mb-1" />
               </div>
               <p className="text-[10px] text-muted leading-relaxed">
-                Your current configuration has a 92% match rate with high-intent decision makers in
-                the fintech sector.
+                ICP configuration completeness for{" "}
+                {settings.prospecting_enabled ? "autonomous prospecting" : "saved targeting"} —{" "}
+                {icp.industryLabel}.
               </p>
               <div className="w-full h-1.5 bg-black/10 rounded-full overflow-hidden">
-                <div className="h-full bg-brand" style={{ width: "92%" }} />
+                <div className="h-full bg-brand" style={{ width: `${icp.completeness}%` }} />
               </div>
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between px-1">
                 <span className="text-[9px] uppercase tracking-widest text-muted font-bold">
-                  Lead Funnel
+                  ICP tags
                 </span>
-                <span className="text-[9px] font-mono text-muted">LIVE</span>
+                <span className="text-[9px] font-mono text-muted">SAVED</span>
               </div>
               {[
-                { label: "Sourced", value: "1,284", color: "text-ink" },
-                { label: "Qualified", value: "412", color: "text-brand" },
-                { label: "In-Call", value: "28", color: "text-brand" },
+                { label: "Titles", value: (settings.target_titles || []).length },
+                { label: "Industries", value: (settings.target_industries || []).length },
+                { label: "States", value: (settings.target_states || []).length },
+                { label: "Size bands", value: (settings.target_employee_ranges || []).length },
               ].map((stat) => (
                 <div
                   key={stat.label}
@@ -386,7 +424,14 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                   <span className="text-[10px] uppercase tracking-[0.2em] text-muted">
                     {stat.label}
                   </span>
-                  <span className={cn("text-sm font-display", stat.color)}>{stat.value}</span>
+                  <span
+                    className={cn(
+                      "text-sm font-display",
+                      stat.value > 0 ? "text-brand" : "text-muted",
+                    )}
+                  >
+                    {stat.value}
+                  </span>
                 </div>
               ))}
             </div>
@@ -395,10 +440,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
               <p className="text-[9px] uppercase tracking-widest text-muted/70 mb-2">
                 Strategy Advice
               </p>
-              <p className="text-[10px] italic text-muted leading-relaxed">
-                "Increasing target titles to include 'Director of Innovation' could expand market
-                reach by 14% without compromising lead quality."
-              </p>
+              <p className="text-[10px] italic text-muted leading-relaxed">"{icp.advice}"</p>
             </div>
           </div>
         </Panel>

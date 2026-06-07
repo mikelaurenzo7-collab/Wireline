@@ -8,7 +8,7 @@
  * before the operator owns a single agent) and acts as the strategist that
  * helps plan the fleet, decide what agents to hire, and coach them.
  */
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
 import {
@@ -220,6 +220,28 @@ const SCENE_ICONS: Record<Exclude<DirectorMessageScene, "general">, React.Elemen
   code: FileText,
 };
 
+/** Per-agent coach threads are tagged with coachAgentId — never bleed fleet/other-coach history. */
+function filterMessagesForCoachFocus(
+  all: DirectorMessage[],
+  focusAgentId: string,
+): DirectorMessage[] {
+  const out: DirectorMessage[] = [];
+  for (let i = 0; i < all.length; i++) {
+    const m = all[i];
+    if (m.role === "operator") {
+      const next = all[i + 1];
+      if (next?.role === "director" && next.coachAgentId === focusAgentId) {
+        out.push(m);
+      }
+      continue;
+    }
+    if (m.role === "director" && m.coachAgentId === focusAgentId) {
+      out.push(m);
+    }
+  }
+  return out;
+}
+
 export default function DirectorWorkspace({
   focusAgentId = null,
   onFocusAgentChange,
@@ -233,6 +255,10 @@ export default function DirectorWorkspace({
   const focusedAgent = focusAgentId ? agents.find((a) => a.id === focusAgentId) : undefined;
   const { error: toastError, success: toastSuccess } = useToast();
   const [messages, setMessages] = useState<DirectorMessage[]>([]);
+  const visibleMessages = useMemo(
+    () => (focusAgentId ? filterMessagesForCoachFocus(messages, focusAgentId) : messages),
+    [messages, focusAgentId],
+  );
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -1112,8 +1138,7 @@ export default function DirectorWorkspace({
   const markResolved = (key: string, state: "done" | "dismissed") =>
     setResolved((prev) => ({ ...prev, [key]: state }));
 
-  const resolveCoachAgentId = (message: DirectorMessage) =>
-    message.coachAgentId || focusAgentId || null;
+  const resolveCoachAgentId = (message: DirectorMessage) => message.coachAgentId ?? null;
 
   const resolveActionAgentId = (
     action: ProposedAction | DirectorProposedAction,
@@ -1513,7 +1538,7 @@ export default function DirectorWorkspace({
               </p>
               <p className="text-[11px] text-muted">{DIRECTOR_LOADING_COPY.sub}</p>
             </div>
-          ) : messages.length === 0 ? (
+          ) : visibleMessages.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1603,7 +1628,7 @@ export default function DirectorWorkspace({
             </motion.div>
           ) : (
             <div className={cn(WL_DIRECTOR_CLASSES.threadColumn, "space-y-2.5")}>
-              {messages.map((m) => {
+              {visibleMessages.map((m) => {
                 const scene =
                   m.role === "director"
                     ? detectDirectorMessageScene(m.content, m.previews, m.proposals)
